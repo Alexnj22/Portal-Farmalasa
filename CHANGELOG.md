@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.858.5 — El vencimiento junto al número, y la foto del teléfono llega lista
+
+**La foto que se manda desde el teléfono ya no se vuelve a editar.** Reporte del
+usuario: *«tomé la foto desde el teléfono, la edité, apliqué filtro, y en la
+computadora volvió a pedirlo»*.
+
+La foto entraba por el camino de siempre —editor incluido—, y eso era correcto
+cuando el teléfono sólo disparaba la cámara: el comentario del código lo decía,
+«la foto de un teléfono es justamente la que más necesita recortarse». Desde que
+el teléfono tiene **su propio editor** (v2.842.0) esa frase dejó de ser cierta y
+nadie la revisó: la foto llega recortada, enderezada y con su acabado, y la
+computadora la mandaba a recortar otra vez — sobre una foto que ya se recortó.
+
+Ahora entra marcada como preparada y va derecho al formulario. Y no hay caso en
+que llegue sin editar: en el teléfono la foto sólo se manda desde el «Guardar»
+del editor — cancelar no manda nada.
+
+**El vencimiento del documento se mudó al lado del número.** Estaba en una fila
+de tres con el lugar y la fecha de expedición, y a ese ancho el rótulo del lugar
+se cortaba en pantalla —«Lugar de expedición del document»— mientras el número
+dejaba media fila vacía. Ahora son dos filas de a dos.
+
+El campo se escribe **una vez** y se usa en dos sitios: junto al DUI, y junto al
+documento alterno de un menor — que es el que caduca antes, así que si hay un
+documento donde el vencimiento importa, es ése.
+
 ## v2.858.4 — Los totales de puntos del cliente son los de verdad
 
 La ficha del cliente mostraba «acumulados» y «canjeados» calculados sobre los 200

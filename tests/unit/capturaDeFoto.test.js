@@ -324,3 +324,45 @@ describe('el marco del encuadre', () => {
         expect(lienzo.slice(i, j)).not.toMatch(/getBoundingClientRect/);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// La foto que llega del teléfono YA está lista
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// «Tomé la foto desde el teléfono, la edité, apliqué filtro, y en la computadora
+// volvió a pedirlo» (usuario, 2026-08-29).
+//
+// La foto entraba por el camino de siempre —editor incluido— y ese
+// comportamiento era correcto cuando el teléfono sólo disparaba la cámara. Desde
+// que el teléfono tiene su propio editor, llega recortada, enderezada y con su
+// acabado: repetirlo en la computadora es pedir dos veces el mismo trabajo, y
+// encima sobre una foto que ya se recortó.
+//
+// No hay caso en que llegue sin editar: en el teléfono la foto sólo se manda
+// desde el `onConfirm` del editor — cancelar no manda nada.
+
+describe('la foto del teléfono no se vuelve a preparar', () => {
+    const field = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/FileField.jsx'), 'utf8');
+    const telefono = fs.readFileSync(
+        path.join(process.cwd(), 'src/views/CapturaDeFotoView.jsx'), 'utf8');
+
+    it('entra marcada como ya preparada', () => {
+        expect(field).toMatch(/fotoComoArchivo\(urlFirmada, 'foto\.jpg'\), \{ yaPreparado: true \}/);
+    });
+
+    it('y eso salta la preparación automática y el editor', () => {
+        expect(field).toMatch(/if \(yaPreparado\) \{ onChange\?\.\(archivo\); return; \}/);
+        // Antes que la rama de las imágenes: si quedara después, la prepararía
+        // igual y la marca no serviría de nada.
+        expect(field.indexOf('if (yaPreparado)'))
+            .toBeLessThan(field.indexOf("archivo.type?.startsWith('image/')"));
+    });
+
+    it('el teléfono sólo manda desde el editor, nunca al tomar la foto', () => {
+        expect(telefono).toMatch(/setPorAjustar\(file\)/);
+        expect(telefono).toMatch(/onConfirm=\{\(listo\) => \{ setPorAjustar\(null\); mandar\(listo\); \}\}/);
+        // Y cancelar no manda nada.
+        expect(telefono).toMatch(/onCancel=\{\(\) => setPorAjustar\(null\)\}/);
+    });
+});

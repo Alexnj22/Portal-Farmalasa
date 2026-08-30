@@ -439,15 +439,36 @@ describe('el vencimiento del documento de identidad', () => {
     const utils = fs.readFileSync(
         path.join(process.cwd(), 'src/store/utils.js'), 'utf8');
 
-    it('se ve en el formulario, al lado de la expedición', () => {
+    /* Se mudó AL LADO DEL NÚMERO el 2026-08-29, mirando la pantalla: estaba en
+     * una fila de tres con el lugar y la fecha de expedición, y a ese ancho el
+     * rótulo del lugar se cortaba —«Lugar de expedición del document»— mientras
+     * el número dejaba media fila vacía. Ahora son dos filas de a dos. */
+    it('se ve al lado del número del documento', () => {
         expect(form).toMatch(/>Fecha de vencimiento</);
-        const iExp = form.indexOf('>Fecha de expedición<');
-        const iVen = form.indexOf('>Fecha de vencimiento<');
-        expect(iExp).toBeGreaterThan(-1);
-        expect(iVen).toBeGreaterThan(iExp);
-        // En la misma rejilla: si quedaran en filas distintas dejarían de estar
-        // «a la par», que es como se pidió.
-        expect(form.slice(iExp, iVen)).not.toMatch(/md:col-span-2 grid/);
+        /* Se mide dónde se USA, no dónde se declara: el campo se escribe una
+         * sola vez arriba del render y se dibuja en dos sitios, así que buscar
+         * el rótulo encuentra la declaración y no la posición en pantalla. */
+        const iDui = form.indexOf('label="DUI" name="dui"');
+        const iVen = form.indexOf('{!isMinor && campoVencimientoDelDocumento}');
+        const iLugar = form.indexOf('label="Lugar de expedición del documento"');
+        expect(iDui).toBeGreaterThan(-1);
+        expect(iVen).toBeGreaterThan(iDui);
+        expect(iLugar).toBeGreaterThan(iVen);
+    });
+
+    // Se escribe UNA vez: dos copias del mismo campo se separan sola la primera
+    // vez que alguien toque una.
+    it('el campo se escribe una vez y sirve al DUI y al documento de un menor', () => {
+        expect((form.match(/>Fecha de vencimiento</g) || [])).toHaveLength(1);
+        expect(form).toMatch(/\{!isMinor && campoVencimientoDelDocumento\}/);
+        expect(form).toMatch(/\{isMinor && campoVencimientoDelDocumento\}/);
+    });
+
+    // Y la fila del lugar vuelve a ser de DOS: a tres columnas su rótulo se
+    // cortaba en pantalla.
+    it('el lugar y la fecha de expedición van en dos columnas', () => {
+        const i = form.indexOf('label="Lugar de expedición del documento"');
+        expect(form.slice(Math.max(0, i - 700), i)).toMatch(/md:grid-cols-2 gap-4/);
     });
 
     it('el alta lo manda a la base', () => {

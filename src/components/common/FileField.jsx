@@ -231,7 +231,13 @@ const FileField = memo(({
         onChange?.(archivo);
     }, [onChange]);
 
-    const aceptar = useCallback(archivo => {
+    /**
+     * @param {File} archivo
+     * @param {{yaPreparado?: boolean}} [opciones]  `yaPreparado` = viene del
+     *   teléfono, donde ya pasó por el editor: se valida y se entrega, sin
+     *   volver a recortarlo. Ver el comentario del efecto que escucha la foto.
+     */
+    const aceptar = useCallback((archivo, { yaPreparado = false } = {}) => {
         if (!archivo) return;
         if (!aceptaArchivo(archivo, accept)) {
             setRechazo(`Ese archivo no es válido (se acepta ${accept})`);
@@ -242,6 +248,10 @@ const FileField = memo(({
             return;
         }
         setRechazo(null);
+        /* Lo que ya se preparó no se vuelve a preparar. Ver el efecto de la
+         * foto del teléfono: allá se recortó, se enderezó y se le dio el
+         * acabado, y repetirlo acá es pedir dos veces el mismo trabajo. */
+        if (yaPreparado) { onChange?.(archivo); return; }
         /* Una IMAGEN se prepara sola; un PDF va derecho. Recortar un PDF
          * exigiría rasterizarlo para no ganar nada: ya viene encuadrado.
          *
@@ -380,10 +390,24 @@ const FileField = memo(({
             dejarDeEscuchar = esperarFoto(captura.id, async (urlFirmada) => {
                 setCaptura(null);
                 try {
-                    // Entra como un `File` normal y sigue el camino de siempre —
-                    // editor incluido: la foto de un teléfono es justamente la
-                    // que más necesita recortarse.
-                    aceptar(await fotoComoArchivo(urlFirmada, 'foto.jpg'));
+                    /* ── Ya viene lista: NO se vuelve a preparar ─────────────
+                     *
+                     * Hasta hoy entraba por el camino de siempre —editor
+                     * incluido— y ese comentario era cierto cuando el teléfono
+                     * sólo disparaba la cámara. Desde que el teléfono tiene su
+                     * propio editor (v2.842.0), la foto llega recortada,
+                     * enderezada y con su acabado: volver a abrir el editor en
+                     * la computadora es pedir dos veces el mismo trabajo, y
+                     * encima sobre una foto que ya se recortó.
+                     *
+                     * Lo reportó el usuario: «tomé la foto desde el teléfono, la
+                     * edité, apliqué filtro, y en la computadora volvió a
+                     * pedirlo».
+                     *
+                     * Y no hay caso en que llegue SIN editar: en el teléfono la
+                     * foto sólo se manda desde el `onConfirm` del editor —
+                     * cancelar no manda nada. */
+                    aceptar(await fotoComoArchivo(urlFirmada, 'foto.jpg'), { yaPreparado: true });
                 } catch {
                     // La foto SÍ se subió; lo que falló es traerla. Se dice, en
                     // vez de cerrar el diálogo como si nada hubiera pasado.

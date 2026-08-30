@@ -2010,6 +2010,33 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return () => { vigente = false; clearTimeout(t); };
     }, [formData?.dui, formData?.id, formData?.enlazar_con_id]);
 
+    /* El vencimiento del documento de identidad. Vive acá y no dentro del JSX
+     * porque se dibuja en DOS sitios —al lado del DUI, y al lado del documento
+     * alterno de un menor— y dos copias del mismo campo se separan sola la
+     * primera vez que alguien toque una. */
+    const campoVencimientoDelDocumento = (
+        <div className="relative z-content">
+            <label className={rotuloCampo('text-content-3')}>
+                <span>Fecha de vencimiento</span>
+                {avisoDuiVence && (
+                    <Badge variant={avisoDuiVence.variant} size="sm">{avisoDuiVence.label}</Badge>
+                )}
+            </label>
+            <LiquidDatePicker value={formData.dui_fecha_vencimiento} onChange={(date) => handleDateChange('dui_fecha_vencimiento', date)} />
+            {/* El aviso repetido abajo y no sólo en el rótulo: la
+                insignia dice CUÁNTO falta, esto dice QUÉ HACER.
+                Un «Vencido» sin la consecuencia se lee como una
+                etiqueta de color. */}
+            {avisoDuiVence && (
+                <p className={`text-micro font-bold mt-1 ml-1 leading-snug ${avisoDuiVence.daysLeft < 0 ? 'text-danger-text' : 'text-warning-text'}`}>
+                    {avisoDuiVence.daysLeft < 0
+                        ? 'El documento está vencido: hay que renovarlo antes de usarlo para el contrato o cualquier trámite.'
+                        : 'Conviene pedirle el documento renovado antes de que venza.'}
+                </p>
+            )}
+        </div>
+    );
+
     const isDuiInvalid = formData?.dui?.length === 10 && !isValidDUIAlgorithm(formData.dui);
     const isDuiIncomplete = !!formData?.dui && formData.dui.length > 0 && formData.dui.length < 10;
 
@@ -2784,6 +2811,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" required hasError={isDuiInvalid || isDuiDuplicate || isDuiIncomplete} errorMessage={duiErrorMsg} />
                                 )}
 
+                                {/* El vencimiento AL LADO del número: son el mismo dato del
+                                    documento, y el número dejaba media fila vacía.
+
+                                    Se escribe UNA vez y se usa dos —acá para el DUI y más
+                                    abajo para el documento del menor— porque el vencimiento
+                                    es del DOCUMENTO, sea cual sea: dejarlo sólo con el DUI
+                                    haría que a un menor no se le pudiera anotar cuándo vence
+                                    el suyo, que es justo el que caduca antes. */}
+                                {!isMinor && campoVencimientoDelDocumento}
+
                                 {isMinor && (
                                     <div className="relative z-content">
                                         <label className={rotuloCampo('text-content-3')}>Tipo de Documento</label>
@@ -2801,6 +2838,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {isMinor && (
                                     <PortalInput label="Número de Documento" name="alt_identity_document" value={formData.alt_identity_document} onChange={handleChange} icon={Fingerprint} placeholder="Número según el documento elegido" required hasError={altIdMissing} errorMessage="Requerido para menores sin DUI" />
                                 )}
+
+                                {/* El de un menor caduca antes que un DUI —un carné de
+                                    minoridad dura poco— así que si hay un documento donde el
+                                    vencimiento importa, es éste. */}
+                                {isMinor && campoVencimientoDelDocumento}
 
                                 {isMinor && isCatalogOther(formData.alt_identity_document_type, ALT_ID_DOCUMENT_TYPE_OPTIONS) && (
                                     <div className="md:col-span-2">
@@ -2839,7 +2881,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     dato —número, lugar y fecha del Art. 23 nº2, más hasta
                                     cuándo vale— y separarlos en filas distintas los hace
                                     parecer campos sueltos. */}
-                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* ── El lugar y la fecha de expedición, en DOS columnas ──
+                                    Estuvieron en una fila de TRES junto al vencimiento, y a
+                                    ese ancho el rótulo del lugar se cortaba en pantalla:
+                                    «Lugar de expedición del document». El vencimiento se mudó
+                                    arriba, al lado del número —que tenía media fila vacía—,
+                                    así que las dos filas quedan de a dos y nada se recorta.
+                                    Lo pidió el usuario mirándolo. */}
+                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <PortalInput
                                         label="Lugar de expedición del documento" name="dui_lugar_expedicion"
                                         value={formData.dui_lugar_expedicion} onChange={handleChange}
@@ -2848,27 +2897,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="relative z-content">
                                         <label className={rotuloCampo('text-content-3')}>Fecha de expedición</label>
                                         <LiquidDatePicker value={formData.dui_fecha_expedicion} onChange={(date) => handleDateChange('dui_fecha_expedicion', date)} />
-                                    </div>
-
-                                    <div className="relative z-content">
-                                        <label className={rotuloCampo('text-content-3')}>
-                                            <span>Fecha de vencimiento</span>
-                                            {avisoDuiVence && (
-                                                <Badge variant={avisoDuiVence.variant} size="sm">{avisoDuiVence.label}</Badge>
-                                            )}
-                                        </label>
-                                        <LiquidDatePicker value={formData.dui_fecha_vencimiento} onChange={(date) => handleDateChange('dui_fecha_vencimiento', date)} />
-                                        {/* El aviso repetido abajo y no sólo en el rótulo: la
-                                            insignia dice CUÁNTO falta, esto dice QUÉ HACER.
-                                            Un «Vencido» sin la consecuencia se lee como una
-                                            etiqueta de color. */}
-                                        {avisoDuiVence && (
-                                            <p className={`text-micro font-bold mt-1 ml-1 leading-snug ${avisoDuiVence.daysLeft < 0 ? 'text-danger-text' : 'text-warning-text'}`}>
-                                                {avisoDuiVence.daysLeft < 0
-                                                    ? 'El documento está vencido: hay que renovarlo antes de usarlo para el contrato o cualquier trámite.'
-                                                    : 'Conviene pedirle el documento renovado antes de que venza.'}
-                                            </p>
-                                        )}
                                     </div>
                                 </div>
 

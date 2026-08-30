@@ -115,11 +115,26 @@ async function estadoDeLaCaja(cookie: string) {
     })).text();
     const aper = panel.match(/id_apertura=(\d+)/)?.[1];
     if (aper) {
+      // Lo que el sistema espera adentro AHORA, quién abrió y a qué hora. Está
+      // en el mismo panel: no cuesta una petición más y es la primera pregunta
+      // de quien mira la pantalla — «¿cuánto hay?».
+      const campo = (etiqueta: string) =>
+        (panel.match(new RegExp(`${etiqueta}:\\s*([^<]*)<`))?.[1] ?? "")
+          .replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || null;
+      const num = (v: string | null) => {
+        const limpio = String(v ?? "").replace(/[^0-9.-]/g, "");
+        const n = Number(limpio);
+        return limpio && Number.isFinite(n) ? n : null;
+      };
       return {
         abierta: true, idCaja,
         aper, emp: panel.match(/emp=(\d+)/)?.[1] ?? idEmple,
         turno: panel.match(/turno=(\d+)/)?.[1] ?? "1",
         idEmple,
+        registrado: num(campo("Monto Registrado")),
+        apertura: num(campo("Monto Apertura")),
+        quien: campo("Nombre"),
+        desde: campo("Hora Apertura"),
       };
     }
   }
@@ -209,7 +224,13 @@ Deno.serve(async (req) => {
     const estado = await estadoDeLaCaja(cookie);
 
     if (accion === "estado") {
-      return json({ ok: true, abierta: estado.abierta, caja: estado.idCaja, turno: estado.turno });
+      return json({
+        ok: true, abierta: estado.abierta, caja: estado.idCaja, turno: estado.turno,
+        registrado: (estado as { registrado?: number | null }).registrado ?? null,
+        apertura: (estado as { apertura?: number | null }).apertura ?? null,
+        quien: (estado as { quien?: string | null }).quien ?? null,
+        desde: (estado as { desde?: string | null }).desde ?? null,
+      });
     }
 
     // ── ABRIR ───────────────────────────────────────────────────────────────

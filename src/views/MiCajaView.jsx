@@ -150,19 +150,24 @@ export default function MiCajaView() {
             return [{ key: 'abrir', icon: DoorOpen, label: 'Abrir la caja', rotulo: 'Abrir',
                 variant: 'primary', onClick: () => setDialogo('abrir') }];
         }
+        /* DOS movimientos y no cuatro: Entrada y Salida.
+         *
+         * «Sacar de una bolsa» era una acción aparte y le pedía a la sala una
+         * decisión que le toca al portal: de dónde sale la plata. Hoy la
+         * decide él —regla del usuario, 30-ago— y **prefiere siempre las bolsas
+         * de cortes anteriores**: ese dinero ya lo descontó su propio cierre,
+         * así que sacarlo de ahí no le mueve nada a la caja de hoy. Sólo cuando
+         * ninguna bolsa alcanza, sale del cajón, y entonces sí hay que anotarlo.
+         *
+         * Cuatro rótulos largos además dejaban al carril sin ancho: la píldora
+         * no tiene techo y se lo come. `rotulo` es lo que se ve. */
         return [
             { key: 'corte', icon: Scale, label: 'Hacer el corte', rotulo: 'Corte',
                 variant: 'primary', onClick: () => { setResultado(null); setDialogo('corte'); } },
-            { key: 'ingreso', icon: ArrowDownLeft, label: 'Anotar un ingreso', rotulo: 'Ingreso',
+            { key: 'entrada', icon: ArrowDownLeft, label: 'Anotar una entrada', rotulo: 'Entrada',
                 onClick: () => setDialogo('ingreso') },
-            // La salida del CAJÓN. La de una bolsa es otra cosa y por eso es
-            // otra acción, que sólo aparece si hay bolsas en la sala.
             { key: 'salida', icon: ArrowUpRight, label: 'Anotar una salida', rotulo: 'Salida',
-                onClick: () => setDialogo('salida') },
-            ...(bolsas.length
-                ? [{ key: 'bolsa', icon: Landmark, label: 'Sacar de una bolsa', rotulo: 'Bolsa',
-                    onClick: () => setDialogo('bolsa') }]
-                : []),
+                onClick: () => setDialogo(bolsas.length ? 'bolsa' : 'salida') },
             { key: 'cerrar', icon: Lock, label: 'Cerrar el día', rotulo: 'Cerrar',
                 onClick: () => setDialogo('cerrar') },
         ];
@@ -188,22 +193,31 @@ export default function MiCajaView() {
                         abuelo y reserva su ancho esté o no—. Sin sala dicen «—»,
                         que es la respuesta honesta. */}
                     <CarrilCards className="flex-1" ariaLabel="Estado de la caja de esta sala">
+                        {/* Lo que el sistema espera adentro AHORA. Es la primera
+                            pregunta de quien entra —«¿cuánto hay?»— y hasta hoy
+                            no estaba en ninguna pantalla del portal. Lo trae el
+                            mismo panel que dice si la caja está abierta, así que
+                            no cuesta una petición más. */}
+                        <StatCard icon={Landmark} label="En la caja"
+                            value={sala && estado?.registrado != null ? formatMoney(estado.registrado) : '—'}
+                            sub={estado?.abierta ? `Turno ${estado.turno} · caja ${estado.caja}` : undefined}
+                            iconBg="bg-brand/10" iconCls="text-brand-text"
+                            loading={cargando} />
                         <StatCard icon={estado?.abierta ? DoorOpen : Lock}
-                            label={!sala ? 'La caja' : estado?.abierta ? 'Caja abierta' : 'Caja cerrada'}
-                            value={!sala ? '—' : estado?.abierta ? `Turno ${estado.turno}` : 'Sin turno'}
-                            sub={!sala ? 'Elige una sala' : estado?.abierta ? `Caja ${estado.caja}` : 'Nadie puede vender'}
+                            label={!sala ? 'La caja' : estado?.abierta ? 'Abierta' : 'Cerrada'}
+                            value={!sala ? '—' : estado?.abierta ? (estado.desde || 'Abierta') : 'Sin turno'}
+                            sub={!sala ? 'Elige una sala'
+                                : estado?.abierta ? (estado.quien || 'sin nombre') : 'Nadie puede vender'}
                             iconBg={estado?.abierta ? 'bg-success/10' : 'bg-warning/10'}
                             iconCls={estado?.abierta ? 'text-success-text' : 'text-warning-text'}
                             valueCls={estado?.abierta ? 'text-success-text' : 'text-warning-text'}
                             loading={cargando} />
-                        <StatCard icon={ArrowUpRight} label="Salidas por anotar"
+                        <StatCard icon={ArrowUpRight} label="Por anotar"
                             value={sala ? pendientes.length : '—'}
-                            sub={pendientes.length ? 'entran al vale del corte' : undefined}
+                            sub={sala ? formatMoney(totalPendiente) : undefined}
                             iconBg="bg-warning/10" iconCls="text-warning-text"
                             valueCls={pendientes.length ? 'text-warning-text' : undefined}
                             loading={cargando} />
-                        <StatCard icon={Landmark} label="Suman"
-                            value={sala ? formatMoney(totalPendiente) : '—'} loading={cargando} />
                         <StatCard icon={ArrowDownLeft} label="Anotado hoy"
                             value={sala ? movimientos.length : '—'}
                             sub={bolsas.length ? `${bolsas.length} bolsa${bolsas.length === 1 ? '' : 's'} en sala` : undefined}
@@ -438,7 +452,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
             titulo={entra ? 'Anotar un ingreso' : 'Anotar una salida'}
             bajada={entra
                 ? 'Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.'
-                : 'Dinero que sale del cajón. Si sale de una bolsa, se registra en Bolsas y no aquí.'}>
+                : 'Sale del cajón porque ninguna bolsa de cortes anteriores alcanza. Esto sí se le anota a la caja.'}>
             <FileField label="Foto de la boleta" accept="image/*" value={foto}
                 onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
             {aviso && <p className="text-caption text-content-2">{aviso}</p>}

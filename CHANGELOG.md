@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.862.0 — La caja dice cuánto hay, y la salida elige sola de dónde
+
+**Cuánto hay en la caja no estaba en ninguna pantalla del portal.** Ahora es la
+primera tarjeta: lo que el sistema espera adentro en este momento, con el turno
+y la caja debajo. Lo trae el mismo panel que dice si está abierta, así que no
+cuesta una petición más. Y al lado, quién la abrió y a qué hora — que hasta hoy
+sólo se sabía entrando al otro sistema.
+
+**Dos movimientos y no cuatro: Entrada y Salida.** «Sacar de una bolsa» era una
+acción aparte, y eso le pedía a la sala una decisión que le toca al portal: de
+dónde sale la plata. Ahora la decide él, y **prefiere siempre las bolsas de
+cortes anteriores** (regla del usuario): ese dinero ya lo descontó su propio
+cierre, así que sacarlo de ahí no le mueve nada a la caja de hoy. Sólo cuando
+ninguna bolsa alcanza sale del cajón — y entonces sí hay que anotarlo, y la
+pantalla lo dice.
+
+De paso, los botones se acortaron a **Corte · Entrada · Salida · Cerrar**. No es
+cosmético: la píldora no tiene techo de ancho y con cuatro rótulos largos se
+comía el carril, que quedaba en tres tarjetas cortadas a la izquierda.
+
 ## v2.861.2 — El acabado: la foto grande, los filtros en una barra y girar con ellos
 
 Cuatro cosas del paso 2 del editor, reportadas desde el teléfono.

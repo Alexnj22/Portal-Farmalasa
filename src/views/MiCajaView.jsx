@@ -168,31 +168,6 @@ export default function MiCajaView() {
         ];
     }, [puedeOperar, sala, estado, bolsas.length]);
 
-    if (!sala) {
-        return (
-            <GlassViewLayout icon={Wallet} title="Mi caja">
-                <div className="p-4 md:p-6 space-y-6">
-                    {/* La salida del vacío va DENTRO del vacío y no arriba: quien
-                        no tiene sala propia —quien supervisa, cuya ficha está en
-                        Administración— veía el cartel y ningún camino. */}
-                    <EmptyState compact icon={Wallet}
-                        title={salas.length ? 'Elige una sala' : 'Sin salas con caja'}
-                        subtitle={salas.length
-                            ? 'Tu ficha no está en una sala con caja, así que elige cuál quieres mirar.'
-                            : 'Todavía no se ha visto ninguna caja abierta, así que no hay nada que mostrar.'}
-                        action={salas.length ? (
-                            <div className="flex gap-2 flex-wrap justify-center">
-                                {salas.map((b) => (
-                                    <Button key={b.id} size="sm" variant="secondary"
-                                        onClick={() => setSala(b.id)}>{b.name}</Button>
-                                ))}
-                            </div>
-                        ) : undefined} />
-                </div>
-            </GlassViewLayout>
-        );
-    }
-
     return (
         <GlassViewLayout icon={Wallet} title={`Mi caja${nombreSala ? ` · ${nombreSala}` : ''}`}>
             <div className="p-4 md:p-6 space-y-6">
@@ -206,7 +181,10 @@ export default function MiCajaView() {
                     {/* Cuatro números fijos, no un desglose de largo variable
                         (§17.0 — «cuántas tarjetas hay lo fija la vista, nunca el
                         dato»). El estado de la caja es el primero porque es la
-                        pregunta con la que alguien entra a esta pantalla. */}
+                        pregunta con la que alguien entra a esta pantalla.
+                        Sin sala elegida no se pinta: no hay caja de la que
+                        hablar, y cuatro tarjetas en cero dirían algo falso. */}
+                    {sala && (
                     <CarrilCards className="flex-1" ariaLabel="Estado de la caja de esta sala">
                         <StatCard icon={estado?.abierta ? DoorOpen : Lock}
                             label={estado?.abierta ? 'Caja abierta' : 'Caja cerrada'}
@@ -230,16 +208,20 @@ export default function MiCajaView() {
                             iconBg="bg-brand/10" iconCls="text-brand-text"
                             loading={cargando} />
                     </CarrilCards>
+                    )}
 
                     {/* La sala y las acciones van en la píldora, no sueltas en el
                         cuerpo: es el lugar único donde se mira qué recorta la
                         vista y qué se puede hacer (§17, §15.5). Una sola primaria
                         por barra — el corte cuando la caja está abierta, abrirla
-                        cuando no. */}
-                    <div className="flex justify-end min-w-0">
+                        cuando no.
+                        La barra se pinta SIEMPRE, también sin sala elegida: es la
+                        ranura donde se elige, y esconderla dejaría el vacío sin
+                        salida — que fue el defecto que la trajo acá. */}
+                    <div className={`flex min-w-0 ${sala ? 'justify-end' : 'justify-start'}`}>
                         <FilterBar acciones={acciones}>
                             {salas.length > 1 && (
-                                <FilterBar.Section active label="sucursal">
+                                <FilterBar.Section active={!!sala} label="sucursal">
                                     <FilterBar.Sucursal value={sala} onChange={setSala}
                                         options={opcionesDeSala} />
                                 </FilterBar.Section>
@@ -248,9 +230,17 @@ export default function MiCajaView() {
                     </div>
                 </div>
 
-                {cargando && <LoadingState label="Mirando la caja" />}
+                {!sala && (
+                    <EmptyState compact icon={Wallet}
+                        title={salas.length ? 'Elige una sala' : 'Sin salas con caja'}
+                        subtitle={salas.length
+                            ? 'Tu ficha no está en una sala con caja: elige arriba cuál quieres mirar.'
+                            : 'Todavía no se ha visto ninguna caja abierta, así que no hay nada que mostrar.'} />
+                )}
 
-                {!cargando && (
+                {sala && cargando && <LoadingState label="Mirando la caja" />}
+
+                {sala && !cargando && (
                     <>
                         {pendientes.length > 0 && (
                             <Notice variant="warning" icon={Landmark}>

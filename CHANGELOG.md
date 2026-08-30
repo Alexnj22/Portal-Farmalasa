@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.858.7 — El pie del editor deja de desbordar en el teléfono
+
+*«El modal en móvil no se ve bien, el botón confirmar se sale y crea scroll»*,
+con la captura de un iPhone.
+
+El pie canónico de un diálogo, con el dedo, **apila los botones a ancho
+completo** — que es lo correcto para un «Cancelar / Aceptar». Pero el pie del
+editor no es eso: tiene **herramientas** (girar, todo, el recorte sugerido) más
+la acción del paso, y esa regla las estiraba a 356 px dentro de una fila que no
+se parte.
+
+Medido en un iPhone 13, el contenido del pie **desbordaba 120 px** en el
+encuadre y 68 en el acabado. Eso es el scroll que se veía, y por eso «Guardar»
+salía enorme y estirado.
+
+Ahora el editor desactiva esa regla y la acción del paso se lleva el ancho que
+sobra —136 px en el encuadre, 162 en el acabado— en vez de 356. **Desborde: 0.**
+En escritorio no cambia nada: ahí el botón conserva su tamaño, porque uno de
+900 px sería absurdo.
+
+De paso quedó verificado en el teléfono lo que ya se había medido en la
+computadora: las cuatro esquinas caen sobre el documento con **desvío 0**.
+
+## v2.858.6 — La sala se elige en su ranura, también en el vacío
+
+La versión anterior movió la sala a `FilterBar.Sucursal` y dejó **seis botones a
+mano** en el estado vacío. O sea que la misma pantalla ofrecía la misma elección
+de dos formas distintas según si ya habías elegido — que es exactamente lo que
+un canónico existe para evitar.
+
+Ahora **la barra se pinta siempre**, con sala o sin ella: es la ranura donde se
+elige, y esconderla dejaba el vacío sin salida. Lo que cambia debajo es el
+contenido, no los controles.
+
+El carril, en cambio, **no** se pinta sin sala: cuatro tarjetas en cero dirían
+algo falso sobre una caja que todavía no se eligió.
+
 ## v2.858.5 — El vencimiento junto al número, y la foto del teléfono llega lista
 
 **La foto que se manda desde el teléfono ya no se vuelve a editar.** Reporte del

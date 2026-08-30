@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.863.0 — Mi caja: el día en una tarjeta, los movimientos con su origen, y cerrar pide corte y doble confirmación
+
+**Cerrar el día ya no se puede hacer de un toque, ni sin haber contado.** Eran
+dos huecos del mismo acto, que es el único de esta pantalla que **no se
+deshace**: la caja de ese día no se vuelve a abrir.
+
+1. **Sin corte no cierra.** Si el día que la caja tiene abierto no lleva ni un
+   corte, cerrar dejaría el efectivo de toda la jornada sin contar ni una vez.
+   El candado está en el servidor —que es donde vale— y además la pantalla lo
+   dice antes, en vez de dejar que alguien lea el aviso y escriba la palabra
+   para enterarse al final de una condición que ya se conocía al pintar.
+2. **Doble confirmación, y la segunda se escribe.** El primer paso explica qué
+   pasa; el segundo pide teclear `CERRAR`. Escribir obliga a leer, que es
+   justamente lo que un segundo «¿Estás seguro?» no consigue.
+
+**El día de la caja tiene su tarjeta:** qué caja y qué turno, desde qué hora,
+quién la abrió, con cuánto, y **lo vendido por todas las formas de pago** con
+el efectivo aparte. Las formas importan y no son un adorno: el comprobante de
+la caja lista al pie sólo tarjeta y crédito, así que una transferencia o un
+cheque quedaban sumados dentro del «efectivo» sin que nadie los viera. La cifra
+sale de las facturas del portal, que es la fuente independiente del papel.
+
+Sigue **sin decir cuánto debería haber en el cajón**: eso es el conteo a ciegas
+del corte y no cambió. Lo vendido no es lo esperado —hay que sumarle la
+apertura y restarle los vales—, y ese trabajo lo hace el corte, después de
+teclear.
+
+**Los movimientos ahora son UNA lista con los DOS orígenes.** Se veía sólo lo
+que entra y sale del cajón; una remesa de $500 pagada con la bolsa de anteayer
+no aparecía en ninguna pantalla del turno, aunque el dinero salió de la sala
+igual. Y cada línea dice de dónde salió, porque de eso depende que el corte
+cuadre: una bolsa **del día que la caja tiene abierto** se vuelve vale al
+cortar —ese dinero la caja todavía lo espera—; una de un **corte anterior** no
+la toca, porque su propio cierre ya lo descontó.
+
+Las salidas de bolsa son del otro módulo, así que sin el permiso de Bolsas la
+policy devuelve cero filas **y ningún error**. La pantalla pregunta antes y lo
+dice: «no las puedo ver» y «no hubo ninguna» se leen igual, y esa confusión es
+la que hace que una lista incompleta pase por completa.
+
+**Y todo se recorta por el día de la CAJA, no por el del calendario.** A las
+once de la noche con la caja sin cerrar el calendario ya cambió de día y la
+caja no: filtrando por el calendario, lo anotado en esa hora desaparecía de la
+pantalla justo mientras todavía contaba para el corte.
+
 ## v2.862.1 — Girar sobre la foto, «Original», y los 52 px que nadie usaba
 
 **«Como está» pasa a «Original».** Lo eligió el usuario, y de paso el rótulo

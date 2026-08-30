@@ -893,14 +893,56 @@ export async function hacerCorte({ sala, efectivo, observaciones = null, simular
 }
 
 /** Los movimientos del cajón que escribió el portal hoy en esta sala. */
-export async function fetchMovimientosDelPortal(sala) {
-    const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+export async function fetchMovimientosDelPortal(sala, dia = null) {
+    // El día de la CAJA, no el del reloj. A las once de la noche con la caja sin
+    // cerrar el reloj ya cambió de día y la caja no: filtrando por el reloj, lo
+    // anotado en esa hora desaparece de la pantalla justo cuando todavía cuenta.
+    const cual = dia || new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
     const { data, error } = await supabase.from('caja_movimientos_portal')
         .select('id, tipo, monto, concepto, numero_boleta, erp_movimiento_id, anulado_at, registrado_at')
-        .eq('branch_id', sala).eq('fecha', hoy)
+        .eq('branch_id', sala).eq('fecha', cual)
         .order('registrado_at', { ascending: false });
     if (error) { console.error('caja: movimientos del portal:', error.message); return []; }
     return data || [];
+}
+
+/**
+ * Lo que salió de una BOLSA en esa sala, ese día de caja.
+ *
+ * Son el otro origen del efectivo que sale, y hasta hoy no se veían junto a los
+ * del cajón: la pantalla mostraba «anotado hoy» y una remesa de $500 pagada con
+ * una bolsa de anteayer no aparecía por ningún lado. Salió del turno igual.
+ *
+ * Cada línea trae la FECHA de su bolsa, que es lo que decide si toca la caja:
+ * una bolsa del día que la caja tiene abierto se convierte en vale al cortar;
+ * una de un corte anterior no —ese dinero ya lo descontó su propio cierre—.
+ *
+ * Requiere el permiso de `bolsas`: sin él la policy devuelve cero filas y no un
+ * error, así que quien llama tiene que preguntar antes en vez de leer el vacío
+ * como «no hubo ninguna».
+ */
+export async function fetchSalidasDeSalaDelDia({ sala, dia }) {
+    if (!sala || !dia) return [];
+    const finDelDia = new Date(`${dia}T00:00:00-06:00`);
+    finDelDia.setDate(finDelDia.getDate() + 1);
+    const { data, error } = await supabase.from('bolsas_operaciones')
+        .select(`id, folio, tipo, monto, entidad, numero_boleta, registrado_at, anulada_at,
+                 bolsas_movimientos ( monto, caja_vale_id, bolsas ( fecha ) )`)
+        .eq('branch_id', sala)
+        .gte('registrado_at', `${dia}T00:00:00-06:00`)
+        .lt('registrado_at', finDelDia.toISOString())
+        .order('registrado_at', { ascending: false });
+    if (error) { console.error('caja: salidas de bolsa del día:', error.message); return []; }
+    return (data || []).map((o) => {
+        const lineas = o.bolsas_movimientos || [];
+        return {
+            ...o,
+            // De qué días son las bolsas que la pagaron. Puede ser más de una:
+            // una salida grande se reparte entre varias.
+            dias: [...new Set(lineas.map((l) => l.bolsas?.fecha).filter(Boolean))].sort(),
+            tocaLaCaja: lineas.some((l) => l.bolsas?.fecha === dia),
+        };
+    });
 }
 
 /**

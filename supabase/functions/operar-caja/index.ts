@@ -223,6 +223,30 @@ Deno.serve(async (req) => {
     await abrirSala(cookie, entrada.erpId);
     const estado = await estadoDeLaCaja(cookie);
 
+    // El día que la caja tiene abierto. Sale de la captura y no del reloj: a las
+    // once de la noche, con la caja sin cerrar, sigue siendo el de ayer.
+    const { data: aperturaViva } = await supabase
+      .from("cortes_caja_aperturas")
+      .select("abierta_el")
+      .eq("branch_id", sala).is("cerrada_at", null)
+      .order("abierta_el", { ascending: false }).limit(1);
+    const diaAbierto = aperturaViva?.[0]?.abierta_el
+      ?? new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+
+    // Los cortes del día que la caja tiene abierto. La pantalla los necesita
+    // para no ofrecer el cierre cuando no hay ninguno: el candado de verdad está
+    // abajo, en la acción de cerrar, pero enterarse recién ahí —después de leer
+    // el aviso y escribir la palabra— es hacer perder el tiempo por una
+    // condición que ya se conocía al pintar.
+    const { data: cortesDelDia, error: errCortes } = await supabase
+      .from("cortes_caja")
+      .select("id, tipo, hora, total_efectivo, diferencia")
+      .eq("branch_id", sala).eq("fecha", diaAbierto)
+      .order("hora", { ascending: true });
+    // Un error acá NO se puede leer como «no hay cortes»: sería ofrecer el
+    // cierre justo cuando no se pudo comprobar que hubiera alguno.
+    if (errCortes) throw new Error(`revisando los cortes del día: ${errCortes.message}`);
+
     if (accion === "estado") {
       return json({
         ok: true, abierta: estado.abierta, caja: estado.idCaja, turno: estado.turno,
@@ -230,6 +254,8 @@ Deno.serve(async (req) => {
         apertura: (estado as { apertura?: number | null }).apertura ?? null,
         quien: (estado as { quien?: string | null }).quien ?? null,
         desde: (estado as { desde?: string | null }).desde ?? null,
+        dia: diaAbierto,
+        cortes: cortesDelDia ?? [],
       });
     }
 
@@ -309,8 +335,6 @@ Deno.serve(async (req) => {
       if (!(Number.isFinite(monto) && monto > 0)) return json({ ok: false, error: "Falta el monto." }, 400);
       if (!concepto) return json({ ok: false, error: "Falta el concepto." }, 400);
 
-      const dia = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
-
       // La fila del portal se escribe ANTES: si la caja lo acepta y el portal no
       // llega a anotarlo, queda un movimiento sin respaldo y sin forma de
       // corregirlo. Al revés, una fila sin `erp_movimiento_id` es un intento
@@ -322,7 +346,7 @@ Deno.serve(async (req) => {
           monto: Number(dosDecimales(monto)), concepto,
           numero_boleta: body.boleta ? String(body.boleta).slice(0, 40) : null,
           foto_url: body.foto_url ? String(body.foto_url) : null,
-          fecha: dia, erp_apertura_id: Number(estado.aper),
+          fecha: diaAbierto, erp_apertura_id: Number(estado.aper),
           registrado_por: quien.id,
         })
         .select("id").single();
@@ -382,6 +406,26 @@ Deno.serve(async (req) => {
     }
 
     // ── CERRAR EL DÍA ───────────────────────────────────────────────────────
+    //
+    // NO se cierra sin al menos un corte del día (regla del usuario, 30-ago).
+    // El cierre emite el Z, y un día que cierra sin haber cortado deja el
+    // efectivo de toda la jornada sin haberse contado ni una vez: la diferencia
+    // ya no se puede atribuir a ningún turno, y el Z no se deshace.
+    //
+    // El corte se cuenta del DÍA QUE LA CAJA TIENE ABIERTO —no de hoy—: una
+    // caja que quedó abierta pasada la medianoche sigue en su día, y pedirle un
+    // corte «de hoy» le exigiría cortar dos veces.
+    {
+      // La lista ya se leyó arriba, con su error tratado como error.
+      if (!(cortesDelDia ?? []).some((c) => c.tipo === "C")) {
+        return json({
+          ok: false,
+          error: "Esta caja no tiene ningún corte del día. Haz el corte antes de cerrar: "
+               + "si cierras ahora, el efectivo de toda la jornada queda sin contar y el cierre no se deshace.",
+        }, 409);
+      }
+    }
+
     const resp = await (await fetch(APERTURA, {
       method: "POST",
       headers: {

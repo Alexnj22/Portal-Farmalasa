@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
-import { ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Scale, Wallet } from 'lucide-react';
+import {
+    AlertTriangle, ArrowDownLeft, ArrowUpRight, Clock, DoorOpen, Landmark, Lock, Scale,
+    ShoppingBag, Wallet,
+} from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
@@ -15,9 +18,11 @@ import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, fetchBolsas,
-    fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchValesPendientes, hacerCorte,
-    leerBoleta, pedirCorreccion, subirComprobante,
+    fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
+    fetchTiposDeSalida, fetchValesPendientes, hacerCorte, leerBoleta, pedirCorreccion,
+    subirComprobante,
 } from '../data/bolsas';
+import { fetchVentasPorPago } from '../data/cortes';
 
 /* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
  * 29-ago): todo lo que mueve efectivo vive en la caja. Es el MISMO componente,
@@ -58,6 +63,9 @@ export default function MiCajaView() {
     const { user, hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const puedeOperar = hasPermission('caja_vales', 'can_edit');
+    // Las salidas de bolsa son del OTRO módulo. Sin este permiso no se leen, y
+    // la pantalla lo dice en vez de mostrar una lista incompleta sin avisar.
+    const puedeVerBolsas = hasPermission('bolsas', 'can_view');
 
     // Arranca SIN sala y la elige quien mira. La ficha de quien supervisa vive
     // en **Administración**, que no tiene caja: tomarla de ahí ofrecía la sala
@@ -72,7 +80,19 @@ export default function MiCajaView() {
     const [resultado, setResultado] = useState(null);
     const [bolsas, setBolsas] = useState(VACIO);
     const [movimientos, setMovimientos] = useState(VACIO);
+    const [deBolsas, setDeBolsas] = useState(VACIO);
+    const [ventas, setVentas] = useState(VACIO);
+    const [tipos, setTipos] = useState(VACIO);
     const [corrigiendo, setCorrigiendo] = useState(null);
+
+    // Cómo se llama cada motivo de salida. Sale de la TABLA y no de una lista
+    // escrita acá: un motivo nuevo aparecería en la base y no en la pantalla,
+    // que es la regla del rótulo que no es una clave.
+    useEffect(() => {
+        let vivo = true;
+        fetchTiposDeSalida().then((t) => { if (vivo) setTipos(t || VACIO); });
+        return () => { vivo = false; };
+    }, []);
 
     // Cuáles tienen caja, y cuál corresponde por omisión.
     useEffect(() => {
@@ -100,13 +120,29 @@ export default function MiCajaView() {
     const cargar = useCallback(async () => {
         if (!sala) { setCargando(false); return; }
         setCargando(true);
-        const [e, v, abiertas, movs] = await Promise.all([
-            estadoDeCaja(sala), fetchValesPendientes(),
+        /* El estado va PRIMERO y solo, aunque cueste un viaje más de reloj: trae
+         * el DÍA que la caja tiene abierto, y ese día —no el del calendario— es
+         * el que recorta todo lo demás. A las once de la noche con la caja sin
+         * cerrar, el calendario ya cambió de día y la caja no: filtrando por el
+         * calendario, lo anotado en esa hora desaparece de la pantalla justo
+         * mientras todavía cuenta para el corte. */
+        const e = await estadoDeCaja(sala);
+        const vivo = e.error ? null : e;
+        const dia = vivo?.dia || new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+        const [v, abiertas, movs, porPago, salidas] = await Promise.all([
+            fetchValesPendientes(),
             fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'CONTADA'] }),
-            fetchMovimientosDelPortal(sala),
+            fetchMovimientosDelPortal(sala, dia),
+            fetchVentasPorPago({ desde: dia, hasta: dia }),
+            // Sin el permiso de bolsas la policy devuelve cero filas y NO un
+            // error: preguntar antes es lo que separa «no hubo ninguna» de «no
+            // las puedo ver», que en pantalla se leen igual.
+            puedeVerBolsas ? fetchSalidasDeSalaDelDia({ sala, dia }) : Promise.resolve(VACIO),
         ]);
         setMovimientos(movs);
-        setEstado(e.error ? null : e);
+        setDeBolsas(salidas);
+        setVentas((porPago || []).filter((p) => String(p.branch_id) === String(sala)));
+        setEstado(vivo);
         setPendientes((v.filas || []).filter((p) => String(p.branch_id) === String(sala)));
         // Sólo las de esta sala y con su saldo: `SalidaDeBolsa` elige la más
         // vieja que alcance sola, y sin el saldo no puede elegir.
@@ -114,11 +150,17 @@ export default function MiCajaView() {
         const saldos = await fetchSaldos(mias.map((b) => b.id));
         setBolsas(mias.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
         setCargando(false);
-    }, [sala]);
+    }, [sala, puedeVerBolsas]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
 
     const totalPendiente = pendientes.reduce((s, p) => s + Number(p.monto || 0), 0);
+
+    /* Si el día que la caja tiene abierto no lleva ni un corte, cerrar deja el
+     * efectivo de toda la jornada sin contar ni una vez — y el cierre no se
+     * deshace. El candado de verdad está en el servidor; esto es para decirlo
+     * ANTES y no después de que alguien escriba la palabra. */
+    const sinCorteHoy = !(estado?.cortes || []).some((c) => c.tipo === 'C');
 
     const correr = async (fn, exito) => {
         setOcupado(true);
@@ -265,38 +307,11 @@ export default function MiCajaView() {
                             </Notice>
                         )}
 
-                        {movimientos.length > 0 && (
-                            <div className="space-y-2">
-                                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
-                                    Anotado hoy desde el portal
-                                </h3>
-                                {movimientos.map((m) => (
-                                    <div key={m.id} data-surface="card"
-                                        className="rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-                                        <div className="min-w-0">
-                                            <p className={`text-body-sm font-medium ${m.anulado_at ? 'text-content-3 line-through' : 'text-content'}`}>
-                                                {m.concepto}
-                                            </p>
-                                            <p className="text-caption text-content-3">
-                                                {m.tipo === 'ENTRADA' ? 'Entró' : 'Salió'}
-                                                {m.numero_boleta ? ` · boleta ${m.numero_boleta}` : ''}
-                                                {m.erp_movimiento_id ? '' : ' · sin llegar a la caja'}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className={`tabular-nums font-bold ${m.tipo === 'ENTRADA' ? 'text-success-text' : 'text-warning-text'}`}>
-                                                {m.tipo === 'SALIDA' ? '−' : ''}{formatMoney(m.monto)}
-                                            </span>
-                                            {puedeOperar && !m.anulado_at && (
-                                                <Button variant="ghost" size="sm" onClick={() => setCorrigiendo(m)}>
-                                                    Corregir
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <PanelDelDia estado={estado} ventas={ventas} />
+
+                        <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas}
+                            dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
+                            puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo} />
 
                         {!puedeOperar && (
                             <Notice variant="info" icon={Lock}>
@@ -346,10 +361,212 @@ export default function MiCajaView() {
                     'Queda pedido. Alguien tiene que aprobarlo.',
                 ).then(() => setCorrigiendo(null))} />
 
-            <DialogoCerrar abierto={dialogo === 'cerrar'} ocupado={ocupado}
-                onClose={() => setDialogo(null)}
-                onCerrar={() => correr(() => cerrarElDia(sala), 'El día quedó cerrado.')} />
+            {dialogo === 'cerrar' && (
+                <DialogoCerrar ocupado={ocupado} sinCorte={sinCorteHoy}
+                    onClose={() => setDialogo(null)}
+                    onCerrar={() => correr(() => cerrarElDia(sala), 'El día quedó cerrado.')} />
+            )}
         </GlassViewLayout>
+    );
+}
+
+/** Sale del dato, no de una lista escrita a mano: `efectivo` → `Efectivo`. */
+const conMayuscula = (t) => {
+    const s = String(t || '').trim();
+    return s ? s[0].toUpperCase() + s.slice(1) : '—';
+};
+
+/**
+ * El día de esta caja, en una tarjeta: qué caja es, desde cuándo, quién la
+ * abrió, con cuánto, y qué se ha vendido — **por todas las formas de pago**.
+ *
+ * Las formas importan y no son un adorno: el comprobante de la caja lista al
+ * pie sólo tarjeta y crédito, así que una transferencia o un cheque quedan
+ * sumados dentro del «efectivo» y nadie los ve por separado. La cifra sale de
+ * las facturas del portal, que es la fuente independiente del papel.
+ *
+ * NO dice cuánto DEBERÍA haber en el cajón — eso es el conteo a ciegas del
+ * corte y se decide arriba, en el diálogo. Acá está lo vendido, que es otra
+ * cosa: quien cuenta billetes no puede derivar el esperado de esto sin sumarle
+ * la apertura y restarle los vales, y ése es justo el trabajo que hace el corte.
+ */
+function PanelDelDia({ estado, ventas }) {
+    if (!estado?.abierta) return null;
+
+    const filas = [...(ventas || [])]
+        .map((v) => ({ tipo: String(v.tipo_pago), docs: Number(v.documentos || 0), total: Number(v.total || 0) }))
+        .sort((a, b) => b.total - a.total);
+    const total = filas.reduce((s, f) => s + f.total, 0);
+    const efectivo = filas.find((f) => f.tipo.toLowerCase() === 'efectivo')?.total ?? 0;
+
+    return (
+        <div data-surface="card" className="rounded-2xl p-4 md:p-5 space-y-4">
+            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+                <Dato icono={Landmark} rotulo="Caja"
+                    valor={`Caja ${estado.caja ?? '—'} · turno ${estado.turno ?? '—'}`} />
+                <Dato icono={Clock} rotulo="Abierta desde" valor={estado.desde || 'sin hora'} />
+                <Dato icono={DoorOpen} rotulo="La abrió" valor={estado.quien || 'sin nombre'} />
+                <Dato icono={Wallet} rotulo="Monto de apertura"
+                    valor={estado.apertura != null ? formatMoney(estado.apertura) : '—'} />
+            </div>
+
+            <div className="space-y-2">
+                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                    Vendido hoy, por forma de pago
+                </h3>
+                {filas.length === 0 ? (
+                    /* Cero ventas y «no pude leerlas» se ven igual si no se dice
+                       cuál es: acá es cero de verdad sólo si la caja acaba de
+                       abrir, así que se nombra el caso en vez de mostrar nada. */
+                    <p className="text-body-sm text-content-3">
+                        Todavía no hay ninguna venta registrada en este día.
+                    </p>
+                ) : (
+                    <>
+                        <ul className="divide-y divide-border/60">
+                            {filas.map((f) => (
+                                <li key={f.tipo} className="flex items-baseline justify-between gap-3 py-1.5">
+                                    <span className="text-body-sm text-content">
+                                        {conMayuscula(f.tipo)}
+                                        <span className="text-caption text-content-3">
+                                            {' '}· {f.docs} documento{f.docs === 1 ? '' : 's'}
+                                        </span>
+                                    </span>
+                                    <span className="tabular-nums font-semibold text-content">
+                                        {formatMoney(f.total)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                        <div className="flex items-baseline justify-between gap-3 pt-1">
+                            <span className="text-body-sm font-bold text-content">Total vendido</span>
+                            <span className="tabular-nums font-black text-content">{formatMoney(total)}</span>
+                        </div>
+                        <div className="flex items-baseline justify-between gap-3">
+                            <span className="text-body-sm text-content-2">De eso, en efectivo</span>
+                            <span className="tabular-nums font-bold text-brand-text">{formatMoney(efectivo)}</span>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function Dato({ icono: Icono, rotulo, valor }) {
+    return (
+        <div className="min-w-0">
+            <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
+                <Icono className="w-3.5 h-3.5" aria-hidden="true" />
+                {rotulo}
+            </p>
+            <p className="text-body-sm font-semibold text-content truncate">{valor}</p>
+        </div>
+    );
+}
+
+/**
+ * Todo lo que movió efectivo en este día de caja, en UNA lista.
+ *
+ * Son dos orígenes y hasta hoy se veía uno solo: lo que entra y sale del CAJÓN,
+ * y lo que sale de una BOLSA. Una remesa de $500 pagada con la bolsa de
+ * anteayer no aparecía en ninguna pantalla del turno, aunque el dinero salió de
+ * la sala igual.
+ *
+ * Y la diferencia entre los dos no es decorativa, así que cada línea la dice:
+ * una bolsa **del día que la caja tiene abierto** se convierte en vale al
+ * cortar —ese dinero la caja todavía lo espera—; una de un **corte anterior**
+ * no toca la caja, porque su propio cierre ya lo descontó. Es la regla que
+ * decide si el corte de esta tarde cuadra o falta.
+ */
+function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, puedeVerBolsas, onCorregir }) {
+    const etiquetaDe = (codigo) =>
+        tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo);
+
+    const lineas = useMemo(() => {
+        const delCajon = (movimientos || []).map((m) => ({
+            clave: `caja-${m.id}`,
+            cuando: m.registrado_at,
+            titulo: m.concepto,
+            entra: m.tipo === 'ENTRADA',
+            monto: Number(m.monto || 0),
+            anulado: !!m.anulado_at,
+            origen: 'De la caja',
+            detalle: [
+                m.numero_boleta ? `boleta ${m.numero_boleta}` : null,
+                m.erp_movimiento_id ? null : 'sin llegar a la caja',
+            ].filter(Boolean),
+            movimiento: m,
+        }));
+        const deLasBolsas = (deBolsas || []).map((o) => ({
+            clave: `bolsa-${o.id}`,
+            cuando: o.registrado_at,
+            titulo: `${etiquetaDe(o.tipo)}${o.entidad ? ` · ${o.entidad}` : ''}`,
+            entra: false,
+            monto: Math.abs(Number(o.monto || 0)),
+            anulado: !!o.anulada_at,
+            // El nombre completo del origen, porque de eso depende el corte.
+            origen: o.tocaLaCaja ? 'De una bolsa de hoy' : 'De una bolsa de un corte anterior',
+            avisa: o.tocaLaCaja,
+            detalle: [
+                o.folio,
+                o.numero_boleta ? `boleta ${o.numero_boleta}` : null,
+                o.tocaLaCaja ? 'se anota como vale al cortar' : 'no toca la caja de hoy',
+            ].filter(Boolean),
+        }));
+        return [...delCajon, ...deLasBolsas]
+            .sort((a, b) => String(b.cuando || '').localeCompare(String(a.cuando || '')));
+    }, [movimientos, deBolsas, tipos]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
+
+    if (!lineas.length && puedeVerBolsas) return null;
+
+    return (
+        <div className="space-y-2">
+            <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                Movimientos de este día{dia ? ` · ${dia}` : ''}
+            </h3>
+
+            {/* Sin el permiso del otro módulo la lista sale incompleta y sin
+                error: la policy devuelve cero filas. Decirlo es la diferencia
+                entre «no hubo ninguna» y «no las puedo ver». */}
+            {!puedeVerBolsas && (
+                <Notice variant="info" icon={ShoppingBag}>
+                    Aquí sólo ves lo que entró y salió de la caja. Las salidas pagadas con una bolsa
+                    de efectivo necesitan el permiso de Bolsas.
+                </Notice>
+            )}
+
+            {lineas.length === 0 && (
+                <p className="text-body-sm text-content-3">Todavía no se ha movido efectivo en este día.</p>
+            )}
+
+            {lineas.map((l) => (
+                <div key={l.clave} data-surface="card"
+                    className="rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                        <p className={`text-body-sm font-medium ${l.anulado ? 'text-content-3 line-through' : 'text-content'}`}>
+                            {l.titulo}
+                        </p>
+                        <p className="text-caption text-content-3">
+                            <span className={l.avisa ? 'text-warning-text font-semibold' : undefined}>
+                                {l.origen}
+                            </span>
+                            {l.detalle.length ? ` · ${l.detalle.join(' · ')}` : ''}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className={`tabular-nums font-bold ${l.entra ? 'text-success-text' : 'text-warning-text'}`}>
+                            {l.entra ? '' : '−'}{formatMoney(l.monto)}
+                        </span>
+                        {puedeOperar && l.movimiento && !l.anulado && (
+                            <Button variant="ghost" size="sm" onClick={() => onCorregir(l.movimiento)}>
+                                Corregir
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </div>
     );
 }
 
@@ -531,13 +748,74 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
     );
 }
 
-function DialogoCerrar({ abierto, ocupado, onClose, onCerrar }) {
+/**
+ * Cerrar el día. Dos pasos, y el segundo no es una formalidad.
+ *
+ * El cierre emite el cierre del día y **no se deshace**: esa caja no se vuelve a
+ * abrir. Un botón de un solo toque para algo irreversible es el diseño que
+ * produce el «se me fue el dedo», y acá el dedo cuesta un día de caja.
+ *
+ * El primer paso explica QUÉ pasa; el segundo pide escribirlo. Escribir la
+ * palabra obliga a leer, que es exactamente lo que un segundo «¿Estás seguro?»
+ * no consigue.
+ *
+ * Lo monta el llamador sólo cuando está abierto, así que vuelve al primer paso
+ * solo: dejarlo montado y blanquearlo con un efecto es la vía por la que un
+ * diálogo se reabre en el paso dos, o sea el botón de un toque que vino a
+ * evitar.
+ */
+function DialogoCerrar({ ocupado, sinCorte, onClose, onCerrar }) {
+    const [paso, setPaso] = useState(1);
+    const [palabra, setPalabra] = useState('');
+
+    /* Sin corte no se cierra, y se dice ANTES de dejar avanzar. El servidor lo
+     * rechaza igual —ahí está el candado— pero enterarse al final, después de
+     * escribir la palabra, es hacer perder el tiempo por una condición que la
+     * pantalla ya conocía. */
+    if (sinCorte) {
+        return (
+            <Marco abierto onClose={onClose} titulo="Falta el corte"
+                bajada="Esta caja todavía no tiene ningún corte del día.">
+                <Notice variant="warning" icon={AlertTriangle}>
+                    Si cierras ahora, el efectivo de toda la jornada queda sin contar ni una vez,
+                    y el cierre no se deshace. Haz el corte primero.
+                </Notice>
+                <div className="flex justify-end">
+                    <Button variant="primary" onClick={onClose}>Entendido</Button>
+                </div>
+            </Marco>
+        );
+    }
+
+    if (paso === 1) {
+        return (
+            <Marco abierto onClose={onClose} titulo="Cerrar el día"
+                bajada="Esto cierra la caja de hoy y emite el cierre del día.">
+                <Notice variant="danger" icon={AlertTriangle}>
+                    <span className="font-bold">No se puede deshacer.</span>
+                    <span className="block mt-0.5 font-normal">
+                        La caja de este día no se vuelve a abrir: lo que quede sin anotar ya no se
+                        podrá anotar, y las bolsas de hoy pasan a ser de un día cerrado.
+                    </span>
+                </Notice>
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                    <Button variant="primary" onClick={() => setPaso(2)}>Continuar</Button>
+                </div>
+            </Marco>
+        );
+    }
+
     return (
-        <Marco abierto={abierto} onClose={onClose} titulo="Cerrar el día"
-            bajada="Cierra el turno y emite el cierre del día. Después de esto la caja queda cerrada hasta mañana.">
+        <Marco abierto onClose={onClose} titulo="Confirma el cierre"
+            bajada="Escribe CERRAR para confirmar que la caja de este día no se vuelve a abrir.">
+            <PortalInput label="Escribe CERRAR" value={palabra}
+                onChange={(e) => setPalabra(e.target.value.toUpperCase())}
+                placeholder="CERRAR" autoFocus />
             <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button variant="primary" disabled={ocupado} onClick={onCerrar}>Cerrar el día</Button>
+                <Button variant="ghost" onClick={() => setPaso(1)}>Atrás</Button>
+                <Button variant="primary" disabled={ocupado || palabra.trim() !== 'CERRAR'}
+                    onClick={onCerrar}>Cerrar el día</Button>
             </div>
         </Marco>
     );

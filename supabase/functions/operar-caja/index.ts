@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
     // condición que ya se conocía al pintar.
     const { data: cortesDelDia, error: errCortes } = await supabase
       .from("cortes_caja")
-      .select("id, tipo, hora, total_efectivo, diferencia")
+      .select("id, tipo, hora, total_declarado, esperado, diferencia_erp, estado")
       .eq("branch_id", sala).eq("fecha", diaAbierto)
       .order("hora", { ascending: true });
     // Un error acá NO se puede leer como «no hay cortes»: sería ofrecer el

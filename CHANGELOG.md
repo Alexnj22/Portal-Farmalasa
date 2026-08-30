@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.864.1 — La caja se leía mal: un error se pintaba como «Cerrada»
+
+Reportado así: *«no hay caja abierta? que detecte ahorita la del ERP»*. La
+Popular estaba abierta desde las 6:58 con $621.50 adentro y la pantalla decía
+**«Cerrada · Sin turno · Nadie puede vender»**.
+
+**Dos defectos, y el segundo es el que importa.**
+
+**1. Yo rompí la lectura ayer.** El `estado` pasó a devolver los cortes del día
+—para no ofrecer el cierre sin uno— y le pedí a `cortes_caja` tres columnas que
+**no existen** (`total_efectivo`, `diferencia`). La función devolvía 500 desde
+el primer intento. Las de verdad son `total_declarado`, `esperado`,
+`diferencia_erp`.
+
+**2. Y ese 500 se pintaba como «la caja está cerrada».** Ése es el hallazgo:
+«no pude leer» y «está cerrada» son respuestas **opuestas** y salían iguales,
+porque un error dejaba el estado en `null` y `null` se dibujaba como cerrada.
+Sin aviso, sin color, sin nada — o sea que un fallo del sistema se leía como un
+dato del negocio, y encima como el dato contrario al verdadero.
+
+Peor: la pantalla entonces ofrecía **«Abrir la caja»** sobre una caja ya
+abierta. El sistema lo rechaza, pero quien aprieta se entera por un error que
+no habla de esto.
+
+Ahora son **tres estados y no dos**: abierta, cerrada, y **«Sin respuesta · No
+se pudo leer»** — con el motivo escrito, un botón para reintentar, y **ninguna
+acción ofrecida** mientras no se sepa. El monto tampoco se muestra: un número
+viejo al lado de una lectura fallida es la otra forma de decir algo que no se
+sabe.
+
+Es la misma lección de `feedback_cero_hallazgos_y_cero_datos_se_ven_igual`, esta
+vez sobre un turno de caja.
+
 ## v2.864.0 — Un solo QR para todas las hojas, y el vencimiento sólo donde existe
 
 **Un escaneo, las hojas que hagan falta.** *«Es incómodo ir subiendo foto por

@@ -73,6 +73,12 @@ export default function MiCajaView() {
     const [sala, setSala] = useState(null);
     const [conCaja, setConCaja] = useState(VACIO);
     const [estado, setEstado] = useState(null);
+    /* «No pude leer la caja» y «la caja está cerrada» son respuestas OPUESTAS y
+     * se veían igual: la tarjeta decía «Cerrada · Nadie puede vender» sobre una
+     * caja abierta desde las 6:58, porque un error dejaba el estado en `null` y
+     * `null` se pintaba como cerrada. El aviso de abrir además invita a abrir
+     * una caja que ya está abierta. */
+    const [noSePudo, setNoSePudo] = useState(null);
     const [pendientes, setPendientes] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [ocupado, setOcupado] = useState(false);
@@ -128,6 +134,7 @@ export default function MiCajaView() {
          * mientras todavía cuenta para el corte. */
         const e = await estadoDeCaja(sala);
         const vivo = e.error ? null : e;
+        setNoSePudo(e.error ? mensajeAmigable(e.error) : null);
         const dia = vivo?.dia || new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
         const [v, abiertas, movs, porPago, salidas] = await Promise.all([
             fetchValesPendientes(),
@@ -188,6 +195,11 @@ export default function MiCajaView() {
      * dos, ninguna es la acción principal. */
     const acciones = useMemo(() => {
         if (!puedeOperar || !sala) return [];
+        /* Sin saber si está abierta no se ofrece NADA. Ofrecer «Abrir la caja»
+         * cuando la lectura falló es invitar a abrir una que ya está abierta:
+         * el sistema lo rechaza, pero el que aprieta se entera por un error que
+         * parece de otra cosa. */
+        if (noSePudo) return [];
         if (!estado?.abierta) {
             return [{ key: 'abrir', icon: DoorOpen, label: 'Abrir la caja', rotulo: 'Abrir',
                 variant: 'primary', onClick: () => setDialogo('abrir') }];
@@ -213,7 +225,7 @@ export default function MiCajaView() {
             { key: 'cerrar', icon: Lock, label: 'Cerrar el día', rotulo: 'Cerrar',
                 onClick: () => setDialogo('cerrar') },
         ];
-    }, [puedeOperar, sala, estado, bolsas.length]);
+    }, [puedeOperar, sala, estado, noSePudo, bolsas.length]);
 
     return (
         <GlassViewLayout icon={Wallet} title={`Mi caja${nombreSala ? ` · ${nombreSala}` : ''}`}>
@@ -241,18 +253,25 @@ export default function MiCajaView() {
                             mismo panel que dice si la caja está abierta, así que
                             no cuesta una petición más. */}
                         <StatCard icon={Landmark} label="En la caja"
-                            value={sala && estado?.registrado != null ? formatMoney(estado.registrado) : '—'}
+                            value={sala && !noSePudo && estado?.registrado != null ? formatMoney(estado.registrado) : '—'}
                             sub={estado?.abierta ? `Turno ${estado.turno} · caja ${estado.caja}` : undefined}
                             iconBg="bg-brand/10" iconCls="text-brand-text"
                             loading={cargando} />
-                        <StatCard icon={estado?.abierta ? DoorOpen : Lock}
-                            label={!sala ? 'La caja' : estado?.abierta ? 'Abierta' : 'Cerrada'}
-                            value={!sala ? '—' : estado?.abierta ? (estado.desde || 'Abierta') : 'Sin turno'}
+                        {/* Tres estados y no dos: abierta, cerrada, y **no se
+                            pudo leer**. El tercero decía «Cerrada · Nadie puede
+                            vender» sobre una caja abierta desde las 6:58 — la
+                            respuesta contraria a la verdad, y sin nada que
+                            avisara que era una falla. */}
+                        <StatCard icon={noSePudo ? AlertTriangle : estado?.abierta ? DoorOpen : Lock}
+                            label={!sala ? 'La caja' : noSePudo ? 'Sin respuesta' : estado?.abierta ? 'Abierta' : 'Cerrada'}
+                            value={!sala ? '—' : noSePudo ? 'No se pudo leer'
+                                : estado?.abierta ? (estado.desde || 'Abierta') : 'Sin turno'}
                             sub={!sala ? 'Elige una sala'
-                                : estado?.abierta ? (estado.quien || 'sin nombre') : 'Nadie puede vender'}
-                            iconBg={estado?.abierta ? 'bg-success/10' : 'bg-warning/10'}
-                            iconCls={estado?.abierta ? 'text-success-text' : 'text-warning-text'}
-                            valueCls={estado?.abierta ? 'text-success-text' : 'text-warning-text'}
+                                : noSePudo ? 'No se sabe si está abierta'
+                                    : estado?.abierta ? (estado.quien || 'sin nombre') : 'Nadie puede vender'}
+                            iconBg={estado?.abierta && !noSePudo ? 'bg-success/10' : 'bg-warning/10'}
+                            iconCls={estado?.abierta && !noSePudo ? 'text-success-text' : 'text-warning-text'}
+                            valueCls={estado?.abierta && !noSePudo ? 'text-success-text' : 'text-warning-text'}
                             loading={cargando} />
                         <StatCard icon={ArrowUpRight} label="Por anotar"
                             value={sala ? pendientes.length : '—'}
@@ -297,7 +316,20 @@ export default function MiCajaView() {
 
                 {sala && cargando && <LoadingState label="Mirando la caja" />}
 
-                {sala && !cargando && (
+                {sala && !cargando && noSePudo && (
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        <span className="font-bold">No se pudo leer la caja de esta sala.</span>
+                        <span className="block mt-0.5 font-normal">
+                            {noSePudo} — no se sabe si está abierta, así que no se ofrece ninguna
+                            acción: abrir una caja que ya está abierta la deja partida en dos.
+                        </span>
+                        <span className="block mt-2">
+                            <Button variant="secondary" size="sm" onClick={cargar}>Volver a intentar</Button>
+                        </span>
+                    </Notice>
+                )}
+
+                {sala && !cargando && !noSePudo && (
                     <>
                         {pendientes.length > 0 && (
                             <Notice variant="warning" icon={Landmark}>

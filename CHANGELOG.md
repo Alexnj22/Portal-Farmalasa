@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.864.3 — Los botones de la caja recuperan su rótulo
+
+Los cuatro actos de Mi caja habían quedado en **un ícono mudo**: una balanza,
+dos flechas y un candado. La diferencia entre «anotar una entrada» y «cerrar el
+día para siempre» era la dirección de una flecha.
+
+No fue un descuido de esta pantalla sino la regla general de la píldora: el
+texto de las acciones es **lo primero que cede** cuando falta ancho, y con el
+carril de cuatro tarjetas al lado cedía siempre. Se corrige con `rotuloFijo`,
+que ya existía para exactamente esto — y que el canónico marca como **opt-in y
+raro**, así que el motivo va escrito en el código.
+
+La advertencia de ese canónico es que una barra con todo rotulado deja de poder
+degradar y se vuelve «una barra de acciones que además filtra». Acá eso es lo
+que la barra **es**: la vista tiene UN filtro —de qué sala— y cuatro actos que
+son la pantalla entera. El que degrada pasa a ser el carril, que se estrecha y
+desliza.
+
+Y los rótulos van cortos —«Hacer corte», «Entrada», «Salida», «Cerrar el día»—
+justamente porque ahora no ceden nunca: con «Anotar una entrada» la píldora se
+comía el ancho del carril.
+
 ## v2.864.2 — Las hojas se ordenan antes de mandarlas
 
 *«Al adjuntar varias fotos, que permita moverlas y ordenarlas antes de darle

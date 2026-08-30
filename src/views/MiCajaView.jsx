@@ -202,7 +202,7 @@ export default function MiCajaView() {
         if (noSePudo) return [];
         if (!estado?.abierta) {
             return [{ key: 'abrir', icon: DoorOpen, label: 'Abrir la caja', rotulo: 'Abrir',
-                variant: 'primary', onClick: () => setDialogo('abrir') }];
+                variant: 'primary', rotuloFijo: true, onClick: () => setDialogo('abrir') }];
         }
         /* DOS movimientos y no cuatro: Entrada y Salida.
          *
@@ -213,17 +213,33 @@ export default function MiCajaView() {
          * así que sacarlo de ahí no le mueve nada a la caja de hoy. Sólo cuando
          * ninguna bolsa alcanza, sale del cajón, y entonces sí hay que anotarlo.
          *
-         * Cuatro rótulos largos además dejaban al carril sin ancho: la píldora
-         * no tiene techo y se lo come. `rotulo` es lo que se ve. */
+         * Los rótulos van CORTOS —«Hacer corte», «Entrada», «Salida»— porque
+         * ahora no ceden nunca y la píldora no tiene techo: con «Anotar una
+         * entrada» se comía el ancho del carril. */
+        /* Las CUATRO llevan `rotuloFijo`, que el canónico marca como opt-in y
+         * raro — y acá el motivo está escrito porque la excepción es real.
+         *
+         * El texto de las acciones es lo primero que la píldora cede, y con el
+         * carril de cuatro tarjetas al lado lo cedía siempre: los cuatro
+         * quedaban en un ícono mudo —una balanza, dos flechas y un candado— y
+         * la diferencia entre «anotar una entrada» y «cerrar el día para
+         * siempre» era la dirección de una flecha. Lo reportó el usuario.
+         *
+         * La advertencia del canónico es que una barra con todo rotulado deja
+         * de poder degradar y se vuelve «una barra de acciones que además
+         * filtra». Acá eso es lo que la barra ES: la vista tiene UN filtro —de
+         * qué sala— y cuatro actos que son la pantalla entera. El que degrada
+         * es el carril, que se estrecha y desliza. */
         return [
-            { key: 'corte', icon: Scale, label: 'Hacer el corte', rotulo: 'Corte',
-                variant: 'primary', onClick: () => { setResultado(null); setDialogo('corte'); } },
-            { key: 'entrada', icon: ArrowDownLeft, label: 'Anotar una entrada', rotulo: 'Entrada',
-                onClick: () => setDialogo('ingreso') },
-            { key: 'salida', icon: ArrowUpRight, label: 'Anotar una salida', rotulo: 'Salida',
-                onClick: () => setDialogo(bolsas.length ? 'bolsa' : 'salida') },
+            { key: 'corte', icon: Scale, label: 'Hacer corte', rotulo: 'Corte',
+                variant: 'primary', rotuloFijo: true,
+                onClick: () => { setResultado(null); setDialogo('corte'); } },
+            { key: 'entrada', icon: ArrowDownLeft, label: 'Entrada', rotulo: 'Entrada',
+                rotuloFijo: true, onClick: () => setDialogo('ingreso') },
+            { key: 'salida', icon: ArrowUpRight, label: 'Salida', rotulo: 'Salida',
+                rotuloFijo: true, onClick: () => setDialogo(bolsas.length ? 'bolsa' : 'salida') },
             { key: 'cerrar', icon: Lock, label: 'Cerrar el día', rotulo: 'Cerrar',
-                onClick: () => setDialogo('cerrar') },
+                rotuloFijo: true, onClick: () => setDialogo('cerrar') },
         ];
     }, [puedeOperar, sala, estado, noSePudo, bolsas.length]);
 

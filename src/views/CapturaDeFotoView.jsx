@@ -34,7 +34,7 @@
  */
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Camera, CheckCircle2, AlertTriangle, Loader2, Plus, Send, X } from 'lucide-react';
+import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, Loader2, Plus, Send, X } from 'lucide-react';
 import { capturaVigente, mandarFoto } from '../data/capturaDesdeElTelefono';
 import { PROPS_CAMARA } from '../utils/capturaDeFoto';
 import Button from '../components/common/Button';
@@ -127,6 +127,15 @@ export default function CapturaDeFotoView() {
         }
     };
 
+    /** Sube o baja una hoja un lugar. El orden de la lista ES el del PDF. */
+    const moverHoja = (i, paso) => setHojas(prev => {
+        const j = i + paso;
+        if (j < 0 || j >= prev.length) return prev;
+        const copia = [...prev];
+        [copia[i], copia[j]] = [copia[j], copia[i]];
+        return copia;
+    });
+
     const quitarHoja = (i) => setHojas(prev => {
         const fuera = prev[i];
         if (fuera?.vista) URL.revokeObjectURL(fuera.vista);
@@ -186,31 +195,60 @@ export default function CapturaDeFotoView() {
 
             {estado === 'listo' && (
                 <>
-                    {/* Las hojas que ya se confirmaron. Se ven todas y en orden,
-                        porque ese orden es el del PDF: si la 3 quedó movida hay
-                        que poder verlo ANTES de mandar, no después. */}
+                    {/* ── Las hojas confirmadas, en una LISTA vertical ────────
+                        Y vertical a propósito, no la tira horizontal que había:
+                        el usuario pidió poder moverlas y ordenarlas antes de
+                        mandar, y ordenar es lo que decide el orden del PDF.
+
+                        Tres motivos para el cambio de forma:
+
+                        · De arriba abajo se lee como se lee el PDF. En una tira
+                          horizontal «subir» y «bajar» no significan nada, y
+                          «izquierda/derecha» se confunde con el desplazamiento
+                          de la propia tira.
+                        · Los controles entran a 44 pt de verdad. En una
+                          miniatura de 80 px había que apilar quitar, subir y
+                          bajar sobre la imagen, y ahí ninguno es un blanco de
+                          dedo honesto.
+                        · Con la tira había que DESPLAZARLA para ver la hoja 6 —
+                          y desplazar con el mismo dedo con el que se arrastra es
+                          justo el gesto que se pelea consigo mismo.
+
+                        Se movió con botones y no arrastrando: arrastrar dentro
+                        de una lista que además se desplaza necesita distinguir
+                        «muevo la hoja» de «muevo la lista» por la dirección o
+                        por un mantener-presionado, y eso falla en la mano de
+                        alguien apurado. Dos flechas no fallan, y el caso real es
+                        corregir un par que quedó al revés, no reordenar ocho. */}
                     {hojas.length > 0 && (
                         <div className="w-full max-w-xs">
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">
-                                {hojas.length === 1 ? '1 hoja lista' : `${hojas.length} hojas listas`}
+                                {hojas.length === 1 ? '1 hoja lista' : `${hojas.length} hojas · en este orden`}
                             </p>
-                            <div className="flex gap-2 overflow-x-auto pb-1">
+                            <div className="flex flex-col gap-2 max-h-[38dvh] overflow-y-auto pr-0.5">
                                 {hojas.map((h, i) => (
-                                    <div key={h.vista} className="relative shrink-0">
+                                    <div key={h.vista} data-surface="card"
+                                        className="flex items-center gap-2 p-2 rounded-2xl">
+                                        <Badge variant="neutral" size="sm" className="shrink-0">{i + 1}</Badge>
                                         <img src={h.vista} alt=""
-                                            className="w-20 h-28 object-cover rounded-2xl
+                                            className="w-11 h-14 shrink-0 object-cover rounded-lg
                                                        shadow-[var(--shadow-glass-2)]" />
-                                        <Badge variant="neutral" size="sm"
-                                            className="absolute bottom-1 left-1">
-                                            {i + 1}
-                                        </Badge>
-                                        <button type="button" onClick={() => quitarHoja(i)}
-                                            aria-label={`Quitar la hoja ${i + 1}`}
-                                            className="absolute -top-1.5 -right-1.5 grid place-items-center
-                                                       h-7 w-7 rounded-full bg-danger-solid text-white
-                                                       shadow-sm active:scale-[0.9] transition-transform">
-                                            <X size={14} strokeWidth={3} />
-                                        </button>
+                                        <span className="flex-1 min-w-0" />
+                                        {/* Las flechas de los extremos se
+                                            DESHABILITAN en vez de esconderse: si
+                                            aparecieran y desaparecieran, los
+                                            botones de las otras filas se
+                                            correrían de lugar entre toque y
+                                            toque. */}
+                                        <Button variant="ghost" size="sm" icon={ChevronUp} iconOnly
+                                            title={`Subir la hoja ${i + 1}`}
+                                            disabled={i === 0} onClick={() => moverHoja(i, -1)} />
+                                        <Button variant="ghost" size="sm" icon={ChevronDown} iconOnly
+                                            title={`Bajar la hoja ${i + 1}`}
+                                            disabled={i === hojas.length - 1} onClick={() => moverHoja(i, 1)} />
+                                        <Button variant="ghost" size="sm" icon={X} iconOnly tone="danger"
+                                            title={`Quitar la hoja ${i + 1}`}
+                                            onClick={() => quitarHoja(i)} />
                                     </div>
                                 ))}
                             </div>
@@ -252,7 +290,7 @@ export default function CapturaDeFotoView() {
                             ? 'Puedes recortarla y enderezarla aquí mismo. Si el documento tiene varias hojas, las vas agregando y se mandan todas juntas.'
                             : (hojas.length === 1
                                 ? 'Agrega las hojas que falten, o mándala así. Se va a ver sola en la computadora.'
-                                : 'Se mandan como un solo documento, en este orden.')}
+                                : 'Se mandan como un solo documento. Acomódalas con las flechas antes de mandar.')}
                     </p>
                 </>
             )}

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.864.2 — Las hojas se ordenan antes de mandarlas
+
+*«Al adjuntar varias fotos, que permita moverlas y ordenarlas antes de darle
+enviar.»* El orden de la lista **es** el orden del PDF, así que tenía que poder
+arreglarse acá y no descubrirse abierto en la computadora.
+
+La tira horizontal de miniaturas pasó a ser una **lista vertical**, y el cambio
+de forma es lo que lo hace posible:
+
+· De arriba abajo se lee como se lee el PDF. En una tira, «subir» y «bajar» no
+  significan nada, e «izquierda/derecha» se confunde con el desplazamiento de la
+  propia tira.
+· Los controles entran a 44 pt de verdad. Sobre una miniatura de 80 px había que
+  apilar quitar, subir y bajar, y ahí ninguno es un blanco de dedo honesto.
+· Con la tira había que desplazarla para ver la hoja 6 — con el mismo dedo con el
+  que se arrastra, que es el gesto que se pelea consigo mismo.
+
+Se mueve con **flechas y no arrastrando**: arrastrar dentro de una lista que
+además se desplaza obliga a distinguir «muevo la hoja» de «muevo la lista» por
+la dirección o por un mantener-presionado, y eso falla en la mano de alguien
+apurado. Dos flechas no fallan, y el caso real es corregir un par que quedó al
+revés, no reordenar ocho. Las de los extremos se deshabilitan en vez de
+esconderse: si aparecieran y desaparecieran, los botones de las otras filas se
+correrían de lugar entre toque y toque.
+
 ## v2.864.1 — La caja se leía mal: un error se pintaba como «Cerrada»
 
 Reportado así: *«no hay caja abierta? que detecte ahorita la del ERP»*. La

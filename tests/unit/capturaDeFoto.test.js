@@ -366,3 +366,34 @@ describe('la foto del teléfono no se vuelve a preparar', () => {
         expect(telefono).toMatch(/onCancel=\{\(\) => setPorAjustar\(null\)\}/);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El pie del editor NO apila: es una barra de herramientas
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// «El modal en móvil no se ve bien, el botón confirmar se sale y crea scroll»
+// (usuario, 2026-08-29, con la captura de un iPhone).
+//
+// El pie canónico, con el dedo, apila los botones a ancho completo
+// (`[&_button]:w-full`) — correcto para un diálogo de «Cancelar / Aceptar». El
+// editor tiene HERRAMIENTAS en el pie (girar, todo, el recorte sugerido) más la
+// acción del paso, y esa regla las estiraba a 356 px dentro de una fila que no
+// se parte: medido en un iPhone 13, el contenido del pie desbordaba 120 px en el
+// encuadre y 68 en el acabado. Después de desactivarla: 0 y 0.
+
+describe('el pie del editor en un teléfono', () => {
+    const editor = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/EditorDeDocumento.jsx'), 'utf8');
+
+    it('desactiva el ancho completo que impone el canónico', () => {
+        expect(editor).toMatch(/<LiquidModal\.Footer className="\[&_button\]:w-auto!"/);
+    });
+
+    /* Y la acción del paso se lleva el ancho que sobra: es lo que el pulgar
+     * acierta sin mirar. En escritorio no crece — ahí un botón de 900 px sería
+     * absurdo. */
+    it('la acción principal crece sólo con el dedo', () => {
+        const veces = (editor.match(/flex-1 md:flex-none/g) || []).length;
+        expect(veces).toBe(2);          // «Continuar» y «Guardar»
+    });
+});

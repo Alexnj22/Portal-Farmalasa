@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.858.7 — El pie del editor deja de desbordar en el teléfono
+## v2.858.8 — El pie del editor deja de desbordar en el teléfono
 
 *«El modal en móvil no se ve bien, el botón confirmar se sale y crea scroll»*,
 con la captura de un iPhone.

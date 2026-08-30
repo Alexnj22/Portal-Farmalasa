@@ -397,7 +397,19 @@ export default function EditorDeDocumento({
                 </div>
             </LiquidModal.Body>
 
-            <LiquidModal.Footer>
+            {/* ── El pie NO apila: es una barra de herramientas ───────────────
+                El canónico, con el dedo, apila los botones a ancho completo
+                (`[&_button]:w-full`) — que es lo correcto para un diálogo de
+                «Cancelar / Aceptar». Acá el pie tiene HERRAMIENTAS (girar, todo,
+                el recorte sugerido) más la acción principal, y apilarlas serían
+                cinco botones de ancho completo comiéndose la pantalla.
+
+                Sin desactivar esa regla, cada botón se estiraba a 356 px dentro
+                de una fila que no se parte: medido en un iPhone 13, el contenido
+                del pie desbordaba **120 px** en el encuadre y 68 en el acabado.
+                Eso es lo que el usuario vio como «el botón se sale y crea
+                scroll». */}
+            <LiquidModal.Footer className="[&_button]:w-auto!">
                 {enEncuadre ? (
                     <div className="flex flex-nowrap items-center gap-2 w-full overflow-x-auto">
                         <Button variant="secondary" size="sm" icon={RotateCw}
@@ -421,7 +433,12 @@ export default function EditorDeDocumento({
                         )}
                         <span className="flex-1 min-w-2" />
                         <Button variant="primary" size="sm" icon={Check}
-                            onClick={enderezar} disabled={!imagen} className="shrink-0">
+                            onClick={enderezar} disabled={!imagen}
+                            /* Con el dedo se lleva el ancho que sobra: es la
+                               acción del paso y el pulgar la acierta sin mirar.
+                               En escritorio no crece — ahí un botón de 900 px
+                               sería absurdo. */
+                            className="shrink-0 flex-1 md:flex-none">
                             Continuar
                         </Button>
                     </div>
@@ -436,7 +453,7 @@ export default function EditorDeDocumento({
                         <span className="flex-1 min-w-2" />
                         <Button variant="primary" size="sm" icon={guardando ? Loader2 : Check}
                             onClick={guardar} loading={guardando}
-                            className="shrink-0"
+                            className="shrink-0 flex-1 md:flex-none"
                             disabled={guardando || !enderezada || !piso.sePuede}>
                             {guardando ? 'Preparando…' : 'Guardar'}
                         </Button>

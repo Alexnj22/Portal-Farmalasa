@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.862.1 — Girar sobre la foto, «Original», y los 52 px que nadie usaba
+
+**«Como está» pasa a «Original».** Lo eligió el usuario, y de paso el rótulo
+mide menos: dos palabras en un carril de tres opciones son las que empujan.
+
+**Girar se mudó SOBRE la foto, y es su tercera casa.** Conviene el registro,
+porque cada mudanza corrigió algo distinto:
+
+| dónde estaba | qué pasó |
+|---|---|
+| en el pie, junto a la flecha de volver | *«parece que es para retomar la foto y no rotar»* |
+| en la barra de acabados | *«el ícono de rotar se pierde (scroll horizontal)»* |
+| encima de la foto | no cuesta alto y no se confunde con nada |
+
+Y esta vez se midió con el CSS compilado, en Chromium y en WebKit. El ancho real
+donde vive esa barra **no es el de la pantalla**: el diálogo es `96vw` y el
+cuerpo lleva `px-3`, así que en un teléfono de 375 px quedan **336**. El carril
+con los tres acabados mide 305, y con el botón al lado el total se iba **21 px
+afuera** — con `overflow-x-auto` eso no se ve como un desborde, se ve como un
+botón que no existe.
+
+La primera medición dio verde y estaba mal: midió contra 351 px porque no
+descontaba el diálogo. Sólo al reproducir el fallo el instrumento empezó a
+servir. También se probó forzarle `shrink!` al carril para vencer su `shrink-0`
+y, medido, **no cambiaba un píxel**: lo que lo acota es su propio `max-w-full`.
+El remiendo se sacó — uno que no hace nada es peor que ninguno, porque el que lo
+lee después cree que hizo falta.
+
+Hoy: 375, 390 y 430 px en un renglón de 50 px, sin desborde horizontal; a 320 px
+pasa a dos renglones en vez de salirse.
+
+**Y 52 px de nada debajo de los acabados.** La zona de avisos reservaba alto fijo
+en el paso 2, con este motivo escrito: «si creciera y encogiera, el lienzo
+cambiaría de alto, la medición volvería a correr y el aviso cambiaría otra vez».
+Ese bucle es real y se vio en pantalla — **en el paso 1**, donde el lienzo se
+mide contra su propia caja. En el paso 2 no puede pasar: las medidas salen del
+recorte ya confirmado, no de la pantalla. El motivo se heredó sin volver a
+comprobarlo, y el costo era medio centímetro de vacío cuando no hay ningún
+aviso.
+
 ## v2.862.0 — La caja dice cuánto hay, y la salida elige sola de dónde
 
 **Cuánto hay en la caja no estaba en ninguna pantalla del portal.** Ahora es la

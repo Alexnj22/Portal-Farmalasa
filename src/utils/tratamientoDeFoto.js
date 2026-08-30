@@ -181,7 +181,10 @@ function realzar(ctx, ancho, alto) {
  * negro y enfoca. `aclarada` lleva todo a gris — lo correcto en una receta,
  * destructivo en un DUI, donde quema la fotografía y los fondos de seguridad. */
 export const ACABADOS = {
-    original: { value: 'original', label: 'Como está',
+    // «Original» y no «Como está»: lo eligió el usuario (2026-08-30). Es el
+    // nombre que la gente ya usa para la foto sin tocar, y además cabe donde el
+    // otro no —dos palabras en un carril de tres opciones—.
+    original: { value: 'original', label: 'Original',
                 pista: 'Sin tocar. Para cuando el color importa tal cual.' },
     nitida:   { value: 'nitida',   label: 'Nítida',
                 pista: 'Corrige la luz y enfoca, sin perder el color.' },

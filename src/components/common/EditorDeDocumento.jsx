@@ -356,7 +356,7 @@ export default function EditorDeDocumento({
                             </div>
                         )
                     ) : (
-                        <div className="w-full h-full min-h-0 flex items-center justify-center
+                        <div className="relative w-full h-full min-h-0 flex items-center justify-center
                                         bg-surface-card-hover rounded-card overflow-hidden p-1">
                             {/* La vista previa toma TODO el hueco: `h-full w-full` con
                                 `object-contain` entra entera y a la vez usa el alto
@@ -373,6 +373,42 @@ export default function EditorDeDocumento({
                                 ? <img src={vista} alt="" className="w-full h-full object-contain
                                                                      rounded-card shadow-[var(--shadow-glass-2)]" />
                                 : <Loader2 size={22} className="animate-spin text-content-3" />}
+
+                            {/* ── Girar va SOBRE la foto ─────────────────────
+                                Y es la tercera casa que prueba, así que
+                                conviene el registro:
+
+                                · En el PIE, junto a la flecha de volver:
+                                  *«parece que es para retomar la foto y no
+                                  rotar»*.
+                                · En la barra de acabados: *«el ícono de rotar
+                                  se pierde (scroll horizontal)»*. Medido — en
+                                  una pantalla de 375 px el diálogo deja 336, y
+                                  el carril con los tres acabados mide 305: con
+                                  el botón al lado, el total se iba 21 px
+                                  afuera. Bajarle el ancho al carril lo habría
+                                  partido en dos renglones, o sea 46 px menos de
+                                  documento para no perder un botón.
+                                · Acá: no cuesta NADA de alto y no se puede
+                                  confundir con volver ni con cerrar, porque
+                                  está encima de lo que gira.
+
+                                El fondo opaco no es adorno: sin él, sobre un
+                                papel blanco el ícono desaparece. */}
+                            {vista && (
+                                /* `data-surface` y `Button`, no un botón a mano: el
+                                   primero lo pintó el gate de diseño —vidrio escrito
+                                   a mano fuera de una superficie canónica, y el
+                                   `title` repitiendo el `aria-label`—. La posición
+                                   es lo único propio; el material y el rótulo los
+                                   pone el canónico. */
+                                <div data-surface="card"
+                                    className="absolute bottom-2 right-2 rounded-btn shadow-[var(--shadow-glass-2)]">
+                                    <Button variant="secondary" size="sm" icon={RotateCw}
+                                        iconOnly title="Girar un cuarto de vuelta"
+                                        onClick={girarResultado} disabled={guardando} />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -401,31 +437,55 @@ export default function EditorDeDocumento({
                     otras herramientas que cambian ESTA foto — el pie se queda
                     con salir y guardar, que son las dos decisiones. */}
                 {!enEncuadre && (
-                    <div className="shrink-0 flex items-center gap-2 overflow-x-auto pb-0.5">
+                    /* NADA de `overflow-x-auto` acá.
+                     *
+                     * Lo tenía, y con eso el carril de acabados conservaba su
+                     * ancho natural y empujaba a Girar fuera de la pantalla:
+                     * *«el ícono de rotar se pierde (scroll horizontal), en
+                     * móvil el scroll horizontal prohibido»* (usuario,
+                     * 2026-08-30). Una herramienta a la que hay que llegar
+                     * deslizando es una herramienta que no está.
+                     *
+                     * `min-w-0` es lo que lo arregla: deja que el carril CEDA
+                     * ancho, y como `SegmentedControl` ya envuelve con más de
+                     * dos opciones, si los tres acabados no entran en un
+                     * renglón pasan a dos — pero Girar nunca desaparece. El
+                     * alto sólo crece cuando de verdad hace falta. */
+                    <div className="shrink-0 flex items-center justify-center">
+                        {/* Sin `className`: el canónico ya trae `max-w-full` y
+                            `flex-wrap`, y con eso solo el carril nunca se sale
+                            —a 320 px pasa a dos renglones—. Se probó agregarle
+                            `min-w-0 shrink!` para vencer su `shrink-0` y,
+                            medido, no cambiaba un píxel: `shrink-0` sólo pesa
+                            cuando el carril tiene un hermano que le dispute el
+                            ancho, y ya no lo tiene. Un remiendo que no hace
+                            nada es peor que ninguno: la próxima persona lo lee
+                            como que hizo falta. */}
                         <SegmentedControl size="sm" label="Acabado"
                             value={acabado} onChange={setAcabado}
                             options={opciones.map(op => ({
                                 value: op.value, label: op.label,
                                 icon: ICONO_DE_ACABADO[op.value],
                             }))} />
-                        <span className="flex-1 min-w-1" />
-                        <Button variant="secondary" size="sm" icon={RotateCw}
-                            iconOnly title="Girar un cuarto de vuelta"
-                            onClick={girarResultado} disabled={guardando} />
                     </div>
                 )}
 
-                {/* Zona de avisos de ALTO FIJO: si creciera y encogiera con lo
-                    que dijera el aviso, el lienzo (`flex-1`) cambiaría de alto,
-                    la medición volvería a correr y el aviso cambiaría otra vez.
-                    Ese bucle ya se vio en pantalla («hace zoom solo en bucle»). */}
-                {/* En el paso 2 el alto es FIJO: si creciera y encogiera con lo
-                    que dijera el aviso, el lienzo (`flex-1`) cambiaría de alto,
-                    la medición volvería a correr y el aviso cambiaría otra vez
-                    — ese bucle ya se vio en pantalla. En el paso 1 no hay
-                    ninguna medición atada al alto, así que reservar 52 px sería
-                    regalarle al vacío el espacio que le falta al documento. */}
-                <div className={`shrink-0 overflow-y-auto ${enEncuadre ? '' : 'h-[52px]'}`}>
+                {/* La zona de avisos NO reserva alto, y eso es una corrección.
+                    Reservaba 52 px fijos en el paso 2 con este motivo escrito:
+                    «si creciera y encogiera con lo que dijera el aviso, el
+                    lienzo (flex-1) cambiaría de alto, la medición volvería a
+                    correr y el aviso cambiaría otra vez». Ese bucle es real y
+                    ya se vio en pantalla — pero en el paso **1**, donde el
+                    lienzo mide el encuadre contra su propia caja.
+
+                    En el paso 2 no puede pasar: `medidas` sale de `enderezada`,
+                    o sea del recorte ya confirmado (`[enderezada, doc]`), y no
+                    de ninguna medida de pantalla. El motivo se heredó del paso
+                    anterior sin volver a comprobarlo, y el costo eran 52 px de
+                    nada debajo de los acabados cuando no hay ningún aviso —
+                    reportado así: *«hay espacio abajo de los iconos de filtro,
+                    puedes hacer más grande la preview»*. */}
+                <div className="shrink-0 overflow-y-auto empty:hidden">
                     {fallo && <Notice variant="warning" compact>{fallo}</Notice>}
                     {!fallo && !enEncuadre && !piso.sePuede && (
                         <Notice variant="danger" compact>
@@ -456,7 +516,7 @@ export default function EditorDeDocumento({
                 scroll». */}
             <LiquidModal.Footer className="[&_button]:w-auto!">
                 {enEncuadre ? (
-                    <div className="flex flex-nowrap items-center gap-2 w-full overflow-x-auto">
+                    <div className="flex flex-wrap items-center gap-2 w-full">
                         <Button variant="secondary" size="sm" icon={RotateCw}
                             iconOnly={conElDedo} title="Girar un cuarto de vuelta"
                             onClick={() => { setMostrarAyuda(false); setCuartos(c => (c + 1) % 4); }}>
@@ -491,7 +551,7 @@ export default function EditorDeDocumento({
                         </Button>
                     </div>
                 ) : (
-                    <div className="flex flex-nowrap items-center gap-2 w-full overflow-x-auto">
+                    <div className="flex flex-wrap items-center gap-2 w-full">
                         <Button variant="secondary" size="sm" icon={ArrowLeft}
                             iconOnly={conElDedo} title="Volver al encuadre"
                             onClick={() => { setPaso('encuadre'); setEnderezada(null); setFormato(null); }}

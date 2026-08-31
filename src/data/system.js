@@ -85,6 +85,16 @@ export function updateAnnouncementFields(id, patch) {
     return supabase.from('announcements').update(patch).eq('id', id);
 }
 
+// Marcar un aviso como leído NO va por `updateAnnouncementFields`: la policy
+// `announcements_update` exige `announcements/can_edit`, que tienen 4 de 46
+// personas. Para el resto el UPDATE no tocaba ninguna fila y PostgREST
+// devolvía 204 SIN error, así que el portal lo daba por hecho. La función
+// resuelve la ficha con `auth_employee_id()` y comprueba la audiencia, que es
+// el candado correcto: quien puede VER el aviso puede marcarlo.
+export function marcarAvisoLeido(announcementId) {
+    return supabase.rpc('marcar_aviso_leido', { p_announcement_id: announcementId });
+}
+
 export function deleteAnnouncementRow(id) {
     return supabase.from('announcements').delete().eq('id', id);
 }

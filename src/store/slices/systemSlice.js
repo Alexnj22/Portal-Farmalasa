@@ -21,6 +21,7 @@ import {
     updateEmployeeEventMetadata, fetchEmployeeById, updateEmployeeFields, deleteEmployeeBranches,
     insertEmployeeBranches, insertEmployeeDocument, insertRole, updateRoleRow, deleteRoleRow,
     insertAnnouncement, updateAnnouncementFull, updateAnnouncementFields, deleteAnnouncementRow,
+    marcarAvisoLeido,
     insertShift, deleteShiftRow, updateShiftRow, setShiftActive, insertHoliday, deleteHolidayRow,
     fetchBranchesBasic, fetchBranchesFull,
 } from '../../data/system';
@@ -1209,8 +1210,12 @@ export const createSystemSlice = (set, get) => ({
             if (!ann) return false;
             if (ann.readBy.some(r => String(typeof r === 'object' ? r.employeeId : r) === String(employeeId))) return true;
 
+            // La escritura la hace el servidor, no este UPDATE: ver
+            // `marcarAvisoLeido` en src/data/system.js. La marca local se
+            // arma igual para pintar la pantalla sin esperar la vuelta, pero
+            // sólo se aplica si el servidor confirmó.
             const updatedReadBy = [...(ann.readBy || []), { employeeId: String(employeeId), readAt: new Date().toISOString() }];
-            const { error } = await updateAnnouncementFields(announcementId, { read_by: updatedReadBy });
+            const { error } = await marcarAvisoLeido(announcementId);
             if (error) throw error;
 
             set((state) => {

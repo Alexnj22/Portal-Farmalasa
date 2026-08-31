@@ -37,7 +37,7 @@ import { useAuth } from '../context/AuthContext';
 import { XCircle, ShieldAlert } from 'lucide-react';
 
 import { mensajeAmigable } from '../utils/errorMessages';
-const SU_ROLES = ['JEFE', 'SUBJEFE'];
+import { requiereCodigoSu } from '../utils/kioskAutorizacion';
 const EMPTY_ARRAY = [];
 // Pausa entre teclas que corta el buffer de escaneo — un lector físico
 // entrega el carné entero en milisegundos; una pausa mayor casi siempre
@@ -807,8 +807,7 @@ const submitEarlyExit = useCallback((e) => {
         kioskConfig.offline = networkError;
 
         if (authPrompt) {
-            const empRole = String(authPrompt.employee?.role || '').toUpperCase();
-            const requiresSuPin = SU_ROLES.some(r => empRole.includes(r));
+            const requiresSuPin = requiereCodigoSu(authPrompt.employee);
 
             // Verificación SERVER-SIDE — auditoría 2026-07-29 (S1-ter).
             //

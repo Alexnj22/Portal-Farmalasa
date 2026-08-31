@@ -372,18 +372,34 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         return () => window.removeEventListener('set-sidebar', handler);
     }, []);
 
+    // La tarjeta del código se pinta sólo con kiosk_pin/can_view (ver `showPin`
+    // más abajo), y `get_kiosk_auth_code` exige ESE MISMO permiso: sin él lanza
+    // FORBIDDEN. Pedirlo igual era una llamada condenada a fallar, repetida cada
+    // 5 minutos por persona. Medido el 2026-08-31 sobre 24 h: 763 llamadas, 504
+    // con 400 de 44 personas contra 233 buenas de 4 — dos tercios del tráfico de
+    // la función eran errores que no le servían a nadie y ensuciaban cualquier
+    // medición de errores del portal.
+    //
+    // La condición es la misma que la de la tarjeta a propósito: pedir un dato
+    // que no se va a mostrar es lo que hizo el ruido. `su_pin` no entra acá —
+    // el sufijo SU viaja DENTRO de esta misma respuesta, y quien lo puede ver
+    // tiene también kiosk_pin (verificado en los 4 cargos que lo tienen).
+    const puedeVerCodigoDeKiosco = hasPermission('kiosk_pin', 'can_view');
+
     // El código rota cada hora en el servidor. Se refresca cada 5 min —antes era
     // cada 10 s contra una función local, que ahora sería una llamada de red
     // inútil— y además justo al cruzar la hora, para no mostrar uno vencido.
     useEffect(() => {
+        if (!puedeVerCodigoDeKiosco) return;
+
         let cancelled = false;
 
         const refresh = async () => {
             const { data, error } = await fetchKioskAuthCode();
             if (cancelled) return;
             if (error || !data) {
-                // Sin permiso (kiosk_pin/can_view) o sin red: no se inventa un
-                // código, se muestra que no hay.
+                // Sin red, o el permiso cambió mientras la pantalla estaba
+                // abierta: no se inventa un código, se muestra que no hay.
                 setAuthPin('····');
                 setSuSuffix('··');
                 return;
@@ -395,7 +411,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         refresh();
         const timer = setInterval(refresh, 5 * 60 * 1000);
         return () => { cancelled = true; clearInterval(timer); };
-    }, []);
+    }, [puedeVerCodigoDeKiosco]);
 
     const visibleGroups = useMemo(() => {
         return MENU_GROUPS.map(g => {
@@ -1202,7 +1218,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         Liquid Glass sobrevive como opción sigue siendo una decisión
                                         aparte, ver AUDITORIA-TEMA-2026-07.md §11. */}
                                     <SidebarSettingsMenu
-                                        showPin={hasPermission('kiosk_pin', 'can_view')}
+                                        showPin={puedeVerCodigoDeKiosco}
                                         showSu={hasPermission('su_pin', 'can_view')}
                                         authPin={authPin}
                                         suSuffix={suSuffix}
@@ -1255,7 +1271,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <div className="flex flex-col items-center gap-3 py-1 animate-in fade-in duration-[var(--dur-lento)]">
                                     <SidebarSettingsMenu
                                         variant="compact"
-                                        showPin={hasPermission('kiosk_pin', 'can_view')}
+                                        showPin={puedeVerCodigoDeKiosco}
                                         showSu={hasPermission('su_pin', 'can_view')}
                                         authPin={authPin}
                                         suSuffix={suSuffix}

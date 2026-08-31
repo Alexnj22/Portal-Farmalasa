@@ -2,8 +2,7 @@ import React, { useEffect } from 'react';
 import Button from '../common/Button';
 import { ShieldAlert, XCircle, SkipForward } from 'lucide-react';
 import { shortEmployeeName } from '../../utils/nameUtils';
-
-const SU_ROLES = ['JEFE', 'SUBJEFE'];
+import { requiereCodigoSu } from '../../utils/kioskAutorizacion';
 
 const formatTime = (dateObj) => {
   if (!dateObj) return '--:--';
@@ -36,8 +35,7 @@ const AuthPromptPanel = ({
   const employeeName = shortEmployeeName(authPrompt.employee);
   const shiftEnd = authPrompt.customConfig?.shiftEndD;
   const expectedIn = authPrompt.customConfig?.expectedIn;
-  const empRole = String(authPrompt.employee?.role || '').toUpperCase();
-  const requiresSuPin = SU_ROLES.includes(empRole);
+  const requiresSuPin = requiereCodigoSu(authPrompt.employee);
 
   const hasValue = scanCode && scanCode.length > 0;
 

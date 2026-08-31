@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.883.5 — El membrete del reglamento, elegido
+
+El membrete queda como se eligió sobre maquetas: **el logo corona la hoja** y
+debajo se reparten el documento a la izquierda y el emisor a la derecha,
+separados por un eje vertical y **alineados por el pie**.
+
+Lo del pie es lo que resuelve el encabezado, y es la parte que no se ve hasta
+que está mal: apoyados arriba, el título y la identificación terminan a alturas
+distintas y el bloque se lee pegado. Como el eje ya separa las dos mitades, la
+regla de abajo puede ser fina — no tiene que hacer sola el trabajo de cortar
+contra el texto.
+
+El PDF sigue en 4 páginas y el encabezado ocupa menos alto que la versión
+apilada del principio.
+
 ## v2.883.4 — Quien se lleva el efectivo no firma su propia entrega
 
 Reporte del usuario, parado en administración con seis bolsas de Salud 2 que no

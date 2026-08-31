@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.880.2 — El reglamento de puntos, en papel
+
+`docs/legal/REGLAMENTO-PROGRAMA-DE-PUNTOS.pdf` — siete páginas, tamaño carta,
+con pie de firma para el representante legal. `npm run reglamento:puntos` lo
+regenera.
+
+Se arma desde el MISMO archivo que se publica en línea
+(`docs/legal/reglamento-programa-de-puntos.html`), no desde una copia: dos
+originales del mismo reglamento es cómo se llega a que el de la pared y el del
+sitio digan cosas distintas, y el que reclama siempre tiene el otro.
+
+No es un adorno — la cláusula 13 dice que un ejemplar se mantiene disponible en
+todas las salas, y un documento que promete su propia disponibilidad y no se
+puede imprimir no cumple lo que dice.
+
+Dos cosas que costaron una segunda pasada: `networkidle` no espera a que las
+fuentes estén listas para pintar, sólo a que la red se calme, y sin
+`document.fonts.ready` el PDF sale con la tipografía de reserva. Y el bloque de
+firma se inyectaba buscando un fragmento exacto de maquetado: no coincidió, el
+PDF salió sin firma y **no dio ningún error** — se descubrió mirándolo.
+
 ## v2.880.1 — El aviso leído queda leído, y nadie se autoriza a sí mismo en el kiosco
 
 Marcar un aviso como leído no guardaba nada para **42 de las 46 personas** del

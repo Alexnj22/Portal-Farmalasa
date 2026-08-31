@@ -12,6 +12,7 @@
     "build:staging": "vite build --mode staging --outDir ${OUT_DIR:-dist-staging}",
     "lint": "eslint .",
     "preview": "vite preview --outDir ${OUT_DIR:-dist} --strictPort --port ${QA_PORT:-4173}",
+    "reglamento:puntos": "node scripts/reglamento-puntos-pdf.mjs docs/legal/reglamento-programa-de-puntos.html",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

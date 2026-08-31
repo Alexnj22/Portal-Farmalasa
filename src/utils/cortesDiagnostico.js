@@ -4,13 +4,12 @@
 // señala un faltante, y tiene que poder mirarse (y corregirse) sin abrir un
 // componente de 400 líneas.
 
-import { formatMoney } from './formatNumber';
+import { conSigno, formatMoney } from './formatNumber';
 
 const CENTAVO = 0.005;
 const redondear = (n) => Math.round(n * 100) / 100;
 const num = (v) => (v == null ? null : Number(v));
 /** El signo explícito importa: en caja, «3.39» y «+3.39» no dicen lo mismo. */
-const conSignoTxt = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
 /** Para meter el concepto de un movimiento en un título sin partirlo en tres. */
 const corto = (s, max = 26) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 
@@ -280,7 +279,7 @@ export function notaDeCifra(corte) {
         return {
             alerta: false,
             titulo: 'Se cortó antes de los cobros de crédito',
-            detalle: `El comprobante suma ${cobros} de cobros que a esta hora todavía no entraban. Por eso vale ${conSignoTxt(c.difErp)} y no ${conSignoTxt(c.difTicket)}.`,
+            detalle: `El comprobante suma ${cobros} de cobros que a esta hora todavía no entraban. Por eso vale ${conSigno(c.difErp)} y no ${conSigno(c.difTicket)}.`,
         };
     }
     if (c.porCobrosCredito) {
@@ -288,7 +287,7 @@ export function notaDeCifra(corte) {
         return {
             alerta: false,
             titulo: 'Los cobros de crédito se contaron de más',
-            detalle: `La otra cifra dice ${conSignoTxt(c.difErp)} porque suma ${cobros} ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Es una falla al sumarlos, no algo que pasó en la caja. Vale ${conSignoTxt(valor)}, que es lo que dice el comprobante.`,
+            detalle: `La otra cifra dice ${conSigno(c.difErp)} porque suma ${cobros} ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Es una falla al sumarlos, no algo que pasó en la caja. Vale ${conSigno(valor)}, que es lo que dice el comprobante.`,
         };
     }
     return {
@@ -296,7 +295,7 @@ export function notaDeCifra(corte) {
         // conviene firmar. Por eso es la única que la vista pinta como aviso.
         alerta: true,
         titulo: 'Revisa los movimientos del día',
-        detalle: `Hay dos cifras (${conSignoTxt(c.difErp)} y ${conSignoTxt(c.difTicket)}) y ${formatMoney(Math.abs(c.brecha))} sin explicar. No conviene dar por bueno un faltante así.`,
+        detalle: `Hay dos cifras (${conSigno(c.difErp)} y ${conSigno(c.difTicket)}) y ${formatMoney(Math.abs(c.brecha))} sin explicar. No conviene dar por bueno un faltante así.`,
     };
 }
 

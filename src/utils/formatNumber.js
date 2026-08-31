@@ -85,6 +85,27 @@ export const formatMoney = (valor, { decimales = 2, signo = true, vacio = VACIO 
 };
 
 /**
+ * Una DIFERENCIA, con su dirección siempre a la vista. `+$3.39` · `-$89.90` · `$0.00`
+ *
+ * `formatMoney` sólo escribe el menos, así que un sobrante y un cuadre se ven
+ * igual de neutros y hay que leer el rótulo para saber cuál es. En una cifra que
+ * dice si falta o sobra dinero, el signo ES el dato.
+ *
+ * Existía escrito a mano en `TarjetaCorte` y en `cortesDiagnostico`, idéntico en
+ * los dos. Vive acá desde el 2026-08-31, cuando iba a ser la tercera copia: el
+ * día que alguien decida que un sobrante se escribe distinto, tiene que haber un
+ * solo lugar donde cambiarlo.
+ *
+ * El cero sale SIN signo a propósito: «+$0.00» dice que sobró nada, que es una
+ * forma rara de decir que cuadró.
+ */
+export const conSigno = (valor, opciones) => {
+    const n = aNumero(valor);
+    if (n === null) return formatMoney(valor, opciones);
+    return n > 0 ? `+${formatMoney(n, opciones)}` : formatMoney(n, opciones);
+};
+
+/**
  * Cantidad de unidades. `18,364`
  *
  * Por defecto sin decimales: casi todo lo que se cuenta en el portal son

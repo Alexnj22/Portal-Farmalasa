@@ -69,13 +69,28 @@ describe('comprobante del corte', () => {
     it('dice la diferencia del tiquete, no la del formulario', () => {
         const papel = enRollo(armar(CORTE_14323));
         expect(papel).toContain('$490.85');   // lo contado
-        expect(papel).toContain('FALTA');
-        expect(papel).toContain('$29.56');
-        // El número que el origen imprime en su propio papel para este corte.
-        // Si aparece como la cifra del corte, alguien volvió a sacar la cuenta
-        // del formulario. En la nota sí puede estar: ahí se lo nombra para
-        // explicar por qué NO es el bueno.
-        expect(papel).not.toMatch(/FALTA[^\n]*431\.36/);
+        expect(papel).toContain('Diferencia');
+        expect(papel).toContain('-$29.56');
+        // El número que el origen imprime en su propio papel para este corte no
+        // aparece en NINGUNA parte: el papel lleva sólo los valores corregidos.
+        expect(papel).not.toContain('431.36');
+    });
+
+    it('la direccion la dice el signo, no un rotulo que cambia', () => {
+        // Decisión del usuario (31-ago): el rótulo es fijo y el signo manda, así
+        // la misma posición del papel siempre significa lo mismo.
+        const sobra = { ...CORTE_14323, contado: 560.00, diferencia: 39.59 };
+        const papelSobra = enRollo(armar(sobra));
+        expect(papelSobra).toContain('+$39.59');
+        expect(papelSobra).not.toContain('SOBRA');
+
+        const cuadra = { ...CORTE_14323, contado: 520.41, diferencia: 0 };
+        const papelCuadra = enRollo(armar(cuadra));
+        // El cero SIN signo: «+$0.00» dice que sobró nada.
+        expect(papelCuadra).toContain('$0.00');
+        expect(papelCuadra).not.toContain('+$0.00');
+        expect(papelCuadra).not.toContain('CUADRA');
+        expect(papelCuadra).not.toContain('FALTA');
     });
 
     it('no repite «debia haber» junto a la diferencia', () => {
@@ -84,14 +99,6 @@ describe('comprobante del corte', () => {
         // tercer número grande le compite al único que hay que mirar.
         const papel = enRollo(armar(CORTE_14323));
         expect(papel.toLowerCase()).not.toContain('debia haber');
-    });
-
-    it('explica en el papel por que la cifra no es la del sistema', () => {
-        const papel = enRollo(armar(CORTE_14323));
-        // El otro papel dice otro número y alguien los va a comparar.
-        expect(papel.toLowerCase()).toContain('cobros de credito se contaron de mas');
-        // Y la otra cifra, que es lo que permite reconciliar los dos papeles.
-        expect(papel).toContain('431.36');
     });
 
     it('separa lo que no pasa por la caja', () => {
@@ -139,12 +146,11 @@ describe('comprobante del corte', () => {
 
     it('se mantiene corto', () => {
         const papel = enRollo(armar(CORTE_14323));
-        // Sin los renglones vacíos del avance de papel del final. 22 es lo
-        // MEDIDO el 2026-08-31 con la nota puesta —el caso más largo—, no un
-        // número redondo: el tope existe para que el papel no vuelva a crecer,
-        // así que un margen holgado no vigila nada.
+        // Sin los renglones vacíos del avance de papel del final. 20 es lo
+        // MEDIDO el 2026-08-31, no un número redondo: el tope existe para que
+        // el papel no vuelva a crecer, así que un margen holgado no vigila nada.
         const utiles = papel.split('\n').filter((l) => l.trim()).length;
-        expect(utiles).toBeLessThanOrEqual(22);
+        expect(utiles).toBeLessThanOrEqual(20);
     });
 
     it('es solo ASCII: el rollo no lee UTF-8', () => {

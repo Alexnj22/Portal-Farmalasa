@@ -50,7 +50,7 @@
 // tiene la ticketera enchufada.
 
 import { EMPRESA } from '../constants/empresa';
-import { formatMoney } from './formatNumber';
+import { conSigno, formatMoney } from './formatNumber';
 import { juntarSiEntra, recortar, selloCorto, soloAscii } from './ticketCampos';
 
 /**
@@ -61,14 +61,13 @@ import { juntarSiEntra, recortar, selloCorto, soloAscii } from './ticketCampos';
  * desde el 13-ago—, así que `esperado` y `diferencia` son los que manda el
  * portal y no los que calculó el formulario del origen.
  *
- * Cuando las dos cuentas no coinciden viene además `nota`, y **se imprime**: el
- * otro papel dice otro número y alguien los va a comparar. Un comprobante que
- * contradice al de al lado sin decir por qué se lee como un error nuestro.
+ * Sólo van los valores REALES y corregidos: la explicación de por qué la otra
+ * cifra es distinta vive en la pantalla, no en el papel. Ver el comentario del
+ * bloque de la nota, más abajo.
  */
 export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt }) {
     const t = resultado?.tiquete || {};
     const dif = Number(resultado?.diferencia ?? 0);
-    const cuadra = Math.abs(dif) < 0.005;
 
     /* Cuatro datos y no seis: se emparejan de a dos por renglon, asi que un
      * numero impar deja medio renglon vacio. La caja y el turno van juntos
@@ -128,26 +127,18 @@ export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt
             texto: 'Esta cuenta la calculo el portal: no se pudo leer el tiquete de la caja.'
                  + ' Hay que cotejarla contra el corte antes de darla por buena.',
         });
-    } else if (resultado?.nota) {
-        /* Por que este numero y no el otro.
-         *
-         * El sistema de la caja guarda una diferencia distinta —suma los cobros
-         * de credito de mas— y alguien va a comparar los dos papeles. Sin esto
-         * el comprobante parece contradecir al de al lado sin decir por que.
-         *
-         * Va el TITULO de `notaDeCifra` —que es quien decidio la cifra, asi que
-         * no puede contradecirla— y la otra cifra en una linea. El detalle
-         * completo se queda en la pantalla: en el papel ocupaba cuatro
-         * renglones para explicar algo que el titulo ya nombra, y el usuario
-         * pidio este comprobante corto. */
-        bloques.push({
-            titulo: soloAscii(resultado.nota.titulo),
-            texto: resultado.segun_el_sistema
-                ? `El sistema de la caja guarda `
-                  + `${formatMoney(resultado.segun_el_sistema.diferencia)}.`
-                : undefined,
-        });
     }
+    /* NO va la explicacion de por que la otra cifra es distinta.
+     *
+     * Estuvo dos renglones y el usuario la saco (31-ago): «esto esta demas,
+     * solo pon los valores reales y corregidos». Y tiene razon sobre el papel:
+     * es un comprobante, no un informe. Quien lo lee necesita saber cuanto
+     * conto y cuanto sobro o falto — nombrar ahi un numero que ya sabemos que
+     * es el equivocado invita a mirarlo.
+     *
+     * La explicacion sigue viva donde SI hace falta: en la pantalla del corte y
+     * en el detalle de la tabla, que es donde alguien compara las dos cifras.
+     * Ver `notaDeCifra`. */
 
     return {
         titulo: 'CORTE DE CAJA',
@@ -157,11 +148,17 @@ export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt
         /* Contado y diferencia, y nada mas (decision del usuario, 31-ago).
          * Lo que debia haber es la suma del bloque de arriba, renglon por
          * renglon: repetirlo aca era un tercer numero grande compitiendo con el
-         * unico que hay que mirar. */
+         * unico que hay que mirar.
+         *
+         * El rotulo es FIJO —«Diferencia»— y la direccion la dice el SIGNO.
+         * Estuvo como FALTA / SOBRA / CUADRA y el usuario lo cambio: un rotulo
+         * que cambia obliga a leerlo para saber que paso, y con «CUADRA» encima
+         * de un $0.00 el papel dice dos veces lo mismo. Con el signo, la misma
+         * posicion del papel siempre significa lo mismo y se lee de un vistazo:
+         * `+$3.39`, `-$29.56`, `$0.00`. */
         totales: [
             ['Contado', formatMoney(resultado?.contado)],
-            [cuadra ? 'CUADRA' : dif > 0 ? 'SOBRA' : 'FALTA',
-             formatMoney(Math.abs(dif)), true],
+            ['Diferencia', conSigno(dif), true],
         ],
         /* Sin renglon de firma, por lo mismo que el vale de bolsa: quien hizo el
          * corte no lo escribio nadie en el papel, lo puso el portal despues de

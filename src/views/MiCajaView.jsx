@@ -34,7 +34,7 @@ import { diferenciaDelCorte, notaDeCifra } from '../utils/cortesDiagnostico';
  * sacan dinero de una bolsa. */
 const SalidaDeBolsa = lazy(() => import('../components/bolsas/SalidaDeBolsa'));
 import { construirComprobanteDeCorte } from '../utils/corteTicket';
-import { formatMoney } from '../utils/formatNumber';
+import { conSigno, formatMoney } from '../utils/formatNumber';
 import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
 
@@ -959,7 +959,7 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
                 <div className="space-y-1 text-body-sm">
                     <p className="text-content-2">Contaste <b className="text-content tabular-nums">{formatMoney(resultado.contado)}</b></p>
                     <p className={`text-h3 font-bold tabular-nums ${cuadro ? 'text-success-text' : dif > 0 ? 'text-warning-text' : 'text-danger-text'}`}>
-                        {dif > 0 ? '+' : ''}{formatMoney(dif)}
+                        {conSigno(dif)}
                     </p>
                     {/* Por qué este número y no el que guardó el sistema de la
                         caja. Lo escribe `notaDeCifra`, que es quien decidió la

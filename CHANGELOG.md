@@ -21,6 +21,78 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.886.8 — La diferencia lleva su signo, y el papel sólo los valores buenos
+
+Dos correcciones del usuario sobre el comprobante del corte.
+
+**Fuera la explicación del papel.** Decía por qué la cifra del sistema de la caja
+es distinta y cuánto guarda —*«esto está demás, sólo pon los valores reales y
+corregidos»*—. Tiene razón sobre el papel: es un comprobante, no un informe, y
+nombrar ahí el número que ya sabemos equivocado invita a mirarlo. La explicación
+sigue donde sí hace falta: en la pantalla del corte y en el detalle de la tabla,
+que es donde alguien compara las dos cifras.
+
+**El rótulo es fijo y manda el signo.** Estaba como FALTA / SOBRA / CUADRA según
+el caso, y un rótulo que cambia obliga a leerlo para saber qué pasó — encima de
+un `$0.00`, «CUADRA» dice dos veces lo mismo. Ahora dice siempre «Diferencia» y
+la dirección va en el número: `+$39.59`, `-$29.56`, `$0.00`. La misma posición
+del papel significa siempre lo mismo.
+
+El cero sale **sin** signo a propósito: «+$0.00» dice que sobró nada, que es una
+forma rara de decir que cuadró.
+
+De paso, `conSigno` se mudó a `formatNumber`. Estaba escrito a mano e idéntico en
+`TarjetaCorte` y en `cortesDiagnostico`, y ésta iba a ser la tercera copia: el
+día que alguien decida que un sobrante se escribe distinto, tiene que haber un
+solo lugar donde cambiarlo.
+
+
+## v2.887.0 — El afiche de la vitrina
+
+`docs/legal/AFICHE-PROGRAMA-DE-PUNTOS.pdf` — una página, tamaño carta, para
+pegar en la vitrina. `npm run afiche:puntos` lo regenera.
+
+**Es un documento APARTE del reglamento, y esa es la decisión.** Uno obliga
+—membrete, cláusulas numeradas, firma— y el otro informa. Meter el resumen
+adentro habría hecho que la hoja que la gente lee de pie fuera también la que se
+firma, y son dos objetos con dos lectores.
+
+Lo que dice, en este orden: la equivalencia (`$1.00 → 1 punto` y
+`100 puntos → $1.00`), **lo que cambia el 1 de octubre** —los puntos duran un
+año, los ya acumulados llegan al 1-oct-2027, el canje pide 100—, cómo se ganan y
+cómo se usan, qué no acumula, y abajo los dos códigos.
+
+**Dos códigos y no uno**, porque son dos preguntas distintas: «¿qué dice la
+regla?» y «¿cuántos tengo?». ⚠️ El primero apunta a
+`portal.farmasalud.lat/reglamento-puntos`, **que todavía no existe** — hay que
+construir esa ruta pública antes de imprimir una sola copia, o el código lleva a
+un 404. El segundo va a `/mis-puntos`, que sí existe.
+
+**El color entra al texto, y en el reglamento no.** Los dos tonos salen del logo
+aprobado —medidos sobre el archivo: `#981D97` y `#8EC30F`, no elegidos de
+memoria—: el verde para lo que se gana, el magenta para lo que se usa. El verde
+del logo no contrasta como texto sobre papel (≈2.3:1), así que el que se lee es
+una versión bajada y el original queda para rellenos y reglas.
+
+**Los códigos se leen antes de dar el PDF por bueno.** Un QR mal armado no se ve
+mal: se ve como un QR, y nadie lo nota hasta que hay cien copias pegadas. El
+script dibuja cada uno en un lienzo, decodifica sus píxeles con la misma norma
+que el login usa para leer un carné, y **falla** si no decodifica o si lo que
+dice no coincide con la dirección impresa al lado. Probado al revés: con el
+rótulo desincronizado a mano, el script sale con código 1.
+
+`scripts/qr-svg.mjs` genera los códigos sin agregar una dependencia —`@zxing/library`
+ya estaba en el proyecto porque el login lee códigos con ella, y leer y escribir
+un QR es la misma norma—. La salida se **pega** en el HTML en vez de inyectarse
+al compilar: así la página publicada y el papel son el mismo archivo, que es lo
+que `reglamento-puntos-pdf.mjs` existe para sostener.
+
+**La medición que costó dos vueltas:** el alto del contenido se midió con el
+viewport por defecto de Playwright (1280 px) cuando la caja real del PDF es de
+**687 px**. A ese ancho el texto envuelve mucho más, así que la hoja «entraba»
+en la medición y salía en dos páginas al imprimir. Es el instrumento midiendo
+otra cosa, no el documento.
+
 ## v2.886.7 — Las formas de pago como vengan, y la diferencia con un solo juez
 
 Tres cosas del comprobante del corte, y la primera es un defecto que ya había

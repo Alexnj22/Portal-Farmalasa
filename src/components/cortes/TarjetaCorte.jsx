@@ -6,7 +6,7 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '../../utils/clickable';
 import { contraste, diferenciaDelCorte, seConfirmaDeUnClic, severidad } from '../../utils/cortesDiagnostico';
-import { formatMoney } from '../../utils/formatNumber';
+import { conSigno, formatMoney } from '../../utils/formatNumber';
 
 /**
  * Un corte de caja, en tarjeta.
@@ -45,7 +45,6 @@ const SEVERIDAD_BADGE = {
 };
 
 const hhmm = (hora) => String(hora || '').slice(0, 5);
-const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
 
 const selloDeTiempo = (iso) => (iso
     ? new Date(iso).toLocaleString('es-SV', {

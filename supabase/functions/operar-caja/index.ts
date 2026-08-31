@@ -518,9 +518,20 @@ Deno.serve(async (req) => {
             process: "ingreso", id_apertura: estado.aper!, id_empleado: estado.emp!,
             turno: estado.turno!, monto: dosDecimales(monto),
             concepto: conceptoCaja, id_tipo: ID_TIPO,
-            // El otro campo de su formulario. Va vacío cuando no aplica: el
-            // sistema lo acepta así, y no todos los ingresos tienen vendedor.
-            codigo_vendedor: String(body.vendedor ?? ""),
+            /* El código de vendedor sale de QUIEN ESTÁ ADENTRO, no de un campo
+             * (pedido del usuario, 31-ago). Era el único dato del formulario que
+             * pedía teclear algo que el portal ya sabe, y un campo así se
+             * escribe mal o se deja vacío: en los dos casos el ingreso queda a
+             * nombre de nadie.
+             *
+             * Sale de la sesión y no del cuerpo del pedido a propósito — si
+             * viajara desde el navegador, cualquiera podría anotar un ingreso a
+             * nombre de otra persona.
+             *
+             * Va vacío cuando la ficha no tiene código: el sistema lo acepta así
+             * (probado el 28-ago con el campo en blanco), y es preferible a
+             * inventar un número que podría ser el de otra persona. */
+            codigo_vendedor: String(quien.code ?? ""),
           }
           : {
             process: "salida", id_apertura: estado.aper!, id_empleado: estado.emp!,

@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.873.0 — El ingreso arranca por la foto, y el vendedor sale de la sesión
+
+**El código de vendedor ya no se pregunta.** Era el único campo del cuadro que
+pedía teclear algo que el portal ya sabe, y un campo así se escribe mal o se
+deja vacío: en los dos casos el ingreso queda a nombre de nadie. Ahora sale de
+**quien está adentro**, y lo resuelve el servidor con la sesión — no viaja desde
+el navegador, porque si viajara cualquiera podría anotar un ingreso a nombre de
+otra persona.
+
+**Y el cuadro se dio vuelta: primero la foto.** Antes pedía los tres datos y la
+foto era un adjunto más; ahora se sube la boleta y **monto, número y concepto se
+llenan solos**. El concepto sale de lo que el papel dice —`tipo_operacion` +
+`entidad`, que el lector ya extraía y nadie usaba—, así que una boleta de CAESS
+escribe «Pago de CAESS» sola.
+
+El motivo es el mismo de la salida de una bolsa: cuando el dato está impreso,
+teclearlo sólo agrega una forma de equivocarse, y **un monto tecleado distinto
+del de la boleta no se descubre nunca** — las dos cifras viven en sitios
+distintos y nadie las enfrenta.
+
+**Lo que la foto llenó queda cerrado; lo que no pudo leer, abierto.** El candado
+es por campo y no por cuadro, y hay dos escotillas: «No tengo boleta: escribirlo
+a mano» antes de subir nada, y «La foto leyó mal: corregir a mano» después. Una
+boleta arrugada, una térmica borrada o una foto movida no pueden dejar a la sala
+sin poder anotar lo que ya pasó.
+
 ## v2.872.0 — El carné lleva el logo de su farmacia
 
 En el carné del documento de bienvenida había un icono de 20×20 dibujado a mano

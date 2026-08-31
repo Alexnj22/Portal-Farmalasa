@@ -700,42 +700,101 @@ function DialogoAbrir({ abierto, ocupado, onClose, onAbrir }) {
  * el criterio es el de allá: lo que dice el papel gana, porque el papel es la
  * verdad de la operación y un número tecleado encima sólo puede alejarse de él.
  */
+/**
+ * Un concepto legible a partir de lo que dice el papel.
+ *
+ * `tipo_operacion` + `entidad` son lo que el lector ya extrae, y juntos dicen
+ * exactamente lo que alguien escribiría a mano: «Pago de CAESS». Es una FRASE
+ * derivada del dato, no un catálogo — si el papel no dice el tipo, queda el
+ * nombre solo, y si no dice ninguno de los dos, el campo se abre para escribir.
+ */
+function conceptoDelPapel(leido) {
+    const quien = String(leido?.red_remesas || leido?.entidad || '').trim();
+    if (!quien) return '';
+    switch (String(leido?.tipo_operacion || '').toUpperCase()) {
+        case 'PAGO_SERVICIO': return `Pago de ${quien}`;
+        case 'REMESA':        return `Remesa ${quien}`;
+        case 'DEPOSITO':      return `Depósito ${quien}`;
+        case 'COMPRA':        return `Compra en ${quien}`;
+        default:              return quien;
+    }
+}
+
+/**
+ * Anotar lo que entra o sale del cajón.
+ *
+ * ── La foto va PRIMERO, y lo que ella lea no se teclea ────────────────────
+ * Hasta el 31-ago el cuadro pedía los tres datos y la foto era un adjunto más;
+ * hoy es al revés, y lo pidió el usuario: **primero la foto**, y monto, número
+ * y concepto se llenan solos con lo que diga el papel. Sólo queda abierto lo
+ * que el lector NO pudo identificar.
+ *
+ * El motivo es el mismo que en la salida de una bolsa: cuando el dato existe
+ * impreso, teclearlo sólo agrega una forma de equivocarse, y un monto tecleado
+ * distinto del de la boleta no se descubre nunca — las dos cifras viven en
+ * sitios distintos y nadie las enfrenta.
+ *
+ * ── Y hay una salida cuando el papel no se deja leer ──────────────────────
+ * «Escribirlo a mano» tiene que seguir existiendo: una boleta arrugada, una
+ * térmica borrada o una foto movida no pueden dejar a la sala sin poder anotar
+ * lo que ya pasó. Por eso el candado es POR CAMPO —se cierra el que la foto
+ * llenó, no el cuadro entero— y hay un botón para abrirlos todos.
+ *
+ * ── El código de vendedor ya no se pregunta ───────────────────────────────
+ * Sale de quien está adentro, y lo resuelve el servidor con la sesión. Era el
+ * único campo que pedía teclear algo que el portal ya sabe.
+ */
 function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onAnotar }) {
     const [monto, setMonto] = useState('');
     const [concepto, setConcepto] = useState('');
     const [boleta, setBoleta] = useState('');
-    // El tercer campo cambia con el sentido, porque así son los dos formularios
-    // del sistema: el ingreso pide «código de vendedor» y el vale pide «recibe».
-    // Es el mismo cuadro y por eso comparte estado.
-    const [extra, setExtra] = useState('');
+    // Sólo la salida sigue preguntándolo: «recibe» es quien se lleva el efectivo
+    // y eso no está en ningún papel ni en la sesión — lo sabe quien lo entrega.
+    const [recibe, setRecibe] = useState('');
     const [foto, setFoto] = useState(null);
     const [leyendo, setLeyendo] = useState(false);
     const [aviso, setAviso] = useState(null);
-    const valido = Number(monto) > 0 && concepto.trim().length > 2;
+    // Qué llenó la foto. Esos campos quedan cerrados: el papel manda.
+    const [deLaFoto, setDeLaFoto] = useState({});
+    // La escotilla, cuando el papel no se deja leer o leyó mal.
+    const [aMano, setAMano] = useState(false);
 
-    // Al elegir la foto se lee sola: pedirle a alguien que además apriete un
-    // botón para que la lean es pedirle que haga el trabajo dos veces.
+    const valido = Number(monto) > 0 && concepto.trim().length > 2;
+    // Antes de la foto no se pide nada: ésa es la vuelta del cuadro. Se abre
+    // igual si alguien elige escribirlo a mano.
+    const pedirDatos = !!foto || aMano;
+    const cerrado = (campo) => !!deLaFoto[campo] && !aMano;
+
     const alElegirFoto = async (f) => {
         setFoto(f);
         setAviso(null);
+        setDeLaFoto({});
         if (!f) return;
         setLeyendo(true);
-        const r = await leerBoleta(f, {
-            entidad: null,
-            numeroBoleta: boleta.trim() || null,
-            monto: Number(monto) || null,
-        });
+        const r = await leerBoleta(f, { entidad: null, numeroBoleta: null, monto: null });
         setLeyendo(false);
-        if (r?.error) { setAviso('No se pudo leer la foto. Puedes escribir el monto a mano.'); return; }
-        const leido = r?.leido || {};
-        const llenados = [];
-        if (Number.isFinite(Number(leido.monto)) && Number(leido.monto) > 0) {
-            setMonto(String(leido.monto)); llenados.push('el monto');
+        if (r?.error) {
+            setAviso('No se pudo leer la foto. Escribe los datos a mano.');
+            setAMano(true);
+            return;
         }
-        if (leido.numero) { setBoleta(String(leido.numero)); llenados.push('el número'); }
+        const leido = r?.leido || {};
+        const puesto = {};
+        if (Number.isFinite(Number(leido.monto)) && Number(leido.monto) > 0) {
+            setMonto(String(leido.monto)); puesto.monto = true;
+        }
+        if (leido.numero_boleta) { setBoleta(String(leido.numero_boleta)); puesto.boleta = true; }
+        const texto = conceptoDelPapel(leido);
+        if (texto) { setConcepto(texto.slice(0, 50)); puesto.concepto = true; }
+        setDeLaFoto(puesto);
+
+        const nombres = { monto: 'el monto', boleta: 'el número', concepto: 'el concepto' };
+        const llenados = Object.keys(puesto).map((k) => nombres[k]);
+        const faltan = ['monto', 'boleta', 'concepto'].filter((k) => !puesto[k]).map((k) => nombres[k]);
         setAviso(llenados.length
-            ? `La foto llenó ${llenados.join(' y ')}.`
-            : 'La foto no traía monto ni número legibles.');
+            ? `La foto llenó ${llenados.join(', ')}.${faltan.length ? ` Falta ${faltan.join(' y ')}.` : ''}`
+            : 'La foto no se dejó leer. Escribe los datos a mano.');
+        if (!llenados.length) setAMano(true);
     };
 
     const guardar = async () => {
@@ -746,7 +805,9 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
         onAnotar({
             monto: Number(monto), concepto: concepto.trim(),
             boleta: boleta.trim() || null, fotoUrl,
-            ...(entra ? { vendedor: extra.trim() } : { recibe: extra.trim() }),
+            // El ingreso ya no manda vendedor: lo resuelve el servidor con la
+            // sesión de quien lo anota.
+            ...(entra ? {} : { recibe: recibe.trim() }),
         });
     };
 
@@ -759,17 +820,43 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
             <FileField label="Foto de la boleta" accept="image/*" value={foto}
                 onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
             {aviso && <p className="text-caption text-content-2">{aviso}</p>}
-            <PortalInput label="Monto" inputMode="decimal" value={monto}
-                onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
-            <PortalInput label="Número de boleta" value={boleta}
-                onChange={(e) => setBoleta(e.target.value)} placeholder="000375" />
-            <PortalInput label="Concepto" value={concepto} maxLength={50}
-                onChange={(e) => setConcepto(e.target.value)}
-                placeholder={entra ? 'Pago de CAESS' : 'Compra de agua fría'} />
-            <PortalInput label={entra ? 'Código de vendedor' : 'Quién recibe'}
-                value={extra} maxLength={60}
-                onChange={(e) => setExtra(e.target.value)}
-                placeholder={entra ? 'opcional' : 'nombre de quien se lleva el efectivo'} />
+
+            {!pedirDatos && !leyendo && (
+                <Notice variant="info" icon={Landmark}>
+                    Sube la foto de la boleta y el monto, el número y el concepto se llenan solos.
+                    <button type="button" onClick={() => setAMano(true)}
+                        className="block mt-1 underline font-bold text-content-2 min-h-[var(--tap-min)]">
+                        No tengo boleta: escribirlo a mano
+                    </button>
+                </Notice>
+            )}
+
+            {pedirDatos && (
+                <>
+                    <PortalInput label="Monto" inputMode="decimal" value={monto} readOnly={cerrado('monto')}
+                        onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
+                    <PortalInput label="Número de boleta" value={boleta} readOnly={cerrado('boleta')}
+                        onChange={(e) => setBoleta(e.target.value)} placeholder="000375" />
+                    <PortalInput label="Concepto" value={concepto} maxLength={50} readOnly={cerrado('concepto')}
+                        onChange={(e) => setConcepto(e.target.value)}
+                        placeholder={entra ? 'Pago de CAESS' : 'Compra de agua fría'} />
+                    {!entra && (
+                        <PortalInput label="Quién recibe" value={recibe} maxLength={60}
+                            onChange={(e) => setRecibe(e.target.value)}
+                            placeholder="nombre de quien se lleva el efectivo" />
+                    )}
+                    {/* La foto puede leer mal, y entonces hay que poder corregirla.
+                        Es un botón y no un campo siempre abierto: abrirlos sin
+                        pedirlo devolvería el problema que la foto vino a resolver. */}
+                    {Object.keys(deLaFoto).length > 0 && !aMano && (
+                        <button type="button" onClick={() => setAMano(true)}
+                            className="text-caption underline text-content-3 min-h-[var(--tap-min)]">
+                            La foto leyó mal: corregir a mano
+                        </button>
+                    )}
+                </>
+            )}
+
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                 <Button variant="primary" disabled={ocupado || leyendo || !valido} onClick={guardar}>

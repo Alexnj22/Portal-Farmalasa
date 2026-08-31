@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.865.0 — La cuenta de pruebas tiene todo activo, y se mantiene sola
+
+Regla del usuario: **«QA siempre debe tener todo activo»**. Se cumplía a medias
+y nadie podía verlo.
+
+Medido antes de tocar nada: de los **159** módulos del portal, a la cuenta de
+pruebas le faltaban **5 enteros** —`caja_vales`, `bolsas_ver_cards`,
+`cargar_compra`, `cuentas_por_pagar`, `dash_recetas_pendientes`— y otros **20**
+los tenía a medias. A ninguno se le quitó el permiso: nacieron después y nadie
+se acordó de dárselos. Hoy son **159 de 159, completos**.
+
+**Por qué no alcanzaba con ponerla al día.** El modo de falla de una cuenta de
+pruebas sin un permiso es el peor que hay: **no da error, da un cero**. El
+barrido del teléfono entra a `/caja`, la cuenta no tiene `caja_vales`, ve la
+pantalla de sin-acceso, y el informe dice «cero hallazgos» — un cero que habla
+de otra pantalla y que se lee igual que uno bueno. O sea que un `UPDATE` de hoy
+arreglaba hoy, y el próximo módulo volvía a abrir el hueco en silencio.
+
+Ahora lo sostiene un disparador: cuando aparece un módulo nuevo **para cualquier
+cargo**, la cuenta de pruebas lo recibe en el mismo acto, completo. Probado
+fabricándole el caso que debe cazar —un módulo inventado para otro cargo— y
+comprobando que llegó; la prueba se deshizo sola, no quedó escrita.
+
+**La marca es una columna, no el nombre del cargo.** `roles.es_cuenta_de_pruebas`.
+Cruzarlo contra el texto `'QA / Testing (CI)'` es exactamente lo que prohíbe «un
+rótulo no es una clave»: el día que alguien le corrija el nombre al cargo, esto
+dejaría de funcionar sin avisar y volveríamos al cero falso.
+
+De paso se regeneró `scripts/db/boolean-columns.json`, que estaba en el 21-ago:
+faltaban **siete** columnas booleanas, y seis no son de este trabajo
+(`bancos.activo`, `pedido_items.es_extra`, `retiro_bultos.firma_requerida`,
+`puntos_consulta_intentos.acerto` y las dos de `tiene_acreditacion_dependiente`).
+Una columna ausente de una tabla que sí está en el archivo se reporta como «no
+es booleana» cuando sí lo es — el falso positivo que el propio encabezado
+advierte.
+
 ## v2.864.4 — El barrido móvil no visitaba ni Bolsas ni Mi caja
 
 Salió al preguntarse si Mi caja «quedó canónica». Los gates de fuente están en

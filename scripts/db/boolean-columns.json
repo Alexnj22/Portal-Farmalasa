@@ -1,72 +1,263 @@
 {
   "_comment": "Snapshot de las columnas BOOLEAN de public.* en prod. Lo usa scripts/data-gate.mjs para detectar el bug de `.eq('col', true)` sobre una columna que NO es booleana (caso recibido_mh, auditoría 2026-07-30). Regenerar con: npm run gate:data -- --regen-schema (imprime el SQL a correr).",
   "_por_que_importa_la_fecha": "El detector NO opina sobre una tabla que no está acá (`if (!(tabla in BOOLEANAS)) continue`), así que un snapshot viejo falla en las DOS direcciones: una tabla nueva entera queda sin vigilar, y una columna nueva de una tabla que SÍ está se reporta como «no es boolean» cuando sí lo es. Medido el 2026-08-21: el snapshot del 30-jul tenía 71 columnas y en prod había 96 — 25 invisibles en tres semanas, entre ellas employees.carne_pendiente, role_permissions.delega_en_ausencia y proveedores_maestro.iva_deducible, que son de tablas ya listadas y por lo tanto candidatas a falso positivo. Si esta fecha tiene más de un mes, regenerar ANTES de creerle al verde.",
-  "_generado": "2026-08-21",
+  "_generado": "2026-08-31",
   "_fuente": "pg_attribute atttypid='boolean' sobre pg_class relkind in ('r','v','m') del esquema public — incluye VISTAS y MATERIALIZADAS, no sólo tablas. El snapshot del 30-jul sólo traía tablas base, y el frontend consulta employees_safe, products_with_lab, v_inventario_lotes, v_sync_health y dte_rechazos_vigentes por nombre igual que a una tabla: sin ellas el detector se callaba justo donde más se lee.",
   "tablas": {
-    "announcements": ["is_archived"],
-    "backup_sync_log": ["success"],
-    "banner_portal": ["activo"],
-    "bitacora_areas": ["activa", "mide_humedad"],
-    "bitacora_lecturas": ["fuera_de_rango", "tarde"],
-    "bitacora_limpiezas": ["tarde"],
-    "bolsas_entidades": ["activo"],
-    "bolsas_tipos_salida": ["activo", "pide_boleta", "pide_receptor"],
-    "branches": ["conteo_ciclico_activo"],
-    "compra_renglon_pendiente": ["ignorado"],
-    "conteo_inventario_items": ["es_agregado_manual", "is_vencidos"],
-    "conteos_inventario": ["ajuste_erp_aplicado", "incluye_vencidos", "pendientes_como_cero"],
-    "cortes_caja_diferencia_personas": ["del_turno"],
-    "cotizaciones": ["applies_retention"],
-    "dispatch_rules": ["caja_especial", "solo_cajas"],
-    "dte_mh_intentos": ["ok"],
-    "dte_rechazos_vigentes": ["accionable"],
-    "email_sync_accounts": ["active"],
-    "email_sync_log": ["success"],
-    "employees": ["carne_pendiente", "disability_has_certification", "has_car", "has_car_license", "has_disability", "has_maestria", "has_motorcycle", "has_motorcycle_license", "has_srs_accreditation", "is_studying", "maestria_is_studying"],
-    "employees_safe": ["carne_pendiente", "disability_has_certification", "has_car", "has_car_license", "has_disability", "has_maestria", "has_motorcycle", "has_motorcycle_license", "has_srs_accreditation", "is_studying", "maestria_is_studying"],
-    "erp_sucursal_map": ["es_bodega"],
-    "holidays": ["is_recurring"],
-    "impresion_dispositivos": ["activo"],
-    "intentos_identidad": ["exito"],
-    "inventory": ["is_vencidos"],
-    "inventory_grouped_mv": ["es_antibiotico"],
-    "inventory_sync_huella": ["is_vencidos"],
-    "inventory_sync_log": ["is_vencidos", "success"],
-    "kiosk_pin_attempts": ["succeeded"],
-    "laboratorios": ["ocultar_en_minmax"],
-    "metas_config": ["bonificaciones_activas", "id"],
-    "minmax_sync_log": ["success"],
-    "mv_stock_analysis": ["is_catalog_only", "is_dead_stock"],
-    "pedido_devolucion": ["viaja"],
-    "pedido_items": ["agotamiento", "caja_especial", "falta_caja", "revision_minmax", "sin_stock"],
-    "pedido_sucursal_status": ["electrolit_ok"],
-    "product_precios": ["activo"],
-    "product_stock_params": ["is_hidden"],
-    "products": ["activo", "devolutivo", "es_antibiotico", "oculto_en_ventas", "perecedero", "regulado", "requiere_receta", "sin_principio_activo"],
-    "products_sync_log": ["success"],
-    "products_with_lab": ["activo", "es_antibiotico"],
-    "proveedores": ["devolutivo"],
-    "proveedores_maestro": ["activo", "iva_deducible", "percibe_1", "percibe_1_override", "retiene_renta"],
-    "purchase_claim_rules": ["activo"],
-    "purchase_dte_documents": ["invalidado"],
-    "purchase_sync_log": ["success"],
-    "role_permissions": ["can_approve", "can_edit", "can_view", "delega_en_ausencia"],
-    "roles": ["is_su"],
-    "ruta_pedidos": ["discrepancia"],
-    "sales_invoice_items": ["costo_ambiguo"],
-    "sales_invoices": ["has_puntos"],
-    "shifts": ["is_active"],
-    "stock_config": ["pedido_recepcion_activa"],
-    "survey_preguntas": ["invertida"],
-    "survey_responses": ["is_jefe"],
-    "surveys": ["anonima", "compartir_resultados"],
-    "sync_log": ["success"],
-    "timesheets": ["is_absent", "is_holiday_worked"],
-    "traslado_interruptor": ["pausado"],
-    "v_inventario_lotes": ["is_vencidos"],
-    "v_sync_health": ["success"],
-    "vacation_plan_headers": ["ai_generated"]
+    "announcements": [
+      "is_archived"
+    ],
+    "backup_sync_log": [
+      "success"
+    ],
+    "bancos": [
+      "activo"
+    ],
+    "banner_portal": [
+      "activo"
+    ],
+    "bitacora_areas": [
+      "activa",
+      "mide_humedad"
+    ],
+    "bitacora_lecturas": [
+      "fuera_de_rango",
+      "tarde"
+    ],
+    "bitacora_limpiezas": [
+      "tarde"
+    ],
+    "bolsas_entidades": [
+      "activo"
+    ],
+    "bolsas_tipos_salida": [
+      "activo",
+      "pide_boleta",
+      "pide_receptor"
+    ],
+    "branches": [
+      "conteo_ciclico_activo"
+    ],
+    "compra_renglon_pendiente": [
+      "ignorado"
+    ],
+    "conteo_inventario_items": [
+      "es_agregado_manual",
+      "is_vencidos"
+    ],
+    "conteos_inventario": [
+      "ajuste_erp_aplicado",
+      "incluye_vencidos",
+      "pendientes_como_cero"
+    ],
+    "cortes_caja_diferencia_personas": [
+      "del_turno"
+    ],
+    "cotizaciones": [
+      "applies_retention"
+    ],
+    "dispatch_rules": [
+      "caja_especial",
+      "solo_cajas"
+    ],
+    "dte_mh_intentos": [
+      "ok"
+    ],
+    "dte_rechazos_vigentes": [
+      "accionable"
+    ],
+    "email_sync_accounts": [
+      "active"
+    ],
+    "email_sync_log": [
+      "success"
+    ],
+    "employees": [
+      "carne_pendiente",
+      "disability_has_certification",
+      "has_car",
+      "has_car_license",
+      "has_disability",
+      "has_maestria",
+      "has_motorcycle",
+      "has_motorcycle_license",
+      "has_srs_accreditation",
+      "is_studying",
+      "maestria_is_studying",
+      "tiene_acreditacion_dependiente"
+    ],
+    "employees_safe": [
+      "carne_pendiente",
+      "disability_has_certification",
+      "has_car",
+      "has_car_license",
+      "has_disability",
+      "has_maestria",
+      "has_motorcycle",
+      "has_motorcycle_license",
+      "has_srs_accreditation",
+      "is_studying",
+      "maestria_is_studying",
+      "tiene_acreditacion_dependiente"
+    ],
+    "erp_sucursal_map": [
+      "es_bodega"
+    ],
+    "holidays": [
+      "is_recurring"
+    ],
+    "impresion_dispositivos": [
+      "activo"
+    ],
+    "intentos_identidad": [
+      "exito"
+    ],
+    "inventory": [
+      "is_vencidos"
+    ],
+    "inventory_grouped_mv": [
+      "es_antibiotico"
+    ],
+    "inventory_sync_huella": [
+      "is_vencidos"
+    ],
+    "inventory_sync_log": [
+      "is_vencidos",
+      "success"
+    ],
+    "kiosk_pin_attempts": [
+      "succeeded"
+    ],
+    "laboratorios": [
+      "ocultar_en_minmax"
+    ],
+    "metas_config": [
+      "bonificaciones_activas",
+      "id"
+    ],
+    "minmax_sync_log": [
+      "success"
+    ],
+    "mv_stock_analysis": [
+      "is_catalog_only",
+      "is_dead_stock"
+    ],
+    "pedido_devolucion": [
+      "viaja"
+    ],
+    "pedido_items": [
+      "agotamiento",
+      "caja_especial",
+      "es_extra",
+      "falta_caja",
+      "revision_minmax",
+      "sin_stock"
+    ],
+    "pedido_sucursal_status": [
+      "electrolit_ok"
+    ],
+    "product_precios": [
+      "activo"
+    ],
+    "product_stock_params": [
+      "is_hidden"
+    ],
+    "products": [
+      "activo",
+      "devolutivo",
+      "es_antibiotico",
+      "oculto_en_ventas",
+      "perecedero",
+      "regulado",
+      "requiere_receta",
+      "sin_principio_activo"
+    ],
+    "products_sync_log": [
+      "success"
+    ],
+    "products_with_lab": [
+      "activo",
+      "es_antibiotico"
+    ],
+    "proveedores": [
+      "devolutivo"
+    ],
+    "proveedores_maestro": [
+      "activo",
+      "iva_deducible",
+      "percibe_1",
+      "percibe_1_override",
+      "retiene_renta"
+    ],
+    "puntos_consulta_intentos": [
+      "acerto"
+    ],
+    "purchase_claim_rules": [
+      "activo"
+    ],
+    "purchase_dte_documents": [
+      "invalidado"
+    ],
+    "purchase_sync_log": [
+      "success"
+    ],
+    "retiro_bultos": [
+      "firma_requerida"
+    ],
+    "role_permissions": [
+      "can_approve",
+      "can_edit",
+      "can_view",
+      "delega_en_ausencia"
+    ],
+    "roles": [
+      "es_cuenta_de_pruebas",
+      "is_su"
+    ],
+    "ruta_pedidos": [
+      "discrepancia"
+    ],
+    "sales_invoice_items": [
+      "costo_ambiguo"
+    ],
+    "sales_invoices": [
+      "has_puntos"
+    ],
+    "shifts": [
+      "is_active"
+    ],
+    "stock_config": [
+      "pedido_recepcion_activa"
+    ],
+    "survey_preguntas": [
+      "invertida"
+    ],
+    "survey_responses": [
+      "is_jefe"
+    ],
+    "surveys": [
+      "anonima",
+      "compartir_resultados"
+    ],
+    "sync_log": [
+      "success"
+    ],
+    "timesheets": [
+      "is_absent",
+      "is_holiday_worked"
+    ],
+    "traslado_interruptor": [
+      "pausado"
+    ],
+    "v_inventario_lotes": [
+      "is_vencidos"
+    ],
+    "v_sync_health": [
+      "success"
+    ],
+    "vacation_plan_headers": [
+      "ai_generated"
+    ]
   },
   "tablas_grandes": {
     "_comment": "Tablas que REQUIEREN paginación (>1000 filas o creciendo sin tope). Conteos reales al 2026-08-21, salvo los `null`, que son «crece sin tope» y no se cuentan. approval_requests entra por la SEGUNDA mitad del criterio, no por tamaño: hoy son cientos de filas, pero es un expediente que sólo crece y el día que cruce las 1000 el corte de PostgREST es mudo.",

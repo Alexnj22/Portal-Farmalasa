@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.888.2 — Cliente frecuente
+
+El afiche decía «Con tu documento la compra se registra en tu cuenta», que
+describe el mecanismo. Corregido por el usuario: **«Con tu registro de cliente
+frecuente se acumulan los puntos»** — ése es el nombre con el que la gente ya
+conoce su registro en la sala, y nombrar algo como el cliente lo nombra es §26.10
+aplicado a un papel en vez de a una pantalla.
+
 ## v2.888.1 — El ticket, la salvedad y el precio especial
 
 Tres lecturas equivocadas que encontró el usuario en el afiche. Las tres son de

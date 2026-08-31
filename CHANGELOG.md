@@ -21,6 +21,103 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.874.1 — El icono del carné es el aprobado, no uno dibujado
+
+Regla del usuario: *«no se crean logos, ni se generan logos de la nada; sólo se
+usan los aprobados: iconos, logos completos»*. Destapó tres cosas, y ninguna se
+veía mal.
+
+**El icono del carné estaba DIBUJADO a mano** — un `arc()` y dos `fillRect()` en
+un lienzo. El comentario lo justificaba: `public/Logo.png` pesa 3096×3186 y no
+cabe en un PDF que se genera en el navegador de una sala. El dato era cierto y la
+conclusión no: **`Logo512.png` pesa 41 kB y es el mismo icono, aprobado**. El
+razonamiento se hizo contra el archivo grande y nadie miró si había otro. Y el
+dibujo no era igual — la abertura del arco caía en otro ángulo y la cruz tenía
+otro grosor.
+
+**Una cruz blanca «al agua»** sobre el fondo del retrato, dibujada con dos
+`fillRect`. Que fuera tenue no la hacía menos logo: la hacía menos revisable. El
+fondo se queda con el degradado, que son colores de la marca y no una figura.
+
+**Y el logo de «Farmacias La Popular y La Salud» que armé en v2.870.0** se
+eliminó, junto con el trozo del script que lo componía. Juntaba el icono
+aprobado con texto en una fuente *parecida* —la de la marca no vino con los
+archivos— y tracking calculado a ojo. Salía bien, y ése era el problema.
+
+Un logo dibujado a mano **no falla nunca**: no lanza, no da 404, no rompe
+ninguna prueba. Sale, se imprime, y se parece lo suficiente como para que nadie
+lo mire dos veces — hasta que termina en un carné que alguien enseña como
+identificación de la empresa. Por eso la regla no es «dibújalo bien», es «no lo
+dibujes».
+
+`npm run logos` sigue existiendo pero sólo **adapta** lo aprobado: recorta el
+margen transparente y acota el tamaño. No compone.
+
+**Y sobre el carné que no traía el logo:** el circuito está bien. Se probó el
+`fetch` dentro de la página publicada, con su service worker: `/logo-la-salud.png`
+devuelve 200 y 11,933 bytes de `image/png`. Ese PDF salió de una pestaña anterior
+al despliegue de v2.872.0.
+
+_(pendiente de redactar)_
+
+## v2.874.0 — Una sanción se firma en el servidor, se puede reclamar, y la planilla no paga el día suspendido
+
+Segunda mitad del régimen del Art. 83 (la primera fue v2.871.0).
+
+**La firma la pone el servidor.** `registrar_sancion` resuelve quién impone la
+sanción con `auth_employee_id()`, nunca por parámetro. Es la regla de
+`registrar_egreso`: el navegador conoce la CUENTA y acá hace falta la FICHA, y
+para 33 de las 42 personas del portal esos dos ids no son el mismo valor. Un
+`impuesta_por` que llegue del cliente es un campo falsificable justo en el
+registro que existe para sostener un despido.
+
+**Y valida la proporción del Art. 83, que no es cosmética.** El num. 3 es «por
+un día»; el num. 4, «por más de un día y hasta treinta, previa autorización y
+calificación de motivos del Director General de Inspección de Trabajo». Una
+suspensión de tres días sin esa autorización es ilegal, así que **no se guarda**.
+El peldaño 5 tampoco entra: es una baja, con su liquidación y su causal del
+Art. 50, y meterla como «sanción» la dejaría fuera de todo lo que el portal ya
+sabe hacer con una baja.
+
+**El reclamo del Art. 77**, que apareció leyendo el reglamento y no estaba en
+ningún resumen del repo: el trabajador tiene 2 días hábiles para reclamar ante
+Recursos Humanos —que responde en 5— y si no queda conforme, 2 más ante la
+Administración. Se registra el DESENLACE, que es lo que cambia los hechos: una
+sanción **REVOCADA** deja de contar para la escalera, deja de suspender y deja
+de pintar el aro en la foto. Los plazos se guardan para poder mirarlos, no para
+que un reloj revoque una sanción sin que nadie decida.
+
+**El Art. 86 dice «en un plazo NO MENOR de sesenta días»** — es un piso, no un
+vencimiento. El resumen que circulaba en el repo lo decía al revés («exige el
+memorando A los 60 días»), y con esa lectura la función habría rechazado justo
+los casos válidos.
+
+**La planilla no paga el día.** `consolidate-timesheets` ya distinguía vacación,
+incapacidad y permiso, pero los tres viven en `approval_requests` porque son
+ausencias SOLICITADAS. Una suspensión es impuesta y vive en `employee_events`.
+Tres decisiones:
+
+- la lista sale de `suspendidos_en()` y **no de una consulta armada en la
+  función**: la regla «sin `endDate` la suspensión es de UN día» se escribe una
+  sola vez;
+- **a un suspendido no se le fabrica la salida automática** — si llegó con una
+  entrada es porque marcó antes de que se registrara la sanción, y auto-cerrarle
+  el turno convertiría ese resto en una jornada que nadie trabajó;
+- el motivo se anota **aunque la persona no figure ausente**. Suena
+  contradictorio y por eso mismo se escribe: alguien suspendido que igual tiene
+  marcajes es justo lo que quien revisa la planilla tiene que ver. Guardando
+  `null` el día se pagaría como cualquier otro.
+
+**Y una prueba que primero dio un verde falso.** Las cinco primeras validaciones
+«pasaron» corriendo como service role: todas morían en `FORBIDDEN` antes de
+llegar a las reglas del Art. 83, y el arnés aceptaba ese rechazo como bueno. Al
+volver a correrlas suplantando a alguien con permiso, cada una disparó la suya —
+`ART83_4_SIN_AUTORIZACION`, `ART83_3`, `FALTA_DESCONOCIDA`,
+`PELDANO_INVALIDO`— el caso válido escribió con la firma del servidor, la
+ventana de fechas resultó exacta (hoy+2 suspendido, hoy+3 no) y revocar por el
+Art. 77 la apagó. Ver
+[[feedback_un_gate_que_no_pudo_medir_no_puede_dar_verde]].
+
 ## v2.873.0 — El ingreso arranca por la foto, y el vendedor sale de la sesión
 
 **El código de vendedor ya no se pregunta.** Era el único campo del cuadro que

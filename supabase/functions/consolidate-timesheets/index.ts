@@ -259,6 +259,21 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 4a-bis. Suspendidos del RIT Art. 83.
+    //
+    // No es una ausencia SOLICITADA sino IMPUESTA, así que no vive en
+    // `approval_requests` como vacación, incapacidad y permiso: vive en
+    // `employee_events`. Y gana sobre las otras tres — una vacación aprobada no
+    // convierte en pagado un día que una sanción dejó sin goce de salario.
+    //
+    // Sale de `suspendidos_en()` y NO de una consulta armada acá: la regla «sin
+    // `endDate` la suspensión es de UN día» tiene que estar escrita una sola
+    // vez. Dos lugares respondiendo lo mismo es como se rompió `turno_del_dia`.
+    const { data: suspData, error: suspErr } = await supabase.rpc('suspendidos_en', { p_fecha: workDate });
+    if (suspErr) throw new Error(`suspendidos_en: ${suspErr.message}`);
+    const suspendidos = new Set<string>(((suspData as string[] | null) || []).map(String));
+    for (const empId of suspendidos) absenceTypeMap.set(empId, 'SUSPENSION');
+
     // 4b. Load attendance punches in CST day window (UTC-6)
     //
     // La ventana llega hasta las 08:00 del día siguiente para alcanzar la
@@ -379,7 +394,11 @@ Deno.serve(async (req) => {
       let autoPunched          = false;
 
       // Auto-punch: employee checked in but never out
-      if (actualStart && !actualEnd && scheduledEnd) {
+      // A un suspendido NO se le genera la salida. Marcar no puede —el kiosco lo
+      // frena— así que si llegó hasta acá con una entrada es porque marcó ANTES
+      // de que se registrara la sanción; fabricarle además una salida
+      // convertiría ese resto en una jornada completa que nadie trabajó.
+      if (actualStart && !actualEnd && scheduledEnd && !suspendidos.has(empId)) {
         let autoEndTime = cstTimeToUTC(workDate, scheduledEnd);
         // Turno que cruza la medianoche: el fin es del día siguiente. Sin esto
         // la salida generada quedaba ANTES de la entrada y la jornada daba
@@ -483,7 +502,14 @@ Deno.serve(async (req) => {
         nocturnal_overtime_hours:  nocturnalOTHours,
         late_minutes:              lateMinutes,
         is_absent:                 isAbsent,
-        absence_type:              isAbsent ? (absenceTypeMap.get(empId) || null) : null,
+        // La suspensión se anota AUNQUE la persona no figure ausente. Suena
+        // contradictorio y por eso mismo se escribe: alguien suspendido que
+        // igual tiene marcajes es justo lo que quien revisa la planilla tiene
+        // que ver. Si se guardara `null` —porque `isAbsent` es false— el día se
+        // pagaría como cualquier otro y nadie se enteraría.
+        absence_type:              suspendidos.has(empId)
+                                     ? 'SUSPENSION'
+                                     : (isAbsent ? (absenceTypeMap.get(empId) || null) : null),
         is_holiday_worked:         !isAbsent && isHoliday,
         status:                    autoPunched ? 'AUTO_PUNCHED' : 'PENDING',
         updated_at:                new Date().toISOString(),

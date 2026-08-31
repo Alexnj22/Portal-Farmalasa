@@ -592,7 +592,23 @@ export function paginaDelCarne({
          * Y si el logo no cargó, vuelve el icono con su texto: un carné sin
          * marca sigue sirviendo para entrar, y uno que no se genera, no. */
         ...(logoPng
-            ? [{ image: logoPng, height: 20, width: 20 * 3.55, ...abs(canto + P, P + 1) }]
+            /* El ancho manda, y el alto sale de la PROPORCIÓN del archivo.
+             *
+             * Estaba al revés —alto 20 y ancho `20 * 3.55`— con la proporción
+             * de los logos de sala escrita a mano. El de la empresa es 7.34:1,
+             * o sea que con ese ancho salía a la mitad de largo del que debía:
+             * aplastado, y aplastado no da error ni rompe nada, se imprime.
+             *
+             * Así entra cualquier logo aprobado sin deformarse: se le da el
+             * ancho disponible de la tarjeta (126.8 pt) con un tope de 24 pt de
+             * alto para que uno cuadrado no se coma media credencial. */
+            ? [(() => {
+                const disponible = CARNE.ancho - canto - P * 2;
+                const proporcion = logoPng.ancho / logoPng.alto;
+                const ancho = Math.min(disponible, 24 * proporcion);
+                return { image: logoPng.dataUrl, width: ancho, height: ancho / proporcion,
+                    ...abs(canto + P, P + 1) };
+            })()]
             : [
                 ...(iconoPng ? [{ image: iconoPng, width: 20, height: 20, ...abs(canto + P, P + 1) }] : []),
                 {
@@ -906,12 +922,24 @@ export async function descargarDocumentoDeBienvenida(datos) {
         /* El logo se trae junto con lo demás y NO en serie: es un `fetch` a un
          * archivo del propio sitio, y encadenarlo detrás del recorte de la foto
          * le sumaría su latencia a un documento que ya tarda. */
-        const { logoDeLaSala, logoComoDataUrl } = await import('./marcaDeLaSala');
+        /* El carné lleva el logo de la EMPRESA, no el de la sala.
+         *
+         * Estuvo un rato con el de la sala —La Popular o La Salud— porque era
+         * lo que había, y el usuario lo corrigió: *«debe salir el logo
+         * completo, el de Farmacias La Popular y La Salud para todos, ya que
+         * ésa es la empresa»*. Y tiene razón sobre lo que ES un carné: acredita
+         * a alguien ante la EMPRESA, no ante la sucursal donde le tocó ese mes.
+         * Alguien que se traslada de Salud 3 a La Popular no cambia de patrono
+         * — y su carné no debería decir otra cosa.
+         *
+         * `logoDeLaSala` se queda exportado: sigue siendo la regla correcta
+         * para lo que sí habla de una sala. */
+        const { LOGO_DE_LA_EMPRESA, logoComoDataUrl } = await import('./marcaDeLaSala');
         const [pdfMake, barrasPng, iconoPng, logoPng] = await Promise.all([
             getPdfMake(),
             barrasComoPng(datos?.valorDelCarne),
             iconoDeLaFarmaciaPng(),
-            logoComoDataUrl(logoDeLaSala(datos?.sala)),
+            logoComoDataUrl(LOGO_DE_LA_EMPRESA),
         ]);
         /* El retrato, en tres intentos y cada uno peor que el anterior:
          *   1. la persona recortada sobre el fondo de la empresa;

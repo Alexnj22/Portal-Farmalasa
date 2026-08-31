@@ -14,7 +14,7 @@
 //    le pide a alguien un trámite que no puede hacer.
 
 import { describe, it, expect } from 'vitest';
-import { marcaDeLaSala, logoDeLaSala } from '../../src/utils/marcaDeLaSala';
+import { marcaDeLaSala, logoDeLaSala, LOGO_DE_LA_EMPRESA } from '../../src/utils/marcaDeLaSala';
 import { definicionDelDocumento, BASICO_DEL_REGLAMENTO, paginaDelCarne, INDUCCION, orientacionPrevisional, nombreDelArchivo } from '../../src/utils/documentoDeBienvenida';
 
 const textoDe = (def) => JSON.stringify(def.content);
@@ -325,7 +325,7 @@ describe('el carné lleva el logo', () => {
         nombre: 'Ana María Pérez', cargo: 'Dependiente de Farmacia', sala: 'Salud 1',
         usuario: 'ana.perez', contrasenaTemporal: 'K7M2QX9P', conCarne: true,
     };
-    const LOGO = 'data:image/png;base64,AAAA';
+    const LOGO = { dataUrl: 'data:image/png;base64,AAAA', ancho: 2204, alto: 300 };
 
     /* Se mira SÓLO la hoja del carné, no el documento entero: «La Popular y La
        Salud» también está en el titular de la hoja 1 —«Bienvenido a Farmacias La
@@ -340,7 +340,7 @@ describe('el carné lleva el logo', () => {
 
     it('cuando el logo cargó, va el logo y NO el texto de las dos farmacias', () => {
         const carne = hojaDelCarne(definicionDelDocumento({ ...base, logoPng: LOGO }));
-        expect(carne).toContain(LOGO);
+        expect(carne).toContain(LOGO.dataUrl);
         expect(carne).not.toContain('La Popular y La Salud');
     });
 
@@ -351,5 +351,80 @@ describe('el carné lleva el logo', () => {
             ...base, logoPng: null, iconoPng: 'data:image/png;base64,BBBB' }));
         expect(carne).toContain('La Popular y La Salud');
         expect(carne).toContain('data:image/png;base64,BBBB');
+    });
+});
+
+/* ── El carné lleva el logo de la EMPRESA, no el de la sala ─────────────────
+ *
+ * «Debe salir el logo completo, el de Farmacias La Popular y La Salud para
+ * todos, ya que ésa es la empresa» (usuario, 2026-08-31). Un carné acredita a
+ * alguien ante la empresa, no ante la sucursal donde le tocó ese mes: quien se
+ * traslada de Salud 3 a La Popular no cambia de patrono.
+ *
+ * `logoDeLaSala` sigue existiendo para lo que sí habla de una sala. */
+describe('el logo de la empresa', () => {
+    it('apunta a un archivo, y no depende de la sala', () => {
+        expect(LOGO_DE_LA_EMPRESA).toBe('/logo-farmacias.png');
+        // No hay forma de que una sala cambie cuál es: es una constante.
+        expect(typeof LOGO_DE_LA_EMPRESA).toBe('string');
+    });
+
+    /* El archivo TODAVÍA no existe: el logo aprobado no llegó, y componerlo
+       está prohibido por la regla del usuario. Mientras tanto el carné cae en el
+       icono aprobado con el nombre en texto — que dice lo mismo sin inventar
+       ninguna figura. Esto se prueba porque el hueco ES el mecanismo: el día que
+       el archivo se copie a `public/`, el carné lo toma sin tocar código. */
+    it('sin el archivo, el carné cae en el icono con el nombre de la empresa', () => {
+        const def = definicionDelDocumento({
+            nombre: 'Ana María Pérez', cargo: 'Dependiente', sala: 'Salud 1',
+            usuario: 'ana.perez', conCarne: true,
+            logoPng: null, iconoPng: 'data:image/png;base64,BBBB',
+        });
+        const c = def.content;
+        const carne = JSON.stringify(c.slice(c.findIndex(b => b?.pageBreak === 'before')));
+        expect(carne).toContain('La Popular y La Salud');
+        expect(carne).toContain('data:image/png;base64,BBBB');
+    });
+});
+
+/* ── El logo no se deforma, entre en la tarjeta el que entre ────────────────
+ *
+ * El alto salía de una proporción escrita a mano (3.55:1, la de los logos de
+ * sala). El de la empresa es 7.34:1, así que con esa cuenta salía a la mitad de
+ * largo del que debía — aplastado. Y aplastado no da error: se imprime.
+ *
+ * Se prueban las dos proporciones y un caso extremo, porque el defecto sólo
+ * aparece cuando el archivo NO tiene la proporción que alguien supuso. */
+describe('el logo mantiene su proporción', () => {
+    const base = {
+        nombre: 'Ana María Pérez', cargo: 'Dependiente', sala: 'Salud 1',
+        usuario: 'ana.perez', conCarne: true,
+    };
+    const dibujado = (ancho, alto) => {
+        const def = definicionDelDocumento({
+            ...base, logoPng: { dataUrl: 'data:image/png;base64,AAAA', ancho, alto } });
+        const c = def.content;
+        const carne = c.slice(c.findIndex(b => b?.pageBreak === 'before'));
+        return carne.find(b => b?.image === 'data:image/png;base64,AAAA');
+    };
+
+    it.each([
+        ['el de la empresa', 2204, 300],
+        ['el de La Salud', 435, 123],
+        ['el de La Popular', 881, 247],
+        ['uno cuadrado', 512, 512],
+    ])('%s sale con su misma proporción', (_, ancho, alto) => {
+        const b = dibujado(ancho, alto);
+        expect(b).toBeTruthy();
+        expect(b.width / b.height).toBeCloseTo(ancho / alto, 2);
+    });
+
+    // Y sin pasarse de la tarjeta: 153 pt de ancho menos el canto y los márgenes.
+    it('nunca más ancho que la tarjeta ni más alto que su tope', () => {
+        for (const [ancho, alto] of [[2204, 300], [435, 123], [512, 512], [300, 2204]]) {
+            const b = dibujado(ancho, alto);
+            expect(b.width, `${ancho}×${alto}`).toBeLessThanOrEqual(126.8 + 0.01);
+            expect(b.height, `${ancho}×${alto}`).toBeLessThanOrEqual(24 + 0.01);
+        }
     });
 });

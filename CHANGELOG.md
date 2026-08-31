@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.875.1 — El logo de la empresa vuelve al carné, y sin deformarse
+
+*«Pero ese logo sí te lo validé, yo te lo pedí.»*
+
+Lo había borrado al aplicar la regla de no crear logos — yo lo había compuesto,
+así que caía de lleno. Y estaba mal: **lo que hace aprobado a un logo es que la
+empresa lo apruebe**, no que lo haya dibujado un diseñador. La regla existe para
+que nadie invente marca por su cuenta, no para tirar la que sí se revisó. Se
+recuperó del historial (`a78dbf25`, 55,379 bytes, intacto).
+
+O sea que la regla se aplicó bien al procedimiento y mal al caso. Sigue valiendo
+entera: lo que no se puede es componer uno nuevo y usarlo **sin que nadie lo
+mire**. Éste se miró.
+
+**Y salía aplastado.** El carné calculaba el alto con una proporción escrita a
+mano —3.55:1, la de los logos de sala— y el de la empresa es **7.34:1**: con esa
+cuenta habría salido a la mitad de largo del que debe. Un logo aplastado no da
+error, no rompe ninguna prueba: se imprime.
+
+Ahora la proporción sale del **propio archivo**: `logoComoDataUrl` devuelve
+también sus medidas, y el carné le da el ancho disponible de la tarjeta (126.8
+pt) con un tope de 24 pt de alto. Así entra cualquier logo aprobado sin
+deformarse — se probó con los cuatro casos, incluido uno cuadrado y uno más alto
+que ancho.
+
+Es la otra mitad de la regla de no componer logos: **tampoco se les cambia la
+forma**.
+
+Lo único que arrastra este archivo, y conviene saberlo: la tipografía no es la de
+la marca —no vino con los originales— sino la más cercana disponible. Si llega la
+de verdad, se reemplaza el archivo y el código no cambia.
+
 ## v2.875.0 — La pantalla para sancionar: propone el peldaño y muestra en qué se apoya
 
 Cierra el régimen del Art. 83 (v2.871.0 y v2.874.0 fueron la base).

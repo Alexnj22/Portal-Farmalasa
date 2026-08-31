@@ -33,18 +33,56 @@ export function logoDeLaSala(sala) {
         : '/logo-la-salud.png';
 }
 
-/* Acá había un `LOGO_DE_LAS_DOS` apuntando a un logo de «Farmacias La Popular y
- * La Salud» que se generaba con un script. Se sacó por la regla del usuario
- * (2026-08-31): *«no se crean logos, ni se generan logos de la nada; sólo se
- * usan los aprobados»*. Cuando exista ese logo aprobado, se agrega acá su
- * archivo — no se vuelve a componer. */
+/**
+ * El logo de la EMPRESA — «Farmacias La Popular y La Salud».
+ *
+ * Va en el carné de todo el mundo: *«debe salir el logo completo, el de
+ * Farmacias La Popular y La Salud para todos, ya que ésa es la empresa»*
+ * (usuario, 2026-08-31). Un carné acredita a alguien ante la EMPRESA y no ante
+ * la sucursal donde le tocó ese mes — quien se traslada de Salud 3 a La Popular
+ * no cambia de patrono.
+ *
+ * ── Este archivo está APROBADO, y la vuelta que dio importa ────────────────
+ *
+ * Se armó a pedido del usuario juntando el icono aprobado con el nombre de la
+ * empresa. Después llegó su regla —*«no se crean logos, ni se generan logos de
+ * la nada»*— y se borró: yo lo había compuesto, así que caía de lleno.
+ *
+ * Y estaba mal borrarlo. Él lo había pedido y lo había visto: *«pero ese logo
+ * sí te lo validé, yo te lo pedí»*. **Lo que hace aprobado a un logo es que la
+ * empresa lo apruebe**, no que lo haya dibujado un diseñador — y la regla
+ * existe para que nadie invente marca por su cuenta, no para tirar la que sí se
+ * revisó.
+ *
+ * O sea que la regla se aplicó bien al procedimiento y mal al caso. Sigue
+ * valiendo entera: lo que NO se puede es componer uno nuevo y usarlo sin que
+ * nadie lo mire. Éste se miró.
+ *
+ * Lo único que arrastra y conviene saber: **la tipografía no es la de la
+ * marca** —no vino con los archivos originales— así que es la más cercana
+ * disponible. Si algún día llega la de verdad, se rehace y se reemplaza el
+ * archivo; el código no cambia.
+ */
+export const LOGO_DE_LA_EMPRESA = '/logo-farmacias.png';
 
 /**
- * El logo como data URL, que es lo que necesita pdfmake.
+ * El logo como data URL, **con sus medidas**.
+ *
+ * ── Por qué devuelve el tamaño y no sólo la imagen ─────────────────────────
+ *
+ * Porque quien lo dibuja tiene que respetar su proporción, y ésa cambia según
+ * cuál sea. Los de sala son ~3.55:1 y el de la empresa entera es **7.34:1**:
+ * con el alto y el ancho escritos a mano para uno, el otro sale aplastado — y
+ * un logo aplastado no da error, se imprime igual.
+ *
+ * Midiéndolo del propio archivo, cambiar el logo por otro no lo deforma. Es la
+ * otra mitad de la regla de no componer logos: tampoco se les cambia la forma.
  *
  * Devuelve `null` si no se pudo traer: el carné tiene que salir igual, con el
- * icono aprobado y el nombre de las dos farmacias en texto. Un documento que no
- * se genera porque no cargó una imagen es peor que uno con menos marca.
+ * icono aprobado y el nombre de la empresa en texto. Un documento que no se
+ * genera porque no cargó una imagen es peor que uno con menos marca.
+ *
+ * @returns {Promise<{dataUrl: string, ancho: number, alto: number} | null>}
  */
 export async function logoComoDataUrl(ruta) {
     if (typeof document === 'undefined') return null;
@@ -52,12 +90,20 @@ export async function logoComoDataUrl(ruta) {
         const r = await fetch(ruta);
         if (!r.ok) return null;
         const blob = await r.blob();
-        return await new Promise((res, rej) => {
+        const dataUrl = await new Promise((res, rej) => {
             const fr = new FileReader();
             fr.onload = () => res(fr.result);
             fr.onerror = rej;
             fr.readAsDataURL(blob);
         });
+        const { ancho, alto } = await new Promise((res, rej) => {
+            const im = new Image();
+            im.onload = () => res({ ancho: im.naturalWidth, alto: im.naturalHeight });
+            im.onerror = rej;
+            im.src = dataUrl;
+        });
+        if (!ancho || !alto) return null;
+        return { dataUrl, ancho, alto };
     } catch {
         return null;
     }

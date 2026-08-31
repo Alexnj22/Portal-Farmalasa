@@ -122,22 +122,15 @@ for (const m of medidas) {
     console.log(`  escrito   ${(fs.statSync(m.destino).size / 1024).toFixed(1)} kB\n`);
 }
 
-/* ── Acá se ARMABA un tercer logo, y se sacó ────────────────────────────────
+/* ── El logo de las dos farmacias NO se rehace acá ──────────────────────────
  *
- * Se generaba «FARMACIAS / LA POPULAR Y LA SALUD» juntando el icono aprobado con
- * texto compuesto acá: fuente parecida, tracking calculado a ojo, medidas
- * copiadas de los originales. Salía bien y ése era el problema.
+ * `public/logo-farmacias.png` se armó una vez, a pedido del usuario, y él lo
+ * aprobó. Desde entonces es un **archivo aprobado** como los otros dos, no algo
+ * derivado: se usa, no se regenera.
  *
- * Regla del usuario (2026-08-31): *«no se crean logos, ni se generan logos de
- * la nada; sólo se usan los aprobados: iconos, logos completos»*.
- *
- * Y tiene razón en algo que no se ve mirando el resultado: la tipografía NO era
- * la de la marca —no vino con los archivos— así que lo que se generaba era un
- * logo que se PARECE. Un logo parecido no da error, se imprime igual, y termina
- * en un carné que alguien enseña como identificación de la empresa.
- *
- * Si hace falta el de las dos farmacias, lo manda quien lo aprueba, ya hecho.
- * Este script sólo ADAPTA lo aprobado: recorta, escala, no compone.
+ * Este script sólo ADAPTA lo aprobado —recorta el margen transparente, acota el
+ * tamaño— y no compone. Si el logo de la empresa hay que cambiarlo, se
+ * reemplaza el archivo.
  */
 
 await navegador.close();

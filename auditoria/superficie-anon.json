@@ -1,7 +1,7 @@
 {
   "nota": "TODO lo que el rol `anon` puede ejecutar o leer en producción, declarado con su motivo. El gate compara esta lista contra el snapshot: si producción tiene algo que no está acá, FALLA. Es lo único que impide que la superficie vuelva a crecer sin que nadie mire — creció de 5 a 24 entre el 2026-07-29 y el 2026-08-23 y no lo detectó nada. · 2026-08-25: se REVOCARON diez (migración 20260825032825) y salen de esta lista — seis funciones de trigger (el GRANT era inerte: Postgres no deja invocarlas directamente, y al dispararse no comprueba el EXECUTE de quien provocó la escritura, probado en el entorno de pruebas), tres funciones puras que no leen ninguna tabla, y update_proveedor_manual. De esa última la auditoría se había equivocado de sobrecarga: el GRANT lo tenía la NUEVA (nueve argumentos, la que usa el portal), porque nació con él por default privileges después de que la revocación del 2026-07-29 cerrara la vieja. Lo que queda declarado es el pre-login del kiosco y de las cajas de impresión, que TIENE que ser alcanzable sin sesión.",
   "por_que_existe": "CLAUDE.md afirmaba que sólo CINCO funciones eran ejecutables por anon y que 'ninguna otra función del proyecto es ejecutable por anon'. La auditoría del 2026-08-23 midió 24. Se abrieron tres a mano y las tres se defienden solas (validan device_token, o lanzan FORBIDDEN, o son triggers inertes), así que no había ningún agujero abierto — pero tampoco había nada vigilando. Una afirmación que nadie verifica deja de ser cierta sin avisar, y la que nadie verifica sobre quién puede entrar sin credenciales es la peor de todas.",
-  "revisado": "2026-08-25",
+  "revisado": "2026-08-31",
   "funciones": [
     {
       "nombre": "get_kiosk_boot_payload",
@@ -121,7 +121,7 @@
       "nombre": "branches",
       "area": "sucursales",
       "estado": "necesaria",
-      "motivo": "El kiosco tiene que saber en qué sala está antes de que nadie inicie sesión. La policy se llama `kiosk_read` y es USING(true): expone el listado de sucursales de la empresa, que no es un dato sensible, pero conviene saber que está abierto."
+      "motivo": "El kiosco tiene que ofrecer la lista de salas antes de que nadie inicie sesión, y por eso la policy `kiosk_read` es USING(true). Lo que ve `anon` son DOS COLUMNAS, no la fila: el 2026-08-31 se le revocó el SELECT de tabla y se le dio por columna sobre `(id, name)`. Hasta ese día devolvía la fila entera —incluido `settings`, con los UUID de las enfermeras de cada sala, la empresa de fumigación, los extintores y la ubicación—, y este motivo decía «el listado de sucursales, que no es un dato sensible»: era cierto de lo que se quiso abrir y falso de lo que estaba abierto. En la misma fecha se le revocaron también INSERT/UPDATE/DELETE/TRUNCATE, que el RLS ya frenaba pero seguían puestos como GRANT por defecto de Supabase."
     }
   ]
 }

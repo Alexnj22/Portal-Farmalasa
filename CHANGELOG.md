@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.892.2 — Sin sesión, la sucursal es sólo su nombre
+
+Salió de una pregunta del usuario sobre `/mis-puntos`: *«no hay forma que desde
+ahí acceda a alguna información del portal, verdad?»*. La respuesta era que no
+—y se midió—, salvo por una tabla.
+
+**`branches` era la única puerta abierta, y estaba más abierta de lo que decía
+su propia declaración.** Probado con la clave pública contra producción:
+`employees`, `sales_invoices` y `pedidos` dan 401; `customers`, `products`,
+`inventory`, `audit_logs`, `cortes_caja`, `export_log` y `role_permissions` dan
+200 con **cero filas** —el RLS aguanta—; y `branches` devolvía **las 8 filas
+enteras**. Las 17 funciones que `anon` alcanza exigen todas token de equipo o
+un secreto de un solo uso.
+
+La policy `kiosk_read` es `USING (true)` y su motivo es bueno: el kiosco tiene
+que ofrecer la lista de salas antes de que nadie inicie sesión. **El problema
+era el alcance, no la puerta** — RLS decide FILAS, no columnas, así que en esa
+fila viajaban `settings` (los UUID de las enfermeras de cada sala, la empresa de
+fumigación, los extintores, la ubicación exacta), `phone`, `cell`, `address`,
+`weekly_hours` y los códigos internos. `auditoria/superficie-anon.json` decía
+«expone el listado de sucursales, que no es un dato sensible»: cierto de lo que
+se quiso abrir, falso de lo que estaba abierto. Es
+[[feedback_una_afirmacion_que_nadie_verifica_deja_de_ser_cierta]] otra vez, y
+esta vez sobre quién entra sin credenciales.
+
+**La corrección es el permiso por columna, que es la herramienta que sí
+distingue**: `REVOKE SELECT ON branches FROM anon` + `GRANT SELECT (id, name)`.
+La policy se queda. Medido después: `select=id,name` → 200 con 8 filas;
+`select=*`, `select=settings`, `select=phone` y hasta `select=id,name,codigo_puntos`
+→ **401**.
+
+**Qué afecta, verificado antes de tocar nada** — nada de lo que funciona hoy:
+
+- Las 17 funciones de `anon` son **SECURITY DEFINER**: leen `branches` sin pasar
+  por el GRANT. `get_kiosk_boot_payload` ya devolvía `(id, name)` y no cambia.
+- El único camino que lee `branches` por PostgREST **sin sesión** es
+  `fetchKioskBoot`, y pide exactamente `select('id, name')`.
+- El configurador del kiosco —el único que usa esa lista— **exige sesión** desde
+  que se cerró lo de la llave horaria, y con sesión manda `branches_select`.
+- Con sesión no cambia nada: `authenticated` conserva el SELECT de tabla.
+
+Lo único que había que mover era **el respaldo de `fetchKioskBoot`**, que pedía
+`select('*')` cuando el payload no traía sucursales: sin sesión eso ahora daría
+*permission denied* justo en el camino que existe para cuando algo ya salió mal.
+Pasa a pedir las mismas dos columnas, que son las únicas que el kiosco lee.
+`fetchBranchesFull` se retiró: era su único llamador.
+
+**Y la segunda cerradura.** `anon` conservaba INSERT/UPDATE/DELETE/TRUNCATE sobre
+`branches` — los GRANT por defecto que Supabase pone en toda tabla del esquema
+público. No podía escribir, y no por eso: no hay ninguna policy de escritura para
+`anon` ni de DELETE para nadie, así que alcanzaba cero filas (verificado: el
+UPDATE da 42501 y el DELETE toca 0 filas, con las 8 sucursales intactas). Se
+revocaron igual, porque mientras el GRANT esté puesto una policy escrita de más
+—o con el rol equivocado— no tiene nada detrás. Ahora INSERT y DELETE dan 401.
+
+⚠️ **Sólo `branches`.** Las otras 180 tablas tienen el mismo default de Supabase
+y el mismo RLS como única cerradura. Eso es una revisión propia, no un cambio
+para hacer de paso.
+
 ## v2.892.1 — La conversión, discreta
 
 La equivalencia pasa de **56 px a 28** y de dos paneles altos a **una tira de 50

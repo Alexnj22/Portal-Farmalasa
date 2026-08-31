@@ -23,7 +23,7 @@ import {
     insertAnnouncement, updateAnnouncementFull, updateAnnouncementFields, deleteAnnouncementRow,
     marcarAvisoLeido,
     insertShift, deleteShiftRow, updateShiftRow, setShiftActive, insertHoliday, deleteHolidayRow,
-    fetchBranchesBasic, fetchBranchesFull,
+    fetchBranchesBasic,
 } from '../../data/system';
 
 export const createSystemSlice = (set, get) => ({
@@ -1518,8 +1518,15 @@ export const createSystemSlice = (set, get) => ({
             if (error) throw error;
 
             if (data) {
+                // El respaldo pide las MISMAS dos columnas que el payload, y no
+                // la fila entera. En el kiosco nadie tiene sesión, y desde el
+                // 2026-08-31 `anon` sólo tiene permiso sobre `id` y `name`:
+                // pedir `*` acá devolvería *permission denied* justo en el
+                // camino que existe para cuando algo ya salió mal. El kiosco
+                // sólo lee `b.id` y `b.name` (useTimeClockEngine), así que no
+                // se pierde nada.
                 if (!data.branches) {
-                    const { data: bData } = await fetchBranchesFull();
+                    const { data: bData } = await fetchBranchesBasic();
                     if (bData) set({ branches: bData });
                 }
 

@@ -153,6 +153,8 @@ export function fetchBranchesBasic() {
     return supabase.from('branches').select('id, name').order('name');
 }
 
-export function fetchBranchesFull() {
-    return supabase.from('branches').select('*').order('name');
-}
+// `fetchBranchesFull` se retiró el 2026-08-31. Tenía un solo llamador —el
+// respaldo de `fetchKioskBoot`— y ése corre SIN sesión: desde que `anon` tiene
+// permiso sólo sobre `id` y `name`, un `select('*')` ahí devuelve *permission
+// denied*. Quien necesite la fila entera ya la trae `fetchBoot`, que corre
+// autenticado.

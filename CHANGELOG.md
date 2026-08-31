@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.876.0 — Los puntos vencen, y el saldo no acumula
+
+Dos reglas nuevas del programa de puntos, y la pantalla del cliente ahora dice
+hasta cuándo le sirven.
+
+**El saldo, las bebidas y las paletas no acumulan** — salvo que en la misma
+compra vaya un producto de farmacia. El clasificador no se escribió a mano: se
+agregó `laboratorios.acumula_puntos`, porque cinco de esos «laboratorios» no lo
+son (RECARGA, NEVERIA, SARITA, CONSTANCIA, BEBIDAS) y el día que entre otro
+proveedor de bebidas, apagarlo tiene que ser marcar una fila. Medido: **1,927
+ventas de 37,341 en 60 días — el 5.2%**. El default es «acumula», para que un
+hueco de catálogo nunca le quite puntos a quien compró un medicamento.
+
+**Los puntos vencen a los 12 meses, cada compra por su cuenta.** El sistema de
+puntos guarda un solo número por cliente, así que los grupos con fecha no se
+guardan: se **derivan** del historial, gastando siempre el más viejo primero —lo
+que hace vencer lo menos posible—. La reconstrucción tiene que dar exactamente
+el saldo, y donde no da, no se toca esa cuenta. Medido contra producción: **0
+descuadradas de 14,632**.
+
+**Nace mirando, no quitando.** Lo ganado antes del arranque cuenta su año desde
+el arranque, no desde su propia fecha — nadie le avisó a esa gente. La
+consecuencia es que **hoy vencen CERO puntos** y el primero posible es del
+**1-oct-2027**. Hasta entonces el cron mensual sólo deja su medición en
+`puntos_vencimiento_log`, para que la decisión de encenderlo se tome contra doce
+mediciones y no contra una estimación.
+
+Y esa primera medición ya dijo lo importante: **sin la regla de gracia
+vencerían 1,431,997 puntos de 10,508 personas**, el 83% de todo lo vivo. Ese es
+el escalón que llega entero el 1-oct-2027 y hay un año para decidir qué hacer
+con él.
+
+En `/mis-puntos` el cliente ve ahora los tres próximos vencimientos. Si el
+servidor no pudo cuadrar sus grupos no se pinta ninguno: una fecha equivocada
+organiza una compra que no era.
+
 ## v2.875.2 — El carné dice el mes, no el día
 
 *«Desde 31 de agosto de 2026: que sólo salga mes / año, no día.»*

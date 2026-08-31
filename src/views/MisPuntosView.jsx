@@ -19,7 +19,7 @@
  * se lea como un trámite de más.
  */
 import React, { useState } from 'react';
-import { Star, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Star, Loader2, AlertTriangle, ArrowLeft, CalendarClock } from 'lucide-react';
 import Button from '../components/common/Button';
 import PortalInput from '../components/common/PortalInput';
 import Notice from '../components/common/Notice';
@@ -135,6 +135,38 @@ export default function MisPuntosView() {
                         <p className="text-body-sm text-content-2">
                             Hola, <strong className="text-content-1">{datos.nombre}</strong>.
                         </p>
+
+                        {/* Cuándo vencen. Va JUNTO al saldo y no al final: es la
+                            mitad de la información que el saldo no da, y quien
+                            entra a ver cuánto tiene necesita saber hasta cuándo
+                            lo tiene. Si el servidor no pudo cuadrar los grupos
+                            manda la lista vacía y acá no se pinta nada — una
+                            fecha equivocada organiza una compra que no era. */}
+                        {datos.vencimientos?.length > 0 && (
+                            <div>
+                                <p className="text-caption uppercase tracking-widest text-content-3 font-black mb-2">
+                                    Cuándo vencen
+                                </p>
+                                <div className="space-y-1.5">
+                                    {datos.vencimientos.map((v) => (
+                                        <div key={v.vence} data-surface="card"
+                                            className="flex items-center gap-3 px-3 py-2.5">
+                                            <CalendarClock size={15} className="text-content-3 shrink-0" />
+                                            <span className="text-body-sm text-content-2 flex-1 min-w-0">
+                                                {fmtFecha(v.vence)}
+                                            </span>
+                                            <span className="text-body-sm font-bold tabular-nums text-content-1 shrink-0">
+                                                {v.puntos.toLocaleString()} pts
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-caption text-content-3 mt-2">
+                                    Los puntos duran 12 meses desde la compra que los dio.
+                                    Cada grupo vence por separado.
+                                </p>
+                            </div>
+                        )}
 
                         {datos.aviso && (
                             <Notice variant="info" icon={Star}>{datos.aviso}</Notice>

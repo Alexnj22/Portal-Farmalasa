@@ -25,6 +25,9 @@
 //   3. El DUI no se guarda en el registro de intentos, sólo su huella. Un
 //      registro que archiva documentos de identidad es una filtración esperando.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  SQL_LOTES_VIVOS, lotesConVencimiento, porVencimiento,
+} from "../_shared/puntosLotes.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -131,7 +134,7 @@ Deno.serve(async (req) => {
     if (!cuentas?.length || cuentas.length > 1) {
       return json({
         ok: true, nombre: cli.name, saldo: 0, equivale: 0,
-        acumulados: 0, canjeados: 0, movimientos: [],
+        acumulados: 0, canjeados: 0, movimientos: [], vencimientos: [],
         aviso: "Todavía no tienes cuenta de puntos. Se te crea en la sala la primera vez que acumulás.",
       });
     }
@@ -156,11 +159,31 @@ Deno.serve(async (req) => {
       [c.idCliente, c.idCliente],
     ) as any;
 
+    // Los grupos con fecha. La resta del más viejo primero la hace la base con
+    // una suma corrida (ver SQL_LOTES_VIVOS): traerse el historial entero para
+    // restarlo acá sería bajar cientos de filas para devolver tres.
+    const [filasLotes] = await conn.query(SQL_LOTES_VIVOS,
+      [c.idCliente, c.idCliente]) as any;
+    const lotes = lotesConVencimiento(filasLotes ?? []);
+
     const saldo = Number(c.saldo ?? 0);
+
+    // La reconstrucción tiene que dar EXACTAMENTE el saldo. Si no da, el
+    // historial y el total no cuentan la misma historia, y las fechas que
+    // saldrían de ahí serían inventadas: se muestra el saldo —que es el dato
+    // bueno— y se callan los vencimientos. Mostrar una fecha equivocada es peor
+    // que no mostrar ninguna, porque el cliente organiza su compra por ella.
+    const suma = lotes.reduce((s, l) => s + l.puntos, 0);
+    const cuadra = Math.abs(suma - saldo) < 1;
+    if (!cuadra) console.error("lotes no cuadran:", { idCliente: c.idCliente, suma, saldo });
+
     return json({
       ok: true,
       nombre: cli.name,
       saldo,
+      // Sólo los tres próximos: la lista completa de una persona con doscientas
+      // compras no se puede leer, y lo único accionable es lo que vence antes.
+      vencimientos: cuadra ? porVencimiento(lotes).slice(0, 3) : [],
       // Cien puntos son un dólar. Se manda ya convertido: «$4.20 de descuento»
       // le dice algo a cualquiera, «420 puntos» no le dice nada a nadie.
       equivale: Math.round(saldo) / 100,

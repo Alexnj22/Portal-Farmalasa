@@ -101,6 +101,21 @@ const CRONS = [
           + 'sobre 60 días) y cortar a las 22 en punto dejaría sin sincronizar justo los de cierre.',
   },
   {
+    job: 'puntos-vencer-mensual', slug: 'puntos-vencer', cadencia: '0 9 1 * *',
+    corridasDia: 1 / 30, sistema: 0,
+    motivo: 'El vencimiento de los puntos. `sistema: 0` como su hermana: no toca el sistema de '
+          + 'origen, lee y escribe en la base de puntos por MySQL. '
+          + 'UNA VEZ AL MES y no más, porque un punto vence un día concreto y adelantarse no '
+          + 'cambia nada: correrlo a diario sería recalcular la misma respuesta treinta veces. '
+          + 'El día 1 a las 09:00 UTC cae en la ventana en que los syncs no corren (12-23,0-5), '
+          + 'así que no compite por conexiones. '
+          + 'Medido en la primera corrida: 1,070 ms para reconstruir los grupos de las 14,632 '
+          + 'cuentas — una sola consulta con suma corrida, no una por cliente. '
+          + 'Hoy corre en modo MIRAR (`{"aplicar": false}` escrito en el cron, no sólo en el '
+          + 'default de la función): el primer punto que puede vencer es del 1-oct-2027, así que '
+          + 'hasta entonces lo único que hace es dejar su medición en `puntos_vencimiento_log`.',
+  },
+  {
     job: 'sync-puntos-1min', slug: 'sync-puntos', cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
     motivo: 'Las ventas que ganan puntos, al sistema de puntos. `sistema: 0` porque NO le pega al '

@@ -122,46 +122,6 @@ const Rotulo = ({ children }) => (
 );
 
 /**
- * Las dos reglas del programa, cara a cara.
- *
- * Es la pieza del afiche que mejor viaja a una pantalla: no hay nada que leer,
- * se entiende de un vistazo, y deja claro que un punto no es un dólar.
- */
-const LasDosReglas = () => (
-    <div data-surface="card" className="overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className="w-9 h-9 rounded-btn bg-logo-green/15 flex items-center justify-center shrink-0">
-                <ShoppingBag size={16} className="text-logo-green-text" strokeWidth={2.5} />
-            </div>
-            <div className="min-w-0 flex-1">
-                <p className="text-caption uppercase tracking-widest text-content-3 font-black">
-                    Cuando compras
-                </p>
-                <p className="text-body-lg text-content-1 font-black tabular-nums">
-                    $1.00 <span className="text-content-3 font-bold">da</span> 1 punto
-                </p>
-            </div>
-        </div>
-
-        <div className="h-px bg-divider mx-4" />
-
-        <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className="w-9 h-9 rounded-btn bg-logo-magenta/15 flex items-center justify-center shrink-0">
-                <Gift size={16} className="text-logo-magenta-text" strokeWidth={2.5} />
-            </div>
-            <div className="min-w-0 flex-1">
-                <p className="text-caption uppercase tracking-widest text-content-3 font-black">
-                    Cuando canjeas
-                </p>
-                <p className="text-body-lg text-content-1 font-black tabular-nums">
-                    100 puntos <span className="text-content-3 font-bold">dan</span> $1.00
-                </p>
-            </div>
-        </div>
-    </div>
-);
-
-/**
  * Cómo funciona, plegado.
  *
  * Plegado y no siempre abierto porque quien viene a ver su saldo ya sabe cómo
@@ -384,7 +344,6 @@ export default function MisPuntosView() {
                             </p>
                         </form>
 
-                        <LasDosReglas />
                         <ComoFunciona />
                     </>
                 ) : (
@@ -588,7 +547,6 @@ function Resultado({ datos, todos, setTodos, volver }) {
                 </section>
             )}
 
-            <LasDosReglas />
             <ComoFunciona />
 
             <Button variant="ghost" onClick={volver} className="w-full">

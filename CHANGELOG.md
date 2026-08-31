@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.891.3 — Fuera la tarjeta de la equivalencia
+
+La quitó el usuario: `$1.00 da 1 punto` / `100 puntos dan $1.00` sale del
+afiche, y en la pantalla del saldo la equivalencia ya está dicha donde importa
+—la cifra en dólares es lo grande y los puntos van debajo—. Repetirla en una
+tarjeta propia era decir dos veces lo mismo.
+
+La v2.891.2 le había sacado sólo la franja de arriba; era la tarjeta entera.
+
+Queda en «Cómo funciona», que es donde alguien va a buscar la regla.
+
 ## v2.891.2 — El scroll de la pantalla del cliente
 
 **`/mis-puntos` no se podía desplazar.** Reportado con captura: la pantalla se

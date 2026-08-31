@@ -101,7 +101,7 @@ const etiqueta = (t) => ({ text: t, fontSize: 7.5, color: MARCA.gris,
  */
 export function definicionDeLaConstancia({
     nombre, dui, cargo, sala, falta, faltaArticulo, peldano, fecha,
-    dias, hasta, autorizacion, hechos, impuestaPor, logoPng, lugar,
+    dias, hasta, autorizacion, hechos, impuestaPor, logoPng, lugar, codigo,
 } = {}) {
     const s = SANCION[peldano] || SANCION[1];
     const esSuspension = peldano === 3 || peldano === 4;
@@ -115,44 +115,91 @@ export function definicionDeLaConstancia({
         pageSize: 'LETTER',
         pageMargins: [56, 44, 56, 52],
         defaultStyle: { fontSize: 10, color: MARCA.tinta, lineHeight: 1.25 },
+        // ── El pie sostiene una hoja SUELTA ──────────────────────────────
+        // No repite el membrete por simetría: en un expediente laboral las hojas
+        // se fotocopian de a una, se escanean sueltas y se archivan en carpetas
+        // distintas. Lleva tres cosas y cada una responde una pregunta que una
+        // hoja sola no puede contestar de sí misma:
+        //
+        //   · quién la emitió — el PATRONO, que es la contraparte del trabajador
+        //   · el NIT, para que no haya dos empresas que puedan reclamarla
+        //   · el CÓDIGO, que es el único dato que devuelve al registro digital.
+        //     Sin él, el papel y el sistema son dos archivos que nadie puede
+        //     cruzar. Es lo mismo que ya hace el ticket de una bolsa.
+        //
+        // Y la numeración: «Página 1 de 2» es lo que delata que falta una hoja.
+        // Sin ella, quitar la segunda no deja rastro.
+        //
+        // Nada del pie lleva color: se imprime en TODAS las hojas de TODOS los
+        // documentos, y ahí el tóner se paga muchas veces.
         footer: (pagina, total) => ({
             columns: [
-                { text: `${EMPRESA.razonSocial} · NIT ${EMPRESA.nit}`, fontSize: 7, color: MARCA.gris },
-                { text: `${pagina} de ${total}`, fontSize: 7, color: MARCA.gris, alignment: 'right' },
+                {
+                    text: [
+                        { text: EMPRESA.patrono },
+                        { text: `   NIT ${EMPRESA.nit}` },
+                        ...(codigo ? [{ text: `   ${codigo}`, bold: true, color: MARCA.tinta }] : []),
+                    ],
+                    fontSize: 7, color: MARCA.gris,
+                },
+                { text: `Página ${pagina} de ${total}`, fontSize: 7, color: MARCA.gris, alignment: 'right' },
             ],
             margin: [56, 12, 56, 0],
         }),
         content: [
+            // ── El membrete, con la forma del que la empresa ya usa ───────────
+            // Mismo orden que el membrete impreso: la marca arriba, y debajo el
+            // PATRONO, el giro, la dirección, el teléfono y los números
+            // fiscales. Que se vea igual que los demás documentos no es
+            // estética — es lo que hace que quien lo recibe lo reconozca como
+            // de la empresa sin tener que leerlo.
+            //
+            // El nombre que va bajo la marca es el del PATRONO y no el
+            // comercial: en una relación de trabajo la contraparte del
+            // trabajador es la persona, no el rótulo del local.
             {
                 columns: [
-                    logoPng
-                        ? { image: logoPng, width: 116, margin: [0, 0, 0, 0] }
-                        : { text: EMPRESA.razonSocial, bold: true, fontSize: 12, color: MARCA.magenta },
                     {
+                        width: '*',
+                        stack: [
+                            logoPng
+                                ? { image: logoPng, width: 150, margin: [0, 0, 0, 6] }
+                                : { text: EMPRESA.nombreComercial, bold: true, fontSize: 12,
+                                    color: MARCA.magenta, margin: [0, 0, 0, 6] },
+                            { text: EMPRESA.patrono, bold: true, fontSize: 9.5, color: MARCA.tinta },
+                            { text: EMPRESA.giro, fontSize: 7.5, color: MARCA.gris },
+                            { text: EMPRESA.direccion, fontSize: 7.5, color: MARCA.gris },
+                            { text: `Tel. ${EMPRESA.telefono}   ·   NIT ${EMPRESA.nit}   ·   NRC ${EMPRESA.nrc}`,
+                              fontSize: 7.5, color: MARCA.gris },
+                        ],
+                    },
+                    {
+                        width: 190,
                         stack: [
                             { text: 'CONSTANCIA DE MEDIDA DISCIPLINARIA', alignment: 'right',
                               bold: true, fontSize: 11, color: MARCA.magenta },
                             { text: `Reglamento Interno de Trabajo · ${s.numeral}`,
                               alignment: 'right', fontSize: 8, color: MARCA.gris },
-                            // El NIT y el NRC son lo que hace el documento
-                            // atribuible al patrono. Sin eso, el resto no se
-                            // sostiene: una hoja sin emisor no acredita nada.
-                            { text: `NIT ${EMPRESA.nit}  ·  NRC ${EMPRESA.nrc}`,
-                              alignment: 'right', fontSize: 7.5, color: MARCA.gris, margin: [0, 4, 0, 0] },
+                            ...(codigo ? [{ text: codigo, alignment: 'right', fontSize: 9, bold: true,
+                                            color: MARCA.tinta, margin: [0, 6, 0, 0] }] : []),
                         ],
                     },
                 ],
-                margin: [0, 0, 0, 6],
+                columnGap: 16,
+                margin: [0, 0, 0, 8],
             },
             { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 503, y2: 0, lineWidth: 2, lineColor: MARCA.verde }],
               margin: [0, 0, 0, 16] },
 
-            // ⚠️ El LUGAR llega por parámetro y no está escrito acá. La primera
-            // versión decía «Chalatenango» y ese dato no existe en ninguna
-            // constante de la empresa — lo había inferido de un comentario
-            // sobre fichas de clientes. Un documento que se firma no puede
-            // llevar un lugar deducido: o se sabe, o no se pone.
-            { text: lugar ? `En ${lugar}, a los ${enLetras(fecha)}.` : `A los ${enLetras(fecha)}.`,
+            // El LUGAR sale de `EMPRESA.municipio`, que a su vez sale de la
+            // dirección del membrete real. La primera versión decía
+            // «Chalantenango» escrito a mano dentro del PDF y era una
+            // inferencia mía —resultó ser correcta, pero eso no la hacía un
+            // dato—. Se puede pisar por parámetro para un documento firmado en
+            // otra parte.
+            { text: (lugar ?? EMPRESA.municipio)
+                ? `En ${lugar ?? EMPRESA.municipio}, a los ${enLetras(fecha)}.`
+                : `A los ${enLetras(fecha)}.`,
               margin: [0, 0, 0, 14] },
 
             {
@@ -170,7 +217,14 @@ export function definicionDeLaConstancia({
                 columnGap: 18,
             },
 
-            { ...etiqueta('FALTA COMETIDA'), margin: [0, 6, 0, 1] },
+            // Quién impone la sanción, dicho con todas las letras: es la
+            // contraparte de la relación de trabajo y quien responde por el
+            // acto. Una constancia que no nombra al patrono deja al trabajador
+            // frente a una marca, que no es nadie.
+            { text: `${EMPRESA.patrono}, propietario de ${EMPRESA.nombreComercial}, hace constar que impone al trabajador la sanción que se detalla, por la falta siguiente:`,
+              fontSize: 9.5, margin: [0, 4, 0, 10] },
+
+            { ...etiqueta('FALTA COMETIDA'), margin: [0, 2, 0, 1] },
             { text: faltaArticulo ? `${falta} (${faltaArticulo})` : (falta || '—'),
               fontSize: 10, margin: [0, 0, 0, 8] },
 

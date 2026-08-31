@@ -131,7 +131,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
     const guardar = useCallback(async () => {
         setGuardando(true);
         try {
-            await registrarSancion({
+            const eventoId = await registrarSancion({
                 employeeId:   empleado.id,
                 falta,
                 peldano,
@@ -140,6 +140,15 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                 nota:         nota.trim() || null,
                 autorizacion: autorizacion.trim() || null,
             });
+            // El código del papel sale del id del evento: es el único dato del
+            // pie que devuelve al registro digital. No es un correlativo —no
+            // cuenta ni ordena— y por eso no se muestra como si lo fuera: es un
+            // LOCALIZADOR, y seis dígitos hexadecimales alcanzan para encontrar
+            // una fila entre las que va a haber en años.
+            const codigo = eventoId
+                ? `S-${String(fecha).slice(0, 4)}-${String(eventoId).replace(/-/g, '').slice(0, 6).toUpperCase()}`
+                : null;
+
             clearDraft(claveBorrador);
 
             // La constancia sale SOLA al guardar, y no detrás de un segundo
@@ -167,6 +176,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                 autorizacion:  autorizacion.trim() || null,
                 hechos:        nota.trim() || null,
                 impuestaPor:   firmante,
+                codigo,
             });
 
             // Que el PDF falle NO deshace la sanción: ya está escrita. Se dice

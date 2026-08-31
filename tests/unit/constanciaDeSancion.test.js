@@ -8,6 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { definicionDeLaConstancia, nombreDeLaConstancia } from '../../src/utils/constanciaDeSancion';
+import { EMPRESA } from '../../src/constants/empresa';
 
 /** Todo el texto del documento, en una sola cadena. */
 function textoDe(nodo, out = []) {
@@ -137,16 +138,48 @@ describe('constancia de sanción · lo que el Art. 83 exige', () => {
         expect(t).toMatch(/NRC 213237-5/);
     });
 
-    it('sin lugar confirmado NO inventa una ciudad', () => {
-        // La primera versión decía «Chalatenango», que salió de una inferencia
-        // y no de ningún dato de la empresa. Un documento que se firma no lleva
-        // un lugar deducido.
-        const sinLugar = todo(definicionDeLaConstancia({ ...base, peldano: 1 }));
-        expect(sinLugar).not.toMatch(/Chalatenango/);
-        expect(sinLugar).toMatch(/^A los 31 de agosto de 2026.$/m);
+    it('el lugar sale de la dirección de la empresa, no de una constante escrita a mano', () => {
+        // La primera versión tenía «Chalatenango» escrito dentro del PDF, y era
+        // una inferencia mía sacada de un comentario sobre fichas de clientes.
+        // Resultó ser correcta —el membrete real dice Chalatenango— pero eso no
+        // la hacía un dato: acertar por casualidad y saber se ven igual desde
+        // afuera, y sólo uno de los dos sobrevive a que la empresa se mude.
+        const t = todo(definicionDeLaConstancia({ ...base, peldano: 1 }));
+        expect(t).toMatch(new RegExp(`En ${EMPRESA.municipio}, a los 31 de agosto de 2026`));
 
-        const conLugar = todo(definicionDeLaConstancia({ ...base, peldano: 1, lugar: 'Chalatenango' }));
-        expect(conLugar).toMatch(/En Chalatenango, a los 31 de agosto de 2026/);
+        // Y se puede pisar, para un documento firmado en otra parte.
+        const otro = todo(definicionDeLaConstancia({ ...base, peldano: 1, lugar: 'San Salvador' }));
+        expect(otro).toMatch(/En San Salvador, a los/);
+        expect(otro).not.toMatch(new RegExp(`En ${EMPRESA.municipio},`));
+    });
+
+    it('nombra al PATRONO, no al nombre comercial', () => {
+        // En una relación de trabajo la contraparte del trabajador es la
+        // persona, no el rótulo del local. Una constancia que sólo nombra la
+        // marca deja al trabajador frente a nadie.
+        const t = todo(definicionDeLaConstancia({ ...base, peldano: 2 }));
+        expect(t).toMatch(new RegExp(EMPRESA.patrono));
+        expect(t).toMatch(new RegExp(`propietario de ${EMPRESA.nombreComercial}`));
+    });
+
+    it('el pie devuelve al registro digital', () => {
+        // El código es el único dato del pie que la hoja no puede sacar de sí
+        // misma — y es justo el que hace falta cuando alguien llega con una
+        // fotocopia preguntando de qué sanción se trata.
+        const def = definicionDeLaConstancia({ ...base, peldano: 2, codigo: 'S-2026-0042' });
+        const pie = textoDe(def.footer(1, 2)).join(' ');
+        expect(pie).toMatch(new RegExp(EMPRESA.patrono));
+        expect(pie).toMatch(/NIT 0401-210685-101-0/);
+        expect(pie).toMatch(/S-2026-0042/);
+        // La numeración es lo que delata que falta una hoja.
+        expect(pie).toMatch(/Página 1 de 2/);
+    });
+
+    it('sin código el pie no imprime un hueco', () => {
+        const def = definicionDeLaConstancia({ ...base, peldano: 1 });
+        const pie = textoDe(def.footer(1, 1)).join(' ');
+        expect(pie).toMatch(/NIT/);
+        expect(pie).not.toMatch(/undefined|null/);
     });
 
     it('el nombre del archivo se reconoce sin abrirlo', () => {

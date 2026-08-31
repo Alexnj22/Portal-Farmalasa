@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.878.0 — El membrete real de la empresa, y el patrono que sí es la contraparte del trabajador
+
+Salió de comparar la constancia contra el **membrete impreso** que la empresa ya
+usa, y lo que apareció no era de diseño.
+
+**`EMPRESA.razonSocial` tiene el nombre COMERCIAL, no el del contribuyente.** El
+contribuyente de ese NIT es una **persona natural** — José Rutilio Alemán
+Vásquez— y «Farmacias La Popular y La Salud» es el nombre con el que opera. El
+NIT y el NRC que ya estaban guardados **coinciden exactamente** con los del
+membrete, así que el dato fiscal siempre estuvo bien: lo que estaba mal era el
+nombre que lo acompaña.
+
+Y en un documento laboral eso no es un detalle. **La contraparte del trabajador
+es la persona, no el rótulo del local**: una constancia que sólo nombra la marca
+deja al trabajador frente a nadie. La constancia ahora dice, con todas las
+letras, quién impone la sanción.
+
+**No se le cambió el valor a `razonSocial`, y es a propósito**: la leen catorce
+sitios y en varios el nombre comercial es el correcto —lo que ve un cliente en
+«Mis puntos», el documento de bienvenida, el ticket—. Se agregaron
+`patrono`, `nombreComercial`, `giro`, `direccion`, `municipio` y `telefono`.
+
+🔴 **Queda abierto, y es una pregunta fiscal:** el **Corte Z** y la hoja de prueba
+de impresión imprimen `razonSocial` junto al NIT y al NRC — o sea el nombre
+comercial en el lugar donde va el del contribuyente. Hay que confirmarlo con
+quien lleva la contabilidad antes de tocarlo.
+
+**El membrete toma la forma del que ya existe:** la marca arriba, y debajo el
+patrono, el giro, la dirección, el teléfono y los números fiscales. Que se vea
+igual que los demás documentos no es estética — es lo que hace que quien lo
+recibe lo reconozca como de la empresa sin leerlo.
+
+**Y el pie es la opción C.** Lleva tres cosas, cada una respondiendo algo que una
+hoja suelta no puede contestar de sí misma: quién la emitió, el NIT, y **el
+código que devuelve al registro digital** (`S-2026-A3F19C`, derivado del id del
+evento). Sin ese código el papel y el sistema son dos archivos que nadie puede
+cruzar. Más «Página 1 de 2», que es lo que delata si falta una hoja. Nada del
+pie lleva color: se imprime en todas las hojas de todos los documentos.
+
+**Un acierto por casualidad, corregido igual.** La versión anterior tenía
+«Chalatenango» escrito dentro del PDF, deducido de un comentario sobre fichas de
+clientes. Resultó ser **correcto** —el membrete real dice Chalatenango— pero eso
+no lo hacía un dato: acertar y saber se ven igual desde afuera, y sólo uno de los
+dos sobrevive a que la empresa se mude. Ahora sale de `EMPRESA.municipio`, y hay
+una prueba que lo verifica contra la constante en vez de contra el texto.
+
+Dieciséis pruebas.
+
 ## v2.877.1 — Una sola definicion de punto vencido
 
 «Vencido» estaba escrito dos veces con un día de diferencia: `vencidosAl` tomaba

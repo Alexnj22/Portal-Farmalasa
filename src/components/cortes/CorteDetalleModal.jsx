@@ -205,14 +205,22 @@ export default function CorteDetalleModal({
     // texto en la misma pantalla, uno arriba y otro al fondo.
     const sev = severidad(visible?.tramo);
     const esZ = visible?.tipo === 'Z';
+    /* Una LECTURA (tipo X) no contó efectivo: no tiene esperado ni diferencia,
+     * así que no hay nada que firmar ni que reabrir. Aparece desde el 31-ago —
+     * ver la nota de `TarjetaCorte`, donde vive el porqué completo.
+     *
+     * `noEsConteo` y no `esZ` en las tres decisiones: lo que las gobierna es
+     * «esto contó dinero», que era lo mismo mientras sólo hubiera dos tipos. */
+    const esX = visible?.tipo === 'X';
+    const noEsConteo = esZ || esX;
     // El desglose del cierre: su monto es venta, no efectivo. Ver el bloque de
     // `desgloseDelCierre`, que es donde vive el porqué.
     const cierre = useMemo(() => desgloseDelCierre(visible, ventas), [visible, ventas]);
     const pendiente = visible?.estado === 'PENDIENTE';
-    const puedeFirmar = pendiente && !esZ && puedeResolver;
+    const puedeFirmar = pendiente && !noEsConteo && puedeResolver;
     // Reabrir es de la propia sala (decisión del usuario, 2026-08-14): la misma
     // gente que firma puede corregir su firma, escribiendo por qué.
-    const puedeReabrir = !pendiente && !esZ && puedeResolver;
+    const puedeReabrir = !pendiente && !noEsConteo && puedeResolver;
 
     const abrirReapertura = useCallback(() => {
         setMotivo(MOTIVOS_REABRIR[0]);
@@ -325,6 +333,20 @@ export default function CorteDetalleModal({
                                         <span className="tabular-nums">{formatMoney(cierre.efectivo)}</span>
                                     </div>
                                 </div>
+                            </div>
+                        ) : esX ? (
+                            /* La lectura NO tiene cifra que mostrar. Su total es
+                               el número que se le mandó al formulario, no un
+                               dinero contado ni unas ventas, y pintarlo en el
+                               lugar donde va la diferencia le daría un sentido
+                               que no tiene. Se dice qué es y se acabó. */
+                            <div data-surface="card" className="p-4 space-y-1">
+                                <div className="text-caption font-bold text-content">Esto es una lectura, no un corte</div>
+                                <p className="text-caption text-content-2">
+                                    Sólo imprime las ventas del turno: no cuenta el efectivo, así que no
+                                    tiene diferencia ni hay nada que confirmar. El efectivo lo cuenta el
+                                    corte de caja del mismo turno.
+                                </p>
                             </div>
                         ) : (
                         <div data-surface="card" className="p-4">
@@ -454,7 +476,7 @@ export default function CorteDetalleModal({
                             </p>
                         ))}
 
-                        {sev === 'ok' && pendiente && !esZ && (
+                        {sev === 'ok' && pendiente && !noEsConteo && (
                             <Notice variant="success" icon={ShieldCheck}>
                                 Este corte cuadra al centavo. No hay nada que investigar.
                             </Notice>
@@ -521,7 +543,7 @@ export default function CorteDetalleModal({
                         {/* Qué se hizo con el faltante o el sobrante. Va después
                             de la firma porque primero se decide si el corte vale
                             y recién después qué se hace con su diferencia. */}
-                        {!esZ && modo !== 'reabrir' && (
+                        {!noEsConteo && modo !== 'reabrir' && (
                             <ResolverDiferencia
                                 corte={visible}
                                 nombreSala={nombreSala}

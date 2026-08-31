@@ -159,6 +159,19 @@ interface Tiquete {
   esperado: number | null;
   contado: number | null;
   diferencia: number | null;
+  /**
+   * Las líneas con las que la caja llegó a lo esperado, en su orden.
+   *
+   * Van al papel que imprime el portal: sin ellas el comprobante diría una
+   * diferencia y no de dónde sale, y quien lo lea no tendría cómo comprobarla.
+   * Es lo mismo que ya hace el vale de bolsa, que lista de qué bolsa salió cada
+   * parte en vez de sólo el total.
+   */
+  lineas: { rotulo: string; monto: number }[];
+  /** Lo que el tiquete dice de sí mismo: identifica el papel sobre la mesa. */
+  empleado: string | null;
+  caja: string | null;
+  turno: string | null;
 }
 
 async function leerTiquete(
@@ -190,17 +203,41 @@ async function leerTiquete(
   const efectivo  = linea(/EFECTIVO \$:\s*([\d.,-]+)/i);
   const retencion = linea(/RETENCION \$:\s*([\d.,-]+)/i) ?? 0;
   const devol     = linea(/DEVOLUCIONES\s*\$:\s*([\d.,-]+)/i) ?? 0;
-  const tipo = String(mov).match(/CORTE TIPO:\s*([^\n]+)/i)?.[1]?.trim() ?? null;
+  const texto = String(mov);
+  const cabecera = {
+    tipo:     texto.match(/CORTE TIPO:\s*([^\n]+)/i)?.[1]?.trim() ?? null,
+    empleado: texto.match(/EMPLEADO:\s*([^\n]+)/i)?.[1]?.trim() ?? null,
+    caja:     texto.match(/CAJA\s*:\s*(\d+)/i)?.[1] ?? null,
+    turno:    texto.match(/TURNO:\s*(\d+)/i)?.[1] ?? null,
+  };
+
+  // Sólo las líneas que TRAJO el tiquete: una sala sin caja chica no imprime esa
+  // línea, y un cero inventado en el papel se lee como un dato medido.
+  const lineas: { rotulo: string; monto: number }[] = [];
+  const agregar = (rotulo: string, rx: RegExp, siCero = false) => {
+    const v = linea(rx);
+    if (v === null || (v === 0 && !siCero)) return;
+    lineas.push({ rotulo, monto: v });
+  };
+  agregar("Saldo inicial",  /SALDO INICIAL \$:\s*([\d.,-]+)/i);
+  agregar("Caja chica",     /SALDO CAJA CHICA \$:\s*([\d.,-]+)/i);
+  agregar("Ingresos",       /\(\+\)\s*INGRESOS \$:\s*([\d.,-]+)/i);
+  agregar("Venta",          /\(\+\)\s*VENTA \$:\s*([\d.,-]+)/i, true);
+  agregar("Vales",          /\(-\)\s*VALES \$:\s*([\d.,-]+)/i);
+  agregar("Cobros credito", /\(\+\)\s*COBROS CREDITO \$:\s*([\d.,-]+)/i);
+  agregar("Retencion",      /\(-\)\s*RETENCION \$:\s*([\d.,-]+)/i);
+  agregar("Devoluciones",   /\(-\)\s*DEVOLUCIONES\s*\$:\s*([\d.,-]+)/i);
+
   // Un tiquete sin las dos líneas de la cuenta se devuelve igual, con la cuenta
   // en `null`. Inventar un cero acá sería decir «cuadró» sobre algo que no se
   // leyó, que es peor que no saber.
   if (totalCaja === null || efectivo === null) {
-    return { texto: mov as string, tipo, esperado: null, contado: null, diferencia: null };
+    return { texto, ...cabecera, esperado: null, contado: null, diferencia: null, lineas };
   }
   const esperado = Number((totalCaja - retencion - devol).toFixed(2));
   return {
-    texto: mov as string, tipo, esperado, contado: efectivo,
-    diferencia: Number((efectivo - esperado).toFixed(2)),
+    texto, ...cabecera, esperado, contado: efectivo,
+    diferencia: Number((efectivo - esperado).toFixed(2)), lineas,
   };
 }
 
@@ -420,6 +457,15 @@ Deno.serve(async (req) => {
       del_tiquete: delTiquete,
       tipo: tiquete?.tipo ?? null,
       id_corte: idCorte,
+      // Lo que necesita el comprobante que imprime el portal. El sistema de la
+      // caja arma su propio tiquete pero sólo lo imprime desde SU pantalla, así
+      // que desde el portal el corte salía sin ningún papel.
+      tiquete: tiquete
+        ? {
+          lineas: tiquete.lineas, empleado: tiquete.empleado,
+          caja: tiquete.caja, turno: tiquete.turno,
+        }
+        : null,
       vale: valeId ? { id: valeId, movimiento_en_caja: movVale, monto: Number(montoVale.toFixed(2)) } : null,
       respuesta: ok ? undefined : respCorte.slice(0, 300),
     });

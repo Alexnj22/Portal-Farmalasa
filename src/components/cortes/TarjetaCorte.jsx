@@ -68,6 +68,16 @@ const TarjetaCorte = memo(function TarjetaCorte({
     compacta = false,
 }) {
     const esZ = corte.tipo === 'Z';
+    /* Una LECTURA (tipo X) no cuenta el efectivo: no tiene esperado, ni
+     * diferencia, ni nada que confirmar. Aparece desde el 31-ago, cuando el
+     * primer corte hecho desde el portal salió X por el default del formulario
+     * del origen — existía allá y en ninguna pantalla de acá.
+     *
+     * `noEsConteo` y no `esZ` en todo lo que sigue: lo que decide si hay
+     * severidad, decisión y firma no es «es el cierre del día», es «esto contó
+     * dinero». Eran lo mismo mientras sólo hubiera dos tipos. */
+    const esX = corte.tipo === 'X';
+    const noEsConteo = esZ || esX;
     const desc = corte.estado === 'DESCARTADO';
     const pendiente = corte.estado === 'PENDIENTE';
     const sev = severidad(corte.tramo);
@@ -100,13 +110,14 @@ const TarjetaCorte = memo(function TarjetaCorte({
     // el corte está pendiente, y el bloque de quién firmó sólo cuando ya no lo
     // está. En la vista completa siguen en renglones separados — ahí sobra
     // ancho y la fila de acciones alineada a la derecha es la forma del portal.
-    const hayEtiquetas = esZ || !pendiente || revisar || (!cuadra && !desc);
-    const hayAcciones = pendiente && !esZ && puedeResolver;
+    const hayEtiquetas = noEsConteo || !pendiente || revisar || (!cuadra && !desc);
+    const hayAcciones = pendiente && !noEsConteo && puedeResolver;
 
     const etiquetas = hayEtiquetas ? (
         <div className="flex items-center gap-1.5 flex-wrap min-w-0">
             {esZ && <Badge variant="info" size="sm">Cierre del día</Badge>}
-            {!esZ && !desc && !cuadra && (
+            {esX && <Badge variant="neutral" size="sm">Lectura</Badge>}
+            {!noEsConteo && !desc && !cuadra && (
                 <Badge variant={SEVERIDAD_BADGE[sev].variant} size="sm" dot>
                     {SEVERIDAD_BADGE[sev].label}
                 </Badge>
@@ -165,10 +176,16 @@ const TarjetaCorte = memo(function TarjetaCorte({
                     las solicitudes. */}
                 <div className="flex items-start gap-1.5 shrink-0">
                     <div className={`font-bold tabular-nums text-right ${compacta ? 'text-label' : 'text-body'}
-                        ${esZ ? 'text-content-2' : desc ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
-                        {esZ
-                            ? <>{formatMoney(corte.total_declarado)}<span className="block text-caption font-normal text-content-3">en ventas</span></>
-                            : conSigno(desc ? diferenciaDelCorte(corte).valor : (corte.tramo ?? 0))}
+                        ${noEsConteo ? 'text-content-2' : desc ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
+                        {/* La lectura NO muestra cifra: su total es el número que
+                            se le mandó al formulario, no un dinero contado ni
+                            unas ventas. Imprimir cualquiera de los dos sería
+                            darle sentido a algo que no lo tiene. */}
+                        {esX
+                            ? <span className="text-caption font-normal text-content-3">sin conteo</span>
+                            : esZ
+                                ? <>{formatMoney(corte.total_declarado)}<span className="block text-caption font-normal text-content-3">en ventas</span></>
+                                : conSigno(desc ? diferenciaDelCorte(corte).valor : (corte.tramo ?? 0))}
                     </div>
                     <OjoDeTarjeta size={13} className="mt-0.5" />
                 </div>
@@ -197,7 +214,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 usuario: al confirmar o rechazar se ve SIEMPRE el nombre, la
                 foto y la fecha/hora — un estado sin autor no se puede
                 reclamar. */}
-            {!pendiente && !esZ && (
+            {!pendiente && !noEsConteo && (
                 <div className="flex items-center gap-2 pt-2 border-t border-divider">
                     <AvatarConEstado emp={persona} px={24} radio="rounded-full" marco="" />
                     <div className="min-w-0 flex-1">

@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.886.0 — El corte imprime su comprobante, y una lectura se ve
+
+**El corte hecho desde el portal no dejaba ningún papel.** Pregunta del usuario:
+*«al confirmarse desde el portal, se imprime el corte del erp en la ticketera? o
+debemos crear uno nosotros?»*. No se imprimía nada: el corte viaja por HTTP al
+sistema de la caja, y el tiquete que ese sistema arma sólo sale cuando alguien
+aprieta Imprimir **en su pantalla** — la misma de la que las salas salieron el 31
+de agosto. Ahora el corte imprime su comprobante en la ticketera de la sala, con
+un botón para repetirlo si no salió el papel.
+
+**Y ese papel dice la diferencia bien.** El sistema de la caja imprime la
+diferencia que se le manda, sin recalcularla, y la que el portal calculaba está
+mal por un defecto ya conocido del origen: `total_corte` cuenta los cobros de
+crédito un número entero de veces de más. En el corte de Salud 3 del 31-ago
+fueron **cuatro veces $100.45**, o sea $411.55 de faltante que no existe — la
+diferencia real es $9.75. El comprobante saca la cuenta del tiquete e **imprime
+sus líneas una por una**, para que quien lo lea pueda rehacerla en vez de
+tener que creerle. Y si el tiquete no se pudo leer, el papel lo dice.
+
+(En pantalla esto ya salía bien: `diferenciaDelCorte` corrige el desvío desde el
+13 de agosto. Lo que faltaba era el papel.)
+
+**Una lectura ahora se ve.** Los cortes tipo X —lecturas de ventas, que no
+cuentan efectivo— se descartaban en silencio al capturarlos, así que existían en
+el sistema de la caja y en ninguna pantalla de acá. Ahora entran, con su píldora
+«Lectura», sin cifra y sin nada que confirmar: no suman en ningún total, sólo
+dejan de ser invisibles. Que el portal ya no las produzca no cerraba el hueco —
+un documento que existe allá y no acá no se puede encontrar.
+
 ## v2.885.0 — las bolsas ahora llegan en vivo, y el reloj queda de red
 
 > «no está realtime?» (usuario).

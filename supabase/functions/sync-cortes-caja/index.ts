@@ -194,7 +194,15 @@ function parsearListado(html: string): FilaCorte[] {
     const fecha = fechaISO(tds[1]);
     if (!id || !fecha) continue;
     const tipo = tds[5].toUpperCase();
-    if (tipo !== "C" && tipo !== "Z") continue;
+    /* La X entra desde el 31-ago. Es una LECTURA de ventas —no cuenta el
+     * efectivo— y no suma en ninguna cuenta del portal, que ya filtra por
+     * `tipo === 'C'`. Se guarda porque un documento que existe del otro lado y
+     * no acá es invisible por construcción: el corte 14318 de Salud 3 salió X
+     * por el default del formulario, y no aparecía en ninguna pantalla.
+     *
+     * Sigue siendo una lista blanca y no un `else`: un tipo que nadie conoció
+     * se descarta, que es la falla segura. */
+    if (!["C", "Z", "X"].includes(tipo)) continue;
     filas.push({
       erpCorteId: Number(id[1]),
       fecha,

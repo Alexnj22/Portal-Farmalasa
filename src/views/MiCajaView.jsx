@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    AlertTriangle, ArrowDownLeft, ArrowUpRight, Clock, DoorOpen, Landmark, Lock, Scale,
-    ShoppingBag, Wallet,
+    AlertTriangle, ArrowDownLeft, ArrowUpRight, Clock, DoorOpen, Landmark, Lock, Printer,
+    Scale, ShoppingBag, Wallet,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
@@ -32,7 +32,9 @@ import { fetchVentasPorPago } from '../data/cortes';
  * arrastra el editor de fotos, y la mayoría de las visitas a esta pantalla no
  * sacan dinero de una bolsa. */
 const SalidaDeBolsa = lazy(() => import('../components/bolsas/SalidaDeBolsa'));
+import { construirComprobanteDeCorte } from '../utils/corteTicket';
 import { formatMoney } from '../utils/formatNumber';
+import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
 
 /**
@@ -146,6 +148,30 @@ export default function MiCajaView() {
         () => branches.find((b) => String(b.id) === String(sala))?.name || '',
         [branches, sala],
     );
+
+    /* El comprobante del corte al rollo.
+     *
+     * `sala` va explícito por lo mismo que en el comprobante de una diferencia:
+     * el papel se anexa al corte, que está EN la sala. Si esta computadora no
+     * tiene la ticketera —administración cortando desde la oficina— sale en la
+     * caja de esa sucursal, que es donde sirve.
+     *
+     * Un fallo de impresión NO es un fallo del corte: se avisa y se ofrece
+     * repetirlo desde el mismo diálogo. */
+    const imprimirCorte = useCallback(async (r) => {
+        const ticket = construirComprobanteDeCorte({
+            resultado: r, sala: nombreSala, hechoPor: user?.name || '',
+            hechoAt: new Date().toISOString(),
+        });
+        const salida = await imprimirDocumento(ticket, { sala });
+        if (salida.ok) {
+            showToast('Comprobante del corte enviado a la impresora',
+                'Si no sale el papel, vuelve a imprimirlo desde aquí.', 'success');
+        } else {
+            showToast('No se pudo imprimir el comprobante', salida.detalle, 'error');
+        }
+        return salida.ok;
+    }, [nombreSala, sala, showToast, user]);
 
     const cargar = useCallback(async () => {
         if (!sala) { setCargando(false); return; }
@@ -407,7 +433,7 @@ export default function MiCajaView() {
                 )} />
 
             <DialogoCorte abierto={dialogo === 'corte'} ocupado={ocupado} resultado={resultado}
-                pendientes={pendientes.length}
+                pendientes={pendientes.length} onImprimir={imprimirCorte}
                 onClose={() => { setDialogo(null); setResultado(null); }}
                 onCortar={async (efectivo) => {
                     setOcupado(true);
@@ -416,6 +442,16 @@ export default function MiCajaView() {
                     if (r.error) { showToast(mensajeAmigable(r.error), 'error'); return; }
                     setResultado(r);
                     cargar();
+                    /* El papel sale solo, como parte del acto — igual que al
+                     * resolver una diferencia. El sistema de la caja arma su
+                     * tiquete pero sólo lo imprime desde SU pantalla, que es de
+                     * la que las salas salieron: cortar desde el portal dejaba
+                     * al turno sin el papel que se anexa al corte del día.
+                     *
+                     * Va después de `setResultado` a propósito: si la ticketera
+                     * no contesta, la pantalla ya muestra el resultado y el
+                     * corte no se deshace por un problema de impresión. */
+                    if (r.ok) imprimirCorte(r);
                 }} />
 
             {dialogo === 'bolsa' && (
@@ -867,7 +903,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
     );
 }
 
-function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCortar }) {
+function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCortar, onImprimir }) {
     const [efectivo, setEfectivo] = useState('');
     const valido = efectivo !== '' && Number(efectivo) >= 0;
 
@@ -884,6 +920,20 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
                     <p className={`text-h3 font-bold tabular-nums ${cuadro ? 'text-success-text' : dif > 0 ? 'text-warning-text' : 'text-danger-text'}`}>
                         {dif > 0 ? '+' : ''}{formatMoney(dif)}
                     </p>
+                    {/* De dónde sale lo esperado. Se muestra por el mismo motivo
+                        que va impreso: el número que el portal calculaba salió
+                        mal una vez, así que una cifra sin su cuenta pide que se
+                        le crea. */}
+                    {(resultado.tiquete?.lineas || []).length > 0 && (
+                        <div className="pt-2 space-y-0.5">
+                            {resultado.tiquete.lineas.map((l) => (
+                                <p key={l.rotulo} className="flex justify-between text-caption text-content-3">
+                                    <span>{l.rotulo}</span>
+                                    <span className="tabular-nums">{formatMoney(l.monto)}</span>
+                                </p>
+                            ))}
+                        </div>
+                    )}
                     {resultado.vale && (
                         <p className="text-caption text-content-3">
                             Se anotó un vale de caja de {formatMoney(resultado.vale.monto)} antes del corte.
@@ -895,7 +945,12 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
                         </p>
                     )}
                 </div>
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                    {resultado.ok && (
+                        <Button variant="secondary" icon={Printer} onClick={() => onImprimir(resultado)}>
+                            Imprimir de nuevo
+                        </Button>
+                    )}
                     <Button variant="primary" onClick={onClose}>Entendido</Button>
                 </div>
             </Marco>

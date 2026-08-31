@@ -92,41 +92,38 @@ const CARNE = { ancho: 153, alto: 242.6 };
 /**
  * El ícono de la farmacia: el arco verde y la cruz morada.
  *
- * Se DIBUJA en un lienzo en vez de incrustar el archivo del logo, y no es un
- * capricho: `public/Logo.png` pesa 3096 × 3186 px, o sea que meterlo en un PDF
- * que se genera en el navegador de una sala costaría más que todo el resto del
- * documento junto. Acá sale a 240 px, que es de sobra para 20 pt impresos.
+ * ── Es el archivo APROBADO, no un dibujo ───────────────────────────────────
  *
- * Las dos figuras salen del logo, no de una interpretación: el arco abierto
- * arriba a la derecha y la cruz griega centrada.
+ * Acá se dibujaba el icono a mano —un arco y una cruz en un lienzo— con este
+ * motivo escrito: que `public/Logo.png` pesa 3096×3186 y meterlo en un PDF que
+ * se genera en el navegador de una sala costaría más que el resto del documento.
+ *
+ * El dato era cierto y la conclusión no: **`public/Logo512.png` pesa 41 kB** y
+ * es el mismo icono, aprobado. El razonamiento se hizo contra el archivo grande
+ * y nadie miró si había otro.
+ *
+ * Lo destapó una regla del usuario (2026-08-31): *«no se crean logos, ni se
+ * generan logos de la nada; sólo se usan los aprobados: iconos, logos
+ * completos»*. Y la diferencia no era teórica — el arco dibujado tenía la
+ * abertura en otro ángulo y la cruz otro grosor que el icono de verdad, así que
+ * el carné salía con un logo *parecido*.
+ *
+ * Un logo dibujado a mano no falla nunca: sale, se imprime, y se parece lo
+ * suficiente como para que nadie lo mire dos veces. Por eso la regla no es
+ * «dibújalo bien», es «no lo dibujes».
  */
-export async function iconoDeLaFarmaciaPng(lado = 240) {
+export async function iconoDeLaFarmaciaPng() {
     if (typeof document === 'undefined') return null;
     try {
-        const c = document.createElement('canvas');
-        c.width = lado; c.height = lado;
-        const x = c.getContext('2d');
-        const r = lado * 0.38;
-        const grosor = lado * 0.14;
-
-        /* El arco: casi una vuelta entera, con la abertura arriba a la derecha,
-         * que es donde la tiene el logo. Los ángulos van en el sentido del
-         * reloj desde la abertura. */
-        x.strokeStyle = MARCA.verde;
-        x.lineWidth = grosor;
-        x.lineCap = 'butt';
-        x.beginPath();
-        x.arc(lado / 2, lado / 2, r, -Math.PI * 0.22, Math.PI * 1.16);
-        x.stroke();
-
-        // La cruz griega, centrada: dos barras del mismo largo. Ocupa la mitad
-        // del ícono — más chica se lee como un punto y se pierde el símbolo.
-        const brazo = lado * 0.50;       // largo total de cada barra
-        const ancho = lado * 0.185;      // grosor de cada barra
-        x.fillStyle = MARCA.magenta;
-        x.fillRect(lado / 2 - brazo / 2, lado / 2 - ancho / 2, brazo, ancho);
-        x.fillRect(lado / 2 - ancho / 2, lado / 2 - brazo / 2, ancho, brazo);
-        return c.toDataURL('image/png');
+        const r = await fetch('/Logo512.png');
+        if (!r.ok) return null;
+        const blob = await r.blob();
+        return await new Promise((res, rej) => {
+            const fr = new FileReader();
+            fr.onload = () => res(fr.result);
+            fr.onerror = rej;
+            fr.readAsDataURL(blob);
+        });
     } catch {
         return null;
     }
@@ -205,7 +202,7 @@ function comoDisco(pintar, lado = 320) {
 }
 
 /**
- * El FONDO de marca del retrato: el morado, el arco verde y el ícono al agua.
+ * El FONDO de marca del retrato: el morado de la empresa.
  *
  * Se dibuja aparte de la persona porque quien lo mira tiene que reconocer la
  * empresa sin leer nada — y porque el fondo de una foto de teléfono (una
@@ -219,17 +216,14 @@ function fondoDeMarca(x, ancho, alto) {
     x.fillStyle = g;
     x.fillRect(0, 0, ancho, alto);
 
-    // La cruz al agua, arriba a la izquierda. Muy tenue: es una marca de agua,
-    // no un segundo logo compitiendo con la cara. El arco del logo NO va acá:
-    // dentro de un disco, un arco es otra curva peleando con el borde.
-    x.save();
-    x.globalAlpha = 0.12;
-    x.fillStyle = '#FFFFFF';
-    const cx = ancho * 0.26, cy = alto * 0.22;
-    const brazo = ancho * 0.26, grosor = ancho * 0.095;
-    x.fillRect(cx - brazo / 2, cy - grosor / 2, brazo, grosor);
-    x.fillRect(cx - grosor / 2, cy - brazo / 2, grosor, brazo);
-    x.restore();
+    /* Acá se dibujaba una cruz blanca al agua. Se sacó por la regla del usuario
+     * (2026-08-31): la cruz es parte del logo, y dibujarla a mano es hacer un
+     * logo. Que fuera tenue no la hace menos logo — la hace menos revisable.
+     *
+     * El fondo se queda con el degradado, que son COLORES de la marca y no una
+     * figura: pintar de morado no es reproducir un símbolo. Si algún día se
+     * quiere la marca de agua, va el archivo aprobado con su alfa, no un
+     * `fillRect`. */
 }
 
 /**

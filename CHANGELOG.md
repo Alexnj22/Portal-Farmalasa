@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.874.3 — El código del icono aprobado, que su entrada se adelantó
+
+Lo que describe **v2.874.1** — el icono del carné pasa a ser `Logo512.png` en vez
+de un dibujo, la cruz al agua se saca, y el logo compuesto de v2.870.0 se
+elimina.
+
+Su entrada quedó commiteada antes que el código: otra sesión estaba trabajando
+en el mismo árbol y su commit se llevó `CHANGELOG.md` con mi entrada dentro. No
+se perdió nada; quedaron en dos commits en vez de uno.
+
 ## v2.874.2 — La pantalla del QR decía «expediente» y «hojas» sobre una boleta
 
 Tres rótulos, y el mismo motivo detrás: esa pantalla se escribió cuando servía a

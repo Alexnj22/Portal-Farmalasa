@@ -2,8 +2,10 @@
  * Deja los logos de la empresa listos para usarse en el portal.
  *
  * Fuente: `marca/` (lo que mandó el usuario, intacto).
- * Salida: `public/logo-la-salud.png`, `public/logo-la-popular.png` y
- *         `public/logo-farmacias.png` (el de las dos juntas, que se arma acá).
+ * Salida: `public/logo-la-salud.png` y `public/logo-la-popular.png`.
+ *
+ * Este script **adapta** lo aprobado —recorta el margen, acota el tamaño— y no
+ * compone nada. Ver la nota del final sobre el logo que se generaba y se sacó.
  *
  *     node scripts/preparar-logos.mjs            (informa, no escribe)
  *     node scripts/preparar-logos.mjs --escribir
@@ -120,66 +122,23 @@ for (const m of medidas) {
     console.log(`  escrito   ${(fs.statSync(m.destino).size / 1024).toFixed(1)} kB\n`);
 }
 
-/* ── Y el tercero: el logo de las DOS farmacias juntas ──────────────────────
+/* ── Acá se ARMABA un tercer logo, y se sacó ────────────────────────────────
  *
- * No existía como archivo; se arma acá con el icono que ya está en el proyecto
- * (`public/Logo512.png`) y el mismo armado que los otros dos: «FARMACIAS» en
- * verde arriba, el nombre en magenta abajo, el icono a la derecha.
+ * Se generaba «FARMACIAS / LA POPULAR Y LA SALUD» juntando el icono aprobado con
+ * texto compuesto acá: fuente parecida, tracking calculado a ojo, medidas
+ * copiadas de los originales. Salía bien y ése era el problema.
  *
- * Las medidas NO se inventaron: salen de medir los dos originales. En los dos,
- * el icono empieza al 73.5% del ancho y mide 0.94× el alto del logo, y
- * «FARMACIA» va sangrado y trackeado para terminar donde termina el nombre.
- * Los colores se muestrearon de los propios archivos —magenta #981D97, verde
- * #8EC30F, idénticos en los tres— en vez de copiarlos de una captura.
+ * Regla del usuario (2026-08-31): *«no se crean logos, ni se generan logos de
+ * la nada; sólo se usan los aprobados: iconos, logos completos»*.
  *
- * La tipografía NO es la original —no vino con los archivos—, así que se usa la
- * más cercana que hay: un geométrico pesado. Si algún día aparece la de verdad,
- * lo que se cambia es `PILA`.
+ * Y tiene razón en algo que no se ve mirando el resultado: la tipografía NO era
+ * la de la marca —no vino con los archivos— así que lo que se generaba era un
+ * logo que se PARECE. Un logo parecido no da error, se imprime igual, y termina
+ * en un carné que alguien enseña como identificación de la empresa.
  *
- * El usuario eligió la forma ANCHA de dos renglones (2026-08-31), sobre una
- * compacta de tres que se probó al lado.
+ * Si hace falta el de las dos farmacias, lo manda quien lo aprueba, ya hecho.
+ * Este script sólo ADAPTA lo aprobado: recorta, escala, no compone.
  */
-const MAGENTA = '#981D97', VERDE = '#8EC30F';
-const PILA = '"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif';
-const DESTINO_COMBINADO = 'public/logo-farmacias.png';
-
-{
-    const icono = aDataUrl('public/Logo512.png');
-    /* Se dibuja al DOBLE y se captura así: 150 px de alto —lo que daba a tamaño
-     * natural— son 12 mm a 300 dpi, o sea que en el papel ya se vería blando.
-     * A 300 px de alto entra cualquier uso impreso y el archivo sigue pesando
-     * decenas de kB. Es el mismo tope que los otros dos (247 px), holgado. */
-    await pagina.setViewportSize({ width: 3000, height: 800 });
-    await pagina.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>
-      body { margin:0; background:transparent; font-family:${PILA}; }
-      .caja { display:inline-flex; align-items:center; gap:52px; }
-      .txt { display:flex; flex-direction:column; align-items:flex-start; line-height:1; }
-      .arriba { color:${VERDE}; font-weight:800; font-size:88px; letter-spacing:.62em;
-                margin-left:.31em; margin-bottom:18px; }
-      .nombre { color:${MAGENTA}; font-weight:800; font-size:148px; letter-spacing:-.015em; }
-      img { display:block; height:300px; }
-    </style></head><body>
-      <div class="caja">
-        <div class="txt">
-          <div class="arriba">FARMACIAS</div>
-          <div class="nombre">LA POPULAR Y LA SALUD</div>
-        </div>
-        <img src="${icono}">
-      </div>
-    </body></html>`);
-    await pagina.waitForTimeout(200);
-    const caja = await pagina.locator('.caja').boundingBox();
-    console.log('Farmacias (las dos)');
-    console.log(`  queda     ${Math.round(caja.width)}×${Math.round(caja.height)}  `
-        + `proporción ${(caja.width / caja.height).toFixed(2)}:1  →  ${DESTINO_COMBINADO}`);
-    if (ESCRIBIR) {
-        // `omitBackground`: el logo va sobre fondo transparente como los otros
-        // dos. Sin esto saldría con un rectángulo blanco y no se podría poner
-        // sobre ningún color.
-        await pagina.locator('.caja').screenshot({ path: DESTINO_COMBINADO, omitBackground: true });
-        console.log(`  escrito   ${(fs.statSync(DESTINO_COMBINADO).size / 1024).toFixed(1)} kB`);
-    }
-}
 
 await navegador.close();
 if (!ESCRIBIR) console.log('\n(nada se escribió — agregá --escribir)');

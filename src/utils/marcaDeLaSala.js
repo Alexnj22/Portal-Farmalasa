@@ -33,15 +33,18 @@ export function logoDeLaSala(sala) {
         : '/logo-la-salud.png';
 }
 
-/** El logo de las DOS farmacias, para cuando no se habla de una sala concreta. */
-export const LOGO_DE_LAS_DOS = '/logo-farmacias.png';
+/* Acá había un `LOGO_DE_LAS_DOS` apuntando a un logo de «Farmacias La Popular y
+ * La Salud» que se generaba con un script. Se sacó por la regla del usuario
+ * (2026-08-31): *«no se crean logos, ni se generan logos de la nada; sólo se
+ * usan los aprobados»*. Cuando exista ese logo aprobado, se agrega acá su
+ * archivo — no se vuelve a componer. */
 
 /**
  * El logo como data URL, que es lo que necesita pdfmake.
  *
  * Devuelve `null` si no se pudo traer: el carné tiene que salir igual, con el
- * icono dibujado que ya usaba. Un documento que no se genera porque no cargó
- * una imagen es peor que uno con el logo viejo.
+ * icono aprobado y el nombre de las dos farmacias en texto. Un documento que no
+ * se genera porque no cargó una imagen es peor que uno con menos marca.
  */
 export async function logoComoDataUrl(ruta) {
     if (typeof document === 'undefined') return null;

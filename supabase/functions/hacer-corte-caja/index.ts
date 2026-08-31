@@ -172,6 +172,9 @@ interface Tiquete {
   empleado: string | null;
   caja: string | null;
   turno: string | null;
+  /** Contexto, NO parte de la cuenta: no pasan por la caja. `null` si no hubo. */
+  tarjeta: number | null;
+  credito: number | null;
 }
 
 async function leerTiquete(
@@ -219,25 +222,49 @@ async function leerTiquete(
     if (v === null || (v === 0 && !siCero)) return;
     lineas.push({ rotulo, monto: v });
   };
-  agregar("Saldo inicial",  /SALDO INICIAL \$:\s*([\d.,-]+)/i);
-  agregar("Caja chica",     /SALDO CAJA CHICA \$:\s*([\d.,-]+)/i);
-  agregar("Ingresos",       /\(\+\)\s*INGRESOS \$:\s*([\d.,-]+)/i);
-  agregar("Venta",          /\(\+\)\s*VENTA \$:\s*([\d.,-]+)/i, true);
-  agregar("Vales",          /\(-\)\s*VALES \$:\s*([\d.,-]+)/i);
-  agregar("Cobros credito", /\(\+\)\s*COBROS CREDITO \$:\s*([\d.,-]+)/i);
-  agregar("Retencion",      /\(-\)\s*RETENCION \$:\s*([\d.,-]+)/i);
-  agregar("Devoluciones",   /\(-\)\s*DEVOLUCIONES\s*\$:\s*([\d.,-]+)/i);
+  // Los rótulos llevan el signo, igual que el tiquete del origen: en el papel
+  // «(-) Vales» se sigue de un vistazo y un menos suelto delante del número se
+  // pierde entre los dígitos.
+  agregar("Saldo inicial",      /SALDO INICIAL \$:\s*([\d.,-]+)/i);
+  agregar("Saldo caja chica",   /SALDO CAJA CHICA \$:\s*([\d.,-]+)/i);
+  agregar("(+) Ingresos",       /\(\+\)\s*INGRESOS \$:\s*([\d.,-]+)/i);
+  agregar("(+) Venta",          /\(\+\)\s*VENTA \$:\s*([\d.,-]+)/i, true);
+  agregar("(-) Vales",          /\(-\)\s*VALES \$:\s*([\d.,-]+)/i);
+  agregar("(+) Cobros credito", /\(\+\)\s*COBROS CREDITO \$:\s*([\d.,-]+)/i);
+  agregar("(-) Retencion",      /\(-\)\s*RETENCION \$:\s*([\d.,-]+)/i);
+  agregar("(-) Devoluciones",   /\(-\)\s*DEVOLUCIONES\s*\$:\s*([\d.,-]+)/i);
+
+  /* Tarjeta y crédito: SÓLO el total de cada bloque.
+   *
+   * El tiquete del origen los lista transacción por transacción y cada renglón
+   * dice «COF» y un monto — el mismo rótulo repetido cuatro veces, que no
+   * distingue nada. Lo único que informa es el TOTAL, y con eso el papel del
+   * portal baja de treinta renglones a catorce.
+   *
+   * Van al comprobante como contexto y NO entran en la cuenta: ni la tarjeta ni
+   * el crédito pasan por la caja. Están porque quien lee el papel pregunta
+   * «¿y lo que se vendió con tarjeta?» y sin ellos parece que falta plata. */
+  const totalDeBloque = (rx: RegExp) => {
+    const bloque = texto.match(rx)?.[1] ?? "";
+    const n = Number((bloque.match(/TOTAL\s+([\d.,]+)/i)?.[1] ?? "").replace(/,/g, ""));
+    return Number.isFinite(n) && n !== 0 ? n : null;
+  };
+  const tarjeta = totalDeBloque(/PAGOS CON TARJETA([\s\S]*?)(?:VENTAS AL CREDITO|$)/i);
+  const credito = totalDeBloque(/VENTAS AL CREDITO([\s\S]*)$/i);
 
   // Un tiquete sin las dos líneas de la cuenta se devuelve igual, con la cuenta
   // en `null`. Inventar un cero acá sería decir «cuadró» sobre algo que no se
   // leyó, que es peor que no saber.
   if (totalCaja === null || efectivo === null) {
-    return { texto, ...cabecera, esperado: null, contado: null, diferencia: null, lineas };
+    return {
+      texto, ...cabecera, esperado: null, contado: null, diferencia: null,
+      lineas, tarjeta, credito,
+    };
   }
   const esperado = Number((totalCaja - retencion - devol).toFixed(2));
   return {
     texto, ...cabecera, esperado, contado: efectivo,
-    diferencia: Number((efectivo - esperado).toFixed(2)), lineas,
+    diferencia: Number((efectivo - esperado).toFixed(2)), lineas, tarjeta, credito,
   };
 }
 
@@ -464,6 +491,7 @@ Deno.serve(async (req) => {
         ? {
           lineas: tiquete.lineas, empleado: tiquete.empleado,
           caja: tiquete.caja, turno: tiquete.turno,
+          tarjeta: tiquete.tarjeta, credito: tiquete.credito,
         }
         : null,
       vale: valeId ? { id: valeId, movimiento_en_caja: movVale, monto: Number(montoVale.toFixed(2)) } : null,

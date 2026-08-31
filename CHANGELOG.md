@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.886.5 — El comprobante del corte, compacto
+
+Pedido del usuario mirando la estructura del tiquete del sistema: el mismo
+papel, más corto. **De 38 renglones con texto a 21**, medido sobre el corte
+14323 de Salud 3, y sin perder un dato:
+
+- **Los correlativos se van.** TIQUETES, FACTURAS y FISCALES, dos columnas cada
+  uno: seis renglones que salen todos en cero.
+- **Tarjeta y crédito quedan en su total.** El tiquete del sistema los lista
+  transacción por transacción y cada renglón dice «COF» y un monto — el mismo
+  rótulo repetido cuatro veces, que no distingue una de otra. Van igual, porque
+  sin ellos el papel parece que perdió plata, pero como una línea cada uno y
+  bajo el rótulo «No pasa por la caja», que es lo que son.
+- **Las líneas sin monto no se imprimen.** Saldo inicial, caja chica, retención
+  y devoluciones sólo aparecen cuando tienen algo.
+
+Las que sí tienen monto se imprimen **todas**, con el signo delante como en el
+original: el corte es una suma, y una suma con un sumando escondido no se puede
+comprobar sobre el papel. El tope lo vigila `tests/unit/corteTicket.test.js` con
+el número medido y no con uno holgado — un margen cómodo deja que el papel
+vuelva a crecer sin que nadie lo note.
+
 ## v2.886.4 — Fuera la remisión a la Defensoría
 
 **4.3 vuelve a como estaba.** El «no transferibles» que le agregué en v2.886.3

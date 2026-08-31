@@ -21,32 +21,6 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.886.8 — La diferencia lleva su signo, y el papel sólo los valores buenos
-
-Dos correcciones del usuario sobre el comprobante del corte.
-
-**Fuera la explicación del papel.** Decía por qué la cifra del sistema de la caja
-es distinta y cuánto guarda —*«esto está demás, sólo pon los valores reales y
-corregidos»*—. Tiene razón sobre el papel: es un comprobante, no un informe, y
-nombrar ahí el número que ya sabemos equivocado invita a mirarlo. La explicación
-sigue donde sí hace falta: en la pantalla del corte y en el detalle de la tabla,
-que es donde alguien compara las dos cifras.
-
-**El rótulo es fijo y manda el signo.** Estaba como FALTA / SOBRA / CUADRA según
-el caso, y un rótulo que cambia obliga a leerlo para saber qué pasó — encima de
-un `$0.00`, «CUADRA» dice dos veces lo mismo. Ahora dice siempre «Diferencia» y
-la dirección va en el número: `+$39.59`, `-$29.56`, `$0.00`. La misma posición
-del papel significa siempre lo mismo.
-
-El cero sale **sin** signo a propósito: «+$0.00» dice que sobró nada, que es una
-forma rara de decir que cuadró.
-
-De paso, `conSigno` se mudó a `formatNumber`. Estaba escrito a mano e idéntico en
-`TarjetaCorte` y en `cortesDiagnostico`, y ésta iba a ser la tercera copia: el
-día que alguien decida que un sobrante se escribe distinto, tiene que haber un
-solo lugar donde cambiarlo.
-
-
 ## v2.887.0 — El afiche de la vitrina
 
 `docs/legal/AFICHE-PROGRAMA-DE-PUNTOS.pdf` — una página, tamaño carta, para
@@ -87,11 +61,59 @@ un QR es la misma norma—. La salida se **pega** en el HTML en vez de inyectars
 al compilar: así la página publicada y el papel son el mismo archivo, que es lo
 que `reglamento-puntos-pdf.mjs` existe para sostener.
 
+**La voz estaba mal y el usuario lo preguntó antes que yo.** *«¿aplicaste la
+voz del portal?»* — no: lo escribí como texto de afiche, en **voseo**, y
+DESIGN.md §26.7 manda **tuteo**. Nueve correcciones (`tenés`→`tienes`,
+`pagás`→`pagas`, `usás`/`querás`→`usas`/`quieras`, `llevás`→`llevas`,
+`Entrás`→`Entras`, `Pedilos`→`Pídelos`, y los dos rótulos `comprás`/`canjeás`).
+Es exactamente [[feedback_el_gate_de_copy_no_ve_el_texto_que_escribi]] otra vez:
+ningún gate mira este archivo, así que verde no quería decir nada — la voz se
+lee en §26 **antes** de escribir, no después de que la corrijan.
+
+**La conversión se rehízo.** Era dos igualdades tipografiadas en fila. Ahora es
+UNA caja partida por un eje —son las dos mitades de un circuito, no dos datos
+sueltos—, la cifra manda y la unidad la acompaña a algo más de la mitad del
+cuerpo (`100` grande, `puntos` chico: es cómo se compone un precio), y el
+término que se OBTIENE va marcado como con un resaltador en vez de pintado de
+color. Pintar la cifra entera de verde la aclara justo cuando se la mira desde
+la puerta; la marca de color dice cuál de los dos es el resultado y deja el
+número en tinta.
+
+El resaltador es un `inset box-shadow` y **no** un degradado con parada dura:
+ese dejaba una hebra de color en el borde de arriba al rasterizar el PDF, y una
+línea que nadie pidió, impresa cien veces, se lee como un defecto.
+
 **La medición que costó dos vueltas:** el alto del contenido se midió con el
 viewport por defecto de Playwright (1280 px) cuando la caja real del PDF es de
 **687 px**. A ese ancho el texto envuelve mucho más, así que la hoja «entraba»
 en la medición y salía en dos páginas al imprimir. Es el instrumento midiendo
 otra cosa, no el documento.
+
+## v2.886.8 — La diferencia lleva su signo, y el papel sólo los valores buenos
+
+Dos correcciones del usuario sobre el comprobante del corte.
+
+**Fuera la explicación del papel.** Decía por qué la cifra del sistema de la caja
+es distinta y cuánto guarda —*«esto está demás, sólo pon los valores reales y
+corregidos»*—. Tiene razón sobre el papel: es un comprobante, no un informe, y
+nombrar ahí el número que ya sabemos equivocado invita a mirarlo. La explicación
+sigue donde sí hace falta: en la pantalla del corte y en el detalle de la tabla,
+que es donde alguien compara las dos cifras.
+
+**El rótulo es fijo y manda el signo.** Estaba como FALTA / SOBRA / CUADRA según
+el caso, y un rótulo que cambia obliga a leerlo para saber qué pasó — encima de
+un `$0.00`, «CUADRA» dice dos veces lo mismo. Ahora dice siempre «Diferencia» y
+la dirección va en el número: `+$39.59`, `-$29.56`, `$0.00`. La misma posición
+del papel significa siempre lo mismo.
+
+El cero sale **sin** signo a propósito: «+$0.00» dice que sobró nada, que es una
+forma rara de decir que cuadró.
+
+De paso, `conSigno` se mudó a `formatNumber`. Estaba escrito a mano e idéntico en
+`TarjetaCorte` y en `cortesDiagnostico`, y ésta iba a ser la tercera copia: el
+día que alguien decida que un sobrante se escribe distinto, tiene que haber un
+solo lugar donde cambiarlo.
+
 
 ## v2.886.7 — Las formas de pago como vengan, y la diferencia con un solo juez
 

@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "preview": "vite preview --outDir ${OUT_DIR:-dist} --strictPort --port ${QA_PORT:-4173}",
     "reglamento:puntos": "node scripts/reglamento-puntos-pdf.mjs docs/legal/reglamento-programa-de-puntos.html",
+    "afiche:puntos": "node scripts/afiche-puntos-pdf.mjs docs/legal/afiche-programa-de-puntos.html",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

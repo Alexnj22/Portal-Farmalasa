@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.869.2 — La corrección de caja iba a la bandeja de personal
+
+Dos defectos mudos que salieron al revisar si el módulo estaba listo, y que
+sólo se ven leyendo las policies.
+
+**`es_solicitud_operativa()` no conocía `CAJA_MOVIMIENTO_CHANGE`.** La policy de
+SELECT tiene dos ramas —lo operativo y lo personal— y todo lo que no está en esa
+lista cae en la segunda. O sea que para VER una corrección sobre el efectivo de
+una caja hacía falta `requests_personales`, el módulo de vacaciones, permisos e
+incapacidades: aparecía en la bandeja de personal y no en la operativa. Nadie
+iba a buscarla ahí.
+
+**Y la policy de UPDATE no incluía `requests_caja`.** Aprobar seguía andando
+—eso lo escribe `operar-caja` con la llave del servidor, que no pasa por RLS—
+pero **rechazar no**, porque eso lo hace el navegador. Se podía aprobar y no se
+podía rechazar, y el rechazo fallaba sin decir por qué.
+
+En la rama nueva el ámbito se mide contra la **sala de la caja**
+(`metadata->>'branch_id'`) y no contra la sucursal de quien la pidió: la
+corrección es sobre una caja, y quien la anotó puede estar de paso en otra sala.
+Es el criterio que ya usan los traslados.
+
+**Y quedó respondida la última incógnita del cierre:** `corte_caja_diario.php` y
+el panel de la caja **no tienen ningún campo de contraseña** —ni `type=password`,
+ni nada que se llame clave, PIN o autorización—. Lo único que aparecía era un
+enlace del menú («Admin Autorización», de Facturas). El cierre del turno no pide
+contraseña de supervisor, así que el corte del portal no se va a trabar por eso.
+
 ## v2.869.1 — La contraseña se pide a Soporte, no a Talento Humano
 
 En el documento de bienvenida. Una contraseña que no entra es un problema de

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.878.1  — El teléfono del membrete es el de la empresa, no el de una sala
+
+El membrete que sirvió de modelo era el de **Farmacia La Salud** y traía
+7962-2719 — el de ESA sala. Un documento que emite la empresa lleva el de la
+empresa: **2301-0013**, confirmado por el usuario.
+
+Y es el mismo número que `regularizar-dte` le escribe a una ficha de cliente sin
+teléfono válido, donde vivía escrito a mano desde el 2026-08-09. Ahora está en
+`EMPRESA`, que es donde lo puede leer cualquiera que lo necesite.
+
 ## v2.878.0 — El membrete real de la empresa, y el patrono que sí es la contraparte del trabajador
 
 Salió de comparar la constancia contra el **membrete impreso** que la empresa ya

@@ -43,8 +43,12 @@ export const EMPRESA = {
     // Chalatenango, a los…»). Antes estaba escrito a mano dentro del PDF y era
     // una inferencia; ahora sale del mismo lugar que la dirección.
     municipio: 'Chalatenango',
-    // ⚠️ Este teléfono es el que aparece en el membrete de **Farmacia La
-    // Salud**. Si cada sala tiene el suyo, el de un documento de la EMPRESA
-    // podría ser otro — confirmarlo antes de darlo por el número general.
-    telefono: '7962-2719',
+    // El de la EMPRESA, confirmado por el usuario el 2026-08-31. El membrete
+    // que sirvió de modelo era el de Farmacia La Salud y traía 7962-2719, que
+    // es el de ESA sala: en un documento que emite la empresa va éste.
+    //
+    // Es el mismo número que `regularizar-dte` le escribe a una ficha de
+    // cliente sin teléfono válido, y no es casualidad — es el número de la
+    // empresa, y hasta hoy vivía sólo dentro de esa edge function.
+    telefono: '2301-0013',
 };

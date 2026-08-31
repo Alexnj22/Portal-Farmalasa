@@ -507,7 +507,7 @@ export const BASICO_DEL_REGLAMENTO = [
  */
 export function paginaDelCarne({
     nombre, cargo = '', sala = '', fechaDeInicio = null,
-    barrasPng = null, retratoPng = null, iconoPng = null,
+    barrasPng = null, retratoPng = null, iconoPng = null, logoPng = null,
 }) {
     /* La tarjeta se dibuja en coordenadas absolutas sobre la hoja: es la única
      * forma de que mida exactamente lo que tiene que medir. Centrada al ancho de
@@ -579,18 +579,39 @@ export function paginaDelCarne({
             ],
         },
 
-        // ── El ícono de la farmacia y el nombre de la empresa ──────────────
-        ...(iconoPng ? [{ image: iconoPng, width: 20, height: 20, ...abs(canto + P, P + 1) }] : []),
-        {
-            ...abs(canto + P + (iconoPng ? 26 : 0), P + 1),
-            columns: [{
-                width: CARNE.ancho - canto - P * 2 - (iconoPng ? 26 : 0),
-                stack: [
-                    { text: 'Farmacias', style: 'carneEmpresa' },
-                    { text: 'La Popular y La Salud', style: 'carneEmpresa' },
-                ],
-            }],
-        },
+        /* ── El logo de SU farmacia ─────────────────────────────────────────
+         *
+         * Acá había un icono de 20×20 dibujado a mano y, al lado, «Farmacias /
+         * La Popular y La Salud» en texto de 6.6 pt. Nombraba a las dos porque
+         * no había con qué distinguirlas: el logo de cada una no existía en el
+         * proyecto.
+         *
+         * Desde el 2026-08-31 sí existe, y el usuario dijo cuál va: *«según
+         * quién vea, si La Popular o La Salud (todos los demás)»*. O sea el de
+         * la sala de esa persona — lo resuelve `marcaDeLaSala`.
+         *
+         * **20 pt de alto y no más**: es exactamente lo que medía el bloque que
+         * reemplaza, así que el resto de la tarjeta no se movió ni un punto. Con
+         * la proporción de los dos logos (~3.55:1) eso da ~71 pt de ancho, sobre
+         * los 126.8 disponibles.
+         *
+         * Y si el logo no cargó, vuelve el icono con su texto: un carné sin
+         * marca sigue sirviendo para entrar, y uno que no se genera, no. */
+        ...(logoPng
+            ? [{ image: logoPng, height: 20, width: 20 * 3.55, ...abs(canto + P, P + 1) }]
+            : [
+                ...(iconoPng ? [{ image: iconoPng, width: 20, height: 20, ...abs(canto + P, P + 1) }] : []),
+                {
+                    ...abs(canto + P + (iconoPng ? 26 : 0), P + 1),
+                    columns: [{
+                        width: CARNE.ancho - canto - P * 2 - (iconoPng ? 26 : 0),
+                        stack: [
+                            { text: 'Farmacias', style: 'carneEmpresa' },
+                            { text: 'La Popular y La Salud', style: 'carneEmpresa' },
+                        ],
+                    }],
+                },
+            ]),
 
         /* ── El retrato, un disco ───────────────────────────────────────────
          * Sin marco dibujado: el aro verde viene DENTRO de la imagen, y fuera
@@ -720,7 +741,7 @@ const bloqueDeInduccion = (b) => ({
  */
 export function definicionDelDocumento({
     nombre, cargo = '', sala = '', usuario, contrasenaTemporal,
-    barrasPng = null, barrasCarnePng = null, retratoPng = null, iconoPng = null, previsional = [],
+    barrasPng = null, barrasCarnePng = null, retratoPng = null, iconoPng = null, logoPng = null, previsional = [],
     fechaDeInicio = null,
     /* ¿Lleva la hoja del carné?
      *
@@ -834,7 +855,7 @@ export function definicionDelDocumento({
     // y el renglón de arriba deja de prometer una página que no existe.
     if (conCarne) {
         cuerpo.push(...paginaDelCarne({ nombre, cargo, sala, fechaDeInicio,
-            barrasPng: barrasCarnePng || barrasPng, retratoPng, iconoPng }));
+            barrasPng: barrasCarnePng || barrasPng, retratoPng, iconoPng, logoPng }));
     }
 
     return {
@@ -888,10 +909,15 @@ export async function descargarDocumentoDeBienvenida(datos) {
         /* El retrato: la foto si la hay, y si no las iniciales sobre el
          * magenta. Nunca un hueco — un carné con un cuadro vacío se lee como un
          * carné a medio hacer, y el día que llegue la foto ocupa el mismo sitio. */
-        const [pdfMake, barrasPng, iconoPng] = await Promise.all([
+        /* El logo se trae junto con lo demás y NO en serie: es un `fetch` a un
+         * archivo del propio sitio, y encadenarlo detrás del recorte de la foto
+         * le sumaría su latencia a un documento que ya tarda. */
+        const { logoDeLaSala, logoComoDataUrl } = await import('./marcaDeLaSala');
+        const [pdfMake, barrasPng, iconoPng, logoPng] = await Promise.all([
             getPdfMake(),
             barrasComoPng(datos?.valorDelCarne),
             iconoDeLaFarmaciaPng(),
+            logoComoDataUrl(logoDeLaSala(datos?.sala)),
         ]);
         /* El retrato, en tres intentos y cada uno peor que el anterior:
          *   1. la persona recortada sobre el fondo de la empresa;
@@ -903,7 +929,7 @@ export async function descargarDocumentoDeBienvenida(datos) {
             || (datos?.foto && await fotoComoDiscoPng(datos.foto))
             || await avatarComoPng(datos?.nombre);
         const def = definicionDelDocumento({
-            ...datos, barrasPng, retratoPng, iconoPng,
+            ...datos, barrasPng, retratoPng, iconoPng, logoPng,
             previsional: orientacionPrevisional(datos),
         });
         pdfMake.createPdf(def).download(nombreDelArchivo(datos?.nombre));

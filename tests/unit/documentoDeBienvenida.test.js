@@ -14,6 +14,7 @@
 //    le pide a alguien un trámite que no puede hacer.
 
 import { describe, it, expect } from 'vitest';
+import { marcaDeLaSala, logoDeLaSala } from '../../src/utils/marcaDeLaSala';
 import { definicionDelDocumento, BASICO_DEL_REGLAMENTO, paginaDelCarne, INDUCCION, orientacionPrevisional, nombreDelArchivo } from '../../src/utils/documentoDeBienvenida';
 
 const textoDe = (def) => JSON.stringify(def.content);
@@ -283,5 +284,72 @@ describe('sin contraseña temporal', () => {
         expect(t).toContain('Contraseña temporal');
         expect(t).toContain('K7M2QX9P');
         expect(t).toMatch(/sirve una sola vez/);
+    });
+});
+
+/* ── El logo es el de SU farmacia ───────────────────────────────────────────
+ *
+ * «Según quién vea: si La Popular o La Salud (todos los demás)» (usuario,
+ * 2026-08-31). La regla se escribió como una EXCEPCIÓN y no como un catálogo:
+ * una sala nueva cae del lado correcto sin que nadie la agregue. */
+describe('la marca de la sala', () => {
+    it('sólo La Popular es La Popular', () => {
+        expect(marcaDeLaSala('La Popular')).toBe('popular');
+        expect(logoDeLaSala('La Popular')).toBe('/logo-la-popular.png');
+    });
+
+    it('todas las demás son La Salud, incluidas Bodega y Administración', () => {
+        for (const s of ['Salud 1', 'Salud 2', 'Salud 3', 'Salud 4', 'Salud 5',
+                         'Bodega', 'Administracion']) {
+            expect(marcaDeLaSala(s), s).toBe('salud');
+        }
+        expect(logoDeLaSala('Salud 3')).toBe('/logo-la-salud.png');
+    });
+
+    // Una sala que todavía no existe tiene que caer en La Salud sin tocar código.
+    it('una sala nueva cae en La Salud sin agregarla a ninguna lista', () => {
+        expect(marcaDeLaSala('Salud 6')).toBe('salud');
+        expect(marcaDeLaSala('Chalatenango Centro')).toBe('salud');
+    });
+
+    // Sin sala —o con una vacía— no se puede adivinar, y el resto es La Salud.
+    it('sin sala, La Salud', () => {
+        expect(marcaDeLaSala('')).toBe('salud');
+        expect(marcaDeLaSala(null)).toBe('salud');
+        expect(marcaDeLaSala(undefined)).toBe('salud');
+    });
+});
+
+describe('el carné lleva el logo', () => {
+    const base = {
+        nombre: 'Ana María Pérez', cargo: 'Dependiente de Farmacia', sala: 'Salud 1',
+        usuario: 'ana.perez', contrasenaTemporal: 'K7M2QX9P', conCarne: true,
+    };
+    const LOGO = 'data:image/png;base64,AAAA';
+
+    /* Se mira SÓLO la hoja del carné, no el documento entero: «La Popular y La
+       Salud» también está en el titular de la hoja 1 —«Bienvenido a Farmacias La
+       Popular y La Salud»— y ése se queda, porque esa hoja le habla de la
+       EMPRESA y no de su sala. La primera versión de esta prueba miraba todo y
+       fallaba acusando a un texto que estaba bien. */
+    const hojaDelCarne = (def) => {
+        const c = def.content;
+        const corte = c.findIndex(b => b?.pageBreak === 'before');
+        return JSON.stringify(c.slice(corte));
+    };
+
+    it('cuando el logo cargó, va el logo y NO el texto de las dos farmacias', () => {
+        const carne = hojaDelCarne(definicionDelDocumento({ ...base, logoPng: LOGO }));
+        expect(carne).toContain(LOGO);
+        expect(carne).not.toContain('La Popular y La Salud');
+    });
+
+    /* Si el logo no cargó vuelve lo de antes. Un carné sin marca sirve para
+       entrar; uno que no se genera, no. */
+    it('si no cargó, vuelve el icono con su texto', () => {
+        const carne = hojaDelCarne(definicionDelDocumento({
+            ...base, logoPng: null, iconoPng: 'data:image/png;base64,BBBB' }));
+        expect(carne).toContain('La Popular y La Salud');
+        expect(carne).toContain('data:image/png;base64,BBBB');
     });
 });

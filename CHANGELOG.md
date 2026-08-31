@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.872.0 — El carné lleva el logo de su farmacia
+
+En el carné del documento de bienvenida había un icono de 20×20 dibujado a mano
+y, al lado, «Farmacias / La Popular y La Salud» en texto de 6.6 pt. Nombraba a
+las dos porque no había con qué distinguirlas: el logo de cada una no existía en
+el proyecto. Desde v2.870.0 sí existe.
+
+Ahora va **el de su sala**: *«según quién vea, si La Popular o La Salud (todos
+los demás)»*. La regla se escribió como una **excepción** y no como un catálogo
+—¿es La Popular? entonces Popular; si no, Salud— así que una sala nueva cae del
+lado correcto sin que nadie la agregue. Bodega y Administración quedan en La
+Salud, que es lo que corresponde.
+
+**20 pt de alto**, exactamente lo que medía el bloque que reemplaza, así que el
+resto de la tarjeta no se movió ni un punto.
+
+Si el logo no carga, vuelve el icono con su texto: un carné sin marca sirve para
+entrar, y uno que no se genera, no.
+
+La hoja 1 sigue diciendo «Bienvenido a Farmacias La Popular y La Salud», y ahí no
+se toca: esa hoja le habla de la **empresa**, no de su sala.
+
+Esto último costó una prueba mal escrita. La primera versión miraba el documento
+entero y fallaba acusando a ese titular, que estaba perfectamente bien — el
+código hacía lo correcto y el instrumento señalaba a otro lado. Hoy la prueba
+mira sólo la hoja del carné.
+
 ## v2.871.0 — El régimen disciplinario del RIT Art. 83, con la escalera que sube y la que baja
 
 **No había ninguno.** `employee_events` tenía tres traslados y un ascenso, y

@@ -255,6 +255,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const actionOptions = useMemo(() => {
         return Object.keys(EVENT_TYPES)
             .filter(key => key !== 'SHIFT_CHANGE') // Los turnos se gestionan desde el Planificador
+            // Las del Art. 83 se imponen desde el expediente, por su propio camino:
+            // ahí viven la escalera, la firma del servidor y la validación de la
+            // proporción. Ofrecerlas acá sería un atajo que se las salta.
+            .filter(key => !EVENT_TYPES[key].soloPorSancion)
             .map(key => ({ value: key, label: EVENT_TYPES[key].label }));
     }, []);
 

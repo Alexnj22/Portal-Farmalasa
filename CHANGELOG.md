@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.875.0 — La pantalla para sancionar: propone el peldaño y muestra en qué se apoya
+
+Cierra el régimen del Art. 83 (v2.871.0 y v2.874.0 fueron la base).
+
+**La escalera se propone, no se aplica sola.** Al elegir la falta, la base
+calcula qué peldaño permite el reglamento y la pantalla lo marca como
+«Propuesta» — pero quien firma elige. Es a propósito: el Art. 83 dice que la
+sanción «deberá ser proporcional a la falta», y la proporción la juzga una
+persona. Lo que la pantalla evita es lo contrario, que alguien salte de la nada
+a una suspensión sin ver que no hay antecedentes.
+
+**Y los antecedentes se ven.** Las faltas de los últimos 60 días, con su fecha y
+con las revocadas marcadas como tales. Una pantalla que dijera «peldaño 3» sin
+mostrarlos pediría un acto de fe justo donde hace falta evidencia: este registro
+existe para sostener un despido en un juicio.
+
+**El quinto peldaño se muestra y no se puede elegir.** Está para que se vea
+dónde termina la escalera. Registrarlo acá sería un error: una terminación es
+una baja, con su liquidación y su causal del Art. 50, y meterla como «sanción»
+la dejaría fuera de todo lo que el portal ya sabe hacer con una baja.
+
+**Y la constancia firmada no la reemplaza el formulario.** El Art. 83 pide la
+firma de ambas partes y el compromiso escrito «con puño y letra» — eso no lo
+puede sustituir una pantalla. Lo dice al guardar: se imprime, se firma y se sube
+al expediente colgada de ese mismo registro (`employee_documents.event_id`, que
+ya existía).
+
+Detalles que valen para la próxima vista:
+
+- **Los cuatro tipos entran al catálogo con `soloPorSancion: true`**, que los
+  saca del selector de «nueva novedad» SIN sacarlos del historial. La distinción
+  importa: el expediente los tiene que rotular y pintar, pero escribirlos por el
+  formulario común sería un atajo que se salta la escalera, la firma del
+  servidor y la validación del Art. 83.
+- **El modal va `lazy`, y está medido**: estático costaba **+4 kB gzip** en el
+  chunk del expediente, que abre TODO el personal para ver su propia ficha.
+  Sancionar es de unos pocos y pasa pocas veces al año.
+- **Guarda borrador por persona.** La sesión de sala se cierra sola a los cinco
+  minutos y un formulario en memoria se pierde entero sin dejar rastro.
+
+⚠️ `gate:bundle` queda en rojo por trabajo de otra sesión —el ENTRY en 297 (tope
+296) y tres vistas por encima de su techo: Cortes, ConteoDetail y Bolsas—. Se
+verificó que no es de acá: quitando los cuatro iconos nuevos de `constants.js` y
+recompilando, el ENTRY sigue en 297.
+
+## v2.874.4 — El carné pide el logo de la empresa, y espera al archivo aprobado
+
+*«En el carné debe salir el logo completo, el de Farmacias La Popular y La Salud
+para todos, ya que ésa es la empresa.»*
+
+Estuvo un rato con el de la **sala** —La Popular o La Salud— porque era lo que
+había. Y la corrección dice algo sobre lo que ES un carné: acredita a alguien
+ante la **empresa**, no ante la sucursal donde le tocó ese mes. Quien se traslada
+de Salud 3 a La Popular no cambia de patrono, y su carné no debería decir otra
+cosa.
+
+**El archivo aprobado no existe todavía**, y por la regla del mismo día no se
+compone: yo llegué a generar uno y se eliminó justamente por eso.
+
+Así que el carné **pide** `/logo-farmacias.png` y, mientras no esté, cae en el
+icono aprobado con «Farmacias / La Popular y La Salud» en texto — que dice lo
+mismo sin inventar ninguna figura. **El día que ese archivo se copie a `public/`,
+el carné lo toma sin tocar una línea de código.**
+
+Es a propósito que no haya un `if` esperándolo ni un aviso: **el hueco es el
+mecanismo**. Poner un logo provisional habría sido exactamente lo que la regla
+prohíbe.
+
+`logoDeLaSala` se queda: sigue siendo la regla correcta para lo que sí habla de
+una sala.
+
 ## v2.874.3 — El código del icono aprobado, que su entrada se adelantó
 
 Lo que describe **v2.874.1** — el icono del carné pasa a ser `Logo512.png` en vez

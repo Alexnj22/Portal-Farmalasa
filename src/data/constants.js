@@ -1,6 +1,7 @@
 import {
   FileText, IdCard, User, HeartPulse, AlertCircle, Paperclip, Calendar,
-  TrendingUp, ArrowRightLeft, Building2, Watch, LogOut, GraduationCap, ClipboardList, DollarSign, RefreshCw
+  TrendingUp, ArrowRightLeft, Building2, Watch, LogOut, GraduationCap, ClipboardList, DollarSign, RefreshCw,
+  MessageSquareWarning, FileWarning, Ban, ShieldCheck
 } from 'lucide-react';
 import { normalizeText } from '../utils/helpers';
 
@@ -22,6 +23,18 @@ export const EVENT_TYPES = {
   SHIFT_CHANGE: { label: 'Cambio de turno', color: 'bg-chart-9/10 text-chart-9-text', icon: Watch, requiresDuration: false, defaultDocType: 'MEMO' },
   TERMINATION: { label: 'Liquidación/Renuncia', color: 'bg-danger text-white', icon: LogOut, requiresDuration: false, defaultDocType: 'CONTRACT' },
   REHIRE: { label: 'Recontratación', color: 'bg-success/10 text-success-text', icon: RefreshCw, requiresDuration: false, defaultDocType: 'CONTRACT' },
+
+  // ── Régimen disciplinario del RIT Art. 83 ─────────────────────────────────
+  // `soloPorSancion` las saca del selector de «nueva novedad» SIN sacarlas del
+  // catálogo, que es la distinción que importa: el historial las tiene que
+  // saber rotular y pintar, pero **no se escriben por el formulario común**.
+  // Una sanción pasa por `registrar_sancion`, que es donde viven la escalera,
+  // la firma del servidor y la validación del Art. 83 — dejarla en el selector
+  // sería ofrecer un atajo que se salta las tres.
+  AMONESTACION_VERBAL:  { label: 'Amonestación verbal',   color: 'bg-warning/10 text-warning-text', icon: MessageSquareWarning, requiresDuration: false, defaultDocType: 'MEMO', soloPorSancion: true },
+  AMONESTACION_ESCRITA: { label: 'Amonestación escrita',  color: 'bg-warning/10 text-warning-text', icon: FileWarning,          requiresDuration: false, defaultDocType: 'MEMO', soloPorSancion: true },
+  SUSPENSION:           { label: 'Suspensión',            color: 'bg-danger/10 text-danger-text',   icon: Ban,                  requiresDuration: true,  defaultDocType: 'MEMO', soloPorSancion: true },
+  RECTIFICACION:        { label: 'Memorando de rectificación', color: 'bg-success/10 text-success-text', icon: ShieldCheck,     requiresDuration: false, defaultDocType: 'MEMO', soloPorSancion: true },
 };
 
 

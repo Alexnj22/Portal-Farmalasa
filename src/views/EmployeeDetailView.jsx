@@ -29,6 +29,12 @@ import { fetchEmployeeTimeline, fetchCredenciales } from '../data/employees';
 // vista la abre TODO el personal para mirar su propio expediente. Sólo lo baja
 // quien tiene el permiso — y sólo cuando el bloque llega a pintarse.
 const CarneDelDia = lazy(() => import('../components/personal/CarneDelDia'));
+
+// `lazy` por el mismo motivo, y medido: estático costaba **+4 kB gzip** en el
+// chunk de esta vista, que abre TODO el personal para mirar su propio
+// expediente. Sancionar es de unos pocos y ocurre pocas veces al año — no puede
+// viajar en la carga de todos los días.
+const SancionModal = lazy(() => import('../components/personal/SancionModal'));
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import useMediaQuery from '../hooks/useMediaQuery';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -38,6 +44,7 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import SearchInput from '../components/common/SearchInput';
 import { clickable } from '../utils/clickable';
 import ModalShell from '../components/common/ModalShell';
+
 import { rotuloCampo } from '../utils/rotuloDeCampo';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
@@ -327,6 +334,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (typeof openModal === 'function') openModal('newEvent', { type: 'TRANSFER', employeeId: emp?.id });
     }, [openModal, emp?.id]);
 
+    // Dos props y no una: al poner el empleado en null, el cuerpo se
+    // desmontaría en el acto mientras `ModalShell` todavía anima su salida, y
+    // la hoja no se cerraría sino que desaparecería. Está escrito en ModalShell.
+    const [sancionAbierta, setSancionAbierta] = useState(false);
+
     const handleVacationRecall = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -444,6 +456,24 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             )}
             {canEdit && (
                 <Button size="sm" icon={Plus} disabled={!canEdit} onClick={handleNewHRAction}><span className="hidden sm:inline">Acción RRHH</span></Button>
+            )}
+            {/* Sanciona quien puede editar la ficha — el mismo permiso que exige
+                `registrar_sancion` en la base. Que los dos coincidan importa: un
+                botón visible que la base rechaza enseña a desconfiar del portal. */}
+            {canEdit && (
+                <Button tone="warning" size="sm" icon={ShieldAlert} onClick={() => setSancionAbierta(true)}><span className="hidden sm:inline">Sanción</span></Button>
+            )}
+            {/* Sólo se monta cuando se abre: montarlo siempre traería el chunk
+                al entrar al expediente, que es exactamente lo que el `lazy`
+                viene a evitar. */}
+            {sancionAbierta && (
+                <Suspense fallback={null}>
+                    <SancionModal
+                        open={sancionAbierta}
+                        onClose={() => setSancionAbierta(false)}
+                        empleado={emp}
+                    />
+                </Suspense>
             )}
         </div>
     );
@@ -708,6 +738,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     PERMIT:                         'success',
                                                     SUPPORT:                        'chart-4',
                                                     INDUCTION:                      'chart-9',
+                                                    AMONESTACION_VERBAL:            'warning',
+                                                    AMONESTACION_ESCRITA:           'warning',
+                                                    SUSPENSION:                     'danger',
+                                                    // El Art. 86 es la única del grupo que es una buena noticia:
+                                                    // dice que la persona rectificó y borra los antecedentes.
+                                                    RECTIFICACION:                  'success',
                                                 };
                                                 // Los que se identifican por SUBCADENA y no por igualdad.
                                                 const VARIANTE_POR_PARTE = [

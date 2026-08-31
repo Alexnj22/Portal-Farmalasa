@@ -59,6 +59,19 @@
      tal cual (7.10:1). Medido el 2026-07-28. */
   --logo-green-solid:  #5c7f0a;
 
+  /* Los mismos dos colores, pero para TEXTO. Es el patrón que
+     success/warning/danger ya tenían (`-text`) y que a la identidad le
+     faltaba: el verde del logo sobre una superficie clara da ~2.3:1 y es
+     ilegible, y el magenta —que sí sirve en claro (7.25:1)— se apaga sobre
+     fondo oscuro. Los dos temas oscuros los reemplazan por las variantes
+     `-soft`, que ya existían para eso.
+
+     Medido sobre blanco: #4f6d08 da 5.96:1 y #981d97 da 7.25:1. Estrenados
+     en `/mis-puntos`, que es la única pantalla del portal que ve un cliente
+     y donde la marca habla de su propio programa. */
+  --logo-green-text:   #4f6d08;
+  --logo-magenta-text: #981d97;
+
   /* ── EL ROL de los colores de marca (2026-07-28) ───────────────────────
      Aparecen donde la app habla DE SÍ MISMA — el logo, la navegación
      activa, un estado vacío, la pantalla de espera. NUNCA en un dato ni en
@@ -165,6 +178,12 @@
   --text-title-lg:  22px;   /*    45 usos — título de vista */
   --text-display:   26px;   /*     9 usos */
   --text-display-lg:32px;   /*     4 usos */
+  /* El escalón que faltaba arriba, y el único de la escala que NO nació de
+     un censo: lo pidió una pantalla que no es del personal. En /mis-puntos
+     la cifra es lo único que se va a leer —de pie, con el teléfono en la
+     mano, a un metro—, y 32px la deja del tamaño del título de una vista.
+     Razón 32→44 = 1.375, dentro del contraste mínimo de §7. */
+  --text-display-xl:44px;
   /* ── A3 (2026-07-26) — solo los dos escalones más chicos suben en táctil ──
      Medido en iPhone 13 real: la vista `staff` renderiza 88 elementos a 9px
      y 33 a 10px. El móvil tira a PEQUEÑO, no a grande — la densidad táctil de
@@ -1246,6 +1265,11 @@ thead.sticky,
      tarjeta clara, invertido aquí. Mismo motivo para success/warning/
      danger-text (fix del bug real de Badge.jsx). */
   --success-text: #34d399; --warning-text: #fbbf24;
+  /* Los `-text` de la identidad, invertidos igual que los de severidad: el
+     verde y el magenta del logo son demasiado oscuros sobre fondo oscuro, y
+     las variantes `-soft` existen exactamente para eso. */
+  --logo-green-text:   var(--logo-green-soft);
+  --logo-magenta-text: var(--logo-magenta-soft);
   /* 2026-07-29: #f87171 daba 4.43:1 sobre el TINTE del badge danger
      (#462e3a = tarjeta + danger/12), justo bajo el 4.5 de AA. Sobre la
      tarjeta plana medía 5.29 y por eso había pasado. #fb9a9a da 5.95
@@ -1498,6 +1522,11 @@ thead.sticky,
   --chart-2-text: var(--success-text); --chart-5-text: var(--chart-9-text);
   --chart-7-text: var(--warning-text); --chart-8-text: var(--content-2);
   --success-text: #34d399; --warning-text: #fbbf24;
+  /* Los `-text` de la identidad, invertidos igual que los de severidad: el
+     verde y el magenta del logo son demasiado oscuros sobre fondo oscuro, y
+     las variantes `-soft` existen exactamente para eso. */
+  --logo-green-text:   var(--logo-green-soft);
+  --logo-magenta-text: var(--logo-magenta-soft);
   /* 2026-07-29: #f87171 daba 4.43:1 sobre el TINTE del badge danger
      (#462e3a = tarjeta + danger/12), justo bajo el 4.5 de AA. Sobre la
      tarjeta plana medía 5.29 y por eso había pasado. #fb9a9a da 5.95
@@ -2400,6 +2429,7 @@ thead.sticky,
   --text-title-lg: var(--text-title-lg);
   --text-display: var(--text-display);
   --text-display-lg: var(--text-display-lg);
+  --text-display-xl: var(--text-display-xl);
 
   --color-brand:        var(--brand);
   --color-brand-text:   var(--brand-text);
@@ -2410,6 +2440,8 @@ thead.sticky,
   --color-logo-green-soft:   var(--logo-green-soft);
   --color-logo-green-solid:  var(--logo-green-solid);
   --color-logo-magenta-soft: var(--logo-magenta-soft);
+  --color-logo-green-text:   var(--logo-green-text);
+  --color-logo-magenta-text: var(--logo-magenta-text);
   --color-success:      var(--success);
   --color-warning:      var(--warning);
   --color-danger:       var(--danger);

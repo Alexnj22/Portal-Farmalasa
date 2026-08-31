@@ -1,7 +1,7 @@
 {
   "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
-  "actualizado": "2026-08-29",
-  "medidas": 43,
+  "actualizado": "2026-08-31",
+  "medidas": 44,
   "sin_medir": 25,
   "funciones": {
     "auth_module_scope": {
@@ -333,6 +333,12 @@
       "casos": null,
       "divergencia": null,
       "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+    },
+    "puntos_cliente_por_dui_y_telefono": {
+      "ms": "41-82",
+      "casos": "la puerta pública de /mis-puntos, 28,105 fichas",
+      "divergencia": "imposible",
+      "nota": "sana — el plan NO puede depender de los argumentos: los dos predicados envuelven la columna en regexp_replace, así que ningún índice los sirve y el plan es un Seq Scan sobre customers con cualquier valor. Medido el 2026-08-31 con EXPLAIN(ANALYZE,TIMING OFF): la función da 41-82 ms y el mismo cuerpo con literales 58 ms — el mismo plan, dentro del ruido. Forzarle plan personalizado sólo agregaría el costo de replanificar."
     },
     "recalcular_totales_conteo": {
       "ms": null,

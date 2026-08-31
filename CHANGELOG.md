@@ -21,6 +21,79 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.891.0 — Mis puntos, para el cliente
+
+`/mis-puntos` es la ÚNICA pantalla del portal que ve alguien que no trabaja acá,
+y estaba escrita como una vista más: rótulo, cifra, dos listas. Rehecha entera.
+
+**Lo que el servidor mandaba y la pantalla tiraba.** `acumulados` y `canjeados`
+viajaban en cada respuesta desde el día uno y no se pintaban en ningún lado. Hoy
+son «Desde que eres cliente»: lo ganado y lo usado, que es lo que convierte un
+saldo en una historia.
+
+**Lo único accionable, y no estaba.** El canje pide 100 puntos, y **tres de cada
+cuatro clientes activos no llegan a 100 en seis meses** — o sea que el caso
+NORMAL de esta pantalla es alguien que todavía no puede canjear y no tenía cómo
+saberlo. Ahora, bajo el saldo: o «Ya puedes canjearlos», o cuánto falta con su
+barra. Se dice en puntos y no en cuánto hay que gastar: es un dato del programa,
+no una venta.
+
+**El código de la sala no es el nombre de la sala.** Los movimientos mostraban
+`FLS1`, que es jerga del sistema de puntos. El nombre sale de
+`branches.codigo_puntos` **en la edge function** y no de una lista escrita en el
+frente: una lista se desincroniza el día que abre una sala. Si esa lectura falla
+se deja el código y se anota — un nombre que no se pudo resolver no puede
+costarle a nadie su saldo.
+
+**Los vencimientos dicen cuánto falta, no sólo la fecha.** «18/09/2026» obliga a
+hacer la cuenta; «Faltan 18 días» no. Bajo 30 días el grupo se pinta en `warning`.
+Los días se calculan en UTC a mediodía y no con `new Date(cadena)`, que en El
+Salvador retrocede un día — acá eso sería un vencimiento adelantado.
+
+**Y ahora la pantalla EXPLICA el programa**, en los dos estados: quien llega por
+el código de la vitrina y no encuentra su registro se va sabiendo cómo se ganan y
+cómo se usan. Arriba, las dos reglas cara a cara —`$1.00 da 1 punto`,
+`100 puntos dan $1.00`— más la novedad del 1 de octubre («ahora se acumulan
+solos», con la segunda frase que evita leer que tampoco hay que identificarse).
+Abajo, plegado, el detalle: cómo ganarlos, cómo usarlos, cuándo vencen y qué no
+acumula, con la salvedad del helado que NO arruina la compra. El texto sale del
+afiche de v2.888.1/.2 —incluido «registro de cliente frecuente», que es el nombre
+con el que la gente conoce su cuenta— y el reglamento completo se **enlaza** a
+`/reglamento-puntos` en vez de copiarse: un resumen que se puede desincronizar
+del reglamento algún día va a decir otra cosa.
+
+**Dos tokens nuevos, los dos con su medición** (DESIGN.md §3 y §7):
+
+- `--logo-green-text` / `--logo-magenta-text`. Mismo patrón que
+  success/warning/danger: el verde del logo es LIMA y sobre claro da ~2.3:1, y el
+  magenta —que sí sirve en claro, 7.25:1— se apaga sobre oscuro. `#4f6d08` da
+  5.96:1 sobre blanco; los temas oscuros caen a las `-soft`, que existían para
+  eso. **Siguen sin ir en un dato**: acá pintan el nombre del programa y sus dos
+  reglas, o sea la app hablando de sí misma, que es lo que §6 reserva para la
+  identidad. El saldo, la barra y los movimientos usan severidad y categoría.
+- `text-display-xl` (44px). El único escalón de la escala que no salió de un
+  censo: lo pidió una pantalla que no es del personal. 32px dejaba la cifra del
+  tamaño del título de una vista. Razón 32→44 = 1.375.
+
+La cifra sube al entrar, con salida exponencial y sin rebote, y con
+`prefers-reduced-motion` aparece puesta — la decisión se toma **antes** del
+primer pintado, así que quien pidió no ver movimiento tampoco ve el cero
+parpadear.
+
+**Lo que se corrigió de paso**: el nombre del cliente ya no se recorta
+(«MARÍA ISABEL GUZMÁN DE HER…» se lee como que el portal tiene mal su ficha), el
+teléfono lleva su máscara, y los movimientos muestran seis con «ver los
+anteriores» en vez de cuarenta filas seguidas.
+
+**Y `puntos_cliente_por_dui_y_telefono` quedó declarada en
+`scripts/planes-genericos.json`** — `gate:perf` la marcaba como
+`plan-generico-sin-declarar`. Medida: **sana**. Es `LANGUAGE sql` con `SET`, pero
+su plan NO puede depender de los argumentos: los dos predicados envuelven la
+columna en `regexp_replace`, así que ningún índice los sirve y con cualquier
+valor el plan es un `Seq Scan` sobre `customers`. 41-82 ms la función contra
+58 ms el mismo cuerpo con literales — el mismo plan, dentro del ruido.
+
+
 ## v2.890.0 — El anuncio manda, la conversión acompaña
 
 **El afiche estaba jerarquizado al revés.** Lo primero y más grande era la
@@ -52,10 +125,6 @@ le hicieron, y menos contestarlas a medias.
 px), sacando dos frases que el reglamento ya dice, y quitándole el tope de ancho
 a la bajada —con `max-width: 33rem` partía en dos y dejaba «registrada.» sola en
 un renglón; sin el tope entra en uno—.
-
-## v2.889.0 — Mis puntos, para el cliente
-
-_(pendiente de redactar)_
 
 ## v2.888.2 — Cliente frecuente
 

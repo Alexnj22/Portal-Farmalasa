@@ -1379,6 +1379,20 @@ glow decorativo nuevo.
 | `--logo-magenta` | `#981d97` | Glow ambiental inferior, estado activo dominante |
 | `--logo-green-soft` | `#b9e05a` | Íconos/texto sobre fondo oscuro (variante clara) |
 | `--logo-magenta-soft` | `#e2a3e0` | Íconos/texto sobre fondo oscuro (variante clara) |
+| `--logo-green-text` | `#4f6d08` claro · `-soft` oscuro | **Texto** de identidad, AA-safe y theme-aware |
+| `--logo-magenta-text` | `#981d97` claro · `-soft` oscuro | ídem |
+
+**Los `-text` de la identidad (2026-08-31).** Mismo patrón que
+success/warning/danger, y por el mismo motivo: el verde del logo es LIMA y sobre
+una superficie clara da ~2.3:1 —ilegible—, mientras que el magenta sí sirve en
+claro (7.25:1) y se apaga sobre fondo oscuro. Los dos temas oscuros los
+reemplazan por las `-soft`, que existían justo para eso. Medido sobre blanco:
+`#4f6d08` da 5.96:1. Estrenados en `/mis-puntos`.
+
+⚠️ **Siguen sin ir en un DATO.** La regla de arriba no cambia: los colores del
+logo aparecen donde la app habla de sí misma. Lo que estos tokens habilitan es
+escribir ESE texto —el nombre del programa, sus dos reglas— sin romper el
+contraste, no teñir un saldo ni un estado.
 
 Utilidades Tailwind ya disponibles vía `@theme inline`: `text-logo-green`,
 `bg-logo-magenta`, `text-logo-green-soft`, `bg-logo-magenta-soft`, etc.
@@ -1452,9 +1466,17 @@ Sin webfonts.
 | `text-title-lg` | 22 | título de vista en móvil |
 | `text-display` | 26 | título de vista |
 | `text-display-lg` | 32 | KPI, cifra destacada |
+| `text-display-xl` | 44 | la cifra que ES la pantalla (hoy sólo `/mis-puntos`) |
 
 En táctil, `--text-micro` y `--text-caption` suben un punto: 9px en un teléfono
 no se lee.
+
+**`text-display-xl` es el único escalón que NO salió de un censo** (2026-08-31):
+lo pidió una pantalla que no es del personal. En `/mis-puntos` la cifra es lo
+único que se va a leer —de pie, con el teléfono en la mano— y 32px la dejaba del
+tamaño del título de una vista. Razón 32→44 = 1.375, dentro del contraste mínimo
+de esta sección. No es el tamaño por defecto de un KPI: `text-display-lg` lo
+sigue siendo.
 
 **Convenciones**
 - Mayúsculas siempre con `uppercase tracking-widest font-black`.

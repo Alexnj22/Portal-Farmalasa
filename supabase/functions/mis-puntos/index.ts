@@ -166,6 +166,23 @@ Deno.serve(async (req) => {
       [c.idCliente, c.idCliente]) as any;
     const lotes = lotesConVencimiento(filasLotes ?? []);
 
+    // ── El código de la sala no es el nombre de la sala ─────────────────────
+    // Los movimientos vienen con la abreviatura del sistema de puntos (`FLS1`),
+    // que es jerga: quien lee esta pantalla es un cliente y no sabe qué es. El
+    // nombre vive en `branches.codigo_puntos`, así que sale de la TABLA y no de
+    // una lista escrita acá — una lista se desincroniza el día que abre una sala
+    // o le cambian el nombre, y nadie se entera.
+    //
+    // Si la lectura falla se deja el código: un nombre que no se pudo resolver
+    // no puede costarle a nadie su saldo. Se anota, porque un select que falla
+    // en silencio deja el Map vacío y el defecto vive semanas.
+    const { data: salas, error: eSalas } = await admin
+      .from("branches").select("codigo_puntos, name").not("codigo_puntos", "is", null);
+    if (eSalas) console.error("no se pudieron leer los nombres de sala:", eSalas.message);
+    const nombreDeSala = new Map(
+      (salas ?? []).map((b: any) => [String(b.codigo_puntos), String(b.name)]),
+    );
+
     const saldo = Number(c.saldo ?? 0);
 
     // La reconstrucción tiene que dar EXACTAMENTE el saldo. Si no da, el
@@ -193,7 +210,8 @@ Deno.serve(async (req) => {
       // tenía, y repetirlos sólo agrega una copia más de un dato sensible
       // viajando por la red.
       movimientos: (movs ?? []).map((m: any) => ({
-        tipo: m.tipo, fecha: m.fecha, puntos: Number(m.puntos), sala: m.sala,
+        tipo: m.tipo, fecha: m.fecha, puntos: Number(m.puntos),
+        sala: nombreDeSala.get(String(m.sala ?? "")) ?? m.sala,
       })),
     });
   } catch (_e) {

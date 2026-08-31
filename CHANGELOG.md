@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.871.0 — El régimen disciplinario del RIT Art. 83, con la escalera que sube y la que baja
+
+**No había ninguno.** `employee_events` tenía tres traslados y un ascenso, y
+nada más. El Art. 83 arma una escalera de cinco peldaños donde **la
+reincidencia dentro de 60 días es lo que habilita subir**, y sin registro no se
+prueba ni eso ni el memorando de rectificación del Art. 86 — o sea que un
+despido por el Art. 50 se cae en juicio por falta de prueba. Es el único camino
+legal que no necesita juez, y hoy existe.
+
+**La suspensión NO se escribe en `employees.status`, y ahí estaba la trampa.**
+El CHECK de esa columna ya admite `SUSPENDIDO` y nada lo escribe nunca, así que
+parecía el lugar. Medido: **65 funciones de Postgres y 16 archivos del frontend
+filtran `status = 'ACTIVO'`**, y ponerlo las apaga las 65 a la vez.
+`nombre_de_vendedor` es la que lo deja claro — filtra ACTIVO, o sea que las
+ventas YA HECHAS por esa persona perderían su nombre mientras dure la sanción.
+Y hay un motivo de fondo: **un `status` no tiene fecha**, y el peldaño 3 es una
+suspensión de UN día. Devolverla exigiría un cron que apague el interruptor, o
+sea una segunda verdad sobre lo mismo — que es exactamente como se rompió
+`turno_del_dia`.
+
+Una suspensión es un **evento con fechas**, igual que una vacación: se pregunta
+POR FECHA y reusa el camino que ya existía.
+
+**Las dos reglas del Art. 83 son distintas, y confundirlas es el error caro:**
+
+| peldaño | qué manda |
+|---|---|
+| 2 · amonestación escrita | **la causa**: «cuando ya haya una o más verbales por la MISMA causa». Sin plazo. |
+| 3 y 4 · suspensión | **el plazo**: «reincida en ALGUNA falta cometida en un periodo de 60 días». No dice «la misma». |
+
+Y el Art. 86 la hace **bajar**: una rectificación deja atrás lo anterior, así
+que los antecedentes se cuentan desde la última. El peldaño 5 —terminación— no
+lo propone ninguna función: es una decisión con nombre y apellido.
+
+`escalera_disciplinaria()` devuelve la propuesta **y sus antecedentes**. Una
+escalera que dice «peldaño 3» sin mostrar en qué se apoya es indefendible en un
+juicio, que es justo para lo que existe este registro.
+
+**El efecto es real, no un papel.** `kiosco_marcar` ya frenaba por evento
+vigente —vacación, incapacidad, permiso— con la misma forma de `endDate`: la
+suspensión entra en ESA lista y no por un camino nuevo. Y al pasar el carné,
+`kiosco_identificar` dice **«suspendido, vuelve el X»** en vez de «no
+encontrado», que mandaría a buscar un lector roto que no lo está.
+
+Lo que sí se decidió NO hacer: **una suspensión no despublica el horario de la
+semana.** Un día de sanción no puede borrar los otros seis; el día se resuelve
+donde importa —el kiosco no deja marcar y la planilla no paga— y la semana
+queda como está.
+
+Probado con seis regresiones fabricadas en una transacción revertida (sin
+antecedentes → 1; verbal de la misma causa a los 100 días → 2; otra causa → 1;
+reincidencia a los 10 días → 3; tope en 4 con autorización del DGIT exigida;
+rectificación del Art. 86 → vuelve a 1), más el control negativo que prueba que
+el arnés puede fallar. Producción quedó en las mismas cuatro filas de siempre.
+
 ## v2.870.0 — Los logos de las dos farmacias, listos para usarse
 
 Tres archivos en `public/`, uno por marca más el de las dos juntas, y el script

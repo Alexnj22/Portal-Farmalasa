@@ -19,7 +19,14 @@
 // mirarla, y el día que aparezca la primera vacación pasaría desapercibida
 // entre las otras 45.
 
-const TEMPORALES = ['VACATION', 'DISABILITY', 'SUPPORT', 'PERMIT', 'INDUCTION'];
+// `SUSPENSION` es el sexto, y su gemelo es la lista de `get_estados_de_personas`
+// en la base: las dos se mueven juntas. Una suspensión del RIT Art. 83 tiene
+// fechas igual que una vacación, así que se deriva por este camino y NO
+// poniendo `employees.status = 'SUSPENDIDO'` — ese interruptor lo filtran 65
+// funciones de Postgres a la vez (`nombre_de_vendedor` entre ellas: las ventas
+// ya hechas perderían el nombre) y además no tiene fecha, así que una
+// suspensión de un día no volvería sola.
+const TEMPORALES = ['VACATION', 'DISABILITY', 'SUPPORT', 'PERMIT', 'INDUCTION', 'SUSPENSION'];
 
 const ROTULO_TEMPORAL = {
     DISABILITY: { texto: 'Incapacitado',  variante: 'danger'  },
@@ -27,6 +34,10 @@ const ROTULO_TEMPORAL = {
     SUPPORT:    { texto: 'En apoyo',      variante: 'chart-9' },
     INDUCTION:  { texto: 'En inducción',  variante: 'chart-6' },
     PERMIT:     { texto: 'Con permiso',   variante: 'chart-3' },
+    // Rojo como incapacidad y no ámbar como vacaciones: las dos primeras son
+    // ausencias previstas y ésta es una sanción. Que se distingan importa —
+    // quien mira la sala tiene que poder ver la diferencia sin abrir la ficha.
+    SUSPENSION: { texto: 'Suspendido',    variante: 'danger'  },
 };
 
 // «No está» y nada más. Es lo que recibe quien no tiene permiso para leer los

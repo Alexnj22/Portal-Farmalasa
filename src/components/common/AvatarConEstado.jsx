@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useSyncExternalStore } from 'react';
-import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle } from 'lucide-react';
+import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle, Ban } from 'lucide-react';
 import LiquidAvatar from './LiquidAvatar';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { estadoDePersona, estadoDesdeClave, normalizarPersona } from '../../utils/estadoDePersona';
@@ -89,6 +89,10 @@ const ICONO = {
   INACTIVO:   UserMinus,
   LIQUIDADO:  UserX,
   SUSPENDIDO: HelpCircle,
+  // El evento del Art. 83, que es lo que de verdad se escribe. `SUSPENDIDO` de
+  // arriba sale de `employees.status` y hoy no lo pone nadie — se deja porque
+  // el CHECK lo admite y una clave sin ícono sale sin color y en silencio.
+  SUSPENSION: Ban,
   // «No está hoy», sin motivo: el reloj es lo más neutro que hay para decir
   // «ahora no» sin insinuar por qué.
   AUSENTE:    Clock,

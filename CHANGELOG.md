@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.885.0 — las bolsas ahora llegan en vivo, y el reloj queda de red
+
+> «no está realtime?» (usuario).
+
+No lo estaba: `bolsas` nunca entró a la publicación de realtime —las 15 que sí
+estaban eran `pedidos`, `rutas`, `notifications` y compañía— así que v2.884.0
+salió con un sondeo cada 20 s. Ahora la tabla está publicada (migración
+`20260831190802_bolsas_en_realtime`) y el cambio llega en cuanto pasa: contar
+entre varios se siente compartido y no por turnos.
+
+**Se publicó UNA tabla y alcanza.** De las trece funciones que mueven el
+circuito, doce escriben en `bolsas` con `UPDATE` y `cerrar_bolsa_de_corte` la
+inserta — incluida `registrar_salida_de_bolsa`, que toca `updated_at` a
+propósito aunque el monto viva en `bolsas_movimientos`. La única que no la toca
+es `anular_salida_de_bolsa`, y ésa la hace quien tiene el diálogo abierto: su
+pantalla se recarga igual por su propia acción, y para las demás queda el reloj.
+
+**El reloj NO se apagó: bajó a 60 s y pasó a ser la red de seguridad.** Es la
+parte que se olvida — lo que llega por el socket llega *sólo mientras el socket
+está vivo*, y nada recupera después lo que pasó mientras estuvo caído. Una
+pestaña suspendida (el teléfono en segundo plano, el ahorro de memoria del
+navegador, un corte de red) vuelve mostrando lo de antes **con cara de estar al
+día**, que es peor que no tener realtime.
+
+Los avisos van **coalescidos**: confirmar un conteo de treinta bolsas es un
+`UPDATE` por bolsa, o sea treinta avisos que sin esto serían treinta lecturas
+completas devolviendo lo mismo. Se espera a que el ruido pare (400 ms) y se lee
+una vez. Y el aviso pone el reloj en hora, para que la lectura del socket no
+deje al reloj creyendo que la pantalla sigue vieja.
+
+La pausa de v2.884.0 vale igual para el canal: con un diálogo abierto el aviso
+**queda anotado** en vez de perderse, y se lee al cerrar.
+
+`useRefrescoEnVivo` pasa a 14 pruebas. Dos de ellas se verificaron rompiendo el
+código a propósito —sacando el coalescido y el id del canal— para confirmar que
+fallan cuando deben; un detector en verde que nadie provocó no prueba nada.
+
+**Riesgo del DDL, medido antes de aplicarlo:** `bolsas` pesa 280 kB con 189
+filas y ningún cron le escribe — no es de las tablas calientes del incidente del
+2026-07-08. Va con `SET lock_timeout = '5s'` igual, que es la regla. La
+`REPLICA IDENTITY` se queda en el default: sólo hace falta saber QUE algo
+cambió para volver a leer. Y la RLS de `bolsas` tiene la misma forma que la de
+`pedidos`, que ya se evalúa bien desde realtime.
+
 ## v2.884.1 — El corte de caja sale C, y el módulo tiene alcance
 
 Del primer corte hecho de verdad desde el portal (Salud 3, 31-ago). Salieron

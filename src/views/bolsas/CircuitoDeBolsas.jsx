@@ -1608,8 +1608,25 @@ export default function CircuitoDeBolsas({
      * acción, así que sumarlo acá sólo agregaría una segunda lectura por acto.
      * Y el conteo a medio escribir no se pierde — el campo vive dentro de
      * `Conteo`, que conserva su estado porque la tarjeta se reconcilia por
-     * `key={b.id}` y la lectura silenciosa no desmonta nada. */
+     * `key={b.id}` y la lectura silenciosa no desmonta nada.
+     *
+     * ── Una sola tabla, y alcanza (migración 20260831190802) ────────────────
+     * `bolsas` entró a la publicación de realtime, así que el cambio llega en
+     * cuanto pasa. No hace falta publicar además `bolsas_movimientos`: las trece
+     * funciones que mueven el circuito escriben en `bolsas` —doce con UPDATE,
+     * `cerrar_bolsa_de_corte` con INSERT—, incluida `registrar_salida_de_bolsa`,
+     * que toca `updated_at` a propósito aunque el monto viva en los movimientos.
+     * La única que no la toca es `anular_salida_de_bolsa`, y ésa la hace quien
+     * tiene el diálogo abierto: su propia pantalla se recarga igual, y para las
+     * demás queda el reloj.
+     *
+     * Y el reloj NO se apaga por tener realtime: baja a 60 s y pasa a ser la
+     * red. Lo que llega por el socket llega sólo mientras el socket está vivo, y
+     * una pestaña que estuvo suspendida vuelve mostrando lo de antes **con cara
+     * de estar al día** — que es peor que no tener realtime. */
     useRefrescoEnVivo(recargarEnSilencio, {
+        tabla: 'bolsas',
+        ms: 60_000,
         activo: !abierta && !depositando && !entregando && !sacando,
     });
 

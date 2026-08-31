@@ -1,6 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useRefrescoEnVivo } from '../../src/hooks/useRefrescoEnVivo';
+
+/* El canal, fingido. Guarda el handler de `postgres_changes` para poder
+ * disparar un aviso a mano, y cuenta los canales quitados: un canal que no se
+ * quita al desmontar es una fuga que no da error — la vista se cierra y el
+ * socket sigue trayendo avisos a un componente que ya no existe. */
+const canales = [];
+vi.mock('../../src/supabaseClient', () => ({
+    supabase: {
+        channel: (topico) => {
+            const c = { topico, handler: null, suscrito: false, quitado: false };
+            c.on = (_tipo, _filtro, fn) => { c.handler = fn; return c; };
+            c.subscribe = () => { c.suscrito = true; return c; };
+            canales.push(c);
+            return c;
+        },
+        removeChannel: (c) => { c.quitado = true; },
+    },
+}));
+
+const { useRefrescoEnVivo } = await import('../../src/hooks/useRefrescoEnVivo');
+
+/** Un cambio en la tabla, como lo mandaría la base. */
+const avisoDeLaBase = () => act(() => { canales.at(-1).handler?.({}); });
 
 /**
  * Que la pantalla se ponga al día sola.
@@ -20,7 +42,7 @@ const verse = (estado) => {
 };
 
 describe('el refresco en vivo', () => {
-    beforeEach(() => { vi.useFakeTimers(); verse('visible'); });
+    beforeEach(() => { vi.useFakeTimers(); verse('visible'); canales.length = 0; });
     afterEach(() => { vi.useRealTimers(); });
 
     it('vuelve a leer cada intervalo, y no antes', () => {
@@ -101,5 +123,79 @@ describe('el refresco en vivo', () => {
         unmount();
         act(() => { vi.advanceTimersByTime(120_000); });
         expect(leer).not.toHaveBeenCalled();
+    });
+
+    it('sin `tabla` no abre ningún canal', () => {
+        renderHook(() => useRefrescoEnVivo(vi.fn(), { ms: 20_000 }));
+        expect(canales).toHaveLength(0);
+    });
+
+    it('un aviso de la base lee, sin esperar el reloj', () => {
+        const leer = vi.fn();
+        renderHook(() => useRefrescoEnVivo(leer, { ms: 60_000, tabla: 'bolsas' }));
+
+        avisoDeLaBase();
+        act(() => { vi.advanceTimersByTime(500); });
+        expect(leer).toHaveBeenCalledTimes(1);
+    });
+
+    it('treinta avisos seguidos son UNA lectura', () => {
+        const leer = vi.fn();
+        renderHook(() => useRefrescoEnVivo(leer, { ms: 60_000, tabla: 'bolsas' }));
+
+        // Confirmar un conteo de treinta bolsas es un UPDATE por bolsa.
+        for (let i = 0; i < 30; i += 1) {
+            avisoDeLaBase();
+            act(() => { vi.advanceTimersByTime(20); });
+        }
+        act(() => { vi.advanceTimersByTime(500); });
+        expect(leer).toHaveBeenCalledTimes(1);
+    });
+
+    it('el aviso pone el reloj en hora: no consulta de nuevo un segundo después', () => {
+        const leer = vi.fn();
+        renderHook(() => useRefrescoEnVivo(leer, { ms: 20_000, tabla: 'bolsas' }));
+
+        act(() => { vi.advanceTimersByTime(19_000); });
+        avisoDeLaBase();
+        act(() => { vi.advanceTimersByTime(500); });
+        expect(leer).toHaveBeenCalledTimes(1);
+
+        // El reloj habría vencido a los 20 s desde el montaje; ya no, porque la
+        // pantalla se leyó recién.
+        act(() => { vi.advanceTimersByTime(5_000); });
+        expect(leer).toHaveBeenCalledTimes(1);
+    });
+
+    it('un aviso durante la pausa no se pierde: se lee al reanudar', () => {
+        const leer = vi.fn();
+        const { rerender } = renderHook(
+            ({ activo }) => useRefrescoEnVivo(leer, { ms: 60_000, tabla: 'bolsas', activo }),
+            { initialProps: { activo: true } },
+        );
+
+        rerender({ activo: false });
+        avisoDeLaBase();
+        act(() => { vi.advanceTimersByTime(5_000); });
+        expect(leer).not.toHaveBeenCalled();
+
+        rerender({ activo: true });
+        expect(leer).toHaveBeenCalledTimes(1);
+    });
+
+    it('al desmontar quita el canal', () => {
+        const { unmount } = renderHook(() => useRefrescoEnVivo(vi.fn(), { tabla: 'bolsas' }));
+        expect(canales.at(-1).suscrito).toBe(true);
+
+        unmount();
+        expect(canales.at(-1).quitado).toBe(true);
+    });
+
+    it('dos vistas sobre la misma tabla no comparten el tema del canal', () => {
+        renderHook(() => useRefrescoEnVivo(vi.fn(), { tabla: 'bolsas' }));
+        renderHook(() => useRefrescoEnVivo(vi.fn(), { tabla: 'bolsas' }));
+
+        expect(canales).toHaveLength(2);
+        expect(canales[0].topico).not.toBe(canales[1].topico);
     });
 });

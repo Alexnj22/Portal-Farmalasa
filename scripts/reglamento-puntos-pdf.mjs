@@ -34,8 +34,8 @@ const firma = `
   <div class="firmas">
     <div class="firmante">
       <div class="linea"></div>
-      <p class="nombre">Edwin Nuñez</p>
-      <p class="cargo">Elaboró</p>
+      <p class="nombre">Edwin Alexander Nuñez Joya</p>
+      <p class="cargo">Supervisor de Ventas</p>
     </div>
     <div class="firmante">
       <div class="linea"></div>

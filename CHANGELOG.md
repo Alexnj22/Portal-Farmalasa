@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.883.2 — Membrete compacto y firmantes con su cargo
+
+El membrete pasa a **dos columnas** —identificación a la izquierda, título a la
+derecha—, como el membrete impreso de la empresa. Apilado ocupaba casi un tercio
+de la primera hoja para decir lo mismo, y en un reglamento que se pega en la
+pared cada centímetro que gana el membrete lo pierde el texto que la gente tiene
+que poder leer de pie.
+
+Firman con nombre completo y cargo: **Edwin Alexander Nuñez Joya**, Supervisor de
+Ventas, y **José Rutilio Alemán Vásquez**, Gerente General.
+
+Tres pasadas costó que el membrete cupiera, y las tres fallaron distinto:
+envolvió y mandó el título abajo con la vigencia alineada contra una caja vacía;
+después `nowrap` lo dejó en su sitio pero la dirección se metió debajo del
+título; y recién con la línea fiscal dos puntos más chica entró entera. Se ve
+sólo abriendo el PDF — el generador no falla en ninguno de los tres casos.
+
 ## v2.883.1 — El reglamento usa el membrete real y nombra al contribuyente
 
 El reglamento pasa a usar **el membrete que la empresa ya usa** —el mismo de

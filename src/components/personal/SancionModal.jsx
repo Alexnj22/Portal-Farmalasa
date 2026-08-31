@@ -44,7 +44,7 @@ const fmtFecha = (iso) => {
     return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-export default function SancionModal({ open, onClose, empleado, onGuardado }) {
+export default function SancionModal({ open, onClose, empleado, sala, firmante, onGuardado }) {
     // El borrador es por PERSONA: dos sanciones a dos personas distintas no se
     // pisan, y volver a abrir la de alguien recupera lo que se estaba
     // escribiendo. La sesión de sala se cierra sola a los 5 minutos y un
@@ -107,6 +107,17 @@ export default function SancionModal({ open, onClose, empleado, onGuardado }) {
     }, [peldano]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const esSuspension = peldano === 3 || peldano === 4;
+    // El último día de la suspensión, para el papel. La base lo calcula igual
+    // (`fecha + dias - 1`) y sigue siendo la verdad: esto es una copia para
+    // imprimir, no una segunda regla.
+    const hastaISO = useMemo(() => {
+        if (!esSuspension || !fecha) return null;
+        const n = Math.max(1, Number(dias) || 1);
+        const d = new Date(`${fecha}T12:00:00`);
+        if (Number.isNaN(d.getTime())) return null;
+        d.setDate(d.getDate() + n - 1);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }, [esSuspension, fecha, dias]);
     const puedeGuardar = useMemo(() => {
         if (!falta || !peldano || !fecha || guardando) return false;
         if (peldano === 4) {
@@ -130,7 +141,40 @@ export default function SancionModal({ open, onClose, empleado, onGuardado }) {
                 autorizacion: autorizacion.trim() || null,
             });
             clearDraft(claveBorrador);
-            toast('Sanción registrada', 'success');
+
+            // La constancia sale SOLA al guardar, y no detrás de un segundo
+            // botón: el Art. 83 exige la firma de ambas partes en presencia del
+            // trabajador, o sea que imprimirla no es un paso opcional sino la
+            // mitad del acto. Un botón aparte es un botón que un día no se
+            // aprieta, y la sanción queda registrada sin el papel que la
+            // sostiene.
+            //
+            // Va con `await import()` porque arrastra pdfmake — la regla de
+            // librerías pesadas de CLAUDE.md.
+            const { descargarConstancia } = await import('../../utils/constanciaDeSancion');
+            const elegida = faltas.find(f => f.clave === falta);
+            const r = await descargarConstancia({
+                nombre:        empleado?.name,
+                dui:           empleado?.dui,
+                cargo:         empleado?.role,
+                sala,
+                falta:         elegida?.nombre || falta,
+                faltaArticulo: elegida?.articulo,
+                peldano,
+                fecha,
+                dias:          esSuspension ? Number(dias) : null,
+                hasta:         hastaISO,
+                autorizacion:  autorizacion.trim() || null,
+                hechos:        nota.trim() || null,
+                impuestaPor:   firmante,
+            });
+
+            // Que el PDF falle NO deshace la sanción: ya está escrita. Se dice
+            // lo que pasó y se dice qué hacer, en vez de dejar a quien sancionó
+            // creyendo que no se guardó nada.
+            if (r.ok) toast('Sanción registrada. Imprime la constancia y súbela firmada.', 'success');
+            else toast('Sanción registrada, pero la constancia no se pudo generar. Vuelve a abrir el expediente para descargarla.', 'warning');
+
             onGuardado?.();
             onClose?.();
         } catch (err) {
@@ -139,7 +183,7 @@ export default function SancionModal({ open, onClose, empleado, onGuardado }) {
             setGuardando(false);
         }
     }, [empleado, falta, peldano, fecha, dias, nota, autorizacion, esSuspension,
-        claveBorrador, toast, onGuardado, onClose]);
+        hastaISO, faltas, sala, firmante, claveBorrador, toast, onGuardado, onClose]);
 
     const antecedentes = escalera?.antecedentes || [];
 
@@ -272,8 +316,9 @@ export default function SancionModal({ open, onClose, empleado, onGuardado }) {
                     «con puño y letra». Se imprime, se firma y se sube al
                     expediente colgada de este mismo registro. */}
                 <Notice variant="info" icon={Info}>
-                    Después de guardar, imprimí la constancia, firmala con el trabajador y subila
-                    al expediente: el reglamento exige la firma de ambas partes.
+                    Al guardar se descarga la constancia. Fírmala con el trabajador —el
+                    reglamento exige la firma de ambas partes y su compromiso escrito a mano— y
+                    súbela al expediente.
                 </Notice>
 
                 <div className="flex gap-3 justify-end">

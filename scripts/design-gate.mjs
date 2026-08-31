@@ -370,6 +370,7 @@ const EXCEPTIONS = {
   // exactamente la categoría "Mapas/canvas/PDF" que ya existe arriba.
   'src/utils/pedidoPrint.js': ['hex'],            // pdfmake: docDefinition, no CSS
   'src/utils/documentoDeBienvenida.js': ['hex'],  // idem: es un PDF, no hay tokens de tema en un papel
+  'src/utils/constanciaDeSancion.js': ['hex'],    // idem: la constancia del Art. 83 se imprime y se firma
   // El QR tiene que ser negro puro sobre blanco puro: es lo que lee un lector, y
   // un token de tema lo dejaría claro sobre claro en oscuro — ilegible para
   // cualquier teléfono. Mismo criterio que la guía de encuadre de la cámara.

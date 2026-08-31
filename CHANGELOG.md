@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.877.0 — La constancia lleva membrete, pie con código, y el renglón de negativa a firmar
+
+**Faltaba el renglón que más se usa.** Ninguna versión del documento tenía dónde
+dejar constancia de que el trabajador **se negó a firmar** — y en una sanción eso
+no es la excepción, es lo normal. Una hoja sin firma y sin nada que explique por
+qué no la tiene no prueba que el acto haya ocurrido. Ahora lleva el bloque, con
+el motivo y **dos testigos**, impreso siempre y en blanco: imprimirlo sólo cuando
+haga falta obligaría a saber de antemano si la persona va a firmar, que es justo
+lo que nadie sabe hasta que está enfrente.
+
+**El membrete identifica al patrono.** El encabezado suma **NIT y NRC**. Sin
+emisor, una hoja no acredita nada por bien redactada que esté — es lo mismo que
+el Art. 80 del reglamento exige de una constancia médica de tercero («papel
+membretado, firmado y sellado por el médico y un teléfono al cual se pueda
+corroborar»), sólo que del lado de la empresa.
+
+**Y un dato inventado, retirado.** La versión anterior decía «En Chalatenango»,
+que no salía de ninguna constante de la empresa: lo había deducido de un
+comentario sobre fichas de clientes. Un documento que alguien firma no puede
+llevar un lugar deducido. Ahora el lugar es un **parámetro**, y sin él la fecha
+va sola («A los 31 de agosto de 2026»). Hay una prueba que verifica exactamente
+eso: que sin lugar confirmado **no aparezca ninguna ciudad**.
+
+Tres hallazgos del `gate:design` en el camino, los tres reales: el portal dice
+**«aquí» y no «acá»** (decisión del usuario del 26-ago), usa **tuteo y no voseo**
+(§26.7 — se habían colado «Volvé», «Imprimí», «subila»), y el hex crudo de las
+líneas del PDF entró a `EXCEPTIONS` con su motivo, igual que el otro documento:
+**un papel no tiene tokens de tema**.
+
+Trece pruebas anclan lo que el reglamento exige — los renglones en blanco, el
+numeral, el Art. 77 con sus plazos, la autorización del DGIT en el peldaño 4, las
+dos firmas, los dos testigos, el NIT. Probado además contra la regresión que
+deberían cazar: quitando los renglones y cambiando el texto de la autorización,
+**dos pruebas fallan**.
+
 ## v2.876.2 — En casa matriz, el cargo decide qué dice el carné
 
 *«Para admin (gerente, administrador, supervisor, talento humano) que salga

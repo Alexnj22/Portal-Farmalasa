@@ -11,22 +11,22 @@
     --ink-2:   #4E554F;
     --ink-3:   #7E857F;
     --rule:    #DDE0DB;
-    --accent:  #0E6B4F;
-    --accent-soft: #EDF5F1;
-    --alerta:  #8A4A0E;
-    --alerta-soft: #FBF1E4;
+    --accent:  #1A1D1B;
+    --accent-soft: #F0F1EE;
+    --alerta:  #1A1D1B;
+    --alerta-soft: #F0F1EE;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --paper: #101312; --card: #171B19; --ink: #E9EDEA; --ink-2: #A9B2AC;
-      --ink-3: #7B837D; --rule: #2A302C; --accent: #55C398;
-      --accent-soft: #14261F; --alerta: #E0A055; --alerta-soft: #241C10;
+      --ink-3: #7B837D; --rule: #2A302C; --accent: #E9EDEA;
+      --accent-soft: #1F2422; --alerta: #E9EDEA; --alerta-soft: #1F2422;
     }
   }
   :root[data-theme="dark"] {
     --paper: #101312; --card: #171B19; --ink: #E9EDEA; --ink-2: #A9B2AC;
-    --ink-3: #7B837D; --rule: #2A302C; --accent: #55C398;
-    --accent-soft: #14261F; --alerta: #E0A055; --alerta-soft: #241C10;
+    --ink-3: #7B837D; --rule: #2A302C; --accent: #E9EDEA;
+    --accent-soft: #1F2422; --alerta: #E9EDEA; --alerta-soft: #1F2422;
   }
 
   * { box-sizing: border-box; }
@@ -116,7 +116,7 @@
   }
   .aviso p { margin-bottom: .55rem; }
   .aviso p:last-child { margin-bottom: 0; }
-  .aviso strong { color: var(--alerta); }
+  .aviso strong { color: var(--ink); }
 
   /* ── Tabla del ejemplo ─────────────────────────────────────────── */
   .tabla-caja { overflow-x: auto; margin-top: .8rem; }
@@ -128,7 +128,7 @@
   th { font-weight: 600; font-size: .78rem; text-transform: uppercase;
        letter-spacing: .07em; color: var(--ink-3); }
   td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  tr.baja td { color: var(--alerta); }
+  tr.baja td { color: var(--ink-2); font-style: italic; }
 
   /* ── Pie ───────────────────────────────────────────────────────── */
   footer {
@@ -141,8 +141,9 @@
   @media print {
     body { background: #fff; color: #000; font-size: 10.5pt; }
     .doc { max-width: none; padding: 0; }
-    section { break-inside: avoid-page; }
-    h2 { break-after: avoid-page; }
+    h2 { break-after: avoid; }
+    ol.clausulas > li { break-inside: avoid; }
+    p { orphans: 2; widows: 2; }
     .vigencia, .destaca, .aviso { background: transparent; }
     .aviso { border-left: 2px solid #000; }
   }

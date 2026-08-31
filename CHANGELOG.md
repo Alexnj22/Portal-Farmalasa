@@ -21,6 +21,89 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.881.1 — El reglamento en blanco y negro, corrido y con dos firmas
+
+El reglamento pasa a blanco y negro y el texto corre. El verde era el acento del
+PROGRAMA, y en un documento que obliga sólo hacía que pareciera un folleto: el
+énfasis lo dan el peso y la regla. Y `break-inside: avoid-page` empujaba cada
+cláusula entera a la hoja siguiente y dejaba media página en blanco — ahora lo
+único que se evita es partir un inciso o dejar un título solo al pie. De 7
+páginas a 6.
+
+Al final firman dos: **Edwin Nuñez** (elaboró) y el **Gerente General** por la
+razón social. Quien lo redactó y quien lo autoriza no son la misma
+responsabilidad, y una sola raya no dice cuál de las dos está cubierta.
+
+**Y los 17 descuentos sin explicación quedaron explicados: son RETENCIÓN de IVA,
+no descuento.** Todos del ISSS, el 1% del Art. 162 — $21.25 sobre un neto de
+$2,125.00, confirmado en la factura `0000052917_COF`, que lo rotula «IVA Retenido
+(−)». Corrige una suposición: el hueco entre renglones y total NO es
+necesariamente un descuento. La columna `sales_invoices.retencion` los separa
+exacto —de las 546 marcadas, 0 son retención; de las 17 sin marca, las 17 lo
+son— así que la fórmula es `descuento = (renglones − total) − retención`, con
+`has_puntos` de compuerta. **La marca no tiene falsos negativos.**
+
+## v2.881.0 — El traslado dice quién lo recibió, y la hora de la firma es la de la firma
+
+Reportado mirando un traslado de Salud 5 a Salud 4: «¿cómo puedo ver quién
+aceptó esto en Salud 4?». No se podía. El detalle mostraba dos personas —quien
+pidió y quien despachó— y el traslado tiene **tres actos**: falta quien abrió la
+bolsa del otro lado.
+
+El dato estaba escrito desde el día uno (`metadata.erp_recibido`: nombre, hora,
+y lo que entró) y no lo pintaba **ninguna** pantalla del portal. El único sitio
+donde asomaba era volver a escanear el código de la bolsa, que contesta «esa
+bolsa ya se recibió, la recibió X». Medido en producción el 2026-08-31: **622 de
+los 666 traslados tenían ese dato guardado y ninguno lo mostraba**. Es el mismo
+defecto que el motivo del rechazo que vivía en `metadata.rejection_reason`: el
+dato estaba, la pantalla no.
+
+Ahora el detalle de cualquier solicitud tiene un bloque **«Recibido en \<sala\>»**
+con quién, cuándo, cuántos productos y unidades entraron, cuánto costaron, y
+cuánto tardó la bolsa desde el despacho — que es lo que dice si estuvo un día
+dando vueltas. Y el bloque de arriba dejó de llamarse «Aplicado» para llamarse
+**«Despachado desde \<sala\>»**: con las dos cajas rotuladas igual, la primera
+parecía el resumen de todo y quien la firmaba parecía el único que había tocado
+la bolsa.
+
+**`by_name` vacío no se rellena con un nombre cualquiera.** Cuando la solicitud
+la cerró el barrido nocturno —porque el sistema ya la tenía recibida por su
+cuenta— la caja dice «lo cerró el portal solo» y muestra la explicación
+guardada, que aclara que la hora es la de la revisión y no la de la entrada.
+Inventar una firma ahí sería exactamente lo contrario de lo que este bloque
+viene a arreglar.
+
+### Y la hora de «Aprobó» era la de otra persona
+
+Segundo defecto, encontrado en el mismo modal. La ficha decía «Aprobó Yessica
+Hernandez · 31 ago, 10:35 a. m.» y Yessica había despachado el **30 de agosto a
+las 10:34**. Los 10:35 del 31 eran el momento en que Idalia Serrano recibió la
+bolsa en Salud 4.
+
+La causa: `cuandoSeDecidio` caía a `updated_at`, que no es la hora de la
+decisión sino la del **último retoque de la fila**. Cualquier cosa posterior la
+mueve —recibir el traslado, anotar que a quien se avisó no se quedó, cerrarla el
+barrido—, y la firma de una persona quedaba sellada con el momento en que actuó
+otra.
+
+No era un caso raro. Medido en producción: la columna `approvals` está **vacía
+en las 788 solicitudes de la tabla** —nadie la escribió nunca— y `decided_at` no
+existe como columna, así que las dos ramas buenas caían siempre al respaldo. De
+los 635 traslados despachados, **416 (el 65%) mostraban una hora equivocada**,
+con un desfase de hasta **118.8 horas**: casi cinco días entre lo que decía la
+pantalla y lo que había pasado. También afectaba a dos cambios de forma de pago,
+por 21.9 horas.
+
+La corrección no inventa un dato: usa el que ya dejó escrito el acto que cerró
+la solicitud — `erp_traslado.at` para un traslado (donde aprobar *es* despachar),
+`erp_aplicado.at` para lo que se aplica afuera, `decidido_at` para un envío.
+`updated_at` queda de último y sólo para lo que no dejó marca propia: un
+rechazo, una cancelación.
+
+Como el arreglo vive en `cuandoSeDecidio`, alcanza también a la tarjeta de la
+lista, no sólo al detalle.
+
+
 ## v2.880.2 — El reglamento de puntos, en papel
 
 `docs/legal/REGLAMENTO-PROGRAMA-DE-PUNTOS.pdf` — siete páginas, tamaño carta,

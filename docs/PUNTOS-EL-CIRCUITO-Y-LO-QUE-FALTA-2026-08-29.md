@@ -215,8 +215,26 @@ ficha que no acumula no canjea, no alerta y no se registra. Es la misma bandera
 que decide la acumulación, y tiene que decidir las dos cosas o las dos mitades
 se separan.
 
-**Otro tanto con los 17 sin marca y con hueco** ($83.18 al año, ninguno de dólar
-entero): hay que mirarlos una vez antes de confiar en la marca como única señal.
+**Los 17 sin marca y con hueco están explicados: son RETENCIÓN, no descuento.**
+Todos del ISSS, todos en Salud 3, todos CCF, y el hueco es siempre el 1% del
+neto (Art. 162) — $21.25 sobre gravadas de $2,401.25, o sea 1% de $2,125.00.
+Lo confirma la factura `0000052917_COF`, que lo rotula «IVA Retenido (−)».
+
+Y eso corrige una suposición: **el hueco entre renglones y total NO es
+necesariamente un descuento.** La columna `sales_invoices.retencion` ya existe y
+separa las dos cosas exacto:
+
+| | con hueco | el hueco ES la retención | descuento real |
+|---|---:|---:|---:|
+| `has_puntos = true` | 546 | **0** | $5,824.66 |
+| `has_puntos = false` | 17 | **17** | $0.00 |
+
+La fórmula de la detección, entonces:
+
+    descuento = (suma de renglones − total) − retención
+
+con `has_puntos` de compuerta. Los dos conjuntos son disjuntos, así que la marca
+**no tiene falsos negativos**: todo canje real está marcado.
 
 ---
 

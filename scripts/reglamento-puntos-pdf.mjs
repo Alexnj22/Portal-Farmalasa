@@ -30,15 +30,38 @@ const cuerpo = readFileSync(resolve(fuente), 'utf8');
 // lo que lo vuelve oficial.
 const firma = `
 <div class="firma">
-  <p>Chalatenango, El Salvador.</p>
-  <div class="linea"></div>
-  <p class="cargo">Representante Legal<br>Farmacias La Popular y La Salud</p>
+  <p class="lugar">Chalatenango, El Salvador.</p>
+  <div class="firmas">
+    <div class="firmante">
+      <div class="linea"></div>
+      <p class="nombre">Edwin Nuñez</p>
+      <p class="cargo">Elaboró</p>
+    </div>
+    <div class="firmante">
+      <div class="linea"></div>
+      <p class="nombre">Gerente General</p>
+      <p class="cargo">Farmacias La Popular y La Salud</p>
+    </div>
+  </div>
 </div>
 <style>
-  .firma { margin-top: 3.5rem; page-break-inside: avoid; }
-  .firma p { font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: .85rem; color: var(--ink-2); }
-  .firma .linea { width: 17rem; border-bottom: 1px solid var(--ink); margin: 3.5rem 0 .4rem; }
-  .firma .cargo { font-size: .8rem; line-height: 1.5; }
+  /* El pie de firma existe SÓLO en el papel. En línea, un espacio para firmar
+     que nadie firmó se lee como un documento a medias; pegado en la pared, la
+     firma es lo que lo vuelve oficial.
+
+     Dos firmantes y no uno: quien lo redactó y quien lo autoriza no son la
+     misma responsabilidad, y un reglamento con una sola raya no dice cuál de
+     las dos está cubierta. */
+  .firma { margin-top: 3rem; break-inside: avoid; }
+  .firma .lugar { font-family: "IBM Plex Sans", system-ui, sans-serif;
+                  font-size: .85rem; color: var(--ink-2); margin-bottom: 4rem; }
+  .firmas { display: flex; gap: 3rem; }
+  .firmante { flex: 1; }
+  .firmante .linea { border-bottom: 1px solid var(--ink); margin-bottom: .45rem; }
+  .firmante .nombre { font-family: "IBM Plex Sans", system-ui, sans-serif;
+                      font-size: .88rem; font-weight: 600; color: var(--ink); margin-bottom: .1rem; }
+  .firmante .cargo  { font-family: "IBM Plex Sans", system-ui, sans-serif;
+                      font-size: .8rem; color: var(--ink-2); line-height: 1.45; }
 </style>`;
 
 // Se inyecta antes del ÚLTIMO `</div>` —el cierre de `.doc`— buscándolo desde

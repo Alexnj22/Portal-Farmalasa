@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.892.4 — El reporte de diferencias deja de leer la columna que nunca se escribió
+
+Salió de la auditoría del circuito de producto. `pedido_items` tenía **dos
+juegos casi homónimos** de columnas para «quién resolvió esta diferencia y
+cuándo», separados por una sola letra:
+
+| | columnas |
+|---|---|
+| vivas | `resuelto_por`, `resuelto_at` — las escriben las RPC de decisión |
+| muertas | `resuelta_por`, `resuelta_at`, `nota_resolucion` |
+
+Medido sobre las **58,018 filas** de la tabla: las tres muertas tienen CERO
+valores. No las escribió nunca el portal, ni una función de la nube, ni una
+migración viva.
+
+Estaba anotado como una trampa a futuro. **Al ir a borrarlas apareció que ya
+estaba disparada.** `get_pedido_diferencias_stats` —el reporte de diferencias de
+pedidos— devolvía `resuelta_at` en su detalle y en su CTE. No daba error: daba
+`null` en el 100% de las filas, y un `null` se lee igual que «todavía nadie lo
+resolvió». Medido sobre los 125 renglones que ese reporte muestra hoy: **6
+estaban resueltos y aparecían como sin resolver.**
+
+Es la forma exacta de [[feedback_nombre_de_columna_no_es_su_tipo]] aplicada al
+NOMBRE en vez del tipo: la consulta corre, no falla, y contesta sobre la columna
+equivocada. La misma familia que dejó la lista de facturas confirmadas por
+Hacienda vacía durante un año.
+
+El orden de la migración importa y está escrito en ella: primero se reemplaza la
+función —si no, el `DROP` la deja rota— y recién después se van las columnas.
+
+**Verificado antes y después contra producción.** Totales idénticos: 33 pedidos
+afectados, 125 renglones, 517 paquetes asignados, 93 recibidos, 424 faltantes; y
+el detalle pasó de mostrar **0** resoluciones a mostrar las **6** que existen.
+Probado primero en el branch de pruebas con `execute_sql`.
+
+De paso, `scripts/entorno-pruebas/correr_fechas.sql` dejó de nombrar
+`resuelta_at` en la lista de columnas a las que les corre la fecha.
+
 ## v2.892.3 — Barrido de seguridad: qué alcanza quien no inició sesión
 
 Segunda pregunta del usuario, después de cerrar `branches`: *«pero entonces, aún

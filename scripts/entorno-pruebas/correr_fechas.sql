@@ -78,7 +78,7 @@ DECLARE
         ARRAY['bitacora_lecturas',        'created_at,fecha'],
         ARRAY['bitacora_limpiezas',       'created_at,fecha'],
         ARRAY['pedidos',                  'created_at,updated_at'],
-        ARRAY['pedido_items',             'confirmado_suc_at,enviado_at,received_at,rechazado_at,resuelta_at,resuelto_at'],
+        ARRAY['pedido_items',             'confirmado_suc_at,enviado_at,received_at,rechazado_at,resuelto_at'],
         ARRAY['pedido_sucursal_status',   'created_at,updated_at'],
         ARRAY['approval_requests',        'created_at,updated_at'],
         ARRAY['notifications',            'created_at,read_at'],

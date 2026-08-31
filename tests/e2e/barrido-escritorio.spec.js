@@ -39,13 +39,19 @@ const SALIDA = 'barridos/escritorio';
 // la leen de ahí. Duplicarla tiene un costo conocido —se desincroniza— y por eso
 // la prueba de abajo lo verifica en vez de confiar.
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
-    'inicio', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
-    'proveedores', 'facturacion', 'facturas-compra', 'cotizaciones', 'conteo-inventario',
-    'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
-    'staff', 'monitor', 'audit', 'schedules', 'payroll', 'requests', 'vacation-plan',
-    'announcements', 'encuesta', 'metas', 'branches', 'laboratorios', 'roles',
-    'permissions', 'sync-health', 'requests-personales', 'my-documents', 'my-announcements',
-    'profile', 'personal',
+    // ⚠️ Direcciones REALES, no las de antes del renombrado del 26-ago
+    // (v2.779.0/v2.781.0). Las viejas en inglés siguen vivas como
+    // `<Navigate replace>`, así que esto no fallaba: aterrizaba en la vista
+    // correcta. Lo que hacía era rotular cada hallazgo con un nombre que ya no
+    // existe, y repetir la misma pantalla bajo dos nombres. Lo vigila
+    // `npm run gate:rutas`.
+    'inicio', 'ventas', 'cortes', 'compras', 'productos', 'pedidos',
+    'minmax', 'clientes', 'proveedores', 'facturacion', 'facturas-compra', 'cotizaciones',
+    'conteo-inventario', 'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
+    'personal', 'monitor', 'auditoria-de-tiempos', 'horarios', 'nomina', 'solicitudes',
+    'vacaciones', 'avisos', 'encuesta', 'metas', 'sucursales', 'laboratorios',
+    'cargos', 'permisos', 'actualizacion-de-datos', 'solicitudes-personales', 'mis-documentos', 'mis-avisos',
+    'mi-perfil',
 ];
 
 // 1440 es el portátil más común y el ancho donde apareció el defecto de Ventas.

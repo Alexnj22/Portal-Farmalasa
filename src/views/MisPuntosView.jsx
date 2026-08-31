@@ -61,7 +61,11 @@ export default function MisPuntosView() {
 
     return (
         <div className="min-h-[100dvh] flex flex-col items-center px-5 py-10 sm:py-16">
-            <div className="w-full max-w-md">
+            {/* `data-contenido` lo estampa `GlassViewLayout`, y esta vista no lo
+                usa a propósito: no tiene menú. Sin la marca, el barrido del
+                teléfono no sabe dónde termina el chasis y la cuenta como vacía
+                —midió cero y el cero era del instrumento—. Se declara acá. */}
+            <div className="w-full max-w-md" data-contenido>
 
                 <div className="flex items-center gap-3 mb-8">
                     <div className="w-11 h-11 rounded-btn bg-brand/10 flex items-center justify-center shrink-0">

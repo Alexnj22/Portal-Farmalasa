@@ -54,9 +54,15 @@ const ABRE = /(nuev|agregar|añadir|editar|ver\b|detalle|abrir|configur|ajust|fi
 const NO_TOCAR = /(anul|elimin|borrar|quitar|descart|publicar|guardar|enviar|sincroniz|transmit|imprim|recalcul|calcular|confirm|aprob|rechaz|despach|salir|cerrar sesi|firmar|pagar|liquidar|fusionar|reintent|restaurar|generar|exportar|descargar)/i;
 
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
-    'staff', 'branches', 'clientes', 'proveedores', 'productos', 'payroll',
-    'cotizaciones', 'facturacion', 'facturas-compra', 'pedidos', 'minmax',
-    'requests', 'vacation-plan', 'announcements', 'metas', 'roles', 'inicio',
+    // ⚠️ Direcciones REALES, no las de antes del renombrado del 26-ago
+    // (v2.779.0/v2.781.0). Las viejas en inglés siguen vivas como
+    // `<Navigate replace>`, así que esto no fallaba: aterrizaba en la vista
+    // correcta. Lo que hacía era rotular cada hallazgo con un nombre que ya no
+    // existe, y repetir la misma pantalla bajo dos nombres. Lo vigila
+    // `npm run gate:rutas`.
+    'personal', 'sucursales', 'clientes', 'proveedores', 'productos', 'nomina',
+    'cotizaciones', 'facturacion', 'facturas-compra', 'pedidos', 'minmax', 'solicitudes',
+    'vacaciones', 'avisos', 'metas', 'cargos', 'inicio',
 ];
 
 // Cuántos disparadores por ruta. Acota el tiempo, y lo que quede afuera se

@@ -1010,6 +1010,12 @@ const ROUTE_TITLES = {
     '/mis-avisos':  'Mis avisos',
     '/mis-documentos':      'Mis documentos',
     '/mi-perfil':           'Mi perfil',
+    // La pestaña del CLIENTE. Sin esta línea decía «Portal FarmaSalud» —el
+    // nombre del software, que es justo lo que su propia vista se cuida de no
+    // mostrarle— y quedaba indistinguible de las otras veinte pestañas que
+    // alguien tenga abiertas. Faltaba desde que nació: la ruta vive fuera del
+    // marco de la sesión y el lector del gate no la alcanzaba.
+    '/mis-puntos':        'Mis puntos',
     '/kiosk':             'Reloj',
     '/login':             'Portal FarmaSalud',
 };

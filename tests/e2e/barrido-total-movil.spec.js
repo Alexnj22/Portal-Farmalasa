@@ -65,10 +65,16 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
     'inicio', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
     'proveedores', 'facturacion', 'facturas-compra', 'cotizaciones', 'conteo-inventario',
     'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
-    'staff', 'monitor', 'audit', 'schedules', 'payroll', 'requests', 'vacation-plan',
-    'announcements', 'encuesta', 'metas', 'branches', 'laboratorios', 'roles',
-    'permissions', 'sync-health', 'requests-personales', 'my-documents', 'my-announcements',
-    'profile', 'personal',
+    // ⚠️ Las direcciones son las REALES, no las de antes del renombrado del
+    // 26-ago (v2.779.0/v2.781.0). Las 17 en inglés siguen vivas como
+    // `<Navigate replace>`, así que el barrido no fallaba: aterrizaba en la
+    // vista correcta y la medía bien. Lo que sí hacía era ROTULAR cada hallazgo
+    // con un nombre que ya no existe en el menú —`schedules` por `horarios`— y
+    // medir /personal DOS VECES, una como `staff` y otra por su nombre.
+    'personal', 'monitor', 'auditoria-de-tiempos', 'horarios', 'nomina',
+    'solicitudes', 'vacaciones', 'avisos', 'encuesta', 'metas', 'sucursales',
+    'laboratorios', 'cargos', 'permisos', 'actualizacion-de-datos',
+    'solicitudes-personales', 'mis-documentos', 'mis-avisos', 'mi-perfil',
     // ── Las 16 que faltaban (F4, 2026-08-21) ────────────────────────────────
     // La lista tenía 38 rutas y `App.jsx` declara **65**. Descontando comodines,
     // login, el kiosco pre-sesión, las de prueba y las que llevan `:id`,
@@ -86,8 +92,11 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
     // de `:id` necesitan un registro concreto, que es trabajo aparte.
     'bitacoras', 'cargar-compra', 'carnes-del-dia', 'cierre-periodo',
     'cuentas-por-pagar', 'encuesta-admin', 'facturas-sala', 'gestion-stock',
-    'impresion', 'inventario', 'mantenimiento', 'my-requests',
-    'orphan-objects', 'sesiones', 'traslados', 'auditview',
+    'impresion', 'inventario', 'mantenimiento', 'objetos-huerfanos',
+    'sesiones', 'traslados', 'auditoria-del-sistema',
+    // `my-requests` salió de acá: redirige a `requests-personales`, que a su
+    // vez redirige a `solicitudes-personales`. Eran dos saltos para medir por
+    // tercera vez la misma pantalla.
     // ── Las dos del dinero (2026-08-31) ─────────────────────────────────────
     // `bolsas` y `caja` nacieron DESPUÉS de que se cerrara la lista de arriba
     // (21-ago), así que arrastraban el mismo defecto que esa tanda vino a
@@ -95,13 +104,30 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
     // — el informe decía «cero hallazgos» sobre un recorrido que no las
     // incluía. Entre las dos vive el circuito entero del efectivo.
     //
-    // ⚠️ **`caja` sólo se mide de verdad con una cuenta que tenga
-    // `caja_vales`.** La de QA hoy NO lo tiene (a pedido del usuario, el
-    // módulo está abierto sólo para supervisión mientras se prueba), así que
-    // el barrido la mediría como la pantalla de sin-acceso y saldría en cero:
-    // un cero que habla de otra pantalla. Antes de creerle a esta ruta, mirar
-    // que la corrida haya entrado.
+    // ⚠️ **`caja` entra, pero llega vacía — y por otro motivo.** Este aviso
+    // decía que la cuenta de QA no tenía `caja_vales` y que el barrido mediría
+    // la pantalla de sin-acceso. Medido el 2026-08-31, las dos mitades son
+    // falsas: en `role_permissions` el cargo QA tiene `caja_vales` en ver y
+    // editar, y la corrida da `sinAcceso=false` con `diceVacio=true`. O sea
+    // que la vista SÍ se abre y pinta su vacío canónico.
+    //
+    // Lo que falta no es el permiso sino la SALA: la ficha de QA va sin
+    // sucursal salvo mientras dura una prueba, y Mi caja no tiene qué mostrar
+    // sin ella. Para medirla con datos hay que prestarle una sala primero.
     'bolsas', 'caja',
+    // ── La del cliente (2026-08-31) ─────────────────────────────────────────
+    // `mis-puntos` es la vista MÁS de teléfono que tiene el portal —la abre un
+    // cliente parado en la sala, sin sesión y sin menú— y es la única que nadie
+    // midió nunca: nació después de que se cerrara la lista, igual que las dos
+    // de arriba. No cae en la exclusión de `/login` y `/kiosk`: ésas se dejan
+    // afuera porque el barrido mediría la pantalla de ingreso en vez de la
+    // vista, y `mis-puntos` ES su propia pantalla.
+    //
+    // ⚠️ Vive fuera del chasis: sin `data-contenido` ni `GlassViewLayout`, así
+    // que mientras nadie consulte una ficha el informe la va a marcar `vacia` —
+    // eso es el formulario, no un error. Los blancos de dedo y el desborde se
+    // miden igual, que es a lo que se la trae.
+    'mis-puntos',
 ];
 
 // `TEMA=dark|solid|solid-dark|liquid` — todo lo medido hasta el 2026-08-07 fue
@@ -438,8 +464,16 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 // `sesiones` —con dos fichas reales— da 16. Contando adentro,
                 // los mismos ocho casos se separan solos.
                 const cajaVista = document.querySelector('[data-contenido]');
+                // Y los CONTROLES cuentan como contenido propio, no sólo las
+                // superficies. Una pantalla que es un formulario —`mis-puntos`, la
+                // del cliente— no pinta ni una tarjeta hasta que alguien consulta,
+                // así que salía `vacía` con dos campos y un botón adentro: o sea
+                // con tres blancos de dedo que son exactamente lo que este barrido
+                // viene a medir. Van acotados a la caja de la vista, así que los
+                // botones del chasis no entran.
                 const propias = cajaVista
-                    ? cajaVista.querySelectorAll('[data-surface], [class*="bg-surface-card"]').length
+                    ? cajaVista.querySelectorAll(
+                        '[data-surface], [class*="bg-surface-card"], input, select, textarea, button').length
                     : 0;
                 // Ninguno de los dos VETA, y eso costó una corrida: el primer
                 // intento dejaba que `data-vacio` ganara sobre todo lo demás, y

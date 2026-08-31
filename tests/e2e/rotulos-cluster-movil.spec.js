@@ -32,14 +32,19 @@ const SALIDA = 'barridos';
 const INFORME = `${SALIDA}/rotulos-cluster.json`;
 
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
-    'inicio', 'ventas', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
-    'proveedores', 'facturacion', 'facturas-compra', 'facturas-sala', 'cotizaciones',
-    'conteo-inventario', 'libro-compras-completo', 'libros-iva', 'resumen-fiscal',
-    'corte-z', 'ventas-perdidas', 'inventario', 'gestion-stock', 'traslados',
-    'staff', 'monitor', 'audit', 'auditview', 'schedules', 'payroll', 'requests',
-    'vacation-plan', 'announcements', 'encuesta', 'encuesta-admin', 'metas',
-    'branches', 'laboratorios', 'roles', 'permissions', 'sync-health', 'requests-personales',
-    'my-documents', 'my-announcements', 'profile', 'personal',
+    // ⚠️ Direcciones REALES, no las de antes del renombrado del 26-ago
+    // (v2.779.0/v2.781.0). Las viejas en inglés siguen vivas como
+    // `<Navigate replace>`, así que esto no fallaba: aterrizaba en la vista
+    // correcta. Lo que hacía era rotular cada hallazgo con un nombre que ya no
+    // existe, y repetir la misma pantalla bajo dos nombres. Lo vigila
+    // `npm run gate:rutas`.
+    'inicio', 'ventas', 'compras', 'productos', 'pedidos', 'minmax',
+    'clientes', 'proveedores', 'facturacion', 'facturas-compra', 'facturas-sala', 'cotizaciones',
+    'conteo-inventario', 'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
+    'inventario', 'gestion-stock', 'traslados', 'personal', 'monitor', 'auditoria-de-tiempos',
+    'auditoria-del-sistema', 'horarios', 'nomina', 'solicitudes', 'vacaciones', 'avisos',
+    'encuesta', 'encuesta-admin', 'metas', 'sucursales', 'laboratorios', 'cargos',
+    'permisos', 'actualizacion-de-datos', 'solicitudes-personales', 'mis-documentos', 'mis-avisos', 'mi-perfil',
 ];
 
 // Se ejecuta DENTRO de la página: mide cada botón del clúster y devuelve el

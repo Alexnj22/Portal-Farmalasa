@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.868.2 — Los barridos medían direcciones que ya no existen, y a la vista del cliente no la medía nadie
+
+**Las cuatro listas de rutas quedaron en el idioma viejo.** El 26-ago se
+renombraron 17 direcciones al español (v2.779.0/v2.781.0) y las viejas se
+quedaron como `<Navigate replace>`, que es lo correcto para no romperle el
+favorito a nadie. Pero los cuatro barridos de QA siguieron nombrándolas en
+inglés: no fallaban —la redirección los deja en la vista correcta— así que
+nada avisó. Lo que sí hacían era **rotular cada hallazgo con un nombre que ya
+no existe** (`schedules` por `horarios`) y medir la misma pantalla dos veces:
+`/personal` entraba como `staff` y por su nombre, y `solicitudes-personales`
+tres veces, encadenando dos redirecciones desde `my-requests`.
+
+**Y a `/mis-puntos` no la medía nadie.** Es la vista más de teléfono que tiene
+el portal —la abre un cliente parado en la sala, sin sesión y sin menú— y
+arrastraba el mismo defecto que `bolsas` y `caja` (v2.864.4): nació después de
+que se cerrara la lista del barrido, el 21-ago. No entra en la exclusión de
+`/login` y `/kiosk`, que se dejan afuera porque ahí el barrido mediría la
+pantalla de ingreso: `mis-puntos` ES su propia pantalla.
+
+**Y `gate:rutas` tampoco la veía — estaba en rojo por eso.** Su lector de
+`App.jsx` cortaba el `element={…}` a los 260 caracteres, y `/mis-puntos` va
+envuelta en su propio fondo: ~320. Se notó al revés, por un falso positivo —el
+registro de auditoría la nombraba y el gate la daba por muerta— y detrás
+estaban los defectos de verdad, que nunca se le habían pedido:
+
+- **la pestaña del navegador decía «Portal FarmaSalud»**, o sea el nombre del
+  software, que es justo lo que esa vista se cuida de no mostrarle al cliente;
+- **no se precargaba**: sin clave en `IMPORTADOR_POR_RUTA` carga lento la
+  primera vez, sin error y sin que nadie lo note.
+
+Hoy el lector cuenta llaves en vez de caracteres, y la VISTA le gana al
+envoltorio al resolver el componente —con el elemento entero a la vista,
+`GlobalBackground` aparece antes que `MisPuntosView` y le haría leer el
+encabezado al fondo de pantalla—. El gate pasó de 55 rutas a 56.
+
+Es la misma familia las tres veces: **lo que vive fuera del marco de la sesión
+es invisible para los instrumentos**, y hay que ir a buscarlo.
+
+**Y su cero seguía siendo del instrumento.** Al medirla, el barrido la marcó
+«llegó sin nada que medir» —fue honesto— porque decide si una vista tiene
+contenido preguntándole a `data-contenido`, que estampa `GlassViewLayout`, y
+esta vista no usa ese chasis a propósito: no tiene menú. Se cerraron las dos
+mitades: la vista se declara, y el barrido cuenta **los controles** como
+contenido propio y no sólo las superficies — una pantalla que es un formulario
+no pinta una sola tarjeta hasta que alguien consulta, y sus dos campos y su
+botón son justo los blancos de dedo que este barrido viene a medir. Acotados a
+la caja de la vista, así que el chasis no entra.
+
+**De paso, un aviso que ya era falso.** El comentario de `caja` decía que la
+cuenta de QA no tenía `caja_vales` y que el barrido mediría la pantalla de
+sin-acceso. Las dos mitades son falsas: en `role_permissions` ese cargo lo
+tiene en ver y editar, y la corrida da `sinAcceso=false` con `diceVacio=true`.
+Lo que falta no es el permiso sino la **sala** — la ficha de QA va sin sucursal
+salvo mientras dura una prueba.
+
+Medido después: las 55 rutas del barrido sin duplicados, sin redirecciones y
+todas existentes en el router — verificado por diff contra `App.jsx`, no a
+ojo. Corrida completa en WebKit iPhone 13, en dos tandas: **55 rutas, 0
+hallazgos**, y ninguna quedó sin medir. La primera tanda se colgó en `metas`
+tras 27 pantallas —WebKit acumulando, el modo de falla que este archivo ya
+tiene escrito—; medida sola, `metas` tarda 8.4 s y sale limpia.
+
 ## v2.868.1 — El documento de bienvenida también sale en una recontratación
 
 *«¿Por qué no me guardó el documento de bienvenida? Lo guardé así»* — con la
@@ -92,48 +154,6 @@ reentrar— se dio a sí misma un permiso **a medias**. Lo cierra un disparador
 `BEFORE` que normaliza la fila antes de escribirla, y que además cubre el otro
 camino: apagarle un interruptor desde la pantalla de permisos. Probado
 apagándoselo a propósito.
-
-## v2.867.1 — Los barridos medían direcciones que ya no existen, y a la vista del cliente no la medía nadie
-
-**Las cuatro listas de rutas quedaron en el idioma viejo.** El 26-ago se
-renombraron 17 direcciones al español (v2.779.0/v2.781.0) y las viejas se
-quedaron como `<Navigate replace>`, que es lo correcto para no romperle el
-favorito a nadie. Pero los cuatro barridos de QA siguieron nombrándolas en
-inglés: no fallaban —la redirección los deja en la vista correcta— así que
-nada avisó. Lo que sí hacían era **rotular cada hallazgo con un nombre que ya
-no existe** (`schedules` por `horarios`) y medir la misma pantalla dos veces:
-`/personal` entraba como `staff` y por su nombre, y `solicitudes-personales`
-tres veces, encadenando dos redirecciones desde `my-requests`.
-
-**Y a `/mis-puntos` no la medía nadie.** Es la vista más de teléfono que tiene
-el portal —la abre un cliente parado en la sala, sin sesión y sin menú— y
-arrastraba el mismo defecto que `bolsas` y `caja` (v2.864.4): nació después de
-que se cerrara la lista del barrido, el 21-ago. No entra en la exclusión de
-`/login` y `/kiosk`, que se dejan afuera porque ahí el barrido mediría la
-pantalla de ingreso: `mis-puntos` ES su propia pantalla.
-
-**Y `gate:rutas` tampoco la veía — estaba en rojo por eso.** Su lector de
-`App.jsx` cortaba el `element={…}` a los 260 caracteres, y `/mis-puntos` va
-envuelta en su propio fondo: ~320. Se notó al revés, por un falso positivo —el
-registro de auditoría la nombraba y el gate la daba por muerta— y detrás
-estaban los defectos de verdad, que nunca se le habían pedido:
-
-- **la pestaña del navegador decía «Portal FarmaSalud»**, o sea el nombre del
-  software, que es justo lo que esa vista se cuida de no mostrarle al cliente;
-- **no se precargaba**: sin clave en `IMPORTADOR_POR_RUTA` carga lento la
-  primera vez, sin error y sin que nadie lo note.
-
-Hoy el lector cuenta llaves en vez de caracteres, y la VISTA le gana al
-envoltorio al resolver el componente —con el elemento entero a la vista,
-`GlobalBackground` aparece antes que `MisPuntosView` y le haría leer el
-encabezado al fondo de pantalla—. El gate pasó de 55 rutas a 56.
-
-Es la misma familia las tres veces: **lo que vive fuera del marco de la sesión
-es invisible para los instrumentos**, y hay que ir a buscarlo.
-
-Medido después: las 55 rutas del barrido sin duplicados, sin redirecciones y
-todas existentes en el router — verificado por diff contra `App.jsx`, no a
-ojo. Primera tanda de 27 rutas en WebKit iPhone 13: **0 hallazgos**.
 
 ## v2.867.0 — El buzón de capturas se vacía solo, y la casilla del carné decide el PDF
 

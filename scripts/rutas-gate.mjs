@@ -126,18 +126,43 @@ function titulosDeRuta(app) {
 // ── Las rutas declaradas en App.jsx, con su componente ───────────────────────
 function rutasDeApp(app) {
   const out = [];
-  for (const m of app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{([\s\S]{0,260}?)\}\s*\/>/g)) {
+  // El `element={…}` se lee CONTANDO LLAVES, no con un tope de caracteres.
+  // El tope era 260 y costó exactamente lo que este gate existe para evitar:
+  // `/mis-puntos` —la única vista pública con envoltorio propio, la que abre un
+  // cliente en su teléfono— tiene un elemento de ~320, así que el lector no la
+  // veía. Y una ruta que el gate no ve no es una ruta sin hallazgos: es una
+  // ruta que no se mide. Se notó al revés, por un falso positivo —`areas.mjs`
+  // la nombraba y el gate la daba por muerta—, y detrás estaba lo de verdad:
+  // nunca se le pidió título de pestaña. Misma familia que el barrido del
+  // teléfono, que tampoco la visitaba: lo que vive fuera del marco de la sesión
+  // es invisible para los instrumentos, y hay que ir a buscarlo.
+  for (const m of app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{/g)) {
     const path = m[1];
-    const el = m[2];
+    const desde = m.index + m[0].length;
+    let prof = 1, i = desde;
+    while (i < app.length && prof > 0) {
+      if (app[i] === '{') prof++;
+      else if (app[i] === '}') prof--;
+      i++;
+    }
+    // Sin el `/>` no es un elemento propio sino la apertura de un anidado.
+    if (!/^\s*\/>/.test(app.slice(i, i + 8))) continue;
+    const el = app.slice(desde, i - 1);
     // Una ficha de detalle (`…/:id`) no tiene un título fijo: lo arma
     // `AppWithToast` con el nombre de lo que se abrió. Acusarla de «sin
     // título» sería acusar al que hizo bien el trabajo.
     if (path.includes('*') || path.includes(':')) continue;
     // Una redirección no es una vista: es el puente de un favorito viejo.
     const esRedireccion = /<Navigate\b/.test(el) || /^Ir[A-Z]/.test((el.match(/<([A-Z][A-Za-z0-9_]*)/) || [])[1] || '');
-    const comp = (el.match(/<([A-Z][A-Za-z0-9_]*)/g) || [])
+    // Y la VISTA gana sobre el envoltorio. Con el elemento entero a la vista
+    // aparecen componentes de marco —`GlobalBackground` en `/mis-puntos`— que
+    // están ANTES en el orden del texto: tomar el primero le haría leer el
+    // encabezado al fondo de pantalla y acusaría a la ruta de no coincidir
+    // consigo misma.
+    const candidatos = (el.match(/<([A-Z][A-Za-z0-9_]*)/g) || [])
       .map(s => s.slice(1))
-      .filter(c => !['PermissionGuard', 'Navigate', 'Suspense', 'ErrorBoundary'].includes(c))[0] || null;
+      .filter(c => !['PermissionGuard', 'Navigate', 'Suspense', 'ErrorBoundary'].includes(c));
+    const comp = candidatos.find(c => /View$/.test(c)) || candidatos[0] || null;
     out.push({ path: path.startsWith('/') ? path : '/' + path, comp, esRedireccion });
   }
   // Rutas anidadas con índice (`<Route path="personal"><Route index …`).

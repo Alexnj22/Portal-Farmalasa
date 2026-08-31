@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.886.2 — El canje pide 100 puntos
+
+La cláusula 4.1 del reglamento decía que el canje se hace **sin cantidad
+mínima**, y no es la regla: se canjea **desde 100 puntos** (US$1.00). Corregido
+en `docs/legal/reglamento-programa-de-puntos.html` y regenerado el PDF de sala
+(`npm run reglamento:puntos`), que sale del mismo archivo.
+
+La equivalencia no cambia —100 puntos = US$1.00, un punto = US$0.01— y por
+encima del mínimo se sigue canjeando cualquier cantidad disponible: el mínimo es
+un piso, no un múltiplo.
+
+Queda una consecuencia que el reglamento todavía no dice y hay que decidir: con
+un piso de 100 puntos, un saldo menor no se puede usar nunca y la cláusula 5 lo
+vence igual a los doce meses. O el saldo por debajo del mínimo no vence, o el
+reglamento lo advierte — hoy no hace ninguna de las dos.
+
+El PDF además arrastra el membrete nuevo (el logo corona la hoja, y debajo el
+documento y el emisor se reparten a los lados de un eje) que ya estaba en el
+archivo del repo y no se había vuelto a generar.
+
 ## v2.886.1 — La lectura no se queda trabada en «Sin confirmar»
 
 Cabo suelto de v2.886.0. Una lectura (tipo X) nace con estado PENDIENTE como

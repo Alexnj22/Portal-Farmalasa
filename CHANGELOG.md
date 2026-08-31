@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.888.1 — El ticket, la salvedad y el precio especial
+
+Tres lecturas equivocadas que encontró el usuario en el afiche. Las tres son de
+fondo, no de redacción.
+
+**1 · «No tienes que guardar el ticket» invitaba a tirarlo.** Es cierto para los
+puntos y falso para todo lo demás: **para un cambio o una devolución el ticket sí
+hace falta**. La frase ahora se limita a lo que sabe —«ya no hay que presentar el
+ticket para que te los abonen»— y el pie de la hoja dice que se guarde. Un afiche
+que hace perder un derecho por ahorrarse cuatro palabras es peor que no tenerlo.
+
+**2 · «Da tu nombre en caja… para que la compra quede a tu nombre»** decía
+«nombre» dos veces en un renglón. Queda **«Identifícate en caja antes de pagar.
+Con tu documento la compra se registra en tu cuenta.»**
+
+**3 · La salvedad rescataba a quien no debía, y ése es el hallazgo.** El
+reglamento tiene DOS clases de exclusión y el afiche las había aplanado en una
+sola lista, así que el «pero si llevas algo de farmacia, sí acumula» parecía
+alcanzar también al precio especial. **No lo alcanza:** basta que algo a precio
+especial, de mayoreo, de convenio o con descuento figure en el ticket para que
+esa compra no acumule, y da igual lo demás que lleve. La salvedad es sólo para
+saldo/recargas/tarjetas y bebidas/helados/paletas.
+
+El reglamento decía «los productos de las **dos primeras exclusiones**», contando
+sobre una lista cuyo primer renglón es *las compras de US$1.00 o menos* — o sea
+que contando en serio, las dos primeras son otras. Ahora los grupos **se nombran**
+en vez de contarse, y se agregó la frase que faltaba: la salvedad no alcanza a los
+precios especiales. Contar posiciones en una lista que alguien va a editar es
+cómo una cláusula cambia de sentido sin que nadie la toque.
+
 ## v2.888.0 — El reglamento se lee sin iniciar sesión
 
 `portal.farmasalud.lat/reglamento-puntos` — pública, sin sesión, servida como

@@ -21,6 +21,92 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.868.0 — Corregir un movimiento de caja llega como solicitud, y se puede resolver
+
+«Corregir» era un callejón: pedía, y nadie podía resolverlo. Ahora viaja por la
+misma bandeja que anular una factura o ajustar un Mín·Máx, con su familia de
+permiso, su firma y su aplicación de verdad.
+
+**Faltaban tres piezas, y cada una fallaba distinto.**
+
+1. **La familia de permiso no existía.** `modulo_de_aprobacion()` no conocía
+   `CAJA_MOVIMIENTO_CHANGE`, así que caía en el `ELSE NULL` — el módulo del
+   ámbito, `requests` a secas. O sea que la corrección de un movimiento de
+   **caja** la decidía cualquiera que decidiera solicitudes de sala, y no había
+   forma de delegar esa parte sin entregar el resto. Hoy es `requests_caja`, con
+   su ficha en «Decidir solicitudes» junto a Facturación, Inventario, Min/Max y
+   Traslados.
+2. **El rótulo faltaba.** La bandeja agrupa por tipo, así que la sección se
+   encabezaba con la clave cruda `CAJA_MOVIMIENTO_CHANGE`. Ahora dice
+   **«Corrección de caja»**.
+3. **Y nada la aplicaba.** Aprobar no tocaba la caja. La rama nueva anula el
+   movimiento o le corrige el monto del otro lado, con el mismo orden que usa
+   facturación: primero la caja, después el portal, y la solicitud queda
+   APPROVED **al final** — si la caja no acepta, sigue PENDING con el motivo a
+   la vista, nunca «aprobada» sobre una caja que no cambió.
+
+**Dos frenos que no están en la pantalla sino en el servidor**, que es donde
+valen: lo que se corrige **no viaja desde el navegador** —sólo el id de la
+solicitud; qué se pidió y con qué monto se relee allá, o quien aprueba podría
+escribir un número distinto del que se pidió— y **quien la pidió no la puede
+aprobar**.
+
+**Y las fichas de «Decidir solicitudes» estaban pegadas.** El contenedor usaba
+`space-y`, que sólo pone margen arriba, pero `LiquidTooltip` envuelve a su hijo
+en un `inline-block`: las cuatro fluían en una línea sin nada que las separara.
+El motivo no se veía leyendo esa línea sino la del tooltip. Ahora es
+`flex flex-wrap gap-2`, con el blanco de dedo de 44pt que además les faltaba.
+
+**Un agujero del disparador de ayer, encontrado usándolo.** Sembrar
+`requests_caja` copiando de `caja_vales` metió a la cuenta de pruebas en su
+propio `SELECT`, y como el disparador salta las filas que ya son suyas —para no
+reentrar— se dio a sí misma un permiso **a medias**. Lo cierra un disparador
+`BEFORE` que normaliza la fila antes de escribirla, y que además cubre el otro
+camino: apagarle un interruptor desde la pantalla de permisos. Probado
+apagándoselo a propósito.
+
+## v2.867.1 — Los barridos medían direcciones que ya no existen, y a la vista del cliente no la medía nadie
+
+**Las cuatro listas de rutas quedaron en el idioma viejo.** El 26-ago se
+renombraron 17 direcciones al español (v2.779.0/v2.781.0) y las viejas se
+quedaron como `<Navigate replace>`, que es lo correcto para no romperle el
+favorito a nadie. Pero los cuatro barridos de QA siguieron nombrándolas en
+inglés: no fallaban —la redirección los deja en la vista correcta— así que
+nada avisó. Lo que sí hacían era **rotular cada hallazgo con un nombre que ya
+no existe** (`schedules` por `horarios`) y medir la misma pantalla dos veces:
+`/personal` entraba como `staff` y por su nombre, y `solicitudes-personales`
+tres veces, encadenando dos redirecciones desde `my-requests`.
+
+**Y a `/mis-puntos` no la medía nadie.** Es la vista más de teléfono que tiene
+el portal —la abre un cliente parado en la sala, sin sesión y sin menú— y
+arrastraba el mismo defecto que `bolsas` y `caja` (v2.864.4): nació después de
+que se cerrara la lista del barrido, el 21-ago. No entra en la exclusión de
+`/login` y `/kiosk`, que se dejan afuera porque ahí el barrido mediría la
+pantalla de ingreso: `mis-puntos` ES su propia pantalla.
+
+**Y `gate:rutas` tampoco la veía — estaba en rojo por eso.** Su lector de
+`App.jsx` cortaba el `element={…}` a los 260 caracteres, y `/mis-puntos` va
+envuelta en su propio fondo: ~320. Se notó al revés, por un falso positivo —el
+registro de auditoría la nombraba y el gate la daba por muerta— y detrás
+estaban los defectos de verdad, que nunca se le habían pedido:
+
+- **la pestaña del navegador decía «Portal FarmaSalud»**, o sea el nombre del
+  software, que es justo lo que esa vista se cuida de no mostrarle al cliente;
+- **no se precargaba**: sin clave en `IMPORTADOR_POR_RUTA` carga lento la
+  primera vez, sin error y sin que nadie lo note.
+
+Hoy el lector cuenta llaves en vez de caracteres, y la VISTA le gana al
+envoltorio al resolver el componente —con el elemento entero a la vista,
+`GlobalBackground` aparece antes que `MisPuntosView` y le haría leer el
+encabezado al fondo de pantalla—. El gate pasó de 55 rutas a 56.
+
+Es la misma familia las tres veces: **lo que vive fuera del marco de la sesión
+es invisible para los instrumentos**, y hay que ir a buscarlo.
+
+Medido después: las 55 rutas del barrido sin duplicados, sin redirecciones y
+todas existentes en el router — verificado por diff contra `App.jsx`, no a
+ojo. Primera tanda de 27 rutas en WebKit iPhone 13: **0 hallazgos**.
+
 ## v2.867.0 — El buzón de capturas se vacía solo, y la casilla del carné decide el PDF
 
 **«Todavía no tiene carné» hacía otra cosa.** Marcarla al dar de alta abría el

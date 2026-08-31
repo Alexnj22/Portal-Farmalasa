@@ -34,4 +34,8 @@ export const MODULO_QUE_DECIDE = {
     INVENTORY_LOAD_REQUEST:    'requests_inventario',
     INVENTORY_DISCARD_REQUEST: 'requests_inventario',
     MINMAX_CHANGE_REQUEST:     'requests_minmax',
+    // Anular o corregir el monto de un movimiento de caja ya anotado. Quien lo
+    // anotó NO puede deshacerlo: un movimiento ya contado es dinero, y borrarlo
+    // en silencio es justamente lo que la bitácora existe para impedir.
+    CAJA_MOVIMIENTO_CHANGE:    'requests_caja',
 };

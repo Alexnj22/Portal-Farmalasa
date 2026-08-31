@@ -61,6 +61,8 @@ const CORTE_URL  = `${BASE}admin_corte.php`;
 const APERTURA   = `${BASE}apertura_caja.php`;
 const INGRESO    = `${BASE}agregar_ingreso_caja.php`;
 const SALIDA     = `${BASE}agregar_salida_caja.php`;
+const EDITAR     = `${BASE}editar_movimiento_caja.php`;
+const BORRAR     = `${BASE}borrar_movimiento_caja.php`;
 
 /** El único tipo ejercido de verdad (28-ago, movimiento 43260). */
 const ID_TIPO = "1";
@@ -155,16 +157,14 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const accion = String(body.accion ?? "");
     const sala = Number(body.sala);
-    // `aplicar_correccion` estuvo en esta lista sin existir, y eso era un arma
-    // cargada: el bloque de CERRAR no era una rama sino la COLA de la función,
-    // así que una acción aceptada y no implementada caía en él y **cerraba el
-    // día** — el único acto irreversible de todo el módulo. Nadie la llamaba
-    // todavía; el defecto estaba esperando a que alguien la cableara.
-    //
-    // Se saca de la lista hasta que se escriba, y de paso la cola deja de ser
-    // una cola (ver el `if (accion === "cerrar")` de abajo): un nombre nuevo mal
-    // escrito tiene que contestar «acción desconocida», nunca hacer algo.
-    if (!["abrir", "ingreso", "salida", "cerrar", "estado", "corregir"].includes(accion)) {
+    // ⚠️ Esta lista es una PUERTA, no una etiqueta. `aplicar_correccion` estuvo
+    // acá antes de existir, y el bloque de CERRAR no era una rama sino la COLA
+    // de la función: una acción aceptada y sin implementar caía en él y
+    // **cerraba el día**, el único acto irreversible del módulo. Hoy la cola ya
+    // no es cola (ver el `if (accion === "cerrar")` de abajo), pero la regla
+    // queda: no se agrega un nombre acá hasta que su rama esté escrita.
+    if (!["abrir", "ingreso", "salida", "cerrar", "estado", "corregir",
+          "aplicar_correccion"].includes(accion)) {
       return json({ ok: false, error: "Acción desconocida." }, 400);
     }
     if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sala." }, 400);
@@ -176,13 +176,25 @@ Deno.serve(async (req) => {
 
     const quien = await requireActiveEmployeeUser(req, supabase);
     if (!quien) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
-    // Leer el estado no es operar: mirar si la caja está abierta lo puede hacer
-    // quien ve los cortes; abrir, anotar o cerrar necesita el permiso de operar.
-    const permiso = await permisoDeModulo(
-      supabase, quien.id, "caja_vales", accion === "estado" ? "can_view" : "can_edit",
-    );
+    /* Tres permisos distintos y no uno, porque son tres actos distintos:
+     *
+     *  · MIRAR el estado lo puede hacer quien ve los cortes (`can_view`).
+     *  · ABRIR, anotar o cerrar es operar la caja (`caja_vales` `can_edit`), y
+     *    pedir una corrección también: la pide quien anotó.
+     *  · APLICAR una corrección es DECIDIRLA, y ésa es la otra persona
+     *    (`requests_caja` `can_approve`). Cobrarla con `caja_vales` dejaría que
+     *    quien se equivocó se aprobara a sí mismo, que es exactamente lo que la
+     *    solicitud existe para impedir. */
+    const [modulo, accionDelPermiso] = accion === "aplicar_correccion"
+      ? ["requests_caja", "can_approve"]
+      : ["caja_vales", accion === "estado" ? "can_view" : "can_edit"];
+    const permiso = await permisoDeModulo(supabase, quien.id, modulo, accionDelPermiso);
     if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
-    if (!permiso.puede) return json({ ok: false, error: "No tienes permiso para operar la caja desde el portal." }, 403);
+    if (!permiso.puede) {
+      return json({ ok: false, error: accion === "aplicar_correccion"
+        ? "No tienes permiso para decidir las correcciones de caja."
+        : "No tienes permiso para operar la caja desde el portal." }, 403);
+    }
 
     // ── PEDIR UNA CORRECCIÓN ────────────────────────────────────────────────
     //
@@ -266,6 +278,137 @@ Deno.serve(async (req) => {
         dia: diaAbierto,
         cortes: cortesDelDia ?? [],
       });
+    }
+
+    // ── APLICAR UNA CORRECCIÓN APROBADA ─────────────────────────────────────
+    //
+    // La otra mitad de `corregir`. Hasta que existió, el botón «Corregir» era un
+    // callejón: creaba la solicitud, alguien la aprobaba y la caja no cambiaba.
+    //
+    // Lo que se corrige **NO viene del navegador**: el id de la solicitud es lo
+    // único que se recibe, y de ahí se relee qué se pidió, sobre qué movimiento
+    // y con qué monto. Mandar el monto desde afuera dejaría que quien aprueba
+    // escribiera un número distinto del que se pidió, y la bitácora guardaría el
+    // pedido y no lo hecho.
+    //
+    // El orden importa y es el mismo que usa facturación: primero la caja,
+    // después el portal, y la solicitud queda APPROVED **al final**. Si el
+    // sistema no acepta, la solicitud sigue PENDING con el motivo a la vista —
+    // nunca una corrección «aprobada» sobre una caja que no cambió.
+    if (accion === "aplicar_correccion") {
+      const solId = String(body.solicitud ?? "");
+      if (!solId) return json({ ok: false, error: "Falta la solicitud." }, 400);
+
+      const { data: sol, error: errSol } = await supabase.from("approval_requests")
+        .select("id, type, status, metadata, employee_id, note, approvals")
+        .eq("id", solId).maybeSingle();
+      if (errSol) throw new Error(`leyendo la solicitud: ${errSol.message}`);
+      if (!sol) return json({ ok: false, error: "Esa solicitud no existe." }, 404);
+      if (sol.type !== "CAJA_MOVIMIENTO_CHANGE") {
+        return json({ ok: false, error: "Esa solicitud no es de una corrección de caja." }, 400);
+      }
+      if (sol.status !== "PENDING") {
+        return json({ ok: false, error: `Esa solicitud ya está en ${sol.status}.` }, 409);
+      }
+      // Quien la pidió no la aprueba. El permiso ya se cobró arriba; esto es lo
+      // otro que hace falta, y no es lo mismo: tener el permiso de decidir no
+      // habilita a decidir lo propio.
+      if (sol.employee_id === quien.id) {
+        return json({ ok: false, error: "No puedes aprobar tu propia corrección." }, 403);
+      }
+
+      const meta = (sol.metadata ?? {}) as Record<string, unknown>;
+      if (Number(meta.branch_id) !== sala) {
+        return json({ ok: false, error: "Esa corrección es de otra sala." }, 400);
+      }
+
+      const { data: mov, error: errMov } = await supabase
+        .from("caja_movimientos_portal")
+        .select("id, tipo, monto, concepto, erp_movimiento_id, anulado_at")
+        .eq("id", Number(meta.movimiento_portal)).maybeSingle();
+      if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
+      if (!mov) return json({ ok: false, error: "Ese movimiento ya no existe." }, 404);
+      if (mov.anulado_at) return json({ ok: false, error: "Ese movimiento ya está anulado." }, 409);
+      // Sin el número del sistema no hay qué corregir del otro lado: la fila del
+      // portal es un intento que nunca llegó a la caja. Decirlo es mejor que
+      // marcar la solicitud como aplicada sobre algo que no está.
+      if (!mov.erp_movimiento_id) {
+        return json({ ok: false, error: "Ese movimiento nunca llegó a la caja, así que no hay nada que corregir ahí." }, 409);
+      }
+
+      const anular = meta.que === "ANULAR";
+      const montoNuevo = Number(meta.monto_nuevo);
+      if (!anular && !(Number.isFinite(montoNuevo) && montoNuevo > 0)) {
+        return json({ ok: false, error: "La solicitud no trae un monto válido." }, 400);
+      }
+
+      const resp = anular
+        ? await (await fetch(BORRAR, {
+            method: "POST",
+            headers: {
+              Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+            body: new URLSearchParams({
+              process: "eliminar", id_movimiento: String(mov.erp_movimiento_id),
+            }).toString(),
+            signal: AbortSignal.timeout(45_000),
+          })).text()
+        : await (await fetch(EDITAR, {
+            method: "POST",
+            headers: {
+              Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+            body: new URLSearchParams({
+              process: "editar", id_movimiento: String(mov.erp_movimiento_id),
+              id_apertura: estado.aper ?? "", id_empleado: estado.emp ?? "",
+              turno: estado.turno ?? "1",
+              monto: dosDecimales(montoNuevo),
+              // El concepto NO se toca: es lo que ata las dos filas cuando
+              // alguien mira del otro lado.
+              concepto: `P${mov.id} ${mov.concepto}`.slice(0, 50),
+            }).toString(),
+            signal: AbortSignal.timeout(45_000),
+          })).text();
+
+      if (!exito(resp)) {
+        return json({ ok: false, error: `La caja no aceptó la corrección: ${resp.slice(0, 200)}` }, 502);
+      }
+
+      // Ya cambió del otro lado. De acá en adelante un fallo deja el portal
+      // desfasado, no la caja: se contesta que se aplicó y se dice qué no quedó
+      // anotado, en vez de callarlo o de fingir que no pasó nada.
+      const parche = anular
+        ? { anulado_at: new Date().toISOString(), anulado_por: quien.id,
+            anulado_motivo: (sol as { note?: string }).note ?? null }
+        : { monto: Number(dosDecimales(montoNuevo)) };
+      const { error: errPortal } = await supabase.from("caja_movimientos_portal")
+        .update({ ...parche, updated_at: new Date().toISOString() })
+        .eq("id", mov.id);
+
+      // Quién decidió va en la fila, no sólo en el estado: una decisión sin
+      // firma no se puede auditar, y ésta mueve dinero de una caja.
+      const { error: errCerrar } = await supabase.from("approval_requests")
+        .update({
+          status: "APPROVED", approver_id: quien.id,
+          approver_note: String(body.approver_note ?? "").slice(0, 500) || null,
+          approvals: [...(Array.isArray(sol.approvals) ? sol.approvals : []), {
+            level: 1, approverId: quien.id, approvedAt: new Date().toISOString(),
+            approverNote: String(body.approver_note ?? "") || null,
+          }],
+          updated_at: new Date().toISOString(),
+        })
+        // `eq("status","PENDING")` es el freno contra dos aprobaciones a la vez:
+        // la segunda no encuentra la fila y no vuelve a escribir en la caja.
+        .eq("id", sol.id).eq("status", "PENDING");
+
+      if (errPortal || errCerrar) {
+        return json({ ok: true, aplicado: { que: meta.que, movimiento: mov.id },
+          aviso: "La caja se corrigió, pero el portal no lo pudo anotar entero. Avísale a Sistemas." });
+      }
+      return json({ ok: true, aplicado: { que: meta.que, movimiento: mov.id,
+        monto: anular ? null : Number(dosDecimales(montoNuevo)) } });
     }
 
     // ── ABRIR ───────────────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ import {
     fetchEmployeeRango, fetchShiftsBasic, fetchPublishedRostersForSwap, updateEmployeeRosterById,
     aplicarSolicitudEnErp,
     aplicarMovimientoInventarioEnErp,
+    aplicarCorreccionDeCaja,
     fetchPersonasDeSolicitudes,
 } from '../../data/requests';
 // El horario se escribe UN día a la vez desde el 2026-08-27: leer el roster,
@@ -61,6 +62,11 @@ export const REQUEST_TYPES = {
     // `INVENTORY_TRANSFER_REQUEST`. Su pantalla propia es `/traslados` —acá se
     // ve para saber que existe, no para resolverlo.
     INVENTORY_TRANSFER_REQUEST:{ label: 'Traslado entre salas',   color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    // Anular o corregir el monto de un movimiento de caja ya anotado. Sin este
+    // rótulo la bandeja agrupaba la sección bajo la clave cruda
+    // `CAJA_MOVIMIENTO_CHANGE` — el mismo defecto que arriba, y por eso va con
+    // el mismo comentario a la vista.
+    CAJA_MOVIMIENTO_CHANGE:    { label: 'Corrección de caja',     color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
     // Vive en otra tabla (`minmax_change_requests`) pero se muestra en el mismo
     // centro: para quien mira la sala es una solicitud más. Ver `adaptarMinMax`.
     MINMAX_CHANGE_REQUEST:     { label: 'Ajuste de Min/Max',      color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
@@ -103,10 +109,23 @@ export const INVENTARIO_REQUEST_TYPES = new Set([
     'INVENTORY_DISCARD_REQUEST',
 ]);
 
+/**
+ * La que corrige un movimiento de CAJA ya anotado.
+ *
+ * Mismas dos razones que las de arriba —un nivel, nada que anotar en el legajo—
+ * y una propia: aprobarla **borra o reescribe una línea de la caja del día**.
+ * Quien la pidió no la puede aprobar, y eso no lo decide esta pantalla: lo
+ * rechaza la propia función.
+ */
+export const CAJA_REQUEST_TYPES = new Set([
+    'CAJA_MOVIMIENTO_CHANGE',
+]);
+
 /** Las que se aplican en un sistema externo al aprobarlas. */
 export const REQUEST_TYPES_QUE_SE_APLICAN = new Set([
     ...FACTURACION_REQUEST_TYPES,
     ...INVENTARIO_REQUEST_TYPES,
+    ...CAJA_REQUEST_TYPES,
 ]);
 
 /**
@@ -1089,6 +1108,56 @@ export const createRequestsSlice = (set, get) => ({
     },
 
     /**
+     * Aprobar una corrección de caja = anularla o reescribirla de verdad.
+     *
+     * Misma forma que las dos de al lado y por el mismo motivo: la función
+     * valida el permiso contra el JWT, relee QUÉ se pidió (nada de eso viaja
+     * desde acá), escribe en la caja y recién entonces marca APPROVED. Si la
+     * caja no acepta, esto devuelve el motivo y la solicitud sigue PENDING —
+     * nunca una corrección «aprobada» sobre una caja que no cambió.
+     *
+     * También rechaza que quien la pidió la apruebe. Ese freno vive allá y no
+     * acá a propósito: escondido en el navegador sería una sugerencia.
+     */
+    _aprobarCaja: async (requestId, req, approverId, approverNote) => {
+        const meta = parseMeta(req.metadata);
+        const { ok, error, aplicado, aviso } =
+            await aplicarCorreccionDeCaja(requestId, meta.branch_id, approverNote);
+
+        if (!ok) {
+            useToastStore.getState().showToast('No se aplicó la corrección', error, 'error');
+            return YA_AVISADO;
+        }
+
+        set(state => ({
+            requests: state.requests.map(r =>
+                r.id === requestId
+                    ? { ...r, status: 'APPROVED', ...selloDeQuienDecidio(get, approverId),
+                        approver_note: approverNote,
+                        metadata: { ...meta, caja_aplicado: aplicado } }
+                    : r
+            ),
+        }));
+        apagarAviso(get, requestId, 'APPROVED');
+
+        if (req.employee?.id) {
+            await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED',
+                approverNote, meta);
+        }
+
+        useToastStore.getState().showToast(
+            aviso ? 'Se corrigió, con un pero' : 'Corrección aplicada',
+            aviso || (aplicado?.que === 'ANULAR'
+                ? 'El movimiento quedó anulado en la caja.'
+                : `El movimiento quedó en ${aplicado?.monto ?? '—'}.`),
+            aviso ? 'info' : 'success',
+            aviso ? 8000 : undefined,
+        );
+        window.dispatchEvent(new CustomEvent('requests-updated'));
+        return true;
+    },
+
+    /**
      * Aprobar una carga o un descarte = moverlo de verdad.
      *
      * Misma forma que `_aprobarFacturacion` y por el mismo motivo: la Edge
@@ -1344,6 +1413,11 @@ export const createRequestsSlice = (set, get) => ({
             // toca nada afuera — eso sigue en `rejectRequest`.
             if (INVENTARIO_REQUEST_TYPES.has(req.type))
                 return await get()._aprobarInventario(requestId, req, approverId, approverNote, aceptadas);
+
+            // Caja: igual, pero borrando o reescribiendo una línea de la caja
+            // del día. Rechazar tampoco toca nada afuera.
+            if (CAJA_REQUEST_TYPES.has(req.type))
+                return await get()._aprobarCaja(requestId, req, approverId, approverNote);
 
             const currentLevel = req.current_level || 1;
             const nextLevel = currentLevel + 1;

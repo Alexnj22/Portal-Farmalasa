@@ -92,7 +92,7 @@ const MAIN_MODULES = MODULES.filter(m => !m.isTab);
  * pantalla el usuario ve un cuadro de cuatro, y que el maestro gobierne sólo
  * dos de ellas sería peor que no gobernar ninguna. */
 const HIJOS_DE_APROBAR = ['requests_facturacion', 'requests_inventario',
-                          'requests_minmax', 'traslados'];
+                          'requests_minmax', 'requests_caja', 'traslados'];
 
 const SUBS_DE = Object.fromEntries(
     MODULE_GROUPS.flatMap(g => g.modules.map(m => [m.key, (m.sub || []).map(s => s.key)])),
@@ -195,6 +195,7 @@ const FAMILIAS_DECIDIR = [
     { key: 'requests_facturacion', label: 'Facturación', desc: 'Anular una factura, o cambiarle el pago, el vendedor o el cliente' },
     { key: 'requests_inventario',  label: 'Inventario',  desc: 'Cargas y descartes de existencia' },
     { key: 'requests_minmax',      label: 'Min / Max',   desc: 'Ajustes de stock mínimo y máximo' },
+    { key: 'requests_caja',        label: 'Caja',        desc: 'Anular o corregir el monto de un movimiento de caja ya anotado' },
     { key: 'traslados',            label: 'Traslados',   desc: 'Confirmar el envío de producto que otra sala pide' },
 ];
 
@@ -422,13 +423,18 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                 era ése. Reportado por el usuario: «¿por qué no son canónicos?».
                 No se usa `SegmentedControl` porque ahí se elige UNA de N y acá
                 se encienden las que sean: es otro control, no otro estilo. */}
-            <div className="space-y-1.5">
+            {/* `flex flex-wrap gap-2` y no `space-y`: `LiquidTooltip` envuelve a su
+                hijo en un `inline-block`, así que las cuatro fichas fluían en
+                UNA línea y `space-y` —que sólo pone margen ARRIBA— no separaba
+                nada. Quedaban pegadas una contra otra, y el motivo no se veía
+                leyendo esta línea sino la del tooltip. Lo reportó el usuario. */}
+            <div className="flex flex-wrap items-center gap-2">
                 {FAMILIAS_DECIDIR.map(f => {
                     const on = !!perm(f.key).can_approve;
                     return (
                         <LiquidTooltip key={f.key} content={f.desc}>
                             <div data-surface={on ? undefined : 'card'}
-                                className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-[var(--dur-slow)] ${on ? 'bg-success/10 border-success/30' : ''}`}>
+                                className={`flex items-center justify-between gap-3 px-3 py-2 min-h-[var(--tap-min)] rounded-xl border transition-all duration-[var(--dur-slow)] ${on ? 'bg-success/10 border-success/30' : ''}`}>
                                 <span className={`text-caption font-bold transition-colors duration-[var(--dur-slow)] ${on ? 'text-content-2' : 'text-content-3'}`}>
                                     {f.label}
                                 </span>

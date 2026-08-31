@@ -344,6 +344,38 @@ export async function aplicarSolicitudEnErp(requestId, approverNote = '') {
  *
  * Devuelve `{ ok, aplicado }` o `{ ok:false, error }`. Nunca lanza.
  */
+/**
+ * Aplica una corrección de caja aprobada: anula el movimiento o le corrige el
+ * monto, del lado de la caja.
+ *
+ * Mismo reparto que las dos de arriba, y acá pesa por un motivo propio: **lo
+ * que se corrige no viaja desde el navegador**. Sólo va el id de la solicitud;
+ * qué se pidió, sobre qué movimiento y con qué monto se relee del otro lado.
+ * Mandar el monto desde acá dejaría que quien aprueba escribiera un número
+ * distinto del que se pidió, y la bitácora guardaría el pedido y no lo hecho.
+ *
+ * `sala` va porque la función abre la sesión de ESA sucursal en el sistema de
+ * la caja; que coincida con la de la solicitud lo comprueba ella, no esto.
+ *
+ * Devuelve `{ ok, aplicado }` o `{ ok:false, error }`. Nunca lanza.
+ */
+export async function aplicarCorreccionDeCaja(requestId, sala, approverNote = '') {
+    try {
+        const { data, error } = await supabase.functions.invoke('operar-caja', {
+            body: { accion: 'aplicar_correccion', sala, solicitud: requestId,
+                    approver_note: approverNote },
+        });
+        if (!error) return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+        // El motivo real viaja en el cuerpo; sin leerlo, todo fallo se ve como
+        // un «non-2xx status code» indistinguible.
+        let detalle = '';
+        try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
+        return { ok: false, error: detalle || error.message };
+    } catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+}
+
 export async function aplicarMovimientoInventarioEnErp(requestId, approverNote = '', aceptadas = null) {
     try {
         const { data, error } = await supabase.functions.invoke('aplicar-movimiento-inventario', {

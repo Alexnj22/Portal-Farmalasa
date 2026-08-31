@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.877.1 — Una sola definicion de punto vencido
+
+«Vencido» estaba escrito dos veces con un día de diferencia: `vencidosAl` tomaba
+la fecha de vencimiento como el último día bueno y el trabajo mensual como el
+primero malo. La estricta era la que iba a correr contra la gente, así que a
+todos se les habrían muerto los puntos **un día antes** de lo que decía su
+pantalla — sin ningún error de por medio y sin nadie a quien reclamarle.
+
+Hoy hay una sola definición, `estaVencido`, y las dos la usan: **el día de
+vencimiento los puntos todavía sirven**. Ante la duda, el día de más es del
+cliente. Cinco pruebas fijan el borde, incluida la del 1-oct-2027, que es cuando
+vencen de golpe los 1,431,997 puntos heredados: un día de corrimiento ahí son
+10,508 personas con un reclamo legítimo.
+
 ## v2.877.0 — La constancia lleva membrete, pie con código, y el renglón de negativa a firmar
 
 **Faltaba el renglón que más se usa.** Ninguna versión del documento tenía dónde

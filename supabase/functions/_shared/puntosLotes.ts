@@ -36,7 +36,7 @@ export type Lote = {
   /** Cuándo se ganaron, AAAA-MM-DD. */
   fecha: string;
   puntos: number;
-  /** Último día en que sirven, AAAA-MM-DD. */
+  /** Último día en que sirven — ese día TODAVÍA sirven. AAAA-MM-DD. */
   vence: string;
 };
 
@@ -102,9 +102,26 @@ export function porVencimiento(lotes: Lote[]): Array<{ vence: string; puntos: nu
     .sort((x, y) => (x.vence < y.vence ? -1 : 1));
 }
 
-/** Cuántos de esos puntos ya pasaron su fecha al día `hoy` (AAAA-MM-DD). */
+/**
+ * ¿Este grupo ya no sirve al día `hoy`?
+ *
+ * **La única definición de «vencido» que existe.** Estuvo escrita dos veces con
+ * un día de diferencia —una tomaba `vence` como el último día bueno y la otra
+ * como el primero malo— y la estricta era la que iba a correr contra la gente:
+ * a todos se les habrían muerto los puntos un día antes de lo que decía su
+ * pantalla, sin ningún error de por medio.
+ *
+ * `vence` es el ÚLTIMO día en que sirven, y ese día todavía sirven. Se elige así
+ * porque es lo que entiende cualquiera que lea «vence el 10/01» en la pantalla,
+ * y porque ante la duda el día de más es del cliente.
+ */
+export function estaVencido(lote: Lote, hoy: string): boolean {
+  return lote.vence < hoy.slice(0, 10);
+}
+
+/** Los grupos que ya no sirven al día `hoy` (AAAA-MM-DD). */
 export function vencidosAl(lotes: Lote[], hoy: string): Lote[] {
-  return lotes.filter((l) => l.vence < hoy.slice(0, 10));
+  return lotes.filter((l) => estaVencido(l, hoy));
 }
 
 /**

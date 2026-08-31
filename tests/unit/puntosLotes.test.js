@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     sumarMeses, venceEl, lotesConVencimiento, porVencimiento, vencidosAl,
-    INICIO_PROGRAMA, MESES_DE_VIDA,
+    estaVencido, INICIO_PROGRAMA, MESES_DE_VIDA,
 } from '../../supabase/functions/_shared/puntosLotes.ts';
 
 // Lo que se ancla acá no es la aritmética: es que un punto NO se muera antes de
@@ -155,5 +155,41 @@ describe('sumarMeses con meses negativos', () => {
             expect(mes).toBeGreaterThanOrEqual(1);
             expect(mes).toBeLessThanOrEqual(12);
         }
+    });
+});
+
+// El borde de un día, que estuvo escrito de dos formas a la vez: `vencidosAl`
+// lo trataba como el último día bueno y el trabajo mensual como el primero
+// malo. La estricta era la que iba a correr contra la gente — a todos se les
+// habrían muerto los puntos un día antes de lo que decía su pantalla, sin un
+// error de por medio y sin nadie a quien reclamarle.
+describe('el día del vencimiento todavía sirve', () => {
+    const lote = { fecha: '2027-01-10', puntos: 100, vence: '2028-01-10' };
+
+    it('el día ANTERIOR no está vencido', () => {
+        expect(estaVencido(lote, '2028-01-09')).toBe(false);
+    });
+
+    it('el DÍA de vencimiento no está vencido — ese día todavía sirve', () => {
+        expect(estaVencido(lote, '2028-01-10')).toBe(false);
+    });
+
+    it('el día SIGUIENTE sí', () => {
+        expect(estaVencido(lote, '2028-01-11')).toBe(true);
+    });
+
+    // Los 1,431,997 puntos que hoy tiene la gente vencen todos el mismo día.
+    // Un día de corrimiento acá son 10,508 personas con un reclamo legítimo.
+    it('lo heredado sirve todo el 1 de octubre de 2027', () => {
+        const [viejo] = lotesConVencimiento([{ fecha: '2024-03-01', quedan: 500 }]);
+        expect(viejo.vence).toBe('2027-10-01');
+        expect(estaVencido(viejo, '2027-09-30')).toBe(false);
+        expect(estaVencido(viejo, '2027-10-01')).toBe(false);
+        expect(estaVencido(viejo, '2027-10-02')).toBe(true);
+    });
+
+    it('`vencidosAl` usa la misma definición', () => {
+        expect(vencidosAl([lote], '2028-01-10')).toHaveLength(0);
+        expect(vencidosAl([lote], '2028-01-11')).toHaveLength(1);
     });
 });

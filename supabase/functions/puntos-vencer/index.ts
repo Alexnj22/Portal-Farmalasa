@@ -30,7 +30,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   INICIO_PROGRAMA, MESES_DE_VIDA, SQL_LOTES_VIVOS,
-  sumarMeses, venceEl, lotesConVencimiento,
+  sumarMeses, venceEl, lotesConVencimiento, estaVencido,
 } from "../_shared/puntosLotes.ts";
 
 const cors = {
@@ -132,7 +132,11 @@ Deno.serve(async (req) => {
       const pts = Number(f.quedan);
       if (!(pts > 0)) continue;
       sinGracia.set(id, (sinGracia.get(id) ?? 0) + pts);
-      if (venceEl(String(f.fecha)) <= hoy) conGracia.set(id, (conGracia.get(id) ?? 0) + pts);
+      // Una sola definición de «vencido», la de `estaVencido`: acá se arma un
+      // lote de mentira nada más para preguntárselo, en vez de repetir la
+      // comparación y arriesgarse a que se corra un día.
+      const l = { fecha: String(f.fecha).slice(0, 10), puntos: pts, vence: venceEl(String(f.fecha)) };
+      if (estaVencido(l, hoy)) conGracia.set(id, (conGracia.get(id) ?? 0) + pts);
     }
 
     const resumen = {
@@ -177,7 +181,7 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          const vencido = lotes.filter((l) => l.vence <= hoy)
+          const vencido = lotes.filter((l) => estaVencido(l, hoy))
             .reduce((s, l) => s + l.puntos, 0);
           // Nunca más de lo que hay, nunca negativo: el mismo freno que la
           // reversión de una anulación.

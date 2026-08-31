@@ -772,10 +772,15 @@ export function definicionDelDocumento({
             layout: 'lightHorizontalLines',
         },
         {
+            /* «Soporte» y no «Talento Humano»: lo pidió el usuario el 2026-08-31.
+               Una contraseña que no entra es un problema de acceso, y quien lo
+               resuelve es quien puede reiniciarla. Las menciones a Talento
+               Humano que quedan en el documento son de OTRA cosa —la afiliación
+               al ISSS y a la AFP— y ésas sí le tocan a ellos. */
             text: contrasenaTemporal
                 ? 'Esta contraseña sirve una sola vez y sólo hasta que la cambies. Si alguien más la vio, '
-                  + 'cámbiala apenas entres y avísale a Talento Humano.'
-                : 'Entras con la contraseña que ya tenías. Si no la recuerdas, pídele a Talento Humano '
+                  + 'cámbiala apenas entres y avísale a Soporte.'
+                : 'Entras con la contraseña que ya tenías. Si no la recuerdas, pídele a Soporte '
                   + 'que te la reinicie.',
             style: 'nota', margin: [0, 8, 0, 0],
         },

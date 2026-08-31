@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.869.1 — La contraseña se pide a Soporte, no a Talento Humano
+
+En el documento de bienvenida. Una contraseña que no entra es un problema de
+acceso, y quien lo resuelve es quien puede reiniciarla.
+
+Cambiaron las **dos** frases de la contraseña —la de «si alguien más la vio,
+cámbiala» y la de «si no la recuerdas, pídele que te la reinicie»—, aunque el
+usuario señaló una: son la misma frase en las dos ramas del mismo párrafo, y
+dejar una diciendo Talento Humano y la otra Soporte manda a dos puertas distintas
+por el mismo problema.
+
+Las menciones a **Talento Humano** que quedan son de otra cosa —la afiliación al
+ISSS y a la AFP, y el carné— y ésas sí le tocan a ellos.
+
 ## v2.869.0 — Supervisión, Administración y Talento Humano con todo activo
 
 Pedido del usuario. Los tres cargos quedan en **160 de 160 módulos, completos**

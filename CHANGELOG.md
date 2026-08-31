@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.883.4 — Quien se lleva el efectivo no firma su propia entrega
+
+Reporte del usuario, parado en administración con seis bolsas de Salud 2 que no
+podía recibir: *«yo retiré de salud 2, ya estoy en admin para recibirlo y
+contar»*.
+
+El freno de la recepción estaba bien y no se tocó: compara contra **quién firmó
+que el dinero salió de la sala**, no contra quién lo cargó. Por eso el mismo día
+otra persona sí pudo recibir en administración las bolsas de Salud 4, Salud 5 y
+La Popular que ella misma se llevó — allá la salida la firmaron las tres salas.
+**Llevar el efectivo y recibirlo ya estaba permitido.**
+
+Lo que falló fue un paso antes: en Salud 2 la entrega se firmó con la sesión de
+quien se lo llevaba, así que las dos firmas de la cadena son la misma persona y
+no queda ningún control. Y el portal no dijo nada — dejó firmar, dejó escanear
+el carné propio, y el aviso apareció tres pasos después, con el dinero ya movido
+y seis bolsas que sólo puede destrabar un tercero.
+
+O sea que la guarda estaba en el extremo equivocado de la cadena. Ahora
+`entregar_bolsas` rechaza que quien se lleva el efectivo sea la misma persona
+que firma la entrega, **con el dinero todavía en la sala**. Es el mismo freno
+que ya tienen los traslados de producto (*«Quien entrega tiene que ser alguien
+de esa sala, no tú»*) y el kiosco desde v2.882.1; el efectivo era el único
+circuito que no lo tenía. Va antes de consumir el vale de identidad, así que un
+rechazo no gasta el carné.
+
+No deja a nadie trabado: medido el 2026-08-31, las siete salas tienen entre 5 y
+7 personas con permiso para firmar una entrega.
+
 ## v2.883.3 — La firma de cada acto lleva la cara de quien la hizo
 
 Corregido por el usuario mirando el detalle del traslado que salió en v2.883.0:

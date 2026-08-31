@@ -233,8 +233,12 @@ export const AREAS = [
         // efecto es una foto de PERSONAL: escribe en el bucket `empleados`.
         // Si esa sesión la ubica en otro lado, gana su decisión.
         edge: ['apply-scheduled-employee-events', 'check-employee-doc-expiry', 'leer-dui',
-               'subir-foto-de-captura'],
-        crons: ['apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily'],
+               'subir-foto-de-captura',
+               // `soltar-captura` vacía el buzón del traspaso: el efecto es
+               // sobre documentos de PERSONAL, así que vive con su gemela.
+               'soltar-captura'],
+        crons: ['apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily',
+                'soltar-capturas-abandonadas'],
         docs: ['docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md'],
     },
     {

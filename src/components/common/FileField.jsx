@@ -382,7 +382,7 @@ const FileField = memo(({
         let vivo = true;
         let dejarDeEscuchar = null;
         (async () => {
-            const { esperarFoto, fotoComoArchivo } = await traspaso();
+            const { esperarFoto, fotoComoArchivo, soltarCaptura } = await traspaso();
             // Se pudo cerrar el diálogo mientras bajaba el trozo. Sin esta
             // guarda quedaría un canal escuchando a una captura que ya no
             // existe, y su limpieza nunca correría.
@@ -408,6 +408,11 @@ const FileField = memo(({
                      * foto sólo se manda desde el `onConfirm` del editor —
                      * cancelar no manda nada. */
                     aceptar(await fotoComoArchivo(urlFirmada, 'foto.jpg'), { yaPreparado: true });
+                    /* Ya está acá: la copia del buzón se borra. `capturas/` es
+                       un buzón y no un archivo — lo que se guarda de verdad se
+                       sube a su lugar definitivo cuando alguien guarda la
+                       ficha. No se espera: el traspaso ya terminó bien. */
+                    soltarCaptura(captura.id);
                 } catch {
                     // La foto SÍ se subió; lo que falló es traerla. Se dice, en
                     // vez de cerrar el diálogo como si nada hubiera pasado.

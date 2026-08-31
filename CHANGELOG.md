@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.867.0 — El buzón de capturas se vacía solo, y la casilla del carné decide el PDF
+
+**«Todavía no tiene carné» hacía otra cosa.** Marcarla al dar de alta abría el
+diálogo de impresión de la ticketera al guardar. *«Eso es incorrecto, el carné lo
+tiene el PDF; ese selector era para ponerlo o no el carné en el PDF.»* Hoy decide
+la **hoja del carné** del documento de bienvenida y no imprime nada: marcada, el
+documento sale de dos páginas; desmarcada, de una, y el aviso deja de prometer
+«el carné va en la página siguiente».
+
+El carné de papel no desapareció — vale hasta medianoche y sirve para quien llega
+sin el suyo — pero se pide desde el perfil, que es donde se sabe que hace falta.
+El texto de la casilla decía lo que el código hacía, así que era la mitad del
+defecto: los dos se corrigieron juntos.
+
+**Y el buzón de las capturas se vacía solo.** *«Si no se guarda, se debe
+descartar / borrar. Sólo se debe guardar si queda guardado y anexado al
+empleado.»*
+
+`capturas/` es un buzón, no un archivo: el teléfono deja ahí la foto, la
+computadora la baja, y al guardar la ficha se sube a su lugar definitivo. La
+copia del buzón no servía para nada desde el segundo en que se bajaba — pero
+nadie la borraba. Medido antes de la primera corrida: **31 archivos y 12.4 MB en
+tres días**, y no son archivos cualesquiera, son DUIs, contratos y constancias de
+personas.
+
+Se borra en dos momentos, y hacen falta los dos: la computadora la suelta apenas
+la baja (el caso normal), y un cron cada hora recoge lo abandonado — el diálogo
+que se cerró, la señal que se fue. El barrido va por el **bucket** y no por las
+filas: una fila borrada deja su archivo sin nadie que lo nombre, y dos de los 31
+ya estaban así.
+
+Primera corrida verificada: **31 archivos y 48 filas**, y el bucket quedó en cero.
+
+**El historial de documentos ahora cubre las recontrataciones.** La lista de los
+que guardan el archivo anterior era sólo el certificado médico, por una decisión
+anterior del mismo usuario: *«esto sólo es necesario para el médico»*. Lo que
+faltaba era una palabra — **recontrataciones**. Alguien que entra, sale y vuelve
+tiene DOS contratos, y los dos son ciertos: el de 2024 no es una versión vieja
+del de 2026, es el que prueba lo que pasó en 2024.
+
+Se suman solicitud de empleo, contrato de trabajo, acuse del Ministerio y las dos
+anualidades. El criterio, dicho de una vez: **¿el papel de antes sigue probando
+algo por su cuenta?** Los que no están conservan igual la traza — cuándo se
+cambió y quién.
+
 ## v2.866.1 — Una acción no implementada cerraba el día
 
 Salió al revisar si el módulo estaba listo, y es la clase de defecto que sólo

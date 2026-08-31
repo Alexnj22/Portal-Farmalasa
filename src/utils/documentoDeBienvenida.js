@@ -722,6 +722,16 @@ export function definicionDelDocumento({
     nombre, cargo = '', sala = '', usuario, contrasenaTemporal,
     barrasPng = null, barrasCarnePng = null, retratoPng = null, iconoPng = null, previsional = [],
     fechaDeInicio = null,
+    /* ¿Lleva la hoja del carné?
+     *
+     * La decide «Todavía no tiene carné» al dar de alta. Hasta hoy esa casilla
+     * hacía otra cosa —mandaba a imprimir un carné de papel en la ticketera— y
+     * el usuario la corrigió: *«eso es incorrecto, el carné lo tiene el PDF; ese
+     * selector era para ponerlo o no el carné en el PDF»* (2026-08-31).
+     *
+     * Por defecto va: quien no toca nada se lleva su carné. Se quita para quien
+     * ya tiene el de plástico, y ahí el documento queda de UNA hoja. */
+    conCarne = true,
 }) {
     const gris = '#6B7280';
     const linea = { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#E5E7EB' }], margin: [0, 14, 0, 14] };
@@ -799,12 +809,16 @@ export function definicionDelDocumento({
     cuerpo.push(linea);
     cuerpo.push({
         text: 'Este documento tiene tus claves. Guárdalo o destrúyelo después de entrar — no lo dejes '
-            + 'sobre un mostrador. El carné va en la página siguiente.',
+            + 'sobre un mostrador.' + (conCarne ? ' El carné va en la página siguiente.' : ''),
         style: 'nota',
     });
 
-    cuerpo.push(...paginaDelCarne({ nombre, cargo, sala, fechaDeInicio,
-        barrasPng: barrasCarnePng || barrasPng, retratoPng, iconoPng }));
+    // La hoja del carné sólo si se pidió. Sin ella el documento es de una hoja,
+    // y el renglón de arriba deja de prometer una página que no existe.
+    if (conCarne) {
+        cuerpo.push(...paginaDelCarne({ nombre, cargo, sala, fechaDeInicio,
+            barrasPng: barrasCarnePng || barrasPng, retratoPng, iconoPng }));
+    }
 
     return {
         pageSize: 'LETTER',

@@ -210,3 +210,38 @@ describe('el carné de pie y la inducción', () => {
         expect(hoja2()).toMatch(/tu cargo todavía no lo tiene habilitado/);
     });
 });
+
+/* ── La hoja del carné es opcional ──────────────────────────────────────────
+ *
+ * La decide «Todavía no tiene carné» al dar de alta. Antes esa casilla mandaba
+ * a imprimir un carné de papel en la ticketera y el documento SIEMPRE llevaba
+ * su hoja de carné; el usuario lo corrigió el 2026-08-31.
+ *
+ * Se prueba por el salto de página y por el contenido, no sólo por uno de los
+ * dos: un `pageBreak` sin carné sería una hoja en blanco —que se imprime
+ * igual— y un carné sin salto saldría encima del texto de la primera. */
+describe('la hoja del carné', () => {
+    const base = {
+        nombre: 'Ana María Pérez', cargo: 'Dependiente de Farmacia', sala: 'Salud 1',
+        usuario: 'ana.perez', contrasenaTemporal: 'K7M2QX9P',
+    };
+    const saltos = (def) => (JSON.stringify(def.content).match(/"pageBreak":"before"/g) || []).length;
+
+    it('va cuando se pide', () => {
+        const def = definicionDelDocumento({ ...base, conCarne: true });
+        expect(saltos(def)).toBe(1);
+        expect(textoDe(def)).toContain('Dependiente de Farmacia');
+        expect(textoDe(def)).toMatch(/El carné va en la página siguiente/);
+    });
+
+    it('NO va cuando no se pide, y ahí el documento es de una hoja', () => {
+        const def = definicionDelDocumento({ ...base, conCarne: false });
+        expect(saltos(def)).toBe(0);
+        // Y el aviso deja de prometer una página que no existe.
+        expect(textoDe(def)).not.toMatch(/El carné va en la página siguiente/);
+    });
+
+    it('por defecto va: quien no toca nada se lleva su carné', () => {
+        expect(saltos(definicionDelDocumento(base))).toBe(1);
+    });
+});

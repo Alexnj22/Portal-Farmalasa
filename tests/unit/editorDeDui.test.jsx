@@ -59,7 +59,7 @@ describe('el editor con tipo="dui"', () => {
     it('pero SÍ ofrece «Nítida», y arranca en ella', () => {
         const delDui = acabadosDe(DOCS.dui).map(a => a.label);
         expect(delDui).toContain('Nítida');
-        expect(delDui).toContain('Como está');
+        expect(delDui).toContain('Original');
         expect(acabadoPorDefecto(DOCS.dui)).toBe('nitida');
     });
 

@@ -72,6 +72,18 @@ const REGENERAR = process.argv.includes('--update-baseline');
  * La cadencia se compara contra producción tal cual: si alguien la aprieta, el
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
+  {
+    job: 'soltar-capturas-abandonadas', slug: 'soltar-captura', cadencia: '7 * * * *',
+    corridasDia: 24, sistema: 0,
+    motivo: 'Vacía el buzón `capturas/` — la copia temporal que el teléfono deja para que la '
+          + 'computadora la baje. El caso normal NO llega acá: quien la baja llama a '
+          + '`soltar-captura` en el acto. Esto recoge lo abandonado (el diálogo que se cerró, la '
+          + 'señal que se fue), que sin barrido se acumula sin techo: medido antes de la primera '
+          + 'corrida, 31 archivos y 12.4 MB en tres días, y son DUIs y contratos de personas. '
+          + '`sistema: 0` porque no habla con el ERP ni con Hacienda: sólo lista y borra en el '
+          + 'Storage del propio proyecto. Cada hora y no cada día porque la variable que este '
+          + 'cron controla es cuánto tiempo pasa un papel ajeno en un buzón que ya nadie mira.',
+  },
   // ── Los que hablan con el sistema en cada corrida ──────────────────────────
   {
     job: 'cortes-caja-30s', slug: 'sync-cortes-caja', cadencia: '30 seconds',

@@ -106,3 +106,26 @@ export async function fotoComoArchivo(url, nombre = 'foto.jpg') {
     const base = String(nombre).replace(/\.[^.]+$/, '');
     return new File([blob], `${base}.${ext}`, { type: tipo });
 }
+
+/**
+ * Suelta la captura: borra la copia del buzón en cuanto la foto ya está acá.
+ *
+ * **Nunca lanza.** El traspaso ya terminó bien cuando esto corre; si la limpieza
+ * falla, lo que NO puede pasar es que se vea como que la foto no llegó. El
+ * barrido de `soltar-captura` recoge lo que quede.
+ */
+export async function soltarCaptura(capturaId) {
+    if (!capturaId) return;
+    try {
+        const { data, error } = await supabase.functions.invoke('soltar-captura', { body: { capturaId } });
+        /* El resultado NO se descarta aunque no se pueda hacer nada con él: si
+           este borrado falla siempre, el buzón se vuelve a llenar y la única
+           señal sería alguien contando archivos meses después. El barrido lo
+           recoge igual, pero un silencio acá esconde que dejó de funcionar. */
+        if (error || !data?.ok) {
+            console.warn('soltarCaptura: no se pudo soltar', error?.message || data?.error);
+        }
+    } catch (e) {
+        console.warn('soltarCaptura:', e?.message || e);
+    }
+}

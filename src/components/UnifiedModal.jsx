@@ -5,7 +5,6 @@ import {
     User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Pencil, Truck, Contact
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
 import LiquidModal from "./common/LiquidModal";
 import { useToastStore } from '../store/toastStore';
 import { LoadingState } from './common/StateViews';
@@ -234,9 +233,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
     // Se ofrece una vez por apertura, y sólo si hay algo que ofrecer.
     const hayQueOfrecer = borradorSeOfrece && !!borrador && !ofrecido;
-    // Quién está dando de alta: su sucursal decide por qué ticketera sale el
-    // carné de papel (se entrega en mano, así que sale donde está esa persona).
-    const { user: quienEmite } = useAuth();
     const montadoParaSalida = useMontadoParaSalida(isOpen);
 
     const { branches, roles, updateBranch, addBranch } = useStaff();
@@ -489,6 +485,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             usuario: created.username,
                             contrasenaTemporal: created.tempPassword,
                             valorDelCarne: finalData.kiosk_pin || null,
+                            /* La hoja del carné va sólo si se marcó «Todavía no
+                               tiene carné»: es exactamente esa pregunta —¿hay
+                               que darle uno?— y no una segunda casilla que
+                               dijera lo mismo con otras palabras. */
+                            conCarne: !!finalData.carne_pendiente,
                             // La foto para el carné. Sale del `photoPreview` del
                             // formulario —que ya es un data URL— y no de la que
                             // se acaba de subir: la subida es asíncrona y su URL
@@ -545,23 +546,20 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         );
                     }
 
-                    // Marcado como que todavía no tiene carné: se le imprime uno
-                    // de papel en el acto. Es el pedido tal cual —«desde la
-                    // creación de un nuevo personal marcado con que aún no tiene
-                    // carné»—, y va DESPUÉS del alta porque el carné cuelga de un
-                    // empleado que ya existe. Si no sale papel, el aviso lo dice y
-                    // el botón del perfil lo reintenta: la ficha ya está guardada
-                    // y no se pierde nada.
-                    if (created?.id && finalData.carne_pendiente) {
-                        const { entregarCarneDePapel } = await import('../utils/entregarCarneDePapel');
-                        await entregarCarneDePapel({
-                            employeeId: created.id,
-                            nombre: `${finalData.first_names ?? ''} ${finalData.last_names ?? ''}`.trim(),
-                            salaId: quienEmite?.branchId ?? null,
-                            emitidoPor: quienEmite?.name || '',
-                            motivo: 'Alta de personal',
-                        });
-                    }
+                    /* ── Acá se imprimía un carné de papel, y estaba mal ─────
+                     *
+                     * «Todavía no tiene carné» disparaba `entregarCarneDePapel`:
+                     * al guardar el alta se abría el diálogo de impresión de la
+                     * ticketera. El usuario lo corrigió el 2026-08-31: *«eso es
+                     * incorrecto, el carné lo tiene el PDF; ese selector era
+                     * para ponerlo o no el carné en el PDF»*.
+                     *
+                     * Hoy la casilla decide la HOJA DEL CARNÉ del documento de
+                     * bienvenida (`conCarne`, más arriba) y no imprime nada. El
+                     * carné de papel sigue existiendo —vale hasta medianoche y
+                     * se usa cuando alguien llega sin el suyo— pero se pide
+                     * desde el perfil, a mano, que es donde se sabe que hace
+                     * falta. Ver `BotonCarneDePapel`. */
                 }
 
                 // El borrador del alta se limpia por el canónico: escrito a

@@ -47,7 +47,7 @@ import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDE
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { usuarioDesdeNombre } from '../../utils/nameUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
-import { abrirCaptura, esperarFoto, fotoComoArchivo, enlaceDeCaptura } from '../../data/capturaDeFoto';
+import { abrirCaptura, esperarFoto, fotoComoArchivo, soltarCaptura, enlaceDeCaptura } from '../../data/capturaDeFoto';
 import QrDeCaptura from '../common/QrDeCaptura';
 
 /* Las tres casillas donde entra un DUI. `DOCUMENTO_IDENTIDAD` NO está: es el
@@ -1446,6 +1446,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 const file = await fotoComoArchivo(url);
                 setFormData(prev => ({ ...prev, file, photoPreview: URL.createObjectURL(file) }));
                 setCaptura(null);
+                // `capturas/` es un buzón: lo que ya llegó acá se borra de allá.
+                // La foto que se guarda de verdad se sube a su lugar definitivo
+                // al guardar la ficha.
+                soltarCaptura(captura.id);
                 useToastStore.getState().showToast('Foto recibida', 'Llegó desde el teléfono.', 'success');
             } catch {
                 // La foto SÍ se subió; lo que falló es traerla. Se dice, en vez
@@ -1507,22 +1511,42 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const HISTORIAL_MAXIMO = 10;
 
-    /* ── Sólo el médico guarda el ARCHIVO anterior ──────────────────────────
+    /* ── Cuáles guardan el ARCHIVO anterior, y cuáles sólo la traza ─────────
      *
-     * Decisión del usuario: «esto sólo es necesario para el médico, y nada más
-     * como historial de texto —cuándo se actualizó y quién— para los otros».
+     * La lista creció el 2026-08-31, y conviene el registro porque **cambia una
+     * decisión anterior del mismo usuario**.
      *
-     * Y tiene sentido en las dos direcciones. El certificado médico del año
-     * pasado ES la prueba de que ese año se cumplió, y quien la pide es una
-     * inspección: sin el archivo no hay nada que enseñar. En cambio el contrato
-     * o una licencia sólo importan en su versión vigente — guardar diez copias
-     * viejas de cada uno engorda la ficha para responder una pregunta que nadie
-     * hace.
+     * Antes decía: *«esto sólo es necesario para el médico, y nada más como
+     * historial de texto —cuándo se actualizó y quién— para los otros»*. El
+     * razonamiento era que el contrato o una licencia sólo importan en su
+     * versión vigente.
      *
-     * Lo que sí importa en todos es la TRAZA: cuándo se cambió y quién lo
-     * cambió. Eso pesa dos campos y contesta «¿esto quién lo tocó?», que es la
-     * pregunta que sí aparece. */
-    const CON_ARCHIVO_ANTERIOR = new Set(['CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO']);
+     * Lo que faltaba era una palabra: **recontrataciones**. *«Archivos que se
+     * van anexando como historial: solicitud de empleo, contrato de trabajo,
+     * acuse de recibido del MT, certificado médico anual, anualidad. Los demás
+     * sólo se actualiza el documento y se guarda la fecha / historial de
+     * actualización. Ya que pueden haber recontrataciones, y otros temas.»*
+     *
+     * Y ahí el contrato deja de tener «una versión vigente»: alguien que entra,
+     * sale y vuelve tiene DOS contratos, y los dos son ciertos. El de 2024 no
+     * es una versión vieja del de 2026 — es el que prueba lo que pasó en 2024,
+     * y es el que pide una inspección o una demanda. Lo mismo la solicitud de
+     * cada ingreso y el acuse de cada uno.
+     *
+     * El criterio que separa las dos listas, dicho de una vez: **¿el papel de
+     * antes sigue probando algo por su cuenta?** El certificado médico de 2025
+     * prueba que ese año se cumplió; el contrato de la primera contratación
+     * prueba esa relación laboral; la anualidad de cada año prueba ese año. En
+     * cambio una licencia de conducir vencida o un DUI reemplazado no prueban
+     * nada que el vigente no diga mejor.
+     *
+     * Los que no están acá conservan igual la TRAZA —cuándo se cambió y quién—,
+     * que pesa dos campos y contesta «¿esto quién lo tocó?». */
+    const CON_ARCHIVO_ANTERIOR = new Set([
+        'SOLICITUD_EMPLEO', 'CONTRATO', 'ACUSE_MTPS',
+        'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
+        'ANUALIDAD_JVPQF', 'ANUALIDAD_JVPE',
+    ]);
 
     const updateDoc = (category, patch) => setFormData(prev => {
         const list = [...(prev.employee_documents || [])];
@@ -4696,18 +4720,27 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 </span>}
                                             />
                                             <p className="text-micro text-content-3 font-medium leading-snug mt-1.5 ml-7">
-                                                Dos páginas: sus accesos al portal con lo básico del reglamento,
-                                                y su carné para recortar. Trae la contraseña temporal, que después
-                                                no se puede volver a ver.
+                                                Sus accesos al portal con lo básico del reglamento, y su
+                                                carné para recortar si lo marcas abajo. Trae la contraseña
+                                                temporal, que después no se puede volver a ver.
                                             </p>
                                         </>
                                     )}
 
-                                    {/* El carné de PAPEL, para el que todavía no tiene
-                                        el de plástico. La marca es lo que habilita
-                                        imprimirlo al dar de alta sin el permiso aparte
-                                        — el trámite del ingreso no se traba esperando
-                                        un permiso. */}
+                                    {/* ── Lo que decide esta casilla CAMBIÓ ──────────
+                                        Decía «al guardar se le imprime un carné de papel
+                                        en la ticketera», y eso era exactamente lo que
+                                        hacía: al terminar el alta se abría el diálogo de
+                                        impresión. Corregido por el usuario (2026-08-31):
+                                        *«eso es incorrecto, el carné lo tiene el PDF; ese
+                                        selector era para ponerlo o no el carné en el
+                                        PDF»*.
+
+                                        Hoy decide la HOJA DEL CARNÉ del documento de
+                                        bienvenida y no imprime nada. El carné de papel
+                                        sigue existiendo —vale hasta medianoche— pero se
+                                        pide desde el perfil, que es donde se sabe que
+                                        alguien llegó sin el suyo. */}
                                     <div className={formData?.id ? '' : 'mt-3 pt-3 border-t border-divider'}>
                                         <Checkbox
                                             checked={!!formData.carne_pendiente}
@@ -4719,7 +4752,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <p className="text-micro text-content-3 font-medium leading-snug mt-1.5 ml-7">
                                             {isEditMode
                                                 ? 'Puedes imprimirle un carné de papel desde su perfil. Vale hasta medianoche.'
-                                                : 'Al guardar se le imprime un carné de papel en la ticketera. Vale hasta medianoche de hoy.'}
+                                                : 'El documento de bienvenida lleva su carné para recortar. Desmárcalo si ya tiene el suyo.'}
                                         </p>
                                     </div>
                                 </div>

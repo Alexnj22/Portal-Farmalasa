@@ -220,9 +220,17 @@ describe('las cuatro esquinas del papel', () => {
         expect(lienzo).toMatch(/drawImage\(imagen/);
     });
 
+    /* La regla no cambió; cambió DÓNDE termina la foto al confirmar.
+     *
+     * Hasta el 2026-08-30 confirmar mandaba (`mandar(listo)`). Desde que el
+     * teléfono junta varias hojas en un solo escaneo, confirmar SUMA la hoja y
+     * mandar es un botón aparte. Lo que se sigue vigilando es lo mismo: que la
+     * foto pase por el editor y no salga cruda de la cámara. */
     it('el teléfono abre el editor en vez de mandar la foto tal cual', () => {
         expect(telefono).toMatch(/lazy\(\(\) => import\('\.\.\/components\/common\/EditorDeDocumento'\)\)/);
-        expect(telefono).toMatch(/onConfirm=\{\(listo\) => \{ setPorAjustar\(null\); mandar\(listo\); \}\}/);
+        // Confirmar suma una hoja; nunca manda desde el editor.
+        expect(telefono).toMatch(/onConfirm=\{\(listo\) => \{[\s\S]{0,200}?setHojas\(/);
+        expect(telefono).not.toMatch(/onConfirm=\{\(listo\) => \{[^}]*mandarFoto/);
     });
 });
 
@@ -361,11 +369,15 @@ describe('la foto del teléfono no se vuelve a preparar', () => {
             .toBeLessThan(field.indexOf("archivo.type?.startsWith('image/')"));
     });
 
-    it('el teléfono sólo manda desde el editor, nunca al tomar la foto', () => {
+    it('el teléfono nunca manda al tomar la foto: pasa por el editor', () => {
+        // Tomar una foto sólo la pone a ajustar.
         expect(telefono).toMatch(/setPorAjustar\(file\)/);
-        expect(telefono).toMatch(/onConfirm=\{\(listo\) => \{ setPorAjustar\(null\); mandar\(listo\); \}\}/);
-        // Y cancelar no manda nada.
-        expect(telefono).toMatch(/onCancel=\{\(\) => setPorAjustar\(null\)\}/);
+        // La única llamada a `enviar` sale de un botón, no del editor ni de
+        // `tomar`: mandar es un acto aparte desde que hay varias hojas.
+        expect(telefono).toMatch(/onClick=\{enviar\}/);
+        expect(telefono).not.toMatch(/const tomar[\s\S]{0,400}?enviar\(/);
+        // Y cancelar no manda nada ni deja hojas a medias.
+        expect(telefono).toMatch(/onCancel=\{\(\) => \{ setPorAjustar\(null\); setSugerido\(null\); \}\}/);
     });
 });
 

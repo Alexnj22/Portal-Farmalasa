@@ -123,7 +123,7 @@ export default function CapturaDeFotoView() {
                siempre: las hojas siguen en pantalla y se puede reintentar o
                quitar alguna. */
             setEstado('error');
-            setMotivo(e?.message || 'No se pudieron unir las hojas. Quita alguna e intenta de nuevo.');
+            setMotivo(e?.message || 'No se pudieron unir las fotos. Quita alguna e intenta de nuevo.');
         }
     };
 
@@ -179,7 +179,13 @@ export default function CapturaDeFotoView() {
         <div className="min-h-[100dvh] flex flex-col items-center justify-center gap-6 px-6 py-10
                         pt-[max(2.5rem,var(--sa-top))] pb-[max(2.5rem,var(--sa-bottom))]">
             <div className="text-center">
-                <p className="text-caption font-black uppercase tracking-widest text-content-3">Foto para el expediente</p>
+                {/* «Foto para el expediente» era de cuando esta pantalla servía
+                    a un solo módulo. Hoy también manda la boleta de un movimiento
+                    de caja, y ahí el rótulo decía algo falso — quien lo lee
+                    encima de una boleta de CAESS piensa que se equivocó de
+                    código. El rótulo describe lo que la pantalla HACE, que es lo
+                    único cierto en todos los casos. */}
+                <p className="text-caption font-black uppercase tracking-widest text-content-3">Foto desde el teléfono</p>
                 {para && <p className="text-display-sm font-black text-content mt-1">{para}</p>}
             </div>
 
@@ -223,7 +229,7 @@ export default function CapturaDeFotoView() {
                     {hojas.length > 0 && (
                         <div className="w-full max-w-xs">
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">
-                                {hojas.length === 1 ? '1 hoja lista' : `${hojas.length} hojas · en este orden`}
+                                {hojas.length === 1 ? '1 foto lista' : `${hojas.length} fotos · en este orden`}
                             </p>
                             <div className="flex flex-col gap-2 max-h-[38dvh] overflow-y-auto pr-0.5">
                                 {hojas.map((h, i) => (
@@ -255,8 +261,13 @@ export default function CapturaDeFotoView() {
                         </div>
                     )}
 
-                    {/* Sin hojas el botón es la pantalla; con hojas se hace
-                        secundario y la acción principal pasa a ser mandar. */}
+                    {/* Sin fotos el botón es la pantalla; con fotos se hace
+                        secundario y la acción principal pasa a ser mandar.
+
+                        Dice «foto» y no «hoja»: una hoja es de un documento de
+                        varias páginas, y esto también manda la boleta de un
+                        movimiento de caja, que es una sola. El rótulo tiene que
+                        valer para las dos cosas. */}
                     <label htmlFor="captura-foto"
                         className={hojas.length === 0
                             ? `flex flex-col items-center justify-center gap-3 w-full max-w-xs
@@ -270,7 +281,7 @@ export default function CapturaDeFotoView() {
                                active:scale-[0.97] transition-transform`}>
                         {hojas.length === 0
                             ? <><Camera size={32} strokeWidth={2.5} />Tomar la foto</>
-                            : <><Plus size={18} strokeWidth={3} />Agregar otra hoja</>}
+                            : <><Plus size={18} strokeWidth={3} />Agregar otra foto</>}
                     </label>
                     <input id="captura-foto" type="file" {...PROPS_CAMARA} className="hidden" onChange={tomar} />
 
@@ -281,16 +292,27 @@ export default function CapturaDeFotoView() {
                                        bg-brand text-white font-black text-body-lg
                                        active:scale-[0.97] transition-transform">
                             <Send size={20} strokeWidth={2.5} />
-                            {hojas.length === 1 ? 'Mandar la foto' : `Mandar las ${hojas.length} hojas`}
+                            {hojas.length === 1 ? 'Mandar la foto' : `Mandar las ${hojas.length} fotos`}
                         </button>
                     )}
 
+                    {/* El pie decía «Agrega las hojas que falten, o mándala
+                        así. Se va a ver sola en la computadora.» y el usuario lo
+                        marcó: no se entendía. Metía tres ideas en dos frases
+                        —que se pueden sumar más, que se puede mandar ya, y que
+                        del otro lado no hay que hacer nada— y la última quedaba
+                        como un «se va a ver sola» sin sujeto claro.
+
+                        Ahora es una idea por frase, y la de la computadora se
+                        dice entera: aparece SOLA, o sea que no hay que volver a
+                        la computadora a buscarla. Eso es lo que a alguien con el
+                        teléfono en la mano le hace falta saber. */}
                     <p className="text-caption text-content-3 font-medium text-center max-w-xs leading-snug">
                         {hojas.length === 0
-                            ? 'Puedes recortarla y enderezarla aquí mismo. Si el documento tiene varias hojas, las vas agregando y se mandan todas juntas.'
+                            ? 'Puedes recortarla y enderezarla aquí mismo. Si son varias, las vas agregando y se mandan todas juntas.'
                             : (hojas.length === 1
-                                ? 'Agrega las hojas que falten, o mándala así. Se va a ver sola en la computadora.'
-                                : 'Se mandan como un solo documento. Acomódalas con las flechas antes de mandar.')}
+                                ? 'Puedes agregar más fotos o mandar ésta ya. Aparece sola en la computadora: no tienes que hacer nada allá.'
+                                : 'Se mandan juntas. Acomódalas con las flechas antes de mandar.')}
                     </p>
                 </>
             )}
@@ -298,7 +320,7 @@ export default function CapturaDeFotoView() {
             {estado === 'mandando' && (
                 <p className="text-body font-black text-brand-text flex items-center gap-2">
                     <Loader2 size={18} className="animate-spin" />
-                    {hojas.length > 1 ? `Mandando las ${hojas.length} hojas…` : 'Mandando la foto…'}
+                    {hojas.length > 1 ? `Mandando las ${hojas.length} fotos…` : 'Mandando la foto…'}
                 </p>
             )}
 

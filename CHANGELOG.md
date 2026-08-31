@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.874.2 — La pantalla del QR decía «expediente» y «hojas» sobre una boleta
+
+Tres rótulos, y el mismo motivo detrás: esa pantalla se escribió cuando servía a
+un solo módulo, y hoy también manda la boleta de un movimiento de caja.
+
+| decía | dice |
+|---|---|
+| «Foto para el expediente» | **«Foto desde el teléfono»** |
+| «Agregar otra hoja» | **«Agregar otra foto»** |
+| «Mandar las 3 hojas» | **«Mandar las 3 fotos»** |
+
+Una **hoja** es de un documento de varias páginas; una boleta de CAESS es una
+sola foto. Y el encabezado no sólo sobraba: era falso — quien lo lee encima de
+una boleta piensa que se equivocó de código.
+
+**Y el pie no se entendía.** Lo marcó el usuario: *«Agrega las hojas que falten,
+o mándala así. Se va a ver sola en la computadora.»* Metía tres ideas en dos
+frases —que se pueden sumar más, que se puede mandar ya, y que del otro lado no
+hay que hacer nada— y la última quedaba como un «se va a ver sola» sin sujeto.
+
+Ahora dice: **«Puedes agregar más fotos o mandar ésta ya. Aparece sola en la
+computadora: no tienes que hacer nada allá.»** Una idea por frase, y la de la
+computadora dicha entera, que es lo que a alguien con el teléfono en la mano le
+hace falta saber.
+
 ## v2.874.1 — El icono del carné es el aprobado, no uno dibujado
 
 Regla del usuario: *«no se crean logos, ni se generan logos de la nada; sólo se

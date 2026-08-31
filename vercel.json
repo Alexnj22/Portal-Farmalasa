@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/oss-proxy/:path*", "destination": "/api/oss-proxy" },
+    { "source": "/reglamento-puntos", "destination": "/reglamento-puntos.html" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
   "headers": [

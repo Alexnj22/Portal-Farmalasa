@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.888.0 — El reglamento se lee sin iniciar sesión
+
+`portal.farmasalud.lat/reglamento-puntos` — pública, sin sesión, servida como
+**HTML plano**. Es a donde apunta el QR del afiche, que hasta hoy llevaba a un
+404.
+
+**No es una vista del portal, y esa es la decisión.** Un documento que promete
+estar disponible no puede depender de que la aplicación entera esté sana para
+mostrarse: sin React, sin sesión, **cero líneas de JavaScript** —así no hay nada
+que pueda leer ni pedirle datos a quien lo lee— y abre en un parpadeo con la
+señal que haya. Sale del MISMO archivo que el PDF de la sala, así que la pared y
+el sitio no pueden decir cosas distintas, y `prebuild` la regenera en cada
+compilación para que no se quede vieja.
+
+**Las tipografías las servimos nosotros** (`public/fuentes/`, 4 woff2 variables,
+OFL). No es preferencia: la CSP del sitio sólo admite estilos y fuentes propias,
+así que las de Google salían bloqueadas y la página se veía con letras de
+repuesto. Servirlas desde `self` las deja entrar **sin tocar la CSP** — la
+alternativa era abrirle un permiso a TODO el portal para arreglar UNA página.
+Verificado sirviendo el archivo con la CSP real de `vercel.json` puesta:
+respuesta 200, las dos familias cargadas, 0 scripts, ni un error de consola ni un
+pedido bloqueado, y sin desborde horizontal en iPhone 13.
+
+El `vercel.json` lleva una reescritura propia **antes** del atrapa-todo del SPA;
+sin ella `/reglamento-puntos` caía en `index.html`.
+
+**La 11.1 recupera la mención al sitio**, que se le había quitado esta mañana
+justamente porque no era cierta. Ahora nombra la dirección exacta en vez de «el
+sitio en internet de la Empresa»: una promesa que se puede comprobar.
+
+---
+
+### Y la noticia estaba escrita al revés
+
+El afiche decía *«Pídelos antes de que te cobren»*. Lo corrigió el usuario:
+**hasta ahora tocaba acumularlos a mano** —el cliente guardaba el ticket y lo
+presentaba— y el cambio es justo el contrario: **los puntos entran solos**. El
+dato estaba a la vista en el repo y no lo miré: `admin_factura.aplicado` está en
+1 sólo en el **6%** de los tickets, o sea que la enorme mayoría nunca se
+presentó, y el documento del circuito dice con todas las letras que esa tabla es
+«contra la que se verifica un ticket **cuando el cliente lo presenta**».
+
+Así que el bloque «lo que cambia» abre con eso, que es lo único que a alguien que
+ya usaba los puntos le cambia la vida. Lo que sigue haciendo falta es
+**identificarse en caja antes de que cobren**, para que la compra quede a su
+nombre — que es otra cosa y ahora se dice como lo que es. En el reglamento, la
+2.3 se partió en dos: identificarse **liga** la compra; acumular es automático.
+
 ## v2.887.0 — El afiche de la vitrina
 
 `docs/legal/AFICHE-PROGRAMA-DE-PUNTOS.pdf` — una página, tamaño carta, para

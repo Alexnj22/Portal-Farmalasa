@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.864.4 — El barrido móvil no visitaba ni Bolsas ni Mi caja
+
+Salió al preguntarse si Mi caja «quedó canónica». Los gates de fuente están en
+verde y eso es cierto, pero **el barrido del teléfono nunca la abrió**: su lista
+de rutas se cerró el 21-ago y las dos vistas del dinero nacieron después. O sea
+que su «cero hallazgos» hablaba de un recorrido que no las incluía — que es
+exactamente el defecto que esa lista ya había corregido una vez, cuando tenía 38
+rutas de 65.
+
+Ahora son 56. Y va escrito el aviso que hace falta para no repetir el error de
+otra forma: **`caja` sólo se mide de verdad con una cuenta que tenga
+`caja_vales`**, y la de QA hoy no lo tiene —el módulo está abierto sólo para
+supervisión mientras se prueba—, así que el barrido la mediría como la pantalla
+de sin-acceso y saldría en cero. Un cero que habla de otra pantalla.
+
+De paso: el rótulo del día en Mi caja mostraba la fecha cruda (`2026-08-30`) y
+ahora dice `sáb 30 ago`, con el mediodía UTC que ya usan Cortes y las bitácoras
+— una fecha sin hora se lee como medianoche UTC y en San Salvador eso es el día
+anterior.
+
 ## v2.864.3 — Los botones de la caja recuperan su rótulo
 
 Los cuatro actos de Mi caja habían quedado en **un ícono mudo**: una balanza,

@@ -88,6 +88,20 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
     'cuentas-por-pagar', 'encuesta-admin', 'facturas-sala', 'gestion-stock',
     'impresion', 'inventario', 'mantenimiento', 'my-requests',
     'orphan-objects', 'sesiones', 'traslados', 'auditview',
+    // ── Las dos del dinero (2026-08-31) ─────────────────────────────────────
+    // `bolsas` y `caja` nacieron DESPUÉS de que se cerrara la lista de arriba
+    // (21-ago), así que arrastraban el mismo defecto que esa tanda vino a
+    // corregir: no se visitaban nunca, y su ausencia no se veía en ningún lado
+    // — el informe decía «cero hallazgos» sobre un recorrido que no las
+    // incluía. Entre las dos vive el circuito entero del efectivo.
+    //
+    // ⚠️ **`caja` sólo se mide de verdad con una cuenta que tenga
+    // `caja_vales`.** La de QA hoy NO lo tiene (a pedido del usuario, el
+    // módulo está abierto sólo para supervisión mientras se prueba), así que
+    // el barrido la mediría como la pantalla de sin-acceso y saldría en cero:
+    // un cero que habla de otra pantalla. Antes de creerle a esta ruta, mirar
+    // que la corrida haya entrado.
+    'bolsas', 'caja',
 ];
 
 // `TEMA=dark|solid|solid-dark|liquid` — todo lo medido hasta el 2026-08-07 fue

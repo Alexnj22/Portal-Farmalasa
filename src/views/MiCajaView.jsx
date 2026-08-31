@@ -418,6 +418,20 @@ export default function MiCajaView() {
     );
 }
 
+/**
+ * `2026-08-30` → `sáb 30 ago`.
+ *
+ * El mediodía y `timeZone: 'UTC'` no son adorno: una fecha sin hora se lee como
+ * medianoche UTC y en San Salvador eso es el día ANTERIOR, así que el rótulo
+ * mostraría un día que no es. Es el mismo idioma que ya usan Cortes y las
+ * bitácoras.
+ */
+const fechaLegible = (f) => (f
+    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
+        weekday: 'short', day: '2-digit', month: 'short', timeZone: 'UTC',
+    })
+    : '');
+
 /** Sale del dato, no de una lista escrita a mano: `efectivo` → `Efectivo`. */
 const conMayuscula = (t) => {
     const s = String(t || '').trim();
@@ -571,7 +585,7 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
     return (
         <div className="space-y-2">
             <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
-                Movimientos de este día{dia ? ` · ${dia}` : ''}
+                Movimientos de este día{dia ? ` · ${fechaLegible(dia)}` : ''}
             </h3>
 
             {/* Sin el permiso del otro módulo la lista sale incompleta y sin

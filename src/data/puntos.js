@@ -82,6 +82,11 @@ export const ROTULO_PUNTOS = {
     retirado:    { label: 'Retirados',  variante: 'neutral', ayuda: 'La venta se anuló y sus puntos nunca se canjearon: el ticket dejó de ser canjeable. Ningún cliente perdió puntos.' },
     devuelto:    { label: 'Devueltos',  variante: 'warning', ayuda: 'La venta se anuló con los puntos YA entregados: se le restaron al cliente.' },
     por_revisar: { label: 'Por revisar', variante: 'danger', ayuda: 'La venta se anuló con los puntos ya entregados y no se pudieron quitar solos.' },
+    /* «No acumula» NO es «retirado». La venta ocurrió y está bien; lo que no
+       acumula es la ficha —un convenio, una empresa—. Con un solo rótulo, dentro
+       de un año alguien leería «anuladas» sobre 61 ventas que nunca se anularon,
+       y no tendría cómo saber que la conclusión estaba mal. */
+    no_acumula:  { label: 'No acumula',  variante: 'neutral', ayuda: 'La compra es de un convenio o de una empresa, así que no acumula puntos. La venta es correcta.' },
     sin_enviar:  { label: 'Sin enviar', variante: 'neutral', ayuda: 'Esta venta no acumula puntos.' },
 };
 
@@ -96,6 +101,6 @@ export const ROTULO_PUNTOS = {
  */
 export const OPCIONES_FILTRO_PUNTOS = [
     { value: '', label: 'Todos los puntos' },
-    ...['acumulado', 'pendiente', 'retirado', 'devuelto', 'por_revisar', 'sin_enviar']
+    ...['acumulado', 'pendiente', 'retirado', 'devuelto', 'por_revisar', 'no_acumula', 'sin_enviar']
         .map(k => ({ value: k, label: ROTULO_PUNTOS[k].label })),
 ];

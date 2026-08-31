@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.880.0 — Los tickets de una ficha que no acumula se retiran solos
+
+Marcar una ficha como «no acumula» la sacaba de la acumulación hacia adelante,
+pero sus tickets ya enviados seguían vivos del otro lado y canjeables. La
+exclusión valía sólo para el futuro y el pasado quedaba contradiciéndola.
+
+Ahora `sync-puntos` los retira solo, en cada corrida: **61 tickets de MAPFRE por
+$2,733.77**, ninguno cobrado, así que ningún saldo cambió. Y como es un barrido y
+no una limpieza a mano, el día que se marque otra empresa sus tickets se retiran
+en la corrida siguiente sin que nadie haga nada.
+
+**Los ya cobrados NO se tocan.** Quitar puntos entregados sería restarle a una
+cuenta por una decisión tomada después — misma línea que las 26 ventas anuladas
+de agosto: se corrige de acá en adelante.
+
+Estado propio, `no_acumula`, y no `retirado`: la venta ocurrió y está bien, lo
+que no acumula es la ficha. Con un solo rótulo, dentro de un año alguien leería
+«anuladas» sobre 61 ventas que nunca se anularon y no tendría cómo saber que la
+conclusión estaba mal.
+
+Y una lección del camino: el estado nuevo lo **rechazó** `puntos_marcar_revertidas`,
+que tiene su propia lista de valores permitidos. La guarda hizo bien su trabajo.
+Un estado se declara en TRES sitios —la columna generada, esa lista y el rótulo
+del frente— y ninguno se entera de los otros dos.
+
+## v2.879.0 — El plazo de tres días también corre para el sobrante, y alguien lo mira
+
+_(pendiente de redactar)_
+
 ## v2.878.4 — La marca de descuento no distingue convenio de canje
 
 `sales_invoices.has_puntos` marca las ventas que salieron con descuento de

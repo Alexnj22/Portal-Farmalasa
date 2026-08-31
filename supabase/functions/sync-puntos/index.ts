@@ -584,6 +584,54 @@ Deno.serve(async (req) => {
       if (e8) fallidas.push(`marcar anuladas: ${e8.message}`);
     }
 
+    // ── Fichas que dejaron de acumular ──────────────────────────────────────
+    // Un convenio, una empresa: fichas que no son una persona que va a llegar a
+    // canjear. Marcarlas con `acumula_puntos = false` las saca de la acumulación
+    // hacia adelante, pero los tickets ya enviados siguen vivos allá y
+    // canjeables — así que hay que retirarlos, o la exclusión sólo vale para el
+    // futuro y el pasado queda contradiciendo la regla.
+    //
+    // Se barre acá y no a mano porque la lista va a crecer: el día que se marque
+    // otra empresa, sus tickets se retiran solos en la corrida siguiente.
+    //
+    // Y NUNCA se tocan los ya cobrados (`aplicado = 1`). Quitar puntos que se
+    // entregaron sería restarle a una cuenta por una decisión tomada después;
+    // se informan y quedan a la vista. Misma línea que las 26 ventas anuladas de
+    // agosto: se corrige de acá en adelante.
+    const noAcumulanRetirados: number[] = [];
+    const noAcumulanYaCobrados: any[] = [];
+    try {
+      const { data: sinAcumular, error: eNA } = await supabase.rpc(
+        'puntos_tickets_de_ficha_que_no_acumula', { p_tope: body?.tope_no_acumula ?? 500 });
+      if (eNA) throw new Error(eNA.message);
+
+      const lista: any[] = Array.isArray(sinAcumular) ? sinAcumular : [];
+      const porBorrar = lista.filter((x) => Number(x.aplicado) === 0);
+      noAcumulanYaCobrados.push(...lista.filter((x) => Number(x.aplicado) === 1));
+
+      if (porBorrar.length && !simular) {
+        for (let i = 0; i < porBorrar.length; i += 200) {
+          const tanda = porBorrar.slice(i, i + 200);
+          await conn.query(
+            'DELETE FROM admin_factura WHERE (sucursal, id) IN (?) AND aplicado = 0',
+            [tanda.map((x) => [x.sucursal, x.erp_invoice_id])],
+          );
+        }
+        // `NO_ACUMULA` y no `BORRADA`: la venta no se anuló, la ficha no acumula.
+        // Dos cosas distintas que un solo rótulo volvería indistinguibles.
+        const { error: eM } = await supabase.rpc('puntos_marcar_revertidas', {
+          p_invoice_ids: porBorrar.map((x) => x.invoice_id),
+          p_reversion: 'NO_ACUMULA',
+        });
+        if (eM) throw new Error(`marcar no acumula: ${eM.message}`);
+        noAcumulanRetirados.push(...porBorrar.map((x) => x.invoice_id));
+      }
+    } catch (e) {
+      // No corta la corrida: el trabajo principal —mandar las ventas que sí
+      // ganan puntos— ya se hizo, y perderlo por esto sería peor.
+      fallidas.push(`fichas que no acumulan: ${e instanceof Error ? e.message : e}`);
+    }
+
     // `ok: false` cuando algo quedó a medias, y con el detalle: una corrida que
     // devuelve 200 sobre trabajo incompleto es la forma en que un fallo vive
     // meses sin que nadie lo mire.
@@ -595,6 +643,8 @@ Deno.serve(async (req) => {
       enviadas,
       sin_enviar_marcadas: sinEnviar,
       refrescadas,
+      no_acumulan_retirados: noAcumulanRetirados.length,
+      no_acumulan_ya_cobrados: noAcumulanYaCobrados.length,
       anuladas_revisadas: cola.length,
       anuladas_borradas: borradas.length,
       anuladas_con_puntos_ya_dados: yaCobradas.length,

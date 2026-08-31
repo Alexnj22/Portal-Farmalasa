@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.878.4 — La marca de descuento no distingue convenio de canje
+
+`sales_invoices.has_puntos` marca las ventas que salieron con descuento de
+puntos, y el hueco entre los renglones y el total dice cuánto — 546 de 546 con
+marca lo tienen, contra 17 de 267,869 sin ella. Con eso el portal puede
+descontar un canje que él no aplicó, que era la pieza que parecía imposible.
+
+**Pero la marca no significa «canje».** Significa «salió con un descuento de ese
+tipo», y el de un convenio se registra igual: las 69 ventas de MAPFRE la traen.
+Del monto marcado en el año, **$1,432.46 de $5,824.66 no son canjes** — así que
+el costo real del programa son **$4,392.20**, no lo que se había medido.
+
+La consecuencia práctica es peor que el número: una detección que no cruzara por
+`customers.acumula_puntos` habría disparado **60 alertas falsas al año** sobre la
+única ficha donde un descuento sin puntos es lo normal. Queda escrito en
+`docs/PUNTOS-EL-CIRCUITO-Y-LO-QUE-FALTA-2026-08-29.md` §5.b antes de que exista
+la detección, que es cuando sirve.
+
 ## v2.878.3 — Un convenio no acumula puntos
 
 MAPFRE es un convenio: la aseguradora paga y el medicamento se lo lleva un

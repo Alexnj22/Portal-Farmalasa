@@ -188,6 +188,38 @@ el filtro `^[0-9]{1,9}$` hace falta igual.
 
 ---
 
+## 5.b Detectar un canje: la marca existe, pero no dice lo que parece
+
+`sales_invoices.has_puntos` es booleana y viene poblada en las 269,206 facturas
+del año. Marca **546** y de esas **546 tienen hueco** entre la suma de sus
+renglones y el total; de las 267,869 sin marca, sólo 17 lo tienen. O sea que la
+marca dice *cuáles* y el hueco dice *cuánto*, con precisión suficiente para que
+el portal descuente un canje que él no aplicó.
+
+**Pero la marca NO significa «canje de puntos».** Significa «esta venta salió con
+un descuento de ese tipo», y el descuento de un **convenio** se registra igual:
+las 69 ventas de MAPFRE la traen. Medido sobre el año:
+
+| | facturas | monto |
+|---|---:|---:|
+| canjes reales (378 fichas de personas) | 486 | $4,392.20 |
+| MAPFRE (convenio) | 60 | $1,432.46 |
+
+Un cuarto del monto marcado no es un canje. Y como MAPFRE **no acumula**, una
+detección ingenua habría disparado **60 alertas de «se dieron puntos que no
+tenía» en un año** sobre la única ficha donde eso es normal — que es la forma
+más rápida de que una sala aprenda a ignorar la alerta.
+
+**La regla: la detección se cruza SIEMPRE con `customers.acumula_puntos`.** Una
+ficha que no acumula no canjea, no alerta y no se registra. Es la misma bandera
+que decide la acumulación, y tiene que decidir las dos cosas o las dos mitades
+se separan.
+
+**Otro tanto con los 17 sin marca y con hueco** ($83.18 al año, ninguno de dólar
+entero): hay que mirarlos una vez antes de confiar en la marca como única señal.
+
+---
+
 ## 6. Problemas de datos del otro sistema, sin resolver
 
 Ninguno se tocó. Son datos de ese sistema y la decisión es del negocio.

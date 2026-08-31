@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.878.2 — La constancia recibe la sala y quién firma
+
+Dos líneas que quedaron fuera del commit anterior. El modal las esperaba
+(`sala`, `firmante`) y el expediente no se las pasaba, así que el papel salía
+con «—» en el lugar de trabajo y con la firma de la empresa en blanco — o sea
+con dos huecos justo en los datos que identifican el acto.
+
+No lo cazó ningún gate: son props opcionales, y una prop que falta no da error.
+Es [[feedback_una_prop_opt_in_es_una_prop_olvidada]] otra vez.
+
 ## v2.878.1  — El teléfono del membrete es el de la empresa, no el de una sala
 
 El membrete que sirvió de modelo era el de **Farmacia La Salud** y traía

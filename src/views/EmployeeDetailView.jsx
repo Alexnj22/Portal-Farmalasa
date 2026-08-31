@@ -472,6 +472,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         open={sancionAbierta}
                         onClose={() => setSancionAbierta(false)}
                         empleado={emp}
+                        sala={branch?.name}
+                        firmante={user?.name}
                     />
                 </Suspense>
             )}

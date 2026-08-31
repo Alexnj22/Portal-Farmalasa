@@ -49,10 +49,12 @@ const firma = `
 
      La raya va centrada y del ancho del nombre, no pegada al margen: una línea
      que arranca en el borde de la hoja se lee como un renglón para llenar, no
-     como un lugar para firmar. */
-  .firma { margin-top: 2.5rem; break-inside: avoid; }
+     como un lugar para firmar.
+     El hueco entre el lugar y la raya es DONDE SE FIRMA: tiene que caber una
+     firma de puño, no un renglón de texto. */
+  .firma { margin-top: 3.5rem; break-inside: avoid; }
   .firma .lugar { font-family: "IBM Plex Sans", system-ui, sans-serif;
-                  font-size: .82rem; color: var(--ink-2); margin-bottom: 3.5rem; }
+                  font-size: .82rem; color: var(--ink-2); margin-bottom: 6.5rem; }
   .firmante { width: min(100%, 17rem); margin: 0 auto; text-align: center; }
   .firmante .linea { border-bottom: 1px solid var(--ink); margin: 0 0 .4rem; }
   .firmante .nombre { font-family: "IBM Plex Sans", system-ui, sans-serif;

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.886.6 — Más aire para firmar
+
+_(pendiente de redactar)_
+
 ## v2.886.5 — El comprobante del corte, compacto
 
 Pedido del usuario mirando la estructura del tiquete del sistema: el mismo

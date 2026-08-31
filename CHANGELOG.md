@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.880.1 — El aviso leído queda leído, y nadie se autoriza a sí mismo en el kiosco
+
+Marcar un aviso como leído no guardaba nada para **42 de las 46 personas** del
+portal, y no había forma de notarlo. El portal lo hacía con un `UPDATE` directo
+sobre `announcements`, y esa policy exige permiso de **edición** de avisos —que
+tienen cuatro cargos—. Sin él la escritura no toca ninguna fila, la base
+responde «listo» sin error, y el portal lo daba por hecho: el aviso desaparecía
+de «Sin leer» y volvía a aparecer en la siguiente carga. Para siempre.
+
+Medido antes de tocar nada: de 26 avisos, **4 tenían lector y los 4 eran la
+misma persona**. Nadie más había quedado registrado como que leyó un aviso,
+nunca. Cendy Quintanilla tenía nueve avisos apilados desde el 3 de agosto sin
+poder marcar ninguno.
+
+Colgaban de ese dato tres cosas más: el panel de quien publica mostraba **0%
+leído** en todo aviso y ninguno pasaba solo a «Completado», el contador de
+avisos sin leer no bajaba nunca, y el kiosco volvía a mostrar el mismo aviso en
+cada marcación.
+
+Ahora lo escribe `marcar_aviso_leido()` en la base. El candado ya no es el
+permiso de editar avisos sino **la audiencia**: quien puede ver un aviso puede
+marcarlo, que es lo que siempre debió ser —marcar como leído es un acto del
+destinatario, no de quien administra—. El modelo ya existía del lado del
+kiosco (`kiosco_aviso_leido`) y era el portal el que escribía a mano.
+
+**En el kiosco, nadie se autoriza a sí mismo.** Al autorizar una marcación
+fuera de turno se acepta el PIN de un jefe de la sala, y la lista de jefes no
+excluía a quien estaba marcando: quien tuviera «jefe» en el cargo tecleaba su
+propio PIN y quedaba autorizado, figurando como su propio autorizador. En cinco
+de las siete salas hay un solo jefe, así que ahí «la segunda persona» y «la
+misma persona» eran el mismo PIN. Y el refuerzo pensado justo para ese caso —el
+código SU cuando a quien se autoriza es un jefe— sólo se pedía por el camino del
+código de la hora, no por el del PIN. Un jefe que necesite autorizarse pide
+ahora el código SU; para eso existe.
+
+**El cartel del código SU no se mostró nunca.** El kiosco pide 6 dígitos en vez
+de 4 cuando quien marca es jefe, y el aviso en pantalla dependía de que el cargo
+fuera *exactamente* la palabra «JEFE» — ningún cargo se llama así, se llaman
+«Jefe/a de Sala». La persona tecleaba los 4 dígitos de siempre y el rebote decía
+«código incorrecto», que manda a buscar el problema donde no está. La regla vive
+ahora en un solo sitio (`src/utils/kioskAutorizacion.js`), con la misma forma que
+la base —contiene «JEFE»— y mirando también el **cargo secundario**, que la base
+sí miraba y el portal no: Alexander Melgar e Idalia Serrano son Regente de
+Enfermería con Subjefe/a de Sala de secundario.
+
+Y el portal dejó de pedir el código del kiosco a quien no lo puede ver. La
+tarjeta ya se ocultaba con el permiso correcto, pero la llamada salía igual cada
+5 minutos: en 24 horas, **763 llamadas con 504 errores** de 44 personas contra
+233 buenas de 4. Dos tercios del tráfico de esa función eran errores que no le
+servían a nadie.
+
 ## v2.880.0 — Los tickets de una ficha que no acumula se retiran solos
 
 Marcar una ficha como «no acumula» la sacaba de la acumulación hacia adelante,
@@ -48,7 +99,43 @@ del frente— y ninguno se entera de los otros dos.
 
 ## v2.879.0 — El plazo de tres días también corre para el sobrante, y alguien lo mira
 
-_(pendiente de redactar)_
+Cierra el punto 2 de «decisión de diferencias», abierto desde el 18-ago.
+
+**El plazo se ponía para la mitad de los casos.** Cuando una sala y bodega
+acuerdan resolver una diferencia **en físico** no queda ningún movimiento en el
+sistema: lo único que cierra el renglón es que alguien apriete «llegó». Pero
+`decidir_diferencia_pedido` fijaba el vencimiento sólo si la opción cerraba con
+`llegada_sala` —el faltante, donde manda bodega—. El **sobrante** cierra con
+`llegada_bodega`, y esa rama no ponía fecha: el renglón esperaba para siempre
+una devolución que nadie tenía plazo para hacer. Es la misma asimetría que ya se
+pagó una vez — el brazo del sobrante se construyó en agosto como espejo del
+faltante y el plazo se quedó atrás.
+
+**Y el plazo que sí se ponía, nadie lo leía.** La pantalla lo muestra a quien
+abre el pedido, que es justo la persona que ya sabe. Ahora hay un cron diario a
+las 09:00 SV que avisa **al lado que DEBE el movimiento** —no a los dos: el que
+espera ya está esperando— y a supervisión, que es quien puede destrabarlo. No
+repite el mismo renglón dentro de 20 horas.
+
+**Un diagnóstico mío que estaba a medias, corregido antes de escribir código.**
+Había dicho que el vencimiento además *se borraba* en cada acción, porque el
+`UPDATE` escribe `resolucion_vence_at = v_vence` sin condición. Al recorrer el
+flujo completo resultó falso: una vez `acordada`, ninguna acción de esa función
+puede volver a correr —cada rama exige un estado anterior distinto— y quien
+limpia la fecha es `confirmar_llegada_diferencia` cuando el producto llega, que
+es lo correcto. Los renglones con la fecha en NULL son los que **sí llegaron**.
+
+Probado fabricándole los dos casos en una transacción revertida: **2 renglones,
+19 avisos** —«Un producto que bodega quedó de mandar» y «Un producto que la sala
+quedó de devolver»— y la segunda corrida del mismo día devuelve **0**. Producción
+quedó sin un solo aviso.
+
+**Dos hallazgos de los gates, los dos reales.** `gate:migrations` avisó que un
+`REVOKE … FROM PUBLIC, anon` **no le quita el EXECUTE a `authenticated`**
+—Supabase se lo concede por su cuenta—, así que una función que escribe avisos en
+nombre del sistema quedaba al alcance de cualquiera con sesión. Y avisó de una
+**versión duplicada**: al leer «la última migración» me llevé la de otra sesión,
+que aplicó la suya tres segundos después. La mía es la 172824.
 
 ## v2.878.4 — La marca de descuento no distingue convenio de canje
 

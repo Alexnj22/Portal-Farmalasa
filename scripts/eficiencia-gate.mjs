@@ -218,6 +218,20 @@ const CRONS = [
           + 'de las dos salas y que nadie puede vender mientras tanto.',
   },
   {
+    job: 'avisar-diferencias-vencidas', slug: null, cadencia: '0 15 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'No llama a ninguna función: es una consulta y un aviso. Cuando una sala y bodega '
+          + 'acuerdan resolver una diferencia EN FÍSICO —bodega manda el producto, o la sala lo '
+          + 'devuelve— no queda ningún movimiento en el sistema: lo único que cierra el renglón '
+          + 'es que alguien apriete «llegó». El plazo de tres días ya se escribía y NADIE lo '
+          + 'leía: la pantalla se lo muestra a quien abre el pedido, que es justo la persona que '
+          + 'ya sabe. Avisa al lado que DEBE el movimiento —no a los dos, el que espera ya está '
+          + 'esperando— y a supervisión, que es quien puede destrabarlo. Una vez al día a las '
+          + '09:00 SV: el plazo es de días, revisarlo cada hora serían 24 lecturas para la misma '
+          + 'respuesta, y un aviso a las 17:00 llega cuando ya no hay nada que mover. No repite '
+          + 'el mismo renglón dentro de 20 horas.',
+  },
+  {
     job: 'drain-cliente-erp-queue', slug: 'push-cliente-erp', cadencia: '3,13,23,33,43,53 * * * *',
     corridasDia: 144, sistema: null,
     motivo: 'SIN MEDIR. Vacía la cola de fichas de cliente; con la cola vacía no debería tocar el '

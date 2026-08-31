@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.878.3 — Un convenio no acumula puntos
+
+MAPFRE es un convenio: la aseguradora paga y el medicamento se lo lleva un
+asegurado, así que la ficha de la venta es la de la empresa. Estaba acumulando
+puntos a nombre de una sociedad que nunca va a canjearlos — **61 ventas por
+$2,733.77 en doce meses**, y el piso de precio no la agarraba.
+
+La bandera es `customers.acumula_puntos`, con el mismo nombre y la misma
+semántica que `laboratorios.acumula_puntos`: es la misma pregunta hecha sobre
+otra tabla, y ponerle dos nombres distintos a una idea es cómo se termina con
+dos reglas distintas. Default `true` — una ficha nueva es una persona que
+compra mientras nadie diga lo contrario.
+
+Quedan **veinte fichas de empresa más** que hoy siguen acumulando (clínicas,
+Banco Promerica, Laboratorios Vijosa, una alcaldía, el ISSS). No se tocaron:
+cada una es una relación comercial y la decisión no es del código.
+
 ## v2.878.2 — La constancia recibe la sala y quién firma
 
 Dos líneas que quedaron fuera del commit anterior. El modal las esperaba

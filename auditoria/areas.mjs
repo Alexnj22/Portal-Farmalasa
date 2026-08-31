@@ -190,6 +190,11 @@ export const AREAS = [
             'src/views/employee/EmployeeProfileView.jsx', 'src/views/employee/EmployeeDocumentsView.jsx',
             'src/components/practicantes/',
             'src/data/employees.js', 'src/data/employeeSelfService.js', 'src/data/practicantes.js',
+            // El régimen disciplinario del RIT Art. 83: la escalera, la
+            // constancia y el reclamo del Art. 77. Va en Personal porque lo que
+            // escribe es el expediente — aunque su efecto se sienta en el
+            // kiosco y en la planilla.
+            'src/data/disciplina.js', 'src/components/personal/SancionModal.jsx',
             'src/data/nationalities.js',
             'src/store/slices/employeeSlice.js', 'src/store/slices/practicantesSlice.js',
             'src/utils/ageUtils.js', 'src/utils/nameUtils.js', 'src/utils/staffHelpers.js',

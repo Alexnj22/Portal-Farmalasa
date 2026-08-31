@@ -195,6 +195,20 @@ Deno.serve(async (req) => {
         ? "No tienes permiso para decidir las correcciones de caja."
         : "No tienes permiso para operar la caja desde el portal." }, 403);
     }
+    /* El ALCANCE, que hasta el 31-ago no se miraba en ninguna de las dos
+     * functions de caja. `sala` viene del navegador y era lo único que decidía
+     * qué caja se abría, se anotaba o se cerraba: quien tuviera el permiso
+     * operaba las siete. Y no había cómo acotarlo, porque `caja_vales` estaba
+     * declarado `hasScope: false` y la pantalla de permisos ni siquiera ofrecía
+     * el selector.
+     *
+     * `aplicar_correccion` y `corregir` no pasan por acá —van contra un
+     * movimiento que se relee de la base, con su propia sala— así que el freno
+     * se aplica a lo que sí toca una caja por número de sala. */
+    if (!["aplicar_correccion", "corregir"].includes(accion)
+        && !permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+      return json({ ok: false, error: "Solo puedes operar la caja de tu propia sala." }, 403);
+    }
 
     // ── PEDIR UNA CORRECCIÓN ────────────────────────────────────────────────
     //
@@ -606,7 +620,55 @@ Deno.serve(async (req) => {
     })).text();
 
     if (!exito(resp)) return json({ ok: false, error: `La caja no aceptó el cierre: ${resp.slice(0, 200)}` }, 502);
-    return json({ ok: true, cerrada: true });
+
+    /* ── ¿Salió el Z? Se COMPRUEBA, no se supone ──────────────────────────
+     *
+     * El cierre del turno es lo que emite el Z, y hasta el 31-ago el portal
+     * daba por hecho que había salido: contestaba `cerrada: true` con sólo
+     * mirar que la caja aceptara la petición.
+     *
+     * Se agrega por lo que enseñó el primer corte hecho desde el portal ese
+     * mismo día: el formulario del corte trae `tipo_corte` con **X** marcado
+     * por defecto, el portal lo reenviaba tal cual, y salió una LECTURA en vez
+     * de un corte de efectivo. Nadie se enteró en el momento —la respuesta
+     * decía «success»— y encima el X quedó invisible, porque `sync-cortes-caja`
+     * sólo guarda C y Z. O sea: el tipo de documento que sale del otro lado no
+     * es algo que se pueda dar por sabido, y el cierre es el acto donde menos
+     * se puede, porque no se deshace.
+     *
+     * Se lee el listado del origen y no `cortes_caja`: la tabla del portal se
+     * llena con el sync, que corre después, así que preguntarle recién cerrado
+     * diría «no hay Z» siempre. Y si la comprobación falla, el cierre YA ocurrió
+     * — se contesta `ok: true` con el aviso, nunca un error que invite a
+     * cerrar de nuevo. */
+    let zEmitido: boolean | null = null;
+    try {
+      const listado = await (await fetch(CORTE_URL, {
+        method: "POST",
+        headers: {
+          Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: new URLSearchParams({ process: "ok", fecha1: diaAbierto, fecha2: diaAbierto }).toString(),
+        signal: AbortSignal.timeout(45_000),
+      })).text();
+      zEmitido = [...listado.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].some(([, tr]) => {
+        const tds = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)]
+          .map((m) => m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+        return tds.length >= 8 && tds[5].toUpperCase() === "Z";
+      });
+    } catch (e) {
+      console.error("operar-caja: no se pudo comprobar el Z:", e);
+    }
+
+    return json({
+      ok: true, cerrada: true, z: zEmitido,
+      aviso: zEmitido === false
+        ? "La caja cerró, pero no aparece el corte Z del día. Hay que revisarlo antes de que se cierre el mes."
+        : zEmitido === null
+          ? "La caja cerró, pero no se pudo comprobar que saliera el corte Z."
+          : undefined,
+    });
   } catch (e) {
     console.error("operar-caja:", e);
     return new Response(JSON.stringify({ ok: false, error: (e as Error)?.message ?? String(e) }), {

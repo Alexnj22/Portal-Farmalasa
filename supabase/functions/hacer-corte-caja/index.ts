@@ -42,6 +42,7 @@ const PANTALLA   = `${BASE}corte_caja_diario.php`;
 const CIERRE_URL = `${BASE}cierre_turno.php`;
 const CREAR_VALE = `${BASE}agregar_salida_caja.php`;
 const MOV_URL    = `${BASE}admin_movimiento_caja_dt.php`;
+const TICKET_URL = `${BASE}corte_caja_diario.php`;
 
 const ID_TIPO_SALIDA = "1";
 
@@ -129,6 +130,80 @@ function camposDelFormulario(html: string): Map<string, string> {
 
 const dosDecimales = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 
+/**
+ * El tiquete que acaba de salir, y lo que ÉL dice que se esperaba.
+ *
+ * Existe porque `total_corte` del formulario NO es el efectivo esperado, y eso
+ * se midió el 31-ago sobre el primer corte real hecho desde el portal (Salud 3,
+ * corte 14319). El portal leyó 893.50, mandó una diferencia de -411.55, y el
+ * tiquete que imprimió el mismo documento dice:
+ *
+ *     (+) VENTA $: 541.75 · (-)VALES $: 150.50 · (+) COBROS CREDITO $: 100.45
+ *     TOTAL CAJA $: 491.70 · EFECTIVO $: 481.95
+ *
+ * O sea que lo esperado eran 491.70 y la diferencia real -9.75. La cuenta del
+ * tiquete cierra sola; la del formulario no, porque `total_corte` sale de
+ * `ventas - vales` y **no incluye los cobros de crédito** (comprobado: el X de
+ * las 12:41 leyó 391.25 = 541.75 - 150.50). El sistema imprime la diferencia
+ * que se le manda, sin recalcularla, así que un esperado equivocado se vuelve
+ * una afirmación falsa sobre dinero en el papel.
+ *
+ * Por eso lo que se le muestra a quien contó sale del TIQUETE y no de la cuenta
+ * del portal. Es la misma regla que ya rige el módulo —el esperado lo calcula la
+ * caja, no nosotros—, aplicada al lugar donde la caja de verdad lo dice.
+ */
+interface Tiquete {
+  texto: string;
+  tipo: string | null;
+  /** `null` cuando el tiquete vino pero no se le pudo leer la cuenta. */
+  esperado: number | null;
+  contado: number | null;
+  diferencia: number | null;
+}
+
+async function leerTiquete(
+  cookie: string, idCorte: string, erpId: number,
+): Promise<Tiquete | null> {
+  const r = await fetch(TICKET_URL, {
+    method: "POST",
+    headers: {
+      Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: new URLSearchParams({
+      process: "imprimir", id_corte: idCorte, id_sucursal_dom: String(erpId),
+    }).toString(),
+    signal: AbortSignal.timeout(45_000),
+  });
+  const mov = JSON.parse(await r.text())?.movimiento ?? null;
+  // Tiene que ser el corte PEDIDO: el origen contesta 200 con un tiquete de
+  // otro corte cuando el id no es de esta sala. Mismo freno que el sync.
+  if (!mov || !new RegExp(`:\\s*${idCorte}\\b`).test(mov)) return null;
+
+  const linea = (rx: RegExp) => {
+    const m = String(mov).match(rx);
+    if (!m) return null;
+    const n = Number(m[1].replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(n) ? n : null;
+  };
+  const totalCaja = linea(/TOTAL CAJA \$:\s*([\d.,-]+)/i);
+  const efectivo  = linea(/EFECTIVO \$:\s*([\d.,-]+)/i);
+  const retencion = linea(/RETENCION \$:\s*([\d.,-]+)/i) ?? 0;
+  const devol     = linea(/DEVOLUCIONES\s*\$:\s*([\d.,-]+)/i) ?? 0;
+  const tipo = String(mov).match(/CORTE TIPO:\s*([^\n]+)/i)?.[1]?.trim() ?? null;
+  // Un tiquete sin las dos líneas de la cuenta se devuelve igual, con la cuenta
+  // en `null`. Inventar un cero acá sería decir «cuadró» sobre algo que no se
+  // leyó, que es peor que no saber.
+  if (totalCaja === null || efectivo === null) {
+    return { texto: mov as string, tipo, esperado: null, contado: null, diferencia: null };
+  }
+  const esperado = Number((totalCaja - retencion - devol).toFixed(2));
+  return {
+    texto: mov as string, tipo, esperado, contado: efectivo,
+    diferencia: Number((efectivo - esperado).toFixed(2)),
+  };
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -156,6 +231,14 @@ Deno.serve(async (req) => {
     const permiso = await permisoDeModulo(supabase, quien.id, "caja_vales", "can_edit");
     if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede) return json({ ok: false, error: "No tienes permiso para hacer el corte desde el portal." }, 403);
+    // El ALCANCE, que hasta el 31-ago no se miraba: `sala` viene del navegador y
+    // era lo único que decidía a qué caja se le hacía el corte. Quien tuviera el
+    // permiso podía cortar la caja de cualquiera de las siete salas, y un corte
+    // no se deshace. El módulo `caja_vales` no ofrecía alcance en la pantalla de
+    // permisos, así que tampoco había forma de acotarlo.
+    if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+      return json({ ok: false, error: "Solo puedes hacer el corte de tu propia sala." }, 403);
+    }
 
     const entrada = getErpBranchMap().find((e) => e.branchId === sala);
     if (!entrada) return json({ ok: false, error: "Esa sala no está configurada." }, 400);
@@ -271,6 +354,24 @@ Deno.serve(async (req) => {
     // ── 3. El envío: sólo se cambia lo que teclea una persona ──────────────
     // Tarjeta y cheque van en CERO y no en lo que traiga la pantalla: no pasan
     // por la caja, y son las dos casillas por las que se tapa un faltante.
+    //
+    // Y el TIPO se fija en C, que es lo único que «reenviar el formulario tal
+    // cual» no podía acertar. Medido el 31-ago en el formulario vivo de Salud 3:
+    //
+    //     <option  value="C">
+    //     <option selected value="X">   ← el que viene marcado
+    //     <option value="Z">
+    //
+    // O sea que el default del formulario es **X**, que es una LECTURA de
+    // ventas y no un corte de efectivo. El portal reproducía fielmente ese
+    // default y el primer corte hecho desde acá salió X: tiquete
+    // «CORTE TIPO: X», sin línea de efectivo, y encima invisible en el portal
+    // porque `sync-cortes-caja` sólo guarda C y Z. La persona lo repitió y el
+    // segundo salió C, así que quedaron dos cortes de la misma caja con dos
+    // minutos de diferencia.
+    //
+    // Los de caja son C. No es una preferencia: el X no cuenta el dinero.
+    campos.set("tipo_corte", "C");
     const diferencia = Number(efectivo) - esperado;
     campos.set("total_efectivo", dosDecimales(efectivo));
     campos.set("total_efectivo1", dosDecimales(efectivo));
@@ -295,12 +396,30 @@ Deno.serve(async (req) => {
     let datos: Record<string, unknown> | null = null;
     try { datos = JSON.parse(respCorte); } catch { datos = null; }
     const ok = String(datos?.typeinfo ?? "").toLowerCase() === "success";
+    const idCorte = datos?.id_corte ?? null;
+
+    // El tiquete manda sobre la cuenta del portal. Si no se pudo leer, se avisa
+    // en vez de caer en silencio a un número que ya sabemos que puede estar mal.
+    let tiquete: Tiquete | null = null;
+    if (ok && idCorte) {
+      try { tiquete = await leerTiquete(cookie, String(idCorte), entrada.erpId); }
+      catch (e) { console.error("hacer-corte-caja: tiquete:", e); }
+    }
+    const delTiquete = tiquete?.esperado !== null && tiquete?.esperado !== undefined;
 
     return json({
       ok,
-      // Recién ACÁ viaja el esperado: después del conteo, nunca antes.
-      esperado, contado: Number(efectivo), diferencia: Number(dosDecimales(diferencia)),
-      id_corte: datos?.id_corte ?? null,
+      // Recién ACÁ viaja el esperado: después del conteo, nunca antes. Y sale
+      // del tiquete cuando se pudo leer — ver `leerTiquete`.
+      esperado: delTiquete ? tiquete!.esperado : esperado,
+      contado: delTiquete ? tiquete!.contado : Number(efectivo),
+      diferencia: delTiquete ? tiquete!.diferencia : Number(dosDecimales(diferencia)),
+      // Lo que el portal había calculado, para poder compararlo. Mientras las
+      // dos cuentas no coincidan siempre, esto es lo que permite verlo.
+      segun_el_portal: { esperado, diferencia: Number(dosDecimales(diferencia)) },
+      del_tiquete: delTiquete,
+      tipo: tiquete?.tipo ?? null,
+      id_corte: idCorte,
       vale: valeId ? { id: valeId, movimiento_en_caja: movVale, monto: Number(montoVale.toFixed(2)) } : null,
       respuesta: ok ? undefined : respCorte.slice(0, 300),
     });

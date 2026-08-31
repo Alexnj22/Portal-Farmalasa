@@ -166,7 +166,14 @@ const GRUPOS_CRUDOS = [
             // espera. No puede viajar de arrastre con el permiso de guardar una
             // bolsa. Hoy lo tiene un solo cargo, por pedido del usuario, para poder
             // hacer la primera prueba cuando lo considere.
-            { key: 'caja_vales',    label: 'Mi caja (operar desde el portal)', desc: 'Abrir la caja, anotar ingresos y vales, hacer el corte con el conteo a ciegas y cerrar el día — todo sin entrar al sistema de la caja. Ver muestra el estado; editar es lo que opera', icon: Wallet, hasApprove: false, hasScope: false },
+            /* `hasScope` es la diferencia entre «operar mi caja» y «operar la de
+             * cualquiera de las siete salas». Nació en `false` y así estuvo
+             * hasta el 31-ago: la sala viajaba desde el navegador y ninguna de
+             * las dos edge functions de caja miraba el alcance, así que quien
+             * tenía el permiso abría, anotaba, cortaba y cerraba la caja de
+             * todas — y un corte no se deshace. Sin el selector acá tampoco
+             * había forma de acotarlo aunque alguien quisiera. */
+            { key: 'caja_vales',    label: 'Mi caja (operar desde el portal)', desc: 'Abrir la caja, anotar ingresos y vales, hacer el corte con el conteo a ciegas y cerrar el día — todo sin entrar al sistema de la caja. Ver muestra el estado; editar es lo que opera. El alcance decide si es solo su sala o todas', icon: Wallet, hasApprove: false, hasScope: true },
             { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, la etiqueta que va pegada a cada bolsa, y marcarlas como entregadas', icon: Package, hasApprove: false, hasScope: true, sub: [
                 // Módulo aparte y no una capacidad de `bolsas` porque son dos
                 // públicos: la sala entrega, administración recibe y cuenta. Con

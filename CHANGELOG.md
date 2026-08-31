@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.884.1 — El corte de caja sale C, y el módulo tiene alcance
+
+Del primer corte hecho de verdad desde el portal (Salud 3, 31-ago). Salieron
+**dos** cortes con dos minutos de diferencia, y el primero no era un corte.
+
+**El tipo.** El formulario del corte trae un desplegable con tres opciones, y el
+que viene marcado por defecto es **X** — una *lectura* de ventas, que no cuenta
+el efectivo. El portal reenviaba el formulario tal como venía, así que mandaba
+ese default: el corte 14318 salió con tiquete «CORTE TIPO: X», sin línea de
+efectivo. La persona lo repitió y el segundo (14319) salió C. Los de caja son C
+y ahora se fija explícitamente. El X además quedó **invisible en el portal**,
+porque la captura sólo guarda C y Z: existía en el sistema de la caja y en
+ninguna pantalla de acá.
+
+**El alcance.** `caja_vales` estaba declarado sin alcance, y ninguna de las dos
+funciones de caja lo miraba: la sala viajaba desde el navegador y era lo único
+que decidía qué caja se abría, se anotaba, se cortaba o se cerraba. Quien tenía
+el permiso operaba las siete, y un corte no se deshace. Ahora el módulo ofrece
+el selector y las dos funciones lo exigen. **No traba a nadie**: los cuatro
+cargos que hoy lo tienen están en «todas», medido antes de encenderlo.
+
+**El Z del cierre se comprueba.** Cerrar el día es lo que emite el Z, y el
+portal daba por hecho que había salido con sólo ver que la caja aceptara la
+petición — el mismo supuesto que dejó pasar el X. Ahora se lee el listado del
+origen y, si el Z no aparece, se avisa. El cierre ya ocurrió, así que es un
+aviso y nunca un error que invite a cerrar de nuevo.
+
+**Y lo esperado sale del tiquete.** `total_corte` del formulario **no es el
+efectivo esperado**: en el corte 14319 el portal leyó 893.50 y mandó una
+diferencia de −411.55, mientras el tiquete del mismo documento dice
+`TOTAL CAJA $: 491.70` y `EFECTIVO $: 481.95` — o sea **−9.75**. La cuenta del
+tiquete cierra sola; la del formulario no, porque `total_corte` sale de
+`ventas − vales` y no incluye los cobros de crédito. El sistema imprime la
+diferencia que se le manda sin recalcularla, así que un esperado equivocado se
+vuelve una afirmación falsa sobre dinero. Lo que se le muestra a quien contó
+ahora sale del tiquete, y viaja también lo que el portal había calculado, para
+poder compararlos.
+
 ## v2.884.0 — las bolsas se actualizan solas: contar entre varios ya no exige recargar
 
 > «en el conteo de bolsas de efectivo, debe actualizarse solo, si estamos 2 o 3

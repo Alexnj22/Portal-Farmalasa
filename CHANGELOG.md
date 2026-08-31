@@ -21,29 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.881.1 — El reglamento en blanco y negro, corrido y con dos firmas
+## v2.882.1 — A un jefe o subjefe solo lo autoriza el código SU
 
-El reglamento pasa a blanco y negro y el texto corre. El verde era el acento del
-PROGRAMA, y en un documento que obliga sólo hacía que pareciera un folleto: el
-énfasis lo dan el peso y la regla. Y `break-inside: avoid-page` empujaba cada
-cláusula entera a la hoja siguiente y dejaba media página en blanco — ahora lo
-único que se evita es partir un inciso o dejar un título solo al pie. De 7
-páginas a 6.
+Cierra el hueco que quedó abierto en v2.880.1. Ahí se corrigió que nadie se
+autorice a sí mismo en el kiosco, pero el código SU se seguía exigiendo **sólo
+por el camino del código de la hora**: el camino del PIN de un compañero no lo
+pedía. Eso hacía que la misma regla valiera distinto según la sala.
 
-Al final firman dos: **Edwin Nuñez** (elaboró) y el **Gerente General** por la
-razón social. Quien lo redactó y quien lo autoriza no son la misma
-responsabilidad, y una sola raya no dice cuál de las dos está cubierta.
+En **Salud 1 y Salud 4** hay dos personas con cargo de jefatura —la jefa de sala
+y una regente de enfermería que tiene «Subjefe/a de Sala» como cargo
+secundario—, así que se autorizaban entre ellas con su PIN y sin ningún código
+SU. En las otras cinco salas hay una sola persona, y ahí el código SU ya era el
+único camino, no por regla sino porque no había con quién.
 
-**Y los 17 descuentos sin explicación quedaron explicados: son RETENCIÓN de IVA,
-no descuento.** Todos del ISSS, el 1% del Art. 162 — $21.25 sobre un neto de
-$2,125.00, confirmado en la factura `0000052917_COF`, que lo rotula «IVA Retenido
-(−)». Corrige una suposición: el hueco entre renglones y total NO es
-necesariamente un descuento. La columna `sales_invoices.retencion` los separa
-exacto —de las 546 marcadas, 0 son retención; de las 17 sin marca, las 17 lo
-son— así que la fórmula es `descuento = (renglones − total) − retención`, con
-`has_puntos` de compuerta. **La marca no tiene falsos negativos.**
+Ahora, cuando a quien marca le corresponde el código SU, el PIN no lo autoriza:
+ni el propio ni el de un compañero presente. Vale igual para jefes y subjefes.
 
-## v2.881.0 — El traslado dice quién lo recibió, y la hora de la firma es la de la firma
+Verificado contra producción, en una prueba que se revierte sola: el subjefe con
+el PIN de la jefa queda **rechazado**, la jefa con su propio PIN queda
+**rechazada**, y una dependienta con el PIN de la jefa sigue quedando
+**autorizada** — el camino del PIN sigue vivo para quien no es jefatura.
+
+## v2.882.0 — El traslado dice quién lo recibió, y la hora de la firma es la de la firma
 
 Reportado mirando un traslado de Salud 5 a Salud 4: «¿cómo puedo ver quién
 aceptó esto en Salud 4?». No se podía. El detalle mostraba dos personas —quien
@@ -102,6 +101,28 @@ rechazo, una cancelación.
 
 Como el arreglo vive en `cuandoSeDecidio`, alcanza también a la tarjeta de la
 lista, no sólo al detalle.
+
+## v2.881.1 — El reglamento en blanco y negro, corrido y con dos firmas
+
+El reglamento pasa a blanco y negro y el texto corre. El verde era el acento del
+PROGRAMA, y en un documento que obliga sólo hacía que pareciera un folleto: el
+énfasis lo dan el peso y la regla. Y `break-inside: avoid-page` empujaba cada
+cláusula entera a la hoja siguiente y dejaba media página en blanco — ahora lo
+único que se evita es partir un inciso o dejar un título solo al pie. De 7
+páginas a 6.
+
+Al final firman dos: **Edwin Nuñez** (elaboró) y el **Gerente General** por la
+razón social. Quien lo redactó y quien lo autoriza no son la misma
+responsabilidad, y una sola raya no dice cuál de las dos está cubierta.
+
+**Y los 17 descuentos sin explicación quedaron explicados: son RETENCIÓN de IVA,
+no descuento.** Todos del ISSS, el 1% del Art. 162 — $21.25 sobre un neto de
+$2,125.00, confirmado en la factura `0000052917_COF`, que lo rotula «IVA Retenido
+(−)». Corrige una suposición: el hueco entre renglones y total NO es
+necesariamente un descuento. La columna `sales_invoices.retencion` los separa
+exacto —de las 546 marcadas, 0 son retención; de las 17 sin marca, las 17 lo
+son— así que la fórmula es `descuento = (renglones − total) − retención`, con
+`has_puntos` de compuerta. **La marca no tiene falsos negativos.**
 
 
 ## v2.880.2 — El reglamento de puntos, en papel

@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.886.3 — Los puntos no se transfieren, y la firma es una
+
+Tres correcciones al reglamento de puntos, más el pie del papel.
+
+**4.3 — no transferibles.** Faltaba decirlo: los puntos pertenecen únicamente al
+Cliente que los acumuló y sólo él puede canjearlos. La cláusula ya negaba el
+efectivo, el reembolso y el interés; lo que no negaba era que la cuenta se
+prestara, que es lo que convierte un programa de fidelidad en un saldo al
+portador.
+
+**9.1 y 11.1 — se cae el sitio en internet.** La modificación del reglamento se
+avisa **sólo** con publicación visible en las salas de venta, y el ejemplar
+disponible es el de la sala. El portal existe (la cláusula 7 manda ahí a
+consultar el saldo), pero es una pantalla de consulta, no un tablón de anuncios:
+prometer que ahí se publica un aviso de treinta días es prometer un canal que
+nadie mantiene. **La 11.1 no la pidió el usuario** — se corrigió con la 9.1
+porque es la misma promesa por el mismo motivo, y dejarla habría hecho que el
+reglamento prometiera su propia disponibilidad en un sitio donde no está.
+
+**El pie de firma queda en una sola raya.** Firma el CONTRIBUYENTE —la persona
+que se obliga, que además es el Gerente General—. La segunda raya era de quien
+redactó el documento, y en un reglamento que obliga frente al Cliente eso no
+agrega a quién responde. El bloque pasó de dos columnas a uno centrado del ancho
+del nombre.
+
+Sigue pendiente lo de v2.886.2: con el mínimo de canje en 100 puntos, un saldo
+menor no se puede usar nunca y la cláusula 5 lo vence igual. El reglamento
+todavía no dice cuál de las dos salidas toma.
+
 ## v2.886.2 — El canje pide 100 puntos
 
 La cláusula 4.1 del reglamento decía que el canje se hace **sin cantidad

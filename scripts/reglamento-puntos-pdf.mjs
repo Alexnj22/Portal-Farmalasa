@@ -31,17 +31,10 @@ const cuerpo = readFileSync(resolve(fuente), 'utf8');
 const firma = `
 <div class="firma">
   <p class="lugar">En Chalatenango, a __FECHA__.</p>
-  <div class="firmas">
-    <div class="firmante">
-      <div class="linea"></div>
-      <p class="nombre">Edwin Alexander Nuñez Joya</p>
-      <p class="cargo">Supervisor de Ventas</p>
-    </div>
-    <div class="firmante">
-      <div class="linea"></div>
-      <p class="nombre">José Rutilio Alemán Vásquez</p>
-      <p class="cargo">Gerente General</p>
-    </div>
+  <div class="firmante">
+    <div class="linea"></div>
+    <p class="nombre">José Rutilio Alemán Vásquez</p>
+    <p class="cargo">Gerente General</p>
   </div>
 </div>
 <style>
@@ -49,21 +42,19 @@ const firma = `
      que nadie firmó se lee como un documento a medias; pegado en la pared, la
      firma es lo que lo vuelve oficial.
 
-     Dos firmantes y no uno: quien lo redactó y quien lo autoriza no son la
-     misma responsabilidad, y una sola raya no dice cuál de las dos está
-     cubierta. El segundo es el CONTRIBUYENTE —la persona que se obliga—, que
-     resultó ser también el Gerente General.
+     UN firmante y no dos: el que firma es el CONTRIBUYENTE —la persona que se
+     obliga, y que resultó ser también el Gerente General—. Antes acá había una
+     segunda raya para quien lo redactó; en un reglamento que obliga frente al
+     Cliente, quien lo redactó no agrega nada a quién responde.
 
-     Las rayas van centradas y del ancho del nombre, no pegadas al margen: una
-     línea que arranca en el borde de la hoja se lee como un renglón para
-     llenar, no como un lugar para firmar. */
+     La raya va centrada y del ancho del nombre, no pegada al margen: una línea
+     que arranca en el borde de la hoja se lee como un renglón para llenar, no
+     como un lugar para firmar. */
   .firma { margin-top: 2.5rem; break-inside: avoid; }
   .firma .lugar { font-family: "IBM Plex Sans", system-ui, sans-serif;
                   font-size: .82rem; color: var(--ink-2); margin-bottom: 3.5rem; }
-  .firmas { display: flex; gap: 2.5rem; text-align: center; }
-  .firmante { flex: 1; }
-  .firmante .linea { border-bottom: 1px solid var(--ink); margin: 0 auto .4rem;
-                     width: min(100%, 15rem); }
+  .firmante { width: min(100%, 17rem); margin: 0 auto; text-align: center; }
+  .firmante .linea { border-bottom: 1px solid var(--ink); margin: 0 0 .4rem; }
   .firmante .nombre { font-family: "IBM Plex Sans", system-ui, sans-serif;
                       font-size: .84rem; font-weight: 600; color: var(--ink);
                       margin-bottom: .05rem; letter-spacing: .01em; }

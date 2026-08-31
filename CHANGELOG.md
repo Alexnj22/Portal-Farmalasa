@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.869.0 — Supervisión, Administración y Talento Humano con todo activo
+
+Pedido del usuario. Los tres cargos quedan en **160 de 160 módulos, completos**
+(ver, editar, aprobar, alcance total).
+
+Lo que había: Administrador y Talento Humano veían **157** y editaban **91**;
+Supervisión veía 158 y editaba 93. Ninguno de esos huecos se decidió — son
+módulos que nacieron después y a los que nadie volvió.
+
+**El caso que lo destapó:** `caja_vales` le había quedado a Supervisión en
+`can_view: true, can_edit: false`. O sea que veía la pantalla de Mi caja y **no
+podía operarla**, justo el cargo para el que se abrió el módulo. Y eso no se
+anuncia con un error: la pantalla sencillamente no ofrece los botones.
+
+**Se escribe fila por fila, y NO se les pone la marca de cuenta de pruebas.**
+Existe `roles.es_cuenta_de_pruebas`, que le da a QA todo módulo nuevo
+automáticamente, y la diferencia es deliberada: QA mide y no opera, así que un
+permiso de más no puede hacer daño. Estos son personas que operan la empresa, y
+hay módulos que nacen restringidos a propósito —`caja_vales` fue uno—, de modo
+que dárselos todos para siempre convertiría cada decisión futura de alcance en
+un permiso ya concedido antes de tomarla. Esto los pone al día **hoy**; que
+sigan al día es una decisión de cada módulo nuevo.
+
+**No incluye** a «Supervisor del Departamento Medico y Enfermería», que hoy
+tiene 8 módulos: es otro trabajo, no la supervisión de ventas de la que hablaba
+el pedido.
+
 ## v2.868.2 — Los barridos medían direcciones que ya no existen, y a la vista del cliente no la medía nadie
 
 **Las cuatro listas de rutas quedaron en el idioma viejo.** El 26-ago se

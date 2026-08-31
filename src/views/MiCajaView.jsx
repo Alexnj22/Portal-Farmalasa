@@ -24,6 +24,7 @@ import {
     subirComprobante,
 } from '../data/bolsas';
 import { fetchVentasPorPago } from '../data/cortes';
+import { diferenciaDelCorte, notaDeCifra } from '../utils/cortesDiagnostico';
 
 /* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
  * 29-ago): todo lo que mueve efectivo vive en la caja. Es el MISMO componente,
@@ -58,6 +59,46 @@ import { mensajeAmigable } from '../utils/errorMessages';
  * pueda cortar en la otra pantalla, ahí ve el esperado.
  */
 const VACIO = [];
+
+/**
+ * La cuenta del corte recién hecho, resuelta por el MISMO juez que la tabla.
+ *
+ * `hacer-corte-caja` devuelve las dos cuentas sin elegir: la del formulario del
+ * origen —que arrastra su defecto conocido, sumar los cobros de crédito un
+ * número entero de veces de más— y las piezas del tiquete. Quién gana lo decide
+ * `diferenciaDelCorte`, que es la función con la que se lee la tabla de cortes
+ * desde el 13-ago, se contrastó contra un testigo independiente (el aviso de
+ * sala) y conoce el único caso en que la buena es la del formulario: un corte
+ * hecho ANTES de que entraran los cobros del día, donde el tiquete suma uno que
+ * a esa hora no existía.
+ *
+ * Va acá y no en la edge function por eso mismo: el corte recién hecho no puede
+ * contarse distinto que el mismo corte mirado mañana en la tabla. Dos jueces
+ * para la misma pregunta es cómo se llega a dos números.
+ *
+ * Sin tiquete no hay qué comparar y queda la del formulario, que es todo lo que
+ * hay — el papel lo declara.
+ */
+function conLaCuentaBuena(r) {
+    if (!r?.ok || !r?.tiquete?.total_caja) return r;
+    // La forma que espera el canónico: es una fila de `cortes_caja`.
+    const comoCorte = {
+        total_declarado: r.contado,
+        esperado: r.esperado,
+        diferencia_erp: r.diferencia,
+        tk_total_caja: r.tiquete.total_caja,
+        tk_cobros_credito: r.tiquete.cobros_credito,
+    };
+    const d = diferenciaDelCorte(comoCorte);
+    return {
+        ...r,
+        esperado: d.esperado, diferencia: d.valor, fuente: d.fuente,
+        // Por qué este número y no el que guardó el sistema. `null` cuando no
+        // hay nada que explicar, y entonces el papel no dice nada.
+        nota: notaDeCifra(comoCorte),
+        segun_el_sistema: { esperado: r.esperado, diferencia: r.diferencia },
+    };
+}
 
 export default function MiCajaView() {
     // `VACIO` estable y no `|| []`: un arreglo nuevo en cada render invalida
@@ -437,9 +478,10 @@ export default function MiCajaView() {
                 onClose={() => { setDialogo(null); setResultado(null); }}
                 onCortar={async (efectivo) => {
                     setOcupado(true);
-                    const r = await hacerCorte({ sala, efectivo });
+                    const bruto = await hacerCorte({ sala, efectivo });
                     setOcupado(false);
-                    if (r.error) { showToast(mensajeAmigable(r.error), 'error'); return; }
+                    if (bruto.error) { showToast(mensajeAmigable(bruto.error), 'error'); return; }
+                    const r = conLaCuentaBuena(bruto);
                     setResultado(r);
                     cargar();
                     /* El papel sale solo, como parte del acto — igual que al
@@ -916,10 +958,18 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
             <Marco abierto={abierto} onClose={onClose} titulo={cuadro ? 'El corte cuadró' : 'El corte tiene diferencia'}>
                 <div className="space-y-1 text-body-sm">
                     <p className="text-content-2">Contaste <b className="text-content tabular-nums">{formatMoney(resultado.contado)}</b></p>
-                    <p className="text-content-2">La caja esperaba <b className="text-content tabular-nums">{formatMoney(resultado.esperado)}</b></p>
                     <p className={`text-h3 font-bold tabular-nums ${cuadro ? 'text-success-text' : dif > 0 ? 'text-warning-text' : 'text-danger-text'}`}>
                         {dif > 0 ? '+' : ''}{formatMoney(dif)}
                     </p>
+                    {/* Por qué este número y no el que guardó el sistema de la
+                        caja. Lo escribe `notaDeCifra`, que es quien decidió la
+                        cifra, así que no puede contradecirla. */}
+                    {resultado.nota && (
+                        <p className="text-caption text-content-2 pt-1">
+                            <b className="text-content">{resultado.nota.titulo}.</b>{' '}
+                            {resultado.nota.detalle}
+                        </p>
+                    )}
                     {/* De dónde sale lo esperado. Se muestra por el mismo motivo
                         que va impreso: el número que el portal calculaba salió
                         mal una vez, así que una cifra sin su cuenta pide que se
@@ -930,6 +980,26 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
                                 <p key={l.rotulo} className="flex justify-between text-caption text-content-3">
                                     <span>{l.rotulo}</span>
                                     <span className="tabular-nums">{formatMoney(l.monto)}</span>
+                                </p>
+                            ))}
+                            <p className="flex justify-between text-caption font-semibold text-content-2 pt-1 border-t border-divider">
+                                <span>Debía haber</span>
+                                <span className="tabular-nums">{formatMoney(resultado.esperado)}</span>
+                            </p>
+                        </div>
+                    )}
+                    {/* Las formas que no pasan por la caja, COMO VENGAN: se
+                        pintan las que trajo el tiquete, no dos escritas acá. Con
+                        «tarjeta» y «crédito» fijas, una forma nueva no aparece
+                        como cero — desaparece, y el número sigue cuadrando
+                        diciendo de menos. Ya costó los $2.20 de Salud 2. */}
+                    {(resultado.tiquete?.formas || []).length > 0 && (
+                        <div className="pt-2 space-y-0.5">
+                            <p className="text-caption text-content-3">No pasa por la caja</p>
+                            {resultado.tiquete.formas.map((f) => (
+                                <p key={f.rotulo} className="flex justify-between text-caption text-content-3">
+                                    <span className="capitalize">{f.rotulo}</span>
+                                    <span className="tabular-nums">{formatMoney(f.monto)}</span>
                                 </p>
                             ))}
                         </div>

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.886.7 — Las formas de pago como vengan, y la diferencia con un solo juez
+
+Tres cosas del comprobante del corte, y la primera es un defecto que ya había
+costado caro.
+
+**Las formas de pago se leen COMO VENGAN.** El papel listaba tarjeta y crédito
+con dos búsquedas escritas a mano, así que un cheque o una transferencia que el
+sistema empiece a imprimir mañana no habría salido en cero: **habría
+desaparecido**, con el papel cuadrando igual y diciendo de menos. Es exactamente
+lo que ya pasó con los $2.20 de Salud 2 del 13 de agosto en el desglose del
+cierre, donde la regla escrita es «pintarlas como vengan». Ahora el tiquete se
+recorre sin saber cuántos bloques trae ni cómo se llaman, y sale lo que haya con
+el rótulo del origen.
+
+**La diferencia la decide un solo juez.** El corte devolvía su propia cuenta y
+la tabla de cortes usa otra —`diferenciaDelCorte`, la del 13 de agosto, que se
+contrastó contra un testigo independiente—. Dos jueces para la misma pregunta es
+cómo se llega a dos números para el mismo corte. Ahora el servidor devuelve las
+**piezas** y la decisión la toma esa función, la misma con la que se lee ese
+corte mañana en la tabla. Eso trae gratis el único caso que la cuenta nueva no
+conocía: un corte hecho **antes** de que entraran los cobros del día, donde la
+buena es la del formulario y no la del tiquete.
+
+Y cuando las dos cifras no coinciden, el papel dice por qué en dos renglones —el
+título de la explicación y cuánto guarda el sistema—, porque alguien va a tener
+los dos papeles al lado y un comprobante que contradice al otro en silencio se
+lee como un error nuestro. El detalle largo se queda en la pantalla.
+
+**Fuera «debía haber» de los totales** (decisión del usuario): quedan el contado
+y la diferencia. Lo que debía haber es la suma del bloque de arriba, renglón por
+renglón, y un tercer número grande le competía al único que hay que mirar. En
+pantalla sí sigue, al pie de la cuenta, donde no compite con nada.
+
 ## v2.886.6 — Más aire para firmar
 
 El hueco entre «En Chalatenango, a …» y la raya del pie pasa de 3.5rem a 6.5rem,

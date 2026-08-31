@@ -18,12 +18,25 @@ import { textoParaElRollo } from '../../src/utils/ticketPrint';
  *     $401.80 en este mismo corte. Ver la nota de `corteTicket.js`.
  */
 
+// Ya pasado por `diferenciaDelCorte`, que es lo que recibe el constructor: el
+// esperado y la diferencia son los del TIQUETE (520.41 / -29.56), no los que
+// calculó el formulario del origen (922.21 / -431.36).
 const CORTE_14323 = {
-    ok: true, id_corte: 14323, del_tiquete: true,
+    ok: true, id_corte: 14323, fuente: 'ticket',
     esperado: 520.41, contado: 490.85, diferencia: -29.56,
+    segun_el_sistema: { esperado: 922.21, diferencia: -431.36 },
+    nota: {
+        titulo: 'Los cobros de crédito se contaron de más',
+        detalle: 'La otra cifra dice -$431.36 porque suma $100.45 4 veces de más.',
+    },
     tiquete: {
         empleado: 'RODRIGO EDUARDO MARQUEZ', caja: '4', turno: '1',
-        tarjeta: 59.20, credito: 112.10,
+        total_caja: 520.41, cobros_credito: 100.45, contado: 490.85,
+        // Como vinieron del tiquete: el rótulo es del origen, no una lista de acá.
+        formas: [
+            { rotulo: 'Pagos con tarjeta', monto: 59.20 },
+            { rotulo: 'Ventas al credito', monto: 112.10 },
+        ],
         lineas: [
             { rotulo: '(+) Ingresos', monto: 11.31 },
             { rotulo: '(+) Venta', monto: 570.30 },
@@ -55,13 +68,30 @@ describe('comprobante del corte', () => {
 
     it('dice la diferencia del tiquete, no la del formulario', () => {
         const papel = enRollo(armar(CORTE_14323));
-        expect(papel).toContain('$520.41');   // lo que debía haber
         expect(papel).toContain('$490.85');   // lo contado
         expect(papel).toContain('FALTA');
         expect(papel).toContain('$29.56');
         // El número que el origen imprime en su propio papel para este corte.
-        // Si aparece acá, alguien volvió a sacar la cuenta del formulario.
-        expect(papel).not.toContain('431.36');
+        // Si aparece como la cifra del corte, alguien volvió a sacar la cuenta
+        // del formulario. En la nota sí puede estar: ahí se lo nombra para
+        // explicar por qué NO es el bueno.
+        expect(papel).not.toMatch(/FALTA[^\n]*431\.36/);
+    });
+
+    it('no repite «debia haber» junto a la diferencia', () => {
+        // Decisión del usuario (31-ago): en los totales van sólo el contado y la
+        // diferencia. Lo que debía haber es la suma del bloque de arriba, y un
+        // tercer número grande le compite al único que hay que mirar.
+        const papel = enRollo(armar(CORTE_14323));
+        expect(papel.toLowerCase()).not.toContain('debia haber');
+    });
+
+    it('explica en el papel por que la cifra no es la del sistema', () => {
+        const papel = enRollo(armar(CORTE_14323));
+        // El otro papel dice otro número y alguien los va a comparar.
+        expect(papel.toLowerCase()).toContain('cobros de credito se contaron de mas');
+        // Y la otra cifra, que es lo que permite reconciliar los dos papeles.
+        expect(papel).toContain('431.36');
     });
 
     it('separa lo que no pasa por la caja', () => {
@@ -71,28 +101,50 @@ describe('comprobante del corte', () => {
         expect(papel).toContain('112.10');
     });
 
-    it('no imprime el bloque cuando no hubo tarjeta ni credito', () => {
-        const sinOtros = {
+    it('pinta las formas COMO VENGAN, no dos escritas a mano', () => {
+        // La regresión que este caso caza: una forma que el origen empiece a
+        // imprimir mañana —cheque, transferencia— tiene que salir sola. Con
+        // «tarjeta» y «credito» fijas no sale como cero: DESAPARECE, y el papel
+        // sigue cuadrando diciendo de menos. Ya costó los $2.20 de Salud 2 del
+        // 13-ago en el desglose del cierre.
+        const conCheque = {
             ...CORTE_14323,
-            tiquete: { ...CORTE_14323.tiquete, tarjeta: null, credito: null },
+            tiquete: {
+                ...CORTE_14323.tiquete,
+                formas: [
+                    ...CORTE_14323.tiquete.formas,
+                    { rotulo: 'Pagos con cheque', monto: 2.20 },
+                ],
+            },
         };
+        const papel = enRollo(armar(conCheque));
+        expect(papel).toContain('Pagos con cheque');
+        expect(papel).toContain('2.20');
+    });
+
+    it('no imprime el bloque cuando no hubo ninguna otra forma', () => {
+        const sinOtros = { ...CORTE_14323, tiquete: { ...CORTE_14323.tiquete, formas: [] } };
         expect(enRollo(armar(sinOtros))).not.toContain('No pasa por la caja');
     });
 
-    it('avisa en el papel cuando la cuenta NO salio del tiquete', () => {
-        const calculado = { ...CORTE_14323, del_tiquete: false };
-        expect(enRollo(armar(calculado)).toUpperCase()).toContain('ATENCION');
-        // Y cuando sí salió del tiquete, no hay ningún aviso que distraiga.
+    it('avisa en el papel cuando NO se pudo leer el tiquete', () => {
+        const sinTiquete = {
+            ...CORTE_14323, nota: null,
+            tiquete: { ...CORTE_14323.tiquete, total_caja: null },
+        };
+        expect(enRollo(armar(sinTiquete)).toUpperCase()).toContain('ATENCION');
+        // Y cuando sí se leyó, no hay ningún aviso que distraiga.
         expect(enRollo(armar(CORTE_14323)).toUpperCase()).not.toContain('ATENCION');
     });
 
     it('se mantiene corto', () => {
         const papel = enRollo(armar(CORTE_14323));
-        // Sin los renglones vacíos del avance de papel del final. 21 es lo
-        // MEDIDO el 2026-08-31, no un número redondo: el tope existe para que
-        // el papel no vuelva a crecer, así que un margen holgado no vigila nada.
+        // Sin los renglones vacíos del avance de papel del final. 22 es lo
+        // MEDIDO el 2026-08-31 con la nota puesta —el caso más largo—, no un
+        // número redondo: el tope existe para que el papel no vuelva a crecer,
+        // así que un margen holgado no vigila nada.
         const utiles = papel.split('\n').filter((l) => l.trim()).length;
-        expect(utiles).toBeLessThanOrEqual(21);
+        expect(utiles).toBeLessThanOrEqual(22);
     });
 
     it('es solo ASCII: el rollo no lee UTF-8', () => {

@@ -155,10 +155,13 @@ const dosDecimales = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 interface Tiquete {
   texto: string;
   tipo: string | null;
-  /** `null` cuando el tiquete vino pero no se le pudo leer la cuenta. */
-  esperado: number | null;
+  /** El efectivo declarado, tal como lo imprimió. `null` si no se pudo leer. */
   contado: number | null;
-  diferencia: number | null;
+  /** TOTAL CAJA del tiquete — la pieza con la que el portal decide. */
+  total_caja: number | null;
+  cobros_credito: number | null;
+  retencion?: number;
+  devoluciones?: number;
   /**
    * Las líneas con las que la caja llegó a lo esperado, en su orden.
    *
@@ -172,9 +175,8 @@ interface Tiquete {
   empleado: string | null;
   caja: string | null;
   turno: string | null;
-  /** Contexto, NO parte de la cuenta: no pasan por la caja. `null` si no hubo. */
-  tarjeta: number | null;
-  credito: number | null;
+  /** Contexto, NO parte de la cuenta: ninguna pasa por la caja. Como vengan. */
+  formas: { rotulo: string; monto: number }[];
 }
 
 async function leerTiquete(
@@ -234,37 +236,77 @@ async function leerTiquete(
   agregar("(-) Retencion",      /\(-\)\s*RETENCION \$:\s*([\d.,-]+)/i);
   agregar("(-) Devoluciones",   /\(-\)\s*DEVOLUCIONES\s*\$:\s*([\d.,-]+)/i);
 
-  /* Tarjeta y crédito: SÓLO el total de cada bloque.
+  /* Las formas de pago que NO pasan por la caja, LEÍDAS COMO VENGAN.
    *
-   * El tiquete del origen los lista transacción por transacción y cada renglón
-   * dice «COF» y un monto — el mismo rótulo repetido cuatro veces, que no
-   * distingue nada. Lo único que informa es el TOTAL, y con eso el papel del
-   * portal baja de treinta renglones a catorce.
+   * ⚠️ Acá había dos regex fijas —«PAGOS CON TARJETA» y «VENTAS AL CREDITO»— y
+   * eso es exactamente el defecto que ya costó los $2.20 de Salud 2 del 13-ago:
+   * con las formas escritas a mano, una que el origen empiece a imprimir
+   * mañana —cheque, transferencia— no aparece como cero, **desaparece sin
+   * dejar rastro**, y el papel sigue cuadrando diciendo de menos. La regla del
+   * portal es pintarlas como vengan (ver la nota de `CorteDetalleModal`).
    *
-   * Van al comprobante como contexto y NO entran en la cuenta: ni la tarjeta ni
-   * el crédito pasan por la caja. Están porque quien lee el papel pregunta
-   * «¿y lo que se vendió con tarjeta?» y sin ellos parece que falta plata. */
-  const totalDeBloque = (rx: RegExp) => {
-    const bloque = texto.match(rx)?.[1] ?? "";
-    const n = Number((bloque.match(/TOTAL\s+([\d.,]+)/i)?.[1] ?? "").replace(/,/g, ""));
-    return Number.isFinite(n) && n !== 0 ? n : null;
-  };
-  const tarjeta = totalDeBloque(/PAGOS CON TARJETA([\s\S]*?)(?:VENTAS AL CREDITO|$)/i);
-  const credito = totalDeBloque(/VENTAS AL CREDITO([\s\S]*)$/i);
+   * La forma del tiquete es: después de la línea DIFERENCIA vienen bloques, y
+   * cada uno es un encabezado sin número, sus renglones de detalle, y un
+   * `TOTAL <monto>` que lo cierra. Se recorre así, sin saber cuántos son ni
+   * cómo se llaman.
+   *
+   * Del detalle se toma SÓLO el total: el origen lista transacción por
+   * transacción y cada renglón dice «COF» y un monto — el mismo rótulo
+   * repetido, que no distingue una de otra. Lo único que informa es el total, y
+   * con eso el papel del portal baja de 38 renglones a 21.
+   *
+   * Van al comprobante como contexto y NO entran en la cuenta: ninguna pasa por
+   * la caja. Están porque quien lee el papel pregunta «¿y lo que se vendió con
+   * tarjeta?» y sin ellas parece que falta plata. */
+  const formas: { rotulo: string; monto: number }[] = [];
+  {
+    const cola = texto.split(/DIFERENCIA\s*\$:[^\n]*\n/i)[1]
+      ?? texto.split(/EXACTO[^\n]*\n/i)[1] ?? "";
+    let titulo: string | null = null;
+    for (const cruda of cola.split("\n")) {
+      const l = cruda.trim();
+      if (!l) continue;
+      const total = l.match(/^TOTAL\s+([\d.,-]+)$/i);
+      if (total && titulo) {
+        const n = Number(total[1].replace(/,/g, ""));
+        if (Number.isFinite(n) && n !== 0) {
+          // Como viene, sólo con la primera en mayúscula: el rótulo es del
+          // origen y traducirlo acá sería una segunda lista que mantener.
+          formas.push({
+            rotulo: titulo.charAt(0) + titulo.slice(1).toLowerCase(),
+            monto: n,
+          });
+        }
+        titulo = null;
+      } else if (!/\d/.test(l)) {
+        titulo = l;               // encabezado de bloque: no trae número
+      }
+    }
+  }
 
   // Un tiquete sin las dos líneas de la cuenta se devuelve igual, con la cuenta
   // en `null`. Inventar un cero acá sería decir «cuadró» sobre algo que no se
   // leyó, que es peor que no saber.
   if (totalCaja === null || efectivo === null) {
     return {
-      texto, ...cabecera, esperado: null, contado: null, diferencia: null,
-      lineas, tarjeta, credito,
+      texto, ...cabecera, contado: null, formas, lineas,
+      total_caja: null, cobros_credito: null,
     };
   }
-  const esperado = Number((totalCaja - retencion - devol).toFixed(2));
+  /* Se devuelven las PIEZAS, no un veredicto.
+   *
+   * Quién gana entre la cuenta del formulario y la del tiquete ya lo decide
+   * `diferenciaDelCorte` en el portal, con una regla que se contrastó contra un
+   * testigo independiente (el aviso de la sala del 13-ago) y que tiene un caso
+   * en el que la buena es la del FORMULARIO: cuando el tiquete suma un cobro de
+   * crédito que a esa hora todavía no había entrado. Resolverlo también acá
+   * sería la misma pregunta contestada dos veces, y la segunda respuesta no
+   * conoce ese caso. */
   return {
-    texto, ...cabecera, esperado, contado: efectivo,
-    diferencia: Number((efectivo - esperado).toFixed(2)), lineas, tarjeta, credito,
+    texto, ...cabecera, contado: efectivo, formas, lineas,
+    total_caja: totalCaja,
+    cobros_credito: linea(/\(\+\)\s*COBROS CREDITO \$:\s*([\d.,-]+)/i) ?? 0,
+    retencion, devoluciones: devol,
   };
 }
 
@@ -469,29 +511,32 @@ Deno.serve(async (req) => {
       try { tiquete = await leerTiquete(cookie, String(idCorte), entrada.erpId); }
       catch (e) { console.error("hacer-corte-caja: tiquete:", e); }
     }
-    const delTiquete = tiquete?.esperado !== null && tiquete?.esperado !== undefined;
-
     return json({
       ok,
-      // Recién ACÁ viaja el esperado: después del conteo, nunca antes. Y sale
-      // del tiquete cuando se pudo leer — ver `leerTiquete`.
-      esperado: delTiquete ? tiquete!.esperado : esperado,
-      contado: delTiquete ? tiquete!.contado : Number(efectivo),
-      diferencia: delTiquete ? tiquete!.diferencia : Number(dosDecimales(diferencia)),
-      // Lo que el portal había calculado, para poder compararlo. Mientras las
-      // dos cuentas no coincidan siempre, esto es lo que permite verlo.
-      segun_el_portal: { esperado, diferencia: Number(dosDecimales(diferencia)) },
-      del_tiquete: delTiquete,
+      /* Recién ACÁ viaja el esperado: después del conteo, nunca antes.
+       *
+       * Y viajan LAS DOS CUENTAS, sin elegir: la del formulario —que arrastra
+       * el defecto conocido del origen, que suma los cobros de crédito un
+       * número entero de veces de más— y las piezas del tiquete. Quién gana lo
+       * decide `diferenciaDelCorte` en el portal, que es la MISMA función con
+       * la que se lee la tabla de cortes desde el 13-ago y la única que conoce
+       * el caso en que la buena es la del formulario (un corte hecho antes de
+       * que entraran los cobros del día). Elegir también acá sería contestar
+       * dos veces la misma pregunta, y esta respuesta sabe menos. */
+      esperado, contado: Number(efectivo),
+      diferencia: Number(dosDecimales(diferencia)),
       tipo: tiquete?.tipo ?? null,
       id_corte: idCorte,
-      // Lo que necesita el comprobante que imprime el portal. El sistema de la
-      // caja arma su propio tiquete pero sólo lo imprime desde SU pantalla, así
-      // que desde el portal el corte salía sin ningún papel.
+      // Lo que necesita el comprobante que imprime el portal, y las piezas con
+      // las que decide. El sistema de la caja arma su propio tiquete pero sólo
+      // lo imprime desde SU pantalla, así que desde el portal el corte salía sin
+      // ningún papel.
       tiquete: tiquete
         ? {
           lineas: tiquete.lineas, empleado: tiquete.empleado,
-          caja: tiquete.caja, turno: tiquete.turno,
-          tarjeta: tiquete.tarjeta, credito: tiquete.credito,
+          caja: tiquete.caja, turno: tiquete.turno, formas: tiquete.formas,
+          contado: tiquete.contado, total_caja: tiquete.total_caja,
+          cobros_credito: tiquete.cobros_credito,
         }
         : null,
       vale: valeId ? { id: valeId, movimiento_en_caja: movVale, monto: Number(montoVale.toFixed(2)) } : null,

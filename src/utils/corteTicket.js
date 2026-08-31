@@ -56,10 +56,14 @@ import { juntarSiEntra, recortar, selloCorto, soloAscii } from './ticketCampos';
 /**
  * El comprobante del corte.
  *
- * `resultado` es lo que devolvió `hacerCorte`: ya trae la cuenta leída del
- * tiquete del origen (`del_tiquete`) o, si no se pudo leer, la del portal. Esa
- * distincion se IMPRIME —no se esconde— porque son dos cosas distintas y el
- * papel es lo unico que va a quedar sobre la mesa.
+ * `resultado` es lo que devolvió `hacerCorte` **ya pasado por
+ * `diferenciaDelCorte`** —la misma función con la que se lee la tabla de cortes
+ * desde el 13-ago—, así que `esperado` y `diferencia` son los que manda el
+ * portal y no los que calculó el formulario del origen.
+ *
+ * Cuando las dos cuentas no coinciden viene además `nota`, y **se imprime**: el
+ * otro papel dice otro número y alguien los va a comparar. Un comprobante que
+ * contradice al de al lado sin decir por qué se lee como un error nuestro.
  */
 export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt }) {
     const t = resultado?.tiquete || {};
@@ -84,18 +88,23 @@ export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt
         filas: (t.lineas || []).map((l) => [l.rotulo, formatMoney(l.monto, { signo: false })]),
     }];
 
-    /* Tarjeta y credito: el TOTAL de cada uno, como contexto.
+    /* Las formas que no pasan por la caja, COMO VENGAN.
      *
-     * No entran en la cuenta —no pasan por la caja— pero sin ellos el papel
+     * No entran en la cuenta —ninguna pasa por la caja— pero sin ellas el papel
      * parece que perdio plata: quien lo lee ve una venta de $570 y $490 de
-     * efectivo y pregunta por la diferencia. Se imprimen solo si hubo. */
-    if (t.tarjeta || t.credito) {
+     * efectivo y pregunta por la diferencia.
+     *
+     * Se pintan las que TRAIGA el tiquete, no dos escritas aca. Con «tarjeta» y
+     * «credito» fijas, una forma que el origen empiece a imprimir manana no
+     * sale como cero: desaparece sin dejar rastro y el papel sigue cuadrando
+     * diciendo de menos. Es la misma regla del desglose del cierre, y ahi ya
+     * costo los $2.20 de Salud 2 del 13-ago. */
+    if ((t.formas || []).length) {
         bloques.push({
             titulo: 'No pasa por la caja',
-            filas: [
-                ...(t.tarjeta ? [['Tarjeta', formatMoney(t.tarjeta, { signo: false })]] : []),
-                ...(t.credito ? [['Venta al credito', formatMoney(t.credito, { signo: false })]] : []),
-            ],
+            filas: t.formas.map((f) => [
+                recortar(f.rotulo, 30), formatMoney(f.monto, { signo: false }),
+            ]),
         });
     }
 
@@ -113,11 +122,30 @@ export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt
      * es un matiz: el numero calculado por el portal ya salio mal una vez. Un
      * papel que no distingue las dos cosas invita a perseguir un faltante que
      * quiza no existe. */
-    if (!resultado?.del_tiquete) {
+    if (!t.total_caja) {
         bloques.push({
             titulo: 'Atencion',
             texto: 'Esta cuenta la calculo el portal: no se pudo leer el tiquete de la caja.'
                  + ' Hay que cotejarla contra el corte antes de darla por buena.',
+        });
+    } else if (resultado?.nota) {
+        /* Por que este numero y no el otro.
+         *
+         * El sistema de la caja guarda una diferencia distinta —suma los cobros
+         * de credito de mas— y alguien va a comparar los dos papeles. Sin esto
+         * el comprobante parece contradecir al de al lado sin decir por que.
+         *
+         * Va el TITULO de `notaDeCifra` —que es quien decidio la cifra, asi que
+         * no puede contradecirla— y la otra cifra en una linea. El detalle
+         * completo se queda en la pantalla: en el papel ocupaba cuatro
+         * renglones para explicar algo que el titulo ya nombra, y el usuario
+         * pidio este comprobante corto. */
+        bloques.push({
+            titulo: soloAscii(resultado.nota.titulo),
+            texto: resultado.segun_el_sistema
+                ? `El sistema de la caja guarda `
+                  + `${formatMoney(resultado.segun_el_sistema.diferencia)}.`
+                : undefined,
         });
     }
 
@@ -126,8 +154,11 @@ export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt
         encabezado: { titulo: soloAscii(EMPRESA.razonSocial) },
         datos,
         bloques,
+        /* Contado y diferencia, y nada mas (decision del usuario, 31-ago).
+         * Lo que debia haber es la suma del bloque de arriba, renglon por
+         * renglon: repetirlo aca era un tercer numero grande compitiendo con el
+         * unico que hay que mirar. */
         totales: [
-            ['Debia haber', formatMoney(resultado?.esperado)],
             ['Contado', formatMoney(resultado?.contado)],
             [cuadra ? 'CUADRA' : dif > 0 ? 'SOBRA' : 'FALTA',
              formatMoney(Math.abs(dif)), true],

@@ -43,7 +43,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     Loader2, AlertTriangle, ArrowLeft, ShoppingBag, Gift, ShieldCheck,
     CalendarClock, ChevronDown, ChevronUp, ChevronRight, CreditCard, Phone, UserRound, ScrollText,
-    Sparkles,
 } from 'lucide-react';
 import Button from '../components/common/Button';
 import PortalInput from '../components/common/PortalInput';
@@ -130,25 +129,6 @@ const Rotulo = ({ children }) => (
  */
 const LasDosReglas = () => (
     <div data-surface="card" className="overflow-hidden">
-        {/* La novedad va ARRIBA de las dos reglas y no en «Cómo funciona»: es lo
-            único que cambió para quien ya era cliente, y quien ya era cliente no
-            abre una sección que cree conocer. La segunda frase existe porque
-            «solos» sin ella se lee como que tampoco hay que identificarse. */}
-        <div className="flex items-start gap-3 px-4 py-3.5 bg-logo-green/[0.07]">
-            <Sparkles size={16} className="text-logo-green-text shrink-0 mt-0.5" strokeWidth={2.5} />
-            <div className="min-w-0 flex-1">
-                <p className="text-body-lg font-black text-content-1 leading-tight">
-                    Ahora se acumulan solos
-                </p>
-                <p className="text-body-sm text-content-2 leading-snug mt-0.5">
-                    Ya no tienes que pedirlos. Identifícate en caja antes de pagar y esa
-                    compra ya cuenta.
-                </p>
-            </div>
-        </div>
-
-        <div className="h-px bg-divider mx-4" />
-
         <div className="flex items-center gap-3 px-4 py-3.5">
             <div className="w-9 h-9 rounded-btn bg-logo-green/15 flex items-center justify-center shrink-0">
                 <ShoppingBag size={16} className="text-logo-green-text" strokeWidth={2.5} />

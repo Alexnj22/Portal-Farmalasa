@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.891.2 — El scroll de la pantalla del cliente
+
+**`/mis-puntos` no se podía desplazar.** Reportado con captura: la pantalla se
+acaba a media sección y no baja.
+
+`index.css` declara `html, body, #root { height: 100%; overflow: hidden }` —el
+documento NO se desplaza nunca, el contenedor que scrollea lo pone
+`AppLayout`—, y esta ruta vive fuera del layout a propósito. Con `min-h-[100dvh]`
+lo que sobra queda **recortado y sin barra**: no falla nada, no avisa nada, y
+desde el teléfono se lee como que la página termina ahí. La ruta declara ahora
+su propio contenedor (`h-[100dvh] overflow-y-auto overscroll-contain`);
+`GlobalBackground` es `fixed` y no lo afecta, porque ese div no tiene `transform`
+ni `filter`.
+
+Vivía latente desde que existe la ruta y sólo se vio ahora, cuando la pantalla
+creció lo bastante para pasar del alto de un teléfono. ⚠️ **`/foto/:secreto`
+tiene el mismo `min-h-[100dvh]` y el mismo riesgo** — hoy su contenido entra,
+así que no se tocó, pero es la misma falla esperando contenido más largo.
+
+**Fuera «Ahora se acumulan solos».** Lo quitó el usuario: el anuncio del cambio
+es cosa del afiche, que es donde alguien lo lee una vez. La pantalla del saldo
+abre con las dos reglas y nada más.
+
 ## v2.891.1 — La redacción del afiche
 
 Nueve bloques reescritos, cuatro señalados por el usuario y el resto por

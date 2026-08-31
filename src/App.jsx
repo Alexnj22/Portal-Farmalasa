@@ -683,7 +683,17 @@ function MainApp() {
                 del servidor exige juntos y con freno por intentos — un teléfono
                 solo no es una llave: sale en el ticket y se puede recorrer. */}
             <Route path="/mis-puntos" element={
-                <div className="relative min-h-[100dvh] w-full bg-surface-page">
+                /* El scroll lo declara ESTA ruta, y tiene que hacerlo: `#root`
+                   es `height:100%; overflow:hidden` (index.css), o sea que el
+                   documento no se desplaza nunca — el contenedor que scrollea
+                   lo pone `AppLayout`, y acá no hay layout. Con `min-h` a secas
+                   lo que sobra queda RECORTADO y sin barra: no falla nada, no
+                   avisa nada, y desde el teléfono se ve como que la página se
+                   acaba ahí. Reportado el 2026-08-31 sobre esta pantalla, que
+                   fue la primera de las tres sin layout en crecer lo bastante.
+                   `GlobalBackground` es `fixed` y no lo afecta: este div no
+                   tiene transform ni filter, así que sigue anclado al viewport. */
+                <div className="relative h-[100dvh] w-full bg-surface-page overflow-y-auto overscroll-contain">
                     <GlobalBackground />
                     <div className="relative z-base">
                         <Suspense fallback={null}><MisPuntosView /></Suspense>

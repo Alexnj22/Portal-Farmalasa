@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.891.1 — La redacción del afiche
+
+Nueve bloques reescritos, cuatro señalados por el usuario y el resto por
+coherencia.
+
+**«Los de cada compra vencen…» se leía como un typo, y lo era de gramática:** la
+frase no tenía sustantivo. Ahora dice **«Los puntos de cada compra vencen a los
+12 meses, y cada compra lleva su propia fecha»** — esa segunda mitad reemplaza al
+«y no el saldo entero de golpe», que decía lo mismo por la negativa y costaba más
+leerlo.
+
+**El mínimo de canje**, de «Con menos de 100 puntos todavía no se puede canjear»
+a **«Necesitas 100 puntos (US$1.00) para canjear»**: la regla dicha por lo que
+hay que hacer, no por lo que falta.
+
+**«La cuenta es tuya» pasa a «Tu cuenta es personal e intransferible»**, que es
+la palabra exacta de la cláusula 2.2 del reglamento. Los dos papeles ahora dicen
+la regla con las mismas palabras.
+
+**«En cualquiera de nuestras salas, mostrando tu documento»** era un fragmento
+sin verbo. Ahora arranca con el verbo —**«Canjea en cualquiera de nuestras
+salas»**— como manda §26.6.
+
+**Las exclusiones dejan de ser una lista con el sujeto cambiando a media frase.**
+El renglón separado por puntos empezaba en «Nunca acumula la compra que…» y
+seguía con cosas que no son compras. Ahora es una oración: *ninguna compra
+acumula si lleva algo a precio especial… basta con que aparezca en la misma
+factura*. Y se dice **factura** donde antes decía *ticket*, que es la palabra que
+está en el resto de la hoja.
+
+También: los dos pies de la equivalencia quedaron simétricos («Por cada dólar de
+tu compra» / «De descuento sobre lo que vas a pagar» — el viejo *«compra que
+acumula»* colgaba sin objeto), y el QR del saldo dejó de hablar de *«cada
+grupo»*, que era jerga del cálculo: dice **«la fecha en que vence cada compra»**.
+
 ## v2.891.0 — Mis puntos, para el cliente
 
 `/mis-puntos` es la ÚNICA pantalla del portal que ve alguien que no trabaja acá,

@@ -54,8 +54,8 @@
   /* ── Encabezado ─────────────────────────────────────────────────────────── */
   .cabeza { display: flex; align-items: flex-end; justify-content: space-between;
             gap: 1.2rem; border-bottom: 2.5px solid var(--tinta); padding-bottom: .55rem; }
-  .cabeza img { width: 2.45in; height: auto; display: block; }
-  h1 { font-weight: 700; font-size: 48px; line-height: .95; letter-spacing: -.02em;
+  .cabeza img { width: 2.6in; height: auto; display: block; }
+  h1 { font-weight: 700; font-size: 52px; line-height: .95; letter-spacing: -.02em;
        margin: 0; }
   .desde { font-family: "IBM Plex Sans", sans-serif; font-size: 11.5px; font-weight: 600;
            text-transform: uppercase; letter-spacing: .13em; color: var(--marca);
@@ -66,13 +66,14 @@
      valen no cambió, ir a pedirlos sí. Se lleva el cuerpo más grande de la hoja
      y la única frase de instrucción, porque es la única que hace falta. */
   .anuncio { background: var(--suave); border-top: 4px solid var(--marca);
-             padding: 1.95rem 1.25rem 2rem; margin-top: .95rem; }
+             padding: 2.3rem 1.3rem 2.35rem; margin-top: 1rem; }
   .eyebrow { font-family: "IBM Plex Sans", sans-serif; font-size: 12px; font-weight: 700;
              text-transform: uppercase; letter-spacing: .16em; color: var(--marca);
              margin: 0 0 .5rem; }
-  .anuncio h2 { font-weight: 700; font-size: 68px; line-height: 1; letter-spacing: -.026em;
+  .anuncio h2 { font-weight: 700; font-size: 78px; line-height: 1; letter-spacing: -.026em;
                 margin: 0 0 .6rem; text-wrap: balance; }
-  .anuncio .bajada { font-size: 21px; line-height: 1.35; color: var(--tinta-2); margin: 0; }
+  .anuncio .bajada { font-size: 22px; line-height: 1.35; color: var(--tinta-2); margin: 0;
+                     text-wrap: balance; }
   .anuncio .bajada b { color: var(--tinta); font-weight: 600; }
 
   /* El resaltador: franja plana detrás del tercio de abajo. Va como
@@ -86,17 +87,18 @@
      Las dos mitades de un circuito dentro de UNA caja, no dos datos sueltos. La
      cifra manda y la unidad la acompaña a poco más de la mitad del cuerpo: es
      cómo se compone un precio, que es lo que esto es. */
-  .canje { display: flex; margin-top: 1.15rem; background: var(--papel);
-           border: 1.5px solid var(--regla); border-radius: 10px; overflow: hidden; }
-  .lado { flex: 1; padding: 1.3rem .5rem 1.35rem; text-align: center; }
-  .lado + .lado { border-left: 1.5px solid var(--regla); }
-  .rotulo { font-size: 12px; font-weight: 600; text-transform: uppercase;
-            letter-spacing: .14em; color: var(--tinta-3); margin: 0 0 .5rem;
+  .canje { display: flex; margin-top: 1.2rem; background: #F7F4F8;
+           border-radius: 7px; overflow: hidden; }
+  .lado { flex: 1; padding: .68rem .5rem .72rem; text-align: center;
+          display: flex; align-items: baseline; justify-content: center; gap: .8rem; }
+  .lado + .lado { border-left: 1.5px solid #E6DFE9; }
+  .rotulo { font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: .13em; color: var(--tinta-3); margin: 0; white-space: nowrap;
             font-family: "IBM Plex Sans", sans-serif; }
-  .cifra { font-weight: 700; font-size: 56px; line-height: 1; margin: 0;
+  .cifra { font-weight: 700; font-size: 28px; line-height: 1; margin: 0;
            font-variant-numeric: tabular-nums; letter-spacing: -.014em;
            display: flex; align-items: center; justify-content: center; gap: .24em; }
-  .cifra .flecha { font-size: .5em; font-weight: 600; color: var(--tinta-3); }
+  .cifra .flecha { font-size: .52em; font-weight: 600; color: var(--tinta-3); }
   .cifra .uni { font-size: .52em; font-weight: 600; letter-spacing: 0; margin-left: .14em; }
   .cifra .sig { font-size: .58em; font-weight: 600; vertical-align: .3em; }
 
@@ -104,10 +106,10 @@
      Un renglón cada uno. Lo que no cabe en un renglón no es un dato clave: es
      una regla, y las reglas están detrás del código. */
   .datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
-           margin-top: 1.35rem; border-top: 2px solid var(--marca); padding-top: 1rem; }
-  .dato h3 { font-weight: 700; font-size: 28px; line-height: 1.05; margin: 0 0 .28rem;
+           margin-top: 1.6rem; border-top: 2px solid var(--marca); padding-top: 1.2rem; }
+  .dato h3 { font-weight: 700; font-size: 31px; line-height: 1.05; margin: 0 0 .28rem;
              letter-spacing: -.012em; }
-  .dato p { font-size: 16px; line-height: 1.4; color: var(--tinta-2); margin: 0; }
+  .dato p { font-size: 17px; line-height: 1.42; color: var(--tinta-2); margin: 0; }
   .dato b { color: var(--tinta); font-weight: 600; }
 
   /* ── Los dos códigos ──────────────────────────────────────────────────────
@@ -118,10 +120,10 @@
   .codigos { margin-top: auto; padding-top: 1.3rem; display: flex; gap: 1.5rem; }
   .codigo { flex: 1; display: flex; gap: .85rem; align-items: center;
             border: 1.5px solid var(--regla); border-radius: 5px; padding: .8rem .85rem; }
-  .codigo .qr { width: 1.3in; height: 1.3in; flex: 0 0 auto; display: block; }
+  .codigo .qr { width: 1.45in; height: 1.45in; flex: 0 0 auto; display: block; }
   .codigo .qr path { fill: var(--tinta); }
-  .codigo h3 { font-weight: 700; font-size: 23px; line-height: 1.08; margin: 0 0 .22rem; }
-  .codigo p { font-size: 15px; line-height: 1.36; color: var(--tinta-2); margin: 0; }
+  .codigo h3 { font-weight: 700; font-size: 25px; line-height: 1.08; margin: 0 0 .22rem; }
+  .codigo p { font-size: 16px; line-height: 1.36; color: var(--tinta-2); margin: 0; }
   /* La dirección parte SÓLO donde dice el <wbr> —después de la barra—, nunca a
      mitad de palabra: «…reglament / o-puntos» no se puede teclear ni comparar
      contra el código, que es para lo único que está escrita. */
@@ -154,8 +156,8 @@
   <section class="anuncio">
     <p class="eyebrow">Ahora es automático</p>
     <h2>Los puntos se acumulan <span class="marcado gana">solos</span></h2>
-    <p class="bajada">Ya no tienes que pedirlos. <b>Identifícate en caja antes de pagar</b>
-    y listo.</p>
+    <p class="bajada">Ya no tienes que pedirlos: solo <b>identifícate en caja antes de
+    pagar</b>.</p>
   </section>
 
   <div class="canje">

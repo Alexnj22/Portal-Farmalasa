@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.892.1 — La conversión, discreta
+
+La equivalencia pasa de **56 px a 28** y de dos paneles altos a **una tira de 50
+px de alto**: rótulo y cifra en la misma línea, sobre un chip tintado sin
+recuadro —a ese tamaño una caja de hairline se lee como un renglón que sobró—.
+
+El motivo es de jerarquía y hay que decirlo entero: `100 puntos → US$1.00` es un
+1% y era lo segundo más grande de la hoja. Sigue impreso, con el mismo cuerpo que
+cualquier dato de la hoja y a un palmo del titular; el reglamento completo está
+en el código de al lado. **No se esconde nada: se deja de gritar lo que no es la
+noticia.**
+
+Lo que soltó la tira se lo llevó el anuncio —de 68 a **78 px**— y el resto se
+repartió entre los tres datos y los códigos, que subieron a 1.45 pulgadas. El
+hueco muerto que quedaba antes de los QR pasó de **110 px a 9**.
+
+Y la bajada dejaba «listo.» solo en un renglón. Ahora es *«Ya no tienes que
+pedirlos: solo identifícate en caja antes de pagar»*, en una línea.
+
 ## v2.892.0 — El afiche que se lee de pie
 
 *«El afiche tiene demasiado texto, las personas no leen.»* Tenía razón y el

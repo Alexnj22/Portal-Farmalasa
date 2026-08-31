@@ -13,7 +13,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import {
     lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento, fmtFechaHora,
-    motivoDeRechazo,
+    motivoDeRechazo, cuantoTardo,
 } from './movimientoTexto';
 import { CaraPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
@@ -320,9 +320,20 @@ const BloqueAplicado = ({ req, aplicado }) => {
     if (!aplicado) return null;
     const esMovimiento = req.type?.startsWith('INVENTORY_');
 
+    /* En un traslado, «Aplicado» decía la mitad de la verdad. El acto que este
+       bloque describe es el DESPACHO —la sala que tiene el producto lo saca y lo
+       manda—, y abajo hay un segundo bloque para el acto de recibirlo. Con las
+       dos cajas rotuladas igual, la primera parecía el resumen de todo y quien
+       la firmaba parecía el único que había tocado la bolsa. */
+    const origen = (typeof req.metadata === 'object' && req.metadata)
+        ? req.metadata.origen_branch_name : null;
+    const rotulo = req.type === 'INVENTORY_TRANSFER_REQUEST'
+        ? (origen ? `Despachado desde ${origen}` : 'Despachado')
+        : 'Aplicado';
+
     return (
         <Caja tono="hover" className="space-y-1">
-            <Rotulo>Aplicado</Rotulo>
+            <Rotulo>{rotulo}</Rotulo>
             {esMovimiento ? (
                 <p className="text-label font-bold text-content">
                     {aplicado.lineas ?? 0} {aplicado.lineas === 1 ? 'producto' : 'productos'}
@@ -366,6 +377,83 @@ const BloqueAplicado = ({ req, aplicado }) => {
                 <ul className="text-micro text-warning-text font-medium leading-snug space-y-0.5">
                     {aplicado.avisos.map((a, i) => <li key={i}>{a}</li>)}
                 </ul>
+            )}
+        </Caja>
+    );
+};
+
+/* ─── Y quién lo recibió del otro lado ────────────────────────────────────── */
+/**
+ * Un traslado tiene TRES actos y la pantalla mostraba dos: quien lo pidió, quien
+ * lo despachó… y quien abrió la bolsa en la sala de destino.
+ *
+ * El tercero estaba guardado desde el día uno —`metadata.erp_recibido`, con
+ * nombre, hora y lo que entró— y no lo pintaba NINGUNA pantalla del portal. El
+ * único sitio donde asomaba era volver a escanear el código de la bolsa, que
+ * contesta «esa bolsa ya se recibió, la recibió X»: o sea que para saber quién
+ * había aceptado un traslado en su sala había que ir a preguntar por WhatsApp.
+ * Medido en producción el 2026-08-31: **622 de los 666 traslados tenían ese dato
+ * escrito y ninguno lo mostraba.** Es el mismo defecto que el motivo del rechazo
+ * que vivía en `metadata.rejection_reason` — el dato estaba, la pantalla no.
+ *
+ * **`by_name` en `null` no es un hueco**: es el barrido nocturno cerrando una
+ * solicitud que el sistema ya tenía recibida por su cuenta
+ * (`cerrar_traslado_ya_recibido` escribe `via: 'sistema'` y deja la firma vacía
+ * A PROPÓSITO). Ahí no se pone un nombre cualquiera —sería justo lo contrario de
+ * lo que este bloque viene a arreglar—: se dice que lo cerró el portal solo, y
+ * se muestra el aviso que explica que la hora es la del barrido y no la de la
+ * entrada.
+ */
+const BloqueRecibido = ({ req, recibido, despachado }) => {
+    if (!recibido) return null;
+    const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
+    const destino = meta.branch_name;
+    const cerroElPortal = !recibido.by_name;
+    const tardanza = cuantoTardo(despachado?.at, recibido.at);
+
+    /* Medido en producción: 2 de las 622 recepciones no traen estos números —
+       las que cerró el barrido, que no carga nada y por eso no tiene qué contar.
+       Hoy llegan con la clave AUSENTE, y `Number(undefined)` es NaN, o sea que
+       un chequeo perezoso alcanzaría… hasta el día que llegue un `null`
+       explícito, porque `Number(null)` es **0** y la caja diría «0 productos · 0
+       unidades». Eso no es un hueco: es una afirmación, y falsa. El `== null`
+       cubre las dos formas del mismo «no hay dato», y lo ancla una prueba. */
+    const numero = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+    const lineas   = numero(recibido.lineas);
+    const unidades = numero(recibido.unidades);
+    const total    = numero(recibido.total);
+
+    return (
+        <Caja tono="hover" className="space-y-1">
+            <Rotulo>{destino ? `Recibido en ${destino}` : 'Recibido'}</Rotulo>
+            <p className="text-label font-bold text-content">
+                {lineas != null && <>{lineas} {lineas === 1 ? 'producto' : 'productos'}{' · '}</>}
+                {unidades != null && <>{unidades} {unidades === 1 ? 'unidad' : 'unidades'}{' · '}</>}
+                {total != null && <>{formatMoney(total)}{' · '}</>}
+                {cerroElPortal ? 'lo cerró el portal solo' : `por ${recibido.by_name}`}
+            </p>
+            {/* La hora, siempre. Es la respuesta a «¿cuándo llegó?», y el tiempo
+                que pasó desde el despacho es lo que dice si la bolsa estuvo un
+                día dando vueltas — que es exactamente lo que nadie podía ver. */}
+            <p className="text-micro text-content-3 tabular-nums">
+                {fmtFechaHora(recibido.at)}{tardanza ? ` · ${tardanza} desde el despacho` : ''}
+            </p>
+            {/* `msg` es la respuesta del sistema al cargar el movimiento, y sólo
+                se muestra cuando la carga NO la hizo el portal (`via: sistema`).
+                Un «Hecho!» no le dice nada a nadie; lo del barrido sí, porque
+                explica por qué la hora es la de la revisión y no la de la
+                entrada. La condición es `via` y no «falta la firma»: de las dos
+                filas así, una tiene nombre y la otra no, y las dos necesitan la
+                explicación.
+
+                Lo que NO se lee acá es el faltante: `erp_recibido` no lo guarda
+                —la respuesta de la recepción sí trae `faltantes`, pero eso viaja
+                al navegador y no a la fila, verificado en prod: 0 solicitudes
+                con esa clave—. Vive en `bolsa_faltante`, con su propia pantalla.
+                Pintar `recibido.faltantes` sería una línea que nunca aparece, y
+                una que nunca aparece se lee como «no faltó nada». */}
+            {recibido.via === 'sistema' && recibido.msg && (
+                <p className="text-micro text-content-3 leading-snug">{recibido.msg}</p>
             )}
         </Caja>
     );
@@ -765,6 +853,8 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
                 onCantidad={onCantidad} cantidades={cantidades} employeesById={employeesById} />
 
             <BloqueAplicado req={req} aplicado={meta.erp_aplicado ?? meta.erp_traslado} />
+
+            <BloqueRecibido req={req} recibido={meta.erp_recibido} despachado={meta.erp_traslado} />
 
             {req.note && (
                 <div>

@@ -21,28 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.882.1 — A un jefe o subjefe solo lo autoriza el código SU
-
-Cierra el hueco que quedó abierto en v2.880.1. Ahí se corrigió que nadie se
-autorice a sí mismo en el kiosco, pero el código SU se seguía exigiendo **sólo
-por el camino del código de la hora**: el camino del PIN de un compañero no lo
-pedía. Eso hacía que la misma regla valiera distinto según la sala.
-
-En **Salud 1 y Salud 4** hay dos personas con cargo de jefatura —la jefa de sala
-y una regente de enfermería que tiene «Subjefe/a de Sala» como cargo
-secundario—, así que se autorizaban entre ellas con su PIN y sin ningún código
-SU. En las otras cinco salas hay una sola persona, y ahí el código SU ya era el
-único camino, no por regla sino porque no había con quién.
-
-Ahora, cuando a quien marca le corresponde el código SU, el PIN no lo autoriza:
-ni el propio ni el de un compañero presente. Vale igual para jefes y subjefes.
-
-Verificado contra producción, en una prueba que se revierte sola: el subjefe con
-el PIN de la jefa queda **rechazado**, la jefa con su propio PIN queda
-**rechazada**, y una dependienta con el PIN de la jefa sigue quedando
-**autorizada** — el camino del PIN sigue vivo para quien no es jefatura.
-
-## v2.882.0 — El traslado dice quién lo recibió, y la hora de la firma es la de la firma
+## v2.883.0 — El traslado dice quién lo recibió, y la hora de la firma es la de la firma
 
 Reportado mirando un traslado de Salud 5 a Salud 4: «¿cómo puedo ver quién
 aceptó esto en Salud 4?». No se podía. El detalle mostraba dos personas —quien
@@ -101,6 +80,28 @@ rechazo, una cancelación.
 
 Como el arreglo vive en `cuandoSeDecidio`, alcanza también a la tarjeta de la
 lista, no sólo al detalle.
+
+## v2.882.1 — A un jefe o subjefe solo lo autoriza el código SU
+
+Cierra el hueco que quedó abierto en v2.880.1. Ahí se corrigió que nadie se
+autorice a sí mismo en el kiosco, pero el código SU se seguía exigiendo **sólo
+por el camino del código de la hora**: el camino del PIN de un compañero no lo
+pedía. Eso hacía que la misma regla valiera distinto según la sala.
+
+En **Salud 1 y Salud 4** hay dos personas con cargo de jefatura —la jefa de sala
+y una regente de enfermería que tiene «Subjefe/a de Sala» como cargo
+secundario—, así que se autorizaban entre ellas con su PIN y sin ningún código
+SU. En las otras cinco salas hay una sola persona, y ahí el código SU ya era el
+único camino, no por regla sino porque no había con quién.
+
+Ahora, cuando a quien marca le corresponde el código SU, el PIN no lo autoriza:
+ni el propio ni el de un compañero presente. Vale igual para jefes y subjefes.
+
+Verificado contra producción, en una prueba que se revierte sola: el subjefe con
+el PIN de la jefa queda **rechazado**, la jefa con su propio PIN queda
+**rechazada**, y una dependienta con el PIN de la jefa sigue quedando
+**autorizada** — el camino del PIN sigue vivo para quien no es jefatura.
+
 
 ## v2.881.1 — El reglamento en blanco y negro, corrido y con dos firmas
 

@@ -273,17 +273,37 @@ export const buscadorDePersonas = (empleados) => (idOCorreo) => {
 /**
  * Cuándo se resolvió.
  *
- * `approvals` es la fuente buena cuando existe —guarda el instante de cada
- * nivel— y `updated_at` el respaldo, que es lo único que queda en un rechazo o
- * en una cancelación. Mientras está pendiente no hay nada que decir: devolver
- * `updated_at` ahí sería llamar «decisión» a cualquier retoque de la fila.
+ * **`updated_at` no es la hora de la decisión: es la del ÚLTIMO retoque de la
+ * fila.** Cualquier cosa que le pase a la solicitud después de decidirla lo
+ * mueve —recibir el traslado, anotar que a quien se avisó no se quedó, cerrarla
+ * el barrido—, y la ficha de «Aprobó» quedaba sellada con esa hora nueva. O sea
+ * que la firma de una persona mostraba el momento en que actuó OTRA.
+ *
+ * Y no era un caso raro. Medido en producción el 2026-08-31: `approvals` está
+ * VACÍO en las 788 solicitudes de la tabla —nadie lo escribió nunca— y
+ * `decided_at` no existe como columna, así que las dos ramas de arriba caían
+ * siempre al respaldo. De los 635 traslados despachados, **416 (el 65%)
+ * mostraban una hora equivocada**, con un desfase de hasta 118.8 horas: casi
+ * cinco días entre lo que decía la pantalla y lo que había pasado.
+ *
+ * La corrección no inventa un dato: usa el que ya estaba escrito por el acto que
+ * cerró la solicitud. Un traslado deja `erp_traslado.at` al despacharlo —que en
+ * un traslado ES la aprobación: se aprueba despachando—, los tipos que se
+ * aplican afuera dejan `erp_aplicado.at`, y un envío marca su paso con
+ * `decidido_at`. `updated_at` queda de último y sólo para lo que no dejó ninguna
+ * marca propia: un rechazo, una cancelación.
+ *
+ * Mientras está pendiente no hay nada que decir: devolver `updated_at` ahí sería
+ * llamar «decisión» a cualquier retoque de la fila.
  */
 export const cuandoSeDecidio = (req) => {
     if (!req || req.status === 'PENDING') return null;
     const ultima = Array.isArray(req.approvals) && req.approvals.length
         ? req.approvals[req.approvals.length - 1]?.approvedAt
         : null;
-    return ultima ?? req.decided_at ?? req.updated_at ?? null;
+    const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
+    const alCerrarse = meta.erp_traslado?.at ?? meta.erp_aplicado?.at ?? meta.decidido_at ?? null;
+    return ultima ?? req.decided_at ?? alCerrarse ?? req.updated_at ?? null;
 };
 
 /**

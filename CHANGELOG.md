@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.884.0 — las bolsas se actualizan solas: contar entre varios ya no exige recargar
+
+> «en el conteo de bolsas de efectivo, debe actualizarse solo, si estamos 2 o 3
+> personas contando, debo actualizar para ver cuáles faltan» (usuario).
+
+Es la pantalla del portal donde más manos hay sobre las mismas filas al mismo
+tiempo: una sala entrega mientras administración recibe, y el conteo se reparte
+entre dos o tres personas con las bolsas sobre la mesa. Hasta acá cada pestaña
+veía sólo lo que había hecho **ella**, y el modo de falla no es una pantalla en
+blanco: es una lista de pendientes que ya no es cierta. Dos personas cuentan la
+misma bolsa y ninguna se entera hasta que una aprieta «volver a contar» sobre el
+trabajo de la otra.
+
+Ahora las cuatro etapas se releen solas cada 20 segundos, en silencio y sin
+mover el scroll. Va en las cuatro y no sólo en «Por contar» porque el problema
+es del circuito: entregar y recibir también se hacen entre varios, y las cuentas
+de las píldoras salen de las mismas listas.
+
+Arriba de la pantalla dice **hace cuánto** es lo que se está viendo, con un
+botón para no tener que esperar. Sin eso el arreglo es indistinguible del
+problema: una lista que se actualiza sola y no lo dice se ve igual que una
+congelada, así que quien no lo sabe sigue recargando la página por las dudas.
+
+Tres cosas que lo separan de un `setInterval` suelto, en `useRefrescoEnVivo`
+(`src/hooks/useRefrescoEnVivo.js`, con sus 7 pruebas):
+
+- **No consulta con la pestaña oculta.** Un reloj suelto sigue preguntando por
+  cada pestaña abierta y por cada portal que quedó puesto — justo donde nadie
+  mira el resultado.
+- **Al volver, cobra lo que se saltó.** Es la mitad que falta: sin esto, volver
+  a la pestaña muestra lo de hace media hora y nada lo delata. Sólo si de verdad
+  venció el intervalo, para que alternar entre ventanas no valga una consulta
+  por cada cambio de foco.
+- **Se pausa con un diálogo abierto.** El detalle de una bolsa, el depósito, la
+  entrega y la salida de dinero muestran cifras sobre las que alguien está
+  decidiendo; cambiárselas por debajo es cómo se termina firmando otra cosa de
+  la que se leyó. Lo saltado se cobra al cerrar.
+
+El conteo a medio escribir **no se pierde**: el campo vive dentro de `Conteo`,
+que conserva su estado porque la tarjeta se reconcilia por `key={b.id}` y la
+lectura silenciosa no desmonta nada. Y si otra persona contó esa misma bolsa
+mientras tanto, la tarjeta pasa a mostrar su conteo — que es exactamente lo que
+se vino a ver.
+
 ## v2.883.5 — El membrete del reglamento, elegido
 
 El membrete queda como se eligió sobre maquetas: **el logo corona la hoja** y

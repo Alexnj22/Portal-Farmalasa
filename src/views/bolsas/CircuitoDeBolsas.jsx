@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import {
     AlertTriangle, Banknote, CalendarDays, CheckCircle2, ChevronDown, ChevronUp, HandCoins,
-    Image as ImageIcon, Inbox, Landmark, Package, Printer, Scale, Send, ShieldCheck,
+    Image as ImageIcon, Inbox, Landmark, Package, Printer, RefreshCw, Scale, Send, ShieldCheck,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -27,6 +27,8 @@ import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
+import { useNowTick } from '../../hooks/useNowTick';
+import { useRefrescoEnVivo } from '../../hooks/useRefrescoEnVivo';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { rangoDeDias } from './etapas';
 import { useToastStore } from '../../store/toastStore';
@@ -838,6 +840,48 @@ function Resolver({ bolsa, ocupado, onResolver, onCancelar, salaId, userId }) {
     );
 }
 
+/* ── Cuán vieja es la pantalla, dicho en pantalla ───────────────────────────
+ *
+ * «si estamos 2 o 3 personas contando, debo actualizar para ver cuáles faltan»
+ * (usuario, 2026-08-31). El circuito lo trabajan varios a la vez —una sala
+ * entrega mientras administración recibe, y el conteo se reparte entre dos o
+ * tres— y hasta acá cada pestaña sólo se enteraba de lo que había hecho ELLA.
+ *
+ * El refresco automático arregla el fondo; esto arregla la otra mitad, que es
+ * poder CREERLE. Una lista que se actualiza sola y no lo dice es
+ * indistinguible de una congelada: quien no sabe que se refresca sigue
+ * recargando la página por las dudas, y quien lo supone deja de recargar sin
+ * tener con qué comprobarlo. Por eso dice las dos cosas —que se actualiza solo
+ * y hace cuánto fue la última— y deja el botón para no tener que esperar.
+ */
+const haceCuanto = (ms) => {
+    const s = Math.max(0, Math.round(ms / 1000));
+    if (s < 15) return 'recién';
+    if (s < 60) return `hace ${s} s`;
+    const min = Math.round(s / 60);
+    if (min < 60) return `hace ${min} min`;
+    const h = Math.round(min / 60);
+    return `hace ${h} h`;
+};
+
+function Frescura({ leidoEn, refrescando, onRecargar }) {
+    /* El reloj vive ACÁ dentro y no en la vista: un tic en el componente de
+     * arriba redibujaría las cuarenta tarjetas —con sus campos de conteo a
+     * medio escribir— para mover dos palabras. */
+    const ahora = useNowTick(10_000);
+    return (
+        <div className="flex items-center justify-end gap-1.5 px-1">
+            <span className="text-caption text-content-3 tabular-nums">
+                {refrescando ? 'Actualizando…' : `Se actualiza solo · ${haceCuanto(ahora - leidoEn)}`}
+            </span>
+            <Button variant="ghost" size="xs" icon={RefreshCw}
+                loading={refrescando} onClick={onRecargar}>
+                Actualizar
+            </Button>
+        </div>
+    );
+}
+
 /**
  * Una etapa del circuito, con su total y su acción de conjunto.
  *
@@ -1147,6 +1191,10 @@ export default function CircuitoDeBolsas({
     const [leidoEn, setLeidoEn] = useState(() => Date.now());
     const [personas, setPersonas] = useState(() => new Map());
     const [cargando, setCargando] = useState(true);
+    /* Distinto de `cargando`: éste NO tapa la pantalla, sólo lo dice arriba.
+       Es la única señal de que la lectura de fondo está en curso — sin ella,
+       apretar «Actualizar» no acusa recibo y se aprieta dos veces. */
+    const [refrescando, setRefrescando] = useState(false);
     const [elegidas, setElegidas] = useState(() => new Set());
     const [ocupado, setOcupado] = useState(null);
     const [sacando, setSacando] = useState(false);
@@ -1179,6 +1227,7 @@ export default function CircuitoDeBolsas({
      * parpadear todo. Contando bolsa por bolsa, eso pasaba en CADA toque. */
     const cargar = useCallback(async ({ silencioso = false } = {}) => {
         if (!silencioso) setCargando(true);
+        setRefrescando(true);
         // Las pendientes se BAJAN todas y se recortan acá; las contadas ya vienen
         // del período, **por la fecha en que se CONTARON** — filtrarlas por la
         // fecha del corte hacía que una bolsa vieja recién contada desapareciera
@@ -1216,6 +1265,7 @@ export default function CircuitoDeBolsas({
         setPorDepositar(paraBanco || []);
         setLeidoEn(Date.now());
         setCargando(false);
+        setRefrescando(false);
         // `conteo_marcado_por` faltaba, y es la firma que más se mira: la de
         // quien está contando AHORA. Sin ella su nombre no llegaba al padrón y
         // la tarjeta caía al acto anterior — o sea, mostraba al que recibió.
@@ -1529,6 +1579,39 @@ export default function CircuitoDeBolsas({
      * argumento con que el hijo llame al callback decidiría si la pantalla se
      * borra. Envuelta, la decisión se queda acá. */
     const recargarEnSilencio = useCallback(() => { cargar({ silencioso: true }); }, [cargar]);
+
+    /* ── La pantalla se pone al día sola ────────────────────────────────────
+     *
+     * «en el conteo de bolsas de efectivo, debe actualizarse solo, si estamos 2
+     * o 3 personas contando, debo actualizar para ver cuáles faltan» (usuario,
+     * 2026-08-31).
+     *
+     * Es la pantalla del portal donde más manos hay sobre las mismas filas al
+     * mismo tiempo: una sala entrega mientras administración recibe, y el
+     * conteo se reparte entre dos o tres personas con las bolsas sobre la mesa.
+     * Sin esto, cada pestaña sólo veía lo que había hecho ELLA — y el modo de
+     * falla no es una pantalla en blanco sino una lista de pendientes que ya no
+     * es cierta: dos personas cuentan la misma bolsa y ninguna se entera hasta
+     * que una de las dos aprieta «volver a contar» sobre el trabajo de la otra.
+     *
+     * Va en las CUATRO etapas y no sólo en «Por contar», porque el problema es
+     * del circuito: entregar y recibir también se hacen entre varios, y las
+     * cuentas de las píldoras salen de las mismas listas.
+     *
+     * Se PAUSA con un diálogo abierto. Los cuatro —el detalle de una bolsa, el
+     * depósito, la entrega y la salida de dinero— muestran cifras sobre las que
+     * alguien está decidiendo, y cambiárselas por debajo mientras decide es cómo
+     * se termina firmando otra cosa de la que se leyó. Lo que se saltó se cobra
+     * al cerrar el diálogo.
+     *
+     * `ocupado` NO pausa a propósito: `correr` ya recarga al terminar cada
+     * acción, así que sumarlo acá sólo agregaría una segunda lectura por acto.
+     * Y el conteo a medio escribir no se pierde — el campo vive dentro de
+     * `Conteo`, que conserva su estado porque la tarjeta se reconcilia por
+     * `key={b.id}` y la lectura silenciosa no desmonta nada. */
+    useRefrescoEnVivo(recargarEnSilencio, {
+        activo: !abierta && !depositando && !entregando && !sacando,
+    });
 
     /**
      * Entregar NO imprime nada (usuario, 2026-08-24: «al enviar las bolsas de
@@ -1922,6 +2005,12 @@ export default function CircuitoDeBolsas({
 
     return (
         <div className="space-y-6">
+            {/* Hace cuánto es lo que se está viendo. Va arriba de todo y en las
+                cuatro etapas: la pregunta «¿esto ya está al día?» es de la
+                pantalla entera, no de una sección. */}
+            <Frescura leidoEn={leidoEn} refrescando={refrescando}
+                onRecargar={recargarEnSilencio} />
+
             {/* ── El corte que cuadró y su dinero que no llegó ────────────────
                 El caso PEOR del circuito, y el único que ninguna otra cifra de
                 la pantalla puede delatar: un corte confirmado dice que había

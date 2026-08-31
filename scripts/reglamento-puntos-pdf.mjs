@@ -30,7 +30,7 @@ const cuerpo = readFileSync(resolve(fuente), 'utf8');
 // lo que lo vuelve oficial.
 const firma = `
 <div class="firma">
-  <p class="lugar">Chalatenango, El Salvador.</p>
+  <p class="lugar">En Chalatenango, a __FECHA__.</p>
   <div class="firmas">
     <div class="firmante">
       <div class="linea"></div>
@@ -39,8 +39,8 @@ const firma = `
     </div>
     <div class="firmante">
       <div class="linea"></div>
-      <p class="nombre">Gerente General</p>
-      <p class="cargo">Farmacias La Popular y La Salud</p>
+      <p class="nombre">José Rutilio Alemán Vásquez</p>
+      <p class="cargo">Gerente General</p>
     </div>
   </div>
 </div>
@@ -50,19 +50,28 @@ const firma = `
      firma es lo que lo vuelve oficial.
 
      Dos firmantes y no uno: quien lo redactó y quien lo autoriza no son la
-     misma responsabilidad, y un reglamento con una sola raya no dice cuál de
-     las dos está cubierta. */
-  .firma { margin-top: 3rem; break-inside: avoid; }
+     misma responsabilidad, y una sola raya no dice cuál de las dos está
+     cubierta. El segundo es el CONTRIBUYENTE —la persona que se obliga—, que
+     resultó ser también el Gerente General.
+
+     Las rayas van centradas y del ancho del nombre, no pegadas al margen: una
+     línea que arranca en el borde de la hoja se lee como un renglón para
+     llenar, no como un lugar para firmar. */
+  .firma { margin-top: 2.5rem; break-inside: avoid; }
   .firma .lugar { font-family: "IBM Plex Sans", system-ui, sans-serif;
-                  font-size: .85rem; color: var(--ink-2); margin-bottom: 4rem; }
-  .firmas { display: flex; gap: 3rem; }
+                  font-size: .82rem; color: var(--ink-2); margin-bottom: 3.5rem; }
+  .firmas { display: flex; gap: 2.5rem; text-align: center; }
   .firmante { flex: 1; }
-  .firmante .linea { border-bottom: 1px solid var(--ink); margin-bottom: .45rem; }
+  .firmante .linea { border-bottom: 1px solid var(--ink); margin: 0 auto .4rem;
+                     width: min(100%, 15rem); }
   .firmante .nombre { font-family: "IBM Plex Sans", system-ui, sans-serif;
-                      font-size: .88rem; font-weight: 600; color: var(--ink); margin-bottom: .1rem; }
+                      font-size: .84rem; font-weight: 600; color: var(--ink);
+                      margin-bottom: .05rem; letter-spacing: .01em; }
   .firmante .cargo  { font-family: "IBM Plex Sans", system-ui, sans-serif;
-                      font-size: .8rem; color: var(--ink-2); line-height: 1.45; }
-</style>`;
+                      font-size: .74rem; color: var(--ink-2);
+                      text-transform: uppercase; letter-spacing: .1em; }
+</style>`.replace('__FECHA__', new Date().toLocaleDateString('es-SV',
+    { day: 'numeric', month: 'long', year: 'numeric' }));
 
 // Se inyecta antes del ÚLTIMO `</div>` —el cierre de `.doc`— buscándolo desde
 // el final. Un `replace` sobre un fragmento exacto de maquetado se rompe en
@@ -92,9 +101,9 @@ await page.pdf({
   displayHeaderFooter: true,
   headerTemplate: '<div></div>',
   footerTemplate:
-    '<div style="width:100%;font-size:8pt;color:#666;padding:0 20mm;'
+    '<div style="width:100%;font-size:7.5pt;color:#666;padding:0 20mm;white-space:nowrap;'
     + 'font-family:system-ui,sans-serif;display:flex;justify-content:space-between">'
-    + '<span>Reglamento del Programa de Puntos · Farmacias La Popular y La Salud</span>'
+    + '<span>Reglamento del Programa de Puntos · NIT 0401-210685-101-0</span>'
     // Las tres piezas del número van en UN solo span: como el pie es un flex con
     // `space-between`, separarlas las manda a las esquinas y el «3 / 7» sale
     // repartido a lo ancho de la página.

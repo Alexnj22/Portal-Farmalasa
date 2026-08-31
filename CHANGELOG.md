@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.883.1 — El reglamento usa el membrete real y nombra al contribuyente
+
+El reglamento pasa a usar **el membrete que la empresa ya usa** —el mismo de
+`constanciaDeSancion.js`: logo, contribuyente, giro, dirección, teléfono, NIT y
+NRC—. Que se vea igual que los demás documentos no es estética: es lo que hace
+que quien lo recibe lo reconozca como de la empresa sin tener que leerlo.
+
+**Y corrige quién se obliga.** Decía que «Farmacias La Popular y La Salud»
+ofrecía el programa, con el NIT al lado; pero el contribuyente de ese NIT es una
+**persona natural**, José Rutilio Alemán Vásquez, y ése es el nombre comercial
+con el que opera. Ahora la cláusula 1 nombra a los dos, en ese orden. En un
+documento que obliga, el obligado tiene que ser quien de verdad puede serlo.
+
+De 13 cláusulas a 11 y de 6 páginas a 4. Se quitó el bloque del final que
+repetía el membrete —el único documento donde repetirse se nota— y esa
+identificación se mudó al pie de cada página, que es donde sirve si una hoja se
+separa del resto.
+
+Firman **Edwin Nuñez** (elaboró) y **José Rutilio Alemán Vásquez** como Gerente
+General — que resultó ser la misma persona que el contribuyente, así que quien
+autoriza es quien se obliga.
+
 ## v2.883.0 — El traslado dice quién lo recibió, y la hora de la firma es la de la firma
 
 Reportado mirando un traslado de Salud 5 a Salud 4: «¿cómo puedo ver quién

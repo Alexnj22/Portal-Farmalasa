@@ -504,6 +504,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             nombre: `${finalData.first_names || ''} ${finalData.last_names || ''}`.trim(),
                             cargo: roles?.find(r => String(r.id) === String(finalData.role_id))?.name || '',
                             sala: branches?.find(b => String(b.id) === String(finalData.branch_id))?.name || '',
+                            /* El TIPO de la sede, no sólo su nombre: el carné
+                               dice «Sala · …» para una farmacia y «Casa Matriz»
+                               para administración, y esa diferencia no se puede
+                               sacar del nombre sin cruzar por un rótulo. */
+                            tipoDeSede: branches?.find(b => String(b.id) === String(finalData.branch_id))?.type || '',
                             fechaDeInicio: finalData.hire_date || null,
                             usuario: created.username,
                             contrasenaTemporal: created.tempPassword,

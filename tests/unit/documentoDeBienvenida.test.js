@@ -14,7 +14,7 @@
 //    le pide a alguien un trámite que no puede hacer.
 
 import { describe, it, expect } from 'vitest';
-import { marcaDeLaSala, logoDeLaSala, LOGO_DE_LA_EMPRESA } from '../../src/utils/marcaDeLaSala';
+import { marcaDeLaSala, logoDeLaSala, LOGO_DE_LA_EMPRESA, comoSeLlamaLaSede } from '../../src/utils/marcaDeLaSala';
 import { definicionDelDocumento, BASICO_DEL_REGLAMENTO, paginaDelCarne, INDUCCION, orientacionPrevisional, nombreDelArchivo } from '../../src/utils/documentoDeBienvenida';
 
 const textoDe = (def) => JSON.stringify(def.content);
@@ -465,5 +465,50 @@ describe('la fecha de inicio', () => {
     it('el día 1 no retrocede de mes', () => {
         expect(partes('2026-09-01').carne).toContain('Desde septiembre de 2026');
         expect(partes('2026-01-01').carne).toContain('Desde enero de 2026');
+    });
+});
+
+/* ── Casa Matriz no es una sala ─────────────────────────────────────────────
+ *
+ * «En el caso de Edemir, que no tiene un área en específico, ¿no debería salir
+ * como casa matriz?» (usuario, 2026-08-31). El carné decía «Sala ·
+ * Administracion»: «Sala» es de las farmacias, y «Administracion» es el nombre
+ * INTERNO de la sucursal, no como se llama ese lugar afuera. El reglamento
+ * interno lo llama casa matriz (Art. 6).
+ *
+ * Se decide por el TIPO y nunca por el nombre: renombrar la sucursal a
+ * «Oficinas» no puede devolver el «Sala ·». */
+describe('cómo se nombra la sede', () => {
+    it('una farmacia es una sala', () => {
+        expect(comoSeLlamaLaSede('Salud 3', 'FARMACIA')).toBe('Sala · Salud 3');
+        expect(comoSeLlamaLaSede('La Popular', 'FARMACIA')).toBe('Sala · La Popular');
+    });
+
+    it('administración es Casa Matriz, se llame como se llame la sucursal', () => {
+        expect(comoSeLlamaLaSede('Administracion', 'ADMINISTRATIVA')).toBe('Casa Matriz');
+        // El día que la renombren, sigue siendo casa matriz.
+        expect(comoSeLlamaLaSede('Oficinas Centrales', 'ADMINISTRATIVA')).toBe('Casa Matriz');
+    });
+
+    it('bodega sí se nombra: es un lugar de verdad', () => {
+        expect(comoSeLlamaLaSede('Bodega', 'BODEGA')).toBe('Bodega');
+    });
+
+    it('sin tipo cae del lado de la farmacia, y sin sede no dice nada', () => {
+        expect(comoSeLlamaLaSede('Salud 1', '')).toBe('Sala · Salud 1');
+        expect(comoSeLlamaLaSede('', 'ADMINISTRATIVA')).toBe('Casa Matriz');
+        expect(comoSeLlamaLaSede('', '')).toBe('');
+    });
+
+    it('y el carné lo usa', () => {
+        const def = definicionDelDocumento({
+            nombre: 'Edemir Quintanilla', cargo: 'Técnico de Mantenimiento',
+            sala: 'Administracion', tipoDeSede: 'ADMINISTRATIVA',
+            usuario: 'edemir.quintanilla', conCarne: true,
+        });
+        const c = def.content;
+        const carne = JSON.stringify(c.slice(c.findIndex(b => b?.pageBreak === 'before')));
+        expect(carne).toContain('Casa Matriz');
+        expect(carne).not.toContain('Sala · Administracion');
     });
 });

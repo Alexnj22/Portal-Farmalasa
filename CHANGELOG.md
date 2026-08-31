@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.876.1 — En el carné, casa matriz no es una sala
+
+*«En el caso de Edemir, que no tiene un área en específico, ¿no debería salir
+como casa matriz?»*
+
+El carné decía **«Sala · Administracion»**, y estaban mal las dos mitades.
+«Sala» es de las farmacias: un técnico de mantenimiento no tiene sala, tiene
+sede. Y «Administracion» es el nombre **interno** de una sucursal en la tabla,
+no como se llama ese lugar cuando se lo nombra afuera — el reglamento interno lo
+llama **casa matriz** (Art. 6: «La Empresa tiene su casa matriz en Calle Morazán,
+casa No. 39…»). O sea que el término es de la empresa, no inventado acá.
+
+| tipo de sede | el carné dice |
+|---|---|
+| FARMACIA | Sala · Salud 3 |
+| ADMINISTRATIVA | Casa Matriz |
+| BODEGA | Bodega |
+
+Bodega sí se nombra: es un lugar de verdad y quien trabaja ahí trabaja ahí. Lo
+que no es una sala es la casa matriz.
+
+**Se decide por el TIPO, nunca por el nombre.** `branches.type` ya distinguía
+FARMACIA, BODEGA y ADMINISTRATIVA; el carné sólo recibía el nombre, así que no
+podía saberlo. Mirar el nombre en su lugar —«¿se llama Administracion?»— sería
+cruzar por un rótulo, y el día que alguien la renombre a «Oficinas» el carné
+volvería a decir «Sala · Oficinas» sin que nada falle. Es la regla del proyecto:
+un rótulo no es una clave. Hay una prueba que renombra la sucursal y comprueba
+que sigue diciendo Casa Matriz.
+
 ## v2.876.0 — Los puntos vencen, y el saldo no acumula
 
 Dos reglas nuevas del programa de puntos, y la pantalla del cliente ahora dice

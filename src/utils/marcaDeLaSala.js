@@ -108,3 +108,41 @@ export async function logoComoDataUrl(ruta) {
         return null;
     }
 }
+
+/**
+ * Cómo se llama la sede de alguien en un carné.
+ *
+ * ── Por qué no alcanza con el nombre de la sucursal ────────────────────────
+ *
+ * El carné decía «Sala · Administracion» para quien trabaja en casa matriz, y
+ * el usuario lo levantó: *«en el caso de Edemir, que no tiene un área en
+ * específico, ¿no debería salir como casa matriz?»*.
+ *
+ * Tiene razón dos veces. **«Sala» es de las farmacias**: un técnico de
+ * mantenimiento no tiene sala, tiene sede. Y **«Administracion» es el nombre
+ * interno de una sucursal en la tabla**, no como se llama ese lugar cuando se lo
+ * nombra afuera — el reglamento interno lo llama **casa matriz** (Art. 6:
+ * «La Empresa tiene su casa matriz en Calle Morazán, casa No. 39…»), y ése es el
+ * término de la empresa, no uno inventado acá.
+ *
+ * ── Se decide por el TIPO, nunca por el nombre ─────────────────────────────
+ *
+ * `branches.type` ya distingue FARMACIA, BODEGA y ADMINISTRATIVA. Mirar el
+ * nombre en su lugar sería cruzar por un rótulo —«¿se llama Administracion?»— y
+ * el día que alguien lo renombre a «Oficinas» el carné volvería a decir «Sala ·
+ * Oficinas» sin que nada falle. Es la regla del proyecto: un rótulo no es una
+ * clave.
+ *
+ * Bodega sí se nombra: es un lugar de verdad y quien trabaja ahí trabaja ahí.
+ * Lo que no es una sala es la casa matriz.
+ *
+ * @param {string} nombre  `branches.name`
+ * @param {string} tipo    `branches.type` — FARMACIA · BODEGA · ADMINISTRATIVA
+ */
+export function comoSeLlamaLaSede(nombre, tipo) {
+    if (tipo === 'ADMINISTRATIVA') return 'Casa Matriz';
+    if (tipo === 'BODEGA') return nombre || 'Bodega';
+    // Sin tipo se cae del lado de la farmacia, que son seis de las ocho sedes y
+    // el único caso donde «Sala ·» es cierto.
+    return nombre ? `Sala · ${nombre}` : '';
+}

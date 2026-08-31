@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.866.1 — Una acción no implementada cerraba el día
+
+Salió al revisar si el módulo estaba listo, y es la clase de defecto que sólo
+se ve leyendo: **`aplicar_correccion` estaba en la lista de acciones aceptadas
+de `operar-caja` y no existía en ninguna parte.**
+
+Eso solo sería inofensivo, pero el bloque de CERRAR **no era una rama**: era la
+COLA de la función. O sea que una acción aceptada y no implementada atravesaba
+`abrir`/`ingreso`/`salida` sin coincidir con ninguna y aterrizaba ahí —
+**cerrando el día**, el único acto irreversible de todo el módulo.
+
+Nadie la llamaba: no hay una sola línea del portal que la use. El defecto estaba
+esperando a que alguien la cableara.
+
+Dos cambios: sale de la lista hasta que se escriba, y **la cola deja de ser una
+cola** — cerrar va con su `if (accion === "cerrar")` explícito. Un nombre nuevo
+mal escrito ahora contesta «acción desconocida»; antes hacía algo, y lo peor
+que hay.
+
 ## v2.866.0 — La sala de Mi caja vive en la dirección
 
 La sala elegida estaba en `useState`, o sea en memoria. Tres consecuencias, y

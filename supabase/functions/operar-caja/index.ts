@@ -155,7 +155,16 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const accion = String(body.accion ?? "");
     const sala = Number(body.sala);
-    if (!["abrir", "ingreso", "salida", "cerrar", "estado", "corregir", "aplicar_correccion"].includes(accion)) {
+    // `aplicar_correccion` estuvo en esta lista sin existir, y eso era un arma
+    // cargada: el bloque de CERRAR no era una rama sino la COLA de la función,
+    // así que una acción aceptada y no implementada caía en él y **cerraba el
+    // día** — el único acto irreversible de todo el módulo. Nadie la llamaba
+    // todavía; el defecto estaba esperando a que alguien la cableara.
+    //
+    // Se saca de la lista hasta que se escriba, y de paso la cola deja de ser
+    // una cola (ver el `if (accion === "cerrar")` de abajo): un nombre nuevo mal
+    // escrito tiene que contestar «acción desconocida», nunca hacer algo.
+    if (!["abrir", "ingreso", "salida", "cerrar", "estado", "corregir"].includes(accion)) {
       return json({ ok: false, error: "Acción desconocida." }, 400);
     }
     if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sala." }, 400);
@@ -407,6 +416,10 @@ Deno.serve(async (req) => {
 
     // ── CERRAR EL DÍA ───────────────────────────────────────────────────────
     //
+    // La rama va con su `if` EXPLÍCITO y no de cola: cerrar no se deshace, y
+    // ser el final del `try` la convertía en lo que pasa cuando ninguna otra
+    // coincide. Ver el comentario de la lista de acciones.
+    //
     // NO se cierra sin al menos un corte del día (regla del usuario, 30-ago).
     // El cierre emite el Z, y un día que cierra sin haber cortado deja el
     // efectivo de toda la jornada sin haberse contado ni una vez: la diferencia
@@ -415,6 +428,8 @@ Deno.serve(async (req) => {
     // El corte se cuenta del DÍA QUE LA CAJA TIENE ABIERTO —no de hoy—: una
     // caja que quedó abierta pasada la medianoche sigue en su día, y pedirle un
     // corte «de hoy» le exigiría cortar dos veces.
+    if (accion !== "cerrar") return json({ ok: false, error: "Acción desconocida." }, 400);
+
     {
       // La lista ya se leyó arriba, con su error tratado como error.
       if (!(cortesDelDia ?? []).some((c) => c.tipo === "C")) {

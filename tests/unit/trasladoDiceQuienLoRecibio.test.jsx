@@ -48,11 +48,11 @@ const REAL = {
             cantidad: 2, factor: 1, presentacion_tipo: 'CAJA', erp_product_id: 3689,
         }],
         erp_traslado: {
-            at: '2026-08-30T16:34:01.896Z', by_name: 'Yessica Xiomara Hernandez',
+            at: '2026-08-30T16:34:01.896Z', by: 'yessica-id', by_name: 'Yessica Xiomara Hernandez',
             lineas: 1, unidades: 2, total: 6.2496, id_traslado: '35559',
         },
         erp_recibido: {
-            at: '2026-08-31T16:35:23.861Z', by: '3be13c04', msg: 'Hecho!',
+            at: '2026-08-31T16:35:23.861Z', by: '3be13c04-312e-455f-a995-359e9f83b894', msg: 'Hecho!',
             total: 6.2496, lineas: 1, unidades: 2, by_name: 'Idalia Serrano',
             concepto: 'REC IDALIA SERRANO (S4) ENV YESSICA HERNANDEZ (S5)',
             id_traslado: '35559',
@@ -65,13 +65,42 @@ const conRecibido = (recibido) => ({
     metadata: { ...REAL.metadata, erp_recibido: recibido },
 });
 
-const pintar = (req) => render(<DetalleSolicitud req={req} employeesById={new Map()} />);
+/* El maestro de personal que recibe el detalle. Las claves son `employees.id`,
+   que es lo que guarda `by` — verificado en producción: los 40 ids distintos que
+   aparecen en `by` están los 40 en `employees`. */
+const PERSONAL = new Map([
+    ['3be13c04-312e-455f-a995-359e9f83b894',
+        { id: '3be13c04-312e-455f-a995-359e9f83b894', name: 'Idalia Serrano', photo: 'https://x/idalia.jpg' }],
+    ['yessica-id',
+        { id: 'yessica-id', name: 'Yessica Xiomara Hernandez', photo: 'https://x/yessica.jpg' }],
+]);
+
+const pintar = (req, personal = PERSONAL) =>
+    render(<DetalleSolicitud req={req} employeesById={personal} />);
 
 describe('el traslado dice quién lo recibió', () => {
     it('nombra a quien abrió la bolsa, y la sala donde la abrió', () => {
         pintar(REAL);
         expect(screen.getByText(/Recibido en Salud 4/i)).toBeTruthy();
-        expect(screen.getByText(/por Idalia Serrano/)).toBeTruthy();
+        expect(screen.getByAltText('Idalia Serrano')).toBeTruthy();
+    });
+
+    /* ── La regla de la foto ──────────────────────────────────────────────
+       Dicha por el usuario mirando este modal: «no veo aplicada la regla de
+       siempre poner foto a la par del nombre». Las dos fichas de arriba la
+       cumplían y estos dos bloques no. */
+    it('la firma lleva la CARA de la persona, no sólo su nombre', () => {
+        pintar(REAL);
+        expect(screen.getByAltText('Idalia Serrano')).toBeTruthy();
+        expect(screen.getByAltText('Yessica Xiomara Hernandez')).toBeTruthy();
+    });
+
+    it('la cara se resuelve por el id `by`, nunca cruzando el nombre', () => {
+        // Mismo nombre guardado, id que no está en el maestro: sin foto, pero
+        // el nombre NO se pierde — perder la firma es peor que perder la cara.
+        pintar(conRecibido({ ...REAL.metadata.erp_recibido, by: 'un-id-que-no-existe' }));
+        expect(screen.queryByAltText('Idalia Serrano')).toBeNull();
+        expect(screen.getByText(/Idalia Serrano/)).toBeTruthy();
     });
 
     it('separa el despacho de la recepción por su rótulo', () => {
@@ -80,12 +109,12 @@ describe('el traslado dice quién lo recibió', () => {
         // de todo y quien la firmaba, el único que tocó la bolsa.
         expect(screen.getByText(/Despachado desde Salud 5/i)).toBeTruthy();
         expect(screen.queryByText(/^Aplicado$/i)).toBeNull();
-        expect(screen.getByText(/por Yessica Xiomara Hernandez/)).toBeTruthy();
+        expect(screen.getByAltText('Yessica Xiomara Hernandez')).toBeTruthy();
     });
 
     it('dice cuánto entró y cuánto tardó la bolsa desde el despacho', () => {
         pintar(REAL);
-        expect(screen.getByText(/1 producto · 2 unidades · \$6\.25 · por Idalia Serrano/)).toBeTruthy();
+        expect(screen.getAllByText(/1 producto · 2 unidades · \$6\.25 · por/).length).toBe(2);
         expect(screen.getByText(/desde el despacho/)).toBeTruthy();
     });
 
@@ -103,6 +132,9 @@ describe('el traslado dice quién lo recibió', () => {
             msg: 'El sistema ya lo tenia recibido cuando el portal barrio las solicitudes en camino; no se volvio a cargar. La fecha de arriba es la del barrido, no la de la entrada.',
         }));
         expect(screen.getByText(/lo cerró el portal solo/)).toBeTruthy();
+        // Y ni una cara: un disco gris al lado se leería como una foto que no
+        // cargó, y lo que pasa es que no hay a quién mostrar.
+        expect(screen.queryByAltText(/Serrano|Clemente/)).toBeNull();
         // Y explica por qué la hora no es la de la entrada.
         expect(screen.getByText(/La fecha de arriba es la del barrido/)).toBeTruthy();
     });
@@ -115,7 +147,7 @@ describe('el traslado dice quién lo recibió', () => {
         }));
         expect(screen.queryByText(/0 productos/)).toBeNull();
         expect(screen.queryByText(/0 unidades/)).toBeNull();
-        expect(screen.getByText(/por Amadeo Clemente/)).toBeTruthy();
+        expect(screen.getByText(/Amadeo Clemente/)).toBeTruthy();
         // Esta fila SÍ tiene firma, y aun así necesita la explicación: la
         // condición del aviso es `via`, no «falta el nombre».
         expect(screen.getByText(/El sistema ya lo tenía recibido/)).toBeTruthy();
@@ -133,7 +165,7 @@ describe('el traslado dice quién lo recibió', () => {
         expect(screen.queryByText(/0 productos/)).toBeNull();
         expect(screen.queryByText(/0 unidades/)).toBeNull();
         expect(screen.queryByText(/\$0\.00/)).toBeNull();
-        expect(screen.getByText(/por Amadeo Clemente/)).toBeTruthy();
+        expect(screen.getByText(/Amadeo Clemente/)).toBeTruthy();
     });
 
     it('el «Hecho!» del sistema no se muestra: no le dice nada a nadie', () => {

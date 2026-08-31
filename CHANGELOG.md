@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.883.3 — La firma de cada acto lleva la cara de quien la hizo
+
+Corregido por el usuario mirando el detalle del traslado que salió en v2.883.0:
+*«no veo aplicada la regla de siempre poner foto a la par del nombre»*. Las dos
+fichas de arriba —quien pidió, quien aprobó— la cumplían desde el 2026-08-11.
+Los bloques «Despachado desde \<sala\>» y «Recibido en \<sala\>» escribían el
+nombre guardado como texto plano, porque es lo único que se lee de un vistazo en
+el `metadata`. Un nombre sin cara obliga a leer; una cara se reconoce.
+
+Ahora los dos usan `ChipPersona`, el mismo canónico del resto del portal, y lo
+mismo vale para el bloque «Aplicado» de los otros tipos de solicitud.
+
+**La foto se resuelve por el id `by`, nunca cruzando el `by_name`.** Cruzar por
+texto acá sería el error de «un rótulo no es una clave» con la excusa de que
+total es sólo una foto: dos personas con nombres parecidos pondrían la cara de
+la otra, y eso no es un adorno mal puesto — es afirmar que la firma es de
+alguien que no la hizo. Verificado en producción: los **40** ids distintos que
+aparecen en `by` (despacho, recepción y aplicado) están los 40 en `employees`,
+así que no había nada que ganar cruzando por nombre. Si el id no resuelve, cae
+al nombre como texto antes que a un hueco: perder la foto es un problema,
+perder la firma es otro.
+
+Y donde no hay firma no va una cara: cuando el traslado lo cerró el barrido
+nocturno, la caja sigue diciendo «lo cerró el portal solo» y **sin** avatar — un
+disco gris al lado se leería como una foto que no cargó, y lo que pasa es que no
+hay a quién mostrar.
+
+Tres pruebas nuevas, una de ellas verificada al revés: con un `Firmante` que
+cayera a buscar por nombre, falla.
+
 ## v2.883.2 — Membrete compacto y firmantes con su cargo
 
 El membrete pasa a **dos columnas** —identificación a la izquierda, título a la

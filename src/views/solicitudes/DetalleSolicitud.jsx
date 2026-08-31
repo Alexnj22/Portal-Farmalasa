@@ -15,7 +15,7 @@ import {
     lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento, fmtFechaHora,
     motivoDeRechazo, cuantoTardo,
 } from './movimientoTexto';
-import { CaraPersona, BloquePersonas } from './PersonasSolicitud';
+import { CaraPersona, ChipPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { ajusteSinCambio, fmtUltimaVenta } from '../../utils/minmaxSolicitud';
@@ -307,6 +307,36 @@ const CabeceraMovimiento = ({ req, meta, unidadesAplicadas = null }) => {
     );
 };
 
+/* ─── Quién firmó un acto guardado en `metadata` ──────────────────────────── */
+/**
+ * Cara y nombre. **Nunca el nombre solo.**
+ *
+ * Regla del usuario, dicha mirando este mismo modal: *«no veo aplicada la regla
+ * de siempre poner foto a la par del nombre»*. Las dos fichas de arriba la
+ * cumplían; los bloques del despacho y la recepción escribían el `by_name`
+ * guardado como texto plano, porque es lo único que se lee de un vistazo en el
+ * `metadata`. Es la misma regla que trajo `BloquePersonas` al detalle: un nombre
+ * sin cara obliga a leer, y una cara se reconoce.
+ *
+ * **La foto sale del `by`, que es un id, NO del `by_name`.** Cruzar por texto
+ * acá sería el error de [[un rótulo no es una clave]] con la excusa de que
+ * «total, es sólo una foto»: dos personas con nombres parecidos pondrían la cara
+ * de la otra, y eso no es un adorno mal puesto — es afirmar que la firma es de
+ * alguien que no la hizo. Verificado en producción el 2026-08-31: los **40** ids
+ * distintos que aparecen en `by` (despacho, recepción y aplicado) están los 40
+ * en `employees`, así que no hay nada que ganar cruzando por nombre.
+ *
+ * Si el id no resuelve —una ficha borrada, un Map a medio hidratar— cae al
+ * `by_name` como texto antes que a un hueco: perder la foto es un problema,
+ * perder el nombre es perder la firma.
+ */
+const Firmante = ({ acto, employeesById }) => {
+    const persona = acto?.by ? employeesById?.get(String(acto.by)) : null;
+    if (persona) return <ChipPersona persona={persona} />;
+    if (acto?.by_name) return <span className="text-caption font-bold text-content-2">{acto.by_name}</span>;
+    return null;
+};
+
 /* ─── Constancia de lo que se aplicó ──────────────────────────────────────── */
 //
 // Sin esto, aprobar y que el cambio ocurra fuera del portal se ve igual que
@@ -316,7 +346,7 @@ const CabeceraMovimiento = ({ req, meta, unidadesAplicadas = null }) => {
 // movimiento de inventario lo pintaba como «— → —», porque su constancia no
 // tiene esos campos sino líneas, unidades y costo. Ahora cada familia se lee
 // con la suya.
-const BloqueAplicado = ({ req, aplicado }) => {
+const BloqueAplicado = ({ req, aplicado, employeesById }) => {
     if (!aplicado) return null;
     const esMovimiento = req.type?.startsWith('INVENTORY_');
 
@@ -334,23 +364,28 @@ const BloqueAplicado = ({ req, aplicado }) => {
     return (
         <Caja tono="hover" className="space-y-1">
             <Rotulo>{rotulo}</Rotulo>
-            {esMovimiento ? (
+            {/* `flex-wrap` y no una sola línea de texto: la cara es un elemento,
+                no una palabra, así que el renglón tiene que poder cortarse antes
+                de ella en una pantalla angosta en vez de empujarla afuera. */}
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
                 <p className="text-label font-bold text-content">
-                    {aplicado.lineas ?? 0} {aplicado.lineas === 1 ? 'producto' : 'productos'}
-                    {' · '}{aplicado.unidades ?? 0} {aplicado.unidades === 1 ? 'unidad' : 'unidades'}
-                    {Number.isFinite(Number(aplicado.total)) && ` · ${formatMoney(aplicado.total)}`}
-                    {aplicado.by_name && ` · por ${aplicado.by_name}`}
+                    {esMovimiento ? (
+                        <>
+                            {aplicado.lineas ?? 0} {aplicado.lineas === 1 ? 'producto' : 'productos'}
+                            {' · '}{aplicado.unidades ?? 0} {aplicado.unidades === 1 ? 'unidad' : 'unidades'}
+                            {Number.isFinite(Number(aplicado.total)) && ` · ${formatMoney(aplicado.total)}`}
+                        </>
+                    ) : (
+                        aplicado.campo === 'anulacion'
+                            ? (aplicado.solventado_internamente
+                                ? 'Factura anulada en el sistema'
+                                : 'Factura anulada')
+                            : `${aplicado.de || '—'} → ${aplicado.a || '—'}`
+                    )}
+                    {(aplicado.by || aplicado.by_name) && ' · por'}
                 </p>
-            ) : (
-                <p className="text-label font-bold text-content">
-                    {aplicado.campo === 'anulacion'
-                        ? (aplicado.solventado_internamente
-                            ? 'Factura anulada en el sistema'
-                            : 'Factura anulada')
-                        : `${aplicado.de || '—'} → ${aplicado.a || '—'}`}
-                    {aplicado.by_name && ` · por ${aplicado.by_name}`}
-                </p>
-            )}
+                <Firmante acto={aplicado} employeesById={employeesById} />
+            </div>
             {/* Lo que hay que hacer AHORA, y por eso no va con los avisos: un
                 aviso se puede leer y seguir de largo. Acá, si nadie vuelve a
                 facturar, la venta queda sin ningún documento que la respalde —
@@ -404,7 +439,7 @@ const BloqueAplicado = ({ req, aplicado }) => {
  * se muestra el aviso que explica que la hora es la del barrido y no la de la
  * entrada.
  */
-const BloqueRecibido = ({ req, recibido, despachado }) => {
+const BloqueRecibido = ({ req, recibido, despachado, employeesById }) => {
     if (!recibido) return null;
     const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
     const destino = meta.branch_name;
@@ -426,12 +461,18 @@ const BloqueRecibido = ({ req, recibido, despachado }) => {
     return (
         <Caja tono="hover" className="space-y-1">
             <Rotulo>{destino ? `Recibido en ${destino}` : 'Recibido'}</Rotulo>
-            <p className="text-label font-bold text-content">
-                {lineas != null && <>{lineas} {lineas === 1 ? 'producto' : 'productos'}{' · '}</>}
-                {unidades != null && <>{unidades} {unidades === 1 ? 'unidad' : 'unidades'}{' · '}</>}
-                {total != null && <>{formatMoney(total)}{' · '}</>}
-                {cerroElPortal ? 'lo cerró el portal solo' : `por ${recibido.by_name}`}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                <p className="text-label font-bold text-content">
+                    {lineas != null && <>{lineas} {lineas === 1 ? 'producto' : 'productos'}{' · '}</>}
+                    {unidades != null && <>{unidades} {unidades === 1 ? 'unidad' : 'unidades'}{' · '}</>}
+                    {total != null && <>{formatMoney(total)}{' · '}</>}
+                    {/* Sin firma no va una cara vacía: lo cerró el portal, y
+                        decirlo con un disco gris al lado se leería como una foto
+                        que no cargó. */}
+                    {cerroElPortal ? 'lo cerró el portal solo' : 'por'}
+                </p>
+                {!cerroElPortal && <Firmante acto={recibido} employeesById={employeesById} />}
+            </div>
             {/* La hora, siempre. Es la respuesta a «¿cuándo llegó?», y el tiempo
                 que pasó desde el despacho es lo que dice si la bolsa estuvo un
                 día dando vueltas — que es exactamente lo que nadie podía ver. */}
@@ -852,9 +893,11 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
             <BloquePorTipo req={req} meta={meta} seleccion={seleccion} onToggle={onToggle}
                 onCantidad={onCantidad} cantidades={cantidades} employeesById={employeesById} />
 
-            <BloqueAplicado req={req} aplicado={meta.erp_aplicado ?? meta.erp_traslado} />
+            <BloqueAplicado req={req} aplicado={meta.erp_aplicado ?? meta.erp_traslado}
+                employeesById={employeesById} />
 
-            <BloqueRecibido req={req} recibido={meta.erp_recibido} despachado={meta.erp_traslado} />
+            <BloqueRecibido req={req} recibido={meta.erp_recibido} despachado={meta.erp_traslado}
+                employeesById={employeesById} />
 
             {req.note && (
                 <div>

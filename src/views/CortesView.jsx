@@ -403,10 +403,18 @@ const CortesView = () => {
     const filtrados = useMemo(() => conTramoTodos.filter((c) => {
         if (sala && String(c.branch_id) !== String(sala)) return false;
 
-        // El cierre del día (Z) no es un conteo, no se confirma y no tiene
-        // diferencia: sólo aparece como contexto, cuando no hay ningún recorte
-        // de estado ni de cifra. Bajo «Sin confirmar» no significaría nada.
-        if (c.tipo === 'Z') {
+        // Lo que NO contó efectivo —el cierre del día (Z) y las lecturas (X)—
+        // no se confirma y no tiene diferencia: sólo aparece como contexto,
+        // cuando no hay ningún recorte de estado ni de cifra. Bajo «Sin
+        // confirmar» no significaría nada.
+        //
+        // Y para la X no es sólo que no signifique: su `estado` nace en
+        // PENDIENTE como el de cualquier fila, así que sin esto se quedaría
+        // para siempre en «Sin confirmar» sin ningún botón que la saque —
+        // además de contradecir al contador de arriba, que ya cuenta sólo las
+        // de tipo 'C'. La condición es «esto contó dinero», no «es el cierre»:
+        // eran lo mismo mientras sólo hubiera dos tipos.
+        if (c.tipo !== 'C') {
             if (estado !== 'TODOS' || diferencia !== 'TODAS') return false;
         } else {
             if (estado !== 'TODOS' && c.estado !== estado) return false;

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.886.1 — La lectura no se queda trabada en «Sin confirmar»
+
+Cabo suelto de v2.886.0. Una lectura (tipo X) nace con estado PENDIENTE como
+cualquier fila, y el recorte de «Sin confirmar» sólo apartaba el cierre del día:
+la lectura aparecía ahí para siempre, sin ningún botón que la sacara —porque no
+hay nada que confirmar— y contradiciendo al contador de arriba, que cuenta sólo
+los cortes de caja. El recorte ahora pregunta «¿esto contó dinero?» en vez de
+«¿es el cierre?», que era la misma pregunta mientras sólo hubiera dos tipos.
+
 ## v2.886.0 — El corte imprime su comprobante, y una lectura se ve
 
 **El corte hecho desde el portal no dejaba ningún papel.** Pregunta del usuario:

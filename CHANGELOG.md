@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.892.3 — Barrido de seguridad: qué alcanza quien no inició sesión
+
+Segunda pregunta del usuario, después de cerrar `branches`: *«pero entonces, aún
+hay cosas de seguridad que se deben corregir?»*. Se midió en vez de contestar de
+memoria.
+
+**El advisor de Supabase da 0 ERRORES.** De 377 avisos, 352 son «función DEFINER
+ejecutable por `authenticated`» —que son las RPC del portal, o sea el diseño— y
+19 por `anon`.
+
+**Ninguna tabla filtra una fila.** El barrido definitivo no fue probar tablas
+sueltas: se cruzó el GRANT de columna contra las policies, salieron **30 tablas
+con una policy que alcanza a `anon`** (casi todas por ser `TO public`, que
+incluye a `anon`, no por estar declaradas para él), y se probaron **las 30** con
+la clave pública contra producción. **0 devolvieron filas**: 28 dan 401 —el
+`anon` no puede ni ejecutar la función `auth_*` que la policy consulta— y 2 dan
+200 con cero filas. La capa que aguanta no es una sola: es el GRANT, la policy y
+la función de guarda, y hace falta que las tres fallen.
+
+**Las 19 funciones de `anon` eran 17 con motivo y 2 sin decidir.** Las 17
+declaradas exigen token de equipo o un secreto de un solo uso. Las otras dos
+—`frenar_ajuste_si_hay_conteo_abierto` y `regrant_al_cambiar_employees_safe`—
+devuelven `trigger` y `event_trigger`: llamarlas por `/rest/v1/rpc/` no hace
+nada, porque sin `NEW` PostgreSQL las rechaza. No eran un agujero; eran un GRANT
+por defecto que nadie decidió, y se revocaron por la misma razón que la escritura
+de `branches`. El disparador sobre `approval_requests` sigue habilitado
+—verificado— porque Postgres comprueba el EXECUTE al CREAR el disparador, no al
+dispararlo.
+
+**Y se corrigió una afirmación de CLAUDE.md que llevaba tiempo siendo falsa.**
+Su regla 3 decía que `attendance` y `audit_logs` «aceptan hoy cualquier fila de
+cualquier usuario autenticado, o sea que se puede fabricar una marcación y
+falsificar la bitácora». Remedido: `attendance_insert` exige
+`employee_id = auth_employee_id() OR can_edit('time_audit')` y
+`audit_logs_insert` exige `user_id = auth_employee_id()`. Están cerrados. De
+TODAS las policies de escritura del esquema, sólo cuatro tienen condición `true`
+y las cuatro son `TO service_role`, que salta el RLS igual: inertes.
+
+Es [[feedback_una_afirmacion_que_nadie_verifica_deja_de_ser_cierta]] por segunda
+vez en el mismo día — ayer el motivo de `branches` describía menos de lo que
+estaba abierto, hoy la regla 3 describía un agujero que ya no existía. Las dos
+mentían por lo mismo: nadie las volvió a medir.
+
+**Los dos INFO del advisor son correctos por diseño**, no deuda:
+`identidad_vales` y `puntos_consulta_intentos` tienen RLS sin policy —o sea,
+niegan todo por PostgREST— y sólo las tocan funciones DEFINER. Verificado: ni una
+referencia a `identidad_vales` fuera de sus migraciones.
+
+**Lo que queda abierto es una DECISIÓN, no un defecto** (ver la respuesta al
+usuario): los cuatro controles de `security_config` siguen los cuatro en
+`observar` —lectura masiva, segundo humano, dispositivo conocido y techo de
+exportación, que son las fases 2 y 3 del blindaje— y la protección de
+contraseñas filtradas (HaveIBeenPwned) está apagada en el panel de Supabase.
+Ninguna se enciende sin que alguien decida el momento.
+
 ## v2.892.2 — Sin sesión, la sucursal es sólo su nombre
 
 Salió de una pregunta del usuario sobre `/mis-puntos`: *«no hay forma que desde

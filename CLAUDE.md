@@ -471,10 +471,21 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
 3. **Policies de escritura**: `USING (true)` está prohibido para UPDATE/DELETE
    **y `WITH CHECK (true)` para INSERT** — el INSERT es el que faltaba en esta
    regla y por ahí se colaron dos (auditoría 2026-07-30): `attendance` y
-   `audit_logs` aceptan hoy cualquier fila de cualquier usuario autenticado, o
-   sea que se puede fabricar una marcación y falsificar la bitácora. Una tabla
+   `audit_logs` aceptaban cualquier fila de cualquier usuario autenticado, o
+   sea que se podía fabricar una marcación y falsificar la bitácora. Una tabla
    append-only no necesita policy de DELETE, pero **sí** necesita que su INSERT
-   diga quién puede escribir qué. Usar `auth_can_edit_any(ARRAY['modulo1','modulo2'])`
+   diga quién puede escribir qué.
+
+   ✅ **Los dos están CERRADOS, y este párrafo dijo lo contrario más tiempo del
+   que fue cierto** (remedido el 2026-08-31): `attendance_insert` exige
+   `employee_id = auth_employee_id() OR can_edit('time_audit')` —o marcás por
+   vos, o tenés el permiso— y `audit_logs_insert` exige
+   `user_id = auth_employee_id()`, o sea que nadie firma con el nombre de otro.
+   Un barrido de TODAS las policies de escritura del esquema deja **cuatro** con
+   condición `true`, y las cuatro son `TO service_role`, que salta el RLS de
+   todos modos: son inertes. Es
+   [[feedback_una_afirmacion_que_nadie_verifica_deja_de_ser_cierta]] otra vez —
+   el hallazgo se arregló y la regla que lo denunciaba no se volvió a mirar. Usar `auth_can_edit_any(ARRAY['modulo1','modulo2'])`
    (helper que resuelve al empleado por uid/code/username y chequea can_edit en
    role_permissions) — NUNCA `USING (true)` para UPDATE/DELETE en tablas sensibles.
    **CRÍTICO (incidente 2026-07-08): TODA llamada a funciones `auth_*` en una policy

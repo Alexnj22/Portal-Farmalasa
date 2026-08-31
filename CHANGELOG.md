@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.870.0 — Los logos de las dos farmacias, listos para usarse
+
+Tres archivos en `public/`, uno por marca más el de las dos juntas, y el script
+que los produce (`npm run logos`).
+
+| | queda en | pesa |
+|---|---|---|
+| `logo-la-salud.png` | 435×123 | 12 kB |
+| `logo-la-popular.png` | 881×247 | 42 kB |
+| `logo-farmacias.png` | 2204×300 | 54 kB |
+
+**El de La Popular venía en 11503×3693 y 398 kB** — un archivo de imprenta — y
+además guardado en `public/`, o sea que se estaba publicando entero. Los
+originales se mudaron a `marca/`, que es la fuente; `public/` queda sólo con lo
+derivado, que es lo único que el portal usa.
+
+**Se recortó el margen transparente**, que era distinto en cada uno: puestos a la
+misma altura se veían de tamaños distintos sin que nada estuviera mal. La Popular
+traía 531 px de aire a la izquierda y 276 arriba.
+
+**No se igualó la altura de los archivos, y eso fue a propósito.** Parecía lo
+prolijo y es al revés: como La Salud viene en 123 px de alto, la altura común
+habría bajado a La Popular —que tiene 2981 px de contenido— a la resolución del
+otro. Y agrandar La Salud tampoco sirve: estirar no agrega detalle, sólo mueve el
+remuestreo de dibujar a guardar, que es peor porque pasa dos veces. Quien iguala
+la altura es la maqueta.
+
+**El logo de las dos farmacias no existía y se armó** con el icono que ya estaba
+en el proyecto (`Logo512.png`) y el mismo armado de los otros dos. Las medidas
+salen de medir los originales, no de inventarlas: en los dos, el icono empieza al
+73.5% del ancho y mide 0.94× el alto, y «FARMACIA» va sangrado y trackeado para
+terminar donde termina el nombre. Los colores se muestrearon de los propios
+archivos —magenta `#981D97`, verde `#8EC30F`, **idénticos en los tres**— en vez
+de copiarlos de una captura.
+
+Lo único que no se pudo respetar es la tipografía, que no venía con los archivos:
+se usó la más cercana disponible. Si aparece la original, se cambia una línea.
+
+Nada está conectado todavía: los archivos quedan listos y dónde entran se decide
+aparte.
+
 ## v2.869.2 — La corrección de caja iba a la bandeja de personal
 
 Dos defectos mudos que salieron al revisar si el módulo estaba listo, y que

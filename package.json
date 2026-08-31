@@ -45,7 +45,8 @@
     "auditoria:recalcular": "node scripts/auditoria-cli.mjs recalcular",
     "auditoria:sincronizar": "node scripts/auditoria-cli.mjs sincronizar",
     "medir:papel": "node scripts/medir-deteccion-de-papel.mjs",
-    "medir:pdf": "node scripts/medir-hojas-en-pdf.mjs"
+    "medir:pdf": "node scripts/medir-hojas-en-pdf.mjs",
+    "logos": "node scripts/preparar-logos.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

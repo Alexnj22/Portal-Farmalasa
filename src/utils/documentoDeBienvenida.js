@@ -753,18 +753,30 @@ export function definicionDelDocumento({
             style: 'texto', margin: [0, 0, 0, 10],
         },
         {
+            /* Con contraseña temporal van las dos filas; sin ella, sólo el
+               usuario. Y no es un caso raro: al ENLAZAR con una ficha que ya
+               existe —una recontratación— la persona conserva la contraseña que
+               tenía, así que no hay ninguna temporal que entregar. Escribir
+               «Contraseña temporal: —» ahí sería peor que no escribir nada: se
+               lee como que el portal no la generó y manda a pedir una. */
             table: {
                 widths: ['auto', '*'],
                 body: [
                     [{ text: 'Usuario', style: 'etiqueta' }, { text: usuario || '—', style: 'credencial' }],
-                    [{ text: 'Contraseña temporal', style: 'etiqueta' }, { text: contrasenaTemporal || '—', style: 'credencial' }],
+                    ...(contrasenaTemporal
+                        ? [[{ text: 'Contraseña temporal', style: 'etiqueta' },
+                            { text: contrasenaTemporal, style: 'credencial' }]]
+                        : []),
                 ],
             },
             layout: 'lightHorizontalLines',
         },
         {
-            text: 'Esta contraseña sirve una sola vez y sólo hasta que la cambies. Si alguien más la vio, '
-                + 'cámbiala apenas entres y avísale a Talento Humano.',
+            text: contrasenaTemporal
+                ? 'Esta contraseña sirve una sola vez y sólo hasta que la cambies. Si alguien más la vio, '
+                  + 'cámbiala apenas entres y avísale a Talento Humano.'
+                : 'Entras con la contraseña que ya tenías. Si no la recuerdas, pídele a Talento Humano '
+                  + 'que te la reinicie.',
             style: 'nota', margin: [0, 8, 0, 0],
         },
     ];

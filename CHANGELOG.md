@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.868.1 — El documento de bienvenida también sale en una recontratación
+
+*«¿Por qué no me guardó el documento de bienvenida? Lo guardé así»* — con la
+casilla marcada, sobre una ficha enlazada.
+
+El documento entero vivía detrás de `if (created?.tempPassword)`. Al **enlazar**
+con una ficha que ya existe, la persona conserva la contraseña que tenía, así que
+no hay ninguna temporal — y con eso la casilla marcada no hacía nada. No fallaba
+nada, no avisaba nada: simplemente no se descargaba.
+
+La confusión estaba en el origen. El documento nació para salvar la contraseña
+temporal, que sólo existe en esa respuesta del servidor, y quedó atado a ella.
+Pero además lleva el carné, la inducción al portal, lo básico del reglamento y la
+orientación de ISSS y AFP — y nada de eso depende de si hay contraseña nueva.
+Quien vuelve a la empresa lo necesita igual.
+
+Hoy son dos preguntas separadas: la contraseña se copia al portapapeles **si
+existe**, y el documento se arma **si lo pidieron**.
+
+**Y cuando ya tiene contraseña, el documento no la nombra.** No sale la fila con
+un guion ni un hueco: sale sólo el usuario, y la nota de abajo pasa de «esta
+contraseña sirve una sola vez» a «entras con la contraseña que ya tenías». Una
+fila que dijera «Contraseña temporal: —» se lee como que el portal no la generó,
+y manda a pedir una que no hace falta.
+
+Lo mismo en el aviso de pantalla, que escribía `Contraseña: undefined` cuando el
+documento no se podía generar.
+
 ## v2.868.0 — Corregir un movimiento de caja llega como solicitud, y se puede resolver
 
 «Corregir» era un callejón: pedía, y nadie podía resolverlo. Ahora viaja por la

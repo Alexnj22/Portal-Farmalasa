@@ -439,8 +439,32 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     const enlazado = created?.enlazadoCon
                         ? `Quedó sobre la ficha de ${created.enlazadoCon}, que conserva su historial.`
                         : null;
+                    /* ── La guarda ya NO es la contraseña temporal ───────────
+                     *
+                     * Era `if (created?.tempPassword)`, y con eso el documento
+                     * entero —casilla marcada incluida— no se armaba al ENLAZAR
+                     * con una ficha existente: esa persona conserva la
+                     * contraseña que ya tenía, así que no hay ninguna temporal.
+                     * Reportado el 2026-08-31 sobre una recontratación: *«¿por
+                     * qué no me guardó el documento de bienvenida? Lo guardé
+                     * así»*, con la casilla marcada.
+                     *
+                     * La confusión estaba en el origen: el documento nació para
+                     * salvar la contraseña temporal —que sólo existe en esa
+                     * respuesta— y quedó atado a ella. Pero además lleva el
+                     * carné, la inducción al portal, lo básico del reglamento y
+                     * la orientación de ISSS y AFP, y nada de eso depende de si
+                     * hay contraseña nueva. Quien vuelve a la empresa lo
+                     * necesita igual.
+                     *
+                     * Hoy son dos preguntas separadas: la contraseña se copia al
+                     * portapapeles SI existe, y el documento se arma si lo
+                     * pidieron. */
+                    const quiereDocumento = formData.descargar_bienvenida !== false;
                     if (created?.tempPassword) {
                         try { await navigator.clipboard.writeText(created.tempPassword); } catch { /* sin permiso de clipboard */ }
+                    }
+                    if (created?.tempPassword || quiereDocumento) {
 
                         // ── El documento que se le entrega a la persona ──────────
                         // La contraseña temporal SÓLO existe en esta respuesta: si
@@ -475,7 +499,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                          * contraseña en pantalla: es la única copia que queda, y
                          * callarla sería perderla por haber desmarcado una
                          * casilla. */
-                        const quiereDocumento = formData.descargar_bienvenida !== false;
                         const { descargarDocumentoDeBienvenida } = await import('../utils/documentoDeBienvenida');
                         const doc = quiereDocumento ? await descargarDocumentoDeBienvenida({
                             nombre: `${finalData.first_names || ''} ${finalData.last_names || ''}`.trim(),
@@ -512,10 +535,17 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 : (enlazado ? "Expediente Enlazado — Documento de Bienvenida" : "Empleado Creado — Documento de Bienvenida"),
                             doc.ok
                                 ? `${enlazado ? enlazado + ' ' : ''}Se descargó el documento: sus accesos y su carné para recortar. Entrégaselo o imprímelo.`
-                                : `${enlazado ? enlazado + ' ' : ''}Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). `
-                                  + (doc.omitido
-                                      ? 'No se pidió el documento — anótala antes de cerrar, no se puede volver a ver.'
-                                      : 'No se pudo generar el documento — anótala antes de cerrar.'),
+                                /* Sin contraseña temporal no se la nombra: al enlazar
+                                   la persona conserva la suya, y escribir «Contraseña:
+                                   undefined» convertiría un caso normal en una alarma. */
+                                : `${enlazado ? enlazado + ' ' : ''}Usuario: ${created.username}`
+                                  + (created.tempPassword
+                                      ? ` · Contraseña: ${created.tempPassword} (copiada al portapapeles). `
+                                        + (doc.omitido
+                                            ? 'No se pidió el documento — anótala antes de cerrar, no se puede volver a ver.'
+                                            : 'No se pudo generar el documento — anótala antes de cerrar.')
+                                      : ' · entra con la contraseña que ya tenía.'
+                                        + (doc.omitido ? '' : ' No se pudo generar el documento.')),
                             doc.ok ? "success" : "warning",
                             20000
                         );

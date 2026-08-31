@@ -245,3 +245,43 @@ describe('la hoja del carné', () => {
         expect(saltos(definicionDelDocumento(base))).toBe(1);
     });
 });
+
+/* ── Una recontratación no trae contraseña temporal ─────────────────────────
+ *
+ * Al ENLAZAR con una ficha que ya existe, la persona conserva la contraseña que
+ * tenía. Hasta el 2026-08-31 el documento entero no se armaba en ese caso —la
+ * guarda del modal era `if (created?.tempPassword)`— y la casilla marcada no
+ * hacía nada: *«¿por qué no me guardó el documento de bienvenida?»*.
+ *
+ * El documento no es sólo la contraseña: lleva el carné, la inducción, lo
+ * básico del reglamento y la orientación previsional. Quien vuelve lo necesita
+ * igual. */
+describe('sin contraseña temporal', () => {
+    const base = {
+        nombre: 'Edemir Quintanilla', cargo: 'Dependiente de Farmacia', sala: 'Salud 1',
+        usuario: 'edemir.quintanilla',
+    };
+
+    it('se arma igual y lleva el usuario', () => {
+        const t = textoDe(definicionDelDocumento(base));
+        expect(t).toContain('edemir.quintanilla');
+    });
+
+    it('NO escribe una fila de contraseña vacía', () => {
+        const t = textoDe(definicionDelDocumento(base));
+        expect(t).not.toContain('Contraseña temporal');
+    });
+
+    it('dice que entra con la que ya tenía, en vez de la nota de la temporal', () => {
+        const t = textoDe(definicionDelDocumento(base));
+        expect(t).toMatch(/contraseña que ya tenías/);
+        expect(t).not.toMatch(/sirve una sola vez/);
+    });
+
+    it('y con contraseña sí van las dos filas', () => {
+        const t = textoDe(definicionDelDocumento({ ...base, contrasenaTemporal: 'K7M2QX9P' }));
+        expect(t).toContain('Contraseña temporal');
+        expect(t).toContain('K7M2QX9P');
+        expect(t).toMatch(/sirve una sola vez/);
+    });
+});

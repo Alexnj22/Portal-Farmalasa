@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.890.0 — El anuncio manda, la conversión acompaña
+
+**El afiche estaba jerarquizado al revés.** Lo primero y más grande era la
+equivalencia —`$1.00 → 1 punto`, `100 puntos → $1.00`—, y eso **no cambió**: vale
+hoy lo mismo que valía ayer. Lo que le cambia la vida a alguien que ya usaba los
+puntos es que **ya no hay que ir a pedirlos**, y estaba enterrado como uno de
+tres recuadros.
+
+Ahora la hoja abre con el anuncio —«Los puntos se acumulan **solos**», con el
+resaltador sobre la palabra que importa— y la equivalencia baja a una tira
+compacta debajo: sigue estando, deja de gritar. El bloque de abajo pasó a
+«También cambia el 1 de octubre» con los dos que quedan (el año de vigencia y el
+mínimo de 100).
+
+**Un solo bloque relleno en toda la hoja.** El anuncio se quedó con el panel
+tintado y el de «también cambia» pasó a distinguirse por su regla magenta: dos
+bloques rellenos compiten y no gana ninguno.
+
+**Fuera la mención del documento de venta, en los dos papeles.** La 2.4 decía que
+el Cliente «no tiene que conservar el documento de venta»; el afiche, que no hay
+que guardar el ticket. Las dos son ciertas para los puntos y sembraban una duda
+sobre **las devoluciones**, donde el documento sí hace falta. Ahora ninguno de
+los dos habla del tema: la 2.4 dice sólo que no hay trámite posterior, y el
+afiche tampoco lo menciona. Un papel no tiene por qué contestar preguntas que no
+le hicieron, y menos contestarlas a medias.
+
+**Tres vueltas de maquetado para que entrara en una hoja.** El titular nuevo pesa
+147 px y la carta útil son 946: se recuperaron achicando la equivalencia (40 → 27
+px), sacando dos frases que el reglamento ya dice, y quitándole el tope de ancho
+a la bajada —con `max-width: 33rem` partía en dos y dejaba «registrada.» sola en
+un renglón; sin el tope entra en uno—.
+
+## v2.889.0 — Mis puntos, para el cliente
+
+_(pendiente de redactar)_
+
 ## v2.888.2 — Cliente frecuente
 
 El afiche decía «Con tu documento la compra se registra en tu cuenta», que

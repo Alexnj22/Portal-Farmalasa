@@ -392,6 +392,32 @@ const soloFecha = (v) => {
 };
 
 /**
+ * Mes y año, sin el día. Es lo que va en el CARNÉ.
+ *
+ * *«Desde 31 de agosto de 2026: que sólo salga mes / año, no día»* (usuario,
+ * 2026-08-31).
+ *
+ * Y tiene sentido para lo que un carné es. Ese renglón dice antigüedad —desde
+ * cuándo esta persona es de la empresa—, y para eso el día no aporta: nadie
+ * mira un carné para saber si alguien entró un lunes o un martes. Lo que sí
+ * hace el día es dar un dato exacto de más en un papel que se enseña en un
+ * mostrador y se pierde.
+ *
+ * La hoja 1 conserva la fecha completa en «Inicio de labores»: ésa no se
+ * enseña, es del expediente de la persona, y ahí el día sí es el dato.
+ *
+ * Comparte con `soloFecha` el arreglo del huso: `new Date('2026-09-01')` es
+ * medianoche UTC, o sea el 31 de agosto en El Salvador. Acá pesa todavía más —
+ * un día de menos el día 1 de cualquier mes cambia el MES entero.
+ */
+const mesYAnio = (v) => {
+    const soloDia = /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
+    const d = soloDia ? new Date(`${v}T12:00:00`) : new Date(v);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' });
+};
+
+/**
  * Qué le toca hacer a la persona con su ISSS y su AFP, y qué no.
  *
  * Los dos no se tramitan igual y confundirlos hace que el documento le pida
@@ -646,7 +672,7 @@ export function paginaDelCarne({
                     { text: nombre || '', style: 'carneNombre' },
                     { text: cargo || '', style: 'carneCargo', margin: [0, 3, 0, 0] },
                     { text: sala ? `Sala · ${sala}` : '', style: 'carneDato', margin: [0, 4, 0, 0] },
-                    { text: fechaDeInicio ? `Desde ${soloFecha(fechaDeInicio) || fechaDeInicio}` : '',
+                    { text: fechaDeInicio ? `Desde ${mesYAnio(fechaDeInicio) || fechaDeInicio}` : '',
                       style: 'carneDato', margin: [0, 1, 0, 0] },
                 ],
             }],

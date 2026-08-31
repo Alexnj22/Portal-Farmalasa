@@ -428,3 +428,42 @@ describe('el logo mantiene su proporción', () => {
         }
     });
 });
+
+/* ── El carné dice mes y año; la hoja 1, la fecha completa ──────────────────
+ *
+ * «Desde 31 de agosto de 2026: que sólo salga mes / año, no día» (usuario,
+ * 2026-08-31). El carné dice ANTIGÜEDAD y para eso el día no aporta; la hoja 1
+ * es del expediente y ahí el día sí es el dato.
+ *
+ * Se prueba con el día 1, que es donde el bug de huso cambiaría el MES entero:
+ * `new Date('2026-09-01')` es medianoche UTC, o sea el 31 de agosto en El
+ * Salvador — sin el arreglo, «septiembre» saldría «agosto». */
+describe('la fecha de inicio', () => {
+    const base = {
+        nombre: 'Ana María Pérez', cargo: 'Dependiente', sala: 'Salud 1',
+        usuario: 'ana.perez', conCarne: true,
+    };
+    const partes = (fechaDeInicio) => {
+        const def = definicionDelDocumento({ ...base, fechaDeInicio });
+        const c = def.content;
+        const corte = c.findIndex(b => b?.pageBreak === 'before');
+        return { hoja1: JSON.stringify(c.slice(0, corte)), carne: JSON.stringify(c.slice(corte)) };
+    };
+
+    it('en el carné va sin día', () => {
+        const { carne } = partes('2026-08-31');
+        expect(carne).toContain('Desde agosto de 2026');
+        expect(carne).not.toContain('31 de agosto');
+    });
+
+    it('en la hoja 1 va completa', () => {
+        const { hoja1 } = partes('2026-08-31');
+        expect(hoja1).toContain('31 de agosto de 2026');
+    });
+
+    // El día 1: sin el arreglo del huso, el mes retrocedería entero.
+    it('el día 1 no retrocede de mes', () => {
+        expect(partes('2026-09-01').carne).toContain('Desde septiembre de 2026');
+        expect(partes('2026-01-01').carne).toContain('Desde enero de 2026');
+    });
+});

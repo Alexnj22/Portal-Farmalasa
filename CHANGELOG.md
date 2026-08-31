@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.875.2 — El carné dice el mes, no el día
+
+*«Desde 31 de agosto de 2026: que sólo salga mes / año, no día.»*
+
+Ese renglón del carné dice **antigüedad** —desde cuándo esta persona es de la
+empresa— y para eso el día no aporta: nadie mira un carné para saber si alguien
+entró un lunes o un martes. Lo que sí hace es poner un dato exacto de más en un
+papel que se enseña en un mostrador y se pierde.
+
+La hoja 1 conserva la fecha completa en «Inicio de labores»: ésa no se enseña, es
+del expediente, y ahí el día sí es el dato.
+
+El formateador nuevo arrastra el mismo arreglo de huso que el de la fecha
+completa, y acá pesa más: `new Date('2026-09-01')` es medianoche UTC, o sea el 31
+de agosto en El Salvador — un día de menos el día 1 de cualquier mes cambia el
+**mes entero**. Está probado con el 1 de septiembre y el 1 de enero.
+
 ## v2.875.1 — El logo de la empresa vuelve al carné, y sin deformarse
 
 *«Pero ese logo sí te lo validé, yo te lo pedí.»*

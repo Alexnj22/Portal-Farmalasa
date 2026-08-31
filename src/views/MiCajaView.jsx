@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
     AlertTriangle, ArrowDownLeft, ArrowUpRight, Clock, DoorOpen, Landmark, Lock, Scale,
     ShoppingBag, Wallet,
@@ -67,10 +68,30 @@ export default function MiCajaView() {
     // la pantalla lo dice en vez de mostrar una lista incompleta sin avisar.
     const puedeVerBolsas = hasPermission('bolsas', 'can_view');
 
-    // Arranca SIN sala y la elige quien mira. La ficha de quien supervisa vive
-    // en **Administración**, que no tiene caja: tomarla de ahí ofrecía la sala
-    // equivocada y escondía las seis que sí la tienen.
-    const [sala, setSala] = useState(null);
+    /* La sala elegida vive en la DIRECCIÓN, no en `useState`.
+     *
+     * Arranca sin ninguna y la elige quien mira: la ficha de quien supervisa
+     * vive en **Administración**, que no tiene caja, así que tomarla de ahí
+     * ofrecía la sala equivocada y escondía las seis que sí la tienen.
+     *
+     * Y va en la dirección por el mismo motivo que la pestaña activa: esta
+     * pantalla se recarga sola —la sesión de sala se cierra a los 5 minutos, y
+     * el service worker recarga al publicar—, y con la sala en memoria eso
+     * devuelve a «Elige una sala» sin decir nada. Además hace que el enlace se
+     * pueda pasar («mirá la caja de Salud 4») y que una medición pueda entrar
+     * de verdad: el barrido del teléfono midió esta vista con la pantalla
+     * vacía y reportó cero hallazgos sobre nada. */
+    const [params, setParams] = useSearchParams();
+    const sala = params.get('sala') ? Number(params.get('sala')) : null;
+    const setSala = useCallback((id) => {
+        setParams((p) => {
+            if (id == null) p.delete('sala'); else p.set('sala', String(id));
+            return p;
+        // REEMPLAZA, no empuja: cambiar de sala no es navegar a otro lado, y
+        // apilarlo obligaría a apretar «atrás» una vez por cada sala mirada
+        // para salir de la pantalla.
+        }, { replace: true });
+    }, [setParams]);
     const [conCaja, setConCaja] = useState(VACIO);
     const [estado, setEstado] = useState(null);
     /* «No pude leer la caja» y «la caja está cerrada» son respuestas OPUESTAS y
@@ -106,11 +127,14 @@ export default function MiCajaView() {
         fetchSalasConCaja().then((ids) => {
             if (!vivo) return;
             setConCaja(ids);
-            // La propia si tiene caja; si no, ninguna: que la elija. Elegir una
+            // La que ya venga en la dirección MANDA — es lo que hace que una
+            // recarga vuelva a donde estaba. Si no viene ninguna, la propia
+            // cuando tiene caja; y si tampoco, ninguna: que la elija. Elegir una
             // por alguien sería decidir en qué sala opera.
-            setSala((actual) => actual ?? (ids.includes(user?.branch_id) ? user.branch_id : null));
+            if (sala == null && ids.includes(user?.branch_id)) setSala(user.branch_id);
         });
         return () => { vivo = false; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al montar y al cambiar de persona: releer `sala` acá la re-elegiría al deseleccionarla
     }, [user?.branch_id]);
 
     const salas = useMemo(

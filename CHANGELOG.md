@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.866.0 — La sala de Mi caja vive en la dirección
+
+La sala elegida estaba en `useState`, o sea en memoria. Tres consecuencias, y
+ninguna daba error:
+
+1. **Cualquier recarga volvía a «Elige una sala».** Y las recargas llegan solas:
+   la sesión de sala se cierra a los 5 minutos y el service worker recarga al
+   publicar. Es la misma regla que la pestaña activa.
+2. **El enlace no se podía pasar** — «mirá la caja de Salud 4» no era un enlace.
+3. **Y ninguna medición podía entrar.** Ésta fue la que lo destapó.
+
+**El barrido del teléfono dijo «cero hallazgos» sobre una pantalla vacía.** Se
+corrió por primera vez sobre `/caja` y volvió en cero en las nueve dimensiones —
+pero el informe traía `diceVacio: true`: la cuenta de pruebas no tiene sala, así
+que midió el «Elige una sala» y no la vista. Un cero que habla de otra pantalla.
+`/bolsas` traía `cargando: true`, que es lo mismo dicho de otra forma.
+
+Con `?sala=2` la corrida entra de verdad —`sinAcceso: false`, `cargando: false`,
+`diceVacio: false`, 16 superficies medidas— y **ahí sí** el cero significa algo:
+
+| corrida | entró | hallazgos |
+|---|---|---|
+| `caja?sala=2` · iPhone 13 de pie | sí, 16 superficies | **0** en las 9 dimensiones |
+| `caja?sala=2` · acostado | sí, 15 superficies | **0** |
+| `bolsas` · de pie | sí, 108 superficies | **0** |
+
+Que es exactamente por qué el informe trae esos campos: alguien ya se tropezó
+con esto antes, y la salida no fue confiar en el número sino publicar junto a él
+la prueba de que se midió.
+
 ## v2.865.0 — La cuenta de pruebas tiene todo activo, y se mantiene sola
 
 Regla del usuario: **«QA siempre debe tener todo activo»**. Se cumplía a medias

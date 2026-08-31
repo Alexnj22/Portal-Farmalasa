@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.892.0 — El afiche que se lee de pie
+
+*«El afiche tiene demasiado texto, las personas no leen.»* Tenía razón y el
+defecto era de fondo: **el afiche estaba haciendo el trabajo del reglamento**.
+
+De **246 palabras a 112**. Lo que se fue —que la cuenta es intransferible, que
+los puntos no se cambian por efectivo, que se gastan primero los más antiguos,
+las seis exclusiones con su salvedad, cómo se canjea en cualquier sala— **no se
+perdió: está a un código de distancia**. Ése es el trabajo del QR, y tener el
+reglamento publicado es justamente lo que deja que el papel sea corto.
+
+Quedan cinco cosas, que son las que alguien puede leer esperando que le cobren:
+el anuncio, cuánto vale un punto, cuánto duran, desde cuánto se canjea, y qué no
+acumula. Las tres últimas en **un renglón cada una** — lo que no cabe en un
+renglón no es un dato clave, es una regla.
+
+**Lo que se ahorró en texto se gastó en cuerpo.** El titular pasó de 40 a
+**68 px** y las cifras de 27 a **56**; los códigos, de 0.95 a 1.3 pulgadas. Un
+afiche al que hay que acercarse a leer no es un afiche, y el problema del
+anterior no era sólo que dijera de más: era que por decir de más, todo tenía que
+ser chico.
+
+Dos detalles de maquetado que sólo se ven al medir: «Canjeas desde 100» partía en
+dos y dejaba la fila despareja (ahora es **«Mínimo 100»**), y la dirección bajo
+el código partía a mitad de palabra —«…reglament / o-puntos»—, que no se puede
+teclear ni comparar contra el QR, que es para lo único que está escrita. Ahora
+parte sólo donde dice un `<wbr>`.
+
 ## v2.891.3 — Fuera la tarjeta de la equivalencia
 
 La quitó el usuario: `$1.00 da 1 punto` / `100 puntos dan $1.00` sale del

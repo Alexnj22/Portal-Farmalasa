@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.886.4 — Fuera la remisión a la Defensoría
+
+**4.3 vuelve a como estaba.** El «no transferibles» que le agregué en v2.886.3
+ya vivía en la **2.2**, y mejor dicho: *la cuenta es personal e intransferible;
+los puntos no pueden cederse, venderse ni acumularse en la cuenta de otra
+persona*. Lo vio el usuario, no yo — busqué dónde faltaba la regla sin leer si ya
+estaba escrita en otra parte. Dos cláusulas que dicen lo mismo con palabras
+distintas es cómo se llega a que alguien las lea como si dijeran cosas distintas.
+
+**10.3 pierde la remisión a la Defensoría del Consumidor.** Queda sólo lo que
+informa: *todo reclamo puede presentarse en cualquier sala de venta, donde
+quedará registrado y se dará respuesta*.
+
+La frase que salió —«sin perjuicio de los derechos que la Ley de Protección al
+Consumidor reconoce al Cliente, quien puede acudir a la Defensoría del Consumidor
+cuando lo estime conveniente»— **no le daba al Cliente ningún derecho**: esos
+derechos existen con o sin este reglamento, y son irrenunciables, así que una
+cláusula no puede quitarlos ni el mencionarlos los agrega. Era una frase
+defensiva, escrita para que la 10.3 no se leyera como si el reclamo en sala fuera
+un paso obligatorio previo. Con la primera oración sola no dice eso, y en un
+documento que se pega en la pared tres líneas que no informan nada compiten con
+las que sí.
+
 ## v2.886.3 — Los puntos no se transfieren, y la firma es una
 
 Tres correcciones al reglamento de puntos, más el pie del papel.

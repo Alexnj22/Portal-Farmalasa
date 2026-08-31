@@ -509,6 +509,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                para administración, y esa diferencia no se puede
                                sacar del nombre sin cruzar por un rótulo. */
                             tipoDeSede: branches?.find(b => String(b.id) === String(finalData.branch_id))?.type || '',
+                            /* Y el ID del cargo: dentro de casa matriz, quien es
+                               del área administrativa lleva «Administración» y
+                               quien no —mantenimiento, servicios generales—
+                               lleva «Casa Matriz». Va el id y no el nombre
+                               porque hay dos supervisores y sólo uno es del
+                               área. */
+                            cargoId: finalData.role_id || null,
                             fechaDeInicio: finalData.hire_date || null,
                             usuario: created.username,
                             contrasenaTemporal: created.tempPassword,

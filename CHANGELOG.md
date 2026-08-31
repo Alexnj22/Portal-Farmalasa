@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.876.2 — En casa matriz, el cargo decide qué dice el carné
+
+*«Para admin (gerente, administrador, supervisor, talento humano) que salga
+Administración. Si es externo, saldrá externo.»*
+
+La misma sede se nombra de dos maneras según quién la lleve, y tiene sentido:
+alguien de Talento Humano **pertenece** a Administración —es su área, y así se
+presenta—, mientras que un técnico de mantenimiento no es de ningún área: su base
+es la casa matriz y trabaja en las ocho sedes. Poner «Administración» en su carné
+diría que es del área administrativa, y no lo es.
+
+| sede | cargo | el carné dice |
+|---|---|---|
+| FARMACIA | cualquiera | Sala · Salud 3 |
+| BODEGA | cualquiera | Bodega |
+| ADMINISTRATIVA | del área (2, 3, 11, 13) | **Administración** |
+| ADMINISTRATIVA | cualquier otro | **Casa Matriz** |
+| EXTERNA | cualquiera | **Externo** |
+
+**Los cuatro cargos van por id, y acá se ve por qué.** Son `Gerente General` (2),
+`Administrador` (3), `Jefe/a de Talento Humano` (11) y `Supervisor/a de Ventas`
+(13). Pero existe también `Supervisor del Departamento Medico y Enfermería` (22),
+que **no** es del área administrativa y que cualquier regla buscando «supervis»
+en el nombre agarraría. Hay una prueba con ese id exacto.
+
+Es la misma razón por la que el tipo de sede sale de `branches.type`: un rótulo
+no es una clave, ni el de la sucursal ni el del cargo.
+
+En una farmacia o en bodega el cargo no cambia nada — un supervisor asignado a
+una sala sigue estando en esa sala.
+
 ## v2.876.1 — En el carné, casa matriz no es una sala
 
 *«En el caso de Edemir, que no tiene un área en específico, ¿no debería salir

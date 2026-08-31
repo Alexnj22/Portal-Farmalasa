@@ -484,10 +484,39 @@ describe('cómo se nombra la sede', () => {
         expect(comoSeLlamaLaSede('La Popular', 'FARMACIA')).toBe('Sala · La Popular');
     });
 
-    it('administración es Casa Matriz, se llame como se llame la sucursal', () => {
-        expect(comoSeLlamaLaSede('Administracion', 'ADMINISTRATIVA')).toBe('Casa Matriz');
-        // El día que la renombren, sigue siendo casa matriz.
-        expect(comoSeLlamaLaSede('Oficinas Centrales', 'ADMINISTRATIVA')).toBe('Casa Matriz');
+    /* Dentro de la casa matriz manda el CARGO: «para admin (gerente,
+       administrador, supervisor, talento humano) que salga Administración»
+       (usuario, 2026-08-31). Quien es del área pertenece a Administración; quien
+       no —mantenimiento, servicios generales— tiene su base ahí pero no es de
+       ningún área. */
+    it('en casa matriz, el área administrativa dice Administración', () => {
+        for (const id of [2, 3, 11, 13]) {
+            expect(comoSeLlamaLaSede('Administracion', 'ADMINISTRATIVA', id), `rol ${id}`)
+                .toBe('Administración');
+        }
+    });
+
+    it('y quien no es del área dice Casa Matriz', () => {
+        // Edemir: técnico de mantenimiento, sin área.
+        expect(comoSeLlamaLaSede('Administracion', 'ADMINISTRATIVA', 40)).toBe('Casa Matriz');
+        expect(comoSeLlamaLaSede('Administracion', 'ADMINISTRATIVA', null)).toBe('Casa Matriz');
+    });
+
+    /* El id 22 es «Supervisor del Departamento Medico y Enfermería» y NO es del
+       área administrativa. Cualquier regla que buscara «supervis» en el nombre
+       lo agarraría: por eso se cruza por id. */
+    it('el otro supervisor no cuenta como área administrativa', () => {
+        expect(comoSeLlamaLaSede('Administracion', 'ADMINISTRATIVA', 22)).toBe('Casa Matriz');
+    });
+
+    it('el nombre de la sucursal no cambia nada', () => {
+        expect(comoSeLlamaLaSede('Oficinas Centrales', 'ADMINISTRATIVA', 2)).toBe('Administración');
+        expect(comoSeLlamaLaSede('Oficinas Centrales', 'ADMINISTRATIVA', 40)).toBe('Casa Matriz');
+    });
+
+    it('externo se nombra por lo que es, no por dónde está', () => {
+        expect(comoSeLlamaLaSede('Contador Externo', 'EXTERNA')).toBe('Externo');
+        expect(comoSeLlamaLaSede('Lo que sea', 'EXTERNA', 2)).toBe('Externo');
     });
 
     it('bodega sí se nombra: es un lugar de verdad', () => {
@@ -500,10 +529,17 @@ describe('cómo se nombra la sede', () => {
         expect(comoSeLlamaLaSede('', '')).toBe('');
     });
 
+    // El cargo NO cambia lo que dice una farmacia ni la bodega: un supervisor
+    // asignado a una sala sigue estando en esa sala.
+    it('en una farmacia el cargo no cambia nada', () => {
+        expect(comoSeLlamaLaSede('Salud 2', 'FARMACIA', 13)).toBe('Sala · Salud 2');
+        expect(comoSeLlamaLaSede('Bodega', 'BODEGA', 3)).toBe('Bodega');
+    });
+
     it('y el carné lo usa', () => {
         const def = definicionDelDocumento({
             nombre: 'Edemir Quintanilla', cargo: 'Técnico de Mantenimiento',
-            sala: 'Administracion', tipoDeSede: 'ADMINISTRATIVA',
+            sala: 'Administracion', tipoDeSede: 'ADMINISTRATIVA', cargoId: 40,
             usuario: 'edemir.quintanilla', conCarne: true,
         });
         const c = def.content;

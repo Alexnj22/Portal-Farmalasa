@@ -527,7 +527,7 @@ export const BASICO_DEL_REGLAMENTO = [
  * la impresora del tamaño de la funda.
  */
 export function paginaDelCarne({
-    nombre, cargo = '', sala = '', tipoDeSede = '', fechaDeInicio = null,
+    nombre, cargo = '', sala = '', tipoDeSede = '', cargoId = null, fechaDeInicio = null,
     barrasPng = null, retratoPng = null, iconoPng = null, logoPng = null,
 }) {
     /* La tarjeta se dibuja en coordenadas absolutas sobre la hoja: es la única
@@ -676,7 +676,7 @@ export function paginaDelCarne({
                        trabaja en casa matriz no tiene sala, y decir «Sala ·
                        Administracion» nombra a la sucursal por su nombre
                        interno. Lo resuelve `comoSeLlamaLaSede`, por el TIPO. */
-                    { text: comoSeLlamaLaSede(sala, tipoDeSede), style: 'carneDato', margin: [0, 4, 0, 0] },
+                    { text: comoSeLlamaLaSede(sala, tipoDeSede, cargoId), style: 'carneDato', margin: [0, 4, 0, 0] },
                     { text: fechaDeInicio ? `Desde ${mesYAnio(fechaDeInicio) || fechaDeInicio}` : '',
                       style: 'carneDato', margin: [0, 1, 0, 0] },
                 ],
@@ -781,7 +781,7 @@ const bloqueDeInduccion = (b) => ({
  * documento sin abrir un navegador ni bajar una librería.
  */
 export function definicionDelDocumento({
-    nombre, cargo = '', sala = '', tipoDeSede = '', usuario, contrasenaTemporal,
+    nombre, cargo = '', sala = '', tipoDeSede = '', cargoId = null, usuario, contrasenaTemporal,
     barrasPng = null, barrasCarnePng = null, retratoPng = null, iconoPng = null, logoPng = null, previsional = [],
     fechaDeInicio = null,
     /* ¿Lleva la hoja del carné?
@@ -895,7 +895,7 @@ export function definicionDelDocumento({
     // La hoja del carné sólo si se pidió. Sin ella el documento es de una hoja,
     // y el renglón de arriba deja de prometer una página que no existe.
     if (conCarne) {
-        cuerpo.push(...paginaDelCarne({ nombre, cargo, sala, tipoDeSede, fechaDeInicio,
+        cuerpo.push(...paginaDelCarne({ nombre, cargo, sala, tipoDeSede, cargoId, fechaDeInicio,
             barrasPng: barrasCarnePng || barrasPng, retratoPng, iconoPng, logoPng }));
     }
 

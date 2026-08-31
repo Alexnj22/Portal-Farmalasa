@@ -110,6 +110,21 @@ export async function logoComoDataUrl(ruta) {
 }
 
 /**
+ * Los cuatro cargos del ÁREA ADMINISTRATIVA, por id.
+ *
+ * `Gerente General` (2), `Administrador` (3), `Jefe/a de Talento Humano` (11) y
+ * `Supervisor/a de Ventas` (13). Son los mismos cuatro que el usuario llama
+ * «admin» — ya está anotado en memoria, y ya costó una vez confundirlos con el
+ * rol llamado `Administrador`.
+ *
+ * **Por id y no por nombre, y acá se ve por qué:** existe también
+ * `Supervisor del Departamento Medico y Enfermería` (22), que casa con
+ * cualquier regla que busque «supervis» y NO es del área administrativa. Un
+ * rótulo no es una clave.
+ */
+export const CARGOS_DEL_AREA_ADMINISTRATIVA = new Set([2, 3, 11, 13]);
+
+/**
  * Cómo se llama la sede de alguien en un carné.
  *
  * ── Por qué no alcanza con el nombre de la sucursal ────────────────────────
@@ -118,30 +133,44 @@ export async function logoComoDataUrl(ruta) {
  * el usuario lo levantó: *«en el caso de Edemir, que no tiene un área en
  * específico, ¿no debería salir como casa matriz?»*.
  *
- * Tiene razón dos veces. **«Sala» es de las farmacias**: un técnico de
- * mantenimiento no tiene sala, tiene sede. Y **«Administracion» es el nombre
- * interno de una sucursal en la tabla**, no como se llama ese lugar cuando se lo
- * nombra afuera — el reglamento interno lo llama **casa matriz** (Art. 6:
- * «La Empresa tiene su casa matriz en Calle Morazán, casa No. 39…»), y ése es el
- * término de la empresa, no uno inventado acá.
+ * **«Sala» es de las farmacias**: un técnico de mantenimiento no tiene sala,
+ * tiene sede. Y **«Administracion» es el nombre interno de una sucursal en la
+ * tabla**, no como se llama ese lugar cuando se lo nombra afuera — el
+ * reglamento interno lo llama **casa matriz** (Art. 6).
  *
- * ── Se decide por el TIPO, nunca por el nombre ─────────────────────────────
+ * ── Y dentro de la casa matriz, el CARGO decide ────────────────────────────
  *
- * `branches.type` ya distingue FARMACIA, BODEGA y ADMINISTRATIVA. Mirar el
- * nombre en su lugar sería cruzar por un rótulo —«¿se llama Administracion?»— y
- * el día que alguien lo renombre a «Oficinas» el carné volvería a decir «Sala ·
- * Oficinas» sin que nada falle. Es la regla del proyecto: un rótulo no es una
- * clave.
+ * Segunda corrección del usuario, el mismo día: *«para admin (gerente,
+ * administrador, supervisor, talento humano) que salga Administración; si es
+ * externo, saldrá externo»*.
  *
- * Bodega sí se nombra: es un lugar de verdad y quien trabaja ahí trabaja ahí.
- * Lo que no es una sala es la casa matriz.
+ * O sea que la misma sede se nombra de dos maneras según quién la lleve, y
+ * tiene sentido: alguien de Talento Humano **pertenece** a Administración —es su
+ * área, y así se presenta—, mientras que un técnico de mantenimiento no es de
+ * ningún área: su base es la casa matriz y trabaja en las ocho sedes. Poner
+ * «Administración» en su carné diría que es del área administrativa, que no lo
+ * es.
  *
- * @param {string} nombre  `branches.name`
- * @param {string} tipo    `branches.type` — FARMACIA · BODEGA · ADMINISTRATIVA
+ * ── Todo se decide por CLAVES, nunca por rótulos ───────────────────────────
+ *
+ * El tipo sale de `branches.type` y el cargo de `roles.id`. Mirar los nombres
+ * sería cruzar por texto: renombrar la sucursal a «Oficinas» devolvería el
+ * «Sala · Oficinas», y buscar «supervis» en el cargo agarraría al
+ * `Supervisor del Departamento Medico y Enfermería`, que no es del área.
+ *
+ * @param {string} nombre   `branches.name`
+ * @param {string} tipo     `branches.type` — FARMACIA · BODEGA · ADMINISTRATIVA · EXTERNA
+ * @param {number|string} [cargoId]  `roles.id` de la persona
  */
-export function comoSeLlamaLaSede(nombre, tipo) {
-    if (tipo === 'ADMINISTRATIVA') return 'Casa Matriz';
+export function comoSeLlamaLaSede(nombre, tipo, cargoId = null) {
+    // Quien no es de la empresa se nombra por lo que es, no por dónde está.
+    if (tipo === 'EXTERNA') return 'Externo';
     if (tipo === 'BODEGA') return nombre || 'Bodega';
+    if (tipo === 'ADMINISTRATIVA') {
+        return CARGOS_DEL_AREA_ADMINISTRATIVA.has(Number(cargoId))
+            ? 'Administración'
+            : 'Casa Matriz';
+    }
     // Sin tipo se cae del lado de la farmacia, que son seis de las ocho sedes y
     // el único caso donde «Sala ·» es cierto.
     return nombre ? `Sala · ${nombre}` : '';

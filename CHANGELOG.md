@@ -23,7 +23,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.886.6 — Más aire para firmar
 
-_(pendiente de redactar)_
+El hueco entre «En Chalatenango, a …» y la raya del pie pasa de 3.5rem a 6.5rem,
+y el bloque entero baja un centímetro más. Ese hueco es DONDE SE FIRMA: tenía el
+alto de un renglón de texto, y una firma de puño no cabe en un renglón. Con un
+solo firmante sobraba media hoja en blanco debajo, así que el aire no le quita
+lugar a nada.
+
+(El commit dice v2.886.5 en el título y la versión es la .6: otra sesión se
+llevó el .5 entre el `version:bump` y el `commit`. Es exactamente el hueco que
+[[feedback_el_hueco_entre_leer_y_escribir_se_mide]] describe — el contenido es
+correcto, el rótulo del commit no.)
 
 ## v2.886.5 — El comprobante del corte, compacto
 

@@ -21,6 +21,76 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.897.0 — El aviso dice en qué lugar quedó la sala
+
+«Cerraste Agosto en 95.0%» no dice si eso estuvo bien. Agosto 2026 lo muestra
+entero: **101.5, 97.7, 95.5, 95.0, 94.3, 89.2**. O sea que ese 95.0% que suena
+a casi-lo-logré es el **cuarto lugar de seis y por debajo del promedio**, y un
+94.3% que suena parecido es el quinto. Esa distancia era justo lo que faltaba.
+
+Ahora el aviso trae el puesto y el promedio para todos, y el listado completo
+de las seis salas para el jefe de sala. Primero y segundo tienen cara propia
+—corona y medalla—; del tercero en adelante, no: un adorno para los seis
+puestos no distinguiría a nadie, que es lo contrario de lo que hace un podio.
+
+**El ranking es por cumplimiento y nunca por dólares.** Salud 1 vendió
+$50,354.03 y Salud 5 $14,345.77: en dólares el orden sería el tamaño de la
+sala, que nadie eligió y nadie puede cambiar. El cumplimiento sí es comparable
+—cada una contra la meta que le tocó—, y de paso el listado no dice el monto de
+nadie.
+
+**El listado va a quien ya ve montos**, que son los cinco jefes de sala. Reusar
+`dash_meta_sala_vista_completa` en vez de inventar un permiso nuevo es
+deliberado: un permiso nuevo nace sin otorgar, y un permiso que falta no da
+error — da una tarjeta a la que le falta un pedazo, indistinguible de una que
+salió bien.
+
+**Y el número del anillo se veía mal, reportado por el usuario.** Con el signo
+de porcentaje, un 101.5% se escribe «102%» y a 10 px no entra en los 28 px de
+adentro del anillo: salía recortado como **«02%»**, que no es un número feo —
+es un número **distinto**. El signo se fue; el título, a dos centímetros, ya
+dice «en 101.5%» con todas las letras.
+
+Dos detalles del cálculo: el puesto sale con `rank()` y no con `row_number()`,
+porque dos salas que cierran en el mismo porcentaje empataron y desempatarlas
+por el orden en que Postgres las devolvió sería inventar una diferencia; y una
+sala que cerró **sin meta** no entra al ranking ni al promedio, pero recibe su
+aviso igual.
+
+Migración `20260901151715`.
+
+## v2.896.0 — El libro mayor de puntos existe, vacío
+
+Migración `20260901151907`. Las cuatro tablas del programa de puntos ya están en
+producción: `puntos_cuenta`, `puntos_lote`, `puntos_salida`, `puntos_salida_lote`.
+
+**Están vacías y nada las escribe.** Ningún cron las toca —se verificó antes de
+crearlas: los dos que existen (`sync-puntos-1min` y `puntos-vencer-mensual`)
+hablan sólo con MySQL y con su propio log—, ninguna pantalla las lee y ninguna
+función las nombra todavía. Encender el programa son **dos actos explícitos y
+separados** que esta migración no hace: correr la migración de saldos una vez, y
+crear el cron de acumulación.
+
+Se aplicó a las 15:18 UTC, dentro de la ventana ocupada de crons, a propósito y
+con red: las FK hacia `sales_invoices` piden un lock que choca con los syncs de
+cada minuto, y `lock_timeout = '5s'` hace que eso falle rápido en vez de congelar
+la tabla. Entró a la primera.
+
+Los candados no son decorativos y se probaron **antes** en el branch, con una
+regresión fabricada para cada uno: doble crédito del mismo ticket, lote de venta
+sin venta, ajuste sin motivo, restantes mayores que el lote, vencimiento anterior
+al cobro, saldo negativo, anulación sin nombrar su venta, y borrar un lote ya
+consumido. **Diez casos, diez correctos**, y el branch quedó limpio.
+
+El que más importa es el índice único parcial sobre `invoice_id`: en la base
+vieja hay **27 tickets con los puntos cobrados dos veces** porque 2,142 facturas
+viven bajo `FLP` y `FLP1` a la vez. Acá eso deja de ser un defecto que haya que
+salir a cazar — la tabla no lo acepta.
+
+Las cuatro quedaron mapeadas en `auditoria/areas.mjs` en el mismo commit: una
+tabla sin área hace fallar el gate y bloquea los commits de todo el mundo, no
+sólo los de quien la creó.
+
 ## v2.894.0 — El cierre de meta se ve antes de leerse
 
 El aviso del día 1 —el que le dice a cada sala cómo cerró el mes y cuánto le

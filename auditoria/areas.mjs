@@ -408,7 +408,16 @@ export const AREAS = [
                  'sales_invoice_resolutions', 'sales_null_resolutions', 'sales_observation_resolutions',
                  'sales_payment_confirmations', 'ventas_cuadre_hallazgos', 'clientes_sin_producto',
                  'product_last_sale', 'product_sales_rollup', 'product_sales_monthly_agg',
-                 'puntos_enviados'],
+                 'puntos_enviados',
+                 // El libro mayor del programa, en el portal (2026-09-01). Va con
+                 // sus hermanas de puntos y no en Clientes porque el hecho que
+                 // registra es el de una VENTA; la ficha es su segundo lector.
+                 // Hoy están VACÍAS y nada las escribe: encender el programa son
+                 // dos actos aparte —migrar los saldos y crear el cron— que
+                 // todavía no se hicieron. Ver
+                 // docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md
+                 'puntos_cuenta', 'puntos_lote', 'puntos_salida', 'puntos_salida_lote',
+                 'puntos_vencimiento_log'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync', 'sync-puntos', 'puntos-probe',
                // `puntos-vencer` la creó otra sesión el 2026-08-31 y quedó sin

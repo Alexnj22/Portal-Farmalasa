@@ -38,6 +38,17 @@ const cors = {
 // datos no se equivoca ocho veces, y quien prueba los de otros necesita miles.
 const TOPE_FALLOS = 8;
 
+// El camino del CÓDIGO va sin segundo factor —el extranjero no tiene teléfono
+// que sirva de llave: el circuito de Hacienda se lo reemplaza por el de la
+// farmacia— así que el código carga todo el peso y el freno se aprieta. Quien
+// copia SU código de un papel no falla cinco veces.
+const TOPE_FALLOS_CODIGO = 5;
+
+// Un código nuestro: siete caracteres del alfabeto sin parecidos. Se reconoce
+// por su FORMA, no porque el cliente elija «entro con código» — una pantalla
+// que pregunta con qué vas a entrar ya perdió a la mitad de la gente.
+const ES_CODIGO = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/;
+
 function conf() {
   const host = Deno.env.get("PUNTOS_MYSQL_HOST");
   const user = Deno.env.get("PUNTOS_MYSQL_USER");
@@ -75,8 +86,13 @@ Deno.serve(async (req) => {
   let conn: any = null;
   try {
     const body = await req.json().catch(() => ({}));
-    const dui = String(body?.dui ?? "").replace(/\D/g, "");
+    // `dui` sigue viajando con ese nombre por compatibilidad con la pantalla,
+    // pero ya no es sólo un DUI: es el documento con el que la persona se
+    // inscribió — DUI, NIT, pasaporte o el código de acceso.
+    const crudo = String(body?.documento ?? body?.dui ?? "");
+    const doc = crudo.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
     const tel = String(body?.telefono ?? "").replace(/\D/g, "");
+    const esCodigo = ES_CODIGO.test(doc);
 
     // Un mismo texto para todo lo que no encontró: el par no existe, el DUI está
     // mal escrito, el teléfono no coincide. Quien pregunta no puede distinguir
@@ -87,9 +103,11 @@ Deno.serve(async (req) => {
       mensaje: "No encontramos una ficha con ese documento y ese teléfono. Revisa los datos, o pregunta en cualquiera de nuestras salas.",
     };
 
-    if (dui.length !== 9 || tel.length < 8) return json(noEncontrado);
+    // Con código el teléfono no se pide; con cualquier otro documento, sí.
+    if (doc.length < 7) return json(noEncontrado);
+    if (!esCodigo && tel.length < 8) return json(noEncontrado);
 
-    const h = await huella(dui);
+    const h = await huella(doc);
     const { data: fallos, error: eReg } = await admin.rpc("puntos_consulta_registrar", {
       p_ip: ip, p_huella_dui: h, p_acerto: false,
     });
@@ -97,15 +115,15 @@ Deno.serve(async (req) => {
     // abierto es lo mismo que no tenerlo, y acá lo que se protege son datos de
     // personas que no eligieron estar expuestas.
     if (eReg) return json({ error: "no disponible" }, 503);
-    if (Number(fallos ?? 0) >= TOPE_FALLOS) {
+    if (Number(fallos ?? 0) >= (esCodigo ? TOPE_FALLOS_CODIGO : TOPE_FALLOS)) {
       return json({
         ok: false, motivo: "muchos_intentos",
         mensaje: "Demasiados intentos. Espera unos minutos y vuelve a probar.",
       }, 429);
     }
 
-    const { data: filas, error: eCli } = await admin.rpc("puntos_cliente_por_dui_y_telefono", {
-      p_dui: dui, p_telefono: tel,
+    const { data: filas, error: eCli } = await admin.rpc("puntos_cliente_por_documento", {
+      p_documento: doc, p_telefono: tel || null,
     });
     if (eCli) return json({ error: "no disponible" }, 503);
     const cli = Array.isArray(filas) ? filas[0] : null;

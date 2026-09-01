@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.910.0 — El código de acceso a Mis puntos
+
+Migración `20260901175526`. Una llave para consultar los puntos cuando el
+documento no alcanza — **la mitad del portal, todavía sin la pantalla**.
+
+**Sale de una cadena de mediciones, no de una idea.** De los 25,113 clientes que
+compran: **10,488 no tienen ningún documento** en su ficha, **0 tienen
+pasaporte**, y para el extranjero el teléfono tampoco sirve de llave — el
+circuito de Hacienda exige **ocho dígitos exactos** y reemplaza lo que no cumple
+por el de la farmacia. Ya hay **228 fichas** con `2301-0013` en lugar del suyo.
+
+**Siete caracteres, mayúsculas, sin parecidos** (`K7M-P4XN`): fuera la O y el 0,
+la I y el 1 y la L, la S y el 5, la Z y el 2, la B y el 8. Son 6,100 millones de
+combinaciones.
+
+**El largo lo decide un ataque que no es el obvio.** No es «adivinar el de
+fulano» sino **«pegarle al de cualquiera»**: con 28,000 códigos repartidos, cada
+intento a ciegas tiene chance de caer en alguno. Por eso el código **solo** vale
+sin teléfono en las fichas **extranjeras**, que son pocas; para el resto sigue
+haciendo falta el teléfono, y eso es lo que permite que sea corto.
+
+**Tabla aparte y no una columna en `customers`**, porque esa tabla la leen más de
+cuarenta personas y una columna ahí sería una llave visible de un vistazo. Acá
+**nadie lee por la API**: sólo las funciones DEFINER, **ver un código queda
+anotado** en la bitácora con quién y cuándo, y reemitirlo mata el anterior en el
+acto.
+
+Trece casos probados en transacciones que se deshacen: emitir sin permiso
+rebota, el CHECK rechaza el 0 y los códigos de 6, dos clientes no comparten
+código, el extranjero entra sin teléfono, **el salvadoreño con el mismo código
+NO entra sin teléfono**, minúsculas y guiones se aceptan, el DUI sigue exigiendo
+teléfono, un teléfono ajeno no sirve, un código inventado no encuentra nada, y
+el estado de la ficha **no filtra el código**.
+
+`mis-puntos` ya acepta documento **o** código —lo reconoce por su forma, no
+preguntándole al cliente con qué va a entrar— y aprieta el freno de 8 intentos a
+**5** en el camino del código, que va sin segundo factor.
+
+Falta la pantalla: emitir y ver desde la ficha del cliente, y el tiquete.
+
 ## v2.909.0 — La última venta se recalcula, no sólo se acumula
 
 Migración `20260901173428`. Cierra la causa de fondo que v2.907.0 dejó abierta a

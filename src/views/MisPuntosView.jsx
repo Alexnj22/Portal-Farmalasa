@@ -52,6 +52,29 @@ import Badge from '../components/common/Badge';
 import { consultarMisPuntos } from '../data/misPuntos';
 import { EMPRESA } from '../constants/empresa';
 
+/**
+ * La forma del código de acceso: siete caracteres de un alfabeto sin parecidos
+ * (sin O/0, sin I/1, sin S/5…). Vive acá arriba porque la contestan dos: el
+ * campo que alguien teclea y el código que viene en la dirección.
+ */
+const FORMA_DEL_CODIGO = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/;
+
+/**
+ * El código que trae la dirección, si trae uno con forma buena.
+ *
+ * El QR del papel es `…/mis-puntos?codigo=K7MP4XN`: quien lo escanea llega con
+ * el campo lleno y la consulta ya hecha. Se valida la FORMA antes de usarlo
+ * porque un intento fallido gasta uno de los cinco del freno, y ninguno se va a
+ * gastar por un enlace mal copiado.
+ */
+function codigoDeLaDireccion() {
+    try {
+        const c = new URLSearchParams(window.location.search).get('codigo') ?? '';
+        const limpio = c.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        return FORMA_DEL_CODIGO.test(limpio) ? limpio : '';
+    } catch { return ''; }
+}
+
 /** Cuántos puntos hacen falta para poder canjear. Lo dice el reglamento §4. */
 const MINIMO_DE_CANJE = 100;
 
@@ -255,9 +278,16 @@ function Movimiento({ m }) {
 
 export default function MisPuntosView() {
     const [dui, setDui] = useState('');
-    const [codigo, setCodigo] = useState('');
+    // Se lee UNA vez, al construir el estado, y no dentro de un efecto: así el
+    // campo ya nace lleno en el primer render —nadie ve el formulario vacío
+    // parpadear— y no hay un setState sincrónico encadenando renders.
+    const [codigo, setCodigo] = useState(codigoDeLaDireccion);
     const [tel, setTel] = useState('');
-    const [cargando, setCargando] = useState(false);
+    // Nace encendido si la dirección trae código: quien llega por el QR está
+    // esperando su saldo desde el primer pixel, así que la pantalla dice
+    // «cargando» de entrada en vez de mostrar un formulario que se va a llenar
+    // solo un instante después.
+    const [cargando, setCargando] = useState(() => !!codigoDeLaDireccion());
     const [error, setError] = useState('');
     const [datos, setDatos] = useState(null);
     const [todos, setTodos] = useState(false);
@@ -270,26 +300,48 @@ export default function MisPuntosView() {
     const duiOk = dui.replace(/\D/g, '').length === 9;
     const telOk = tel.replace(/\D/g, '').length >= 8;
     const codigoLimpio = codigo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    const codigoOk = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/.test(codigoLimpio);
+    const codigoOk = FORMA_DEL_CODIGO.test(codigoLimpio);
     // Con código no se pide teléfono: quien entra así es una persona extranjera,
     // y su teléfono no sirve de llave porque el circuito de facturación se lo
     // reemplaza por el de la farmacia.
     const puedeConsultar = (codigoOk || (duiOk && telOk)) && !cargando;
 
-    const consultar = async (e) => {
-        e.preventDefault();
-        if (!puedeConsultar) return;
-        setCargando(true);
-        setError('');
-        // El código manda si está completo: es el camino de quien no puede
-            // entrar con su documento, y si escribió los dos, ése es el que quiso.
-            const r = await consultarMisPuntos(
-                codigoOk ? { documento: codigoLimpio }
-                         : { documento: dui, telefono: tel });
+    /**
+     * La consulta, con lo que se va a preguntar dicho explícitamente.
+     *
+     * `yaEncendido` es para la entrada por QR, donde `cargando` ya nació en
+     * `true`: sin él habría que encenderlo otra vez desde el efecto, y un
+     * setState sincrónico ahí encadena renders sin necesidad.
+     */
+    const pedir = async (llave, { yaEncendido = false } = {}) => {
+        if (!yaEncendido) { setCargando(true); setError(''); }
+        const r = await consultarMisPuntos(llave);
         setCargando(false);
         if (r.ok) { setDatos(r); setTodos(false); return; }
         setError(r.mensaje);
     };
+
+    const consultar = (e) => {
+        e.preventDefault();
+        if (!puedeConsultar) return;
+        // El código manda si está completo: es el camino de quien no puede
+        // entrar con su documento, y si escribió los dos, ése es el que quiso.
+        return pedir(codigoOk ? { documento: codigoLimpio }
+                              : { documento: dui, telefono: tel });
+    };
+
+    // Quien llegó por el QR del papel no tiene que apretar nada: el código ya
+    // vino en la dirección, así que la consulta sale sola. Una sola vez —el
+    // `ref` lo garantiza aunque React monte el componente dos veces en
+    // desarrollo—, y sólo si de verdad venía uno.
+    const yaConsultoSolo = useRef(false);
+    useEffect(() => {
+        if (yaConsultoSolo.current) return;
+        const delEnlace = codigoDeLaDireccion();
+        if (!delEnlace) return;
+        yaConsultoSolo.current = true;
+        pedir({ documento: delEnlace }, { yaEncendido: true }); // eslint-disable-line react-hooks/set-state-in-effect -- con `yaEncendido` no toca el estado hasta después del await, pero la regla no puede verlo
+    }, []);
 
     const volver = () => { setDatos(null); setError(''); setDui(''); setTel(''); };
 

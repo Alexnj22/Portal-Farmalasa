@@ -283,7 +283,7 @@ export function construirTicketHtml(ticket) {
     const bloqueHtml = (b) => `
       <div class="bloque">
         ${b.titulo ? `<div class="btit">${esc(b.titulo)}</div>` : ''}
-        ${b.texto ? `<p class="texto">${esc(b.texto)}</p>` : ''}
+        ${b.texto ? `<p class="texto ${b.destacado ? 'destacado' : ''}">${esc(b.texto)}</p>` : ''}
         ${b.monoespaciado ? `<pre class="regla">${esc(b.monoespaciado)}</pre>` : ''}
         ${(b.filas ?? []).map(filaPar).join('')}
       </div>`;
@@ -364,6 +364,12 @@ export function construirTicketHtml(ticket) {
   .btit { font-weight: 700; text-transform: uppercase; font-size: 8pt;
           letter-spacing: .5px; border-bottom: 1px dotted #000; margin-bottom: .8mm; }
   .texto { overflow-wrap: anywhere; }
+  /* El dato por el que existe el papel —un código que alguien va a teclear en su
+     teléfono— se lee de un vistazo o no sirve. En el rollo son doble alto Y
+     doble ancho; acá el equivalente visual, que es lo que se ve en el diálogo
+     del navegador y en la vista previa. */
+  .texto.destacado { font-size: 20pt; font-weight: 700; text-align: center;
+                     letter-spacing: 2px; margin: 1.2mm 0; }
   /* pre-wrap y no pre: un renglón más largo que el rollo tiene que PARTIRSE, no
      salirse. Con pre el papel lo corta, y una línea cortada se confunde con una
      falla de la impresora; partida, se ve que no cabía. Medido: la regla de 48
@@ -614,6 +620,13 @@ const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `$
  * partido, que es peor que un total que no resalta.
  */
 const DESTACADO = `${ESC}!\x18`;
+/**
+ * Lo mismo, y además doble ANCHO (`0x20`). Es para un renglón que está SOLO y
+ * centrado —un código que hay que teclear, un número que alguien dicta por
+ * teléfono—: ahí no hay nada que alinear contra él, así que la objeción que le
+ * prohíbe el doble ancho a un total no aplica. Caben 20 caracteres.
+ */
+const DESTACADO_GRANDE = `${ESC}!\x38`;
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
 // ── El código de barras ─────────────────────────────────────────────────────
@@ -800,7 +813,9 @@ const CORTAR_PAPEL = `${GS}V1`;
  * la derecha, que es lo correcto para una columna de dinero y deja el margen
  * igual. Es la única decisión de este bloque que no salió de medir.
  */
-export const COLUMNAS_TICKET = { chica: 54, normal: 40 };
+// `grande` es el ancho a doble ancho: la mitad de `normal`, porque cada
+// carácter ocupa dos columnas. No es una preferencia, es aritmética del aparato.
+export const COLUMNAS_TICKET = { chica: 54, normal: 40, grande: 20 };
 const FIN_NOMBRE = 31, FIN_CANT = 36, FIN_PU = 44, FIN_TOTAL = 52;
 
 const aDerecha = (texto, hasta) => String(texto).padStart(hasta).slice(-hasta);
@@ -946,7 +961,16 @@ export function seccionesParaElPrograma(ticket) {
             // impresora en la columna donde se le acaba el papel y corta a mitad
             // de palabra: en el primer ticket real salió «…ES EL ANCHO DE EST /
             // A IMPRESORA.». El aparato no sabe qué es una palabra.
-            ...(b.texto ? enRenglones(b.texto, COLUMNAS_TICKET.chica) : []),
+            // `destacado` sube el texto a doble alto Y doble ancho. Acá sí va el
+            // doble ancho —que `dosColumnas` no puede usar, porque rellena
+            // contando 40 columnas—: este renglón está solo y centrado, así que
+            // no hay nada que alinear contra él. A cambio caben 20 caracteres,
+            // que es el ancho con el que se parte.
+            ...(b.texto
+                ? (b.destacado
+                    ? [DESTACADO_GRANDE + enRenglones(b.texto, COLUMNAS_TICKET.grande).join('\n') + LETRA_CHICA]
+                    : enRenglones(b.texto, COLUMNAS_TICKET.chica))
+                : []),
             b.monoespaciado ?? '',
             ...(b.filas ?? []).map(([r, v]) => dosColumnas(r, v)),
         ].filter(Boolean)),

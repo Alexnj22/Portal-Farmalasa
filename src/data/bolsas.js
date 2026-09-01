@@ -489,6 +489,27 @@ const BUCKET_COMPROBANTES = 'payment-proofs';
  * «que sea opcional la foto» del pago a proveedor no se podía decir con dos
  * valores sin perder el caso de la remesa, que sí la exige siempre.
  */
+/**
+ * Lo que puede entrar y salir del CAJÓN, con nombre.
+ *
+ * Es el catálogo de `caja_tipos_movimiento`, no el de las bolsas: son dos
+ * circuitos distintos y `bolsas_tipos_salida` describe el otro —de dónde sale
+ * el dinero ya embolsado—.
+ *
+ * Sale de la tabla y no de una lista en el `.jsx` por la regla del rótulo que
+ * no es una clave: un tipo nuevo aparecería en la base y no en la pantalla. Y
+ * existe porque el concepto era texto libre y la aplicación de inyección —el
+ * ingreso más frecuente, ~600 en 60 días— estaba escrita de quince maneras.
+ */
+export async function fetchTiposDeMovimiento() {
+    const { data, error } = await supabase.from('caja_tipos_movimiento')
+        .select('codigo, etiqueta, sentido, pide_boleta, pide_persona, foto, lleva_comprobante, leyenda')
+        .eq('activo', true)
+        .order('orden');
+    if (error) { console.error('caja: fetchTiposDeMovimiento failed:', error.message); return []; }
+    return data || [];
+}
+
 export async function fetchTiposDeSalida() {
     const { data, error } = await supabase.from('bolsas_tipos_salida')
         .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, pide_receptor, multiplo, leyenda')
@@ -849,8 +870,8 @@ export async function abrirCaja({ sala, montoApertura = 0 }) {
     return operar({ accion: 'abrir', sala, monto_apertura: montoApertura });
 }
 
-export async function anotarIngreso({ sala, monto, concepto, boleta = null, fotoUrl = null, vendedor = '' }) {
-    return operar({ accion: 'ingreso', sala, monto, concepto, boleta, foto_url: fotoUrl, vendedor });
+export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null, fotoUrl = null, vendedor = '' }) {
+    return operar({ accion: 'ingreso', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, vendedor });
 }
 
 /**
@@ -860,8 +881,8 @@ export async function anotarIngreso({ sala, monto, concepto, boleta = null, foto
  * entra al vale consolidado—. Ésta es la otra: un gasto pagado con la plata del
  * cajón, que hasta hoy se tecleaba en la otra pantalla.
  */
-export async function anotarSalida({ sala, monto, concepto, boleta = null, fotoUrl = null, recibe = '' }) {
-    return operar({ accion: 'salida', sala, monto, concepto, boleta, foto_url: fotoUrl, recibe });
+export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null, fotoUrl = null, recibe = '' }) {
+    return operar({ accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe });
 }
 
 export async function cerrarElDia(sala) {

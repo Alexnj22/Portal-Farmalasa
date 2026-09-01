@@ -21,6 +21,133 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.923.2 — El logo de la empresa: FARMACIAS centrado sobre el nombre
+
+`public/logo-farmacias.png` tenía «FARMACIAS» alineado a la izquierda, casi a
+ras del arranque de «LA POPULAR Y LA SALUD» (+23 px sobre 1,840 de ancho). Lo
+pidió el usuario centrado y lo aprobó así.
+
+**No se dibujó nada.** Se movió el bloque de letras ya aprobado y el resto del
+archivo quedó intacto — el icono no se tocó (sigue en 1910–2195 × 6–295) y el
+nombre tampoco (9–1848 × 141–252). Es la única forma de cambiarle la posición a
+un logo sin componer uno nuevo: ver la regla de marca —sólo se usan los
+archivos aprobados, adaptar sí, componer nunca.
+
+**Centrado ÓPTICO, no por tinta.** Centrar la caja de letras exacta pedía
++406 px; se aplicaron **+378**, o sea 28 px a la izquierda. El motivo es el
+tracking: «FARMACIAS» lleva ~56 px entre letras y ese espacio también existe
+DESPUÉS de la S, aunque no se vea. Centrando la tinta a secas la palabra se lee
+corrida a la derecha; medio espacio de letra a la izquierda la deja donde el ojo
+la espera. Quedó en 410–1390, centro 900 contra 928 del nombre.
+
+Lo usa `LOGO_DE_LA_EMPRESA` (`src/utils/marcaDeLaSala.js`), así que el cambio
+entra en todo lo que muestre el logo de la empresa, el carné incluido.
+
+## v2.922.3 — El código se lee de un vistazo y el QR entra solo
+
+Tres correcciones al papel del código de acceso a Mis puntos, después de
+imprimir uno de verdad.
+
+**El código sale grande.** Doble alto **y doble ancho** en el rollo, y del
+tamaño equivalente en el diálogo del navegador. Es el dato por el que existe
+este papel: alguien lo va a teclear en su teléfono, parado en la caja y muchas
+veces sin los lentes puestos. El doble ancho se puede usar acá —y no en un
+total— porque el renglón está solo y centrado: no hay nada contra qué
+alinearlo. A cambio caben 20 caracteres, que es donde se parte.
+
+**El QR lleva el código adentro.** Ahora apunta a
+`…/mis-puntos?codigo=K7MP4XN`: quien lo escanea llega con su saldo ya en
+pantalla, sin teclear nada. La pantalla lee ese código de la dirección al
+construir el estado —no dentro de un efecto—, así el campo nace lleno y nadie
+ve el formulario vacío parpadear un instante. Se valida la **forma** del código
+antes de usarlo: un intento fallido gasta uno de los cinco del freno, y ninguno
+se va a gastar por un enlace mal copiado.
+
+El código igual va escrito abajo. Los dos casos que este papel existe para
+cubrir son gente sin teléfono con cámara o sin datos en ese momento: el QR es el
+atajo, el escrito es el que nunca falla.
+
+**El pie pasó de cuatro renglones a dos.** Decía cómo escanear, qué se ve
+adentro, cuánto dura y qué hacer si se pierde. Eso es un instructivo, y un
+instructivo en un papel de caja no lo lee nadie. El QR ya no necesita
+explicación, así que queda sólo lo que el papel no puede hacer solo: *«Guarda
+este papel o copia tu codigo en un lugar seguro para poder entrar.»*
+
+**Y «PUNTOS SALUD» salía dos veces** — una en el encabezado y otra como título,
+tres renglones más abajo. Un renglón que repite al de arriba no informa, gasta
+rollo; es la misma decisión que ya había tomado el ticket de traslado. El nombre
+para la lista de la caja va aparte, donde sí hace falta distinguir un trabajo de
+otro.
+## v2.923.0 — El cajón tiene catálogo: qué entra y qué sale, con nombre
+
+Migración `20260901214147`. «Nos faltan varias opciones de ingreso de efectivo y
+de vales» (usuario, 1-sep). El catálogo **no se inventó**: cada tipo sale de lo
+que las salas ya anotaron en los últimos 60 días, con su cuenta al lado.
+
+**El concepto era texto libre, y por eso no se podía contar.** Medido:
+
+| lo que se anota | veces | formas de escribirlo |
+|---|---:|---:|
+| aplicación de inyección | **~600** | **15** |
+| abono a un crédito | 101 | 1 |
+| prueba de glucosa | 41 | 4 |
+| servicio a domicilio | 19 | 1 |
+
+`APLICACION DE INYECCION`, `APLICACION`, `INYECCION`, `APLIC DE INYEC`,
+`APLICACION D EINYECCION`, `APLIC D EINYEC`, `2 APLICACIONES DE INYECCION`…
+Nadie puede decir cuánto entró por aplicaciones en un mes sin leer 600 renglones
+y decidir uno por uno.
+
+**El concepto no se va: pasa a ser el DETALLE del tipo.** «Aplicación de
+inyección» es lo que se suma; «Neurobion 25000» es lo que la sala quería anotar.
+Y cada tipo trae su propia pista de qué escribir ahí — sin ella, el campo se
+llena repitiendo el rótulo de arriba.
+
+### El tipo decide qué se pregunta
+
+El diálogo empezaba **pidiendo la foto de una boleta**. Está bien para el pago
+de un recibo, y es exactamente lo contrario de lo que necesita el ingreso más
+frecuente de todos: una aplicación de inyección no tiene boleta ninguna, así que
+seiscientas veces alguien tuvo que pasar por «no tengo boleta: escribirlo a
+mano» antes de poder anotar un dólar.
+
+Ahora el tipo va primero y él decide: si pide foto (`NO` / `OPCIONAL` /
+`OBLIGATORIA`), si pide el número de la boleta, si pide a quién. Con
+`foto: 'NO'` los campos salen directo.
+
+**Y el detalle deja de ser obligatorio cuando el tipo ya dice qué fue**: exigir
+que alguien escriba «aplicación» debajo de un desplegable que dice «Aplicacion
+de inyeccion» es pedir el mismo dato dos veces. Sigue siendo obligatorio en los
+dos «Otro», que es donde el tipo no dice nada.
+
+**Lo que se guarda del lado de la caja es rótulo + detalle** (`Aplicacion de
+inyeccion · Neurobion 25000`): del otro lado no hay tipo, sólo un campo de
+texto, y ahí el papel tiene que seguir diciendo qué fue. El código del tipo
+viaja aparte, en `caja_movimientos_portal.tipo_codigo`, y es lo que se suma.
+
+`NULL` en las filas viejas **no es un dato faltante que haya que rellenar**: son
+las que se anotaron cuando el concepto era todo lo que había, y adivinarles un
+tipo hoy sería inventar una clasificación que nadie hizo.
+
+### Trece tipos
+
+**Entra:** aplicación de inyección · prueba de glucosa · abono a un crédito ·
+**abono para apartar producto** · servicio a domicilio · pago de un recibo ·
+otro.
+
+**Sale:** compra o gasto urgente · pago a proveedor · anticipo a un empleado ·
+pago de bonificación · devolución a un cliente · otro.
+
+`ABONO_CLIENTE` lleva la bandera `lleva_comprobante`, que es por donde va a
+entrar el circuito del abono. Es una bandera y no un `codigo === 'ABONO_CLIENTE'`
+en la pantalla, para que el día que haya un segundo tipo con papel no haya que
+tocar el formulario.
+
+El diálogo se **remonta** en cada apertura (`key`) en vez de limpiarse con un
+efecto: sin eso, abrir «Salida» después de una entrada llegaba con el tipo de la
+entrada elegido — y los tipos de los dos sentidos no son los mismos, así que el
+desplegable mostraba un código que su propia lista no tiene.
+
 ## v2.922.2 — Efectivo: se dice de qué bolsa salió, y el comprobante del abono
 
 Dos correcciones de pantalla y la primera pieza visible de los abonos.

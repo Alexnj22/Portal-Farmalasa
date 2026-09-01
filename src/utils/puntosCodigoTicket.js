@@ -11,8 +11,11 @@
 // credencial de un empleado— mientras que esto sólo deja MIRAR un saldo. El
 // cliente tiene que poder teclearlo en su teléfono, así que tiene que verlo.
 //
-// El QR va a `/mis-puntos` y el código escrito abajo. Los dos hacen falta: el
-// QR lleva a la pantalla, el código es lo que se escribe una vez adentro.
+// El QR **lleva el código adentro**: `…/mis-puntos?codigo=K7MP4XN`. Quien lo
+// escanea entra ya con su saldo en pantalla, sin teclear nada. Y el código
+// igual va escrito grande abajo, porque los dos casos que este papel existe
+// para cubrir son gente sin teléfono con cámara o sin datos en ese momento: el
+// QR es el atajo, el código escrito es el que nunca falla.
 //
 // ── El código se parte en dos grupos ────────────────────────────────────────
 // `K7M - P4XN`. Son siete caracteres de un alfabeto sin parecidos, y partirlos
@@ -23,6 +26,12 @@ import { imprimirDocumento, fechaHora } from './ticketPrint';
 
 /** A dónde lleva el QR del papel. Es la misma que el afiche de la vitrina. */
 export const URL_MIS_PUNTOS = 'https://portal.farmasalud.lat/mis-puntos';
+
+/** La misma pantalla, pero ya con el código puesto. */
+export const urlConCodigo = (codigo) => {
+    const c = String(codigo ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    return c ? `${URL_MIS_PUNTOS}?codigo=${c}` : URL_MIS_PUNTOS;
+};
 
 /** `K7MP4XN` → `K7M - P4XN`, sólo para leerlo. */
 export const codigoLegible = (codigo) => {
@@ -40,7 +49,12 @@ export const codigoLegible = (codigo) => {
  */
 export function construirTicketDeCodigo({ nombre, codigo, emitidoPor = '', ahora = new Date() }) {
     return {
-        titulo: 'Puntos Salud',
+        // **Sin `titulo`, a propósito**: el encabezado ya dice PUNTOS SALUD en
+        // grande, y `titulo` se imprime OTRA VEZ unos renglones más abajo. Un
+        // renglón que repite al de arriba no informa, gasta rollo — es la misma
+        // decisión que el ticket de traslado. El nombre para la lista de la caja
+        // va aparte, en `tituloDeCola`.
+        titulo: '',
         encabezado: {
             titulo: 'PUNTOS SALUD',
             lineas: [nombre || 'Cliente'].filter(Boolean),
@@ -51,6 +65,10 @@ export function construirTicketDeCodigo({ nombre, codigo, emitidoPor = '', ahora
             // que existe el papel: compartir renglón con cualquier otra cosa lo
             // volvería un dato más de una lista.
             texto: codigoLegible(codigo),
+            // Doble alto y doble ancho. Es el dato que alguien va a teclear en
+            // un teléfono parado en la caja, muchas veces sin los lentes
+            // puestos: si no se lee de un vistazo, el papel no sirve.
+            destacado: true,
         }],
         datos: [
             ['Impreso', fechaHora(ahora)],
@@ -58,12 +76,14 @@ export function construirTicketDeCodigo({ nombre, codigo, emitidoPor = '', ahora
         ],
         // La impresora lo dibuja por la cola (`GS ( k`) y el programa de la caja
         // lo recibe como URL. Los dos salen de acá, así que no pueden divergir.
-        qr: URL_MIS_PUNTOS,
+        qr: urlConCodigo(codigo),
+        // Cuatro renglones de instrucciones era un instructivo, y un instructivo
+        // en un papel de caja no lo lee nadie. El QR ya no necesita explicación
+        // —abre la pantalla con el saldo puesto—, así que lo único que queda por
+        // decir es lo que el papel NO puede hacer solo: sobrevivir.
         pie: [
-            'Escanea el codigo y escribe el de arriba',
-            'para ver tus puntos y cuando vencen.',
-            'Guardalo: sirve mientras no pidas otro.',
-            'Si lo pierdes, pide uno nuevo en caja.',
+            'Guarda este papel o copia tu codigo',
+            'en un lugar seguro para poder entrar.',
         ],
     };
 }
@@ -75,5 +95,10 @@ export function construirTicketDeCodigo({ nombre, codigo, emitidoPor = '', ahora
  * mano a alguien que está parado ahí. Misma regla que el carné del día.
  */
 export function imprimirTicketDeCodigo(datos, { sala = null } = {}) {
-    return imprimirDocumento(construirTicketDeCodigo(datos), { sala });
+    return imprimirDocumento(construirTicketDeCodigo(datos), {
+        sala,
+        // Sin `titulo` el nombre en la lista de la caja saldría «Documento».
+        // Ahí sí hace falta distinguir un trabajo de otro.
+        tituloDeCola: 'Codigo de acceso a Mis puntos',
+    });
 }

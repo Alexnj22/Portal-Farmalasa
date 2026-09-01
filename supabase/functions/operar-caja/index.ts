@@ -553,6 +553,15 @@ Deno.serve(async (req) => {
         .insert({
           branch_id: sala, tipo: esEntrada ? "ENTRADA" : "SALIDA",
           monto: Number(dosDecimales(monto)), concepto,
+          /* QUÉ fue, además de cuánto. El concepto sigue siendo texto libre —es
+           * el detalle: «Neurobion 25000»— y el tipo es lo que se puede sumar.
+           * Sin él, la aplicación de inyección estaba escrita de quince maneras
+           * y nadie podía decir cuánto entró por aplicaciones en un mes.
+           *
+           * La FK lo valida: un código inventado hace fallar el INSERT antes de
+           * que el dinero se mueva, que es el orden correcto. `null` sigue
+           * siendo válido y es lo que tienen las filas viejas. */
+          tipo_codigo: body.tipo ? String(body.tipo).slice(0, 40) : null,
           numero_boleta: body.boleta ? String(body.boleta).slice(0, 40) : null,
           foto_url: body.foto_url ? String(body.foto_url) : null,
           fecha: diaAbierto, erp_apertura_id: Number(estado.aper),

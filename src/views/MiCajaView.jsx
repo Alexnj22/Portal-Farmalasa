@@ -8,6 +8,7 @@ import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
 import FilterBar from '../components/common/FilterBar';
 import LiquidModal from '../components/common/LiquidModal';
+import LiquidSelect from '../components/common/LiquidSelect';
 import Notice from '../components/common/Notice';
 import FileField from '../components/common/FileField';
 import PortalInput from '../components/common/PortalInput';
@@ -19,7 +20,7 @@ import { useToastStore } from '../store/toastStore';
 import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
-    fetchTiposDeSalida, fetchValesPendientes, hacerCorte, leerBoleta, pedirCorreccion,
+    fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte, leerBoleta, pedirCorreccion,
     subirComprobante,
 } from '../data/bolsas';
 import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '../data/cortes';
@@ -58,6 +59,26 @@ import { mensajeAmigable } from '../utils/errorMessages';
  * pueda cortar en la otra pantalla, ahí ve el esperado.
  */
 const VACIO = [];
+
+/* Qué escribir en «Detalle», por tipo.
+ *
+ * Un `placeholder` genérico no enseña nada, y este campo es justo el que decide
+ * si el registro sirve dentro de un mes: sin la pista, «Aplicación de
+ * inyección» se llena con «aplicación» —el mismo dato que ya está arriba— en
+ * vez de con qué se aplicó. Vive acá y no en la tabla porque es texto de la
+ * PANTALLA, no del catálogo: cambia con el diseño del formulario, no con el
+ * negocio. */
+const PISTA_DE_DETALLE = {
+    APLICACION:     'Neurobion 25000',
+    GLUCOSA:        'en ayunas',
+    ABONO_CREDITO:  'de qué compra',
+    PAGO_SERVICIO:  'CAESS, ANDA, telefono',
+    COMPRA:         'agua fria, saldo telefonico',
+    PAGO_PROVEEDOR: 'que factura se paga',
+    ANTICIPO:       'quincena que descuenta',
+    BONIFICACION:   'de que linea',
+    DEVOLUCION:     'por que se devuelve',
+};
 
 /**
  * La cuenta del corte recién hecho, resuelta por el MISMO juez que la tabla.
@@ -185,6 +206,9 @@ export default function MiCajaView({ comoPestana = false }) {
     const [deBolsas, setDeBolsas] = useState(VACIO);
     const [ventas, setVentas] = useState(VACIO);
     const [tipos, setTipos] = useState(VACIO);
+    // Lo que puede entrar y salir del CAJÓN. Otro catálogo que el de arriba:
+    // aquél nombra de dónde sale el dinero de una BOLSA.
+    const [tiposDeCaja, setTiposDeCaja] = useState(VACIO);
     const [corrigiendo, setCorrigiendo] = useState(null);
     /* Los cortes del día, COMPLETOS. `estadoDeCaja` ya trae los suyos, pero sin
      * el nombre de quien cortó ni quién lo confirmó — y es justo lo que la sala
@@ -200,6 +224,7 @@ export default function MiCajaView({ comoPestana = false }) {
     useEffect(() => {
         let vivo = true;
         fetchTiposDeSalida().then((t) => { if (vivo) setTipos(t || VACIO); });
+        fetchTiposDeMovimiento().then((t) => { if (vivo) setTiposDeCaja(t || VACIO); });
         return () => { vivo = false; };
     }, []);
 
@@ -575,8 +600,15 @@ export default function MiCajaView({ comoPestana = false }) {
                 onClose={() => setDialogo(null)}
                 onAbrir={(monto) => correr(() => abrirCaja({ sala, montoApertura: monto }), 'La caja quedó abierta.')} />
 
-            <DialogoMovimiento abierto={dialogo === 'ingreso' || dialogo === 'salida'}
+            {/* `key` y no un efecto que limpie al cerrar: el diálogo se
+                REMONTA en cada apertura, así que empieza vacío por
+                construcción. Sin esto, abrir «Salida» después de una entrada
+                llegaba con el tipo de la entrada elegido — y los tipos de los
+                dos sentidos no son los mismos, así que el desplegable mostraba
+                un código que su propia lista no tiene. */}
+            <DialogoMovimiento key={dialogo} abierto={dialogo === 'ingreso' || dialogo === 'salida'}
                 entra={dialogo === 'ingreso'} ocupado={ocupado} sala={sala} userId={user?.id}
+                tipos={tiposDeCaja}
                 onClose={() => setDialogo(null)}
                 onAnotar={(datos) => correr(
                     () => (dialogo === 'ingreso' ? anotarIngreso : anotarSalida)({ sala, ...datos }),
@@ -941,7 +973,20 @@ function conceptoDelPapel(leido) {
  * Sale de quien está adentro, y lo resuelve el servidor con la sesión. Era el
  * único campo que pedía teclear algo que el portal ya sabe.
  */
-function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onAnotar }) {
+function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], onClose, onAnotar }) {
+    /* QUÉ es, antes que cuánto.
+     *
+     * El diálogo empezaba pidiendo la foto de una boleta, y eso está bien para
+     * el pago de un recibo — pero el ingreso más frecuente de todos es la
+     * aplicación de una inyección, que no tiene boleta ninguna. Medido: ~600 en
+     * 60 días, escritas de quince maneras distintas porque el concepto era un
+     * campo de texto. Ahora el tipo se elige primero y **él decide qué se
+     * pregunta**: si pide foto, si pide el número de la boleta, si pide a quién.
+     *
+     * El concepto no desaparece: pasa a ser el DETALLE del tipo. «Aplicación de
+     * inyección» es lo que se suma; «Neurobion 25000» es lo que la sala quería
+     * anotar. */
+    const [codigo, setCodigo] = useState('');
     const [monto, setMonto] = useState('');
     const [concepto, setConcepto] = useState('');
     const [boleta, setBoleta] = useState('');
@@ -956,10 +1001,27 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
     // La escotilla, cuando el papel no se deja leer o leyó mal.
     const [aMano, setAMano] = useState(false);
 
-    const valido = Number(monto) > 0 && concepto.trim().length > 2;
-    // Antes de la foto no se pide nada: ésa es la vuelta del cuadro. Se abre
-    // igual si alguien elige escribirlo a mano.
-    const pedirDatos = !!foto || aMano;
+    const delSentido = useMemo(
+        () => tipos.filter((t) => t.sentido === (entra ? 'ENTRADA' : 'SALIDA')),
+        [tipos, entra],
+    );
+    const tipo = useMemo(() => delSentido.find((t) => t.codigo === codigo) || null,
+        [delSentido, codigo]);
+
+    // El detalle deja de ser obligatorio cuando el TIPO ya dice qué fue: exigir
+    // que alguien escriba «aplicación» debajo de un desplegable que dice
+    // «Aplicacion de inyeccion» es pedir el mismo dato dos veces.
+    const exigeDetalle = !tipo || tipo.codigo.startsWith('OTRO');
+    const valido = !!tipo
+        && Number(monto) > 0
+        && (!exigeDetalle || concepto.trim().length > 2)
+        && (!tipo.pide_boleta || boleta.trim().length > 0)
+        && (tipo.foto !== 'OBLIGATORIA' || !!foto);
+
+    // La foto sólo manda la vuelta del cuadro cuando el tipo la pide. Con
+    // `foto: 'NO'` —la aplicación, la glucosa— los campos salen directo: pedir
+    // una boleta que no existe es lo que hacía que se escribiera a mano.
+    const pedirDatos = tipo && (tipo.foto === 'NO' || !!foto || aMano);
     const cerrado = (campo) => !!deLaFoto[campo] && !aMano;
 
     const alElegirFoto = async (f) => {
@@ -1000,11 +1062,22 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
             try { fotoUrl = await subirComprobante(foto, { salaId: sala, userId }); } catch { fotoUrl = null; }
         }
         onAnotar({
-            monto: Number(monto), concepto: concepto.trim(),
+            monto: Number(monto),
+            // Lo que se GUARDA como concepto es el rótulo del tipo más el
+            // detalle: del otro lado —el sistema de la caja— no hay tipo, sólo
+            // un campo de texto, y ahí el papel tiene que seguir diciendo qué
+            // fue. El `tipo` viaja aparte y es lo que se puede sumar.
+            concepto: [tipo?.etiqueta, concepto.trim()].filter(Boolean).join(' · ').slice(0, 50),
+            tipo: tipo?.codigo || null,
             boleta: boleta.trim() || null, fotoUrl,
-            // El ingreso ya no manda vendedor: lo resuelve el servidor con la
-            // sesión de quien lo anota.
-            ...(entra ? {} : { recibe: recibe.trim() }),
+            /* El ingreso ya no manda vendedor: lo resuelve el servidor con la
+             * sesión de quien lo anota. Pero SÍ manda la persona cuando el tipo
+             * la pide —«de quién» en un abono a crédito—, y va por `vendedor`
+             * porque es el campo que el sistema de la caja recibe del lado de
+             * la entrada; del lado de la salida el campo se llama `recibe`. */
+            ...(entra
+                ? (tipo?.pide_persona ? { vendedor: recibe.trim() } : {})
+                : { recibe: recibe.trim() }),
         });
     };
 
@@ -1014,33 +1087,56 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
             bajada={entra
                 ? 'Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.'
                 : 'Sale del cajón porque ninguna bolsa de cortes anteriores alcanza. Esto sí se le anota a la caja.'}>
-            <FileField label="Foto de la boleta" accept="image/*" value={foto}
-                onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
-            {aviso && <p className="text-caption text-content-2">{aviso}</p>}
+            {/* Lo primero, y de la TABLA: una lista escrita a mano en el
+                `.jsx` se desincroniza de la base sin avisar. */}
+            <LiquidSelect label={entra ? 'Qué entra' : 'Qué sale'} value={codigo}
+                onChange={setCodigo} options={delSentido.map((t) => ({ value: t.codigo, label: t.etiqueta }))}
+                placeholder="Elige de qué se trata" />
+            {tipo?.leyenda && <p className="text-caption text-content-2">{tipo.leyenda}</p>}
 
-            {!pedirDatos && !leyendo && (
-                <Notice variant="info" icon={Landmark}>
-                    Sube la foto de la boleta y el monto, el número y el concepto se llenan solos.
-                    <button type="button" onClick={() => setAMano(true)}
-                        className="block mt-1 underline font-bold text-content-2 min-h-[var(--tap-min)]">
-                        No tengo boleta: escribirlo a mano
-                    </button>
-                </Notice>
+            {/* La foto sólo cuando el tipo la usa. Ofrecerla siempre es lo que
+                hacía que la aplicación de una inyección —que no tiene boleta—
+                pasara por el aro de «no tengo boleta» seiscientas veces. */}
+            {tipo && tipo.foto !== 'NO' && (
+                <>
+                    <FileField label={tipo.foto === 'OBLIGATORIA' ? 'Foto de la boleta (obligatoria)' : 'Foto de la boleta'}
+                        accept="image/*" value={foto}
+                        onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
+                    {aviso && <p className="text-caption text-content-2">{aviso}</p>}
+
+                    {!pedirDatos && !leyendo && (
+                        <Notice variant="info" icon={Landmark}>
+                            Sube la foto de la boleta y el monto, el número y el detalle se llenan solos.
+                            {tipo.foto !== 'OBLIGATORIA' && (
+                                <button type="button" onClick={() => setAMano(true)}
+                                    className="block mt-1 underline font-bold text-content-2 min-h-[var(--tap-min)]">
+                                    No tengo boleta: escribirlo a mano
+                                </button>
+                            )}
+                        </Notice>
+                    )}
+                </>
             )}
 
             {pedirDatos && (
                 <>
                     <PortalInput label="Monto" inputMode="decimal" value={monto} readOnly={cerrado('monto')}
                         onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
-                    <PortalInput label="Número de boleta" value={boleta} readOnly={cerrado('boleta')}
-                        onChange={(e) => setBoleta(e.target.value)} placeholder="000375" />
-                    <PortalInput label="Concepto" value={concepto} maxLength={50} readOnly={cerrado('concepto')}
+                    {tipo.pide_boleta && (
+                        <PortalInput label="Número de boleta" value={boleta} readOnly={cerrado('boleta')}
+                            onChange={(e) => setBoleta(e.target.value)} placeholder="000375" />
+                    )}
+                    {/* «Detalle» y no «Concepto»: el concepto ya lo dice el
+                        tipo. Acá va lo que el tipo no puede saber — qué se
+                        aplicó, de qué era el recibo. */}
+                    <PortalInput label={exigeDetalle ? 'Detalle' : 'Detalle (opcional)'}
+                        value={concepto} maxLength={50} readOnly={cerrado('concepto')}
                         onChange={(e) => setConcepto(e.target.value)}
-                        placeholder={entra ? 'Pago de CAESS' : 'Compra de agua fría'} />
-                    {!entra && (
-                        <PortalInput label="Quién recibe" value={recibe} maxLength={60}
+                        placeholder={PISTA_DE_DETALLE[tipo.codigo] || (entra ? 'de qué se trata' : 'en qué se gastó')} />
+                    {tipo.pide_persona && (
+                        <PortalInput label={entra ? 'De quién' : 'Quién recibe'} value={recibe} maxLength={60}
                             onChange={(e) => setRecibe(e.target.value)}
-                            placeholder="nombre de quien se lleva el efectivo" />
+                            placeholder={entra ? 'nombre del cliente' : 'nombre de quien se lleva el efectivo'} />
                     )}
                     {/* La foto puede leer mal, y entonces hay que poder corregirla.
                         Es un botón y no un campo siempre abierto: abrirlos sin

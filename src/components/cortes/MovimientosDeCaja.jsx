@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, History, Pencil, Search, Trash2, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, History, Pencil, Scale, Search, Trash2, Wallet } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
+import Notice from '../common/Notice';
 import TablePagination from '../common/TablePagination';
-import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import { EmptyState } from '../common/StateViews';
 import { formatMoney } from '../../utils/formatNumber';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -34,24 +34,39 @@ import { usePaginaEnUrl } from '../../hooks/usePaginaEnUrl';
  * cero. Un movimiento así no se distingue de uno legítimo mirando el monto; se
  * distingue mirando CUÁNDO apareció y contra qué corte.
  *
- * ── El toque abre la historia, no una hoja genérica ────────────────────────
- * Por eso `usarAccionDeFila`: en el teléfono la fila es una ficha y su destino
- * real es el historial de ese movimiento. Y el detalle va en un modal y no en
- * un `<tr>` expandido justamente para que el teléfono y el escritorio abran lo
- * mismo — un `<tr colSpan>` no se pinta en modo ficha.
+ * ── Por qué dejó de ser una tabla (v2.914.0) ───────────────────────────────
+ * Era cinco columnas —fecha, sala, concepto, estado, monto— donde todo pesaba
+ * lo mismo: un movimiento normal y uno borrado ocupaban el mismo renglón gris y
+ * se distinguían por un badge del ancho de un dedo. Pero esta lista no existe
+ * para leerse en orden: existe para que salte lo que está mal.
+ *
+ * Tres cambios, y cada uno contesta una de las preguntas de arriba:
+ *
+ *  1. **Agrupada por día y por sala, con el neto de cada grupo.** Los
+ *     movimientos de una sala son una serie que termina en su corte; mezclados
+ *     con los de otra sala hay que reconstruir cuál va con cuál.
+ *  2. **El corte, dibujado como línea.** Es la única forma de ver de qué lado
+ *     cayó cada movimiento, y era el dato que el párrafo de arriba pedía desde
+ *     que se escribió — la hora del corte y la del movimiento ya existían y
+ *     nunca se habían puesto una contra otra.
+ *  3. **El estado ES la forma de la fila, no un badge.** Un borrado va tachado
+ *     y en rojo; un editado muestra el monto anterior tachado al lado del
+ *     nuevo. Sin abrir nada, y sin leer una columna que en el teléfono ni
+ *     siquiera se dibujaba (`hideBelow: 'md'`).
+ *
+ * ⚠️ **«Se vio después del corte» sale de la CAPTURA, no del sistema de la
+ * caja.** Sus movimientos no publican hora — la tabla tiene `fecha` y nada
+ * más—, así que lo que se compara contra el corte es `created_at`, o sea cuándo
+ * la captura lo vio por primera vez, con la resolución de su cadencia (30 min).
+ * Por eso el rótulo dice «se vio» y no «se anotó»: prometer la hora exacta
+ * sería inventarla. Y sólo se marca cuando la captura lo vio EL MISMO DÍA de su
+ * fecha; en un movimiento traído por un relleno hacia atrás, `created_at` es la
+ * fecha del relleno y la comparación no significaría nada.
  */
 
-const COLS = [
-    { key: 'fecha',    label: 'Fecha',    align: 'left'   },
-    { key: 'sala',     label: 'Sala',     align: 'left',   hideBelow: 'md' },
-    { key: 'concepto', label: 'Concepto', align: 'left'   },
-    { key: 'estado',   label: 'Estado',   align: 'center', hideBelow: 'md' },
-    { key: 'monto',    label: 'Monto',    align: 'right'  },
-];
-
-const fechaCorta = (f) => (f
+const fechaLarga = (f) => (f
     ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-        day: '2-digit', month: 'short', timeZone: 'UTC',
+        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
     })
     : '—');
 
@@ -61,6 +76,31 @@ const cuando = (iso) => (iso
         timeZone: 'America/El_Salvador',
     })
     : '—');
+
+const horaDe = (iso) => (iso
+    ? new Date(iso).toLocaleTimeString('es-SV', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'America/El_Salvador',
+    })
+    : null);
+
+const hhmm = (t) => (t ? String(t).slice(0, 5) : '—');
+
+/** El día de El Salvador de una marca de tiempo, para comparar contra `fecha`. */
+const diaSV = (iso) => (iso
+    ? new Date(new Date(iso).getTime() - 6 * 3600_000).toISOString().slice(0, 10)
+    : null);
+
+/** Minutos desde medianoche, en hora de sala. Para ordenar y comparar. */
+const minutosDeIso = (iso) => {
+    if (!iso) return null;
+    const d = new Date(new Date(iso).getTime() - 6 * 3600_000);
+    return d.getUTCHours() * 60 + d.getUTCMinutes();
+};
+const minutosDeHora = (t) => {
+    if (!t) return null;
+    const [h, m] = String(t).split(':').map(Number);
+    return Number.isFinite(h) ? h * 60 + (m || 0) : null;
+};
 
 // El rótulo de un cambio, en términos de lo que pasó y no del código.
 const CAMBIOS = {
@@ -73,6 +113,7 @@ const CAMBIOS = {
 export default function MovimientosDeCaja({
     movimientos = [],
     historial = [],
+    cortes = [],
     salas,
     cargando = false,
     busqueda = '',
@@ -83,7 +124,7 @@ export default function MovimientosDeCaja({
     const [abierto, setAbierto] = useState(null);
 
     // La historia agrupada por movimiento, una vez. Sin esto, marcar «editado»
-    // en la tabla costaría un recorrido del historial por fila.
+    // en la lista costaría un recorrido del historial por fila.
     const historiaPorMov = useMemo(() => {
         const m = new Map();
         for (const h of historial) {
@@ -106,6 +147,11 @@ export default function MovimientosDeCaja({
         [historiaDe],
     );
 
+    const ultimaEdicion = useCallback(
+        (mov) => historiaDe(mov).filter((h) => h.cambio === 'EDITADO').pop() || null,
+        [historiaDe],
+    );
+
     const filtrados = useMemo(() => movimientos.filter((m) => {
         if (tipo !== 'TODOS' && m.tipo !== tipo) return false;
         if (estado === 'VIGENTES'      && m.desaparecido_at) return false;
@@ -115,7 +161,104 @@ export default function MovimientosDeCaja({
     }), [movimientos, tipo, estado, busqueda, salas, fueEditado]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
-    const pagina = filtrados.slice((page - 1) * pageSize, page * pageSize);
+    const pagina = useMemo(
+        () => filtrados.slice((page - 1) * pageSize, page * pageSize),
+        [filtrados, page, pageSize],
+    );
+
+    /* Los cortes que cuentan efectivo, por día y sala, ordenados por hora.
+     *
+     * Sólo los de tipo 'C': el cierre del día (Z) y las lecturas (X) no cuentan
+     * dinero, así que dibujar su línea diría que un movimiento «cayó después de
+     * algo» que no midió nada. */
+    const cortesPorGrupo = useMemo(() => {
+        const m = new Map();
+        for (const c of cortes) {
+            if (c.tipo !== 'C') continue;
+            const clave = `${c.fecha}:${c.branch_id}`;
+            if (!m.has(clave)) m.set(clave, []);
+            m.get(clave).push(c);
+        }
+        for (const lista of m.values()) {
+            lista.sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
+        }
+        return m;
+    }, [cortes]);
+
+    /* La página, armada como expediente: día → sala → renglones intercalados
+     * con los cortes de esa sala ese día.
+     *
+     * Cada renglón sale con su minuto en hora de sala —el de la captura para el
+     * movimiento, el de la fila para el corte— y se ordena de más nuevo a más
+     * viejo, que es el orden con el que se entra a mirar. Un movimiento sin
+     * minuto comparable (ver el ⚠️ del encabezado) va al final del grupo, sin
+     * cruzar ninguna línea: no se puede afirmar de qué lado cayó. */
+    const dias = useMemo(() => {
+        const porDia = new Map();
+        for (const mv of pagina) {
+            if (!porDia.has(mv.fecha)) porDia.set(mv.fecha, new Map());
+            const salasDelDia = porDia.get(mv.fecha);
+            if (!salasDelDia.has(mv.branch_id)) salasDelDia.set(mv.branch_id, []);
+            salasDelDia.get(mv.branch_id).push(mv);
+        }
+
+        return [...porDia.entries()]
+            .sort((a, b) => String(b[0]).localeCompare(String(a[0])))
+            .map(([fecha, salasDelDia]) => {
+                const grupos = [...salasDelDia.entries()]
+                    .map(([branchId, lista]) => {
+                        // El minuto comparable de cada movimiento, o `null`.
+                        const conMinuto = lista.map((mv) => ({
+                            tipoFila: 'mov',
+                            mv,
+                            minuto: diaSV(mv.created_at) === mv.fecha ? minutosDeIso(mv.created_at) : null,
+                        }));
+                        const cortesAqui = (cortesPorGrupo.get(`${fecha}:${branchId}`) || []).map((c) => ({
+                            tipoFila: 'corte', corte: c, minuto: minutosDeHora(c.hora),
+                        }));
+
+                        const conHora = conMinuto.filter((f) => f.minuto != null);
+                        const sinHora = conMinuto.filter((f) => f.minuto == null);
+                        const filas = [...conHora, ...cortesAqui]
+                            .sort((a, b) => (b.minuto ?? 0) - (a.minuto ?? 0))
+                            .concat(sinHora);
+
+                        // El neto sólo con lo que SIGUE en la caja: un
+                        // movimiento que ya no está tampoco está en el dinero, y
+                        // sumarlo daría un neto que no coincide con ningún tiquete.
+                        const neto = lista.reduce((s, mv) => (mv.desaparecido_at ? s
+                            : s + (mv.tipo === 'ENTRADA' ? 1 : -1) * (Number(mv.monto) || 0)), 0);
+
+                        return {
+                            branchId,
+                            nombre: salas?.get(branchId) || `Sucursal ${branchId}`,
+                            filas, neto, cuantos: lista.length,
+                        };
+                    })
+                    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+                return { fecha, grupos };
+            });
+    }, [pagina, cortesPorGrupo, salas]);
+
+    /* Cuántos aparecieron DESPUÉS del último corte de su día y sala. Es el
+     * hallazgo del 22-ago convertido en número, y va arriba de todo porque
+     * quien entra a esta lista con una diferencia en la mano viene a buscar
+     * exactamente eso. */
+    const tardios = useMemo(() => {
+        let n = 0;
+        for (const d of dias) {
+            for (const g of d.grupos) {
+                let vistoCorte = false;
+                // Las filas van de más nueva a más vieja: todo lo que aparece
+                // ANTES de cruzar la primera línea de corte es posterior a él.
+                for (const f of g.filas) {
+                    if (f.tipoFila === 'corte') { vistoCorte = true; continue; }
+                    if (!vistoCorte && f.minuto != null) n++;
+                }
+            }
+        }
+        return n;
+    }, [dias]);
 
     if (!cargando && filtrados.length === 0) {
         return busqueda ? (
@@ -133,55 +276,59 @@ export default function MovimientosDeCaja({
     }
 
     return (
-        <>
-            <DataTable
-                columns={COLS}
-                loading={cargando}
-                /* La primera celda es la fecha, pero a esta lista se entra
-                   buscando QUÉ se movió: la identidad es el concepto y el ancla,
-                   el monto. Y `usarAccionDeFila` porque la fila tiene destino
-                   propio —la historia de ese movimiento—, que sin declararlo
-                   perdería contra la hoja genérica (§32.8). */
-                movil={{ usarAccionDeFila: true, identidad: 'concepto', ancla: 'monto' }}
-                empty={{ icon: Wallet, message: 'Sin movimientos en el período' }}
-            >
-                {pagina.map((m, i) => {
-                    const editado = fueEditado(m);
-                    const ido = Boolean(m.desaparecido_at);
-                    return (
-                        <DataRow key={m.id} index={i} onClick={() => setAbierto(m)}>
-                            <DataCell>
-                                <span className="tabular-nums text-content-2 font-semibold">{fechaCorta(m.fecha)}</span>
-                            </DataCell>
-                            <DataCell hideBelow="md">
-                                <span className="text-content-2 text-body-sm">{salas?.get(m.branch_id) || '—'}</span>
-                            </DataCell>
-                            <DataCell>
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                    {m.tipo === 'ENTRADA'
-                                        ? <ArrowDownLeft size={13} className="text-success-text shrink-0" title="Entra a la caja" />
-                                        : <ArrowUpRight  size={13} className="text-warning-text shrink-0" title="Sale de la caja" />}
-                                    <span className={`truncate text-body-sm ${ido ? 'text-content-3 line-through' : 'text-content'}`}>
-                                        {m.concepto || 'Sin concepto'}
+        <div className="space-y-5">
+            {tardios > 0 && (
+                <Notice variant="warning" icon={Scale}>
+                    <span className="font-bold">
+                        {tardios === 1
+                            ? 'Un movimiento se vio después del corte de su día'
+                            : `${tardios} movimientos se vieron después del corte de su día`}
+                    </span>
+                    <span className="block mt-0.5 font-normal text-content-2">
+                        No significa que esté mal. Significa que no se distingue por el monto —hay que
+                        mirar cuándo entró—, y por eso queda arriba de la línea del corte.
+                    </span>
+                </Notice>
+            )}
+
+            {dias.map((d) => (
+                <section key={d.fecha} className="space-y-3">
+                    <h3 className="text-label font-bold text-content capitalize px-1">{fechaLarga(d.fecha)}</h3>
+
+                    {d.grupos.map((g) => (
+                        <div key={g.branchId} className="space-y-1.5">
+                            <div className="flex items-baseline justify-between gap-3 px-1">
+                                <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                    {g.nombre}
+                                </h4>
+                                <span className="text-micro text-content-3">
+                                    {g.cuantos} {g.cuantos === 1 ? 'movimiento' : 'movimientos'} · neto{' '}
+                                    <span className={`tabular-nums font-bold ${
+                                        g.neto > 0 ? 'text-success-text' : g.neto < 0 ? 'text-warning-text' : 'text-content-2'
+                                    }`}>
+                                        {g.neto > 0 ? '+' : g.neto < 0 ? '−' : ''}{formatMoney(Math.abs(g.neto))}
                                     </span>
-                                </div>
-                            </DataCell>
-                            <DataCell align="center" hideBelow="md">
-                                {ido ? <Badge variant="danger" size="sm">Ya no está</Badge>
-                                    : editado ? <Badge variant="warning" size="sm">Se modificó</Badge>
-                                        : m.origen === 'PORTAL' ? <Badge variant="info" size="sm">Del portal</Badge>
-                                            : <span className="text-content-3 text-micro">—</span>}
-                            </DataCell>
-                            <DataCell align="right">
-                                <span className={`tabular-nums font-bold ${ido ? 'text-content-3 line-through'
-                                    : m.tipo === 'ENTRADA' ? 'text-success-text' : 'text-content'}`}>
-                                    {m.tipo === 'SALIDA' ? '−' : ''}{formatMoney(m.monto)}
                                 </span>
-                            </DataCell>
-                        </DataRow>
-                    );
-                })}
-            </DataTable>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                {g.filas.map((f) => (f.tipoFila === 'corte' ? (
+                                    <LineaDeCorte key={`c${f.corte.id}`} corte={f.corte} />
+                                ) : (
+                                    <Renglon
+                                        key={f.mv.id}
+                                        mov={f.mv}
+                                        minuto={f.minuto}
+                                        editado={fueEditado(f.mv)}
+                                        edicion={ultimaEdicion(f.mv)}
+                                        onAbrir={() => setAbierto(f.mv)}
+                                    />
+                                )))}
+                            </div>
+                        </div>
+                    ))}
+                </section>
+            ))}
 
             {!cargando && filtrados.length > pageSize && (
                 <TablePagination
@@ -201,7 +348,99 @@ export default function MovimientosDeCaja({
                 sala={abierto ? salas?.get(abierto.branch_id) : ''}
                 onClose={() => setAbierto(null)}
             />
-        </>
+        </div>
+    );
+}
+
+/**
+ * El corte, dibujado como una línea que cruza la lista.
+ *
+ * No es un separador decorativo: es el instante contra el que se mide todo lo
+ * de arriba. Por eso lleva su cifra —el corte que cuadró justo después de un
+ * ingreso es exactamente el caso que hay que poder ver— y no es pulsable: el
+ * detalle de un corte vive en su pestaña, y llevar de una lista a otra al tocar
+ * una línea sería un destino que nadie pidió.
+ */
+function LineaDeCorte({ corte }) {
+    const dif = Number(corte.diferencia_erp);
+    const cuadra = !Number.isFinite(dif) || Math.abs(dif) < 0.005;
+    return (
+        <div className="flex items-center gap-2 py-1" role="separator"
+            aria-label={`Corte de las ${hhmm(corte.hora)}`}>
+            <span className="h-px flex-1 bg-brand/25" aria-hidden="true" />
+            <span className="shrink-0">
+                <Badge variant={cuadra ? 'info' : dif > 0 ? 'warning' : 'danger'} size="sm" icon={Scale}>
+                    Corte {hhmm(corte.hora)} · {formatMoney(corte.total_declarado)}
+                    {!cuadra && ` · ${dif > 0 ? '+' : '−'}${formatMoney(Math.abs(dif))}`}
+                </Badge>
+            </span>
+            <span className="h-px flex-1 bg-brand/25" aria-hidden="true" />
+        </div>
+    );
+}
+
+/**
+ * Un movimiento. La forma dice el estado; el badge sólo lo nombra.
+ *
+ * El carril de color de la izquierda y el glifo son lo que se ve antes de leer:
+ * verde entra, ámbar sale, rojo ya no está. Un editado muestra el monto
+ * anterior tachado AL LADO del nuevo — que es el dato, y estaba escondido
+ * detrás de un clic.
+ */
+function Renglon({ mov, minuto, editado, edicion, onAbrir }) {
+    const ido = Boolean(mov.desaparecido_at);
+    const entra = mov.tipo === 'ENTRADA';
+    const Glifo = ido ? Trash2 : entra ? ArrowDownLeft : ArrowUpRight;
+
+    const carril = ido ? 'bg-danger' : entra ? 'bg-success' : 'bg-warning';
+    const cajaGlifo = ido ? 'bg-danger/10 text-danger-text'
+        : entra ? 'bg-success/10 text-success-text' : 'bg-warning/10 text-warning-text';
+    const colorMonto = ido ? 'text-danger-text line-through'
+        : entra ? 'text-success-text' : 'text-warning-text';
+
+    const montoAntes = edicion && Number(edicion.monto_antes) !== Number(edicion.monto_despues)
+        ? edicion.monto_antes : null;
+
+    const hora = minuto != null ? horaDe(mov.created_at) : null;
+
+    return (
+        <button type="button" onClick={onAbrir} data-interactive
+            className="w-full text-left rounded-xl overflow-hidden flex items-stretch gap-0
+                       min-h-[var(--tap-min)] active:scale-[0.99] transition-transform"
+            data-surface="card"
+            title="Ver todo lo que se le vio cambiar">
+            <span className={`w-1 shrink-0 ${carril}`} aria-hidden="true" />
+            <span className="flex items-center gap-3 flex-1 min-w-0 p-2.5">
+                <span className={`shrink-0 w-8 h-8 rounded-lg grid place-items-center ${cajaGlifo}`} aria-hidden="true">
+                    <Glifo className="w-4 h-4" />
+                </span>
+
+                <span className="flex-1 min-w-0">
+                    <span className={`block text-body-sm font-semibold truncate ${
+                        ido ? 'text-content-3 line-through' : 'text-content'}`}>
+                        {mov.concepto || 'Sin concepto'}
+                    </span>
+                    <span className="flex items-center gap-1.5 flex-wrap text-micro text-content-3">
+                        {ido && <Badge variant="danger" size="sm">Ya no está</Badge>}
+                        {!ido && editado && <Badge variant="warning" size="sm">Se modificó</Badge>}
+                        {mov.origen === 'PORTAL' && <Badge variant="info" size="sm">Del portal</Badge>}
+                        {hora ? `se vio ${hora}` : 'sin hora comparable'}
+                        {ido && ` · dejó de estar ${cuando(mov.desaparecido_at)}`}
+                    </span>
+                </span>
+
+                <span className="shrink-0 text-right">
+                    <span className={`block text-body font-black tabular-nums ${colorMonto}`}>
+                        {entra ? '+' : '−'}{formatMoney(mov.monto)}
+                    </span>
+                    {montoAntes != null && (
+                        <span className="block text-micro text-content-3 tabular-nums line-through">
+                            antes {entra ? '+' : '−'}{formatMoney(montoAntes)}
+                        </span>
+                    )}
+                </span>
+            </span>
+        </button>
     );
 }
 
@@ -235,12 +474,13 @@ function DetalleDelMovimiento({ movimiento, historia, sala, onClose }) {
                     </p>
                     <p className="text-body-sm text-content-2">{movimiento.concepto || 'Sin concepto'}</p>
                     <p className="text-caption text-content-3">
-                        {sala || '—'} · {fechaCorta(movimiento.fecha)}
+                        {sala || '—'} · {fechaLarga(movimiento.fecha)}
                         {movimiento.origen === 'PORTAL' && ' · anotado por el portal'}
                     </p>
                 </div>
 
                 <div className="text-caption text-content-3 space-y-0.5">
+                    <p>Se vio por primera vez: {cuando(movimiento.created_at)}</p>
                     <p>Visto por última vez: {cuando(movimiento.visto_at)}</p>
                     {ido && <p className="text-danger-text font-semibold">Dejó de estar: {cuando(movimiento.desaparecido_at)}</p>}
                 </div>

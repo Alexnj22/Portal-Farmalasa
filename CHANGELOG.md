@@ -21,6 +21,94 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.919.0 — Efectivo: Mi caja y Cortes son una sola pantalla
+
+> «para mí debe ser una sola cosa, no tiene sentido 3 cosas, cortes de caja, mi
+> caja y bolsas de efectivo» (usuario, 1-sep)
+
+**Mi caja** y **Cortes de caja** eran dos entradas de menú para el mismo dinero,
+y seguir un turno obligaba a saltar entre las dos. Hoy son **una vista con tres
+pestañas** en `/caja`, llamada **Efectivo**:
+
+| pestaña | qué es | permiso |
+|---|---|---|
+| **Hoy** | la caja de mi sala, ahora — abrir, entrada, salida, cortar, cerrar | `caja_vales` |
+| **Cortes** | el historial y las decisiones | `cortes_caja` |
+| **Movimientos** | lo que entró y salió del cajón | `cortes_caja` |
+
+**Los módulos NO se tocan**: siguen siendo dos permisos, porque operar la caja
+es otro acto que mirarla y hay gente con uno solo —Contabilidad tiene
+`cortes_caja` y no `caja_vales`, y no ve «Hoy»—. Lo que cambió es que ya no son
+dos destinos: la ruta abre con cualquiera de los dos y **cada pestaña cobra el
+suyo**. En el menú, los dos módulos apuntan a la misma ruta y `AppLayout` los
+funde en una entrada; sin ese `dedupe` quien tuviera los dos vería «Efectivo»
+dos veces.
+
+`/cortes` sigue viva y **redirige llevándose la consulta** — la nombran avisos
+ya enviados y los favoritos de quien la usaba, y un `<Navigate>` a secas
+descartaría el `?corte=<id>` de una notificación.
+
+### «Aperturas» dejó de ser pestaña
+
+Sus datos —quién abrió, desde cuándo, con cuánto, si marcó entrada— suben como
+**fichas al encabezado de Cortes**. Nadie entra al portal a mirar aperturas: se
+miran **al leer un corte**, para saber a quién pertenece, y tenerlas en otra
+pestaña obligaba a salir de la lista y volver.
+
+Como ficha dicen de un vistazo lo que la tabla hacía leer columna por columna:
+la banda de color es el estado, el avatar es la persona, y **una apertura sin
+persona se ve porque no tiene cara**. Tres de las seis salas abren con una
+cuenta compartida —«MI CAJA LA SALUD 5»—, y ahí las iniciales se omiten a
+propósito: «ML» se leería como si alguien se llamara así.
+
+Sus dos desplegables se fueron con la pestaña. Una ficha no se recorta: se mira.
+
+### Movimientos, rehecho
+
+Eran cinco columnas donde todo pesaba lo mismo: un movimiento normal y uno
+borrado ocupaban el mismo renglón gris y se distinguían por un badge que en el
+teléfono **ni siquiera se dibujaba** (`hideBelow: 'md'`). Pero esta lista no
+existe para leerse en orden — existe para que salte lo que está mal.
+
+1. **Agrupada por día y por sala, con el neto de cada grupo.** Los movimientos
+   de una sala son una serie que termina en su corte; mezclados con los de otra
+   hay que reconstruir cuál va con cuál. El neto **no cuenta los desaparecidos**:
+   un movimiento que ya no está tampoco está en el dinero.
+2. **El corte, dibujado como línea que cruza la lista.** Es la única forma de
+   ver de qué lado cayó cada movimiento — el caso que trajo esta pantalla es el
+   ingreso de $454.00 del 22-ago en Salud 1, por el monto exacto del sobrante
+   anterior, que dejó la diferencia en cero. Ese no se distingue por la cifra:
+   se distingue por el momento. La hora del corte y la del movimiento existían
+   desde siempre y nunca se habían puesto una contra otra.
+3. **El estado ES la forma de la fila.** Un borrado va tachado y en rojo; un
+   editado muestra el monto anterior tachado al lado del nuevo. Sin abrir nada.
+
+⚠️ **«Se vio después del corte» sale de la CAPTURA, no del sistema de la caja.**
+Sus movimientos no publican hora —la tabla tiene `fecha` y nada más—, así que lo
+que se compara es `created_at`, con la resolución de la cadencia de captura (30
+min). Por eso el rótulo dice **«se vio»** y no «se anotó»: prometer la hora
+exacta sería inventarla. Y sólo se marca cuando la captura lo vio **el mismo
+día** de su fecha; en un movimiento traído por un relleno hacia atrás,
+`created_at` es la fecha del relleno y la comparación no significaría nada.
+
+### Lo que hay que saber
+
+**La ranura de sucursal cambia de conjunto entre pestañas.** En «Hoy» es *qué
+caja opero* (las salas de `caja_vales`, y las elige `MiCajaView` con su propio
+`?sala=`); en las otras dos es *qué sala miro* (las de `cortes_caja`). Es la
+misma pregunta con distintas respuestas, no una ranura que cambia de
+significado — que es lo que hundió la convivencia con Bolsas. Y el **período no
+se dibuja en «Hoy»** porque ahí no existe: es *ahora*.
+
+**Bolsas sigue aparte.** Es la cuarta pestaña natural —el dinero sale de aquí y
+termina allá—, pero su período significa otra cosa: una bolsa vive días, un
+corte pasa en un instante. Entra cuando esto esté probado en sala.
+
+⚠️ **La firma del corte todavía no existe.** La maqueta muestra «desde el portal
+· a ciegas · <persona>» en cada corte, y eso necesita que `hacer-corte-caja`
+escriba su propia fila antes de mandar el corte. Va en el siguiente paso; hoy un
+corte hecho desde el portal se sigue viendo igual que uno hecho en la caja.
+
 ## v2.918.1 — Quien atiende imprime en su sala, supervisión elige
 
 El orden definitivo del papel del código, dicho por el usuario:

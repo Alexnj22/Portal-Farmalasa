@@ -117,9 +117,15 @@ export function fetchMovimientos({ branchId, fecha }) {
 // Las columnas de la LISTA de movimientos. `visto_at` y `desaparecido_at`
 // existen desde v2.838.0: sin ellas, un movimiento borrado en el origen se veía
 // igual que uno vigente, que es justo lo que la lista tiene que distinguir.
+// `created_at` desde v2.914.0: es CUÁNDO LA CAPTURA lo vio por primera vez, y
+// es lo único que se puede comparar contra la hora de un corte —los movimientos
+// del sistema de la caja no publican hora, la tabla sólo tiene `fecha`—. Con
+// eso la lista dibuja de qué lado del corte cayó cada uno, que es la pregunta
+// que la trajo: un ingreso por el monto exacto del sobrante anterior no se
+// distingue por la cifra, se distingue por el momento.
 const CAMPOS_MOV = `
     id, branch_id, erp_movimiento_id, fecha, concepto, monto, tipo,
-    origen, visto_at, desaparecido_at, capturado_at
+    origen, visto_at, desaparecido_at, capturado_at, created_at
 `;
 
 /**

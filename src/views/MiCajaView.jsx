@@ -100,7 +100,18 @@ function conLaCuentaBuena(r) {
     };
 }
 
-export default function MiCajaView() {
+/**
+ * `comoPestana` — esta vista es la pestaña «Hoy» de Efectivo desde v2.914.0.
+ *
+ * Con la prop puesta NO dibuja su propio `GlassViewLayout`: el anfitrión ya
+ * puso el marco, el título y la barra de pestañas, y anidar dos marcos daría
+ * dos encabezados y dos rellenos. El cuerpo y los diálogos son exactamente los
+ * mismos — no hay una versión «de pestaña» de nada, sólo el marco de menos.
+ *
+ * Sigue exportándose entera y usable sola: si algún día la sala vuelve a tener
+ * su pantalla propia, no hay que deshacer nada.
+ */
+export default function MiCajaView({ comoPestana = false }) {
     // `VACIO` estable y no `|| []`: un arreglo nuevo en cada render invalida
     // los `useMemo` que dependen de él.
     const branches = useStaff((s) => s.branches) ?? VACIO;
@@ -369,9 +380,16 @@ export default function MiCajaView() {
         ];
     }, [puedeOperar, sala, estado, noSePudo, bolsas.length]);
 
-    return (
-        <GlassViewLayout icon={Wallet} title={`Mi caja${nombreSala ? ` · ${nombreSala}` : ''}`}>
-            <div className="p-4 md:p-6 space-y-6">
+    /* El nombre de la sala vivía en el título de la vista, y como pestaña ya no
+     * hay título propio. Sin esto, quien mira la caja de OTRA sala no tiene
+     * nada en pantalla que se lo diga — y operar la caja equivocada no se
+     * deshace. Con una sola sala el selector tampoco se dibuja (§ el selector
+     * se esconde con una opción), así que este rótulo es lo único que queda. */
+    const cuerpo = (
+        <div className="p-4 md:p-6 space-y-6">
+            {comoPestana && nombreSala && (
+                <h2 className="text-label font-bold text-content -mb-2">Caja de {nombreSala}</h2>
+            )}
 
                 {/* El carril y la píldora comparten UNA fila (§17.0). Las dos
                     mitades —`lg:flex-row` acá y `flex-1` en el carril— son
@@ -502,7 +520,12 @@ export default function MiCajaView() {
                         )}
                     </>
                 )}
-            </div>
+        </div>
+    );
+
+    const todo = (
+        <>
+            {cuerpo}
 
             <DialogoAbrir abierto={dialogo === 'abrir'} ocupado={ocupado}
                 onClose={() => setDialogo(null)}
@@ -559,6 +582,13 @@ export default function MiCajaView() {
                     onClose={() => setDialogo(null)}
                     onCerrar={() => correr(() => cerrarElDia(sala), 'El día quedó cerrado.')} />
             )}
+        </>
+    );
+
+    if (comoPestana) return todo;
+    return (
+        <GlassViewLayout icon={Wallet} title={`Mi caja${nombreSala ? ` · ${nombreSala}` : ''}`}>
+            {todo}
         </GlassViewLayout>
     );
 }

@@ -49,16 +49,31 @@ export const MODULE_MAP = {
     maintenance:       { path: '/mantenimiento',  label: 'Mantenimiento',            icon: Wrench        },
     // ── Próximamente ──
     ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
-    cortes_caja:       { path: '/cortes',           label: 'Cortes de caja',           icon: Wallet     },
+    /* «Mi caja» y «Cortes de caja» son UNA sola pantalla desde v2.914.0, así que
+     * los dos módulos apuntan a la MISMA ruta y el menú los funde en una entrada
+     * (ver el `dedupe` por `path` de `AppLayout`). Siguen siendo dos permisos —
+     * operar la caja y mirar los cortes son dos cosas distintas y hay gente con
+     * uno solo—, pero no dos destinos: eran el mismo dinero en dos sitios y
+     * obligaban a saltar de pantalla para seguir un turno.
+     *
+     * `/cortes` sigue existiendo y redirige, porque la nombran avisos ya
+     * enviados y los favoritos de quien la usaba. */
+    cortes_caja:       { path: '/caja',             label: 'Efectivo',                 icon: Wallet     },
     bolsas:            { path: '/bolsas',           label: 'Bolsas de efectivo',       icon: Package    },
-    caja_vales:        { path: '/caja',             label: 'Mi caja',                  icon: Wallet     },
+    caja_vales:        { path: '/caja',             label: 'Efectivo',                 icon: Wallet     },
     metas:             { path: '/metas',            label: 'Metas',                    icon: Target     },
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },
     clientes:          { path: '/clientes',         label: 'Clientes',                 icon: Contact    },
     encuesta:          { path: '/encuesta',         label: 'Clima organizacional',     icon: BarChart2  },
     encuesta_admin:    { path: '/encuesta-admin',   label: 'Encuestas',                icon: PenLine    },
-    bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
+    /* El slot de «Bonificaciones» era el que quedó cuando se retiró Promociones
+     * el 2026-07-28. Se reconvirtió en el módulo real el 2026-09-01: la clave
+     * pasa a `promociones` para que coincida con el primer segmento de la ruta
+     * —que es como `moduleKeyForPath` resuelve el módulo—, y los permisos ya
+     * repartidos se migraron con ella. El usuario las llama promociones; la
+     * bonificación es lo que gana cada persona, que es otra cosa. */
+    promociones:       { path: '/promociones',      label: 'Promociones',              icon: Gift       },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icon: Package       },
     laboratorios:      { path: '/laboratorios',     label: 'Laboratorios',             icon: FlaskConical  },

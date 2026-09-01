@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { AlertTriangle, ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, DoorOpen, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, UserX, Wallet } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -13,7 +13,13 @@ import Notice from '../components/common/Notice';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import AsentarDiferencias from '../components/cortes/AsentarDiferencias';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
-import AperturasDeCaja from '../components/cortes/AperturasDeCaja';
+import FichasDeCaja from '../components/cortes/FichasDeCaja';
+/* La pestaña «Hoy» es `MiCajaView` entera, y va DIFERIDA a propósito: arrastra
+ * los diálogos de operar la caja —abrir, corte, entrada, salida, la lectura de
+ * la boleta— y quien entra sólo a mirar cortes (Contabilidad no tiene
+ * `caja_vales`) no los va a abrir nunca. Cargarla con la vista fundiría los dos
+ * chunks y le cobraría a todo el mundo el peso de operar. */
+const MiCajaView = lazy(() => import('./MiCajaView'));
 import MovimientosDeCaja from '../components/cortes/MovimientosDeCaja';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -58,13 +64,33 @@ import { tokenMatch } from '../utils/searchUtils';
 // significado según la pestaña —un corte pasa en un instante, una bolsa vive
 // días—. Acá sucursal y período significan exactamente lo mismo en las dos, así
 // que se comparten; lo que cambia son las dos ranuras de la derecha.
+/* ── «Efectivo»: una sola pantalla, tres pestañas (v2.914.0) ───────────────
+ *
+ * «Mi caja» y «Cortes de caja» eran dos entradas de menú para el mismo dinero.
+ * Regla del usuario: *«para mí debe ser una sola cosa, no tiene sentido 3
+ * cosas»*. Hoy son una vista y dos permisos:
+ *
+ *   Hoy          HACER  — la caja de mi sala, ahora.        `caja_vales`
+ *   Cortes       MIRAR  — el historial y las decisiones.    `cortes_caja`
+ *   Movimientos  MIRAR  — las entradas y salidas.           `cortes_caja`
+ *
+ * ── «Aperturas» dejó de ser pestaña ────────────────────────────────────────
+ * Sus datos —quién abrió, desde cuándo, con cuánto— viven arriba de los cortes
+ * como fichas (`FichasDeCaja`). Nadie entra al portal a mirar aperturas: se
+ * miran AL LEER UN CORTE, para saber a quién pertenece, y tenerlas en otra
+ * pestaña obligaba a salir de la lista y volver.
+ *
+ * ── La ranura de sucursal cambia de CONJUNTO entre pestañas ────────────────
+ * En «Hoy» es *qué caja opero* (las salas de `caja_vales`, y la elige
+ * `MiCajaView` con su propio `?sala=`); en las otras dos es *qué sala miro*
+ * (las de `cortes_caja`). Es la misma pregunta con distintas respuestas, no una
+ * ranura que cambia de significado — que es lo que hundió la convivencia con
+ * Bolsas. Y el PERÍODO no se dibuja en «Hoy» porque ahí no existe: es *ahora*.
+ */
 const PESTANAS = [
-    { key: 'cortes',      label: 'Cortes',      icon: Wallet },
-    { key: 'movimientos', label: 'Movimientos', icon: ArrowDownLeft },
-    // «Aperturas» y NO «Turnos»: esa palabra ya es el turno de trabajo de
-    // Horarios, y el sistema de la caja la usa para un tercer sentido —el
-    // número 1, 2 ó 3 que sale en el tiquete dentro de una misma apertura—.
-    { key: 'aperturas',   label: 'Aperturas',   icon: DoorOpen },
+    { key: 'hoy',         label: 'Hoy',         icon: Wallet,        modulo: 'caja_vales'  },
+    { key: 'cortes',      label: 'Cortes',      icon: Scale,         modulo: 'cortes_caja' },
+    { key: 'movimientos', label: 'Movimientos', icon: ArrowDownLeft, modulo: 'cortes_caja' },
 ];
 
 const VACIO = [];
@@ -132,22 +158,6 @@ const ESTADOS_MOV = [
     { value: 'VIGENTES',      label: 'Vigentes' },
     { value: 'EDITADOS',      label: 'Se modificaron' },
     { value: 'DESAPARECIDOS', label: 'Ya no están' },
-];
-
-// Las dos preguntas de «Aperturas», en dos ranuras y no en una: «¿sigue
-// abierta?» y «¿la abrió una persona?» son independientes, y juntas no se
-// podrían cruzar —una caja abierta AHORA con una cuenta compartida es
-// exactamente la fila que hay que mirar—.
-const ESTADOS_APER = [
-    { value: 'TODAS',    label: 'Abiertas y cerradas' },
-    { value: 'ABIERTAS', label: 'Abiertas ahora' },
-    { value: 'CERRADAS', label: 'Ya cerradas' },
-];
-
-const QUIEN_APER = [
-    { value: 'TODOS',   label: 'Cualquiera' },
-    { value: 'PERSONA', label: 'Abrió una persona' },
-    { value: 'CUENTA',  label: 'Cuenta compartida' },
 ];
 
 // El carril de la vista: cuatro números fijos, no un desglose de largo variable
@@ -218,9 +228,26 @@ const CortesView = () => {
     // cierra sola a los 5 minutos y el service worker recarga al publicar, así
     // que una pestaña en memoria devuelve a «Cortes» sin decir nada — y eso no
     // se reporta como un defecto, se reporta como «la pantalla se movió sola».
-    const [pestana, setPestana] = usePestanaEnUrl(PESTANAS, 'cortes');
+    /* Sólo las pestañas cuyo módulo se tiene. Quien únicamente ve los cortes
+     * —Contabilidad— no ve «Hoy», y quien sólo opera la caja no ve las otras
+     * dos. Se filtra ACÁ y no dentro de cada cuerpo porque `usePestanaEnUrl`
+     * necesita la lista visible: sin eso, un `?tab=hoy` en la dirección abriría
+     * una pestaña vacía en vez de caer en la primera que sí existe. */
+    const pestanasVisibles = useMemo(
+        () => PESTANAS.filter((p) => hasPermission(p.modulo, 'can_view')),
+        [hasPermission],
+    );
+    // El defecto es «Hoy» para quien opera: la sala entra a trabajar, no a
+    // mirar el historial. Sin `caja_vales` cae en la primera que quede.
+    const [pestana, setPestana] = usePestanaEnUrl(
+        pestanasVisibles,
+        hasPermission('caja_vales', 'can_view') ? 'hoy' : 'cortes',
+    );
+    const enHoy         = pestana === 'hoy';
     const enMovimientos = pestana === 'movimientos';
-    const enAperturas   = pestana === 'aperturas';
+    // Las fichas de caja acompañan a los CORTES: ahí es donde se pregunta de
+    // quién es el corte que se está leyendo.
+    const enCortes      = pestana === 'cortes';
 
     const [movs, setMovs] = useState(VACIO);
     const [historial, setHistorial] = useState(VACIO);
@@ -228,14 +255,20 @@ const CortesView = () => {
     const [tipoMov, setTipoMov] = useState('TODOS');
     const [estadoMov, setEstadoMov] = useState('TODOS');
 
+    /* Las aperturas ya no son una pestaña con filtros propios: son las fichas de
+     * arriba de los cortes, y una ficha no se recorta — se mira. Los dos
+     * desplegables que tenía (estado y quién) se fueron con la pestaña; lo que
+     * decían está en la banda de color y en el avatar de cada ficha. */
     const [aperturas, setAperturas] = useState(VACIO);
     const [entradas, setEntradas] = useState(VACIO);
     const [pudeAsistencia, setPudeAsistencia] = useState(true);
     const [cargandoAper, setCargandoAper] = useState(false);
-    const [estadoAper, setEstadoAper] = useState('TODAS');
-    const [quienAper, setQuienAper] = useState('TODOS');
 
+    /* En «Hoy» no se piden ni los cortes ni sus diferencias: esa pestaña es la
+     * caja de UNA sala y trae lo suyo por su cuenta. Pedirlos igual sería
+     * bajar el período entero de las seis salas para no mirarlo. */
     const cargar = useCallback(async () => {
+        if (enHoy) { setCargando(false); return; }
         setCargando(true);
         const filas = await fetchCortes({ desde, hasta });
         setCortes(filas || VACIO);
@@ -246,7 +279,7 @@ const CortesView = () => {
         const autores = await fetchPersonas((filas || []).map((c) => c.resuelto_por));
         setPersonas(new Map(autores.map((p) => [p.id, p])));
         setDifs(await fetchDiferencias({ desde, hasta }) || VACIO);
-    }, [desde, hasta]);
+    }, [desde, hasta, enHoy]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + al cambiar el rango
 
@@ -272,7 +305,7 @@ const CortesView = () => {
     // marcado en otra sala —cubrir un turno ajeno es normal— así que acotarla
     // por sala haría aparecer un «no marcó» que no es cierto.
     const cargarAper = useCallback(async () => {
-        if (!enAperturas) return;
+        if (!enCortes) return;
         setCargandoAper(true);
         const [filas, asistencia] = await Promise.all([
             fetchAperturas({ desde, hasta, branchId: sala || null }),
@@ -282,7 +315,7 @@ const CortesView = () => {
         setEntradas(asistencia.filas || VACIO);
         setPudeAsistencia(asistencia.pude);
         setCargandoAper(false);
-    }, [enAperturas, desde, hasta, sala]);
+    }, [enCortes, desde, hasta, sala]);
 
     useEffect(() => { cargarAper(); }, [cargarAper]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la pestaña y al cambiar sala o rango
 
@@ -350,41 +383,6 @@ const CortesView = () => {
         { clave: 'tocados',  filtro: 'estado', valor: 'EDITADOS',      icon: Pencil,        label: 'Se modificaron', valor_txt: resumenMovs.tocados,               iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
         { clave: 'idos',     filtro: 'estado', valor: 'DESAPARECIDOS', icon: Trash2,        label: 'Ya no están',    valor_txt: resumenMovs.idos,                  iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: resumenMovs.idos ? 'text-danger-text' : undefined },
     ], [resumenMovs]);
-
-    // Las cuatro de «Aperturas». «Sin marcación» sólo cuenta cuando hay con qué
-    // cruzar: sin marcaciones en el período, un cero ahí diría «todos marcaron».
-    const resumenAper = useMemo(() => {
-        const marcaron = new Set(entradas.map((e) => e.employee_id));
-        const hayConQueCruzar = pudeAsistencia && entradas.length > 0;
-        return {
-            total:      aperturas.length,
-            abiertas:   aperturas.filter((a) => !a.cerrada_at).length,
-            sinPersona: aperturas.filter((a) => !a.employee_id).length,
-            sinMarcar:  hayConQueCruzar
-                ? aperturas.filter((a) => a.employee_id && !marcaron.has(a.employee_id)).length
-                : null,
-        };
-    }, [aperturas, entradas, pudeAsistencia]);
-
-    const METRICAS_APER = useMemo(() => [
-        { clave: 'total',      filtro: null,     valor: null,       icon: DoorOpen,   label: 'Aperturas',       valor_txt: resumenAper.total },
-        { clave: 'abiertas',   filtro: 'estado', valor: 'ABIERTAS', icon: Clock,      label: 'Abiertas ahora',  valor_txt: resumenAper.abiertas,   iconBg: 'bg-success/10', iconCls: 'text-success-text' },
-        { clave: 'sinPersona', filtro: 'quien',  valor: 'CUENTA',   icon: UserX,      label: 'Sin persona',     valor_txt: resumenAper.sinPersona, iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: resumenAper.sinPersona ? 'text-warning-text' : undefined },
-        { clave: 'sinMarcar',  filtro: null,     valor: null,       icon: AlertTriangle, label: 'Sin marcación', valor_txt: resumenAper.sinMarcar ?? '—', iconBg: 'bg-danger/10', iconCls: 'text-danger-text', valueCls: resumenAper.sinMarcar ? 'text-danger-text' : undefined },
-    ], [resumenAper]);
-
-    const aplicarMetricaAper = useCallback((m) => {
-        if (m.filtro === 'estado') setEstadoAper((v) => (v === m.valor ? 'TODAS' : m.valor));
-        else if (m.filtro === 'quien') setQuienAper((v) => (v === m.valor ? 'TODOS' : m.valor));
-    }, []);
-
-    const aperturasFiltradas = useMemo(() => aperturas.filter((a) => {
-        if (estadoAper === 'ABIERTAS' && a.cerrada_at) return false;
-        if (estadoAper === 'CERRADAS' && !a.cerrada_at) return false;
-        if (quienAper === 'PERSONA' && !a.employee_id) return false;
-        if (quienAper === 'CUENTA'  && a.employee_id) return false;
-        return true;
-    }), [aperturas, estadoAper, quienAper]);
 
     const aplicarMetricaMov = useCallback((m) => {
         if (m.filtro === 'tipo') setTipoMov((v) => (v === m.valor ? 'TODOS' : m.valor));
@@ -523,7 +521,6 @@ const CortesView = () => {
         setSala(''); setPeriodo(HOY);
         setEstado('TODOS'); setDiferencia('TODAS');
         setTipoMov('TODOS'); setEstadoMov('TODOS');
-        setEstadoAper('TODAS'); setQuienAper('TODOS');
         setBusqueda(''); setPagina(1);
     };
 
@@ -538,16 +535,26 @@ const CortesView = () => {
             onTabChange={setPestana}
             searchValue={busqueda}
             onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
-            placeholder={enAperturas
-                ? 'Buscar por sala, persona u hora…'
-                : enMovimientos
-                    ? 'Buscar por concepto, sala o monto…'
-                    : 'Buscar por sala, persona, hora o monto…'}
+            // En «Hoy» no hay nada que buscar: es un turno, no una lista.
+            showSearch={!enHoy}
+            placeholder={enMovimientos
+                ? 'Buscar por concepto, sala o monto…'
+                : 'Buscar por sala, persona, hora o monto…'}
         />
     );
 
     return (
-        <GlassViewLayout icon={Wallet} title="Cortes de caja" filtersContent={filtersContent}>
+        <GlassViewLayout icon={Wallet} title="Efectivo" filtersContent={filtersContent}>
+            {/* «Hoy» trae su propio cuerpo entero —carril, píldora con las
+                acciones, paneles y diálogos—, así que se dibuja SOLA y no
+                dentro del andamio de abajo, que es el de las dos listas. */}
+            {enHoy && (
+                <Suspense fallback={<div className="p-4 md:p-6"><LoadingState label="Abriendo la caja" /></div>}>
+                    <MiCajaView comoPestana />
+                </Suspense>
+            )}
+
+            {!enHoy && (
             <div className="p-4 md:p-6 space-y-6">
 
                 {/* El carril y la píldora comparten UNA fila (§17.0): las dos
@@ -571,16 +578,7 @@ const CortesView = () => {
                         ariaLabel={enMovimientos
                             ? 'Resumen de los movimientos del período'
                             : 'Resumen de los cortes del período'}>
-                        {enAperturas
-                            ? METRICAS_APER.map((m) => (
-                                <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
-                                    label={m.label} value={m.valor_txt} valueCls={m.valueCls}
-                                    active={m.filtro === 'estado' ? estadoAper === m.valor
-                                        : m.filtro === 'quien' ? quienAper === m.valor : false}
-                                    onClick={m.filtro ? () => aplicarMetricaAper(m) : undefined}
-                                    loading={cargandoAper} />
-                            ))
-                            : enMovimientos
+                        {enMovimientos
                             ? METRICAS_MOV.map((m) => (
                                 <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
                                     label={m.label} value={m.valor_txt} valueCls={m.valueCls}
@@ -604,8 +602,8 @@ const CortesView = () => {
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
                             activeCount={[sala, !periodoIntacto,
-                                enAperturas ? estadoAper !== 'TODAS' : enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
-                                enAperturas ? quienAper !== 'TODOS' : enMovimientos ? estadoMov !== 'TODOS' : diferencia !== 'TODAS',
+                                enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
+                                enMovimientos ? estadoMov !== 'TODOS' : diferencia !== 'TODAS',
                             ].filter(Boolean).length}>
                             {/* La ranura de sucursal SÓLO con alcance ALL. Con
                                 BRANCH la policy de `cortes_caja` ya devuelve
@@ -641,25 +639,7 @@ const CortesView = () => {
                                 PESTAÑA. Sucursal y período se quedan porque
                                 significan lo mismo en las dos; el estado de un
                                 corte no significa nada sobre un vale. */}
-                            {enAperturas ? (
-                                <>
-                                    <FilterBar.Section active={estadoAper !== 'TODAS'} onClear={() => setEstadoAper('TODAS')} label="estado">
-                                        <FilterBar.Opciones
-                                            label="Estado" icon={Clock}
-                                            value={estadoAper} onChange={(v) => setEstadoAper(v || 'TODAS')}
-                                            options={ESTADOS_APER} ancho="185px"
-                                        />
-                                    </FilterBar.Section>
-
-                                    <FilterBar.Section active={quienAper !== 'TODOS'} onClear={() => setQuienAper('TODOS')} label="quién">
-                                        <FilterBar.Opciones
-                                            label="Quién" icon={UserX}
-                                            value={quienAper} onChange={(v) => setQuienAper(v || 'TODOS')}
-                                            options={QUIEN_APER} ancho="185px"
-                                        />
-                                    </FilterBar.Section>
-                                </>
-                            ) : enMovimientos ? (
+                            {enMovimientos ? (
                                 <>
                                     <FilterBar.Section active={tipoMov !== 'TODOS'} onClear={() => setTipoMov('TODOS')} label="tipo">
                                         <FilterBar.Opciones
@@ -705,15 +685,16 @@ const CortesView = () => {
                     porque no es otra sección de la pantalla —son los mismos
                     cortes— sino algo pendiente de hacer, y esconderlo detrás de
                     un recorte sería no anunciarlo. */}
-                {enAperturas && (
-                    <AperturasDeCaja
-                        aperturas={aperturasFiltradas}
+                {/* Las fichas de caja van ARRIBA de los cortes y debajo de la
+                    píldora: contestan «¿de quién es este corte?», que es la
+                    pregunta que se hace al leer la lista de abajo. */}
+                {enCortes && (
+                    <FichasDeCaja
+                        aperturas={aperturas}
                         entradas={entradas}
                         pudeLeerAsistencia={pudeAsistencia}
                         salas={salasMap}
                         cargando={cargandoAper}
-                        busqueda={busqueda}
-                        onLimpiarBusqueda={() => setBusqueda('')}
                     />
                 )}
 
@@ -721,6 +702,9 @@ const CortesView = () => {
                     <MovimientosDeCaja
                         movimientos={movs}
                         historial={historial}
+                        // Los cortes del período, para dibujar la línea contra la
+                        // que se mide cada movimiento. Ya están cargados.
+                        cortes={cortes}
                         salas={salasMap}
                         cargando={cargandoMovs}
                         busqueda={busqueda}
@@ -730,7 +714,7 @@ const CortesView = () => {
                     />
                 )}
 
-                {!enMovimientos && !enAperturas && !cargando && puedeResolver && sinAsentar.length > 0 && (
+                {enCortes && !cargando && puedeResolver && sinAsentar.length > 0 && (
                     <Notice variant="warning" icon={Landmark}>
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                             <div className="min-w-0">
@@ -750,13 +734,13 @@ const CortesView = () => {
                     </Notice>
                 )}
 
-                {!enMovimientos && !enAperturas && cargando && <LoadingState label="Buscando los cortes" />}
+                {enCortes && cargando && <LoadingState label="Buscando los cortes" />}
 
                 {/* Dos vacíos distintos (§26.2): el del filtro se arregla
                     borrándolo y el de verdad no. Y el de «Sin confirmar» vacío
                     es un vacío FELIZ (§26.3) — la sala quería que no hubiera
                     nada. Los tres llevan su salida (§18.1). */}
-                {!enMovimientos && !enAperturas && !cargando && filtrados.length === 0 && (
+                {enCortes && !cargando && filtrados.length === 0 && (
                     busqueda ? (
                         <EmptyState
                             compact icon={Search} title="Sin resultados"
@@ -783,7 +767,7 @@ const CortesView = () => {
                     )
                 )}
 
-                {!enMovimientos && !enAperturas && !cargando && porDia.map((g) => (
+                {enCortes && !cargando && porDia.map((g) => (
                     <section key={g.fecha} className="space-y-3">
                         <div className="flex items-baseline justify-between gap-3 px-1">
                             <h3 className="text-label font-bold text-content capitalize">{rotularDia(g.fecha)}</h3>
@@ -823,7 +807,7 @@ const CortesView = () => {
                     </section>
                 ))}
 
-                {!enMovimientos && !enAperturas && !cargando && filtrados.length > porPagina && (
+                {enCortes && !cargando && filtrados.length > porPagina && (
                     <TablePagination
                         page={pagActual}
                         totalPages={totalPaginas}
@@ -835,6 +819,7 @@ const CortesView = () => {
                     />
                 )}
             </div>
+            )}
 
             <AsentarDiferencias
                 abierto={asentando}

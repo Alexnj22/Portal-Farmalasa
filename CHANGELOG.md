@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.923.4 — El logo nuevo llega al afiche y al reglamento de puntos
+
+El centrado de «FARMACIAS» (v2.923.1) entró solo en todo el portal porque todo
+pasa por `LOGO_DE_LA_EMPRESA`. **En tres documentos no**, y la pregunta la hizo
+el usuario —*«el afiche, los documentos como el de puntos?»*— antes de que
+ningún gate ni ninguna prueba lo notara:
+
+| documento | cómo lleva el logo |
+|---|---|
+| `docs/legal/afiche-programa-de-puntos.html` | pegado adentro, `data:image/png;base64` |
+| `docs/legal/reglamento-programa-de-puntos.html` | ídem |
+| `public/reglamento-puntos.html` | derivado del anterior |
+
+Los dos PDF —el afiche de la vitrina y el reglamento— salen de esos HTML, así
+que estaban saliendo con el logo anterior.
+
+**Que el logo vaya pegado es correcto y no se cambió.** Los dos son archivos que
+se mandan sueltos, se publican en línea y se imprimen para la vitrina: con un
+`<img src="/logo-farmacias.png">`, el papel saldría con un hueco y la copia que
+alguien reenvíe por correo, también.
+
+**Lo que faltaba era la consecuencia de esa decisión: un logo pegado no se
+entera de que el archivo cambió.** No hay error, no hay prueba que falle, y
+leyendo el código se ve un `<img>` con una cadena larguísima que no dice cuál
+logo tiene adentro — se descubre mirando el papel, que es tarde. Ahora lo
+resuelve `npm run logo:incrustar` (`scripts/incrustar-logo.mjs`): vuelve a pegar
+el aprobado en los documentos que lo llevan adentro, ancla por el `alt` y no por
+la posición, y **falla si no encuentra el ancla** en vez de informar que todo
+salió bien sin haber cambiado nada. Con `--escribir` recuerda qué hay que
+regenerar después.
+
+`public/reglamento-puntos.html` no está entre sus destinos aunque tenga el logo
+pegado: lo genera `reglamento-puntos-web.mjs` desde el de `docs/`, y parchearlo
+también lo dejaría al día un rato y desincronizado en cuanto alguien edite la
+fuente. Lo derivado se regenera.
+
+Verificado en los cuatro archivos comparando el md5 de la imagen embebida contra
+el del archivo aprobado, y mirando las dos primeras páginas de los PDF. Los QR
+del afiche se releyeron al regenerarlo: los dos decodifican a la dirección
+escrita al lado.
+
 ## v2.923.3 — Caja: POS Promerica, y el abono a crédito no se anota a mano
 
 Migración `20260901215403`. Tres correcciones al catálogo recién nacido, las

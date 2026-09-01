@@ -16,6 +16,7 @@
     "reglamento:puntos:pdf": "node scripts/reglamento-puntos-pdf.mjs docs/legal/reglamento-programa-de-puntos.html",
     "reglamento:puntos:web": "node scripts/reglamento-puntos-web.mjs docs/legal/reglamento-programa-de-puntos.html",
     "afiche:puntos": "node scripts/afiche-puntos-pdf.mjs docs/legal/afiche-programa-de-puntos.html",
+    "logo:incrustar": "node scripts/incrustar-logo.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

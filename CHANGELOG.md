@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.913.1 — El papel sale directo a la sala de quien imprime
+
+Decisión del usuario: **sin diálogo**. Quien aprieta Imprimir casi siempre está
+en su propia sala con el cliente enfrente, y un paso de más en cada impresión se
+paga todos los días. Nathaly, de Salud 1, aprieta una vez y el papel sale por la
+ticketera de Salud 1.
+
+**El diálogo queda para lo único que el atajo no puede resolver: que no haya a
+dónde mandarlo.** Sin sucursal en la ficha, o con la caja de su sala apagada, sin
+registrar o ilegible. Ahí sí hay que elegir — mandarlo a una caja muerta lo deja
+esperando sin que nadie se entere.
+
+**Y como ya no hay diálogo, el aviso dice a dónde fue**, que es lo único que
+quedaba confirmándolo. Y distingue los dos casos: «El papel sale por la ticketera
+de Salud 1» contra «La caja de Salud 1 está apagada. El papel sale cuando
+encienda». Las dos son verdad y llevan a cosas distintas — a buscar el papel, o a
+ir a encender la caja.
+
+Verificado de paso: **las seis cajas están latiendo**, con el último latido de
+hace segundos. Y una trampa que casi me hace decir lo contrario:
+`salas_con_caja_de_impresion()` lleva `AND auth_employee_id() IS NOT NULL`, así
+que consultándola sin sesión devuelve **cero filas** — que se lee exactamente
+igual que «ninguna sala imprime». Es
+[[feedback_un_gate_que_no_pudo_medir_no_puede_dar_verde]] en una función de
+lectura: el vacío era mío, no del dato.
+
 ## v2.913.0 — El código en su propio campo, y la sala se pregunta
 
 Dos correcciones del usuario, y las dos mejoran algo que yo había resuelto peor.

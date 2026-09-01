@@ -214,6 +214,7 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
     const aviso = (titulo, mensaje, tipo) =>
         useToastStore.getState().showToast(titulo, mensaje, tipo);
     const { user } = useAuth();
+    const branches = useStaff(s => s.branches) || [];
     const [estado, setEstado] = useState(null);
     const [codigo, setCodigo] = useState(null);
     const [ocupado, setOcupado] = useState(false);
@@ -263,26 +264,52 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
             'success');
     });
 
-    // La lista de salas se lee EN EL CLIC, no en un efecto: una caja se apaga
-    // en cualquier momento, y así lo que se ofrece es de ese instante.
-    const preguntarSala = () => conError('leer las cajas de impresión')(async () => {
-        setPreguntando(true);
+    // ── Sale directo a la sala de quien imprime ───────────────────────────
+    // Decisión del usuario (2026-09-01): sin diálogo. Casi siempre quien aprieta
+    // está en su propia sala con el cliente enfrente, y un paso de más en cada
+    // impresión se paga todos los días.
+    //
+    // El diálogo queda para lo único que el atajo no puede resolver: que NO haya
+    // a dónde mandarlo. Sin sucursal en la ficha, o con la caja de su sala
+    // apagada o sin registrar. Ahí sí hay que elegir, porque mandarlo a una caja
+    // muerta lo deja esperando sin que nadie se entere.
+    //
+    // La lista se lee EN EL CLIC y no en un efecto: una caja se apaga en
+    // cualquier momento, así que lo que se decide es del instante.
+    const alImprimir = () => conError('leer las cajas de impresión')(async () => {
         setCargandoSalas(true);
+        let lista = [];
+        let fallo = false;
         try {
-            const { salas: s, error } = await fetchSalasConCaja();
-            setSalas(s ?? []);
-            setFalloSalas(!!error);
-        } catch {
-            // Que no se pueda leer la lista NO deja el diálogo mudo: se abre
-            // igual, marcado, con «Esta computadora» todavía disponible.
-            setSalas([]);
-            setFalloSalas(true);
-        } finally { setCargandoSalas(false); }
+            const r = await fetchSalasConCaja();
+            lista = r?.salas ?? [];
+            fallo = !!r?.error;
+        } catch { fallo = true; } finally { setCargandoSalas(false); }
+
+        const mia = lista.find(x => String(x.branch_id) === String(user?.branchId));
+        if (mia && !fallo) {
+            const nombre = branches.find(b => String(b.id) === String(mia.branch_id))?.name || 'tu sala';
+            await imprimir({ salaId: Number(mia.branch_id) })();
+            // Sin diálogo no hay nada que confirme a dónde fue. Se dice, y se
+            // dice si la caja está dormida: el papel sale igual, pero cuando
+            // alguien la despierte — y quien lo espera tiene que saberlo.
+            aviso(mia.latiendo ? 'Enviado a imprimir' : 'En cola',
+                mia.latiendo
+                    ? `El papel sale por la ticketera de ${nombre}.`
+                    : `La caja de ${nombre} está apagada. El papel sale cuando encienda.`,
+                mia.latiendo ? 'success' : 'warning');
+            return;
+        }
+
+        // Sin sala propia utilizable: que elija.
+        setSalas(lista);
+        setFalloSalas(fallo);
+        setPreguntando(true);
     });
 
     // El import es diferido: la ticketera y su maquetación pesan, y esta ficha
     // se abre muchas más veces de las que alguien imprime un papel.
-    const imprimir = ({ salaId }) => conError('imprimir el papel')(async () => {
+    const imprimir = ({ salaId }) => () => conError('imprimir el papel')(async () => {
         setPreguntando(false);
         const valor = codigo ?? await verCodigoAcceso(customerId);
         if (!valor) { aviso('Sin código', 'Este cliente todavía no tiene uno. Genéralo primero.', 'error'); return; }
@@ -339,7 +366,7 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
                 )}
                 {estado?.tiene && (
                     <Button size="sm" variant="secondary" icon={Printer}
-                        onClick={preguntarSala} disabled={ocupado}>
+                        onClick={alImprimir} disabled={ocupado || cargandoSalas}>
                         Imprimir
                     </Button>
                 )}
@@ -354,7 +381,7 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
             <ElegirSalaDeImpresion
                 open={preguntando}
                 onClose={() => setPreguntando(false)}
-                onElegir={imprimir}
+                onElegir={(elec) => imprimir(elec)()}
                 salas={salas}
                 cargando={cargandoSalas}
                 fallo={falloSalas}

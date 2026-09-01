@@ -936,7 +936,7 @@ export async function fetchSalidasDeSalaDelDia({ sala, dia }) {
     finDelDia.setDate(finDelDia.getDate() + 1);
     const { data, error } = await supabase.from('bolsas_operaciones')
         .select(`id, folio, tipo, monto, entidad, numero_boleta, registrado_at, anulada_at,
-                 bolsas_movimientos ( monto, caja_vale_id, bolsas ( fecha ) )`)
+                 bolsas_movimientos ( monto, caja_vale_id, bolsas ( fecha, folio ) )`)
         .eq('branch_id', sala)
         .gte('registrado_at', `${dia}T00:00:00-06:00`)
         .lt('registrado_at', finDelDia.toISOString())
@@ -949,6 +949,14 @@ export async function fetchSalidasDeSalaDelDia({ sala, dia }) {
             // De qué días son las bolsas que la pagaron. Puede ser más de una:
             // una salida grande se reparte entre varias.
             dias: [...new Set(lineas.map((l) => l.bolsas?.fecha).filter(Boolean))].sort(),
+            /* CUÁLES bolsas, con su folio. La pantalla decía «de una bolsa de un
+             * corte anterior» y no cuál — y ese dinero salió de una bolsa
+             * concreta, que es la que alguien va a tener que ir a buscar. El
+             * folio ya viajaba en la consulta un nivel más abajo. */
+            bolsasUsadas: [...new Map(lineas
+                .filter((l) => l.bolsas?.folio)
+                .map((l) => [l.bolsas.folio, { folio: l.bolsas.folio, fecha: l.bolsas.fecha }]))
+                .values()],
             tocaLaCaja: lineas.some((l) => l.bolsas?.fecha === dia),
         };
     });

@@ -706,7 +706,7 @@ function PanelDelDia({ estado, ventas }) {
                                     <span className="text-body-sm text-content">
                                         {conMayuscula(f.tipo)}
                                         <span className="text-caption text-content-3">
-                                            {' '}· {f.docs} documento{f.docs === 1 ? '' : 's'}
+                                            {' '}· {f.docs} venta{f.docs === 1 ? '' : 's'}
                                         </span>
                                     </span>
                                     <span className="tabular-nums font-semibold text-content">
@@ -777,11 +777,22 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
             entra: false,
             monto: Math.abs(Number(o.monto || 0)),
             anulado: !!o.anulada_at,
-            // El nombre completo del origen, porque de eso depende el corte.
-            origen: o.tocaLaCaja ? 'De una bolsa de hoy' : 'De una bolsa de un corte anterior',
+            /* El nombre completo del origen, porque de eso depende el corte —
+             * y CUÁL bolsa, que es lo que faltaba: «de una bolsa de un corte
+             * anterior» no dice a cuál ir a buscar. Con varias se nombran
+             * todas: una salida grande se reparte entre las que alcancen. */
+            origen: o.tocaLaCaja
+                ? 'De una bolsa de hoy'
+                : (o.bolsasUsadas || []).length
+                    ? `De la bolsa ${o.bolsasUsadas.map((b) => b.folio).join(' y ')}`
+                    : 'De una bolsa de un corte anterior',
             avisa: o.tocaLaCaja,
             detalle: [
                 o.folio,
+                // De qué día es esa bolsa. El folio la identifica; la fecha dice
+                // por qué su dinero ya no le mueve nada a la caja de hoy.
+                !o.tocaLaCaja && (o.dias || []).length
+                    ? `del ${o.dias.map(fechaLegible).join(' y ')}` : null,
                 o.numero_boleta ? `boleta ${o.numero_boleta}` : null,
                 o.tocaLaCaja ? 'se anota como vale al cortar' : 'no toca la caja de hoy',
             ].filter(Boolean),

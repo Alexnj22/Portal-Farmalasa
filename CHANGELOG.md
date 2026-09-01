@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.922.2 — Efectivo: se dice de qué bolsa salió, y el comprobante del abono
+
+Dos correcciones de pantalla y la primera pieza visible de los abonos.
+
+**«No dice de cuál.»** Una salida pagada con una bolsa vieja decía «De una bolsa
+de un corte anterior» — cierto, y sin decir a cuál ir a buscar. Ahora nombra la
+bolsa por su folio y su día: **«De la bolsa B-1042 · del sáb 30 ago»**. Con
+varias las nombra todas: una salida grande se reparte entre las que alcancen.
+El folio ya viajaba en la consulta un nivel más abajo y no se estaba leyendo.
+
+**«En vez de documento, venta.»** El desglose por forma de pago decía «47
+documentos». Un documento es jerga de la tubería; lo que se cuenta son ventas.
+
+### El comprobante del abono
+
+El papel que se lleva el cliente cuando deja dinero para apartar un producto.
+**Es el contrato, no un recibo**: es la única prueba de que dejó dinero y de qué
+le prometieron, y con él vuelve a retirar.
+
+Lleva folio, fecha, sucursal, vencimiento, cliente y teléfono; la tabla de
+productos con cantidad, unitario y total; el total del producto, el abono y lo
+que queda pendiente; las condiciones; quién atendió; y el **código de barras del
+folio**, para que al retirar la sala escanee el papel en vez de teclear.
+
+**Un renglón sin precio se imprime sin monto.** Un encargo que todavía no se
+cotiza no tiene precio pactado, y escribir un número tentativo lo convierte en
+uno: el cliente vuelve con el papel en la mano y ese número es lo que va a
+exigir. Se imprime la cantidad y el nombre, la columna del monto queda vacía y
+el total dice «Por definir». Y entonces **tampoco se promete un saldo**: sin
+total no hay resta posible.
+
+**Las cuatro columnas no son una elección de diseño.** El rollo **sólo sabe
+maquetar tablas de cuatro**: con cualquier otra cantidad cae a «primera celda a
+la izquierda, última a la derecha» y las del medio **desaparecen sin error**. La
+primera versión de este papel usaba tres y salió con la cantidad y el monto,
+**sin el nombre del producto** — que es lo único que el cliente lee para
+comprobar que le apartaron lo que pidió. Lo caza ahora
+`tests/unit/abonoTicket.test.js`, que mira el TEXTO del rollo y no el objeto:
+el objeto estaba bien las dos veces.
+
+**En el papel van CUATRO condiciones, no las siete de la política.** El rollo
+cobra papel por renglón —la política entera son ~20 sobre un comprobante de
+treinta— y un muro de texto en papel térmico no se lee, se salta. Van las que se
+discuten en el mostrador con el papel en la mano: cuánto dura, que el dinero no
+vuelve en efectivo, que hay que traer el papel, y que el precio no se mueve. La
+política completa vive en `POLITICA_DE_RESERVA`.
+
+**Y las condiciones viven en el código, no en una tabla.** Lo que se imprimió el
+día del abono es lo que rige para ese abono: una tabla editable cambiaría de
+retroactivo las condiciones de los comprobantes ya entregados.
+
+Falta la pantalla que lo emite y el retiro con su vale.
+
 ## v2.922.1 — Promociones — los campos del formulario, en su sitio
 
 Reportado con una captura: los campos del modal de nueva promoción estaban

@@ -58,11 +58,40 @@ Los endpoints, con el estado de cada uno:
 | borrar movimiento | `borrar_movimiento_caja.php` `process=eliminar` | ✅ **probado el 28-ago** |
 | editar movimiento | `editar_movimiento_caja.php` `process=editar` | sin probar |
 | comprobante del vale | `agregar_ingreso_caja.php` `process=imprimir` | devuelve el texto |
-| apertura de caja | `apertura_caja.php` `process=insert` | sin probar |
-| turno nuevo / cerrar turno | `apertura_caja.php` `process=apertura_turno` / `cerrar_turno` | sin probar |
+| apertura de caja **y turno nuevo** | `apertura_caja.php` `process=insert` | formulario leído en vivo el **01-sep**; la escritura sigue sin probar |
 | formulario del corte, **ya calculado** | `corte_caja_diario.php?aper_id=` (GET) | ✅ leído |
 | grabar el corte | `cierre_turno.php` (formulario completo) | sin probar |
 | comprobante del corte | `corte_caja_diario.php` `process=imprimir` | devuelve el texto |
+
+### El turno lo calcula la caja (leído el 01-sep)
+
+Abrir el turno siguiente **no es otro `process`**: es el mismo `insert`. Lo que
+cambia es el número, y ese número **lo pone el servidor de la caja**, no quien
+llena el formulario:
+
+```html
+<select id="turno_x" name="turno_x">…1 2 3…</select>          <!-- el visible -->
+<input type='hidden' id='turno' name='turno' value='3'>       <!-- el que manda -->
+<input type="hidden" name="process" value="insert">
+```
+
+`apertura_caja.php` se pide con GET, y su campo escondido `turno` ya trae el que
+sigue —lo calcula mirando los turnos abiertos ese día en esa sala—. Su propio JS
+(`js/funciones/funciones_apertura.js`) hace `new FormData(form)` y lo manda tal
+cual, así que **el turno correcto es siempre el que la pantalla ya sabía**.
+
+Medido el 01-sep: Salud 1 → `2`, Salud 3 → `3` (tenía dos turnos abiertos).
+`operar-caja` escribía `1` fijo y por eso Salud 3 no pudo empezar su turno
+después del corte. Corregido en v2.913.4.
+
+Dos detalles del mismo formulario que conviene tener a mano:
+
+- **`caja` sale vacío cuando no hay ninguna para abrir.** Con el turno abierto,
+  el `<select>` es sólo «Seleccione», y su JS ni siquiera envía: muestra «Debe de
+  seleccionar una caja». O sea que la propia pantalla ya sabe si se puede abrir.
+- **`empleado` ofrece únicamente al de la sesión**, pero el servidor toma el que
+  venga en el formulario — es el mismo hallazgo del 28-ago, y por eso el portal
+  puede mandar el empleado que esa sala usa siempre.
 
 ### La prueba de escritura del 28-ago
 

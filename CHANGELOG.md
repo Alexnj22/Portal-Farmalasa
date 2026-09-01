@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.903.0 — La foto va siempre, y el nombre entero
+
+Regla del usuario, dicha como regla y no como pedido: **si el portal muestra a
+una persona, muestra su foto.** El ranking de vendedores del aviso la tenía en
+el podio de administración y no en el listado de la sala.
+
+**Y el nombre no se corta.** «Katherine S…» y «DOLORES…» eran nombres a medias.
+Ahora cada fila trae `first_names` y `last_names` **por separado**, que es lo que
+`shortEmployeeName` pide expresamente: `employees.name` es una columna generada
+y con tres palabras la frontera es ambigua —«ANA PEREZ LOPEZ» puede ser un
+nombre y dos apellidos o al revés, y en producción hay de las dos formas—, así
+que partir ese texto es adivinar.
+
+**Para que entraran, la barra se convirtió en el fondo de la fila.** La barrita
+al costado se comía 64 px que hacían falta para la cara y el nombre completo, y
+el dato es exactamente el mismo: la participación ahora se lee como un relleno
+detrás del renglón. La fila propia suma su aro y su marca, en el color de su
+tramo.
+
+La foto no viaja en el aviso: viaja `employee_id`, y la campana busca a la
+persona en el mismo store del que salen las caras del resto del portal, donde ya
+viene firmada. Una URL firmada guardada en la metadata expiraría; una cruda no
+se puede mostrar.
+
+Migración `20260901160742`.
+
 ## v2.902.1 — El vendedor se compara con su promedio, y la fila propia se ve
 
 Tres correcciones del usuario sobre los avisos del día 1.

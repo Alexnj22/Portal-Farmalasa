@@ -140,38 +140,44 @@ function PuestoDelVendedor({ datos, claseTenue, isDark }) {
  * arriba haría ver enorme una diferencia de dos décimas — que es justo la que
  * hay entre el primero y el segundo de La Popular (20.7% y 20.4%).
  */
-function TablaDeVendedores({ tabla, promedio, isDark }) {
+function TablaDeVendedores({ tabla, promedio, isDark, buscarEmpleado }) {
     if (!tabla?.length) return null;
     const tope = Math.max(...tabla.map(f => f.parte), 1);
 
     return (
-        <ul className="flex flex-col gap-1">
-            {tabla.map(({ nombre, parte, yo, venta }, i) => {
-                const t = tonoContraPromedio(parte, promedio, isDark);
+        <ul className="flex flex-col gap-0.5">
+            {tabla.map((v, i) => {
+                const t = tonoContraPromedio(v.parte, promedio, isDark);
+                // La ficha del store trae la foto ya firmada; lo del aviso es el
+                // respaldo para cuando esa persona no esté en el store.
+                const emp = buscarEmpleado?.(v.employeeId)
+                    || { id: v.employeeId, name: v.nombre, first_names: v.nombres, last_names: v.apellidos };
                 return (
-                    <li key={`${nombre}-${i}`}
-                        /* La fila propia no se distingue sólo por la negrita: en una
-                           lista de seis renglones del mismo tamaño, la negrita se
-                           pierde. Lleva además fondo, un aro y una marca al costado —
-                           en SU color, para no pelearse con el rojo de quien está bajo
-                           el promedio. */
-                        className={`flex items-center gap-2 min-w-0 rounded-md
-                            ${yo ? `${t.realce} ring-1 -mx-1.5 pl-1 pr-1.5 py-0.5` : ''}`}>
-                        {yo && <span aria-hidden="true" className={`w-0.5 self-stretch rounded-full ${t.fondo}`} />}
-                        <span className={`text-caption truncate flex-1 min-w-0 ${t.texto} ${yo ? 'font-black' : 'font-semibold'}`}>
-                            {shortEmployeeName(nombre)}
+                    <li key={v.employeeId || `${v.nombre}-${i}`}
+                        /* La participación dejó de ser una barra al costado y pasó a
+                           ser el FONDO de la fila: la barra se comía 64 px que hacían
+                           falta para la foto y para el nombre entero, y el dato es el
+                           mismo. La fila propia suma aro y marca, en su propio color
+                           para no pelearse con el rojo de estar bajo el promedio. */
+                        className={`relative flex items-center gap-2 min-w-0 rounded-md overflow-hidden
+                            px-1.5 py-1 ${yoClase(v.yo, t)}`}>
+                        <span aria-hidden="true"
+                              className={`absolute inset-y-0 left-0 ${t.fondo} ${v.yo ? 'opacity-25' : 'opacity-15'}`}
+                              style={{ width: `${(v.parte / tope) * 100}%` }} />
+                        {v.yo && <span aria-hidden="true" className={`relative w-0.5 self-stretch rounded-full ${t.fondo}`} />}
+                        <span className="relative flex-shrink-0">
+                            <AvatarConEstado emp={emp} px={22} radio="rounded-full" marco="" mostrarChip={false} />
                         </span>
-                        <span className="w-16 h-1.5 rounded-full bg-border-card overflow-hidden flex-shrink-0">
-                            <span className={`block h-full rounded-full ${t.fondo} ${yo ? '' : 'opacity-70'}`}
-                                  style={{ width: `${(parte / tope) * 100}%` }} />
+                        <span className={`relative flex-1 min-w-0 truncate text-caption ${t.texto} ${v.yo ? 'font-black' : 'font-semibold'}`}>
+                            {shortEmployeeName(emp)}
                         </span>
-                        {venta != null && (
-                            <span className={`text-caption tabular-nums w-16 text-right flex-shrink-0 ${t.texto} ${yo ? 'font-black' : 'font-semibold'}`}>
-                                {formatMoney(venta)}
+                        {v.venta != null && (
+                            <span className={`relative text-caption tabular-nums text-right flex-shrink-0 ${t.texto} ${v.yo ? 'font-black' : 'font-semibold'}`}>
+                                {formatMoney(v.venta)}
                             </span>
                         )}
-                        <span className={`text-caption tabular-nums w-10 text-right flex-shrink-0 ${t.texto} ${yo ? 'font-black' : 'font-semibold'}`}>
-                            {parte.toFixed(1)}%
+                        <span className={`relative text-caption tabular-nums w-11 text-right flex-shrink-0 ${t.texto} ${v.yo ? 'font-black' : 'font-semibold'}`}>
+                            {v.parte.toFixed(1)}%
                         </span>
                     </li>
                 );
@@ -179,6 +185,9 @@ function TablaDeVendedores({ tabla, promedio, isDark }) {
         </ul>
     );
 }
+
+// El realce de la fila propia, aparte para no repetir el ternario en el className.
+const yoClase = (yo, t) => (yo ? `${t.realce} ring-1` : '');
 
 /**
  * El cuerpo dibujado: las cifras (sólo para quien ve montos), el puesto de la
@@ -190,7 +199,7 @@ function TablaDeVendedores({ tabla, promedio, isDark }) {
  * versión de esa frase sería copiar la regla que decide quién ve dólares, y la
  * copia es la que se queda vieja.
  */
-export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark }) {
+export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark, buscarEmpleado }) {
     const { venta, meta, metaNueva, mesCerrado, mesNuevo, tabla } = datos;
 
     // «1.6% menos que Agosto» y no «−1.6%»: el signo hay que interpretarlo, la
@@ -212,7 +221,7 @@ export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark }) {
             <PuestoDelVendedor datos={datos} claseTenue={claseTenue} isDark={isDark} />
 
             {tabla?.length > 0 && (
-                <TablaDeVendedores tabla={tabla} promedio={datos.promedio} isDark={isDark} />
+                <TablaDeVendedores tabla={tabla} promedio={datos.promedio} isDark={isDark} buscarEmpleado={buscarEmpleado} />
             )}
 
             {venta != null && metaNueva != null && (

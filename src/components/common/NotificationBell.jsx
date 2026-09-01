@@ -1069,6 +1069,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                         datos={cierre}
                                                                         claseTenue={cx.rowBody}
                                                                         isDark={isDark}
+                                                                        buscarEmpleado={buscarEmpleadoPorId}
                                                                     />
                                                                 )}
                                                                 {empresa && (

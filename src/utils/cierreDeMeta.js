@@ -48,7 +48,15 @@ export function datosDeCierreDeMeta(n) {
         tabla: Array.isArray(m.tabla)
             ? m.tabla.filter(f => f && Number.isFinite(Number(f.parte)))
                      .map(f => ({
+                         // La ficha, para pintar la foto: la campana busca a la
+                         // persona en el store, donde la foto ya viene firmada.
+                         employeeId: f.employee_id ? String(f.employee_id) : null,
+                         // Partido en dos porque `employees.name` es una columna
+                         // generada y con tres palabras la frontera es ambigua
+                         // — ver `shortEmployeeName`.
                          nombre: String(f.nombre || ''),
+                         nombres: f.nombres || '',
+                         apellidos: f.apellidos || '',
                          parte: Number(f.parte),
                          yo: !!f.yo,
                          // El monto de cada vendedor viaja SÓLO en el aviso del

@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.899.0 — El ranking es de vendedores, y administración recibe el cierre de la empresa
+
+Dos correcciones del usuario sobre el aviso del día 1, la primera de fondo:
+
+> «los jefes no deben de ver las demás salas, debe de ver cómo quedaron sus
+> dependientes, lo que te pedí es el listado / ranking de vendedores»
+
+El listado comparaba la sala contra las otras cinco. Eso ponía delante de cada
+jefe el resultado de salas que no maneja y dejaba afuera lo único sobre lo que
+sí puede hacer algo: **cómo le fue a su gente**. Ahora el listado son los
+vendedores de su sala, y la línea del puesto es la de **la persona** entre sus
+compañeros, no la de la sala entre las salas.
+
+**En participación, nunca en dólares.** Es lo que se pidió («la venta de cada
+uno en porcentaje») y además es lo que vuelve el listado seguro: una
+participación dice quién movió más mostrador sin publicar cuánto factura nadie.
+El ranking del Inicio ya había tomado esta misma decisión cuando falta
+`dash_vendedores_vista_completa`.
+
+**El denominador es la venta de la sala; la LISTA, sus fichas** — y confundirlos
+daba un promedio falso. En La Popular, agosto trae **once** códigos de vendedor:
+seis son fichas de la sala y cinco son códigos sueltos («el vendedor 20», «el
+vendedor 1») con entre $1.25 y $254.19. Rankeando los once, el promedio de
+participación cae a 9.1% y **Ana Aleman (9.8%) queda "sobre el promedio" siendo
+la última de las seis reales**. La lista se arma con las fichas activas de la
+sucursal; la participación se calcula sobre la venta completa. Las seis de La
+Popular suman 99.3% y no 100%: la diferencia es venta que no hizo ninguna de
+ellas, y redondearla a 100 sería inventar.
+
+**El listado se arma por destinatario**, para marcarle su propia fila sin
+publicar el código de nadie: `employees.code` es la semilla del PIN del kiosco
+(SHA-256 del código), así que no puede viajar en la metadata de un aviso ajeno.
+
+### El aviso de administración
+
+Nuevo, `METAS_CIERRE_EMPRESA`: el cumplimiento **global**, cada sucursal con su
+porcentaje, y los **tres que más vendieron con su cara**. Lo reciben los cuatro
+cargos del área —Gerente General, Administrador, Talento Humano y Supervisión—
+resueltos por permiso y no por una lista de ids, y sólo si NO están en una sala:
+quien está en una sala ya recibe el suyo.
+
+- **El global se suma, no se promedia.** Promediar los seis porcentajes le daría
+  el mismo peso a la sala que vende $14,345.77 que a la que vende $50,354.03.
+- **La foto no viaja en el aviso: viaja la ficha.** Una URL firmada guardada en
+  la metadata expiraría y una cruda no se puede mostrar, así que la campana
+  busca a la persona en el mismo store del que salen las caras del resto del
+  portal.
+- **El top 3 va por venta total, y eso tiene un costo declarado:** premia a
+  quien más horas estuvo. El ranking del módulo tiene «por día» y «por hora»
+  justamente por eso —en agosto, Katherine Salinas quedaba 6ª por total y 1ª por
+  hora—. Un aviso no puede llevar un interruptor.
+
+**Y una que no habría dado error:** la primera versión buscaba el módulo
+`metas_ver`, que no existe — el módulo es `metas`. Habría devuelto **cero
+destinatarios**, y un cero se lee igual que «todavía no es el día». Encima nadie
+la llamaba: la función existía y el ciclo diario no la invocaba.
+
+Migraciones `20260901153526`, `20260901153918` y `20260901154043`.
+
 ## v2.898.0 — Las operaciones de puntos, escritas y probadas
 
 Migraciones `20260901152357` y `20260901152737`. El programa de puntos ya tiene

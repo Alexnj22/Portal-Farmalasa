@@ -32,23 +32,70 @@ export function datosDeCierreDeMeta(n) {
     return {
         pct,
         cumplida: pct >= 100,
-        // El puesto es contexto, no adorno: un 95.0% que suena a
-        // casi-lo-logré es el cuarto lugar de seis, y un 94.3% que suena
-        // parecido es el quinto.
+        // El puesto es de LA PERSONA entre los vendedores de su sala, no de
+        // la sala entre las salas: un jefe no maneja las otras salas, maneja a
+        // su gente. Nulo para quien no vendió ese mes.
         puesto:   Number.isFinite(puesto)   ? puesto   : null,
         de:       Number.isFinite(cuantas)  ? cuantas  : null,
         promedio: Number.isFinite(promedio) ? promedio : null,
-        // El listado llega sólo al jefe de sala, y sin un solo dólar: se
-        // comparan cumplimientos, que es lo único comparable entre una sala
-        // que vende $50,354.03 y otra que vende $14,345.77.
+        // Cuánto de la venta de la sala hizo esta persona.
+        miParte: m.mi_parte == null ? null : Number(m.mi_parte),
+        // El listado llega sólo al jefe de sala, y sin un solo dólar: es la
+        // participación de cada quien en la venta de la sala, que es lo que se
+        // puede comparar sin publicar cuánto vendió nadie. `yo` lo marca el
+        // servidor por destinatario — el código de empleado no puede viajar en
+        // la metadata de un aviso ajeno, es la semilla del PIN del kiosco.
         tabla: Array.isArray(m.tabla)
-            ? m.tabla.filter(f => f && Number.isFinite(Number(f.pct)))
-                     .map(f => ({ sala: String(f.sala || ''), pct: Number(f.pct) }))
+            ? m.tabla.filter(f => f && Number.isFinite(Number(f.parte)))
+                     .map(f => ({ nombre: String(f.nombre || ''), parte: Number(f.parte), yo: !!f.yo }))
             : [],
         venta:     Number.isFinite(venta)     ? venta     : null,
         meta:      Number.isFinite(meta)      ? meta      : null,
         metaNueva: Number.isFinite(metaNueva) ? metaNueva : null,
         mesCerrado: m.mes_cerrado || '',
         mesNuevo:   m.mes_nuevo   || '',
+    };
+}
+
+/**
+ * El cierre visto desde administración: el cumplimiento de la EMPRESA, cada
+ * sucursal y los tres que más vendieron.
+ *
+ * Es otro tipo de aviso (`METAS_CIERRE_EMPRESA`) y no una variante del de sala,
+ * porque no es la misma noticia dicha para otro público: la sala se entera de
+ * lo suyo, administración se entera de las seis a la vez.
+ */
+export function datosDeCierreDeEmpresa(n) {
+    if (n?.type !== 'METAS_CIERRE_EMPRESA') return null;
+    const m = n.metadata || {};
+    const pct = Number(m.pct);
+    if (!Number.isFinite(pct)) return null;
+
+    const num = (v) => (v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+
+    return {
+        pct,
+        cumplida: pct >= 100,
+        venta: num(m.venta),
+        meta:  num(m.meta),
+        mesCerrado: m.mes_cerrado || '',
+        mesNuevo:   m.mes_nuevo   || '',
+        sucursales: Array.isArray(m.sucursales)
+            ? m.sucursales.filter(s => s && Number.isFinite(Number(s.pct)))
+                          .map(s => ({ sala: String(s.sala || ''), pct: Number(s.pct) }))
+            : [],
+        // `employee_id` es la ficha, no la cuenta: con ella la campana busca a
+        // la persona en el mismo store del que salen las caras del resto del
+        // portal, y la foto se firma donde ya se firma. Una URL guardada en la
+        // metadata expiraría — ver `storageFiles.js`.
+        top3: Array.isArray(m.top3)
+            ? m.top3.filter(t => t && t.employee_id)
+                    .map(t => ({
+                        employeeId: String(t.employee_id),
+                        nombre: String(t.nombre || ''),
+                        sala:   String(t.sala || ''),
+                        venta:  num(t.venta),
+                    }))
+            : [],
     };
 }

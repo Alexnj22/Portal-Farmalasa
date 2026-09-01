@@ -1,6 +1,8 @@
 import React from 'react';
 import { Crown, Medal } from 'lucide-react';
 import { formatMoney } from '../../utils/formatNumber';
+import { shortEmployeeName } from '../../utils/nameUtils';
+import AvatarConEstado from './AvatarConEstado';
 
 /* El cierre de mes de una sala, dentro de la campana.
  *
@@ -90,21 +92,23 @@ const PODIO = {
 };
 
 /**
- * En qué lugar quedó la sala, y de qué lado del promedio.
+ * En qué lugar quedó LA PERSONA entre los vendedores de su sala.
  *
- * Va para todos —también para quien no ve montos—: es el contexto del número
- * que el título ya dijo, no un dato nuevo sobre dinero.
+ * Va para todos —también para quien no ve montos—: la participación es un
+ * porcentaje, no un monto, así que no dice cuánto vendió nadie en plata.
+ * Nada se pinta si esa persona no vendió ese mes.
  */
-function PuestoDeLaSala({ datos, claseTenue, isDark }) {
-    const { puesto, de, promedio, pct } = datos;
-    if (!puesto || !de) return null;
+function PuestoDelVendedor({ datos, claseTenue, isDark }) {
+    const { puesto, de, promedio, miParte } = datos;
+    if (!puesto || !de || miParte == null) return null;
 
     const podio = PODIO[puesto];
     const ordinal = puesto === 1 ? '1er' : `${puesto}º`;
     // «bajo el promedio» y no un signo: la palabra no hay que interpretarla.
     const contraPromedio = promedio == null ? null
-        : pct >= promedio ? `sobre el promedio (${promedio}%)`
-                          : `bajo el promedio (${promedio}%)`;
+        : miParte >= promedio ? `sobre el promedio (${promedio}%)`
+                              : `bajo el promedio (${promedio}%)`;
+    const parte = `${miParte}% de la venta de la sala`;
 
     if (podio) {
         const Icono = podio.Icono;
@@ -114,80 +118,68 @@ function PuestoDeLaSala({ datos, claseTenue, isDark }) {
                 <span className="text-caption font-black uppercase tracking-widest">
                     {podio.texto} de {de}
                 </span>
-                {contraPromedio && (
-                    <span className={`text-caption font-medium ${claseTenue}`}>
-                        · {contraPromedio}
-                    </span>
-                )}
+                <span className={`text-caption font-medium ${claseTenue}`}>· {parte}</span>
             </div>
         );
     }
 
     return (
         <p className={`text-caption font-semibold ${claseTenue}`}>
-            {ordinal} lugar de {de}{contraPromedio ? ` · ${contraPromedio}` : ''}
+            {ordinal} lugar de {de} · {parte}{contraPromedio ? ` · ${contraPromedio}` : ''}
         </p>
     );
 }
 
 /**
- * Las seis salas, en cumplimiento.
+ * Los vendedores de la sala, en participación.
  *
- * Nunca en dólares: Salud 1 vendió $50,354.03 y Salud 5 $14,345.77, así que un
- * ranking por monto sería el tamaño de la sala —algo que nadie eligió y nadie
- * puede cambiar—. El cumplimiento sí es comparable: cada una contra la meta que
- * le tocó.
+ * Nunca en dólares: una participación dice quién movió más mostrador sin
+ * publicar cuánto factura nadie. Es la misma decisión que ya tomó el ranking
+ * del Inicio cuando falta `dash_vendedores_vista_completa`.
  *
- * La barra se mide contra el MAYOR de la tabla y no contra 100, para que el mes
- * en que todas queden por debajo siga teniendo diferencias visibles. Quién
- * cumplió lo dice el color, y al lado está el número.
+ * La barra arranca en cero y se mide contra el mayor de la lista. Empezarla más
+ * arriba haría ver enorme una diferencia de dos décimas — que es justo la que
+ * hay entre el primero y el segundo de La Popular (20.7% y 20.4%).
  */
-function TablaDeSalas({ tabla, salaPropia, claseTenue, isDark }) {
+function TablaDeVendedores({ tabla, claseTenue, isDark }) {
     if (!tabla?.length) return null;
-    const tope = Math.max(...tabla.map(f => f.pct), 1);
+    const tope = Math.max(...tabla.map(f => f.parte), 1);
 
     return (
         <ul className="flex flex-col gap-1">
-            {tabla.map(({ sala, pct }) => {
-                const propia   = sala === salaPropia;
-                const cumplida = pct >= 100;
-                const tono = cumplida
-                    ? (isDark ? 'bg-success-text' : 'bg-success')
-                    : (isDark ? 'bg-chart-1' : 'bg-chart-1-solid');
-                return (
-                    <li key={sala} className="flex items-center gap-2 min-w-0">
-                        <span className={`text-caption truncate w-20 flex-shrink-0
-                            ${propia ? 'font-black' : `font-semibold ${claseTenue}`}`}>
-                            {sala}
-                        </span>
-                        <span className="flex-1 h-1.5 rounded-full bg-border-card overflow-hidden">
-                            <span
-                                className={`block h-full rounded-full ${tono} ${propia ? '' : 'opacity-45'}`}
-                                style={{ width: `${(pct / tope) * 100}%` }}
-                            />
-                        </span>
-                        <span className={`text-caption tabular-nums w-12 text-right flex-shrink-0
-                            ${propia ? 'font-black' : `font-semibold ${claseTenue}`}`}>
-                            {pct.toFixed(1)}%
-                        </span>
-                    </li>
-                );
-            })}
+            {tabla.map(({ nombre, parte, yo }, i) => (
+                <li key={`${nombre}-${i}`} className="flex items-center gap-2 min-w-0">
+                    <span className={`text-caption truncate w-24 flex-shrink-0
+                        ${yo ? 'font-black' : `font-semibold ${claseTenue}`}`}>
+                        {shortEmployeeName(nombre)}
+                    </span>
+                    <span className="flex-1 h-1.5 rounded-full bg-border-card overflow-hidden">
+                        <span
+                            className={`block h-full rounded-full ${isDark ? 'bg-chart-1' : 'bg-chart-1-solid'} ${yo ? '' : 'opacity-45'}`}
+                            style={{ width: `${(parte / tope) * 100}%` }}
+                        />
+                    </span>
+                    <span className={`text-caption tabular-nums w-10 text-right flex-shrink-0
+                        ${yo ? 'font-black' : `font-semibold ${claseTenue}`}`}>
+                        {parte.toFixed(1)}%
+                    </span>
+                </li>
+            ))}
         </ul>
     );
 }
 
 /**
- * El cuerpo dibujado: las cifras (sólo para quien ve montos), el puesto entre
- * las salas (para todos), el listado completo (sólo para el jefe de sala) y el
- * mes que empieza.
+ * El cuerpo dibujado: las cifras (sólo para quien ve montos), el puesto de la
+ * persona entre los vendedores de su sala (para todos), el listado de esos
+ * vendedores (sólo para el jefe de sala) y el mes que empieza.
  *
  * Sin montos, el `body` del aviso se sigue mostrando tal cual —ya está escrito
  * en porcentaje— y acá se le suma nada más el puesto. Redactar una segunda
  * versión de esa frase sería copiar la regla que decide quién ve dólares, y la
  * copia es la que se queda vieja.
  */
-export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark, salaPropia }) {
+export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark }) {
     const { venta, meta, metaNueva, mesCerrado, mesNuevo, tabla } = datos;
 
     // «1.6% menos que Agosto» y no «−1.6%»: el signo hay que interpretarlo, la
@@ -206,10 +198,10 @@ export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark, salaPropia }) 
                 </div>
             )}
 
-            <PuestoDeLaSala datos={datos} claseTenue={claseTenue} isDark={isDark} />
+            <PuestoDelVendedor datos={datos} claseTenue={claseTenue} isDark={isDark} />
 
             {tabla?.length > 0 && (
-                <TablaDeSalas tabla={tabla} salaPropia={salaPropia} claseTenue={claseTenue} isDark={isDark} />
+                <TablaDeVendedores tabla={tabla} claseTenue={claseTenue} isDark={isDark} />
             )}
 
             {venta != null && metaNueva != null && (
@@ -226,6 +218,105 @@ export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark, salaPropia }) 
                             </span>
                         )}
                     </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+/* ── El podio de la empresa ────────────────────────────────────────────────
+ * Los tres que más vendieron, con su cara. La foto no viaja en el aviso: viaja
+ * la ficha, y la campana busca a la persona en el mismo store del que salen las
+ * caras del resto del portal. Una URL firmada guardada en la metadata
+ * expiraría, y una cruda no se puede mostrar.
+ *
+ * El orden es por venta total del mes. Conviene saber que eso premia a quien
+ * más horas estuvo: el ranking del módulo de Metas tiene «por día» y «por hora»
+ * justamente por eso —en agosto, Katherine Salinas quedaba 6ª por total y 1ª
+ * por hora—. Un aviso no puede llevar un interruptor, y «los tres que más
+ * vendieron» es lo que la frase significa en la sala. */
+const MEDALLA = ['text-warning-text', 'text-content-2', 'text-content-3'];
+
+function PodioDeLaEmpresa({ top3, buscarEmpleado, claseTenue }) {
+    if (!top3?.length) return null;
+    return (
+        <ul className="flex flex-col gap-2">
+            {top3.map((v, i) => {
+                const emp = buscarEmpleado?.(v.employeeId) || { id: v.employeeId, name: v.nombre };
+                return (
+                    <li key={v.employeeId} className="flex items-center gap-2 min-w-0">
+                        <span className={`text-caption font-black w-4 flex-shrink-0 tabular-nums ${MEDALLA[i] || ''}`}>
+                            {i + 1}º
+                        </span>
+                        <AvatarConEstado emp={emp} px={26} radio="rounded-full" marco="" />
+                        <span className="flex-1 min-w-0">
+                            <span className="block text-caption font-black truncate">{shortEmployeeName(emp)}</span>
+                            <span className={`block text-micro font-semibold truncate ${claseTenue}`}>{v.sala}</span>
+                        </span>
+                        {v.venta != null && (
+                            <span className="text-caption font-black tabular-nums flex-shrink-0">
+                                {formatMoney(v.venta)}
+                            </span>
+                        )}
+                    </li>
+                );
+            })}
+        </ul>
+    );
+}
+
+/**
+ * El cierre para administración: el global de la empresa, cada sucursal y el
+ * podio de vendedores.
+ *
+ * El porcentaje del título es venta total sobre meta total, no el promedio de
+ * los seis: promediar le daría el mismo peso a la sala que vende $14,345.77 que
+ * a la que vende $50,354.03, y ése no es el cumplimiento de la empresa.
+ */
+export function CuerpoDeCierreDeEmpresa({ datos, claseTenue, isDark, buscarEmpleado }) {
+    const { venta, meta, sucursales, top3 } = datos;
+
+    return (
+        <div className="flex flex-col gap-2 mt-1">
+            {venta != null && (
+                <div className="flex items-baseline gap-2 flex-wrap tabular-nums">
+                    <span className="text-body-lg font-black tracking-tight">{formatMoney(venta)}</span>
+                    {meta != null && (
+                        <span className={`text-body-sm font-semibold ${claseTenue}`}>de {formatMoney(meta)}</span>
+                    )}
+                </div>
+            )}
+
+            {sucursales?.length > 0 && (
+                <ul className="flex flex-col gap-1">
+                    {sucursales.map(({ sala, pct }) => (
+                        <li key={sala} className="flex items-center gap-2 min-w-0">
+                            <span className={`text-caption font-semibold truncate w-24 flex-shrink-0 ${claseTenue}`}>
+                                {sala}
+                            </span>
+                            <span className="flex-1 h-1.5 rounded-full bg-border-card overflow-hidden">
+                                <span
+                                    className={`block h-full rounded-full ${pct >= 100
+                                        ? (isDark ? 'bg-success-text' : 'bg-success')
+                                        : (isDark ? 'bg-warning-text' : 'bg-warning')}`}
+                                    style={{ width: `${Math.min(pct, 130) / 130 * 100}%` }}
+                                />
+                            </span>
+                            <span className="text-caption font-black tabular-nums w-12 text-right flex-shrink-0">
+                                {pct.toFixed(1)}%
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            {top3?.length > 0 && (
+                <>
+                    <div className="h-px bg-border-card" />
+                    <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>
+                        Los que más vendieron
+                    </p>
+                    <PodioDeLaEmpresa top3={top3} buscarEmpleado={buscarEmpleado} claseTenue={claseTenue} />
                 </>
             )}
         </div>

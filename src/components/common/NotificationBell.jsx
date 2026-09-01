@@ -24,8 +24,8 @@ import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/soli
 import Contador from './Contador';
 import AvatarConEstado from './AvatarConEstado';
 import NotificacionDetalle from './NotificacionDetalle';
-import { AnilloDeMeta, CuerpoDeCierreDeMeta } from './CierreDeMeta';
-import { datosDeCierreDeMeta } from '../../utils/cierreDeMeta';
+import { AnilloDeMeta, CuerpoDeCierreDeMeta, CuerpoDeCierreDeEmpresa } from './CierreDeMeta';
+import { datosDeCierreDeMeta, datosDeCierreDeEmpresa } from '../../utils/cierreDeMeta';
 
 /* El diálogo canónico de la solicitud, para el rechazo.
  *
@@ -289,6 +289,11 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         employees.forEach(e => m.set(String(e.id), e));
         return m;
     }, [employees]);
+    // El podio de la empresa necesita la ficha para pintar la cara. Va como
+    // función y no como Map para no obligar al componente de la tarjeta a
+    // conocer la forma del store.
+    const buscarEmpleadoPorId = useCallback(
+        (id) => empleadosPorId.get(String(id)) || null, [empleadosPorId]);
     const sucursalesPorId = useMemo(() => {
         const m = new Map();
         branches.forEach(b => m.set(String(b.id), b.name));
@@ -960,6 +965,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                    Devuelve `null` para un aviso viejo o para un mes que
                                                    cerró sin meta, y ahí la fila queda como siempre. */
                                                 const cierre   = datosDeCierreDeMeta(n);
+                                                /* Y su gemelo de administración, que mira las seis salas
+                                                   a la vez. Comparten el anillo y nada más. */
+                                                const empresa  = datosDeCierreDeEmpresa(n);
+                                                const conAnillo = cierre || empresa;
 
                                                 // Fila en ventana de deshacer (borrado individual)
                                                 if (pendingOne) {
@@ -1020,8 +1029,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             className={`relative w-full flex items-start gap-3 pl-3.5 pr-9 py-3 text-left
                                                                 ${interactiva ? 'cursor-pointer' : 'cursor-default'}`}
                                                         >
-                                                            {cierre ? (
-                                                                <AnilloDeMeta pct={cierre.pct} cumplida={cierre.cumplida} isDark={isDark} />
+                                                            {conAnillo ? (
+                                                                <AnilloDeMeta pct={conAnillo.pct} cumplida={conAnillo.cumplida} isDark={isDark} />
                                                             ) : (
                                                                 <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
                                                                     <Icon size={16} strokeWidth={2} />
@@ -1046,7 +1055,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     la regla que decide quién ve dólares—, y
                                                                     debajo se le suma igual el puesto entre las
                                                                     salas, que no habla de dinero. */}
-                                                                {(!cierre || cierre.venta == null) && n.body && (
+                                                                {(!conAnillo || (cierre && cierre.venta == null)) && n.body && (
                                                                     <CuerpoDeNotificacion
                                                                         id={n.id}
                                                                         texto={n.body}
@@ -1060,7 +1069,14 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                         datos={cierre}
                                                                         claseTenue={cx.rowBody}
                                                                         isDark={isDark}
-                                                                        salaPropia={sucursal}
+                                                                    />
+                                                                )}
+                                                                {empresa && (
+                                                                    <CuerpoDeCierreDeEmpresa
+                                                                        datos={empresa}
+                                                                        claseTenue={cx.rowBody}
+                                                                        isDark={isDark}
+                                                                        buscarEmpleado={buscarEmpleadoPorId}
                                                                     />
                                                                 )}
 

@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.915.0 — Promociones — el cálculo, verificado al número
+
+Las cuatro escrituras del módulo (crear, activar, cambiar montos, extender) y
+las dos lecturas. Sigue sin haber pantalla; esto es el motor.
+
+**El cálculo se midió antes de escribirlo, y la forma obvia era la lenta.** Tres
+maneras de contar lo vendido de una promoción de cinco productos en un mes,
+todas con `EXPLAIN (ANALYZE, TIMING OFF)` contra producción:
+
+| forma | tiempo |
+|---|---:|
+| entrando por producto, un renglón a la vez | 248 ms **× 5** |
+| una sola pasada, con los renglones en un CTE | 1,145 ms |
+| igual, acotando la fecha antes | 930 ms |
+| **dos CTE materializados + hash join** | **72 ms** |
+
+Las dos del medio pierden por lo mismo: el planificador estima el CTE de
+renglones en una fila, elige *nested loops* y aplica la **fecha después del
+join** — lee 9,725 renglones de venta para quedarse con 604, con una búsqueda
+por clave primaria para cada uno. Materializar los dos lados le da cardinalidades
+reales y elige dos hash joins.
+
+La función es `plpgsql` y no `sql` a propósito, y lleva
+`plan_cache_mode = 'force_custom_plan'`: **medido, la sexta llamada sigue en
+56 ms**, que es exactamente donde una función sin eso se cae al plan genérico.
+Y es `SECURITY DEFINER` porque lee las facturas, cuya policy ningún cargo de
+sala cumple: por el camino ingenuo no daría error, devolvería **cero ventas en
+silencio** — la misma trampa que costó $478.50 en el widget de la meta.
+
+**Verificado contra un `SELECT` directo, no contra sí mismo.** Con una promoción
+de prueba sobre agosto real: 3,169 unidades en 292 documentos por un lado, 92 por
+el otro — **idénticos** a la cuenta a mano. Y los tres candados probados: la
+bitácora no se puede llamar desde una sesión de usuario, un INSERT directo lo
+rechaza el RLS, y alguien sin el módulo ve cero filas en las siete tablas. El
+rastro de prueba quedó **borrado**; las tablas están en cero.
+
+**Lo que la verificación encontró:** `costo_vendedor` estaba sumando $10.00 de
+diez unidades cuyo código de vendedor no da con nadie activo. Ese bono no se
+paga y no se reparte, así que contarlo mentía sobre lo que la promoción cuesta.
+Ahora son tres números distintos: lo pagable ($3,159.00), lo que no tiene dueño
+($10.00), y los fondos de Administración y Bodega —que **sí** lo incluyen,
+porque el fondo es del área y no de quien vendió: el producto salió igual.
+
+Dos reglas quedaron ciertas por construcción y no por acordarse: **el reparto
+tiene que sumar el lote** (si no, la promoción no se crea) y **cambiar un monto
+no reescribe lo ya ganado** (agrega una tarifa con su fecha, y cada venta se
+paga con la que regía ese día).
+
 ## v2.914.0 — Promociones por producto — las tablas y su bitácora
 
 Arranca el módulo de **Promociones**: la campaña por la que un laboratorio paga

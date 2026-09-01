@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.893.1 — Las cuatro decisiones, y el canje que no hay que construir
+
+Las cuatro preguntas que bloqueaban el plan de puntos, respondidas. Dos de las
+respuestas lo cambian de forma.
+
+**El canje NO se construye: se detecta.** Yo había puesto «el canje en el
+mostrador» como el paso que impedía apagar MySQL, y estaba mal planteado. El
+usuario: *«los puntos se canjean en el ERP, el portal ya detecta ventas con
+puntos, al detectar una los descontará de los puntos del cliente»*. El portal no
+autoriza el canje, lo **registra** — y el mostrador el día del apagado funciona
+igual, porque nunca dependió del portal para esto. **El plan se quedó sin paso
+bloqueante.**
+
+La fórmula ya estaba medida en el documento del circuito y ahora tiene su lugar
+en el plan: `descuento = (renglones − total) − retención`, con `has_puntos` de
+compuerta y sin falsos negativos. Y la guarda que la vuelve segura quedó
+**verificada contra producción**: `MAPFRE` es la **única** ficha con
+`acumula_puntos = false` de las 28,110 —73 ventas, 69 con la marca—. Sin cruzar
+por esa bandera, la detección habría disparado 60 alertas al año sobre la única
+ficha donde el descuento sin puntos es lo normal.
+
+**Y el período en paralelo no hacía falta.** El usuario preguntó si no era mejor
+migrar y encender de una. Tenía razón: el paralelo servía para **comparar** los
+dos motores, y comparar no exige que los dos escriban — se puede hacer sobre la
+historia ya guardada, de lectura, en minutos. Se corrió sobre la semana del 1 al
+7 de julio:
+
+| | facturas |
+|---|---:|
+| motor nuevo | 4,009 |
+| circuito viejo | 5,265 |
+| coinciden | **4,009** |
+| **sólo el nuevo** | **0** |
+| sólo el viejo | 1,256 |
+
+**Cero falsos positivos**, y las 1,256 de diferencia desglosadas una por una:
+709 de US$1.00 o menos, 318 con un renglón bajo el precio 3, 209 sin ningún
+producto que acumule, 14 anuladas, y **6** por catálogo. O sea **1,250 de 1,256
+son rechazos correctos** — el motor nuevo no pierde trabajo, el viejo acreditaba
+lo que no debía. Que es exactamente lo que dijo el usuario: *«MariaDB no tiene
+validaciones, es rústico, por eso lo estamos mejorando con el portal»*.
+
+Los 6 del catálogo son el único cabo suelto y hay que abrirlos antes de migrar.
+
+Las otras dos, sin vueltas: **el mínimo se queda en 100** (el reglamento y el
+afiche ya lo dicen; igual va como parámetro en la base y no dentro de una
+función, porque el dato medido dice que ese número se va a mover) y **las 27
+cuentas de doble crédito se migran como están** — corregirlas sería quitarle
+puntos a 27 personas sin avisarles, y hacia adelante la tabla lo rechaza.
+
+El orden quedó en seis pasos sin freno: tablas → regla → funciones → migrar
+saldos (`ganado_el` 1-oct-2026, `vence_el` 1-oct-2027) → encender → apagar MySQL.
+
 ## v2.893.0 — Los puntos, listos para mudarse
 
 `docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md`. MariaDB va a dejar de existir, así

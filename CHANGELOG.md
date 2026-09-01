@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.912.0 — La pantalla del cliente acepta el código
+
+Lo preguntó el usuario y era un hueco real: el servidor ya aceptaba el código
+desde v2.910.0, pero **`/mis-puntos` seguía exigiendo nueve dígitos** y lo
+rechazaba antes de mandarlo. Media función sin su pantalla.
+
+- El campo pasa de **«DUI»** a **«Documento o código»**, y **pierde la máscara**:
+  la del DUI mete guiones y sólo deja dígitos, y un código lleva letras. Da igual
+  cómo lo escriban —el servidor limpia todo lo que no sea letra o número—, así
+  que el ejemplo muestra las dos formas: `00000000-0 · K7M-P4XN`.
+- La validación pasa de «exactamente 9 dígitos» a «al menos 7 alfanuméricos», y
+  **el código se reconoce por su forma**, no preguntándole a la persona con qué
+  va a entrar: una pantalla que abre con esa pregunta ya perdió a la mitad de la
+  gente. Es el mismo patrón que el servidor.
+- Con un código, **el teléfono deja de pedirse** — y el campo lo dice
+  («Teléfono (no hace falta)») en vez de desaparecer: un campo que se esfuma
+  mientras alguien escribe se lee como que la pantalla se rompió.
+
+`consultarMisPuntos` manda ahora `documento`, y sigue mandando `dui` con el mismo
+valor: la edge function acepta los dos y prefiere el primero, así que una
+pantalla vieja en la caché de alguien sigue funcionando.
+
 ## v2.911.3 — El botón de generar el código, arreglado
 
 `TypeError: m is not a function` al apretar «Generar». Lo encontró el usuario, y

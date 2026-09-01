@@ -260,18 +260,28 @@ export default function MisPuntosView() {
     const [datos, setDatos] = useState(null);
     const [todos, setTodos] = useState(false);
 
-    // Nueve dígitos el documento, ocho el teléfono. Se valida acá para no gastar
-    // un intento del freno con algo que ni siquiera tiene forma de dato.
-    const duiOk = dui.replace(/\D/g, '').length === 9;
+    // El campo ya no es sólo un DUI: es el documento con el que la persona se
+    // inscribió —DUI, NIT o pasaporte— o el código que le dio la sala. Se valida
+    // acá para no gastar un intento del freno con algo que ni siquiera tiene
+    // forma de dato.
+    const limpio = dui.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    // Un código nuestro se reconoce por su FORMA, no preguntándole a la persona
+    // con qué va a entrar: una pantalla que abre con esa pregunta ya perdió a la
+    // mitad de la gente. Es el mismo patrón del servidor.
+    const esCodigo = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/.test(limpio);
+    const docOk = limpio.length >= 7;
     const telOk = tel.replace(/\D/g, '').length >= 8;
-    const puedeConsultar = duiOk && telOk && !cargando;
+    // Con código el teléfono no se pide: quien entra así es una persona
+    // extranjera, y su teléfono no sirve de llave porque el circuito de
+    // facturación se lo reemplaza por el de la farmacia.
+    const puedeConsultar = docOk && (esCodigo || telOk) && !cargando;
 
     const consultar = async (e) => {
         e.preventDefault();
         if (!puedeConsultar) return;
         setCargando(true);
         setError('');
-        const r = await consultarMisPuntos({ dui, telefono: tel });
+        const r = await consultarMisPuntos({ documento: dui, telefono: tel });
         setCargando(false);
         if (r.ok) { setDatos(r); setTodos(false); return; }
         setError(r.mensaje);
@@ -315,15 +325,23 @@ export default function MisPuntosView() {
                                 Son los dos datos de tu registro de cliente frecuente.
                             </p>
 
+                            {/* Sin `maskType`: la máscara del DUI mete guiones y
+                                sólo deja dígitos, y un código lleva letras. El
+                                servidor limpia todo lo que no sea letra o
+                                número, así que da igual cómo lo escriban. */}
                             <PortalInput
-                                name="dui" label="DUI" icon={CreditCard}
-                                maskType="DUI" inputMode="numeric"
-                                placeholder="00000000-0" value={dui} autoComplete="off"
+                                name="dui" label="Documento o código" icon={CreditCard}
+                                placeholder="00000000-0  ·  K7M-P4XN" value={dui}
+                                autoComplete="off" autoCapitalize="characters" spellCheck={false}
                                 onChange={e => setDui(e.target.value)}
                             />
+                            {/* Con código el teléfono deja de pedirse, y el campo
+                                lo dice en vez de desaparecer: un campo que se
+                                esfuma mientras alguien escribe se lee como que
+                                la pantalla se rompió. */}
                             <PortalInput
-                                name="telefono" label="Teléfono" icon={Phone}
-                                maskType="PHONE" inputMode="tel"
+                                name="telefono" label={esCodigo ? 'Teléfono (no hace falta)' : 'Teléfono'}
+                                icon={Phone} maskType="PHONE" inputMode="tel"
                                 placeholder="0000-0000" value={tel} autoComplete="tel"
                                 onChange={e => setTel(e.target.value)}
                             />

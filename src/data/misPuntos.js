@@ -14,10 +14,14 @@ import { supabase } from '../supabaseClient';
  * Ni el documento ni el teléfono. Quien preguntó ya los tenía, y devolverlos
  * sólo agrega una copia más de un dato sensible viajando por la red.
  */
-export async function consultarMisPuntos({ dui, telefono }) {
+export async function consultarMisPuntos({ documento, dui, telefono }) {
     try {
         const { data, error } = await supabase.functions.invoke('mis-puntos', {
-            body: { dui, telefono },
+            // `documento` es el nombre nuevo: ya no es sólo un DUI, puede ser el
+            // NIT, el pasaporte o el código que le dio la sala. `dui` sigue
+            // viajando por si alguna pantalla vieja todavía lo manda así — la
+            // edge function acepta los dos y prefiere `documento`.
+            body: { documento: documento ?? dui, dui: documento ?? dui, telefono },
         });
         // `functions.invoke` marca error para cualquier código que no sea 2xx,
         // y el 429 del freno viene por ahí con su cuerpo adentro. Sin esto, a

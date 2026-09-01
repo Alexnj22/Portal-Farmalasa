@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.922.1 — Promociones — los campos del formulario, en su sitio
+
+Reportado con una captura: los campos del modal de nueva promoción estaban
+desalineados y las fechas se leían mal. Cinco correcciones, y **la primera era
+un bug de datos, no de estilo**.
+
+- **Administración aparecía como una séptima sala** en el reparto. El filtro era
+  `!b.es_bodega`, y el catálogo que carga el portal trae sólo `id` y `name`: esa
+  propiedad no existe, así que su negación era cierta para todos. Un prop que no
+  existe no da error — deja pasar todo. Administración no está en el mapa del
+  sistema de origen porque no vende, o sea que era un campo que nunca podría
+  tener ventas y descuadraba el lote a propósito. Ahora sale de `SALAS_VENTA`,
+  la lista que Metas ya usa para la misma pregunta.
+- **Las fechas decían 09/01/2026** para el 1 de septiembre: el campo nativo pinta
+  el formato del sistema operativo. Se usa el selector del portal, que escribe
+  DD/MM/AAAA.
+- **«Presentación» no tenía rótulo** y su vecino «Lote» sí, así que las dos
+  columnas arrancaban a alturas distintas. Ahora los controles que no traen
+  etiqueta propia la llevan puesta.
+- El «Requerido» era una píldora del alto de un botón sobre campos chicos; queda
+  un asterisco. Y el aviso de que el reparto debe cuadrar sólo sale cuando ya
+  hay un lote escrito, no sobre un formulario recién abierto.
+- **El texto de ayuda se cortaba**: iba pegado al rótulo y en el teléfono se leía
+  «NOMBRE DE LA PROMOCIÓN ES EL NOMBRE QUE VA…». Y el buscador seguía mostrando
+  sus resultados después de elegir un producto; ahora se limpia.
+
+Verificado en un iPhone 13 real de WebKit, con el modal abierto y un producto
+cargado: **nada se desborda, ningún blanco táctil bajo 44pt y ningún campo por
+debajo de 16px** (que es lo que hace que iOS acerque la pantalla solo). El
+barrido de la ruta también quedó en cero.
+
 ## v2.922.0 — Abonos de cliente: la tabla y el folio
 
 Migraciones `20260901212158` y `20260901212228`. El **cimiento** de los abonos

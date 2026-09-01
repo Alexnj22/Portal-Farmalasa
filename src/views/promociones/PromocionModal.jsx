@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Trash2, AlertTriangle, Check, Tag } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import Button from '../../components/common/Button';
@@ -11,19 +12,32 @@ import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import useBorrador from '../../hooks/useBorrador';
 import { useStaffStore } from '../../store/staffStore';
+import { SALAS_VENTA } from '../metas/metasUtils';
 import { crearPromocion, fetchPresentacionesDeProducto } from '../../data/promociones';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { hoySV, fmtUnidades, rotuloPresentacion } from './promocionesUtils';
 
 const CLAVE_BORRADOR = 'promocion_nueva';
 
-/** Las seis salas de venta. Bodega queda afuera: el lote se reparte entre las
- *  salas que venden, y ésa es la regla que hace que el total no cambie cuando
- *  un traslado mueve producto. */
+/**
+ * Las seis salas de VENTA, del catálogo canónico.
+ *
+ * El filtro anterior era `!b.es_bodega && b.name !== 'Bodega'`, y dejaba entrar
+ * a **Administración**: el `branches` del store trae sólo `id` y `name`, así que
+ * `b.es_bodega` es `undefined` y su negación es cierta para todos. Un prop que
+ * no existe no da error — deja pasar todo. Administración no está en el mapa del
+ * sistema de origen porque no vende, así que aparecía un séptimo campo de
+ * reparto que nunca podía tener ventas y descuadraba el lote a propósito.
+ *
+ * `SALAS_VENTA` es la lista que ya usa Metas para la misma pregunta; una segunda
+ * copia se desincroniza el día que abra o cierre una sala.
+ */
 const useSalasDeVenta = () => {
     const branches = useStaffStore((s) => s.branches);
     return useMemo(
-        () => (branches || []).filter((b) => !b.es_bodega && b.name !== 'Bodega'),
+        () => SALAS_VENTA
+            .map((id) => (branches || []).find((b) => Number(b.id) === id))
+            .filter(Boolean),
         [branches],
     );
 };
@@ -136,16 +150,16 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         name="nombre"
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
-                        placeholder="Orfenaflex septiembre"
-                        helperText="Es el nombre que va a ver la sala."
+                        placeholder="El nombre que va a ver la sala"
                         required
                     />
 
                     {/* El canónico: 150 ms de rebote medidos, piso de dos
                         letras y la barra abierta. Se acota el alto porque acá
                         es UNA sección del formulario, no la pantalla entera. */}
-                    <div className="max-h-64 flex flex-col rounded-lg border border-border-card p-2">
+                    <div className="max-h-56 flex flex-col">
                         <BuscadorDeProducto
+                            key={renglones.length}
                             onElegir={agregar}
                             placeholder="Buscar el producto de la promoción…"
                             invitacion={{ icono: Tag, texto: 'Busca el producto que entra en la promoción' }}
@@ -196,6 +210,28 @@ function cuadra(r) {
     return suma === (Number(r.lote_total) || 0) && suma > 0;
 }
 
+/**
+ * El rótulo de un control que no trae el suyo — `LiquidSelect` y
+ * `LiquidDatePicker` no llevan etiqueta, y `PortalInput` sí. Mezclarlos en una
+ * fila sin esto deja las dos columnas arrancando a alturas distintas, que es
+ * exactamente lo que se veía en la captura.
+ *
+ * `falta` marca lo que hay que llenar SIN el badge «Requerido» del canónico:
+ * ahí es una píldora del alto de un botón, y en una rejilla de campos chicos
+ * pesa más que el campo que señala.
+ */
+function Campo({ rotulo, falta = false, children }) {
+    return (
+        <div className="flex flex-col gap-1 min-w-0">
+            <span className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
+                {rotulo}
+                {falta && <span className="text-danger" aria-label="requerido">*</span>}
+            </span>
+            {children}
+        </div>
+    );
+}
+
 function RenglonEditor({ r, salas, onCambiar, onReparto, onQuitar }) {
     const [presentaciones, setPresentaciones] = useState([]);
 
@@ -236,33 +272,44 @@ function RenglonEditor({ r, salas, onCambiar, onReparto, onQuitar }) {
                     onClick={onQuitar} title="Quitar producto" />
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
-                <LiquidSelect
-                    value={r.factor_unidades == null ? '' : String(r.factor_unidades)}
-                    onChange={(v) => onCambiar('factor_unidades', v === '' ? null : Number(v))}
-                    options={opcionesPres}
-                    clearable={false}
-                    compact
-                    ariaLabel="Presentación"
-                />
-                <PortalInput
-                    label="Lote (unidades)"
-                    name={`lote-${r.erp_product_id}`}
-                    value={r.lote_total}
-                    onChange={(e) => onCambiar('lote_total', e.target.value)}
-                    inputMode="numeric"
-                    compact
-                />
+            {/* Las dos columnas llevan rótulo o quedan desalineadas: el campo
+                con etiqueta empieza más abajo que el que no la tiene. */}
+            <div className="grid gap-3 sm:grid-cols-2">
+                <Campo rotulo="Presentación">
+                    <LiquidSelect
+                        value={r.factor_unidades == null ? '' : String(r.factor_unidades)}
+                        onChange={(v) => onCambiar('factor_unidades', v === '' ? null : Number(v))}
+                        options={opcionesPres}
+                        clearable={false}
+                        compact
+                        ariaLabel="Presentación"
+                    />
+                </Campo>
+                <Campo rotulo="Lote en unidades" falta={!(Number(r.lote_total) > 0)}>
+                    <PortalInput
+                        name={`lote-${r.erp_product_id}`}
+                        value={r.lote_total}
+                        onChange={(e) => onCambiar('lote_total', e.target.value)}
+                        inputMode="numeric"
+                        placeholder="0"
+                        compact
+                    />
+                </Campo>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
-                <PortalInput label="Empieza" name={`ini-${r.erp_product_id}`} type="date"
-                    value={r.inicio} onChange={(e) => onCambiar('inicio', e.target.value)} compact />
-                <PortalInput label="Termina" name={`fin-${r.erp_product_id}`} type="date"
-                    value={r.fin} onChange={(e) => onCambiar('fin', e.target.value)} compact required />
+            {/* El selector del portal, no `type="date"`: el nativo pinta el
+                formato del sistema operativo —en la captura salía 09/01/2026,
+                que se lee como 9 de enero— y el portal escribe DD/MM/AAAA. */}
+            <div className="grid gap-3 sm:grid-cols-2">
+                <Campo rotulo="Empieza">
+                    <LiquidDatePicker value={r.inicio} onChange={(v) => onCambiar('inicio', v)} compact />
+                </Campo>
+                <Campo rotulo="Termina" falta={!r.fin}>
+                    <LiquidDatePicker value={r.fin} onChange={(v) => onCambiar('fin', v)} compact />
+                </Campo>
             </div>
 
-            <div className="grid gap-2 grid-cols-3">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
                 <PortalInput label={`Vendedor ${unidadPago}`} name={`bv-${r.erp_product_id}`}
                     value={r.bono_vendedor} onChange={(e) => onCambiar('bono_vendedor', e.target.value)}
                     inputMode="decimal" compact />
@@ -284,7 +331,7 @@ function RenglonEditor({ r, salas, onCambiar, onReparto, onQuitar }) {
                         {fmtUnidades(suma)} de {fmtUnidades(lote)}
                     </Badge>
                 </div>
-                <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
                     {salas.map((s) => (
                         <PortalInput
                             key={s.id}
@@ -297,7 +344,7 @@ function RenglonEditor({ r, salas, onCambiar, onReparto, onQuitar }) {
                         />
                     ))}
                 </div>
-                {!ok && (
+                {!ok && lote > 0 && (
                     <p className="text-caption text-warning-text mt-1.5">
                         El reparto tiene que sumar exactamente el lote — si no, alguna sala vendería
                         contra un número que no es suyo y el aviso les mentiría a todas.

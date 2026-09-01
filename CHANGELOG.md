@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.904.0 — El cálculo de MIN·MAX deja de contar ventas anuladas, y Bodega deja de pisar lo ajustado a mano
+
+Migraciones `20260901162649`, `20260901162804` y `20260901162911`. Salen de una
+auditoría completa del cálculo medida contra producción; el informe con los
+nueve hallazgos está en la conversación.
+
+**El filtro de anuladas no excluía ninguna factura.** El cálculo traía la
+demanda con `AND inv.estado != 'ANULADA'`, y **`'ANULADA'` no existe**: los tres
+únicos valores que ha tenido esa columna en toda la historia son `FINALIZADA`
+(359,531), `DTE INVALIDADO EN MH` (1,028) y `NULA` (9). Una condición contra un
+valor inexistente es siempre verdadera, así que el filtro no descartaba nada y
+las ventas anuladas entraban como demanda real: en la ventana de 180 días,
+**390 facturas y 7,950 unidades fantasma**, y **285 productos·sala con el máximo
+distinto** al corregirlo (peor caso, 74 unidades de más).
+
+Lo llamativo es que **ya se había corregido en el resto del portal el 6 de
+agosto** (`20260806022058`): los libros de IVA, las metas, los puntos y medio
+centenar de funciones usan los estados reales. MIN·MAX no entró en aquella
+tanda, y la migración del 21-ago que reescribió `calculate_stock_params` copió
+el literal viejo sin notarlo. Se corrigen las cuatro funciones del módulo
+—`calculate_stock_params`, `get_products_sold_no_minmax`, `get_no_sales_products`
+y `get_stagnant_inventory`—; **quedan ocho más con el literal viejo**, anotadas
+en la migración, que hay que decidir aparte. La del trigger
+`fn_update_product_last_sale` además no se arregla sólo cambiando el literal:
+corre al insertar el renglón y la anulación llega después.
+
+**Bodega borraba los ajustes a mano.** Su MIN·MAX es la suma de las salas y lo
+escribe un trigger cuya rama `live_upsert` escribía el par directo, **sin la
+guarda `manual_at IS NULL` que el cálculo sí tiene desde el 21-ago**. Cada vez
+que una sala publicaba, el número que alguien había puesto en Bodega
+desaparecía sin aviso: medido, 22 filas con ajuste y 66 fuera de la suma, y dos
+pisadas el mismo 1-sep. Ahora la fila ajustada **conserva su par y recibe la
+suma como borrador**, igual que una sala — callar la escritura sin mostrar la
+diferencia habría sido el mismo defecto al revés. Verificado en producción
+dentro de una transacción revertida: con marca, 12·22 se mantiene y 12·23 queda
+propuesto; sin marca, el par se actualiza solo como siempre.
+
+La tercera migración restaura una expresión que la segunda había reescrito a una
+forma equivalente. No cambió ningún resultado —comprobado sobre ocho pares— pero
+su gemela `bodega_min` y la escalera de `publish_stock_params` conservan la
+forma original, y dos escrituras de la misma regla se leen como si fueran dos.
+
+**Ningún MIN·MAX se modificó**: las correcciones actúan en la próxima corrida
+del cron. El efecto del filtro es BAJAR números, así que no puede generar
+sobre-stock.
+
 ## v2.903.0 — La foto va siempre, y el nombre entero
 
 Regla del usuario, dicha como regla y no como pedido: **si el portal muestra a

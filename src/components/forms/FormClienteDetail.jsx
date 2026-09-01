@@ -22,7 +22,7 @@ import {
     codigoDeError, mensajeDeError,
 } from '../../data/customers';
 import {
-    fetchPuntosDeCliente, estadoCodigoAcceso, verCodigoAcceso, emitirCodigoAcceso,
+    fetchPuntosDeCliente, estadoCodigoAcceso, verCodigoAcceso, emitirCodigoAcceso, salaDeHoy,
 } from '../../data/puntos';
 import {
     EL_SALVADOR_GEO, municipiosDe, distritosDe, normalizarGeo, conciliarGeo,
@@ -284,7 +284,13 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
     // alcance no distingue a nadie. Medido antes de elegirlo.
     const alImprimir = () => conError('leer las cajas de impresión')(async () => {
         const andaPorVariasSalas = getScope('ventas') === 'ALL';
-        const miSala = user?.branchId ?? null;
+        // La sala se pregunta a la BASE, no se lee de la sesión: hoy contesta la
+        // de la ficha, y el día que los horarios digan la del día contesta ésa
+        // —quien va de apoyo imprime donde está— sin tocar esta pantalla. Si la
+        // consulta falla se cae a la de la sesión, que es lo que había antes.
+        let miSala = null;
+        try { miSala = await salaDeHoy(); } catch { miSala = user?.branchId ?? null; }
+        if (miSala == null) miSala = user?.branchId ?? null;
 
         if (!andaPorVariasSalas && miSala != null) {
             await imprimir({ salaId: Number(miSala) })();

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.921.0 — El papel sale por la sala donde estás
+
+La sala por la que sale el papel ya no se lee de la sesión del navegador: se le
+pregunta a la base, con `empleado_sala_de_hoy()`.
+
+Hoy contesta exactamente lo mismo que antes —la sucursal de la ficha—, así que
+para quien usa el portal no cambia nada. Lo que cambia es el día que los
+horarios digan la sala del día: quien va de apoyo a otra sala va a imprimir
+**donde está**, sin que haya que volver a tocar la pantalla de clientes.
+
+Está preparado, no adivinado. Los horarios todavía no traen sucursal —
+`employee_rosters` está en cero filas y no tiene esa columna—, así que la
+función deja escrito el contrato para quien construya el apoyo: la sucursal del
+día se lee de `branchId`, `branch_id`, `sucursalId` o `sucursal_id`, en ese
+orden. Cuatro claves y no una porque el módulo ya mezcla las dos convenciones en
+el mismo objeto, y elegir una sola garantizaría que el día que alguien escriba
+la otra, el papel salga en la sala equivocada **sin dar error**.
+
+Tres frenos, cada uno por un modo de falla concreto:
+
+- **Sólo cuenta un horario publicado.** Un borrador es una idea, y mandar un
+  papel a otra sala por una idea es justo el error que esto evita. Es el mismo
+  criterio con el que la planilla lee los horarios.
+- **La sucursal tiene que existir en `branches`.** Un id que no está ahí no es
+  «otra sala», es basura: se ignora y se cae a la ficha. Sin eso, un dedazo en
+  el editor mandaría el papel a ninguna parte y nadie sabría por qué.
+- **Un valor que no es un número no tumba nada.** Se ignora y se sigue.
+
+Verificado con seis casos sobre datos de verdad —sin horarios, con el horario
+diciendo otra sala, con un borrador, con una sucursal inexistente, con el nombre
+de la sala escrito como texto y con la clave alterna—: los seis dan lo esperado,
+y la prueba se deshizo sola sin dejar una fila.
+
 ## v2.920.0 — Promociones — la pantalla
 
 Ya se puede entrar a **Comercial → Promociones**. Tres pestañas: las promociones

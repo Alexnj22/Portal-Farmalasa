@@ -106,6 +106,24 @@ export async function emitirCodigoAcceso(customerId) {
     return data;
 }
 
+/**
+ * La sala donde trabaja HOY quien está usando el portal.
+ *
+ * Hoy contesta siempre la sucursal de la ficha, porque los horarios todavía no
+ * dicen la del día. El día que la digan —el contrato de claves está escrito en
+ * `empleado_sala_de_hoy`— esta misma llamada devuelve la otra, y quien va de
+ * apoyo a otra sala imprime ahí sin que nadie toque este archivo.
+ *
+ * Se resuelve en la BASE y no acá: el horario es de quien lo publica, no del
+ * navegador, y un `user.branchId` guardado en la sesión se queda viejo apenas
+ * alguien cambia de sala.
+ */
+export async function salaDeHoy() {
+    const { data, error } = await supabase.rpc('empleado_sala_de_hoy');
+    if (error) throw new Error(error.message);
+    return data ?? null;
+}
+
 export const ROTULO_PUNTOS = {
     acumulado:   { label: 'Acumulados', variante: 'success', ayuda: 'El cliente ya presentó el ticket y se le dieron sus puntos.' },
     pendiente:   { label: 'Pendientes', variante: 'neutral', ayuda: 'La venta está registrada y sus puntos se pueden reclamar.' },

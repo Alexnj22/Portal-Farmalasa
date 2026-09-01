@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
      *    solicitud existe para impedir. */
     const [modulo, accionDelPermiso] = accion === "aplicar_correccion"
       ? ["requests_caja", "can_approve"]
-      : ["caja_vales", accion === "estado" ? "can_view" : "can_edit"];
+      : ["caja_vales", accion === "estado" ? "can_view" : "can_edit"];   // `abono` incluido: es un ingreso
     const permiso = await permisoDeModulo(supabase, quien.id, modulo, accionDelPermiso);
     if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede) {
@@ -537,12 +537,65 @@ Deno.serve(async (req) => {
     // su vale consolidado. Esto es lo que entra y sale del CAJÓN —el pago de un
     // recibo, la compra de agua fría— que hasta hoy se tecleaba en la otra
     // pantalla.
-    if (accion === "ingreso" || accion === "salida") {
-      const esEntrada = accion === "ingreso";
+    if (accion === "ingreso" || accion === "salida" || accion === "abono") {
+      const esEntrada = accion !== "salida";
+      const esAbono = accion === "abono";
       const monto = Number(body.monto);
-      const concepto = String(body.concepto ?? "").trim();
+      let concepto = String(body.concepto ?? "").trim();
       if (!(Number.isFinite(monto) && monto > 0)) return json({ ok: false, error: "Falta el monto." }, 400);
-      if (!concepto) return json({ ok: false, error: "Falta el concepto." }, 400);
+      if (!esAbono && !concepto) return json({ ok: false, error: "Falta el concepto." }, 400);
+
+      /* ── EL ABONO DE CLIENTE ────────────────────────────────────────────
+       *
+       * Es un ingreso con un contrato encima: el dinero entra al cajón igual
+       * que cualquier otro, y además queda una fila que dice a quién, por qué
+       * producto y hasta cuándo. Va por ESTE camino y no por uno propio porque
+       * el movimiento de caja es exactamente el mismo — separarlo daría dos
+       * maneras de meter dinero al cajón, y la segunda se olvidaría de algo.
+       *
+       * El ORDEN importa y no es libre:
+       *   1. el folio, que es lo que va impreso y en el concepto;
+       *   2. el movimiento del portal, ANTES de tocar la caja (patrón de acá);
+       *   3. la fila del abono, ligada al movimiento;
+       *   4. recién entonces la caja.
+       *
+       * Si (4) falla, queda un abono con su movimiento sin `erp_movimiento_id`:
+       * un intento VISIBLE que se puede reintentar. Al revés —tocar la caja
+       * primero— dejaría dinero adentro sin nada que dijera de quién es. */
+      let folio: string | null = null;
+      let cliente = "";
+      let telefono: string | null = null;
+      let renglones: unknown[] = [];
+      let total: number | null = null;
+      let venceEl = "";
+      if (esAbono) {
+        cliente = String(body.cliente_nombre ?? "").trim();
+        telefono = String(body.cliente_telefono ?? "").trim() || null;
+        renglones = Array.isArray(body.renglones) ? body.renglones : [];
+        total = body.total == null || body.total === "" ? null : Number(body.total);
+        venceEl = String(body.vence_el ?? "").trim();
+        if (cliente.length < 3) return json({ ok: false, error: "Falta el nombre del cliente." }, 400);
+        if (!renglones.length) return json({ ok: false, error: "Falta qué se está apartando." }, 400);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(venceEl)) return json({ ok: false, error: "Falta hasta cuándo vale la reserva." }, 400);
+        // El total NO puede ser menor que lo que ya pagó: sería un saldo
+        // negativo impreso en un comprobante que el cliente se lleva.
+        if (total != null && Number.isFinite(total) && total < monto) {
+          return json({ ok: false, error: "El abono no puede ser mayor que el total del producto." }, 400);
+        }
+
+        const { data: f, error: errFolio } = await supabase
+          .rpc("siguiente_folio_de_abono", { p_branch_id: sala });
+        // Sin folio no se sigue: el comprobante SE IDENTIFICA por él, y uno
+        // inventado acá no coincidiría con la serie que la función lleva.
+        if (errFolio || !f) {
+          console.error(`[operar-caja] abono sala=${sala}: folio: ${errFolio?.message}`);
+          return json({ ok: false, error: "No se pudo generar el numero del comprobante." }, 503);
+        }
+        folio = String(f);
+        // El concepto que ve la caja lleva el folio: es lo único que ata el
+        // movimiento con el papel cuando alguien mira del otro lado.
+        concepto = `Abono ${folio} ${cliente}`;
+      }
 
       // La fila del portal se escribe ANTES: si la caja lo acepta y el portal no
       // llega a anotarlo, queda un movimiento sin respaldo y sin forma de
@@ -569,6 +622,31 @@ Deno.serve(async (req) => {
         })
         .select("id").single();
       if (errFila) throw new Error(`guardando el movimiento: ${errFila.message}`);
+
+      let abono: Record<string, unknown> | null = null;
+      if (esAbono) {
+        const { data: fa, error: errAbono } = await supabase
+          .from("abonos_de_cliente")
+          .insert({
+            folio, branch_id: sala, fecha: diaAbierto,
+            cliente_erp_id: body.cliente_erp_id ? Number(body.cliente_erp_id) : null,
+            cliente_nombre: cliente, cliente_telefono: telefono,
+            total: total != null && Number.isFinite(total) ? Number(dosDecimales(total)) : null,
+            abonado: Number(dosDecimales(monto)),
+            renglones, vence_el: venceEl,
+            anotado_por: quien.id, movimiento_ingreso_id: fila.id,
+          })
+          .select("*").single();
+        // Si el abono no se puede escribir, el dinero TODAVÍA no entró a la
+        // caja: se para acá y queda sólo el intento del movimiento, que es
+        // visible y sin plata movida. Seguir daría un ingreso sin contrato —el
+        // caso que este circuito existe para que no pase.
+        if (errAbono) {
+          console.error(`[operar-caja] abono sala=${sala} folio=${folio}: ${errAbono.message}`);
+          return json({ ok: false, error: "No se pudo guardar el abono. No se movio dinero." }, 500);
+        }
+        abono = fa;
+      }
 
       // El concepto lleva el número del portal adelante: es lo único que ata
       // las dos filas cuando alguien mira del otro lado, y el campo trunca a 50.
@@ -628,11 +706,15 @@ Deno.serve(async (req) => {
       // tiene la fila sin el número del sistema: se puede reintentar, pero
       // alguien tiene que enterarse.
       if (errLigar) {
-        return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov,
+        return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono,
           aviso: "El movimiento se hizo, pero no se pudo enlazar con el del sistema." });
       }
 
-      return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov });
+      // El abono viaja de vuelta ENTERO: el comprobante se arma con la fila que
+      // quedó escrita —con su folio y su vencimiento—, no con lo que el
+      // navegador creía que estaba mandando. Si los dos difieren, el papel
+      // tiene que decir lo que dice la base.
+      return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono });
     }
 
     // ── CERRAR EL DÍA ───────────────────────────────────────────────────────

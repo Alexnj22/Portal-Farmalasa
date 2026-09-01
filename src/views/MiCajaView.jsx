@@ -20,7 +20,8 @@ import { useToastStore } from '../store/toastStore';
 import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
-    fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte, leerBoleta, pedirCorreccion,
+    anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
+    leerBoleta, pedirCorreccion,
     subirComprobante,
 } from '../data/bolsas';
 import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '../data/cortes';
@@ -33,6 +34,10 @@ import { diferenciaDelCorte, notaDeCifra } from '../utils/cortesDiagnostico';
  * arrastra el editor de fotos, y la mayoría de las visitas a esta pantalla no
  * sacan dinero de una bolsa. */
 const SalidaDeBolsa = lazy(() => import('../components/bolsas/SalidaDeBolsa'));
+/* El abono va diferido por lo mismo: arrastra el buscador del catálogo y la
+ * mayoría de las visitas a esta pantalla no apartan nada. */
+const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
+import { construirComprobanteDeAbono } from '../utils/abonoTicket';
 import { construirComprobanteDeCorte } from '../utils/corteTicket';
 import { conSigno, formatMoney } from '../utils/formatNumber';
 import { imprimirDocumento } from '../utils/ticketPrint';
@@ -290,6 +295,24 @@ export default function MiCajaView({ comoPestana = false }) {
             showToast('Comprobante del corte enviado a la impresora',
                 'Si no sale el papel, vuelve a imprimirlo desde aquí.', 'success');
         } else {
+            showToast('No se pudo imprimir el comprobante', salida.detalle, 'error');
+        }
+        return salida.ok;
+    }, [nombreSala, sala, showToast, user]);
+
+    /* El comprobante del abono al rollo.
+     *
+     * `sala` va explícito por lo mismo que el del corte: el papel se lo lleva el
+     * cliente que está PARADO EN ESA SALA. Si esta computadora no tiene la
+     * ticketera —administración mirando desde la oficina— sale en la caja de esa
+     * sucursal, que es donde está la persona que lo espera. */
+    const imprimirAbono = useCallback(async (abono) => {
+        const ticket = construirComprobanteDeAbono({
+            abono, sala: nombreSala, hechoPor: user?.name || '',
+            hechoAt: new Date().toISOString(),
+        });
+        const salida = await imprimirDocumento(ticket, { sala });
+        if (!salida.ok) {
             showToast('No se pudo imprimir el comprobante', salida.detalle, 'error');
         }
         return salida.ok;
@@ -608,9 +631,40 @@ export default function MiCajaView({ comoPestana = false }) {
                 llegaba con el tipo de la entrada elegido — y los tipos de los
                 dos sentidos no son los mismos, así que el desplegable mostraba
                 un código que su propia lista no tiene. */}
+            {dialogo === 'abono' && (
+                <Suspense fallback={null}>
+                    <DialogoAbono abierto ocupado={ocupado} sala={sala}
+                        onClose={() => setDialogo(null)}
+                        onGuardar={async (datos) => {
+                            setOcupado(true);
+                            const r = await anotarAbono({
+                                sala, monto: datos.monto,
+                                clienteNombre: datos.cliente_nombre,
+                                clienteTelefono: datos.cliente_telefono,
+                                renglones: datos.renglones, total: datos.total,
+                                venceEl: datos.vence_el,
+                            });
+                            setOcupado(false);
+                            if (r.error) { showToast(mensajeAmigable(r.error), 'error'); return; }
+                            setDialogo(null);
+                            cargar();
+                            showToast(`Abono anotado · ${r.abono?.folio || ''}`,
+                                'El comprobante va a la impresora.', 'success');
+                            /* El papel sale como parte del acto, igual que el
+                             * comprobante del corte. Y se arma con la fila QUE
+                             * QUEDÓ ESCRITA —con su folio y su vencimiento—, no
+                             * con lo que el formulario creía estar mandando: si
+                             * los dos difieren, el papel dice lo que dice la
+                             * base. Un fallo de impresión no deshace el abono. */
+                            if (r.abono) await imprimirAbono(r.abono);
+                        }} />
+                </Suspense>
+            )}
+
             <DialogoMovimiento key={dialogo} abierto={dialogo === 'ingreso' || dialogo === 'salida'}
                 entra={dialogo === 'ingreso'} ocupado={ocupado} sala={sala} userId={user?.id}
                 tipos={tiposDeCaja}
+                onComprobante={() => setDialogo('abono')}
                 onClose={() => setDialogo(null)}
                 onAnotar={(datos) => correr(
                     () => (dialogo === 'ingreso' ? anotarIngreso : anotarSalida)({ sala, ...datos }),
@@ -975,7 +1029,7 @@ function conceptoDelPapel(leido) {
  * Sale de quien está adentro, y lo resuelve el servidor con la sesión. Era el
  * único campo que pedía teclear algo que el portal ya sabe.
  */
-function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], onClose, onAnotar }) {
+function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], onClose, onAnotar, onComprobante }) {
     /* QUÉ es, antes que cuánto.
      *
      * El diálogo empezaba pidiendo la foto de una boleta, y eso está bien para
@@ -1024,6 +1078,19 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     // `foto: 'NO'` —la aplicación, la glucosa— los campos salen directo: pedir
     // una boleta que no existe es lo que hacía que se escribiera a mano.
     const pedirDatos = tipo && (tipo.foto === 'NO' || !!foto || aMano);
+
+    /* Un tipo con comprobante NO se llena acá: cambia de diálogo.
+     *
+     * El abono levanta un compromiso —cliente, productos, plazo, saldo— y sale
+     * un papel. Meter todo eso en este formulario lo volvería largo para los
+     * otros seis tipos, que son casi todas las veces. Se decide por la BANDERA
+     * del catálogo y no por `codigo === 'ABONO_CLIENTE'`, para que un segundo
+     * tipo con papel no obligue a volver acá. */
+    const elegirTipo = (v) => {
+        const elegido = delSentido.find((t) => t.codigo === v);
+        if (elegido?.lleva_comprobante && onComprobante) { onComprobante(elegido); return; }
+        setCodigo(v);
+    };
     const cerrado = (campo) => !!deLaFoto[campo] && !aMano;
 
     const alElegirFoto = async (f) => {
@@ -1097,7 +1164,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 tipo de movimiento: no significa nada y deja el formulario sin
                 el único dato que decide qué se pregunta. */}
             <LiquidSelect label={entra ? 'Qué entra' : 'Qué sale'} value={codigo}
-                onChange={setCodigo} options={delSentido.map((t) => ({ value: t.codigo, label: t.etiqueta }))}
+                onChange={elegirTipo} options={delSentido.map((t) => ({ value: t.codigo, label: t.etiqueta }))}
                 clearable={false} placeholder="Elige de qué se trata" />
             {tipo?.leyenda && <p className="text-caption text-content-2">{tipo.leyenda}</p>}
 

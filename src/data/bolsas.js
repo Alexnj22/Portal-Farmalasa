@@ -881,6 +881,28 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
  * entra al vale consolidado—. Ésta es la otra: un gasto pagado con la plata del
  * cajón, que hasta hoy se tecleaba en la otra pantalla.
  */
+/**
+ * El abono de un cliente para apartar un producto.
+ *
+ * Es un INGRESO con contrato: el dinero entra al cajón como cualquier otro y
+ * además queda una fila que dice a quién, por qué producto y hasta cuándo. Va
+ * por `operar-caja` y no por un `insert` del navegador porque el folio, la
+ * escritura del abono y el movimiento en la caja tienen que pasar EN ORDEN y
+ * con el mismo freno de permisos — un `insert` desde acá dejaría fabricar un
+ * abono sin que entrara un centavo.
+ *
+ * Devuelve `abono` con la fila tal como quedó escrita: el comprobante se arma
+ * con eso y no con lo que el navegador creía estar mandando.
+ */
+export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono = null,
+    clienteErpId = null, renglones = [], total = null, venceEl }) {
+    return operar({
+        accion: 'abono', sala, monto,
+        cliente_nombre: clienteNombre, cliente_telefono: clienteTelefono,
+        cliente_erp_id: clienteErpId, renglones, total, vence_el: venceEl,
+    });
+}
+
 export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null, fotoUrl = null, recibe = '' }) {
     return operar({ accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe });
 }

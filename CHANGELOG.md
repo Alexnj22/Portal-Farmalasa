@@ -21,6 +21,67 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.924.0 — Abono de cliente: la pantalla y el comprobante
+
+El circuito del abono, de punta a punta salvo el retiro. En **Entrada**, al
+elegir «Abono para apartar producto» el diálogo **cambia**: pide cliente,
+teléfono y los productos, el dinero entra a la caja como cualquier ingreso, y
+sale el comprobante por la ticketera.
+
+**Cambia de diálogo por la BANDERA del catálogo**, no por
+`codigo === 'ABONO_CLIENTE'`: el día que haya un segundo tipo con papel no hay
+que volver a tocar el formulario. Y es otro diálogo y no seis campos más porque
+los otros tipos son casi todas las veces — meterles esto adentro alargaría el
+formulario corto para el 95% de los usos.
+
+**El orden en el servidor no es libre**, y por eso el abono va por
+`operar-caja` y no por un `insert` del navegador:
+
+1. el folio, que es lo que va impreso y en el concepto;
+2. el movimiento del portal, **antes** de tocar la caja;
+3. la fila del abono, ligada al movimiento;
+4. recién entonces la caja.
+
+Si (3) falla, **no se movió dinero** y queda sólo el intento del movimiento. Si
+falla (4), queda un abono cuyo movimiento no tiene `erp_movimiento_id`: un
+intento visible que se puede reintentar. Al revés —la caja primero— dejaría
+dinero adentro sin nada que dijera de quién es.
+
+**El comprobante se arma con la fila que quedó escrita**, no con lo que el
+formulario creía estar mandando: si los dos difieren, el papel dice lo que dice
+la base. Por eso el abono viaja de vuelta entero en la respuesta.
+
+### Lo que el formulario no deja hacer
+
+**El precio se escribe, no se busca.** El buscador del catálogo devuelve nombre
+e id, no precio — y aunque lo devolviera, el que rige es el que la sala le está
+cotizando al cliente en ese momento, que es el que queda fijo por el plazo.
+
+**Basta un renglón sin precio para que el total no exista.** Sumar los que sí
+tienen daría una cifra que parece el total y no lo es, y ésa es la que el
+cliente leería. `null` es la respuesta honesta, e imprime «Por definir».
+
+**El abono no puede ser mayor que el total**: sería un saldo negativo impreso en
+un papel que el cliente se lleva. Se frena en la pantalla y otra vez en el
+servidor.
+
+**El vencimiento se calcula una sola vez, al abrir.** Con el diálogo abierto
+pasada la medianoche, calcularlo en cada render lo cambiaría solo entre el
+momento en que se lee y el momento en que se aprieta «Anotar» — el papel diría
+un día y la base otro. Y cuenta el día de **la sala** (−6), no el del equipo.
+
+**Y guarda borrador, por sala.** Siete campos de captura contra una sesión que
+se cierra sola a los cinco minutos: perderlo con el cliente parado enfrente es
+lo que hace que la próxima vez se anote en un papel y no en el portal. Se guarda
+con cada tecla y no al cerrar — la sesión no se cierra por un botón. Por sala,
+porque dos salas en el mismo equipo se pisarían el borrador. Lo pidió
+`gate:borradores`.
+
+En el diálogo están las **siete** condiciones de la política, plegadas, para
+contestarle al cliente en el mostrador; en el papel siguen yendo cuatro.
+
+Falta el retiro: escanear el folio, anotar el vale y cerrar la reserva.
+
 ## v2.923.4 — El logo nuevo llega al afiche y al reglamento de puntos
 
 El centrado de «FARMACIAS» (v2.923.1) entró solo en todo el portal porque todo

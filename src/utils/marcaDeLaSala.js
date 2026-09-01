@@ -62,6 +62,29 @@ export function logoDeLaSala(sala) {
  * marca** —no vino con los archivos originales— así que es la más cercana
  * disponible. Si algún día llega la de verdad, se rehace y se reemplaza el
  * archivo; el código no cambia.
+ *
+ * ── La posición de «FARMACIAS» la eligió el usuario (2026-09-01) ───────────
+ *
+ * Hasta hoy iba alineada a la izquierda. Se la pasó **centrada sobre el
+ * nombre**, moviendo los píxeles ya aprobados —el icono y «LA POPULAR Y LA
+ * SALUD» no se tocaron— y de las dos formas de centrar eligió la ÓPTICA:
+ *
+ * | | corrimiento | centro de FARMACIAS |
+ * |---|---:|---:|
+ * | por tinta | +406 px | 928 |
+ * | **óptico ← el que se usa** | **+378 px** | **900** |
+ *
+ * El nombre está centrado en 928. Centrar la caja de letras exacta deja la
+ * palabra leyéndose corrida a la derecha, porque el tracking de ~56 px entre
+ * letras también existe DESPUÉS de la S aunque no se vea; los 28 px de menos
+ * son medio espacio de letra y es lo que la pone donde el ojo la espera.
+ *
+ * **Las tres posiciones están guardadas en `marca/`** —`-alineado-izquierda`,
+ * `-centrado-tinta`, `-centrado-optico`— y no en `public/`, que se publica
+ * entero. Cambiar de opción es copiar el archivo elegido sobre
+ * `public/logo-farmacias.png`: **el código no cambia y este valor tampoco.**
+ * Todo lo que muestra el logo de la empresa pasa por acá, así que el archivo es
+ * el único lugar donde hay que tocarlo.
  */
 export const LOGO_DE_LA_EMPRESA = '/logo-farmacias.png';
 

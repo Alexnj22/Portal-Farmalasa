@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.923.2 — Dónde se usa el logo de la empresa, escrito donde se decide
+
+Barrido de todo el repo detrás del logo de la empresa, para contestar «¿queda
+actualizado en todos lados?» con la lista y no con una impresión: **hay un solo
+sitio**, la constante `LOGO_DE_LA_EMPRESA` de `src/utils/marcaDeLaSala.js`, y
+todo lo que dibuja el logo la importa de ahí. Por eso reemplazar el archivo
+alcanzó — no hubo ninguna pantalla que tocar.
+
+La decisión de la posición quedó escrita **junto a la constante**: los dos
+corrimientos (+406 por tinta, +378 óptico), por qué ganó el óptico, y que las
+tres versiones viven en `marca/` para cambiar de opción copiando el archivo. Ahí
+es donde va a mirar el que se pregunte por qué «FARMACIAS» está donde está —
+no en el changelog, que nadie relee.
+
+Lo que el barrido descartó, que también hacía falta saber: el **icono**
+(`Logo192`/`Logo512`) es otro archivo y no cambió, así que la cabecera del
+portal, el login, el kiosco y la orden de despacho siguen igual. La orden de
+despacho lleva el icono a 22×22 junto al nombre de la SALA y así se queda: el
+logo de la empresa mide 7.35:1 y no entra en esa celda, y ese papel habla de una
+sala, no de la empresa. El corte Z y la hoja de conteo nunca llevaron logo.
+
 ## v2.923.1 — El logo de la empresa: FARMACIAS centrado sobre el nombre
 
 `public/logo-farmacias.png` tenía «FARMACIAS» alineado a la izquierda, casi a
@@ -40,8 +61,18 @@ DESPUÉS de la S, aunque no se vea. Centrando la tinta a secas la palabra se lee
 corrida a la derecha; medio espacio de letra a la izquierda la deja donde el ojo
 la espera. Quedó en 410–1390, centro 900 contra 928 del nombre.
 
-Lo usa `LOGO_DE_LA_EMPRESA` (`src/utils/marcaDeLaSala.js`), así que el cambio
-entra en todo lo que muestre el logo de la empresa, el carné incluido.
+**Todo lo que muestra el logo de la empresa pasa por una sola constante**,
+`LOGO_DE_LA_EMPRESA` (`src/utils/marcaDeLaSala.js`), así que reemplazar el
+archivo alcanzó y no hubo nada que cambiar en cada pantalla: hoy lo dibujan el
+**carné** (`documentoDeBienvenida.js`) y la **constancia de sanción**
+(`constanciaDeSancion.js`), y los dos lo miden del propio archivo —por eso
+cambiarle la posición no los deforma—. La decisión quedó escrita ahí, con los
+dos corrimientos y por qué ganó el óptico.
+
+Los otros documentos siguen con el **icono**, que es otro archivo y no cambió:
+la orden de despacho lo lleva a 22×22 junto al nombre de la SALA —el lockup mide
+7.35:1 y no entra, y ese papel habla de una sala, no de la empresa—. El corte Z
+y la hoja de conteo nunca llevaron logo.
 
 **Las tres posiciones quedan guardadas en `marca/`**, que es donde vive lo
 aprobado: `logo-farmacias-alineado-izquierda.png` (como estaba hasta hoy),

@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.906.0 — El portal guarda la foto diaria del inventario
+
+Migraciones `20260901171601`, `20260901171629`, `20260901171842` y
+`20260901171951`. Cierra el hueco que dejó abierto el hallazgo 2 de la auditoría.
+
+`inventory` dice cuánto hay **ahora** y nada más. Sin historial, el cálculo no
+puede distinguir «dejó de venderse» de «faltó», y esas dos piden lo contrario.
+La guarda de v2.905.0 frena el daño con el stock actual, pero es un parche al
+efecto: para sacar los días de quiebre del denominador de la velocidad hay que
+saber qué días estuvo en cero, y eso sólo se sabe si se guarda.
+
+**`inventory_daily`**, particionada por mes, con retención de **24 meses**. La
+escribe el cron `inventory-daily-snapshot` a las 07:45 UTC — la 01:45 de El
+Salvador, con la sala cerrada, así que la foto describe un día terminado y no
+uno a medias. `inventory-daily-particiones` mantiene las particiones el día 1.
+
+Costo medido insertando 30 días reales en producción, en transacción revertida:
+13,545 filas por día, **~403 MB al año**, con techo en ~805 MB a los 24 meses.
+La base entera pesa hoy 1,647 MB. La alternativa barata —guardar sólo los pares
+en cero— costaba 16 MB al año pero no deja mirar cuánto inventario había un día
+cualquiera; se eligió la foto completa a propósito. Los 24 meses permiten
+comparar un mes contra el **mismo mes del año anterior**, que es lo único que
+contesta si una ráfaga como la de GLUDETHON se repite — el otro hueco que dejó
+la auditoría.
+
+**Y las particiones abrieron un agujero que hubo que cerrar.** El ACL por
+defecto de este proyecto otorga `arwdDxtm` a `anon` y `authenticated` sobre toda
+tabla nueva de `public`, y toda función nueva es ejecutable por ellos, de forma
+**explícita**. Poner RLS y GRANT en el padre —lo que manda la regla 1— no
+alcanza: una partición es una tabla propia, PostgREST la expone como su propio
+endpoint, y el RLS del padre no la cubre al consultarla directo. Medido: las 16
+particiones sin RLS y legibles por `anon`; el advisor pasó de 0 a **16 ERRORES**.
+Lo mismo con las dos funciones: `REVOKE ... FROM PUBLIC` no toca la concesión
+nominal a `authenticated`.
+
+Cerrado, y —lo que importa— el mantenedor mensual ahora cierra cada partición en
+el mismo acto de crearla, y repara cualquiera que aparezca abierta. Una tabla que
+se cierra a mano y se reabre sola cada primero de mes es peor que una abierta,
+porque el arreglo hace creer que está resuelto. Advisor de vuelta en **0
+errores**; verificado con `SET ROLE`: `authenticated` lee por el padre,
+`anon` recibe «permission denied» por el padre y por una partición directa.
+
 ## v2.905.1 — Electrolit: la misma caja no se pregunta dos veces, y «sin novedad» cuenta lo que faltó
 
 Salud 1 recibió el pedido `10-310826-3` y la tarjeta quedó diciendo dos cosas a

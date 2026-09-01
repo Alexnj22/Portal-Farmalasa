@@ -593,9 +593,15 @@ export const AREAS = [
             'src/data/stockParams.js', 'src/data/minmaxRequests.js',
         ],
         tablas: ['product_stock_params', 'product_stock_params_history', 'stock_config',
-                 'minmax_change_requests', 'minmax_ignored', 'minmax_sync_log'],
+                 'minmax_change_requests', 'minmax_ignored', 'minmax_sync_log',
+                 // La foto diaria de existencias. Vive acá y no en `inventario`
+                 // porque su motivo de existir es el cálculo: sin saber qué días
+                 // un producto estuvo en cero, la velocidad no puede distinguir
+                 // «dejó de venderse» de «faltó», y esas dos piden lo contrario.
+                 'inventory_daily'],
         edge: ['auto-calculate-minmax'],
-        crons: ['auto-calculate-minmax-monthly'],
+        crons: ['auto-calculate-minmax-monthly',
+                'inventory-daily-snapshot', 'inventory-daily-particiones'],
         docs: ['docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md', 'docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md',
                'docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md'],
     },

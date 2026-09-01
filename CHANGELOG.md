@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.913.2 — El código se generaba y la bitácora lo deshacía
+
+Migración `20260901191652`. `audit_logs.severity` va en **MAYÚSCULA** y su CHECK
+lo exige: `INFO`, `WARNING` o `CRITICAL`. Las dos funciones del código escribían
+`'warning'` y `'portal'`.
+
+**El código se generaba bien y la transacción se deshacía entera** al llegar a la
+bitácora. Para quien apretaba el botón: «no se pudo generar el código», que
+apunta a cualquier lado menos al renglón real.
+
+Y no se ve leyendo — el `INSERT` es sintácticamente perfecto, no lo caza el lint,
+y la función es DEFINER así que tampoco es un problema de permisos. Lo delata
+**ejecutarlo**, que es lo que hice recién ahora: correr el cuerpo sin la guarda
+de permiso, dentro de una transacción que se deshace, para separar «falla el
+permiso» de «falla la escritura». Falló la segunda.
+
+Es el **segundo** error del mismo tipo en esta sesión, después de `addToast`:
+suponer la forma de algo en vez de leerla del propio proyecto. Los registros que
+ya existen usan `INFO`/`WARNING`/`CRITICAL` y `ADMIN_PANEL`/`SYSTEM`, y bastaba
+un `SELECT DISTINCT`.
+
 ## v2.913.1 — El papel sale directo a la sala de quien imprime
 
 Decisión del usuario: **sin diálogo**. Quien aprieta Imprimir casi siempre está

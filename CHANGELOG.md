@@ -59,7 +59,7 @@ escribe las filas que cambian, que en este repo es regla para todo lo que corre
 solo. Queda declarada en el manifiesto de `gate:eficiencia` con su costo y su
 motivo.
 
-## v2.908.1 — La bitácora firma con la ficha, y escribirla ya no exige poder leerla
+## v2.909.1 — La bitácora firma con la ficha, y escribirla ya no exige poder leerla
 
 Migraciones `20260901172915` y `20260901173102`.
 

@@ -1,5 +1,5 @@
 import { safeJsonParse, CACHE_KEYS } from '../utils';
-import { insertAuditLog, fetchAuditLogs as fetchAuditLogsData, getSessionUserId } from '../../data/audit';
+import { insertAuditLog, fetchAuditLogs as fetchAuditLogsData } from '../../data/audit';
 
 // ==========================================================
 // 🔐 Auditoría PRO (sin IP)
@@ -151,13 +151,12 @@ export const createAuditSlice = (set) => ({
     const source = ALLOWED_SOURCES.has(sourceCandidate) ? sourceCandidate : AUDIT_SOURCES.ADMIN_PANEL;
     const severity = ALLOWED_SEVERITY.has(severityCandidate) ? severityCandidate : AUDIT_SEVERITY.INFO;
 
-    // Quién firma: la sesión manda. `sb_user` queda de respaldo para el caso
-    // en que la sesión todavía no esté hidratada, pero la policy de INSERT
-    // (20260806000957) sólo acepta el auth.uid() de la sesión.
-    const sessionUserId = await getSessionUserId();
-
+    // Quién firma NO se manda desde acá: lo resuelve `registrar_bitacora` con
+    // `auth_employee_id()`. El navegador conoce la CUENTA y la bitácora se firma
+    // con la FICHA, y elegir mal ese id es lo que la dejó muda 22 días — ver el
+    // encabezado de `src/data/audit.js`. `user_name` viaja sólo de respaldo,
+    // para el caso en que la ficha no se pueda resolver.
     const logData = {
-      user_id: sessionUserId || storedUser?.id || null,
       user_name: overrideName || storedUser?.name || 'Sistema/Anónimo',
       action: normalizedAction,
       target_id: tId != null && String(tId).trim() !== '' ? String(tId) : null,
@@ -178,7 +177,10 @@ export const createAuditSlice = (set) => ({
       }
 
       set((state) => {
-        // Usamos la data real devuelta por Supabase que incluye el ID generado
+        // `registrar_bitacora` devuelve la fila TAL COMO quedó escrita —con su
+        // firma resuelta y sus rótulos ya normalizados—, así que la lista local
+        // no muestra nada que la base no tenga. El respaldo es sólo para el caso
+        // en que la función devuelva NULL (una acción vacía).
         const insertedRow = data || { ...logData, created_at: new Date().toISOString() };
         const next = [insertedRow, ...(state.auditLog || [])];
         // Mantenemos la memoria local ligera (max 1000)

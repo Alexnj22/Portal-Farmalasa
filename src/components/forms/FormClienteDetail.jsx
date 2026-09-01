@@ -213,7 +213,7 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
     // el resto de este archivo. `addToast` no existe.
     const aviso = (titulo, mensaje, tipo) =>
         useToastStore.getState().showToast(titulo, mensaje, tipo);
-    const { user } = useAuth();
+    const { user, getScope } = useAuth();
     const branches = useStaff(s => s.branches) || [];
     const [estado, setEstado] = useState(null);
     const [codigo, setCodigo] = useState(null);
@@ -264,36 +264,38 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
             'success');
     });
 
-    // ── A dónde sale el papel, en tres pasos ──────────────────────────────
-    // Sin diálogo (decisión del usuario, 2026-09-01): un paso de más en cada
-    // impresión se paga todos los días.
+    // ── A dónde sale el papel ─────────────────────────────────────────────
+    // Sin diálogo para quien atiende (decisión del usuario, 2026-09-01): un paso
+    // de más en cada impresión se paga todos los días.
     //
-    //   1. Este equipo, si está configurado para imprimir → sale acá
-    //   2. Si no, la cola de la sucursal de quien aprieta
-    //   3. Si tampoco (sin sucursal, o su caja apagada) → recién ahí, el diálogo
+    //   1. ¿Se mueve entre salas, o no tiene sucursal? → que ELIJA
+    //   2. Si no, la cola de su sucursal, directo
+    //   3. Si su caja no está disponible → el diálogo igual
     //
-    // El orden importa y el primero es el que resuelve el apoyo: quien va a
-    // cubrir a otra sala imprime donde está. Al revés —mirar primero su
-    // sucursal— el papel le saldría en su sala de siempre, lejos del cliente.
+    // ── Quién «se mueve entre salas» sale del ALCANCE, no del cargo ─────────
+    // `getScope('ventas')`: los tres cargos de sala —dependiente, jefe/a de
+    // sala, regente— lo tienen en `BRANCH`, y supervisión y gerencia en `ALL`.
+    // O sea que la persona que anda por varias salas ya está marcada como tal en
+    // los permisos, y no hay que mantener una lista de cargos que se
+    // desactualiza sola.
     //
-    // La lista de salas se lee EN EL CLIC y no en un efecto: una caja se apaga
-    // en cualquier momento, así que lo que se decide es del instante.
+    // Se mira `ventas` y NO `clientes` a propósito: `clientes` está en `ALL`
+    // para todo el mundo —un cliente no pertenece a una sala— así que ahí el
+    // alcance no distingue a nadie. Medido antes de elegirlo.
     const alImprimir = () => conError('leer las cajas de impresión')(async () => {
-        // ── 1 · ¿este equipo imprime? ─────────────────────────────────────
-        // Si alguien configuró ESTA computadora, es porque está en un mostrador,
-        // y el papel tiene que salir acá — sea la sala que sea. Es lo que
-        // resuelve el apoyo: quien va a cubrir a otra sala imprime donde está,
-        // sin que el portal tenga que saber su horario. Y no lo sabe: medido el
-        // 2026-09-01, `employee_rosters` está en cero filas y ni siquiera tiene
-        // columna de sucursal.
-        const { equipoConfiguradoParaImprimir } = await import('../../utils/ticketPrint');
-        if (equipoConfiguradoParaImprimir()) {
-            await imprimir({ salaId: null })();
-            aviso('Enviado a imprimir', 'El papel sale por la ticketera de esta computadora.', 'success');
+        const andaPorVariasSalas = getScope('ventas') === 'ALL';
+        const miSala = user?.branchId ?? null;
+
+        if (!andaPorVariasSalas && miSala != null) {
+            await imprimir({ salaId: Number(miSala) })();
+            const nombre = branches.find(b => String(b.id) === String(miSala))?.name || 'tu sala';
+            aviso('Enviado a imprimir', `El papel sale por la ticketera de ${nombre}.`, 'success');
             return;
         }
 
-        // ── 2 · si no, a la cola de su sucursal ───────────────────────────
+        // Se mueve entre salas, o no tiene una: hay que preguntar. La lista se
+        // lee EN EL CLIC y no en un efecto — una caja se apaga en cualquier
+        // momento, así que lo que se ofrece es de ese instante.
         setCargandoSalas(true);
         let lista = [];
         let fallo = false;
@@ -303,22 +305,6 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
             fallo = !!r?.error;
         } catch { fallo = true; } finally { setCargandoSalas(false); }
 
-        const mia = lista.find(x => String(x.branch_id) === String(user?.branchId));
-        if (mia && !fallo) {
-            const nombre = branches.find(b => String(b.id) === String(mia.branch_id))?.name || 'tu sala';
-            await imprimir({ salaId: Number(mia.branch_id) })();
-            // Sin diálogo no hay nada que confirme a dónde fue. Se dice, y se
-            // dice si la caja está dormida: el papel sale igual, pero cuando
-            // alguien la despierte — y quien lo espera tiene que saberlo.
-            aviso(mia.latiendo ? 'Enviado a imprimir' : 'En cola',
-                mia.latiendo
-                    ? `El papel sale por la ticketera de ${nombre}.`
-                    : `La caja de ${nombre} está apagada. El papel sale cuando encienda.`,
-                mia.latiendo ? 'success' : 'warning');
-            return;
-        }
-
-        // Sin sala propia utilizable: que elija.
         setSalas(lista);
         setFalloSalas(fallo);
         setPreguntando(true);

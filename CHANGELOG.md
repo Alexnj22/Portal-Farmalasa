@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.918.1 — Quien atiende imprime en su sala, supervisión elige
+
+El orden definitivo del papel del código, dicho por el usuario:
+
+> «los que tienen una sucursal asignada según la sucursal o el horario del día
+> (por apoyo, etc), administración pregunta dónde imprimir, o externos.»
+
+1. **Tiene sucursal y atiende en ella** → directo a la cola de su sala, sin
+   preguntar nada
+2. **Anda por varias salas, o no tiene sucursal** → elige dónde
+3. **Su caja no está disponible** → el diálogo igual
+
+**Quién «anda por varias salas» sale del ALCANCE, no de una lista de cargos.**
+`getScope('ventas')`: dependiente, jefe/a de sala y regente lo tienen en
+`BRANCH`; supervisión y gerencia en `ALL`. La persona que se mueve **ya está
+marcada como tal en los permisos**, así que no hay que mantener una lista que se
+desactualiza sola. Hay precedente exacto en el repo —
+`getScope('schedules') === 'ALL'` en `FormWfmAnalytics`.
+
+Y se mira **`ventas` y no `clientes`**, medido antes de elegirlo: `clientes` está
+en `ALL` para **todos** los cargos —un cliente no pertenece a una sala— así que
+ahí el alcance no distingue a nadie y el diálogo se le habría abierto a los 34.
+
+### ⚠️ Lo del «horario del día» todavía no se puede
+
+De las dos mitades que pidió el usuario, la sucursal funciona y **el horario
+no**, porque no hay de dónde leerlo: `employee_rosters` está en **cero filas** y
+**no tiene columna de sucursal** —guarda empleado, semana y horas—, así que el
+módulo de horarios nunca contempló que alguien trabaje en otra sala.
+`attendance` también está en cero.
+
+Mientras tanto, quien va de apoyo **elige** si es de supervisión, y si es
+dependiente el papel le sale en su sala de siempre. El día que un roster diga la
+sucursal del día, el único lugar que cambia es esa primera condición.
+
+De paso se quitó `equipoConfiguradoParaImprimir()`, que había durado una versión:
+al cambiar el orden se quedó sin llamadores, y una función exportada que nadie
+usa es una que alguien va a usar mañana creyendo que está probada.
+
 ## v2.918.0 — Promociones — el lote sigue al producto entre salas
 
 Cuando una sala le manda producto de la promoción a otra, el lote se mueve solo:

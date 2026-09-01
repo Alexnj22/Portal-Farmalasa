@@ -1338,38 +1338,6 @@ export function leerAjustesDeImpresion() {
     }
 }
 
-/**
- * ¿Esta computadora está puesta para imprimir en rollo?
- *
- * No es lo mismo que `leerAjustesDeImpresion`, que SIEMPRE devuelve algo —sus
- * valores por defecto— para que nadie tenga que decidir nada. Acá la pregunta es
- * otra: ¿alguien configuró ESTE equipo, o estoy leyendo el default?
- *
- * ── Para qué sirve la distinción ────────────────────────────────────────────
- * Es lo más cerca que el portal está de saber **en qué sala está parada** la
- * persona. Los ajustes viven en el `localStorage` de la máquina y no viajan con
- * la cuenta: si están puestos, alguien instaló esa computadora en un mostrador.
- *
- * Y hacía falta porque no hay otra fuente. Medido el 2026-09-01:
- * `employee_rosters` está en **cero filas** y ni siquiera tiene columna de
- * sucursal —el módulo de horarios nunca contempló que alguien trabaje en otra
- * sala—, y `attendance` también está en cero. O sea que «¿dónde trabaja hoy?»
- * no tiene respuesta; «¿desde qué máquina está apretando?» sí.
- */
-export function equipoConfiguradoParaImprimir() {
-    try {
-        const g = JSON.parse(localStorage.getItem(LS_AJUSTES) || '{}');
-        // Basta con que UNO de los dos esté puesto: el ancho lo elige quien
-        // instala el rollo, el sistema quien instala el equipo, y en la práctica
-        // se guardan juntos. Exigir los dos convertiría un ajuste a medias en
-        // «esta computadora no imprime», que es peor que el caso que arregla.
-        return ANCHOS_ROLLO.some(a => a.mm === g.ancho)
-            || g.sistema === 'windows' || g.sistema === 'linux';
-    } catch {
-        return false;
-    }
-}
-
 export function guardarAjustesDeImpresion(ajustes) {
     try { localStorage.setItem(LS_AJUSTES, JSON.stringify(ajustes)); } catch { /* modo privado o sin cuota */ }
     return ajustes;

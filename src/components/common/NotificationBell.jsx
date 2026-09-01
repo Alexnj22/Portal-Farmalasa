@@ -1042,17 +1042,25 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     sobra: diría en palabras lo mismo que está
                                                                     arriba en números. Sin montos el `body` ya
                                                                     viene escrito en porcentaje y se deja tal
-                                                                    cual — redactarlo otra vez acá sería copiar
-                                                                    la regla que decide quién ve dólares. */}
-                                                                {cierre?.venta != null ? (
-                                                                    <CuerpoDeCierreDeMeta datos={cierre} claseTenue={cx.rowBody} />
-                                                                ) : n.body && (
+                                                                    cual —redactarlo otra vez acá sería copiar
+                                                                    la regla que decide quién ve dólares—, y
+                                                                    debajo se le suma igual el puesto entre las
+                                                                    salas, que no habla de dinero. */}
+                                                                {(!cierre || cierre.venta == null) && n.body && (
                                                                     <CuerpoDeNotificacion
                                                                         id={n.id}
                                                                         texto={n.body}
                                                                         recortar={!abierta}
                                                                         clase={cx.rowBody}
                                                                         onRecorte={marcarCuerpoCortado}
+                                                                    />
+                                                                )}
+                                                                {cierre && (
+                                                                    <CuerpoDeCierreDeMeta
+                                                                        datos={cierre}
+                                                                        claseTenue={cx.rowBody}
+                                                                        isDark={isDark}
+                                                                        salaPropia={sucursal}
                                                                     />
                                                                 )}
 

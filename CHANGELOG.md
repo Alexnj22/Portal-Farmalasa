@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.897.1 — El puesto y el listado, del lado del navegador
+
+La otra mitad de v2.897.0: el anillo con su número corregido, la fila del
+puesto —con corona y medalla para los dos primeros— y el listado de las seis
+salas. La entrega es una sola; quedó partida en dos commits porque otra sesión
+commiteó sin paths mientras `src/version.js` y el CHANGELOG estaban en el
+índice, y se los llevó (99c4141d). El índice de git es estado compartido.
+
 ## v2.897.0 — El aviso dice en qué lugar quedó la sala
 
 «Cerraste Agosto en 95.0%» no dice si eso estuvo bien. Agosto 2026 lo muestra

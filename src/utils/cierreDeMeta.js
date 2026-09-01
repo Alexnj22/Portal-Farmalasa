@@ -25,9 +25,26 @@ export function datosDeCierreDeMeta(n) {
     const meta      = m.meta       == null ? null : Number(m.meta);
     const metaNueva = m.meta_nueva == null ? null : Number(m.meta_nueva);
 
+    const puesto   = Number(m.puesto);
+    const cuantas  = Number(m.de);
+    const promedio = Number(m.promedio);
+
     return {
         pct,
         cumplida: pct >= 100,
+        // El puesto es contexto, no adorno: un 95.0% que suena a
+        // casi-lo-logré es el cuarto lugar de seis, y un 94.3% que suena
+        // parecido es el quinto.
+        puesto:   Number.isFinite(puesto)   ? puesto   : null,
+        de:       Number.isFinite(cuantas)  ? cuantas  : null,
+        promedio: Number.isFinite(promedio) ? promedio : null,
+        // El listado llega sólo al jefe de sala, y sin un solo dólar: se
+        // comparan cumplimientos, que es lo único comparable entre una sala
+        // que vende $50,354.03 y otra que vende $14,345.77.
+        tabla: Array.isArray(m.tabla)
+            ? m.tabla.filter(f => f && Number.isFinite(Number(f.pct)))
+                     .map(f => ({ sala: String(f.sala || ''), pct: Number(f.pct) }))
+            : [],
         venta:     Number.isFinite(venta)     ? venta     : null,
         meta:      Number.isFinite(meta)      ? meta      : null,
         metaNueva: Number.isFinite(metaNueva) ? metaNueva : null,

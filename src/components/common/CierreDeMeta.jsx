@@ -1,4 +1,5 @@
 import React from 'react';
+import { Crown, Medal } from 'lucide-react';
 import { formatMoney } from '../../utils/formatNumber';
 
 /* El cierre de mes de una sala, dentro de la campana.
@@ -11,8 +12,7 @@ import { formatMoney } from '../../utils/formatNumber';
  * se mira antes de leer no había ni un dato.
  *
  * Acá ese recuadro pasa a ser el cumplimiento dibujado. El arco ES el
- * porcentaje y el color es el estado, así que el resultado se ve sin leer y la
- * tarjeta no crece un pixel.
+ * porcentaje y el color es el estado, así que el resultado se ve sin leer.
  *
  * ── El texto del aviso NO se va ────────────────────────────────────────────
  * `notifications.body` sigue trayendo la frase completa y es lo que se lee si
@@ -32,15 +32,20 @@ const VUELTA = 2 * Math.PI * R;    // 119.38
  * es la peor confusión posible en una tarjeta que habla de si la meta se
  * cumplió. Salud 3 cerró agosto en 101.5%, así que el caso no es hipotético.
  *
- * El color dice el estado pero nunca solo: el porcentaje va escrito adentro y
- * el título del aviso lo repite en palabras. Ámbar y verde son justo el par que
- * más gente confunde.
+ * El número va SIN el signo de porcentaje: con él, un 101.5% se escribe «102%»
+ * y a 10 px no entra en los 28 px de adentro del anillo — se vio recortado como
+ * «02%», que es un número distinto y no un número feo. El signo no hace falta:
+ * el título, a dos centímetros, dice «en 101.5%» con todas las letras.
+ *
+ * El color dice el estado pero nunca solo, por lo mismo: ámbar y verde son
+ * justo el par que más gente confunde.
  */
 export function AnilloDeMeta({ pct, cumplida, isDark }) {
     const tono = cumplida
         ? (isDark ? 'text-success-text' : 'text-success')
         : (isDark ? 'text-warning-text' : 'text-warning');
     const avance = Math.max(0, Math.min(pct, 100)) / 100;
+    const entero = Math.round(pct);
 
     return (
         <div className="relative w-9 h-9 flex-shrink-0 mt-0.5">
@@ -64,44 +69,152 @@ export function AnilloDeMeta({ pct, cumplida, isDark }) {
                     <circle cx="23" cy="4" r="3.2" className={`fill-current ${tono}`} />
                 )}
             </svg>
-            <span className={`absolute inset-0 grid place-items-center text-caption font-black tabular-nums ${tono}`}>
-                {Math.round(pct)}%
+            <span
+                aria-hidden="true"
+                className={`absolute inset-0 grid place-items-center leading-none tabular-nums
+                    font-black tracking-tighter ${entero >= 100 ? 'text-micro' : 'text-caption'} ${tono}`}
+            >
+                {entero}
             </span>
         </div>
     );
 }
 
+/* ── El podio ──────────────────────────────────────────────────────────────
+ * Primero y segundo tienen cara propia. El resto no: un adorno para los seis
+ * puestos no distinguiría a nadie, que es justo lo contrario de lo que un
+ * podio hace. */
+const PODIO = {
+    1: { Icono: Crown, texto: '1er lugar', claro: 'text-warning',   oscuro: 'text-warning-text' },
+    2: { Icono: Medal, texto: '2º lugar',  claro: 'text-content-2', oscuro: 'text-content-2' },
+};
+
 /**
- * El cuerpo con montos: la venta grande, la meta al lado en tono bajo, y debajo
- * —tras una línea— el mes que empieza.
+ * En qué lugar quedó la sala, y de qué lado del promedio.
  *
- * Sin montos no se dibuja nada de esto: se deja el `body` del aviso tal cual,
- * que ya está escrito en porcentaje. Una segunda redacción acá sería una copia
- * de la regla que decide quién ve dólares, y la copia es la que se queda vieja.
+ * Va para todos —también para quien no ve montos—: es el contexto del número
+ * que el título ya dijo, no un dato nuevo sobre dinero.
  */
-export function CuerpoDeCierreDeMeta({ datos, claseTenue }) {
-    const { venta, meta, metaNueva, mesCerrado, mesNuevo } = datos;
-    if (venta == null) return null;
+function PuestoDeLaSala({ datos, claseTenue, isDark }) {
+    const { puesto, de, promedio, pct } = datos;
+    if (!puesto || !de) return null;
+
+    const podio = PODIO[puesto];
+    const ordinal = puesto === 1 ? '1er' : `${puesto}º`;
+    // «bajo el promedio» y no un signo: la palabra no hay que interpretarla.
+    const contraPromedio = promedio == null ? null
+        : pct >= promedio ? `sobre el promedio (${promedio}%)`
+                          : `bajo el promedio (${promedio}%)`;
+
+    if (podio) {
+        const Icono = podio.Icono;
+        return (
+            <div className={`flex items-center gap-1.5 flex-wrap ${isDark ? podio.oscuro : podio.claro}`}>
+                <Icono size={14} strokeWidth={2.5} />
+                <span className="text-caption font-black uppercase tracking-widest">
+                    {podio.texto} de {de}
+                </span>
+                {contraPromedio && (
+                    <span className={`text-caption font-medium ${claseTenue}`}>
+                        · {contraPromedio}
+                    </span>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <p className={`text-caption font-semibold ${claseTenue}`}>
+            {ordinal} lugar de {de}{contraPromedio ? ` · ${contraPromedio}` : ''}
+        </p>
+    );
+}
+
+/**
+ * Las seis salas, en cumplimiento.
+ *
+ * Nunca en dólares: Salud 1 vendió $50,354.03 y Salud 5 $14,345.77, así que un
+ * ranking por monto sería el tamaño de la sala —algo que nadie eligió y nadie
+ * puede cambiar—. El cumplimiento sí es comparable: cada una contra la meta que
+ * le tocó.
+ *
+ * La barra se mide contra el MAYOR de la tabla y no contra 100, para que el mes
+ * en que todas queden por debajo siga teniendo diferencias visibles. Quién
+ * cumplió lo dice el color, y al lado está el número.
+ */
+function TablaDeSalas({ tabla, salaPropia, claseTenue, isDark }) {
+    if (!tabla?.length) return null;
+    const tope = Math.max(...tabla.map(f => f.pct), 1);
+
+    return (
+        <ul className="flex flex-col gap-1">
+            {tabla.map(({ sala, pct }) => {
+                const propia   = sala === salaPropia;
+                const cumplida = pct >= 100;
+                const tono = cumplida
+                    ? (isDark ? 'bg-success-text' : 'bg-success')
+                    : (isDark ? 'bg-chart-1' : 'bg-chart-1-solid');
+                return (
+                    <li key={sala} className="flex items-center gap-2 min-w-0">
+                        <span className={`text-caption truncate w-20 flex-shrink-0
+                            ${propia ? 'font-black' : `font-semibold ${claseTenue}`}`}>
+                            {sala}
+                        </span>
+                        <span className="flex-1 h-1.5 rounded-full bg-border-card overflow-hidden">
+                            <span
+                                className={`block h-full rounded-full ${tono} ${propia ? '' : 'opacity-45'}`}
+                                style={{ width: `${(pct / tope) * 100}%` }}
+                            />
+                        </span>
+                        <span className={`text-caption tabular-nums w-12 text-right flex-shrink-0
+                            ${propia ? 'font-black' : `font-semibold ${claseTenue}`}`}>
+                            {pct.toFixed(1)}%
+                        </span>
+                    </li>
+                );
+            })}
+        </ul>
+    );
+}
+
+/**
+ * El cuerpo dibujado: las cifras (sólo para quien ve montos), el puesto entre
+ * las salas (para todos), el listado completo (sólo para el jefe de sala) y el
+ * mes que empieza.
+ *
+ * Sin montos, el `body` del aviso se sigue mostrando tal cual —ya está escrito
+ * en porcentaje— y acá se le suma nada más el puesto. Redactar una segunda
+ * versión de esa frase sería copiar la regla que decide quién ve dólares, y la
+ * copia es la que se queda vieja.
+ */
+export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark, salaPropia }) {
+    const { venta, meta, metaNueva, mesCerrado, mesNuevo, tabla } = datos;
 
     // «1.6% menos que Agosto» y no «−1.6%»: el signo hay que interpretarlo, la
     // palabra no. Y el mes va sin año — el título ya dijo cuál es.
     const mesCorto = (mesCerrado || '').split(' ')[0];
-    const delta = (meta && metaNueva)
-        ? (metaNueva - meta) / meta * 100
-        : null;
+    const delta = (meta && metaNueva) ? (metaNueva - meta) / meta * 100 : null;
 
     return (
-        <>
-            <div className="flex items-baseline gap-2 flex-wrap tabular-nums mt-1">
-                <span className="text-body-lg font-black tracking-tight">{formatMoney(venta)}</span>
-                {meta != null && (
-                    <span className={`text-body-sm font-semibold ${claseTenue}`}>de {formatMoney(meta)}</span>
-                )}
-            </div>
+        <div className="flex flex-col gap-2 mt-1">
+            {venta != null && (
+                <div className="flex items-baseline gap-2 flex-wrap tabular-nums">
+                    <span className="text-body-lg font-black tracking-tight">{formatMoney(venta)}</span>
+                    {meta != null && (
+                        <span className={`text-body-sm font-semibold ${claseTenue}`}>de {formatMoney(meta)}</span>
+                    )}
+                </div>
+            )}
 
-            {metaNueva != null && (
+            <PuestoDeLaSala datos={datos} claseTenue={claseTenue} isDark={isDark} />
+
+            {tabla?.length > 0 && (
+                <TablaDeSalas tabla={tabla} salaPropia={salaPropia} claseTenue={claseTenue} isDark={isDark} />
+            )}
+
+            {venta != null && metaNueva != null && (
                 <>
-                    <div className="h-px bg-border-card my-2" />
+                    <div className="h-px bg-border-card" />
                     <div className="flex items-baseline gap-2 flex-wrap tabular-nums">
                         <span className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>
                             {mesNuevo}
@@ -115,6 +228,6 @@ export function CuerpoDeCierreDeMeta({ datos, claseTenue }) {
                     </div>
                 </>
             )}
-        </>
+        </div>
     );
 }

@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.924.1 — El barrido de puntos ya no recorre 359,000 filas para devolver nada
+
+El portal se puso lento y dejó de dejar entrar entre las **16:35 y las 16:44**.
+No fue Realtime —su handshake devolvía 101 en todo momento— ni el ingreso: la
+sesión se abría y **lo que el portal lee después** tardaba 19 segundos, que es
+el techo del gateway. Postgres se reinició a las 16:41.
+
+La causa era **una sola consulta de lectura**, la que barre los tiquetes de una
+ficha que dejó de acumular puntos. Corre cada minuto y devolvía `[]` — pero para
+llegar a esa lista vacía recorría **358,964 filas** de `puntos_enviados`, con una
+búsqueda en `sales_invoices` por cada una: **1,528,584 buffers y hasta 12,963 ms
+por vuelta**. La reserva de conexiones del portal son 20, así que ese único
+barrido bastaba para que todo lo demás esperara detrás.
+
+**Y la consulta estaba bien escrita.** Lo que estaba mal era una ESTIMACIÓN:
+`customers` no tenía estadística útil para `acumula_puntos`, así que el
+planificador usaba la selectividad por defecto de un booleano —la mitad, 14,042
+de 28,120— cuando la respuesta real es **una sola ficha**. Creyendo que las
+coincidencias abundaban, elegía recorrer la tabla en el orden del `ORDER BY`
+esperando llenar el `LIMIT 500` enseguida. Con la estadística corregida elige el
+camino inverso: entra por esa única ficha, sigue por sus 73 facturas y ahí
+termina.
+
+Medido, la misma llamada: **1,528,584 buffers / 2,868 ms → 1,495 / 6.3 ms.**
+
+El `ANALYZE` solo ya la arreglaba, pero queda además un **índice parcial** sobre
+las fichas que no acumulan. Apoyar el portal en una estadística sería apoyarlo en
+que alguien la refresque a tiempo: `customers` son 28,120 filas y el autovacuum
+recién analiza al 20% de cambio, o sea casi nunca. Con el índice el plan bueno no
+depende de eso.
+
+La lección es la de siempre y esta vez llegó por el lado del planificador: **una
+consulta de LECTURA lenta tumba el portal entero**, y el síntoma no la nombra —
+se ve como «no puedo entrar».
+
 ## v2.924.0 — Abono de cliente: la pantalla y el comprobante
 
 El circuito del abono, de punta a punta salvo el retiro. En **Entrada**, al

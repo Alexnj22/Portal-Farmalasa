@@ -104,12 +104,32 @@ export default function MiCajaView() {
     // `VACIO` estable y no `|| []`: un arreglo nuevo en cada render invalida
     // los `useMemo` que dependen de él.
     const branches = useStaff((s) => s.branches) ?? VACIO;
-    const { user, hasPermission } = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const puedeOperar = hasPermission('caja_vales', 'can_edit');
     // Las salidas de bolsa son del OTRO módulo. Sin este permiso no se leen, y
     // la pantalla lo dice en vez de mostrar una lista incompleta sin avisar.
     const puedeVerBolsas = hasPermission('bolsas', 'can_view');
+
+    /* El ALCANCE, que es el de `caja_vales` y no el de Cortes.
+     *
+     * La lista de salas sale de `fetchSalasConCaja`, que lee
+     * `cortes_caja_aperturas` — y su RLS recorta por el alcance de
+     * **`cortes_caja`**, que es otro módulo. Quien mira todos los cortes y
+     * opera sólo su caja recibía las seis salas, elegía una ajena, y
+     * `operar-caja` la negaba con un 403 tres clics después. El freno del
+     * servidor ya estaba (v2.884.1); lo que faltaba era que la pantalla no
+     * ofreciera lo que el servidor iba a negar.
+     *
+     * `branchId` y no `branch_id`: así se llama en el objeto de la sesión (el
+     * resto del portal escribe `user?.branchId ?? user?.branch_id`, acá estaba
+     * sólo la forma que no existe). En snake_case valía `undefined` SIEMPRE,
+     * así que la sala propia no se elegía nunca — y como el selector se
+     * esconde cuando hay una sola opción, quien tiene exactamente una sala se
+     * quedaba en «Elige una sala» sin nada arriba que elegir. Ésa es la
+     * pantalla vacía que reportó la sala: ni error, ni fila de menos. */
+    const alcance = getScope('caja_vales');
+    const miSala = user?.branchId ?? user?.branch_id ?? null;
 
     /* La sala elegida vive en la DIRECCIÓN, no en `useState`.
      *
@@ -164,26 +184,41 @@ export default function MiCajaView() {
         return () => { vivo = false; };
     }, []);
 
-    // Cuáles tienen caja, y cuál corresponde por omisión.
+    // Cuáles han tenido caja alguna vez. Sirve para DESCUBRIRLAS, no para
+    // decidir quién puede operar cuál — eso lo dice el alcance, abajo.
     useEffect(() => {
         let vivo = true;
-        fetchSalasConCaja().then((ids) => {
-            if (!vivo) return;
-            setConCaja(ids);
-            // La que ya venga en la dirección MANDA — es lo que hace que una
-            // recarga vuelva a donde estaba. Si no viene ninguna, la propia
-            // cuando tiene caja; y si tampoco, ninguna: que la elija. Elegir una
-            // por alguien sería decidir en qué sala opera.
-            if (sala == null && ids.includes(user?.branch_id)) setSala(user.branch_id);
-        });
+        fetchSalasConCaja().then((ids) => { if (vivo) setConCaja(ids); });
         return () => { vivo = false; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al montar y al cambiar de persona: releer `sala` acá la re-elegiría al deseleccionarla
-    }, [user?.branch_id]);
+    }, []);
 
-    const salas = useMemo(
-        () => branches.filter((b) => conCaja.includes(b.id)),
-        [branches, conCaja],
-    );
+    const salas = useMemo(() => {
+        /* Con alcance de una sola sala, la lista ES su sala, y va aunque
+         * todavía no tenga ninguna apertura: `conCaja` sale del historial, y el
+         * historial no puede decidir quién abre la caja por PRIMERA vez. Sin
+         * esto, la primera sala en estrenar la pantalla no tendría cómo entrar
+         * —«Sin salas con caja» sobre una caja que sí existe—. */
+        if (alcance !== 'ALL') {
+            return branches.filter((b) => String(b.id) === String(miSala));
+        }
+        return branches.filter((b) => conCaja.includes(b.id));
+    }, [branches, conCaja, alcance, miSala]);
+
+    /* Cuál sale elegida.
+     *
+     * La que venga en la DIRECCIÓN manda — es lo que hace que una recarga
+     * vuelva a donde estaba. Si no viene ninguna: la propia; y si la propia no
+     * está en la lista pero hay UNA sola, ésa. Con una única opción no hay
+     * ninguna decisión que tomar, y dejarla sin elegir deja la pantalla vacía
+     * **sin salida**, porque el selector no se dibuja para una sola sala. Con
+     * dos o más se elige a mano: elegir por alguien sería decidir en qué sala
+     * opera. */
+    useEffect(() => {
+        if (sala != null || salas.length === 0) return;
+        const propia = salas.find((b) => String(b.id) === String(miSala));
+        if (propia) setSala(propia.id);
+        else if (salas.length === 1) setSala(salas[0].id);
+    }, [salas, miSala, sala, setSala]);
 
     const nombreSala = useMemo(
         () => branches.find((b) => String(b.id) === String(sala))?.name || '',
@@ -415,10 +450,18 @@ export default function MiCajaView() {
 
                 {!sala && (
                     <EmptyState compact icon={Wallet}
-                        title={salas.length ? 'Elige una sala' : 'Sin salas con caja'}
+                        title={salas.length ? 'Elige una sala'
+                            : alcance !== 'ALL' ? 'Tu ficha no está en una sala'
+                                : 'Sin salas con caja'}
                         subtitle={salas.length
                             ? 'Tu ficha no está en una sala con caja: elige arriba cuál quieres mirar.'
-                            : 'Todavía no se ha visto ninguna caja abierta, así que no hay nada que mostrar.'} />
+                            /* Con alcance de una sola sala y sin sala en la ficha no hay
+                               NADA que ofrecer, y decir «todavía no se ha visto ninguna
+                               caja abierta» manda a mirar la caja cuando lo que falta es
+                               la ficha. Son dos vacíos distintos y se leían igual. */
+                            : alcance !== 'ALL'
+                                ? 'Solo puedes operar la caja de tu sala, y tu ficha no tiene ninguna asignada. Pídeselo a Talento Humano.'
+                                : 'Todavía no se ha visto ninguna caja abierta, así que no hay nada que mostrar.'} />
                 )}
 
                 {sala && cargando && <LoadingState label="Mirando la caja" />}

@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.913.3 — Mi caja: la sala propia sale elegida y el alcance recorta la lista
+
+Reportado desde sala: una dependiente con el permiso recién concedido abría
+**Mi caja** y no veía nada. Ni error, ni fila de menos — la pantalla vacía
+decía «Elige una sala» y arriba no había nada que elegir. Dos defectos que
+solos no se notan y juntos dejan la vista muerta:
+
+**1 · `user?.branch_id` no existe.** El objeto de la sesión escribe
+`branchId`; el resto del portal lo lee como `user?.branchId ?? user?.branch_id`
+y esta vista tenía **sólo** la forma que no existe. Así que la línea que elige
+la sala propia por omisión comparaba contra `undefined` y **no se cumplió
+nunca**, desde que la pantalla se escribió. No se notó porque quien la probaba
+—supervisión, administración— tiene alcance de todas las salas y elige a mano
+de todos modos.
+
+**2 · El selector se esconde con una sola sala.** Correcto por sí solo: con una
+única opción no hay nada que elegir. Pero con (1) sin resolver, quien tiene
+exactamente una sala se quedaba sin sala elegida **y sin selector para
+elegirla**. La sala de la que se entra a esta pantalla es exactamente ese caso.
+
+Hoy la sala sale elegida: la que venga en la dirección manda, si no la propia,
+y si la propia no está en la lista pero hay una sola opción, ésa.
+
+**Y la lista ahora respeta el alcance de `caja_vales`, que es el módulo de esta
+pantalla.** Salía de `cortes_caja_aperturas`, cuyo RLS recorta por el alcance
+de **`cortes_caja`** — otro módulo. Quien mira todos los cortes y opera sólo su
+caja recibía las seis salas, elegía una ajena y `operar-caja` la negaba con un
+403 tres clics después. El freno del servidor ya estaba desde v2.884.1; lo que
+faltaba era que la pantalla no ofreciera lo que el servidor iba a negar. El
+criterio del navegador es ahora el mismo que el de la function: `scope = 'ALL'`
+o la sala propia.
+
+De paso, con alcance de una sala la lista **ya no depende del historial de
+aperturas**: `conCaja` sale de las cajas que alguna vez se abrieron, y el
+historial no puede decidir quién abre la caja por primera vez. La primera sala
+en estrenar la pantalla habría leído «Sin salas con caja» sobre una caja que sí
+existe.
+
+Y los dos vacíos dejaron de leerse igual: sin sala en la ficha y con alcance de
+una sola, el cartel dice que falta la ficha, no que no se ha visto ninguna caja
+abierta.
+
 ## v2.913.2 — El código se generaba y la bitácora lo deshacía
 
 Migración `20260901191652`. `audit_logs.severity` va en **MAYÚSCULA** y su CHECK

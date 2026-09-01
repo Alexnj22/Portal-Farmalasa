@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.902.1 — El vendedor se compara con su promedio, y la fila propia se ve
+
+Tres correcciones del usuario sobre los avisos del día 1.
+
+**La barra de cada sucursal no era roja, sólo el porcentaje.** Y no era un
+problema de color: el reemplazo que ponía la escala de tres tramos en la barra
+**nunca se aplicó** —el `replace` no encontró su ancla y no falló—, así que ese
+renglón se quedó con la regla vieja de dos colores. Salud 4 (94.3%) y Salud 5
+(89.2%) salían con el número en rojo y la barra en naranja, contándose dos cosas
+distintas en la misma línea. Es exactamente lo que CLAUDE.md advierte de un
+reemplazo por script, y lo que faltó fue verificarlo después.
+
+**El vendedor ahora se pinta contra el promedio de su sala**, en tres tramos:
+verde arriba, rojo abajo y **amarillo EN el promedio** — y ese «en» necesita un
+ancho, porque nadie cae exactamente en la media: sin banda, una décima de
+diferencia pintaría verde o rojo y el color diría más de lo que el dato
+sostiene. La banda es **±5% relativo** y no ±1 punto fijo, porque la
+participación media depende de cuánta gente hay en la sala: 16.6% con seis
+vendedores, 20.0% con cinco, 10% con diez. Medido en agosto: en Salud 5 va de
+19.0 a 21.0, en La Popular de 15.8 a 17.4.
+
+**La fila propia se ve.** Sólo estaba en negrita, y en una lista de seis
+renglones del mismo tamaño la negrita se pierde. Ahora lleva fondo, un aro y una
+marca al costado, **en el color de su propio tramo** — para que resaltar a la
+persona no pelee con el rojo de estar bajo el promedio.
+
 ## v2.902.0 — El auto-aplicar de MIN·MAX mira el dinero, no sólo el porcentaje
 
 Migración `20260901155551`. El freno que decide si un MIN·MAX nuevo entra solo

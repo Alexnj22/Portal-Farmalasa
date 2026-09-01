@@ -2,7 +2,7 @@ import React from 'react';
 import { Crown, Medal } from 'lucide-react';
 import { formatMoney } from '../../utils/formatNumber';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import { tonoDeCumplimiento } from '../../utils/cierreDeMeta';
+import { tonoDeCumplimiento, tonoContraPromedio } from '../../utils/cierreDeMeta';
 import AvatarConEstado from './AvatarConEstado';
 
 /* El cierre de mes de una sala, dentro de la campana.
@@ -140,41 +140,37 @@ function PuestoDelVendedor({ datos, claseTenue, isDark }) {
  * arriba haría ver enorme una diferencia de dos décimas — que es justo la que
  * hay entre el primero y el segundo de La Popular (20.7% y 20.4%).
  */
-function TablaDeVendedores({ tabla, promedio, claseTenue, isDark }) {
+function TablaDeVendedores({ tabla, promedio, isDark }) {
     if (!tabla?.length) return null;
     const tope = Math.max(...tabla.map(f => f.parte), 1);
-    const rojo = isDark ? 'text-danger-text' : 'text-danger';
 
     return (
         <ul className="flex flex-col gap-1">
             {tabla.map(({ nombre, parte, yo, venta }, i) => {
-                // Bajo el promedio de la sala, en rojo — la misma regla que ya
-                // usa el ranking del Inicio desde el 2026-08-05. No es un
-                // reproche por vender poco: es por vender menos que el resto de
-                // la misma sala, que es la comparación que la sala hace.
-                const bajo = promedio != null && parte < promedio;
+                const t = tonoContraPromedio(parte, promedio, isDark);
                 return (
-                    <li key={`${nombre}-${i}`} className="flex items-center gap-2 min-w-0">
-                        <span className={`text-caption truncate flex-1 min-w-0
-                            ${bajo ? rojo : ''} ${yo ? 'font-black' : `font-semibold ${bajo ? '' : claseTenue}`}`}>
+                    <li key={`${nombre}-${i}`}
+                        /* La fila propia no se distingue sólo por la negrita: en una
+                           lista de seis renglones del mismo tamaño, la negrita se
+                           pierde. Lleva además fondo, un aro y una marca al costado —
+                           en SU color, para no pelearse con el rojo de quien está bajo
+                           el promedio. */
+                        className={`flex items-center gap-2 min-w-0 rounded-md
+                            ${yo ? `${t.realce} ring-1 -mx-1.5 pl-1 pr-1.5 py-0.5` : ''}`}>
+                        {yo && <span aria-hidden="true" className={`w-0.5 self-stretch rounded-full ${t.fondo}`} />}
+                        <span className={`text-caption truncate flex-1 min-w-0 ${t.texto} ${yo ? 'font-black' : 'font-semibold'}`}>
                             {shortEmployeeName(nombre)}
                         </span>
                         <span className="w-16 h-1.5 rounded-full bg-border-card overflow-hidden flex-shrink-0">
-                            <span
-                                className={`block h-full rounded-full ${bajo ? (isDark ? 'bg-danger-text' : 'bg-danger')
-                                                                              : (isDark ? 'bg-chart-1' : 'bg-chart-1-solid')}
-                                    ${yo ? '' : 'opacity-60'}`}
-                                style={{ width: `${(parte / tope) * 100}%` }}
-                            />
+                            <span className={`block h-full rounded-full ${t.fondo} ${yo ? '' : 'opacity-70'}`}
+                                  style={{ width: `${(parte / tope) * 100}%` }} />
                         </span>
                         {venta != null && (
-                            <span className={`text-caption tabular-nums w-16 text-right flex-shrink-0
-                                ${bajo ? rojo : ''} ${yo ? 'font-black' : `font-semibold ${bajo ? '' : claseTenue}`}`}>
+                            <span className={`text-caption tabular-nums w-16 text-right flex-shrink-0 ${t.texto} ${yo ? 'font-black' : 'font-semibold'}`}>
                                 {formatMoney(venta)}
                             </span>
                         )}
-                        <span className={`text-caption tabular-nums w-10 text-right flex-shrink-0
-                            ${bajo ? rojo : ''} ${yo ? 'font-black' : `font-semibold ${bajo ? '' : claseTenue}`}`}>
+                        <span className={`text-caption tabular-nums w-10 text-right flex-shrink-0 ${t.texto} ${yo ? 'font-black' : 'font-semibold'}`}>
                             {parte.toFixed(1)}%
                         </span>
                     </li>
@@ -216,7 +212,7 @@ export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark }) {
             <PuestoDelVendedor datos={datos} claseTenue={claseTenue} isDark={isDark} />
 
             {tabla?.length > 0 && (
-                <TablaDeVendedores tabla={tabla} promedio={datos.promedio} claseTenue={claseTenue} isDark={isDark} />
+                <TablaDeVendedores tabla={tabla} promedio={datos.promedio} isDark={isDark} />
             )}
 
             {venta != null && metaNueva != null && (
@@ -311,9 +307,7 @@ export function CuerpoDeCierreDeEmpresa({ datos, claseTenue, isDark, buscarEmple
                             </span>
                             <span className="flex-1 h-1.5 rounded-full bg-border-card overflow-hidden">
                                 <span
-                                    className={`block h-full rounded-full ${pct >= 100
-                                        ? (isDark ? 'bg-success-text' : 'bg-success')
-                                        : (isDark ? 'bg-warning-text' : 'bg-warning')}`}
+                                    className={`block h-full rounded-full ${tonoDeCumplimiento(pct, isDark).fondo}`}
                                     style={{ width: `${Math.min(pct, 130) / 130 * 100}%` }}
                                 />
                             </span>

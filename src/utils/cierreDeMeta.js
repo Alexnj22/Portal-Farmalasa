@@ -124,3 +124,38 @@ export function tonoDeCumplimiento(pct, isDark) {
     return { texto: isDark ? 'text-danger-text' : 'text-danger',
              fondo: isDark ? 'bg-danger-text'   : 'bg-danger' };
 }
+
+/* ── El vendedor contra el promedio de su sala ─────────────────────────────
+ * Verde arriba, rojo abajo, amarillo EN el promedio — y el «en» necesita un
+ * ancho, porque nadie cae exactamente en la media: sin banda, una décima de
+ * diferencia pintaría verde o rojo y el color diría más de lo que el dato
+ * sostiene.
+ *
+ * La banda es ±5% RELATIVO al promedio, no ±1 punto fijo: la participación
+ * media depende de cuánta gente hay en la sala —16.6% con seis, 20.0% con
+ * cinco, 10% con diez— así que un ancho fijo sería enorme en una sala grande y
+ * mínimo en una chica. Medido en agosto: en Salud 5 (promedio 20.0%) la banda
+ * va de 19.0 a 21.0, y en La Popular (16.6%) de 15.8 a 17.4.
+ *
+ * `realce` es el fondo de la fila propia. Va en el color del tramo para que
+ * resaltar a la persona no pelee con el rojo de estar bajo el promedio.
+ */
+export function tonoContraPromedio(parte, promedio, isDark) {
+    if (promedio == null || !Number.isFinite(promedio) || promedio <= 0) {
+        return { texto: '', fondo: isDark ? 'bg-chart-1' : 'bg-chart-1-solid',
+                 realce: 'bg-surface-card-hover ring-border-card' };
+    }
+    if (parte >= promedio * 1.05) {
+        return { texto: isDark ? 'text-success-text' : 'text-success',
+                 fondo:  isDark ? 'bg-success-text'   : 'bg-success',
+                 realce: 'bg-success/10 ring-success/30' };
+    }
+    if (parte <= promedio * 0.95) {
+        return { texto: isDark ? 'text-danger-text' : 'text-danger',
+                 fondo:  isDark ? 'bg-danger-text'   : 'bg-danger',
+                 realce: 'bg-danger/10 ring-danger/30' };
+    }
+    return { texto: isDark ? 'text-warning-text' : 'text-warning',
+             fondo:  isDark ? 'bg-warning-text'   : 'bg-warning',
+             realce: 'bg-warning/10 ring-warning/30' };
+}

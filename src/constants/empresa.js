@@ -36,9 +36,24 @@ export const EMPRESA = {
     // sanción, en un contrato o en una liquidación, la contraparte del
     // trabajador es esta persona — no la marca.
     patrono: 'JOSÉ RUTILIO ALEMÁN VÁSQUEZ',
+
+    // ── Cómo se firma un documento COMERCIAL ────────────────────────────────
+    // Decisión del usuario, 2026-09-01: en el reglamento del programa de puntos,
+    // el afiche y cualquier documento comercial, el propietario se nombra
+    // **José Alemán V.** — con sus acentos, siempre.
+    //
+    // No reemplaza a `patrono` y es a propósito: ése es quien firma una
+    // RELACIÓN DE TRABAJO, y en un contrato, una liquidación o una planilla la
+    // contraparte del trabajador se nombra con el nombre legal completo. Dos
+    // claves porque son dos usos, no porque haya dos personas.
+    propietario: 'José Alemán V.',
+
     nombreComercial: 'Farmacias La Popular y La Salud',
     giro: 'Venta de productos farmacéuticos y medicinales',
-    direccion: 'Carretera a Chalatenango, Caserío Totolco, Chalatenango, Chalatenango',
+    // La de CASA MATRIZ. Le faltaba «Chalatenango Sur» — corregido por el
+    // usuario el 2026-09-01 contra el membrete real. Una sala tiene su propia
+    // dirección; ésta es la de la empresa.
+    direccion: 'Carretera a Chalatenango, Caserío Totolco, Chalatenango Sur, Chalatenango',
     // El municipio, para el encabezado de un documento que se firma («En
     // Chalatenango, a los…»). Antes estaba escrito a mano dentro del PDF y era
     // una inferencia; ahora sale del mismo lugar que la dirección.

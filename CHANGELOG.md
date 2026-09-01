@@ -21,6 +21,157 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.910.0 — La última venta se recalcula, no sólo se acumula
+
+Migración `20260901173428`. Cierra la causa de fondo que v2.907.0 dejó abierta a
+propósito.
+
+`product_last_sale` —la fecha de la última venta de cada producto en cada sala—
+la escribía SÓLO un disparador, al insertar el renglón de venta, y con una
+condición que hace que la fecha **suba y nunca baje**. La anulación de la
+factura llega después: para cuando el sync la marca, el renglón ya está adentro
+y nadie vuelve a sacarlo. Por eso corregir el literal `'ANULADA'` arreglaba lo
+que entrara de ahí en adelante y no tocaba **nada** de lo ya escrito.
+
+Ahora existe `refresh_product_last_sale()`, que recalcula la tabla desde las
+ventas reales, con un cron diario a las **06:45 UTC** — quince minutos después
+del que ya hacía lo mismo con la tabla gemela del resumen de ventas, que por
+tenerlo se había corregido sola.
+
+Corrido una vez al aplicarlo: **34 fechas corregidas y 11 filas borradas**,
+exactamente lo que había predicho el ensayo. Las 11 eran productos que nunca se
+vendieron y figuraban vendidos porque su única venta estaba anulada. Nueve de
+esas 45 cruzaban el corte de 90 días con el que Mín·Máx decide si congela una
+baja de máximo. La tabla quedó en 16,885 filas, cero desfasadas.
+
+No era un arrastre que se limpia una vez y listo: se anulan **~65 facturas por
+mes** de forma sostenida (60/55/54/70/81/75/57 de febrero a agosto), así que sin
+el barrido se volvía a ensuciar sola y en silencio. Por eso es un cron y no un
+`UPDATE` suelto.
+
+Detalles que valen para quien la toque: recalcula **todo el historial** y no una
+ventana —la fecha de algo que no se vende hace dos años sigue siendo un dato, y
+una ventana la borraría—; cuesta ~1.07 s entrando por índice en las dos tablas
+grandes, sin barrer ninguna; usa los mismos criterios que el disparador
+(`es_bodega = false`, cantidad > 0, producto no nulo ni 0), verificado porque el
+recálculo no inserta ni una fila que el disparador no hubiera escrito; y sólo
+escribe las filas que cambian, que en este repo es regla para todo lo que corre
+solo. Queda declarada en el manifiesto de `gate:eficiencia` con su costo y su
+motivo.
+
+## v2.908.1 — La bitácora firma con la ficha, y escribirla ya no exige poder leerla
+
+Migraciones `20260901172915` y `20260901173102`.
+
+Salió de revisar el pedido `10-310826-3` (v2.905.1): al buscar qué se había
+tocado en la pantalla de llegada, **no había registro**.
+`PEDIDO_LLEGADA_CONFIRMADA` tiene tres filas en toda la historia y la última es
+del **28-jun**; todos los `PEDIDO_*` dejaron de escribirse entre el 12 y el
+17-ago.
+
+**Medido: desde el 10-ago, sólo CUATRO personas dejaron rastro en la bitácora.**
+Edwin Nuñez (594 filas), QA Testing (46), Celina Escobar (30) y Carlos Renderos
+(6). Las otras 44 fichas activas: cero. Y no es que no usaran el portal —
+`appendAuditLog` se llama desde **234 sitios en 68 archivos**.
+
+Eran **dos frenos independientes**, y cada uno por su cuenta bastaba para perder
+la fila sin dar error:
+
+1. **La firma era la cuenta y la tabla pide la ficha.** `audit_logs.user_id`
+   apunta a `employees(id)` —lo dice su FK— y la policy de INSERT lo exige desde
+   el **10-ago** (`las_policies_resuelven_al_empleado_no_a_la_cuenta`), cuando
+   pasó de `auth.uid()` a `auth_employee_id()`. El cliente nunca se enteró y
+   siguió mandando `auth.uid()`. Los dos ids coinciden sólo si la persona entra
+   por su puerta vieja, y **46 de las 48 fichas activas tienen además una cuenta
+   enlazada con otro id** (68 enlaces creados entre el 4 y el 31-ago). Entrando
+   por ahí, el RLS rechaza — y `appendAuditLog` se traga el error. El comentario
+   del código decía que la policy pedía `auth.uid()`: era cierto el día que se
+   escribió y nada lo volvió a mirar.
+2. **El `.select()` encadenado al insert es un RETURNING, y un RETURNING tiene
+   que pasar la policy de SELECT** — que pide `auditview.can_view`. Lo tienen
+   **4 de 48 personas, y son exactamente las 4 que firmaron algo**. O sea que
+   en esta tabla escribir exigía poder leer, que es lo contrario de lo que una
+   bitácora necesita. Verificado con el par controlado: misma sesión, misma
+   fila, con `RETURNING` da `42501` y sin él entra.
+
+La escritura pasa a **`registrar_bitacora`**, función `SECURITY DEFINER` que
+resuelve la firma con `auth_employee_id()` adentro — el mismo patrón de
+`registrar_egreso`, cuya lección se aprendió el 24-ago en `export_log` y nunca
+llegó a la tabla más vieja y más grande. El llamador **no elige quién firma**: el
+`user_name` que manda el navegador sólo se usa si la ficha no se puede resolver
+(probado: mandando «FIRMA FALSA» quedó escrito «Nathaly Estrada»). Devuelve la
+fila escrita, así que el navegador tampoco inventa la firma para su lista local.
+Y un rótulo fuera de catálogo o una sala inexistente ya no cuestan la fila
+entera: caen al valor por defecto. `anon` no la puede ejecutar.
+
+Verificado en producción con la sesión real de una persona que entra por cuenta
+enlazada y **no** tiene permiso de ver la bitácora: antes `42501`, ahora la fila
+entra firmada con su ficha.
+
+Barrido de las otras 20 escrituras del cliente que encadenan `.select()`:
+`audit_logs` es la única donde el que escribe normalmente no puede leer. Las
+demás tienen la política de lectura abierta, o dejan ver la fila propia, o piden
+el mismo permiso que ya hace falta para escribir.
+
+**Queda abierto:** `source = 'KIOSK'` **no tiene ni una fila desde que existe la
+tabla** (abril). El kiosco entra como `anon` con el token del equipo, y `anon` no
+puede escribir bitácora — abrirle la puerta es una decisión de seguridad, no un
+arreglo. Anotado sin tocar.
+
+## v2.908.0 — Puntos Salud, el programa tiene nombre
+
+Nueve correcciones del usuario al reglamento y al afiche. Dos tocan código.
+
+**El programa se llama «Puntos Salud»** y ahora lo dice: en el título del
+reglamento (en el verde del logo, medido sobre el archivo), en la 1.1 —«un
+programa de puntos de lealtad llamado **Puntos Salud**»— y como titular del
+afiche.
+
+**El propietario se nombra `José Alemán V.` en documentos comerciales.** Vive en
+`EMPRESA.propietario`, **al lado** de `EMPRESA.patrono` y no en su lugar: ese
+otro es quien firma una **relación de trabajo**, y en un contrato o una planilla
+la contraparte del trabajador se nombra con el nombre legal completo. Dos claves
+porque son dos usos, no porque haya dos personas. Y la dirección de **casa
+matriz** recupera «Chalatenango Sur», que faltaba.
+
+**Los extranjeros entran al programa.** La cláusula 2 se abrió: el documento de
+identidad es el DUI para quien lo tenga, y el **pasaporte o el carné de
+residente** para la persona extranjera — con la misma inscripción y la misma
+consulta en línea. ⚠️ **Esto obliga a un cambio en `/mis-puntos` que todavía no
+está hecho**: hoy la pantalla exige un DUI de exactamente 9 dígitos y rechazaría
+un pasaporte. La ficha ya tiene la columna (`customers.pasaporte`).
+
+**Un dólar exacto ahora acumula.** La 3.2 pasa de «vale más de US$1.00» a **«vale
+US$1.00 o más»**, y la 3.3 de «las compras de US$1.00 o menos» a **«las compras
+menores a US$1.00»**. No es un detalle de redacción: hay **12,437 facturas de
+exactamente US$1.00 con cliente identificado** desde mayo de 2025, y con el
+`> 1` del código ninguna daba puntos — el reglamento impreso habría dicho lo
+contrario que el sistema. Corregido en `ventas_elegibles_puntos` (migración
+`20260901172746`); medido sobre la semana de julio, **4,155 facturas contra
+4,009**. `ventas_para_puntos` NO se tocó: alimenta el circuito viejo, que sigue
+bajo el reglamento anterior hasta que se apague MySQL.
+
+**La 4.4 es nueva y es buena noticia:** el canje aplica a **cualquier tipo de
+compra**. Las exclusiones de la 3.3 dicen qué compras no *acumulan*; no limitan
+en qué compra pueden *usarse* los puntos que ya se tienen.
+
+Además: «el saldo, las recargas y las tarjetas telefónicas» pasa a **«lo
+relacionado a telefonía»**, entran las **promociones** a la lista de precios
+excluidos, se fueron los artículos sobrantes («las bebidas, los helados y las
+paletas» → «bebidas, helados y paletas»), y la 7.1 dice **«cualquier sala de
+ventas»**.
+
+**En el afiche**, «Sin descuentos» bajó a letra chica al pie —era una restricción
+ocupando el lugar de una ventaja—. En su lugar probé «Sirven para todo» (la 4.4
+dicha en grande) y el usuario lo rechazó; después «Sucursales», y también.
+Quedó **«Donde quieras»**: *acumulas y canjeas en cualquiera de nuestras
+sucursales*. Es lo único relevante que la hoja no decía en ninguna otra parte, y
+contesta una pregunta que la gente sí se hace. «Duran un año» pasó a
+**«Vigencia»**, y los tres encabezados quedaron de una línea y con la misma
+forma: **Vigencia · Mínimo 100 · Donde quieras** — un plazo, un número y una
+libertad. Y se identifica **en el
+mostrador**, no «en caja».
+
 ## v2.907.0 — El filtro de anuladas de la última venta no excluía ninguna
 
 Migración `20260901171129`. Cuatro funciones descartaban las ventas anuladas

@@ -1,4 +1,4 @@
-<title>Reglamento de Puntos</title>
+<title>Reglamento Puntos Salud</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
@@ -7,16 +7,20 @@
   :root {
     --paper: #FAFAF8; --ink: #161A18; --ink-2: #4E554F; --ink-3: #7E857F;
     --rule: #DCDFDA; --suave: #F0F1EE;
+    /* El verde del logo aprobado, medido sobre el archivo. */
+    --verde-marca: #6C9309;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --paper: #101312; --ink: #E9EDEA; --ink-2: #A9B2AC; --ink-3: #7B837D;
       --rule: #2A302C; --suave: #1E2321;
+      --verde-marca: #9FCF2A;
     }
   }
   :root[data-theme="dark"] {
     --paper: #101312; --ink: #E9EDEA; --ink-2: #A9B2AC; --ink-3: #7B837D;
     --rule: #2A302C; --suave: #1E2321;
+    --verde-marca: #9FCF2A;
   }
 
   * { box-sizing: border-box; }
@@ -55,6 +59,10 @@
   h1 { font-family: "IBM Plex Sans", system-ui, sans-serif;
        font-size: clamp(1.3rem,4.5vw,1.62rem); font-weight: 700; line-height: 1.12;
        letter-spacing: -0.025em; margin: 0 0 .25rem; }
+  /* El nombre del programa dentro del título. Va en el verde de la marca y en
+     un cuerpo menor: el documento se llama «Reglamento del Programa de Puntos»
+     y «Puntos Salud» es CÓMO SE LLAMA el programa, no parte del título. */
+  .marca-programa { color: var(--verde-marca); white-space: nowrap; }
   .vigencia { font-family: "IBM Plex Sans", system-ui, sans-serif;
               font-size: .8rem; font-weight: 600; color: var(--ink-2); margin: 0; }
   .patrono { font-family: "IBM Plex Sans", system-ui, sans-serif;
@@ -132,14 +140,15 @@
     </div>
     <div class="fila">
       <div class="mem-doc">
-        <h1>Reglamento del<br>Programa de Puntos</h1>
+        <h1>Reglamento del<br>Programa de Puntos <span class="marca-programa">Puntos Salud</span></h1>
         <p class="vigencia">Vigente a partir del 1 de octubre de 2026</p>
       </div>
       <div class="mem-emisor">
-        <p class="patrono">JOSÉ RUTILIO ALEMÁN VÁSQUEZ</p>
+        <p class="patrono">JOSÉ ALEMÁN V.</p>
         <p class="fiscal">
           Venta de productos farmacéuticos y medicinales<br>
-          Carretera a Chalatenango, Caserío Totolco, Chalatenango<br>
+          Carretera a Chalatenango, Caserío Totolco,<br>
+          Chalatenango Sur, Chalatenango<br>
           Tel. 2301-0013 &nbsp;·&nbsp; NIT 0401-210685-101-0 &nbsp;·&nbsp; NRC 213237-5
         </p>
       </div>
@@ -149,11 +158,13 @@
   <section>
     <h2><span class="num">1</span> Objeto</h2>
     <ol class="clausulas">
-      <li>José Rutilio Alemán Vásquez, quien opera bajo el nombre comercial
+      <li>José Alemán V., quien opera bajo el nombre comercial
       <strong>Farmacias La Popular y La Salud</strong> (en adelante,
-      <strong>la Empresa</strong>), ofrece a sus clientes un Programa de Puntos:
-      las compras hechas en sus salas de venta acumulan puntos que pueden
-      canjearse por un descuento en compras posteriores.</li>
+      <strong>la Empresa</strong>), ofrece a sus clientes un programa de puntos
+      de lealtad llamado <strong>Puntos Salud</strong> (en adelante,
+      <strong>el Programa</strong>): las compras hechas en sus salas de venta
+      acumulan puntos que pueden canjearse por un descuento en compras
+      posteriores.</li>
       <li>Este reglamento contiene las condiciones completas del Programa y
       sustituye cualquier condición anterior. La participación es gratuita y
       voluntaria.</li>
@@ -164,8 +175,16 @@
     <h2><span class="num">2</span> Quién participa</h2>
     <ol class="clausulas">
       <li>Cualquier persona natural mayor de dieciocho años que proporcione su
-      nombre, Documento Único de Identidad y número de teléfono en cualquier sala
-      de venta de la Empresa.</li>
+      nombre, un <strong>documento de identidad</strong> y su número de teléfono
+      en cualquier sala de venta de la Empresa.</li>
+      <li>El documento de identidad es el <strong>Documento Único de
+      Identidad</strong> para quien lo tenga, y el <strong>pasaporte</strong> o
+      el <strong>carné de residente</strong> para la persona extranjera. La
+      inscripción se hace en cualquier sala de venta y de la misma forma en los
+      dos casos.</li>
+      <li>El Cliente extranjero consulta su saldo en línea con el número de ese
+      mismo documento y su teléfono, igual que quien se inscribió con su
+      Documento Único de Identidad.</li>
       <li>La cuenta es <strong>personal e intransferible</strong>: los puntos no
       pueden cederse, venderse ni acumularse en la cuenta de otra persona.</li>
       <li>El Cliente debe identificarse en caja <strong>antes de que la venta se
@@ -183,21 +202,21 @@
       <strong>1 punto</strong>. Las fracciones no acumulan.</li>
       <li>Es elegible la compra que cumple las tres condiciones:
         <ul class="viñetas">
-          <li>vale más de US$1.00;</li>
+          <li>vale <strong>US$1.00 o más</strong>;</li>
           <li>se hace al precio ordinario de venta al público de la sala;</li>
           <li>incluye al menos un producto farmacéutico o de cuidado personal.</li>
         </ul>
       </li>
-      <li><strong>No acumulan puntos</strong> las compras de US$1.00 o menos; el
-      saldo, las recargas y las tarjetas telefónicas; las bebidas, los helados y
-      las paletas; las compras a precios especiales, de mayoreo, de convenio o
-      con cualquier otro descuento; el monto correspondiente a un canje de
-      puntos; y las compras amparadas en un convenio con una empresa,
-      aseguradora o institución, cuando la factura se emite a nombre de ésta.
+      <li><strong>No acumulan puntos</strong> las compras menores a US$1.00; lo
+      relacionado a telefonía; bebidas, helados y paletas; las compras a precios
+      especiales, de mayoreo, promociones, de convenio o con cualquier otro
+      descuento; el monto correspondiente a un canje de puntos; y las compras
+      amparadas en un convenio con una empresa, aseguradora o institución, cuando
+      la factura se emite a nombre de ésta.
       <br><br>
       Si en una misma compra se llevan productos de los dos grupos señalados
-      —saldo, recargas y tarjetas telefónicas; bebidas, helados y paletas— junto
-      con al menos un producto farmacéutico o de cuidado personal,
+      —lo relacionado a telefonía; bebidas, helados y paletas— junto con al menos
+      un producto farmacéutico o de cuidado personal,
       <strong>la compra sí acumula puntos</strong>.
       <br><br>
       Esta salvedad <strong>no alcanza</strong> a las compras a precios
@@ -223,6 +242,10 @@
       <strong>primero los puntos más antiguos</strong>.</li>
       <li>Los puntos <strong>no son canjeables por dinero en efectivo</strong>,
       no son reembolsables y no generan intereses ni rendimiento alguno.</li>
+      <li>El canje aplica a <strong>cualquier tipo de compra</strong>. Las
+      exclusiones de la cláusula 3.3 dicen qué compras no <em>acumulan</em>
+      puntos; no limitan en qué compra pueden <em>usarse</em> los que ya se
+      tienen.</li>
     </ol>
   </section>
 
@@ -283,8 +306,9 @@
     <ol class="clausulas">
       <li>El Cliente puede consultar su saldo, sus movimientos y las fechas de
       vencimiento en <strong>portal.farmasalud.lat/mis-puntos</strong>,
-      ingresando su Documento Único de Identidad y su número de teléfono. También
-      puede pedir esa información en la caja de cualquier sala.</li>
+      ingresando el número del documento con el que se inscribió y su número de
+      teléfono. También puede pedir esa información en la caja de cualquier sala
+      de ventas.</li>
       <li>Si advierte una diferencia, puede presentar su reclamo conforme a la
       cláusula 10, acompañando el documento de venta respectivo.</li>
     </ol>

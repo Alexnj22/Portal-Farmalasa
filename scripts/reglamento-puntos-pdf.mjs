@@ -33,7 +33,7 @@ const firma = `
   <p class="lugar">En Chalatenango, a __FECHA__.</p>
   <div class="firmante">
     <div class="linea"></div>
-    <p class="nombre">José Rutilio Alemán Vásquez</p>
+    <p class="nombre">José Alemán V.</p>
     <p class="cargo">Gerente General</p>
   </div>
 </div>
@@ -43,7 +43,9 @@ const firma = `
      firma es lo que lo vuelve oficial.
 
      UN firmante y no dos: el que firma es el CONTRIBUYENTE —la persona que se
-     obliga, y que resultó ser también el Gerente General—. Antes acá había una
+     obliga, y que resultó ser también el Gerente General—. Firma con el nombre
+     CORTO, que es como la empresa se nombra en sus documentos comerciales; el
+     nombre legal completo queda para los laborales y los fiscales. Antes acá había una
      segunda raya para quien lo redactó; en un reglamento que obliga frente al
      Cliente, quien lo redactó no agrega nada a quién responde.
 
@@ -96,7 +98,7 @@ await page.pdf({
   footerTemplate:
     '<div style="width:100%;font-size:7.5pt;color:#666;padding:0 20mm;white-space:nowrap;'
     + 'font-family:system-ui,sans-serif;display:flex;justify-content:space-between">'
-    + '<span>Reglamento del Programa de Puntos · NIT 0401-210685-101-0</span>'
+    + '<span>Reglamento del Programa de Puntos «Puntos Salud» · NIT 0401-210685-101-0</span>'
     // Las tres piezas del número van en UN solo span: como el pie es un flex con
     // `space-between`, separarlas las manda a las esquinas y el «3 / 7» sale
     // repartido a lo ancho de la página.

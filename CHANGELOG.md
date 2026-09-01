@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.911.0 — El papel del código, con su QR
+
+La pantalla del código de acceso y su tiquete. Con esto el circuito está
+completo: se genera desde la ficha, se ve, se imprime y el cliente entra.
+
+**Se puede generar para CUALQUIER cliente**, no sólo extranjeros. Lo que depende
+de la categoría es otra cosa: si el código alcanza **solo**, sin teléfono. Para
+una ficha extranjera sí; para el resto va acompañado del teléfono, y eso es lo
+que permite que sea de siete caracteres y no de una docena.
+
+**El código no se muestra al abrir la ficha.** Se muestra que existe y desde
+cuándo; verlo es un botón aparte que **queda anotado en la bitácora**. Si fueran
+lo mismo, abrir cualquier ficha registraría que alguien miró esa llave, y la
+bitácora dejaría de distinguir al que la consultó del que sólo pasó por ahí.
+
+Y el bloque va **arriba del panel de puntos y fuera de él**, porque
+`PanelPuntos` corta temprano cuando no hay cuenta —sin DUI, sin cuenta, DUI
+duplicado— y ésos son exactamente los casos en los que el código hace falta.
+Adentro no se vería justo cuando importa.
+
+### El QR va distinto por cada camino, y no es un capricho
+
+`GS ( k` —el comando de QR— **lleva bytes NUL adentro** (el byte alto del
+largo). Y este archivo ya documenta qué pasa con un NUL por el camino directo:
+*«ese cero se pierde, la impresora se queda esperando el parámetro que falta y
+se come el trabajo siguiente»* — es lo que colgó la ticketera de Salud 4 con
+`GS V 66 0`, llevándose con ella los tickets de facturación.
+
+Así que:
+
+| camino | cómo va el QR |
+|---|---|
+| **directo** (programa de la caja) | por el campo `qr` **como URL** — es lo que el sistema de facturación ya hace, o sea lo único probado |
+| **cola** (`lp -o raw`) | el comando `GS ( k`; ahí los bytes viajan en base64 y el NUL sobrevive |
+| **vista previa** | SVG dibujado con `@zxing/library`, por `await import()` |
+
+Los tres salen del **mismo `ticket.qr`**, así que no pueden decir cosas
+distintas. Es el mismo patrón que ya usaba el corte de papel, que también se
+emite sólo por la cola.
+
+⚠️ **El camino de la cola no está probado en papel.** El del programa sí lo está
+por transitividad —es lo que hace el otro sistema—, pero los bytes ESC/POS que
+el portal compone son nuevos. Antes de repartir el papel en las seis salas hay
+que imprimir uno en una, y si algo sale mal el código **igual está escrito** en
+el ticket: el QR es un atajo, no el dato.
+
+**El código sí va escrito**, al revés que el carné del día donde el valor de las
+barras jamás se imprime. No es una excepción caprichosa: el carné **abre el
+portal** y esto sólo deja **mirar un saldo**. El cliente tiene que poder
+teclearlo.
+
 ## v2.910.0 — El código de acceso a Mis puntos
 
 Migración `20260901175526`. Una llave para consultar los puntos cuando el

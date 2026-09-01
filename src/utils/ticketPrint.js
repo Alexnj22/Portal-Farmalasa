@@ -141,6 +141,43 @@ export async function dibujarCodigoDeBarras(valor, simbologia = 'CODE128') {
 }
 
 /**
+ * Un código QR como SVG, para la vista previa del navegador.
+ *
+ * En el rollo lo dibuja la IMPRESORA (`GS ( k`); acá hay que dibujarlo nosotros,
+ * porque la ventana de impresión es HTML. Son dos caminos para el mismo código
+ * y no hay forma de evitarlo — lo que sí se evita es que digan cosas distintas:
+ * los dos salen del mismo `ticket.qr`.
+ *
+ * `@zxing/library` entra por `await import()` y no estático: ya está en el
+ * proyecto porque el login LEE códigos con ella, pero pesa, y una pantalla que
+ * nunca imprime un QR no tiene por qué cargarla.
+ */
+export async function dibujarQR(valor) {
+    const texto = String(valor ?? '').trim();
+    if (!texto) return '';
+    const { QRCodeWriter, BarcodeFormat, EncodeHintType } = await import('@zxing/library');
+    const hints = new Map();
+    hints.set(EncodeHintType.ERROR_CORRECTION, 'M');
+    hints.set(EncodeHintType.MARGIN, 0);
+    const m = new QRCodeWriter().encode(texto, BarcodeFormat.QR_CODE, 0, 0, hints);
+    const n = m.getWidth();
+    // Un solo <path> con los módulos de cada fila unidos en tiras: un <rect> por
+    // módulo son cientos de nodos para dibujar lo mismo.
+    let d = '';
+    for (let y = 0; y < n; y++) {
+        let x = 0;
+        while (x < n) {
+            if (!m.get(x, y)) { x++; continue; }
+            let ancho = 0;
+            while (x + ancho < n && m.get(x + ancho, y)) ancho++;
+            d += `M${x} ${y}h${ancho}v1h-${ancho}z`;
+            x += ancho;
+        }
+    }
+    return `<svg viewBox="0 0 ${n} ${n}" width="120" height="120" aria-hidden="true"><path d="${d}"/></svg>`;
+}
+
+/**
  * El mismo ticket con las barras de `ticket.codigos` ya dibujadas.
  *
  * `construirTicketHtml` es síncrono —lo llama un `useMemo` para pintar la vista
@@ -153,12 +190,16 @@ export async function dibujarCodigoDeBarras(valor, simbologia = 'CODE128') {
  */
 export async function conCodigosDibujados(ticket) {
     const codigos = ticket?.codigos ?? [];
-    if (!codigos.length || codigos.every(c => c.svg != null)) return ticket;
-    const dibujados = await Promise.all(codigos.map(async (c) => (
-        c.svg != null ? c
-            : { ...c, svg: await dibujarCodigoDeBarras(c.valor, c.simbologia).catch(() => '') }
-    )));
-    return { ...ticket, codigos: dibujados };
+    const faltaQr = ticket?.qr && ticket?.qrSvg == null;
+    if (!faltaQr && (!codigos.length || codigos.every(c => c.svg != null))) return ticket;
+    const [dibujados, qrSvg] = await Promise.all([
+        Promise.all(codigos.map(async (c) => (
+            c.svg != null ? c
+                : { ...c, svg: await dibujarCodigoDeBarras(c.valor, c.simbologia).catch(() => '') }
+        ))),
+        faltaQr ? dibujarQR(ticket.qr).catch(() => '') : Promise.resolve(ticket?.qrSvg ?? ''),
+    ]);
+    return { ...ticket, codigos: dibujados, qrSvg };
 }
 
 /**
@@ -367,6 +408,7 @@ export function construirTicketHtml(ticket) {
   ${filasDeDatos.map(filaDeDatos).join('')}
   ${bloques.map(bloqueHtml).join('')}
   ${codigos.map(codigoHtml).join('')}
+  ${ticket?.qrSvg ? `<div class="barras">${ticket.qrSvg}</div>` : ''}
   ${itemsHtml}
   ${totales.length ? `<div class="totales">${totales.map(filaTotal).join('')}</div>` : ''}
   ${ticket.barraPrueba ? '<div class="barra"><div class="solida"></div><div class="franjas"></div></div>' : ''}
@@ -553,6 +595,10 @@ const SALTOS_DE_CORTE = 6;
 
 // Códigos de la impresora, tal como aparecen en el ticket del origen.
 const ESC = '\x1b', GS = '\x1d';
+
+// Tamaño de cada módulo del QR, en puntos. Con 6 un código de una dirección
+// corta ocupa poco más de dos centímetros — se lee de una y no se come el rollo.
+const QR_MODULO = 6;
 const CENTRO = `${ESC}a\x01`, IZQUIERDA = `${ESC}a\x00`, DERECHA = `${ESC}a\x02`;
 const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `${ESC}!\x10`;
 /**
@@ -658,6 +704,46 @@ function codigoDeBarrasParaElRollo({
         ? `${GS}k\x04${limpio}\x00`
         : `${GS}k\x49${String.fromCharCode(limpio.length + 2)}{B${limpio}`;
     return CENTRO + ajustes + comando;
+}
+
+/**
+ * Un código QR en los bytes que entiende la impresora — **sólo por la cola**.
+ *
+ * `GS ( k` es una familia de cinco comandos y **todos llevan un NUL adentro**
+ * (el byte alto del largo). Por el camino directo —HTTP + PHP hasta el programa
+ * de la caja— ese cero se pierde, la impresora se queda esperando el parámetro
+ * que falta y se come el trabajo siguiente. Es exactamente lo que colgó la
+ * ticketera de Salud 4 con `GS V 66 0`, y por eso este comando NO se emite por
+ * ese camino: ahí el QR viaja como URL en el campo `qr`, que es lo que el
+ * sistema de facturación ya hace y por eso está probado.
+ *
+ * Por la cola los bytes van en base64 y el NUL sobrevive intacto.
+ *
+ * Los cuatro pasos son fijos y en este orden: modelo, tamaño de módulo, nivel
+ * de corrección, guardar los datos, imprimir. Saltarse el primero deja el
+ * modelo en el que la impresora traiga de fábrica, que no es el mismo en todas.
+ */
+function qrParaElRollo(valor, { modulo = QR_MODULO } = {}) {
+    const texto = String(valor ?? '').trim();
+    if (!texto) return '';
+    // Un QR de más de 300 caracteres sale ilegible en 80 mm de papel: los
+    // módulos quedan por debajo de lo que resuelve un teléfono. Se descarta acá
+    // en vez de imprimir un cuadrito que nadie puede leer.
+    if (texto.length > 300) return '';
+
+    const k = (datos) => {
+        const n = datos.length;
+        return `${GS}(k${String.fromCharCode(n & 0xFF)}${String.fromCharCode((n >> 8) & 0xFF)}${datos}`;
+    };
+    const modeloDos   = k('1\x41\x32\x00');
+    const tamano      = k('1\x43' + String.fromCharCode(Math.max(1, Math.min(16, modulo))));
+    // Nivel M: aguanta ~15% del código tapado. En un papel que se dobla y se
+    // guarda en un bolsillo, el mínimo es poco.
+    const correccion  = k('1\x45\x31');
+    const guardar     = `${GS}(k${String.fromCharCode((texto.length + 3) & 0xFF)}${String.fromCharCode(((texto.length + 3) >> 8) & 0xFF)}1\x50\x30${texto}`;
+    const imprimir    = k('1\x51\x30');
+
+    return CENTRO + modeloDos + tamano + correccion + guardar + imprimir + IZQUIERDA;
 }
 
 /**
@@ -939,7 +1025,12 @@ export function seccionesParaElPrograma(ticket) {
         // no lleva pie: era un renglón en blanco de más en cada papel.
         pie: soloASCII(LETRA_CHICA + CENTRO + (pie.length ? '\n' + pie.join('\n') : ''))
             + '\n'.repeat(SALTOS_DE_CORTE),
-        img: '', qr: '', qr_farmalasa: '',
+        img: '',
+        // Por ESTE camino el QR va como URL: el programa de la caja lo dibuja,
+        // que es lo que el sistema de facturación ya hace. Los bytes ESC/POS
+        // NO pueden ir acá — llevan NUL y el NUL se pierde en el trayecto.
+        qr: String(ticket?.qr ?? ''),
+        qr_farmalasa: '',
     };
 }
 
@@ -966,7 +1057,10 @@ export function seccionesParaElPrograma(ticket) {
  */
 export function textoParaElRollo(ticket) {
     const s = seccionesParaElPrograma(ticket);
-    return `${ESC}@` + s.encabezado + s.cuerpo + s.pie + CORTAR_PAPEL;
+    // El QR va acá y no dentro de las secciones, por lo mismo que el corte: es
+    // lo ÚNICO que se emite distinto según el camino. Entre el cuerpo y el pie,
+    // que es donde el programa de la caja pone el suyo.
+    return `${ESC}@` + s.encabezado + s.cuerpo + qrParaElRollo(ticket?.qr) + s.pie + CORTAR_PAPEL;
 }
 
 /**

@@ -72,6 +72,40 @@ export async function fetchPuntosDeCliente(customerId) {
  * «aplicado = 1». Y «Sin enviar» en vez de «no sincronizada» — quien lo lee no
  * tiene por qué saber que hay dos bases de datos.
  */
+// ── El código de acceso a «Mis puntos» ──────────────────────────────────────
+//
+// Tres llamadas y no una, y la separación es el punto: `estado` dice SI hay
+// código y desde cuándo —eso se puede mostrar sin más—, mientras que VER el
+// código es un acto aparte que queda anotado en la bitácora con quién y cuándo.
+//
+// Si fueran una sola, abrir la ficha de cualquier cliente registraría que
+// alguien miró su llave, y la bitácora dejaría de distinguir a quien la
+// consultó de quien sólo pasó por ahí.
+
+/** ¿Tiene código, desde cuándo, cuántas veces se le emitió? Sin el código. */
+export async function estadoCodigoAcceso(customerId) {
+    const { data, error } = await supabase.rpc('puntos_codigo_estado', { p_customer_id: customerId });
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+/** El código, en claro. **Queda anotado en la bitácora.** */
+export async function verCodigoAcceso(customerId) {
+    const { data, error } = await supabase.rpc('puntos_codigo_ver', { p_customer_id: customerId });
+    if (error) throw new Error(error.message);
+    return data?.codigo ?? null;
+}
+
+/**
+ * Emite uno nuevo. Si ya tenía, el anterior **deja de servir en el acto** — es
+ * lo que hace útil el reemitir cuando alguien pierde su papel.
+ */
+export async function emitirCodigoAcceso(customerId) {
+    const { data, error } = await supabase.rpc('puntos_codigo_emitir', { p_customer_id: customerId });
+    if (error) throw new Error(error.message);
+    return data;
+}
+
 export const ROTULO_PUNTOS = {
     acumulado:   { label: 'Acumulados', variante: 'success', ayuda: 'El cliente ya presentó el ticket y se le dieron sus puntos.' },
     pendiente:   { label: 'Pendientes', variante: 'neutral', ayuda: 'La venta está registrada y sus puntos se pueden reclamar.' },

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Loader2, Check, IdCard, MapPin, Phone, ShieldCheck, Receipt,
-    History, AlertTriangle, Store, Building2, Star,
+    History, AlertTriangle, Store, Building2, Star, KeyRound, Eye, Printer, RefreshCw,
 } from 'lucide-react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
@@ -18,7 +18,9 @@ import {
     fetchCustomerDetail, updateCustomerFiscal, pushClienteAlErp,
     codigoDeError, mensajeDeError,
 } from '../../data/customers';
-import { fetchPuntosDeCliente } from '../../data/puntos';
+import {
+    fetchPuntosDeCliente, estadoCodigoAcceso, verCodigoAcceso, emitirCodigoAcceso,
+} from '../../data/puntos';
 import {
     EL_SALVADOR_GEO, municipiosDe, distritosDe, normalizarGeo, conciliarGeo,
 } from '../../data/elSalvadorGeo';
@@ -186,6 +188,132 @@ function PanelActividad({ actividad, facturas, bitacora }) {
  * cuatro casos significa eso. Los otros tres son problemas de datos que alguien
  * puede arreglar — y que nadie va a arreglar si la pantalla los esconde.
  */
+/**
+ * El código de acceso a «Mis puntos», en la ficha.
+ *
+ * ── Por qué el código NO se muestra al abrir ────────────────────────────────
+ * Porque es una llave: quien la ve puede consultar el saldo de esa persona. Se
+ * muestra que EXISTE y desde cuándo —eso no compromete nada— y verlo es un
+ * botón aparte que queda anotado en la bitácora con quién y cuándo. Sin esa
+ * separación, abrir cualquier ficha registraría que alguien miró la llave, y la
+ * bitácora dejaría de distinguir al que la consultó del que sólo pasó por ahí.
+ *
+ * ── Se puede emitir para CUALQUIER cliente ─────────────────────────────────
+ * No sólo para extranjeros. Lo que depende de la categoría es otra cosa: si el
+ * código alcanza SOLO, sin teléfono. Para una ficha extranjera sí —su teléfono
+ * no sirve de llave porque el circuito de Hacienda se lo reemplaza por el de la
+ * farmacia—; para el resto va acompañado del teléfono, y eso es lo que permite
+ * que el código sea de siete caracteres y no de una docena.
+ */
+function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
+    const addToast = useToastStore(s => s.addToast);
+    const empleado = useStaff(s => s.currentUser);
+    const [estado, setEstado] = useState(null);
+    const [codigo, setCodigo] = useState(null);
+    const [ocupado, setOcupado] = useState(false);
+
+    useEffect(() => {
+        let vivo = true;
+        estadoCodigoAcceso(customerId)
+            .then(e => { if (vivo) setEstado(e); })
+            .catch(() => { if (vivo) setEstado({ tiene: false }); });
+        return () => { vivo = false; };
+    }, [customerId]);
+
+    const conError = (accion) => async (fn) => {
+        setOcupado(true);
+        try { await fn(); } catch (e) {
+            addToast(e?.message === 'FORBIDDEN'
+                ? `No tienes permiso para ${accion}.`
+                : `No se pudo ${accion}. Intenta de nuevo.`, 'error');
+        } finally { setOcupado(false); }
+    };
+
+    const ver = () => conError('ver el código')(async () => {
+        setCodigo(await verCodigoAcceso(customerId));
+    });
+
+    const emitir = () => conError('generar el código')(async () => {
+        const r = await emitirCodigoAcceso(customerId);
+        setCodigo(r?.codigo ?? null);
+        setEstado(await estadoCodigoAcceso(customerId));
+        addToast(r?.veces_emitido > 1
+            ? 'Código nuevo. El anterior dejó de servir.'
+            : 'Código generado.', 'success');
+    });
+
+    // El import es diferido: la ticketera y su maquetación pesan, y esta ficha
+    // se abre muchas más veces de las que alguien imprime un papel.
+    const imprimir = () => conError('imprimir el papel')(async () => {
+        const valor = codigo ?? await verCodigoAcceso(customerId);
+        if (!valor) { addToast('Este cliente todavía no tiene código.', 'error'); return; }
+        const { imprimirTicketDeCodigo } = await import('../../utils/puntosCodigoTicket');
+        await imprimirTicketDeCodigo(
+            { nombre, codigo: valor, emitidoPor: empleado?.name ?? '' },
+            { sala: empleado?.branch_id ?? null },
+        );
+    });
+
+    const legible = codigo
+        ? `${codigo.slice(0, 3)} - ${codigo.slice(3)}`
+        : null;
+
+    return (
+        <div data-surface="card" className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-content-2" aria-hidden="true" />
+                <span className="text-caption">Código de acceso</span>
+                {estado?.tiene
+                    ? <Badge size="sm" variant="success">Emitido</Badge>
+                    : <Badge size="sm" variant="neutral">Sin código</Badge>}
+            </div>
+
+            <p className="text-sm text-content-2">
+                {esExtranjero
+                    ? 'Con este código el cliente entra a Mis puntos sin su teléfono, porque su ficha es de una persona extranjera.'
+                    : 'El cliente entra a Mis puntos con este código y su teléfono. Sirve cuando no tiene su documento a mano.'}
+            </p>
+
+            {legible && (
+                <p className="text-center font-mono text-2xl tracking-[0.2em] py-2">{legible}</p>
+            )}
+
+            {estado?.tiene && !legible && (
+                <p className="text-xs text-content-3">
+                    Emitido el {new Date(estado.emitido_at).toLocaleDateString('es-SV')}
+                    {estado.veces_emitido > 1 && ` · ${estado.veces_emitido} veces`}
+                </p>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+                {estado?.tiene && !legible && (
+                    <Button size="sm" variant="secondary" icon={Eye} onClick={ver} disabled={ocupado}>
+                        Ver el código
+                    </Button>
+                )}
+                {puedeEditar && (
+                    <Button size="sm" variant={estado?.tiene ? 'ghost' : 'primary'}
+                        icon={estado?.tiene ? RefreshCw : KeyRound}
+                        onClick={emitir} disabled={ocupado}>
+                        {estado?.tiene ? 'Generar uno nuevo' : 'Generar código'}
+                    </Button>
+                )}
+                {estado?.tiene && (
+                    <Button size="sm" variant="secondary" icon={Printer} onClick={imprimir} disabled={ocupado}>
+                        Imprimir
+                    </Button>
+                )}
+            </div>
+
+            {estado?.tiene && (
+                <p className="text-xs text-content-3">
+                    Ver el código queda registrado. Generar uno nuevo deja el anterior sin efecto.
+                </p>
+            )}
+        </div>
+    );
+}
+
 function PanelPuntos({ customerId }) {
     // Arranca en `true` en vez de encenderse dentro del efecto: el panel se monta
     // cuando se lo abre y ya nace cargando, así que un `setCargando(true)` ahí
@@ -507,7 +635,19 @@ const FormClienteDetail = ({ formData }) => {
             )}
 
             {panel === 'puntos' ? (
-                <PanelPuntos customerId={id} />
+                <div className="space-y-5">
+                    {/* Va ARRIBA del panel y fuera de él a propósito: `PanelPuntos`
+                        corta temprano cuando no hay cuenta de puntos —sin DUI, sin
+                        cuenta, DUI duplicado— y ésos son exactamente los casos en
+                        los que el código hace falta. Adentro, el bloque no se vería
+                        justo cuando importa. */}
+                    <CodigoDeAcceso
+                        customerId={id}
+                        nombre={form.name || cliente?.name || ''}
+                        esExtranjero={(form.categoria || '') === 'Extranjero'}
+                        puedeEditar={editable} />
+                    <PanelPuntos customerId={id} />
+                </div>
             ) : panel === 'actividad' ? (
                 <PanelActividad actividad={actividad} facturas={facturas} bitacora={bitacora} />
             ) : (

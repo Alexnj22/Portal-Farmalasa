@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.905.0 — MIN·MAX: lo que falta no pierde su máximo, y una venta de mayoreo no define el stock de sala
+
+Migraciones `20260901164324` y `20260901165102`. Los hallazgos 2 y 5 de la
+auditoría del 1-sep.
+
+**El quiebre le bajaba el número al producto que faltaba.** Sin producto no hay
+venta; el cálculo leía esos días como demanda que cayó y recortaba el máximo;
+con menos máximo se pide menos y vuelve a faltar antes. Un círculo, y en
+silencio. Medido: **505 pares en quiebre**, y de los que se movieron el 1-sep
+**80 recibieron una baja estando en cero** — 455 unidades de capacidad quitadas
+a productos que faltaban. Ahora el auto-aplicar no BAJA el par cuando se dan
+tres cosas juntas: el cambio baja, no hay nada en la sala, y el producto vendía
+hace menos de 90 días. La tercera evita el defecto opuesto —de los 505, **128 no
+venden hace 90 días** y a esos bajarles el número es lo correcto—. Lo frenado no
+se pierde: va a la lista de revisión (62 filas más).
+
+**Una venta de mayoreo contaba como demanda de mostrador.** El cálculo agrupaba
+por día de una vez y perdía lo único que distingue «veinte personas llevaron
+una» de «un cliente llevó veinte»: el tamaño de cada venta. El caso que lo
+destapó — DICLOFENACO SAIMED en Salud 3, **una factura de 26 cajas el 26-ago,
+2,600 unidades, el 78% del mes en las seis salas**, contra una venta normal de
+20 cápsulas por un dólar. Proponía **172·243** sobre un vigente de 11·16. Ahora
+una venta 15× más grande que la normal de ese producto **en esa sala** no entra
+al cálculo de la demanda; la venta se factura y sale en los reportes igual.
+
+El 15 salió de medir 5×, 10× y 15× en el catálogo entero: los tres arreglan
+Salud 3 igual, pero 5× y 10× además bajan Salud 2 y La Popular, donde vender de
+a cajas puede ser demanda legítima. Y la mediana es **por sala**, no por
+producto, porque La Popular tiene mediana 20 donde las demás tienen 10. Efecto
+final: 703 renglones excluidos de 227,374, 291 pares bajan de 13,365, ninguno se
+queda sin ventas, y el costo del MAX baja 0.63%.
+
+Las dos se verificaron **corriendo el cálculo completo en producción dentro de
+transacciones revertidas**: La Popular (1,885 filas) con 316 pares en quiebre y
+**cero bajados**, y Salud 3 (2,654 filas) con el DICLOFENACO proponiendo 12·18
+en vez de 172·243. GLUDETHON sigue en 11·17 — **la regla de mayoreo no caza una
+promoción**, porque ahí no hay ninguna venta grande que excluir: 214 unidades en
+204 facturas. Eso necesita una lista de campañas y queda abierto.
+
 ## v2.904.0 — El cálculo de MIN·MAX deja de contar ventas anuladas, y Bodega deja de pisar lo ajustado a mano
 
 Migraciones `20260901162649`, `20260901162804` y `20260901162911`. Salen de una

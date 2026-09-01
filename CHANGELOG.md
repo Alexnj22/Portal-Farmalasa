@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.913.4 — El turno de la apertura lo dice la caja
+
+Salud 3 hizo su corte desde el portal y después **no pudo empezar el turno
+nuevo**: la pantalla devolvía un error y el turno hubo que abrirlo desde la
+caja. Medido en el registro — un 502 a las 19:23, y el motivo no quedó escrito
+en ninguna parte porque sólo existió en la pantalla de quien lo apretó.
+
+**El portal mandaba el turno `1`, fijo.** Y `1` sólo es correcto en el PRIMER
+turno del día: en cuanto hay un corte, el turno que sigue es el 2. Leída en
+vivo la pantalla de apertura de la caja, su campo escondido `turno` decía **3**
+para Salud 3 —ya tenía dos turnos abiertos ese día— mientras el portal pedía el
+1, o sea un turno que ya existía.
+
+Ese campo escondido lo calcula el servidor de la caja mirando los turnos del
+día, y su propio formulario lo manda tal cual. Ahora el portal hace lo mismo:
+lee la pantalla de apertura, toma de ahí el número y manda los dos campos
+—`turno` y `turno_x`— con él. Si no lo puede leer **no inventa uno**: `1` es
+justo el valor que rompe, y adivinar escribe un turno equivocado en la caja de
+una sala.
+
+El defecto nació con la pantalla y era invisible por construcción: el único
+caso probado —el primer turno del día— es exactamente aquel en el que `1`
+acierta.
+
+**Y el motivo de un rechazo ya no se pierde.** Las cuatro escrituras a la caja
+devolvían los primeros 200 caracteres de su respuesta cruda dentro del mensaje
+de error: ni la sala entiende eso, ni alcanza para diagnosticarlo después. Hoy
+el detalle completo queda en el registro de la función y la pantalla dice qué
+hacer.
+
+⚠️ **Sin probar contra una caja real**: comprobarlo exige abrir un turno de
+verdad en una sala. El número que se manda sí se verificó, leyendo el
+formulario de la caja de Salud 3 en vivo.
+
 ## v2.913.3 — Mi caja: la sala propia sale elegida y el alcance recorta la lista
 
 Reportado desde sala: una dependiente con el permiso recién concedido abría

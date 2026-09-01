@@ -836,8 +836,17 @@ export async function estadoDeCaja(sala) {
     return operar({ accion: 'estado', sala });
 }
 
-export async function abrirCaja({ sala, montoApertura = 0, turno = 1 }) {
-    return operar({ accion: 'abrir', sala, monto_apertura: montoApertura, turno });
+/**
+ * Abrir la caja del turno.
+ *
+ * **El turno NO se manda.** Lo dice la caja: su pantalla de apertura trae el
+ * número que sigue, calculado con los turnos que ya se abrieron ese día. Acá
+ * viajaba un `turno = 1` fijo, y 1 sólo acierta en el primer turno del día —
+ * después del primer corte la caja rechazaba la apertura y la sala se quedaba
+ * sin poder empezar (Salud 3, 01-sep). Ver `operar-caja`.
+ */
+export async function abrirCaja({ sala, montoApertura = 0 }) {
+    return operar({ accion: 'abrir', sala, monto_apertura: montoApertura });
 }
 
 export async function anotarIngreso({ sala, monto, concepto, boleta = null, fotoUrl = null, vendedor = '' }) {

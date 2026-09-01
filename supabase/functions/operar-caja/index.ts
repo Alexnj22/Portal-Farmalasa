@@ -387,7 +387,8 @@ Deno.serve(async (req) => {
           })).text();
 
       if (!exito(resp)) {
-        return json({ ok: false, error: `La caja no aceptó la corrección: ${resp.slice(0, 200)}` }, 502);
+        console.error(`[operar-caja] corrección mov=${meta.erp_movimiento_id}: ${resp.slice(0, 1000)}`);
+        return json({ ok: false, error: "La caja no aceptó la corrección. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
       }
 
       // Ya cambió del otro lado. De acá en adelante un fallo deja el portal
@@ -448,6 +449,38 @@ Deno.serve(async (req) => {
 
       const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
       const monto = Number(body.monto_apertura ?? 0);
+
+      /* QUÉ TURNO SIGUE LO DICE LA CAJA, no el portal.
+       *
+       * `apertura_caja.php` trae un campo escondido `turno` con el número que
+       * corresponde —lo calcula su servidor mirando los turnos que ya se
+       * abrieron ese día en esa sala— y su propio formulario lo manda tal cual.
+       * El portal escribía **1 fijo**, y 1 sólo es correcto en el PRIMER turno
+       * del día: en cuanto hay un corte, el turno siguiente es el 2, y pedir
+       * otra vez el 1 es pedir un turno que ya existe.
+       *
+       * Medido el 2026-09-01 en Salud 3: dos turnos ya abiertos, el campo
+       * escondido decía **3**, el portal mandó **1**, y la sala se quedó sin
+       * poder empezar el turno hasta que alguien lo abrió desde la caja. El
+       * defecto nació con la pantalla y era invisible: el primer turno del día
+       * —el único que se había probado— es justo el caso en que 1 acierta.
+       *
+       * Se mandan los DOS campos con el mismo número, igual que el formulario:
+       * `turno` es el escondido y `turno_x` el que se elige en pantalla. Y NO
+       * se lee de `body`: quien llama no sabe la respuesta, y el cliente
+       * mandaba precisamente el 1 que rompe. */
+      const formulario = await (await fetch(APERTURA, {
+        headers: { Cookie: cookie }, signal: AbortSignal.timeout(30_000),
+      })).text();
+      // `name='turno'` con la comilla pegada: `turno_x` no coincide.
+      const turno = formulario.match(/name=['"]turno['"][^>]*value=['"](\d+)['"]/i)?.[1];
+      // Sin el número NO se inventa uno. Caer a 1 es volver al defecto, y
+      // adivinar acá escribe un turno equivocado en la caja de una sala.
+      if (!turno) {
+        console.error(`[operar-caja] abrir sala=${sala}: el formulario de apertura no trajo el turno`);
+        return json({ ok: false, error: "No se pudo saber qué turno sigue. Vuelve a intentarlo en un momento." }, 503);
+      }
+
       const resp = await (await fetch(APERTURA, {
         method: "POST",
         headers: {
@@ -457,13 +490,23 @@ Deno.serve(async (req) => {
         body: new URLSearchParams({
           process: "insert", fecha: hoy, empleado: String(empErp), caja: String(estado.idCaja),
           monto_apertura: dosDecimales(monto), monto_ch: "0",
-          turno_x: String(body.turno ?? 1), turno: String(body.turno ?? 1),
+          turno_x: turno, turno,
           id_sucursal: String(entrada.erpId),
         }).toString(),
         signal: AbortSignal.timeout(45_000),
       })).text();
 
-      if (!exito(resp)) return json({ ok: false, error: `La caja no aceptó la apertura: ${resp.slice(0, 200)}` }, 502);
+      /* El motivo COMPLETO va al registro, no a la pantalla.
+       *
+       * Devolvía los primeros 200 caracteres de la respuesta cruda de la caja:
+       * ni la sala entiende eso, ni alcanza para diagnosticarlo después —el
+       * 502 del 01-sep quedó sin motivo en ninguna parte, porque el texto sólo
+       * existió en la pantalla de quien lo apretó—. Hoy el detalle queda en el
+       * registro de la función y la pantalla dice lo que hay que hacer. */
+      if (!exito(resp)) {
+        console.error(`[operar-caja] abrir sala=${sala} caja=${estado.idCaja} turno=${turno}: ${resp.slice(0, 1000)}`);
+        return json({ ok: false, error: "La caja no aceptó la apertura. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+      }
 
       // Quién la abrió DE VERDAD. La captura de cada media hora va a traer el
       // resto (hora, monto, id de apertura); esto es lo que ella no puede saber.
@@ -561,9 +604,10 @@ Deno.serve(async (req) => {
       })).text();
 
       if (!exito(resp)) {
+        console.error(`[operar-caja] ${accion} sala=${sala} fila=${fila.id}: ${resp.slice(0, 1000)}`);
         return json({
           ok: false, movimiento_del_portal: fila.id,
-          error: `La caja no aceptó el movimiento: ${resp.slice(0, 200)}`,
+          error: "La caja no aceptó el movimiento. Vuelve a intentarlo; si sigue igual, avisa a Sistemas.",
         }, 502);
       }
       let idMov: number | null = null;
@@ -619,7 +663,10 @@ Deno.serve(async (req) => {
       signal: AbortSignal.timeout(45_000),
     })).text();
 
-    if (!exito(resp)) return json({ ok: false, error: `La caja no aceptó el cierre: ${resp.slice(0, 200)}` }, 502);
+    if (!exito(resp)) {
+      console.error(`[operar-caja] cerrar sala=${sala}: ${resp.slice(0, 1000)}`);
+      return json({ ok: false, error: "La caja no aceptó el cierre. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+    }
 
     /* ── ¿Salió el Z? Se COMPRUEBA, no se supone ──────────────────────────
      *

@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.893.0 — Los puntos, listos para mudarse
+
+`docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md`. MariaDB va a dejar de existir, así
+que los puntos tienen que vivir en el portal. **Nada aplicado: el plan queda
+escrito y probado para que el día que se confirme sea pegar y correr.**
+
+**El hallazgo que achica el trabajo a la mitad: `ventas_para_puntos` ya existe en
+Postgres y ya implementa las tres reglas de elegibilidad completas** — el piso
+del precio 3 con su historia por fecha y el margen de 2%, `FINALIZADA`,
+`total > 1`, el código de vendedor que cabe en un `int`, y las dos banderas
+`acumula_puntos` (la del cliente y la del laboratorio). El motor de acumulación
+no hay que escribirlo. Lo único que vive del otro lado es **el libro mayor**.
+
+**Cuatro tablas, y el modelo es un libro de LOTES, no un saldo.** El vencimiento
+es por compra, así que hay que saber de qué compra vino cada punto: un saldo
+suelto no puede contestar «¿cuáles se me vencen en marzo?». `puntos_cuenta` ·
+`puntos_lote` (entradas) · `puntos_salida` (canje, anulación, vencimiento,
+ajuste) · `puntos_salida_lote` (qué lote pagó cuánto — sin eso, «te vencieron 33
+puntos» no se puede demostrar).
+
+**Probado en el branch, y no sólo «entra sin error».** A cada candado se le
+fabricó la regresión que debería cazar, dentro de una transacción que se deshace:
+diez casos, diez correctos. El que más importa es el doble crédito — en la base
+vieja hay **27 tickets con los puntos cobrados dos veces** porque 2,142 facturas
+viven bajo `FLP` y `FLP1` a la vez. Con el índice único parcial sobre
+`invoice_id` eso deja de ser un defecto que haya que salir a cazar: **la tabla no
+lo acepta.** El branch quedó limpio (se corrió con `execute_sql`, nunca
+`apply_migration`, y las tablas se borraron después).
+
+**La migración se simplificó sola, y no fue planeado.** El problema conocido era
+que los puntos actuales no tienen fecha individual, sólo un saldo — y el modelo
+nuevo necesita lotes fechados. Pero el régimen de transición del reglamento ya
+dice que todo lo acumulado hasta el 30 de septiembre vence el 1 de octubre de
+2027. Entonces es **un lote por cuenta** y no hay que averiguar el origen de un
+solo punto. Lo que se escribió para ser justo con el cliente resultó ser también
+lo que vuelve trivial la mudanza.
+
+**El freno no es técnico y hay que decirlo:** el canje lo hace hoy la aplicación
+de ellos contra MySQL. Del paso 1 al 6 se puede hacer sin tocar la sala —
+incluidos varios días con los dos circuitos escribiendo en paralelo y cuadrando
+saldo contra saldo—, pero **mientras el canje no exista en el portal, la base
+vieja no se puede apagar.**
+
+Y una que se toma antes de construir: el día que `/mis-puntos` permita canjear,
+**DUI + teléfono deja de alcanzar** como llave. Hoy es proporcionado porque la
+pantalla sólo muestra y no hace nada que no se pueda deshacer.
+
+Medido de paso, y vale igual aunque esto no arranque: el circuito mueve **~700
+facturas y ~7,500 puntos por día** (~$75 diarios de deuda nueva), y el portal
+**no tiene ninguna copia de los saldos** — si esa base se pierde, no se
+reconstruyen.
+
 ## v2.892.4 — El reporte de diferencias deja de leer la columna que nunca se escribió
 
 Salió de la auditoría del circuito de producto. `pedido_items` tenía **dos

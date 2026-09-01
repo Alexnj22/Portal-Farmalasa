@@ -264,19 +264,36 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
             'success');
     });
 
-    // ── Sale directo a la sala de quien imprime ───────────────────────────
-    // Decisión del usuario (2026-09-01): sin diálogo. Casi siempre quien aprieta
-    // está en su propia sala con el cliente enfrente, y un paso de más en cada
+    // ── A dónde sale el papel, en tres pasos ──────────────────────────────
+    // Sin diálogo (decisión del usuario, 2026-09-01): un paso de más en cada
     // impresión se paga todos los días.
     //
-    // El diálogo queda para lo único que el atajo no puede resolver: que NO haya
-    // a dónde mandarlo. Sin sucursal en la ficha, o con la caja de su sala
-    // apagada o sin registrar. Ahí sí hay que elegir, porque mandarlo a una caja
-    // muerta lo deja esperando sin que nadie se entere.
+    //   1. Este equipo, si está configurado para imprimir → sale acá
+    //   2. Si no, la cola de la sucursal de quien aprieta
+    //   3. Si tampoco (sin sucursal, o su caja apagada) → recién ahí, el diálogo
     //
-    // La lista se lee EN EL CLIC y no en un efecto: una caja se apaga en
-    // cualquier momento, así que lo que se decide es del instante.
+    // El orden importa y el primero es el que resuelve el apoyo: quien va a
+    // cubrir a otra sala imprime donde está. Al revés —mirar primero su
+    // sucursal— el papel le saldría en su sala de siempre, lejos del cliente.
+    //
+    // La lista de salas se lee EN EL CLIC y no en un efecto: una caja se apaga
+    // en cualquier momento, así que lo que se decide es del instante.
     const alImprimir = () => conError('leer las cajas de impresión')(async () => {
+        // ── 1 · ¿este equipo imprime? ─────────────────────────────────────
+        // Si alguien configuró ESTA computadora, es porque está en un mostrador,
+        // y el papel tiene que salir acá — sea la sala que sea. Es lo que
+        // resuelve el apoyo: quien va a cubrir a otra sala imprime donde está,
+        // sin que el portal tenga que saber su horario. Y no lo sabe: medido el
+        // 2026-09-01, `employee_rosters` está en cero filas y ni siquiera tiene
+        // columna de sucursal.
+        const { equipoConfiguradoParaImprimir } = await import('../../utils/ticketPrint');
+        if (equipoConfiguradoParaImprimir()) {
+            await imprimir({ salaId: null })();
+            aviso('Enviado a imprimir', 'El papel sale por la ticketera de esta computadora.', 'success');
+            return;
+        }
+
+        // ── 2 · si no, a la cola de su sucursal ───────────────────────────
         setCargandoSalas(true);
         let lista = [];
         let fallo = false;

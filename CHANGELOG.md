@@ -21,6 +21,84 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.918.0 — Promociones — el lote sigue al producto entre salas
+
+Cuando una sala le manda producto de la promoción a otra, el lote se mueve solo:
+baja en la que envía, sube en la que recibe, **al confirmarse la llegada** — no
+al despachar, porque hasta que no llega la sala no lo puede vender. Sin esto las
+dos pantallas mienten: la que recibió aparece pasada de su lote cuando en
+realidad recibió producto legítimamente, y la que cedió aparece floja cuando lo
+que hizo fue ceder.
+
+**Nadie tiene que marcar el traslado como «de la promoción».** El lote es una
+cuenta, no un producto aparte: las cajas de la promoción y las que ya estaban en
+la sala son físicamente idénticas, y al vender una la factura no dice de cuál
+montón salió. Pedirle a alguien que distinga lo indistinguible sería pedirle que
+adivine, y un olvido dejaría mal los dos números sin que nadie se entere.
+
+**Bodega queda afuera sola, y eso es lo que conserva el total.** El movimiento se
+aplica sólo cuando *las dos puntas* tienen reparto en ese renglón. Bodega no lo
+tiene —el reparto se declara entre las seis salas de venta—, así que un despacho
+suyo no mueve nada: eso es el suministro inicial, ya contado. Así el total es
+invariante por construcción y no por acordarse de restar.
+
+Y eso resolvió de paso el problema más feo: «traslado» nombra **tres circuitos
+distintos**, y el de Bodega guarda su cantidad **en paquetes** —medido, el 21% de
+las 7,069 líneas recibidas tiene factor mayor que 1—, así que compararla cruda
+contra un lote en unidades habría subcontado en silencio. Al quedar Bodega fuera
+por la regla del reparto, esa conversión no hace falta.
+
+Verificado con cinco casos: un traslado entre salas mueve 20 unidades; **desde
+Bodega no mueve nada**; pedir 999 con 60 disponibles mueve 60 y lo anota
+(*«se pidieron 999, había 60»*); un producto sin promoción no mueve nada; y de
+una sala a sí misma tampoco. El total quedó en **500 = 500 = 500** —original,
+vigente y lote declarado— con la desviación visible por sala (+80 y −80).
+
+Los dos enganches van con su bloque de excepción: si algo falla en la
+contabilidad de la promoción, **el traslado se confirma igual**. Un traslado que
+no se puede recibir porque falló la cuenta de una promoción sería mucho peor que
+un lote desactualizado.
+
+## v2.917.1 — El papel sale donde está la persona
+
+Lo levantó el usuario: *«si el empleado va a otra sala por apoyo, al imprimir
+imprimiría en la sala que tiene activa en ese momento verdad?»*. **No** — salía
+en la sucursal de su ficha, o sea lejos del cliente que espera el papel.
+
+**Y no había de dónde sacar la respuesta.** Las dos fuentes posibles están
+vacías: `employee_rosters` en **cero filas** y `attendance` en **cero marcas**.
+Peor todavía, `employee_rosters` **no tiene columna de sucursal** —guarda
+`employee_id`, la semana y las horas— así que el módulo de horarios **nunca
+contempló que alguien trabaje en otra sala**. Aunque se publicaran mañana,
+seguirían sin decir dónde.
+
+**La salida no era un dato nuevo: era cambiar la pregunta.** «¿Dónde trabaja hoy
+esta persona?» no tiene respuesta; «¿desde qué máquina está apretando?» sí. Los
+ajustes de impresión —ancho de rollo y sistema— viven en el `localStorage` de
+cada equipo y **no viajan con la cuenta**: si están puestos, alguien instaló esa
+computadora en un mostrador.
+
+Queda en tres pasos, y el orden es lo que resuelve el apoyo:
+
+1. **Este equipo**, si está configurado para imprimir → sale acá, sea la sala que sea
+2. Si no, **la cola de la sucursal** de quien aprieta
+3. Si tampoco (sin sucursal, o su caja apagada) → recién ahí, el diálogo
+
+| quién | dónde está | sale en |
+|---|---|---|
+| Nathaly (Salud 1) | mostrador de Salud 1 | Salud 1 |
+| Nathaly (Salud 1) | **de apoyo en Salud 3** | **Salud 3** — antes salía en Salud 1 |
+| cualquiera | su casa, laptop | la cola de su sucursal |
+
+El caso que queda mal es una **laptop propia dentro de una sala ajena**: no tiene
+ajustes, así que el papel iría a su sucursal. Es raro, y se nota al toque porque
+el aviso dice a dónde fue.
+
+`equipoConfiguradoParaImprimir()` es una función aparte de
+`leerAjustesDeImpresion()` a propósito: esa última **siempre** devuelve algo —sus
+valores por defecto— para que nadie tenga que decidir nada, así que no sirve para
+preguntar «¿alguien configuró este equipo?».
+
 ## v2.917.0 — Promociones — el cierre diario y el aviso del 80%
 
 Una promoción termina por **dos causas** y ahora el portal dice cuál fue: se

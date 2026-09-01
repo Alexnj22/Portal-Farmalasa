@@ -13,6 +13,8 @@ import SegmentedControl from '../common/SegmentedControl';
 import { LoadingState } from '../common/StateViews';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
+import ElegirSalaDeImpresion from '../personal/ElegirSalaDeImpresion';
+import { fetchSalasConCaja } from '../../data/impresion';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
 import {
@@ -215,6 +217,17 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
     const [estado, setEstado] = useState(null);
     const [codigo, setCodigo] = useState(null);
     const [ocupado, setOcupado] = useState(false);
+    // ¿En qué sala se imprime? Se PREGUNTA, no se deduce de la ficha de quien
+    // aprieta: medido el 2026-09-01, las 48 personas activas tienen sucursal
+    // asignada, así que «el empleado sin sucursal» no existe y esa condición
+    // nunca dispararía. Lo que sí pasa es que alguien de supervisión atienda
+    // desde el mostrador de OTRA sala —o desde su casa—, y ahí su sucursal
+    // asignada es justo el destino equivocado: el papel saldría lejos del
+    // cliente que lo está esperando.
+    const [preguntando, setPreguntando] = useState(false);
+    const [salas, setSalas] = useState([]);
+    const [cargandoSalas, setCargandoSalas] = useState(false);
+    const [falloSalas, setFalloSalas] = useState(false);
 
     useEffect(() => {
         let vivo = true;
@@ -250,18 +263,33 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
             'success');
     });
 
+    // La lista de salas se lee EN EL CLIC, no en un efecto: una caja se apaga
+    // en cualquier momento, y así lo que se ofrece es de ese instante.
+    const preguntarSala = () => conError('leer las cajas de impresión')(async () => {
+        setPreguntando(true);
+        setCargandoSalas(true);
+        try {
+            const { salas: s, error } = await fetchSalasConCaja();
+            setSalas(s ?? []);
+            setFalloSalas(!!error);
+        } catch {
+            // Que no se pueda leer la lista NO deja el diálogo mudo: se abre
+            // igual, marcado, con «Esta computadora» todavía disponible.
+            setSalas([]);
+            setFalloSalas(true);
+        } finally { setCargandoSalas(false); }
+    });
+
     // El import es diferido: la ticketera y su maquetación pesan, y esta ficha
     // se abre muchas más veces de las que alguien imprime un papel.
-    const imprimir = () => conError('imprimir el papel')(async () => {
+    const imprimir = ({ salaId }) => conError('imprimir el papel')(async () => {
+        setPreguntando(false);
         const valor = codigo ?? await verCodigoAcceso(customerId);
         if (!valor) { aviso('Sin código', 'Este cliente todavía no tiene uno. Genéralo primero.', 'error'); return; }
         const { imprimirTicketDeCodigo } = await import('../../utils/puntosCodigoTicket');
-        // `sala: null` a propósito: sale por la computadora donde se está
-        // atendiendo, que es donde está parado el cliente esperando el papel.
-        // Y ése es el camino en el que el QR viaja como URL — el probado.
         await imprimirTicketDeCodigo(
             { nombre, codigo: valor, emitidoPor: user?.name || user?.email || '' },
-            { sala: null },
+            { sala: salaId },
         );
     });
 
@@ -310,7 +338,8 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
                     </Button>
                 )}
                 {estado?.tiene && (
-                    <Button size="sm" variant="secondary" icon={Printer} onClick={imprimir} disabled={ocupado}>
+                    <Button size="sm" variant="secondary" icon={Printer}
+                        onClick={preguntarSala} disabled={ocupado}>
                         Imprimir
                     </Button>
                 )}
@@ -321,6 +350,15 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
                     Ver el código queda registrado. Generar uno nuevo deja el anterior sin efecto.
                 </p>
             )}
+
+            <ElegirSalaDeImpresion
+                open={preguntando}
+                onClose={() => setPreguntando(false)}
+                onElegir={imprimir}
+                salas={salas}
+                cargando={cargandoSalas}
+                fallo={falloSalas}
+                titulo="Imprimir el código de acceso" />
         </div>
     );
 }

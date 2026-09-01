@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.913.0 — El código en su propio campo, y la sala se pregunta
+
+Dos correcciones del usuario, y las dos mejoran algo que yo había resuelto peor.
+
+**El código va en un TERCER campo, no compartiendo el del DUI.** Yo había hecho
+un solo campo que aceptaba las dos cosas, y eso obligaba a quitarle al DUI su
+máscara y su validación de nueve dígitos. **Un campo que acepta dos formatos no
+puede validar ninguno** — y esa validación es justo lo que evita gastar un
+intento del freno con algo mal escrito.
+
+Ahora son DUI + teléfono arriba, y el código abajo, presentado como lo que es:
+*«¿La sala te dio un código? Úsalo aquí y no hace falta lo de arriba.»* Cuando el
+código está completo, los dos de arriba se desactivan solos — se ve que ya no
+hacen falta en vez de que la pantalla los ignore en silencio.
+
+**Y la sala de impresión se PREGUNTA.** Lo levantó el usuario: *«si le doy
+generar desde mi casa? no se manda en cola como los otros?»*. Su idea era
+preguntar sólo a quien no tenga sucursal asignada, y al medirlo **ese caso no
+existe**: las 48 personas activas tienen una. Lo que sí pasa —y es lo que él
+estaba haciendo— es atender desde el mostrador de OTRA sala, y ahí la sucursal
+asignada es justo el destino equivocado: el papel saldría lejos del cliente que
+lo espera.
+
+Así que se pregunta siempre, con `ElegirSalaDeImpresion` — **el componente ya
+existía** para el carné del día, con este mismo razonamiento escrito adentro. Se
+ofrecen sólo las salas con caja de impresión, se dice si la caja está despierta,
+y «Esta computadora» sigue disponible. La lista se lee en el clic y no en un
+efecto: una caja se apaga en cualquier momento.
+
 ## v2.912.0 — La pantalla del cliente acepta el código
 
 Lo preguntó el usuario y era un hueco real: el servidor ya aceptaba el código

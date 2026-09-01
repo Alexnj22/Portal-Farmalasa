@@ -57,6 +57,7 @@ export const IMPORTADORES = {
     ResumenFiscalView: () => import("../views/contabilidad/ResumenFiscalView"),
     CorteZView: () => import("../views/contabilidad/CorteZView"),
     MetasView: () => import("../views/metas/MetasView"),
+    PromocionesView: () => import("../views/promociones/PromocionesView"),
     ProveedoresView: () => import("../views/purchases/ProveedoresView"),
     ClientesView: () => import("../views/ClientesView"),
     MisPuntosView: () => import("../views/MisPuntosView"),
@@ -111,6 +112,7 @@ export const IMPORTADOR_POR_RUTA = {
     'resumen-fiscal': IMPORTADORES.ResumenFiscalView,
     'corte-z': IMPORTADORES.CorteZView,
     'metas': IMPORTADORES.MetasView,
+    'promociones': IMPORTADORES.PromocionesView,
     'impresion': IMPORTADORES.ImpresionView,
     'carnes-del-dia': IMPORTADORES.CarnesDelDiaView,
     'prueba-ios': IMPORTADORES.IOSTestView,
@@ -153,7 +155,10 @@ export const IMPORTADOR_POR_RUTA = {
     'ventas': IMPORTADORES.VentasView,
     'cortes': IMPORTADORES.CortesView,
     'bolsas': IMPORTADORES.BolsasView,
-    'caja': IMPORTADORES.MiCajaView,
+    // «Efectivo» ES `CortesView` desde v2.914.0 — `MiCajaView` es su pestaña
+    // «Hoy» y viaja adentro, así que precargar la ruta tiene que traer el
+    // anfitrión y no la pestaña.
+    'caja': IMPORTADORES.CortesView,
     'ventas-perdidas': IMPORTADORES.VentasPperdidasView,
 };
 

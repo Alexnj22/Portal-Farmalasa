@@ -113,9 +113,10 @@ const MENU_GROUPS = [
     // así que queda a un click desde cualquier pantalla en vez de detrás del
     // acordeón. Va pegado a Bonificaciones: el tramo del bono sale de la meta.
     { key: 'metas',        label: 'Metas',         icon: Target,        modules: ['metas'] },
-    // La vista de Promociones se retiró el 2026-07-28 (pedido del usuario):
-    // el grupo queda como el slot de Bonificaciones, que se construye después.
-    { key: 'bonificaciones', label: 'Bonificaciones', icon: Gift, modules: ['bonificaciones'] },
+    // Promociones se retiró el 2026-07-28 y el grupo quedó reservado como el
+    // slot de Bonificaciones. Se construyó el 2026-09-01 y volvió con su nombre:
+    // es la campaña por la que un laboratorio paga por unidad vendida.
+    { key: 'promociones', label: 'Promociones', icon: Gift, modules: ['promociones'] },
     { key: 'producto',     label: 'Producto',      icon: Package,       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a sucursales', icon: ClipboardList, modules: ['pedidos'] },
     // `gestion_stock` e `inventario` van PRIMERO y no al final de la lista
@@ -419,8 +420,24 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             // por permiso real — sin esto, todo empleado veía grupos muertos
             // (ej. "Comercial" conteniendo solo "Bonificaciones Próximamente").
             const hasReal = g.modules.some(key => !MODULE_MAP[key]?.comingSoon && hasPermission(key, 'can_view'));
+            /* Dos módulos que apuntan a la MISMA ruta son UNA entrada.
+             *
+             * `caja_vales` y `cortes_caja` son dos permisos —operar la caja y
+             * mirar los cortes— y una sola pantalla desde v2.914.0. Sin este
+             * `dedupe` el menú pintaría «Efectivo» dos veces, con el mismo
+             * destino, a quien tenga los dos; y quedarse con un solo módulo en
+             * el grupo dejaría sin entrada a quien tenga el otro —Contabilidad
+             * sólo tiene `cortes_caja`—. Gana el primero del grupo, que es el
+             * orden que la lista ya declara. */
+            const vistas = new Set();
             const visibleModules = g.modules
                 .filter(key => MODULE_MAP[key]?.comingSoon ? hasReal : hasPermission(key, 'can_view'))
+                .filter(key => {
+                    const ruta = MODULE_MAP[key]?.path;
+                    if (!ruta || vistas.has(ruta)) return false;
+                    vistas.add(ruta);
+                    return true;
+                })
                 .map(key => ({ key, ...MODULE_MAP[key] }));
             return { ...g, visibleModules };
         }).filter(g => g.visibleModules.length > 0);

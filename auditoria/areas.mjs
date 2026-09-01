@@ -293,10 +293,15 @@ export const AREAS = [
     },
     {
         id: 'nomina',
-        nombre: 'Nómina y bonificaciones',
-        resumen: 'La planilla quincenal, las boletas impresas y la bonificación ligada al cumplimiento de meta.',
-        modulos: ['payroll', 'payroll_descargar', 'bonificaciones'],
-        rutas: ['/nomina', '/bonificaciones'],
+        nombre: 'Nómina',
+        resumen: 'La planilla quincenal y las boletas impresas.',
+        // `bonificaciones` vivía acá porque el nombre del slot vacío sonaba a
+        // planilla. Al construirse el 2026-09-01 resultó ser otra cosa —una
+        // campaña comercial de laboratorio— y se mudó a su área propia
+        // (`promociones`) con su ruta. La bonificación ligada a la meta sigue
+        // siendo del área `metas`, que es donde se calcula.
+        modulos: ['payroll', 'payroll_descargar'],
+        rutas: ['/nomina'],
         archivos: [
             'src/views/PayrollView.jsx',
             'src/data/payroll.js',
@@ -455,6 +460,23 @@ export const AREAS = [
         edge: [],
         crons: ['metas-ciclo-diario'],
         docs: ['docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md'],
+    },
+    {
+        id: 'promociones',
+        nombre: 'Promociones por producto',
+        resumen: 'La campaña por la que un laboratorio paga por unidad vendida: el lote declarado y repartido por sala, su avance contra las ventas reales, el cierre automático y el aviso a la sala que se queda sin producto.',
+        modulos: ['promociones'],
+        rutas: ['/promociones'],
+        archivos: [
+            'src/views/promociones/',
+            'src/data/promociones.js',
+        ],
+        tablas: ['promociones', 'promocion_renglon', 'promocion_renglon_tarifa',
+                 'promocion_reparto', 'promocion_reparto_mov', 'promocion_excedente',
+                 'promocion_historial'],
+        edge: [],
+        crons: ['promociones-ciclo-diario'],
+        docs: ['docs/PLAN-PROMOCIONES-2026-09-01.md'],
     },
     {
         id: 'cortes-efectivo',

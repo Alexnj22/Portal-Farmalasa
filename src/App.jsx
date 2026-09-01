@@ -67,7 +67,6 @@ const PayrollView = lazy(IMPORTADORES.PayrollView);
 const VentasView = lazy(IMPORTADORES.VentasView);
 const CortesView = lazy(IMPORTADORES.CortesView);
 const BolsasView = lazy(IMPORTADORES.BolsasView);
-const MiCajaView = lazy(IMPORTADORES.MiCajaView);
 const ProductosView = lazy(IMPORTADORES.ProductosView);
 const LaboratoriosView = lazy(IMPORTADORES.LaboratoriosView);
 const PedidosView = lazy(IMPORTADORES.PedidosView);
@@ -87,6 +86,7 @@ const CierrePeriodoView = lazy(IMPORTADORES.CierrePeriodoView);
 const ResumenFiscalView = lazy(IMPORTADORES.ResumenFiscalView);
 const CorteZView = lazy(IMPORTADORES.CorteZView);
 const MetasView = lazy(IMPORTADORES.MetasView);
+const PromocionesView = lazy(IMPORTADORES.PromocionesView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
 const ClientesView = lazy(IMPORTADORES.ClientesView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
@@ -195,9 +195,21 @@ const EmployeeProfileWrapper = ({ openModal, setView, setActiveEmployeeGlobal })
 // ============================================================================
 // 🔒 PERMISSION GUARD — Protege rutas individuales
 // ============================================================================
+/**
+ * `moduleKey` acepta UNO o VARIOS módulos, y con varios entra quien tenga
+ * CUALQUIERA.
+ *
+ * Nació con Efectivo (v2.914.0): «Mi caja» y «Cortes de caja» son una sola
+ * pantalla y siguen siendo dos permisos —operar la caja es otro acto que
+ * mirarla, y hay gente con uno solo: Contabilidad tiene `cortes_caja` y no
+ * `caja_vales`—. Con un guardia de un módulo había que elegir cuál, y elegir
+ * cualquiera de los dos dejaba fuera a la mitad de la gente. Cada pestaña cobra
+ * el suyo por su cuenta.
+ */
 const PermissionGuard = ({ moduleKey, children }) => {
     const { hasPermission } = useAuth();
-    if (!hasPermission(moduleKey, 'can_view')) return <AccessDeniedView />;
+    const claves = Array.isArray(moduleKey) ? moduleKey : [moduleKey];
+    if (!claves.some((k) => hasPermission(k, 'can_view'))) return <AccessDeniedView />;
     return children;
 };
 
@@ -210,6 +222,14 @@ const PermissionGuard = ({ moduleKey, children }) => {
  * descarta — la persona llegaría a la lista general en vez de a su solicitud,
  * que es la mitad de lo que el aviso prometía.
  */
+/** `/cortes` → `/caja?pestana=cortes`, conservando lo que traiga la consulta. */
+const IrAEfectivo = () => {
+    const { search, hash } = useLocation();
+    const q = new URLSearchParams(search);
+    q.set('pestana', 'cortes');
+    return <Navigate to={`/caja?${q.toString()}${hash}`} replace />;
+};
+
 const IrAPersonales = () => {
     const { search, hash } = useLocation();
     return <Navigate to={`/requests-personales${search}${hash}`} replace />;
@@ -793,11 +813,17 @@ function MainApp() {
                                     <Route path="avisos" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
 
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
-                                    <Route path="cortes" element={<PermissionGuard moduleKey="cortes_caja"><CortesView /></PermissionGuard>} />
+                                    {/* `/cortes` REDIRIGE, no es otra pantalla: desde v2.914.0
+                                        los cortes son una pestaña de Efectivo. La ruta se conserva
+                                        porque la nombran avisos ya enviados y los favoritos de
+                                        quien la usaba, y **se lleva la consulta** — un aviso puede
+                                        traer `?corte=<id>`, y un `<Navigate>` a secas la descarta. */}
+                                    <Route path="cortes" element={<IrAEfectivo />} />
                                     <Route path="bolsas" element={<PermissionGuard moduleKey="bolsas"><BolsasView /></PermissionGuard>} />
-                                    {/* `caja_vales` y no `cortes_caja`: operar la caja es otro
-                                        permiso que mirarla, y hoy lo tiene un solo cargo. */}
-                                    <Route path="caja" element={<PermissionGuard moduleKey="caja_vales"><MiCajaView /></PermissionGuard>} />
+                                    {/* Los DOS módulos abren esta pantalla y cada pestaña cobra el
+                                        suyo: «Hoy» pide `caja_vales`, las otras dos `cortes_caja`.
+                                        Quien tiene uno solo entra y ve lo suyo. */}
+                                    <Route path="caja" element={<PermissionGuard moduleKey={['caja_vales', 'cortes_caja']}><CortesView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
                                     <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
@@ -820,6 +846,7 @@ function MainApp() {
                                     <Route path="resumen-fiscal" element={<PermissionGuard moduleKey="resumen_fiscal"><ResumenFiscalView /></PermissionGuard>} />
                                     <Route path="corte-z" element={<PermissionGuard moduleKey="corte_z"><CorteZView /></PermissionGuard>} />
                                     <Route path="metas" element={<PermissionGuard moduleKey="metas"><MetasView /></PermissionGuard>} />
+                                    <Route path="promociones" element={<PermissionGuard moduleKey="promociones"><PromocionesView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
@@ -976,13 +1003,17 @@ const ROUTE_TITLES = {
     '/entrevistas':       'Entrevistas',
     '/avisos':            'Gestión de avisos',
     '/ventas':            'Ventas',
-    '/cortes':            'Cortes de caja',
+    '/cortes':            'Efectivo',
     '/bolsas':            'Bolsas de efectivo',
-    '/caja':              'Mi caja',
+    '/caja':              'Efectivo',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
     '/clientes':          'Clientes',
     '/metas':             'Metas',
+    // Copiado LITERAL del `title` del GlassViewLayout de la vista: es lo que
+    // exige gate:rutas, y por buenos motivos — el título de la pestaña del
+    // navegador es uno de los cuatro nombres de una vista.
+    '/promociones':       'Promociones',
     '/productos':         'Productos',
     '/laboratorios':      'Laboratorios',
     '/pedidos':           'Pedidos a sucursales',

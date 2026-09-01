@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.920.0 — Promociones — la pantalla
+
+Ya se puede entrar a **Comercial → Promociones**. Tres pestañas: las promociones
+vivas con su lote, el seguimiento de una —producto por producto, sala por sala y
+persona por persona— y el histórico de las terminadas. El botón «Nueva
+promoción» arma la campaña entera: productos, presentación, lote, montos y el
+reparto entre las seis salas.
+
+El módulo hereda el slot que quedó reservado como «Bonificaciones» cuando se
+retiró Promociones el 28 de julio, y **vuelve con su nombre** — el usuario las
+llama promociones; la bonificación es lo que gana cada persona, que es otra
+cosa. La clave pasa a `promociones` para que coincida con el primer segmento de
+la ruta, que es como el portal resuelve a qué módulo pertenece una pantalla.
+
+**Lo que los gates encontraron, que era código de verdad y no formalidades:**
+
+- Escribí un `BuscadorDeProducto` propio **tapando el nombre de uno canónico que
+  ya existía** — con 150 ms de rebote medidos, piso de dos letras y la barra
+  abierta por un reporte de sala. Se usa el canónico y el mío se fue entero,
+  junto con el helper de datos que lo acompañaba.
+- Al mirar ese hallazgo apareció un defecto que ningún gate nombra: los ids ya
+  elegidos se pasaban como un `.map()` suelto, o sea **un array nuevo en cada
+  render**, y estaban en las dependencias del efecto de búsqueda: la consulta se
+  relanzaba sola sin parar.
+- Siete de copy y formato: el portal dice «aquí» y tutea, un vacío se escribe
+  «Sin ‹sustantivo›», y las cifras salen del formateador del portal y no de un
+  `toLocaleString` con el locale escrito a mano en cada archivo.
+
+Lo que la pantalla dice con cuidado: el aviso de **bonificaciones suspendidas**
+va una sola vez y arriba de todo —no puede prometer un pago que hoy no existe—,
+lo que no tiene dueño se muestra aparte con su motivo, y el reparto no deja
+guardar si no suma el lote, porque si no alguna sala vendería contra un número
+que no es suyo. Los tres estados van separados: cargando, el error —que
+distingue «tu cargo no tiene el módulo» de un fallo de consulta— y el vacío, que
+a su vez distingue «no hay» de «tu búsqueda no encontró».
+
 ## v2.919.0 — Efectivo: Mi caja y Cortes son una sola pantalla
 
 > «para mí debe ser una sola cosa, no tiene sentido 3 cosas, cortes de caja, mi

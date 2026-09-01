@@ -13,6 +13,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { electrolitFueraDeEspeciales } from '../../utils/cajasEspeciales';
 
 // Opciones de sucursal para selector de caja extra (excluye bodega)
 const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));
@@ -58,6 +59,12 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
     const cajas = useMemo(() => deriveCajas(cajaMap, items), [cajaMap, items]);
 
+    // Cuántas cajas de Electrolit quedan por preguntar ACÁ. Las que además son
+    // caja especial ya se preguntan abajo, una por una y con su etiqueta: si se
+    // preguntaran en los dos sitios, la misma caja física admite dos respuestas
+    // distintas y la base guarda las dos. Ver `electrolitFueraDeEspeciales`.
+    const electrolitAparte = electrolitFueraDeEspeciales(cajasElectrolit, cajasEspeciales);
+
     const getEst  = (num) => estados[num] ?? 'ok';
     const setEst  = (num, val) => setEstados(prev => ({ ...prev, [num]: val }));
 
@@ -67,6 +74,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const hayProblemas   = cajasDanadas.length > 0 || cajasFaltantes.length > 0;
 
     const espFaltantes = cajasEspeciales.filter(e => espEstados[e.label] === 'faltante').map(e => e.label);
+    const electrolitPendiente = electrolitAparte > 0 && electrolitFaltantes === null;
 
     const handleConfirm = () => {
         // Validar cajas extra: si no tiene rotulación, requerir número de caja
@@ -82,7 +90,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         if (draftKey) clearDraft(draftKey);
         onConfirm({
             cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
-            electrolitFaltantes:    cajasElectrolit > 0 ? electrolitFaltantes : null,
+            electrolitFaltantes:    electrolitAparte > 0 ? electrolitFaltantes : null,
             especialesLlegadas:     cajasEspeciales.length > 0
                 ? Object.fromEntries(cajasEspeciales.map(e => [e.label, espEstados[e.label] ?? 'ok']))
                 : null,
@@ -235,41 +243,57 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     </div>
                 )}
 
-                {/* Electrolit — cuántas no llegaron */}
-                {cajasElectrolit > 0 && (
+                {/* Electrolit — primero SI faltó alguna, y recién después cuántas.
+                    Acá había un contador suelto bajo el título «¿Cuántas cajas de
+                    Electrolit no llegaron?», con un «de 4» al lado y el número sin
+                    rótulo propio. Un número al lado de un total se lee como «cuántas
+                    hay»: el 1-sep-2026 Salud 1 subió el contador a 4 sobre cuatro
+                    cajas que SÍ habían llegado, y como en el mismo modal las marcó
+                    E1…E4 en OK, la base guardó las dos respuestas.
+
+                    La pregunta de sí/no va primero y no admite lectura invertida; el
+                    contador no existe hasta que alguien dijo que faltó algo, y cuando
+                    existe lleva la palabra «faltan» pegada al número. */}
+                {electrolitAparte > 0 && (
                     <div className="p-3 rounded-2xl border border-warning/30 bg-warning/10 flex flex-col gap-2.5">
                         <div className="flex items-center gap-2">
                             <Zap size={13} className="text-warning shrink-0" />
                             <span className="text-label font-semibold text-warning-text flex-1">
-                                ¿Cuántas cajas de Electrolit no llegaron?
+                                Cajas de Electrolit
                             </span>
                             <span className="text-micro font-bold text-warning uppercase tracking-wide">
-                                de {cajasElectrolit}
+                                {electrolitAparte} caja{electrolitAparte !== 1 ? 's' : ''}
                             </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                size="sm"
-                                tone="success"
-                                icon={Check}
-                                className="flex-1"
-                                onClick={() => setElectrolitFaltantes(0)}
-                            >Todas llegaron</Button>
-                            <div className="flex items-center gap-1 shrink-0">
-                                <Button variant="secondary" size="xs" disabled={(electrolitFaltantes ?? 0) <= 0} onClick={() => setElectrolitFaltantes(f => Math.max(0, (f ?? 0) - 1))}>−</Button>
-                                <span className={`w-8 text-center text-subtitle font-black tabular-nums ${
-                                    electrolitFaltantes === null ? 'text-content-3'
-                                    : electrolitFaltantes === 0  ? 'text-success'
-                                    :                              'text-danger-text'}`}>
-                                    {electrolitFaltantes ?? '—'}
-                                </span>
-                                <Button variant="secondary" size="xs" disabled={(electrolitFaltantes ?? 0) >= cajasElectrolit} onClick={() => setElectrolitFaltantes(f => Math.min(cajasElectrolit, (f ?? 0) + 1))}>+</Button>
+                        <SegmentedControl
+                            layout="block"
+                            label="¿Llegaron las cajas de Electrolit?"
+                            value={electrolitFaltantes === null ? null : electrolitFaltantes === 0 ? 'todas' : 'faltan'}
+                            onChange={v => setElectrolitFaltantes(v === 'todas' ? 0 : 1)}
+                            options={[
+                                { value: 'todas',  label: 'Todas llegaron', icon: Check,     tone: 'success' },
+                                { value: 'faltan', label: 'Faltó alguna',   icon: PackageX,  tone: 'danger'  },
+                            ]}
+                        />
+                        {(electrolitFaltantes ?? 0) > 0 && (
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                                <span className="text-caption text-content-2 flex-1 basis-32">¿Cuántas no llegaron?</span>
+                                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                                    <Button variant="secondary" size="xs" disabled={electrolitFaltantes <= 1} onClick={() => setElectrolitFaltantes(f => Math.max(1, f - 1))}>−</Button>
+                                    <span className="w-8 text-center text-subtitle font-black tabular-nums text-danger-text">
+                                        {electrolitFaltantes}
+                                    </span>
+                                    <Button variant="secondary" size="xs" disabled={electrolitFaltantes >= electrolitAparte} onClick={() => setElectrolitFaltantes(f => Math.min(electrolitAparte, f + 1))}>+</Button>
+                                    <span className="text-caption text-danger-text font-semibold">
+                                        faltan de {electrolitAparte}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                         {(electrolitFaltantes ?? 0) > 0 && (
                             <p className="inline-flex items-start gap-1 text-caption text-danger-text px-0.5">
                                 <AlertTriangle size={11} className="shrink-0 mt-px" aria-hidden="true" />
-                                Se notificará a bodega sobre las {electrolitFaltantes} caja{electrolitFaltantes > 1 ? 's' : ''} faltantes.
+                                Se notificará a bodega sobre {electrolitFaltantes === 1 ? 'la caja que no llegó' : `las ${electrolitFaltantes} cajas que no llegaron`}.
                             </p>
                         )}
                     </div>
@@ -413,10 +437,18 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     renglón. En escritorio nada cambia: los dos entran. */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
-                    <Button loading={submitting} onClick={handleConfirm}>
-                        {Object.keys(estados).length === 0 && cajas.length > 0
-                            ? 'Confirmar que todas llegaron'
-                            : 'Confirmar llegada'}</Button>
+                    {/* El Electrolit se responde, no se omite. Sin responder, el
+                        contador viajaba en `null` y la llegada quedaba sin decir
+                        nada de las cajas más caras del despacho — un hueco que se
+                        lee igual que un «todas llegaron». Un toque cuesta menos
+                        que reconstruir después qué pasó. El rótulo dice POR QUÉ
+                        no se puede apretar, como en el modal de reenvío. */}
+                    <Button loading={submitting} disabled={electrolitPendiente} onClick={handleConfirm}>
+                        {electrolitPendiente
+                            ? 'Respondé el Electrolit primero'
+                            : Object.keys(estados).length === 0 && cajas.length > 0
+                                ? 'Confirmar que todas llegaron'
+                                : 'Confirmar llegada'}</Button>
                 </div>
             </div>
         </PedidoModal>

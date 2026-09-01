@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.905.1 — Electrolit: la misma caja no se pregunta dos veces, y «sin novedad» cuenta lo que faltó
+
+Salud 1 recibió el pedido `10-310826-3` y la tarjeta quedó diciendo dos cosas a
+la vez: **«Llegada confirmada — sin novedad»** arriba y **«4 Electrolit
+faltantes»** dos renglones más abajo. Las cuatro cajas habían llegado.
+
+**La pantalla de llegada preguntaba dos veces por las mismas cuatro cajas.** Un
+Electrolit ×12 cae en las dos cuentas —`cajas_electrolit` porque despacha en
+CAJA, `cajas_especiales` porque está marcado como especial—, así que el modal
+mostraba un contador «¿Cuántas cajas de Electrolit no llegaron?» **y** los
+interruptores E1…E4 con su OK/Falta. Se marcó E1…E4 en OK —la respuesta
+correcta— y el contador quedó en 4. La base guardó las dos respuestas
+contradictorias, los cuatro renglones se bloquearon como no llegados y bodega
+recibió un aviso de faltante que no existía. Hoy son 151 de los 367 renglones de
+Electrolit por caja los que están en las dos listas, o sea que no era de este
+pedido: era de todos.
+
+El contador ahora sólo cubre las cajas de Electrolit que **no** viajan ya como
+caja especial (`electrolitFueraDeEspeciales`), y la resta se hace al LEER para
+que la cuenta salga igual en los pedidos que ya existen y en los nuevos. En el
+pedido del ejemplo eso deja una sola pregunta, la de las E1…E4.
+
+**Y donde el contador sigue existiendo, ya no se puede leer al revés.** Era un
+número suelto con un «de 4» al lado, y un número junto a un total se lee como
+«cuántas hay». Ahora la pregunta es primero sí/no —«Todas llegaron» / «Faltó
+alguna»—, el contador no aparece hasta que alguien dijo que faltó algo, y el
+número lleva la palabra «faltan» pegada. Sin responder no se puede confirmar la
+llegada: el botón dice por qué, igual que en el modal de reenvío.
+
+**El tipo de llegada cuenta lo que faltó, no sólo las cajas numeradas.** Estaba
+escrito mirando `cajasFaltantes`/`cajasDanadas` a secas, así que un despacho
+donde lo único que no llegó fue Electrolit —o una caja especial— salía
+`completa`. El faltante era real (renglones bloqueados, aviso a bodega) y la
+única línea que alguien lee decía lo contrario. Mismo agregado en
+`hasObservacion`: un pedido así se ocultaba solo del filtro que existe para
+encontrarlo.
+
+El aviso a bodega de cajas físicas se dejó atado a las cajas **numeradas** y no
+al tipo: ahora que el tipo también cuenta el Electrolit, dispararlo por ahí
+armaba el mensaje con dos listas vacías («Salud 1 reporta: .»). El Electrolit y
+las especiales ya tenían su propio aviso.
+
+**La tarjeta dejó de contar dos veces.** Mostraba «4 Electrolit» y «4 cajas
+especiales» para las mismas cuatro cajas.
+
+Corregido en producción el pedido `10-310826-3-S1`: `electrolit_ok = true`,
+`electrolit_faltantes = 0` y los cuatro renglones (Fresa, Fresa Kiwi, Mora Azul,
+Uva) desbloqueados para contarse. Queda anotado en la bitácora como
+`PEDIDO_ELECTROLIT_CORREGIDO`. Era la única fila de la base con esta
+contradicción.
+
 ## v2.905.0 — MIN·MAX: lo que falta no pierde su máximo, y una venta de mayoreo no define el stock de sala
 
 Migraciones `20260901164324` y `20260901165102`. Los hallazgos 2 y 5 de la

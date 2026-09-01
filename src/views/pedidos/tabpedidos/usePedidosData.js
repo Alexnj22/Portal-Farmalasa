@@ -803,15 +803,30 @@ export function usePedidosData({ searchTerm = '' }) {
         setBusyAction('llegada');
         try {
             // 1. Determinar tipo global
-            const hasFalta  = cajasFaltantes.length > 0;
-            const hasDanada = cajasDanadas.length > 0;
+            //
+            //    Cuenta TODO lo que no llegó, no sólo las cajas numeradas. Escrito
+            //    con `cajasFaltantes` a secas, el 1-sep-2026 Salud 1 reportó cuatro
+            //    cajas de Electrolit no recibidas y la tarjeta igual dijo «Llegada
+            //    confirmada — sin novedad»: las seis cajas con número sí habían
+            //    llegado, y el tipo no miraba nada más. El faltante existía —los
+            //    renglones quedaron bloqueados y bodega recibió el aviso—, pero la
+            //    única línea que alguien lee decía lo contrario.
+            const hasFaltaNumerada = cajasFaltantes.length > 0;
+            const hasDanada        = cajasDanadas.length > 0;
+            const hasFaltaElec     = (electrolitFaltantes ?? 0) > 0;
+            const hasFaltaEsp      = !!especialesLlegadas && Object.values(especialesLlegadas).some(v => v === 'faltante');
+            const hasFalta         = hasFaltaNumerada || hasFaltaElec || hasFaltaEsp;
             const tipo = hasFalta && hasDanada ? 'mixto'
                        : hasFalta              ? 'falta_caja'
                        : hasDanada             ? 'caja_danada'
                        :                         'completa';
 
             // 2. Marcar items de cajas faltantes como falta_caja: true
-            if (hasFalta) {
+            //    `hasFaltaNumerada` y no `hasFalta`: acá se resuelven los renglones
+            //    por número de caja. El Electrolit y las especiales tienen sus
+            //    propios pasos (2b y 2c), y entrar acá sin cajas numeradas caería
+            //    en la rama conservadora que bloquea TODO lo pendiente.
+            if (hasFaltaNumerada) {
                 const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'caja_map, pagina_items');
                 if (pssErr) throw pssErr;
                 const cajaMapDb     = pss?.caja_map    ?? {};
@@ -911,7 +926,11 @@ export function usePedidosData({ searchTerm = '' }) {
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
 
             // 5a. Notificar bodega si hay problema en cajas físicas
-            if (tipo !== 'completa') {
+            //     La condición es de las cajas NUMERADAS, no del tipo: desde que el
+            //     tipo también cuenta el Electrolit y las especiales, un faltante
+            //     de ésos entraría acá y armaría el mensaje con dos listas vacías
+            //     («Salud 1 reporta: .»). Cada uno tiene su propio aviso — 5b y 5d.
+            if (hasFaltaNumerada || hasDanada) {
                 fetchBodegaBranchId().then(({ data: b }) => {
                     if (!b?.branch_id) return;
                     const parts = [];
@@ -1645,11 +1664,18 @@ export function usePedidosData({ searchTerm = '' }) {
     // completado y se ocultaba solo: la alarma desaparecía justo cuando importa.
     // Visto en el navegador, no en el fuente; el `get_pedidos_en_curso` sí los
     // devuelve, era este filtro el que los tiraba.
+    //
+    // El Electrolit y las cajas especiales entran en la cuenta por lo mismo que
+    // entran en `llegada_tipo`: un despacho donde lo único que no llegó fueron
+    // cuatro cajas de Electrolit tiene una observación, y sin estas dos líneas se
+    // ocultaba solo del filtro que existe para encontrarlo.
     const hasObservacion = useCallback((r) =>
         r.pedido_status === 'parcial' ||
         (r.llegada_tipo && r.llegada_tipo !== 'completa') ||
         (r.falta_cajas?.length  > 0) ||
         (r.cajas_danadas?.length > 0) ||
+        (r.electrolit_ok === false) ||
+        Object.values(r.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante') ||
         ((ingresoStats[`act_${r.pedido_id}_${r.erp_sucursal_id}`]?.sin_ingresar ?? 0) > 0),
     [ingresoStats]);
 

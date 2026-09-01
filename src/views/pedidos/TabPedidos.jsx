@@ -36,6 +36,7 @@ import { usePedidosData } from './tabpedidos/usePedidosData';
 import { clickable } from '../../utils/clickable';
 import { esCargoDeSupervision } from '../../utils/decisionDiferencia';
 import { dialogoDiferido } from '../../utils/dialogoDiferido';
+import { electrolitFueraDeEspeciales } from '../../utils/cajasEspeciales';
 
 /* Los once diálogos se bajan al ABRIRLOS, no al entrar a la pestaña: abrir
  * Pedidos descargaba RecepcionModal (1,959 líneas), CrearRutaModal (812),
@@ -549,8 +550,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {row.total_cajas > 0 && (
                                             <Badge icon={Box} uppercase={false}>{row.total_cajas} caja{row.total_cajas !== 1 ? 's' : ''}</Badge>
                                         )}
-                                        {(row.cajas_electrolit ?? 0) > 0 && (
-                                            <Badge icon={Inbox} uppercase={false}>{row.cajas_electrolit} Electrolit</Badge>
+                                        {/* Sólo las que NO son además caja especial: si no,
+                                            las mismas cuatro cajas salían dos veces —«4
+                                            Electrolit» y «4 cajas especiales»— y la tarjeta
+                                            aparentaba ocho. Misma cuenta que usa el modal de
+                                            llegada, para que no vuelvan a discrepar. */}
+                                        {electrolitFueraDeEspeciales(row.cajas_electrolit, row.cajas_especiales) > 0 && (
+                                            <Badge icon={Inbox} uppercase={false}>{electrolitFueraDeEspeciales(row.cajas_electrolit, row.cajas_especiales)} Electrolit</Badge>
                                         )}
                                         {row.electrolit_ok === false && (
                                             <Badge icon={Zap} uppercase={false}>{(row.electrolit_faltantes ?? 0) > 0

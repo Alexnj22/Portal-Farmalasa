@@ -80,3 +80,32 @@ export function construirCajasEspeciales(rows) {
             product_name:   r.products?.nombre ?? '',
         })));
 }
+
+/**
+ * De las cajas de Electrolit de un despacho, cuántas NO viajan ya como caja
+ * especial — o sea, cuántas quedan por preguntar aparte.
+ *
+ * Existe porque un mismo Electrolit ×12 puede caer en las dos cuentas:
+ * `cajas_electrolit` lo cuenta por despachar en CAJA, y `cajas_especiales` lo
+ * cuenta por estar marcado `caja_especial`. Hoy 151 de los 367 renglones de
+ * Electrolit por caja son las dos cosas, así que la pantalla de llegada
+ * preguntaba **dos veces por la misma caja física**: una con un contador de
+ * «cuántas no llegaron» y otra con su etiqueta E1…En y un OK/Falta.
+ *
+ * El 1-sep-2026 eso costó el pedido 10-310826-3 de Salud 1: las cuatro cajas
+ * llegaron, se marcaron E1…E4 en OK —la respuesta correcta— y el contador quedó
+ * en 4. La base guardó las dos respuestas contradictorias, los cuatro renglones
+ * se bloquearon como no llegados y el banner igual decía «sin novedad».
+ *
+ * Se resta acá y no en el momento de finalizar a propósito: `cajas_electrolit`
+ * significa «todas las cajas de Electrolit del despacho» y así se guardó en los
+ * pedidos que ya existen. Restando al LEER, la cuenta sale igual para los
+ * viejos y para los nuevos; restando al escribir, los viejos quedarían con un
+ * número y los nuevos con otro.
+ */
+export function electrolitFueraDeEspeciales(cajasElectrolit = 0, cajasEspeciales = []) {
+    const yaPreguntadas = (cajasEspeciales ?? [])
+        .filter(e => (e?.product_name ?? '').toLowerCase().includes('electrolit'))
+        .length;
+    return Math.max(0, (cajasElectrolit ?? 0) - yaPreguntadas);
+}

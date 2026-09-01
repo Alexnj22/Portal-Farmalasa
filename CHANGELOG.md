@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.914.0 — Promociones por producto — las tablas y su bitácora
+
+Arranca el módulo de **Promociones**: la campaña por la que un laboratorio paga
+una bonificación por cada unidad vendida de ciertos productos. Es la Fase 4 del
+plan de Metas, que quedó escrita el 4 de agosto con las capturas del Excel y
+**nunca se construyó** — el plan se archivó como «cerrado» porque sus tres
+primeras fases estaban hechas, aunque su propia §10 decía que faltaban dos.
+
+Esta entrega es sólo la base de datos: siete tablas, su RLS y su bitácora. No
+hay pantalla todavía, y las bonificaciones siguen **suspendidas** — cuando la
+haya, todo se muestra como «se habría ganado».
+
+**Tres mediciones cambiaron el modelo**, y las tres corrigieron un supuesto:
+
+- **Las compras ya vienen en unidades base.** Sobre 1,265 productos, la razón
+  entre lo comprado y lo vendido-en-unidades da **1.02** (1,235 dentro de la
+  banda 0.5–2.0); contra la cantidad cruda da 2.58. Así que el lote y lo vendido
+  se comparan sin convertir nada.
+- **Pero el lote NO se puede derivar de esas compras.** Loraler se compró 11
+  veces en 5 meses, Orfenaflex 7: son compras de rutina. Deducir el lote de la
+  ventana de fechas haría que un reabastecimiento normal suba el techo y la
+  promoción **no se acabe nunca**. Por eso `lote_total` es declarado.
+- **La presentación se guarda como factor, no como rótulo.** De las 39,329
+  líneas de venta de agosto, `id_presentacion` es **NULL en el 100%**, y hay
+  **283 etiquetas distintas para sólo 29 factores** — el mismo producto se
+  factura como `CAJA 1x100` y `CAJA 1X100`. Agrupar por el texto habría partido
+  en dos una presentación que es una sola.
+
+El lote se reparte por sala y **los traslados lo mueven** al confirmarse la
+llegada, así que `promocion_reparto` guarda lo asignado original y lo vigente
+por separado: sin eso, la sala que cede producto aparece floja y la que lo
+recibe aparece pasada de su lote. El excedente —lo vendido por encima del
+lote— no se paga solo ni se niega solo: va a Supervisión, y mientras se decide
+se muestra aparte sin sumar, para que nadie vea un número que después le baja.
+
+El módulo hereda el slot de «Bonificaciones», que existía como *próximamente*
+desde que se retiró el módulo viejo de Promociones el 28 de julio. La clave
+pasa a `promociones` para que coincida con la ruta, y **se conservan los
+permisos ya repartidos**.
+
+Y una corrección sobre la marcha que vale anotar: al Gerente General se le
+intentó dar el permiso con un `INSERT … NOT EXISTS`, pero **su fila ya
+existía** —venía del slot viejo con los tres permisos en falso—, así que el
+guard hizo lo que decía y el permiso nunca se otorgó. Sin error: la migración
+devolvió éxito y el único rastro era un `can_approve` en falso que nadie iba a
+mirar hasta que un excedente se quedara sin quien lo decida. Con una fila
+preexistente, la operación correcta es `UPDATE`.
+
 ## v2.913.4 — El turno de la apertura lo dice la caja
 
 Salud 3 hizo su corte desde el portal y después **no pudo empezar el turno

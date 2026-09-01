@@ -47,7 +47,14 @@ export function datosDeCierreDeMeta(n) {
         // la metadata de un aviso ajeno, es la semilla del PIN del kiosco.
         tabla: Array.isArray(m.tabla)
             ? m.tabla.filter(f => f && Number.isFinite(Number(f.parte)))
-                     .map(f => ({ nombre: String(f.nombre || ''), parte: Number(f.parte), yo: !!f.yo }))
+                     .map(f => ({
+                         nombre: String(f.nombre || ''),
+                         parte: Number(f.parte),
+                         yo: !!f.yo,
+                         // El monto de cada vendedor viaja SÓLO en el aviso del
+                         // jefe; en el del dependiente la clave no existe.
+                         venta: f.venta == null || !Number.isFinite(Number(f.venta)) ? null : Number(f.venta),
+                     }))
             : [],
         venta:     Number.isFinite(venta)     ? venta     : null,
         meta:      Number.isFinite(meta)      ? meta      : null,
@@ -98,4 +105,22 @@ export function datosDeCierreDeEmpresa(n) {
                     }))
             : [],
     };
+}
+
+/* ── La escala del cumplimiento, decidida por el usuario ───────────────────
+ * Verde a partir de 100, naranja a partir de 95, rojo debajo. Tres tramos y no
+ * dos: entre «cumplió» y «no cumplió» hay una franja que en la práctica se
+ * trata distinto —95.0% se conversa, 89.2% se corrige—, y con dos colores esas
+ * dos salas salían pintadas igual.
+ *
+ * El color nunca va solo: el porcentaje está escrito al lado en todos los
+ * sitios donde se usa. Verde y naranja son un par que mucha gente no
+ * distingue. */
+export function tonoDeCumplimiento(pct, isDark) {
+    if (pct >= 100) return { texto: isDark ? 'text-success-text' : 'text-success',
+                             fondo: isDark ? 'bg-success-text'   : 'bg-success' };
+    if (pct >= 95)  return { texto: isDark ? 'text-warning-text' : 'text-warning',
+                             fondo: isDark ? 'bg-warning-text'   : 'bg-warning' };
+    return { texto: isDark ? 'text-danger-text' : 'text-danger',
+             fondo: isDark ? 'bg-danger-text'   : 'bg-danger' };
 }

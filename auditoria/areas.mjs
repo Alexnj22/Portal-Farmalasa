@@ -417,14 +417,19 @@ export const AREAS = [
                  // todavía no se hicieron. Ver
                  // docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md
                  'puntos_cuenta', 'puntos_lote', 'puntos_salida', 'puntos_salida_lote',
-                 'puntos_vencimiento_log'],
+                 'puntos_vencimiento_log', 'puntos_config'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync', 'sync-puntos', 'puntos-probe',
                // `puntos-vencer` la creó otra sesión el 2026-08-31 y quedó sin
                // mapear, lo que bloquea el gate —y el commit— para todo el
                // mundo. Va con sus hermanas de puntos, que es donde produce el
                // efecto. Si esa sesión la ubica en otro lado, gana su decisión.
-               'puntos-consulta', 'puntos-vencer'],
+               'puntos-consulta', 'puntos-vencer',
+               // Escritas el 2026-09-01 y NO desplegadas: producción sigue
+               // corriendo el circuito viejo. `puntos-motor` es el futuro cron
+               // (acumular + canjes + anulaciones) y `puntos-traer-saldos` el
+               // puente de una sola vez para la migración.
+               'puntos-motor', 'puntos-traer-saldos'],
         crons: ['sync-dte-inv-all-1min', 'check-sales-alerts-5min', 'check-sales-reconciliation-daily',
                 'close-ventas-month', 'refresh-sales-daily-stats', 'refresh-sales-daily-stats-full',
                 'refresh-product-sales-rollup-daily', 'refresh-product-sales-monthly-agg',

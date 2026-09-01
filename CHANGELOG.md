@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.900.0 — El ranking lo ve toda la sala, y la escala tiene tres colores
+
+Cuatro correcciones del usuario sobre los avisos del día 1.
+
+**El ranking lo ve toda la sala.** Antes el listado entero era del jefe y el
+dependiente sólo sabía su propio puesto. La línea que separa a los dos no es
+QUIÉN aparece —eso lo ven todos— sino si al lado de cada quien va un monto: la
+venta de cada vendedor viaja sólo con `dash_meta_sala_vista_completa`, y en el
+aviso del dependiente esa clave ni siquiera existe.
+
+**Quien está bajo el promedio de su sala, en rojo.** Es la misma regla que el
+ranking del Inicio usa desde el 2026-08-05. No marca al que vende poco: marca al
+que vende menos que el resto de su propia sala, que es la comparación que la
+sala hace.
+
+**Tres colores y no dos** (verde ≥ 100, naranja ≥ 95, rojo debajo), en el anillo
+y en cada barra. Entre «cumplió» y «no cumplió» hay una franja que en la
+práctica se trata distinto —95.0% se conversa, 89.2% se corrige— y con dos
+colores esas dos salas salían pintadas igual. El color nunca va solo: el
+porcentaje está escrito al lado en todos los sitios donde se usa, porque verde y
+naranja son un par que mucha gente no distingue.
+
+**Y el aviso de administración habla de la META**, no de «la empresa»: lo que
+cerró en 96.4% es la meta.
+
+Migración `20260901155114`. La escala vive en una sola función
+(`tonoDeCumplimiento`) y no en cada tarjeta — el día que los cortes se muevan,
+se mueven en un solo sitio.
+
 ## v2.899.0 — El ranking es de vendedores, y administración recibe el cierre de la empresa
 
 Dos correcciones del usuario sobre el aviso del día 1, la primera de fondo:

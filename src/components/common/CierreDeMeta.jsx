@@ -2,6 +2,7 @@ import React from 'react';
 import { Crown, Medal } from 'lucide-react';
 import { formatMoney } from '../../utils/formatNumber';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { tonoDeCumplimiento } from '../../utils/cierreDeMeta';
 import AvatarConEstado from './AvatarConEstado';
 
 /* El cierre de mes de una sala, dentro de la campana.
@@ -42,10 +43,8 @@ const VUELTA = 2 * Math.PI * R;    // 119.38
  * El color dice el estado pero nunca solo, por lo mismo: ámbar y verde son
  * justo el par que más gente confunde.
  */
-export function AnilloDeMeta({ pct, cumplida, isDark }) {
-    const tono = cumplida
-        ? (isDark ? 'text-success-text' : 'text-success')
-        : (isDark ? 'text-warning-text' : 'text-warning');
+export function AnilloDeMeta({ pct, isDark }) {
+    const tono = tonoDeCumplimiento(pct, isDark).texto;
     const avance = Math.max(0, Math.min(pct, 100)) / 100;
     const entero = Math.round(pct);
 
@@ -141,30 +140,46 @@ function PuestoDelVendedor({ datos, claseTenue, isDark }) {
  * arriba haría ver enorme una diferencia de dos décimas — que es justo la que
  * hay entre el primero y el segundo de La Popular (20.7% y 20.4%).
  */
-function TablaDeVendedores({ tabla, claseTenue, isDark }) {
+function TablaDeVendedores({ tabla, promedio, claseTenue, isDark }) {
     if (!tabla?.length) return null;
     const tope = Math.max(...tabla.map(f => f.parte), 1);
+    const rojo = isDark ? 'text-danger-text' : 'text-danger';
 
     return (
         <ul className="flex flex-col gap-1">
-            {tabla.map(({ nombre, parte, yo }, i) => (
-                <li key={`${nombre}-${i}`} className="flex items-center gap-2 min-w-0">
-                    <span className={`text-caption truncate w-24 flex-shrink-0
-                        ${yo ? 'font-black' : `font-semibold ${claseTenue}`}`}>
-                        {shortEmployeeName(nombre)}
-                    </span>
-                    <span className="flex-1 h-1.5 rounded-full bg-border-card overflow-hidden">
-                        <span
-                            className={`block h-full rounded-full ${isDark ? 'bg-chart-1' : 'bg-chart-1-solid'} ${yo ? '' : 'opacity-45'}`}
-                            style={{ width: `${(parte / tope) * 100}%` }}
-                        />
-                    </span>
-                    <span className={`text-caption tabular-nums w-10 text-right flex-shrink-0
-                        ${yo ? 'font-black' : `font-semibold ${claseTenue}`}`}>
-                        {parte.toFixed(1)}%
-                    </span>
-                </li>
-            ))}
+            {tabla.map(({ nombre, parte, yo, venta }, i) => {
+                // Bajo el promedio de la sala, en rojo — la misma regla que ya
+                // usa el ranking del Inicio desde el 2026-08-05. No es un
+                // reproche por vender poco: es por vender menos que el resto de
+                // la misma sala, que es la comparación que la sala hace.
+                const bajo = promedio != null && parte < promedio;
+                return (
+                    <li key={`${nombre}-${i}`} className="flex items-center gap-2 min-w-0">
+                        <span className={`text-caption truncate flex-1 min-w-0
+                            ${bajo ? rojo : ''} ${yo ? 'font-black' : `font-semibold ${bajo ? '' : claseTenue}`}`}>
+                            {shortEmployeeName(nombre)}
+                        </span>
+                        <span className="w-16 h-1.5 rounded-full bg-border-card overflow-hidden flex-shrink-0">
+                            <span
+                                className={`block h-full rounded-full ${bajo ? (isDark ? 'bg-danger-text' : 'bg-danger')
+                                                                              : (isDark ? 'bg-chart-1' : 'bg-chart-1-solid')}
+                                    ${yo ? '' : 'opacity-60'}`}
+                                style={{ width: `${(parte / tope) * 100}%` }}
+                            />
+                        </span>
+                        {venta != null && (
+                            <span className={`text-caption tabular-nums w-16 text-right flex-shrink-0
+                                ${bajo ? rojo : ''} ${yo ? 'font-black' : `font-semibold ${bajo ? '' : claseTenue}`}`}>
+                                {formatMoney(venta)}
+                            </span>
+                        )}
+                        <span className={`text-caption tabular-nums w-10 text-right flex-shrink-0
+                            ${bajo ? rojo : ''} ${yo ? 'font-black' : `font-semibold ${bajo ? '' : claseTenue}`}`}>
+                            {parte.toFixed(1)}%
+                        </span>
+                    </li>
+                );
+            })}
         </ul>
     );
 }
@@ -201,7 +216,7 @@ export function CuerpoDeCierreDeMeta({ datos, claseTenue, isDark }) {
             <PuestoDelVendedor datos={datos} claseTenue={claseTenue} isDark={isDark} />
 
             {tabla?.length > 0 && (
-                <TablaDeVendedores tabla={tabla} claseTenue={claseTenue} isDark={isDark} />
+                <TablaDeVendedores tabla={tabla} promedio={datos.promedio} claseTenue={claseTenue} isDark={isDark} />
             )}
 
             {venta != null && metaNueva != null && (
@@ -302,7 +317,7 @@ export function CuerpoDeCierreDeEmpresa({ datos, claseTenue, isDark, buscarEmple
                                     style={{ width: `${Math.min(pct, 130) / 130 * 100}%` }}
                                 />
                             </span>
-                            <span className="text-caption font-black tabular-nums w-12 text-right flex-shrink-0">
+                            <span className={`text-caption font-black tabular-nums w-12 text-right flex-shrink-0 ${tonoDeCumplimiento(pct, isDark).texto}`}>
                                 {pct.toFixed(1)}%
                             </span>
                         </li>

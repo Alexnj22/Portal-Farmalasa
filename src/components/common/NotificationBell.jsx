@@ -1030,7 +1030,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                 ${interactiva ? 'cursor-pointer' : 'cursor-default'}`}
                                                         >
                                                             {conAnillo ? (
-                                                                <AnilloDeMeta pct={conAnillo.pct} cumplida={conAnillo.cumplida} isDark={isDark} />
+                                                                <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                                                             ) : (
                                                                 <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
                                                                     <Icon size={16} strokeWidth={2} />

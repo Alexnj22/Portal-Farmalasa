@@ -76,6 +76,47 @@ Deno.serve(async (req) => {
       const { data: cli, error } = await admin
         .from("customers").select("id, name, dui").eq("id", customerId).maybeSingle();
       if (error) throw new Error(`customers: ${error.message}`);
+
+      // ── ¿Quién contesta? ────────────────────────────────────────────────
+      // Una FILA lo decide (`puntos_config.fuente`), no un despliegue. Y va
+      // ANTES del chequeo del DUI a propósito: el puente con la base vieja
+      // necesita documento, el libro mayor del portal no —la ficha ya ES la
+      // cuenta—. Ponerlo después dejaría sin saldo a las 11,415 fichas sin DUI
+      // aun después de mudarnos, por una condición que ya no aplica.
+      const { data: cfgP, error: eCfg } = await admin
+        .from("puntos_config").select("fuente").maybeSingle();
+      // Un fallo acá no puede tumbar la pantalla —se sigue por la base vieja,
+      // que es el modo seguro— pero se anota: en silencio, el interruptor se
+      // vería APAGADO estando encendido.
+      if (eCfg) console.error("no se pudo leer puntos_config:", eCfg.message);
+
+      if (cfgP?.fuente === "portal") {
+        const { data: est, error: eEst } = await admin.rpc("puntos_estado_cuenta", {
+          p_customer_id: customerId,
+        });
+        if (eEst) throw new Error(`puntos_estado_cuenta: ${eEst.message}`);
+
+        const movs = (est?.movimientos ?? []) as any[];
+        return json({
+          ok: true,
+          cliente: {
+            id_puntos: null, nombre: cli?.name ?? null,
+            saldo:      Number(est?.saldo ?? 0),
+            acumulados: Number(est?.ganados ?? 0),
+            canjeados:  Number(est?.usados ?? 0),
+            n_compras:  movs.filter((m) => m.tipo === "compra").length,
+            n_canjes:   movs.filter((m) => m.tipo === "canje").length,
+          },
+          // Acá la lista viene entera: el libro es de esta base y no hay 200
+          // movimientos de tope como del otro lado.
+          hay_mas: false,
+          movimientos: movs.map((m) => ({
+            tipo: m.tipo === "compra" ? "acumulacion" : m.tipo,
+            fecha: m.fecha, puntos: Number(m.puntos),
+            documento: m.motivo ?? null, sala: m.sucursal ?? null,
+          })),
+        });
+      }
       // Sin DUI no hay puente posible: el otro sistema identifica por documento,
       // no por nombre. Se devuelve el motivo para que la pantalla lo DIGA en vez
       // de mostrar un vacío que se lee como «no tiene puntos».

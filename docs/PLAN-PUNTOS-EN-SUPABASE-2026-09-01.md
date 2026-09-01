@@ -601,20 +601,53 @@ Y una prueba que salió gratis: una de las corridas se cortó por tiempo a mitad
 de camino y **las tablas quedaron en cero**. El rollback no es una promesa del
 diseño, se vio funcionar.
 
+### Construido el 2026-09-01, y sin desplegar
+
+| pieza | qué es | estado |
+|---|---|---|
+| `puntos_config` | **el interruptor**: `fuente`, `acumulacion_activa`, `minimo_canje` | en prod, **apagado** |
+| `puntos_barrer_canjes` · `puntos_barrer_anulaciones` | los dos barridos sobre las ventas | en prod, inertes |
+| `puntos_migrar` **corregida** | liga por **DUI**, no por `erp_id` | en prod |
+| `supabase/functions/puntos-motor` | el futuro cron: acumular + canjes + anulaciones + avisos | **escrita, NO desplegada** |
+| `supabase/functions/puntos-traer-saldos` | el puente de una sola vez con MySQL | **escrita, NO desplegada** |
+| `mis-puntos` y `puntos-consulta` | leen el libro mayor cuando `fuente = 'portal'` | **escritas, NO desplegadas** |
+
+**`puntos_migrar` estaba mal y lo delató leer el código que ya resolvía el
+puente.** Ligaba por `erp_id`, y la base de puntos **no tiene el número del
+ERP**: identifica por documento. Medido sobre las 28,111 fichas al corregirlo —
+16,696 con DUI usable, **11,415 sin DUI** (a ésas no se les puede migrar nada) y
+**100 DUI repetidos en 203 fichas**, donde la función **no elige: informa**.
+Elegir mal le pone el saldo de una persona a otra, y eso no se deshace mirando.
+
+**Dos interruptores, y hacen falta los dos.** `puntos-motor` no escribe a menos
+que exista un cron que la llame **y** `acumulacion_activa` esté en `true`. Con la
+bandera apagada la corrida se hace igual pero **simulada**: informa exactamente
+lo que haría. Así el cron se puede crear y observar días antes de encender nada.
+
+**El orden dentro del motor importa:** acumular va ANTES que los canjes. Al
+revés, quien compra y canjea el mismo día no tendría todavía los puntos de esa
+compra y el canje saldría «sin saldo suficiente» — un aviso falso a la sala por
+un problema de orden, que es la clase de alerta que enseña a ignorarlas.
+
+**El cambio de fuente es una FILA, no un despliegue.** `mis-puntos` y
+`puntos-consulta` preguntan `puntos_config.fuente`; si no existe o falla, siguen
+por MySQL. En `puntos-consulta` esa rama va **antes** del chequeo del DUI a
+propósito: el puente viejo necesita documento, el libro mayor no —la ficha ya ES
+la cuenta—, y ponerlo después dejaría sin saldo a las 11,415 fichas sin DUI aun
+después de mudarnos.
+
 ### Lo que falta para encender
 
-1. **El puente que trae los saldos.** Una edge function que lea `Clientes` de
-   MySQL y llame a `puntos_migrar`. No se puede hacer desde fuera del proyecto:
-   sólo las edge functions alcanzan esa base.
-2. **El cron de acumulación.** Llamar a `puntos_acumular(..., p_simular => false)`.
-   **No existe y no se crea hasta que se pida.**
-3. **El detector de canjes y anulaciones**, enganchado a las ventas nuevas.
-4. **El frente**: `/mis-puntos` y el panel de la ficha leen MySQL hoy; tienen que
-   pasar a `puntos_estado_cuenta`. **Va al final**, después de migrar: apuntarlo
-   antes le mostraría cero puntos a todo el mundo.
-5. **El aviso** a sala y supervisor cuando un canje no alcanza. La función ya
-   devuelve `avisar` y `aviso` armados; falta quien los mande — una función de
-   Postgres no manda notificaciones.
+1. **Desplegar las cuatro edge functions.** `puntos-motor` y
+   `puntos-traer-saldos` son nuevas; `mis-puntos` y `puntos-consulta` van con su
+   rama nueva. Desplegarlas **no enciende nada** —la bandera manda—, pero el CLI
+   se traga el `.env` del repo: `mv .env .env.bak` primero.
+2. **Correr `puntos-traer-saldos` en simulado** y mirar los problemas: cuántas
+   cuentas no encuentran ficha y cuántos DUI están repetidos.
+3. **Correr la migración de verdad**, y cuadrar saldo contra saldo.
+4. **Crear el cron** que llama a `puntos-motor`.
+5. **Encender la bandera**: `acumulacion_activa = true`, y después
+   `fuente = 'portal'`.
 6. **Los 6 casos de catálogo** de §7, sin abrir.
 7. **La comparación sobre el mes anterior al corte**, no sólo la semana de julio.
 

@@ -120,6 +120,60 @@ Deno.serve(async (req) => {
       { p_ip: ip, p_huella_dui: h, p_acerto: true });
     if (eAcierto) console.error("no se pudo anotar el acierto:", eAcierto.message);
 
+    // ── ¿Quién contesta el saldo? ─────────────────────────────────────────
+    // Una FILA lo decide (`puntos_config.fuente`), no un despliegue: el día del
+    // corte se cambia un valor y esta pantalla pasa a leer el libro mayor del
+    // portal. Y si la fila no existe o la consulta falla, se sigue por MySQL —
+    // el modo seguro es el que ya venía funcionando.
+    const { data: cfgP, error: eCfg } = await admin
+      .from("puntos_config").select("fuente").maybeSingle();
+    // El error NO corta la consulta —quien preguntó tiene derecho a su saldo—
+    // pero tampoco se descarta: si esta lectura falla en silencio, el
+    // interruptor se ve APAGADO estando encendido y la pantalla sigue leyendo
+    // la base vieja para siempre sin que nadie entienda por qué.
+    if (eCfg) console.error("no se pudo leer puntos_config:", eCfg.message);
+
+    if (cfgP?.fuente === "portal") {
+      const { data: est, error: eEst } = await admin.rpc("puntos_estado_cuenta", {
+        p_customer_id: cli.id,
+      });
+      if (eEst) return json({ error: "no disponible" }, 503);
+
+      const saldoP = Number(est?.saldo ?? 0);
+      const { data: salasP, error: eSalas } = await admin
+        .from("branches").select("codigo_puntos, name");
+      // Sin el Map, los movimientos saldrían con el código de sala en vez del
+      // nombre. No es para tanto como para negar el saldo, pero se anota.
+      if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
+      const nombrePorCodigo = new Map(
+        (salasP ?? []).map((b: any) => [String(b.codigo_puntos), String(b.name)]),
+      );
+
+      return json({
+        ok: true,
+        nombre: cli.name,
+        saldo: saldoP,
+        // Los tres próximos, igual que del otro lado. Acá NO hace falta
+        // reconstruir los grupos ni comprobar que cuadren: el libro los tiene
+        // fechados uno por uno, que es justo para lo que se hizo así.
+        vencimientos: (est?.vencimientos ?? [])
+          .map((v: any) => ({ vence: v.vence_el, puntos: Number(v.puntos) }))
+          .slice(0, 3),
+        equivale: Math.round(saldoP) / 100,
+        acumulados: Number(est?.ganados ?? 0),
+        canjeados: Number(est?.usados ?? 0),
+        movimientos: (est?.movimientos ?? []).map((m: any) => ({
+          // Del otro lado sólo existen «compra» y «canje». Acá hay dos tipos
+          // más —vencimiento y anulación— y se dicen: un saldo que baja sin
+          // que la lista lo explique es lo que hace que alguien reclame.
+          tipo: m.tipo,
+          fecha: m.fecha,
+          puntos: Number(m.puntos),
+          sala: nombrePorCodigo.get(String(m.sucursal ?? "")) ?? m.sucursal,
+        })),
+      });
+    }
+
     const mysql = await import("npm:mysql2@3.11.0/promise");
     conn = await mysql.createConnection(cfg);
 

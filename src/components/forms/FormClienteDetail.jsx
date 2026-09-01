@@ -12,6 +12,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
 import { LoadingState } from '../common/StateViews';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
 import {
@@ -206,8 +207,11 @@ function PanelActividad({ actividad, facturas, bitacora }) {
  * que el código sea de siete caracteres y no de una docena.
  */
 function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
-    const addToast = useToastStore(s => s.addToast);
-    const empleado = useStaff(s => s.currentUser);
+    // `showToast(titulo, mensaje, tipo)` — así lo expone el store, y así lo usa
+    // el resto de este archivo. `addToast` no existe.
+    const aviso = (titulo, mensaje, tipo) =>
+        useToastStore.getState().showToast(titulo, mensaje, tipo);
+    const { user } = useAuth();
     const [estado, setEstado] = useState(null);
     const [codigo, setCodigo] = useState(null);
     const [ocupado, setOcupado] = useState(false);
@@ -223,9 +227,11 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
     const conError = (accion) => async (fn) => {
         setOcupado(true);
         try { await fn(); } catch (e) {
-            addToast(e?.message === 'FORBIDDEN'
-                ? `No tienes permiso para ${accion}.`
-                : `No se pudo ${accion}. Intenta de nuevo.`, 'error');
+            aviso('No se pudo',
+                e?.message === 'FORBIDDEN'
+                    ? `No tienes permiso para ${accion}.`
+                    : `No se pudo ${accion}. ${e?.message ?? 'Intenta de nuevo.'}`,
+                'error');
         } finally { setOcupado(false); }
     };
 
@@ -237,20 +243,25 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
         const r = await emitirCodigoAcceso(customerId);
         setCodigo(r?.codigo ?? null);
         setEstado(await estadoCodigoAcceso(customerId));
-        addToast(r?.veces_emitido > 1
-            ? 'Código nuevo. El anterior dejó de servir.'
-            : 'Código generado.', 'success');
+        aviso(r?.veces_emitido > 1 ? 'Código nuevo' : 'Código generado',
+            r?.veces_emitido > 1
+                ? 'El anterior dejó de servir en este momento.'
+                : 'Ya se puede imprimir y entregar.',
+            'success');
     });
 
     // El import es diferido: la ticketera y su maquetación pesan, y esta ficha
     // se abre muchas más veces de las que alguien imprime un papel.
     const imprimir = () => conError('imprimir el papel')(async () => {
         const valor = codigo ?? await verCodigoAcceso(customerId);
-        if (!valor) { addToast('Este cliente todavía no tiene código.', 'error'); return; }
+        if (!valor) { aviso('Sin código', 'Este cliente todavía no tiene uno. Genéralo primero.', 'error'); return; }
         const { imprimirTicketDeCodigo } = await import('../../utils/puntosCodigoTicket');
+        // `sala: null` a propósito: sale por la computadora donde se está
+        // atendiendo, que es donde está parado el cliente esperando el papel.
+        // Y ése es el camino en el que el QR viaja como URL — el probado.
         await imprimirTicketDeCodigo(
-            { nombre, codigo: valor, emitidoPor: empleado?.name ?? '' },
-            { sala: empleado?.branch_id ?? null },
+            { nombre, codigo: valor, emitidoPor: user?.name || user?.email || '' },
+            { sala: null },
         );
     });
 

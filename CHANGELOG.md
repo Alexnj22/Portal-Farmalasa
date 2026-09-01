@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.911.3 — El botón de generar el código, arreglado
+
+`TypeError: m is not a function` al apretar «Generar». Lo encontró el usuario, y
+eran **dos APIs que me inventé**:
+
+- `useToastStore(s => s.addToast)` — el store expone
+  **`showToast(titulo, mensaje, tipo)`**, y este mismo archivo ya lo usaba así
+  **doce líneas más abajo**, tres veces.
+- `useStaff(s => s.currentUser)` — la sesión no vive en `staffStore` (ése tiene
+  `employees`, `branches`, `shifts`); vive en **`useAuth()`**.
+
+**Un selector de Zustand sobre una clave que no existe devuelve `undefined` sin
+quejarse.** No falla la compilación, no falla el lint, el componente monta
+perfecto — y el error aparece recién al apretar el botón, minificado y sin
+nombre útil. En producción.
+
+De paso el aviso de error ahora **muestra el mensaje real** en vez de un
+«intenta de nuevo» genérico: si la próxima falla es del servidor, se va a poder
+leer.
+
+Y el papel sale con `sala: null`, o sea por la computadora donde se está
+atendiendo — que es donde está parado el cliente esperándolo, y además es el
+camino en el que el QR viaja como URL, el único probado.
+
 ## v2.911.2 — Tres retoques del reglamento
 
 Correcciones de redacción del usuario, todas en el texto del reglamento:

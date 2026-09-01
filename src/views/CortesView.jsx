@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -204,7 +205,27 @@ const CortesView = () => {
     const [estado, setEstado] = useState('TODOS');
     const [diferencia, setDiferencia] = useState('TODAS');
     const [busqueda, setBusqueda] = useState('');
-    const [sala, setSala] = useState('');
+    /* La sucursal vive en la DIRECCIÓN y la comparten las tres pestañas.
+     *
+     * Pedido del usuario (1-sep): «si tengo seleccionada la sucursal espero que
+     * al ir a cortes o movimientos siga el filtro activo». Con la sala en
+     * `useState` de esta vista y en `?sala=` dentro de «Hoy» eran DOS
+     * selecciones con el mismo nombre: elegir Salud 3 y cambiar de pestaña
+     * devolvía a «todas», y nada lo avisaba.
+     *
+     * Es además el mismo parámetro que ya usaba `MiCajaView`, así que un enlace
+     * a `/caja?sala=27` abre las tres pestañas en esa sala. */
+    const [params, setParams] = useSearchParams();
+    const sala = params.get('sala') || '';
+    const setSala = useCallback((v) => {
+        setParams((p) => {
+            if (v) p.set('sala', String(v)); else p.delete('sala');
+            return p;
+        // REEMPLAZA, no empuja: cambiar de sucursal recorta la vista, no navega
+        // a otro lado, y apilarlo obliga a apretar «atrás» una vez por sala
+        // mirada para salir de la pantalla.
+        }, { replace: true });
+    }, [setParams]);
 
     const [cortes, setCortes] = useState(VACIO);
     const [personas, setPersonas] = useState(() => new Map());
@@ -544,7 +565,13 @@ const CortesView = () => {
     );
 
     return (
-        <GlassViewLayout icon={Wallet} title="Efectivo" filtersContent={filtersContent}>
+        <GlassViewLayout icon={Wallet}
+            /* La sala va en el TÍTULO y no en un rótulo dentro del cuerpo: ahí
+               quedaba debajo del carril y se leía tapado. Y hace falta —operar
+               la caja equivocada no se deshace—, porque con una sola sucursal
+               la ranura de la píldora ni siquiera se dibuja. */
+            title={`Efectivo${nombreSala[sala] ? ` · ${nombreSala[sala]}` : ''}`}
+            filtersContent={filtersContent}>
             {/* «Hoy» trae su propio cuerpo entero —carril, píldora con las
                 acciones, paneles y diálogos—, así que se dibuja SOLA y no
                 dentro del andamio de abajo, que es el de las dos listas. */}

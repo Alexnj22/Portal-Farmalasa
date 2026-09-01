@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.921.1 — Efectivo: las tarjetas dicen si todo está bien, y la sucursal no se pierde
+
+Tres cosas reportadas al ver la pantalla en vivo (usuario, 1-sep).
+
+**«Hay un texto que queda bajo las cards.»** El rótulo «Caja de Salud 3» que
+puse dentro del cuerpo quedaba debajo del carril y se leía tapado. Se fue: la
+sala va en el **título de la vista** —«Efectivo · Salud 3»—, que es donde ya
+vivía antes de la unificación. Y hace falta, porque con una sola sucursal la
+ranura de la píldora ni siquiera se dibuja.
+
+**«Hay mucha información ahí. Lo que interesa más que todo ver es que todo esté
+bien: la caja, quién abrió, quién hizo el corte y confirmó.»** Las cuatro
+tarjetas eran «En la caja / Abierta / Por anotar / Anotado hoy» —dos de ellas
+trabajo por hacer, no estado— y debajo el panel repetía «Caja · Abierta desde ·
+La abrió · Monto de apertura», o sea lo mismo tres centímetros más abajo. Ahora
+son las cuatro preguntas de «¿está todo bien?», una por tarjeta:
+
+| | contesta |
+|---|---|
+| **En la caja** | cuánto espera el sistema adentro ahora |
+| **Abierta** | desde qué hora, y quién la abrió |
+| **Último corte** | a qué hora, y quién lo hizo |
+| **Confirmado** | si alguien lo revisó, y quién |
+
+La fila duplicada del panel se fue; lo único que no repetía —con cuánto abrió la
+caja— bajó al pie del desglose de ventas, que es donde es parte de la cuenta.
+
+Y los nombres van **cortos**: la caja escribe «RODRIGO EDUARDO MARQUEZ» y en una
+tarjeta eso se cortaba a «RODRIGO EDUARDO M…» — el apellido, que es lo que
+distingue a dos Rodrigos, era justo lo que se perdía. Primer nombre y primer
+apellido.
+
+Las dos tarjetas nuevas necesitan `cortes_caja`, y **sin ese permiso dicen «—» y
+no «sin cortar»**: la policy devuelve cero filas sin error, así que «no hubo
+ningún corte» y «no los puedo ver» se leerían igual.
+
+**«Si tengo seleccionada la sucursal espero que al ir a cortes o movimientos
+siga el filtro activo.»** No seguía: «Hoy» la guardaba en `?sala=` y las otras
+dos en un `useState` de la vista — dos selecciones con el mismo nombre. Elegir
+Salud 3 y cambiar de pestaña devolvía a «todas», sin avisar. Ahora la sucursal
+vive en la dirección y la comparten las tres, así que además `/caja?sala=27`
+abre cualquier pestaña en esa sala.
+
 ## v2.921.0 — El papel sale por la sala donde estás
 
 La sala por la que sale el papel ya no se lee de la sesión del navegador: se le

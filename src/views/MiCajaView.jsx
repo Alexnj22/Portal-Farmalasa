@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    AlertTriangle, ArrowDownLeft, ArrowUpRight, Clock, DoorOpen, Landmark, Lock, Printer,
-    Scale, ShoppingBag, Wallet,
+    AlertTriangle, ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
@@ -23,7 +22,7 @@ import {
     fetchTiposDeSalida, fetchValesPendientes, hacerCorte, leerBoleta, pedirCorreccion,
     subirComprobante,
 } from '../data/bolsas';
-import { fetchVentasPorPago } from '../data/cortes';
+import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '../data/cortes';
 import { diferenciaDelCorte, notaDeCifra } from '../utils/cortesDiagnostico';
 
 /* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
@@ -121,6 +120,8 @@ export default function MiCajaView({ comoPestana = false }) {
     // Las salidas de bolsa son del OTRO módulo. Sin este permiso no se leen, y
     // la pantalla lo dice en vez de mostrar una lista incompleta sin avisar.
     const puedeVerBolsas = hasPermission('bolsas', 'can_view');
+    // Los cortes son del OTRO módulo, igual que las bolsas.
+    const puedeVerCortes = hasPermission('cortes_caja', 'can_view');
 
     /* El ALCANCE, que es el de `caja_vales` y no el de Cortes.
      *
@@ -185,6 +186,13 @@ export default function MiCajaView({ comoPestana = false }) {
     const [ventas, setVentas] = useState(VACIO);
     const [tipos, setTipos] = useState(VACIO);
     const [corrigiendo, setCorrigiendo] = useState(null);
+    /* Los cortes del día, COMPLETOS. `estadoDeCaja` ya trae los suyos, pero sin
+     * el nombre de quien cortó ni quién lo confirmó — y es justo lo que la sala
+     * entra a comprobar: «que todo esté bien» (usuario, 1-sep). Van aparte y no
+     * en la respuesta de la caja porque salen de la base, no del sistema de la
+     * caja, y llegan aunque él no conteste. */
+    const [cortesDelDia, setCortesDelDia] = useState(VACIO);
+    const [firmantes, setFirmantes] = useState(() => new Map());
 
     // Cómo se llama cada motivo de salida. Sale de la TABLA y no de una lista
     // escrita acá: un motivo nuevo aparecería en la base y no en la pantalla,
@@ -288,17 +296,29 @@ export default function MiCajaView({ comoPestana = false }) {
         setVentas((porPago || []).filter((p) => String(p.branch_id) === String(sala)));
         setEstado(vivo);
         setPendientes((v.filas || []).filter((p) => String(p.branch_id) === String(sala)));
+
+        /* Sin `cortes_caja` la policy devuelve cero filas y NO un error, así
+         * que «no hubo ningún corte» y «no los puedo ver» se leerían igual.
+         * Preguntar antes es lo que los separa. */
+        if (puedeVerCortes) {
+            const delDia = (await fetchCortes({ desde: dia, hasta: dia }) || [])
+                .filter((c) => String(c.branch_id) === String(sala));
+            setCortesDelDia(delDia);
+            const quienes = await fetchPersonas(delDia.map((c) => c.resuelto_por));
+            setFirmantes(new Map(quienes.map((q) => [q.id, q])));
+        } else {
+            setCortesDelDia(VACIO);
+        }
         // Sólo las de esta sala y con su saldo: `SalidaDeBolsa` elige la más
         // vieja que alcance sola, y sin el saldo no puede elegir.
         const mias = (abiertas || []).filter((b) => String(b.branch_id) === String(sala));
         const saldos = await fetchSaldos(mias.map((b) => b.id));
         setBolsas(mias.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
         setCargando(false);
-    }, [sala, puedeVerBolsas]);
+    }, [sala, puedeVerBolsas, puedeVerCortes]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
 
-    const totalPendiente = pendientes.reduce((s, p) => s + Number(p.monto || 0), 0);
 
     /* Si el día que la caja tiene abierto no lleva ni un corte, cerrar deja el
      * efectivo de toda la jornada sin contar ni una vez — y el cierre no se
@@ -380,17 +400,31 @@ export default function MiCajaView({ comoPestana = false }) {
         ];
     }, [puedeOperar, sala, estado, noSePudo, bolsas.length]);
 
-    /* El nombre de la sala vivía en el título de la vista, y como pestaña ya no
-     * hay título propio. Sin esto, quien mira la caja de OTRA sala no tiene
-     * nada en pantalla que se lo diga — y operar la caja equivocada no se
-     * deshace. Con una sola sala el selector tampoco se dibuja (§ el selector
-     * se esconde con una opción), así que este rótulo es lo único que queda. */
+    /* Un nombre CORTO. La caja escribe «RODRIGO EDUARDO MARQUEZ» y en una
+     * tarjeta eso se corta a «RODRIGO EDUARDO M…», que es peor que dos
+     * palabras: el apellido —lo que distingue a dos Rodrigos— es justo lo que
+     * se pierde. Primer nombre y primer apellido, con mayúscula normal. */
+    const corto = useCallback((texto) => {
+        const partes = String(texto || '').trim().split(/\s+/).filter(Boolean);
+        if (!partes.length) return null;
+        const elegidas = partes.length > 2 ? [partes[0], partes[2]] : partes.slice(0, 2);
+        return elegidas.map(conMayuscula).join(' ');
+    }, []);
+
+    /* Las CUATRO preguntas con las que alguien entra a esta pantalla, y ninguna
+     * más (pedido del usuario, 1-sep: «no des tanta información en las cards.
+     * lo que interesa más que todo ver es que todo esté bien: la caja, quién
+     * abrió, quién hizo el corte y confirmó»).
+     *
+     * Las de antes contaban pendientes y bolsas —trabajo por hacer, no estado—
+     * y repetían la mitad del panel de abajo. */
+    const ultimoCorte = useMemo(
+        () => [...cortesDelDia].filter((c) => c.tipo === 'C').pop() || null,
+        [cortesDelDia],
+    );
+
     const cuerpo = (
         <div className="p-4 md:p-6 space-y-6">
-            {comoPestana && nombreSala && (
-                <h2 className="text-label font-bold text-content -mb-2">Caja de {nombreSala}</h2>
-            )}
-
                 {/* El carril y la píldora comparten UNA fila (§17.0). Las dos
                     mitades —`lg:flex-row` acá y `flex-1` en el carril— son
                     obligatorias: `useMedidaFila` busca el carril en el abuelo de
@@ -399,50 +433,60 @@ export default function MiCajaView({ comoPestana = false }) {
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     {/* Cuatro números fijos, no un desglose de largo variable
                         (§17.0 — «cuántas tarjetas hay lo fija la vista, nunca el
-                        dato»). El estado de la caja es el primero porque es la
-                        pregunta con la que alguien entra a esta pantalla.
-                        Va SIEMPRE, también sin sala: cuántas tarjetas hay lo fija
-                        la vista y no el dato, y esconder el carril le descuenta
-                        314px a la píldora igual —`useMedidaFila` lo busca en el
-                        abuelo y reserva su ancho esté o no—. Sin sala dicen «—»,
-                        que es la respuesta honesta. */}
+                        dato»). Van SIEMPRE, también sin sala: esconder el carril
+                        le descuenta 314px a la píldora igual —`useMedidaFila` lo
+                        busca en el abuelo y reserva su ancho esté o no—. Sin
+                        sala dicen «—», que es la respuesta honesta. */}
                     <CarrilCards className="flex-1" ariaLabel="Estado de la caja de esta sala">
-                        {/* Lo que el sistema espera adentro AHORA. Es la primera
-                            pregunta de quien entra —«¿cuánto hay?»— y hasta hoy
-                            no estaba en ninguna pantalla del portal. Lo trae el
-                            mismo panel que dice si la caja está abierta, así que
-                            no cuesta una petición más. */}
+                        {/* 1 · ¿Cuánto hay? Lo que el sistema espera adentro
+                            AHORA, que hasta v2.886 no estaba en ninguna pantalla. */}
                         <StatCard icon={Landmark} label="En la caja"
                             value={sala && !noSePudo && estado?.registrado != null ? formatMoney(estado.registrado) : '—'}
-                            sub={estado?.abierta ? `Turno ${estado.turno} · caja ${estado.caja}` : undefined}
                             iconBg="bg-brand/10" iconCls="text-brand-text"
                             loading={cargando} />
-                        {/* Tres estados y no dos: abierta, cerrada, y **no se
-                            pudo leer**. El tercero decía «Cerrada · Nadie puede
-                            vender» sobre una caja abierta desde las 6:58 — la
-                            respuesta contraria a la verdad, y sin nada que
-                            avisara que era una falla. */}
+
+                        {/* 2 · ¿Está abierta, y quién la abrió? Tres estados y no
+                            dos: abierta, cerrada, y **no se pudo leer**. El
+                            tercero decía «Cerrada · Nadie puede vender» sobre una
+                            caja abierta desde las 6:58 — la respuesta contraria a
+                            la verdad, sin nada que avisara que era una falla. */}
                         <StatCard icon={noSePudo ? AlertTriangle : estado?.abierta ? DoorOpen : Lock}
                             label={!sala ? 'La caja' : noSePudo ? 'Sin respuesta' : estado?.abierta ? 'Abierta' : 'Cerrada'}
                             value={!sala ? '—' : noSePudo ? 'No se pudo leer'
                                 : estado?.abierta ? (estado.desde || 'Abierta') : 'Sin turno'}
-                            sub={!sala ? 'Elige una sala'
-                                : noSePudo ? 'No se sabe si está abierta'
-                                    : estado?.abierta ? (estado.quien || 'sin nombre') : 'Nadie puede vender'}
+                            sub={!sala || noSePudo ? undefined
+                                : estado?.abierta ? (corto(estado.quien) || 'sin nombre') : 'Nadie puede vender'}
                             iconBg={estado?.abierta && !noSePudo ? 'bg-success/10' : 'bg-warning/10'}
                             iconCls={estado?.abierta && !noSePudo ? 'text-success-text' : 'text-warning-text'}
                             valueCls={estado?.abierta && !noSePudo ? 'text-success-text' : 'text-warning-text'}
                             loading={cargando} />
-                        <StatCard icon={ArrowUpRight} label="Por anotar"
-                            value={sala ? pendientes.length : '—'}
-                            sub={sala ? formatMoney(totalPendiente) : undefined}
-                            iconBg="bg-warning/10" iconCls="text-warning-text"
-                            valueCls={pendientes.length ? 'text-warning-text' : undefined}
+
+                        {/* 3 · ¿Se cortó, y quién? Sin `cortes_caja` la lista
+                            llega vacía por policy, así que se dice «—» en vez de
+                            «sin cortar»: son respuestas opuestas. */}
+                        <StatCard icon={Scale} label="Último corte"
+                            value={!sala || !puedeVerCortes ? '—'
+                                : ultimoCorte ? String(ultimoCorte.hora).slice(0, 5) : 'Sin cortar'}
+                            sub={ultimoCorte ? (corto(ultimoCorte.empleado_texto) || 'sin nombre')
+                                : !puedeVerCortes ? 'sin permiso para verlos' : undefined}
+                            iconBg={ultimoCorte ? 'bg-brand/10' : 'bg-warning/10'}
+                            iconCls={ultimoCorte ? 'text-brand-text' : 'text-warning-text'}
+                            valueCls={!ultimoCorte && sala && puedeVerCortes ? 'text-warning-text' : undefined}
                             loading={cargando} />
-                        <StatCard icon={ArrowDownLeft} label="Anotado hoy"
-                            value={sala ? movimientos.length : '—'}
-                            sub={bolsas.length ? `${bolsas.length} bolsa${bolsas.length === 1 ? '' : 's'} en sala` : undefined}
-                            iconBg="bg-brand/10" iconCls="text-brand-text"
+
+                        {/* 4 · ¿Alguien lo revisó? Un corte sin confirmar es
+                            trabajo pendiente de otra persona, y es la última
+                            pregunta de «¿está todo bien?». */}
+                        <StatCard icon={ShieldCheck} label="Confirmado"
+                            value={!sala || !puedeVerCortes || !ultimoCorte ? '—'
+                                : ultimoCorte.estado === 'CONFIRMADO' ? 'Sí'
+                                    : ultimoCorte.estado === 'DESCARTADO' ? 'Descartado' : 'Falta'}
+                            sub={ultimoCorte?.resuelto_por
+                                ? (corto(firmantes.get(ultimoCorte.resuelto_por)?.name) || 'sin nombre')
+                                : ultimoCorte ? 'nadie lo ha revisado' : undefined}
+                            iconBg={ultimoCorte?.estado === 'CONFIRMADO' ? 'bg-success/10' : 'bg-warning/10'}
+                            iconCls={ultimoCorte?.estado === 'CONFIRMADO' ? 'text-success-text' : 'text-warning-text'}
+                            valueCls={ultimoCorte && ultimoCorte.estado !== 'CONFIRMADO' ? 'text-warning-text' : undefined}
                             loading={cargando} />
                     </CarrilCards>
 
@@ -636,17 +680,13 @@ function PanelDelDia({ estado, ventas }) {
     const total = filas.reduce((s, f) => s + f.total, 0);
     const efectivo = filas.find((f) => f.tipo.toLowerCase() === 'efectivo')?.total ?? 0;
 
+    /* La fila de «Caja · Abierta desde · La abrió · Monto de apertura» se fue de
+     * acá: decía LO MISMO que las tarjetas de arriba, tres centímetros más
+     * abajo y con el nombre completo en mayúsculas. Lo único que no repetía era
+     * el monto de apertura, que va ahora al pie del desglose — es parte de la
+     * cuenta del día, no del encabezado. */
     return (
         <div data-surface="card" className="rounded-2xl p-4 md:p-5 space-y-4">
-            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-                <Dato icono={Landmark} rotulo="Caja"
-                    valor={`Caja ${estado.caja ?? '—'} · turno ${estado.turno ?? '—'}`} />
-                <Dato icono={Clock} rotulo="Abierta desde" valor={estado.desde || 'sin hora'} />
-                <Dato icono={DoorOpen} rotulo="La abrió" valor={estado.quien || 'sin nombre'} />
-                <Dato icono={Wallet} rotulo="Monto de apertura"
-                    valor={estado.apertura != null ? formatMoney(estado.apertura) : '—'} />
-            </div>
-
             <div className="space-y-2">
                 <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
                     Vendido hoy, por forma de pago
@@ -683,6 +723,12 @@ function PanelDelDia({ estado, ventas }) {
                             <span className="text-body-sm text-content-2">De eso, en efectivo</span>
                             <span className="tabular-nums font-bold text-brand-text">{formatMoney(efectivo)}</span>
                         </div>
+                        <div className="flex items-baseline justify-between gap-3">
+                            <span className="text-body-sm text-content-2">Con lo que abrió la caja</span>
+                            <span className="tabular-nums text-content-2">
+                                {estado.apertura != null ? formatMoney(estado.apertura) : '—'}
+                            </span>
+                        </div>
                     </>
                 )}
             </div>
@@ -690,17 +736,6 @@ function PanelDelDia({ estado, ventas }) {
     );
 }
 
-function Dato({ icono: Icono, rotulo, valor }) {
-    return (
-        <div className="min-w-0">
-            <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
-                <Icono className="w-3.5 h-3.5" aria-hidden="true" />
-                {rotulo}
-            </p>
-            <p className="text-body-sm font-semibold text-content truncate">{valor}</p>
-        </div>
-    );
-}
 
 /**
  * Todo lo que movió efectivo en este día de caja, en UNA lista.

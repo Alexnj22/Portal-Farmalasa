@@ -24,6 +24,8 @@ import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/soli
 import Contador from './Contador';
 import AvatarConEstado from './AvatarConEstado';
 import NotificacionDetalle from './NotificacionDetalle';
+import { AnilloDeMeta, CuerpoDeCierreDeMeta } from './CierreDeMeta';
+import { datosDeCierreDeMeta } from '../../utils/cierreDeMeta';
 
 /* El diálogo canónico de la solicitud, para el rechazo.
  *
@@ -954,6 +956,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                 const quien    = n.created_by ? empleadosPorId.get(String(n.created_by)) : null;
                                                 const sucursal = n.branch_id ? sucursalesPorId.get(String(n.branch_id)) : null;
                                                 const corte    = corteResoluble(n);
+                                                /* El cierre de mes de una sala se dibuja en vez de leerse.
+                                                   Devuelve `null` para un aviso viejo o para un mes que
+                                                   cerró sin meta, y ahí la fila queda como siempre. */
+                                                const cierre   = datosDeCierreDeMeta(n);
 
                                                 // Fila en ventana de deshacer (borrado individual)
                                                 if (pendingOne) {
@@ -1014,9 +1020,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             className={`relative w-full flex items-start gap-3 pl-3.5 pr-9 py-3 text-left
                                                                 ${interactiva ? 'cursor-pointer' : 'cursor-default'}`}
                                                         >
-                                                            <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
-                                                                <Icon size={16} strokeWidth={2} />
-                                                            </div>
+                                                            {cierre ? (
+                                                                <AnilloDeMeta pct={cierre.pct} cumplida={cierre.cumplida} isDark={isDark} />
+                                                            ) : (
+                                                                <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
+                                                                    <Icon size={16} strokeWidth={2} />
+                                                                </div>
+                                                            )}
                                                             <div className="flex-1 min-w-0">
                                                                 {/* El punto va PEGADO al título, no en la esquina.
                                                                     Arriba a la derecha competía por el mismo sitio
@@ -1028,7 +1038,15 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     )}
                                                                     {tituloSinEmoji(n.title)}
                                                                 </p>
-                                                                {n.body && (
+                                                                {/* Con montos, las cifras se dibujan y el párrafo
+                                                                    sobra: diría en palabras lo mismo que está
+                                                                    arriba en números. Sin montos el `body` ya
+                                                                    viene escrito en porcentaje y se deja tal
+                                                                    cual — redactarlo otra vez acá sería copiar
+                                                                    la regla que decide quién ve dólares. */}
+                                                                {cierre?.venta != null ? (
+                                                                    <CuerpoDeCierreDeMeta datos={cierre} claseTenue={cx.rowBody} />
+                                                                ) : n.body && (
                                                                     <CuerpoDeNotificacion
                                                                         id={n.id}
                                                                         texto={n.body}

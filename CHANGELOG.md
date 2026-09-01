@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.894.0 — El cierre de meta se ve antes de leerse
+
+El aviso del día 1 —el que le dice a cada sala cómo cerró el mes y cuánto le
+toca al que empieza— salió por primera vez hoy, a las 08:00 SV, a 33 personas.
+Y salió como un párrafo de tres renglones con tres cifras adentro: había que
+**leerlo entero** para saber si el mes se cumplió.
+
+Ahora el recuadro de la izquierda deja de ser un ícono y pasa a ser el
+**cumplimiento dibujado**. Ese recuadro gastaba 36×36 px en un símbolo que vale
+igual para un pedido, una solicitud y una meta: o sea que el único lugar de la
+tarjeta que se mira antes de leer no tenía ni un dato. El arco es el porcentaje,
+el color es el estado, y la tarjeta no crece un pixel.
+
+Debajo, para quien ve montos, las cifras se dibujan en vez de narrarse: la venta
+grande, la meta al lado en tono bajo, y tras una línea el mes que empieza con su
+diferencia en palabras («1.6% menos que Agosto» y no «−1.6%», porque el signo
+hay que interpretarlo y la palabra no).
+
+**Tres decisiones que no son detalle:**
+
+- **El arco se topa en la vuelta completa.** Un 101.5% dibujado como 1.015
+  vueltas se ve idéntico a un 1.5%, que es la peor confusión posible en una
+  tarjeta que habla de si la meta se cumplió. El excedente se dice con un punto
+  en las doce. Salud 3 cerró agosto en 101.5%: el caso no es hipotético.
+- **Los montos NO viajan en la metadata de todos.** El cuerpo del aviso se parte
+  en dos a propósito —28 de las 33 personas de sala no tienen
+  `dash_meta_sala_vista_completa` y reciben porcentajes—, y el destinatario
+  puede leer su propia fila de `notifications` entera. Meter `venta`, `meta` o
+  `meta_nueva` en la metadata de todos habría publicado por la puerta de atrás
+  exactamente lo que el cuerpo se cuida de no decir. `pct` sí va para todos: es
+  el número que el título ya dice en voz alta.
+- **El texto no se va.** `body` sigue trayendo la frase completa; es lo que se
+  lee si el aviso llega a un sitio que no sabe pintar la tarjeta. Lo que cambia
+  es el render, no el dato — y `datosDeCierreDeMeta` devuelve `null` en cuanto
+  falta algo (un aviso viejo, o un mes que cerró **sin meta**, que no tiene
+  porcentaje que dibujar), y ahí la fila queda exactamente como estaba.
+
+Migración `20260901150521`. Piezas nuevas: `src/utils/cierreDeMeta.js` (el
+lector) y `src/components/common/CierreDeMeta.jsx` (el anillo y el cuerpo).
+
 ## v2.893.1 — Las cuatro decisiones, y el canje que no hay que construir
 
 Las cuatro preguntas que bloqueaban el plan de puntos, respondidas. Dos de las

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.917.0 — Promociones — el cierre diario y el aviso del 80%
+
+Una promoción termina por **dos causas** y ahora el portal dice cuál fue: se
+vendió el lote, o venció la fecha. Cierra **sola**, con su motivo y su fecha, y
+queda en bitácora — no espera a que alguien entre a mirar. Cuando cierra el
+último producto, la promoción se finaliza y se avisa.
+
+**El aviso sale al 80% del lote DE CADA SALA**, no del total. La sala que se
+queda sin producto es la que necesita saberlo, y el aviso lleva las tres cosas
+que hacen falta para actuar: cuánto le queda, **en qué salas sí hay**, y con
+cuánto. Segundo aviso al llegar a cero. Va a quien puede pedir un traslado — que
+es quien puede hacer algo con el aviso — y a quien lleva las promociones, que es
+quien puede mover producto entre salas.
+
+Verificado en producción con los dos motivos: un producto vencido ayer y otro
+con el lote pasado cerraron en la misma corrida, cada uno con su motivo escrito,
+y la promoción quedó finalizada — `cerrados_por_lote=1 cerrados_por_fecha=1
+finalizadas=1`. La selección de avisos se probó **sin disparar ninguno**,
+comparando las seis salas: las tres pasadas de su lote entran, las tres por
+debajo del 80% no. El texto de «dónde sí hay» sale ordenado por cuánto queda
+(*La Popular 1092 · Salud 3 322 · Salud 1 311*). Rastro de prueba borrado, tablas
+en cero.
+
+Dos detalles que se corrigieron durante la construcción:
+
+- El avance se calculaba **una vez por sala avisada**. Ahora se calcula una sola
+  vez al entrar: lo necesitan el cierre por lote, el aviso y el «dónde sí hay».
+- El cron quedó **declarado en el gate de eficiencia** con su motivo. No es
+  contabilidad: un cron de SQL puro sin declarar es **invisible al gate por
+  construcción** —su consulta sólo trae de producción los que llaman a
+  `functions/v1/` o los ya declarados—, así que el día que se apagara solo,
+  nadie se enteraría.
+
 ## v2.916.0 — Clientes lo ve y lo edita quien atiende
 
 Migración `20260901203159`. **De 5 personas a 38.**

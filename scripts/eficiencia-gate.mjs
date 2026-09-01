@@ -235,6 +235,18 @@ const CRONS = [
           + 'de las dos salas y que nadie puede vender mientras tanto.',
   },
   {
+    job: 'promociones-ciclo-diario', slug: null, cadencia: '30 13 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'SQL puro: no llama a ninguna función ni toca el sistema de origen. Cierra los '
+          + 'renglones de promoción que terminaron —por lote agotado o por vencimiento— y avisa '
+          + 'al 80% y al 100% del lote de CADA SALA. Se declara acá aunque no cueste peticiones '
+          + 'porque un cron de SQL puro sin declarar es invisible al gate por construcción: la '
+          + 'consulta de la sección B sólo trae de producción los que llaman a functions/v1/ o '
+          + 'los ya declarados. Una vez al día a las 7:30 SV, antes de que abran las salas, para '
+          + 'que el aviso llegue con margen para pedir un traslado y no cuando ya no hay nada '
+          + 'que hacer.',
+  },
+  {
     job: 'avisar-diferencias-vencidas', slug: null, cadencia: '0 15 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'No llama a ninguna función: es una consulta y un aviso. Cuando una sala y bodega '

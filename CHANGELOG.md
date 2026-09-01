@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.910.0 — La última venta se recalcula, no sólo se acumula
+## v2.909.0 — La última venta se recalcula, no sólo se acumula
 
 Migración `20260901173428`. Cierra la causa de fondo que v2.907.0 dejó abierta a
 propósito.

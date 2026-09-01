@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 /**
- * data-gate — invariantes de la capa de datos. Local, sin red.
+ * data-gate — invariantes de la capa de datos. Local y sin red por defecto;
+ * con `--remote` agrega UNA sección que mide contra producción.
+ *
+ * Esa separación es deliberada y es la misma de gate:migrations: el gate corre
+ * en el pre-commit, y un gate de commit que necesita red falla sin conexión y
+ * enseña a escribir `--no-verify`. Lo que sólo se puede ver en producción
+ * —una función de Postgres comparando contra un valor que su tabla no tiene—
+ * va detrás del flag y se corre al cerrar el trabajo.
  *
  * Nace de la auditoría completa del 2026-07-30
  * (docs/AUDITORIA-COMPLETA-2026-07-30.md). Cada categoría existe porque el
@@ -77,6 +84,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { abrirCanal } from './lib/canal-supabase.mjs';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 const BASELINE = join(RAIZ, 'scripts', 'data-gate-baseline.json');
@@ -131,6 +139,50 @@ Cruzar el resultado contra el CHECK, que es quien decide qué se admite:
 
 Si el CHECK admite un tipo que el disparador no nombra, el hueco es de la BASE
 y se arregla allá: el aviso de ese tipo sale hoy con la clave cruda.
+`);
+  process.exit(0);
+}
+
+if (process.argv.includes('--regen-estados')) {
+  console.log(`
+Correr contra prod y volcar el resultado en scripts/db/estado-values.json.
+
+Manda el CHECK cuando lo hay —es la verdad declarada y no depende de que la
+tabla tenga filas—, y sólo si no hay CHECK se miran los valores observados:
+
+  DO $$
+  DECLARE r record; v text[]; out jsonb := '{}'::jsonb;
+  BEGIN
+    FOR r IN
+      SELECT c.table_name AS t,
+             (SELECT array_agg(DISTINCT m[1] ORDER BY m[1])
+                FROM pg_constraint con
+                JOIN pg_class rel ON rel.oid = con.conrelid
+                JOIN pg_namespace n2 ON n2.oid = rel.relnamespace AND n2.nspname = 'public',
+                LATERAL regexp_matches(pg_get_constraintdef(con.oid), '''([^'']*)''::text', 'g') m
+               WHERE con.contype = 'c' AND rel.relname = c.table_name
+                 AND pg_get_constraintdef(con.oid) ~ 'estado = ANY .ARRAY.') AS decl
+        FROM information_schema.columns c
+        JOIN information_schema.tables ta ON ta.table_schema = c.table_schema
+             AND ta.table_name = c.table_name AND ta.table_type = 'BASE TABLE'
+       WHERE c.table_schema = 'public' AND c.column_name = 'estado'
+       ORDER BY 1
+    LOOP
+      IF r.decl IS NOT NULL THEN
+        out := out || jsonb_build_object(r.t, jsonb_build_object('origen','check','valores', to_jsonb(r.decl)));
+      ELSE
+        EXECUTE format('SELECT array_agg(DISTINCT estado ORDER BY estado) FROM public.%I WHERE estado IS NOT NULL', r.t) INTO v;
+        out := out || jsonb_build_object(r.t, jsonb_build_object('origen','filas','valores', to_jsonb(coalesce(v, ARRAY[]::text[]))));
+      END IF;
+    END LOOP;
+    CREATE TEMP TABLE _out(j jsonb); INSERT INTO _out VALUES (out);
+  END $$;
+  SELECT jsonb_pretty(j) FROM _out;
+
+Una tabla con «origen: filas» lleva la lista de lo OBSERVADO, así que puede
+quedarse corta cuando el sistema de origen empiece a mandar un valor nuevo —
+sales_invoices es de ésas. Si la fecha de «_generado» tiene meses, regenerar
+antes de creerle al verde.
 `);
   process.exit(0);
 }
@@ -259,7 +311,27 @@ const leerFuente = (archivo) => (soloIndexado
   ? (desdeIndice.get(archivo) ?? '')
   : readFileSync(join(RAIZ, archivo), 'utf8'));
 
-const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'in-columna-repetida': [], 'error-ignorado': [], 'escritura-a-ciegas': [], 'tipo-sin-rotulo': [], 'alcance-contra-branch': [] };
+const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'in-columna-repetida': [], 'error-ignorado': [], 'escritura-a-ciegas': [], 'tipo-sin-rotulo': [], 'alcance-contra-branch': [], 'columna-retirada': [] };
+
+/**
+ * Columnas que ya NO existen, con el motivo y a dónde se fue el dato.
+ *
+ * Una columna borrada no necesita un gate para dar error —la consulta falla— y
+ * sin embargo hace falta: el error llega en producción, en la pantalla de
+ * alguien, y el mensaje de PostgREST nombra la columna pero no dice qué
+ * reemplazarla. Acá el aviso llega al escribirla y trae la respuesta.
+ *
+ * Se buscan sobre el código SIN comentarios (`soloCodigo`), así que las notas
+ * que explican por qué se retiró no se acusan a sí mismas.
+ */
+const COLUMNAS_RETIRADAS = {
+  system_role: 'employees.system_role se retiró el 2026-08-28: el escalón sale del CARGO (roles.rango). Usá rango_de_empleado()/auth_rango() en la base, `rango` de employees_safe en el portal, o empleados_por_rango() para buscar por escalón. Ver docs/PLAN-ROLES-SIN-SYSTEM-ROLE-2026-08-28.md.',
+};
+/* Los de la sección remota van aparte: no tienen archivo ni ratchet — una
+ * función viva de Postgres comparando contra un valor inexistente es un
+ * hallazgo nuevo siempre, nunca deuda heredada. */
+const hallazgosRemotos = [];
+
 const push = (cat, archivo, linea, detalle) => {
   if (exento(archivo, cat)) return;
   hallazgos[cat].push({ archivo, linea, detalle });
@@ -390,6 +462,13 @@ function tablaEnContexto(src, idx) {
 
 for (const archivo of archivos) {
   const src = soloCodigo(leerFuente(archivo));
+
+  // 0. columna-retirada — una columna que ya no existe, escrita otra vez.
+  for (const [col, motivo] of Object.entries(COLUMNAS_RETIRADAS)) {
+    for (const m of src.matchAll(new RegExp(`\\b${col}\\b`, 'g'))) {
+      push('columna-retirada', archivo, lineaDe(src, m.index), motivo);
+    }
+  }
 
   // 1. tipo-booleano — .eq/.neq/.is(col, true|false) y {col: true|false} en escrituras,
   //    contra el snapshot de columnas realmente BOOLEAN.
@@ -586,6 +665,139 @@ for (const archivo of archivos) {
   }
 }
 
+/* ── literal-de-estado-inexistente — un filtro que no filtra ────────────────
+ *
+ * Sección REMOTA (`--remote`): mira las funciones vivas de Postgres, no el
+ * fuente. Tiene que ser así porque el defecto vive ahí y en ningún otro lado —
+ * el archivo de la migración que lo corrige NOMBRA el literal viejo en su
+ * comentario, así que un detector que leyera `supabase/migrations/` se
+ * acusaría a sí mismo y acusaría además a toda migración histórica, que no se
+ * toca.
+ *
+ * El bug (2026-09-01): ocho funciones filtraban las ventas anuladas con
+ * `inv.estado != 'ANULADA'`, y `sales_invoices.estado` NUNCA tuvo ese valor —
+ * sus tres únicos son FINALIZADA, DTE INVALIDADO EN MH y NULA. Una condición
+ * contra un valor inexistente es siempre verdadera: **no descartaba ni una
+ * fila**. No da error, no falta un renglón y se ve igual que un filtro que
+ * funciona; por eso vivió desde el día uno. El arreglo canónico de agosto
+ * (20260806022058) alcanzó a medio centenar de funciones y NO a estas ocho, y
+ * peor: una migración del 21-ago reescribió `calculate_stock_params` entera y
+ * copió el literal viejo sin que nada lo notara.
+ *
+ * Cómo decide, y por qué no resuelve alias:
+ * parsear `<alias>.estado` hasta su tabla con expresiones regulares es frágil,
+ * así que se compara contra la UNIÓN de los valores de TODAS las tablas con
+ * columna `estado` que la función menciona. Es deliberadamente laxo: un
+ * literal válido para cualquiera de ellas pasa. Aun así habría cazado las
+ * ocho, porque de las tablas que nombran sólo `sales_invoices` tiene `estado`.
+ * Lo que no se puede es acusar de más — un gate que le pega al que hizo bien
+ * el trabajo se termina desactivando.
+ *
+ * Los valores salen de `scripts/db/estado-values.json`, y del CHECK de la
+ * tabla cuando lo hay: ésa es la verdad declarada y no depende de que haya
+ * filas, así que una tabla vacía (`recetas`) no produce falsos positivos.
+ */
+if (process.argv.includes('--remote')) {
+  const ESTADOS = JSON.parse(leerRetrato('scripts/db/estado-values.json')).tablas;
+  let canal = null;
+  try {
+    canal = abrirCanal('data-gate');
+    const funciones = canal.consultar(`
+      SELECT p.proname, pg_get_functiondef(p.oid) AS def
+        FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+       WHERE n.nspname = 'public' AND p.prokind = 'f'
+         AND pg_get_functiondef(p.oid) ~* '\\mestado\\M'
+       ORDER BY 1`);
+
+    for (const { proname, def } of funciones) {
+      /* Las tablas con columna `estado` que esta función nombra. */
+      const tablas = Object.keys(ESTADOS)
+        .filter(t => new RegExp(`\\b${t}\\b`).test(def));
+      if (tablas.length === 0) continue;   // el `estado` es de un CTE o una variable
+
+      const validos = new Set(tablas.flatMap(t => ESTADOS[t].valores));
+
+      /* `estado <op> 'literal'`, `estado IN ('a','b')` y `estado = ANY(ARRAY[…])`.
+       * Se salta lo que está dentro de un comentario para no acusar a la nota
+       * que explica el bug.
+       *
+       * Las dos trampas del parseo, las dos medidas la primera vez que corrió
+       * —y las dos produciendo hallazgos FALSOS, que es como se desactiva un
+       * gate—:
+       *
+       *  1. Un operador de UN valor no captura una lista. Capturando «uno o
+       *     más literales separados por coma» detrás de un `=`, el match se
+       *     desbordaba más allá del paréntesis y seguía tragando los literales
+       *     de la línea siguiente: `v_prev.estado = 'cerrado',` dentro de un
+       *     `jsonb_build_object` acusó a 'vivo', que estaba cuatro renglones
+       *     abajo y no se compara con nada. Sólo `IN` y `= ANY` llevan lista, y
+       *     acotada al `)` que la cierra.
+       *
+       *  2. Dentro de un `EXECUTE` dinámico las comillas van DOBLADAS. El SQL
+       *     vive en una cadena, así que `NOT IN ('NULA', …)` se escribe
+       *     `NOT IN (''NULA'', …)` — y leído con las reglas normales el primer
+       *     literal es la cadena vacía. Las tres funciones que arman su
+       *     consulta así (`get_ventas_con_puntos`, `get_ventas_con_receta`,
+       *     que filtran BIEN) salieron acusadas. Se des-escapa el tramo antes
+       *     de leerlo. */
+      const cuerpo = def.replace(/--[^\n]*/g, '');
+      const LITERAL = /'((?:[^']|'')*)'/g;
+      const cmp = /\.?\bestado\b\s*(?:::text\s*)?(=\s*ANY|IS +NOT +DISTINCT +FROM|IS +DISTINCT +FROM|NOT +IN|IN|!=|<>|=)/gi;
+
+      for (const m of cuerpo.matchAll(cmp)) {
+        const op = m[1].replace(/\s+/g, ' ').toUpperCase();
+        const deLista = op === 'IN' || op === 'NOT IN' || op.startsWith('= ANY');
+        let tramo = cuerpo.slice(m.index + m[0].length, m.index + m[0].length + 400);
+
+        /* El literal tiene que seguir INMEDIATAMENTE al operador. Si lo que
+         * viene es una variable o una columna (`estado = p_estado`), no hay
+         * literal que juzgar y la comparación se salta.
+         *
+         * Es la trampa 3, y también salió acusando a quien no debía: buscando
+         * «el primer literal de los próximos 400 caracteres», un
+         * `IF p_estado = ...` se llevaba el texto del `RAISE EXCEPTION` de
+         * cinco líneas más abajo y lo reportaba como si fuera un valor de
+         * estado — «compara estado contra 'FACTURA_ANULADA: esa factura ya
+         * está anulada.'». */
+        const arranque = deLista
+          ? /^\s*\(\s*(?:ARRAY\s*\[\s*)?(?='')?(?=')/
+          : /^\s*(?='')?(?=')/;
+        if (!arranque.test(tramo)) continue;
+
+        if (deLista) {
+          /* Sólo hasta el paréntesis que cierra la lista. */
+          const fin = tramo.indexOf(')');
+          tramo = fin >= 0 ? tramo.slice(0, fin) : tramo;
+        }
+        /* Comillas dobladas ⇒ el SQL viaja dentro de una cadena: des-escapar.
+         * Se detecta por el `''` que abre el primer literal, no por adivinar
+         * si la función usa EXECUTE. */
+        if (/^\s*\(?\s*(?:ARRAY\s*\[)?\s*''/.test(tramo)) tramo = tramo.replace(/''/g, "'");
+
+        LITERAL.lastIndex = 0;
+        const literales = [...tramo.matchAll(LITERAL)].map(l => l[1].replace(/''/g, "'"));
+        for (const valor of deLista ? literales : literales.slice(0, 1)) {
+          if (valor === '' || validos.has(valor)) continue;   // '' es un coalesce, no un estado
+          hallazgosRemotos.push({
+            archivo: `public.${proname}()`,
+            linea: lineaDe(def, def.indexOf(m[0])),
+            detalle: `compara estado contra '${valor}', que ninguna de las tablas que nombra `
+              + `(${tablas.join(', ')}) puede tener. El filtro no descarta nada. `
+              + `Valores reales: ${[...validos].sort().join(' · ')}`,
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error(`\n✗ data-gate --remote: no se pudo medir contra producción — ${e.message}`);
+    if (e.detalleCli) console.error(e.detalleCli);
+    /* Un gate que no pudo medir NO puede dar verde. */
+    process.exit(1);
+  } finally {
+    canal?.cerrar();
+  }
+}
+
 // ── reporte + ratchet ──────────────────────────────────────────────────────
 const conteos = Object.fromEntries(Object.entries(hallazgos).map(([k, v]) => [k, v.length]));
 
@@ -612,9 +824,21 @@ for (const [cat, lista] of Object.entries(hallazgos)) {
   }
 }
 
+/* La sección remota no tiene ratchet a propósito: una función VIVA comparando
+ * contra un valor que su tabla no puede tener es siempre un hallazgo nuevo, no
+ * deuda que se hereda. Bloqueante en cero desde el día uno. */
+if (process.argv.includes('--remote')) {
+  const n = hallazgosRemotos.length;
+  console.log(`\n${n === 0 ? '✓' : '✗ SUBIÓ'}  literal-de-estado-inexistente: ${n} (tope 0)`);
+  for (const h of hallazgosRemotos) {
+    console.log(`     ${h.archivo}:${h.linea}\n       ${h.detalle}`);
+  }
+  if (n > 0) falla = true;
+}
+
 if (falla) {
   console.error('\n✗ data-gate: una categoría subió. Es código nuevo que hay que arreglar,');
   console.error('  no un baseline que regenerar.\n');
   process.exit(1);
 }
-console.log('\n✓ data-gate en verde\n');
+console.log(`\n✓ data-gate en verde${process.argv.includes('--remote') ? ' (con la sección remota)' : ''}\n`);

@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.907.0 — El filtro de anuladas de la última venta no excluía ninguna
+
+Migración `20260901171129`. Cuatro funciones descartaban las ventas anuladas
+con `estado != 'ANULADA'`, y ese valor **no existe ni existió nunca**: los tres
+únicos que ha tenido la columna son `FINALIZADA`, `DTE INVALIDADO EN MH` y
+`NULA`. Una condición contra un valor inexistente es siempre verdadera, así que
+el filtro **no descartaba ni una factura**. No da error, no falta un renglón y
+se ve idéntico a un filtro que funciona; por eso vivió desde el día uno.
+
+Es la segunda mitad de lo que empezó v2.904.0 con las cuatro de Mín·Máx. Las
+corregidas ahora son `fn_update_product_last_sale`, `get_last_sale_dates`,
+`get_product_last_sales` y `refresh_product_sales_rollup`, y cada una se
+reescribió con su cuerpo VIVO cambiando sólo esa línea — verificado por huella
+`md5`, no de vista.
+
+Lo que estaba mal, medido antes de tocar nada:
+
+- **689 de 13,612** filas del resumen de ventas por producto·sala, con **7,934
+  unidades fantasma** en la ventana de 180 días y hasta 700 en una sola fila.
+  Eso alimenta la velocidad de venta, o sea el mínimo y el máximo.
+- **412 renglones anulados** visibles en la pantalla de últimas ventas, sobre
+  401 productos·sala.
+- **45 productos·sala** con la fecha de última venta equivocada, hasta **195
+  días** más nueva de lo real. **Once nunca se vendieron**: su única "venta"
+  estaba anulada.
+
+El resumen de ventas se recalcula entero cada día, así que se corrige solo. La
+tabla de última venta no —sólo la escribe el disparador, y nunca baja una
+fecha—, así que esas 45 filas siguen como estaban; **nueve** de ellas cruzan el
+corte de 90 días con el que Mín·Máx decide si congela una baja.
+
+Y para que no vuelva a pasar sin que nadie se entere, `npm run gate:data --
+--remote` agrega `literal-de-estado-inexistente`: mira las funciones VIVAS de
+Postgres y falla si alguna compara `estado` contra un valor que su tabla no
+puede tener. Va detrás del flag porque el pre-commit no puede depender de la
+red. El retrato de valores válidos vive en `scripts/db/estado-values.json` y
+sale del CHECK de cada tabla cuando lo hay — así una tabla vacía no produce
+falsos positivos. Bloqueante en cero, sin ratchet: una función viva filtrando
+contra un valor imposible es siempre un hallazgo nuevo, nunca deuda heredada.
+
 ## v2.906.0 — El portal guarda la foto diaria del inventario
 
 Migraciones `20260901171601`, `20260901171629`, `20260901171842` y

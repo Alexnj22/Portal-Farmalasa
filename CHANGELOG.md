@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.923.3 — Caja: POS Promerica, y el abono a crédito no se anota a mano
+
+Migración `20260901215403`. Tres correcciones al catálogo recién nacido, las
+tres del usuario.
+
+**«Abono a crédito no es un ingreso: ese sí se hace desde el sistema
+automáticamente al abonar una venta al crédito.»** Los 101 movimientos que la
+medición encontró son de cuando se anotaba a mano. Ofrecerlo hoy invita a anotar
+**dos veces el mismo dinero** —el que la venta al crédito registra sola y el que
+alguien teclea— y un ingreso duplicado **sobra en el corte sin que nada lo
+delate**. Se desactiva, no se borra: es catálogo, y un movimiento que le apunte
+tiene que poder seguir diciendo qué fue.
+
+**«Pago de un recibo» → «POS Promerica».** El rótulo nombraba el acto; el que la
+sala reconoce es el aparato. Y la causa —CAESS, ANDA, el teléfono— **no se elige
+de una lista: se lee de la boleta que el POS imprime**, que es la misma que ya
+se fotografía. Por eso su foto pasa a **obligatoria**: sin ella no hay de dónde
+sacar el monto, el número ni de qué era el pago. Eso ya lo hace `leerBoleta`; lo
+que faltaba era que el tipo lo exigiera.
+
+**«Todos» no debe estar en el listado.** El desplegable lo ofrecía arriba de la
+lista: es su forma de limpiar un **filtro**, y acá no hay filtro sino una
+elección obligatoria. «Todos» no es un tipo de movimiento — no significa nada, y
+elegirlo deja el formulario sin el único dato que decide qué se pregunta.
+`clearable={false}`.
+
 ## v2.923.2 — Dónde se usa el logo de la empresa, escrito donde se decide
 
 Barrido de todo el repo detrás del logo de la empresa, para contestar «¿queda

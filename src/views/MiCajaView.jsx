@@ -72,7 +72,9 @@ const PISTA_DE_DETALLE = {
     APLICACION:     'Neurobion 25000',
     GLUCOSA:        'en ayunas',
     ABONO_CREDITO:  'de qué compra',
-    PAGO_SERVICIO:  'CAESS, ANDA, telefono',
+    // La causa la lee la foto de la boleta del aparato; la pista es por si hay
+    // que corregirla a mano.
+    POS_PROMERICA:  'CAESS, ANDA, telefono',
     COMPRA:         'agua fria, saldo telefonico',
     PAGO_PROVEEDOR: 'que factura se paga',
     ANTICIPO:       'quincena que descuenta',
@@ -1089,9 +1091,14 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 : 'Sale del cajón porque ninguna bolsa de cortes anteriores alcanza. Esto sí se le anota a la caja.'}>
             {/* Lo primero, y de la TABLA: una lista escrita a mano en el
                 `.jsx` se desincroniza de la base sin avisar. */}
+            {/* `clearable={false}`: sin eso el desplegable ofrece «Todos»
+                arriba de la lista, que es su forma de limpiar un FILTRO. Acá no
+                es un filtro — es una elección obligatoria, y «Todos» no es un
+                tipo de movimiento: no significa nada y deja el formulario sin
+                el único dato que decide qué se pregunta. */}
             <LiquidSelect label={entra ? 'Qué entra' : 'Qué sale'} value={codigo}
                 onChange={setCodigo} options={delSentido.map((t) => ({ value: t.codigo, label: t.etiqueta }))}
-                placeholder="Elige de qué se trata" />
+                clearable={false} placeholder="Elige de qué se trata" />
             {tipo?.leyenda && <p className="text-caption text-content-2">{tipo.leyenda}</p>}
 
             {/* La foto sólo cuando el tipo la usa. Ofrecerla siempre es lo que

@@ -21,6 +21,89 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.902.0 — El auto-aplicar de MIN·MAX mira el dinero, no sólo el porcentaje
+
+Migración `20260901155551`. El freno que decide si un MIN·MAX nuevo entra solo
+o va a revisión tenía **un criterio y era relativo**: si el par se movía más
+del ±40%, a la lista. Sobre números chicos un criterio relativo marca todo — un
+producto que pasa de MAX 3 a MAX 5 es +67% y termina en la lista de alguien,
+aunque sean dos unidades de algo que cuesta $2.
+
+Ahora son **dos puertas y basta pasar una**: la de siempre, o que el cambio sea
+de a lo sumo 10 unidades y $50 de inventario. La puerta vieja no se tocó, así
+que el cambio sólo AGREGA casos que entran solos, nunca quita.
+
+Medido contra producción sobre las 2,082 filas que dejó el recálculo del 1-sep:
+**640 entran solas y la lista baja a 1,442**, con un neto de entre $19 y $486
+por sala. El costo unitario sale de la presentación más chica, idéntico a
+`get_inventory_cost_summary`, para que la pantalla y el cálculo no midan
+distinto. Un producto sin costo conocido da NULL, la puerta no se abre y sigue
+yendo a revisión: la falla segura.
+
+Lo que queda no es del mismo tipo y por eso no se tocó acá: **553** están por su
+marca de ajuste manual —que nadie limpia nunca, así que vuelven todos los
+meses—, **818** son productos que empiezan o dejan de tenerse en sala, y sólo
+**71** son «el número se movió mucho y mueve dinero», que es lo que de verdad
+pide criterio: unas 12 por sala.
+
+Sale de la auditoría del recálculo del 1-sep, que además midió que la
+winsorización al percentil 92 es casi inerte (recorta 2.9% promedio, y en el
+78% de los pares no recorta nada) porque se calcula sobre los días CON venta y
+el 84% de los productos vende en menos de 20 de los 180. Eso queda abierto.
+
+## v2.901.0 — El motor de puntos, escrito y sin desplegar
+
+Migración `20260901154837` y tres edge functions. Con esto el programa de puntos
+tiene **todo lo que necesita para vivir en el portal**, y sigue apagado.
+
+**`puntos_migrar` estaba mal, y lo delató leer el código que ya resolvía el
+puente.** Ligaba por `erp_id` — y la base de puntos **no tiene el número del
+ERP**: identifica por documento, como hace `puntos-consulta` desde siempre para
+la pantalla de la ficha. Corregida a DUI, y al medir el terreno aparecieron los
+tres accidentes que obligan a que **informe en vez de adivinar**: de 28,111
+fichas, 16,696 tienen DUI usable, **11,415 no tienen DUI** —a ésas no se les
+puede migrar nada— y **100 DUI están repetidos en 203 fichas**. Ahí la función
+**no elige**: lo reporta. Elegir mal le pone el saldo de una persona a otra, y
+eso no se deshace mirando la tabla después.
+
+**`puntos_config`: el interruptor es una FILA.** `fuente` (mysql | portal),
+`acumulacion_activa` y `minimo_canje`. Nace en el estado apagado a propósito — un
+interruptor cuyo default es «encendido» se enciende por accidente. Y la marcha
+atrás nunca puede ser una migración, que es la lección del outage del 2026-07-08.
+De paso el mínimo de canje sale de las constantes: el dato medido dice que **ese
+número es el cuello de botella del programa**, así que se va a mover.
+
+**Dos interruptores, y hacen falta los dos.** `puntos-motor` no escribe a menos
+que exista un cron que la llame **y** la bandera esté encendida. Con la bandera
+apagada corre igual pero **simulada**: informa exactamente lo que haría y no toca
+una fila. El cron se puede crear y observar días antes de encender nada.
+
+**Y el orden dentro del motor importa:** acumular va ANTES que los canjes. Al
+revés, quien compra y canjea el mismo día no tendría todavía los puntos de esa
+compra y el canje saldría «sin saldo suficiente» — un aviso falso a la sala por
+un problema de orden, que es la clase de alerta que enseña a ignorarlas.
+
+**El cambio de fuente no es un despliegue.** `mis-puntos` y `puntos-consulta`
+preguntan `puntos_config.fuente`; si no existe o falla, siguen por MySQL — el
+modo seguro es el que ya venía funcionando. En `puntos-consulta` la rama nueva va
+**antes** del chequeo del DUI: el puente viejo necesita documento, el libro mayor
+no —la ficha ya ES la cuenta—, y ponerla después dejaría sin saldo a las 11,415
+fichas sin DUI aun después de mudarnos.
+
+Probado en transacciones que se deshacen, 7 casos: el interruptor nace apagado,
+la tabla rechaza una segunda fila de configuración, la migración clasifica bien
+los cinco casos (normal, DUI repetido, sin ficha, DUI corto, saldo cero), y el
+barrido de agosto **vio 50 canjes, registraría 45 y apartó 5 de convenio** —
+MAPFRE saliendo sola, sin escribir una fila.
+
+Dos errores míos que el repo ya había cometido y anotado: `employees` **no tiene
+`is_active`** (es `status = 'ACTIVO'`, y está escrito en un comentario de
+`avisar-bultos-viejos`), y no toda fila de `employees` es una persona a la que
+avisarle — se filtra `tipo_ficha = 'empleado'`.
+
+**Nada desplegado.** Las edge functions se despliegan con el CLI de Supabase, no
+con el push: producción sigue corriendo el circuito viejo intacto.
+
 ## v2.900.0 — El ranking lo ve toda la sala, y la escala tiene tres colores
 
 Cuatro correcciones del usuario sobre los avisos del día 1.

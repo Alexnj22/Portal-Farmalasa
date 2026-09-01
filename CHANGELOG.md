@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.923.2 — El logo de la empresa: FARMACIAS centrado sobre el nombre
+## v2.923.1 — El logo de la empresa: FARMACIAS centrado sobre el nombre
 
 `public/logo-farmacias.png` tenía «FARMACIAS» alineado a la izquierda, casi a
 ras del arranque de «LA POPULAR Y LA SALUD» (+23 px sobre 1,840 de ancho). Lo
@@ -42,6 +42,16 @@ la espera. Quedó en 410–1390, centro 900 contra 928 del nombre.
 
 Lo usa `LOGO_DE_LA_EMPRESA` (`src/utils/marcaDeLaSala.js`), así que el cambio
 entra en todo lo que muestre el logo de la empresa, el carné incluido.
+
+**Las tres posiciones quedan guardadas en `marca/`**, que es donde vive lo
+aprobado: `logo-farmacias-alineado-izquierda.png` (como estaba hasta hoy),
+`logo-farmacias-centrado-tinta.png` (+406 px) y `logo-farmacias-centrado-optico.png`
+(+378, el que se usa). No van a `public/` porque todo lo que está ahí se publica
+y viaja aunque nadie lo pida; cambiar de opción es copiar el archivo elegido
+sobre `public/logo-farmacias.png`. Y guardar el de la izquierda es a propósito:
+al aplicar la regla de marca una vez se borró un logo que el usuario sí había
+aprobado y hubo que rescatarlo del historial — un archivo aprobado no se pierde
+porque dejó de estar en uso.
 
 ## v2.922.3 — El código se lee de un vistazo y el QR entra solo
 

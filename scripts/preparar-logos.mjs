@@ -131,6 +131,17 @@ for (const m of medidas) {
  * Este script sólo ADAPTA lo aprobado —recorta el margen transparente, acota el
  * tamaño— y no compone. Si el logo de la empresa hay que cambiarlo, se
  * reemplaza el archivo.
+ *
+ * Así se hizo el 2026-09-01 (v2.923.1): el usuario lo pidió con «FARMACIAS»
+ * centrado sobre el nombre, y se centró MOVIENDO los píxeles ya aprobados
+ * —+378 px, centrado óptico: 28 px menos que el centro exacto, que es medio
+ * espacio del tracking de ~56 px— sin redibujar ni una letra. El icono y el
+ * nombre no se tocaron.
+ *
+ * Las tres posiciones quedan en `marca/`: `-alineado-izquierda` (la de antes),
+ * `-centrado-tinta` (+406) y `-centrado-optico` (+378, el que usa el portal).
+ * Cambiar de opción es copiar el elegido sobre `public/logo-farmacias.png` —
+ * no se regenera ninguno.
  */
 
 await navegador.close();

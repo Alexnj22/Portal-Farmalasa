@@ -665,3 +665,45 @@ SELECT cron.schedule('puntos-acumular-1min', '* * * * *', $$ … $$);
 
 Antes de cada uno se corre su versión simulada, que hace el mismo trabajo y no
 escribe una fila.
+
+---
+
+## 11. El prompt para encender
+
+Esto es lo que se pega en una sesión nueva **el día que se decida arrancar**.
+Está escrito para que la sesión no tenga que adivinar nada: le dice dónde está
+la verdad, en qué orden va, y **dónde se para a mostrar antes de escribir**.
+
+> Vamos a encender el programa de puntos en el portal. Leé primero
+> `docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md` §10 —ahí está el estado real— y
+> verificá contra producción antes de creerle, que el doc puede haber quedado
+> viejo.
+>
+> El orden es éste, y **no lo cambies**:
+>
+> 1. Desplegá las cuatro edge functions (`puntos-motor`, `puntos-traer-saldos`,
+>    `mis-puntos`, `puntos-consulta`). Ninguna enciende nada por sí sola.
+> 2. Corré `puntos-traer-saldos` **en simulado** y **parate ahí**: mostrame
+>    cuántas cuentas de MySQL no encuentran ficha, cuántos DUI están repetidos y
+>    cuántos puntos hay en juego en cada grupo. **No migres hasta que yo diga.**
+> 3. Cuando te lo apruebe: migrá de verdad con fecha `2026-10-01` y cuadrame
+>    saldo contra saldo, cuenta por cuenta. Si un total no cuadra, pará.
+> 4. Creá el cron de `puntos-motor` con `acumulacion_activa` **apagada**, y
+>    dejalo correr simulado. Mostrame un día de corridas: qué habría acumulado,
+>    qué canjes habría detectado, qué avisos habría mandado.
+> 5. Recién entonces, y con mi sí explícito, encendé `acumulacion_activa` y
+>    después `fuente = 'portal'`.
+>
+> Además, antes del paso 3: corré la comparación de elegibilidad sobre **el mes
+> completo anterior al corte**, no sólo la semana de julio, y mostrame las
+> diferencias. Y traeme los 6 casos de catálogo de §7 que quedaron sin abrir.
+>
+> Nada de esto se hace de corrido: son cinco pasos con freno, y **el freno lo
+> suelto yo**.
+
+**Por qué el prompt tiene frenos y no es una sola orden.** Los tres actos que no
+se deshacen mirando son la migración de saldos, el cron y la bandera. Migrar mal
+le pone el saldo de una persona a otra —hay **100 DUI repetidos en 203 fichas**,
+y `puntos_migrar` informa pero no elige—; encender la acumulación sin haberla
+visto simulada mete filas en el libro mayor que después hay que distinguir de las
+buenas. El resto del plan se puede rehacer; esos tres, no.

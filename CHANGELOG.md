@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.911.2 — Tres retoques del reglamento
+
+Correcciones de redacción del usuario, todas en el texto del reglamento:
+
+- **2.2** — «de la misma forma en los dos casos» → **«en ambos casos»**.
+- **2.5** — «antes de que la venta **se cierre**» → **«antes de que la venta
+  finalice»**. Es la palabra que se usa en la sala; «cerrar» una venta suena a
+  cerrar la caja, que es otra cosa y pasa una vez al día.
+- **3.2** — «cumple las tres condiciones» → **«las tres condiciones
+  siguientes»**, que es lo que anuncia una lista.
+
 ## v2.911.1 — El programa se llama Puntos Salud, y nada más
 
 Dos correcciones de redacción del usuario.

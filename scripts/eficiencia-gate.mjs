@@ -73,6 +73,23 @@ const REGENERAR = process.argv.includes('--update-baseline');
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'refresh-product-last-sale-daily', slug: null, cadencia: '45 6 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Recalcula `product_last_sale` —la fecha de la última venta de cada producto en cada '
+          + 'sala— desde las ventas reales. Existe porque el disparador que la llena escribe al '
+          + 'INSERTAR el renglón y sólo sabe SUBIR la fecha, y la anulación de la factura llega '
+          + 'después: sin este barrido, cada factura anulada deja su fecha adentro para siempre. '
+          + 'Medido el 2026-09-01 al estrenarlo: 34 fechas equivocadas (hasta 195 días más nuevas '
+          + 'de lo real) y 11 productos que NUNCA se vendieron pero figuraban vendidos, con nueve '
+          + 'de esas 45 cruzando el corte de 90 días con el que Mín·Máx decide si congela una '
+          + 'baja de máximo. Se anulan ~65 facturas por mes de forma sostenida, así que la '
+          + 'suciedad se re-acumula sola: por eso es un cron y no un arreglo de una vez. '
+          + '`sistema: 0` porque es SQL puro contra la propia base — no habla con el ERP ni con '
+          + 'Hacienda. Una vez al día y a las 06:45 UTC: cuesta ~1.07 s entrando por índice, va '
+          + 'después del rollup de las 06:30 para no pelearle el `work_mem`, y cae en la ventana '
+          + 'en que los crons de sync están quietos (corren 12-23,0-5).',
+  },
+  {
     job: 'soltar-capturas-abandonadas', slug: 'soltar-captura', cadencia: '7 * * * *',
     corridasDia: 24, sistema: 0,
     motivo: 'Vacía el buzón `capturas/` — la copia temporal que el teléfono deja para que la '

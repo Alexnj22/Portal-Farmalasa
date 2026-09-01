@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.911.1 — El programa se llama Puntos Salud, y nada más
+
+Dos correcciones de redacción del usuario.
+
+**El título del reglamento decía el nombre dos veces**: «Reglamento del Programa
+de Puntos · Puntos Salud». Queda **«Reglamento del programa Puntos Salud»** —
+«de Puntos» sobraba desde que el programa tiene nombre propio. El pie de cada
+página va igual.
+
+**Y la bajada del afiche pierde la coletilla.** Decía *«solo identifícate antes
+de pagar **y esa compra ya cuenta**»*; queda en el punto. La segunda mitad
+explicaba algo que el titular —«Los puntos se acumulan solos»— ya dijo dos
+renglones arriba, y entraba en una segunda línea para repetirlo.
+
 ## v2.911.0 — El papel del código, con su QR
 
 La pantalla del código de acceso y su tiquete. Con esto el circuito está

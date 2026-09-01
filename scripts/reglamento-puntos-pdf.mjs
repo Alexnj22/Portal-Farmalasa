@@ -98,7 +98,7 @@ await page.pdf({
   footerTemplate:
     '<div style="width:100%;font-size:7.5pt;color:#666;padding:0 20mm;white-space:nowrap;'
     + 'font-family:system-ui,sans-serif;display:flex;justify-content:space-between">'
-    + '<span>Reglamento del Programa de Puntos «Puntos Salud» · NIT 0401-210685-101-0</span>'
+    + '<span>Reglamento del programa Puntos Salud · NIT 0401-210685-101-0</span>'
     // Las tres piezas del número van en UN solo span: como el pie es un flex con
     // `space-between`, separarlas las manda a las esquinas y el «3 / 7» sale
     // repartido a lo ancho de la página.

@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.922.0 — Abonos de cliente: la tabla y el folio
+
+Migraciones `20260901212158` y `20260901212228`. El **cimiento** de los abonos
+de cliente —el dinero que alguien deja para apartar un producto—. Todavía no hay
+pantalla ni comprobante: esto es la tabla, sus permisos y el folio.
+
+**El circuito, decidido por el usuario (1-sep):**
+
+| momento | qué pasa en la caja |
+|---|---|
+| **abono** | entra como INGRESO. El dinero está en el cajón y cuenta para el corte |
+| **retiro** | la venta registra el total, y un **VALE** por el monto abonado explica el dinero que la caja espera y no llegó hoy |
+
+Sin ese vale la caja pediría el total de la venta habiendo recibido sólo la
+diferencia, y el corte saldría faltante por el monto del abono.
+
+**No toca existencias**, y es deliberado: el producto se aparta a mano en la
+sala. Devolver al disponible la existencia de una reserva que vence, sin que
+nadie mire el estante, es inventar stock.
+
+**Los renglones van en `jsonb` y no en una tabla hija.** Un renglón puede ser un
+producto del catálogo o un nombre escrito a mano —el encargo que todavía no
+existe como producto—, así que la mitad de las filas no tendría FK. Y nunca se
+consultan por separado: se leen enteros con su abono, para reimprimir el papel.
+
+**El papel es el contrato, así que se guarda como se imprimió.** El nombre y el
+teléfono se copian a la fila aunque el cliente tenga ficha: si mañana alguien le
+corrige el nombre, el comprobante que el cliente tiene en la mano sigue siendo
+reconstruible.
+
+**El folio no lleva guion**, y eso no es estética: va adentro del código de
+barras, y `limpiarValorDeBarras` deja `[A-Z0-9]` y nada más —es el alfabeto que
+las dos simbologías del rollo aceptan sin cambiar de juego de caracteres—. Con
+guion, el papel diría `S3-1000`, el lector devolvería `S31000`, y la búsqueda
+fallaría **sólo al escanear**. Queda `S31000`: código de sala más un correlativo
+**global**, porque dos series por sala darían `S31000` y `S41000` el mismo día y
+nadie notaría que son abonos distintos del mismo número.
+
+Se escribe únicamente por la edge function con `service_role`: `authenticated`
+tiene SELECT y nada más. Un `WITH CHECK` permisivo dejaría fabricar un abono sin
+que entrara un centavo a la caja.
+
+La segunda migración cierra lo que la primera dejó abierto: el REVOKE de
+`siguiente_folio_de_abono` quitaba el EXECUTE a PUBLIC y a anon, y eso **no
+alcanza** — Supabase se lo concede a `authenticated` aparte, así que cualquier
+sesión podía quemar folios de la secuencia. Lo cazó `gate:migrations`.
+
 ## v2.921.1 — Efectivo: las tarjetas dicen si todo está bien, y la sucursal no se pierde
 
 Tres cosas reportadas al ver la pantalla en vivo (usuario, 1-sep).

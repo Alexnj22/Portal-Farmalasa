@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.898.0 — Las operaciones de puntos, escritas y probadas
+
+Migraciones `20260901152357` y `20260901152737`. El programa de puntos ya tiene
+en el portal **todo lo que necesita para funcionar** — y sigue apagado.
+
+`puntos_vence_el` · `ventas_elegibles_puntos` · `puntos_consumir` ·
+`puntos_acumular` · `puntos_registrar_canje` · `puntos_anular_venta` ·
+`puntos_vencer_lotes` · `puntos_cuadrar` · `puntos_estado_cuenta` ·
+`puntos_migrar`.
+
+**Nada se llama solo.** No hay trigger, no hay cron, ninguna pantalla las usa.
+Y las que escriben **simulan por defecto**: para que toquen una fila hay que
+pedírselo con `p_simular => false`. Encender son dos actos explícitos que estas
+migraciones no hacen.
+
+**El vencimiento tiene una excepción con fecha, y vive en UNA función.** Doce
+meses desde la compra, salvo lo ganado antes del 1 de octubre de 2026: a eso el
+reglamento le prometió el 1-oct-2027. Sin esa rama, un punto ganado el 15 de
+septiembre vencería el 15 de septiembre de 2027 — **antes de lo prometido**, y el
+error no se vería hasta dentro de un año. Probadas las 7 fechas de borde: el
+30-sep y el 1-oct dan las dos `2027-10-01`, o sea que los dos regímenes se
+encuentran sin hueco.
+
+**Probado contra datos reales, y sin dejar una fila.** Todas las corridas fueron
+dentro de transacciones que terminan en `RAISE`; al final las cuatro tablas
+siguen en cero. Veintinueve casos entre las tres tandas. Los que más importan:
+
+- **acumular simulado dice «5 lotes» y escribe 0**
+- el canje detectó **600 puntos** ($6.00) en una factura real; **sin saldo
+  descuenta 0 y pide aviso**, con saldo descuenta los 600
+- el mismo canje dos veces no descuenta dos veces
+- **MAPFRE devuelve «ninguna»** — la guarda del convenio, contra la ficha real
+- migrar es idempotente y pone `vence_el = 2027-10-01`
+- el cuadre da **0 descuadradas** antes y después de vencer
+
+Y una prueba que salió gratis: una corrida se cortó por tiempo a mitad de camino
+y las tablas quedaron en cero. El rollback no es una promesa del diseño — se vio
+funcionar.
+
+**`ventas_elegibles_puntos` reproduce exacto la consulta suelta**: 4,009 facturas
+y 47,449 puntos en la semana de julio, con `sin_ficha: 0` — las 4,009 tienen
+cliente identificado, así que ligar por ficha y no por el nombre escrito en la
+factura funciona para el 100%.
+
+Los dos archivos locales se verificaron **por md5 contra `pg_proc`**: 10 de 10
+cuerpos idénticos a lo que corre en producción. Una transcripción a mano de 486
+líneas de SQL es exactamente donde se cuela una diferencia que nadie nota.
+
 ## v2.897.1 — El puesto y el listado, del lado del navegador
 
 La otra mitad de v2.897.0: el anillo con su número corregido, la fila del

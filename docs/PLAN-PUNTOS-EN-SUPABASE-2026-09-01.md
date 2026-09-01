@@ -568,19 +568,67 @@ END $$;
 
 ---
 
-## 10. Cuando se confirme, el orden exacto de la sesión
+## 10. Estado real — qué está aplicado y qué falta
 
-1. `npm run gate:migrations -- --remote` para ver que el repo y prod estén parejos
-   **antes** de agregar nada.
-2. Copiar el cuerpo de `ventas_para_puntos` desde `pg_proc.prosrc` — **no** desde
-   este documento.
-3. Correr el §8 en el branch de pruebas. Si un caso sale «LO ACEPTO», parar.
-4. `apply_migration` de las tres migraciones a producción, una por una.
-5. **Guardar el archivo local de cada una con la versión de 14 dígitos que
-   devolvió el servidor**, en el mismo commit. `apply_migration` nunca toca el
-   disco y olvidarlo no da ningún error.
-6. Agregar las cuatro tablas y las funciones a `auditoria/areas.mjs` — sin eso
-   `gate:auditoria` falla y bloquea el commit de todo el mundo.
-7. Declarar el cron nuevo en el manifiesto `CRONS` de `gate:eficiencia`, con su
-   costo por corrida y el motivo escrito.
-8. `npm run gate:perf`, `npm run gate:eficiencia`, `npm run gate:data`.
+**Aplicado a producción el 2026-09-01** (y las tres con su archivo local en el
+mismo commit):
+
+| migración | qué dejó |
+|---|---|
+| `20260901151907` | las cuatro tablas del libro mayor |
+| `20260901152357` | `puntos_vence_el` y `ventas_elegibles_puntos` |
+| `20260901152737` | las ocho operaciones |
+
+**Todo está INERTE.** Las tablas están vacías, ningún cron las toca, ninguna
+pantalla las lee y ninguna función se llama sola. Se verificó antes de crear
+nada que los dos crones existentes (`sync-puntos-1min` y `puntos-vencer-mensual`)
+hablan sólo con MySQL y con su propio log.
+
+### Probado contra datos REALES, en transacciones que se deshacen
+
+Ninguna prueba dejó una fila: se corrieron dentro de un bloque que termina en
+`RAISE`, y al final las cuatro tablas siguen en cero.
+
+| | |
+|---|---|
+| **estructura** (en el branch) | 10 casos: doble crédito, lote de venta sin venta, ajuste sin motivo, restantes > lote, vence antes de ganarse, saldo negativo, anulación sin su venta, FIFO, borrar un lote consumido |
+| **vencimiento** | 7 fechas de borde. El 30-sep y el 1-oct dan los dos `2027-10-01`: las dos reglas se encuentran sin hueco |
+| **la regla** | 4,009 facturas y 47,449 puntos en la semana de julio — **idéntico** a la consulta suelta, y `sin_ficha: 0` |
+| **ciclo completo** | 9 casos: acumular simulado no escribe, acumular real, saldo = suma de lotes, anular, anular dos veces, estado de cuenta, cuadre, vencer, cuadre tras vencer |
+| **canje y migración** | 10 casos: simulado no escribe, canje sin saldo descuenta 0 y pide aviso, canje con saldo, el mismo canje dos veces, **MAPFRE devuelve «ninguna»**, migrar simulado/real/repetido, cuadre final |
+
+Y una prueba que salió gratis: una de las corridas se cortó por tiempo a mitad
+de camino y **las tablas quedaron en cero**. El rollback no es una promesa del
+diseño, se vio funcionar.
+
+### Lo que falta para encender
+
+1. **El puente que trae los saldos.** Una edge function que lea `Clientes` de
+   MySQL y llame a `puntos_migrar`. No se puede hacer desde fuera del proyecto:
+   sólo las edge functions alcanzan esa base.
+2. **El cron de acumulación.** Llamar a `puntos_acumular(..., p_simular => false)`.
+   **No existe y no se crea hasta que se pida.**
+3. **El detector de canjes y anulaciones**, enganchado a las ventas nuevas.
+4. **El frente**: `/mis-puntos` y el panel de la ficha leen MySQL hoy; tienen que
+   pasar a `puntos_estado_cuenta`. **Va al final**, después de migrar: apuntarlo
+   antes le mostraría cero puntos a todo el mundo.
+5. **El aviso** a sala y supervisor cuando un canje no alcanza. La función ya
+   devuelve `avisar` y `aviso` armados; falta quien los mande — una función de
+   Postgres no manda notificaciones.
+6. **Los 6 casos de catálogo** de §7, sin abrir.
+7. **La comparación sobre el mes anterior al corte**, no sólo la semana de julio.
+
+### El encendido, cuando se pida
+
+Son **dos actos explícitos**, y hasta que los dos ocurran esto no cambia nada:
+
+```sql
+-- 1 · los saldos (con el volcado de MySQL en p_filas)
+SELECT public.puntos_migrar('[…]'::json, DATE '2026-10-01', false);
+
+-- 2 · el cron
+SELECT cron.schedule('puntos-acumular-1min', '* * * * *', $$ … $$);
+```
+
+Antes de cada uno se corre su versión simulada, que hace el mismo trabajo y no
+escribe una fila.

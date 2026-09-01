@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.916.0 — Clientes lo ve y lo edita quien atiende
+
+Migración `20260901203159`. **De 5 personas a 38.**
+
+Salió de una pregunta del usuario sobre el código de acceso, y lo que destapó
+era más viejo que el código: **quien atiende en el mostrador no podía ni VER la
+ficha de un cliente**. El módulo `clientes` lo tenían cinco cargos —Administrador,
+Gerente General, Talento Humano, Supervisor de Ventas y QA— y ninguno de ellos
+está en la sala cuando alguien pregunta por sus puntos.
+
+Ahora también lo tienen los tres cargos que atienden: **Dependiente de Farmacia
+(21), Regente de Enfermería (7) y Jefe/a de Sala (6)**. Los tres ya veían
+`ventas` y `pedidos`; `clientes` era el hueco.
+
+> «abrelo, igual ellos deben poder agregar clientes y demas.»
+
+**Se evaluó la alternativa acotada y el usuario eligió el módulo entero.** El
+módulo ya soporta sub-capacidades —existe `clientes_ver_montos` justamente
+porque *«la ficha fiscal se completa igual sin ver cuánto factura cada
+cliente»*— y se podía agregar una hermana sólo para el código. La decisión fue
+abrirlo completo, porque el alta de clientes también les corresponde.
+
+⚠️ Lo que eso abre, dicho entero: la ficha fiscal de las **28,110** personas
+—DUI, NIT, NRC, categoría, contacto y ubicación— y con `can_edit`, corregirlas.
+**`clientes_ver_montos` NO se tocó**: cuánto factura cada cliente sigue siendo de
+quien ya lo tenía.
+
 ## v2.915.0 — Promociones — el cálculo, verificado al número
 
 Las cuatro escrituras del módulo (crear, activar, cambiar montos, extender) y

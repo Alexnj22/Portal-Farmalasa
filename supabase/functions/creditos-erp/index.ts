@@ -155,7 +155,16 @@ Deno.serve(async (req) => {
           cliente: body.cliente ?? null,
         },
       }).select("id").single();
-      if (eSol) throw new Error(`creando la solicitud: ${eSol.message}`);
+      if (eSol) {
+        /* 23505 es el índice único `approval_requests_un_abono_pendiente`: otra
+         * persona pidió lo mismo entre la comprobación de arriba y este insert.
+         * La ventana es estrecha y real, y por eso la garantía vive en la base
+         * y no en el `if`. Acá sólo se traduce a algo que se pueda leer. */
+        if (String((eSol as { code?: string }).code) === "23505") {
+          return responder({ ok: false, error: "Ya hay una solicitud pendiente sobre ese abono." }, 409);
+        }
+        throw new Error(`creando la solicitud: ${eSol.message}`);
+      }
       return responder({ ok: true, solicitud: sol.id });
     }
 

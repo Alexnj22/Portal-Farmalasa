@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.945.1 — Una sola solicitud viva por objeto
+
+Pregunta del usuario: *«verifica eso mismo con las demás solicitudes, ¿si tienen
+la validación de 1 solicitud activa?»*. Se auditaron las siete familias que
+existen en producción.
+
+La pregunta sólo aplica a las que corrigen **un objeto que ya existe** — pedir
+dos veces por la misma factura es un error; pedir dos traslados distintos, no.
+Con ese corte:
+
+| familia | guarda |
+|---|---|
+| Anulación · Forma de pago · Vendedor · Cliente | ✅ índice único por factura |
+| Traslado entre salas | ✅ índice único mientras esté pendiente |
+| Carga · Descarte · Envío de producto | no aplica: cada una **crea** una operación nueva |
+| **Corrección de caja** | ❌ **sin ninguna guarda** |
+| **Corrección de un abono** | ❌ sólo una comprobación en código |
+
+Las dos que faltaban ya la tienen, **como índice y no como `if`**. La
+comprobación en código tiene una ventana: dos personas aprietan a la vez, las
+dos leen «no hay ninguna pendiente», las dos insertan. Es estrecha y es real, y
+el daño no es cosmético — dos correcciones aprobadas sobre el mismo movimiento
+se aplican las dos, y la segunda corre sobre algo que la primera ya cambió. El
+`if` se queda para dar el mensaje amable; el índice es la garantía.
+
+La corrección de caja además **no comprobaba nada**: ahora lo hace, y el error
+del índice se traduce a «ya hay una solicitud pendiente sobre ese movimiento»
+en vez de reventar.
+
+⚠️ Lo que esto **no** cubre, y conviene saberlo: una corrección de *monto* en
+caja aprobada dos veces **seguidas** —no a la vez— sigue siendo posible. Al
+aplicar, la guarda mira si el movimiento está anulado, y eso sólo atrapa la
+anulación. Es de la función que aplica, no del índice.
+
 ## v2.945.0 — El origen ya deja fuera el cobro que no es efectivo
 
 Ayer salió v2.941.0 con una hipótesis escrita como aviso. Hoy se midió y era

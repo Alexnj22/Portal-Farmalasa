@@ -235,6 +235,19 @@ Deno.serve(async (req) => {
       if (!mov) return json({ ok: false, error: "Ese movimiento no existe." }, 404);
       if (mov.anulado_at) return json({ ok: false, error: "Ese movimiento ya está anulado." }, 409);
 
+      /* Una sola solicitud viva por movimiento. Faltaba (auditado el 2-sep a
+       * pedido del usuario): dos personas podían pedir lo mismo, un supervisor
+       * aprobar las dos, y la segunda corrección aplicarse sobre un movimiento
+       * que la primera ya cambió. La garantía es el índice
+       * `approval_requests_un_movimiento_pendiente`; esto da el mensaje. */
+      const { data: yaHay, error: errYaHay } = await supabase.from("approval_requests")
+        .select("id").eq("type", "CAJA_MOVIMIENTO_CHANGE").eq("status", "PENDING")
+        .eq("metadata->>movimiento_portal", String(movId)).maybeSingle();
+      if (errYaHay) throw new Error(`buscando solicitudes vivas: ${errYaHay.message}`);
+      if (yaHay) {
+        return json({ ok: false, error: "Ya hay una solicitud pendiente sobre ese movimiento." }, 409);
+      }
+
       const { data: sol, error: errSol } = await supabase.from("approval_requests").insert({
         type: "CAJA_MOVIMIENTO_CHANGE",
         employee_id: quien.id,
@@ -246,7 +259,13 @@ Deno.serve(async (req) => {
           concepto: mov.concepto, erp_movimiento_id: mov.erp_movimiento_id,
         },
       }).select("id").single();
-      if (errSol) throw new Error(`creando la solicitud: ${errSol.message}`);
+      if (errSol) {
+        // 23505: el índice único. Otra persona pidió lo mismo en el medio.
+        if (String((errSol as { code?: string }).code) === "23505") {
+          return json({ ok: false, error: "Ya hay una solicitud pendiente sobre ese movimiento." }, 409);
+        }
+        throw new Error(`creando la solicitud: ${errSol.message}`);
+      }
       return json({ ok: true, solicitud: sol.id });
     }
 

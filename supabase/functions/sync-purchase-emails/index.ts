@@ -33,7 +33,14 @@ const ZIP_MAX_ENTRY_BYTES = 10 * 1024 * 1024; // igual a MAX_REMOTE_BYTES/file_s
 // absoluto (ej. cotizaciones, catálogos, comprobantes de pago de otro tipo).
 // Si el correo trae al menos un JSON válido ya sabemos que es un DTE por
 // estructura (validateDte), así que este filtro NO aplica en ese caso.
-const DTE_EMAIL_KEYWORD_RE = /(factura|comprobante|\bdte\b|ccf|cr[ée]dito\s*fiscal|documento\s*tributario|nota\s*de\s*cr[ée]dito|nota\s*de\s*d[ée]bito|nota\s*de\s*remisi[oó]n|tributari[oa]\s*electr[oó]nic[oa])/i;
+// `invalidaci[oó]n|anulaci[oó]n|cancelaci[oó]n` se agregaron el 2026-09-02, y
+// faltaban por una razón que sólo se ve con el correo delante: un aviso de
+// anulación puede no nombrar el documento que anula. Promerica manda dos con el
+// asunto **«Invalidación de documento»** — «documento» a secas no matchea
+// («documento tributario» sí), así que `emailLooksLikeDte` daba false y el PDF
+// se descartaba con un warning, sin fila en Revisión y sin nada que mirar.
+// Fueron dos CCF anulados el 28-ago que no dejaron rastro en ninguna pantalla.
+const DTE_EMAIL_KEYWORD_RE = /(factura|comprobante|\bdte\b|ccf|cr[ée]dito\s*fiscal|documento\s*tributario|nota\s*de\s*cr[ée]dito|nota\s*de\s*d[ée]bito|nota\s*de\s*remisi[oó]n|tributari[oa]\s*electr[oó]nic[oa]|invalidaci[oó]n|anulaci[oó]n|cancelaci[oó]n)/i;
 
 // Enlaces en el cuerpo del correo (en vez de adjunto inline) — algunos
 // proveedores mandan "descargue su factura aquí" con un link a su portal en

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.938.1 — Un aviso de anulación puede no nombrar la factura que anula
+
+**Dos CCF más anulados, y estos ni siquiera habían llegado a Revisión.** Banco
+Promerica manda su aviso con el asunto **«Invalidación de documento»** — y el
+filtro que decide si un correo es de facturación pedía «documento *tributario*»,
+así que «documento» a secas no matcheaba nada. `emailLooksLikeDte` daba false, el
+PDF se descartaba antes de abrirse, y el único rastro era una línea de aviso en
+el registro del sync. Cero filas, cero pantallas, nada que mirar.
+
+Se agregaron `invalidación`, `anulación` y `cancelación` a esa lista: **un aviso
+de anulación puede no nombrar el documento que anula**, y era justo el caso que
+faltaba.
+
+**Y el barrido se corrió sobre las DOS bandejas.** La corrección de v2.937.0 se
+verificó sólo contra la de compras; los avisos de Promerica llegan a la otra.
+Contando todo, quedan **11 documentos invalidados** con su respaldo enlazado, y
+en Revisión no queda ningún aviso de anulación pendiente — sólo tres
+«Comprobante de abono», que no lo son.
+
+**Lo que este barrido no puede probar.** Busca por lo que el asunto delata. Un
+aviso con asunto neutro y el sello sólo dibujado en el PDF seguiría siendo
+invisible, porque los PDF de correos que no parecen facturas no se abren — que
+es la guarda que evita acumular basura en Revisión. Cerrar ese hueco pide leer
+el PDF de todo correo de un remitente ya conocido, y es una decisión aparte.
+
 ## v2.938.0 — Las cuentas por cobrar viven en el portal, y el plazo avisa
 
 Pedido del usuario: *«haz un cron que traiga las cuentas por cobrar, así

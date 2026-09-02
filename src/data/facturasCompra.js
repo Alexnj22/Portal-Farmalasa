@@ -146,6 +146,31 @@ export async function downloadPurchaseDtePackage(row) {
         const res = await fetch(url);
         if (res.ok) entradas.push({ name: `${baseName}.${ext}`, input: await res.blob() });
     }
+
+    // Si está anulado, el paquete lleva la prueba de que lo está: el PDF con el
+    // sello y, cuando el proveedor lo manda, el JSON del evento con su propio
+    // sello de recepción del Ministerio de Hacienda. Sin esto el ZIP traía el
+    // documento original y nada más — el mismo contenido que si estuviera
+    // vigente, o sea que el archivo no dice lo que pasó.
+    //
+    // Best-effort: si el respaldo no se puede bajar, el paquete sale igual con
+    // el documento. Una descarga no puede fallar entera por un adjunto.
+    if (row?.invalidado && row?.id) {
+        try {
+            for (const r of await fetchPurchaseDteReviewSources(row.id)) {
+                if (!r?.file_path) continue;
+                const url = await getSignedFileUrl(r.file_path);
+                if (!url) continue;
+                const res = await fetch(url);
+                if (!res.ok) continue;
+                const ext = String(r.filename || '').toLowerCase().endsWith('.json') ? 'json' : 'pdf';
+                entradas.push({ name: `${baseName}-anulacion.${ext}`, input: await res.blob() });
+            }
+        } catch (e) {
+            console.error('facturasCompra.js: respaldo de anulación —', e);
+        }
+    }
+
     if (entradas.length === 0) throw new Error('No se pudo descargar ningún archivo de este documento.');
 
     triggerDownload(await downloadZip(entradas).blob(), `${baseName}.zip`);

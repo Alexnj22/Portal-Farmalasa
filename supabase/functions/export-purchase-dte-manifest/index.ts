@@ -130,6 +130,9 @@ Deno.serve(async (req) => {
     type Entrada = { name: string; rel: string };
     const entradas: Entrada[] = [];
     const warnings: string[] = [];
+    // Para colgarle a cada documento anulado su respaldo, más abajo: la
+    // carpeta y el nombre base ya se calcularon una vez, no se recalculan.
+    const anulados = new Map<number, { folder: string; baseName: string }>();
 
     if (ids.length > 0) {
       // .in() con miles de ids es una URL enorme; se trocea el INPUT igual
@@ -155,6 +158,53 @@ Deno.serve(async (req) => {
           if (jsonRel) entradas.push({ name: `${folder}/${baseName}.json`, rel: jsonRel });
           const pdfRel = relativePath(row.pdf_path);
           if (pdfRel) entradas.push({ name: `${folder}/${baseName}.pdf`, rel: pdfRel });
+          if (row.invalidado === true) anulados.set(row.id, { folder, baseName });
+        }
+      }
+    }
+
+    // El respaldo de la anulación, junto al documento que anula.
+    //
+    // Hasta hoy la carpeta «Anulados» DECÍA que el documento estaba anulado y
+    // no llevaba con qué probarlo: adentro iban el JSON y el PDF del documento
+    // ORIGINAL, y el aviso —el PDF con el sello y, cuando lo hay, el JSON del
+    // evento con su propio sello de recepción del Ministerio de Hacienda— se
+    // quedaba afuera, porque vive en la cola de Revisión ya resuelto y de ahí
+    // sólo se exportaba lo `pendiente`.
+    //
+    // Eso deja el respaldo al revés de como se necesita: quien audita ve un
+    // documento archivado bajo «Anulados» sin nada que sostenga la afirmación.
+    // Bajo la norma DTE 2.0 el emisor entrega TRES archivos por invalidación, y
+    // los que la prueban son justamente los que faltaban.
+    //
+    // Van con sufijo `-anulacion` para que ordenados por nombre queden pegados
+    // al documento que anulan, y sin `Anulados/` propio: el respaldo pertenece
+    // al documento, no a una categoría aparte.
+    if (anulados.size > 0) {
+      // Chunks de 200 y no de 500: `matched_document_id` SE REPITE (un mismo
+      // documento puede tener el PDF del aviso, el JSON del evento y algún
+      // reenvío), así que acotar la entrada no acota la respuesta — con 200
+      // ids y hasta 4 respaldos cada uno la respuesta sigue lejos del techo de
+      // 1000 filas de PostgREST, que trunca sin avisar.
+      const DOC_CHUNK = 200;
+      const idsAnulados = [...anulados.keys()];
+      for (let i = 0; i < idsAnulados.length; i += DOC_CHUNK) {
+        const { data: respaldos, error: respErr } = await admin
+          .from("purchase_dte_review_queue")
+          .select("id, kind, file_path, filename, matched_document_id")
+          .eq("status", "emparejado")
+          .in("matched_document_id", idsAnulados.slice(i, i + DOC_CHUNK))
+          .order("id");
+        if (respErr) throw new Error(`respaldos de anulación: ${respErr.message}`);
+        for (const r of respaldos ?? []) {
+          const destino = anulados.get(r.matched_document_id as number);
+          const rel = relativePath(r.file_path);
+          if (!destino || !rel) continue;
+          // La extensión sale del archivo real y no del `kind`: un aviso puede
+          // llegar como PDF o como JSON, y ponerle la extensión equivocada hace
+          // que no abra.
+          const ext = (r.filename || "").toLowerCase().endsWith(".json") ? "json" : "pdf";
+          entradas.push({ name: `${destino.folder}/${destino.baseName}-anulacion.${ext}`, rel });
         }
       }
     }

@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.938.5 — El respaldo de la anulación viaja con el documento que anula
+
+**La carpeta «Anulados» decía que el documento estaba anulado y no llevaba con
+qué probarlo.** Adentro iban el JSON y el PDF del documento **original** — el
+mismo contenido que si estuviera vigente. El aviso del proveedor (el PDF con el
+sello, y cuando lo hay el JSON del evento con su propio sello de recepción del
+Ministerio de Hacienda) se quedaba afuera, porque vive en la cola de Revisión ya
+resuelto y de ahí sólo se exportaba lo *pendiente*.
+
+Para un respaldo fiscal eso está al revés: quien audita ve un documento
+archivado bajo «Anulados» sin nada que sostenga la afirmación. Bajo la norma DTE
+2.0 el emisor entrega **tres** archivos por invalidación, y los que la prueban
+son justamente los que faltaban.
+
+Ahora el aviso baja junto al documento, con sufijo `-anulacion` para que
+ordenados por nombre queden pegados:
+
+```
+Anulados/Credito Fiscal (CCF)/9F53BF27….json              ← el CCF
+Anulados/Credito Fiscal (CCF)/9F53BF27….pdf               ← su representación
+Anulados/Credito Fiscal (CCF)/9F53BF27…-anulacion.pdf     ← el aviso
+Anulados/Credito Fiscal (CCF)/9F53BF27…-anulacion.json    ← el evento, con sello del MH
+```
+
+Vale para la descarga masiva y para el botón «Todo» de un documento suelto. **No
+se duplica nada**: un documento va a `Anulados/<tipo>` **o** a `<tipo>`, nunca a
+los dos — eso ya era así y se verificó.
+
+Tres detalles que se rompen solos si no se cuidan: la extensión sale del archivo
+real y no de su clase (un aviso puede llegar como PDF o como JSON, y la
+extensión equivocada hace que no abra); los chunks de la consulta son de 200 y
+no de 500 porque `matched_document_id` **se repite** —un documento puede tener
+el PDF, el JSON y algún reenvío— así que acotar la entrada no acota la
+respuesta; y el desempate de nombres que ya existía cubre el caso de un
+proveedor que manda el mismo aviso tres veces (Guardado): salen `-anulacion.pdf`,
+`-anulacion (2).pdf` y `-anulacion (3).pdf`.
+
 ## v2.938.4 — La sala sigue abierta a las 10
 
 La cartera se refrescaba de 7am a 9pm y el usuario lo corrigió: *«de 7 a 10 pm,

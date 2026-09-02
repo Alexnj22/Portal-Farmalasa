@@ -1011,6 +1011,18 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
   let cutOff = false;
   const messagesToMarkProcessed: string[] = [];
 
+  // Quién ya nos facturó alguna vez. Se pide UNA vez por cuenta, no por mensaje:
+  // son ~97 direcciones y la guarda de más abajo la consulta en cada correo.
+  const remitentesConocidos = new Set<string>();
+  {
+    const { data: lista, error: remErr } = await supabase.rpc('get_remitentes_dte_conocidos', { p_account_id: account.id });
+    // No se traga el error: sin la lista, la guarda vuelve a depender sólo del
+    // asunto y un aviso de anulación con asunto neutro se pierde otra vez, en
+    // silencio. Que quede dicho en los avisos de la corrida.
+    if (remErr) warnings.push(`get_remitentes_dte_conocidos: ${remErr.message} — la guarda queda sólo con el asunto`);
+    else for (const c of (lista ?? [])) if (c) remitentesConocidos.add(String(c).toLowerCase());
+  }
+
   for (const id of pendingIds) {
     // H10: contra el deadline de la invocación, no contra un reloj propio.
     if (Date.now() > deadline) { cutOff = true; break; }
@@ -1222,11 +1234,35 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
     // asunto o el preview del correo mencione algo tipo factura/DTE/comprobante,
     // para no acumular PDFs de correos que no son facturas en absoluto.
     const orphanPdfsAll = pdfParts.filter(pp => !usedPdfFilenames.has(pp.filename));
-    const emailLooksLikeDte = jsonParts.length > 0 || looksLikeDteEmail(subject, msg.snippet ?? null);
+    // Tercera vía, agregada el 2026-09-02: **quién manda el correo**.
+    //
+    // Las dos primeras miran el contenido (¿trae un JSON de DTE?) y el asunto
+    // (¿dice factura/comprobante/…?). Las dos fallan con el mismo caso: un aviso
+    // de anulación puede no nombrar el documento que anula. Promerica manda
+    // «Invalidación de documento», el PDF se descartaba antes de abrirse, y dos
+    // CCF quedaron vigentes sin dejar una fila en ninguna pantalla — el único
+    // rastro era una línea de aviso en el registro de la corrida.
+    //
+    // Se puede ampliar el asunto (y se hizo), pero eso sólo cubre las palabras
+    // que a uno se le ocurrieron. Quién manda no depende de cómo lo tituló:
+    // si ya nos facturó, su PDF se mira. Y el costo está medido — de 15
+    // remitentes con PDF descartado, 13 no mandan DTE, así que la guarda sigue
+    // filtrando lo que existe para filtrar.
+    const correoDelRemitente = (fromEmail ?? '').toLowerCase().match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/)?.[0] ?? null;
+    const deProveedorConocido = !!correoDelRemitente && remitentesConocidos.has(correoDelRemitente);
+    const pareceDtePorContenido = jsonParts.length > 0 || looksLikeDteEmail(subject, msg.snippet ?? null);
+    const emailLooksLikeDte = pareceDtePorContenido || deProveedorConocido;
+    // Los que entran SÓLO porque el remitente ya nos facturó pasan una prueba
+    // más abajo: su PDF se abre, pero se encola únicamente si nombra un
+    // documento que tenemos. La guarda existe para no perder una anulación, no
+    // para llenar Revisión — y medido en vivo, esa diferencia son los 6 correos
+    // de «Notificación de Pagos Recibidos» de ERA, que no dicen nada de ningún
+    // DTE nuestro y no hay nada que hacer con ellos.
+    const soloPorRemitente = deProveedorConocido && !pareceDtePorContenido;
     const orphanPdfs = emailLooksLikeDte ? orphanPdfsAll : [];
     if (!emailLooksLikeDte && orphanPdfsAll.length > 0) {
       documentsSkipped += orphanPdfsAll.length;
-      warnings.push(`mensaje ${id} (${fromEmail}): ${orphanPdfsAll.length} adjunto(s) PDF ignorado(s) — el correo no parece ser factura/DTE (asunto: "${subject ?? ''}")`);
+      warnings.push(`mensaje ${id} (${fromEmail}): ${orphanPdfsAll.length} adjunto(s) PDF ignorado(s) — ni el asunto ni el remitente lo relacionan con un DTE (asunto: "${subject ?? ''}")`);
     }
 
     if (dryRun) {
@@ -1406,12 +1442,34 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
     for (const op of orphanPdfs) {
       try {
         const pdfBytes = await resolveAttachmentBytes(accessToken, id, op);
+        const { codigo: detectedCodigo, isNoticeOrRelatedDoc, isAnulado } = await detectCodigoGeneracionInPdf(pdfBytes);
+
+        // Se lee el PDF ANTES de subirlo. El orden importa para el caso de
+        // `soloPorRemitente`: leerlo es barato y local, subirlo deja un archivo
+        // en Storage para siempre. Al revés, cada notificación de pago de un
+        // proveedor conocido dejaba su basura guardada aunque después se
+        // descartara.
+        const { data: existing, error: findErr } = detectedCodigo
+          ? await supabase.from('purchase_dte_documents')
+              .select('id, pdf_path, invalidado')
+              .eq('codigo_generacion', detectedCodigo)
+              .maybeSingle()
+          : { data: null, error: null };
+        // El error del select NO se traga: con `!findErr && existing` un fallo
+        // de red se leía igual que "no existe ese documento", y el aviso se iba
+        // a Revisión como huérfano sin que nada lo dijera.
+        if (findErr) throw new Error(`buscar ${detectedCodigo}: ${findErr.message}`);
+
+        if (soloPorRemitente && !existing) {
+          documentsSkipped++;
+          warnings.push(`mensaje ${id} (${fromEmail}): PDF ${op.filename} de un proveedor conocido pero no nombra ningún documento nuestro — descartado (asunto: "${subject ?? ''}")`);
+          continue;
+        }
+
         const path = `review/${id}-${sanitizeStorageKey(op.filename)}`;
         const { error: upErr } = await supabase.storage.from(BUCKET)
           .upload(path, pdfBytes, { contentType: 'application/pdf', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
-
-        const { codigo: detectedCodigo, isNoticeOrRelatedDoc, isAnulado } = await detectCodigoGeneracionInPdf(pdfBytes);
         // Dos señales independientes, y hacen falta las dos porque cada
         // proveedor esconde la anulación en un sitio distinto: Uniserfa la
         // escribe en el PDF (`isAnulado`), Guardado la DIBUJA y sólo la dice
@@ -1451,16 +1509,6 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         let isDuplicateResend = false;
         let autoInvalidated = false;
         if (detectedCodigo) {
-          // El error del select NO se traga: con `!findErr && existing` un
-          // fallo de red se leía igual que "no existe ese documento", y el
-          // aviso se iba a Revisión como huérfano sin que nada lo dijera.
-          const { data: existing, error: findErr } = await supabase
-            .from('purchase_dte_documents')
-            .select('id, pdf_path, invalidado')
-            .eq('codigo_generacion', detectedCodigo)
-            .maybeSingle();
-          if (findErr) throw new Error(`buscar ${detectedCodigo}: ${findErr.message}`);
-
           if (existing && esAvisoDeAnulacion) {
             // La anulación se resuelve ANTES que "adjuntar el PDF que falta".
             // Con el orden viejo, un documento todavía sin PDF propio se

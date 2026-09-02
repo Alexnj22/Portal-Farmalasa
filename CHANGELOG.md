@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.938.3 — La cartera se refresca cada 10 minutos, no cada hora
+
+El usuario: *«cada hora es mucho, ¿cada 5 minutos? o qué opinás»*. Se midió
+antes de contestar, porque la respuesta depende de un número que nadie tenía:
+
+**Una corrida completa cuesta 17.3 s y 1.4 MB** — medio segundo de login más
+seis listados, y Salud 3 sola son 6.2 s. Y el origen **no** deja pedir sólo los
+que deben: su pantalla ofrece rango de fechas y nada más, así que es la tanda
+entera o nada.
+
+| cadencia | corridas/día | peticiones/día | datos | % del tiempo del origen |
+|---|---:|---:|---:|---:|
+| cada hora | 24 | 144 | 34 MB | 0.5% |
+| cada 15 min | 96 | 576 | 134 MB | 1.9% |
+| **cada 10 min** | **90** | **540** | **126 MB** | **2.9%** |
+| cada 5 min | 288 | 1.728 | 403 MB | 5.8% |
+
+Queda en **cada 10 minutos, de 7am a 9pm**. Dos razones:
+
+1. **La frescura de esta lista no protege dinero.** El abono relee el saldo del
+   origen antes de escribir y rechaza el exceso, así que una lista atrasada
+   muestra una deuda ya pagada durante unos minutos — molesto, no peligroso.
+   Los 5 minutos cuestan el doble para ganar cinco minutos sobre algo que no
+   puede hacer daño, y ocuparían el 5.8% del tiempo de un sistema que es el
+   mismo con el que las salas facturan.
+2. **De noche no hay quien cobre ni quien mire.** Doce corridas nocturnas son 72
+   peticiones que no cambian un dato, y la de las 7am deja la lista al día antes
+   de que abra la primera sala.
+
+Y el cron se llama **`creditos-cada-10min`**: uno que se llamara
+`creditos-cada-hora` corriendo cada diez minutos es una mentira que alguien iba
+a creer — el nombre es lo primero que se lee en el panel y en el manifiesto.
+
+## v2.938.2 — La guarda mira también quién manda el correo
+
+**Ampliar la lista de palabras sólo cubre las palabras que a uno se le
+ocurrieron.** El sync no abre los PDF de un correo que «no parece factura» —una
+guarda que existe para no llenar Revisión de cotizaciones, estados de cuenta y
+reportes de terminal, y que acierta— pero la decidía leyendo el **asunto**. Y un
+aviso de anulación puede no nombrar el documento que anula: eso es lo que costó
+dos CCF de Promerica el 28-ago.
+
+Ahora hay una tercera vía, y no depende de cómo se tituló el correo: **si el
+remitente ya nos facturó alguna vez, su PDF se abre igual.** La lista sale de
+los hechos (`get_remitentes_dte_conocidos`, las direcciones que ya trajeron un
+DTE) y no de una configuración que alguien tenga que mantener al día.
+
+**Y el costo está medido, no supuesto.** De los 15 remitentes a los que alguna
+vez se les descartó un PDF, **13 no mandan DTE** — reportes de terminal, estados
+de cuenta, cursos, cotizaciones. La guarda sigue filtrando exactamente lo que
+existe para filtrar; lo que cambia es que deja de tapar a los otros dos.
+
+Es por dirección exacta y no por dominio, a propósito: `comercios@promerica`
+manda 142 liquidaciones de terminal que no son DTE, y
+`facturaelectronica@promerica` manda los documentos. Son la misma empresa y sólo
+uno de los dos buzones factura.
+
 ## v2.938.1 — Un aviso de anulación puede no nombrar la factura que anula
 
 **Dos CCF más anulados, y estos ni siquiera habían llegado a Revisión.** Banco

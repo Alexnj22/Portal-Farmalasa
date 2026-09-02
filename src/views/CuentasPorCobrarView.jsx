@@ -17,7 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
-import { abonarCredito, DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchUltimaLectura } from '../data/creditos';
+import { abonarCredito, DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchUltimaLectura, severidadDeDias } from '../data/creditos';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { formatMoney } from '../utils/formatNumber';
 /* `fechaCorta` sale de `ticketCampos` y no se reescribe acá: es la MISMA
@@ -66,6 +66,16 @@ const VER = [
 ];
 
 const VACIO = [];
+
+/** Lo que la insignia significa, en palabras. El color solo no se puede leer —
+ *  ni con daltonismo ni con un lector de pantalla. */
+function tituloDeDias(dias, saldo) {
+    const s = severidadDeDias(dias, saldo);
+    if (s.grave) return 'Más de dos meses sin pagar';
+    if (s.variant === 'danger') return 'Pasado del plazo';
+    if (s.porVencer) return 'Vence esta semana';
+    return 'Dentro del plazo';
+}
 
 /** Cuánto del crédito está pagado, en enteros. Acotado a [0,100]: un abono de
  *  más —o un total en cero— no puede pintar una barra que se sale de su caja. */
@@ -345,7 +355,16 @@ export default function CuentasPorCobrarView() {
                                                 {c.documento}
                                             </span>
                                         </span>
-                                        <Badge variant={c.vencido ? 'warning' : 'neutral'} size="sm">
+                                        {/* Cuatro escalones y no dos: dentro del
+                                            plazo, por vencer (los últimos cinco
+                                            días), pasado el mes, y pasados dos
+                                            meses. El último cambia de FORMA
+                                            —relleno, con icono— y no sólo de
+                                            color, porque el mismo rojo repetido
+                                            se aprende a ignorar en una semana. */}
+                                        <Badge {...severidadDeDias(c.dias, c.saldo)} size="sm"
+                                            icon={severidadDeDias(c.dias, c.saldo).grave ? AlertTriangle : undefined}
+                                            title={tituloDeDias(c.dias, c.saldo)}>
                                             {c.dias} d
                                         </Badge>
                                     </div>
@@ -472,8 +491,9 @@ function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
                         </p>
                     </div>
                     {credito.saldo > 0.004 && (
-                        <Badge variant={credito.vencido ? 'warning' : 'neutral'} size="sm">
-                            {credito.dias} día{credito.dias === 1 ? '' : 's'}
+                        <Badge {...severidadDeDias(credito.dias, credito.saldo)} size="sm"
+                            icon={severidadDeDias(credito.dias, credito.saldo).grave ? AlertTriangle : undefined}>
+                            {credito.dias} día{credito.dias === 1 ? '' : 's'} · {tituloDeDias(credito.dias, credito.saldo)}
                         </Badge>
                     )}
                 </div>

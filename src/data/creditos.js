@@ -22,6 +22,36 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 /** El plazo de la política: un mes desde la fecha del crédito. */
 export const DIAS_DE_PLAZO = 30;
 
+/** Cuántos días antes del plazo se empieza a avisar. Cinco: es una semana de
+ *  trabajo, o sea que todavía se puede llamar al cliente y cobrarle a tiempo.
+ *  Avisar antes convertiría el aviso en el estado normal de media cartera. */
+export const DIAS_DE_AVISO = 5;
+
+/** Dos meses. Pasado el mes ya es tarde; pasados dos, el crédito dejó de ser un
+ *  atraso y es una cobranza — por eso la insignia cambia de FORMA y no sólo de
+ *  color: el mismo rojo repetido se aprende a ignorar. */
+export const DIAS_GRAVE = 60;
+
+/**
+ * Cómo se ve un crédito según lo que lleva.
+ *
+ * La escala vive acá y no en la pantalla porque son cuatro escalones con dos
+ * números detrás, y escribirlos en cada vista es cómo dos pantallas terminan
+ * llamando «vencido» a cosas distintas.
+ *
+ *   sin saldo o dentro del plazo    neutral
+ *   entre 25 y 30 días              warning · va a vencer
+ *   pasado el mes                   danger
+ *   pasados dos meses               danger RELLENO, con icono
+ */
+export function severidadDeDias(dias, saldo = 1) {
+    if (!(Number(saldo) > 0.004) || dias == null) return { variant: 'neutral', tone: 'soft' };
+    if (dias > DIAS_GRAVE) return { variant: 'danger', tone: 'solid', grave: true };
+    if (dias > DIAS_DE_PLAZO) return { variant: 'danger', tone: 'soft' };
+    if (dias >= DIAS_DE_PLAZO - DIAS_DE_AVISO) return { variant: 'warning', tone: 'soft', porVencer: true };
+    return { variant: 'neutral', tone: 'soft' };
+}
+
 async function pedir(body) {
     try {
         const { data, error } = await supabase.functions.invoke('creditos-erp', { body });

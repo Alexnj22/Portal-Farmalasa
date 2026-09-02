@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.940.1 — Los días tienen cuatro escalones, no dos
+
+La insignia de días era ámbar o gris, y con eso «va a vencer en tres días» y
+«lleva 463 sin pagar» se veían igual. Pedido del usuario, con la escala que hoy
+aplica sobre los 124 créditos con saldo:
+
+| | días | insignia | cuántos hoy |
+|---|---|---|---:|
+| dentro del plazo | < 25 | gris | 77 |
+| **vence esta semana** | 25 – 30 | ámbar | 13 |
+| **pasado del mes** | 31 – 60 | rojo | 25 |
+| **más de dos meses** | > 60 | rojo **relleno**, con icono | **9** |
+
+El último escalón cambia de **forma** y no sólo de color, y eso es a propósito:
+el mismo rojo repetido se aprende a ignorar en una semana. Los nueve que llevan
+más de dos meses tienen que verse distinto de los veinticinco que se pasaron del
+mes.
+
+Y cada insignia lleva su significado en palabras (`title`): un color solo no se
+puede leer — ni con daltonismo ni con un lector de pantalla.
+
+Los cinco días de aviso previo son una semana de trabajo, que es lo que hace
+falta para llamar al cliente y cobrarle **antes** de que se pase. Avisar antes
+convertiría el ámbar en el estado normal de media cartera.
+
 ## v2.940.0 — Las tarjetas dicen cuánto lleva pagado
 
 Cuentas por cobrar, rehecha. Antes cada tarjeta eran seis renglones planos y uno

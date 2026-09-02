@@ -2,7 +2,8 @@ import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
 import {
-  creditosDeLaSala, FORMAS_DEL_PORTAL as FORMAS, getCortesCreds, getSessionCookie, ABONO_URL,
+  abonosDelCredito, creditosDeLaSala, FORMAS_DEL_PORTAL as FORMAS,
+  getCortesCreds, getSessionCookie, ABONO_URL,
 } from "../_shared/creditos.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -86,6 +87,26 @@ Deno.serve(async (req) => {
         for (const c of filas) creditos.push({ ...c, branch_id: branchId });
       }
       return responder({ ok: true, creditos });
+    }
+
+    // ── HISTORIAL — los abonos que el ORIGEN tiene de un crédito ─────────
+    //
+    // Corrige una afirmación equivocada: el portal decía que el sistema de la
+    // caja «no expone la fecha de sus abonos, sólo el acumulado». Es falso — su
+    // panel trae la tabla completa con fecha, hora, tipo, número y monto. La
+    // conclusión vieja salió de mirar el LISTADO de créditos, que sí da sólo el
+    // total, y de no abrir el panel.
+    if (accion === "historial") {
+      const sala = Number(body.sala);
+      const credito = String(body.credito ?? "").trim();
+      const entrada = mapa.find((e) => e.branchId === sala);
+      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Solo puedes ver tu propia sala." }, 403);
+      }
+      if (!credito) return responder({ ok: false, error: "Falta el crédito." }, 400);
+      const abonos = await abonosDelCredito(cookie, entrada.erpId, credito);
+      return responder({ ok: true, abonos });
     }
 
     // ── PAGAR — un documento que cubre uno o VARIOS créditos ─────────────

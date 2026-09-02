@@ -11,6 +11,9 @@ const LOGIN_URL  = `${BASE}login.php`;
 const SESION_URL = `${BASE}cambio_sesion.php`;
 const LISTA_URL  = `${BASE}admin_credito_dt.php`;
 export const ABONO_URL = `${BASE}abono_credito.php`;
+/** El PANEL de un crédito: su deuda, sus abonos con fecha y hora, y el id de
+ *  cada uno. Es la misma URL que el abono, con `id_credito` por GET. */
+const PANEL_URL = `${BASE}abono_credito.php`;
 
 /** Las ocho que el ORIGEN acepta, tal cual las ofrece su desplegable. Se deja
  *  escrita para saber qué se le puede mandar, pero NO es la lista que valida el
@@ -123,4 +126,67 @@ export async function creditosDeLaSala(
       factura_erp: factura,
     };
   });
+}
+
+
+export interface AbonoDelOrigen {
+  erp_id: string | null;
+  fecha: string | null;     // YYYY-MM-DD
+  hora: string | null;
+  forma: string;
+  documento: string | null;
+  monto: number;
+}
+
+/**
+ * Los abonos que el ORIGEN tiene registrados para un crédito.
+ *
+ * ── Esto corrige una afirmación equivocada ────────────────────────────────
+ * Hasta el 2-sep el portal decía —y así estaba escrito en el código— que «el
+ * sistema de la caja no expone la fecha de sus abonos, sólo el acumulado». Es
+ * falso: el panel `abono_credito.php?id_credito=<n>` trae la tabla completa con
+ * **fecha, hora, tipo de documento, número y monto**, y además el id de cada
+ * abono. La conclusión vieja salió de mirar el listado de créditos, que sólo da
+ * el total abonado, y de no abrir el panel.
+ *
+ * Con esto la ficha puede mostrar TODO el historial y no sólo lo cobrado desde
+ * el portal — que era la mitad de la historia, y la mitad que menos importa
+ * cuando alguien discute un saldo.
+ *
+ * Se lee bajo demanda, al abrir la ficha: es una petición de ~250 ms. Traerlo
+ * en el cron serían 124 peticiones por corrida para algo que casi nadie mira.
+ */
+export async function abonosDelCredito(
+  cookie: string, erpId: number, credito: string,
+): Promise<AbonoDelOrigen[]> {
+  await abrirSala(cookie, erpId);
+  const html = await (await fetch(`${PANEL_URL}?id_credito=${encodeURIComponent(credito)}`, {
+    headers: { Cookie: cookie, "X-Requested-With": "XMLHttpRequest" },
+    signal: AbortSignal.timeout(30_000),
+  })).text();
+
+  /* El cuerpo de la tabla se llama `appas` en el HTML del origen. Se acota a
+   * ese bloque a propósito: el panel trae además el formulario de abonar, y una
+   * expresión suelta sobre la página entera levantaría sus filas. */
+  const cuerpo = /<tbody[^>]*id=['"]appas['"][^>]*>([\s\S]*?)<\/tbody>/i.exec(html)?.[1] ?? "";
+  const filas = [...cuerpo.matchAll(/<tr>([\s\S]*?)<\/tr>/gi)].map((m) => m[1]);
+
+  return filas.map((fila) => {
+    const celdas = [...fila.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)]
+      .map((c) => c[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
+    // El id del abono viaja en el `id` del botón de borrar de la última celda.
+    const erp_id = /id=['"](\d+)['"]/.exec(fila)?.[1] ?? null;
+    // dd-mm-aaaa → aaaa-mm-dd, sin pasar por Date: leída como medianoche, una
+    // fecha retrocede un día en cualquier huso al oeste.
+    const cruda = celdas[0] ?? "";
+    const p = /^(\d{2})-(\d{2})-(\d{4})$/.exec(cruda);
+    return {
+      erp_id,
+      fecha: p ? `${p[3]}-${p[2]}-${p[1]}` : null,
+      hora: celdas[1] || null,
+      forma: celdas[2] || "",
+      documento: celdas[3] || null,
+      monto: Number(String(celdas[4] ?? "").replace(/[^0-9.]/g, "")) || 0,
+    };
+  }).filter((a) => a.monto > 0);
 }

@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.943.0 — El historial de abonos sale completo
+
+**Corrección de una afirmación que el portal dio por buena todo el día.** Acá
+decía —y el código lo repetía en tres sitios— que *«el sistema de la caja no
+expone la fecha de sus abonos, sólo el acumulado»*. **Es falso.**
+
+Su panel de crédito trae la tabla entera: **fecha, hora, tipo de documento,
+número, monto**, y hasta el id de cada abono. La conclusión vieja salió de mirar
+el **listado** de créditos —que sí da sólo el total abonado— y de no abrir el
+panel. El usuario lo señaló: *«me habías dicho que en el ERP sí se puede editar
+y eliminar, de hecho sí está eso»*.
+
+Ahora la ficha muestra **todos los abonos**, no sólo los cobrados desde el
+portal. De cada uno sale su fecha y hora reales; y de los que se cobraron por
+acá, además **quién los cobró y con qué comprobante**. Los que se cobraron en la
+caja dicen «cobrado en la caja» y no un nombre inventado: allá el abono queda a
+nombre del usuario de la sala, que en tres de las seis es una cuenta compartida.
+
+Se lee al abrir la ficha —una petición de ~250 ms— y no en el cron: traerlo cada
+diez minutos serían 124 peticiones para algo que se mira de a uno.
+
+### Lo que la auditoría del sistema de la caja encontró
+
+- **El panel de abonos existe** y se llega por `abono_credito.php?id_credito=N`.
+- **Sí se puede BORRAR un abono**, uno por uno. La acción se llama `quitar` y
+  lleva el id del abono.
+- **No hay editar.** El panel sólo abona y borra — lo mismo que dijo el usuario.
+
+El borrado **no quedó cableado a propósito**. Falta el nombre del parámetro que
+lleva el id, y averiguarlo a fuerza de probar contra producción es exactamente
+lo que no se hace: un intento con el parámetro equivocado puede borrar **todos**
+los abonos de un crédito, y eso no se deshace. Se completa mirando la petición
+real que hace el sistema de la caja al borrar.
+
 ## v2.942.0 — Un pago que cubre varios créditos, con su comprobante
 
 Pregunta del usuario: *«¿qué pasa si hace una sola transferencia para pagar 3

@@ -20,7 +20,8 @@ import { useToastStore } from '../store/toastStore';
 import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
 import {
     DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchCreditosDelCliente,
-    fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito, pagarCreditos, severidadDeDias,
+    fetchHistorialDelOrigen, fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito,
+    pagarCreditos, severidadDeDias,
     subirComprobanteDeAbono,
 } from '../data/creditos';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -524,20 +525,53 @@ export default function CuentasPorCobrarView() {
  */
 function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
     const [datos, setDatos] = useState(null);
+    const [delOrigen, setDelOrigen] = useState(null);
     const [cargando, setCargando] = useState(true);
 
+    /* Dos fuentes en paralelo, y cada una sabe algo que la otra no:
+     *   el PORTAL   quién cobró, con qué comprobante y a qué hora exacta
+     *   el ORIGEN   TODOS los abonos, incluidos los cobrados en la caja
+     * Mostrar sólo los del portal era mostrar la mitad, y justo la mitad que
+     * menos importa cuando alguien discute un saldo. */
     const cargar = useCallback(async () => {
         setCargando(true);
-        const d = await fetchCreditoDetalle(credito.id);
+        const [d, h] = await Promise.all([
+            fetchCreditoDetalle(credito.id),
+            fetchHistorialDelOrigen({ sala: credito.branch_id, credito: credito.credito }),
+        ]);
         setDatos(d?.error ? null : d);
+        setDelOrigen(h?.error || !h?.ok ? null : (h.abonos || VACIO));
         setCargando(false);
-    }, [credito.id]);    
+    }, [credito.id, credito.branch_id, credito.credito]);    
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la ficha
 
     const c = datos?.credito;
     const compra = datos?.compra || VACIO;
-    const abonos = datos?.abonos || VACIO;
+    const delPortal = datos?.abonos || VACIO;
+
+    /* La lista del ORIGEN manda —es la que explica el saldo— y de la del portal
+     * se toma quién cobró. Se emparejan por monto y fecha, que es lo único que
+     * los dos lados comparten: el id del abono de allá no se guardaba acá.
+     * Un abono sin pareja simplemente sale sin cara, que es la verdad. */
+    const abonos = useMemo(() => {
+        if (!delOrigen) return delPortal.map((a) => ({ ...a, origen: 'portal' }));
+        const libres = [...delPortal];
+        return delOrigen.map((o) => {
+            const i = libres.findIndex((p) => Math.abs(Number(p.monto) - Number(o.monto)) < 0.005
+                && String(p.created_at).slice(0, 10) === o.fecha);
+            const par = i >= 0 ? libres.splice(i, 1)[0] : null;
+            return {
+                id: o.erp_id || `${o.fecha}-${o.monto}`,
+                monto: o.monto, forma: o.forma, documento: o.documento,
+                fecha: o.fecha, hora: o.hora,
+                abonado_por: par?.abonado_por ?? null,
+                cobrado_por: par?.cobrado_por ?? null,
+                saldo_despues: par?.saldo_despues ?? null,
+                origen: par ? 'portal' : 'caja',
+            };
+        });
+    }, [delOrigen, delPortal]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Ficha del crédito">
@@ -665,18 +699,15 @@ function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
                                 </span>
                                 {abonos.length > 0 && (
                                     <span className="text-micro font-normal text-content-3">
-                                        {abonos.length} desde el portal
+                                        {abonos.length}
                                     </span>
                                 )}
                             </h4>
                             {abonos.length === 0 ? (
-                                /* Se dice «desde el portal» a propósito: el otro
-                                   sistema no expone la fecha de sus abonos, sólo
-                                   el acumulado. Un «sin abonos» a secas sería
-                                   falso para un crédito que ya pagó la mitad. */
                                 <p className="text-body-sm text-content-3">
-                                    Todavía no se le ha cobrado desde el portal.
-                                    {(c?.abonado ?? 0) > 0.004 && ` Lleva ${formatMoney(c.abonado)} abonados desde la caja.`}
+                                    {delOrigen
+                                        ? 'Todavía no se le ha abonado nada.'
+                                        : 'No se pudo leer el historial de la caja.'}
                                 </p>
                             ) : (
                                 <ul className="space-y-0">
@@ -700,16 +731,23 @@ function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
                                                         {a.documento ? <span className="text-content-3 font-normal"> ({a.documento})</span> : null}
                                                     </span>
                                                     <span className="block text-micro text-content-3 truncate">
-                                                        {new Date(a.created_at).toLocaleString('es-SV', {
-                                                            day: '2-digit', month: '2-digit', year: 'numeric',
-                                                            hour: '2-digit', minute: '2-digit',
-                                                        })} · {a.cobrado_por || 'sin identificar'}
+                                                        {fechaCorta(a.fecha)}{a.hora ? `, ${a.hora}` : ''}
+                                                        {' · '}
+                                                        {/* Un abono cobrado en la caja no tiene
+                                                            nombre y no se le inventa uno: allá
+                                                            queda a nombre del usuario de la sala,
+                                                            que en tres de las seis es una cuenta
+                                                            compartida. Decir «en la caja» es la
+                                                            verdad; poner un nombre, no. */}
+                                                        {a.cobrado_por || 'cobrado en la caja'}
                                                     </span>
                                                 </span>
                                             </span>
-                                            <span className="text-micro tabular-nums text-content-3 shrink-0">
-                                                quedó {formatMoney(a.saldo_despues)}
-                                            </span>
+                                            {a.saldo_despues != null && (
+                                                <span className="text-micro tabular-nums text-content-3 shrink-0">
+                                                    quedó {formatMoney(a.saldo_despues)}
+                                                </span>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>

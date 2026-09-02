@@ -234,6 +234,22 @@ export async function subirComprobanteDeAbono(archivo, sala) {
     return data?.publicUrl || null;
 }
 
+/**
+ * Los abonos que el SISTEMA DE LA CAJA tiene de un crédito, con fecha y hora.
+ *
+ * ⚠️ Esto corrige una afirmación que el portal dio por buena todo el 2-sep: que
+ * «el origen no expone la fecha de sus abonos, sólo el acumulado». Es falso —
+ * su panel trae la tabla completa. La conclusión salió de mirar el LISTADO de
+ * créditos, que sí da sólo el total, y de no abrir el panel.
+ *
+ * Se lee al abrir la ficha y no en el cron: es una petición de ~250 ms por
+ * crédito, y traerla cada diez minutos serían 124 peticiones para algo que se
+ * mira de a uno.
+ */
+export async function fetchHistorialDelOrigen({ sala, credito }) {
+    return pedir({ accion: 'historial', sala, credito });
+}
+
 /** Los POS con los que se cobra con tarjeta. Salen de la tabla: sumar uno es
  *  una fila, no un despliegue. */
 export async function fetchPosProveedores() {

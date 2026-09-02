@@ -116,3 +116,36 @@ export async function fetchProveedoresDelSistema() {
     if (error) throw error;
     return (data ?? []).map((s) => ({ value: String(s.id), label: s.nombre }));
 }
+
+/**
+ * La cola de excedentes: lo vendido por encima del lote, esperando decisión.
+ *
+ * El excedente NO son ventas fuera de la promoción —esas no existen para el
+ * módulo—: son ventas suyas, del producto y en las fechas correctas, que se
+ * pasaron del lote que se negoció con el laboratorio. Por eso hay que decidir:
+ * ese bono no está acordado con nadie.
+ */
+export async function fetchExcedentes(estado = 'por_decidir') {
+    const { data, error } = await supabase.rpc('get_excedentes', {
+        p_estado: estado || null,
+    });
+    if (error) throw error;
+    return data ?? [];
+}
+
+/**
+ * Aprobar suma el excedente a lo de esa persona; negar exige el motivo.
+ *
+ * El motivo no es un campo más: sin él quien vendió se queda sin nada que
+ * reclamar. La base también lo exige, así que la pantalla pide lo mismo que el
+ * servidor va a pedir — y no descubre el freno después de mandar.
+ */
+export async function decidirExcedente(id, aprobar, motivo = null) {
+    const { data, error } = await supabase.rpc('decidir_excedente', {
+        p_id: Number(id),
+        p_aprobar: !!aprobar,
+        p_motivo: motivo || null,
+    });
+    if (error) throw error;
+    return data ?? null;
+}

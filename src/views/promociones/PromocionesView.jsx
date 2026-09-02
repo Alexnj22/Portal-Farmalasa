@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Tag, Layers, History, Plus, AlertTriangle } from 'lucide-react';
+import { Tag, Layers, History, Plus, AlertTriangle, Scale } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -12,6 +12,7 @@ import { textoBuscable } from './promocionesUtils';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';
+import TabExcedentes from './TabExcedentes';
 import PromocionModal from './PromocionModal';
 
 /**
@@ -23,11 +24,13 @@ import PromocionModal from './PromocionModal';
  */
 export default function PromocionesView() {
     const { hasPermission, permsLoading } = useAuth();
-    const puedeEditar = hasPermission('promociones', 'can_edit');
+    const puedeEditar  = hasPermission('promociones', 'can_edit');
+    const puedeAprobar = hasPermission('promociones', 'can_approve');
 
     const tabs = useMemo(() => ([
         { key: 'activas',     label: 'Activas',     icon: Tag },
         { key: 'seguimiento', label: 'Seguimiento', icon: Layers },
+        { key: 'excedentes',  label: 'Excedentes',  icon: Scale },
         { key: 'historico',   label: 'Histórico',   icon: History },
     ]), []);
 
@@ -102,6 +105,9 @@ export default function PromocionesView() {
         }
         if (tab === 'seguimiento') {
             return <TabSeguimiento promos={vivas} busqueda={busqueda} />;
+        }
+        if (tab === 'excedentes') {
+            return <TabExcedentes puedeAprobar={puedeAprobar} />;
         }
         if (tab === 'historico') {
             return <TabHistorico promos={terminadas} busqueda={busqueda} />;

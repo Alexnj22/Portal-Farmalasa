@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.926.0 — Promociones — la pantalla para decidir los excedentes
+
+Cierra el circuito que estaba abierto: el proceso diario ya avisaba «hay
+excedentes por decidir» con un enlace a una pestaña **que no existía**, y las
+dos funciones para leerlos y resolverlos vivían en la base sin que nadie las
+llamara. Un aviso que llega a una dirección donde no se puede actuar.
+
+**Qué es un excedente**, porque el nombre no lo dice solo: el laboratorio se
+comprometió a 100 unidades y se vendieron 120. Las primeras 100 se pagan sin
+discusión; las 20 restantes son ventas reales —mismo producto, mismas fechas—
+pero **no están acordadas con nadie**. No son «ventas fuera de la promoción»:
+ésas simplemente no existen para el módulo.
+
+La pestaña muestra la cola con quién vendió, de qué promoción, cuánto se pasó y
+cuánto sería. Aprobar lo suma a lo de esa persona; **negar exige el motivo**, y
+quien vendió lo recibe en su aviso — sin eso se queda sin nada que reclamar.
+Mientras nadie decide, esas unidades siguen mostrándose aparte y **no suman**:
+nadie ve su bono en $112 para que después le baje a $100.
+
+Verificado de punta a punta con datos reales: la cola se lee, aprobar y negar
+funcionan, **negar sin motivo rebota** y **decidir dos veces también**. Y un
+cuadre que valió la pena mirar: de 3,149 unidades por encima del lote, la cola
+recibió 3,139 — las 10 que faltan son las que no tienen dueño, que no entran
+porque no hay a quién preguntarle.
+
+En el teléfono las dos acciones van detrás de mantener presionado, no como una
+tira de botones: en una tabla táctil se tocan sin querer, y acá el toque
+equivocado paga o niega plata de alguien.
+
+Con esto la Fase 4 del plan de Metas queda completa.
+
 ## v2.925.2 — Cuando el portal no responde: qué mirar y en qué orden
 
 Después del corte del 01-sep quedaron dos cosas: un comando para diagnosticarlo

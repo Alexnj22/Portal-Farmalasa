@@ -27,6 +27,10 @@
       "bloques": 43000,
       "deuda": true,
       "motivo": "258 MB, y 2,109 ms de media — el peor tiempo de la lista. El tablero de generar pedido, 6 llamadas. NO auditado."
+    },
+    "get_stock_analysis_jsonb": {
+      "bloques": 41000,
+      "motivo": "AUDITADA el 2026-09-02: NO es un defecto, es lo que Bodega mira. Medidas las 7 salas con el mismo EXPLAIN, todas devolviendo las mismas 4,245 filas: seis leen 5,000–7,000 bloques (40–55 MB) y Bodega 31,483 (246 MB). La diferencia NO es volumen —Bodega tiene 4,731 filas de inventario contra 2,538–3,571 de las demás, o sea 1.5×, no 6×— sino alcance: el cuerpo tiene tres `p_erp_sucursal_id = 6 OR …` que para Bodega abren el rollup de ventas, el inventario y la última venta a LAS SIETE SALAS. Es la pregunta que hace esa pantalla («¿cuánto hay en toda la empresa?»), así que el costo es el trabajo. El techo lo fija Bodega, que es el caso real más caro; las otras seis ni se acercan. `get_stock_analysis_jsonb` es sólo el `json_agg` alrededor: el trabajo es de `get_stock_analysis`, y aparece con este nombre porque es el que llama el portal."
     }
   }
 }

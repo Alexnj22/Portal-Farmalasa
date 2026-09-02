@@ -1,8 +1,8 @@
 {
   "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
-  "actualizado": "2026-08-31",
-  "medidas": 44,
-  "sin_medir": 25,
+  "actualizado": "2026-09-02",
+  "medidas": 43,
+  "sin_medir": 24,
   "funciones": {
     "auth_module_scope": {
       "ms": null,
@@ -298,18 +298,6 @@
       "divergencia": "0.9",
       "nota": null
     },
-    "get_sucursal_net_stock": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_top_supplier_per_product": {
-      "ms": "19",
-      "casos": "300 productos (la tanda real)",
-      "divergencia": null,
-      "nota": "barrido"
-    },
     "get_traslado_disponibilidad": {
       "ms": "213–249",
       "casos": "5 solicitudes · 5/5 idéntico",
@@ -418,5 +406,6 @@
       "divergencia": null,
       "nota": "barrido"
     }
-  }
+  },
+  "_2026_09_02_el_ms_no_alcanza": "get_top_supplier_per_product y get_sucursal_net_stock SALEN de esta lista: se pasaron a plpgsql con plan_cache_mode='force_custom_plan' (migración 20260902153208). Las dos TENÍAN el defecto y esta lista las daba por sanas — la primera con «19 ms» y la segunda con «costo despreciable». El número no estaba mal: con la caché caliente el plan malo cuesta 43 ms. Lo que estaba mal es el CRITERIO. La auditoría del 25-ago descartaba candidatas por TIEMPO («bajo 200 ms no hace falta medirla a fondo»), y el tiempo sobre una base en reposo no puede ver una diferencia de 61× en TRABAJO: 48,441 bloques contra 791 para devolver las mismas 1,000 filas. La primera llamada del día, con lo que sí hay que ir a buscar al disco, costó 876 ms. El hallazgo salió de la sección F de gate:perf (bloques por llamada), no de ésta. PENDIENTE: quedan 12 funciones de esta lista con un parámetro de ARRAY — la forma donde el plan genérico más se equivoca, porque estima la lista en 127 filas sin verla. Ninguna está medida POR BLOQUES."
 }

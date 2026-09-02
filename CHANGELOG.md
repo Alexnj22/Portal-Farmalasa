@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.939.1 — el CSV de Mín·Máx leía 24 veces lo que existe
+
+Los dos gates que quedaron en rojo al cerrar la v2.938.8, mirados. **Uno era un
+defecto real; el otro, el instrumento.**
+
+### `gate:perf` — dos funciones con plan genérico
+
+Bajar el CSV de Mín·Máx en Bodega pide el proveedor y el neto de cada producto
+en tandas de 1.000 ids. Las dos funciones que contestan son la **trampa 4** del
+CLAUDE.md: `LANGUAGE sql` + `SET search_path` no se inlinea, y su cuerpo se
+planifica **una sola vez con los argumentos como `Params`** — nunca ve un valor.
+No cae al plan genérico en la sexta llamada: nace genérica.
+
+Y acá el plan bueno **sí** depende del argumento. Sin ver el array, el
+planificador estima 127 filas donde hay 12.296 —97× corto— y elige un Nested
+Loop que entra a `purchase_receipts` **por fila**. Viéndolo, estima 12.705 y
+elige un Hash Join con un solo barrido de las 5.442 filas.
+
+Medido con la definición vieja levantada en `pg_temp` al lado de su cuerpo con
+literales:
+
+| | 300 ids | 1.000 ids |
+|---|---:|---:|
+| `get_top_supplier_per_product` | 15.310 bloques | **48.441** |
+| el mismo cuerpo con literales | 633 | **791** |
+| `get_sucursal_net_stock` | — | 5.948 |
+| el mismo cuerpo con literales | — | 1.078 |
+
+**61× el trabajo para devolver lo mismo** — 379 MB para leer dos tablas que
+juntas pesan 15 MB. Verificado idéntico: mismo md5, 1.000 y 839 filas. Las dos
+pasaron a `plpgsql` con `plan_cache_mode = 'force_custom_plan'`; quedan en 806 y
+1.072 bloques, iguales en la llamada 1, la 6 y la 7.
+
+**Por qué la auditoría del 25-ago las había declarado sanas.** Su criterio de
+descarte era el TIEMPO —«bajo 200 ms no hace falta medirla a fondo»— y ésta
+anotó 19 ms. El número no estaba mal: con la caché caliente, esas 48.441
+lecturas cuestan 43 ms porque son casi todas `hit`. La primera llamada del día
+costó **876 ms**. Un umbral de milisegundos sobre una base en reposo no puede
+ver una diferencia de 61× en TRABAJO; los bloques sí, y por eso el hallazgo
+salió de la sección F y no de la E. Quedan **12 funciones de esa lista con un
+parámetro de array** —la forma donde el plan genérico más se equivoca— y ninguna
+está medida por bloques.
+
+`get_stock_analysis_jsonb` (246 MB) **no** es un defecto y queda declarado con su
+medición: las 7 salas devuelven las mismas 4.245 filas, seis leen 40–55 MB y
+Bodega 246. La diferencia no es volumen —Bodega tiene 1,5× el inventario, no 6×—
+sino alcance: tres `p_erp_sucursal_id = 6 OR …` le abren el rollup de ventas, el
+inventario y la última venta a **las siete salas**, que es la pregunta que hace
+esa pantalla.
+
+### `gate:eficiencia` — el veredicto lo decidía el reloj, no la base
+
+Rojo con 2.262/h contra un tope de 1.240; verde con 1.115 al remedir veinte
+minutos después. Ya iba **la segunda vez** (la anterior: 2.752/h → 894).
+
+La causa, medida: `refresh-product-sales-rollup-daily` corre a las 06:30 UTC,
+dura **3,2 segundos** y reescribe `product_sales_rollup` entera — **2.550 de las
+9.972 escrituras sin inserción de un día, el 26%, en tres segundos**. Una
+ventana de 15 minutos que lo contenga lee 10.200/h de esa sola tabla; cualquier
+otra lee 0. O sea que el rojo no dependía de la base sino de a qué hora había
+corrido el gate la vez anterior.
+
+**El tope no se movió: se arregló el muestreo.** La ventana mínima pasa de 15
+minutos a 6 horas, donde ese mismo golpe aporta 425/h como mucho. El gate no da
+verde sin medir — difiere el veredicto y la ventana crece hasta que alcanza.
+
+Pendiente, y es la corrección de fondo: declarar el churn **intencional** con su
+motivo —ese rollup y el latido de las 6 cajas de `impresion_dispositivos`, que
+juntos son el 68% del total y ninguno es «una tabla que se reescribe sola»— y
+bajar el tope a lo que quede.
+
 ## v2.939.0 — El crédito cuenta su historia
 
 Pedido del usuario: *«necesito que tenga fecha de compra, y fecha de último

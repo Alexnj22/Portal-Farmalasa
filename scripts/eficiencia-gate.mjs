@@ -726,6 +726,7 @@ if (!SOLO_LOCAL) {
      * `_estado` no es un tope: es la lectura anterior, y se refresca en cada
      * corrida. Si el contador bajó, el servidor reinició y no hay nada que
      * comparar: se vuelve a anotar y se dice. */
+    const VENTANA_MINIMA_H = 6;
     const crudo = churn.reduce((n, t) => n + Math.max(0, Number(t.upd) - Number(t.ins)), 0);
     const prev = existsSync(ESTADO_FILE)
       ? JSON.parse(readFileSync(ESTADO_FILE, 'utf8'))
@@ -736,12 +737,40 @@ if (!SOLO_LOCAL) {
     let inutilesHora = null;
     if (!prev || crudo < Number(prev.crudo ?? 0)) {
       console.log(`\n  escrituras sin inserción: ${gris('primera lectura (o el servidor reinició) — se anota y se compara en la próxima')}`);
-    } else if (horasDesde < 0.25) {
-      /* Quince minutos, no tres. Con ventanas cortas la tasa salta: la misma
-       * base dio 619/h sobre seis minutos y 1.330/h sobre dos, sin que hubiera
-       * cambiado nada. Un tope contra un número así se convierte en un gate que
-       * falla al azar, y ésos se terminan salteando. */
-      console.log(`\n  escrituras sin inserción: ${gris(`pasaron ${Math.round(horasDesde * 60)} min desde la lectura anterior — hacen falta 15 para que la tasa signifique algo`)}`);
+    } else if (horasDesde < VENTANA_MINIMA_H) {
+      /* SEIS HORAS, y el número no es una corazonada — es el tamaño que hace
+       * falta para que un golpe diario no mande.
+       *
+       * La ventana empezó en 2 minutos, pasó a 6 y después a 15, cada vez
+       * porque la tasa saltaba: la misma base dio 619/h sobre seis minutos y
+       * 1.330/h sobre dos. Quince tampoco alcanzaba, y el 2026-09-02 se midió
+       * POR QUÉ en vez de volver a estimarlo.
+       *
+       * `refresh-product-sales-rollup-daily` corre a las 06:30 UTC, dura 3.2
+       * segundos y reescribe `product_sales_rollup` entera: 2.550 de las 9.972
+       * escrituras sin inserción de un día completo — el 26% — en TRES
+       * SEGUNDOS. Una ventana de 15 minutos que lo contenga lee 10.200/h de esa
+       * sola tabla; cualquier otra lee 0. El tope es 1.240. O sea que el
+       * veredicto no lo decidía la base: lo decidía si la corrida anterior del
+       * gate cayó antes o después de las 06:30.
+       *
+       * Ya había dejado dos rojos falsos anotados (2.752/h y 2.262/h, los dos
+       * verdes al remedir), que es exactamente cómo un gate se termina
+       * salteando con `--no-verify`.
+       *
+       * Con seis horas ese mismo golpe aporta 425/h como mucho. No lo alisa del
+       * todo —para eso harían falta 24— pero lo deja por debajo del ruido, y a
+       * cambio el gate sigue pudiendo juzgar dentro de un día de trabajo.
+       *
+       * Que difiera el veredicto NO es que dé verde sin medir: la lectura
+       * anterior no se pisa (ver abajo), así que la ventana CRECE hasta que
+       * alcanza. Lo que sigue pendiente, y es la corrección de fondo: declarar
+       * el churn INTENCIONAL con su motivo —el rollup diario y el latido de las
+       * 6 cajas de `impresion_dispositivos`, que juntos son el 68% del total y
+       * ninguno de los dos es «una tabla que se reescribe sola»— y bajar el
+       * tope a lo que quede. Eso exige medir el resto sobre una ventana larga,
+       * y un número así no se inventa en una sesión. */
+      console.log(`\n  escrituras sin inserción: ${gris(`pasaron ${Math.round(horasDesde * 60)} min desde la lectura anterior — hacen falta ${VENTANA_MINIMA_H * 60} para que la tasa signifique algo`)}`);
     } else {
       inutilesHora = Math.round((crudo - Number(prev.crudo)) / horasDesde);
       medido.escriturasInutilesHora = inutilesHora;

@@ -832,6 +832,12 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
     // El reparto: `credito.id` → cuánto
     const [hermanos, setHermanos] = useState(VACIO);
+    /* El diálogo abre con UN crédito: el que se tocó. Antes listaba todos los
+     * del cliente y el que se venía a cobrar se perdía entre ellos —lo señaló
+     * el usuario mirando dos créditos de MAPFRE del mismo día—. Repartir se
+     * PIDE, y sólo cuando hay un documento que repartir: el efectivo no se
+     * reparte, se cobra dos veces. */
+    const [repartir, setRepartir] = useState(false);
     const [reparto, setReparto] = useState(() => ({ [credito.id]: '' }));
 
     const [posDisponibles, setPosDisponibles] = useState(VACIO);
@@ -860,10 +866,18 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
      * una transferencia leída como cheque daría otros campos, y dejarla puesta
      * significaría cobrar con un comprobante que nadie volvió a mirar. */
     const cambiarForma = useCallback((v) => {
-        setForma(v || 'Efectivo');
+        const nueva = v || 'Efectivo';
+        setForma(nueva);
+        if (nueva === 'Efectivo') setRepartir(false);
         setArchivo(null); setLectura(null); setErrorLectura(null);
         setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc('');
     }, []);
+
+    /* Los OTROS créditos del cliente, sin el que se está cobrando. */
+    const otros = useMemo(
+        () => hermanos.filter((h) => String(h.id) !== String(credito.id)),
+        [hermanos, credito.id],
+    );
 
     const leer = useCallback(async (f) => {
         setArchivo(f); setLectura(null); setErrorLectura(null);
@@ -877,11 +891,32 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
          * siempre y se equivoca a veces, y quien tiene el papel en la mano es
          * quien puede corregirlo. Un campo que no se puede tocar convierte un
          * error de lectura en un pago que no se puede registrar. */
-        if (r.sugerido?.monto != null) setMontoDoc(String(r.sugerido.monto));
+        if (r.sugerido?.monto != null) {
+            setMontoDoc(String(r.sugerido.monto));
+            /* Lo leído se ASIGNA solo, que es lo que el usuario pidió: «carga el
+             * monto y pregunta cuánto se asignará a cada una». Al crédito que se
+             * abrió le toca lo que quepa; si sobra y el cliente tiene otros, se
+             * abre el reparto con el resto repartido del más viejo al más nuevo
+             * — y ahí se corrige a mano. Si sobra y NO hay otros, se deja el
+             * total: la advertencia de «sobran $X» es la que tiene que hablar. */
+            const suyo = Math.min(Number(r.sugerido.monto), Number(credito.saldo) || 0);
+            const resto = Number((Number(r.sugerido.monto) - suyo).toFixed(2));
+            const nuevo = { [credito.id]: (resto > 0.004 ? suyo : Number(r.sugerido.monto)).toFixed(2) };
+            if (resto > 0.004 && otros.length) {
+                setRepartir(true);
+                let queda = resto;
+                for (const h of otros) {
+                    if (queda <= 0.004) break;
+                    const toma = Math.min(queda, Number(h.saldo) || 0);
+                    if (toma > 0.004) { nuevo[h.id] = toma.toFixed(2); queda = Number((queda - toma).toFixed(2)); }
+                }
+            }
+            setReparto(nuevo);
+        }
         if (r.sugerido?.fecha) setFechaDoc(r.sugerido.fecha);
         if (r.sugerido?.documento) setDocumento(String(r.sugerido.documento));
         if (r.sugerido?.pos) setPos(r.sugerido.pos);
-    }, [forma, hermanos, credito]);
+    }, [forma, hermanos, credito, otros]);
 
     /* El reparto se propone solo, del más viejo al más nuevo, hasta agotar el
      * documento. Es el orden en que conviene cerrar: el que lleva más tiempo.
@@ -889,17 +924,25 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     const repartirSolo = useCallback((total) => {
         let queda = Number(total) || 0;
         const nuevo = {};
-        for (const h of hermanos.length ? hermanos : [credito]) {
+        // Del actual PRIMERO y después los otros por antigüedad: quien abrió
+        // este crédito vino a cobrar éste, no el más viejo del cliente.
+        for (const h of [credito, ...otros]) {
             if (queda <= 0.004) break;
             const toma = Math.min(queda, Number(h.saldo) || 0);
             if (toma > 0.004) { nuevo[h.id] = toma.toFixed(2); queda = Number((queda - toma).toFixed(2)); }
         }
         setReparto(nuevo);
-    }, [hermanos, credito]);
+    }, [credito, otros]);
 
     /* En un `useMemo` y no suelto: lo consume un `useCallback`, y una lista
      * nueva en cada render le cambiaría las dependencias siempre. */
-    const listaDeCreditos = useMemo(() => (hermanos.length ? hermanos : [credito]), [hermanos, credito]);
+    const listaDeCreditos = useMemo(
+        () => (repartir && hermanos.length ? hermanos : [credito]),
+        [repartir, hermanos, credito],
+    );
+    // Repartir sólo tiene sentido con un DOCUMENTO: un comprobante es uno y
+    // puede cubrir varios créditos. El efectivo se cobra de a uno.
+    const puedeRepartir = forma !== 'Efectivo' && otros.length > 0;
     const sumaRepartida = Object.values(reparto)
         .reduce((t, v) => t + (Number(v) || 0), 0);
     // Con papel el total lo dice el comprobante; con «Otro» lo escribe quien
@@ -931,6 +974,11 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                 <div>
                     <h3 className="text-h3 font-bold text-content">Recibir un pago</h3>
                     <p className="text-body-sm text-content-2 mt-1 truncate">{credito.cliente}</p>
+                    {/* CUÁL crédito. Sin esto, con dos del mismo día y el mismo
+                        cliente no había forma de saber en cuál se estaba. */}
+                    <p className="text-micro text-content-3 mt-0.5 truncate">
+                        {fechaCorta(credito.fecha)} · {credito.documento} · debe {formatMoney(credito.saldo)}
+                    </p>
                 </div>
 
                 <LiquidSelect label="Con qué paga" value={forma} onChange={cambiarForma}
@@ -1010,11 +1058,11 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
                         {/* ── A qué créditos se aplica ────────────────────── */}
                         <div className="space-y-2">
-                            <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
                                 <span className="text-body-sm font-bold text-content">
-                                    {listaDeCreditos.length > 1 ? 'A qué créditos se aplica' : 'Cuánto se le abona'}
+                                    {repartir ? 'A qué créditos se aplica' : 'Cuánto se le abona'}
                                 </span>
-                                {listaDeCreditos.length > 1 && totalPago > 0 && (
+                                {repartir && totalPago > 0 && (
                                     <Button variant="ghost" size="sm"
                                         onClick={() => repartirSolo(totalPago)}>
                                         Repartir del más viejo
@@ -1039,6 +1087,19 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                     </span>
                                 </div>
                             ))}
+
+                            {/* «Abonar a otra cuenta» y no la lista completa de
+                                entrada: el crédito que se vino a cobrar es el
+                                que importa, y ponerlo entre los otros diez del
+                                cliente lo esconde. Sólo con documento — un
+                                comprobante es uno y puede cubrir varios; el
+                                efectivo se cobra de a uno. */}
+                            {puedeRepartir && !repartir && (
+                                <Button variant="ghost" size="sm" icon={HandCoins}
+                                    onClick={() => setRepartir(true)}>
+                                    Abonar también a otra cuenta ({otros.length})
+                                </Button>
+                            )}
 
                             <div className="flex items-baseline justify-between gap-3 pt-2 border-t border-border/60">
                                 <span className="text-body-sm text-content-2">

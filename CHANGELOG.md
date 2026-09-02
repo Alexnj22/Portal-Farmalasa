@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.947.1 — El pago abre en el crédito que se tocó
+
+Reporte del usuario, mirando dos créditos de MAPFRE del mismo día: *«las 2
+pendientes, se pierde cuál es la actual, la que abrí»*. Tenía razón — el diálogo
+listaba todos los créditos del cliente y el que se venía a cobrar quedaba como
+uno más de la lista, sin nada que lo distinguiera.
+
+Ahora:
+
+- **Abre con el crédito que se tocó, y sólo ése.** Y el encabezado lo nombra:
+  fecha, documento y cuánto debe, debajo del nombre del cliente.
+- **«Abonar también a otra cuenta»** despliega los demás cuando hacen falta, con
+  el número de los que hay.
+- **Sólo con documento.** Un comprobante es uno y puede cubrir varios créditos;
+  el efectivo se cobra de a uno, así que con efectivo el botón no aparece
+  (decisión del usuario: *«todo menos efectivo»*).
+
+**Y el comprobante se reparte solo.** *«Si es transferencia, carga el monto y
+pregunta cuánto se asignará a cada una»*: al leerlo, al crédito abierto le toca
+lo que quepa, y si sobra —y el cliente tiene otros— se abre el reparto con el
+resto repartido del más viejo al más nuevo, listo para corregir a mano. Si sobra
+y no hay otros, se deja el total y habla la advertencia de «sobran $X».
+
+El reparto automático también cambió de orden: **el crédito abierto primero** y
+después los demás por antigüedad. Quien abrió este crédito vino a cobrar éste,
+no el más viejo del cliente.
+
 ## v2.947.0 — El cierre del día se manda como viene y se comprueba
 
 Pedido del usuario: *«todo el proceso se debe hacer desde el portal, enviando los

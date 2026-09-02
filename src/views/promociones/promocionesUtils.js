@@ -96,9 +96,16 @@ export const textoBuscable = (p) => [
 // El tipo LABORATORIO — el mes es su unidad
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** «agosto 2026» a partir de «2026-08». Sin día: el programa es del mes entero. */
+/**
+ * «agosto de 2026» a partir de «2026-08». Sin día: el programa es del mes entero.
+ *
+ * El patrón es el MISMO que el CHECK de la base (`(0[1-9]|1[0-2])`) y no un
+ * `\d{2}` suelto: con el suelto, «2026-13» pasaba y `new Date(2026, 12, 1)`
+ * rueda a enero de 2027. O sea que la pantalla nombraba con toda confianza un
+ * mes que nadie había pedido, y del año siguiente.
+ */
 export function rotuloMes(ym) {
-    if (!/^\d{4}-\d{2}$/.test(String(ym || ''))) return '—';
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(ym || ''))) return '—';
     const [y, m] = String(ym).split('-').map(Number);
     // Con componentes y no con `new Date('2026-08')`, que se lee como UTC y en
     // El Salvador retrocede al mes anterior.
@@ -107,22 +114,40 @@ export function rotuloMes(ym) {
 }
 
 /**
- * Los meses que se pueden elegir: los 12 anteriores, el actual y el siguiente.
+ * Los meses que se pueden elegir: el siguiente, el actual y los anteriores.
  *
  * El siguiente entra porque un programa se negocia ANTES de que empiece el mes;
- * los anteriores, porque el usuario preguntó explícitamente si esto es
- * retroactivo — y lo es: cargar agosto en septiembre calcula agosto completo
- * con las ventas que ya están.
+ * los anteriores, porque esto es retroactivo — cargar agosto en septiembre
+ * calcula agosto completo con las ventas que ya están.
+ *
+ * ⚠️ El signo del paso importa y ya se equivocó una vez: con `i--` la lista
+ * arrancaba en el mes anterior y seguía hacia ADELANTE, ofreciendo doce meses
+ * que todavía no existen. No falla nada —son cadenas AAAA-MM válidas— y el
+ * único síntoma fue que la liquidación se armó del mes que no era. Por eso lo
+ * fija `tests/unit/promocionesUtils.test.js` con una fecha congelada.
  */
 export function mesesRecientes(cuantos = 13) {
     const [y, m] = hoySV().split('-').map(Number);
     const out = [];
-    for (let i = 1; i >= -(cuantos - 1); i--) {
+    for (let i = -1; i < cuantos - 1; i++) {
         const d = new Date(y, m - 1 - i, 1);
         const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         out.push({ value, label: rotuloMes(value) });
     }
     return out;
+}
+
+/**
+ * El mes anterior al de hoy, en AAAA-MM.
+ *
+ * Existe para que nadie lo saque de una POSICIÓN de `mesesRecientes`: un
+ * `meses[1]` se lee como «el anterior» y deja de serlo el día que la lista
+ * cambia de orden, que es exactamente lo que pasó.
+ */
+export function mesAnterior() {
+    const [y, m] = hoySV().split('-').map(Number);
+    const d = new Date(y, m - 2, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 /** El resumen de una promoción de laboratorio para la tarjeta. */

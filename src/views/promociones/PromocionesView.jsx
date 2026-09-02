@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical } from 'lucide-react';
+import { Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -13,6 +13,7 @@ import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';
 import TabExcedentes from './TabExcedentes';
+import TabLiquidacion from './TabLiquidacion';
 import PromocionModal from './PromocionModal';
 import EditarPromocionModal from './EditarPromocionModal';
 import PromocionLaboratorioModal from './PromocionLaboratorioModal';
@@ -43,6 +44,7 @@ export default function PromocionesView() {
         { key: 'activas',     label: 'Activas',     icon: Tag },
         { key: 'seguimiento', label: 'Seguimiento', icon: Layers },
         { key: 'excedentes',  label: 'Excedentes',  icon: Scale },
+        { key: 'liquidacion', label: 'Liquidación', icon: Wallet },
         { key: 'historico',   label: 'Histórico',   icon: History },
     ]), []);
 
@@ -135,6 +137,9 @@ export default function PromocionesView() {
         }
         if (tab === 'excedentes') {
             return <TabExcedentes puedeAprobar={puedeAprobar} />;
+        }
+        if (tab === 'liquidacion') {
+            return <TabLiquidacion puedeEditar={puedeEditar} puedeAprobar={puedeAprobar} />;
         }
         if (tab === 'historico') {
             return <TabHistorico promos={terminadas} busqueda={busqueda} />;

@@ -143,6 +143,23 @@ const REGLAS = [
     // La causa ya está cerrada, pero el código nunca debe llegar al usuario.
     [/ACCION_INVALIDA/i, 'Ese interruptor ya no existe. Recarga la pantalla.'],
 
+    // — Liquidación mensual de bonos —
+    [/LIQUIDACION_APROBADA/i,
+        'Ese mes ya está aprobado y sus números están congelados. Para cambiarlo hay que reabrirlo primero.'],
+    [/LIQUIDACION_VACIA/i,
+        'Esa hoja no tiene ni un concepto. Hay que calcularla antes de aprobarla.'],
+    [/FALTA_METAS/i,
+        'Para armar la liquidación hay que poder ver las metas de todas las salas, y tu cargo no tiene ese alcance. Consulta con tu jefatura.'],
+    // Los dos siguientes NO son culpa de quien aprieta el botón: el primero es
+    // un permiso que se movió, el segundo un cambio en cómo Metas resuelve la
+    // sala. Los dos frenan ANTES de escribir, así que nada quedó a medias.
+    [/META_ILEGIBLE/i,
+        'No se pudo leer el bono de meta de una de las salas, así que no se escribió nada. Avisa al equipo de sistemas.'],
+    [/META_DE_OTRA_SALA/i,
+        'El bono de meta llegó con la sala equivocada y la liquidación se detuvo sin escribir nada. Avisa al equipo de sistemas.'],
+    [/MOTIVO_REQUERIDO/i,
+        'Falta escribir el motivo: esta acción siempre lleva su porqué.'],
+
     // — Promociones —
     // Los códigos de este módulo llegaban CRUDOS a la pantalla: ni el prefijo
     // en mayúsculas con guiones bajos ni la prosa que lo sigue disparan

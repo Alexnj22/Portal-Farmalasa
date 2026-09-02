@@ -21,6 +21,90 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.934.0 — Liquidación mensual de bonos
+
+La Fase 5, y la que hacía falta para que las otras cuatro sirvan de algo: **una
+hoja por mes con lo que le toca a cada persona**, juntando los tres programas.
+Bono de meta, bonos de las promociones por producto, bono de laboratorio y
+excedentes aprobados, con su desglose y su total. El gerente la aprueba y queda
+congelada y exportable para planilla.
+
+Existe porque sumarlos a mano de tres pantallas es cómo se paga de menos sin que
+nadie lo note: las tres están bien.
+
+### En qué mes cae cada bono — la decisión que da forma a todo
+
+No es obvio, porque los tres no viven en la misma unidad de tiempo:
+
+| | paga en |
+|---|---|
+| meta | su propio mes |
+| laboratorio | su propio mes |
+| **producto** | **el mes en que la promoción TERMINÓ**, entera |
+| excedente | el mes en que se aprobó |
+
+El de producto es el que sorprende. Una promoción por lote puede empezar el 12
+de agosto y cerrarse el 3 de octubre, y **no se parte por mes**, por dos razones
+que son de plata:
+
+1. su bono depende del **corte del lote**, y dónde cae ese corte sólo se sabe
+   cuando la promoción termina — partirla obligaría a pagar en agosto un bono
+   que en octubre resulta que estaba fuera del lote;
+2. `unidades_por_bono` hace que partir **pierda dinero**. Con 3 unidades por
+   bono, 8 vendidas en agosto y 4 en septiembre son 12 → cuatro bonos enteros.
+   Partido por mes: `floor(8/3)=2` más `floor(4/3)=1` = **3**. Un bono se
+   evapora en el corte del calendario, y nadie lo notaría.
+
+### La guarda que parece de más y no lo es
+
+El bono de meta se lee con `get_bono_meta_sala`, y esa función resuelve la sala
+por el **alcance** de quien pregunta: con alcance de sucursal devuelve siempre la
+propia e **ignora el parámetro**. Llamarla seis veces sin comprobarlo habría
+escrito los números de una sola sala seis veces, y la liquidación habría salido
+completa, firmada y mal — sin un error, sin una fila de menos y con el nombre de
+otra sala encima. Por eso hay dos frenos: se exige alcance ALL antes de empezar,
+y además se comprueba que la respuesta traiga la sala que se pidió.
+
+### Una divergencia dormida que se cerró de paso
+
+Había **dos respuestas** a «cuánto ganó esta persona por esta promoción»:
+`get_promocion` —lo que se ve en Seguimiento— paga por tramo
+(`floor(unidades / unidades_por_bono) × monto`), y `promocion_corte_del_lote`
+—lo que decide qué es excedente— multiplicaba directo, sin tramo. Coinciden
+mientras `unidades_por_bono` valga 1, que es el default del formulario y el
+único valor que hay hoy en producción. O sea que la divergencia estaba dormida
+y se despertaba el día que alguien negociara «1 bono cada 3»: la pantalla diría
+un número y la liquidación pagaría otro, sin que nada fallara. Ahora las dos
+cuentan por tramo, y el corte devuelve además los fondos de Administración y
+Bodega generados **por lo que entró en el lote**.
+
+### Tres defectos corregidos en el camino
+
+- **La lista de meses recorría el calendario hacia ADELANTE.** Devolvía trece
+  meses con forma perfecta, sólo que doce todavía no existían. No falló nada: el
+  único síntoma fue que la liquidación se armó de septiembre en vez de agosto, y
+  eso se vio en la fila escrita en la base, no en la pantalla. Lo ancla ahora
+  `tests/unit/promocionesUtils.test.js` con el reloj congelado.
+- **`rotuloMes('2026-13')` decía «enero de 2027».** El patrón era `\d{2}` en vez
+  del `(0[1-9]|1[0-2])` que usa la base, y `new Date(2026, 12, 1)` rueda de año.
+  Lo cazó el test que se acababa de escribir para lo anterior.
+- **Una celda envuelta en un componente propio se pierde en el teléfono.**
+  `DataTable` mapea la enésima `DataCell` a la enésima columna y lee su
+  `children`; un `<Monto>` que *devuelve* la celda no tiene children, así que la
+  fila de la tabla se veía bien y el renglón de contexto de la ficha salía vacío.
+
+Y una lección sobre el instrumento: la captura de página completa y el
+`innerText` mostraban **todas** las fichas en blanco. No lo estaban —
+`content-visibility:auto` no rinde lo que está fuera de pantalla. El portal
+estaba bien y la medición no.
+
+Migraciones `20260902034002`, `…034049`, `…034153` y `…034358`. Verificado contra
+producción con agosto real: **$2,184.64** en 35 personas, y cada parte cuadra
+contra un `SELECT` independiente — el bono de meta de cada sala nunca excede su
+bolsa (la diferencia es la venta sin dueño), el corte del lote parte 3,800
+unidades reales en 2,000 dentro y 1,800 de excedente, y los cuatro frenos de la
+base disparan con su mensaje. Datos de prueba borrados.
+
 ## v2.933.0 — El corte se confirma o se descarta ahí mismo
 
 > «al dar hacer corte y obtener resultado debe preguntar si se confirma o se

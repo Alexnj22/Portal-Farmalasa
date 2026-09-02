@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.936.1 — Bolsas: el aviso de frescura sólo aparece si la pantalla se quedó quieta
+
+`/bolsas` mostraba siempre un rótulo «Se actualiza solo · hace 2 min» con su
+botón «Actualizar». Lo sacó el usuario: *«si es realtime no se actualiza sola
+ante un cambio? no necesito saber hace cuanto se actualizo ni actualizar porque
+pasara solo»*. Y es cierto para el caso normal — la tabla `bolsas` está
+publicada en realtime desde el 31-ago, así que el cambio llega en cuanto pasa.
+Un letrero que anuncia lo que ya se ve pasar es ruido, y un botón para hacer lo
+que la pantalla hace sola invita a apretarlo por las dudas.
+
+- **Ya no se dibuja nada mientras la pantalla se pone al día**, ni por el canal
+  ni por el reloj de 60 s.
+- **Sólo si NADA la refrescó en tres minutos** aparece «Puede estar
+  desactualizado · hace N min» con el botón. Ésa era la mitad que el rótulo
+  cubría y que no se podía tirar con él: lo que llega por el socket llega sólo
+  mientras el socket está vivo, y una pantalla congelada se ve exactamente
+  igual que una al día. Pasa en dos casos reales — la red caída (`cargar` no
+  atrapa el error, así que la marca de la última lectura se queda quieta) y la
+  pestaña que estuvo dormida y todavía no completó la lectura de vuelta.
+- **Se calla con un diálogo abierto**, porque ahí la pausa del refresco es a
+  propósito: avisar de algo que uno mismo pidió es una alarma falsa. Los dos
+  —la pausa y el silencio— salen ahora del MISMO booleano, para que un quinto
+  diálogo no arregle uno solo.
+
 ## v2.936.0 — Cuentas por cobrar, vista propia
 
 Los créditos salieron de Efectivo y ahora son **su propia vista**, por pedido

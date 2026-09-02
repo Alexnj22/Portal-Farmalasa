@@ -840,20 +840,39 @@ function Resolver({ bolsa, ocupado, onResolver, onCancelar, salaId, userId }) {
     );
 }
 
-/* ── Cuán vieja es la pantalla, dicho en pantalla ───────────────────────────
+/* ── Sólo se habla cuando la pantalla dejó de ponerse al día ────────────────
  *
  * «si estamos 2 o 3 personas contando, debo actualizar para ver cuáles faltan»
- * (usuario, 2026-08-31). El circuito lo trabajan varios a la vez —una sala
- * entrega mientras administración recibe, y el conteo se reparte entre dos o
- * tres— y hasta acá cada pestaña sólo se enteraba de lo que había hecho ELLA.
+ * (usuario, 2026-08-31). Eso lo arregló el refresco automático. La primera
+ * versión de esto agregaba además un rótulo permanente —«Se actualiza solo ·
+ * hace 2 min»— con su botón, para poder CREERLE.
  *
- * El refresco automático arregla el fondo; esto arregla la otra mitad, que es
- * poder CREERLE. Una lista que se actualiza sola y no lo dice es
- * indistinguible de una congelada: quien no sabe que se refresca sigue
- * recargando la página por las dudas, y quien lo supone deja de recargar sin
- * tener con qué comprobarlo. Por eso dice las dos cosas —que se actualiza solo
- * y hace cuánto fue la última— y deja el botón para no tener que esperar.
+ * El usuario lo sacó el 2026-09-02: «si es realtime no se actualiza sola ante
+ * un cambio? no necesito saber hace cuanto se actualizo ni actualizar porque
+ * pasara solo». Y tiene razón sobre el caso normal: un letrero que dice lo que
+ * ya se ve pasar es ruido, y un botón para hacer lo que la pantalla hace sola
+ * invita a apretarlo por las dudas.
+ *
+ * Pero la mitad que ese rótulo cubría es real y no se puede tirar con él: lo
+ * que llega por el socket llega **sólo mientras el socket está vivo**, y una
+ * pantalla congelada se ve exactamente igual que una al día. La salida es que
+ * el aviso aparezca CUANDO PASA y no siempre: mientras la pantalla se pone al
+ * día —por el canal o por el reloj de 60 s— no se dibuja nada; recién si nada
+ * la refrescó en TRES minutos aparece el aviso con su botón.
+ *
+ * Con la red viva y la pestaña a la vista eso no pasa nunca (el reloj sólo
+ * corre con la pestaña visible, y al volver cobra lo que se saltó). Aparece en
+ * los dos casos donde de verdad hay algo que decir: la red caída —`cargar` no
+ * atrapa el error, así que `leidoEn` se queda quieto— y la pestaña que estuvo
+ * dormida y todavía no completó la primera lectura de vuelta.
+ *
+ * Y se calla con un diálogo abierto, porque ahí la pausa es a propósito
+ * (`activo: false`): avisar de algo que uno mismo decidió es una alarma falsa.
  */
+// Cuánto puede quedarse quieta la pantalla antes de que valga la pena decirlo.
+// Tres veces el reloj de 60 s: un ciclo perdido puede ser cualquier cosa, tres
+// seguidos ya no.
+const VIEJA_MS = 3 * 60_000;
 const haceCuanto = (ms) => {
     const s = Math.max(0, Math.round(ms / 1000));
     if (s < 15) return 'recién';
@@ -864,15 +883,20 @@ const haceCuanto = (ms) => {
     return `hace ${h} h`;
 };
 
-function Frescura({ leidoEn, refrescando, onRecargar }) {
+function Frescura({ leidoEn, refrescando, pausado, onRecargar }) {
     /* El reloj vive ACÁ dentro y no en la vista: un tic en el componente de
      * arriba redibujaría las cuarenta tarjetas —con sus campos de conteo a
      * medio escribir— para mover dos palabras. */
     const ahora = useNowTick(10_000);
+    // El `return null` va DESPUÉS del hook: sacarlo arriba cambiaría la
+    // cantidad de hooks entre renders.
+    if (pausado || ahora - leidoEn < VIEJA_MS) return null;
     return (
         <div className="flex items-center justify-end gap-1.5 px-1">
-            <span className="text-caption text-content-3 tabular-nums">
-                {refrescando ? 'Actualizando…' : `Se actualiza solo · ${haceCuanto(ahora - leidoEn)}`}
+            <span className="text-caption text-warning-text tabular-nums">
+                {refrescando
+                    ? 'Actualizando…'
+                    : `Puede estar desactualizado · ${haceCuanto(ahora - leidoEn)}`}
             </span>
             <Button variant="ghost" size="xs" icon={RefreshCw}
                 loading={refrescando} onClick={onRecargar}>
@@ -1624,10 +1648,17 @@ export default function CircuitoDeBolsas({
      * red. Lo que llega por el socket llega sólo mientras el socket está vivo, y
      * una pestaña que estuvo suspendida vuelve mostrando lo de antes **con cara
      * de estar al día** — que es peor que no tener realtime. */
+    /* Un solo booleano para las dos cosas, y a propósito: el refresco se pausa
+     * con un diálogo abierto, y el aviso de «puede estar desactualizado» tiene
+     * que callarse EXACTAMENTE en ese mismo rato. Con dos expresiones separadas
+     * el día que alguien agregue un quinto diálogo se arregla una sola, y la
+     * pantalla avisaría de una pausa que ella misma pidió. */
+    const refrescoActivo = !abierta && !depositando && !entregando && !sacando;
+
     useRefrescoEnVivo(recargarEnSilencio, {
         tabla: 'bolsas',
         ms: 60_000,
-        activo: !abierta && !depositando && !entregando && !sacando,
+        activo: refrescoActivo,
     });
 
     /**
@@ -2022,11 +2053,12 @@ export default function CircuitoDeBolsas({
 
     return (
         <div className="space-y-6">
-            {/* Hace cuánto es lo que se está viendo. Va arriba de todo y en las
-                cuatro etapas: la pregunta «¿esto ya está al día?» es de la
-                pantalla entera, no de una sección. */}
+            {/* Normalmente no dibuja NADA: la pantalla se pone al día sola y
+                decirlo era ruido. Sólo habla si nada la refrescó en tres
+                minutos —red caída, pestaña que estuvo dormida—, que es el único
+                caso donde una lista congelada se ve igual que una al día. */}
             <Frescura leidoEn={leidoEn} refrescando={refrescando}
-                onRecargar={recargarEnSilencio} />
+                pausado={!refrescoActivo} onRecargar={recargarEnSilencio} />
 
             {/* ── El corte que cuadró y su dinero que no llegó ────────────────
                 El caso PEOR del circuito, y el único que ninguna otra cifra de

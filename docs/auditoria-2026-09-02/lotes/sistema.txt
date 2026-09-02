@@ -1,0 +1,39 @@
+# sistema — Sistema, salud y auditoría general
+
+## archivos
+src/views/AuditView.jsx
+src/views/SyncHealthView.jsx
+src/views/OrphanObjectsView.jsx
+src/views/IOSTestView.jsx
+src/views/RawTestView.jsx
+src/views/NotFoundView.jsx
+src/data/audit.js
+src/data/syncHealth.js
+src/data/orphanObjects.js
+src/data/bannerPortal.js
+src/store/slices/auditSlice.js
+src/components/forms/FormAuditDetail.jsx
+src/data/egreso.js
+
+## tablas
+audit_logs
+sync_log
+sync_alert_log
+backup_sync_log
+orphan_objects_registry
+security_config
+export_log
+
+## funciones (sql)
+
+## crons
+check-sync-health-alerts-20min
+backup-critical-tables-weekly
+purge-sync-logs-daily
+purge-cron-history-daily
+
+## edge functions
+check-sync-health-alerts
+backup-critical-tables
+oss-proxy
+saly-ai

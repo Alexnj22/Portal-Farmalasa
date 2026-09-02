@@ -1,0 +1,71 @@
+# pedidos — Pedidos a sucursales
+
+## archivos
+src/views/PedidosView.jsx
+src/views/pedidos/CrearRutaModal.jsx
+src/views/pedidos/DevolverModal.jsx
+src/views/pedidos/FinalizarCajasModal.jsx
+src/views/pedidos/LlegadaModal.jsx
+src/views/pedidos/PedidoModal.jsx
+src/views/pedidos/ProgramarEntregaModal.jsx
+src/views/pedidos/RecepcionModal.jsx
+src/views/pedidos/ReenvioLlegadaModal.jsx
+src/views/pedidos/RutaMapModal.jsx
+src/views/pedidos/TabGenerar.jsx
+src/views/pedidos/TabMetricas.jsx
+src/views/pedidos/TabPedidos.jsx
+src/views/pedidos/TabReglas.jsx
+src/views/pedidos/TabRutas.jsx
+src/views/pedidos/tabpedidos/AnularModal.jsx
+src/views/pedidos/tabpedidos/ApoioScanModal.jsx
+src/views/pedidos/tabpedidos/DecisionDiferencia.jsx
+src/views/pedidos/tabpedidos/DevolucionBloque.jsx
+src/views/pedidos/tabpedidos/DifSection.jsx
+src/views/pedidos/tabpedidos/EmpChip.jsx
+src/views/pedidos/tabpedidos/FilterPill.jsx
+src/views/pedidos/tabpedidos/ItemSections.jsx
+src/views/pedidos/tabpedidos/LifecycleTimeline.jsx
+src/views/pedidos/tabpedidos/PauseModal.jsx
+src/views/pedidos/tabpedidos/PostCompletionSection.jsx
+src/views/pedidos/tabpedidos/ReceptionActions.jsx
+src/views/pedidos/tabpedidos/StageAnims.jsx
+src/views/pedidos/tabpedidos/StagePill.jsx
+src/views/pedidos/tabpedidos/SucPill.jsx
+src/views/pedidos/tabpedidos/constants.js
+src/views/pedidos/tabpedidos/helpers.js
+src/views/pedidos/tabpedidos/usePedidosData.js
+src/data/pedidos.js
+src/data/devoluciones.js
+src/data/diferencias.js
+src/data/dispatchRules.js
+src/data/recepcion.js
+
+## tablas
+pedidos
+pedido_items
+pedido_apoyo
+pedido_devolucion
+pedido_item_eventos
+pedido_pausa_historial
+pedido_recepcion_extras
+pedido_recepcion_firmas
+pedido_sucursal_status
+pedido_traslado_erp
+pedido_traslado_linea
+pedidos_snapshots
+dispatch_rules
+rutas
+ruta_pedidos
+ruta_locations
+diferencia_opcion
+
+## funciones (sql)
+
+## crons
+continuar-traslados-pedido
+reintentar-ingreso-pedido
+
+## edge functions
+trasladar-pedido-erp
+devolver-pedido-erp
+maps-proxy

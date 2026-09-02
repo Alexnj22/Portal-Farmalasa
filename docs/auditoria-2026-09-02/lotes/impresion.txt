@@ -1,0 +1,17 @@
+# impresion — Impresión en ticketera
+
+## archivos
+src/views/ImpresionView.jsx
+src/components/impresion/CajasDeImpresion.jsx
+src/data/impresion.js
+
+## tablas
+cola_impresion
+impresion_dispositivos
+
+## funciones (sql)
+
+## crons
+purgar-cola-impresion-diario
+
+## edge functions

@@ -1,0 +1,41 @@
+# sucursales — Sucursales
+
+## archivos
+src/views/BranchesView.jsx
+src/views/BranchDetailView.jsx
+src/views/branch-tabs/GraficaGastos.jsx
+src/views/branch-tabs/TabExpediente.jsx
+src/views/branch-tabs/TabExpenses.jsx
+src/views/branch-tabs/TabHistory.jsx
+src/views/branch-tabs/TabStaff.jsx
+src/data/branches.js
+src/store/slices/branchSlice.js
+src/components/forms/BranchHelpers.jsx
+src/components/forms/BranchTabGeneral.jsx
+src/components/forms/BranchTabHorarios.jsx
+src/components/forms/BranchTabInmueble.jsx
+src/components/forms/BranchTabLegal.jsx
+src/components/forms/BranchTabServicios.jsx
+src/components/forms/FormBranchEmployees.jsx
+src/components/forms/FormSucursal.jsx
+src/components/forms/FormLeadership.jsx
+src/components/forms/FormServicePayment.jsx
+src/components/forms/FormSrsPermit.jsx
+src/components/forms/FormPharmacyRegent.jsx
+src/components/forms/FormNursingRegents.jsx
+src/components/forms/FormPharmacovigilance.jsx
+
+## tablas
+branches
+branch_documents
+branch_expenses
+erp_sucursal_map
+
+## funciones (sql)
+
+## crons
+check-doc-expiry-daily
+
+## edge functions
+analyze-branch
+check-doc-expiry

@@ -1,0 +1,44 @@
+# bitacoras — Bitácoras reguladas (SRS)
+
+## archivos
+src/views/BitacorasView.jsx
+src/views/bitacoras/TabBajoReceta.jsx
+src/views/bitacoras/TabCierre.jsx
+src/views/bitacoras/TabConfiguracion.jsx
+src/views/bitacoras/TabHoy.jsx
+src/components/bitacoras/AnotarLectura.jsx
+src/components/bitacoras/AnotarLimpieza.jsx
+src/components/bitacoras/CompletarRenglon.jsx
+src/components/bitacoras/DetalleDeFolio.jsx
+src/components/bitacoras/EditorDeHorarios.jsx
+src/components/bitacoras/Firma.jsx
+src/components/bitacoras/MatrizDelDia.jsx
+src/components/bitacoras/PasarLaRonda.jsx
+src/components/bitacoras/PuntosDeLimpieza.jsx
+src/components/srs/SrsBuscadorWidget.jsx
+src/components/srs/SrsEnriquecerModal.jsx
+src/data/bitacoras.js
+
+## tablas
+bitacora_areas
+bitacora_cierres
+bitacora_correcciones
+bitacora_dispensaciones
+bitacora_folios
+bitacora_lecturas
+bitacora_limpiezas
+recetas
+receta_items
+medicos
+
+## funciones (sql)
+
+## crons
+bitacora-dispensaciones-1min
+bitacora-dispensaciones-repaso-diario
+avisar-bitacora-por-vencer-30min
+
+## edge functions
+consultar-profesional-cssp
+srs-proxy
+avisar-bitacora-por-vencer

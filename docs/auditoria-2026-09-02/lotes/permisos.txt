@@ -1,0 +1,22 @@
+# permisos — Permisos, cargos y candado de módulo
+
+## archivos
+src/views/PermissionsView.jsx
+src/views/RolesView.jsx
+src/views/MaintenanceView.jsx
+src/components/mantenimiento/AvisoDelPortal.jsx
+src/constants/permissionModules.js
+src/constants/solicitudModulos.js
+src/data/permissions.js
+src/data/moduleLocks.js
+src/components/forms/FormRoleEmployees.jsx
+
+## tablas
+role_permissions
+roles
+
+## funciones (sql)
+
+## crons
+
+## edge functions

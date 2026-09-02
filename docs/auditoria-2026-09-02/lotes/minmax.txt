@@ -1,0 +1,42 @@
+# minmax — Min · Máx
+
+## archivos
+src/views/MinMaxView.jsx
+src/views/productos/TabMinMax.jsx
+src/views/productos/tabminmax/AbcXyzBadge.jsx
+src/views/productos/tabminmax/AbcXyzMatrix.jsx
+src/views/productos/tabminmax/BorradoresRanura.jsx
+src/views/productos/tabminmax/CardSkeletons.jsx
+src/views/productos/tabminmax/ConfigPanel.jsx
+src/views/productos/tabminmax/CostCards.jsx
+src/views/productos/tabminmax/CoverageBar.jsx
+src/views/productos/tabminmax/DraftCostCard.jsx
+src/views/productos/tabminmax/ExpandedPanel.jsx
+src/views/productos/tabminmax/LabsPanel.jsx
+src/views/productos/tabminmax/MotivoAjusteModal.jsx
+src/views/productos/tabminmax/RowActions.jsx
+src/views/productos/tabminmax/StockBar.jsx
+src/views/productos/tabminmax/constants.js
+src/views/productos/tabminmax/helpers.js
+src/views/productos/tabminmax/useMinMaxData.js
+src/data/stockParams.js
+src/data/minmaxRequests.js
+
+## tablas
+product_stock_params
+product_stock_params_history
+stock_config
+minmax_change_requests
+minmax_ignored
+minmax_sync_log
+inventory_daily
+
+## funciones (sql)
+
+## crons
+auto-calculate-minmax-monthly
+inventory-daily-snapshot
+inventory-daily-particiones
+
+## edge functions
+auto-calculate-minmax

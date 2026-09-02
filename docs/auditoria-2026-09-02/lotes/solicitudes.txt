@@ -1,0 +1,24 @@
+# solicitudes — Solicitudes y aprobaciones
+
+## archivos
+src/views/RequestsView.jsx
+src/views/solicitudes/DetalleSolicitud.jsx
+src/views/solicitudes/ModalNuevaOperativa.jsx
+src/views/solicitudes/ModalNuevaPersonal.jsx
+src/views/solicitudes/PersonasSolicitud.jsx
+src/views/solicitudes/TarjetaSolicitud.jsx
+src/views/solicitudes/VentaDeSolicitud.jsx
+src/views/solicitudes/familiasOperativas.js
+src/views/solicitudes/movimientoTexto.js
+src/data/requests.js
+src/data/solicitudDeAviso.js
+src/store/slices/requestsSlice.js
+
+## tablas
+approval_requests
+
+## funciones (sql)
+
+## crons
+
+## edge functions

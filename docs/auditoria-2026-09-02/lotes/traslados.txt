@@ -1,0 +1,42 @@
+# traslados — Traslados entre salas
+
+## archivos
+src/views/TrasladosView.jsx
+src/views/traslados/ConfirmarPorCodigo.jsx
+src/views/traslados/DeclararFaltantes.jsx
+src/views/traslados/FilasEnvio.jsx
+src/views/traslados/FilasFaltante.jsx
+src/views/traslados/FilasTraslado.jsx
+src/views/traslados/GrupoPorRecibir.jsx
+src/views/traslados/HistorialTraslados.jsx
+src/views/traslados/LecturaQueNoEntro.jsx
+src/views/traslados/RetiroModal.jsx
+src/views/traslados/trasladoTexto.js
+src/data/traslados.js
+src/data/envios.js
+src/data/trasladoSwitch.js
+src/data/retiros.js
+src/data/faltantes.js
+src/store/composicionTraslado.js
+
+## tablas
+envio_linea
+traslado_interruptor
+retiros
+retiro_bultos
+bolsa_faltante
+
+## funciones (sql)
+
+## crons
+barrer-traslados-recibidos
+continuar-envios
+avisar-envios-sin-decidir
+avisar-traslados-por-respaldo-0805-sv
+avisar-bultos-viejos-daily
+
+## edge functions
+aplicar-traslado-inventario
+enviar-producto-erp
+barrer-traslados-recibidos
+avisar-bultos-viejos

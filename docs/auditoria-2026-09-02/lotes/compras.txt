@@ -1,0 +1,64 @@
+# compras — Compras y cuentas por pagar
+
+## archivos
+src/views/ComprasView.jsx
+src/views/purchases/CargarCompraView.jsx
+src/views/purchases/CuentasPorPagarView.jsx
+src/views/purchases/FacturasCompraView.jsx
+src/views/purchases/FacturasSalaView.jsx
+src/views/purchases/PanelDeducibilidad.jsx
+src/views/purchases/ProveedoresView.jsx
+src/data/compras.js
+src/data/cargarCompra.js
+src/data/cuentasPorPagar.js
+src/data/facturasCompra.js
+src/data/facturasSala.js
+src/data/proveedores.js
+src/components/forms/FormProveedorDetail.jsx
+src/components/forms/FormPurchaseDteViewer.jsx
+src/components/forms/FormRegisterPayment.jsx
+
+## tablas
+purchase_receipts
+purchase_receipt_items
+purchase_sync_log
+purchase_dte_documents
+purchase_dte_claims
+purchase_dte_processed_messages
+purchase_dte_review_queue
+purchase_claim_avisos
+purchase_claim_lines
+purchase_claim_rules
+compra_documento_leido
+compra_pago_aplicado
+compra_pagos
+compra_producto_alias
+compra_renglon_pendiente
+proveedores
+proveedores_categorias
+proveedores_maestro
+suppliers
+email_sync_accounts
+email_sync_log
+
+## funciones (sql)
+
+## crons
+sync-purchases-10min
+sync-purchase-emails-daily
+check-purchases-reconciliation-daily
+purchases-fastbackfill-semanal
+verificar-facturas-reclamadas-2h
+avisar-facturas-de-sala-0830-sv
+
+## edge functions
+sync-erp-purchases
+sync-purchase-emails
+check-purchases-reconciliation
+scrape-erp-proveedores
+backfill-proveedores-dte
+export-purchase-dte-manifest
+export-purchase-dte-zip
+analyze-document
+leer-boleta
+erp-csv-probe

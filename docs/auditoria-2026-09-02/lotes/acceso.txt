@@ -1,0 +1,55 @@
+# acceso — Acceso, identidad y kiosco
+
+## archivos
+src/views/LoginView.jsx
+src/views/TimeClockView.jsx
+src/views/CarnesDelDiaView.jsx
+src/views/SesionesView.jsx
+src/views/AccessDeniedView.jsx
+src/views/NoAccessView.jsx
+src/components/timeclock/AuthPromptPanel.jsx
+src/components/timeclock/EarlyExitForm.jsx
+src/components/timeclock/FeedbackOverlay.jsx
+src/components/timeclock/IdleScanPanel.jsx
+src/components/timeclock/KioskConfigModal.jsx
+src/components/timeclock/SelfDeclareShiftPanel.jsx
+src/components/sesiones/BloqueoModal.jsx
+src/components/personal/BotonCarneDePapel.jsx
+src/components/personal/CarneDelDia.jsx
+src/components/personal/ElegirSalaDeImpresion.jsx
+src/components/personal/SancionModal.jsx
+src/data/auth.js
+src/data/kiosco.js
+src/data/kioskAuth.js
+src/data/carneTemporal.js
+src/data/sesiones.js
+src/components/forms/FormSetPassword.jsx
+src/components/forms/FormChangeOwnPassword.jsx
+src/components/forms/FormDispositivos.jsx
+
+## tablas
+kiosk_credentials
+kiosk_devices
+kiosk_pin_attempts
+carnes_temporales
+login_rate_limit
+session_activity
+session_last_seen
+employee_auth_accounts
+intentos_identidad
+identidad_vales
+
+## funciones (sql)
+
+## crons
+purgar-carnes-temporales
+purge-sesiones-vencidas
+purge-session-activity-daily
+
+## edge functions
+ensure_user_by_code
+set-employee-password
+disable-employee-auth
+bulk-create-employee-users
+emitir-carne-temporal
+renombrar-usuario-empleado

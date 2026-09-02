@@ -1,0 +1,40 @@
+# inventario — Inventario, conteo y ventas perdidas
+
+## archivos
+src/views/InventarioView.jsx
+src/views/GestionStockView.jsx
+src/views/ConteoInventarioView.jsx
+src/views/inventario/AddManualItemForm.jsx
+src/views/inventario/ConteoDetailView.jsx
+src/views/inventario/TabInventario.jsx
+src/views/inventario/TabSinVenta.jsx
+src/views/inventario/camposDeConteo.jsx
+src/views/VentasPperdidasView.jsx
+src/components/inventario/NuevoConteoModal.jsx
+src/data/inventory.js
+src/data/inventarioTab.js
+src/data/inventoryMovements.js
+src/data/evidencia.js
+src/data/conteoInventario.js
+src/data/ventasPerdidas.js
+src/store/slices/conteoInventarioSlice.js
+
+## tablas
+inventory
+inventory_sync_huella
+inventory_sync_log
+conteos_inventario
+conteo_inventario_items
+conteo_inventario_item_history
+ventas_perdidas
+
+## funciones (sql)
+
+## crons
+refresh-inv-mv-2min
+crear-conteos-ciclicos-mensual
+vacuum-inventory-hourly
+
+## edge functions
+aplicar-movimiento-inventario
+analyze-history

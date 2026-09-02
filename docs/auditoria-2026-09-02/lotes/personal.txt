@@ -1,0 +1,52 @@
+# personal — Personal y expediente
+
+## archivos
+src/views/EmployeeDetailView.jsx
+src/views/personal/EquiposView.jsx
+src/data/estadosDePersonas.js
+src/views/employee/EmployeeProfileView.jsx
+src/views/employee/EmployeeDocumentsView.jsx
+src/components/practicantes/PracticanteModal.jsx
+src/data/employees.js
+src/data/employeeSelfService.js
+src/data/practicantes.js
+src/data/disciplina.js
+src/data/nationalities.js
+src/store/slices/employeeSlice.js
+src/store/slices/practicantesSlice.js
+src/components/forms/EmployeeFormModal.jsx
+src/components/forms/FormRehireEmployee.jsx
+src/components/forms/AsignarDocumentoAVarios.jsx
+src/data/documentosCompartidos.js
+src/data/capturaDeFoto.js
+src/views/CapturaDeFotoView.jsx
+src/data/capturaDesdeElTelefono.js
+src/components/forms/FormAddCustomDocument.jsx
+src/components/forms/FormDocumentViewer.jsx
+src/components/forms/FormEditContact.jsx
+src/components/forms/FormUploadOnly.jsx
+src/components/forms/FormNovedad.jsx
+src/data/recorteSugerido.js
+src/data/prepararDocumento.js
+
+## tablas
+employees
+employee_branches
+employee_documents
+employee_events
+practicantes
+education_catalog_entries
+
+## funciones (sql)
+
+## crons
+apply-scheduled-employee-events-daily
+check-employee-doc-expiry-daily
+soltar-capturas-abandonadas
+
+## edge functions
+apply-scheduled-employee-events
+check-employee-doc-expiry
+leer-dui
+subir-foto-de-captura
+soltar-captura

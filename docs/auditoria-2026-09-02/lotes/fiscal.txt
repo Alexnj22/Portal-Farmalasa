@@ -1,0 +1,28 @@
+# fiscal — Libros fiscales y cierre de período
+
+## archivos
+src/views/contabilidad/CierrePeriodoView.jsx
+src/views/contabilidad/CorteZView.jsx
+src/views/contabilidad/LibroComprasCompletoView.jsx
+src/views/contabilidad/LibrosIvaView.jsx
+src/views/contabilidad/ResumenFiscalView.jsx
+src/views/contabilidad/libroIva.js
+src/data/librosIva.js
+src/data/libroComprasCompleto.js
+src/data/cierrePeriodo.js
+src/data/resumenFiscal.js
+src/data/corteZ.js
+
+## tablas
+corte_z
+periodos_fiscales
+contabilidad_config
+
+## funciones (sql)
+
+## crons
+corte-z-mensual
+
+## edge functions
+sync-corte-z
+verificar-csv-libros

@@ -1,0 +1,36 @@
+# metas — Metas y cumplimiento
+
+## archivos
+src/views/metas/BarraAvance.jsx
+src/views/metas/ExplicacionMeta.jsx
+src/views/metas/GastoModal.jsx
+src/views/metas/GraficaMes.jsx
+src/views/metas/GraficaMesDias.jsx
+src/views/metas/GraficasHistorico.jsx
+src/views/metas/MetaModal.jsx
+src/views/metas/MetasView.jsx
+src/views/metas/RankingVendedores.jsx
+src/views/metas/TabBono.jsx
+src/views/metas/TabConfirmacion.jsx
+src/views/metas/TabGastos.jsx
+src/views/metas/TabHistorico.jsx
+src/views/metas/TabTablero.jsx
+src/views/metas/metasUtils.js
+src/data/metas.js
+
+## tablas
+metas_config
+metas_factor_cumplimiento
+metas_gasto
+metas_gasto_cuota
+metas_gasto_sala
+metas_historial
+metas_resultado
+metas_sucursal
+
+## funciones (sql)
+
+## crons
+metas-ciclo-diario
+
+## edge functions

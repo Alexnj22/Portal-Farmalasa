@@ -1,0 +1,63 @@
+# cortes-efectivo — Cortes de caja y bolsas de efectivo
+
+## archivos
+src/views/CortesView.jsx
+src/views/BolsasView.jsx
+src/views/bolsas/CircuitoDeBolsas.jsx
+src/views/bolsas/etapas.js
+src/views/MiCajaView.jsx
+src/components/cortes/AsentarDiferencias.jsx
+src/components/cortes/CorteDetalleModal.jsx
+src/components/cortes/FichasDeCaja.jsx
+src/components/cortes/MovimientosDeCaja.jsx
+src/components/cortes/ResolverDiferencia.jsx
+src/components/cortes/TarjetaCorte.jsx
+src/components/bolsas/ConteosDeBolsas.jsx
+src/components/bolsas/DepositoAlBanco.jsx
+src/components/bolsas/DepositosAlBanco.jsx
+src/components/bolsas/DetalleDeBolsa.jsx
+src/components/bolsas/EntregaDeBolsas.jsx
+src/components/bolsas/IdentidadDeQuienRetira.jsx
+src/components/bolsas/SalidaDeBolsa.jsx
+src/components/bolsas/ValesDeCaja.jsx
+src/components/caja/DialogoAbono.jsx
+src/data/cortes.js
+src/data/bolsas.js
+
+## tablas
+cortes_caja
+cortes_caja_diferencia_personas
+cortes_caja_diferencias
+cortes_caja_eventos
+cortes_caja_movimientos
+cortes_caja_movimientos_historial
+cortes_caja_aperturas
+caja_vales_portal
+caja_aperturas_del_portal
+caja_movimientos_portal
+caja_tipos_movimiento
+abonos_de_cliente
+bolsas
+bancos
+bolsas_conteos
+bolsas_entidades
+bolsas_entregas
+bolsas_eventos
+bolsas_movimientos
+bolsas_operaciones
+bolsas_tipos_salida
+depositos_bancarios
+
+## funciones (sql)
+
+## crons
+cortes-caja-30s
+cortes-caja-repaso-diario
+cortes-pendientes-0730-sv
+
+## edge functions
+sync-cortes-caja
+sync-aperturas-caja
+anotar-vales-caja
+hacer-corte-caja
+operar-caja

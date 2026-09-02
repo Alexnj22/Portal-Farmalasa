@@ -1,0 +1,26 @@
+# promociones — Promociones por producto
+
+## archivos
+src/views/promociones/PromocionModal.jsx
+src/views/promociones/PromocionesView.jsx
+src/views/promociones/TabActivas.jsx
+src/views/promociones/TabHistorico.jsx
+src/views/promociones/TabSeguimiento.jsx
+src/views/promociones/promocionesUtils.js
+src/data/promociones.js
+
+## tablas
+promociones
+promocion_renglon
+promocion_renglon_tarifa
+promocion_reparto
+promocion_reparto_mov
+promocion_excedente
+promocion_historial
+
+## funciones (sql)
+
+## crons
+promociones-ciclo-diario
+
+## edge functions

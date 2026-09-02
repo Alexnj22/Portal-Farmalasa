@@ -1,0 +1,29 @@
+# comunicacion — Avisos, notificaciones y encuestas
+
+## archivos
+src/views/AnnouncementsView.jsx
+src/views/employee/EmployeeAnnouncementsView.jsx
+src/views/EncuestaView.jsx
+src/views/EncuestaAdminView.jsx
+src/data/notifications.js
+src/data/pushSubscriptions.js
+src/data/encuestas.js
+src/store/slices/notificationsSlice.js
+src/components/forms/FormAnnouncements.jsx
+
+## tablas
+announcements
+notifications
+push_subscriptions
+surveys
+survey_bloques
+survey_preguntas
+survey_responses
+
+## funciones (sql)
+
+## crons
+purge-notifications-daily
+
+## edge functions
+send-push-notification

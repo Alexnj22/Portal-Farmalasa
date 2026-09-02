@@ -1,0 +1,18 @@
+# nomina — Nómina
+
+## archivos
+src/views/PayrollView.jsx
+src/data/payroll.js
+src/store/slices/payrollSlice.js
+src/components/forms/FormNewPayrollPeriod.jsx
+src/components/forms/FormEditPayrollEntry.jsx
+
+## tablas
+payroll_entries
+payroll_periods
+
+## funciones (sql)
+
+## crons
+
+## edge functions

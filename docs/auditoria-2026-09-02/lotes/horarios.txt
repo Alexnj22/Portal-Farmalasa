@@ -1,0 +1,36 @@
+# horarios — Horarios, turnos y vacaciones
+
+## archivos
+src/views/SchedulesView.jsx
+src/views/schedule-tabs/TabShifts.jsx
+src/views/schedule-tabs/components/InlineDayEditor.jsx
+src/views/schedule-tabs/components/ScheduleCalendar.jsx
+src/views/schedule-tabs/components/ScheduleChart.jsx
+src/views/VacationPlanView.jsx
+src/data/schedules.js
+src/data/vacationPlans.js
+src/store/slices/vacationPlanSlice.js
+src/components/forms/FormWfmAnalytics.jsx
+src/components/forms/GraficaAfluencia.jsx
+src/components/forms/FormVacationRecall.jsx
+
+## tablas
+employee_rosters
+shifts
+holidays
+schedule_coverage
+vacation_plans
+vacation_plan_headers
+wfm_snapshots
+
+## funciones (sql)
+
+## crons
+auto-copy-weekly-roster
+roster-missing-alert-saturday
+wfm_weekly_snapshot
+
+## edge functions
+auto-copy-weekly-roster
+generate-vacation-plan
+wfm-ai-scheduler

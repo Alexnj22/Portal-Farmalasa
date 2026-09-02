@@ -1,0 +1,40 @@
+# tablero — Tablero de inicio
+
+## archivos
+src/views/DashboardView.jsx
+src/views/dashboard/AcomodarModal.jsx
+src/views/dashboard/EnviarProductoModal.jsx
+src/views/dashboard/GraficaTendencia.jsx
+src/views/dashboard/InstrumentoBaldosa.jsx
+src/views/dashboard/LanzadorSolicitud.jsx
+src/views/dashboard/PedirTrasladoModal.jsx
+src/views/dashboard/WidgetAnnulmentRequest.jsx
+src/views/dashboard/WidgetBitacoras.jsx
+src/views/dashboard/WidgetBolsasSala.jsx
+src/views/dashboard/WidgetCortesSala.jsx
+src/views/dashboard/WidgetDatoPedido.jsx
+src/views/dashboard/WidgetFacturasSala.jsx
+src/views/dashboard/WidgetInventoryMovement.jsx
+src/views/dashboard/WidgetInventorySearch.jsx
+src/views/dashboard/WidgetMetaSala.jsx
+src/views/dashboard/WidgetMinMaxRequest.jsx
+src/views/dashboard/WidgetRecetasPendientes.jsx
+src/views/dashboard/WidgetTransferRequests.jsx
+src/views/dashboard/WidgetVendedores.jsx
+src/views/dashboard/baldosas/BaldosaFacturacion.jsx
+src/views/dashboard/baldosas/BaldosaInventario.jsx
+src/views/dashboard/baldosas/BaldosaMinMax.jsx
+src/views/dashboard/inventario/PanelDeInventario.jsx
+src/views/dashboard/inventario/salas.js
+src/constants/dashboardTabs.js
+src/data/dashboard.js
+
+## tablas
+user_dashboard_prefs
+dashboard_canon
+
+## funciones (sql)
+
+## crons
+
+## edge functions

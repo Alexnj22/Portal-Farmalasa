@@ -1,0 +1,20 @@
+# asistencia — Asistencia y marcaciones
+
+## archivos
+src/views/AttendanceMonitorView.jsx
+src/views/AttendanceAuditView.jsx
+src/data/attendanceAudit.js
+src/views/asistencia/quincena.js
+
+## tablas
+attendance
+timesheets
+overtime_bank
+
+## funciones (sql)
+
+## crons
+consolidate-timesheets-daily
+
+## edge functions
+consolidate-timesheets

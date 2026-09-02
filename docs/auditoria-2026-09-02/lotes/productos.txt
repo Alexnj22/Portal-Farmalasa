@@ -1,0 +1,38 @@
+# productos — Productos, presentaciones y laboratorios
+
+## archivos
+src/views/ProductosView.jsx
+src/views/productos/TabCatalogo.jsx
+src/views/productos/TabLaboratorios.jsx
+src/views/productos/TabPresentaciones.jsx
+src/views/productos/TabPoliticaVencimiento.jsx
+src/views/LaboratoriosView.jsx
+src/data/productos.js
+src/data/presentaciones.js
+src/data/laboratorios.js
+src/data/minmaxLabs.js
+
+## tablas
+products
+products_changelog
+products_sync_log
+presentaciones
+product_active_principles
+product_categories
+product_locations
+product_precios
+product_precios_changelog
+product_precios_history
+laboratorios
+lab_locations
+
+## funciones (sql)
+
+## crons
+sync-products-10min
+notify-new-products-daily
+vacuum-products-hourly
+
+## edge functions
+sync-products
+notify-new-products-daily

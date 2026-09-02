@@ -1,0 +1,10 @@
+ FAIL  tests/unit/bandejaYCatalogosDeSala.test.js > el enrutador de aprobadores > «quién es admin» se decide por `system_role`, no por una columna que no existe
+ FAIL  tests/unit/bitacoraDeAcciones.test.js > quién firma > el `user_id` sale de la sesión, no de `localStorage`
+ FAIL  tests/unit/bitacoraDeAcciones.test.js > quién firma > sin sesión hidratada cae al de `localStorage`, y si no, a null
+ FAIL  tests/unit/decisionDiferencia.test.js > esCargoDeSupervision > reconoce los mismos tres cargos que la base
+ FAIL  tests/unit/registroDePermisos.test.js > el registro y el menú hablan de los mismos módulos > dos módulos no comparten la misma ruta
+AssertionError: expected '[]' to match /system_role|ADMIN/
+AssertionError: expected false to be true // Object.is equality
+AssertionError: expected undefined to be 'uid-de-la-sesion' // Object.is equality
+AssertionError: expected undefined to be 'uid-guardado' // Object.is equality
+AssertionError: hay rutas repetidas en MODULE_MAP: expected 56 to be 57 // Object.is equality

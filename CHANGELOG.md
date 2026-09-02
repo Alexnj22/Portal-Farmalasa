@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.933.0 — El corte se confirma o se descarta ahí mismo
+
+> «al dar hacer corte y obtener resultado debe preguntar si se confirma o se
+> descarta» (usuario, 1-sep)
+
+El corte quedaba **PENDIENTE** y había que ir a la pestaña de Cortes a
+resolverlo. Y desde v2.931.1 un corte sin confirmar **no habilita el cierre del
+día**, así que la sala llegaba al final de la jornada con el candado puesto sin
+saber por qué.
+
+Ahora la pantalla del resultado pregunta: **Confirmar el corte** o **Descartar**.
+Quien acaba de contar es quien sabe si el conteo estuvo bien.
+
+Usa el **mismo `useResolverCorte`** que la pestaña de Cortes — dos caminos para
+la misma decisión que escribieran distinto darían dos bitácoras. Y si la fila
+todavía no llegó del sync, lo dice y manda a Cortes en vez de fallar en silencio:
+el corte se registró en la caja igual.
+
+### Corrección de una afirmación mía
+
+En la conversación anterior dije que **el corte cierra el turno en la caja**. Los
+datos del 1-sep lo contradicen: tres cortes seguidos —21:11, 21:13 y 21:15—
+salieron todos en el **turno 3**, sin apertura entre medio. Si el corte cerrara
+el turno, cada uno habría necesitado una.
+
+Queda sin explicar por qué a las 19:23 el panel del sistema de la caja no
+reportaba apertura viva. **Se verifica en vivo con la caja abierta** — es la
+única forma de mirarlo, y hasta entonces no se escribe ninguna regla que dependa
+de eso.
+
 ## v2.932.1 — El cierre emite el corte Z, y el tiquete siempre gana
 
 ### El Z es un tipo de CORTE, no un efecto de cerrar el turno

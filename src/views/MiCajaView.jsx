@@ -18,6 +18,7 @@ import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
+import useResolverCorte from '../hooks/useResolverCorte';
 import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
@@ -230,6 +231,16 @@ export default function MiCajaView({ comoPestana = false }) {
     const [ocupado, setOcupado] = useState(false);
     const [dialogo, setDialogo] = useState(null);   // 'abrir' | 'ingreso' | 'corte' | 'cerrar'
     const [resultado, setResultado] = useState(null);
+    /* Confirmar o descartar SIN salir de acá (pedido del usuario, 1-sep): «al
+     * dar hacer corte y obtener resultado debe preguntar si se confirma o se
+     * descarta». Antes el corte quedaba PENDIENTE y había que ir a la pestaña
+     * de Cortes a resolverlo — y un corte sin resolver no habilita el cierre,
+     * así que la sala llegaba al final del día con el candado puesto sin saber
+     * por qué. Es el MISMO `useResolverCorte` que usa la pestaña: dos caminos
+     * para la misma decisión que escribieran distinto darían dos bitácoras. */
+    const { resolver, ocupadoId } = useResolverCorte({
+        nombreSala: { [sala]: nombreSala }, origen: 'micaja',
+    });
     const [bolsas, setBolsas] = useState(VACIO);
     const [movimientos, setMovimientos] = useState(VACIO);
     const [deBolsas, setDeBolsas] = useState(VACIO);
@@ -580,6 +591,8 @@ export default function MiCajaView({ comoPestana = false }) {
      *
      * Las de antes contaban pendientes y bolsas —trabajo por hacer, no estado—
      * y repetían la mitad del panel de abajo. */
+    const estado_dia = diaAbierto;
+
     const ultimoCorte = useMemo(
         () => [...cortesDelDia].filter((c) => c.tipo === 'C').pop() || null,
         [cortesDelDia],
@@ -806,6 +819,26 @@ export default function MiCajaView({ comoPestana = false }) {
             <DialogoCorte abierto={dialogo === 'corte'} ocupado={ocupado} resultado={resultado}
                 pendientes={pendientes.length} onImprimir={imprimirCorte}
                 yaEmbolsado={yaEmbolsado} bolsasDeHoy={bolsasDeHoy.length}
+                resolviendo={ocupadoId != null}
+                onResolver={async (estado, motivo) => {
+                    /* La fila del corte llega por el sync, que corre después:
+                     * se busca por el número que devolvió el sistema de la caja.
+                     * Si todavía no está, se dice — y se resuelve desde Cortes,
+                     * que es donde va a aparecer. */
+                    const delDia = await fetchCortes({ desde: estado_dia, hasta: estado_dia });
+                    const mio = (delDia || []).find(
+                        (c) => String(c.erp_corte_id) === String(resultado?.id_corte),
+                    );
+                    if (!mio) {
+                        showToast('Todavía no aparece el corte',
+                            'Se registró en la caja y llega al portal en unos minutos. '
+                            + 'Confírmalo desde Cortes.', 'warning');
+                        return;
+                    }
+                    if (await resolver(mio, estado, { motivo })) {
+                        setDialogo(null); setResultado(null); cargar();
+                    }
+                }}
                 onClose={() => { setDialogo(null); setResultado(null); }}
                 onCortar={async (efectivo) => {
                     setOcupado(true);
@@ -1479,7 +1512,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
 }
 
 function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0, bolsasDeHoy = 0,
-    onClose, onCortar, onImprimir }) {
+    resolviendo = false, onResolver, onClose, onCortar, onImprimir }) {
     const [efectivo, setEfectivo] = useState('');
     const valido = efectivo !== '' && Number(efectivo) >= 0;
     /* Lo que se declara es el ACUMULADO del día; lo que se cuenta, sólo el
@@ -1552,13 +1585,41 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
                         </p>
                     )}
                 </div>
-                <div className="flex justify-end gap-2">
+                {/* ── La decisión, acá mismo ────────────────────────────
+                    Un corte queda PENDIENTE hasta que alguien lo firma, y sin
+                    firma no se puede cerrar el día. Mandar a otra pestaña a
+                    resolverlo hacía que la sala llegara al cierre con el
+                    candado puesto sin saber por qué. Y quien acaba de contar
+                    es quien sabe si el conteo estuvo bien. */}
+                {resultado.ok && onResolver && (
+                    <Notice variant="info" icon={ShieldCheck}>
+                        <span className="font-bold">¿Este conteo es el bueno?</span>
+                        <span className="block mt-0.5 font-normal text-content-2">
+                            Confírmalo para que cuente como el corte del día. Si fue una prueba
+                            o contaste mal, descártalo y vuelve a hacerlo.
+                        </span>
+                    </Notice>
+                )}
+                <div className="flex justify-end gap-2 flex-wrap">
                     {resultado.ok && (
                         <Button variant="secondary" icon={Printer} onClick={() => onImprimir(resultado)}>
-                            Imprimir de nuevo
+                            Imprimir
                         </Button>
                     )}
-                    <Button variant="primary" onClick={onClose}>Entendido</Button>
+                    {resultado.ok && onResolver ? (
+                        <>
+                            <Button variant="ghost" disabled={resolviendo}
+                                onClick={() => onResolver('DESCARTADO', 'Conteo descartado desde la caja')}>
+                                Descartar
+                            </Button>
+                            <Button variant="primary" disabled={resolviendo}
+                                onClick={() => onResolver('CONFIRMADO')}>
+                                Confirmar el corte
+                            </Button>
+                        </>
+                    ) : (
+                        <Button variant="primary" onClick={onClose}>Entendido</Button>
+                    )}
                 </div>
             </Marco>
         );

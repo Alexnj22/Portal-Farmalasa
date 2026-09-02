@@ -961,7 +961,7 @@ function TabDocumentos({
                             // El del pulgar es fijo y de una palabra: "DESCARGAR"
                             // (66,8px) y "DESCARGANDO…" no entran en la columna.
                             rotulo: 'Descarga',
-                            title: 'Descargar todos los filtrados en un ZIP',
+                            title: 'Descargar todos los filtrados en un ZIP — los anulados van en su propia carpeta',
                             disabled: bulkDownloading, onClick: downloadBulk,
                         }] : []),
                         ...(canEdit ? [{

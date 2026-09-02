@@ -50,6 +50,24 @@ function folderForTipo(tipoDte: string | null): string {
   return DTE_TYPE_FOLDERS[tipoDte] || `Tipo ${tipoDte}`;
 }
 
+// Pedido del usuario 2026-09-01: los anulados van aparte. Un documento
+// invalidado NO ampara deducciones (Art. 119-E CT) y la pantalla ya los
+// excluye de los totales — pero en el ZIP caían mezclados con los buenos, así
+// que quien lo abre para archivar o para pasárselo al contador tenía que
+// abrir uno por uno para saber cuáles no cuentan.
+//
+// Se separan ADENTRO por tipo (Anulados/Factura/…, no Anulados/ plano):
+// contar por tipo de documento —que es para lo que existen estas carpetas—
+// tiene que seguir funcionando en las dos mitades.
+//
+// Y se incluyen, no se omiten: el respaldo del anulado es justamente lo que
+// justifica que ese correlativo no esté en el libro.
+const CARPETA_ANULADOS = "Anulados";
+function folderForRow(tipoDte: string | null, invalidado: boolean): string {
+  const tipo = folderForTipo(tipoDte);
+  return invalidado ? `${CARPETA_ANULADOS}/${tipo}` : tipo;
+}
+
 function relativePath(publicUrl: string | null): string | null {
   if (!publicUrl) return null;
   const marker = `/object/public/${BUCKET}/`;
@@ -121,7 +139,7 @@ Deno.serve(async (req) => {
       for (let i = 0; i < ids.length; i += ID_CHUNK) {
         const { data: rows, error: selErr } = await admin
           .from("purchase_dte_documents")
-          .select("id, codigo_generacion, tipo_dte, json_path, pdf_path")
+          .select("id, codigo_generacion, tipo_dte, json_path, pdf_path, invalidado")
           .in("id", ids.slice(i, i + ID_CHUNK));
         if (selErr) throw new Error(selErr.message);
 
@@ -130,7 +148,9 @@ Deno.serve(async (req) => {
           // TabRevision) — sin este fallback, 2+ documentos así en la misma
           // descarga generaban null.json/null.pdf y se pisaban entre sí.
           const baseName = row.codigo_generacion || `doc-${row.id}`;
-          const folder = folderForTipo(row.tipo_dte);
+          // `invalidado` es boolean NOT NULL DEFAULT false, pero el === true
+          // deja el ZIP igual de correcto si algún día llega como null.
+          const folder = folderForRow(row.tipo_dte, row.invalidado === true);
           const jsonRel = relativePath(row.json_path);
           if (jsonRel) entradas.push({ name: `${folder}/${baseName}.json`, rel: jsonRel });
           const pdfRel = relativePath(row.pdf_path);

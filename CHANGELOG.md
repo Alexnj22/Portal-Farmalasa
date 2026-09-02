@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.929.0 — Compras: los anulados bajan en su propia carpeta del ZIP
+
+> «en las compras, al descargar el zip, ¿que separe en otra carpeta los
+> anulados?» (usuario, 1-sep)
+
+El ZIP del período separaba por tipo de documento —`Factura/`,
+`Credito Fiscal (CCF)/`, …— más `Revisar/` para lo que sigue pendiente. Los
+**anulados caían mezclados con los buenos**: la pantalla ya los excluye de los
+totales y les pinta su badge, pero el ZIP no distinguía nada, así que quien lo
+abre para archivar o para pasárselo al contador tenía que ir documento por
+documento para saber cuáles no cuentan. En agosto eran **1 entre 616**, y en
+julio **2 entre 864** — la proporción es justo la que hace que se pase por alto.
+
+Ahora van a `Anulados/`, y **adentro se siguen dividiendo por tipo**
+(`Anulados/Factura/`, `Anulados/Credito Fiscal (CCF)/`): contar por tipo de
+documento —que es para lo que existen estas carpetas— tiene que seguir
+funcionando en las dos mitades.
+
+**Se incluyen, no se omiten.** Un documento invalidado no ampara deducciones
+(Art. 119-E CT), pero su respaldo es justamente lo que justifica que ese
+correlativo no esté en el libro: sacarlo del ZIP dejaría un hueco sin explicar.
+
+El cambio vive en `export-purchase-dte-manifest` —la función que arma la lista
+de archivos del ZIP; el navegador los baja y empaqueta— y ya está desplegada.
+
+**Comprobado contra producción**, no sólo desplegado: se le pidió el manifiesto
+de tres anulados y tres normales del mismo tipo, y devolvió
+`Anulados/Credito Fiscal (CCF)/…` para los primeros y `Credito Fiscal (CCF)/…`
+para los segundos, sin faltantes. Uno de esos anulados se bajó por su enlace
+firmado: 200, 261,933 bytes, un PDF de verdad.
+
 ## v2.928.1 — Promociones — corregir una promoción ya creada
 
 Una promoción guardada no se podía tocar. Dos de las funciones para corregirla

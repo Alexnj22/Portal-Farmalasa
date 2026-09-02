@@ -295,6 +295,140 @@ Deno.serve(async (req) => {
       return responder({ ok: true, que, nuevo });
     }
 
+    // ── RESOLVER un pago con «Otro», crédito por crédito ─────────────────
+    //
+    // «En la solicitud se debe poder confirmar individualmente si van más de 1
+    // cuenta a abonar, si se rechaza 1 o más con motivo» (usuario, 2-sep). Una
+    // liquidación del ISSS puede cubrir tres créditos y que dos correspondan y
+    // el tercero no — resolverla en bloque obligaría a rechazar los tres.
+    //
+    // Aprobar sólo CONFIRMA: el abono ya se aplicó cuando la sala lo registró.
+    // Rechazar lo DESHACE en el sistema de la caja y le devuelve el saldo al
+    // crédito. Eso se puede desde hoy: la acción de borrado se auditó esta
+    // mañana y el portal comprueba releyendo, porque el origen contesta
+    // «Success» aunque no haya borrado nada.
+    if (accion === "resolver_otro") {
+      const solId = String(body.solicitud ?? "");
+      const decisiones: { credito: string; decision: string; motivo?: string }[] =
+        Array.isArray(body.decisiones) ? body.decisiones : [];
+      if (!solId) return responder({ ok: false, error: "Falta la solicitud." }, 400);
+      if (!decisiones.length) return responder({ ok: false, error: "No se decidió nada." }, 400);
+
+      const { data: sol, error: eSol } = await supabase.from("approval_requests")
+        .select("id, type, status, metadata, employee_id")
+        .eq("id", solId).maybeSingle();
+      if (eSol) throw new Error(`leyendo la solicitud: ${eSol.message}`);
+      if (!sol) return responder({ ok: false, error: "Esa solicitud no existe." }, 404);
+      if (sol.type !== "ABONO_OTRO_CONFIRMAR") {
+        return responder({ ok: false, error: "Esa solicitud no es de un pago con «Otro»." }, 400);
+      }
+      if (sol.status !== "PENDING") {
+        return responder({ ok: false, error: "Esa solicitud ya se resolvió." }, 409);
+      }
+      // Quien pidió no se aprueba. La policy no alcanza: esto lo escribe la
+      // función con la llave del servidor, que no pasa por RLS.
+      if (String(sol.employee_id) === String(quien.id)) {
+        return responder({ ok: false, error: "No puedes aprobar tu propia solicitud." }, 403);
+      }
+
+      const permisoDecidir = await permisoDeModulo(
+        supabase, quien.id, "requests_cuentas_por_cobrar", "can_approve");
+      if (permisoDecidir.roto) return responder({ ok: false, error: permisoDecidir.roto }, 503);
+      if (!permisoDecidir.puede) {
+        return responder({ ok: false, error: "No tienes permiso para decidir esto." }, 403);
+      }
+
+      const meta = (sol.metadata ?? {}) as Record<string, unknown>;
+      const sala = Number(meta.branch_id);
+      const entrada = mapa.find((e) => e.branchId === sala);
+      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      const renglones = (Array.isArray(meta.creditos) ? meta.creditos : []) as
+        Record<string, unknown>[];
+
+      // Un rechazo SIN motivo no es un rechazo: quien pagó tiene derecho a
+      // saber por qué se le devolvió el abono.
+      for (const d of decisiones) {
+        if (d.decision === "RECHAZADO" && String(d.motivo ?? "").trim().length < 5) {
+          return responder({ ok: false, error: "Un rechazo necesita motivo." }, 400);
+        }
+      }
+
+      const resultado: Record<string, unknown>[] = [];
+      const fallidos: string[] = [];
+      for (const r of renglones) {
+        const credito = String(r.credito ?? "");
+        const d = decisiones.find((x) => String(x.credito) === credito);
+        if (!d || d.decision !== "RECHAZADO") {
+          resultado.push({ ...r, decision: d?.decision ?? "APROBADO", motivo: null });
+          continue;
+        }
+        /* Para deshacerlo hay que saber QUÉ abono es, y el id se lo puso el
+         * origen. Se relee el crédito y se busca por monto: es lo único que los
+         * dos lados comparten, y un pago con «Otro» del mismo monto y el mismo
+         * día sobre el mismo crédito no existe en la práctica. */
+        const suyos = await abonosDelCredito(cookie, entrada.erpId, credito);
+        const abono = suyos.find((a) =>
+          Math.abs(a.monto - Number(r.monto)) < 0.005 && a.forma === "Otro");
+        if (!abono?.erp_id) {
+          fallidos.push(`${credito}: no se encontró el abono para deshacerlo`);
+          resultado.push({ ...r, decision: "RECHAZADO", motivo: d.motivo, deshecho: false });
+          continue;
+        }
+        await quitarAbonoDelOrigen(cookie, entrada.erpId, abono.erp_id);
+        // El origen dice «Success» aunque no borre nada: se comprueba releyendo.
+        const quedan = await abonosDelCredito(cookie, entrada.erpId, credito);
+        const sigue = quedan.some((a) => a.erp_id === abono.erp_id);
+        if (sigue) fallidos.push(`${credito}: el abono sigue ahí`);
+        resultado.push({ ...r, decision: "RECHAZADO", motivo: d.motivo, deshecho: !sigue });
+
+        if (!sigue) {
+          const { error: eAnular } = await supabase.from("creditos_abonos_portal")
+            .update({ anulado_at: new Date().toISOString(), anulado_por: quien.id })
+            .eq("branch_id", sala).eq("credito_erp", credito)
+            .eq("monto", Number(r.monto)).is("anulado_at", null);
+          if (eAnular) console.error("[creditos-erp] anulando el abono:", eAnular.message);
+        }
+      }
+
+      /* La solicitud queda APROBADA aunque se haya rechazado algún renglón: lo
+       * que se resolvió fue la solicitud, y el detalle de qué se aceptó y qué no
+       * vive en `creditos`. Marcarla RECHAZADA por un renglón diría que no se
+       * aprobó nada, que es falso. */
+      const { error: eCerrar } = await supabase.from("approval_requests")
+        .update({
+          status: "APPROVED", approver_id: quien.id,
+          resolved_at: new Date().toISOString(),
+          metadata: { ...meta, creditos: resultado, resuelto_por: quien.id },
+        })
+        .eq("id", solId);
+      if (eCerrar) throw new Error(`cerrando la solicitud: ${eCerrar.message}`);
+
+      // Refrescar el espejo de los créditos que cambiaron.
+      try {
+        const fechas = [...new Set(renglones.map((r) => String(r.fecha)).filter(Boolean))];
+        for (const f of fechas) {
+          const filas = await creditosDeLaSala(cookie, entrada.erpId, f, f);
+          const { error: eSync } = await supabase.rpc("sync_creditos_batch",
+            { p_filas: filas.map((c) => ({ ...c, branch_id: sala })) });
+          /* El resultado NO se descarta: si el espejo no se refresca, la
+           * pantalla sigue mostrando el saldo viejo y quien acaba de rechazar
+           * un abono cree que no pasó nada. No corta la respuesta —lo del
+           * origen ya está hecho— pero queda en el log. */
+          if (eSync) console.error(`[creditos-erp] espejo ${f}: ${eSync.message}`);
+        }
+      } catch (e) {
+        console.error(`[creditos-erp] espejo tras resolver: ${(e as Error).message}`);
+      }
+
+      return responder({
+        ok: fallidos.length === 0,
+        creditos: resultado,
+        aviso: fallidos.length
+          ? `No se pudo deshacer: ${fallidos.join(" · ")}. Hay que quitarlo a mano en la caja.`
+          : undefined,
+      }, fallidos.length ? 207 : 200);
+    }
+
     // ── HISTORIAL — los abonos que el ORIGEN tiene de un crédito ─────────
     //
     // Corrige una afirmación equivocada: el portal decía que el sistema de la
@@ -556,7 +690,16 @@ Deno.serve(async (req) => {
             branch_id: sala, pago_id: String(pago.id),
             cliente: ficha?.cliente ?? hechos[0].vivo.cliente,
             monto: aplicado, detalle: documento || null,
-            creditos: hechos.map((h) => ({ credito: h.credito, monto: h.monto })),
+            /* Cada crédito con su renglón: la solicitud se resuelve UNO POR UNO
+             * —«se debe poder confirmar individualmente si van más de 1 cuenta»—
+             * y para eso hace falta saber cuál abono es cuál. `abono_erp` se
+             * llena al resolver, releyendo el crédito: acá todavía no se sabe
+             * qué id le dio el origen a cada uno. */
+            creditos: hechos.map((h) => ({
+              credito: h.credito, monto: h.monto,
+              cliente: h.vivo.cliente, fecha: h.vivo.fecha,
+              decision: null, motivo: null,
+            })),
             comprobante_url: body.comprobanteUrl || null,
           },
         });

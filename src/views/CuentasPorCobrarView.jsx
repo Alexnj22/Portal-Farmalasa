@@ -819,6 +819,9 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, onClose, onAbonar, on
 function DialogoAbono({ credito, onClose, onCobrar }) {
     const [forma, setForma] = useState('Efectivo');
     const [documento, setDocumento] = useState('');
+    // Sólo para «Otro»: es lo que quien aprueba va a leer, y por eso es
+    // obligatorio. Con las otras formas el papel habla solo.
+    const [motivo, setMotivo] = useState('');
     const [fechaDoc, setFechaDoc] = useState('');
     const [pos, setPos] = useState('');
     const [montoDoc, setMontoDoc] = useState('');
@@ -870,7 +873,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         setForma(nueva);
         if (nueva === 'Efectivo') setRepartir(false);
         setArchivo(null); setLectura(null); setErrorLectura(null);
-        setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc('');
+        setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc(''); setMotivo('');
     }, []);
 
     /* Los OTROS créditos del cliente, sin el que se está cobrando. */
@@ -954,7 +957,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         && Math.abs(sumaRepartida - totalPago) < 0.005;
     const listo = !bloqueado && cuadra
         && (!conPapel || (archivo && lectura))
-        && (!esOtro || documento.trim().length >= 3);
+        && (!esOtro || motivo.trim().length >= 5);
 
     const cobrar = useCallback(async () => {
         setOcupado(true);
@@ -964,9 +967,10 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         await onCobrar({
             forma, documento: documento.trim(), montoDocumento: Number(totalPago.toFixed(2)),
             aplicaciones, archivo, lectura, fechaDocumento: fechaDoc || null, pos: pos || null,
+            motivo: motivo.trim() || null,
         });
         setOcupado(false);
-    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, onCobrar]);
+    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, onCobrar]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Cobrar un crédito">
@@ -1020,20 +1024,22 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
                 {esOtro && (
                     <div className="space-y-3">
-                        {/* Se dice ANTES de escribir nada: quien cobra tiene que
-                            saber que esto va a revisión, no enterarse después. */}
-                        <Notice variant="warning" icon={AlertTriangle}>
-                            «Otro» es para lo que <strong>no</strong> se paga con ninguna de las
-                            cuatro formas —el ISSS, una aseguradora, lo que se liquida por
-                            planilla o convenio—. El abono entra ya, y va una
-                            <strong> solicitud de confirmación</strong> a quien decide sobre
-                            cuentas por cobrar.
+                        {/* Corto y en el orden en que importa: qué va a pasar, y
+                            qué hay que escribir. El párrafo largo que explicaba
+                            para qué sirve «Otro» sobra — quien lo eligió ya lo
+                            sabe, y se lo comía la mitad del diálogo. */}
+                        <Notice variant="info">
+                            Este abono entra ya y se envía a <strong>aprobación</strong>.
+                            Escribe el motivo.
                         </Notice>
-                        <PortalInput label="Con qué se pagó" value={documento} maxLength={80}
-                            placeholder="ISSS · planilla de agosto"
-                            onChange={(e) => setDocumento(e.target.value)} />
                         <PortalInput label="Monto del pago" inputMode="decimal" value={montoDoc}
                             onChange={(e) => setMontoDoc(e.target.value)} />
+                        {/* «Con qué se pagó» salió: la forma ya ES «Otro», así que
+                            era pedir dos veces el mismo dato. Lo que hace falta es
+                            el MOTIVO, y es lo que quien aprueba va a leer. */}
+                        <PortalTextarea label="Motivo" value={motivo} rows={2}
+                            placeholder="ISSS, planilla de agosto"
+                            onChange={(e) => setMotivo(e.target.value)} />
                     </div>
                 )}
 
@@ -1070,23 +1076,53 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                 )}
                             </div>
 
-                            {listaDeCreditos.map((h) => (
-                                <div key={h.id} className="flex items-center gap-3 min-w-0">
-                                    <span className="min-w-0 flex-1">
-                                        <span className="block text-body-sm text-content truncate">
-                                            {fechaCorta(h.fecha)} · {h.documento}
+                            {listaDeCreditos.map((h) => {
+                                const esEste = String(h.id) === String(credito.id);
+                                const puesto = Number(reparto[h.id]) || 0;
+                                const debe = Number(h.saldo) || 0;
+                                const seExcede = puesto > debe + 0.004;
+                                return (
+                                    /* Cada crédito en su propia tarjeta y no como
+                                       dos renglones sueltos: con dos del mismo día
+                                       y el mismo cliente, la fila con un campo al
+                                       lado no decía qué era el campo ni contra qué
+                                       tope. Ahora dice «Abona … de $X» y trae el
+                                       atajo de poner todo. */
+                                    <div key={h.id} data-surface="card"
+                                        data-tono={seExcede ? 'danger' : undefined}
+                                        className="rounded-xl p-2.5 flex items-center gap-3 min-w-0">
+                                        <span className="min-w-0 flex-1">
+                                            <span className="flex items-center gap-1.5 min-w-0">
+                                                <span className="text-body-sm text-content truncate">
+                                                    {fechaCorta(h.fecha)} · {h.documento}
+                                                </span>
+                                                {esEste && listaDeCreditos.length > 1 && (
+                                                    <Badge variant="brand" size="sm">este</Badge>
+                                                )}
+                                            </span>
+                                            <span className="block text-micro text-content-3">
+                                                debe {formatMoney(debe)} · {h.dias ?? credito.dias} días
+                                            </span>
                                         </span>
-                                        <span className="block text-micro text-content-3">
-                                            debe {formatMoney(h.saldo)} · {h.dias ?? credito.dias} días
+
+                                        <span className="shrink-0 flex items-center gap-1.5">
+                                            <span className="w-24">
+                                                <PortalInput label="Abona" inputMode="decimal" placeholder="0.00"
+                                                    value={reparto[h.id] ?? ''}
+                                                    onChange={(e) => setReparto((r) => ({ ...r, [h.id]: e.target.value }))} />
+                                            </span>
+                                            {/* «Todo» es el caso normal —se paga el
+                                                crédito completo— y escribir $35.57
+                                                a mano es donde se equivoca uno. */}
+                                            <Button variant="ghost" size="sm"
+                                                title={`Abonar los ${formatMoney(debe)}`}
+                                                onClick={() => setReparto((r) => ({ ...r, [h.id]: debe.toFixed(2) }))}>
+                                                Todo
+                                            </Button>
                                         </span>
-                                    </span>
-                                    <span className="w-28 shrink-0">
-                                        <PortalInput label="" inputMode="decimal" placeholder="0.00"
-                                            value={reparto[h.id] ?? ''}
-                                            onChange={(e) => setReparto((r) => ({ ...r, [h.id]: e.target.value }))} />
-                                    </span>
-                                </div>
-                            ))}
+                                    </div>
+                                );
+                            })}
 
                             {/* «Abonar a otra cuenta» y no la lista completa de
                                 entrada: el crédito que se vino a cobrar es el
@@ -1103,7 +1139,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
                             <div className="flex items-baseline justify-between gap-3 pt-2 border-t border-border/60">
                                 <span className="text-body-sm text-content-2">
-                                    {(conPapel || esOtro) ? 'Repartido' : 'Total a cobrar'}
+                                    {(conPapel || esOtro) ? 'Va aplicado' : 'Total a cobrar'}
                                 </span>
                                 <span className={`text-body font-black tabular-nums ${
                                     cuadra || (!conPapel && !esOtro) ? 'text-content' : 'text-danger-text'}`}>

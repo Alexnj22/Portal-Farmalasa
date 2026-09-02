@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.952.0 — La salida de efectivo sale primero del cajón
+
+Regla del usuario: *«con las salidas de caja, que la prioridad sea caja; si no
+tiene efectivo, lo saca de las bolsas como ya está la regla»*.
+
+Estaba al revés. El botón «Salida» de Mi caja hacía
+`setDialogo(bolsas.length ? 'bolsa' : 'salida')`: con **una** bolsa abierta en
+la sala, el cajón ni se ofrecía. La regla del 30-ago decía «prefiere siempre las
+bolsas de cortes anteriores» —ese dinero ya lo descontó su propio cierre—, y así
+se pagaron **$3.37** (OTR-1060, Salud 3) abriendo una bolsa sellada del día
+anterior con el cajón lleno de las ventas de la mañana.
+
+Hoy el botón abre siempre el mismo diálogo y el **monto** decide el origen: si
+el cajón tiene el efectivo, de ahí sale y se le anota su vale al turno; si no lo
+tiene, sale de las bolsas con la regla de siempre —la más vieja que alcance
+sola, y el paso en billetes que sale del monto—. El cajón entra **entero o no
+entra**: partirlo dejaría un vale de caja y un vale de bolsa por una sola
+entrega. La cuenta vive en `utils/bolsasReparto` (`elegirOrigen`), con sus seis
+casos en `tests/unit/bolsasReparto.test.js`.
+
+**Cuánto efectivo tiene el cajón lo calcula el servidor**, y no es el «Monto
+Registrado» del origen. A ese número le sobran dos cosas y le falta una:
+
+| | |
+|---|---|
+| ventas que no fueron en efectivo | **se restan** — una venta con tarjeta no deja un billete |
+| lo ya embolsado hoy | **se resta** — meter el dinero en una bolsa no le avisa al origen: le sigue figurando adentro hasta el Z. Medido en Salud 3 el 30-ago: corte de las 12:14 con $438.69 → bolsa de $438.69, y el corte de las 18:04 seguía esperando esos $438.69 |
+| los vales ya anotados de bolsas de hoy | **se suman de vuelta** — el origen ya los restó, y esa plata también está dentro de `embolsado` |
+| el cobro de créditos | **no se suma** — es el defecto conocido del origen, y dejarlo deja el número por debajo: de menos manda a las bolsas, que es lo de siempre; de más mandaría a buscar billetes que no están |
+
+Si no se puede medir, `efectivo: null` — que **no es cero**: es «no sé», y va a
+las bolsas. Y el número **nunca se muestra**: el conteo a ciegas del corte es
+todo el control, y esta pantalla no puede ser la puerta de al lado por donde se
+sabe (regla del 1-sep).
+
+**Un solo catálogo de motivos.** Había dos listas para el mismo acto —
+`bolsas_tipos_salida` y la mitad SALIDA de `caja_tipos_movimiento`— así que el
+mismo pago a proveedor se llamaba distinto según de dónde saliera la plata. Hoy
+la lista es una y cada motivo lleva `caja_tipo`: en qué movimiento de caja se
+convierte cuando sale del cajón (`NULL` = nunca sale de ahí, y es la falla
+segura). Los dos que sólo vivían del lado de la caja —bonificación y
+devolución— se mudaron; ninguno se había usado.
+
+**Y el vale de una salida no se imprimía desde Mi caja.** El diálogo se cerraba
+con `onHecho={() => { setDialogo(null); cargar(); }}`: descartaba la operación y
+no mandaba **ningún** papel — ni el vale que se archiva ni la etiqueta nueva de
+la bolsa, que desde ese momento dice un efectivo que ya no tiene. Las otras dos
+pantallas que abren el mismo diálogo sí llamaban a `imprimirTrasLaSalida`.
+Medido en OTR-1060: `impreso_at` en NULL y **ninguna fila en `cola_impresion`**
+a esa hora, con la caja de la sala imprimiendo normal seis minutos antes y seis
+después. No fue la ticketera: el papel nunca se mandó.
+
+De paso, `imprimirTrasLaSalida` toma la sala de la **operación** y sólo después
+de la bolsa que el llamador tenga en memoria: `registrar_salida_de_bolsa`
+devuelve la fila entera, así que es un dato que siempre está — el otro depende
+de que la bolsa esté en la lista que esa pantalla cargó, y sin él el vale no va
+a la cola de la sala.
+
+Y el aviso de «no alcanza» decía **«En billetes de $0.00»** en toda salida
+redonda que no fuera un cambio por monedas: leía `bolsas_tipos_salida.multiplo`,
+que es por motivo, cuando el paso lo dispara el monto desde el 1-sep. Ahora sale
+de `elegirBolsas`, que es quien lo derivó.
+
+Migraciones `20260902174000_la_salida_sale_primero_del_cajon` y
+`20260902183220_el_efectivo_del_cajon_se_suma_en_la_base` — la segunda porque
+`gate:data` levantó que bajar las facturas del día para sumarlas en JavaScript
+es un `sin-paginar`: PostgREST trunca en 1000 sin avisar, y el día que una sala
+las cruce el descuento saldría de menos, o sea el cajón parecería tener MÁS de
+lo que tiene. Hoy el máximo por sala y día son 273 facturas: el defecto habría
+vivido callado hasta el día que sí.
+
 ## v2.951.1 — El pie del modal de recepción entra en una fila
 
 Pregunta del usuario sobre lo que salió en v2.949.0: *«¿comprobaste que ese

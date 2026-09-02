@@ -554,7 +554,10 @@ export async function fetchTiposDeMovimiento() {
 
 export async function fetchTiposDeSalida() {
     const { data, error } = await supabase.from('bolsas_tipos_salida')
-        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, pide_receptor, multiplo, leyenda')
+        // `caja_tipo` dice en qué movimiento de la caja se convierte el motivo
+        // cuando el efectivo sale del CAJÓN. NULL = ese motivo nunca sale de
+        // ahí, y es la falla segura: va a las bolsas, como siempre.
+        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, pide_receptor, multiplo, leyenda, caja_tipo')
         .eq('activo', true)
         .order('orden');
     if (error) { console.error('bolsas: fetchTiposDeSalida failed:', error.message); return []; }

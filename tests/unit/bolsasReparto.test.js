@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { disponibles, elegirBolsas, totalDisponible } from '../../src/utils/bolsasReparto';
+import { disponibles, elegirBolsas, elegirOrigen, totalDisponible } from '../../src/utils/bolsasReparto';
 
 // De qué bolsa sale el dinero. La regla del usuario es «la más vieja que
 // alcance SOLA» — no vaciar la vieja primero, que es la respuesta intuitiva y
@@ -183,5 +183,57 @@ describe('cuando el motivo paga en billetes', () => {
             .toEqual([{ bolsa_id: 148, folio: 'LP-1147', monto: 560 }]);
         expect(elegirBolsas(laPopular, 570).repartos)
             .toEqual([{ bolsa_id: 160, folio: 'LP-1159', monto: 570 }]);
+    });
+});
+
+/* ── La prioridad es el CAJÓN (regla del usuario, 2026-09-02) ───────────────
+ *
+ * Lo trajo OTR-1060 de Salud 3: $3.37 de un pago sacados de una bolsa del día
+ * ANTERIOR con el cajón lleno de las ventas de la mañana. Antes de esto el
+ * botón de Mi caja ni ofrecía el cajón mientras hubiera una bolsa abierta. */
+describe('de dónde sale: el cajón primero', () => {
+    const conCajon = (efectivoEnCaja, monto, puedeElCajon = true) =>
+        elegirOrigen({ efectivoEnCaja, puedeElCajon, lista, monto });
+
+    it('si el cajón tiene el efectivo, sale de ahí y no se toca ninguna bolsa', () => {
+        const r = conCajon(120, 3.37);
+        expect(r.origen).toBe('CAJA');
+        expect(r.alcanza).toBe(true);
+        // Sin repartos a propósito: no hay bolsa que abrir, así que tampoco hay
+        // etiqueta nueva que anunciar.
+        expect(r.repartos).toEqual([]);
+    });
+
+    it('si no alcanza en el cajón, sale de las bolsas con la regla de siempre', () => {
+        const r = conCajon(50, 300);
+        expect(r.origen).toBe('BOLSAS');
+        expect(r.repartos).toEqual([{ bolsa_id: 1, folio: 'S3-1001', monto: 300 }]);
+    });
+
+    it('el cajón entra ENTERO: no se parte una salida entre el cajón y una bolsa', () => {
+        // Con $200 en el cajón y una salida de $300, el cajón no aporta nada:
+        // serían dos vales en dos archivos distintos por una sola entrega.
+        const r = conCajon(200, 300);
+        expect(r.origen).toBe('BOLSAS');
+        expect(r.repartos).toEqual([{ bolsa_id: 1, folio: 'S3-1001', monto: 300 }]);
+    });
+
+    it('el cajón respeta el paso: con $505 no paga una salida de $500', () => {
+        // $500 es múltiplo de 10, así que del cajón salen billetes de $10: de
+        // $505 sólo puede entregar $500... que alcanza. Con $499 no.
+        expect(conCajon(505, 500).origen).toBe('CAJA');
+        expect(conCajon(499, 500).origen).toBe('BOLSAS');
+    });
+
+    it('no poder medir el efectivo NO es tener cero: manda a las bolsas', () => {
+        // `null` es «no sé». La falla segura es la regla vieja, no mandar a
+        // alguien a buscar billetes que capaz no están.
+        expect(conCajon(null, 3.37).origen).toBe('BOLSAS');
+    });
+
+    it('un motivo sin mapear al catálogo de la caja va a las bolsas', () => {
+        // `bolsas_tipos_salida.caja_tipo` en NULL = ese motivo nunca sale del
+        // cajón, por más efectivo que haya.
+        expect(conCajon(5000, 3.37, false).origen).toBe('BOLSAS');
     });
 });

@@ -18,6 +18,7 @@ import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
+import useCerrarBolsa from '../hooks/useCerrarBolsa';
 import useResolverCorte from '../hooks/useResolverCorte';
 import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, cerrarTurno, estadoDeCaja, fetchBolsas,
@@ -247,6 +248,8 @@ export default function MiCajaView({ comoPestana = false }) {
      * caja, y llegan aunque él no conteste. */
     const [cortesDelDia, setCortesDelDia] = useState(VACIO);
     const [firmantes, setFirmantes] = useState(() => new Map());
+    /** Quién guardó cada bolsa (id → nombre), para la etiqueta que se reimprime. */
+    const [embolsaron, setEmbolsaron] = useState(() => new Map());
 
     // Cómo se llama cada motivo de salida. Sale de la TABLA y no de una lista
     // escrita acá: un motivo nuevo aparecería en la base y no en la pantalla,
@@ -315,6 +318,16 @@ export default function MiCajaView({ comoPestana = false }) {
      * así que no decía dónde. Lo caza `no-use-before-define` sobre variables;
      * al mover un hook, comprobar que todo lo que lee ya esté declarado. */
     const { resolver, ocupadoId } = useResolverCorte({
+        nombreSala: { [sala]: nombreSala }, origen: 'micaja',
+    });
+
+    /* Los papeles de una salida de bolsa: el vale y la etiqueta nueva. Sale del
+     * hook y no de acá por lo mismo que `useResolverCorte` — tres pantallas
+     * ofrecen la salida y la que escriba su propia versión va a salir con un
+     * número equivocado pegado en una bolsa. Va debajo de `nombreSala` por la
+     * misma razón que el de arriba: leerlo antes de su `const` lanza en cada
+     * render, no devuelve `undefined`. */
+    const { imprimirTrasLaSalida } = useCerrarBolsa({
         nombreSala: { [sala]: nombreSala }, origen: 'micaja',
     });
 
@@ -428,6 +441,11 @@ export default function MiCajaView({ comoPestana = false }) {
         const mias = (abiertas || []).filter((b) => String(b.branch_id) === String(sala));
         const saldos = await fetchSaldos(mias.map((b) => b.id));
         setBolsas(mias.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
+        /* Quién guardó cada bolsa. Va a la etiqueta que se reimprime después de
+         * una salida, y sin él `useCerrarBolsa` cae al nombre de QUIEN ESTÁ
+         * MIRANDO: la etiqueta diría que la guardó alguien que no la guardó. */
+        const guardaron = await fetchPersonas(mias.map((b) => b.cerrada_por));
+        setEmbolsaron(new Map((guardaron || []).map((q) => [q.id, q.name])));
         setCargando(false);
     }, [sala, puedeVerBolsas, puedeVerCortes]);
 
@@ -493,7 +511,7 @@ export default function MiCajaView({ comoPestana = false }) {
         [bolsasDeHoy],
     );
 
-    const correr = async (fn, exito) => {
+    const correr = useCallback(async (fn, exito) => {
         setOcupado(true);
         const r = await fn();
         setOcupado(false);
@@ -517,12 +535,76 @@ export default function MiCajaView({ comoPestana = false }) {
         setDialogo(null);
         cargar();
         return r;
-    };
+    // Memoizada y no una función suelta: `anotarSalidaDelCajon` la lleva en sus
+    // dependencias, y una función nueva por render la reharía en cada uno.
+    }, [showToast, cargar]);
 
     const opcionesDeSala = useMemo(
         () => salas.map((b) => ({ value: b.id, label: b.name })),
         [salas],
     );
+
+    /* ── Los papeles de una salida que sí tocó una bolsa ────────────────────
+     *
+     * **Esto faltaba y el defecto llegó a producción.** El diálogo se cerraba
+     * con `onHecho={() => { setDialogo(null); cargar(); }}`, o sea que descartaba
+     * la operación y no imprimía NADA: ni el vale que se archiva ni la etiqueta
+     * nueva de la bolsa, que desde ese momento dice un efectivo que ya no tiene.
+     * Las otras dos pantallas que abren el mismo diálogo —la baldosa del Inicio
+     * y el módulo de Bolsas— sí llamaban a `imprimirTrasLaSalida`.
+     *
+     * Medido en OTR-1060 (Salud 3, 2-sep, $3.37): `bolsas_movimientos.impreso_at`
+     * en NULL y **ninguna fila en `cola_impresion`** a esa hora, con la caja de
+     * la sala imprimiendo normal seis minutos antes y seis después. O sea que no
+     * fue la ticketera: el papel nunca se mandó.
+     *
+     * Es el MISMO código que corre en las otras dos, y por eso vive en el hook:
+     * dos copias de una regla son dos reglas. */
+    const trasLaSalidaDeBolsa = useCallback(async (operacion, repartos) => {
+        await imprimirTrasLaSalida(operacion, repartos, bolsas, embolsaron);
+        setDialogo(null);
+        cargar();
+    }, [imprimirTrasLaSalida, bolsas, embolsaron, cargar]);
+
+    /* ── Y la salida que sale del CAJÓN ─────────────────────────────────────
+     *
+     * Otro camino de escritura porque es otro dinero: el del cajón le pertenece
+     * al turno abierto, así que se le anota a la caja —el corte de la noche la
+     * espera como vale— y no hay bolsa que descontar ni etiqueta que reimprimir.
+     * El papel es el mismo comprobante de movimiento que ya imprime un ingreso.
+     *
+     * Devuelve `{ ok }` en vez de lanzar: el diálogo tiene que poder mostrar el
+     * motivo sin perder lo escrito, y la identidad comprobada se suelta sola
+     * allá cuando la escritura no entró. */
+    const anotarSalidaDelCajon = useCallback(async (datos) => {
+        const r = await correr(() => anotarSalida({
+            sala,
+            monto: datos.monto,
+            concepto: datos.concepto,
+            tipo: datos.tipo,
+            boleta: datos.boleta,
+            fotoUrl: datos.fotoUrl,
+            recibe: datos.recibe,
+            recibidoPor: datos.recibidoPor,
+            vale: datos.vale,
+        }), 'Salida anotada.');
+        // `correr` ya mostró el motivo en un aviso y dejó el diálogo abierto:
+        // se devuelve sin texto para no decir lo mismo dos veces.
+        if (!r?.ok) return { ok: false };
+        // El papel se arma con la fila que devolvió el servidor —con su número y
+        // su fecha—, no con lo que el formulario mandó.
+        if (r.movimiento) {
+            await imprimirMovimiento(r.movimiento, { etiqueta: datos.etiqueta || '' }, {
+                detalle: datos.detalle,
+                persona: datos.persona?.name || datos.recibe || '',
+                // Sale de la FILA, que lo trae del vale consumido: el navegador
+                // no decide cómo se comprobó.
+                comoSeComprobo: r.movimiento.recibido_metodo || null,
+            });
+        }
+        return { ok: true };
+    }, [correr, sala, imprimirMovimiento]);
+
 
     /* Las acciones de la vista son un DESCRIPTOR, no botones a mano (§15.5): la
      * vista dice qué se puede hacer y `FilterBar` decide cómo se dibuja en cada
@@ -546,11 +628,19 @@ export default function MiCajaView({ comoPestana = false }) {
         /* DOS movimientos y no cuatro: Entrada y Salida.
          *
          * «Sacar de una bolsa» era una acción aparte y le pedía a la sala una
-         * decisión que le toca al portal: de dónde sale la plata. Hoy la
-         * decide él —regla del usuario, 30-ago— y **prefiere siempre las bolsas
-         * de cortes anteriores**: ese dinero ya lo descontó su propio cierre,
-         * así que sacarlo de ahí no le mueve nada a la caja de hoy. Sólo cuando
-         * ninguna bolsa alcanza, sale del cajón, y entonces sí hay que anotarlo.
+         * decisión que le toca al portal: de dónde sale la plata. La decide él,
+         * y desde el **2026-09-02 la prioridad es el CAJÓN**: si la caja tiene
+         * el efectivo, de ahí sale y se le anota su vale; sólo cuando no lo
+         * tiene se abre una bolsa.
+         *
+         * Estaba al revés —«prefiere siempre las bolsas de cortes anteriores»,
+         * regla del 30-ago— y el botón hacía `setDialogo(bolsas.length ? 'bolsa'
+         * : 'salida')`: con UNA bolsa abierta el cajón ni se ofrecía. Así se
+         * pagaron $3.37 (OTR-1060, Salud 3) abriendo una bolsa sellada del día
+         * anterior con el cajón lleno de las ventas de la mañana.
+         *
+         * Hoy el botón abre SIEMPRE el mismo diálogo y el origen lo decide el
+         * monto adentro (`utils/bolsasReparto`).
          *
          * Los rótulos van CORTOS —«Hacer corte», «Entrada», «Salida»— porque
          * ahora no ceden nunca y la píldora no tiene techo: con «Anotar una
@@ -576,11 +666,11 @@ export default function MiCajaView({ comoPestana = false }) {
             { key: 'entrada', icon: ArrowDownLeft, label: 'Entrada', rotulo: 'Entrada',
                 rotuloFijo: true, onClick: () => setDialogo('ingreso') },
             { key: 'salida', icon: ArrowUpRight, label: 'Salida', rotulo: 'Salida',
-                rotuloFijo: true, onClick: () => setDialogo(bolsas.length ? 'bolsa' : 'salida') },
+                rotuloFijo: true, onClick: () => setDialogo('salida') },
             { key: 'cerrar', icon: Lock, label: 'Cerrar el día', rotulo: 'Cerrar',
                 rotuloFijo: true, onClick: () => setDialogo('cerrar') },
         ];
-    }, [puedeOperar, sala, estado, noSePudo, bolsas.length]);
+    }, [puedeOperar, sala, estado, noSePudo]);
 
     /* Un nombre CORTO. La caja escribe «RODRIGO EDUARDO MARQUEZ» y en una
      * tarjeta eso se corta a «RODRIGO EDUARDO M…», que es peor que dos
@@ -802,15 +892,26 @@ export default function MiCajaView({ comoPestana = false }) {
                 </Suspense>
             )}
 
-            <DialogoMovimiento key={dialogo} abierto={dialogo === 'ingreso' || dialogo === 'salida'}
-                entra={dialogo === 'ingreso'} ocupado={ocupado} sala={sala} userId={user?.id}
+            {/* Sólo la ENTRADA. La salida se mudó a `SalidaDeBolsa`, que hoy es
+                el único diálogo de salida: tenía el catálogo completo, la
+                lectura de la boleta y la identidad por carné, y con el origen
+                decidiéndose por el monto dos formularios eran dos respuestas a
+                la misma pregunta. Los dos motivos que sólo existían acá
+                —bonificación y devolución— se mudaron a `bolsas_tipos_salida`
+                con la migración `20260902174000`.
+
+                El componente sigue sabiendo dibujar una salida (`entra=false`);
+                esa mitad queda para borrar en una pasada aparte, junto con el
+                `identifica_receptor` de `caja_tipos_movimiento`. */}
+            <DialogoMovimiento key={dialogo} abierto={dialogo === 'ingreso'}
+                entra ocupado={ocupado} sala={sala} userId={user?.id}
                 tipos={tiposDeCaja}
                 onComprobante={() => setDialogo('abono')}
                 onClose={() => setDialogo(null)}
                 onAnotar={async (datos, tipoElegido, identificada) => {
                     const r = await correr(
-                        () => (dialogo === 'ingreso' ? anotarIngreso : anotarSalida)({ sala, ...datos }),
-                        dialogo === 'ingreso' ? 'Ingreso anotado.' : 'Salida anotada.',
+                        () => anotarIngreso({ sala, ...datos }),
+                        'Ingreso anotado.',
                     );
                     // El papel se arma con la fila que devolvió el servidor —con
                     // su número y su fecha—, no con lo que el formulario mandó.
@@ -889,11 +990,23 @@ export default function MiCajaView({ comoPestana = false }) {
                     if (r.ok) imprimirCorte(r);
                 }} />
 
-            {dialogo === 'bolsa' && (
+            {dialogo === 'salida' && (
                 <Suspense fallback={null}>
+                    {/* El ÚNICO diálogo de salida. El origen —cajón o bolsa— lo
+                        decide el monto adentro: la prioridad es la caja, y las
+                        bolsas son el segundo camino (regla del usuario, 2-sep).
+
+                        `efectivoEnCaja` lo calcula el SERVIDOR y no esta
+                        pantalla: «Monto Registrado» del origen incluye las
+                        ventas que no fueron en efectivo y lo que ya se embolsó
+                        hoy, y la corrección necesita leer `sales_invoices` sin
+                        depender del permiso de quien mira. Ver
+                        `efectivoEnElCajon` en `operar-caja`. */}
                     <SalidaDeBolsa abierto bolsas={bolsas} saldos={null}
+                        sala={sala} efectivoEnCaja={estado?.efectivo ?? null}
+                        onSalidaDeCaja={anotarSalidaDelCajon}
                         onClose={() => setDialogo(null)}
-                        onHecho={() => { setDialogo(null); cargar(); }} />
+                        onHecho={trasLaSalidaDeBolsa} />
                 </Suspense>
             )}
 

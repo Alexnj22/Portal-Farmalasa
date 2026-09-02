@@ -274,7 +274,16 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
         // registró no tenía forma de enterarse hasta que faltara el comprobante.
         if (operacion?.id) {
             try {
-                await imprimirValeDeOperacion(operacion.id, filas[0]?.bolsa?.branch_id);
+                /* La sala sale de la OPERACIÓN y sólo después de la bolsa que
+                 * la pantalla tenga en memoria. `registrar_salida_de_bolsa`
+                 * devuelve la fila entera —`branch_id` incluido—, así que es un
+                 * dato que siempre está; el otro depende de que la bolsa esté
+                 * en la lista que este llamador cargó, y sin él el vale no va a
+                 * la cola de la sala: se intenta en la impresora de ESTA
+                 * computadora y termina en el diálogo del navegador. */
+                await imprimirValeDeOperacion(
+                    operacion.id, operacion.branch_id ?? filas[0]?.bolsa?.branch_id,
+                );
             } catch (e) {
                 console.error('bolsas: el vale no se pudo imprimir:', e?.message);
                 showToast?.('Falta el vale',

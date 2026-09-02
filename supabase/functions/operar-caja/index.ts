@@ -146,6 +146,95 @@ async function estadoDeLaCaja(cookie: string) {
 const dosDecimales = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 const exito = (t: string) => /"typeinfo"\s*:\s*"Success"/i.test(t);
 
+/**
+ * **Cuántos BILLETES hay en el cajón ahora.** Otra pregunta que «Monto
+ * Registrado», y la que decide de dónde sale una salida de efectivo.
+ *
+ * ── Por qué `registrado` no sirve tal cual, medido ─────────────────────────
+ * El «Monto Registrado» del panel es el `total_corte` del origen:
+ *
+ *     total_tike + total_factura + total_credito + monto_apertura
+ *     + total_entrada − total_salida
+ *
+ * o sea que le sobran dos cosas y le falta una:
+ *
+ * 1. **Le sobran las ventas que no fueron en efectivo.** Una venta con tarjeta
+ *    entra ahí y no deja un billete en el cajón. Se restan de
+ *    `sales_invoices.tipo_pago`, que es el mismo dato con el que la pantalla
+ *    ya arma el panel del día.
+ * 2. **Le sobra lo que ya se embolsó hoy.** Meter el dinero en una bolsa no le
+ *    avisa nada al origen: la plata de las bolsas DE HOY le sigue figurando
+ *    adentro hasta el Z de la noche (es exactamente el motivo por el que
+ *    existe `caja_vales_portal`). Medido en Salud 3 el 30-ago: corte C de las
+ *    12:14 con $438.69 contados → bolsa de $438.69, y el corte de las 18:04
+ *    esperaba $969.30, o sea que el origen seguía contando los $438.69 que ya
+ *    estaban dentro de una bolsa sellada.
+ *
+ *    ⚠️ Y de eso hay que devolver lo que YA se anotó como vale: cuando una
+ *    salida tomó de una bolsa de hoy, el portal le anotó el vale a la caja
+ *    —`registrado` ya lo restó— y esa misma plata está adentro de
+ *    `embolsado`. Restar las dos la contaría dos veces.
+ * 3. **Le falta el cobro de créditos**, que es el defecto conocido del origen
+ *    (docs/AUDITORIA-CORTE-DESDE-EL-PORTAL-2026-09-02.md §2). Ese dinero SÍ
+ *    entra en billetes, así que no sumarlo deja el número **por debajo** de lo
+ *    que hay — y esa es la dirección segura: de menos manda la salida a las
+ *    bolsas, que es lo que se hacía siempre. De más mandaría a alguien a
+ *    buscar en un cajón billetes que no están.
+ *
+ * Nada de esto escribe una diferencia en ningún lado: es para decidir de dónde
+ * sale la plata, no para corregirle el corte al origen —eso se decidió dejarlo
+ * como está—.
+ *
+ * Vive en el servidor y no en la pantalla por dos motivos: `sales_invoices` con
+ * llave de servicio no depende del permiso de quien mira (el alcance de
+ * `cortes_caja` lo tienen 9 de 24 cargos, y sin él la consulta devuelve cero
+ * filas **sin error**, o sea un cajón que parece lleno), y así las tres
+ * pantallas que ofrecen la salida contestan lo mismo.
+ *
+ * Devuelve las piezas además del total: un número que decide dónde está el
+ * dinero tiene que poder auditarse sin volver a correr la cuenta.
+ */
+async function efectivoEnElCajon(
+  // deno-lint-ignore no-explicit-any
+  supabase: any, sala: number, dia: string, registrado: number | null,
+) {
+  if (registrado == null) return { efectivo: null };
+
+  /* Las tres piezas se suman EN LA BASE (`caja_efectivo_piezas`) y no bajando
+   * las filas para sumarlas acá. Lo levantó `gate:data` como `sin-paginar` y
+   * tenía razón: PostgREST trunca en 1000 filas sin avisar, así que el día que
+   * una sala cruce las mil facturas el descuento saldría de menos y el cajón
+   * parecería tener MÁS de lo que tiene — la dirección peligrosa. Medido: el
+   * máximo por sala y día son 273, o sea que el defecto habría vivido callado
+   * hasta el día que sí. De paso, tres viajes se vuelven uno. */
+  const { data, error } = await supabase
+    .rpc("caja_efectivo_piezas", { p_branch_id: sala, p_dia: dia });
+
+  /* Un error NO se lee como cero. Sin el descuento, el cajón parecería tener
+   * todo lo del día: es la regla de las edge functions —nunca ignorar el
+   * `error`— y acá el precio sería mandar a alguien a sacar billetes que no
+   * están. Sin poder medirlo, `efectivo: null`, y `null` no es cero: la salida
+   * cae a las bolsas, que es lo que se hacía siempre. */
+  if (error || !data) {
+    console.error(`[operar-caja] efectivo sala=${sala} dia=${dia}: ${error?.message ?? "sin datos"}`);
+    return { efectivo: null };
+  }
+
+  const noEfectivo = Number(data.ventas_no_efectivo ?? 0);
+  const embolsado = Number(data.embolsado_hoy ?? 0);
+  const yaAnotado = Number(data.vales_ya_anotados ?? 0);
+  const efectivo = registrado - noEfectivo - embolsado + yaAnotado;
+  return {
+    efectivo: Number(dosDecimales(Math.max(0, efectivo))),
+    efectivo_piezas: {
+      registrado,
+      ventas_no_efectivo: noEfectivo,
+      embolsado_hoy: embolsado,
+      vales_ya_anotados: yaAnotado,
+    },
+  };
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -302,14 +391,17 @@ Deno.serve(async (req) => {
     if (errCortes) throw new Error(`revisando los cortes del día: ${errCortes.message}`);
 
     if (accion === "estado") {
+      const registrado = (estado as { registrado?: number | null }).registrado ?? null;
       return json({
         ok: true, abierta: estado.abierta, caja: estado.idCaja, turno: estado.turno,
-        registrado: (estado as { registrado?: number | null }).registrado ?? null,
+        registrado,
         apertura: (estado as { apertura?: number | null }).apertura ?? null,
         quien: (estado as { quien?: string | null }).quien ?? null,
         desde: (estado as { desde?: string | null }).desde ?? null,
         dia: diaAbierto,
         cortes: cortesDelDia ?? [],
+        // Cuánto de eso son BILLETES, que es otra pregunta. Ver `efectivoEnElCajon`.
+        ...(await efectivoEnElCajon(supabase, sala, diaAbierto, registrado)),
       });
     }
 

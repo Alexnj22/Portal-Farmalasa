@@ -13,7 +13,7 @@ import {
     boletaYaRegistrada, fetchEntidadesDeSalida, fetchTiposDeSalida,
     guardarLecturaDeBoleta, leerBoleta, registrarSalida, subirComprobante,
 } from '../../data/bolsas';
-import { disponibles, elegirBolsas, totalDisponible } from '../../utils/bolsasReparto';
+import { disponibles, elegirOrigen, totalDisponible } from '../../utils/bolsasReparto';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
@@ -25,14 +25,30 @@ import { useToastStore } from '../../store/toastStore';
 const EditorDeDocumento = lazy(() => import('../common/EditorDeDocumento'));
 
 /**
- * Sacar dinero de una bolsa — el «Entrega de remesas» que pidió el usuario.
+ * Sacar efectivo — el «Entrega de remesas» que pidió el usuario, y hoy toda
+ * salida de dinero de la sala.
  *
- * ── El portal elige la bolsa, no la persona ────────────────────────────────
- * Regla del usuario: **la más vieja que alcance sola**. Se muestra cuál eligió y
- * cuánto va a quedarle, porque el papel que va a entrar a esa bolsa dice
- * exactamente eso. Sólo combina cuando ninguna alcanza, y entonces lo avisa: dos
- * vales en dos bolsas no es lo mismo que uno. La cuenta vive en
- * `utils/bolsasReparto` para poder probarla.
+ * ── El portal elige de dónde sale, no la persona ───────────────────────────
+ * **La prioridad es el CAJÓN** (regla del usuario, 2026-09-02): si la caja
+ * tiene el efectivo, de ahí sale y se le anota su vale; si no lo tiene, sale de
+ * las bolsas con la regla vieja — **la más vieja que alcance sola**—. Se
+ * muestra cuál eligió y cuánto va a quedarle, porque el papel que va a entrar a
+ * esa bolsa dice exactamente eso. Sólo combina cuando ninguna alcanza, y
+ * entonces lo avisa: dos vales en dos bolsas no es lo mismo que uno. La cuenta
+ * vive en `utils/bolsasReparto` para poder probarla.
+ *
+ * Lo que trajo la inversión: OTR-1060 de Salud 3, **$3.37** de un pago sacados
+ * de la bolsa S3-1216 —del día anterior— con el cajón lleno de las ventas de la
+ * mañana. Hasta ese día el botón de Mi caja ni ofrecía el cajón mientras la
+ * sala tuviera una bolsa abierta.
+ *
+ * ── Un diálogo y no dos ────────────────────────────────────────────────────
+ * Antes había otro cuadro para «anotar una salida de caja», con su propio
+ * catálogo de motivos. Con el origen decidiéndose por el MONTO, dos formularios
+ * son dos respuestas a la misma pregunta: el mismo pago a proveedor se llamaba
+ * distinto según de dónde saliera la plata. Hoy el catálogo es uno
+ * (`bolsas_tipos_salida`) y cada motivo lleva `caja_tipo`, que dice en qué
+ * movimiento de caja se convierte cuando sale del cajón.
  *
  * ── El formulario sale del CATÁLOGO ────────────────────────────────────────
  * Qué campos exige cada motivo son datos (`bolsas_tipos_salida`), no `if`s
@@ -126,7 +142,22 @@ function avisoDeEntidad(leido, entidad) {
     };
 }
 
-export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHecho }) {
+/**
+ * @param sala           de qué sucursal es esta salida. Hasta ahora salía de la
+ *                       primera bolsa, y con el cajón como origen puede no
+ *                       haber ninguna.
+ * @param efectivoEnCaja lo que hay en BILLETES en el cajón, o `null` si no se
+ *                       pudo medir. Lo calcula el servidor (`operar-caja`,
+ *                       acción `estado`) y no la pantalla. `null` manda a las
+ *                       bolsas, que es la falla segura.
+ * @param onSalidaDeCaja cómo se anota una salida del cajón. Sin ella el cajón
+ *                       no se ofrece — las pantallas que no operan la caja
+ *                       siguen sacando de las bolsas, como siempre.
+ */
+export default function SalidaDeBolsa({
+    abierto, bolsas, saldos, sala = null, efectivoEnCaja = null,
+    onSalidaDeCaja = null, onClose, onHecho,
+}) {
     const { user } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
 
@@ -297,7 +328,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * así que sin esto no hay contra qué comparar. Sale de las bolsas que se
      * están mirando —todas las de este diálogo son de la misma sala— y no de la
      * elección, que todavía no existe cuando alguien está escribiendo. */
-    const salaId = bolsas?.[0]?.branch_id ?? null;
+    const salaId = sala ?? bolsas?.[0]?.branch_id ?? null;
     /* El campo VACÍO no es un monto — y hay que decirlo, porque `Number('')` es
      * **0** y no `NaN`.
      *
@@ -314,15 +345,30 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * es «hay un monto y vale cero». `falta` ya exige `n > 0` y `elegirBolsas`
      * recibe 0 cuando no es finito, así que el resto no cambia. */
     const n = String(monto).trim() === '' ? NaN : Number(String(monto).trim().replace(',', '.'));
-    /* El PASO sale del motivo, no de un `if` acá: `bolsas_tipos_salida.multiplo`
-     * dice en cuánto paga cada uno. Hoy sólo «Cambio por monedas» lo tiene, en
-     * $10 — y aun así la regla la dispara el MONTO, no el motivo: $2,000 sale
-     * en billetes redondos y las monedas se quedan en las bolsas, $125.75 sale
-     * exacto. Ver la cabecera de `utils/bolsasReparto`. */
+    /* De dónde sale: el CAJÓN primero, las bolsas después. El paso —en cuánto
+     * se reparte— lo dispara el MONTO y no el motivo: $2,000 sale en billetes
+     * redondos y las monedas se quedan donde estaban, $125.75 sale exacto. Ver
+     * la cabecera de `utils/bolsasReparto`.
+     *
+     * `puedeElCajon` sale del catálogo (`caja_tipo`) y de que esta pantalla
+     * sepa anotarle a la caja. Las dos condiciones son necesarias: el módulo de
+     * Bolsas y la baldosa del Inicio muestran las bolsas de VARIAS salas y no
+     * operan ninguna caja, así que ahí el cajón no es un origen posible. */
     const eleccion = useMemo(
-        () => elegirBolsas(lista, Number.isFinite(n) ? n : 0),
-        [lista, n, t],
+        () => elegirOrigen({
+            efectivoEnCaja: onSalidaDeCaja ? efectivoEnCaja : null,
+            puedeElCajon: !!t?.caja_tipo,
+            lista,
+            monto: Number.isFinite(n) ? n : 0,
+        }),
+        [lista, n, t, efectivoEnCaja, onSalidaDeCaja],
     );
+    const delCajon = eleccion.origen === 'CAJA';
+    /* Si el cajón siquiera se consultó. Distinto de `delCajon`: acá la pregunta
+     * es «¿esta pantalla podía sacarlo de la caja?», y sirve para que el aviso
+     * de «no alcanza» no mienta por omisión en las dos pantallas que ni miran
+     * el cajón. */
+    const puedeSalirDelCajon = !!onSalidaDeCaja && !!t?.caja_tipo && efectivoEnCaja != null;
 
     /**
      * Al elegir la foto: primero se LEE, después se abre el editor.
@@ -613,13 +659,21 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
              * cinco bolsas con $2,466.25 sólo entregan $2,450 en billetes de
              * $10. `eleccion.disponible` ya viene medido bajo la regla que rige
              * este monto, así que la frase no puede contradecir al reparto. */
+            /* El paso sale de `eleccion` y NO de `t.multiplo`. Esa columna es
+             * por motivo y sólo la tiene «Cambio por monedas»: desde que el
+             * paso lo dispara el monto (1-sep), una remesa de $500 anunciaba
+             * «En billetes de $0.00». */
             if (eleccion.redondo) {
-                return `En billetes de ${formatMoney(t.multiplo)} la sala tiene `
+                return `En billetes de ${formatMoney(eleccion.paso)} la sala tiene `
                      + `${formatMoney(eleccion.disponible)}: no alcanza. `
                      + `Los ${formatMoney(totalDisponible(lista) - eleccion.disponible)} `
                      + 'que faltan son monedas y se quedan en las bolsas.';
             }
-            return `En la sala hay ${formatMoney(totalDisponible(lista))} en bolsas: no alcanza.`;
+            // No se dice cuánto hay en el cajón: el conteo a ciegas del corte
+            // es todo el control, y esta pantalla no puede ser la puerta de al
+            // lado por donde se sabe el número (regla del usuario, 1-sep).
+            return `${puedeSalirDelCajon ? 'En la caja no hay tanto, y en' : 'En'} `
+                 + `la sala hay ${formatMoney(totalDisponible(lista))} en bolsas: no alcanza.`;
         }
         if (t.etiqueta_entidad && !entidad.trim()) return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
         if (t.pide_boleta && !boleta.trim()) return 'Falta el número de boleta.';
@@ -633,7 +687,8 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         // dinero dos veces por una sola operación.
         if (problemaDeLaBoleta?.bloquea) return problemaDeLaBoleta.texto;
         return null;
-    }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto, problemaDeLaBoleta, laFotoManda]);
+    }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto, problemaDeLaBoleta,
+        laFotoManda, puedeSalirDelCajon]);
 
     const falta = useMemo(() => {
         if (faltaEnElFormulario) return faltaEnElFormulario;
@@ -671,9 +726,60 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             let fotoUrl = null;
             if (foto) {
                 fotoUrl = await subirComprobante(foto, {
-                    salaId: eleccion.repartos[0] && bolsas.find((b) => b.id === eleccion.repartos[0].bolsa_id)?.branch_id,
+                    // `salaId` primero: con el cajón como origen no hay ninguna
+                    // bolsa de la que deducir la sucursal.
+                    salaId: salaId
+                        ?? (eleccion.repartos[0]
+                            && bolsas.find((b) => b.id === eleccion.repartos[0].bolsa_id)?.branch_id),
                     userId: user?.id,
                 });
+            }
+
+            /* ── Sale del CAJÓN: es un movimiento de la caja, no de una bolsa ──
+             *
+             * Otro camino de escritura y a propósito: el dinero del cajón le
+             * pertenece al turno abierto, así que la salida se le anota AHÍ —el
+             * corte de la noche la va a esperar como vale— y no hay ninguna
+             * bolsa que descontar ni etiqueta que reimprimir. El comprobante lo
+             * imprime quien nos pasó `onSalidaDeCaja`, que es la pantalla que
+             * ya sabe imprimir los movimientos de su caja. */
+            if (delCajon) {
+                const r = await onSalidaDeCaja({
+                    monto: n,
+                    tipo: t.caja_tipo,
+                    // Cómo se llama el motivo en el PAPEL. Viaja porque el
+                    // comprobante lo arma quien escribe, y del otro lado el
+                    // catálogo es otro: `caja_tipos_movimiento` tiene su propia
+                    // etiqueta y no tiene por qué decir lo mismo.
+                    etiqueta: t.etiqueta,
+                    // Del otro lado no hay motivo, sólo un campo de texto de 50:
+                    // el rótulo va adelante para que el papel siga diciendo qué
+                    // fue. Es la misma regla del diálogo de movimientos.
+                    concepto: [t.etiqueta, entidad.trim(), nota.trim()]
+                        .filter(Boolean).join(' · ').slice(0, 50),
+                    detalle: [entidad.trim(), nota.trim()].filter(Boolean).join(' · '),
+                    boleta: boleta.trim() || null,
+                    fotoUrl,
+                    recibidoPor: t.pide_receptor ? persona?.id : null,
+                    vale: t.pide_receptor ? vale : null,
+                    // Sin carné no hay a quién atribuirlo: el receptor no es de
+                    // la casa (un cliente, un cobrador) y el campo del otro lado
+                    // es texto. Se manda la entidad cuando la hay.
+                    recibe: t.pide_receptor ? '' : entidad.trim(),
+                    persona: t.pide_receptor ? persona : null,
+                });
+                if (!r?.ok) {
+                    if (t.pide_receptor) olvidarLaIdentidad();
+                    // `error` puede venir vacío a propósito: quien escribe ya
+                    // mostró el motivo. Repetirlo en rojo acá diría lo mismo
+                    // dos veces con dos redacciones.
+                    setError(r?.error || null);
+                    return;
+                }
+                descartar();
+                showToast?.('Salida registrada', `De la caja · ${formatMoney(n)}`, 'success');
+                onClose?.();
+                return;
             }
 
             const { data, error: err } = await registrarSalida({
@@ -709,7 +815,8 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             setGuardando(false);
         }
     }, [falta, guardando, foto, eleccion, bolsas, user, t, n, entidad, boleta, nota,
-        persona, vale, lectura, olvidarLaIdentidad, showToast, onHecho, onClose, descartar]);
+        persona, vale, lectura, olvidarLaIdentidad, showToast, onHecho, onClose, descartar,
+        delCajon, onSalidaDeCaja, salaId]);
 
     const enIdentidad = paso === 'IDENTIDAD' && !!t?.pide_receptor;
 
@@ -817,7 +924,37 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         </div>
     );
 
-    const saleDe = eleccion.repartos.length > 0 && (
+    /* Del cajón: una sola línea, y dice qué va a pasar del otro lado.
+     *
+     * NO lleva cuánto queda en la caja —a diferencia de la bolsa, que sí lo
+     * dice— porque ese número es la respuesta del conteo a ciegas del corte, y
+     * decirlo acá sería entregarlo por la puerta de al lado (regla del usuario,
+     * 1-sep). Lo que sí hay que decir es que la caja se entera: sin eso, quien
+     * lo registra no tiene cómo saber que el corte de la noche no le va a
+     * marcar un faltante. */
+    const saleDelCajon = delCajon && Number.isFinite(n) && n > 0 && (
+        <div data-surface="card" className="p-3 space-y-1">
+            <span className="text-caption font-black uppercase tracking-widest text-content-3">
+                Sale de
+            </span>
+            <div className="flex items-baseline justify-between gap-2">
+                <span className="text-label text-content truncate">
+                    La caja
+                    <span className="text-caption text-content-3">
+                        {' '}· queda anotado como vale del turno
+                    </span>
+                </span>
+                <span className="text-label font-bold tabular-nums text-content shrink-0">
+                    {formatMoney(n)}
+                </span>
+            </div>
+            <p className="text-caption text-content-3 pt-1">
+                Ninguna bolsa se abre: el efectivo sale del cajón.
+            </p>
+        </div>
+    );
+
+    const saleDeUnaBolsa = eleccion.repartos.length > 0 && (
         <div data-surface="card" className="p-3 space-y-1.5">
             <span className="text-caption font-black uppercase tracking-widest text-content-3">
                 Sale de
@@ -850,25 +987,40 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                 la regla haciendo su trabajo. */}
             {eleccion.redondo && (
                 <p className="text-caption text-content-3 pt-1">
-                    Salen billetes de {formatMoney(t.multiplo)}: las monedas se quedan
+                    Salen billetes de {formatMoney(eleccion.paso)}: las monedas se quedan
                     en cada bolsa.
                 </p>
             )}
         </div>
     );
 
+    /* UN solo bloque «Sale de», y el que corresponda. Se resuelve acá y no en
+       cada uno de los tres sitios donde se dibuja: tres condiciones para la
+       misma pregunta es cómo dos de ellas se quedan viejas. */
+    const saleDe = delCajon ? saleDelCajon : saleDeUnaBolsa;
+
+    /* El título dice la VERDAD de esta pantalla, y no es la misma en las tres.
+     *
+     * Desde Mi caja el origen lo decide el monto —cajón primero, bolsas
+     * después—, así que el papel es «Sacar efectivo». Desde el módulo de Bolsas
+     * y desde la baldosa del Inicio el cajón no es un origen posible: las dos
+     * muestran bolsas de VARIAS salas y no operan ninguna caja, así que ahí
+     * sigue siendo «Sacar dinero de una bolsa». Un título que prometiera elegir
+     * el origen donde no se puede elegir sería peor que el viejo. */
+    const titulo = onSalidaDeCaja ? 'Sacar efectivo' : 'Sacar dinero de una bolsa';
+
     return (
         <LiquidModal open={!!abierto} onClose={guardando ? undefined : onClose}
-            maxWidth="max-w-lg" className="h-fit" ariaLabel="Sacar dinero de una bolsa">
+            maxWidth="max-w-lg" className="h-fit" ariaLabel={titulo}>
             <LiquidModal.Header>
                 <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Sacar dinero de una bolsa</h3>
+                    <h3 className="text-body font-bold text-content">{titulo}</h3>
                     <p className="text-caption text-content-3">
                         {enIdentidad
                             ? `${t.etiqueta} · ${formatMoney(n)}`
                             : lista.length
                                 ? `${lista.length} ${lista.length === 1 ? 'bolsa' : 'bolsas'} en la sala · ${formatMoney(totalDisponible(lista))}`
-                                : 'No hay bolsas con efectivo en la sala'}
+                                : 'Sin bolsas con efectivo en la sala'}
                     </p>
                 </div>
             </LiquidModal.Header>
@@ -1142,9 +1294,11 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             <LiquidModal.Footer>
                 <div className="flex items-center justify-between gap-3 w-full flex-wrap">
                     <span className="text-caption text-content-3 min-w-0 truncate">
-                        {falta || (eleccion.repartos.length > 1
-                            ? `Sale un vale para archivar y ${eleccion.repartos.length} etiquetas nuevas`
-                            : 'Sale un vale para archivar y la etiqueta nueva de la bolsa')}
+                        {falta || (delCajon
+                            ? 'Sale el comprobante de la caja para archivar'
+                            : eleccion.repartos.length > 1
+                                ? `Sale un vale para archivar y ${eleccion.repartos.length} etiquetas nuevas`
+                                : 'Sale un vale para archivar y la etiqueta nueva de la bolsa')}
                     </span>
                     <div className="flex items-center gap-2 ml-auto">
                         {enIdentidad ? (

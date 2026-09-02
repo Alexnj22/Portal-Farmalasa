@@ -1,4 +1,28 @@
-// De qué bolsa sale el dinero.
+// De dónde sale el dinero: primero el CAJÓN, después las bolsas.
+//
+// ── La prioridad se invirtió el 2026-09-02 ─────────────────────────────────
+//
+// Hasta ese día una salida de efectivo salía SIEMPRE de una bolsa: el botón de
+// Mi caja ni ofrecía el cajón mientras la sala tuviera una bolsa abierta. La
+// regla del 30-ago era «prefiere las bolsas de cortes anteriores», porque ese
+// dinero ya lo descontó su propio cierre.
+//
+// Regla nueva del usuario: **la prioridad es la caja.** Si el cajón tiene el
+// efectivo, de ahí sale; si no lo tiene, sale de las bolsas con todo lo que
+// sigue escrito abajo, que no cambió.
+//
+// Lo trajo OTR-1060 de Salud 3: **$3.37** de un pago sacados de la bolsa
+// S3-1216, del día anterior, con el cajón lleno de las ventas de la mañana.
+// Abrir una bolsa sellada de ayer para pagar $3.37 rompe justo el control que
+// la bolsa existe para dar.
+//
+// El cajón entra al reparto como un origen más y con la MISMA regla del paso:
+// si el monto es múltiplo de $10, del cajón salen billetes de $10. Y entra
+// entero o no entra —no se parte una salida entre el cajón y una bolsa—: sería
+// un vale de caja más un vale de bolsa por una sola entrega, y son dos papeles
+// distintos en dos archivos distintos.
+//
+// ── Lo de abajo es la regla de las bolsas, que no cambió ───────────────────
 //
 // Regla del usuario (2026-08-15): **la más vieja que alcance sola**. No se parte
 // una remesa en dos bolsas para vaciar la más antigua — se busca desde la más
@@ -88,11 +112,16 @@ export function disponibles(bolsas, saldos) {
  * viejo se quitó a propósito y no se dejó ignorado — un argumento que no hace
  * nada se sigue pasando durante años y hace creer que decide algo.
  * @returns {{ repartos: Array<{bolsa_id, folio, monto}>, alcanza: boolean,
- *            combinada: boolean, falta: number, redondo: boolean, disponible: number }}
+ *            combinada: boolean, falta: number, redondo: boolean,
+ *            disponible: number, paso: number }}
  *   `alcanza` false = entre todas no hay tanto. `combinada` true = hizo falta
  *   más de una bolsa, o sea que van a ser varios vales. `redondo` true = la
  *   regla del paso está actuando y las monedas se quedan en las bolsas.
- *   `disponible` es el techo bajo la regla vigente.
+ *   `disponible` es el techo bajo la regla vigente. `paso` es en cuánto se
+ *   reparte, en DÓLARES y no en centavos: la pantalla tiene que poder decir
+ *   «salen billetes de $10» sin volver a derivarlo — cuando lo derivaba ella
+ *   leía `bolsas_tipos_salida.multiplo`, que sólo tiene «Cambio por monedas»,
+ *   así que una remesa de $500 anunciaba «billetes de $0.00».
  */
 export function elegirBolsas(lista, monto) {
     const objetivo = centavos(monto);
@@ -107,7 +136,7 @@ export function elegirBolsas(lista, monto) {
     };
     const disponible = (lista || []).reduce((a, b) => a + puede(b), 0) / 100;
 
-    const vacio = { repartos: [], alcanza: false, combinada: false, falta: 0, redondo, disponible };
+    const vacio = { repartos: [], alcanza: false, combinada: false, falta: 0, redondo, disponible, paso: paso / 100 };
     if (objetivo <= 0 || !lista?.length) return vacio;
 
     // 1. La más vieja que alcance SOLA.
@@ -115,7 +144,7 @@ export function elegirBolsas(lista, monto) {
     if (sola) {
         return {
             repartos: [{ bolsa_id: sola.id, folio: sola.folio, monto: objetivo / 100 }],
-            alcanza: true, combinada: false, falta: 0, redondo, disponible,
+            alcanza: true, combinada: false, falta: 0, redondo, disponible, paso: paso / 100,
         };
     }
 
@@ -137,9 +166,57 @@ export function elegirBolsas(lista, monto) {
         falta: resta > 0 ? resta / 100 : 0,
         redondo,
         disponible,
+        paso: paso / 100,
     };
 }
 
 /** Lo que hay en total en la sala, para decir cuánto falta cuando no alcanza. */
 export const totalDisponible = (lista) =>
     (lista || []).reduce((a, b) => a + centavos(b.saldo), 0) / 100;
+
+/**
+ * **De dónde sale una salida de efectivo: el cajón primero, las bolsas después.**
+ *
+ * @param efectivoEnCaja  lo que hay en BILLETES en el cajón, o `null` si no se
+ *                        pudo medir. `null` NO es cero: es «no sé», y manda a
+ *                        las bolsas, que es lo que se hacía siempre. La falla
+ *                        segura es no mandar a nadie a buscar billetes que
+ *                        capaz no están.
+ * @param puedeElCajon    si ese motivo puede pagarse del cajón —o sea si
+ *                        `bolsas_tipos_salida.caja_tipo` no es `NULL`—. Un
+ *                        motivo sin mapear va a las bolsas.
+ * @param lista           las bolsas de la sala, ya ordenadas por `disponibles`
+ * @param monto           lo que se quiere sacar
+ *
+ * @returns el mismo objeto de `elegirBolsas` más `origen`: `'CAJA'` o
+ *   `'BOLSAS'`. Con `'CAJA'` los `repartos` van VACÍOS a propósito — no hay
+ *   ninguna bolsa que tocar, y devolver uno falso haría que la pantalla
+ *   anunciara una etiqueta nueva sobre una bolsa que nadie abrió.
+ *
+ * El cajón entra ENTERO o no entra: partir una salida entre el cajón y una
+ * bolsa dejaría un vale de caja y un vale de bolsa por una sola entrega, que
+ * son dos papeles en dos archivos distintos por un solo acto.
+ *
+ * Y respeta el paso igual que una bolsa: si el monto es múltiplo de $10, del
+ * cajón salen billetes de $10. Con el monto redondo eso sólo puede recortar el
+ * techo hacia abajo, nunca hacia arriba.
+ */
+export function elegirOrigen({ efectivoEnCaja, puedeElCajon, lista, monto }) {
+    const enBolsas = elegirBolsas(lista, monto);
+    const objetivo = centavos(monto);
+    if (objetivo <= 0 || !puedeElCajon || efectivoEnCaja == null) {
+        return { ...enBolsas, origen: 'BOLSAS' };
+    }
+    const paso = pasoDeMonto(objetivo);
+    const enCaja = centavos(efectivoEnCaja);
+    const puede = paso > 0 ? Math.floor(enCaja / paso) * paso : enCaja;
+    if (puede < objetivo) return { ...enBolsas, origen: 'BOLSAS' };
+    return {
+        ...enBolsas,
+        origen: 'CAJA',
+        repartos: [],
+        alcanza: true,
+        combinada: false,
+        falta: 0,
+    };
+}

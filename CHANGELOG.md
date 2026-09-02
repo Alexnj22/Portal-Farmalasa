@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.957.0 — POS Promerica también es la salida: el voucher dice qué fue
+
+Pedido del usuario mirando las salidas de Efectivo: *«hay muchos tipos de salida
+que son del POS Promerica, y si lo dejamos como en entrada, sólo poniendo POS
+Promerica, y el concepto que se llene solo según el voucher de la foto junto al
+número de boleta y monto»*. Y al preguntarle el alcance: *«reemplaza a remesas,
+ya que ahí se dan, pero no sería sólo remesas, sería retiro de efectivo, etc. El
+voucher lo dice. Si es remesa, el papel también tiene la remesadora y dice
+remesa»*.
+
+Es el mismo movimiento que ya se hizo del lado de la ENTRADA el 1-sep, cuando
+«Pago de un recibo» pasó a ser «POS Promerica»: el nombre que la sala reconoce
+es el **aparato**, y qué operación fue lo dice el papel que ese aparato imprime.
+
+**Medido antes de tocar nada, sobre las 63 salidas registradas:** 50 son remesas
+—repartidas en tres de las ocho redes del desplegable— y **5 son retiros del POS
+metidos en «Otro»**: «retiro con targeta», «retiro con token», y tres con boleta
+de Banco Promerica y sin ninguna nota. O sea que la lista de motivos obligaba a
+elegir entre una casilla que decía de más y una que no decía nada.
+
+**Qué cambia en la pantalla**
+
+- El motivo «Remesa entregada a un cliente» y su desplegable de ocho
+  remesadoras se **reemplazan por «POS Promerica»**. Foto obligatoria, como
+  antes.
+- La foto ya llenaba el monto y el número; ahora llena además **«Qué fue»** —
+  «Remesa MONEYGRAM», «Retiro de efectivo», «Pago de CAESS»—. Es la misma
+  función que usa la entrada (`conceptoDelPapel`, ahora en `src/utils/`) para
+  que el mismo papel no diga dos cosas según por dónde entró.
+- **La remesadora ya no se pregunta**: sale de la boleta y se normaliza contra
+  el catálogo de ocho, así que «MONEY GRAM WS» impreso se sigue guardando como
+  «MONEYGRAM» — en su columna, en el vale y en el movimiento de la caja.
+- **`RETIRO` es nuevo en el lector** (`leer-boleta`): reconoce «RETIRO»,
+  «RETIRO SIN TARJETA», «ADELANTO» y «AVANCE DE EFECTIVO», que es justo lo que
+  la sala venía escribiendo a mano.
+
+**Tres decisiones que conviene tener escritas**
+
+1. **«Qué fue» queda ABIERTO, a diferencia del monto y del número.** Esos dos
+   identifican la operación y el servidor los coteja contra el papel, así que
+   se muestran como dato y no como casilla. Éste es una frase derivada: dejarlo
+   abierto es lo que permite agregarle lo que el papel no dice —«retira don
+   Ruti»— sin volver a tomar la foto.
+2. **El motivo ya no viaja como «esperado» al lector.** Mientras existió
+   «Remesa», elegirla era afirmar qué operación era y el papel podía
+   contradecirla; «POS Promerica» no afirma ninguna, así que no hay dos
+   respuestas que enfrentar. El aviso de «el papel habla de otra cosa» se fue
+   con la pregunta que lo hacía posible.
+3. **El catálogo de motivos llega COMPLETO, con los apagados adentro.**
+   `fetchTiposDeSalida` ya no filtra por `activo`: un motivo se desactiva cuando
+   deja de ofrecerse, no cuando deja de haber ocurrido, y las 50 remesas viejas
+   necesitan su rótulo para poder decir qué fueron —filtrado, caían al respaldo
+   `conMayuscula(codigo)` y «Remesa entregada a un cliente» se leía «Remesa»—.
+   Quien **ofrece** el motivo filtra por `activo` al armar la lista, y el motivo
+   elegido exige `activo`: un borrador guardado antes del cambio vuelve con
+   «REMESA» puesto y no puede registrar por una casilla retirada.
+
+Migración `20260902215853`: columna `bolsas_tipos_salida.entidad_la_dice_el_papel`,
+el motivo `POS_PROMERICA` (prefijo `POS`) y su movimiento de caja
+`POS_PROMERICA_SALIDA` —código propio porque la clave de
+`caja_tipos_movimiento` es el código solo y la entrada ya ocupa
+`POS_PROMERICA`—, las ocho remesadoras mudadas al motivo nuevo, y `REMESA`
+desactivada en las dos tablas. No se borra: `bolsas_operaciones.tipo` la
+referencia.
+
+Anclado en `tests/unit/salidaDeBolsaMotivos.test.jsx` (12 casos) y en
+`tests/unit/conceptoDelPapel.test.js` (5), que fija la trampa que costó una
+remesa trabada el 21-ago y que acá volvía por la puerta de atrás: **la remesa se
+nombra con la RED del detalle, nunca con el banco de la cabecera** — que es el
+del POS de la farmacia.
+
 ## v2.956.6 — Una diferencia nueva reabre el acuse del pedido
 
 Pregunta del usuario sobre la corrección de v2.949.0: *«¿sólo se puede hacer una

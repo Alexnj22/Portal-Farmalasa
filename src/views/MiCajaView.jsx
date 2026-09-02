@@ -43,6 +43,7 @@ const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
 import { construirComprobanteDeAbono } from '../utils/abonoTicket';
 import { construirComprobanteDeCorte } from '../utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '../utils/movimientoTicket';
+import { conceptoDelPapel } from '../utils/conceptoDelPapel';
 import { conSigno, formatMoney } from '../utils/formatNumber';
 import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -1335,26 +1336,6 @@ function DialogoAbrir({ abierto, ocupado, onClose, onAbrir }) {
  * el criterio es el de allá: lo que dice el papel gana, porque el papel es la
  * verdad de la operación y un número tecleado encima sólo puede alejarse de él.
  */
-/**
- * Un concepto legible a partir de lo que dice el papel.
- *
- * `tipo_operacion` + `entidad` son lo que el lector ya extrae, y juntos dicen
- * exactamente lo que alguien escribiría a mano: «Pago de CAESS». Es una FRASE
- * derivada del dato, no un catálogo — si el papel no dice el tipo, queda el
- * nombre solo, y si no dice ninguno de los dos, el campo se abre para escribir.
- */
-function conceptoDelPapel(leido) {
-    const quien = String(leido?.red_remesas || leido?.entidad || '').trim();
-    if (!quien) return '';
-    switch (String(leido?.tipo_operacion || '').toUpperCase()) {
-        case 'PAGO_SERVICIO': return `Pago de ${quien}`;
-        case 'REMESA':        return `Remesa ${quien}`;
-        case 'DEPOSITO':      return `Depósito ${quien}`;
-        case 'COMPRA':        return `Compra en ${quien}`;
-        default:              return quien;
-    }
-}
-
 /**
  * Anotar lo que entra o sale del cajón.
  *

@@ -552,13 +552,32 @@ export async function fetchTiposDeMovimiento() {
     return data || [];
 }
 
+/**
+ * El catálogo de motivos, COMPLETO — los apagados también.
+ *
+ * No filtra por `activo` y no es un descuido: un motivo se desactiva cuando
+ * deja de ofrecerse, no cuando deja de haber ocurrido. `bolsas_operaciones.tipo`
+ * sigue apuntándole —las 50 remesas registradas antes del 2-sep, por ejemplo— y
+ * las pantallas que sólo LISTAN necesitan su rótulo para poder decir qué fueron.
+ * Filtrado acá, esas filas caían al respaldo `conMayuscula(codigo)` y una
+ * «Remesa entregada a un cliente» se leía «Remesa» sin que nada avisara.
+ *
+ * Quien OFRECE el motivo filtra por `activo` al armar la lista — hoy sólo
+ * `SalidaDeBolsa`. Es la mitad que sí tiene que respetar el apagado.
+ *
+ * `caja_tipo` dice en qué movimiento de la caja se convierte el motivo cuando el
+ * efectivo sale del CAJÓN. NULL = ese motivo nunca sale de ahí, y es la falla
+ * segura: va a las bolsas, como siempre.
+ *
+ * `entidad_la_dice_el_papel` dice que la entidad NO se pregunta: sale de la
+ * boleta. El campo no se dibuja y no frena el registro, pero
+ * `etiqueta_entidad` sigue siendo su rótulo — en el vale impreso y en el aviso
+ * de qué llenó la foto.
+ */
 export async function fetchTiposDeSalida() {
     const { data, error } = await supabase.from('bolsas_tipos_salida')
-        // `caja_tipo` dice en qué movimiento de la caja se convierte el motivo
-        // cuando el efectivo sale del CAJÓN. NULL = ese motivo nunca sale de
-        // ahí, y es la falla segura: va a las bolsas, como siempre.
-        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, pide_receptor, multiplo, leyenda, caja_tipo')
-        .eq('activo', true)
+        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, '
+              + 'pide_receptor, multiplo, leyenda, caja_tipo, entidad_la_dice_el_papel, activo')
         .order('orden');
     if (error) { console.error('bolsas: fetchTiposDeSalida failed:', error.message); return []; }
     return data || [];

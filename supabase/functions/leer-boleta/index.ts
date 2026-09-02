@@ -145,7 +145,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
   "nombres": ["TODOS los nombres de empresa, banco, marca o red impresos en el papel"],
   "numero_boleta": "el número rotulado BOLETA / VOUCHER / RECIBO / No., sólo dígitos, o null",
   "numeros_del_papel": ["TODOS los números de 4 dígitos o más impresos en el papel"],
-  "tipo_operacion": "REMESA | PAGO_SERVICIO | DEPOSITO | COMPRA | OTRO — lo que DICE el papel",
+  "tipo_operacion": "REMESA | PAGO_SERVICIO | RETIRO | DEPOSITO | COMPRA | OTRO — lo que DICE el papel",
   "red_remesas": "la red de remesas del detalle (MoneyGram, Ria, Western Union...), o null",
   "monto": 0.00,
   "moneda": "USD" | null,
@@ -179,7 +179,9 @@ Reglas:
   haya leído mal.
 - "tipo_operacion" sale de lo que el papel DICE, no de lo que parezca: "REMESA"
   si aparece esa palabra o el nombre de una red de remesas; "PAGO_SERVICIO" si
-  nombra un servicio (CAESS, CLARO, TIGO, agua, luz); "DEPOSITO" si dice
+  nombra un servicio (CAESS, CLARO, TIGO, agua, luz); "RETIRO" si el POS
+  ENTREGA efectivo contra una tarjeta, un token o una cuenta —"RETIRO",
+  "RETIRO SIN TARJETA", "ADELANTO" o "AVANCE DE EFECTIVO"—; "DEPOSITO" si dice
   depósito o abono a cuenta; "COMPRA" si es la compra de un producto. Si no se
   puede afirmar, "OTRO".
 - "red_remesas" es la red que ENTREGA el dinero —MoneyGram, Ria, Western Union,

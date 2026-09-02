@@ -25,25 +25,40 @@ const registrarSalida = vi.fn(async () => ({ data: { folio: 'PAG-1' }, error: nu
    000318 por $100.00 — la remesa real del 2026-08-21. */
 const leerBoleta = vi.fn(async () => ({
     leido: { es_boleta: true, legible: true, monto: 100, numero_boleta: '000318',
-             entidad: 'BANCO PROMERICA', nombres: ['BANCO PROMERICA', 'RIA'] },
+             entidad: 'BANCO PROMERICA', nombres: ['BANCO PROMERICA', 'RIA'],
+             // Lo que el papel dice que FUE. Arriba lleva el banco del POS y en
+             // el detalle la red que entrega el dinero: son dos nombres
+             // distintos y la operación se lee del segundo.
+             tipo_operacion: 'REMESA', red_remesas: 'RIA' },
     coincide: { entidad: null, numeroBoleta: null, monto: null },
     veredicto: 'OK',
     avisos: [],
 }));
 
-// El catálogo, calcado de las filas reales de `bolsas_tipos_salida`.
+/* El catálogo, calcado de las filas reales de `bolsas_tipos_salida` — con los
+ * motivos APAGADOS incluidos, que es como llega desde el 2026-09-02: la lista
+ * completa hace falta para nombrar salidas viejas, y `activo` es lo que decide
+ * cuáles se ofrecen. */
 const TIPOS = [
-    { codigo: 'REMESA', etiqueta: 'Remesa entregada a un cliente', prefijo: 'REM', signo: -1,
-      etiqueta_entidad: 'Remesadora', pide_boleta: true, foto: 'OBLIGATORIA', pide_receptor: false },
+    { codigo: 'POS_PROMERICA', etiqueta: 'POS Promerica', prefijo: 'POS', signo: -1,
+      etiqueta_entidad: 'Remesadora', pide_boleta: true, foto: 'OBLIGATORIA',
+      pide_receptor: false, entidad_la_dice_el_papel: true, activo: true },
     { codigo: 'PAGO_PROVEEDOR', etiqueta: 'Pago a proveedor', prefijo: 'PAG', signo: -1,
-      etiqueta_entidad: 'Proveedor', pide_boleta: false, foto: 'OPCIONAL', pide_receptor: false },
+      etiqueta_entidad: 'Proveedor', pide_boleta: false, foto: 'OPCIONAL',
+      pide_receptor: false, entidad_la_dice_el_papel: false, activo: true },
     { codigo: 'GASTO', etiqueta: 'Gasto o compra urgente', prefijo: 'GAS', signo: -1,
-      etiqueta_entidad: null, pide_boleta: false, foto: 'OPCIONAL', pide_receptor: true },
+      etiqueta_entidad: null, pide_boleta: false, foto: 'OPCIONAL',
+      pide_receptor: true, entidad_la_dice_el_papel: false, activo: true },
+    // Apagado el 2-sep a favor de «POS Promerica». Sigue en el catálogo porque
+    // 50 salidas le apuntan y tienen que poder decir qué fueron.
+    { codigo: 'REMESA', etiqueta: 'Remesa entregada a un cliente', prefijo: 'REM', signo: -1,
+      etiqueta_entidad: 'Remesadora', pide_boleta: true, foto: 'OBLIGATORIA',
+      pide_receptor: false, entidad_la_dice_el_papel: false, activo: false },
 ];
 
 vi.mock('../../src/data/bolsas', () => ({
     fetchTiposDeSalida: vi.fn(async () => TIPOS),
-    fetchEntidadesDeSalida: vi.fn(async () => [{ tipo: 'REMESA', nombre: 'RIA' }]),
+    fetchEntidadesDeSalida: vi.fn(async () => [{ tipo: 'POS_PROMERICA', nombre: 'RIA' }]),
     registrarSalida: (...a) => registrarSalida(...a),
     subirComprobante: vi.fn(async () => 'https://x/f.jpg'),
     leerBoleta: (...a) => leerBoleta(...a),
@@ -141,17 +156,68 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
         expect(arg.vale).toBeNull();
     });
 
-    // La remesa NO se relajó: es la única que pasa por el POS. Lo que cambió en
-    // v2.703.6 es el ORDEN — la foto va primero porque trae el monto y el
-    // número—, así que lo que se ancla es que la foto siga siendo obligatoria y
-    // que los datos que ella trae todavía NO se pidan a mano.
-    it('la remesa exige foto, y el monto y el número no se piden antes', async () => {
+    // «POS Promerica» NO se relajó: es la única que pasa por el POS. Lo que
+    // cambió en v2.703.6 es el ORDEN — la foto va primero porque trae el monto y
+    // el número—, así que lo que se ancla es que la foto siga siendo obligatoria
+    // y que los datos que ella trae todavía NO se pidan a mano.
+    it('«POS Promerica» exige foto, y el monto y el número no se piden antes', async () => {
         await abrir();
-        await elegirMotivo('Remesa entregada a un cliente');
+        await elegirMotivo('POS Promerica');
         expect(screen.getByText('Foto del comprobante')).toBeTruthy();
         expect(screen.queryByText(/Foto del comprobante \(opcional\)/i)).toBeNull();
         expect(screen.queryByText('Número de boleta')).toBeNull();
         expect(screen.queryByLabelText(/Cuánto/i)).toBeNull();
+    });
+
+    /* ── El motivo apagado no se ofrece, pero el catálogo lo conserva ───────
+     * Un borrador guardado antes del cambio vuelve con «REMESA» puesto: sin la
+     * exigencia de `activo` se podría registrar por una casilla retirada. */
+    it('un motivo apagado no aparece en la lista de motivos', async () => {
+        await abrir();
+        fireEvent.click(screen.getByLabelText('Motivo de la salida'));
+        await act(async () => {});
+        expect(screen.getByText('POS Promerica')).toBeTruthy();
+        expect(screen.queryByText('Remesa entregada a un cliente')).toBeNull();
+    });
+
+    /* ── La remesadora ya no se pregunta: la dice el papel ──────────────────
+     * Usuario, 2026-09-02: «reemplaza a remesas, pero no sería sólo remesas,
+     * sería retiro de efectivo, etc. El voucher lo dice». Un retiro no tiene
+     * remesadora ninguna, así que pedirla dejaría trabado todo lo que no es una
+     * remesa. */
+    it('«POS Promerica» no pide la remesadora: la saca de la boleta', async () => {
+        await abrir();
+        await elegirMotivo('POS Promerica');
+        expect(screen.queryByLabelText('Remesadora')).toBeNull();
+        expect(screen.queryByText('Remesadora')).toBeNull();
+
+        await elegirFoto();
+        // Sale de la boleta, normalizada contra el catálogo: el papel dice la
+        // red en el detalle y arriba lleva el banco del POS.
+        fireEvent.click(screen.getByRole('button', { name: /Registrar e imprimir/i }));
+        await act(async () => {});
+        expect(registrarSalida.mock.calls[0][0].entidad).toBe('RIA');
+    });
+
+    /* ── Y el concepto lo escribe el papel ──────────────────────────────────
+     * «El concepto que se llene solo según el voucher de la foto, junto al
+     * número de boleta y monto». Queda ABIERTO a propósito: el monto y el
+     * número los coteja el servidor contra el papel, esto es una frase
+     * derivada y hay que poder agregarle lo que el papel no dice. */
+    it('la boleta llena «Qué fue», y el campo queda abierto', async () => {
+        await abrir();
+        await elegirMotivo('POS Promerica');
+        await elegirFoto();
+
+        const campo = screen.getByLabelText('Qué fue');
+        expect(campo.value).toBe('Remesa RIA');
+        expect(campo.readOnly).toBe(false);
+
+        fireEvent.change(campo, { target: { value: 'Remesa RIA · retira don Ruti' } });
+        await act(async () => {});
+        fireEvent.click(screen.getByRole('button', { name: /Registrar e imprimir/i }));
+        await act(async () => {});
+        expect(registrarSalida.mock.calls[0][0].nota).toBe('Remesa RIA · retira don Ruti');
     });
 
     // ── El cartel rojo imposible (2026-08-21) ──────────────────────────────
@@ -161,20 +227,23 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
     // número?» y viajaba como monto esperado de $0.00.
     it('la foto se lee con el monto VACÍO: no viaja un cero que nadie escribió', async () => {
         await abrir();
-        await elegirMotivo('Remesa entregada a un cliente');
+        await elegirMotivo('POS Promerica');
         await elegirFoto();
 
         expect(leerBoleta).toHaveBeenCalledTimes(1);
         const esperado = leerBoleta.mock.calls[0][1];
         expect(esperado.monto).toBeNull();
         expect(esperado.numeroBoleta).toBeNull();
+        // Y el motivo tampoco viaja: «POS Promerica» nombra el aparato, no la
+        // operación, así que no hay nada que el papel tenga que confirmar.
+        expect(esperado.tipo).toBeUndefined();
     });
 
     // Regla del usuario: «la única forma en que no quede informativo es si la
     // foto no logra distinguir el monto o boleta».
     it('lo que la boleta dijo se muestra como dato y no se puede escribir encima', async () => {
         await abrir();
-        await elegirMotivo('Remesa entregada a un cliente');
+        await elegirMotivo('POS Promerica');
         await elegirFoto();
 
         // El monto se busca DENTRO de su tarjeta: «Sale de» también dice
@@ -195,7 +264,7 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
             veredicto: 'OK', avisos: [],
         });
         await abrir();
-        await elegirMotivo('Remesa entregada a un cliente');
+        await elegirMotivo('POS Promerica');
         await elegirFoto();
 
         expect(tarjeta('Cuánto').textContent).toContain('$100.00');

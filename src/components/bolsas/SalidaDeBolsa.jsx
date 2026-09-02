@@ -14,6 +14,7 @@ import {
     guardarLecturaDeBoleta, leerBoleta, registrarSalida, subirComprobante,
 } from '../../data/bolsas';
 import { disponibles, elegirOrigen, totalDisponible } from '../../utils/bolsasReparto';
+import { conceptoDelPapel } from '../../utils/conceptoDelPapel';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
@@ -259,7 +260,18 @@ export default function SalidaDeBolsa({
         setPaso('FORMULARIO'); setPersona(null); setVale(null); setError(null);
     }, [abierto]);
 
-    const t = useMemo(() => tipos.find((x) => x.codigo === tipo) || null, [tipos, tipo]);
+    /* El catálogo llega COMPLETO —los motivos apagados también, para que las
+     * salidas viejas puedan seguir diciendo qué fueron— así que acá se exige
+     * `activo`: un borrador guardado antes de que un motivo se retirara volvería
+     * con él puesto y dejaría registrar por una casilla que ya no se ofrece.
+     * Pasó a existir el 2-sep, cuando «Remesa» se apagó a favor de «POS
+     * Promerica» con borradores de remesa a medio escribir en los teléfonos. */
+    const t = useMemo(
+        () => tipos.find((x) => x.codigo === tipo && x.activo) || null,
+        [tipos, tipo],
+    );
+    /* Los que se OFRECEN. Aparte del catálogo completo por lo mismo de arriba. */
+    const ofrecidos = useMemo(() => tipos.filter((x) => x.activo), [tipos]);
 
     /** Las opciones del campo «entidad» de ESTE motivo. Vacío = campo libre. */
     const opciones = useMemo(
@@ -286,10 +298,12 @@ export default function SalidaDeBolsa({
         setTipo(codigo); setEntidad(''); setPersona(null); setVale(null);
         setFoto(null); setPorEditar(null); setLectura(null);
         setBoleta(''); setRepetida([]);
-        // El monto sólo si lo había puesto la foto: uno escrito a mano es una
-        // decisión de la persona y sobrevive al cambio de motivo, como siempre.
+        // El monto y la nota, sólo si los había puesto la foto: lo escrito a
+        // mano es una decisión de la persona y sobrevive al cambio de motivo,
+        // como siempre.
         setDeLaFoto((puestos) => {
             if (puestos.includes('el monto')) setMonto('');
+            if (puestos.includes('de qué fue')) setNota('');
             return [];
         });
     }, []);
@@ -385,14 +399,17 @@ export default function SalidaDeBolsa({
         if (!f) { setFoto(null); setLectura(null); setDeLaFoto([]); setPisadosPorLaFoto([]); return; }
         setLeyendo(true);
         setLectura(null);
+        /* El motivo NO viaja como esperado, y desde el 2-sep es a propósito.
+         *
+         * Hasta ese día se mandaba `tipo: 'REMESA'` para que la boleta
+         * CONFIRMARA la casilla elegida. Con «POS Promerica» esa pregunta ya no
+         * existe: el motivo es el aparato y la operación —remesa, retiro,
+         * depósito— la DICE el papel, así que no hay contra qué confirmar. Lo
+         * que el lector devuelva en `tipo_operacion` es el dato, no el juez. */
         const r = await leerBoleta(f, {
             entidad: entidad.trim() || null,
             numeroBoleta: boleta.trim() || null,
             monto: Number.isFinite(n) ? n : null,
-            // El motivo elegido, para que la boleta lo CONFIRME. No puede
-            // autollenarlo —la foto se pide después de elegirlo— pero sí decir
-            // que el papel habla de otra cosa. Pedido del usuario (29-ago).
-            tipo: tipo === 'REMESA' ? 'REMESA' : null,
         });
         setLeyendo(false);
         setLectura(r);
@@ -468,12 +485,42 @@ export default function SalidaDeBolsa({
                     puestos.push(t?.etiqueta_entidad?.toLowerCase() || 'la entidad');
                 }
             }
+
+            /* ── Y QUÉ FUE ───────────────────────────────────────────────────
+             *
+             * Pedido del usuario (2026-09-02), sobre las salidas del POS: «que
+             * el concepto se llene solo según el voucher de la foto, junto al
+             * número de boleta y monto». Es lo mismo que ya hace la entrada
+             * desde el 1-sep, y con la MISMA función (`conceptoDelPapel`) para
+             * que el mismo papel no diga dos cosas según por dónde entró.
+             *
+             * Sólo cuando el papel manda. En los motivos que no lo tienen —un
+             * gasto, un anticipo— la nota es lo que alguien quiso anotar, y
+             * escribirle encima «Compra en FERRETERIA DON GENARO» borraría el
+             * único dato que ese motivo no puede deducir.
+             *
+             * A diferencia del monto y del número, este campo NO queda cerrado.
+             * Esos dos identifican la operación y el servidor los coteja contra
+             * el papel; esto es una frase derivada, y dejarla abierta es lo que
+             * permite agregarle lo que el papel no dice —«retira don Ruti»— sin
+             * volver a tomar la foto. */
+            if (laFotoManda) {
+                const queFue = conceptoDelPapel(l);
+                if (queFue) {
+                    const habia = nota.trim();
+                    if (habia && normalizarNombre(habia) !== normalizarNombre(queFue)) {
+                        pisados.push('de qué fue');
+                    }
+                    setNota(queFue);
+                    puestos.push('de qué fue');
+                }
+            }
         }
         setDeLaFoto(puestos);
         setPisadosPorLaFoto(pisados);
 
         setPorEditar(f);
-    }, [entidad, boleta, monto, n, opciones, t, tipo]);
+    }, [entidad, boleta, monto, nota, n, opciones, t, laFotoManda]);
 
     /**
      * Qué pasa con lo que dijo el lector, dicho en una frase.
@@ -541,8 +588,9 @@ export default function SalidaDeBolsa({
         return [
             !monto.trim() && 'el monto',
             !boleta.trim() && 'el número',
+            !nota.trim() && 'de qué fue',
         ].filter(Boolean);
-    }, [laFotoManda, lectura, monto, boleta]);
+    }, [laFotoManda, lectura, monto, boleta, nota]);
 
     // Lo que el bloqueo le dice a la lista de «qué falta».
     const bloqueoDeLaFoto = problemaDeLaFoto?.bloquea ? problemaDeLaFoto.texto : null;
@@ -556,26 +604,13 @@ export default function SalidaDeBolsa({
     const avisoDeLaFoto = useMemo(() => {
         if (!foto || !lectura || lectura.error || problemaDeLaFoto) return null;
 
-        /* El papel habla de otra cosa que el motivo elegido.
-         *
-         * Va PRIMERO porque es el más grave de los dos que no frenan: la
-         * entidad mal es un rótulo; el motivo mal manda la operación al
-         * circuito equivocado —una remesa registrada como pago a proveedor
-         * pide datos que no son y se busca después en el lugar donde no está—.
-         *
-         * Y no frena, por lo mismo que la entidad: el papel no siempre dice la
-         * palabra, y frenar por lo que el papel no obliga a decir trabaría una
-         * operación buena con el cliente enfrente. */
-        if (lectura.coincide?.tipo === false) {
-            const dice = (lectura.leido || {}).tipo_operacion;
-            return {
-                tono: 'warning', bloquea: false,
-                texto: dice === 'PAGO_SERVICIO'
-                    ? 'La boleta parece de un pago de servicio, no de una remesa. Si el motivo es el correcto, puedes guardar.'
-                    : 'La boleta no dice que sea una remesa. Si el motivo es el correcto, puedes guardar.',
-            };
-        }
-
+        /* Acá vivía el aviso de «el papel habla de otra cosa que el motivo
+         * elegido». Se fue con el motivo que lo hacía posible: mientras existió
+         * «Remesa», elegirla era afirmar qué operación era y el papel podía
+         * contradecirla. «POS Promerica» no afirma ninguna —nombra el aparato—
+         * así que ya no hay dos respuestas que enfrentar, y el servidor ya no
+         * recibe `esperado.tipo`. Lo que el papel dice sobre la operación se ve
+         * escrito en «Qué fue», que es donde sirve. */
         const hay = (lectura.avisos || []).some((a) => a.campo === 'entidad');
         return hay ? avisoDeEntidad(lectura.leido || {}, entidad) : null;
     }, [foto, lectura, problemaDeLaFoto, entidad]);
@@ -649,7 +684,15 @@ export default function SalidaDeBolsa({
          * «Falta cuánto» acá arriba era pedir a mano justo lo que la foto trae,
          * y frenaba el botón antes de dejar elegirla. */
         if (laFotoManda) {
-            if (!entidad.trim()) return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
+            /* La entidad sólo si la contesta una PERSONA. Con
+             * `entidad_la_dice_el_papel` no hay campo que llenar —la remesadora
+             * sale de la boleta— y exigirla dejaría trabado todo lo que no es
+             * una remesa: un retiro de efectivo no tiene remesadora ninguna.
+             * Y sin la guarda de `etiqueta_entidad`, un motivo sin rótulo
+             * lanzaba acá al leer `.toLowerCase()` de `null`. */
+            if (t.etiqueta_entidad && !t.entidad_la_dice_el_papel && !entidad.trim()) {
+                return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
+            }
             if (!foto) return 'Falta la foto del comprobante.';
         }
         if (!Number.isFinite(n) || n <= 0) return 'Falta cuánto.';
@@ -675,7 +718,9 @@ export default function SalidaDeBolsa({
             return `${puedeSalirDelCajon ? 'En la caja no hay tanto, y en' : 'En'} `
                  + `la sala hay ${formatMoney(totalDisponible(lista))} en bolsas: no alcanza.`;
         }
-        if (t.etiqueta_entidad && !entidad.trim()) return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
+        if (t.etiqueta_entidad && !t.entidad_la_dice_el_papel && !entidad.trim()) {
+            return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
+        }
         if (t.pide_boleta && !boleta.trim()) return 'Falta el número de boleta.';
         if (t.foto === 'OBLIGATORIA' && !foto) return 'Falta la foto del comprobante.';
         // Decisión del usuario (2026-08-20): sin una boleta que cuadre, no se
@@ -743,6 +788,16 @@ export default function SalidaDeBolsa({
              * bolsa que descontar ni etiqueta que reimprimir. El comprobante lo
              * imprime quien nos pasó `onSalidaDeCaja`, que es la pantalla que
              * ya sabe imprimir los movimientos de su caja. */
+            /* La entidad va al papel SÓLO si la contestó una persona.
+             *
+             * Cuando la dice el papel, la nota ya la nombra —«Remesa MONEY GRAM
+             * WS»— y repetirla daría «POS Promerica · MONEYGRAM · Remesa MONEY
+             * GRAM WS» sobre un campo de 50 caracteres que recorta por la
+             * derecha: el concepto perdería justo la parte que dice qué fue.
+             * La remesadora no se pierde — se guarda en su columna, sale impresa
+             * en el vale y viaja como `recibe` al movimiento de la caja. */
+            const entidadDicha = t.entidad_la_dice_el_papel ? '' : entidad.trim();
+
             if (delCajon) {
                 const r = await onSalidaDeCaja({
                     monto: n,
@@ -755,9 +810,9 @@ export default function SalidaDeBolsa({
                     // Del otro lado no hay motivo, sólo un campo de texto de 50:
                     // el rótulo va adelante para que el papel siga diciendo qué
                     // fue. Es la misma regla del diálogo de movimientos.
-                    concepto: [t.etiqueta, entidad.trim(), nota.trim()]
+                    concepto: [t.etiqueta, entidadDicha, nota.trim()]
                         .filter(Boolean).join(' · ').slice(0, 50),
-                    detalle: [entidad.trim(), nota.trim()].filter(Boolean).join(' · '),
+                    detalle: [entidadDicha, nota.trim()].filter(Boolean).join(' · '),
                     boleta: boleta.trim() || null,
                     fotoUrl,
                     recibidoPor: t.pide_receptor ? persona?.id : null,
@@ -882,7 +937,11 @@ export default function SalidaDeBolsa({
     /* Si el campo tiene lista propia —las remesadoras—, es un desplegable: así
      * lo que se guarda coincide con el catálogo por construcción y no por cómo
      * lo escribió cada quien. */
-    const campoEntidad = t?.etiqueta_entidad && (opciones.length ? (
+    /* El campo sólo cuando lo contesta una PERSONA. Con
+     * `entidad_la_dice_el_papel` la lista sigue existiendo —es contra lo que se
+     * normaliza «MONEY GRAM WS» a «MONEYGRAM»— pero no se pregunta: la
+     * remesadora sale de la boleta, y en un retiro no hay ninguna. */
+    const campoEntidad = t?.etiqueta_entidad && !t?.entidad_la_dice_el_papel && (opciones.length ? (
         <div>
             <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
                 {t.etiqueta_entidad}
@@ -994,6 +1053,15 @@ export default function SalidaDeBolsa({
         </div>
     );
 
+    /* Qué va al lado del MOTIVO, y si va algo.
+     *
+     * Con la foto mandando iba la remesadora —el único dato que el papel no
+     * decía—. Desde que la dice, «POS Promerica» no tiene nada que preguntar
+     * ahí: sin esta variable el motivo se quedaba en media rejilla con una
+     * columna vacía al lado, y una casilla que no existe se lee como una que no
+     * cargó. */
+    const acompanaAlMotivo = t ? (laFotoManda ? campoEntidad : campoMonto) : null;
+
     /* UN solo bloque «Sale de», y el que corresponda. Se resuelve acá y no en
        cada uno de los tres sitios donde se dibuja: tres condiciones para la
        misma pregunta es cómo dos de ellas se quedan viejas. */
@@ -1075,18 +1143,18 @@ export default function SalidaDeBolsa({
                             tomó pide un número para una salida que todavía no
                             se sabe qué es, y el motivo puede cambiar cuánto se
                             puede sacar y de qué bolsa. */}
-                        <div className={t ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : ''}>
+                        <div className={acompanaAlMotivo ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : ''}>
                             <div>
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
                                     Motivo
                                 </span>
                                 <LiquidSelect
                                     value={tipo} onChange={elegirMotivo}
-                                    options={tipos.map((x) => ({ value: x.codigo, label: x.etiqueta }))}
+                                    options={ofrecidos.map((x) => ({ value: x.codigo, label: x.etiqueta }))}
                                     placeholder="Elegir…" ariaLabel="Motivo de la salida"
                                 />
                             </div>
-                            {t && (laFotoManda ? campoEntidad : campoMonto)}
+                            {acompanaAlMotivo}
                         </div>
 
                         {/* Lo que hay que saber de ESTE motivo, dicho por el
@@ -1275,12 +1343,25 @@ export default function SalidaDeBolsa({
 
                         {/* El detalle también espera al motivo: es una nota
                             SOBRE la salida, y sin motivo todavía no hay salida
-                            de la que anotar nada. */}
-                        {!!t && (
+                            de la que anotar nada. Y cuando la foto manda espera
+                            además a la foto, por lo mismo que el monto y el
+                            número: es ella quien lo contesta.
+
+                            Ahí cambia de rótulo y deja de ser opcional en el
+                            texto —«Qué fue»—: en «POS Promerica» el motivo
+                            nombra el APARATO, así que esta línea es lo único que
+                            dice si fue una remesa, un retiro o un depósito. Sigue
+                            siendo un campo abierto a propósito: el monto y el
+                            número los coteja el servidor contra el papel y por
+                            eso quedan cerrados, pero esto es una frase derivada
+                            y hay que poder agregarle lo que el papel no dice. */}
+                        {!!t && (!laFotoManda || datosALaVista) && (
                             <PortalTextarea
-                                label="Detalle (opcional)" name="nota" rows={2}
+                                label={laFotoManda ? 'Qué fue' : 'Detalle (opcional)'} name="nota" rows={2}
                                 value={nota} onChange={(e) => setNota(e.target.value)}
-                                placeholder="Cualquier cosa que ayude a entenderlo después"
+                                placeholder={laFotoManda
+                                    ? 'Lo dice la boleta: remesa, retiro de efectivo…'
+                                    : 'Cualquier cosa que ayude a entenderlo después'}
                             />
                         )}
                     </>

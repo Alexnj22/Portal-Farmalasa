@@ -4,7 +4,7 @@
 // ModuleLockBanner necesita resolver "¿qué módulo es esta ruta?" para poder
 // montarse una sola vez en GlassViewLayout en lugar de a mano en cada vista —
 // y un componente de `common/` no puede importar el layout entero.
-import { CalendarCheck,
+import { CalendarCheck, HandCoins,
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Activity,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
@@ -60,6 +60,9 @@ export const MODULE_MAP = {
      * enviados y los favoritos de quien la usaba. */
     cortes_caja:       { path: '/caja',             label: 'Efectivo',                 icon: Wallet     },
     bolsas:            { path: '/bolsas',           label: 'Bolsas de efectivo',       icon: Package    },
+    /* Vista propia y no una pestaña de Efectivo: Efectivo contesta «¿cuadra el
+     * dinero de HOY?» y esto «¿quién nos debe de los últimos dos años?». */
+    cuentas_por_cobrar:{ path: '/cuentas-por-cobrar', label: 'Cuentas por cobrar',      icon: HandCoins  },
     caja_vales:        { path: '/caja',             label: 'Efectivo',                 icon: Wallet     },
     metas:             { path: '/metas',            label: 'Metas',                    icon: Target     },
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },

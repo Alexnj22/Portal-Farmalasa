@@ -128,15 +128,16 @@ Deno.serve(async (req) => {
     const quien = await requireActiveEmployeeUser(req, supabase);
     if (!quien) return responder({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
 
-    /* Mirar los créditos es ver la caja; abonar es MOVERLA. Dos permisos y no
-     * uno: quien revisa la cartera no necesariamente cobra. */
+    /* Módulo propio —`cuentas_por_cobrar`, la vista «Cuentas por cobrar»— y no
+     * `caja_vales`: son dos preguntas distintas y las mira otra gente. Mirar la
+     * cartera es `can_view`; abonar es MOVER el cajón, así que es `can_edit`. */
     const [modulo, capacidad] = accion === "abonar"
-      ? ["caja_vales", "can_edit"]
-      : ["caja_vales", "can_view"];
+      ? ["cuentas_por_cobrar", "can_edit"]
+      : ["cuentas_por_cobrar", "can_view"];
     const permiso = await permisoDeModulo(supabase, quien.id, modulo, capacidad as "can_view" | "can_edit");
     if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede) {
-      return responder({ ok: false, error: "No tienes permiso para ver los créditos." }, 403);
+      return responder({ ok: false, error: "No tienes permiso para ver las cuentas por cobrar." }, 403);
     }
 
     const mapa = getErpBranchMap().filter((e) => e.erpId !== 6);   // Bodega no vende al crédito

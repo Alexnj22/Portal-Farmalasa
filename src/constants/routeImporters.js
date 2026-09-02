@@ -37,6 +37,7 @@ export const IMPORTADORES = {
     VentasView: () => import("../views/VentasView"),
     CortesView: () => import("../views/CortesView"),
     BolsasView: () => import("../views/BolsasView"),
+    CuentasPorCobrarView: () => import("../views/CuentasPorCobrarView"),
     MiCajaView: () => import("../views/MiCajaView"),
     ProductosView: () => import("../views/ProductosView"),
     LaboratoriosView: () => import("../views/LaboratoriosView"),
@@ -155,6 +156,7 @@ export const IMPORTADOR_POR_RUTA = {
     'ventas': IMPORTADORES.VentasView,
     'cortes': IMPORTADORES.CortesView,
     'bolsas': IMPORTADORES.BolsasView,
+    'cuentas-por-cobrar': IMPORTADORES.CuentasPorCobrarView,
     // «Efectivo» ES `CortesView` desde v2.914.0 — `MiCajaView` es su pestaña
     // «Hoy» y viaja adentro, así que precargar la ruta tiene que traer el
     // anfitrión y no la pestaña.

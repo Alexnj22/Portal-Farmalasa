@@ -24,6 +24,7 @@
 // ambiguas fuera de su grupo: ahí `staff_list` es "Listado" y acá es "Listado de
 // Personal"; `staff_detail` no está en el menú y acá es "Expediente completo".
 import {
+    HandCoins,
     CalendarCheck, ShieldCheck, Monitor, Calendar, Building2, Megaphone, ClipboardList,
     Palmtree, Activity, AlertTriangle, User, Eye, Pencil, CheckCircle2,
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
@@ -174,6 +175,19 @@ const GRUPOS_CRUDOS = [
              * todas — y un corte no se deshace. Sin el selector acá tampoco
              * había forma de acotarlo aunque alguien quisiera. */
             { key: 'caja_vales',    label: 'Mi caja (operar desde el portal)', desc: 'Abrir la caja, anotar ingresos y vales, hacer el corte con el conteo a ciegas y cerrar el día — todo sin entrar al sistema de la caja. Ver muestra el estado; editar es lo que opera. El alcance decide si es solo su sala o todas', icon: Wallet, hasApprove: false, hasScope: true },
+            /* Vista propia y no una capacidad de `caja_vales`, porque son dos
+             * preguntas distintas: `caja_vales` es *operar mi caja HOY* y esto
+             * es *quién nos debe de los últimos dos años*. La cartera se revisa
+             * en otro momento y la mira otra gente.
+             *
+             * `hasScope` por lo mismo que las otras dos de caja: la sala cobra
+             * lo suyo y la supervisión ve las seis. Y el alcance lo cobra el
+             * SERVIDOR — mandar otra sala en la petición no muestra su cartera.
+             *
+             * `can_edit` es abonar, y abonar mete efectivo al cajón: cuenta
+             * para el corte de ese día. Además NO se puede deshacer — el
+             * sistema de la caja no tiene forma de anular un abono. */
+            { key: 'cuentas_por_cobrar', label: 'Cuentas por cobrar', desc: 'Quién debe, desde cuándo y cuánto, en las seis salas. Ver es mirar la cartera y el plazo del mes; editar es abonar — el efectivo entra al cajón, cuenta para el corte del día y no se puede deshacer', icon: HandCoins, hasApprove: false, hasScope: true },
             { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, la etiqueta que va pegada a cada bolsa, y marcarlas como entregadas', icon: Package, hasApprove: false, hasScope: true, sub: [
                 // Módulo aparte y no una capacidad de `bolsas` porque son dos
                 // públicos: la sala entrega, administración recibe y cuenta. Con

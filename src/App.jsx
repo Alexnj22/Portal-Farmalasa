@@ -66,6 +66,7 @@ const VacationPlanView = lazy(IMPORTADORES.VacationPlanView);
 const PayrollView = lazy(IMPORTADORES.PayrollView);
 const VentasView = lazy(IMPORTADORES.VentasView);
 const CortesView = lazy(IMPORTADORES.CortesView);
+const CuentasPorCobrarView = lazy(IMPORTADORES.CuentasPorCobrarView);
 const BolsasView = lazy(IMPORTADORES.BolsasView);
 const ProductosView = lazy(IMPORTADORES.ProductosView);
 const LaboratoriosView = lazy(IMPORTADORES.LaboratoriosView);
@@ -830,6 +831,7 @@ function MainApp() {
                                         suyo: «Hoy» pide `caja_vales`, las otras dos `cortes_caja`.
                                         Quien tiene uno solo entra y ve lo suyo. */}
                                     <Route path="caja" element={<PermissionGuard moduleKey={['caja_vales', 'cortes_caja']}><CortesView /></PermissionGuard>} />
+                                    <Route path="cuentas-por-cobrar" element={<PermissionGuard moduleKey="cuentas_por_cobrar"><CuentasPorCobrarView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
                                     <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
@@ -1012,6 +1014,7 @@ const ROUTE_TITLES = {
     '/cortes':            'Efectivo',
     '/bolsas':            'Bolsas de efectivo',
     '/caja':              'Efectivo',
+    '/cuentas-por-cobrar': 'Cuentas por cobrar',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
     '/clientes':          'Clientes',

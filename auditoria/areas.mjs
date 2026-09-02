@@ -497,7 +497,7 @@ export const AREAS = [
             'src/utils/bolsaComprobante.js', 'src/utils/bolsasReparto.js', 'src/utils/corteComprobante.js',
             'src/utils/cortesDiagnostico.js', 'src/utils/cajasEspeciales.js',
             'src/utils/corteTicket.js', 'src/utils/abonoTicket.js', 'src/utils/movimientoTicket.js',
-            'src/data/creditos.js', 'src/components/cortes/CreditosDeClientes.jsx',
+            'src/data/creditos.js', 'src/views/CuentasPorCobrarView.jsx',
         ],
         tablas: ['cortes_caja', 'cortes_caja_diferencia_personas', 'cortes_caja_diferencias',
                  'cortes_caja_eventos', 'cortes_caja_movimientos',

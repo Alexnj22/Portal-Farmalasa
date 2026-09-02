@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.936.0 — Cuentas por cobrar, vista propia
+
+Los créditos salieron de Efectivo y ahora son **su propia vista**, por pedido
+del usuario. La razón de fondo no es de acomodo: Efectivo contesta *«¿cuadra el
+dinero de HOY?»* y esto contesta *«¿quién nos debe de los últimos dos años?»*.
+Comparten el cajón, no la pregunta — la cartera se revisa en otro momento, la
+mira otra gente, y su período es todo el histórico y no el día.
+
+- **`/cuentas-por-cobrar`**, con su propio módulo de permiso
+  `cuentas_por_cobrar`: ver es mirar la cartera y el plazo; **editar es
+  abonar**, que mete efectivo al cajón y no se puede deshacer.
+- **El permiso se le dio EXACTAMENTE a quien ya tenía `caja_vales`**, con su
+  mismo alcance — la sala cobra lo suyo, la supervisión ve las seis. La
+  pantalla cambió de lugar, no de público: dárselo también a quien tiene
+  `cortes_caja` habría abierto el nombre y la deuda de 43 clientes sin que
+  nadie lo decidiera.
+- **Dos cifras arriba**: cuánto suma lo que se está mirando y **cuántos se
+  pasaron del plazo**, que es el número que decide si hay que salir a cobrar
+  hoy. Filtro por *Con saldo · Pasados del plazo · Todos* y por sucursal, con
+  la sala en la dirección — la sesión de sala se cierra sola a los 5 minutos y
+  una recarga volvería a «todas» sin decir nada.
+
+Efectivo vuelve a sus tres pestañas de siempre (Hoy · Cortes · Movimientos).
+
 ## v2.935.0 — Los créditos de los clientes, en el portal
 
 **Quién debe, desde cuándo, y cobrarle** — sin salir de Efectivo. Antes había

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, HandCoins, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -15,6 +15,7 @@ import { EmptyState, LoadingState } from '../components/common/StateViews';
 import AsentarDiferencias from '../components/cortes/AsentarDiferencias';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
 import FichasDeCaja from '../components/cortes/FichasDeCaja';
+import CreditosDeClientes from '../components/cortes/CreditosDeClientes';
 /* La pestaña «Hoy» es `MiCajaView` entera, y va DIFERIDA a propósito: arrastra
  * los diálogos de operar la caja —abrir, corte, entrada, salida, la lectura de
  * la boleta— y quien entra sólo a mirar cortes (Contabilidad no tiene
@@ -31,6 +32,7 @@ import {
     fetchAperturas, fetchCortes, fetchDiferencias, fetchEntradasParaCruce,
     fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas,
 } from '../data/cortes';
+import { fetchCreditos } from '../data/creditos';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { formatMoney } from '../utils/formatNumber';
@@ -92,6 +94,15 @@ const PESTANAS = [
     { key: 'hoy',         label: 'Hoy',         icon: Wallet,        modulo: 'caja_vales'  },
     { key: 'cortes',      label: 'Cortes',      icon: Scale,         modulo: 'cortes_caja' },
     { key: 'movimientos', label: 'Movimientos', icon: ArrowDownLeft, modulo: 'cortes_caja' },
+    /* Los créditos entran acá y no en un módulo propio: **abonar es meter
+     * efectivo al cajón**, y ese dinero cuenta para el corte del mismo día. Un
+     * módulo aparte los dejaría lejos de la caja que los recibe.
+     *
+     * Va con `caja_vales` —el permiso de OPERAR— y no con `cortes_caja`: verlos
+     * es mirar la cartera, pero el botón que importa mueve dinero. La pestaña se
+     * ve con `can_view` y el abono pide `can_edit`, los dos del lado del
+     * servidor. */
+    { key: 'creditos',    label: 'Créditos',    icon: HandCoins,     modulo: 'caja_vales'  },
 ];
 
 const VACIO = [];
@@ -269,6 +280,7 @@ const CortesView = () => {
     // Las fichas de caja acompañan a los CORTES: ahí es donde se pregunta de
     // quién es el corte que se está leyendo.
     const enCortes      = pestana === 'cortes';
+    const enCreditos    = pestana === 'creditos';
 
     const [movs, setMovs] = useState(VACIO);
     const [historial, setHistorial] = useState(VACIO);
@@ -280,6 +292,9 @@ const CortesView = () => {
      * arriba de los cortes, y una ficha no se recorta — se mira. Los dos
      * desplegables que tenía (estado y quién) se fueron con la pestaña; lo que
      * decían está en la banda de color y en el avatar de cada ficha. */
+    const [creditos, setCreditos] = useState(VACIO);
+    const [cargandoCreditos, setCargandoCreditos] = useState(false);
+
     const [aperturas, setAperturas] = useState(VACIO);
     const [entradas, setEntradas] = useState(VACIO);
     const [pudeAsistencia, setPudeAsistencia] = useState(true);
@@ -339,6 +354,23 @@ const CortesView = () => {
     }, [enCortes, desde, hasta, sala]);
 
     useEffect(() => { cargarAper(); }, [cargarAper]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la pestaña y al cambiar sala o rango
+
+    /* Los créditos se leen EN VIVO del sistema de origen y sólo con la pestaña
+     * abierta: son seis peticiones —una por sala, en serie porque la sucursal
+     * vive en la sesión de allá— y no aportan nada a las otras pestañas.
+     *
+     * Sin copia local a propósito: el saldo cambia cada vez que alguien cobra
+     * en la caja, y una copia de hace media hora mostraría una deuda ya pagada.
+     * Cobrarle dos veces a un cliente es peor que no mostrar la lista. */
+    const cargarCreditos = useCallback(async () => {
+        if (!enCreditos) return;
+        setCargandoCreditos(true);
+        const r = await fetchCreditos({ sala: sala || null });
+        setCreditos(r?.creditos || VACIO);
+        setCargandoCreditos(false);
+    }, [enCreditos, sala]);
+
+    useEffect(() => { cargarCreditos(); }, [cargarCreditos]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la pestaña y al cambiar de sala
 
     const nombreSala = useMemo(() => {
         const m = {};
@@ -558,9 +590,11 @@ const CortesView = () => {
             onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
             // En «Hoy» no hay nada que buscar: es un turno, no una lista.
             showSearch={!enHoy}
-            placeholder={enMovimientos
-                ? 'Buscar por concepto, sala o monto…'
-                : 'Buscar por sala, persona, hora o monto…'}
+            placeholder={enCreditos
+                ? 'Buscar por cliente, documento o monto…'
+                : enMovimientos
+                    ? 'Buscar por concepto, sala o monto…'
+                    : 'Buscar por sala, persona, hora o monto…'}
         />
     );
 
@@ -589,6 +623,7 @@ const CortesView = () => {
                     obligatorias, porque `useMedidaFila` busca el carril en el
                     abuelo de la píldora y le descuenta 314px lo tenga al lado o
                     no. En renglones separados no falla: roba ancho en silencio. */}
+                {!enCreditos && (
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     {/* Cuatro números fijos del período, y cada uno es el ATAJO
                         de su ranura (§17.0). El carril del efectivo se fue con
@@ -706,6 +741,7 @@ const CortesView = () => {
                         </FilterBar>
                     </div>
                 </div>
+                )}
 
                 {/* El trabajo que queda después de resolver una diferencia: el
                     movimiento en el sistema. Va como aviso y no como pestaña
@@ -722,6 +758,18 @@ const CortesView = () => {
                         pudeLeerAsistencia={pudeAsistencia}
                         salas={salasMap}
                         cargando={cargandoAper}
+                    />
+                )}
+
+                {enCreditos && (
+                    <CreditosDeClientes
+                        creditos={creditos}
+                        salas={salasMap}
+                        cargando={cargandoCreditos}
+                        busqueda={busqueda}
+                        puedeAbonar={hasPermission('caja_vales', 'can_edit')}
+                        onLimpiarBusqueda={() => setBusqueda('')}
+                        onAbonado={cargarCreditos}
                     />
                 )}
 

@@ -1,0 +1,267 @@
+import {
+  getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
+} from "../_shared/security.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LOS CRÉDITOS DE LOS CLIENTES — verlos y abonarles desde el portal.
+//
+// ── Por qué pasa por acá y no por el navegador ────────────────────────────
+// El sistema de la caja no habla con el navegador de nadie: hay que entrar con
+// las credenciales del portal y fijar la sucursal en la sesión. Y el abono
+// MUEVE DINERO —entra al cajón como efectivo— así que el permiso y el alcance
+// se cobran del lado del servidor, igual que en `operar-caja`.
+//
+// ── Lo que se midió antes de escribir esto (1-sep) ────────────────────────
+// 126 créditos con saldo entre las seis salas, $4,646.21, 43 clientes. De esos,
+// **35 pasados del mes de plazo** ($443.70) y el más viejo con **462 días**.
+// Nadie los está mirando: no existe ninguna pantalla que los liste.
+//
+// ── La trampa del nombre, que rompe en silencio ───────────────────────────
+// El formulario del origen manda el parámetro `id_factura`, y **lo que lleva
+// adentro es el ID DEL CRÉDITO**. Medido: el crédito 102 se pide con
+// `?id_credito=102`, su campo oculto `id_factura` vale `102`, y la factura de
+// ese mismo crédito es la **19228**. Mandar el número de la factura abonaría al
+// crédito de otra persona —o a ninguno— sin dar error. Por eso acá el parámetro
+// se llama `credito` y la traducción al nombre ajeno se hace en un solo sitio.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const BASE      = "https://clientesdte3.oss.com.sv/farma_salud/";
+const LOGIN_URL = `${BASE}login.php`;
+const SESION_URL = `${BASE}cambio_sesion.php`;
+const LISTA_URL = `${BASE}admin_credito_dt.php`;
+const ABONO_URL = `${BASE}abono_credito.php`;
+
+/** Las formas de pago que el origen acepta, tal cual las ofrece su desplegable. */
+const FORMAS = ["Efectivo", "Recibo", "Voucher", "Transferencia", "Cheque", "Tarjeta", "Bitcoin", "Otro"];
+
+/* Las MISMAS credenciales que `operar-caja` y `hacer-corte-caja`: es la misma
+ * sesión de la caja, y el abono entra por la misma puerta que un ingreso. */
+function getCortesCreds(): { username: string; password: string } {
+  const raw = Deno.env.get("ERP_CORTES_CREDS");
+  if (!raw) throw new Error("ERP_CORTES_CREDS secret no configurado.");
+  return JSON.parse(raw);
+}
+
+const json = (b: unknown, s = 200, h: HeadersInit = {}) =>
+  new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json", ...h } });
+
+async function getSessionCookie(u: string, p: string): Promise<string> {
+  const res = await fetch(LOGIN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ username: u, password: p, m: "1" }).toString(),
+    redirect: "manual", signal: AbortSignal.timeout(20_000),
+  });
+  const cookie = res.headers.get("set-cookie")?.split(";")[0];
+  if (!cookie) throw new Error("login sin cookie de sesión");
+  return cookie;
+}
+
+async function abrirSala(cookie: string, erpId: number): Promise<void> {
+  const r = await fetch(SESION_URL, {
+    method: "POST",
+    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ process: "set_sucursal", id_sucursal: String(erpId) }).toString(),
+    signal: AbortSignal.timeout(20_000),
+  });
+  let ok = false;
+  try { ok = Boolean(JSON.parse(await r.text())?.success); } catch { ok = false; }
+  // La lista y el abono son POR SUCURSAL: sin fijarla, se leería —o se
+  // abonaría— en la sala equivocada, y eso no se deshace.
+  if (!ok) throw new Error(`no se pudo abrir la sala ${erpId}`);
+}
+
+/** El HTML de una celda, en texto. El listado del origen viene con marcas. */
+const soloTexto = (s: string) => String(s ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
+/**
+ * Los créditos de UNA sala.
+ *
+ * `length` alto y una sola pasada: son ~800 por sala en año y medio, y el
+ * listado del origen pagina del lado del servidor. Pedir de a poco costaría una
+ * vuelta de red por página para armar la misma lista.
+ */
+async function creditosDeLaSala(cookie: string, erpId: number, desde: string, hasta: string) {
+  await abrirSala(cookie, erpId);
+  const url = `${LISTA_URL}?fechai=${desde}&fechaf=${hasta}&draw=1&start=0&length=5000`;
+  const txt = await (await fetch(url, {
+    headers: { Cookie: cookie, "X-Requested-With": "XMLHttpRequest" },
+    signal: AbortSignal.timeout(60_000),
+  })).text();
+  let datos: { data?: unknown[][] };
+  try { datos = JSON.parse(txt); } catch { throw new Error("el listado de créditos no vino en JSON"); }
+
+  return (datos.data ?? []).map((f) => {
+    const total   = Number(f[6]) || 0;
+    const abonado = Number(f[7]) || 0;
+    const saldo   = Number(f[8]) || 0;
+    // El id de la FACTURA sale del enlace «Ver Detalles»; el de la fila es el
+    // del CRÉDITO. Los dos hacen falta y no son el mismo número.
+    const factura = /id_factura=(\d+)/.exec(String(f[10] ?? ""))?.[1] ?? null;
+    return {
+      credito: String(f[0]),
+      fecha: String(f[1]),
+      cliente: soloTexto(String(f[2])),
+      tipo_doc: String(f[3] ?? ""),
+      documento: String(f[4] ?? ""),
+      total, abonado, saldo,
+      estado: soloTexto(String(f[9] ?? "")),
+      factura_erp: factura,
+    };
+  });
+}
+
+Deno.serve(async (req) => {
+  const cors = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  const responder = (b: unknown, s = 200) => json(b, s, cors);
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const accion = String(body.accion ?? "listar");
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const quien = await requireActiveEmployeeUser(req, supabase);
+    if (!quien) return responder({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+
+    /* Mirar los créditos es ver la caja; abonar es MOVERLA. Dos permisos y no
+     * uno: quien revisa la cartera no necesariamente cobra. */
+    const [modulo, capacidad] = accion === "abonar"
+      ? ["caja_vales", "can_edit"]
+      : ["caja_vales", "can_view"];
+    const permiso = await permisoDeModulo(supabase, quien.id, modulo, capacidad as "can_view" | "can_edit");
+    if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
+    if (!permiso.puede) {
+      return responder({ ok: false, error: "No tienes permiso para ver los créditos." }, 403);
+    }
+
+    const mapa = getErpBranchMap().filter((e) => e.erpId !== 6);   // Bodega no vende al crédito
+    const { username, password } = getCortesCreds();
+    const cookie = await getSessionCookie(username, password);
+
+    // ── LISTAR ───────────────────────────────────────────────────────────
+    if (accion === "listar") {
+      const desde = String(body.desde ?? "2025-01-01");
+      const hasta = String(body.hasta ?? new Date().toISOString().slice(0, 10));
+      /* Con alcance de una sala se lee SÓLO la suya. El navegador manda `sala`,
+       * pero quien decide es el permiso: sin esto, cambiar un número en la
+       * petición mostraría la cartera de otra sucursal. */
+      const salas = permiso.alcanceTodo
+        ? (body.sala ? mapa.filter((e) => e.branchId === Number(body.sala)) : mapa)
+        : mapa.filter((e) => e.branchId === Number(permiso.emp?.branch_id));
+      if (!salas.length) return responder({ ok: true, creditos: [] });
+
+      const creditos: unknown[] = [];
+      for (const { branchId, erpId } of salas) {
+        // En serie y no en paralelo: la sucursal vive en la SESIÓN del origen,
+        // así que dos lecturas a la vez se pisarían la sala y devolverían la
+        // cartera equivocada sin dar ningún error.
+        const filas = await creditosDeLaSala(cookie, erpId, desde, hasta);
+        for (const c of filas) creditos.push({ ...c, branch_id: branchId });
+      }
+      return responder({ ok: true, creditos });
+    }
+
+    // ── ABONAR ───────────────────────────────────────────────────────────
+    if (accion === "abonar") {
+      const sala = Number(body.sala);
+      const credito = String(body.credito ?? "").trim();
+      const monto = Number(body.monto);
+      const forma = String(body.forma ?? "Efectivo");
+      const documento = String(body.documento ?? "").trim();
+
+      const entrada = mapa.find((e) => e.branchId === sala);
+      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Solo puedes abonar en tu propia sala." }, 403);
+      }
+      if (!credito) return responder({ ok: false, error: "Falta a qué crédito se abona." }, 400);
+      if (!(Number.isFinite(monto) && monto > 0)) {
+        return responder({ ok: false, error: "Falta el monto." }, 400);
+      }
+      if (!FORMAS.includes(forma)) {
+        return responder({ ok: false, error: "Esa forma de pago no existe." }, 400);
+      }
+
+      /* El saldo se relee del ORIGEN, no se cree el que mandó el navegador.
+       * Entre que la pantalla cargó y alguien aprieta pueden haber abonado en
+       * la caja: sin esto, un abono de más deja el crédito en saldo negativo y
+       * el cliente pagó dos veces. */
+      const filas = await creditosDeLaSala(cookie, entrada.erpId,
+        "2020-01-01", new Date().toISOString().slice(0, 10));
+      const vivo = filas.find((c) => c.credito === credito);
+      if (!vivo) return responder({ ok: false, error: "Ese crédito no existe en esta sala." }, 404);
+      if (monto > vivo.saldo + 0.004) {
+        return responder({
+          ok: false,
+          error: `Ese crédito debe ${vivo.saldo.toFixed(2)}. No se puede abonar más que eso.`,
+          saldo: vivo.saldo,
+        }, 409);
+      }
+
+      /* ⚠️ `id_factura` lleva el ID DEL CRÉDITO. No es un descuido de acá: es
+       * el nombre que usa el formulario del origen, y su propio campo oculto
+       * viaja con el número del crédito. Mandar el de la factura abonaría al
+       * crédito de otra persona sin dar error. La traducción vive en esta
+       * línea y en ninguna otra. */
+      const resp = await (await fetch(ABONO_URL, {
+        method: "POST",
+        headers: {
+          Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: new URLSearchParams({
+          process: "abonar",
+          id_factura: credito,
+          monto: monto.toFixed(2),
+          tipo_doc: forma,
+          num_doc: documento,
+        }).toString(),
+        signal: AbortSignal.timeout(45_000),
+      })).text();
+
+      let datos: Record<string, unknown> = {};
+      try { datos = JSON.parse(resp); } catch { /* se trata como fallo abajo */ }
+      if (String(datos.typeinfo ?? "").toLowerCase() !== "success") {
+        console.error(`[creditos-erp] abonar credito=${credito} sala=${sala}: ${resp.slice(0, 1000)}`);
+        return responder({
+          ok: false,
+          error: "La caja no aceptó el abono. Vuelve a intentarlo; si sigue igual, avisa a Sistemas.",
+        }, 502);
+      }
+
+      /* Quién cobró y a qué hora — que es lo que el origen NO guarda: allá el
+       * abono queda a nombre del usuario de la caja, que es el mismo para toda
+       * la sala. Sin esta fila, «¿quién recibió ese dinero?» no tiene respuesta.
+       *
+       * Va DESPUÉS del abono y su fallo no lo deshace: el dinero ya entró. Se
+       * anota el error y se contesta ok con aviso, que es lo honesto. */
+      const { error: errLog } = await supabase.from("creditos_abonos_portal").insert({
+        branch_id: sala, credito_erp: credito, factura_erp: vivo.factura_erp,
+        cliente: vivo.cliente, monto: Number(monto.toFixed(2)),
+        forma, documento: documento || null,
+        saldo_antes: vivo.saldo, saldo_despues: Number((vivo.saldo - monto).toFixed(2)),
+        abonado_por: quien.id,
+        erp_abono_id: datos.id_abono_credito ? String(datos.id_abono_credito) : null,
+      });
+
+      return responder({
+        ok: true,
+        abono: datos,
+        saldo_despues: Number((vivo.saldo - monto).toFixed(2)),
+        aviso: errLog
+          ? "El abono se hizo, pero no se pudo anotar quién lo recibió. Avísale a Sistemas."
+          : undefined,
+      });
+    }
+
+    return responder({ ok: false, error: "Acción desconocida." }, 400);
+  } catch (e) {
+    console.error("creditos-erp:", e);
+    return responder({ ok: false, error: (e as Error).message ?? "Error" }, 500);
+  }
+});

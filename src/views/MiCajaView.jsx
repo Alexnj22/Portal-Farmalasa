@@ -20,7 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import useResolverCorte from '../hooks/useResolverCorte';
 import {
-    abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, fetchBolsas,
+    abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, cerrarTurno, estadoDeCaja, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     leerBoleta, pedirCorreccion,
@@ -422,7 +422,7 @@ export default function MiCajaView({ comoPestana = false }) {
         setCargando(false);
     }, [sala, puedeVerBolsas, puedeVerCortes]);
 
-    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
+    useEffect(() => { cargar(); }, [cargar]);
 
 
     /* Si el día que la caja tiene abierto no lleva ni un corte, cerrar deja el
@@ -835,9 +835,29 @@ export default function MiCajaView({ comoPestana = false }) {
                             + 'Confírmalo desde Cortes.', 'warning');
                         return;
                     }
-                    if (await resolver(mio, estado, { motivo })) {
-                        setDialogo(null); setResultado(null); cargar();
+                    if (!await resolver(mio, estado, { motivo })) return;
+                    /* Confirmar CIERRA EL TURNO (regla del usuario, 1-sep): «al
+                     * hacer un corte y confirmarlo deben abrir caja de nuevo la
+                     * persona responsable». El corte cuenta lo que hay; cerrar
+                     * el turno es lo que hace que ese conteo sea de alguien —
+                     * sin eso, el tramo siguiente se le sigue cargando a quien
+                     * ya entregó.
+                     *
+                     * Descartar NO cierra: un conteo que no se firmó no termina
+                     * el turno de nadie.
+                     *
+                     * Y esto NO es el cierre del día: el Z es otro acto. */
+                    if (estado === 'CONFIRMADO') {
+                        const c = await cerrarTurno(sala);
+                        if (c?.error) {
+                            showToast('El corte quedó confirmado',
+                                'Pero el turno sigue abierto: ' + mensajeAmigable(c.error), 'warning');
+                        } else {
+                            showToast('Turno cerrado',
+                                'Quien siga vendiendo tiene que abrir la caja con su carné.', 'success');
+                        }
                     }
+                    setDialogo(null); setResultado(null); cargar();
                 }}
                 onClose={() => { setDialogo(null); setResultado(null); }}
                 onCortar={async (efectivo) => {

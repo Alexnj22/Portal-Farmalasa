@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.935.0 — Los créditos de los clientes, en el portal
+
+**Quién debe, desde cuándo, y cobrarle** — sin salir de Efectivo. Antes había
+que entrar sala por sala al sistema de la caja y recorrer una tabla de 800 filas
+para saberlo, así que nadie lo hacía.
+
+Lo que se midió antes de escribir una línea, leyendo las seis salas de verdad:
+**2,386 créditos**, de los cuales **126 con saldo — $4,646.21 entre 43
+clientes**. De esos, **35 pasados del mes de plazo** y el más viejo con **462
+días**. Salud 1 sola tiene 47 con saldo ($688.10) y Salud 3, $3,346.59.
+
+- **Pestaña «Créditos»** en Efectivo. Filtro por *Con saldo* · *Pasados del
+  plazo* · *Todos*, y los más viejos arriba, que es el orden en que alguien
+  recorre la lista para ir a cobrar. Una banda ámbar marca al que se pasó del
+  plazo antes de leer nada.
+- **El plazo es un HALLAZGO, no un candado.** Pasarse del mes no bloquea nada
+  —el portal no decide a quién se le fía— pero se ve y se puede filtrar. Un
+  plazo que nadie mira es un plazo que no existe: el crédito de 462 días lo
+  prueba.
+- **Abonar desde acá**, con las ocho formas de pago que acepta la caja. El
+  efectivo entra al cajón y cuenta para el corte del mismo día, y el papel lo
+  dice.
+- **Quién cobró y a qué hora**, que es justo lo que el origen no guarda: allá el
+  abono queda a nombre del usuario de la caja, que en varias salas es una cuenta
+  compartida. Acá firma quien tiene la sesión, en `creditos_abonos_portal`.
+
+Tres decisiones que evitan un cobro mal hecho:
+
+1. **La lista se lee EN VIVO, sin copia local.** El saldo cambia cada vez que
+   alguien cobra en la caja, y una copia de hace media hora mostraría una deuda
+   ya pagada — o sea, cobrarle dos veces a un cliente.
+2. **El saldo se relee del origen antes de escribir.** Entre que la pantalla
+   cargó y alguien aprieta pueden haber cobrado: sin esto, un abono de más deja
+   el crédito en negativo.
+3. **`id_factura` lleva el ID DEL CRÉDITO, no el de la factura.** Es el nombre
+   que usa el formulario del origen y su propio campo oculto viaja con el número
+   del crédito — medido: el crédito 102 tiene la factura 19228. Mandar el de la
+   factura abonaría al crédito de otra persona **sin dar error**. Acá el
+   parámetro se llama `credito` y la traducción vive en una sola línea.
+
+Y el alcance lo decide el servidor: ver es `caja_vales` · `can_view`, abonar es
+`can_edit`, y con alcance de una sala sólo se lee y se cobra la propia — cambiar
+un número en la petición no muestra la cartera de otra sucursal.
+
+**Además: el corte confirmado cierra el TURNO, no el día.** Son dos actos
+distintos («cerrar caja no significa sacar corte Z, que es el cierre del día»):
+al confirmar un corte se cierra el tramo de esa persona y la siguiente abre el
+suyo; el Z sigue siendo el cierre de la jornada y va aparte.
+
+⚠️ **El abono todavía no se probó contra la caja de verdad** — y no por
+descuido: el sistema de origen **no tiene forma de deshacer un abono**, así que
+una prueba de un centavo quedaría para siempre en el crédito de un cliente real.
+La lectura sí está verificada de punta a punta contra las seis salas.
+
 ## v2.934.0 — Liquidación mensual de bonos
 
 La Fase 5, y la que hacía falta para que las otras cuatro sirvan de algo: **una

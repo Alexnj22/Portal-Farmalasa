@@ -940,13 +940,31 @@ export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta 
  * Si el Z falla NO se cierra: se devuelve el error y el día sigue abierto, que
  * es lo reparable. Cerrar igual sería repetir el defecto a propósito.
  */
+/**
+ * Cerrar el TURNO — no el día.
+ *
+ * Son dos actos distintos y el usuario lo dijo así (1-sep): «cerrar caja no
+ * significa sacar corte Z, que es el cierre del día».
+ *
+ *   cerrar el turno   termina el tramo de UNA persona. La que sigue abre el
+ *                     suyo, y desde ahí el dinero es suyo.
+ *   cerrar el día     emite el Z y termina la jornada.
+ *
+ * Se cierra al CONFIRMAR un corte: «al hacer un corte y confirmarlo deben abrir
+ * caja de nuevo la persona responsable». El corte cuenta lo que hay; cerrar el
+ * turno es lo que hace que ese conteo sea el de alguien.
+ */
+export async function cerrarTurno(sala) {
+    return operar({ accion: 'cerrar', sala });
+}
+
 export async function cerrarElDia(sala) {
     const z = await hacerCorte({ sala, efectivo: 0, tipo: 'Z' });
     if (z?.error) return { error: z.error };
     if (z && z.ok === false) {
         return { error: new Error(z.error || 'No se pudo emitir el corte Z. El día sigue abierto.') };
     }
-    const cierre = await operar({ accion: 'cerrar', sala });
+    const cierre = await cerrarTurno(sala);
     // El número del Z viaja de vuelta: es lo que alguien va a buscar en el
     // sistema de la caja si algo no cuadra al cerrar el mes.
     return cierre?.error ? cierre : { ...cierre, z_corte: z?.id_corte ?? null };

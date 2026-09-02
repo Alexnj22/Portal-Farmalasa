@@ -3,19 +3,10 @@
 // its pause badge, shown inside each expanded pedido card.
 import React from 'react';
 import { Pause } from 'lucide-react';
-import { fmtMin, elapsed } from './helpers';
+import { fmtMin, elapsed, fmtHM } from './helpers';
 import Badge from '../../../components/common/Badge';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '../../../utils/nameUtils';
-
-// `es-SV` devuelve «10:22 a. m.» —con espacio dentro de la abreviatura— y eso
-// son ~62px, más ancho que el nodo que lo contiene. Se junta a «10:22 a.m.».
-function fmtHM(iso) {
-    if (!iso) return '';
-    return new Date(iso)
-        .toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true })
-        .replace(/\s*([ap])\.\s*m\./i, ' $1.m.');
-}
 
 // El ancho de cada paso del carril. Eran 48px y ninguno de los rótulos entraba
 // —«Confirmado» mide ~52px y la hora ~55px—, así que el texto se salía de su

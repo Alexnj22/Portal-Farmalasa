@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Undo2, Check, X, Loader2, Truck, PackageCheck, AlertTriangle, FlaskConical, Image as ImageIcon } from 'lucide-react';
+import { Undo2, Check, X, Loader2, Truck, PackageCheck, AlertTriangle, FlaskConical } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import PortalInput from '../../../components/common/PortalInput';
 import Badge from '../../../components/common/Badge';
 import EmpChip from './EmpChip';
-import { getSignedFileUrl, openStoredFile } from '../../../utils/storageFiles';
+import EvidenciaFotos from '../../../components/common/EvidenciaFotos';
 
 // La devolución de un renglón, pegada a su diferencia.
 //
@@ -25,20 +24,6 @@ export default function DevolucionBloque({
     dev, isBranch, busyAction, empMap = new Map(), readOnly = false,
     onMover, onRecibir, onProbar,
 }) {
-    const [firmadas, setFirmadas] = useState([]);
-
-    // El bucket es privado: la URL guardada es la de formato público —que no
-    // sirve para mirar— y hay que firmarla. Se firma al pintar el bloque y no al
-    // guardar, porque una firma vence y lo que se persiste no puede vencer.
-    useEffect(() => {
-        let vivo = true;
-        const urls = dev?.evidencia_urls ?? [];
-        if (!urls.length) { setFirmadas([]); return undefined; }
-        Promise.all(urls.map(u => getSignedFileUrl(u)))
-            .then(r => { if (vivo) setFirmadas(r.filter(Boolean)); });
-        return () => { vivo = false; };
-    }, [dev?.id, dev?.evidencia_urls]);
-
     // ── Todavía no hay devolución ────────────────────────────────────────────
     // Acá vivía el botón «Devolver a bodega», que era la puerta de entrada. Ya
     // no: devolver es UNA de las dos salidas de la decisión (2026-08-18), y la
@@ -107,21 +92,12 @@ export default function DevolucionBloque({
 
             {dev.nota && <p className="text-caption text-content-2 italic">«{dev.nota}»</p>}
 
-            {/* La foto del daño: lo único que bodega puede mirar para decidir. */}
-            {firmadas.length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
-                    {firmadas.map((u, i) => (
-                        <button key={i} type="button" onClick={() => openStoredFile(dev.evidencia_urls[i])}
-                            aria-label={`Ver la foto ${i + 1} del producto`}
-                            className="w-16 h-16 rounded-lg overflow-hidden border border-border-card bg-surface-card-hover">
-                            <img src={u} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
-                        </button>
-                    ))}
-                    <span className="text-micro text-content-3 flex items-center gap-1">
-                        <ImageIcon size={10} />toca para verla completa
-                    </span>
-                </div>
-            )}
+            {/* La foto del daño: lo único que bodega puede mirar para decidir.
+                `EvidenciaFotos` es el canónico de «lo que ya está subido» —abre
+                la foto en el visor y no en otra pestaña, y dibuja la miniatura
+                que NO se pudo firmar en vez de dejar un hueco. Acá vivía una
+                copia a mano que hacía las dos cosas peor. */}
+            <EvidenciaFotos urls={dev.evidencia_urls} titulo="Foto del producto" />
 
             {dev.aviso && (
                 <p className="text-caption text-warning-text flex items-start gap-1.5">

@@ -21,6 +21,102 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.956.0 — El detalle de una diferencia resuelta se lee como el proceso que fue
+
+Pedido del usuario sobre lo que salió en v2.955.3: *«mejoralo visualmente, que
+se entienda más cómo fue el proceso, más ordenado»*.
+
+Eran tres bloques apilados —las cifras, la decisión, el movimiento— y nada decía
+que fueran **pasos**. Los nombres aparecían cuatro veces sin decir qué hizo cada
+uno, no había **una sola hora** en toda la tarjeta, y el mismo hecho se contaba
+dos veces: «Entró en la sala» arriba y «Pedida por Yamileth» abajo.
+
+Ahora es un carril de pasos, en orden, con quién y cuándo:
+
+```
+CÓMO SE RESOLVIÓ
+● corrigió lo contado          Yamileth   11:43 a.m.
+│ Contado 1 → 3 · venía 1 traslado y 3 físico
+● propuso cómo se arregla      Yamileth   11:45 a.m.
+│ Bodega le pasa la cantidad a la sala
+● estuvo de acuerdo            Josue       1:03 p.m.
+● confirmó la entrada          Josue       1:03 p.m.
+  Entró en la sala — TRA-P150-S5-H1-I92549
+```
+
+No inventa nada: **son los eventos del renglón**, que ya traían el verbo, quién,
+cuándo y la clave del traslado, y ya estaban guardados. Y usa el MISMO
+`EVENTO_LABEL` que la actividad del pie: dos listas de rótulos para los mismos
+hechos es cómo se desincronizan.
+
+Cuatro decisiones que salieron de medir, no de mirar:
+
+- **La salida acordada se dice cuando CAMBIA**, no en cada paso. Viaja pegada a
+  todos los eventos desde que alguien la propone, así que decirla siempre la
+  repetía tres veces. Con este corte, una contrapropuesta muestra justo lo que
+  hay que ver: que el segundo turno eligió la otra.
+- **La hora va en su propia columna.** Con `flex-wrap` y `ms-auto`, en un
+  teléfono de 390 el paso más largo la empujaba a un renglón propio, alineada a
+  la derecha y sola. Medido en 390 y 620, en tema claro y oscuro.
+- **El hilo entre puntos es visible.** A 1 px con `--divider` no se veía, y sin
+  él la lista deja de leerse como una secuencia, que es lo único que este bloque
+  tiene que decir.
+- **La «Actividad» del pie desaparece cuando sería un duplicado exacto**: con
+  una sola diferencia eran los mismos cuatro renglones bajo un segundo título.
+  Con dos o más sigue estando, porque ahí la cronología cruzada no repite,
+  entrelaza.
+
+**Tres rótulos faltaban y salían CRUDOS a la pantalla**: la actividad imprimía
+`traslado_recibido` tal cual, que además nombra la tubería y no el negocio.
+También faltaban `extra_anotado` y `extra_quitado`. Un rótulo que falta no da
+error: imprime la clave interna y parece un dato.
+
+Una diferencia cerrada **antes** de que existiera la bitácora del renglón no
+tiene eventos: ésa se sigue mostrando como antes, para no perder lo único que se
+sabe de ella.
+
+Y de paso, dos canónicos. `fmtHM` se mudó a `helpers` —la usan dos carriles, y
+dos copias del mismo formato pueden verse distintas en la misma tarjeta— y el
+bloque de movimiento pasó a **`EvidenciaFotos`**, el canónico de «lo que ya está
+subido». Tenía una copia a mano que abría la foto en otra pestaña y dejaba un
+hueco cuando la firma fallaba; el canónico la abre en el visor y dibuja la
+miniatura que no se pudo firmar.
+
+## v2.956.1 — Un corte sin conteo se descarta y no traba a los demás
+
+Salud 4, 2-sep 13:09. El corte salió del sistema de la caja con el efectivo en
+**$0.00** sobre una caja que esperaba $319.10, y ese sistema **lo dio por
+exacto**: el comprobante dice `EFECTIVO $: 0.00 · EXACTO FELICIDADES`, y lo
+publica con total 0.00 y diferencia 0.00.
+
+v2.953.1 ya había hecho la mitad correcta —el portal dejó de anunciar un
+faltante inventado de $319.10 con el botón de cobrárselo a alguien al lado—,
+pero el mismo criterio apagó también los **botones**. La pantalla quedó
+diciendo «lo que corresponde es descartarlo» con el pie vacío, y como los cortes
+del día se suman, **el de las 15:02 tampoco se podía confirmar**: «Antes hay que
+resolver el corte de las 13:09», sobre uno que no se podía resolver por ningún
+lado. La sala se quedó sin poder cerrar el día. Dos frenos correctos que juntos
+no dejaban puerta.
+
+- **Ahora tiene salida.** Un corte sin conteo ofrece **Descartar** —su único
+  motivo posible, sin lista que elegir— y **no ofrece Confirmar**: no hay conteo
+  que dar por bueno. Lo rechaza también `resolver_corte_caja`, que es donde
+  manda.
+- **No traba a los que vienen después.** Queda fuera de la guarda de orden, con
+  el mismo criterio que ya usaba el portal para el tramo: no midió nada, así que
+  no puede desplazar la referencia de nadie.
+- **La tarjeta ya no dice `$0.00`.** Sobre un tramo nulo esa cifra se lee
+  «cuadró exacto», que es justo el número falso que el detalle se había quitado.
+  Dice **sin conteo**, con su etiqueta.
+- **El portal no puede volver a crear uno.** `hacer-corte-caja` rechaza un corte
+  de $0.00 cuando la caja espera dinero — el freno va ahí porque es lo último
+  antes de un documento que el origen no anula.
+- **El aviso pide la acción que existe**: «salió sin contar el efectivo, hay que
+  descartarlo y volver a hacer el corte», y no «confirmalo».
+- El gemelo del criterio vive en la base (`corte_no_conto_efectivo`) y se
+  enfrentó al de JavaScript sobre 13 casos: **iguales, 0 distintas**. Y sobre
+  los 501 cortes tipo C capturados marca **uno**, que es éste.
+
 ## v2.955.3 — Las diferencias resueltas se pueden ver
 
 Pedido del usuario: *«¿cómo veo las diferencias resueltas? por trazabilidad,

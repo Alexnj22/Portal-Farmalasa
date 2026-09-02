@@ -27,6 +27,33 @@ export function fmtEntrega(iso) {
     return d.toLocaleDateString('es-SV', { weekday: 'short', day: 'numeric', month: 'short' }) + ` ${time}`;
 }
 
+// La hora de un momento. `es-SV` devuelve «10:22 a. m.» —con espacio dentro de
+// la abreviatura— y eso son ~62px; se junta a «10:22 a.m.».
+//
+// Vivía dentro de `LifecycleTimeline`. Se mudó acá cuando el carril de pasos de
+// una diferencia necesitó la misma hora: dos copias del mismo formato son dos
+// horas que pueden verse distintas en la misma tarjeta.
+export function fmtHM(iso) {
+    if (!iso) return '';
+    return new Date(iso)
+        .toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true })
+        .replace(/\s*([ap])\.\s*m\./i, ' $1.m.');
+}
+
+// Cuándo pasó algo, para leerlo dentro de una secuencia.
+//
+// La hora sola alcanza mientras todo pasó hoy —que es el caso normal de un
+// pedido— y el día se agrega sólo cuando NO fue hoy. Sin eso, un pedido de la
+// semana pasada muestra cuatro horas sueltas y parece de esta mañana.
+export function fmtMomento(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const hoy = new Date();
+    if (d.toDateString() === hoy.toDateString()) return fmtHM(iso);
+    return `${d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' })} · ${fmtHM(iso)}`;
+}
+
 export function fmtRelative(iso) {
     if (!iso) return '—';
     const min = elapsed(iso);

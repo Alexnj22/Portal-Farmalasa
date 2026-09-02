@@ -3,10 +3,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight, Clock } from 'lucide-react';
-import { calcSolicitado, fmtRelative } from './helpers';
+import { calcSolicitado, fmtRelative, fmtMomento } from './helpers';
 import Badge from '../../../components/common/Badge';
 import PortalInput from '../../../components/common/PortalInput';
 import DevolucionBloque from './DevolucionBloque';
+import EvidenciaFotos from '../../../components/common/EvidenciaFotos';
 import EmpChip from './EmpChip';
 import DecisionDiferencia from './DecisionDiferencia';
 import { fetchOpcionesDiferencia, opcionElegida } from '../../../data/diferencias';
@@ -57,6 +58,13 @@ const EVENTO_LABEL = {
     devolucion_rechazada:    'no aceptó la devolución',
     devolucion_recibida:     'recibió la devolución en bodega',
     correccion_conteo:       'corrigió lo contado',
+    // Los tres de abajo faltaban y salían CRUDOS a la pantalla: la actividad
+    // del pedido #150 mostraba «traslado_recibido» tal cual, que además nombra
+    // la tubería y no el negocio. Un rótulo que falta no da error: imprime la
+    // clave interna y parece un dato.
+    traslado_recibido:       'confirmó la entrada del producto',
+    extra_anotado:           'anotó un producto que llegó de más',
+    extra_quitado:           'quitó lo que había anotado de más',
 };
 
 const DIF_MAX = 3;
@@ -118,6 +126,17 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
     const esperando = difItems.filter(r => clasificar(r) === 'esperando');
     const resueltas = difItems.filter(r => r.resolucion_status === 'confirmada');
     const allConfirmed = difItems.length > 0 && resueltas.length === difItems.length;
+
+    // La bitácora de abajo, sólo si dice algo que los carriles no.
+    //
+    // Cada diferencia cerrada cuenta sus pasos adentro de su propio renglón, con
+    // el mismo vocabulario y en el mismo orden. Con una sola diferencia, la
+    // «Actividad» del pie eran los MISMOS cuatro renglones bajo un segundo
+    // título — que es justo lo que hace que una pantalla se lea desordenada.
+    // Con dos o más sigue apareciendo: ahí la cronología cruzada no es una
+    // repetición, es la única vista que las entrelaza.
+    const idsConCarril = new Set(resueltas.map(r => r.id));
+    const eventosFueraDeUnCarril = eventos.filter(e => !idsConCarril.has(e.pedido_item_id));
     const visibleItems = showAll ? mias : mias.slice(0, DIF_MAX);
     const hiddenCount  = mias.length - DIF_MAX;
 
@@ -238,7 +257,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                             abierta={verResuelta === item.id}
                             onToggle={() => setVerResuelta(v => (v === item.id ? null : item.id))}
                             derecha={<EsperandoA item={item} catalogo={catalogo} isBranch={isBranch} />}
-                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null}
+                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null} eventos={eventos}
                             isBranch={isBranch} esSupervision={esSupervision}
                             onDecidirDiferencia={onDecidirDiferencia}
                             onConfirmarLlegada={onConfirmarLlegada}
@@ -280,7 +299,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                             onToggle={() => setVerResuelta(v => (v === item.id ? null : item.id))}
                             derecha={<EmpChip emp={item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por) : null}
                                               size="xs" tono="success-text" />}
-                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null}
+                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null} eventos={eventos}
                             isBranch={isBranch} esSupervision={esSupervision} readOnly />
                     ))}
                 </div>
@@ -339,7 +358,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 Se consulta cuando algo no cuadra, no cada vez que se abre el
                 pedido: va al final y cerrado, con el chevron que dice que
                 pliega (§5.3). */}
-            {eventos.length > 0 && (
+            {eventosFueraDeUnCarril.length > 0 && (
                 <div className="pt-1">
                     <button type="button" onClick={() => setVerActividad(v => !v)}
                         aria-expanded={verActividad}
@@ -382,10 +401,20 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
 // El chevron y no el ojo: acá se PLIEGA un grupo, y el ojo prometería «hay más
 // para ver» (§5.3).
 function FilaCompacta({
-    item, tono, Icono, abierta, onToggle, derecha, catalogo, empMap, dev,
+    item, tono, Icono, abierta, onToggle, derecha, catalogo, empMap, dev, eventos = [],
     isBranch, esSupervision, readOnly = false,
     onDecidirDiferencia, onConfirmarLlegada, onMoverDevolucion, onRecibirDevolucion, onProbarDevolucion,
 }) {
+    // Cerrada = ya no hay nada que decidir, así que lo que queda es CONTAR qué
+    // pasó. `DecisionDiferencia` y `DevolucionBloque` existen para actuar y
+    // sobre una cerrada repetían el mismo hecho desde dos lados.
+    //
+    // Pero sólo si hay pasos que contar: una diferencia vieja, cerrada antes de
+    // que existiera la bitácora del renglón, no tiene ni un evento. Ahí el
+    // carril quedaría vacío y se perdería lo único que se sabe de ella —la
+    // salida acordada y quién la cerró—, así que se muestra como antes.
+    const hayPasos = eventos.some(e => e.pedido_item_id === item.id);
+    const cerrada  = item.resolucion_status === 'confirmada' && hayPasos;
     const et = ERROR_TIPO_LABEL[item.error_tipo];
     const hover = tono === 'success' ? 'hover:bg-success/5' : 'hover:bg-warning/5';
     const tinta = tono === 'success' ? 'text-success' : 'text-warning';
@@ -406,12 +435,19 @@ function FilaCompacta({
             {abierta && (
                 <div className="px-3 pb-2.5 space-y-2">
                     <Cifras item={item} />
-                    <DecisionDiferencia item={item} catalogo={catalogo} esSala={isBranch}
-                        esSupervision={esSupervision} empMap={empMap} readOnly={readOnly}
-                        onDecidir={onDecidirDiferencia} onConfirmarLlegada={onConfirmarLlegada} />
-                    <DevolucionBloque dev={dev} isBranch={isBranch} empMap={empMap} readOnly={readOnly}
-                        onMover={onMoverDevolucion} onRecibir={onRecibirDevolucion}
-                        onProbar={onProbarDevolucion} />
+                    {cerrada ? (
+                        <ProcesoDeLaDiferencia item={item} eventos={eventos}
+                            empMap={empMap} catalogo={catalogo} dev={dev} />
+                    ) : (
+                        <>
+                            <DecisionDiferencia item={item} catalogo={catalogo} esSala={isBranch}
+                                esSupervision={esSupervision} empMap={empMap} readOnly={readOnly}
+                                onDecidir={onDecidirDiferencia} onConfirmarLlegada={onConfirmarLlegada} />
+                            <DevolucionBloque dev={dev} isBranch={isBranch} empMap={empMap} readOnly={readOnly}
+                                onMover={onMoverDevolucion} onRecibir={onRecibirDevolucion}
+                                onProbar={onProbarDevolucion} />
+                        </>
+                    )}
                 </div>
             )}
         </div>
@@ -444,6 +480,108 @@ function Cifra({ rotulo, valor, tono = 'text-content' }) {
         <div>
             <p className="text-micro font-black text-content-3 uppercase tracking-widest leading-none">{rotulo}</p>
             <p className={`text-body-xl font-black tabular-nums leading-tight ${tono}`}>{valor ?? '—'}</p>
+        </div>
+    );
+}
+
+/**
+ * Cómo se resolvió una diferencia, leído como lo que es: una secuencia.
+ *
+ * Antes eran tres bloques apilados —las cifras, la decisión, el movimiento— sin
+ * nada que dijera que son PASOS. Los nombres aparecían cuatro veces sin decir
+ * qué hizo cada uno, no había una sola hora, y el mismo hecho se contaba dos
+ * veces («Entró en la sala» arriba y «Pedida por» abajo). Reportado el
+ * 2026-09-02: «que se entienda más cómo fue el proceso, más ordenado».
+ *
+ * No inventa nada: son los eventos del renglón, que ya traen el verbo, quién y
+ * cuándo, en orden. Y el vocabulario es el MISMO `EVENTO_LABEL` de la actividad
+ * de abajo — dos listas de rótulos para los mismos hechos es cómo se
+ * desincronizan.
+ *
+ * El hilo se dibuja por tramo, de un punto al siguiente, y no como una línea
+ * detrás de todos: así el punto no necesita un aro del color del fondo para
+ * taparla, y el fondo de esta tarjeta cambia con el tono.
+ */
+function ProcesoDeLaDiferencia({ item, eventos = [], empMap, catalogo, dev }) {
+    const pasos = useMemo(() => eventos
+        .filter(e => e.pedido_item_id === item.id)
+        .slice()
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
+    [eventos, item.id]);
+
+    if (!pasos.length) return null;
+
+    return (
+        <div className="border-t border-divider pt-2.5">
+            <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-2">
+                Cómo se resolvió
+            </p>
+            <ol className="space-y-2">
+                {pasos.map((ev, i) => {
+                    const ultimo  = i === pasos.length - 1;
+                    const emp     = ev.hecho_por ? empMap.get(ev.hecho_por) : null;
+                    // La salida acordada viaja pegada a TODOS los eventos desde
+                    // que alguien la propone, así que decirla en cada paso la
+                    // repetía tres veces. Se dice cuando CAMBIA — que además es
+                    // justo lo que hay que ver en una contrapropuesta, donde el
+                    // segundo turno elige la otra.
+                    const previa  = i > 0 ? pasos[i - 1].resolucion_tipo : null;
+                    const salida  = (ev.resolucion_tipo && ev.resolucion_tipo !== previa)
+                        ? (opcionElegida(catalogo, item.error_tipo, ev.resolucion_tipo)?.rotulo
+                            ?? RESOLUCION_LABEL[ev.resolucion_tipo] ?? ev.resolucion_tipo)
+                        : null;
+                    return (
+                        // Dos columnas y no un `flex-wrap` con `ms-auto`: en un
+                        // teléfono de 390 el paso más largo empujaba la hora a un
+                        // renglón propio, alineada a la derecha y sola. Con la
+                        // hora en su columna, el verbo envuelve y la hora se
+                        // queda arriba a la derecha, que es donde se la busca.
+                        <li key={ev.id}
+                            className="relative ps-5 grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 items-baseline">
+                            <span aria-hidden
+                                className={`absolute left-0 top-[5px] w-2 h-2 rounded-full ${
+                                    ultimo ? 'bg-success' : 'bg-content-3'}`} />
+                            {/* El hilo va de este punto al siguiente. `--divider`
+                                a 1px es casi invisible sobre la tarjeta teñida y
+                                sin él la lista deja de leerse como una secuencia,
+                                que es lo único que este bloque tiene que decir. */}
+                            {!ultimo && (
+                                <span aria-hidden
+                                    className="absolute left-[3.5px] top-[15px] -bottom-2 w-px bg-content-3/40" />
+                            )}
+                            <span className="text-label font-semibold text-content-2 min-w-0">
+                                {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
+                                {emp && <span className="ms-1.5"><EmpChip emp={emp} size="xs" /></span>}
+                            </span>
+                            <span className="text-micro text-content-3 tabular-nums whitespace-nowrap">
+                                {fmtMomento(ev.created_at)}
+                            </span>
+                            {(salida || ev.nota) && (
+                                <div className="col-span-2">
+                                    {salida && (
+                                        <p className="text-caption text-content-2 leading-snug">{salida}</p>
+                                    )}
+                                    {ev.nota && (
+                                        <p className="text-caption text-content-3 leading-snug">{ev.nota}</p>
+                                    )}
+                                </div>
+                            )}
+                        </li>
+                    );
+                })}
+            </ol>
+
+            {/* Lo que el carril no puede contar: la foto del daño y el aviso de
+                un movimiento que salió mal. El resto del bloque de movimiento
+                —el rótulo, quién lo pidió— ya está arriba, paso por paso. */}
+            <div className="mt-2 space-y-2 empty:mt-0">
+                <EvidenciaFotos urls={dev?.evidencia_urls} titulo="Foto del producto" />
+                {dev?.error_msg && (
+                    <p className="text-caption text-danger flex items-start gap-1.5">
+                        <AlertTriangle size={11} className="shrink-0 mt-0.5" />{dev.error_msg}
+                    </p>
+                )}
+            </div>
         </div>
     );
 }

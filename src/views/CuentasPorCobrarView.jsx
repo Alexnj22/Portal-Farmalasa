@@ -11,6 +11,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import Notice from '../components/common/Notice';
 import PortalInput from '../components/common/PortalInput';
 import TablePagination from '../components/common/TablePagination';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -117,6 +118,7 @@ export default function CuentasPorCobrarView() {
 
     const nombreDeSala = useMemo(() => new Map(branches.map((b) => [b.id, b.name])), [branches]);
 
+
     /* Sale del ESPEJO del portal, que un cron refresca cada hora. Antes se leía
      * en vivo del sistema de la caja y abrir la pantalla costaba seis
      * peticiones EN SERIE —la sucursal vive en su sesión, no se pueden hacer a
@@ -158,7 +160,13 @@ export default function CuentasPorCobrarView() {
     // que alguien recorre la lista con el teléfono en la mano.
     }).sort((a, b) => (b.dias ?? 0) - (a.dias ?? 0)), [conEdad, ver, busqueda, nombreDeSala]);
 
-    const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
+    /* 50 y no 25: con 25 la sala más cargada (47 con saldo) quedaba partida en
+     * dos páginas y la última fila de la primera mostraba UNA tarjeta con dos
+     * huecos al lado. Los tamaños son los del portal —25/50/100— así que el
+     * default es lo único que se puede elegir acá. */
+    const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({
+        total: filtrados.length, tamPorDefecto: 50,
+    });
     const pagina = filtrados.slice((page - 1) * pageSize, page * pageSize);
 
     const totalDebido = useMemo(
@@ -295,8 +303,13 @@ export default function CuentasPorCobrarView() {
                                        especificidad sola y el estado se lee en el
                                        marcado. Una franja además obligaba a
                                        `overflow-hidden`, que recorta el foco. */
+                                    /* Sin `data-tono`: el aro de color decía lo
+                                       mismo que la insignia de días y el usuario
+                                       lo pidió fuera —«con el badge se
+                                       entiende»—. Dos señales para un solo dato
+                                       es ruido, y con 25 tarjetas en pantalla el
+                                       aro ámbar se comía la jerarquía. */
                                     data-surface="card"
-                                    data-tono={c.vencido ? 'warning' : c.saldo <= 0.004 ? 'success' : undefined}
                                     data-interactive
                                     role="button" tabIndex={0}
                                     onClick={() => setViendo(c)}
@@ -336,8 +349,16 @@ export default function CuentasPorCobrarView() {
                                     </span>
 
                                     {c.vendedor?.name && (
-                                        <span className="flex items-center gap-1 text-micro text-content-3 min-w-0">
-                                            <UserCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                        <span className="flex items-center gap-1.5 text-micro text-content-3 min-w-0">
+                                            {/* `AvatarConEstado` y no `LiquidAvatar` a secas: es
+                                                el canónico (DESIGN.md §5.4) y resuelve la ficha
+                                                por id contra el store, así que la foto —ya
+                                                firmada en el arranque— y el aro de vacaciones o
+                                                incapacidad salen sin que esta vista sepa nada.
+                                                Sin chip: a 20 px no cabe, y acá lo que importa
+                                                es la cara. */}
+                                            <AvatarConEstado emp={{ id: c.vendedor_id, name: c.vendedor.name }}
+                                                px={20} mostrarChip={false} radio="rounded-full" />
                                             <span className="truncate">Le vendió {c.vendedor.name}</span>
                                         </span>
                                     )}
@@ -452,7 +473,6 @@ function FichaDelCredito({ credito, onClose, onAbonar }) {
 
                         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
                             {[['Fecha de compra', fechaCorta(c?.fecha || credito.fecha)],
-                              ['Le vendió', c?.vendedor || 'sin registrar'],
                               ['Último abono', c?.ultimo_abono_el
                                   ? fechaCorta(c.ultimo_abono_el)
                                   : 'ninguno desde el portal'],
@@ -462,6 +482,21 @@ function FichaDelCredito({ credito, onClose, onAbonar }) {
                                     <dd className="text-content font-medium text-right truncate">{v}</dd>
                                 </div>
                             ))}
+                            {/* «Le vendió» va aparte de la lista de arriba porque
+                                lleva CARA: en una fila de texto la foto obligaría
+                                a alinear por la línea de base y quedaría cortada. */}
+                            <div className="flex items-center justify-between gap-3 min-w-0">
+                                <dt className="text-content-3 shrink-0">Le vendió</dt>
+                                <dd className="flex items-center gap-2 min-w-0">
+                                    {c?.vendedor && (
+                                        <AvatarConEstado emp={{ id: c.vendedor_id, name: c.vendedor }}
+                                            px={26} mostrarChip={false} radio="rounded-full" />
+                                    )}
+                                    <span className="text-content font-medium truncate">
+                                        {c?.vendedor || 'sin registrar'}
+                                    </span>
+                                </dd>
+                            </div>
                         </dl>
 
                         <section className="space-y-2">

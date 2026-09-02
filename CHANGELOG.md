@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.939.2 — La cara de quien vendió, y la lista sin partir
+
+Tres correcciones del usuario sobre Cuentas por cobrar.
+
+**La foto de quien vendió**, en la tarjeta y en la ficha. Con `AvatarConEstado`,
+que es el canónico: resuelve la ficha por id contra el store, así que la foto
+—ya firmada en el arranque— y el aro de vacaciones o incapacidad salen sin que
+esta vista sepa nada de eso. Sin chip a 20 px, que no cabe.
+
+**El aro de color salió.** *«Quita el aro de color, con el badge se entiende»* —
+y es cierto: el tono decía lo mismo que la insignia de días, y con 25 tarjetas
+en pantalla el ámbar se comía la jerarquía. Dos señales para un solo dato es
+ruido.
+
+**La lista ya no se parte.** *«¿Por qué si hay más, no se llenan esos
+espacios?»*: con 25 por página, la sala más cargada —47 créditos con saldo—
+quedaba en dos páginas y la última fila de la primera mostraba **una tarjeta con
+dos huecos al lado**. Ahora la página abre en 50: la sala entra completa. Los
+tamaños son los del portal (25/50/100), así que lo único elegible acá era el
+default.
+
 ## v2.939.1 — el CSV de Mín·Máx leía 24 veces lo que existe
 
 Los dos gates que quedaron en rojo al cerrar la v2.938.8, mirados. **Uno era un

@@ -1455,6 +1455,25 @@ export default function CircuitoDeBolsas({
         [diasQueNoCuadran],
     );
 
+    /* Y el SIGNO del descuadre, que hasta el 2026-09-02 se tiraba con un
+     * `Math.abs` y el aviso decía «faltan» siempre.
+     *
+     * No era teórico: ese día la corrección de una bolsa dejó el descuadre en
+     * +$119.38 —o sea que las bolsas guardaban MÁS de lo que declaró el corte— y
+     * la pantalla anunció «faltan $119.38». Un aviso que dice lo contrario de lo
+     * que pasa manda a buscar dinero que está, y de paso esconde el caso que sí
+     * hay que mirar: guardar de más es que algo se contó dos veces.
+     *
+     * Son TRES frases y no dos porque el conjunto puede ser mixto, y ahí ninguna
+     * de las dos sirve: se nombra el hecho —no cuadran— y el detalle de cada día
+     * lo dice renglón por renglón. */
+    const deMenos = useMemo(
+        () => diasQueNoCuadran.filter((d) => Number(d.descuadre) < 0),
+        [diasQueNoCuadran],
+    );
+    const soloDeMas   = diasQueNoCuadran.length > 0 && deMenos.length === 0;
+    const soloDeMenos = diasQueNoCuadran.length > 0 && deMenos.length === diasQueNoCuadran.length;
+
     // Las que además quedaron fuera del rango: el aviso no puede decir «están
     // abajo, en Contadas» sobre una bolsa que el período no dibuja.
     /* Las que ya se contaron y esperan el cierre, y las que faltan. El botón de
@@ -2086,17 +2105,27 @@ export default function CircuitoDeBolsas({
                             ? (diasQueNoCuadran.length === 1
                                 ? 'Un día cerró sin guardar nada del efectivo que declaró el corte'
                                 : `${diasQueNoCuadran.length} días cerraron sin guardar nada del efectivo que declaró el corte`)
-                            : (diasQueNoCuadran.length === 1
-                                ? 'Un día cerró con menos efectivo guardado del que declaró el corte'
-                                : `${diasQueNoCuadran.length} días cerraron con menos efectivo guardado del que declaró el corte`)}
+                            : soloDeMas
+                                ? (diasQueNoCuadran.length === 1
+                                    ? 'Un día cerró con más efectivo guardado del que declaró el corte'
+                                    : `${diasQueNoCuadran.length} días cerraron con más efectivo guardado del que declaró el corte`)
+                                : soloDeMenos
+                                    ? (diasQueNoCuadran.length === 1
+                                        ? 'Un día cerró con menos efectivo guardado del que declaró el corte'
+                                        : `${diasQueNoCuadran.length} días cerraron con menos efectivo guardado del que declaró el corte`)
+                                    : `${diasQueNoCuadran.length} días no cuadran entre lo que declaró el corte y lo que se guardó`}
                     </span>
                     <span className="block mt-1 font-normal text-content-2">
                         {ningunaBolsa
                             ? `Esos días el corte se confirmó y no se abrió ninguna bolsa, así que ese
                                efectivo nunca entró al circuito. Hay que averiguar qué se hizo con ese
                                dinero en la sala antes de darlo por guardado.`
-                            : `El corte de esos días cuadró y las bolsas también: lo que no cuadra es
-                               cuánto llegó a guardarse. Hay que revisar la caja de esa sala.`}
+                            : soloDeMas
+                                ? `El corte de esos días cuadró y las bolsas también: lo que no cuadra es
+                                   que se guardó de más. Suele ser un mismo efectivo contado dos veces,
+                                   así que hay que revisar las bolsas de esa sala antes de que salgan.`
+                                : `El corte de esos días cuadró y las bolsas también: lo que no cuadra es
+                                   cuánto llegó a guardarse. Hay que revisar la caja de esa sala.`}
                     </span>
                     <span className="block mt-2.5 border-t border-danger/20 pt-2 space-y-1">
                         {diasQueNoCuadran.map((d) => {
@@ -2111,7 +2140,7 @@ export default function CircuitoDeBolsas({
                                         {verMontos
                                             ? (sinBolsa
                                                 ? `${formatMoney(d.declarado)} sin guardar · ninguna bolsa`
-                                                : `faltan ${formatMoney(Math.abs(Number(d.descuadre)))} de ${formatMoney(d.declarado)} · ${d.bolsas} ${Number(d.bolsas) === 1 ? 'bolsa' : 'bolsas'}`)
+                                                : `${Number(d.descuadre) > 0 ? 'sobran' : 'faltan'} ${formatMoney(Math.abs(Number(d.descuadre)))} de ${formatMoney(d.declarado)} · ${d.bolsas} ${Number(d.bolsas) === 1 ? 'bolsa' : 'bolsas'}`)
                                             : (sinBolsa
                                                 ? 'ninguna bolsa'
                                                 : `${d.bolsas} ${Number(d.bolsas) === 1 ? 'bolsa' : 'bolsas'} guardadas`)}

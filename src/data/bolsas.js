@@ -75,12 +75,32 @@ export async function fetchCortesPorEmbolsar({ desde, hasta }) {
 
 /**
  * El invariante del circuito, sala por sala y día por día:
- * **Σ bolsas del día == declarado del último corte confirmado**.
+ * **Σ etiquetas del día + vales que salieron ANTES == declarado del último corte
+ * confirmado**.
  *
  * Detecta el caso peor —efectivo contado que nunca se guardó— y es lo único que
  * lo detecta: un corte que cuadra no dice nada sobre si el dinero llegó a una
  * bolsa. Estaba escrito en el plan como algo que «sale gratis» y no existía en
  * ninguna pantalla.
+ *
+ * ⚠️ **Hasta el 2026-09-02 esa suma no podía fallar.** Sumaba `monto_inicial` a
+ * secas, y la bolsa nueva nacía como `declarado − suma de las etiquetas del día`:
+ * después de insertarla la suma daba el declarado POR CONSTRUCCIÓN. Medido sobre
+ * los 54 días-sala del circuito, los 54 daban la igualdad exacta al centavo. O
+ * sea que el control comparaba un número contra sí mismo, y sólo veía dos cosas
+ * — días sin ninguna bolsa, y bolsas anuladas.
+ *
+ * Los vales son lo que rompe la identidad: a una bolsa se le puede SACAR dinero,
+ * y entonces lo que tiene adentro ya no es lo que dice su etiqueta. «Antes» es
+ * antes de que se creara la última bolsa del día — el estado exacto que vio
+ * `bolsa_sugerida` al calcularla, para que las dos mitades midan con la misma
+ * vara. Y así queda fijo en el tiempo: los vales que salen DESPUÉS bajan el saldo
+ * de hoy pero no mueven el invariante, que es lo que impide que un día viejo se
+ * ponga rojo solo a medida que su dinero va saliendo.
+ *
+ * El `descuadre` viene CON SIGNO y hay que respetarlo: negativo es que se guardó
+ * de menos, positivo que se guardó de más —un mismo efectivo contado dos veces—,
+ * y son dos problemas distintos. La pantalla lo dijo al revés hasta ese día.
  *
  * El servidor devuelve TAMBIÉN los días que cuadran, a propósito: una lista que
  * sólo trae problemas no se distingue de una que no se cargó — ver

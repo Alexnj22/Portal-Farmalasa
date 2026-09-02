@@ -156,6 +156,41 @@ export function abonarCredito({
 }
 
 /**
+ * Pagar: UN documento que cubre uno o varios créditos del mismo cliente.
+ *
+ * Reemplaza a `abonarCredito` para todo lo nuevo. La diferencia no es de forma:
+ * un pago es el documento —un monto, una referencia, una vez— y los abonos
+ * dicen cuánto de él se aplicó a cada crédito. Sin esa separación, una
+ * transferencia que paga tres créditos se anexaría tres veces y la suma de los
+ * abonos daría el triple de lo que el banco movió.
+ *
+ * Medido el 2-sep: **24 de los 43 clientes con saldo tienen más de un crédito**,
+ * y uno tiene once. No es un caso raro.
+ *
+ * Puede devolver 207: entraron algunos y otros no. El sistema de la caja recibe
+ * un abono por llamada y no hay forma de hacerlo atómico, así que lo que entró
+ * queda registrado y `aviso` dice qué faltó.
+ */
+export function pagarCreditos({
+    sala, forma = 'Efectivo', documento = '', montoDocumento, aplicaciones,
+    comprobanteUrl = null, lectura = null, fechaDocumento = null, pos = null,
+}) {
+    return pedir({
+        accion: 'pagar', sala, forma, documento, montoDocumento, aplicaciones,
+        comprobanteUrl, lectura, fechaDocumento, pos,
+    });
+}
+
+/** Los otros créditos con saldo del MISMO cliente en esa sala. Por ficha y no
+ *  por nombre: el nombre sale de cómo se escribió la factura, y repartir un
+ *  pago por nombre le abonaría a otra persona. */
+export async function fetchCreditosDelCliente(creditoId) {
+    const { data, error } = await supabase.rpc('creditos_del_cliente', { p_credito_id: Number(creditoId) });
+    if (error) { console.error('creditos: creditos_del_cliente failed:', error.message); return []; }
+    return data || [];
+}
+
+/**
  * Lee el comprobante de un pago que NO es efectivo y devuelve lo que dice.
  *
  * El orden es al revés que en la salida de una bolsa: allá la persona escribe y

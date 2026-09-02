@@ -21,6 +21,69 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.942.0 — Un pago que cubre varios créditos, con su comprobante
+
+Pregunta del usuario: *«¿qué pasa si hace una sola transferencia para pagar 3
+créditos? ¿cómo se anexan?»*. Hasta acá no pasaba nada bueno — y no era un caso
+raro:
+
+> **24 de los 43 clientes con saldo tienen más de un crédito** (103 de los 124),
+> y uno tiene **once**.
+
+Con el modelo viejo, el mismo comprobante se habría anexado tres veces —tres
+veces $50 en la bitácora para $50 que entraron— y el lector habría **rechazado
+dos de los tres**, porque comparaba el monto del papel contra el saldo de UN
+crédito.
+
+### Ahora el pago y el abono son dos cosas
+
+**El pago** es el documento: un monto, una referencia, **una vez** — es lo que
+aparece en el estado de cuenta del banco. **Los abonos** dicen cuánto de él fue
+a cada crédito. Sin esa separación, cuadrar el banco contra el portal era
+imposible.
+
+El diálogo de cobro lista todos los créditos con saldo de ese cliente en la
+sala, propone el reparto **del más viejo al más nuevo** y deja corregir renglón
+por renglón. La suma tiene que dar **exacto**: aceptar menos dejaría una
+diferencia sin dueño — el banco movió $50 y el portal explicaría $45.
+
+Y **el mismo comprobante no se puede usar dos veces**. Lo garantiza un índice
+único sobre la referencia, y se comprueba antes de tocar el sistema de la caja:
+sin eso, nada impedía anexar el mismo papel al día siguiente para otro cliente.
+
+### El papel va primero
+
+Para transferencia, cheque y tarjeta, **la foto se anexa antes de escribir
+nada** y de ahí salen el monto, la fecha y el número — editables. El orden es lo
+contrario de la salida de una bolsa, y a propósito: allá el monto lo decide
+quien saca el dinero; acá lo decide el papel que el cliente trajo, y pedir que
+se escriba primero es invitar a escribir lo que se esperaba.
+
+El lector tiene un prompt por documento y **frena** cuando la foto no es un
+comprobante, no se lee, el voucher salió **declinado**, o el pago **no está a
+nombre de la empresa** — que en una transferencia es lo único que prueba que el
+dinero llegó a nuestra cuenta y no a otra. Tolera el nombre abreviado o
+invertido, porque un comprobante bancario recorta.
+
+**Los tres POS**: Promerica, Davivienda y Atlántida, como catálogo. Lo que se
+imprime arriba del voucher es el **procesador** y no siempre la marca con la que
+se lo llama, así que cada uno lleva sus variantes — y un POS sin reconocer es un
+**aviso y no un freno**: rechazar un voucher bueno con el cliente enfrente es
+peor.
+
+### Además
+
+- La **cara de quien cobró** en el historial de abonos, igual que la de quien
+  vendió.
+- Si la foto no se puede subir, **el cobro sigue**: el cliente está enfrente con
+  el dinero, y no cobrarle porque una foto falló es el peor de los dos errores.
+  Se avisa, y el número del comprobante queda igual.
+
+⚠️ Si el sistema de la caja acepta dos abonos y rechaza el tercero, **ese dinero
+ya se movió**: el portal registra lo que entró y responde en amarillo diciendo
+qué faltó. No hay forma de hacerlo atómico — el origen recibe un abono por
+llamada.
+
 ## v2.941.0 — El corte dice a qué corte pertenece cada cobro de crédito
 
 Migración `20260902163013`. El detalle de un corte ya no muestra la línea

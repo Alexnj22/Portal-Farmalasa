@@ -12,12 +12,17 @@ import Notice from '../components/common/Notice';
 import PortalInput from '../components/common/PortalInput';
 import TablePagination from '../components/common/TablePagination';
 import AvatarConEstado from '../components/common/AvatarConEstado';
+import FileField from '../components/common/FileField';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
-import { abonarCredito, DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchUltimaLectura, severidadDeDias } from '../data/creditos';
+import {
+    DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchCreditosDelCliente,
+    fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito, pagarCreditos, severidadDeDias,
+    subirComprobanteDeAbono,
+} from '../data/creditos';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { formatMoney } from '../utils/formatNumber';
 /* `fechaCorta` sale de `ticketCampos` y no se reescribe acá: es la MISMA
@@ -77,6 +82,17 @@ const VER = [
 ];
 
 const VACIO = [];
+
+/** Lo que cada freno significa, en palabras del mostrador. */
+const MOTIVO_DEL_FRENO = {
+    NO_ES_COMPROBANTE: 'La foto no muestra un comprobante de pago.',
+    ILEGIBLE: 'El comprobante no se lee: la foto está borrosa o cortada.',
+    NO_APROBADO: 'Ese voucher salió declinado, así que no acredita ningún pago.',
+    SIN_MONTO: 'No se pudo leer el monto del comprobante.',
+    OTRO_BENEFICIARIO: 'El comprobante NO está a nombre de la empresa.',
+    MONTO_MAYOR_AL_SALDO: 'El comprobante es por más de lo que este cliente debe.',
+};
+
 
 /** Lo que la insignia significa, en palabras. El color solo no se puede leer —
  *  ni con daltonismo ni con un lector de pantalla. */
@@ -216,18 +232,46 @@ export default function CuentasPorCobrarView() {
         [conEdad],
     );
 
-    const cobrar = useCallback(async ({ monto, forma, documento }) => {
-        const r = await abonarCredito({
-            sala: abonando.branch_id, credito: abonando.credito, monto, forma, documento,
+    const cobrar = useCallback(async (pago) => {
+        /* El papel se sube DESPUÉS de que la lectura pasó y ANTES de tocar el
+         * sistema de la caja: así el bucket no acumula los intentos descartados,
+         * y el abono no queda registrado sin su respaldo.
+         *
+         * Si la subida falla NO se corta el cobro: el cliente está enfrente con
+         * el dinero, y no cobrarle porque una foto no subió sería el peor de los
+         * dos errores. Se avisa y se sigue — el número del comprobante queda
+         * igual, que es lo que ata el pago al estado de cuenta. */
+        let comprobanteUrl = null;
+        if (pago.archivo) {
+            try {
+                comprobanteUrl = await subirComprobanteDeAbono(pago.archivo, abonando.branch_id);
+            } catch (err) {
+                showToast('El comprobante no se guardó',
+                    `${mensajeAmigable(err)} El cobro sigue; el número queda anotado.`, 'warning');
+            }
+        }
+
+        const r = await pagarCreditos({
+            sala: abonando.branch_id,
+            forma: pago.forma,
+            documento: pago.documento,
+            montoDocumento: pago.montoDocumento,
+            aplicaciones: pago.aplicaciones,
+            fechaDocumento: pago.fechaDocumento,
+            pos: pago.pos,
+            comprobanteUrl,
+            lectura: pago.lectura || null,
         });
-        if (r?.error || r?.ok === false) {
-            showToast('No se pudo abonar', mensajeAmigable(r.error || r), 'error');
+        if (r?.error || (r?.ok === false && !r?.aviso)) {
+            showToast('No se pudo cobrar', mensajeAmigable(r.error || r), 'error');
             return false;
         }
-        if (r.aviso) showToast('Quedó algo pendiente', r.aviso, 'warning');
+        if (r.aviso) showToast('El pago quedó a medias', r.aviso, 'warning');
         else {
-            showToast('Abono registrado',
-                `${abonando.cliente} · queda ${formatMoney(r.saldo_despues)}`, 'success');
+            const n = r.aplicaciones?.length || 1;
+            showToast('Pago registrado',
+                `${abonando.cliente} · ${formatMoney(r.aplicado)} en ${n} crédito${n === 1 ? '' : 's'}`,
+                'success');
         }
         setAbonando(null);
         cargar();
@@ -487,7 +531,7 @@ function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
         const d = await fetchCreditoDetalle(credito.id);
         setDatos(d?.error ? null : d);
         setCargando(false);
-    }, [credito.id]);
+    }, [credito.id]);    
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la ficha
 
@@ -639,17 +683,28 @@ function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
                                     {abonos.map((a) => (
                                         <li key={a.id} className="flex items-center justify-between gap-3 min-w-0
                                                                    py-2 border-b border-border/40 last:border-0">
-                                            <span className="min-w-0">
-                                                <span className="block text-body-sm text-content">
-                                                    {formatMoney(a.monto)}
-                                                    <span className="text-content-3 font-normal"> · {a.forma}</span>
-                                                    {a.documento ? <span className="text-content-3 font-normal"> ({a.documento})</span> : null}
-                                                </span>
-                                                <span className="block text-micro text-content-3 truncate">
-                                                    {new Date(a.created_at).toLocaleString('es-SV', {
-                                                        day: '2-digit', month: '2-digit', year: 'numeric',
-                                                        hour: '2-digit', minute: '2-digit',
-                                                    })} · {a.cobrado_por || 'sin identificar'}
+                                            <span className="flex items-center gap-2 min-w-0">
+                                                {/* La cara de quien cobró, igual que la de
+                                                    quien vendió: quién recibió el dinero es
+                                                    justo lo que el sistema de la caja no
+                                                    guarda, así que acá se ve. */}
+                                                {a.abonado_por && (
+                                                    <AvatarConEstado
+                                                        emp={{ id: a.abonado_por, name: a.cobrado_por }}
+                                                        px={26} mostrarChip={false} radio="rounded-full" />
+                                                )}
+                                                <span className="min-w-0">
+                                                    <span className="block text-body-sm text-content">
+                                                        {formatMoney(a.monto)}
+                                                        <span className="text-content-3 font-normal"> · {a.forma}</span>
+                                                        {a.documento ? <span className="text-content-3 font-normal"> ({a.documento})</span> : null}
+                                                    </span>
+                                                    <span className="block text-micro text-content-3 truncate">
+                                                        {new Date(a.created_at).toLocaleString('es-SV', {
+                                                            day: '2-digit', month: '2-digit', year: 'numeric',
+                                                            hour: '2-digit', minute: '2-digit',
+                                                        })} · {a.cobrado_por || 'sin identificar'}
+                                                    </span>
                                                 </span>
                                             </span>
                                             <span className="text-micro tabular-nums text-content-3 shrink-0">
@@ -674,72 +729,266 @@ function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
     );
 }
 
+/**
+ * Cobrar: el papel primero, el reparto después.
+ *
+ * ── El orden lo pidió el usuario, y tiene una razón ───────────────────────
+ * «Si es transferencia / cheque / tarjeta, que se anexe el comprobante PRIMERO
+ * antes de digitar montos, y que de ahí mismo lo tome». En la salida de una
+ * bolsa el portal hace lo contrario —se escribe y la foto confirma— y está
+ * bien: allá el monto lo decide quien saca el dinero. Acá lo decide el papel
+ * que el cliente trajo, y pedir que se escriba primero es invitar a escribir lo
+ * que se esperaba —el saldo redondo— y no lo que el documento dice.
+ *
+ * ── Y un pago puede cubrir VARIOS créditos ────────────────────────────────
+ * «¿Qué pasa si hace una sola transferencia para pagar 3 créditos?». Medido:
+ * **24 de los 43 clientes con saldo tienen más de uno**, y uno tiene once. Así
+ * que el reparto no es un extra: es el caso normal. El pago es el documento y
+ * los abonos dicen cuánto de él fue a cada crédito.
+ */
 function DialogoAbono({ credito, onClose, onCobrar }) {
-    const [monto, setMonto] = useState('');
     const [forma, setForma] = useState('Efectivo');
     const [documento, setDocumento] = useState('');
+    const [fechaDoc, setFechaDoc] = useState('');
+    const [pos, setPos] = useState('');
+    const [montoDoc, setMontoDoc] = useState('');
     const [ocupado, setOcupado] = useState(false);
 
-    const n = Number(monto);
-    /* El tope es el saldo LEÍDO en pantalla; el servidor lo vuelve a comprobar
-     * contra el origen antes de escribir, porque entre una cosa y la otra
-     * pueden haber cobrado en la caja. */
-    const excede = Number.isFinite(n) && n > credito.saldo + 0.004;
-    const valido = Number.isFinite(n) && n > 0 && !excede;
+    // El papel
+    const [archivo, setArchivo] = useState(null);
+    const [leyendo, setLeyendo] = useState(false);
+    const [lectura, setLectura] = useState(null);
+    const [errorLectura, setErrorLectura] = useState(null);
+
+    // El reparto: `credito.id` → cuánto
+    const [hermanos, setHermanos] = useState(VACIO);
+    const [reparto, setReparto] = useState(() => ({ [credito.id]: '' }));
+
+    const [posDisponibles, setPosDisponibles] = useState(VACIO);
+
+    const conPapel = forma !== 'Efectivo';
+
+    useEffect(() => {
+        let vivo = true;
+        (async () => {
+            const [otros, proveedores] = await Promise.all([
+                fetchCreditosDelCliente(credito.id), fetchPosProveedores(),
+            ]);
+            if (!vivo) return;
+            setHermanos(otros);
+            setPosDisponibles(proveedores);
+        })();
+        return () => { vivo = false; };
+     
+    }, [credito.id]);
+
+    /* Cambiar de forma tira el papel y lo leído. No es prolijidad: la foto de
+     * una transferencia leída como cheque daría otros campos, y dejarla puesta
+     * significaría cobrar con un comprobante que nadie volvió a mirar. */
+    const cambiarForma = useCallback((v) => {
+        setForma(v || 'Efectivo');
+        setArchivo(null); setLectura(null); setErrorLectura(null);
+        setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc('');
+    }, []);
+
+    const leer = useCallback(async (f) => {
+        setArchivo(f); setLectura(null); setErrorLectura(null);
+        if (!f) return;
+        setLeyendo(true);
+        const r = await leerPagoDeCredito(f, { forma, saldo: sumaDeSaldos(hermanos, credito) });
+        setLeyendo(false);
+        if (r?.error) { setErrorLectura(mensajeAmigable(r.error)); return; }
+        setLectura(r);
+        /* Lo leído LLENA el formulario, y queda editable: el lector acierta casi
+         * siempre y se equivoca a veces, y quien tiene el papel en la mano es
+         * quien puede corregirlo. Un campo que no se puede tocar convierte un
+         * error de lectura en un pago que no se puede registrar. */
+        if (r.sugerido?.monto != null) setMontoDoc(String(r.sugerido.monto));
+        if (r.sugerido?.fecha) setFechaDoc(r.sugerido.fecha);
+        if (r.sugerido?.documento) setDocumento(String(r.sugerido.documento));
+        if (r.sugerido?.pos) setPos(r.sugerido.pos);
+    }, [forma, hermanos, credito]);
+
+    /* El reparto se propone solo, del más viejo al más nuevo, hasta agotar el
+     * documento. Es el orden en que conviene cerrar: el que lleva más tiempo.
+     * Se propone y no se impone — la persona lo corrige renglón por renglón. */
+    const repartirSolo = useCallback((total) => {
+        let queda = Number(total) || 0;
+        const nuevo = {};
+        for (const h of hermanos.length ? hermanos : [credito]) {
+            if (queda <= 0.004) break;
+            const toma = Math.min(queda, Number(h.saldo) || 0);
+            if (toma > 0.004) { nuevo[h.id] = toma.toFixed(2); queda = Number((queda - toma).toFixed(2)); }
+        }
+        setReparto(nuevo);
+    }, [hermanos, credito]);
+
+    /* En un `useMemo` y no suelto: lo consume un `useCallback`, y una lista
+     * nueva en cada render le cambiaría las dependencias siempre. */
+    const listaDeCreditos = useMemo(() => (hermanos.length ? hermanos : [credito]), [hermanos, credito]);
+    const sumaRepartida = Object.values(reparto)
+        .reduce((t, v) => t + (Number(v) || 0), 0);
+    const totalPago = conPapel ? Number(montoDoc) : sumaRepartida;
+
+    const bloqueado = lectura && lectura.veredicto !== 'OK';
+    const cuadra = Number.isFinite(totalPago) && totalPago > 0
+        && Math.abs(sumaRepartida - totalPago) < 0.005;
+    const listo = !bloqueado && cuadra && (!conPapel || (archivo && lectura));
+
+    const cobrar = useCallback(async () => {
+        setOcupado(true);
+        const aplicaciones = listaDeCreditos
+            .filter((h) => Number(reparto[h.id]) > 0.004)
+            .map((h) => ({ credito: h.credito, monto: Number(reparto[h.id]) }));
+        await onCobrar({
+            forma, documento: documento.trim(), montoDocumento: Number(totalPago.toFixed(2)),
+            aplicaciones, archivo, lectura, fechaDocumento: fechaDoc || null, pos: pos || null,
+        });
+        setOcupado(false);
+    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, onCobrar]);
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-sm" ariaLabel="Abonar al crédito">
-            <div className="p-5 space-y-4">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Cobrar un crédito">
+            <div className="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
                 <div>
-                    <h3 className="text-h3 font-bold text-content">Abonar al crédito</h3>
-                    <p className="text-body-sm text-content-2 mt-1 flex items-center gap-1.5">
-                        <UserCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
-                        {credito.cliente}
-                    </p>
+                    <h3 className="text-h3 font-bold text-content">Recibir un pago</h3>
+                    <p className="text-body-sm text-content-2 mt-1 truncate">{credito.cliente}</p>
                 </div>
 
-                <div className="flex items-baseline justify-between gap-3 text-body-sm">
-                    <span className="text-content-2">Debe</span>
-                    <span className="tabular-nums font-black text-content">{formatMoney(credito.saldo)}</span>
-                </div>
-
-                {/* Nunca `type="number"`: en el teclado del teléfono no tiene
-                    separador decimal y la rueda del mouse cambia el monto sin
-                    que nadie lo toque. */}
-                <PortalInput label="Cuánto abona" inputMode="decimal" value={monto} autoFocus
-                    onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
-                <LiquidSelect label="Forma de pago" value={forma} onChange={(v) => setForma(v || 'Efectivo')}
+                <LiquidSelect label="Con qué paga" value={forma} onChange={cambiarForma}
                     options={FORMAS.map((f) => ({ value: f, label: f }))} clearable={false} />
-                {forma !== 'Efectivo' && (
-                    <PortalInput label="Número de documento" value={documento} maxLength={40}
-                        onChange={(e) => setDocumento(e.target.value)} placeholder="si lo hubiere" />
+
+                {/* ── El papel, ANTES de los montos ───────────────────────── */}
+                {conPapel && (
+                    <div className="space-y-3">
+                        <FileField label={`Foto del comprobante (${forma.toLowerCase()})`}
+                            accept="image/*" value={archivo}
+                            onChange={leer} onClear={() => leer(null)} />
+
+                        {leyendo && <LoadingState label="Leyendo el comprobante" />}
+
+                        {errorLectura && (
+                            /* «No se pudo preguntar» NO es «el comprobante está
+                               mal», y se dicen distinto: lo primero se arregla
+                               reintentando y lo segundo no. */
+                            <Notice variant="warning" icon={AlertTriangle}>
+                                No se pudo leer el comprobante: {errorLectura} Vuelve a intentarlo,
+                                o escribe los datos a mano.
+                            </Notice>
+                        )}
+
+                        {bloqueado && (
+                            <Notice variant="danger" icon={AlertTriangle}>
+                                {MOTIVO_DEL_FRENO[lectura.veredicto]
+                                    || 'El comprobante no se pudo dar por bueno.'}
+                                {lectura.veredicto === 'OTRO_BENEFICIARIO' && lectura.leido?.beneficiario
+                                    && ` Dice «${lectura.leido.beneficiario}».`}
+                            </Notice>
+                        )}
+
+                        {lectura && !bloqueado && (lectura.avisos || []).length > 0 && (
+                            <Notice variant="warning">{lectura.avisos.join(' ')}</Notice>
+                        )}
+                    </div>
                 )}
 
-                {excede && (
-                    <Notice variant="danger" icon={AlertTriangle}>
-                        No se puede abonar más de lo que debe. Con un monto mayor el crédito quedaría
-                        en negativo y el cliente habría pagado de más.
-                    </Notice>
-                )}
+                {/* Los montos sólo después de que el papel pasó: pedirlos antes
+                    es invitar a escribir lo que se esperaba. */}
+                {(!conPapel || (lectura && !bloqueado)) && (
+                    <>
+                        {conPapel && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <PortalInput label="Monto del comprobante" inputMode="decimal"
+                                    value={montoDoc} onChange={(e) => setMontoDoc(e.target.value)} />
+                                <PortalInput label="Fecha del comprobante" type="date"
+                                    value={fechaDoc} onChange={(e) => setFechaDoc(e.target.value)} />
+                                <PortalInput label="Número del comprobante" value={documento} maxLength={40}
+                                    onChange={(e) => setDocumento(e.target.value)} />
+                                {forma === 'Tarjeta' && (
+                                    <LiquidSelect label="POS" value={pos} onChange={(v) => setPos(v || '')}
+                                        options={posDisponibles.map((p) => ({ value: p.codigo, label: p.nombre }))} />
+                                )}
+                            </div>
+                        )}
 
-                {forma === 'Efectivo' && (
-                    <Notice variant="info">
-                        El efectivo entra al cajón y cuenta para el corte del día.
-                    </Notice>
+                        {/* ── A qué créditos se aplica ────────────────────── */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-body-sm font-bold text-content">
+                                    {listaDeCreditos.length > 1 ? 'A qué créditos se aplica' : 'Cuánto se le abona'}
+                                </span>
+                                {listaDeCreditos.length > 1 && totalPago > 0 && (
+                                    <Button variant="ghost" size="sm"
+                                        onClick={() => repartirSolo(totalPago)}>
+                                        Repartir del más viejo
+                                    </Button>
+                                )}
+                            </div>
+
+                            {listaDeCreditos.map((h) => (
+                                <div key={h.id} className="flex items-center gap-3 min-w-0">
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block text-body-sm text-content truncate">
+                                            {fechaCorta(h.fecha)} · {h.documento}
+                                        </span>
+                                        <span className="block text-micro text-content-3">
+                                            debe {formatMoney(h.saldo)} · {h.dias ?? credito.dias} días
+                                        </span>
+                                    </span>
+                                    <span className="w-28 shrink-0">
+                                        <PortalInput label="" inputMode="decimal" placeholder="0.00"
+                                            value={reparto[h.id] ?? ''}
+                                            onChange={(e) => setReparto((r) => ({ ...r, [h.id]: e.target.value }))} />
+                                    </span>
+                                </div>
+                            ))}
+
+                            <div className="flex items-baseline justify-between gap-3 pt-2 border-t border-border/60">
+                                <span className="text-body-sm text-content-2">
+                                    {conPapel ? 'Repartido' : 'Total a cobrar'}
+                                </span>
+                                <span className={`text-body font-black tabular-nums ${
+                                    cuadra || !conPapel ? 'text-content' : 'text-danger-text'}`}>
+                                    {formatMoney(sumaRepartida)}
+                                    {conPapel && totalPago > 0 && ` de ${formatMoney(totalPago)}`}
+                                </span>
+                            </div>
+
+                            {conPapel && totalPago > 0 && !cuadra && (
+                                /* La suma tiene que dar EXACTO. Aceptar menos
+                                   dejaría una diferencia sin dueño: el banco
+                                   movió $50 y el portal explicaría $45. */
+                                <Notice variant="warning">
+                                    {sumaRepartida < totalPago
+                                        ? `Faltan ${formatMoney(totalPago - sumaRepartida)} por aplicar.`
+                                        : `Sobran ${formatMoney(sumaRepartida - totalPago)} sobre el comprobante.`}
+                                </Notice>
+                            )}
+                        </div>
+
+                        {forma === 'Efectivo' && (
+                            <Notice variant="info">
+                                El efectivo entra al cajón y cuenta para el corte del día.
+                            </Notice>
+                        )}
+                    </>
                 )}
 
                 <div className="flex justify-end gap-2">
                     <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                    <Button variant="primary" disabled={ocupado || !valido}
-                        onClick={async () => {
-                            setOcupado(true);
-                            await onCobrar({ monto: n, forma, documento: documento.trim() });
-                            setOcupado(false);
-                        }}>
-                        Abonar
+                    <Button variant="primary" disabled={ocupado || !listo} onClick={cobrar}>
+                        Cobrar
                     </Button>
                 </div>
             </div>
         </LiquidModal>
     );
+}
+
+/** Todo lo que el cliente debe en esa sala. Es contra esto que se compara el
+ *  monto del papel: contra el saldo de UN crédito, una transferencia que paga
+ *  tres se rechazaría — que es justo el caso que hay que soportar. */
+function sumaDeSaldos(hermanos, credito) {
+    const lista = hermanos?.length ? hermanos : [credito];
+    return lista.reduce((t, h) => t + (Number(h.saldo) || 0), 0);
 }

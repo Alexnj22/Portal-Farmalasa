@@ -88,6 +88,240 @@ Deno.serve(async (req) => {
       return responder({ ok: true, creditos });
     }
 
+    // ── PAGAR — un documento que cubre uno o VARIOS créditos ─────────────
+    //
+    // Pregunta del usuario (2-sep): «¿qué pasa si hace una sola transferencia
+    // para pagar 3 créditos?». No es un caso raro: medido, **24 de los 43
+    // clientes con saldo tienen más de un crédito**, y uno tiene once.
+    //
+    // Un PAGO es el documento —un monto, una referencia, una vez— y los ABONOS
+    // dicen cuánto de él se aplicó a cada crédito. Sin esa separación, el mismo
+    // comprobante se anexaría N veces y la suma de los abonos daría el triple
+    // de lo que el banco movió.
+    if (accion === "pagar") {
+      const sala = Number(body.sala);
+      const forma = String(body.forma ?? "Efectivo");
+      const documento = String(body.documento ?? "").trim();
+      const montoDoc = Number(body.montoDocumento);
+      const aplicaciones: { credito: string; monto: number }[] =
+        Array.isArray(body.aplicaciones) ? body.aplicaciones : [];
+
+      const entrada = mapa.find((e) => e.branchId === sala);
+      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Solo puedes cobrar en tu propia sala." }, 403);
+      }
+      if (!FORMAS.includes(forma)) {
+        return responder({ ok: false, error: "Esa forma de pago no se acepta." }, 400);
+      }
+      if (!aplicaciones.length) {
+        return responder({ ok: false, error: "No se eligió a qué crédito aplicar el pago." }, 400);
+      }
+      const limpias = aplicaciones
+        .map((a) => ({ credito: String(a?.credito ?? "").trim(), monto: Number(a?.monto) }))
+        .filter((a) => a.credito && Number.isFinite(a.monto) && a.monto > 0);
+      if (limpias.length !== aplicaciones.length) {
+        return responder({ ok: false, error: "Hay un renglón sin crédito o sin monto." }, 400);
+      }
+      const suma = Number(limpias.reduce((t, a) => t + a.monto, 0).toFixed(2));
+      if (!(Number.isFinite(montoDoc) && montoDoc > 0)) {
+        return responder({ ok: false, error: "Falta el monto del pago." }, 400);
+      }
+      /* La suma tiene que dar EXACTO. Aceptar menos dejaría una diferencia sin
+       * dueño: el banco movió $50 y el portal explicaría $45, y esos $5 no
+       * aparecerían en ninguna cuenta hasta la conciliación del mes. Si el
+       * cliente pagó de más, eso es un saldo a favor y el sistema de la caja no
+       * sabe qué es — hay que decirlo, no repartirlo. */
+      if (Math.abs(suma - montoDoc) > 0.004) {
+        return responder({
+          ok: false,
+          error: suma < montoDoc
+            ? `El pago es de ${montoDoc.toFixed(2)} y lo repartido suma ${suma.toFixed(2)}. `
+              + `Faltan ${(montoDoc - suma).toFixed(2)} por aplicar.`
+            : `Lo repartido suma ${suma.toFixed(2)} y el pago es de ${montoDoc.toFixed(2)}.`,
+        }, 400);
+      }
+
+      /* El mismo comprobante no se puede usar dos veces. Lo garantiza un índice
+       * único, pero se comprueba ANTES de tocar el sistema de la caja: llegar
+       * al índice significaría haber abonado ya y no poder registrarlo. */
+      if (forma !== "Efectivo" && documento) {
+        const { data: yaUsado, error: eDup } = await supabase
+          .from("creditos_pagos").select("id, cliente, created_at")
+          .eq("forma", forma).eq("documento", documento).maybeSingle();
+        if (eDup) console.error("[creditos-erp] duplicado:", eDup.message);
+        if (yaUsado) {
+          return responder({
+            ok: false,
+            error: `Ese comprobante ya se usó el ${String(yaUsado.created_at).slice(0, 10)} `
+                 + `para ${yaUsado.cliente}.`,
+          }, 409);
+        }
+      }
+
+      // El saldo vivo de cada crédito, releído del ORIGEN por la FECHA de cada
+      // uno. Se agrupan las fechas: varios créditos del mismo día son una sola
+      // lectura, y lo normal es que un cliente deba de días cercanos.
+      const { data: enEspejo, error: eEspejo } = await supabase
+        .from("creditos_de_clientes").select("credito_erp, fecha, cliente, customer_id")
+        .eq("branch_id", sala).in("credito_erp", limpias.map((a) => a.credito));
+      if (eEspejo) console.error("[creditos-erp] espejo:", eEspejo.message);
+      const porCredito = new Map((enEspejo ?? []).map((r) => [r.credito_erp, r]));
+
+      const fechas = [...new Set((enEspejo ?? []).map((r) => String(r.fecha)))];
+      const vivos = new Map<string, Awaited<ReturnType<typeof creditosDeLaSala>>[number]>();
+      const leidos: Awaited<ReturnType<typeof creditosDeLaSala>> = [];
+      const ventanas = fechas.length
+        ? fechas.map((f) => ({ desde: f, hasta: f }))
+        : [{ desde: "2020-01-01", hasta: new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10) }];
+      for (const v of ventanas) {
+        const filas = await creditosDeLaSala(cookie, entrada.erpId, v.desde, v.hasta);
+        for (const c of filas) { vivos.set(c.credito, c); leidos.push(c); }
+      }
+
+      for (const a of limpias) {
+        const vivo = vivos.get(a.credito);
+        if (!vivo) {
+          return responder({ ok: false, error: `El crédito ${a.credito} no existe en esta sala.` }, 404);
+        }
+        if (a.monto > vivo.saldo + 0.004) {
+          return responder({
+            ok: false,
+            error: `${vivo.cliente}: el crédito del ${vivo.fecha} debe ${vivo.saldo.toFixed(2)} `
+                 + `y se le quiso aplicar ${a.monto.toFixed(2)}.`,
+          }, 409);
+        }
+      }
+
+      /* ── Se escribe en el origen, de a uno ─────────────────────────────
+       * No hay forma de hacerlo atómico: el sistema de la caja recibe un abono
+       * por llamada. Si el tercero falla, los dos primeros YA entraron y ese
+       * dinero se movió — así que no se deshace nada y se registra lo que sí
+       * entró. Lo que NO se puede hacer es contestar 200: quien cobra tiene que
+       * saber que el pago quedó a medias, con el cliente todavía enfrente. */
+      const hechos: { credito: string; monto: number; vivo: typeof leidos[number]; erp: unknown }[] = [];
+      const fallidos: string[] = [];
+      for (const a of limpias) {
+        const vivo = vivos.get(a.credito)!;
+        const resp = await (await fetch(ABONO_URL, {
+          method: "POST",
+          headers: {
+            Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: new URLSearchParams({
+            process: "abonar",
+            // ⚠️ `id_factura` lleva el ID DEL CRÉDITO — es el nombre que usa el
+            // formulario del origen. Mandar el de la factura abonaría al
+            // crédito de otra persona sin dar error.
+            id_factura: a.credito,
+            monto: a.monto.toFixed(2),
+            tipo_doc: forma,
+            num_doc: documento,
+          }).toString(),
+          signal: AbortSignal.timeout(45_000),
+        })).text();
+        let datos: Record<string, unknown> = {};
+        try { datos = JSON.parse(resp); } catch { /* se trata como fallo abajo */ }
+        if (String(datos.typeinfo ?? "").toLowerCase() !== "success") {
+          console.error(`[creditos-erp] pagar credito=${a.credito}: ${resp.slice(0, 600)}`);
+          fallidos.push(`${a.credito} (${a.monto.toFixed(2)})`);
+          continue;
+        }
+        hechos.push({ credito: a.credito, monto: a.monto, vivo, erp: datos });
+      }
+
+      if (!hechos.length) {
+        return responder({
+          ok: false,
+          error: "La caja no aceptó el pago. Vuelve a intentarlo; si sigue igual, avisa a Sistemas.",
+        }, 502);
+      }
+
+      // Releer para CONFIRMAR y refrescar el espejo al instante.
+      const confirmados = new Map<string, number>();
+      try {
+        for (const v of ventanas) {
+          const filas = await creditosDeLaSala(cookie, entrada.erpId, v.desde, v.hasta);
+          for (const c of filas) confirmados.set(c.credito, c.saldo);
+          const { error: eSync } = await supabase.rpc("sync_creditos_batch", {
+            p_filas: filas.map((c) => ({ ...c, branch_id: sala })),
+          });
+          if (eSync) console.error(`[creditos-erp] espejo: ${eSync.message}`);
+        }
+      } catch (e) {
+        console.error(`[creditos-erp] releer sala=${sala}: ${(e as Error).message}`);
+      }
+
+      const ficha = porCredito.get(hechos[0].credito);
+      const aplicado = Number(hechos.reduce((t, h) => t + h.monto, 0).toFixed(2));
+
+      const { data: pago, error: ePago } = await supabase.from("creditos_pagos").insert({
+        branch_id: sala,
+        customer_id: ficha?.customer_id ?? null,
+        cliente: ficha?.cliente ?? hechos[0].vivo.cliente,
+        forma,
+        // El monto del DOCUMENTO cuando entró completo; lo aplicado cuando
+        // quedó a medias. Guardar el del papel sobre un pago parcial diría que
+        // entró un dinero que el portal no puede explicar.
+        monto: fallidos.length ? aplicado : Number(montoDoc.toFixed(2)),
+        documento: documento || null,
+        fecha_documento: body.fechaDocumento || null,
+        pos_proveedor: body.pos || null,
+        comprobante_url: body.comprobanteUrl || null,
+        lectura: body.lectura || null,
+        registrado_por: quien.id,
+      }).select("id").single();
+      if (ePago) console.error("[creditos-erp] creditos_pagos:", ePago.message);
+
+      const { error: eAbonos } = await supabase.from("creditos_abonos_portal").insert(
+        hechos.map((h) => ({
+          pago_id: pago?.id ?? null,
+          branch_id: sala,
+          credito_erp: h.credito,
+          factura_erp: h.vivo.factura_erp,
+          cliente: h.vivo.cliente,
+          monto: Number(h.monto.toFixed(2)),
+          forma,
+          documento: documento || null,
+          saldo_antes: h.vivo.saldo,
+          // El saldo CONFIRMADO por el origen, no la resta: es lo que hace que
+          // la bitácora sirva para auditar y no sólo para narrar.
+          saldo_despues: confirmados.has(h.credito)
+            ? confirmados.get(h.credito)
+            : Number((h.vivo.saldo - h.monto).toFixed(2)),
+          abonado_por: quien.id,
+          comprobante_url: body.comprobanteUrl || null,
+          lectura: body.lectura || null,
+          fecha_documento: body.fechaDocumento || null,
+          pos_proveedor: body.pos || null,
+          erp_abono_id: (h.erp as Record<string, unknown>)?.id_abono_credito
+            ? String((h.erp as Record<string, unknown>).id_abono_credito) : null,
+        })),
+      );
+      if (eAbonos) console.error("[creditos-erp] abonos:", eAbonos.message);
+
+      const avisos = [
+        fallidos.length
+          ? `Entraron ${hechos.length} de ${limpias.length}. NO entró: ${fallidos.join(", ")}. `
+            + "Ese dinero no se aplicó; vuelve a intentarlo sólo por lo que faltó."
+          : null,
+        eAbonos ? "El pago entró, pero no se pudo anotar quién lo recibió. Avísale a Sistemas." : null,
+      ].filter(Boolean);
+
+      return responder({
+        ok: fallidos.length === 0,
+        pago_id: pago?.id ?? null,
+        aplicado,
+        aplicaciones: hechos.map((h) => ({
+          credito: h.credito,
+          monto: h.monto,
+          saldo_despues: confirmados.get(h.credito) ?? null,
+        })),
+        aviso: avisos.length ? avisos.join(" ") : undefined,
+      }, fallidos.length ? 207 : 200);
+    }
+
     // ── ABONAR ───────────────────────────────────────────────────────────
     if (accion === "abonar") {
       const sala = Number(body.sala);

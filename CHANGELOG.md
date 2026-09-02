@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.936.2 — Efectivo abría con error
+
+**Efectivo reventaba entera al entrar** y el aviso no decía dónde:
+`ReferenceError: Cannot access 'E' before initialization`, con la `E` minificada
+y el único rastro apuntando a React, no al portal.
+
+La causa era de una línea. En «Hoy», el hook que confirma o descarta un corte
+leía `nombreSala` **68 líneas antes** de su propio `const`:
+
+```js
+useResolverCorte({ nombreSala: { [sala]: nombreSala } })   // linea 241
+...
+const nombreSala = useMemo(...)                            // linea 307
+```
+
+Eso no da `undefined` —que habria pasado desapercibido—: da un **ReferenceError
+en cada render**, porque el objeto se arma al renderizar. El hook se movio
+debajo de la declaracion.
+
+Lo caza `no-use-before-define` sobre variables, que es lo que lo encontro
+despues de descartar imports circulares (cero en todo `src/`) y avisos del
+compilador (ninguno). **Al mover un hook, comprobar que todo lo que lee ya este
+declarado.**
+
 ## v2.936.1 — Bolsas: el aviso de frescura sólo aparece si la pantalla se quedó quieta
 
 `/bolsas` mostraba siempre un rótulo «Se actualiza solo · hace 2 min» con su

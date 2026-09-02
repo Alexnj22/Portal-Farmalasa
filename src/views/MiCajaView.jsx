@@ -231,16 +231,6 @@ export default function MiCajaView({ comoPestana = false }) {
     const [ocupado, setOcupado] = useState(false);
     const [dialogo, setDialogo] = useState(null);   // 'abrir' | 'ingreso' | 'corte' | 'cerrar'
     const [resultado, setResultado] = useState(null);
-    /* Confirmar o descartar SIN salir de acá (pedido del usuario, 1-sep): «al
-     * dar hacer corte y obtener resultado debe preguntar si se confirma o se
-     * descarta». Antes el corte quedaba PENDIENTE y había que ir a la pestaña
-     * de Cortes a resolverlo — y un corte sin resolver no habilita el cierre,
-     * así que la sala llegaba al final del día con el candado puesto sin saber
-     * por qué. Es el MISMO `useResolverCorte` que usa la pestaña: dos caminos
-     * para la misma decisión que escribieran distinto darían dos bitácoras. */
-    const { resolver, ocupadoId } = useResolverCorte({
-        nombreSala: { [sala]: nombreSala }, origen: 'micaja',
-    });
     const [bolsas, setBolsas] = useState(VACIO);
     const [movimientos, setMovimientos] = useState(VACIO);
     const [deBolsas, setDeBolsas] = useState(VACIO);
@@ -308,6 +298,25 @@ export default function MiCajaView({ comoPestana = false }) {
         () => branches.find((b) => String(b.id) === String(sala))?.name || '',
         [branches, sala],
     );
+
+    /* Confirmar o descartar SIN salir de acá (pedido del usuario, 1-sep): «al
+     * dar hacer corte y obtener resultado debe preguntar si se confirma o se
+     * descarta». Antes el corte quedaba PENDIENTE y había que ir a la pestaña
+     * de Cortes a resolverlo — y un corte sin resolver no habilita el cierre,
+     * así que la sala llegaba al final del día con el candado puesto sin saber
+     * por qué. Es el MISMO `useResolverCorte` que usa la pestaña: dos caminos
+     * para la misma decisión que escribieran distinto darían dos bitácoras.
+     *
+     * ⚠️ Va DEBAJO de `nombreSala` y no arriba con los `useState`, y no es
+     * cosmético: arriba leía `nombreSala` **antes** de su `const`, y eso no es
+     * `undefined` sino un ReferenceError —«Cannot access … before
+     * initialization»— en CADA render. Efectivo entera reventaba contra el
+     * ErrorBoundary desde la v2.930.0 y el aviso nombraba una letra minificada,
+     * así que no decía dónde. Lo caza `no-use-before-define` sobre variables;
+     * al mover un hook, comprobar que todo lo que lee ya esté declarado. */
+    const { resolver, ocupadoId } = useResolverCorte({
+        nombreSala: { [sala]: nombreSala }, origen: 'micaja',
+    });
 
     /* El comprobante del corte al rollo.
      *
@@ -422,7 +431,7 @@ export default function MiCajaView({ comoPestana = false }) {
         setCargando(false);
     }, [sala, puedeVerBolsas, puedeVerCortes]);
 
-    useEffect(() => { cargar(); }, [cargar]);
+    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
 
 
     /* Si el día que la caja tiene abierto no lleva ni un corte, cerrar deja el

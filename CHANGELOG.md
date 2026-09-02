@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.954.1 — El conteo de la sala no se repite cuando hay una sola
+
+La lista de cortes lleva dos encabezados —el del día y el de cada sala— y cada uno
+con su conteo. Cuando el día tiene **una sola sala**, el del día es la suma de un
+único sumando, así que las dos líneas dicen exactamente lo mismo, una debajo de la
+otra: «2 cortes · 1 con diferencia» dos veces.
+
+Y no es un caso raro: es lo que pasa **siempre que el filtro de sala está puesto**,
+porque ahí nunca hay más de un grupo por día. Lo levantó el usuario mirando la
+pantalla.
+
+El conteo de la sala aparece ahora sólo cuando hay más de una en ese día, que es
+cuando de verdad reparte el total del día. El nombre de la sala se queda: eso sí
+dice algo con un solo grupo.
+
 ## v2.954.0 — el corte del portal ya no cierra el turno del sistema
 
 Reportado por el usuario el 2-sep, con la frase exacta: *«al hacer el corte

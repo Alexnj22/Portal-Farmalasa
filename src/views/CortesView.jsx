@@ -811,10 +811,21 @@ const CortesView = () => {
                                     <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
                                         {s.nombre}
                                     </h4>
-                                    <span className="text-micro text-content-3">
-                                        {s.lista.length} {s.lista.length === 1 ? 'corte' : 'cortes'}
-                                        {s.conDiferencia > 0 && ` · ${s.conDiferencia} con diferencia`}
-                                    </span>
+                                    {/* El conteo de la sala sólo cuando hay MÁS DE UNA
+                                        en el día: con una sola, el del día es su
+                                        suma sobre un único sumando, así que las
+                                        dos líneas dicen exactamente lo mismo una
+                                        debajo de la otra —«2 cortes · 1 con
+                                        diferencia» dos veces—. Lo levantó el
+                                        usuario mirando la pantalla con el filtro
+                                        de sala puesto, que es el caso donde
+                                        SIEMPRE hay un solo grupo. */}
+                                    {g.grupos.length > 1 && (
+                                        <span className="text-micro text-content-3">
+                                            {s.lista.length} {s.lista.length === 1 ? 'corte' : 'cortes'}
+                                            {s.conDiferencia > 0 && ` · ${s.conDiferencia} con diferencia`}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

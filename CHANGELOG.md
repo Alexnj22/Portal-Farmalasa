@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.958.4 — El concepto lo dice la línea impresa del voucher
+
+El usuario mandó **dos boletas reales** del mismo POS y del mismo día como
+referencia: *«esa dice retiro Token, esa es su opción. En vale de POS Promerica.
+Ésta es boleta y monto»* y *«ésta es remesa, ahí dice, y la remesadora Money
+Gram, monto y boleta»*.
+
+Las dos muestran lo mismo: **`tipo_operacion` agrupa y el papel distingue.**
+
+| lo que imprime el POS | antes decía | ahora dice |
+|---|---|---|
+| `RETIRO TOKEN / PAGO CTK / EN EFECTIVO` | Retiro de efectivo | **Retiro Token** |
+| `REMESA / MONEY GRAM WS / EN EFECTIVO` | Remesa MONEY GRAM WS | igual |
+
+La del retiro perdía la palabra **Token**, que es con la que la sala la
+reconoce. Y no era hipotético: esa boleta (001103, $125.00, Salud 3) **ya está
+registrada en producción** y su lectura guardada dice `tipo_operacion: OTRO`, sin
+rastro de «RETIRO TOKEN» — el lector nunca miró esa línea porque nadie se la
+había pedido.
+
+**`leer-boleta` devuelve ahora `operacion_impresa`**: la línea central que nombra
+la operación, copiada tal cual, sin «EN EFECTIVO», sin la línea de la red —ésa
+sigue siendo `red_remesas`— y sin nombres de personas. El prompt lleva las dos
+boletas del usuario como ejemplo, con la salida esperada de cada una.
+
+`conceptoDelPapel` la prefiere sobre el genérico del enum. La remesa es la
+excepción y sigue mandando la red: su línea impresa dice «REMESA» a secas, y lo
+que distingue una remesa de otra es quién entrega el dinero.
+
+**Dos detalles que costaron un intento cada uno:**
+
+1. **La capitulación se aplica SÓLO a la línea impresa.** El papel grita en
+   mayúsculas y «Retiro Token» se lee mejor que «RETIRO TOKEN», pero
+   capitalizar también la entidad rompe los nombres que son siglas **con
+   vocales**: CAESS, ANDA, RIA. Lo que se gana ahí es cosmético; lo que se
+   perdería es el nombre de a quién se le pagó.
+2. **La sigla se reconoce por no tener vocales, no por ser corta.** El primer
+   intento dejaba en mayúsculas las palabras de hasta tres letras y devolvía
+   «Compra en Ferreteria **DON** Genaro». «WS» y «CTK» no tienen vocales; «DON»
+   sí.
+
+Y una tercera cosa que las boletas enseñaron: la del retiro trae **dos renglones
+rotulados MONTO** —«MONTO: 125» arriba, entre los datos del cliente, y «MONTO:
+US$125.00» abajo—. El prompt ahora dice cuál manda: el que lleva la moneda.
+
 ## v2.958.3 — Cuentas por cobrar va tercera en el menú de Efectivo
 
 Pedido del usuario: *«pasa a cuentas por cobrar al 3 nivel del menu. ahorita

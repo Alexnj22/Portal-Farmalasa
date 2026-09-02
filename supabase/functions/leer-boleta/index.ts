@@ -146,6 +146,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
   "numero_boleta": "el número rotulado BOLETA / VOUCHER / RECIBO / No., sólo dígitos, o null",
   "numeros_del_papel": ["TODOS los números de 4 dígitos o más impresos en el papel"],
   "tipo_operacion": "REMESA | PAGO_SERVICIO | RETIRO | DEPOSITO | COMPRA | OTRO — lo que DICE el papel",
+  "operacion_impresa": "la línea que NOMBRA la operación, tal como está impresa, o null",
   "red_remesas": "la red de remesas del detalle (MoneyGram, Ria, Western Union...), o null",
   "monto": 0.00,
   "moneda": "USD" | null,
@@ -160,6 +161,9 @@ Reglas:
   producto, una pantalla, una persona, una hoja en blanco, un documento de otro tipo).
 - "monto" es el TOTAL cobrado o entregado, como número, sin símbolo de moneda ni
   separadores de miles. Si hay varios importes, el que está rotulado MONTO o TOTAL.
+  Una misma boleta puede traer DOS renglones "MONTO": uno arriba, entre los datos
+  del cliente y sin símbolo ("MONTO: 125"), y el total abajo, con moneda
+  ("MONTO: US$125.00"). Vale el de abajo, el que lleva la moneda.
 - "nombres" lista TODO nombre propio de empresa, banco, marca o red de remesas que
   aparezca en el papel, esté donde esté: la cabecera, el cuerpo, el pie, el logo.
   Una boleta de remesa suele llevar DOS —el banco que procesa el cobro arriba y la
@@ -188,6 +192,28 @@ Reglas:
   Transnetwork—, que NO es el banco de la cabecera. En una boleta de Promerica
   que dice "REMESA / MONEY GRAM WS", la red es MoneyGram y Promerica es sólo
   quien procesa el cobro. Si el papel no nombra ninguna red, null.
+- "operacion_impresa" es la línea CENTRAL que nombra la operación, copiada tal
+  cual. Vive entre los datos del cajero y la firma del cliente, y suele venir en
+  dos o tres renglones: la operación, la marca o red, y la forma de pago.
+  Devolvé SÓLO el renglón de la operación, con las palabras que la califican en
+  ESE renglón. NO incluyas "EN EFECTIVO", ni el renglón de la marca o la red
+  —ése va en "red_remesas"—, ni nombres de personas, ni importes.
+
+  Existe porque el enum de "tipo_operacion" agrupa y el papel distingue: dos
+  boletas reales de Banco Promerica del 2-sep-2026, y lo que hay que devolver en
+  cada una:
+
+    · "RETIRO TOKEN / PAGO CTK / EN EFECTIVO"
+        tipo_operacion    = "RETIRO"
+        operacion_impresa = "RETIRO TOKEN"
+        red_remesas       = null
+
+    · "REMESA / MONEY GRAM WS / EN EFECTIVO"
+        tipo_operacion    = "REMESA"
+        operacion_impresa = "REMESA"
+        red_remesas       = "MONEY GRAM WS"
+
+  Si el papel no tiene una línea así, null. No la deduzcas del resto.
 - "recuadro" es la caja que encierra SÓLO el papel dentro de la foto, en fracciones
   de 0 a 1 sobre el ancho y el alto de la imagen (x,y = esquina superior izquierda).
   Si el papel ocupa toda la foto, devuelve {"x":0,"y":0,"w":1,"h":1}.

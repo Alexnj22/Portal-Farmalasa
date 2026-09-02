@@ -601,6 +601,36 @@ Deno.serve(async (req) => {
       // llega a anotarlo, queda un movimiento sin respaldo y sin forma de
       // corregirlo. Al revés, una fila sin `erp_movimiento_id` es un intento
       // visible que se puede reintentar.
+      /* ── QUIEN SE LLEVA EL EFECTIVO ─────────────────────────────────────
+       *
+       * El vale es el de un solo uso de `identidad_vales` —cinco minutos, un
+       * consumo, verificado contra la persona— y lo consume el SERVIDOR, que es
+       * el unico que lo puede comprobar. El navegador solo lo transporta y
+       * nunca ve el secreto con el que se emitio.
+       *
+       * Se consume ANTES de escribir nada: si la identidad no se puede probar,
+       * no hay movimiento y no se mueve un centavo. Al reves —escribir y
+       * comprobar despues— dejaria plata salida a nombre de nadie.
+       *
+       * `metodo` sale del vale y no del cuerpo del pedido: es el vale el que
+       * sabe si fue carne o contrasena, y dejar que lo diga el navegador
+       * permitiria escribir «carne» sobre una comprobacion que fue de otra
+       * clase. */
+      let recibidoPor: string | null = null;
+      let recibidoMetodo: string | null = null;
+      if (!esEntrada && body.recibido_por) {
+        const { data: metodo, error: errVale } = await supabase
+          .rpc("consumir_vale_de_identidad", {
+            p_vale: body.vale ?? null, p_persona: String(body.recibido_por),
+          });
+        if (errVale) {
+          console.error(`[operar-caja] salida sala=${sala}: identidad: ${errVale.message}`);
+          return json({ ok: false, error: errVale.message }, 403);
+        }
+        recibidoPor = String(body.recibido_por);
+        recibidoMetodo = metodo ? String(metodo) : null;
+      }
+
       const { data: fila, error: errFila } = await supabase
         .from("caja_movimientos_portal")
         .insert({
@@ -617,6 +647,13 @@ Deno.serve(async (req) => {
           tipo_codigo: body.tipo ? String(body.tipo).slice(0, 40) : null,
           numero_boleta: body.boleta ? String(body.boleta).slice(0, 40) : null,
           foto_url: body.foto_url ? String(body.foto_url) : null,
+          // Las dos mitades de «quien recibio», y nunca las dos a la vez: o se
+          // comprobo con carne, o se escribio un nombre porque el receptor no
+          // es de la casa.
+          recibido_por: recibidoPor,
+          recibido_metodo: recibidoMetodo,
+          recibido_texto: !esEntrada && !recibidoPor && body.recibe
+            ? String(body.recibe).slice(0, 60) : null,
           fecha: diaAbierto, erp_apertura_id: Number(estado.aper),
           registrado_por: quien.id,
         })

@@ -503,7 +503,7 @@ const BUCKET_COMPROBANTES = 'payment-proofs';
  */
 export async function fetchTiposDeMovimiento() {
     const { data, error } = await supabase.from('caja_tipos_movimiento')
-        .select('codigo, etiqueta, sentido, pide_boleta, pide_persona, foto, lleva_comprobante, leyenda')
+        .select('codigo, etiqueta, sentido, pide_boleta, pide_persona, identifica_receptor, foto, lleva_comprobante, leyenda')
         .eq('activo', true)
         .order('orden');
     if (error) { console.error('caja: fetchTiposDeMovimiento failed:', error.message); return []; }
@@ -903,8 +903,23 @@ export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono 
     });
 }
 
-export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null, fotoUrl = null, recibe = '' }) {
-    return operar({ accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe });
+/**
+ * Sale del cajón.
+ *
+ * `recibidoPor` + `vale` son la identidad COMPROBADA de quien se lleva el
+ * efectivo — el vale es el de un solo uso que devolvió `identificarPorCarne` o
+ * `identificarPorUsuario`, nunca el secreto. Lo consume el servidor, que es
+ * quien lo puede verificar; el navegador sólo lo transporta.
+ *
+ * `recibe` es la otra mitad: el nombre escrito, para los tipos cuyo receptor no
+ * es de la casa —una devolución se la lleva un cliente y no tiene carné—.
+ */
+export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null,
+    fotoUrl = null, recibe = '', recibidoPor = null, vale = null }) {
+    return operar({
+        accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe,
+        recibido_por: recibidoPor, vale,
+    });
 }
 
 export async function cerrarElDia(sala) {

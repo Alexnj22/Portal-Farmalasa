@@ -12,6 +12,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import Notice from '../components/common/Notice';
 import FileField from '../components/common/FileField';
 import PortalInput from '../components/common/PortalInput';
+import IdentidadDeQuienRetira from '../components/bolsas/IdentidadDeQuienRetira';
 import StatCard from '../components/common/StatCard';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -352,6 +353,7 @@ export default function MiCajaView({ comoPestana = false }) {
             etiqueta: tipo?.etiqueta || '',
             detalle: extra?.detalle || '',
             persona: extra?.persona || '',
+            comoSeComprobo: extra?.comoSeComprobo || null,
             sala: nombreSala, hechoPor: user?.name || '',
             hechoAt: new Date().toISOString(),
         });
@@ -759,7 +761,7 @@ export default function MiCajaView({ comoPestana = false }) {
                 tipos={tiposDeCaja}
                 onComprobante={() => setDialogo('abono')}
                 onClose={() => setDialogo(null)}
-                onAnotar={async (datos, tipoElegido) => {
+                onAnotar={async (datos, tipoElegido, identificada) => {
                     const r = await correr(
                         () => (dialogo === 'ingreso' ? anotarIngreso : anotarSalida)({ sala, ...datos }),
                         dialogo === 'ingreso' ? 'Ingreso anotado.' : 'Salida anotada.',
@@ -769,7 +771,10 @@ export default function MiCajaView({ comoPestana = false }) {
                     if (r?.movimiento) {
                         await imprimirMovimiento(r.movimiento, tipoElegido, {
                             detalle: datos.detalle,
-                            persona: datos.recibe || datos.vendedor || '',
+                            persona: identificada?.name || datos.recibe || datos.vendedor || '',
+                            // Sale de la FILA, que lo trae del vale consumido:
+                            // el navegador no decide cómo se comprobó.
+                            comoSeComprobo: r.movimiento.recibido_metodo || null,
                         });
                     }
                 }} />
@@ -1195,6 +1200,16 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * inyección» es lo que se suma; «Neurobion 25000» es lo que la sala quería
      * anotar. */
     const [codigo, setCodigo] = useState('');
+    /* Quién se lleva el efectivo, COMPROBADO. `persona` y `vale` salen juntos
+     * del servidor: el navegador no elige a quién se le atribuye el dinero, y
+     * el secreto del carné nunca pasa por acá. */
+    const [persona, setPersona] = useState(null);
+    const [vale, setVale] = useState(null);
+    // 'DATOS' → 'IDENTIDAD'. Son dos pantallas y no una porque el lector de
+    // carné es un `keydown` global que NO cancela la tecla: con el formulario
+    // dibujado, la ráfaga del carné se escribiría dentro del campo que tenga el
+    // foco, a la vista. Mismo motivo que en la salida de una bolsa.
+    const [paso, setPaso] = useState('DATOS');
     const [monto, setMonto] = useState('');
     const [concepto, setConcepto] = useState('');
     const [boleta, setBoleta] = useState('');
@@ -1220,11 +1235,14 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     // que alguien escriba «aplicación» debajo de un desplegable que dice
     // «Aplicacion de inyeccion» es pedir el mismo dato dos veces.
     const exigeDetalle = !tipo || tipo.codigo.startsWith('OTRO');
+    // Con identidad, el nombre NO se teclea: sale de quien quedó reconocido.
+    const identifica = !!tipo?.identifica_receptor;
     const valido = !!tipo
         && Number(monto) > 0
         && (!exigeDetalle || concepto.trim().length > 2)
         && (!tipo.pide_boleta || boleta.trim().length > 0)
-        && (tipo.foto !== 'OBLIGATORIA' || !!foto);
+        && (tipo.foto !== 'OBLIGATORIA' || !!foto)
+        && (!tipo.pide_persona || identifica || recibe.trim().length > 1);
 
     // La foto sólo manda la vuelta del cuadro cuando el tipo la pide. Con
     // `foto: 'NO'` —la aplicación, la glucosa— los campos salen directo: pedir
@@ -1298,11 +1316,43 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
              * la entrada; del lado de la salida el campo se llama `recibe`. */
             ...(entra
                 ? (tipo?.pide_persona ? { vendedor: recibe.trim() } : {})
-                : { recibe: recibe.trim() }),
+                : {
+                    recibe: identifica ? '' : recibe.trim(),
+                    // El vale es de un solo uso y lo consume el SERVIDOR. Acá
+                    // sólo viaja; el secreto con el que se emitió nunca llegó.
+                    recibidoPor: identifica ? persona?.id : null,
+                    vale: identifica ? vale : null,
+                }),
             // Para el papel: el detalle suelto y quién, sin el rótulo pegado.
             detalle: concepto.trim(),
-        }, tipo);
+        }, tipo, identifica ? persona : null);
     };
+
+    /* El paso del carné va SOLO en pantalla, sin ningún campo de texto dibujado.
+     * `useCapturaDeCarne` es un `keydown` global que no cancela la tecla: con el
+     * formulario a la vista, la ráfaga del carné se escribiría dentro del campo
+     * que tenga el foco — el número del carné, legible, en un campo de concepto.
+     * Es el mismo defecto que se corrigió en el login (v2.638.0). */
+    if (paso === 'IDENTIDAD') {
+        return (
+            <Marco abierto={abierto} onClose={onClose} titulo="Quién se lleva el efectivo"
+                bajada={`${formatMoney(Number(monto) || 0)} · ${tipo?.etiqueta || ''}${concepto.trim() ? ` · ${concepto.trim()}` : ''}`}>
+                <IdentidadDeQuienRetira
+                    activo={!!abierto && !ocupado}
+                    persona={persona}
+                    onIdentificada={({ persona: p, vale: v }) => { setPersona(p); setVale(v); }}
+                    onOlvidar={() => { setPersona(null); setVale(null); }}
+                    bloqueado={ocupado}
+                />
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setPaso('DATOS')}>Atrás</Button>
+                    <Button variant="primary" disabled={ocupado || !persona || !vale} onClick={guardar}>
+                        Anotar
+                    </Button>
+                </div>
+            </Marco>
+        );
+    }
 
     return (
         <Marco abierto={abierto} onClose={onClose}
@@ -1361,10 +1411,20 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                         value={concepto} maxLength={50} readOnly={cerrado('concepto')}
                         onChange={(e) => setConcepto(e.target.value)}
                         placeholder={PISTA_DE_DETALLE[tipo.codigo] || (entra ? 'de qué se trata' : 'en qué se gastó')} />
-                    {tipo.pide_persona && (
+                    {/* Con identidad no hay campo: el nombre sale de quien
+                        quedó reconocido, y teclearlo sería contestar dos veces
+                        la misma pregunta —la mitad de ellas mal—. Se pide en el
+                        paso siguiente, con la pantalla limpia. */}
+                    {tipo.pide_persona && !identifica && (
                         <PortalInput label={entra ? 'De quién' : 'Quién recibe'} value={recibe} maxLength={60}
                             onChange={(e) => setRecibe(e.target.value)}
                             placeholder={entra ? 'nombre del cliente' : 'nombre de quien se lleva el efectivo'} />
+                    )}
+                    {tipo.pide_persona && identifica && (
+                        <Notice variant="info" icon={Lock}>
+                            Al continuar se le pide el <b>carné</b> a quien se lleva el efectivo.
+                            Si no lo trae, ahí mismo puede entrar con su usuario y contraseña.
+                        </Notice>
                     )}
                     {/* La foto puede leer mal, y entonces hay que poder corregirla.
                         Es un botón y no un campo siempre abierto: abrirlos sin
@@ -1380,8 +1440,12 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
 
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button variant="primary" disabled={ocupado || leyendo || !valido} onClick={guardar}>
-                    Anotar
+                {/* Con identidad el botón no anota: pasa al carné. Anotar antes
+                    de comprobar dejaría plata salida a nombre de nadie si la
+                    comprobación falla. */}
+                <Button variant="primary" disabled={ocupado || leyendo || !valido}
+                    onClick={() => (identifica ? setPaso('IDENTIDAD') : guardar())}>
+                    {identifica ? 'Continuar' : 'Anotar'}
                 </Button>
             </div>
         </Marco>

@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.930.0 — El vale identifica a quien recibe con el carné
+
+Migración `20260902024056`. Corrige un descuido de la versión anterior, señalado
+por el usuario:
+
+> «¿por qué raya de firma y no escanear el carné o poner usuario y contraseña?»
+
+No había motivo bueno. El papel del vale salió con una raya porque copié el
+criterio del comprobante de bolsa **sin ver que ahí sí se identifica** — con
+`IdentidadDeQuienRetira`, lector de carné y escotilla de usuario/contraseña,
+desde el 19-ago. Una raya prueba que alguien escribió algo; el carné prueba
+QUIÉN, lo resuelve el servidor y deja un vale de un solo uso.
+
+Ahora la salida del cajón pasa por el mismo camino que la de una bolsa: se
+llenan los datos, **se continúa a una pantalla que sólo tiene el lector**, y
+recién con la identidad comprobada se anota.
+
+**Va en su propia pantalla y no como un campo más**, y no es estética:
+`useCapturaDeCarne` es un `keydown` global que **no cancela la tecla**. Con el
+formulario dibujado, la ráfaga del carné se escribe dentro del campo que tenga
+el foco — el número del carné, legible, dentro del concepto. Es el mismo defecto
+que se corrigió en el login (v2.638.0).
+
+**El vale se consume ANTES de escribir nada.** Si la identidad no se puede
+probar, no hay movimiento y no se mueve un centavo. Al revés —escribir y
+comprobar después— dejaría plata salida a nombre de nadie. Y `recibido_metodo`
+sale del propio vale, no del navegador: dejar que lo diga el cliente permitiría
+escribir «carné» sobre una comprobación que fue de otra clase.
+
+### Pero no todo el que recibe es de la casa
+
+Un anticipo, una compra, una bonificación y un pago a proveedor se los lleva
+alguien de la sala: ahí el carné es la respuesta exacta. Una **devolución a un
+cliente** se la lleva el cliente, que no tiene carné — pedirle uno sería pedir lo
+imposible, y poner el del empleado diría que el empleado se quedó con el dinero.
+
+Por eso es una columna del catálogo (`identifica_receptor`) y no una regla
+global. Y **el papel cambia con ella**, como pidió el usuario:
+
+| | qué imprime |
+|---|---|
+| se identificó | el nombre y **cómo se comprobó**. Sin raya: el registro lo prueba mejor |
+| nombre escrito | raya de firma **con el nombre debajo** — «Firma de Jose Alberto Ramirez» |
+
+> «si el vale lo firma un tercero, que diga otro, se pone el nombre y sale la
+> raya de firma con el nombre abajo»
+
+El ingreso nunca lleva raya: quien entrega es el cliente y el papel es suyo —
+pedirle que firme el comprobante que se lleva no prueba nada.
+
 ## v2.929.0 — Compras: los anulados bajan en su propia carpeta del ZIP
 
 > «en las compras, al descargar el zip, ¿que separe en otra carpeta los

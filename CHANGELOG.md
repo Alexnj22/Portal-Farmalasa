@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.956.6 — Una diferencia nueva reabre el acuse del pedido
+
+Pregunta del usuario sobre la corrección de v2.949.0: *«¿sólo se puede hacer una
+vez, no confirmando todo, verdad? ¿Qué pasa si se confirma todo pero después
+resulta un problema?»*. Al ir a verificarlo aparecieron dos huecos.
+
+**Un acuse viejo firmando una corrección que nadie vio.** Nada limpia
+`corregido_bodega_at` ni `confirmado_correccion_at` —lo verifiqué en
+`update_pedido_sucursal_lifecycle`, que sólo los escribe—, así que un problema
+levantado DESPUÉS de cerrar el pedido terminaba, al resolverse, mostrando
+«Cerrado. La sala confirmó que recibió la corrección» con la fecha de la vuelta
+anterior. La segunda corrección nunca fue confirmada por nadie y la tarjeta
+decía que sí.
+
+Ahora, en cuanto una corrección crea una diferencia, **el cierre de esa sala se
+borra**: bodega vuelve a marcar y la sala vuelve a confirmar. Es la misma regla
+que ya tiene el renglón —una diferencia nueva no hereda la firma de la
+anterior— aplicada al pedido. Y la pantalla lo dice al guardar, porque quien
+corrige no tiene por qué saber que el acuse se cae: *«El pedido ya estaba
+cerrado: vuelve a quedar abierto hasta que bodega y la sala lo cierren de
+nuevo»*.
+
+**Y el aviso de una diferencia ya cerrada decía otra cosa.** Caía en la misma
+guarda que una con propuesta en curso —«esta diferencia ya se está
+resolviendo»— sobre algo que ya se resolvió y cuyo producto ya se movió. El
+freno es correcto: una cantidad que las dos partes firmaron no se reescribe por
+un costado. Lo que faltaba era decir por qué, y a dónde ir: ahora dice que hay
+que levantarlo con supervisión.
+
+Para que quede escrito, porque la pregunta era razonable y la respuesta no
+estaba en ningún lado:
+
+| | ¿se puede corregir? |
+|---|---|
+| contado, nadie propuso nada | **sí**, las veces que haga falta |
+| alguien ya propuso una salida | no — la cantidad es la que aceptó la otra parte |
+| la diferencia ya se cerró | no — se levanta con supervisión |
+| el pedido entero ya está confirmado y cerrado | **sí**, y reabre el acuse |
+| el pedido está anulado | no |
+
 ## v2.956.5 — El aviso de vales no pide lo que el corte ya hace
 
 Segunda pregunta del usuario sobre el mismo aviso de Bolsas: *«pero no entiendo,

@@ -1225,12 +1225,20 @@ export default function RecepcionModal({
                 producto: row.products?.nombre ?? null,
                 antes: Number(row.cantidad_recibida) || 0, ahora: cantidadRaw,
             });
+            // `reabrio_el_cierre`: el pedido ya estaba dado por cerrado y esta
+            // corrección lo vuelve a abrir. Hay que decirlo — quien corrige no
+            // tiene por qué saber que el acuse de bodega y sala se cae, y
+            // enterarse después de que «volvió a aparecer» es peor.
             useToastStore.getState().showToast(
                 'Corregido',
-                data?.error_tipo
+                (data?.error_tipo
                     ? 'Quedó anotado como diferencia. Bodega tiene que contestar antes de que el producto se mueva.'
-                    : 'El conteo ahora coincide con lo enviado.',
-                data?.error_tipo ? 'warning' : 'success', 6000,
+                    : 'El conteo ahora coincide con lo enviado.')
+                + (data?.reabrio_el_cierre
+                    ? ' El pedido ya estaba cerrado: vuelve a quedar abierto hasta que bodega y la sala lo cierren de nuevo.'
+                    : ''),
+                data?.error_tipo ? 'warning' : 'success',
+                data?.reabrio_el_cierre ? 9000 : 6000,
             );
         } catch (e) {
             setSaveError(mensajeAmigable(e));

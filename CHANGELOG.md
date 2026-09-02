@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.925.0 — Promociones — el bono es opcional, el lote también, y la cola de excedentes
+
+Tres cosas que el diseño daba por hechas y se corrigieron al ver la pantalla.
+
+**No toda promoción paga bono.** A veces la campaña sólo sirve para MEDIR qué se
+vendió de esos productos en esas fechas, y obligar a poner montos convierte una
+medición en un pago que nadie acordó. Ahora cada producto dice si paga, y cuando
+paga dice **quién lo cancela**: la empresa o un proveedor —y cuál, de los 127 a
+los que realmente se les factura—. Si no paga, no aparece ningún monto ni la
+pregunta de quién paga: un formulario que pide datos que no aplican invita a
+llenarlos, y después alguien cobra lo que nadie acordó.
+
+**El lote y el reparto ya no son obligatorios.** Una promoción que empezó hace
+tres días se registra igual y cuenta las ventas de esas fechas. Sin lote no hay
+techo, así que no cierra por agotarse, no avisa al 80% y no genera excedentes —
+las tres cosas se calculan CONTRA el lote y caen solas. Un reparto que sí se
+escribe tiene que seguir sumando su lote.
+
+**Y la cola de excedentes**, que es lo que faltaba de la fase. Lo vendido por
+encima del lote no se paga solo ni se descarta: queda con nombre y monto, y
+Supervisión decide. Negar exige el motivo, y a quien vendió le llega el aviso en
+los dos casos. Mientras nadie decide, esas unidades se muestran aparte y **no
+suman** — nadie ve un número que después le baja.
+
+El corte se hace en el orden en que se vendió, y una venta que cae justo sobre
+el límite se **prorratea**: el lote está en unidades base y el bono se paga en la
+unidad de la presentación, así que media caja no se paga entera ni se pierde
+entera.
+
+**En la pantalla**, corregido con las capturas del usuario:
+
+- El botón «Nueva promoción» estaba suelto en el encabezado, donde no van
+  botones. Ahora es una acción de `FilterBar`, que la dibuja como píldora en
+  escritorio y **la baja sola a la barra flotante al alcance del pulgar** en el
+  teléfono. Iba como descriptor y no como JSX, que es justo lo que permite esas
+  dos formas.
+- Los campos usaban `compact`, que es de celda de grilla: 32px de alto y 12px de
+  texto. En el teléfono eso rompe las dos reglas a la vez — los 44pt de blanco
+  táctil y los 16px que evitan que iOS acerque la pantalla al enfocar.
+
+Verificado en WebKit iPhone 13 con el modal abierto y un producto cargado: nada
+se desborda, ningún blanco táctil bajo 44pt, ningún campo bajo 16px.
+
 ## v2.924.2 — La salida dice de qué bolsa salió y cuánto se anota como vale
 
 Salió de verificar a mano una salida de $500 en Salud 3, a pedido del usuario.

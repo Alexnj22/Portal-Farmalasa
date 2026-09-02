@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Trash2, AlertTriangle, Check, Tag } from 'lucide-react';
+import { Trash2, AlertTriangle, Check, Tag, Pencil, Plus } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -13,7 +13,9 @@ import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import useBorrador from '../../hooks/useBorrador';
 import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
-import { crearPromocion, fetchPresentacionesDeProducto } from '../../data/promociones';
+import {
+    crearPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
+} from '../../data/promociones';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { hoySV, fmtUnidades, rotuloPresentacion } from './promocionesUtils';
 
@@ -25,12 +27,7 @@ const CLAVE_BORRADOR = 'promocion_nueva';
  * El filtro anterior era `!b.es_bodega && b.name !== 'Bodega'`, y dejaba entrar
  * a **Administración**: el `branches` del store trae sólo `id` y `name`, así que
  * `b.es_bodega` es `undefined` y su negación es cierta para todos. Un prop que
- * no existe no da error — deja pasar todo. Administración no está en el mapa del
- * sistema de origen porque no vende, así que aparecía un séptimo campo de
- * reparto que nunca podía tener ventas y descuadraba el lote a propósito.
- *
- * `SALAS_VENTA` es la lista que ya usa Metas para la misma pregunta; una segunda
- * copia se desincroniza el día que abra o cierre una sala.
+ * no existe no da error — deja pasar todo.
  */
 const useSalasDeVenta = () => {
     const branches = useStaffStore((s) => s.branches);
@@ -42,21 +39,53 @@ const useSalasDeVenta = () => {
     );
 };
 
+const renglonNuevo = (prod, salas) => ({
+    erp_product_id: prod.id,
+    producto: prod.nombre,
+    laboratorio: prod.laboratorio_nombre || 'Sin laboratorio',
+    factor_unidades: null,
+    inicio: hoySV(),
+    fin: '',
+    // Vacío a propósito: «todavía no se sabe» es un estado válido y se puede
+    // guardar así. La promoción cuenta las ventas de sus fechas igual.
+    lote_total: '',
+    tiene_bono: true,
+    paga: 'proveedor',
+    supplier_id: '',
+    bono_vendedor: '1.00',
+    bono_adm: '0.25',
+    bono_bodega: '0.25',
+    unidades_por_bono: '1',
+    reparto: Object.fromEntries(salas.map((s) => [s.id, ''])),
+    confirmado: false,
+});
+
+/**
+ * Nueva promoción.
+ *
+ * **Nada toca la base hasta «Guardar promoción»** (decisión del usuario): cada
+ * producto se confirma en la lista y el formulario pregunta si hay otro, pero la
+ * escritura es una sola al final. Si alguien se arrepiente a mitad, no queda una
+ * promoción incompleta que después haya que limpiar — y el borrador ya protege
+ * lo escrito de un cierre de sesión.
+ */
 export default function PromocionModal({ open, onClose, onGuardada }) {
     const salas = useSalasDeVenta();
 
-    const [nombre, setNombre]   = useState('');
-    const [nota, setNota]       = useState('');
+    const [nombre, setNombre] = useState('');
+    const [nota, setNota] = useState('');
     const [renglones, setRenglones] = useState([]);
     const [guardando, setGuardando] = useState(false);
     const [fallo, setFallo] = useState(null);
+    const [proveedores, setProveedores] = useState([]);
+
+    useEffect(() => {
+        if (!open) return;
+        fetchProveedoresDelSistema().then(setProveedores).catch(() => setProveedores([]));
+    }, [open]);
 
     const valor = useMemo(() => ({ nombre, nota, renglones }), [nombre, nota, renglones]);
 
-    /* Un formulario largo se guarda solo: la sesión de sala se cierra a los 5
-       minutos y lo escrito vive en memoria. El aviso «¿sigues ahí?» evita la
-       sorpresa, no la pérdida. No repone solo — devuelve el dato y la pantalla
-       decide. */
     const { recuperado, cuando, descartar, hayBorrador } = useBorrador(
         CLAVE_BORRADOR, valor, { activo: open },
     );
@@ -69,25 +98,9 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         descartar();
     }, [recuperado, descartar]);
 
-    const agregar = (prod) => {
-        setRenglones((rs) => {
-            if (rs.some((r) => r.erp_product_id === prod.id)) return rs;
-            return [...rs, {
-                erp_product_id: prod.id,
-                producto: prod.nombre,
-                laboratorio: prod.laboratorio_nombre || 'Sin laboratorio',
-                factor_unidades: null,
-                inicio: hoySV(),
-                fin: '',
-                lote_total: '',
-                bono_vendedor: '1.00',
-                bono_adm: '0.25',
-                bono_bodega: '0.25',
-                unidades_por_bono: '1',
-                reparto: Object.fromEntries(salas.map((s) => [s.id, ''])),
-            }];
-        });
-    };
+    const agregar = (prod) => setRenglones((rs) => (
+        rs.some((r) => r.erp_product_id === prod.id) ? rs : [...rs, renglonNuevo(prod, salas)]
+    ));
 
     const cambiar = (idx, campo, v) =>
         setRenglones((rs) => rs.map((r, i) => (i === idx ? { ...r, [campo]: v } : r)));
@@ -98,6 +111,8 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         )));
 
     const quitar = (idx) => setRenglones((rs) => rs.filter((_, i) => i !== idx));
+
+    const hayEditando = renglones.some((r) => !r.confirmado);
 
     const guardar = async () => {
         setFallo(null);
@@ -111,12 +126,19 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     factor_unidades: r.factor_unidades,
                     inicio: r.inicio,
                     fin: r.fin,
-                    lote_total: Number(r.lote_total) || 0,
-                    bono_vendedor: Number(r.bono_vendedor) || 0,
-                    bono_adm: Number(r.bono_adm) || 0,
-                    bono_bodega: Number(r.bono_bodega) || 0,
+                    // Vacío viaja como vacío, no como cero: la base distingue
+                    // «no se sabe» de «cero», y `Number('')` daría 0.
+                    lote_total: r.lote_total === '' ? null : Number(r.lote_total),
+                    tiene_bono: !!r.tiene_bono,
+                    paga: r.tiene_bono ? r.paga : null,
+                    supplier_id: r.tiene_bono && r.paga === 'proveedor'
+                        ? (r.supplier_id === '' ? null : Number(r.supplier_id))
+                        : null,
+                    bono_vendedor: r.tiene_bono ? Number(r.bono_vendedor) || 0 : 0,
+                    bono_adm: r.tiene_bono ? Number(r.bono_adm) || 0 : 0,
+                    bono_bodega: r.tiene_bono ? Number(r.bono_bodega) || 0 : 0,
                     unidades_por_bono: Number(r.unidades_por_bono) || 1,
-                    reparto: Object.entries(r.reparto)
+                    reparto: Object.entries(r.reparto || {})
                         .filter(([, u]) => Number(u) > 0)
                         .map(([branch_id, u]) => ({ branch_id: Number(branch_id), unidades: Number(u) })),
                 })),
@@ -130,8 +152,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         }
     };
 
-    const listo = nombre.trim() && renglones.length > 0
-        && renglones.every((r) => r.fin && Number(r.lote_total) > 0 && cuadra(r));
+    const listo = nombre.trim() && renglones.length > 0 && !hayEditando;
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Nueva promoción">
@@ -154,28 +175,47 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         required
                     />
 
-                    {/* El canónico: 150 ms de rebote medidos, piso de dos
-                        letras y la barra abierta. Se acota el alto porque acá
-                        es UNA sección del formulario, no la pantalla entera. */}
-                    <div className="max-h-56 flex flex-col">
-                        <BuscadorDeProducto
-                            key={renglones.length}
-                            onElegir={agregar}
-                            placeholder="Buscar el producto de la promoción…"
-                            invitacion={{ icono: Tag, texto: 'Busca el producto que entra en la promoción' }}
+                    {renglones.map((r, i) => (r.confirmado ? (
+                        <RenglonListo
+                            key={r.erp_product_id}
+                            r={r}
+                            proveedores={proveedores}
+                            onEditar={() => cambiar(i, 'confirmado', false)}
+                            onQuitar={() => quitar(i)}
                         />
-                    </div>
-
-                    {renglones.map((r, i) => (
+                    ) : (
                         <RenglonEditor
                             key={r.erp_product_id}
                             r={r}
                             salas={salas}
+                            proveedores={proveedores}
                             onCambiar={(c, v) => cambiar(i, c, v)}
                             onReparto={(s, v) => cambiarReparto(i, s, v)}
                             onQuitar={() => quitar(i)}
+                            onListo={() => cambiar(i, 'confirmado', true)}
                         />
-                    ))}
+                    )))}
+
+                    {/* El buscador sólo aparece cuando no hay nada a medio
+                        llenar: preguntar «¿hay otro?» con un producto sin
+                        terminar invita a dejarlo incompleto. */}
+                    {!hayEditando && (
+                        <div className="max-h-56 flex flex-col">
+                            <BuscadorDeProducto
+                                key={renglones.length}
+                                onElegir={agregar}
+                                placeholder={renglones.length
+                                    ? 'Agregar otro producto…'
+                                    : 'Buscar el producto de la promoción…'}
+                                invitacion={{
+                                    icono: renglones.length ? Plus : Tag,
+                                    texto: renglones.length
+                                        ? '¿Hay otro producto? Búscalo, o guarda la promoción'
+                                        : 'Busca el producto que entra en la promoción',
+                                }}
+                            />
+                        </div>
+                    )}
 
                     <PortalTextarea
                         label="Nota"
@@ -192,7 +232,9 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
 
             <LiquidModal.Footer>
                 <span className="text-caption text-content-3 mr-auto">
-                    Nace en borrador — no cuenta hasta activarla.
+                    {hayEditando
+                        ? 'Termina el producto para poder guardar.'
+                        : 'Nace en borrador — no cuenta hasta activarla.'}
                 </span>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 <Button icon={Check} loading={guardando} disabled={!listo} onClick={guardar}>
@@ -203,22 +245,32 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     );
 }
 
-/** ¿El reparto de este renglón suma su lote? Lo valida también la base, pero
- *  decirlo mientras se escribe evita mandar algo que va a rebotar. */
-function cuadra(r) {
-    const suma = Object.values(r.reparto || {}).reduce((a, u) => a + (Number(u) || 0), 0);
-    return suma === (Number(r.lote_total) || 0) && suma > 0;
+/** Un producto ya confirmado: una línea, no un formulario abierto. */
+function RenglonListo({ r, proveedores, onEditar, onQuitar }) {
+    const prov = proveedores.find((p) => p.value === String(r.supplier_id))?.label;
+    return (
+        <div className="rounded-lg border border-border-card bg-surface-card-hover px-3 py-2.5
+                        flex items-center gap-2">
+            <Check size={15} className="text-success shrink-0" />
+            <div className="flex-1 min-w-0">
+                <p className="text-body-sm font-semibold text-content truncate">{r.producto}</p>
+                <p className="text-caption text-content-3 truncate">
+                    {r.lote_total ? `Lote ${fmtUnidades(r.lote_total)} · ` : 'Sin lote · '}
+                    {r.tiene_bono
+                        ? `$${r.bono_vendedor} · paga ${r.paga === 'empresa' ? 'la empresa' : (prov || 'un proveedor')}`
+                        : 'sólo mide, no paga bono'}
+                </p>
+            </div>
+            <Button variant="ghost" size="sm" iconOnly icon={Pencil} onClick={onEditar} title="Editar" />
+            <Button variant="ghost" size="sm" iconOnly icon={Trash2} onClick={onQuitar} title="Quitar" />
+        </div>
+    );
 }
 
 /**
  * El rótulo de un control que no trae el suyo — `LiquidSelect` y
- * `LiquidDatePicker` no llevan etiqueta, y `PortalInput` sí. Mezclarlos en una
- * fila sin esto deja las dos columnas arrancando a alturas distintas, que es
- * exactamente lo que se veía en la captura.
- *
- * `falta` marca lo que hay que llenar SIN el badge «Requerido» del canónico:
- * ahí es una píldora del alto de un botón, y en una rejilla de campos chicos
- * pesa más que el campo que señala.
+ * `LiquidDatePicker` no llevan etiqueta y `PortalInput` sí. Mezclarlos en una
+ * fila sin esto deja las columnas arrancando a alturas distintas.
  */
 function Campo({ rotulo, falta = false, children }) {
     return (
@@ -232,7 +284,7 @@ function Campo({ rotulo, falta = false, children }) {
     );
 }
 
-function RenglonEditor({ r, salas, onCambiar, onReparto, onQuitar }) {
+function RenglonEditor({ r, salas, proveedores, onCambiar, onReparto, onQuitar, onListo }) {
     const [presentaciones, setPresentaciones] = useState([]);
 
     useEffect(() => {
@@ -243,23 +295,26 @@ function RenglonEditor({ r, salas, onCambiar, onReparto, onQuitar }) {
 
     const opcionesPres = useMemo(() => ([
         { value: '', label: 'Cualquier presentación' },
-        ...presentaciones.map((p) => ({
-            value: String(p.factor),
-            label: `${p.etiqueta} · ×${p.factor}`,
-        })),
+        ...presentaciones.map((p) => ({ value: String(p.factor), label: `${p.etiqueta} · ×${p.factor}` })),
     ]), [presentaciones]);
+
+    const etiquetaPres = presentaciones
+        .find((p) => String(p.factor) === String(r.factor_unidades))?.etiqueta;
 
     const suma = Object.values(r.reparto || {}).reduce((a, u) => a + (Number(u) || 0), 0);
     const lote = Number(r.lote_total) || 0;
-    const ok = suma === lote && suma > 0;
+    const hayLote = r.lote_total !== '' && lote > 0;
+    // El reparto sólo tiene que cuadrar si alguien empezó a repartir. Sin lote y
+    // sin reparto, la promoción mide y ya.
+    const repartoOk = suma === 0 || (hayLote && suma === lote);
 
-    // Con una presentación elegida el monto es POR esa presentación, no por
-    // unidad. Decirlo en la etiqueta evita el error de poner $1 por caja
-    // creyendo que paga por caja cuando pagaría por tableta.
     const unidadPago = r.factor_unidades == null
         ? '$/unidad'
-        : `$/${(presentaciones.find((p) => String(p.factor) === String(r.factor_unidades))?.etiqueta || 'presentación')
-              .split(' ')[0].toLowerCase()}`;
+        : `$/${(etiquetaPres || 'presentación').split(' ')[0].toLowerCase()}`;
+
+    const puedeConfirmar = !!r.fin
+        && repartoOk
+        && (!r.tiene_bono || r.paga === 'empresa' || (r.paga === 'proveedor' && !!r.supplier_id));
 
     return (
         <div className="rounded-lg border border-border-card bg-surface-card p-3 space-y-3">
@@ -272,8 +327,6 @@ function RenglonEditor({ r, salas, onCambiar, onReparto, onQuitar }) {
                     onClick={onQuitar} title="Quitar producto" />
             </div>
 
-            {/* Las dos columnas llevan rótulo o quedan desalineadas: el campo
-                con etiqueta empieza más abajo que el que no la tiene. */}
             <div className="grid gap-3 sm:grid-cols-2">
                 <Campo rotulo="Presentación">
                     <LiquidSelect
@@ -281,83 +334,140 @@ function RenglonEditor({ r, salas, onCambiar, onReparto, onQuitar }) {
                         onChange={(v) => onCambiar('factor_unidades', v === '' ? null : Number(v))}
                         options={opcionesPres}
                         clearable={false}
-                        compact
                         ariaLabel="Presentación"
                     />
                 </Campo>
-                <Campo rotulo="Lote en unidades" falta={!(Number(r.lote_total) > 0)}>
+                <Campo rotulo="Lote en unidades">
                     <PortalInput
                         name={`lote-${r.erp_product_id}`}
                         value={r.lote_total}
                         onChange={(e) => onCambiar('lote_total', e.target.value)}
                         inputMode="numeric"
-                        placeholder="0"
-                        compact
+                        placeholder="Vacío si todavía no se sabe"
                     />
                 </Campo>
             </div>
 
-            {/* El selector del portal, no `type="date"`: el nativo pinta el
-                formato del sistema operativo —en la captura salía 09/01/2026,
-                que se lee como 9 de enero— y el portal escribe DD/MM/AAAA. */}
             <div className="grid gap-3 sm:grid-cols-2">
                 <Campo rotulo="Empieza">
-                    <LiquidDatePicker value={r.inicio} onChange={(v) => onCambiar('inicio', v)} compact />
+                    <LiquidDatePicker value={r.inicio} onChange={(v) => onCambiar('inicio', v)} />
                 </Campo>
                 <Campo rotulo="Termina" falta={!r.fin}>
-                    <LiquidDatePicker value={r.fin} onChange={(v) => onCambiar('fin', v)} compact />
+                    <LiquidDatePicker value={r.fin} onChange={(v) => onCambiar('fin', v)} />
                 </Campo>
             </div>
 
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-                <PortalInput label={`Vendedor ${unidadPago}`} name={`bv-${r.erp_product_id}`}
-                    value={r.bono_vendedor} onChange={(e) => onCambiar('bono_vendedor', e.target.value)}
-                    inputMode="decimal" compact />
-                <PortalInput label="Fondo admón." name={`ba-${r.erp_product_id}`}
-                    value={r.bono_adm} onChange={(e) => onCambiar('bono_adm', e.target.value)}
-                    inputMode="decimal" compact />
-                <PortalInput label="Fondo bodega" name={`bb-${r.erp_product_id}`}
-                    value={r.bono_bodega} onChange={(e) => onCambiar('bono_bodega', e.target.value)}
-                    inputMode="decimal" compact />
-            </div>
+            <div className="rounded-lg bg-surface-card-hover p-2.5 space-y-3">
+                <Campo rotulo="¿Este producto paga bono?">
+                    <LiquidSelect
+                        value={r.tiene_bono ? 'si' : 'no'}
+                        onChange={(v) => onCambiar('tiene_bono', v === 'si')}
+                        options={[
+                            { value: 'si', label: 'Sí, paga por unidad vendida' },
+                            { value: 'no', label: 'No — sólo medir cuánto se vende' },
+                        ]}
+                        clearable={false}
+                        ariaLabel="Paga bono"
+                    />
+                </Campo>
 
-            <div>
-                <div className="flex items-baseline gap-2 mb-1.5">
-                    <span className="text-label uppercase tracking-wide text-content-3 font-semibold">
-                        Reparto por sala
-                    </span>
-                    <span className="flex-1" />
-                    <Badge variant={ok ? 'success' : 'warning'} size="sm">
-                        {fmtUnidades(suma)} de {fmtUnidades(lote)}
-                    </Badge>
-                </div>
-                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-                    {salas.map((s) => (
-                        <PortalInput
-                            key={s.id}
-                            label={s.name}
-                            name={`rep-${r.erp_product_id}-${s.id}`}
-                            value={r.reparto?.[s.id] ?? ''}
-                            onChange={(e) => onReparto(s.id, e.target.value)}
-                            inputMode="numeric"
-                            compact
-                        />
-                    ))}
-                </div>
-                {!ok && lote > 0 && (
-                    <p className="text-caption text-warning-text mt-1.5">
-                        El reparto tiene que sumar exactamente el lote — si no, alguna sala vendería
-                        contra un número que no es suyo y el aviso les mentiría a todas.
-                    </p>
+                {/* Sin bono no se pregunta nada más: ni montos ni quién paga. Un
+                    formulario que pide datos que no aplican invita a llenarlos,
+                    y después alguien cobra lo que nadie acordó. */}
+                {r.tiene_bono && (
+                    <>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <Campo rotulo="¿Quién lo cancela?">
+                                <LiquidSelect
+                                    value={r.paga || ''}
+                                    onChange={(v) => onCambiar('paga', v)}
+                                    options={[
+                                        { value: 'empresa',   label: 'La empresa' },
+                                        { value: 'proveedor', label: 'Un proveedor' },
+                                    ]}
+                                    clearable={false}
+                                    ariaLabel="Quién paga el bono"
+                                />
+                            </Campo>
+                            {r.paga === 'proveedor' && (
+                                <Campo rotulo="Proveedor" falta={!r.supplier_id}>
+                                    <LiquidSelect
+                                        value={String(r.supplier_id || '')}
+                                        onChange={(v) => onCambiar('supplier_id', v)}
+                                        options={proveedores}
+                                        placeholder="Elige el proveedor"
+                                        clearable={false}
+                                       
+                                        ariaLabel="Proveedor que paga"
+                                    />
+                                </Campo>
+                            )}
+                        </div>
+
+                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                            <PortalInput label={`Vendedor ${unidadPago}`} name={`bv-${r.erp_product_id}`}
+                                value={r.bono_vendedor} onChange={(e) => onCambiar('bono_vendedor', e.target.value)}
+                                inputMode="decimal" />
+                            <PortalInput label="Fondo admón." name={`ba-${r.erp_product_id}`}
+                                value={r.bono_adm} onChange={(e) => onCambiar('bono_adm', e.target.value)}
+                                inputMode="decimal" />
+                            <PortalInput label="Fondo bodega" name={`bb-${r.erp_product_id}`}
+                                value={r.bono_bodega} onChange={(e) => onCambiar('bono_bodega', e.target.value)}
+                                inputMode="decimal" />
+                        </div>
+                    </>
                 )}
             </div>
 
+            {/* El reparto sólo aparece si hay lote que repartir: sin lote no hay
+                nada que dividir, y seis campos vacíos parecen obligatorios. */}
+            {hayLote && (
+                <div>
+                    <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
+                        <span className="text-label uppercase tracking-wide text-content-3 font-semibold">
+                            Reparto por sala
+                        </span>
+                        <span className="text-caption text-content-3">opcional</span>
+                        <span className="flex-1" />
+                        {suma > 0 && (
+                            <Badge variant={repartoOk ? 'success' : 'warning'} size="sm">
+                                {fmtUnidades(suma)} de {fmtUnidades(lote)}
+                            </Badge>
+                        )}
+                    </div>
+                    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+                        {salas.map((s) => (
+                            <PortalInput
+                                key={s.id}
+                                label={s.name}
+                                name={`rep-${r.erp_product_id}-${s.id}`}
+                                value={r.reparto?.[s.id] ?? ''}
+                                onChange={(e) => onReparto(s.id, e.target.value)}
+                                inputMode="numeric"
+                               
+                            />
+                        ))}
+                    </div>
+                    {!repartoOk && (
+                        <p className="text-caption text-warning-text mt-1.5">
+                            Si repartes, tiene que sumar exactamente el lote — si no, alguna sala
+                            vendería contra un número que no es suyo. Déjalo todo vacío para no repartir.
+                        </p>
+                    )}
+                </div>
+            )}
+
             <p className="text-caption text-content-3">
                 {r.factor_unidades == null
-                    ? 'Cuenta cualquier presentación y paga por unidad base.'
-                    : `Sólo cuentan las ventas hechas como ${rotuloPresentacion(r.factor_unidades,
-                        presentaciones.find((p) => String(p.factor) === String(r.factor_unidades))?.etiqueta)}, y el monto es por esa presentación.`}
+                    ? 'Cuenta cualquier presentación'
+                    : `Sólo cuentan las ventas hechas como ${rotuloPresentacion(r.factor_unidades, etiquetaPres)}`}
+                {r.lote_total === '' && ' · sin lote, sólo mide las ventas de esas fechas'}
+                {'.'}
             </p>
+
+            <Button icon={Check} size="sm" disabled={!puedeConfirmar} onClick={onListo}>
+                Guardar producto
+            </Button>
         </div>
     );
 }

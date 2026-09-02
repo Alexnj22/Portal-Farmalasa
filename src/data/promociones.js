@@ -100,3 +100,19 @@ export async function fetchPresentacionesDeProducto(erpProductId) {
     if (error) throw error;
     return data ?? [];
 }
+
+/**
+ * Los proveedores a los que se les factura, para decir quién paga el bono.
+ *
+ * Sale de `suppliers` —los 127 que vienen del sistema de origen— y no de la
+ * lista corta del portal: no hay que mantenerla a mano y ya contiene a quien
+ * emite la nota de crédito de una campaña.
+ */
+export async function fetchProveedoresDelSistema() {
+    const { data, error } = await supabase
+        .from('suppliers')
+        .select('id, nombre')
+        .order('nombre');
+    if (error) throw error;
+    return (data ?? []).map((s) => ({ value: String(s.id), label: s.nombre }));
+}

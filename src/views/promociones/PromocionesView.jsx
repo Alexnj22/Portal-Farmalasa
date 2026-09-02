@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Tag, Layers, History, Plus, AlertTriangle } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
-import Button from '../../components/common/Button';
+import FilterBar from '../../components/common/FilterBar';
 import Notice from '../../components/common/Notice';
 import { LoadingState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../hooks/usePestanaEnUrl';
@@ -75,9 +75,13 @@ export default function PromocionesView() {
         />
     );
 
-    const headerLeft = puedeEditar ? (
-        <Button icon={Plus} onClick={() => setModal(true)}>Nueva promoción</Button>
-    ) : null;
+    /* `rotuloFijo` porque ésta es LA acción de la pantalla: un botón relleno con
+       un «+» mudo no dice qué agrega, y es justo el control que la vista existe
+       para que se apriete. */
+    const acciones = puedeEditar ? [{
+        key: 'nueva', icon: Plus, label: 'Nueva promoción', rotulo: 'Nueva',
+        variant: 'primary', rotuloFijo: true, onClick: () => setModal(true),
+    }] : [];
 
     /* Los tres estados van separados a propósito. Un rechazo de permiso NO se
        puede ver como una lista vacía: deja a la persona sin nada que reportar
@@ -118,10 +122,11 @@ export default function PromocionesView() {
             icon={Tag}
             title="Promociones"
             filtersContent={filtersContent}
-            headerLeft={headerLeft}
             transparentBody
         >
             <div className="p-4 md:p-6 space-y-6">
+                {acciones.length > 0 && <FilterBar acciones={acciones} />}
+
                 {/* El aviso va una sola vez y arriba de todo: la pantalla no
                     puede prometer un pago que hoy no existe. */}
                 <Notice variant="warning" icon={AlertTriangle}>

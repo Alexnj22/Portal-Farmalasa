@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.959.0 — La boleta llena el concepto, y el portal guarda el texto completo
+
+Pedido del usuario sobre la boleta de Claro de Salud 4: *«por qué no se agrega
+el concepto, pago de telefonía, compañía Claro, tipo línea móvil, teléfono el
+que sale ahí, así cualquier cosa podemos buscar»*.
+
+### El concepto dice ahora QUÉ servicio y DE QUIÉN
+
+El lector de boletas ya sacaba la empresa (`CLARO`), pero no el servicio ni el
+número. Ahora lee dos campos más y el concepto sale así:
+
+```
+antes:   Pago de CLARO
+ahora:   Pago de CLARO · LINEA MOVIL · 77463090
+```
+
+La última palabra del pedido es la razón de fondo: **buscar**. «Pago de CLARO»
+es lo mismo veinte veces al mes, y el teléfono es lo único que distingue *ese*
+pago. El nombre del cliente no sirve —el papel lo imprime cortado, «YANIRA NOEMI
+AGUILAR QU»— y el monto se repite. Vale igual para un depósito (el NIC, la
+cuenta); una remesa no los lleva, porque ahí la referencia es la boleta.
+
+Y cabe: **38 caracteres** contra los 50 del campo del sistema de la caja.
+
+### El portal guarda el texto completo
+
+El campo de concepto de ese sistema mide **50 caracteres** — medido sobre los
+**2,418 movimientos** que él mismo devuelve: el más largo tiene exactamente 50,
+ninguno lo pasa, 32 llegan al tope. El portal recortaba antes de mandar (si no,
+recortaría el otro por la derecha igual, que es donde está lo que dice qué fue)
+**y guardaba ese mismo texto recortado**. La cola se perdía en los dos lados:
+
+```
+Remesa entregada a un cliente · MONEYGRAM · PAGO D
+└────────────── 50 caracteres exactos ───────────┘
+```
+
+Ahora son dos campos: `concepto` es lo que se pudo **mandar**, `detalle` es lo
+que se **escribió**. La pantalla muestra el segundo. Las filas anteriores al
+2-sep no tienen cómo recuperarlo y caen al recortado — `NULL` dice «no se
+guardó», que es distinto de decir que ése era el completo.
+
 ## v2.958.8 — Cada movimiento del día dice su hora, quién lo anotó y su boleta
 
 Reportado por el usuario sobre la remesa de **$50 de MoneyGram** de Salud 4, en

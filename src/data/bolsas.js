@@ -934,8 +934,15 @@ export async function abrirCaja({ sala, montoApertura = 0 }) {
     return operar({ accion: 'abrir', sala, monto_apertura: montoApertura });
 }
 
-export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null, fotoUrl = null, vendedor = '' }) {
-    return operar({ accion: 'ingreso', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, vendedor });
+export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null,
+    fotoUrl = null, vendedor = '', conceptoCompleto = null }) {
+    // `detalle` es el concepto SIN el recorte a 50 del sistema de la caja. Va
+    // igual que en la salida: un ingreso escrito largo perdía la cola por el
+    // mismo motivo, y nadie iba a mirar dos veces el mismo defecto.
+    return operar({
+        accion: 'ingreso', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, vendedor,
+        detalle: conceptoCompleto,
+    });
 }
 
 /**
@@ -979,10 +986,14 @@ export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono 
  * es de la casa —una devolución se la lleva un cliente y no tiene carné—.
  */
 export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null,
-    fotoUrl = null, recibe = '', recibidoPor = null, vale = null }) {
+    fotoUrl = null, recibe = '', recibidoPor = null, vale = null, detalle = null }) {
     return operar({
         accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe,
         recibido_por: recibidoPor, vale,
+        // El concepto SIN el recorte a 50 del sistema de la caja. Viaja aparte
+        // porque `concepto` es lo que se le manda a él y esto es lo que se
+        // escribió — ver la migración `..._concepto_completo`.
+        detalle,
     });
 }
 
@@ -1128,8 +1139,8 @@ export async function fetchMovimientosDelPortal(sala, dia = null) {
      * remesa de $50 de Salud 4: «no tiene hora, no tiene foto ni nombre de
      * quien lo hizo, no se puede ver la foto». Los tres datos existían. */
     const { data, error } = await supabase.from('caja_movimientos_portal')
-        .select('id, tipo, monto, concepto, numero_boleta, erp_movimiento_id, anulado_at,'
-              + ' registrado_at, registrado_por, foto_url')
+        .select('id, tipo, monto, concepto, detalle, numero_boleta, erp_movimiento_id,'
+              + ' anulado_at, registrado_at, registrado_por, foto_url')
         .eq('branch_id', sala).eq('fecha', cual)
         .order('registrado_at', { ascending: false });
     if (error) { console.error('caja: movimientos del portal:', error.message); return []; }

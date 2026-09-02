@@ -821,6 +821,18 @@ Deno.serve(async (req) => {
         .insert({
           branch_id: sala, tipo: esEntrada ? "ENTRADA" : "SALIDA",
           monto: Number(dosDecimales(monto)), concepto,
+          /* El concepto COMPLETO, sin el recorte a 50 que exige el campo del
+           * sistema de la caja. `concepto` es lo que se pudo MANDAR allá;
+           * esto es lo que se ESCRIBIÓ. Son dos verdades distintas, y hasta el
+           * 2026-09-02 se guardaba sólo la primera: la remesa de $50 de Salud 4
+           * quedó como «… · MONEYGRAM · PAGO D», cortada a la mitad de la nota.
+           *
+           * Se guarda sólo si dice MÁS que el recortado: si son iguales, dos
+           * copias del mismo texto no agregan nada y `null` deja claro que no
+           * hubo nada que recortar. */
+          detalle: body.detalle && String(body.detalle).trim() !== concepto
+            ? String(body.detalle).trim().slice(0, 500)
+            : null,
           /* QUÉ fue, además de cuánto. El concepto sigue siendo texto libre —es
            * el detalle: «Neurobion 25000»— y el tipo es lo que se puede sumar.
            * Sin él, la aplicación de inyección estaba escrita de quince maneras

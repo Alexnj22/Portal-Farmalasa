@@ -114,3 +114,56 @@ describe('conceptoDelPapel', () => {
         expect(conceptoDelPapel(null)).toBe('');
     });
 });
+
+/* ── QUÉ servicio y DE QUIÉN ────────────────────────────────────────────────
+ *
+ * Pedido del usuario (2026-09-02) sobre la boleta de Claro de Salud 4: «por qué
+ * no se agrega el concepto, pago de telefonía, compañía Claro, tipo línea móvil,
+ * teléfono el que sale ahí, así cualquier cosa podemos buscar».
+ *
+ * La última palabra es la razón: «Pago de CLARO» es lo mismo veinte veces al
+ * mes, y el teléfono es lo único que distingue ESE pago. El nombre del cliente
+ * no sirve —el papel lo imprime cortado, «YANIRA NOEMI AGUILAR QU»— y el monto
+ * se repite todos los meses. */
+describe('lo que hace buscable un pago de servicio', () => {
+    const CLARO = {
+        tipo_operacion: 'PAGO_SERVICIO',
+        operacion_impresa: 'PAGO DE TELEFONIA',
+        servicio: 'CLARO',
+        detalle_servicio: 'LINEA MOVIL',
+        referencia_servicio: '77463090',
+    };
+
+    it('la boleta real de Salud 4: empresa, servicio y teléfono', () => {
+        expect(conceptoDelPapel(CLARO)).toBe('Pago de CLARO · LINEA MOVIL · 77463090');
+    });
+
+    it('cabe en el campo del sistema de la caja', () => {
+        // 50 caracteres, medidos sobre 2,418 movimientos del origen. Si el
+        // concepto no cupiera, el recorte se comería justo el número.
+        expect(conceptoDelPapel(CLARO).length).toBeLessThanOrEqual(50);
+    });
+
+    it('cada pieza sólo si el papel la trajo', () => {
+        expect(conceptoDelPapel({ ...CLARO, detalle_servicio: null }))
+            .toBe('Pago de CLARO · 77463090');
+        expect(conceptoDelPapel({ ...CLARO, referencia_servicio: null }))
+            .toBe('Pago de CLARO · LINEA MOVIL');
+        expect(conceptoDelPapel({ ...CLARO, detalle_servicio: null, referencia_servicio: null }))
+            .toBe('Pago de CLARO');
+    });
+
+    it('un depósito también dice de quién', () => {
+        expect(conceptoDelPapel({
+            tipo_operacion: 'DEPOSITO', servicio: 'ANDA',
+            detalle_servicio: null, referencia_servicio: '4410225',
+        })).toBe('Depósito ANDA · 4410225');
+    });
+
+    it('una remesa NO los lleva: su referencia es la boleta, no una cuenta', () => {
+        expect(conceptoDelPapel({
+            tipo_operacion: 'REMESA', red_remesas: 'MONEY GRAM WS',
+            detalle_servicio: 'X', referencia_servicio: '99999999',
+        })).toBe('Remesa MONEY GRAM WS');
+    });
+});

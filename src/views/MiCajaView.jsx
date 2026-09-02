@@ -572,6 +572,14 @@ export default function MiCajaView({ comoPestana = false }) {
             recibe: datos.recibe,
             recibidoPor: datos.recibidoPor,
             vale: datos.vale,
+            // El texto entero. `concepto` va recortado a 50 porque es lo que le
+            // cabe al sistema de la caja; esto es lo que alguien escribió, y sin
+            // guardarlo la cola se perdía en los dos lados.
+            //
+            // Es `conceptoCompleto` y NO `detalle`: `detalle` es la nota suelta
+            // que va al PAPEL, sin el rótulo del tipo adelante. Dos textos
+            // parecidos con dos trabajos distintos.
+            detalle: datos.conceptoCompleto,
         }), 'Salida anotada.');
         // `correr` ya mostró el motivo en un aviso y dejó el diálogo abierto:
         // se devuelve sin texto para no decir lo mismo dos veces.
@@ -1220,7 +1228,12 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
         const delCajon = (movimientos || []).map((m) => ({
             clave: `caja-${m.id}`,
             cuando: m.registrado_at,
-            titulo: m.concepto,
+            /* El COMPLETO cuando lo hay. `concepto` es lo que le cupo al
+             * sistema de la caja —50 caracteres— y por eso la remesa de $50 de
+             * Salud 4 se leía «… · MONEYGRAM · PAGO D». Las filas anteriores al
+             * 2026-09-02 no tienen el completo y caen al recortado, que es todo
+             * lo que se guardó de ellas. */
+            titulo: m.detalle || m.concepto,
             entra: m.tipo === 'ENTRADA',
             monto: Number(m.monto || 0),
             anulado: !!m.anulado_at,
@@ -1621,6 +1634,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             // un campo de texto, y ahí el papel tiene que seguir diciendo qué
             // fue. El `tipo` viaja aparte y es lo que se puede sumar.
             concepto: [tipo?.etiqueta, concepto.trim()].filter(Boolean).join(' · ').slice(0, 50),
+            /* El mismo texto SIN recortar. `concepto` es lo que le cabe al
+             * sistema de la caja —50 caracteres, medidos— y esto es lo que se
+             * escribió. Guardar sólo el primero perdía la cola en los dos
+             * lados: la remesa de $50 de Salud 4 quedó en «… · PAGO D». */
+            conceptoCompleto: [tipo?.etiqueta, concepto.trim()].filter(Boolean).join(' · '),
             tipo: tipo?.codigo || null,
             boleta: boleta.trim() || null, fotoUrl,
             /* El ingreso ya no manda vendedor: lo resuelve el servidor con la

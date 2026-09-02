@@ -149,6 +149,8 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
   "operacion_impresa": "la línea que NOMBRA la operación, tal como está impresa, o null",
   "red_remesas": "la red de remesas del detalle (MoneyGram, Ria, Western Union...), o null",
   "servicio": "la empresa a la que se le PAGA (CAESS, ANDA, CLARO...), del detalle, o null",
+  "detalle_servicio": "qué servicio de esa empresa (LINEA MOVIL, RESIDENCIAL, PREPAGO...), o null",
+  "referencia_servicio": "el número que identifica a quién se le pagó (teléfono, NIC, cuenta), o null",
   "monto": 0.00,
   "moneda": "USD" | null,
   "fecha": "YYYY-MM-DD o null",
@@ -232,6 +234,20 @@ Reglas:
   papel, no por una regla fija.
 
   Si el papel no nombra ninguna empresa de servicio, null.
+- "detalle_servicio" es lo que CALIFICA al servicio en su propio renglón, y suele
+  ir pegado a la empresa con un guión. En "PAGO DE TELEFONIA / CLARO - LINEA
+  MOVIL" el servicio es "CLARO" y el detalle_servicio es "LINEA MOVIL". Copialo
+  tal cual, sin la empresa adelante. Si no lo dice, null.
+- "referencia_servicio" es el número que dice A QUIÉN se le pagó: el teléfono en
+  un pago de telefonía, el NIC en uno de luz, el número de cuenta o de contrato
+  en los demás. Va rotulado —TELEFONO:, NIC:, CUENTA:, CONTRATO:, SUMINISTRO:—
+  y NO es la boleta, ni la referencia del POS, ni la autorización, ni el
+  terminal, ni el monto. Sólo los dígitos.
+
+  Existe porque es el ÚNICO dato con el que alguien vuelve a encontrar ese pago
+  después: el nombre del cliente puede estar cortado y el monto se repite todos
+  los meses. En la boleta de Claro del 2-sep-2026 es "77463090", rotulado
+  TELEFONO. Si el papel no trae ninguno así, null.
 - "recuadro" es la caja que encierra SÓLO el papel dentro de la foto, en fracciones
   de 0 a 1 sobre el ancho y el alto de la imagen (x,y = esquina superior izquierda).
   Si el papel ocupa toda la foto, devuelve {"x":0,"y":0,"w":1,"h":1}.

@@ -82,16 +82,34 @@ export function conceptoDelPapel(leido) {
     const servicio = String(leido?.servicio || '').trim();
     // La cabecera. Se usa en un solo caso, y está dicho por qué.
     const cabecera = String(leido?.entidad || '').trim();
+    /* ── QUÉ servicio, y DE QUIÉN ──────────────────────────────────────────
+     *
+     * Pedido del usuario (2026-09-02) sobre la boleta de Claro: «por qué no se
+     * agrega el concepto, pago de telefonía, compañía Claro, tipo línea móvil,
+     * teléfono el que sale ahí, así cualquier cosa podemos buscar».
+     *
+     * Y la razón de fondo es la última palabra: **buscar**. «Pago de CLARO» es
+     * lo mismo veinte veces al mes; el número de teléfono es lo único que
+     * distingue ESE pago de los otros. El nombre del cliente no sirve —el papel
+     * lo imprime cortado, «YANIRA NOEMI AGUILAR QU»— y el monto se repite.
+     *
+     * Se escriben tal como vienen: son un servicio y un número, y capitalizarlos
+     * sólo puede romperlos. */
+    const queServicio = String(leido?.detalle_servicio || '').trim();
+    const deQuien = String(leido?.referencia_servicio || '').trim();
+    // Se cuelgan del concepto, no lo reemplazan: primero qué fue, después de
+    // quién. Cada pieza sólo si el papel la trajo.
+    const con = (base) => [base, queServicio, deQuien].filter(Boolean).join(' · ');
     switch (String(leido?.tipo_operacion || '').toUpperCase()) {
         // La red va primero aunque haya línea impresa: ésta dice «REMESA» a
         // secas y la red es lo que distingue una remesa de otra.
         case 'REMESA':        return red ? `Remesa ${red}` : (impresa || 'Remesa');
-        case 'PAGO_SERVICIO': return servicio ? `Pago de ${servicio}` : (impresa || 'Pago de servicio');
+        case 'PAGO_SERVICIO': return con(servicio ? `Pago de ${servicio}` : (impresa || 'Pago de servicio'));
         // El POS entrega efectivo contra una tarjeta, un token o una cuenta. No
         // lleva a quién: el nombre impreso ahí es el banco del aparato — lo que
         // sí distingue es CÓMO se retiró, y eso lo dice la línea del papel.
         case 'RETIRO':        return impresa || 'Retiro de efectivo';
-        case 'DEPOSITO':      return servicio ? `Depósito ${servicio}` : (impresa || 'Depósito');
+        case 'DEPOSITO':      return con(servicio ? `Depósito ${servicio}` : (impresa || 'Depósito'));
         // La única que usa la cabecera, y a propósito: en el tiquete de una
         // tienda el nombre de arriba ES el comercio donde se compró.
         case 'COMPRA':        return cabecera ? `Compra en ${cabecera}` : (impresa || 'Compra');

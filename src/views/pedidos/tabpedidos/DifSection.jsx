@@ -4,7 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight, Clock } from 'lucide-react';
 import { calcSolicitado, fmtRelative, fmtDia, fmtHM } from './helpers';
+import { ERP_NAMES } from '../../../constants/erp';
 import Badge from '../../../components/common/Badge';
+import Notice from '../../../components/common/Notice';
 import PortalInput from '../../../components/common/PortalInput';
 import DevolucionBloque from './DevolucionBloque';
 import EvidenciaFotos from '../../../components/common/EvidenciaFotos';
@@ -149,6 +151,9 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
     // individual — bodega marca la corrección global, sucursal la confirma.
     const corrBodegaEmp = row?.corregido_bodega_por      ? empMap.get(row.corregido_bodega_por)      : null;
     const corrConfEmp   = row?.confirmado_correccion_por ? empMap.get(row.confirmado_correccion_por) : null;
+    // «la sucursal» no le dice a nadie CUÁL. La tarjeta es de una sala concreta
+    // y su nombre ya está a mano.
+    const nombreSala    = ERP_NAMES[row?.erp_sucursal_id] ?? 'la sala';
 
     return (
         <div className="border-t border-warning/30 px-4 py-3 space-y-3">
@@ -317,49 +322,71 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 </div>
             )}
 
-            {/* ── Cierre de bodega (7A.1) ──
-                Va DESPUÉS de las diferencias y no antes: es el acuse que cierra
-                el ciclo, y arriba dejaba «Esperando confirmación de sucursal…»
-                pisando el lugar de lo que hay que leer. */}
-            {allConfirmed && !readOnly && (
-                <div className="border-t border-warning/30 pt-2.5 space-y-2">
-                    {!row?.confirmado_correccion_at ? (
-                        !row?.corregido_bodega_at ? (
-                            !isBranch ? (
-                                <div className="space-y-2">
-                                    <p className="text-caption text-content-2 font-semibold">Todas las diferencias fueron resueltas — marca la corrección como completa</p>
-                                    <div className="flex gap-2">
-                                        <PortalInput
-                                            aria-label="Nota de la corrección" className="flex-1" tono="success" compact
-                                            value={corrNota} onChange={e => setCorrNota(e.target.value)}
-                                            placeholder="Nota (opcional)…"
-                                        />
-                                        <Button tone="success" disabled={busyAction === 'corr_bodega'} onClick={() => onCorregirBodega?.(corrNota || null)}>{busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}</Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <p className="text-caption text-content-3 italic">Esperando que bodega marque la corrección…</p>
-                            )
-                        ) : isBranch ? (
-                            <div className="space-y-2">
-                                <div className="flex items-start gap-1.5 text-caption bg-success/10 rounded-lg px-2.5 py-1.5 border border-success/30">
-                                    <CheckCircle2 size={10} className="text-success mt-0.5 shrink-0" />
-                                    <div>
-                                        <span className="font-semibold text-success-text">Bodega marcó la corrección</span>
-                                        <EmpChip emp={corrBodegaEmp} size="xs" tono="success-text" />
-                                        {row.corregido_bodega_nota && <p className="text-success italic">{row.corregido_bodega_nota}</p>}
-                                    </div>
-                                </div>
-                                <Button tone="success" icon={Check} loading={busyAction === 'confirmar_corr'} onClick={() => onConfirmarCorreccion?.()}>Confirmar corrección recibida</Button>
-                            </div>
+            {/* ── Para cerrar — el último paso, y ya no en letra chica ──────
+                Era un renglón en gris itálico de 11 px al pie: «Esperando
+                confirmación de sucursal…». Reportado el 2026-09-02 mirando
+                justo ese estado: *«no dice que ya fue finalizado todo, sigue
+                pendiente que lo acepten en Salud 5»*. La tarjeta se leía
+                terminada —encabezado verde, cuatro pasos con su punto verde— y
+                lo único que decía que faltaba algo era la línea que menos pesa
+                de toda la pantalla.
+
+                Ahora es un `Notice`, dice QUIÉN tiene que hacerlo con el nombre
+                de la sala, y trae la fecha y la hora del paso que ya se dio. Se
+                pinta también sin permiso de edición: ver en qué quedó el pedido
+                no es lo mismo que poder cerrarlo, y ocultarlo dejaba a media
+                empresa leyendo una tarjeta que parecía terminada. */}
+            {allConfirmed && (
+                <div className="border-t border-divider pt-2.5 space-y-2">
+                    <p className="text-micro font-black text-content-3 uppercase tracking-widest">
+                        Para cerrar
+                    </p>
+
+                    {row?.confirmado_correccion_at ? (
+                        <Notice variant="success" icon={CheckCircle2}
+                            action={<EmpChip emp={corrConfEmp} size="xs" tono="success-text" />}>
+                            Cerrado. La sala confirmó que recibió la corrección
+                            {' · '}{fmtDia(row.confirmado_correccion_at)} {fmtHM(row.confirmado_correccion_at)}
+                        </Notice>
+                    ) : row?.corregido_bodega_at ? (
+                        isBranch ? (
+                            <Notice variant="warning" icon={Clock}
+                                action={readOnly ? null : (
+                                    <Button tone="success" icon={Check} loading={busyAction === 'confirmar_corr'}
+                                        onClick={() => onConfirmarCorreccion?.()}>Confirmar corrección recibida</Button>
+                                )}>
+                                Bodega ya marcó la corrección
+                                {' · '}{fmtDia(row.corregido_bodega_at)} {fmtHM(row.corregido_bodega_at)}
+                                {' — '}falta que confirmes que la recibiste.
+                                {row.corregido_bodega_nota && <em className="block not-italic opacity-80">«{row.corregido_bodega_nota}»</em>}
+                            </Notice>
                         ) : (
-                            <p className="text-caption text-content-3 italic">Esperando confirmación de sucursal…</p>
+                            <Notice variant="warning" icon={Clock}
+                                action={<EmpChip emp={corrBodegaEmp} size="xs" tono="warning-text" />}>
+                                Falta que <strong>{nombreSala}</strong> confirme que recibió la corrección.
+                                {' '}Bodega la marcó el {fmtDia(row.corregido_bodega_at)} a las {fmtHM(row.corregido_bodega_at)}
+                            </Notice>
                         )
+                    ) : (isBranch || readOnly) ? (
+                        <Notice variant="warning" icon={Clock}>
+                            Falta que <strong>bodega</strong> marque la corrección como completa.
+                        </Notice>
                     ) : (
-                        <div className="flex flex-wrap items-center gap-1.5 text-caption text-success-text">
-                            <CheckCircle2 size={11} className="text-success shrink-0" />
-                            <strong>Corrección confirmada</strong>
-                            <EmpChip emp={corrConfEmp} size="xs" tono="success-text" />
+                        <div className="space-y-2">
+                            <p className="text-caption text-content-2">
+                                {resueltas.length === 1
+                                    ? 'La diferencia está resuelta.'
+                                    : `Las ${resueltas.length} diferencias están resueltas.`}
+                                {' '}Marca la corrección como completa y {nombreSala} tendrá que confirmar que la recibió.
+                            </p>
+                            <div className="flex gap-2">
+                                <PortalInput
+                                    aria-label="Nota de la corrección" className="flex-1" tono="success" compact
+                                    value={corrNota} onChange={e => setCorrNota(e.target.value)}
+                                    placeholder="Nota (opcional)…"
+                                />
+                                <Button tone="success" disabled={busyAction === 'corr_bodega'} onClick={() => onCorregirBodega?.(corrNota || null)}>{busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}</Button>
+                            </div>
                         </div>
                     )}
                 </div>

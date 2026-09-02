@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.956.4 — El acuse que falta se ve, y dice qué sala
+
+Reporte del usuario mirando la tarjeta del pedido #150: *«no dice que ya fue
+finalizado todo, sigue pendiente que lo acepten en Salud 5»*.
+
+Tenía razón, y el defecto era de **peso visual**. La tarjeta se leía terminada
+—encabezado verde, «DIFERENCIAS RESUELTAS», cuatro pasos con su punto verde— y
+lo único que decía que faltaba algo era un renglón en gris itálico de 11 px al
+pie: *«Esperando confirmación de sucursal…»*. La línea que menos pesa de toda
+la pantalla cargaba con la única noticia que cambia lo que hay que hacer.
+
+Ahora ese paso es un bloque **PARA CERRAR** con un aviso del canónico `Notice`,
+en ámbar, que dice **quién** tiene que actuar y **cuándo** se dio el paso
+anterior:
+
+| estado | qué dice |
+|---|---|
+| bodega, sin marcar | La diferencia está resuelta. Marca la corrección como completa y **Salud 5** tendrá que confirmar que la recibió |
+| bodega, ya marcada | Falta que **Salud 5** confirme que recibió la corrección. Bodega la marcó el 2 sept a las 1:04 p.m. |
+| la sala, le toca | Bodega ya marcó la corrección · 2 sept 1:04 p.m. — falta que confirmes que la recibiste |
+| cerrado | Cerrado. La sala confirmó que recibió la corrección · 2 sept 9:20 a.m. |
+
+Tres cosas que cambian con esto:
+
+- **Dice el nombre de la sala.** «La sucursal» no le dice a nadie cuál, y la
+  tarjeta es de una sala concreta: su nombre ya estaba a mano.
+- **Trae la fecha y la hora** del paso que sí se dio. Antes no había ninguna.
+- **Se pinta también sin permiso de edición.** El bloque entero estaba detrás de
+  `!readOnly`, así que quien sólo puede mirar veía una tarjeta que parecía
+  terminada. Ver en qué quedó el pedido no es lo mismo que poder cerrarlo: el
+  aviso se muestra siempre, el botón sólo a quien puede apretarlo.
+
+Y el bloque salió de estar arriba de las diferencias, donde le pisaba el lugar a
+lo que hay que leer. Es el último paso: va al final.
+
 ## v2.956.3 — El aviso de vales dice de qué sala es
 
 Reportado por el usuario sobre Bolsas: *«Faltan anotarle a la caja 2 salidas por

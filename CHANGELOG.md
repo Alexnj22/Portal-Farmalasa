@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.931.2 — La bolsa se mide contra el saldo, y el aviso del cierre se dice
+
+Migración `20260902032330`. Dos defectos del primer cierre real desde el portal.
+
+### La etiqueta de la bolsa decía $787.01 y en el cajón había $906.39
+
+`bolsa_sugerida` restaba la suma de los **`monto_inicial`** de las bolsas del
+día. Pero a una bolsa se le puede SACAR dinero, y entonces lo que tiene adentro
+ya no es lo que dice su etiqueta.
+
+```
+S3-1216   nació con $359.60, REM-1058 le sacó $119.38  →  quedan $240.22
+corte     declarado $1,146.61
+
+con la etiqueta:  1146.61 − 359.60 = 787.01   ← se lleva de menos
+con el saldo:     1146.61 − 240.22 = 906.39   ← lo que hay en el cajón
+```
+
+Los $119.38 de diferencia son exactamente lo que ya había salido con la remesa.
+Con la cuenta vieja quedaban en el cajón **como un sobrante que nadie puede
+explicar** — porque ese dinero no está.
+
+Ahora usa `bolsa_saldo`, que es la misma función con la que se valida cada
+salida: las dos mitades del circuito miden con la misma vara.
+
+### El portal comprobó que el Z no salió, y la pantalla lo tiró
+
+El cierre del día devuelve `aviso` cuando la comprobación del Z falla —«La caja
+cerró, pero no aparece el corte Z del día»— y esa comprobación **existía y
+funcionaba desde el 31-ago**. Lo que faltaba era decirlo: `correr` mostraba un
+mensaje de éxito fijo y **descartaba el `aviso`**.
+
+Resultado del 1-sep en Salud 3: la pantalla dijo «El día quedó cerrado», el Z no
+estaba, y hubo que hacerlo a mano en el sistema de la caja.
+
+Y no era sólo el cierre — el mismo `correr` tiraba los otros dos avisos que
+`operar-caja` sabe dar: «la caja abrió, pero no se pudo anotar quién la abrió» y
+«el movimiento se hizo, pero no se pudo enlazar». Los tres son actos que
+salieron a medias, y los tres se veían como si hubieran salido bien.
+
+Ahora el aviso **gana** sobre el mensaje de éxito y sale como advertencia: es lo
+que hay que atender.
+
+⚠️ **Queda abierto por qué `cerrar_turno` no emitió el Z.** El cierre respondió
+que sí y el único Z del día es el que se hizo a mano. Hay que averiguar si
+cerrar el turno emite el Z o si el Z es otro acto — hasta saberlo, **el aviso
+es lo que evita que un día cierre sin su Z sin que nadie se entere.**
+
 ## v2.931.1 — El corte cuadra con los cobros de crédito, y cerrar exige confirmarlo
 
 Migración `20260902030218`. Tres cosas, las tres salidas del primer corte hecho

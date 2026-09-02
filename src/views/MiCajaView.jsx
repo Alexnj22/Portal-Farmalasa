@@ -478,7 +478,22 @@ export default function MiCajaView({ comoPestana = false }) {
         const r = await fn();
         setOcupado(false);
         if (r.error) { showToast(mensajeAmigable(r.error), 'error'); return null; }
-        if (exito) showToast(exito, 'success');
+        /* ── El `aviso` del servidor GANA sobre el mensaje de éxito ─────────
+         *
+         * `operar-caja` contesta `ok: true` con un `aviso` cuando el acto salió
+         * pero algo quedó a medias: la caja abrió y no se pudo anotar quién, el
+         * movimiento se hizo y no se pudo ligar, **el día cerró y no aparece el
+         * corte Z**. Los tres viajaban y esta función los tiraba, mostrando
+         * «El día quedó cerrado» sobre un cierre sin Z.
+         *
+         * Reportado el 1-sep en Salud 3: el portal cerró, avisó que el Z no
+         * estaba, la pantalla dijo que todo bien, y el Z hubo que hacerlo a
+         * mano en el sistema de la caja. La comprobación existía y funcionaba;
+         * lo que faltaba era decirlo.
+         *
+         * Va como advertencia y no como éxito: es lo que hay que atender. */
+        if (r.aviso) showToast('Quedó algo pendiente', r.aviso, 'warning');
+        else if (exito) showToast(exito, 'success');
         setDialogo(null);
         cargar();
         return r;
@@ -830,6 +845,8 @@ export default function MiCajaView({ comoPestana = false }) {
             {dialogo === 'cerrar' && (
                 <DialogoCerrar ocupado={ocupado} sinCorte={sinCorteHoy} sinConfirmar={corteSinConfirmar}
                     onClose={() => setDialogo(null)}
+                    /* El Z se COMPRUEBA y su respuesta se dice. `z: false` llega
+                       como `aviso`, que `correr` ahora muestra. */
                     onCerrar={() => correr(() => cerrarElDia(sala), 'El día quedó cerrado.')} />
             )}
         </>

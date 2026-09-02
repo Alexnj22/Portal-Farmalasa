@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.958.3 — Cuentas por cobrar va tercera en el menú de Efectivo
+
+Pedido del usuario: *«pasa a cuentas por cobrar al 3 nivel del menu. ahorita
+está en el 2»*. Dentro del grupo **Efectivo** la cartera pasa de segunda a
+tercera, detrás de «Bolsas de efectivo». Las dos primeras entradas son el
+dinero del turno —cuadrarlo y guardarlo—; la cartera es la pregunta que se hace
+después, y es la única del grupo que no habla del día de hoy.
+
+Un detalle que conviene dejar escrito porque hace contar mal: el grupo declara
+**cuatro** claves de módulo y pinta **tres** renglones. `caja_vales` y
+`cortes_caja` son dos permisos —operar la caja y mirar los cortes— sobre la
+misma ruta desde la v2.914.0, y el `dedupe` por `path` los funde en una sola
+entrada. O sea que la posición en la lista del código no es la posición en la
+pantalla.
+
+## v2.958.2 — La remesadora sólo si el papel dice remesa
+
+Pregunta del usuario sobre la v2.957.0: *«pero si no es remesa, no sale
+remesadora ¿verdad?»*. El campo no se dibuja nunca —eso estaba bien— pero el
+**dato sí se escribía**, y midiendo las boletas guardadas aparecieron dos
+defectos que hasta la v2.957.0 no importaban y ahora sí.
+
+Los dos son el mismo cambio de contexto: mientras la remesadora se elegía a
+mano, el emparejador sólo autollenaba un desplegable **a la vista** y la persona
+lo corregía. Desde que la dice el papel, ni el acierto falso ni el hueco se
+pueden ver.
+
+**1 · «FERRETERIA» contiene «RIA».** La búsqueda es por contención de cadenas y
+«RIA» tiene tres letras: una compra en «FERRETERIA DON GENARO» quedaba con
+remesadora **RIA**. Ahora se pregunta primero si el papel dice que es una
+remesa (`tipo_operacion = REMESA`, o que el lector haya nombrado la red), que es
+exactamente lo que dijo el usuario: *«si es remesa, el papel también tiene la
+remesadora y dice remesa»*. Un retiro de efectivo no tiene remesadora, y
+buscarla igual la inventa.
+
+**2 · «MONEY GRAM WS» no emparejaba con «MONEYGRAM».** La red se imprime de las
+dos formas y con el espacio en el medio ninguna cadena contiene a la otra:
+**4 de las 10 remesas de MoneyGram** se habrían guardado sin remesadora. El
+cotejo contra el catálogo ahora compara también sin espacios (`pegado`), que es
+una función aparte a propósito — `normalizarNombre` es la regla compartida con
+`leer-boleta` y tocarla haría que las dos digan cosas distintas del mismo papel.
+
+**Medido sobre las 21 boletas con lectura completa** (las otras 29 se
+fotografiaron antes de que el lector devolviera `tipo_operacion`, así que su
+`null` no significa «no es una remesa» — mirarlas habría dado 26 falsas
+pérdidas y mandado a corregir lo que no estaba roto):
+
+| | acierta | pierde | escribe una falsa |
+|---|---:|---:|---:|
+| como quedó en v2.957.0 | 18/21 | 2 | **1** |
+| sólo si el papel dice remesa | 19/21 | 2 | 0 |
+| comparando sin espacios | 19/21 | 1 | 1 |
+| **las dos, que es lo que va** | **20/21** | 1 | **0** |
+
+La que sigue perdiéndose es una boleta que **no nombra ninguna red** —
+`["Banco Promerica", "AB FARMACIA LA SALUD", "VISA_AB"]`—: la persona sabía que
+era Transnetwork y el papel no lo dice. Ahí queda vacía, que es lo correcto.
+
 ## v2.958.1 — El papel del corte sale al confirmar, y la base cuenta igual que la pantalla
 
 Dos cosas del módulo de cortes, las dos pedidas/destapadas el 2-sep.

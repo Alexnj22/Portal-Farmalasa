@@ -58,7 +58,10 @@ const TIPOS = [
 
 vi.mock('../../src/data/bolsas', () => ({
     fetchTiposDeSalida: vi.fn(async () => TIPOS),
-    fetchEntidadesDeSalida: vi.fn(async () => [{ tipo: 'POS_PROMERICA', nombre: 'RIA' }]),
+    fetchEntidadesDeSalida: vi.fn(async () => [
+        { tipo: 'POS_PROMERICA', nombre: 'MONEYGRAM' },
+        { tipo: 'POS_PROMERICA', nombre: 'RIA' },
+    ]),
     registrarSalida: (...a) => registrarSalida(...a),
     subirComprobante: vi.fn(async () => 'https://x/f.jpg'),
     leerBoleta: (...a) => leerBoleta(...a),
@@ -197,6 +200,52 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
         fireEvent.click(screen.getByRole('button', { name: /Registrar e imprimir/i }));
         await act(async () => {});
         expect(registrarSalida.mock.calls[0][0].entidad).toBe('RIA');
+    });
+
+    /* ── El papel escribe «MONEY GRAM WS» y el catálogo dice «MONEYGRAM» ────
+     * Medido sobre las boletas guardadas: la red se imprime de las dos formas,
+     * y con el espacio en el medio ninguna contiene a la otra — 4 de las 10
+     * remesas de MoneyGram se quedaban sin remesadora. Mientras se elegía a
+     * mano no se notaba; desde que la dice el papel, se guarda vacía. */
+    it('«Money Gram WS» impreso se guarda como MONEYGRAM', async () => {
+        leerBoleta.mockResolvedValueOnce({
+            leido: { es_boleta: true, legible: true, monto: 100, numero_boleta: '000318',
+                     tipo_operacion: 'REMESA', red_remesas: null,
+                     entidad: 'Banco Promerica',
+                     nombres: ['Banco Promerica', 'Farmacia La Salud', 'Money Gram WS'] },
+            coincide: {}, veredicto: 'OK', avisos: [],
+        });
+        await abrir();
+        await elegirMotivo('POS Promerica');
+        await elegirFoto();
+
+        fireEvent.click(screen.getByRole('button', { name: /Registrar e imprimir/i }));
+        await act(async () => {});
+        expect(registrarSalida.mock.calls[0][0].entidad).toBe('MONEYGRAM');
+    });
+
+    /* ── Y un papel que NO es de una remesa no deja remesadora ──────────────
+     * «RIA» tiene tres letras y la búsqueda es por contención, así que
+     * **«FERRETERIA» la contiene**: una compra quedaba con remesadora RIA. Con
+     * el campo a la vista alguien lo corregía; sin campo, se guarda y nadie lo
+     * ve. Por eso primero se pregunta si el papel dice que es una remesa. */
+    it('un papel que no es de una remesa no deja remesadora', async () => {
+        leerBoleta.mockResolvedValueOnce({
+            leido: { es_boleta: true, legible: true, monto: 2, numero_boleta: '000901',
+                     tipo_operacion: 'COMPRA', red_remesas: null,
+                     entidad: 'FERRETERIA DON GENARO',
+                     nombres: ['FERRETERIA DON GENARO', 'CONSTRUCCIONES PEREZ'] },
+            coincide: {}, veredicto: 'OK', avisos: [],
+        });
+        await abrir();
+        await elegirMotivo('POS Promerica');
+        await elegirFoto();
+
+        expect(screen.getByLabelText('Qué fue').value).toBe('Compra en FERRETERIA DON GENARO');
+
+        fireEvent.click(screen.getByRole('button', { name: /Registrar e imprimir/i }));
+        await act(async () => {});
+        expect(registrarSalida.mock.calls[0][0].entidad).toBe('');
     });
 
     /* ── Y el concepto lo escribe el papel ──────────────────────────────────

@@ -123,6 +123,24 @@ const normalizarNombre = (v) => String(v ?? '')
     .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 
 /**
+ * El mismo nombre, sin los espacios. Para cotejar contra el catálogo y NADA más.
+ *
+ * La red se imprime de las dos formas: «MoneyGram» en unas boletas y «MONEY
+ * GRAM WS» en otras, y el catálogo dice «MONEYGRAM». Con el espacio en el medio
+ * ninguna de las dos contiene a la otra, así que el emparejamiento fallaba —
+ * medido sobre las boletas guardadas: **4 de 10 remesas de MoneyGram**.
+ *
+ * Mientras la remesadora se elegía a mano eso no se notaba: el desplegable
+ * quedaba vacío y la persona la elegía. Desde que la dice el papel, no
+ * emparejar significa **guardar la remesa sin remesadora**, y sin campo donde
+ * verlo.
+ *
+ * No reemplaza a `normalizarNombre`: aquélla es la regla compartida con la edge
+ * function y tocarla haría que las dos digan cosas distintas del mismo papel.
+ */
+const pegado = (v) => normalizarNombre(v).replace(/ /g, '');
+
+/**
  * Cómo se cuenta que la boleta no nombra a la entidad que se eligió.
  *
  * En un solo lugar porque lo dicen dos caminos —el aviso nuevo del servidor y
@@ -462,23 +480,40 @@ export default function SalidaDeBolsa({
                 setBoleta(String(l.numero_boleta));
                 puestos.push('el número');
             }
-            /* La entidad SÓLO si lo leído es una de las de la lista.
+            /* La entidad SÓLO si el papel dice que es una REMESA, y sólo si lo
+             * que nombra está en la lista.
              *
              * Es el único campo que no se puede copiar tal cual: arriba de la
              * boleta suele ir el banco del POS —«BANCO PROMERICA»—, que no es
              * la remesadora, así que escribirlo pondría en el vale una entidad
-             * que no atendió la operación. Se busca la remesadora entre TODOS
-             * los nombres que el lector encontró en el papel, y si ninguno
-             * está en la lista, el campo se queda vacío. */
-            if (!entidad.trim() && opciones.length) {
+             * que no atendió la operación.
+             *
+             * ── Por qué se pregunta primero si es una remesa (2026-09-02) ────
+             * Porque un retiro de efectivo NO tiene remesadora, y buscarla igual
+             * la inventa: la búsqueda es por contención de cadenas y «RIA» tiene
+             * tres letras, así que **«FERRETERIA» la contiene**. Medido sobre
+             * las boletas guardadas: una compra en «FERRETERIA DON GENARO»
+             * quedaba con remesadora RIA.
+             *
+             * Mientras el campo se elegía a mano eso no llegaba a escribirse
+             * —se autollenaba un desplegable a la vista y la persona lo
+             * corregía—. Desde que la dice el papel, un acierto falso se guarda
+             * sin que nadie pueda verlo. Y la pregunta es la del usuario: «si es
+             * remesa, el papel también tiene la remesadora y dice remesa».
+             *
+             * Vale `red_remesas` como prueba además de `tipo_operacion`: si el
+             * lector nombró la red, es una remesa aunque no haya sabido
+             * rotularla. */
+            const diceRemesa = String(l.tipo_operacion || '').toUpperCase() === 'REMESA'
+                || !!String(l.red_remesas || '').trim();
+            if (!entidad.trim() && opciones.length && diceRemesa) {
                 // `red_remesas` primero: es la que ENTREGA el dinero. `entidad` es
                 // la cabecera —el banco del POS— y va al final justamente por eso.
                 const impresos = [l.red_remesas, ...(Array.isArray(l.nombres) ? l.nombres : []), l.entidad];
                 const acierto = opciones.find((o) =>
-                    impresos.some((nom) => normalizarNombre(nom) && (
-                        normalizarNombre(nom) === normalizarNombre(o.value)
-                        || normalizarNombre(nom).includes(normalizarNombre(o.value))
-                        || normalizarNombre(o.value).includes(normalizarNombre(nom))
+                    impresos.some((nom) => pegado(nom) && (
+                        pegado(nom).includes(pegado(o.value))
+                        || pegado(o.value).includes(pegado(nom))
                     )));
                 if (acierto) {
                     setEntidad(acierto.value);

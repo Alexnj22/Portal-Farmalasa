@@ -1003,7 +1003,11 @@ export async function cerrarTurno(sala) {
 export async function cerrarElDia(sala) {
     const z = await hacerCorte({ sala, efectivo: 0, tipo: 'Z' });
     if (z?.error) return { error: z.error };
-    if (z && z.ok === false) {
+    /* `ya_estaba` NO es un fallo: es el reintento después de un «no se pudo
+     * confirmar que saliera el Z». El Z está, lo que falta es cerrar el turno —
+     * y si acá se devolviera error, el día quedaría abierto para siempre, con su
+     * Z hecho y sin forma de terminar desde el portal. */
+    if (z && z.ok === false && !z.ya_estaba) {
         return { error: new Error(z.error || 'No se pudo emitir el corte Z. El día sigue abierto.') };
     }
     /* ── Si el Z no salió Z, NO se cierra el turno ─────────────────────────
@@ -1017,7 +1021,7 @@ export async function cerrarElDia(sala) {
      * que pasó el 1-sep y hubo que arreglar a mano en el sistema de la caja—.
      * Parando acá, el día sigue abierto, que es lo reparable: el Z se puede
      * volver a intentar y el cierre todavía no ocurrió. */
-    if (z?.aviso) {
+    if (z?.aviso && !z.ya_estaba) {
         return { error: new Error(`${z.aviso} El día NO se cerró: sigue abierto para poder arreglarlo.`) };
     }
     const cierre = await cerrarTurno(sala);

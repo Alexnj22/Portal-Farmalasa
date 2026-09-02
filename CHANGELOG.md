@@ -21,6 +21,90 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.948.0 — Un producto ya confirmado se puede encontrar y corregir
+
+Reporte del usuario sobre el pedido de Salud 5: *«confirmaron el producto
+SECUFEM, y era incorrecto, llegó 3 en físico y 1 en sistema, así que hay 2
+pendientes»*, y enseguida la causa de que no se pudiera arreglar: *«si ya
+confirmé un producto en específico, al buscarlo en Confirmar no sale. No hay un
+apartado donde diga los productos ya confirmados»*.
+
+Las dos mitades eran el mismo hueco. Un renglón confirmado desaparecía de la
+pantalla entera: no entra en la lista que recibe el modal (sólo viajan los
+`pendiente`), la búsqueda rápida además lo descartaba a mano, y su hoja queda
+«Contada» y no se vuelve a abrir. Y la base cerraba el círculo por los dos
+lados — `receive_pedido_sucursal` sólo toca renglones `pendiente` (que es lo que
+impide contar dos veces el mismo producto) y anotarlo como llegado de más lo
+rechaza con *«ese producto tiene su propio renglón; escribí ahí la cantidad que
+contaste»*, un consejo que era imposible de seguir.
+
+Nada de esto da error. La búsqueda contestaba «sin resultados», que se lee como
+«ese producto no vino en el pedido».
+
+- **La búsqueda de Confirmar encuentra lo ya contado**, bajo «Ya lo contaste»,
+  con lo enviado y lo contado uno al lado del otro. Sin los dos números no hay
+  forma de ver que no coinciden, que es justo lo que se viene a revisar.
+- **«Ya confirmados»**, junto a «¿Llegó un producto extra?»: la lista completa de
+  lo contado, con buscador y el estado de cada renglón dicho con el verbo —
+  «Sobran 2», «Faltan 2»— y no con un signo, que junto a un total se lee como
+  cuántos hay.
+- **«Corregir lo contado»** reescribe la cantidad y la nota
+  (`corregir_recepcion_de_item`).
+- **Y hay puerta después de terminar.** El aviso «Confirmado en Sistema de
+  Ventas» era el final del camino y con él se iba el único botón que abre la
+  recepción; ahora lleva «Revisar lo contado», que abre directo en la lista.
+  Quien nota el error lo nota al terminar.
+
+**Corregir NO mueve existencias, y la pantalla lo dice antes de guardar.** El
+renglón vuelve a quedar `con_diferencia` y de ahí lo toma la conversación que ya
+existe: la sala propone, bodega contesta, y el traslado de la cantidad de más
+sale de ese acuerdo. Una sala no le puede bajar la existencia a bodega sin que
+bodega se entere. Cuando la corrección crea una diferencia, bodega recibe el
+aviso en el momento — una diferencia que espera a que alguien mire la pantalla
+no cierra el circuito.
+
+Dos frenos que la base vuelve a aplicar aunque la pantalla ya los respete: lo
+corrige **la sala que contó** (o supervisión, que es la que destraba cuando la
+sala no está), y **no se corrige una diferencia con propuesta en curso** — ahí
+la cantidad es la que aceptó la otra parte. Quién corrigió y de cuánto a cuánto
+queda en la línea de tiempo del renglón (`correccion_conteo`); `received_by`
+no se pisa, así que sigue diciendo quién contó.
+
+Medido contra el caso real (renglón 92549, ensayo revertido): enviado 1,
+contado 3 → `con_diferencia · sobrante`, diferencia **2**.
+
+## v2.947.2 — Un día tiene un solo corte Z
+
+Cierra un riesgo que abrió el arreglo de v2.947.0. Desde que el cierre del día
+**se para** cuando el comprobante no confirma que salió un Z, aparece un
+reintento — y sin freno el reintento emite un **segundo Z del mismo día**. Un Z
+no se deshace: serían dos cierres fiscales de una jornada.
+
+Y el caso no es raro. El aviso también salta cuando el comprobante **no se pudo
+leer**, que es un fallo de red sobre un Z que salió perfecto: quien cierra ve «no
+se pudo confirmar», aprieta de nuevo, y se lleva el duplicado.
+
+Ahora, antes de emitir un Z, se le pregunta al sistema de la caja si el día ya
+tiene el suyo. Tres respuestas y las tres importan:
+
+| | qué hace |
+|---|---|
+| el día **no** tiene Z | lo emite |
+| el día **ya** tiene Z | no emite otro, y **el cierre sigue adelante** |
+| **no se pudo comprobar** | no emite nada y lo dice |
+
+La segunda fila es la que hace útil al freno: «ya estaba» **no es un fallo**, es
+el reintento después del aviso. El Z está; lo que falta es cerrar el turno. Si
+devolviera error, el día quedaría abierto para siempre —con su Z hecho— y sin
+forma de terminarlo desde el portal.
+
+La tercera es la falla segura: emitir un Z a ciegas es justo lo que este freno
+viene a evitar.
+
+Se le pregunta al **origen** y no a `cortes_caja`: la tabla del portal se llena
+con la captura, que corre después, así que recién emitido diría «no hay Z»
+siempre. Es la misma lectura que ya hace `operar-caja` para comprobar el cierre.
+
 ## v2.947.1 — El pago abre en el crédito que se tocó
 
 Reporte del usuario, mirando dos créditos de MAPFRE del mismo día: *«las 2

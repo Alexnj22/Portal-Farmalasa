@@ -5,7 +5,7 @@ import Button from '../common/Button';
 import AvatarConEstado from '../common/AvatarConEstado';
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '../../utils/clickable';
-import { contraste, diferenciaDelCorte, seConfirmaDeUnClic, severidad } from '../../utils/cortesDiagnostico';
+import { contraste, diferenciaDelCorte, noContoEfectivo, seConfirmaDeUnClic, severidad } from '../../utils/cortesDiagnostico';
 import { conSigno, formatMoney } from '../../utils/formatNumber';
 
 /**
@@ -76,7 +76,10 @@ const TarjetaCorte = memo(function TarjetaCorte({
      * severidad, decisión y firma no es «es el cierre del día», es «esto contó
      * dinero». Eran lo mismo mientras sólo hubiera dos tipos. */
     const esX = corte.tipo === 'X';
-    const noEsConteo = esZ || esX;
+    /* Y uno tipo C que salió con el efectivo en cero tampoco contó: el 2-sep a
+     * las 13:09 el papel decía «EFECTIVO $: 0.00 · EXACTO FELICIDADES» y el
+     * portal ofrecía cobrar un faltante de $319.10. Ver `noContoEfectivo`. */
+    const noEsConteo = esZ || esX || noContoEfectivo(corte);
     const desc = corte.estado === 'DESCARTADO';
     const pendiente = corte.estado === 'PENDIENTE';
     const sev = severidad(corte.tramo);

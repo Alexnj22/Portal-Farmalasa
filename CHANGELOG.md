@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.953.1 — Un corte sin efectivo contado no es un faltante
+
+Salud 4, 2-sep 13:09 (corte 14393), nueve minutos después del de las 13:00 y con
+las mismas cifras del día. Su comprobante termina así:
+
+```
+TOTAL CAJA $:  230.85
+EFECTIVO  $:     0.00
+EXACTO FELICIDADES $:  0.00
+```
+
+No se contó nada, y el propio sistema de la caja lo dio por exacto. El portal en
+cambio hacía su resta —0 − 319.10— y anunciaba un **faltante de $319.10**, con un
+botón al lado que ofrecía **cobrárselo a alguien**. Nadie contó cero y perdió la
+caja del día: no se contó, que es otra cosa.
+
+Es la misma falla del 31-ago un paso más adentro. Aquella vez el corte hecho
+desde el portal salió tipo **X** porque el desplegable del origen trae X marcado;
+acá el tipo salió bien y lo que viajó en su valor por defecto fue el **monto** —
+la comprobación de `hacer-corte-caja` acepta `efectivo >= 0`, o sea que un cero
+pasa.
+
+`noContoEfectivo` lo reconoce por **tres cosas juntas**, y las tres hacen falta:
+el comprobante esperaba dinero ese día, no se contó nada, y el origen **igual lo
+dio por exacto**. Con sólo la primera se silenciaría una caja realmente vacía, que
+es una alarma buena — ahí el origen sí marca el faltante. Sobre los 493 cortes
+capturados las tres se cumplen una vez, y es éste.
+
+Qué cambia: no tiene diferencia (`null`, que **no es cero** — con cero quedaba
+listo para confirmar de un clic, peor que el faltante inventado), no corre la base
+del día, no se cuenta entre los cuadrados del mes, y no se puede firmar ni
+reabrir. El detalle dice qué pasó y qué hacer: descartarlo y volver a hacer el
+corte.
+
+**Además, la pista del múltiplo ahora mide en dólares y no en la razón.** Ese
+mismo corte ofrecía «la diferencia es 4 × $79.70» cuando 4 × 79.70 = **$318.80**,
+no $319.10: con la tolerancia sobre `|n − entero|` el margen crece con la cifra, y
+a esta altura medio centésimo de razón son **40 centavos**. Mandaba a buscar un
+movimiento que no existe — y una pista que ni siquiera suma es peor que ninguna:
+se va a mirar, no se encuentra, y la próxima ya no se lee.
+
 ## v2.953.0 — El efectivo del cobro de crédito entra al esperado del corte
 
 Cobrar un crédito desde el portal mete efectivo en el cajón, pero el sistema de

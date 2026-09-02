@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     cobrosDeCredito, conTramo, desgloseDelCierre, diferenciaDelCorte,
-    formasFueraDelComprobante, notaDeCifra, repartirEnPartes, sugerenciasDeCorte,
+    formasFueraDelComprobante, noContoEfectivo, notaDeCifra, repartirEnPartes,
+    seConfirmaDeUnClic, sugerenciasDeCorte, resumenDeCortes,
 } from '../../src/utils/cortesDiagnostico';
 
 // Los casos son cortes REALES capturados el 13 y 14 de agosto de 2026. No son
@@ -420,5 +421,91 @@ describe('el efectivo del portal que el comprobante deja fuera', () => {
         // La nota que sale es la de siempre —el formulario contó los cobros de
         // más—, no la nueva: no hay nada que el comprobante haya dejado fuera.
         expect(notaDeCifra(limpio).titulo).toBe('Los cobros de crédito se contaron de más');
+    });
+});
+
+/* ── El corte que no contó el efectivo ───────────────────────────────────────
+ *
+ * Salud 4, 2-sep 13:09 (corte 14393), nueve minutos después del de las 13:00 y
+ * con las mismas cifras del día. Su tiquete termina:
+ *
+ *     TOTAL CAJA $:  230.85 · EFECTIVO $: 0.00 · EXACTO FELICIDADES $: 0.00
+ *
+ * El portal restaba 0 − 319.10 y anunciaba un faltante de $319.10 con un botón
+ * al lado para cobrárselo a alguien. */
+describe('un corte que no contó el efectivo', () => {
+    const SIN_CONTEO = corte({
+        hora: '13:09:48', total_declarado: 0, diferencia_erp: 0,
+        tk_ingresos: 6.00, tk_venta: 274.85, tk_subtotal: 280.85, tk_vales: 50.00,
+        tk_cobros_credito: null, tk_total_caja: 230.85, cobros_portal_efectivo: 88.25,
+    });
+
+    it('se reconoce por las tres cosas juntas', () => {
+        expect(noContoEfectivo(SIN_CONTEO)).toBe(true);
+    });
+
+    it('no tiene diferencia: `null`, que no es cero', () => {
+        const d = diferenciaDelCorte(SIN_CONTEO);
+        expect(d.valor).toBe(null);
+        expect(d.fuente).toBe('sin-conteo');
+    });
+
+    it('no se puede confirmar de un clic', () => {
+        // Con `valor: 0` habría quedado listo para firmar sin abrirlo, que es
+        // peor que el faltante inventado: no lo mira nadie.
+        const [c] = conTramo([SIN_CONTEO]);
+        expect(c.tramo).toBe(null);
+        expect(seConfirmaDeUnClic(c)).toBe(false);
+    });
+
+    it('no corre la base del día ni se cuenta como cuadrado', () => {
+        const lista = conTramo([
+            corte({ hora: '13:00:49', estado: 'CONFIRMADO', total_declarado: 309.25, diferencia_erp: 78.40,
+                tk_subtotal: 280.85, tk_vales: 50.00, tk_total_caja: 230.85, cobros_portal_efectivo: 88.25 }),
+            { ...SIN_CONTEO, estado: 'CONFIRMADO' },
+            corte({ hora: '18:00:00', total_declarado: 400.00, diferencia_erp: 0,
+                tk_subtotal: 280.85, tk_vales: 50.00, tk_total_caja: 400.00, cobros_portal_efectivo: 88.25 }),
+        ]);
+        expect(lista[0].tramo).toBe(-9.85);
+        expect(lista[1].tramo).toBe(null);
+        // El de las 18:00 se mide contra el de las 13:00, no contra el vacío.
+        expect(lista[2].tramo).toBe(9.85);
+
+        const r = resumenDeCortes(lista);
+        expect(r.sinConteo).toBe(1);
+        expect(r.vivos).toBe(2);
+    });
+
+    it('una caja realmente vacía SÍ sigue siendo un faltante', () => {
+        // La diferencia está en que ahí el origen marca el faltante. Silenciarlo
+        // taparía una alarma buena, así que las tres condiciones van juntas.
+        const vacia = corte({
+            hora: '20:00:00', total_declarado: 0, diferencia_erp: -230.85,
+            tk_subtotal: 280.85, tk_vales: 50.00, tk_total_caja: 230.85, cobros_portal_efectivo: 0,
+        });
+        expect(noContoEfectivo(vacia)).toBe(false);
+        expect(diferenciaDelCorte(vacia).valor).toBe(-230.85);
+    });
+});
+
+describe('la pista del múltiplo mide en dólares, no en la razón', () => {
+    it('no ofrece un múltiplo que no suma', () => {
+        /* El caso real: diferencia $319.10 y un movimiento de $79.70. La
+         * pantalla decía «la diferencia es 4 × $79.70», pero 4 × 79.70 = 318.80.
+         * Con la tolerancia sobre la razón, medio centésimo son 40 centavos a
+         * esta altura de cifra. */
+        const s = sugerenciasDeCorte(
+            { ...corte({ hora: '13:09:48' }), tramo: -319.10 },
+            [{ tipo: 'ENTRADA', monto: 79.70, concepto: 'POR ABONO A CREDITO' }],
+        );
+        expect(s.some((x) => x.titulo.includes('79.70'))).toBe(false);
+    });
+
+    it('y sigue ofreciendo el que sí suma', () => {
+        const s = sugerenciasDeCorte(
+            { ...corte({ hora: '13:09:48' }), tramo: -318.80 },
+            [{ tipo: 'ENTRADA', monto: 79.70, concepto: 'POR ABONO A CREDITO' }],
+        );
+        expect(s.some((x) => x.titulo.includes('79.70'))).toBe(true);
     });
 });

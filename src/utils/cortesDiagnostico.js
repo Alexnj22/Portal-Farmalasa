@@ -14,6 +14,41 @@ const num = (v) => (v == null ? null : Number(v));
 const corto = (s, max = 26) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 
 /**
+ * Un corte que NO contó efectivo: el papel lo dice y no hay diferencia que sacar.
+ *
+ * ── El caso, medido ────────────────────────────────────────────────────────
+ * Salud 4, 2-sep 13:09 (corte 14393), nueve minutos después del de las 13:00 y
+ * con las mismas cifras del día. Su tiquete termina así:
+ *
+ *     TOTAL CAJA $:   230.85
+ *     EFECTIVO  $:      0.00
+ *     EXACTO FELICIDADES $:  0.00
+ *
+ * O sea: no se contó nada, y el origen igual lo dio por exacto. El portal en
+ * cambio hacía su resta —0 − 319.10— y anunciaba un **faltante de $319.10**,
+ * con un botón al lado que ofrecía cobrárselo a alguien. Nadie contó cero y
+ * perdió la caja del día: no se contó, que es otra cosa.
+ *
+ * ── Por qué las tres condiciones ───────────────────────────────────────────
+ * `declarado = 0` solo no alcanza: una caja realmente vacía también da cero, y
+ * ahí el origen SÍ marca el faltante — silenciarlo taparía una alarma buena.
+ * Las tres juntas dicen exactamente una cosa: el origen esperaba dinero ese día
+ * (`tk_total_caja > 0`), no se contó nada, y el origen **igual lo dio por
+ * exacto**. Sobre los 493 cortes capturados eso pasa una vez, y es éste.
+ *
+ * ── Es la misma falla del 31-ago, un paso más adentro ──────────────────────
+ * Aquella vez el corte hecho desde el portal salió tipo **X** porque el
+ * desplegable del origen trae X marcado. Acá el tipo salió bien y lo que viajó
+ * en su valor por defecto fue el MONTO — la comprobación de
+ * `hacer-corte-caja` acepta `efectivo >= 0`, o sea que un cero pasa. Ver
+ * [[feedback_reenviar_un_formulario_tal_cual_manda_sus_valores_por_defecto]].
+ */
+export const noContoEfectivo = (corte) => corte?.tipo === 'C'
+    && (num(corte?.total_declarado) ?? 0) === 0
+    && (num(corte?.diferencia_erp) ?? 0) === 0
+    && (num(corte?.tk_total_caja) ?? 0) > 0;
+
+/**
  * Los cortes de caja son ACUMULATIVOS dentro del día: el de la noche contiene
  * al de la mañana. Entonces la diferencia que importa —la que señala un turno—
  * no es la del corte, es cuánto se movió DESDE el corte anterior.
@@ -56,7 +91,10 @@ const corto = (s, max = 26) => (s.length > max ? `${s.slice(0, max - 1).trimEnd(
 export function conTramo(cortesDeLaSala) {
     let previa = 0;
     return cortesDeLaSala.map((c) => {
-        if (c.tipo !== 'C' || c.estado === 'DESCARTADO') {
+        // Un corte sin conteo no es un tramo NI corre la base: no midió nada, así
+        // que no puede desplazar la referencia de los que vienen después. Mismo
+        // criterio que un descartado.
+        if (c.tipo !== 'C' || c.estado === 'DESCARTADO' || noContoEfectivo(c)) {
             return { ...c, tramo: null, acumulado: null, fuente: null };
         }
         // La acumulada sale de `diferenciaDelCorte`, no de `diferencia_erp`: el
@@ -122,11 +160,16 @@ export function conTramoPorSalaYDia(cortes) {
 export function resumenDeCortes(cortesConTramo) {
     const r = {
         vivos: 0, cuadrados: 0, exceso: 0, faltante: 0,
-        pendientes: 0, confirmados: 0, descartados: 0,
+        pendientes: 0, confirmados: 0, descartados: 0, sinConteo: 0,
     };
     for (const c of cortesConTramo || []) {
         if (c.tipo !== 'C') continue;
         if (c.estado === 'DESCARTADO') { r.descartados += 1; continue; }
+        // Uno que no contó efectivo no es ni cuadrado ni descuadrado: no midió.
+        // Contarlo entre los cuadrados —que es lo que hacía, porque su tramo es
+        // null y `severidad(null)` da 'ok'— sube el porcentaje del mes con un
+        // corte que nadie hizo.
+        if (noContoEfectivo(c)) { r.sinConteo += 1; continue; }
         r.vivos += 1;
         if (c.estado === 'PENDIENTE') r.pendientes += 1; else r.confirmados += 1;
         const s = severidad(c.tramo);
@@ -193,6 +236,9 @@ export function estadoDelDia(cortesDeLaSala) {
  * corte definitivo —el que se confirma— ya pasaron todos, así que no estorba.)
  */
 export function contraste(corte) {
+    // Sin conteo no hay dos cifras que contrastar, y restar contra un cero que
+    // nadie escribió inventa un faltante del tamaño de la caja del día.
+    if (noContoEfectivo(corte)) return null;
     const declarado = num(corte?.total_declarado);
     const totalCaja = num(corte?.tk_total_caja);
     const difErp = num(corte?.diferencia_erp);
@@ -283,6 +329,11 @@ export function contraste(corte) {
  * queda.
  */
 export function diferenciaDelCorte(corte) {
+    // `valor: null` y no 0: «no se contó» no es «cuadró». Un cero acá lo dejaba
+    // listo para confirmar de un clic, que es peor que el faltante inventado.
+    if (noContoEfectivo(corte)) {
+        return { valor: null, fuente: 'sin-conteo', esperado: num(corte?.tk_total_caja) };
+    }
     const c = contraste(corte);
     if (!c) {
         return { valor: num(corte?.diferencia_erp) ?? 0, fuente: 'guardada', esperado: num(corte?.esperado) };
@@ -638,7 +689,8 @@ export function severidad(monto) {
  * que se desincronice va a significar que desde una pantalla se puede dar por
  * bueno un faltante sin verlo.
  */
-export const seConfirmaDeUnClic = (corte) => severidad(corte?.tramo) === 'ok';
+export const seConfirmaDeUnClic = (corte) => corte?.tramo != null
+    && severidad(corte.tramo) === 'ok';
 
 /**
  * Qué revisar cuando un tramo no cuadra.
@@ -724,7 +776,14 @@ export function sugerenciasDeCorte(corte, movimientos = [], invisibles = [], cob
         const n = objetivo / monto;
         const entero = Math.round(n);
         if (entero < 1 || entero > 6) continue;
-        if (Math.abs(n - entero) > CENTAVO) continue;
+        /* La tolerancia va en DÓLARES, no en la razón. Con `|n − entero|` el
+         * margen crece con la cifra: sobre $319.10, medio centésimo de razón
+         * son **40 centavos**, y así el corte de las 13:09 de Salud 4 ofrecía
+         * «la diferencia es 4 × $79.70» cuando 4 × 79.70 = $318.80. Mandaba a
+         * buscar un movimiento que no existe, y el número ni siquiera cerraba
+         * — una pista que no suma es peor que ninguna: se va a mirar, no se
+         * encuentra, y la próxima ya no se lee. */
+        if (Math.abs(objetivo - entero * monto) > CENTAVO) continue;
         multiplos.push({ monto, veces, concepto, entero });
     }
     // 1× primero (coincidencia exacta con un movimiento) y, a igual cantidad de

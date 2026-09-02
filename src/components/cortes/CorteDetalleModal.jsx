@@ -16,8 +16,8 @@ import {
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
 import {
-    cobrosDeCredito, desgloseDelCierre, entroEnEfectivo, formasFueraDelComprobante, notaDeCifra,
-    severidad, sugerenciasDeCorte,
+    cobrosDeCredito, desgloseDelCierre, entroEnEfectivo, formasFueraDelComprobante, noContoEfectivo,
+    notaDeCifra, severidad, sugerenciasDeCorte,
 } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
@@ -237,7 +237,11 @@ export default function CorteDetalleModal({
      * `noEsConteo` y no `esZ` en las tres decisiones: lo que las gobierna es
      * «esto contó dinero», que era lo mismo mientras sólo hubiera dos tipos. */
     const esX = visible?.tipo === 'X';
-    const noEsConteo = esZ || esX;
+    /* Y uno tipo C que salió con el efectivo en cero tampoco contó — ver
+     * `noContoEfectivo`. Va acá y no en un `if` propio porque las tres
+     * decisiones que gobierna (firmar, reabrir, el desglose) son las mismas. */
+    const sinConteo = noContoEfectivo(visible);
+    const noEsConteo = esZ || esX || sinConteo;
     // El desglose del cierre: su monto es venta, no efectivo. Ver el bloque de
     // `desgloseDelCierre`, que es donde vive el porqué.
     const cierre = useMemo(() => desgloseDelCierre(visible, ventas), [visible, ventas]);
@@ -371,6 +375,27 @@ export default function CorteDetalleModal({
                                     Sólo imprime las ventas del turno: no cuenta el efectivo, así que no
                                     tiene diferencia ni hay nada que confirmar. El efectivo lo cuenta el
                                     corte de caja del mismo turno.
+                                </p>
+                            </div>
+                        ) : sinConteo ? (
+                            /* Tampoco hay cifra que mostrar acá, y por un motivo
+                               más caro: SÍ había una, y era falsa. El portal
+                               restaba el cero contra el esperado del día y
+                               anunciaba un faltante del tamaño de la caja, con
+                               el botón de cobrárselo a alguien al lado. Se dice
+                               qué pasó y qué hacer. */
+                            <div data-surface="card" className="p-4 space-y-1">
+                                <div className="text-caption font-bold text-content">Este corte no contó el efectivo</div>
+                                <p className="text-caption text-content-2">
+                                    El comprobante dice <span className="tabular-nums">$0.00</span> de
+                                    efectivo contado y aun así lo da por exacto, así que no hay diferencia
+                                    que firmar. Suele pasar cuando el corte se manda sin escribir cuánto
+                                    se contó. Lo que corresponde es descartarlo y volver a hacerlo.
+                                </p>
+                                <p className="text-caption text-content-3 pt-1">
+                                    El efectivo del día lo cuenta el corte que sí se hizo. Su cifra no se
+                                    repite en esta pantalla a propósito: dos números del mismo día en dos
+                                    pantallas es justo lo que hace dudar del bueno.
                                 </p>
                             </div>
                         ) : (

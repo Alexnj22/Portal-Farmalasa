@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.927.0 — El corte: la sala cuenta el cajón y el portal suma las bolsas del día
+
+**Esto arregla faltantes que no existen.** Y salió de una pregunta del usuario:
+*«al hacer el corte, ¿deben poner la cantidad total como en el ERP o sólo lo que
+tengo en efectivo?»*
+
+**En cada corte confirmado el efectivo se embolsa** — la bolsa se lleva el
+incremento y el cajón queda vacío. Pero el sistema de la caja **acumula el día
+entero**, así que el corte de la tarde espera todo lo del día, incluido lo que
+está en la bolsa de la mañana. Medido:
+
+| Salud 5, 1-sep | declarado | bolsa que nació |
+|---|---:|---:|
+| corte 12:36 | $488.63 | $488.63 |
+| corte 19:00 | **$816.95** | **$328.32** |
+
+$816.95 − $488.63 = $328.32. Si en el segundo hubieran contado sólo el cajón
+habrían declarado ~$328 y el corte habría marcado **un faltante de $488 que no
+existe**.
+
+Ahora la sala cuenta **sólo el cajón** y el portal pone el resto:
+
+```
+declarado = saldo de las bolsas de hoy + efectivo contado en el cajón
+```
+
+**Es el SALDO, no la etiqueta.** A una bolsa de hoy se le puede haber sacado
+dinero, y ese ya no está adentro: Salud 3 hoy, la bolsa `S3-1216` nació con
+$359.60 y `REM-1058` le sacó $119.38 → aporta **$240.22**. Ésa es la parte
+«menos los vales de caja» de la regla del usuario. Y encaja por los dos lados:
+el vale baja $119.38 lo que el sistema espera, y el saldo baja $119.38 lo que se
+declara.
+
+Verificado contra tres cortes reales antes de escribirlo: Salud 5 ($488.63 +
+$328.32 = $816.95 ✓) y Salud 2 ($1,032.65 + $805.01 = $1,837.66 ✓), los dos
+exactamente lo que la sala declaró y con lo que cuadró.
+
+**Las bolsas ya entregadas también cuentan.** El dinero salió de la sala, pero
+el día del sistema de la caja lo sigue contando —entregar no es un vale— y el
+corte tiene que declarar lo que ese día vendió.
+
+### El conteo a ciegas sale reforzado, no debilitado
+
+Mostrar lo ya embolsado **no** revela lo esperado: es lo que la sala misma
+guardó y lleva escrito en la etiqueta de cada bolsa. Lo que sigue sin verse —y
+es el control— es cuánto **debería** haber. Y al revés: como esa mitad la pone
+el portal con el saldo real, que nadie puede inflar, **lo único que se teclea es
+un conteo de verdad**.
+
 ## v2.926.0 — Promociones — la pantalla para decidir los excedentes
 
 Cierra el circuito que estaba abierto: el proceso diario ya avisaba «hay

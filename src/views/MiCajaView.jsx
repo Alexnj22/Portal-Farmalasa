@@ -376,6 +376,43 @@ export default function MiCajaView({ comoPestana = false }) {
      * ANTES y no después de que alguien escriba la palabra. */
     const sinCorteHoy = !(estado?.cortes || []).some((c) => c.tipo === 'C');
 
+    /* ── LO QUE YA ESTÁ EMBOLSADO DE HOY ───────────────────────────────────
+     *
+     * En cada corte confirmado el efectivo se EMBOLSA (regla del usuario,
+     * 1-sep): la bolsa se lleva el incremento y el cajón queda vacío. Pero el
+     * sistema de la caja **acumula el día entero**, así que el corte de la tarde
+     * espera todo lo del día — lo que está en la bolsa de la mañana incluido.
+     *
+     * Medido en Salud 5 el 1-sep: corte de las 12:36 declarado $488.63 → bolsa
+     * de $488.63; corte de las 19:00 declarado **$816.95** → bolsa de $328.32,
+     * que es la diferencia. Si en el segundo hubieran contado sólo el cajón
+     * habrían declarado ~$328 y el corte habría marcado un faltante de $488 que
+     * no existe.
+     *
+     * Así que la sala cuenta SÓLO EL CAJÓN y esto lo pone el portal. Es lo que
+     * pidió el usuario: «que no tenga que sumar ni hacer nada más».
+     *
+     * Y es el SALDO, no la etiqueta: a una bolsa de hoy se le puede haber sacado
+     * dinero —una remesa, un pago— y ese dinero ya no está adentro. Salud 3 hoy:
+     * la bolsa S3-1216 nació con $359.60 y `REM-1058` le sacó $119.38, así que
+     * aporta $240.22. Esa resta es la parte «menos los vales de caja».
+     *
+     * Las entregadas también cuentan: el dinero salió de la sala pero el día
+     * del sistema de la caja lo sigue contando —entregar no es un vale—, y el
+     * corte tiene que declarar lo que ese día vendió. */
+    // El día se saca a una constante antes del `useMemo`: leer `estado?.dia`
+    // adentro hace que el compilador infiera `estado` entero como dependencia y
+    // no pueda conservar la memoización.
+    const diaAbierto = estado?.dia ?? null;
+    const bolsasDeHoy = useMemo(
+        () => (bolsas || []).filter((b) => b.fecha && diaAbierto && b.fecha === diaAbierto),
+        [bolsas, diaAbierto],
+    );
+    const yaEmbolsado = useMemo(
+        () => bolsasDeHoy.reduce((t, b) => t + (Number(b.saldo ?? b.monto_inicial) || 0), 0),
+        [bolsasDeHoy],
+    );
+
     const correr = async (fn, exito) => {
         setOcupado(true);
         const r = await fn();
@@ -673,6 +710,7 @@ export default function MiCajaView({ comoPestana = false }) {
 
             <DialogoCorte abierto={dialogo === 'corte'} ocupado={ocupado} resultado={resultado}
                 pendientes={pendientes.length} onImprimir={imprimirCorte}
+                yaEmbolsado={yaEmbolsado} bolsasDeHoy={bolsasDeHoy.length}
                 onClose={() => { setDialogo(null); setResultado(null); }}
                 onCortar={async (efectivo) => {
                     setOcupado(true);
@@ -1244,9 +1282,13 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     );
 }
 
-function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCortar, onImprimir }) {
+function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0, bolsasDeHoy = 0,
+    onClose, onCortar, onImprimir }) {
     const [efectivo, setEfectivo] = useState('');
     const valido = efectivo !== '' && Number(efectivo) >= 0;
+    /* Lo que se declara es el ACUMULADO del día; lo que se cuenta, sólo el
+     * cajón. La suma la hace el portal — ver `yaEmbolsado` en la vista. */
+    const declarado = (Number(efectivo) || 0) + yaEmbolsado;
 
     // Con resultado, la pantalla cambia de trabajo: ya no pide un número, dice
     // cómo salió. Son dos momentos y no dos diálogos porque es el mismo acto.
@@ -1328,18 +1370,45 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
 
     return (
         <Marco abierto={abierto} onClose={onClose} titulo="Hacer el corte"
-            bajada="Cuenta el efectivo de la caja y escribe cuánto hay. No se muestra cuánto debería haber: eso aparece después.">
+            bajada="Cuenta SÓLO el efectivo que hay en el cajón ahora. Lo que ya está en las bolsas de hoy lo suma el portal.">
             {pendientes > 0 && (
                 <Notice variant="info" icon={Landmark}>
                     Antes del corte se anota un <b>vale de caja</b> con {pendientes} salida{pendientes === 1 ? '' : 's'} del día.
                 </Notice>
             )}
-            <PortalInput label="Efectivo contado" inputMode="decimal" value={efectivo}
+            <PortalInput label="Efectivo en el cajón" inputMode="decimal" value={efectivo}
                 onChange={(e) => setEfectivo(e.target.value)} placeholder="0.00" autoFocus />
+
+            {/* La suma, a la vista.
+                Mostrar lo ya embolsado NO rompe el conteo a ciegas: no es lo que
+                el sistema espera, es lo que la sala misma guardó y lleva escrito
+                en la etiqueta de cada bolsa. Lo que sigue sin verse —y es el
+                control— es cuánto DEBERÍA haber. Al revés: como el portal pone
+                esa mitad y nadie la puede inflar, lo único que se teclea es un
+                conteo de verdad. */}
+            {yaEmbolsado > 0 && (
+                <div className="space-y-1 text-body-sm">
+                    <div className="flex justify-between gap-3">
+                        <span className="text-content-2">
+                            Ya en {bolsasDeHoy === 1 ? 'la bolsa' : `las ${bolsasDeHoy} bolsas`} de hoy
+                        </span>
+                        <span className="tabular-nums text-content-2">{formatMoney(yaEmbolsado)}</span>
+                    </div>
+                    <div className="flex justify-between gap-3 pt-1 border-t border-border/60">
+                        <span className="font-bold text-content">Se declara</span>
+                        <span className="tabular-nums font-black text-content">{formatMoney(declarado)}</span>
+                    </div>
+                    <p className="text-caption text-content-3">
+                        El sistema de la caja cuenta el día entero, así que el corte declara todo
+                        lo del día — no sólo lo del cajón.
+                    </p>
+                </div>
+            )}
+
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                 <Button variant="primary" disabled={ocupado || !valido}
-                    onClick={() => onCortar(Number(efectivo))}>Hacer el corte</Button>
+                    onClick={() => onCortar(declarado)}>Hacer el corte</Button>
             </div>
         </Marco>
     );

@@ -12,7 +12,7 @@ import { tokenMatch } from '../../../utils/searchUtils';
 import { ERP_NAMES } from '../../../constants/erp';
 import { printFromPedidoItems, getExactPageGroups } from '../../../utils/pedidoPrint';
 import { PAUSE_REASONS } from './constants';
-import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange } from './helpers';
+import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion } from './helpers';
 import {
     fetchEmployeeBranchId, fetchSucursalIdForBranch, fetchBodegaBranchId, fetchBranchIdForSucursal,
     fetchBranchInfoForSucursal, fetchBranchNamesForSucursales, fetchApoyoForPedidos, fetchApoyoForPedido,
@@ -142,7 +142,7 @@ export function usePedidosData({ searchTerm = '' }) {
     const [ingresoEnCurso, setIngresoEnCurso] = useState({});
     // Los relojes de esa vigilancia, para poder apagarlos al desmontar.
     const vigilanciaRef = useRef({});
-    const [cardStats,  setCardStats]  = useState({}); // cardKey → { enviados, sinStock, porRegla }
+    const [cardStats,  setCardStats]  = useState({}); // cardKey → { enviados, sinStock, porRegla, pendientes, sinResolver }
     const [entregaMap, setEntregaMap] = useState({}); // cardKey → { entregado_at, entregado_por, ruta }
 
     // ── Cargar rutas activas ──────────────────────────────────────────────────
@@ -181,7 +181,7 @@ export function usePedidosData({ searchTerm = '' }) {
             if (statErr) console.error('loadActive: get_pedido_item_stats failed:', statErr.message);
             (statRows ?? []).forEach(s => {
                 const k = `act_${s.pedido_id}_${s.erp_sucursal_id}`;
-                stats[k] = { enviados: s.enviados, sinStock: s.sin_stock, porRegla: s.por_regla, agotamiento: s.agotamiento ?? 0, pendientes: s.pendientes ?? 0 };
+                stats[k] = { enviados: s.enviados, sinStock: s.sin_stock, porRegla: s.por_regla, agotamiento: s.agotamiento ?? 0, pendientes: s.pendientes ?? 0, sinResolver: s.sin_resolver ?? 0 };
             });
         }
         setCardStats(stats);
@@ -1746,22 +1746,31 @@ export function usePedidosData({ searchTerm = '' }) {
         }
         if (searchTerm.trim()) rows = rows.filter(r => tokenMatch(searchTerm, String(r.numero), r.notes));
         const uid = String(user?.id ?? '');
+        const stat = (r) => cardStats[`act_${r.pedido_id}_${r.erp_sucursal_id}`] ?? {};
         return [...rows].sort((a, b) => {
-            // 1. Mío primero — lo inicié o lo creé yo
+            // 1. Lo que le pide algo a alguien AHORA — ver `necesitaAtencion`.
+            //    Va ANTES que «mío» y antes que la fecha: el pedido con una
+            //    diferencia abierta o con las cajas sin contar es el que hay que
+            //    ver, lo haya creado quien lo haya creado y sea de cuando sea.
+            //    «Mío» sigue existiendo, pero adentro de cada grupo.
+            const atA = necesitaAtencion(a, stat(a));
+            const atB = necesitaAtencion(b, stat(b));
+            if (atA !== atB) return atA ? -1 : 1;
+            // 2. Mío — lo inicié o lo creé yo
             const mineA = uid && (String(a.iniciado_por) === uid || String(a.created_by) === uid);
             const mineB = uid && (String(b.iniciado_por) === uid || String(b.created_by) === uid);
             if (mineA !== mineB) return mineA ? -1 : 1;
-            // 2. Stage
+            // 3. Stage
             const stageA = getBranchStage(a);
             const stageB = getBranchStage(b);
             const baseA = STAGE_ORDER[stageA] ?? 5;
             const baseB = STAGE_ORDER[stageB] ?? 5;
             const sa = (hasObservacion(a) && baseA > 0 && baseA < 7) ? 6 : baseA;
             const sb = (hasObservacion(b) && baseB > 0 && baseB < 7) ? 6 : baseB;
-            // 3. Fecha más reciente
+            // 4. Fecha más reciente
             return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);
         });
-    }, [activeRows, filterSuc, filterStatus, filterDate, searchTerm, hasObservacion, user]); // eslint-disable-line
+    }, [activeRows, filterSuc, filterStatus, filterDate, searchTerm, hasObservacion, user, cardStats]); // eslint-disable-line
 
     const sucursalCounts = useMemo(() => {
         const [desde, hasta] = (filterDate ?? '').split('|');

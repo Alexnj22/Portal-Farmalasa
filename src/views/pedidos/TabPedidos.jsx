@@ -23,7 +23,7 @@ import { notifyBranch } from '../../utils/notify';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SucPill from './tabpedidos/SucPill';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, difsSinResolver } from './tabpedidos/helpers';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse } from './tabpedidos/helpers';
 import ItemSections from './tabpedidos/ItemSections';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
 import DifSection from './tabpedidos/DifSection';
@@ -308,7 +308,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const stage      = getBranchStage(row);
                             const estadoSala = estadoDeLaSala(row);
                             const cardKey    = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
-                            const difsDeLaSala = difsSinResolver(items[cardKey]);
+                            // De la MISMA fuente que el orden del tablero: la
+                            // stat que calcula la base. Antes se contaba sobre
+                            // los renglones cargados, que llegan un momento
+                            // después — el chip aparecía de golpe. Y con dos
+                            // cuentas de la misma cosa, la lista y la tarjeta
+                            // podían decir distinto.
+                            const difsDeLaSala = cardStats[cardKey]?.sinResolver ?? 0;
                             const isExp      = expanded === cardKey;
                             const lcKey      = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
                             const isLCBusy   = busyLifecycle === lcKey;

@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.958.0 — Lo que necesita atención va arriba, sin importar la fecha
+
+Pedido del usuario: *«si hay un pedido pendiente, sea de recibir, o un producto
+con diferencia, siempre se muestre arriba sin importar la fecha»*.
+
+**No sólo no subían: una diferencia BAJABA la tarjeta.** El orden por etapa
+mandaba lo que tuviera observación al escalón **6 de 7** —encima de «ya
+recibido» y debajo de todo lo demás—, así que el pedido con un problema abierto
+terminaba al fondo de la lista, que es el último lugar donde alguien lo va a
+buscar.
+
+Ahora la primera clave del orden es **`necesitaAtencion`**, y son dos casos, los
+dos por SALA:
+
+1. **Diferencias de esa sala que todavía esperan algo.**
+2. **Las cajas están en la sala y nadie terminó de contarlas** —
+   `llegada_fisica_at` sin `recibido_erp_at`.
+
+Un pedido todavía en ruta **no** entra: nadie puede hacer nada con él, y subirlo
+dejaría media lista «arriba», que es lo mismo que no ordenar.
+
+Va **antes que «mío primero»**: el pedido con una diferencia abierta hay que
+verlo, lo haya creado quien lo haya creado. «Mío» sigue existiendo, pero adentro
+de cada grupo. El orden queda: **necesita atención → mío → etapa → fecha**.
+
+**Y el número sale de la base, no del navegador.** `get_pedido_item_stats` gana
+una columna `sin_resolver`: `con_diferencia` no servía porque cuenta el `status`
+del renglón, y ese status se queda en `con_diferencia` para siempre —es el
+registro de que hubo una—, así que una sala con todo acordado y el traslado
+hecho seguía contando 1. Lo que dice si falta algo es `resolucion_status`, cuyo
+único estado terminal es `confirmada`.
+
+Medido al aplicarla, pedido #150: **La Popular** `con_diferencia 1 ·
+sin_resolver 1` (el REGUTOL, en contrapropuesta) y **Salud 5** `con_diferencia 1
+· sin_resolver 0` (el SECUFEM, cerrado y con su traslado hecho).
+
+**El chip «difs. pendientes» pasó a esa misma columna**, que además llega con la
+lista: antes contaba sobre los renglones cargados, que llegan un momento
+después, así que aparecía de golpe. Y dos cuentas de la misma cosa son dos
+números que pueden contradecirse en la misma pantalla.
+
 ## v2.957.0 — POS Promerica también es la salida: el voucher dice qué fue
 
 Pedido del usuario mirando las salidas de Efectivo: *«hay muchos tipos de salida

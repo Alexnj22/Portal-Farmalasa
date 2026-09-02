@@ -199,32 +199,32 @@ export function estadoDeLaSala(row) {
 }
 
 /**
- * Cuántas diferencias de ESTA sala siguen esperando algo.
+ * ¿Esta tarjeta le pide algo a alguien AHORA?
  *
- * El chip de la tarjeta se encendía con `pedido_status === 'parcial'`, y eso es
- * del PEDIDO entero — el mismo defecto que ya costó el rótulo de arriba. Medido
- * el 2026-09-02 en el pedido #150: Salud 5 mostraba «Difs. pendientes» con su
- * única diferencia CERRADA (SECUFEM, `confirmada`, el traslado ya entró a la
- * sala); la que seguía viva era el REGUTOL de **La Popular**, la otra sala del
- * mismo pedido.
+ * Es la primera clave del orden del tablero: lo que necesita atención va
+ * arriba, sin importar la fecha. Pedido del usuario (2026-09-02): *«si hay un
+ * pedido pendiente, sea de recibir, o un producto con diferencia, siempre se
+ * muestre arriba sin importar la fecha»*.
  *
- * Y aunque el pedido fuera de una sola sala seguiría mintiendo:
- * `pedido_items.status` se queda en `'con_diferencia'` para siempre —es el
- * registro de que hubo una— así que `pedidos.status` no vuelve de `'parcial'`
- * nunca. Lo que dice si falta algo es `resolucion_status`, y su único estado
- * terminal es `'confirmada'`: `'acordada'` todavía tiene un movimiento en vuelo,
- * `'propuesta'`/`'contrapropuesta'`/`'escalada'` esperan a alguien, y `null` es
- * que nadie propuso nada.
+ * Antes no sólo no subían: una diferencia BAJABA la tarjeta. El orden por etapa
+ * mandaba lo que tuviera observación al escalón 6 de 7 —encima de `erp` y
+ * debajo de todo lo demás—, así que el pedido con un problema abierto terminaba
+ * al fondo de la lista.
  *
- * `undefined` mientras los renglones no llegaron: devuelve 0 y no se pinta nada.
- * Preferible a afirmar sobre lo que todavía no se leyó — el auto-cargado de
- * `usePedidosData` los trae solos en cuanto el pedido está `parcial`.
+ * Dos casos, los dos por SALA y ninguno por fecha:
+ *
+ *  1. `sinResolver` — diferencias de esta sala que todavía esperan algo. Sale de
+ *     `get_pedido_item_stats`, que lo calcula en la base: `con_diferencia` no
+ *     sirve porque el status del renglón se queda ahí para siempre.
+ *  2. Las cajas están EN la sala y nadie terminó de contarlas
+ *     (`llegada_fisica_at` sin `recibido_erp_at`). Un pedido todavía en ruta no
+ *     entra: nadie puede hacer nada con él, y subirlo dejaría a media lista
+ *     «arriba», que es lo mismo que no ordenar.
  */
-export function difsSinResolver(itemsDeLaSala) {
-    if (!Array.isArray(itemsDeLaSala)) return 0;
-    return itemsDeLaSala.filter(
-        r => r.status === 'con_diferencia' && r.resolucion_status !== 'confirmada',
-    ).length;
+export function necesitaAtencion(row, stats = {}) {
+    if (!row) return false;
+    if ((stats.sinResolver ?? 0) > 0) return true;
+    return !!row.llegada_fisica_at && !row.recibido_erp_at;
 }
 
 // solicitado = need in presentation units before dispatch rounding

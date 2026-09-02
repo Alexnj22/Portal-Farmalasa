@@ -1,5 +1,9 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+/* `aBase64Reducido` sale de `bolsas`, donde vive el mismo problema: una foto de
+ * teléfono son 4 MB y el lector no necesita más resolución que la del papel.
+ * Reescribirla acá sería tener dos reducciones que se pueden desajustar. */
+import { aBase64Reducido } from './bolsas';
 
 /**
  * Los créditos de los clientes — verlos y abonarles.
@@ -141,8 +145,67 @@ export async function fetchUltimaLectura() {
  * escribir: entre que esta pantalla cargó y alguien aprieta pueden haber
  * cobrado en la caja.
  */
-export function abonarCredito({ sala, credito, monto, forma = 'Efectivo', documento = '' }) {
-    return pedir({ accion: 'abonar', sala, credito, monto, forma, documento });
+export function abonarCredito({
+    sala, credito, monto, forma = 'Efectivo', documento = '',
+    comprobanteUrl = null, lectura = null, fechaDocumento = null, pos = null,
+}) {
+    return pedir({
+        accion: 'abonar', sala, credito, monto, forma, documento,
+        comprobanteUrl, lectura, fechaDocumento, pos,
+    });
+}
+
+/**
+ * Lee el comprobante de un pago que NO es efectivo y devuelve lo que dice.
+ *
+ * El orden es al revés que en la salida de una bolsa: allá la persona escribe y
+ * la foto confirma; acá la foto va primero y LLENA. La diferencia es de quién es
+ * el dato — en una salida el monto lo decide quien saca el dinero, y en un abono
+ * lo decide el papel que el cliente trajo. Escribirlo primero es invitar a
+ * escribir lo que se esperaba y no lo que el documento dice.
+ *
+ * La imagen viaja INLINE y no por el bucket: la verificación pasa ANTES de
+ * guardar, y subir para verificar dejaría en el bucket la basura de cada intento
+ * fallido — justo las fotos que se decidió no conservar.
+ */
+export async function leerPagoDeCredito(archivo, { forma, saldo }) {
+    try {
+        const base64 = await aBase64Reducido(archivo);
+        const { data, error } = await supabase.functions.invoke('leer-pago-de-credito', {
+            body: {
+                imagenBase64: base64,
+                mimeType: archivo.type || 'image/jpeg',
+                forma: String(forma || '').toLowerCase(),
+                saldo,
+            },
+        });
+        if (error) return { error };
+        if (!data || data.error) return { error: new Error(data?.error || 'NO_SE_PUDO_LEER') };
+        return data;
+    } catch (err) {
+        return { error: err };
+    }
+}
+
+/** El papel, al bucket privado. Se sube DESPUÉS de que la lectura pasó: así el
+ *  bucket no acumula los intentos descartados. */
+export async function subirComprobanteDeAbono(archivo, sala) {
+    const ext = (archivo.name?.split('.').pop() || 'jpg').toLowerCase();
+    const path = `abonos-credito/${sala}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage
+        .from('payment-proofs').upload(path, archivo, { contentType: archivo.type });
+    if (error) throw new Error(`No se pudo subir el comprobante: ${error.message}`);
+    const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path);
+    return data?.publicUrl || null;
+}
+
+/** Los POS con los que se cobra con tarjeta. Salen de la tabla: sumar uno es
+ *  una fila, no un despliegue. */
+export async function fetchPosProveedores() {
+    const { data, error } = await supabase.from('pos_proveedores')
+        .select('codigo, nombre').eq('activo', true).order('orden');
+    if (error) { console.error('creditos: fetchPosProveedores failed:', error.message); return []; }
+    return data || [];
 }
 
 /**

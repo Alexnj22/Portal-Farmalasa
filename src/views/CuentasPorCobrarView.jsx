@@ -395,7 +395,11 @@ export default function CuentasPorCobrarView() {
                                             <span className="text-h3 font-black tabular-nums text-content leading-none">
                                                 {formatMoney(c.saldo)}
                                             </span>
-                                            <span className="text-micro text-content-3 truncate">
+                                            {/* El total, un escalón abajo del saldo y no en
+                                                micro: es la otra mitad de la pregunta —«debe
+                                                $22.85» no dice nada sin saber si compró $32
+                                                o $300—, y en micro había que buscarlo. */}
+                                            <span className="text-body-sm text-content-2 tabular-nums truncate">
                                                 de {formatMoney(c.total)}
                                             </span>
                                         </div>

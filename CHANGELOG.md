@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.940.3 — La fecha del abono la escribe el abono
+
+**Se hicieron los tres primeros abonos reales desde el portal** —$8.55 en
+efectivo y dos transferencias de $11.30 y $10.00— y los tres entraron. Dos
+dejaron el crédito en cero, y el saldo que el portal guardó coincide con el que
+el sistema de la caja devolvió: la confirmación contra el origen funciona.
+
+Y destaparon un defecto que sólo se ve usándolo: **la ficha decía «ninguno desde
+el portal» con el abono listado tres renglones más abajo, en la misma
+pantalla.** La columna existía y nadie la escribía.
+
+Ahora la escribe un **trigger** y no una línea en la función que cobra. Hoy hay
+un solo escritor, pero mañana puede haber una corrección a mano, una anulación o
+un backfill — y cada escritor nuevo tendría que acordarse. Olvidarlo no da
+error: da una ficha que dice «ninguno» sobre un crédito que ya se cobró.
+
+Dos detalles del trigger que valen: es `SECURITY DEFINER` porque escribe en una
+tabla que `authenticated` no puede tocar —sin eso, el día que se anule un abono
+desde el navegador el UPDATE fallaría y **abortaría la anulación**—, y la fecha
+se **recalcula del conjunto** en vez de asignarse, porque al anular el último la
+fecha buena es la del anterior y no un null.
+
+**Y el total se ve más grande.** «Debe $22.85» no dice nada sin saber si compró
+$32 o $300, y en micro había que buscarlo.
+
 ## v2.940.2 — Sólo cuatro formas de pago
 
 Pedido del usuario: *«voucher y recibo quítalo, otro y bitcoin también; sólo

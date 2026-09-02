@@ -504,14 +504,14 @@ export const AREAS = [
                  'cortes_caja_movimientos_historial', 'cortes_caja_aperturas',
                  'caja_vales_portal', 'caja_aperturas_del_portal', 'caja_movimientos_portal',
                  'caja_tipos_movimiento', 'abonos_de_cliente', 'creditos_abonos_portal',
-                 'creditos_de_clientes', 'creditos_sync',
+                 'creditos_de_clientes', 'creditos_sync', 'pos_proveedores',
                  'bolsas', 'bancos', 'bolsas_conteos', 'bolsas_entidades', 'bolsas_entregas',
                  'bolsas_eventos', 'bolsas_movimientos',
                  'bolsas_operaciones', 'bolsas_tipos_salida', 'depositos_bancarios'],
         // `creditos-erp` va acá y no en Facturación: abonar a un crédito mete
         // EFECTIVO al cajón, y ese dinero cuenta para el corte del mismo día.
         edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja', 'hacer-corte-caja', 'operar-caja',
-               'creditos-erp', 'sync-creditos', 'avisar-creditos-vencidos'],
+               'creditos-erp', 'sync-creditos', 'avisar-creditos-vencidos', 'leer-pago-de-credito'],
         crons: ['cortes-caja-30s', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv',
                 'creditos-cada-10min', 'creditos-barrido-completo', 'creditos-vencidos-0800-sv'],
         docs: ['docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md', 'docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md',

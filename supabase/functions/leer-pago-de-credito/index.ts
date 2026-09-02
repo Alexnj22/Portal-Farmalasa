@@ -1,0 +1,284 @@
+import { createClient } from "npm:@supabase/supabase-js@2"
+import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts"
+import { callGemini, parseGeminiJson } from "../_shared/gemini.ts"
+
+// ════════════════════════════════════════════════════════════════════════════
+// Lee el comprobante con el que un cliente abona un crédito, y LLENA el
+// formulario con lo que dice el papel.
+//
+// Pedido del usuario (2-sep): «si es transferencia / cheque / tarjeta, que se
+// anexe el comprobante primero antes de digitar montos etc., y que de ahí mismo
+// lo tome».
+//
+// ── El orden es al revés que en `leer-boleta`, y no es un detalle ──────────
+// Allá la persona escribe el monto y la foto CONFIRMA; acá la foto va primero y
+// LLENA. La diferencia es de quién es el dato: en una salida de dinero el monto
+// lo decide quien saca la plata, y en un abono lo decide el papel que el cliente
+// trajo. Pedir que se escriba primero es invitar a escribir lo que se esperaba
+// —el saldo redondo— y no lo que el documento dice.
+//
+// Por eso esta función NO recibe un `esperado` con el monto. Recibe el SALDO,
+// que es lo único contra lo que tiene sentido comparar: un papel por más de lo
+// que se debe es un papel de otra cosa.
+//
+// ── Tres documentos, tres cosas que probar ────────────────────────────────
+//
+//   transferencia  el dinero tiene que haber llegado a NUESTRA cuenta. Lo que
+//                  se comprueba es el BENEFICIARIO: si el comprobante va a
+//                  nombre de otro, el cliente pagó a otra persona.
+//   cheque         igual, y además que sea un cheque y no otra hoja.
+//   tarjeta        el voucher tiene que ser de uno de NUESTROS POS. Un voucher
+//                  de otro comercio no acredita nada.
+//
+// El monto y la fecha se leen en los tres y se ofrecen para llenar.
+//
+// ── El veredicto lo arma el código, no el modelo ──────────────────────────
+// El modelo sólo LEE. Si la decisión de frenar dependiera de que conteste «no
+// coincide», bastaría con que un día conteste distinto para que la regla cambie
+// sola. El modelo aporta datos; la regla se puede leer acá.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** A nombre de quién tiene que estar. Es `EMPRESA.patrono` de
+ *  `src/constants/empresa.js` — el nombre LEGAL, que es el de las cuentas y el
+ *  de un cheque, y no el comercial «José Alemán V.».
+ *  ⚠️ Las dos copias son la misma y se mueven juntas. */
+const TITULAR = "JOSÉ RUTILIO ALEMÁN VÁSQUEZ"
+
+/** Sin acentos, sin puntos, en mayúsculas y con un solo espacio. Un nombre
+ *  impreso viene de mil formas y comparar cadenas crudas rechaza las buenas. */
+const norm = (v: unknown) => String(v ?? "")
+  .normalize("NFD").replace(/[̀-ͯ]/g, "")
+  .toUpperCase().replace(/[^A-Z0-9 ]+/g, " ").replace(/\s+/g, " ").trim()
+
+/**
+ * ¿El beneficiario es el titular, «más o menos»?
+ *
+ * El usuario lo pidió así —«que sea Jose Rutilio Aleman Vasquez (o más o menos
+ * el nombre así)»— y tiene razón: un comprobante bancario recorta, abrevia e
+ * invierte («ALEMAN VASQUEZ JOSE R», «J RUTILIO ALEMAN V»). Exigir la cadena
+ * exacta rechazaría pagos buenos con el cliente enfrente.
+ *
+ * La regla: **al menos un apellido** —ALEMAN o VASQUEZ, que es lo que
+ * identifica— y **dos de las cuatro** palabras del nombre. Con eso «JOSE
+ * MARTINEZ» no pasa y «ALEMAN VASQUEZ J» sí.
+ */
+function esElTitular(nombre: unknown): boolean {
+  const t = norm(nombre)
+  if (!t) return false
+  const partes = new Set(t.split(" "))
+  const apellido = partes.has("ALEMAN") || partes.has("VASQUEZ")
+  const cuantas = ["JOSE", "RUTILIO", "ALEMAN", "VASQUEZ"].filter((p) => partes.has(p)).length
+  return apellido && cuantas >= 2
+}
+
+/** Dos montos son el mismo si difieren menos de un centavo. */
+const mismoMonto = (a: unknown, b: unknown) => {
+  const x = Number(a), y = Number(b)
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+  return Math.abs(x - y) < 0.005
+}
+
+const PROMPTS: Record<string, string> = {
+  transferencia: `Estás mirando el comprobante de una TRANSFERENCIA BANCARIA: puede ser la
+captura de pantalla de una app de banco, un correo de confirmación o un papel impreso.
+
+Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
+{
+  "es_comprobante": true | false,
+  "tipo_documento": "TRANSFERENCIA | DEPOSITO | OTRO",
+  "beneficiario": "el nombre de quien RECIBE el dinero, tal cual está impreso, o null",
+  "ordenante": "el nombre de quien ENVÍA el dinero, o null",
+  "banco": "el banco que emite el comprobante, o null",
+  "monto": 0.00,
+  "moneda": "USD" | null,
+  "fecha": "YYYY-MM-DD o null",
+  "referencia": "el número de referencia, confirmación o transacción, o null",
+  "numeros_del_papel": ["TODOS los números de 4 dígitos o más que aparezcan"],
+  "legible": true | false,
+  "motivo": "si es_comprobante es false, en una frase corta y en español, qué se ve"
+}
+
+Reglas:
+- "es_comprobante" es false si no se ve un comprobante de transferencia o depósito
+  (una foto de otra cosa, una pantalla en blanco, un producto, una persona).
+- OJO con BENEFICIARIO vs ORDENANTE. Son dos nombres distintos y confundirlos
+  invierte el sentido de la operación. El beneficiario es a quien SE LE ABONA:
+  suele ir rotulado "Beneficiario", "Destino", "Para", "Acreditar a", "Cuenta
+  destino". El ordenante es quien paga: "De", "Origen", "Cuenta debitada".
+  Si sólo hay un nombre y no se puede saber cuál es, ponelo en "beneficiario" y
+  dejá "ordenante" en null.
+- "monto" es el importe transferido, como número, sin símbolo ni separadores de
+  miles. Si hay comisión aparte, el monto es el que RECIBE el beneficiario.
+- "fecha" es la de la operación, no la de impresión ni la de hoy.
+- Si un dato no está, null. No lo inventes ni lo deduzcas.`,
+
+  cheque: `Estás mirando la foto de un CHEQUE.
+
+Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
+{
+  "es_comprobante": true | false,
+  "tipo_documento": "CHEQUE | OTRO",
+  "beneficiario": "el nombre escrito en la línea PÁGUESE A LA ORDEN DE, o null",
+  "ordenante": "el titular de la cuenta, impreso abajo o al pie, o null",
+  "banco": "el banco impreso en el cheque, o null",
+  "monto": 0.00,
+  "moneda": "USD" | null,
+  "fecha": "YYYY-MM-DD o null",
+  "referencia": "el número del cheque, o null",
+  "numeros_del_papel": ["TODOS los números de 4 dígitos o más que aparezcan"],
+  "legible": true | false,
+  "motivo": "si es_comprobante es false, en una frase corta y en español, qué se ve"
+}
+
+Reglas:
+- "beneficiario" es lo escrito después de "PÁGUESE A LA ORDEN DE" — puede estar a
+  mano. "ordenante" es el titular impreso de la cuenta, que es otra cosa.
+- "monto" es la cifra en números. Si la cifra en números y la escrita en letras no
+  coinciden, usá la escrita en LETRAS y dejá "legible" en true igual.
+- "fecha" es la del cheque. Un cheque con fecha futura es válido de leer: se
+  devuelve la fecha tal cual, sin corregirla.
+- "referencia" es el número de cheque, normalmente arriba a la derecha. NO uses el
+  número de cuenta ni el de ruta impreso abajo en tinta magnética.
+- Si un dato no está, null. No lo inventes.`,
+
+  tarjeta: `Estás mirando el VOUCHER de un pago con tarjeta en un punto de venta (POS),
+casi siempre papel térmico angosto.
+
+Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
+{
+  "es_comprobante": true | false,
+  "tipo_documento": "VOUCHER | OTRO",
+  "procesador": "el nombre del banco o procesador impreso ARRIBA del voucher, o null",
+  "nombres": ["TODOS los nombres de banco, marca o comercio impresos en el papel"],
+  "comercio": "el nombre del comercio, si aparece, o null",
+  "monto": 0.00,
+  "moneda": "USD" | null,
+  "fecha": "YYYY-MM-DD o null",
+  "referencia": "el número de AUTORIZACIÓN o APROBACIÓN, o null",
+  "numeros_del_papel": ["TODOS los números de 4 dígitos o más que aparezcan"],
+  "aprobado": true | false,
+  "legible": true | false,
+  "motivo": "si es_comprobante es false, en una frase corta y en español, qué se ve"
+}
+
+Reglas:
+- "procesador" es el nombre de arriba, que es del BANCO que procesa el cobro y no
+  de la tarjeta ni del comercio. Copialo tal cual.
+- "nombres" lista todo nombre propio impreso, esté donde esté: cabecera, cuerpo,
+  pie, logo. Hace falta porque el procesador no siempre está arriba.
+- "aprobado" es false si el voucher dice DECLINADA, RECHAZADA, ANULADA o
+  similar. Un voucher declinado no acredita ningún pago.
+- "referencia" es la AUTORIZACIÓN. NO uses el número de terminal, el lote, ni los
+  últimos dígitos de la tarjeta.
+- NUNCA devuelvas el número completo de la tarjeta, ni siquiera si se ve.
+- Si un dato no está, null. No lo inventes.`,
+}
+
+Deno.serve(async (req) => {
+  const cors = getCorsHeaders(req)
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors })
+  const json = (b: unknown, s = 200) =>
+    new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } })
+
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    )
+    const quien = await requireActiveEmployeeUser(req, supabase)
+    if (!quien) return json({ error: "SESION_INVALIDA" }, 401)
+
+    const { imagenBase64, mimeType, forma, saldo } = await req.json()
+    if (!imagenBase64) return json({ error: "SIN_IMAGEN" }, 400)
+
+    const clave = String(forma || "").toLowerCase()
+    const prompt = PROMPTS[clave]
+    if (!prompt) return json({ error: "FORMA_SIN_LECTOR" }, 400)
+
+    // El formulario está abierto con el cliente esperando: si tarda más que
+    // esto, conviene decirlo y ofrecer reintentar antes que colgar la pantalla.
+    const leido = parseGeminiJson<Record<string, unknown>>(await callGemini({
+      prompt,
+      inlineData: [{ mimeType: mimeType || "image/jpeg", data: imagenBase64 }],
+      jsonOutput: true,
+      temperature: 0,
+      timeoutMs: 45_000,
+    }))
+
+    // ── La regla, en código ────────────────────────────────────────────────
+    const monto = Number(leido.monto)
+    const tieneMonto = Number.isFinite(monto) && monto > 0
+    const tope = Number(saldo)
+
+    /* Los POS salen de la tabla y no de una lista escrita acá: son tres y hoy
+     * el portal conoce uno con nombre. Con la tabla, sumar los otros dos es una
+     * fila; escritos a mano, un despliegue — y mientras tanto el voucher de un
+     * POS bueno se rechazaría con el cliente enfrente. */
+    let pos: { codigo: string; nombre: string } | null = null
+    let posSinReconocer = false
+    if (clave === "tarjeta") {
+      const { data: proveedores, error: ePos } = await supabase
+        .from("pos_proveedores").select("codigo, nombre, nombres_en_el_papel").eq("activo", true)
+      // Nunca descartar el error de un query: sin esto, un fallo de lectura
+      // dejaría la lista vacía y TODO voucher saldría como «POS desconocido».
+      if (ePos) console.error("[leer-pago] pos_proveedores:", ePos.message)
+      const enElPapel = [leido.procesador, ...(Array.isArray(leido.nombres) ? leido.nombres : [])]
+        .map(norm).filter(Boolean)
+      for (const p of proveedores ?? []) {
+        const alias = (p.nombres_en_el_papel ?? []).map(norm)
+        if (alias.some((a: string) => enElPapel.some((n) => n.includes(a)))) {
+          pos = { codigo: p.codigo, nombre: p.nombre }
+          break
+        }
+      }
+      posSinReconocer = !pos
+    }
+
+    const coincide = {
+      titular: clave === "tarjeta" ? null : esElTitular(leido.beneficiario),
+      cabeEnElSaldo: tieneMonto && Number.isFinite(tope) ? monto <= tope + 0.004 : null,
+      pos: clave === "tarjeta" ? !posSinReconocer : null,
+    }
+
+    /* El VEREDICTO es lo que frena, y son pocas cosas a propósito: que sea el
+     * documento que dice ser, que se lea, que el dinero haya llegado a nuestro
+     * nombre, y que no diga más de lo que el cliente debe. Todo lo demás es
+     * aviso — un freno de más se paga con el cliente esperando en el mostrador. */
+    let veredicto = "OK"
+    if (!leido.es_comprobante) veredicto = "NO_ES_COMPROBANTE"
+    else if (leido.legible === false) veredicto = "ILEGIBLE"
+    else if (clave === "tarjeta" && leido.aprobado === false) veredicto = "NO_APROBADO"
+    else if (!tieneMonto) veredicto = "SIN_MONTO"
+    else if (coincide.titular === false) veredicto = "OTRO_BENEFICIARIO"
+    else if (coincide.cabeEnElSaldo === false) veredicto = "MONTO_MAYOR_AL_SALDO"
+
+    const avisos: string[] = []
+    if (posSinReconocer) {
+      avisos.push("No se reconoció el POS del voucher. Compruébalo antes de aceptar el pago.")
+    }
+    if (!leido.fecha) avisos.push("El comprobante no dice la fecha; escríbela a mano.")
+    if (!leido.referencia) avisos.push("No se leyó el número del comprobante; escríbelo a mano.")
+
+    return json({
+      leido,
+      coincide,
+      veredicto,
+      avisos,
+      // Lo que la pantalla va a poner en el formulario. Se devuelve aparte de
+      // `leido` para que se vea qué se autollenó y qué se dejó a mano.
+      sugerido: {
+        monto: tieneMonto ? Number(monto.toFixed(2)) : null,
+        fecha: leido.fecha ?? null,
+        documento: leido.referencia ?? null,
+        pos: pos?.codigo ?? null,
+        posNombre: pos?.nombre ?? null,
+      },
+      titularEsperado: TITULAR,
+    })
+  } catch (e) {
+    // Sin veredicto: no es «el comprobante está mal», es «no se pudo
+    // preguntar». La pantalla tiene que decirlo distinto y ofrecer reintentar.
+    console.error("leer-pago-de-credito:", e)
+    return json({ error: (e as Error).message ?? "NO_SE_PUDO_LEER" }, 500)
+  }
+})

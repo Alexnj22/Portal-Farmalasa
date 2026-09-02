@@ -597,7 +597,7 @@ export async function fetchEntidadesDeSalida() {
 // sale del editor a su tamaño de siempre.
 const LADO_PARA_LEER = 1400;
 
-function aBase64Reducido(archivo) {
+export function aBase64Reducido(archivo) {
     return new Promise((res, rej) => {
         const url = URL.createObjectURL(archivo);
         const img = new Image();

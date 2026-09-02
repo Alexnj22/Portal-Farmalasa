@@ -454,12 +454,15 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
     );
 }
 
-// ── ClassifyReviewAction — "Clasificar" (solo orphan_pdf): el usuario elige
-// el tipo del PDF (aviso de anulación vs. otro documento relacionado) y el
-// DTE al que se enlaza. Reemplaza el botón suelto "Marcar invalidado" que
-// vivía en el detalle del documento — sin contexto de qué PDF lo justificaba.
-// El efecto (invalidar) es consecuencia de la clasificación, resuelto por
-// classify_purchase_dte_review (ver migración 20260722170000). ────────────
+// ── ClassifyReviewAction — "Clasificar": el usuario elige el tipo del archivo
+// (aviso de anulación vs. otro documento relacionado) y el DTE al que se
+// enlaza. Reemplaza el botón suelto "Marcar invalidado" que vivía en el
+// detalle del documento — sin contexto de qué archivo lo justificaba. El
+// efecto (invalidar) es consecuencia de la clasificación, resuelto por
+// classify_purchase_dte_review (ver migración 20260722170000).
+//
+// Vale para las DOS clases de evidencia desde el 2026-09-02: el PDF con el
+// sello y el JSON del evento de invalidación. ────────────────────────────
 
 function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassified }) {
     const [tipo, setTipo] = useState('anulacion');
@@ -467,13 +470,30 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
+    // Preselecciona el documento cuando el propio aviso dice cuál es. Sin esto
+    // hay que encontrarlo a mano en una lista de cientos, que es la clase de
+    // fricción por la que una fila pendiente se queda pendiente.
+    //
+    // `invalida_codigo_generacion` primero y por una razón que no se ve: en un
+    // aviso de invalidación el código impreso en el PDF es el del EVENTO, no el
+    // del documento anulado (Brandstar, 27-ago: el PDF dice 122A62A7… y el CCF
+    // es 9F53BF27…). El del JSON es el bueno.
+    const codigoSugerido = row?.ai_suggested?.invalida_codigo_generacion
+        ?? row?.ai_suggested?.detected_codigo_generacion ?? null;
+    useEffect(() => {
+        if (!open || !codigoSugerido || documentId) return;
+        const encontrado = documents.find(
+            (d) => String(d.codigo_generacion || '').toUpperCase() === String(codigoSugerido).toUpperCase());
+        if (encontrado) setDocumentId(encontrado.id);
+    }, [open, codigoSugerido, documents, documentId]);
+
     if (!open) {
         return (
             <div className="flex items-center gap-1.5">
                 <ActionButton
                     icon={Tag}
                     label="Clasificar"
-                    title="Clasificar este PDF (ej. aviso de anulación) y vincularlo al DTE que afecta"
+                    title="Clasificar este archivo (ej. aviso de anulación) y vincularlo al DTE que afecta"
                     color="slate"
                     onClick={() => { onOpen(); setError(''); setTipo('anulacion'); setDocumentId(''); }}
                 />
@@ -1341,26 +1361,33 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                                                         onMatched={() => { bumpRefresh(); setExpandedAction(null); }}
                                                     />
                                                 )}
-                                                {!isMatchOpen && (
-                                                    <ClassifyReviewAction
-                                                        row={row}
-                                                        documents={documents}
-                                                        open={isClassifyOpen}
-                                                        onOpen={() => { loadDocuments(); setExpandedAction({ rowId: row.id, kind: 'classify' }); }}
-                                                        onClose={() => setExpandedAction(null)}
-                                                        onClassified={() => { bumpRefresh(); setExpandedAction(null); }}
-                                                    />
-                                                )}
-                                                {!anyOpen && (
-                                                    <ActionButton
-                                                        icon={CheckCircle2}
-                                                        label="Sin JSON"
-                                                        color="emerald"
-                                                        title="Guarda este PDF como documento aunque nunca llegue su JSON"
-                                                        onClick={() => confirmSinJson(row)}
-                                                    />
-                                                )}
                                             </>
+                                        )}
+                                        {/* Clasificar vale para las dos clases de evidencia: el PDF
+                                            con el sello y el JSON del evento de invalidación. Para
+                                            el JSON, hasta el 2026-09-02 la ÚNICA acción disponible
+                                            era Descartar — o sea que la prueba legal de que el
+                                            proveedor anuló el documento sólo se podía tirar. */}
+                                        {(row.kind === 'orphan_pdf' || row.kind === 'invalidacion_pendiente') && !isMatchOpen && (
+                                            <ClassifyReviewAction
+                                                row={row}
+                                                documents={documents}
+                                                open={isClassifyOpen}
+                                                onOpen={() => { loadDocuments(); setExpandedAction({ rowId: row.id, kind: 'classify' }); }}
+                                                onClose={() => setExpandedAction(null)}
+                                                onClassified={() => { bumpRefresh(); setExpandedAction(null); }}
+                                            />
+                                        )}
+                                        {/* "Sin JSON" se queda sólo en el PDF: crea un documento a
+                                            partir del archivo, y un JSON de evento no es un DTE. */}
+                                        {row.kind === 'orphan_pdf' && !anyOpen && (
+                                            <ActionButton
+                                                icon={CheckCircle2}
+                                                label="Sin JSON"
+                                                color="emerald"
+                                                title="Guarda este PDF como documento aunque nunca llegue su JSON"
+                                                onClick={() => confirmSinJson(row)}
+                                            />
                                         )}
                                         {!anyOpen && (
                                             <ActionButton

@@ -82,13 +82,19 @@ export async function findPurchaseDteDocumentByCodigo(codigo) {
     return data || null;
 }
 
-// El PDF huérfano de Revisión que justificó marcar un documento invalidado
-// (ver classify_purchase_dte_review) — para poder mostrar un link "Ver PDF
-// de anulación" en el detalle del documento en vez de dejarlo sin rastro.
-export async function fetchPurchaseDteReviewSource(documentId) {
+// Los respaldos de Revisión que justificaron marcar un documento invalidado
+// (ver classify_purchase_dte_review) — para poder abrirlos desde el detalle en
+// vez de dejar la anulación sin rastro.
+//
+// Devuelve la LISTA y no el primero: una anulación puede traer dos archivos —el
+// PDF con el sello y el JSON del evento, con su propio sello de recepción del
+// Ministerio de Hacienda— y quedarse con `[0]` dejaba al otro sin forma de
+// abrirse. Vienen con el PDF primero y cada uno con su `kind`, que es lo que
+// decide el rótulo.
+export async function fetchPurchaseDteReviewSources(documentId) {
     const { data, error } = await supabase.rpc('get_purchase_dte_review_source', { p_document_id: documentId });
     if (error) throw error;
-    return (data || [])[0] || null;
+    return data || [];
 }
 
 export async function resolvePurchaseDteReview(reviewId, action, matchedDocumentId = null) {

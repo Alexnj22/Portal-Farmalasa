@@ -583,15 +583,44 @@ const UUID_RE = /\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[
 // Ampliado 2026-07-22 tras verificación en vivo: el primer patrón exigía
 // frases completas ("documento anulado", "ha sido anulado") y no capturaba
 // el caso más común — un sello/watermark suelto "ANULADO" sobre la misma
-// representación gráfica (caso real: Grupo Jamilu). \b...\b para no
-// necesitar contexto de frase.
-const DOC_TYPE_NOTICE_RE = /(invalidaci[oó]n|anulaci[oó]n|\banulad[oa]\b|nota\s+de\s+cr[ée]dito|nota\s+de\s+d[ée]bito|comprobante\s+de\s+retenci[oó]n|comprobante\s+de\s+liquidaci[oó]n)/i;
+// representación gráfica (caso real: Grupo Jamilu). Sin exigir contexto de
+// frase, entonces — pero con un límite, y el límite estaba mal elegido:
+//
+// El `\b` de apertura hacía FALLAR justo el caso más común, y por eso esta
+// línea vivió con la forma equivocada desde julio (medido el 2026-09-02 sobre
+// los dos avisos de Uniserfa del 14-ago): la marca de agua no trae separador
+// propio, así que unpdf la devuelve PEGADA al texto anterior —
+// «$ 138.97ANULADO»—. Entre `7` y `A` no hay límite de palabra (los dos son
+// \w), o sea que `\banulado` no matchea y el CCF vuelve a Revisión como si su
+// PDF no dijera nada. Con pdftotext el mismo archivo sale separado letra por
+// letra, así que el defecto tampoco se ve mirándolo con otra herramienta.
+//
+// Y el `\b` NO se puede quitar a secas: en una farmacéutica «GRANULADO» está
+// en las descripciones de producto, y sin el límite marcaría anulado un CCF
+// perfectamente vigente. El límite correcto no es «palabra» sino «que no
+// venga pegado a otra LETRA» — un dígito o un símbolo delante sí valen.
+const LETRA_RE_FRAG = 'A-Za-zÁÉÍÓÚÜÑáéíóúüñ';
+const ANULADO_FRAG   = `(?<![${LETRA_RE_FRAG}])anulad[oa](?![${LETRA_RE_FRAG}])`;
+
+const DOC_TYPE_NOTICE_RE = new RegExp(
+  `(invalidaci[oó]n|anulaci[oó]n|${ANULADO_FRAG}|nota\\s+de\\s+cr[ée]dito|nota\\s+de\\s+d[ée]bito|comprobante\\s+de\\s+retenci[oó]n|comprobante\\s+de\\s+liquidaci[oó]n)`, 'i');
 
 // Señal específica de "ANULADO" (vs. el conjunto más amplio de arriba, que
 // también incluye invalidación/ND/NC) — se usa para decidir si conviene
 // marcar automáticamente invalidado=true en el documento ya capturado con
 // el mismo código, además de no descartarlo como duplicado.
-const ANULADO_RE = /\banulad[oa]\b/i;
+const ANULADO_RE = new RegExp(ANULADO_FRAG, 'i');
+
+// El asunto del correo es la ÚNICA señal cuando la marca de anulación es una
+// IMAGEN y no texto: los tres avisos de Guardado del 28-ago traen exactamente
+// el mismo texto que el CCF original (4,345 caracteres, idénticos) y cuatro
+// imágenes de más — el sello está DIBUJADO. No hay nada que leer, y sin esto
+// esos avisos se quedan en Revisión para siempre.
+//
+// Nunca actúa solo: sólo cuenta acompañado de un código de generación que YA
+// matchea un documento guardado. Un asunto que dice «anulado» sin un código
+// que resuelva no invalida nada.
+const ASUNTO_ANULACION_RE = /(anulad[oa]|anulaci[oó]n|invalidad[oa]|invalidaci[oó]n|cancelaci[oó]n|cancelad[oa])/i;
 
 async function detectCodigoGeneracionInPdf(pdfBytes: Uint8Array): Promise<{ codigo: string | null; isNoticeOrRelatedDoc: boolean; isAnulado: boolean }> {
   try {
@@ -608,6 +637,257 @@ async function detectCodigoGeneracionInPdf(pdfBytes: Uint8Array): Promise<{ codi
   }
 }
 
+// ── Invalidación: un solo sitio la escribe ────────────────────────────────────
+
+// Cuatro vías distintas descubren que un CCF fue anulado —el JSON del evento,
+// el sello impreso en el PDF, el asunto del correo, y la segunda pasada del
+// final de la corrida— y las cuatro tienen que hacer lo MISMO: marcar el
+// documento, dejar el aviso enlazado y avisar si el mes ya se declaró. Con la
+// escritura repartida, la quinta vía que se agregue se va a olvidar de una de
+// las tres y nadie lo va a notar, porque un documento marcado «invalidado» se
+// ve exactamente igual con o sin su aviso adjunto.
+type ResultadoInvalidacion =
+  | { estado: 'sin_documento' }
+  | { estado: 'ya_invalidado'; doc: any }
+  | { estado: 'marcado'; doc: any };
+
+async function marcarInvalidado(
+  supabase: any, codigoGeneracion: string, motivo: string | null, warnings: string[],
+): Promise<ResultadoInvalidacion> {
+  const { data: doc, error: findErr } = await supabase
+    .from('purchase_dte_documents')
+    .select('id, codigo_generacion, numero_control, emisor_nombre, fecha_emision, monto_total, invalidado')
+    .eq('codigo_generacion', codigoGeneracion)
+    .maybeSingle();
+  if (findErr) throw new Error(`buscar ${codigoGeneracion}: ${findErr.message}`);
+  if (!doc) return { estado: 'sin_documento' };
+  // "Ya invalidado" NO es lo mismo que "no lo encontré", y la diferencia
+  // decide si el aviso vuelve a la cola de Revisión o se cierra: con un solo
+  // `update ... select` que devuelve 0 filas, los dos casos se ven iguales.
+  if (doc.invalidado === true) return { estado: 'ya_invalidado', doc };
+
+  const { error: updErr } = await supabase
+    .from('purchase_dte_documents')
+    .update({ invalidado: true, invalidado_motivo: motivo, invalidado_at: new Date().toISOString() })
+    .eq('id', doc.id)
+    .eq('invalidado', false);
+  if (updErr) throw new Error(`marcar invalidado ${codigoGeneracion}: ${updErr.message}`);
+
+  await avisarSiPeriodoCerrado(supabase, doc, motivo, warnings);
+  return { estado: 'marcado', doc };
+}
+
+// Bajo la normativa DTE 2.0 el plazo del evento de invalidación se cuenta por
+// RECEPTOR, no por tipo de documento: para un contribuyente son los 10
+// primeros días hábiles del mes SIGUIENTE. O sea que un CCF del 28 de agosto
+// se puede anular con septiembre empezado — cuando el libro de agosto ya se
+// imprimió y se declaró.
+//
+// Marcarlo en silencio es el peor modo de falla posible: el libro que muestra
+// la pantalla deja de dar el total del papel presentado, y no hay error, ni
+// fila de menos, ni nada que falle. Se descubre cuadrando, meses después.
+//
+// `periodos_fiscales` está VACÍO hoy —nunca se cerró un mes—, así que esto
+// nace inerte a propósito y se enciende solo el día que se cierre el primero.
+//
+// Va a quien LEE los libros (`libros_iva`) y no a quien cierra el período: el
+// que declara es el que necesita enterarse, y `cierre_periodo` hoy no incluye
+// ni al Contador Externo ni al Gerente General.
+async function avisarSiPeriodoCerrado(supabase: any, doc: any, motivo: string | null, warnings: string[]) {
+  try {
+    if (!doc?.fecha_emision) return;
+    const periodo = `${String(doc.fecha_emision).slice(0, 7)}-01`;
+    const { data: per, error: perErr } = await supabase
+      .from('periodos_fiscales').select('periodo').eq('periodo', periodo).eq('estado', 'cerrado').maybeSingle();
+    if (perErr) throw new Error(`periodos_fiscales: ${perErr.message}`);
+    if (!per) return; // el mes sigue abierto: la anulación entra al libro sin más
+
+    // Antiduplicado por DOCUMENTO, no por corrida: la anulación de un CCF se
+    // avisa una vez aunque el proveedor reenvíe el aviso tres veces (Guardado
+    // mandó tres correos idénticos el 28-ago).
+    const checkKey = `anulacion_periodo_cerrado:${doc.id}`;
+    const { data: yaAvisado, error: nErr } = await supabase
+      .from('notifications').select('id').eq('metadata->>check_key', checkKey).limit(1);
+    if (nErr) throw new Error(`notifications: ${nErr.message}`);
+    if (yaAvisado && yaAvisado.length > 0) return;
+
+    const { data: roles, error: rErr } = await supabase
+      .from('role_permissions').select('role_id').eq('module_key', 'libros_iva').eq('can_view', true);
+    if (rErr) throw new Error(`role_permissions: ${rErr.message}`);
+    const roleIds = (roles ?? []).map((r: any) => r.role_id);
+
+    // La ficha técnica (QA) se filtra ACÁ y no con un `.neq()`: en PostgREST
+    // un `tipo_ficha <> 'tecnica'` es NULL para las filas sin tipo, o sea que
+    // las descarta también — y descartar destinatarios en silencio es
+    // exactamente lo que este aviso existe para no hacer.
+    const { data: gente, error: gErr } = roleIds.length === 0
+      ? { data: [], error: null }
+      : await supabase.from('employees').select('id, tipo_ficha').in('role_id', roleIds).eq('status', 'ACTIVO');
+    if (gErr) throw new Error(`employees: ${gErr.message}`);
+    const destinatarios = (gente ?? []).filter((g: any) => g.tipo_ficha !== 'tecnica').map((g: any) => String(g.id));
+
+    const mes = String(doc.fecha_emision).slice(0, 7);
+    if (destinatarios.length === 0) {
+      // Un aviso sin destinatarios es un aviso que no existe. Se dice fuerte
+      // en vez de contarlo como enviado.
+      warnings.push(`DTE ${doc.codigo_generacion}: anulación sobre ${mes} YA CERRADO y NADIE puede recibir el aviso (nadie con can_view en libros_iva)`);
+      return;
+    }
+
+    const { error: notiErr } = await supabase.rpc('notify_employees', {
+      p_recipients: destinatarios,
+      p_type: 'ANULACION_PERIODO_CERRADO',
+      p_title: `Anularon un documento de ${mes}, que ya está declarado`,
+      // Dice el monto y el proveedor porque es lo único accionable: con eso se
+      // sabe de una si mueve la aguja de la declaración o no.
+      p_body: `${doc.emisor_nombre ?? 'Un proveedor'} anuló ${doc.numero_control ?? doc.codigo_generacion}`
+        + (doc.monto_total != null ? ` por $${Number(doc.monto_total).toFixed(2)}` : '')
+        + `. ${motivo ?? 'Sin motivo declarado'}. El libro de ${mes} ya no da el mismo total que se declaró.`,
+      p_link: '/libros-iva',
+      p_metadata: { check_key: checkKey, documento_id: doc.id, periodo, codigo_generacion: doc.codigo_generacion },
+    });
+    if (notiErr) throw new Error(`notify_employees: ${notiErr.message}`);
+    warnings.push(`DTE ${doc.codigo_generacion}: anulación sobre ${mes} YA CERRADO — avisado a ${destinatarios.length} persona(s)`);
+  } catch (e: any) {
+    // Que falle el aviso NO puede deshacer la marca de invalidado: el
+    // documento anulado tiene que quedar anulado igual. Queda anotado.
+    warnings.push(`aviso de período cerrado (doc ${doc?.id}): ${e.message}`);
+  }
+}
+
+// Deja el aviso ENLAZADO al documento que invalidó, en vez de descartarlo.
+// Es la mitad que el camino automático no hacía: `classify_purchase_dte_review`
+// (el camino a mano) marca invalidado Y deja `matched_document_id`, y el visor
+// lee justo eso para ofrecer «Ver PDF de anulación». El automático marcaba y
+// no encolaba nada, así que el documento quedaba anulado sin ninguna prueba
+// visible de por qué.
+//
+// Va con upsert que ACTUALIZA (no `ignoreDuplicates`): la fila puede existir
+// ya, pendiente, de una corrida anterior que no supo reconocer el aviso — es
+// exactamente el caso de los ocho avisos de agosto.
+async function enlazarAvisoDeAnulacion(
+  supabase: any, fila: Record<string, unknown>, documentId: number,
+) {
+  const { error } = await supabase.from('purchase_dte_review_queue').upsert({
+    ...fila,
+    status: 'emparejado',
+    matched_document_id: documentId,
+    resolved_at: new Date().toISOString(),
+  }, { onConflict: 'account_id,source_message_id,filename' });
+  if (error) throw new Error(`enlazar aviso: ${error.message}`);
+}
+
+
+// La segunda pasada — el orden de los correos NO puede decidir si una anulación
+// se aplica.
+//
+// Dos de las cinco anulaciones de agosto se perdieron exactamente por eso, y
+// por márgenes que ninguna regla de negocio elegiría: el aviso de Farquisal se
+// procesó **0.77 s** antes de que su propio CCF entrara a la base, y el de
+// Brandstar **25 s**. Los dos, dentro de la MISMA corrida — el `UPDATE ... WHERE
+// codigo_generacion = <original>` no tocó ninguna fila, la anulación se encoló
+// como "DTE original aún no capturado", y nada volvió a mirarla nunca.
+//
+// La primera pasada ya tiene un reintento, pero mira sólo `orphan_pdf` y sólo
+// el documento que ACABA de insertar. Ésta cierra el caso general: al terminar
+// la cuenta, todo lo que quedó pendiente se vuelve a contrastar contra la base
+// completa. Cuesta una consulta y unas pocas filas, y es lo único que hace que
+// el resultado no dependa del orden en que Gmail devolvió la lista.
+const UUID_G_RE = /[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}/;
+
+async function reintentarAnulacionesPendientes(
+  supabase: any, accountId: number, warnings: string[],
+): Promise<number> {
+  const { data: filas, error } = await supabase
+    .from('purchase_dte_review_queue')
+    .select('id, kind, filename, reason, ai_suggested, file_path, account_id, source_message_id, from_email, subject, received_at')
+    .eq('account_id', accountId)
+    .eq('status', 'pendiente')
+    .or('kind.eq.invalidacion_pendiente,ai_suggested->>es_anulacion.eq.true');
+  if (error) { warnings.push(`segunda pasada: no se pudo leer la cola — ${error.message}`); return 0; }
+
+  let aplicadas = 0;
+  for (const f of (filas ?? [])) {
+    const ai = (f.ai_suggested ?? {}) as Record<string, any>;
+    // El orden importa: en un aviso de invalidación el código del EVENTO
+    // (`detected_codigo_generacion`, sacado del PDF) NO es el del documento
+    // anulado. `invalida_codigo_generacion` sale del JSON y es el bueno.
+    const codigo: string | null =
+      ai.invalida_codigo_generacion
+      ?? (f.kind === 'invalidacion_pendiente'
+            // Las filas encoladas ANTES de que existiera `ai_suggested` acá
+            // sólo tienen el código dentro de la frase de `reason`. Es un
+            // rescate para lo ya acumulado, no la vía normal.
+            ? (String(f.reason ?? '').match(UUID_G_RE)?.[0] ?? null)
+            : ai.detected_codigo_generacion ?? null);
+    if (!codigo) continue;
+
+    try {
+      const res = await marcarInvalidado(
+        supabase, String(codigo).toUpperCase(),
+        ai.motivo_anulacion ?? 'Anulado: aviso del proveedor recibido por correo',
+        warnings,
+      );
+      if (res.estado === 'sin_documento') continue; // el original sigue sin llegar; queda pendiente
+      const { error: linkErr } = await supabase.from('purchase_dte_review_queue')
+        .update({ status: 'emparejado', matched_document_id: res.doc.id, resolved_at: new Date().toISOString() })
+        .eq('id', f.id);
+      if (linkErr) { warnings.push(`segunda pasada: revisión ${f.id} — ${linkErr.message}`); continue; }
+      aplicadas++;
+      warnings.push(res.estado === 'marcado'
+        ? `segunda pasada: ${f.filename} → doc ${res.doc.id} (${codigo}) marcado invalidado`
+        : `segunda pasada: ${f.filename} → doc ${res.doc.id} (${codigo}) ya estaba invalidado, aviso enlazado`);
+    } catch (e: any) {
+      warnings.push(`segunda pasada: revisión ${f.id} (${codigo}) — ${e.message}`);
+    }
+  }
+
+  // Un aviso de invalidación llega como TRES archivos bajo la norma DTE 2.0: el
+  // JSON del evento, la representación gráfica del evento y la del documento
+  // anulado. Sólo el JSON sabe a qué documento apunta — el código impreso en el
+  // PDF del evento es el del EVENTO, no el del CCF (Brandstar, 27-ago: el PDF
+  // dice 122A62A7… y el anulado es 9F53BF27…). O sea que ese PDF NO se puede
+  // resolver por sí mismo, y se quedaba pendiente para siempre aunque su propio
+  // JSON, en el mismo correo, ya hubiera aplicado la anulación.
+  //
+  // El vínculo es el correo: llegaron juntos, hablan del mismo evento.
+  const { data: resueltas, error: rErr } = await supabase
+    .from('purchase_dte_review_queue')
+    .select('source_message_id, matched_document_id')
+    .eq('account_id', accountId)
+    .eq('kind', 'invalidacion_pendiente')
+    .eq('status', 'emparejado')
+    .not('matched_document_id', 'is', null);
+  if (rErr) { warnings.push(`segunda pasada (hermanos): ${rErr.message}`); return aplicadas; }
+
+  const docPorMensaje = new Map<string, number>();
+  for (const r of (resueltas ?? [])) {
+    if (r.source_message_id) docPorMensaje.set(r.source_message_id, r.matched_document_id);
+  }
+  if (docPorMensaje.size === 0) return aplicadas;
+
+  const { data: sueltos, error: sErr } = await supabase
+    .from('purchase_dte_review_queue')
+    .select('id, filename, source_message_id')
+    .eq('account_id', accountId)
+    .eq('kind', 'orphan_pdf')
+    .eq('status', 'pendiente')
+    .in('source_message_id', [...docPorMensaje.keys()]);
+  if (sErr) { warnings.push(`segunda pasada (hermanos): ${sErr.message}`); return aplicadas; }
+
+  for (const h of (sueltos ?? [])) {
+    const docId = docPorMensaje.get(h.source_message_id);
+    if (!docId) continue;
+    const { error: linkErr } = await supabase.from('purchase_dte_review_queue')
+      .update({ status: 'emparejado', matched_document_id: docId, resolved_at: new Date().toISOString() })
+      .eq('id', h.id);
+    if (linkErr) { warnings.push(`segunda pasada (hermanos): revisión ${h.id} — ${linkErr.message}`); continue; }
+    warnings.push(`segunda pasada: ${h.filename} llegó en el mismo correo que la invalidación → enlazado al doc ${docId}`);
+  }
+
+  return aplicadas;
+}
+
 // ── Procesar una cuenta ────────────────────────────────────────────────────────
 
 interface AccountResult {
@@ -615,6 +895,10 @@ interface AccountResult {
   documentsInserted: number;
   documentsSkipped: number;
   pdfsUnmatched: number;
+  // Anulaciones que la segunda pasada aplicó al cierre de la cuenta. Se
+  // reporta aparte de documentsInserted porque no es un documento nuevo: es un
+  // documento viejo que dejó de valer, y ese número tiene que poder mirarse.
+  anulacionesAplicadas: number;
   warnings: string[];
   hasMore: boolean;
   remaining: number;
@@ -776,7 +1060,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
 
     const usedPdfFilenames = new Set<string>();
     const validDtes: { json: any; jsonPart: AttachmentPart; pdfPart: AttachmentPart | null; rawBytes: Uint8Array; selloRecibido: string | null }[] = [];
-    const invalidJsons: { part: AttachmentPart; reason: string; kind?: string }[] = [];
+    const invalidJsons: { part: AttachmentPart; reason: string; kind?: string; aiSuggested?: Record<string, unknown>; matchedDocumentId?: number }[] = [];
 
     for (const jp of jsonParts) {
       let bytes: Uint8Array;
@@ -828,20 +1112,54 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
       // documento.codigoGeneracion marcándolo invalidado, en vez de
       // acumularse en Revisión mezclado con JSON genuinamente roto.
       if (parsed?.documento?.codigoGeneracion && parsed?.motivo) {
-        const originalCodigo = parsed.documento.codigoGeneracion;
+        const originalCodigo = String(parsed.documento.codigoGeneracion).toUpperCase();
         const motivo = parsed.motivo.motivoAnulacion ?? null;
-        const { data: updated, error: invalidadoErr } = await supabase
-          .from('purchase_dte_documents')
-          .update({ invalidado: true, invalidado_motivo: motivo, invalidado_at: new Date().toISOString() })
-          .eq('codigo_generacion', originalCodigo)
-          .select('id');
-        if (invalidadoErr) {
-          warnings.push(`DTE ${originalCodigo}: no se pudo marcar invalidado — ${invalidadoErr.message}`);
+        const fecAnula = parsed?.identificacion?.fecAnula ?? null;
+        // El código del EVENTO no es el del documento que anula, y confundirlos
+        // manda el aviso a un documento inexistente: en el aviso de Brandstar
+        // del 27-ago el PDF imprime `122A62A7…` (el evento) y el CCF anulado es
+        // `9F53BF27…`. El único sitio donde está el vínculo bueno es este
+        // `documento.codigoGeneracion` del JSON.
+        const aiSuggested = {
+          invalida_codigo_generacion: originalCodigo,
+          motivo_anulacion: motivo,
+          fec_anula: fecAnula,
+          es_anulacion: true,
+        };
+        try {
+          const res = await marcarInvalidado(supabase, originalCodigo, motivo, warnings);
+          if (res.estado === 'sin_documento') {
+            // El original todavía no está en la base. Puede que llegue en esta
+            // MISMA corrida —los dos correos entran juntos y el orden lo decide
+            // Gmail—, así que la segunda pasada del final lo reintenta.
+            if (looksFacturaRelated) {
+              invalidJsons.push({
+                part: jp,
+                reason: `invalidación de ${originalCodigo} — DTE original aún no capturado`,
+                kind: 'invalidacion_pendiente',
+                aiSuggested,
+              });
+            }
+          } else {
+            // Se guarda IGUAL, enlazado al documento: el JSON del evento trae su
+            // propio sello del MH («Invalidación Recibida y Procesada») y es la
+            // prueba de que la anulación existe. Antes se descartaba en cuanto
+            // el UPDATE tocaba una fila, así que el documento quedaba anulado
+            // sin ningún respaldo que mirar.
+            invalidJsons.push({
+              part: jp,
+              reason: `invalidación de ${originalCodigo} (${motivo ?? 'sin motivo'})`,
+              kind: 'invalidacion_pendiente',
+              aiSuggested,
+              matchedDocumentId: res.doc.id,
+            });
+            warnings.push(res.estado === 'marcado'
+              ? `DTE ${originalCodigo}: marcado invalidado (${motivo ?? 'sin motivo'})`
+              : `DTE ${originalCodigo}: ya estaba invalidado — se enlaza el JSON del evento`);
+          }
+        } catch (e: any) {
+          warnings.push(`DTE ${originalCodigo}: no se pudo marcar invalidado — ${e.message}`);
           messageHadFailedReviewOp = true;
-        } else if (updated && updated.length > 0) {
-          warnings.push(`DTE ${originalCodigo}: marcado invalidado (${motivo ?? 'sin motivo'})`);
-        } else if (looksFacturaRelated) {
-          invalidJsons.push({ part: jp, reason: `invalidación de ${originalCodigo} — DTE original aún no capturado`, kind: 'invalidacion_pendiente' });
         }
         documentsSkipped++;
         continue;
@@ -1074,6 +1392,10 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
       }
     }
 
+    // El asunto se lee UNA vez por mensaje, no por PDF: es la señal del correo,
+    // no del archivo.
+    const asuntoAnula = ASUNTO_ANULACION_RE.test(subject ?? '');
+
     for (const op of orphanPdfs) {
       try {
         const pdfBytes = await resolveAttachmentBytes(accessToken, id, op);
@@ -1083,6 +1405,25 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
 
         const { codigo: detectedCodigo, isNoticeOrRelatedDoc, isAnulado } = await detectCodigoGeneracionInPdf(pdfBytes);
+        // Dos señales independientes, y hacen falta las dos porque cada
+        // proveedor esconde la anulación en un sitio distinto: Uniserfa la
+        // escribe en el PDF (`isAnulado`), Guardado la DIBUJA y sólo la dice
+        // en el asunto (`asuntoAnula`). Ninguna de las dos sola cubría agosto.
+        const esAvisoDeAnulacion = isAnulado || asuntoAnula;
+
+        const fila = {
+          kind:        'orphan_pdf',
+          file_path:    publicUrl(path),
+          filename:    op.filename,
+          account_id:  account.id,
+          source_message_id: id,
+          from_email:  fromEmail,
+          subject,
+          received_at: receivedAt,
+          ai_suggested: detectedCodigo
+            ? { detected_codigo_generacion: detectedCodigo, es_anulacion: esAvisoDeAnulacion }
+            : null,
+        };
 
         // Si el código detectado ya tiene un DTE sincronizado SIN su propio
         // PDF, se adjunta directo — sin pasar por Revisión en absoluto.
@@ -1101,21 +1442,38 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         // suena a un aviso/nota, nunca se descarta aunque el tamaño
         // coincida.
         let isDuplicateResend = false;
-        // Marca automática de invalidado (a pedido del usuario, 2026-07-22 —
-        // verificado en vivo contra el caso real de Grupo Jamilu antes de
-        // dejarlo sin confirmación manual): si el PDF trae el sello/mención
-        // "ANULADO" Y matchea el código de un documento ya capturado, se
-        // marca invalidado=true directo en ese documento — no se pisa un
-        // invalidado_motivo más detallado que ya viniera del flujo JSON
-        // (`.eq('invalidado', false)` como guard).
         let autoInvalidated = false;
         if (detectedCodigo) {
+          // El error del select NO se traga: con `!findErr && existing` un
+          // fallo de red se leía igual que "no existe ese documento", y el
+          // aviso se iba a Revisión como huérfano sin que nada lo dijera.
           const { data: existing, error: findErr } = await supabase
             .from('purchase_dte_documents')
             .select('id, pdf_path, invalidado')
             .eq('codigo_generacion', detectedCodigo)
             .maybeSingle();
-          if (!findErr && existing && !existing.pdf_path) {
+          if (findErr) throw new Error(`buscar ${detectedCodigo}: ${findErr.message}`);
+
+          if (existing && esAvisoDeAnulacion) {
+            // La anulación se resuelve ANTES que "adjuntar el PDF que falta".
+            // Con el orden viejo, un documento todavía sin PDF propio se
+            // quedaba con el aviso colgado COMO SI fuera su representación
+            // gráfica, y sin marcar: el archivo puesto y el CCF vigente.
+            const res = await marcarInvalidado(
+              supabase, detectedCodigo,
+              isAnulado
+                ? 'Anulado: el PDF del proveedor trae el sello ANULADO'
+                : `Anulado: el proveedor lo avisó por correo («${(subject ?? '').slice(0, 80)}»)`,
+              warnings,
+            );
+            if (res.estado !== 'sin_documento') {
+              await enlazarAvisoDeAnulacion(supabase, fila, res.doc.id);
+              autoInvalidated = true;
+              warnings.push(res.estado === 'marcado'
+                ? `PDF ${op.filename}: código ${detectedCodigo} — doc ${res.doc.id} marcado invalidado y aviso enlazado`
+                : `PDF ${op.filename}: código ${detectedCodigo} — doc ${res.doc.id} ya estaba invalidado, aviso enlazado`);
+            }
+          } else if (existing && !existing.pdf_path) {
             const { data: attachData, error: attachErr } = await supabase
               .from('purchase_dte_documents')
               .update({ pdf_path: publicUrl(path) })
@@ -1126,33 +1484,18 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
               autoMatched = true;
               warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado — emparejado automáticamente con doc ${existing.id}`);
             }
-          } else if (!findErr && existing && existing.pdf_path && existing.invalidado) {
+          } else if (existing && existing.pdf_path && existing.invalidado) {
             // Bug real 2026-07-22 (doc 1281, aviso de Easyfact): el documento
-            // ya estaba invalidado por OTRA vía (ej. el flujo JSON oficial
-            // de Hacienda) antes de que este PDF llegara — mandarlo a
-            // Revisión le pide a un humano confirmar algo que ya está
-            // aplicado, y se queda pendiente para siempre porque isAnulado
-            // (que exige la palabra "anulado/a" literal en el PDF) no
-            // matchea avisos que dicen "invalidación". Si el documento YA
-            // está invalidado, no hace falta que el PDF lo confirme.
+            // ya estaba invalidado por OTRA vía antes de que este PDF
+            // llegara — mandarlo a Revisión le pide a un humano confirmar
+            // algo que ya está aplicado, y se queda pendiente para siempre.
+            // Se enlaza en vez de descartarse: es evidencia de ESE documento
+            // venga de donde venga, y descartarla dejaba al CCF anulado sin
+            // nada que mirar.
+            await enlazarAvisoDeAnulacion(supabase, fila, existing.id);
             autoInvalidated = true;
-            warnings.push(`PDF ${op.filename}: código ${detectedCodigo} — doc ${existing.id} ya estaba invalidado, no se manda a Revisión`);
-          } else if (!findErr && existing && existing.pdf_path && isAnulado) {
-            const { data: invData, error: invErr } = await supabase
-              .from('purchase_dte_documents')
-              .update({ invalidado: true, invalidado_motivo: 'Detectado automáticamente: PDF con sello/mención ANULADO', invalidado_at: new Date().toISOString() })
-              .eq('id', existing.id)
-              .eq('invalidado', false)
-              .select('id');
-            if (invErr) {
-              warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado como ANULADO pero no se pudo marcar invalidado en doc ${existing.id} — ${invErr.message}`);
-            } else if (invData && invData.length > 0) {
-              autoInvalidated = true;
-              warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado como ANULADO — doc ${existing.id} marcado invalidado automáticamente`);
-            } else {
-              autoInvalidated = true; // ya estaba invalidado (carrera con el chequeo de arriba)
-            }
-          } else if (!findErr && existing && existing.pdf_path && !isNoticeOrRelatedDoc) {
+            warnings.push(`PDF ${op.filename}: código ${detectedCodigo} — doc ${existing.id} ya estaba invalidado, aviso enlazado`);
+          } else if (existing && existing.pdf_path && !isNoticeOrRelatedDoc) {
             const existingRel = relativeStoragePath(existing.pdf_path);
             if (existingRel) {
               const { data: existingBlob } = await supabase.storage.from(BUCKET).download(existingRel);
@@ -1170,17 +1513,11 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         }
 
         if (!autoMatched && !isDuplicateResend && !autoInvalidated) {
-          const { error: rqErr } = await supabase.from('purchase_dte_review_queue').upsert({
-            kind:        'orphan_pdf',
-            file_path:    publicUrl(path),
-            filename:    op.filename,
-            account_id:  account.id,
-            source_message_id: id,
-            from_email:  fromEmail,
-            subject,
-            received_at: receivedAt,
-            ai_suggested: detectedCodigo ? { detected_codigo_generacion: detectedCodigo } : null,
-          }, { onConflict: 'account_id,source_message_id,filename', ignoreDuplicates: true });
+          // Sin `ignoreDuplicates`, por lo mismo que el JSON del evento: la
+          // fila puede existir ya, pendiente y sin `ai_suggested.es_anulacion`,
+          // de una corrida anterior que no supo reconocer el aviso.
+          const { error: rqErr } = await supabase.from('purchase_dte_review_queue')
+            .upsert(fila, { onConflict: 'account_id,source_message_id,filename' });
           if (rqErr) throw new Error(rqErr.message);
           pdfsUnmatched++;
         }
@@ -1219,14 +1556,14 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
       }
     }
 
-    for (const { part, reason, kind } of invalidJsons) {
+    for (const { part, reason, kind, aiSuggested, matchedDocumentId } of invalidJsons) {
       try {
         const jsonBytes = await resolveAttachmentBytes(accessToken, id, part);
         const path = `review/${id}-${sanitizeStorageKey(part.filename)}`;
         const { error: upErr } = await supabase.storage.from(BUCKET)
           .upload(path, jsonBytes, { contentType: 'application/json', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
-        const { error: rqErr } = await supabase.from('purchase_dte_review_queue').upsert({
+        const fila = {
           kind:        kind ?? 'invalid_json',
           file_path:    publicUrl(path),
           filename:    part.filename,
@@ -1236,8 +1573,23 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           from_email:  fromEmail,
           subject,
           received_at: receivedAt,
-        }, { onConflict: 'account_id,source_message_id,filename', ignoreDuplicates: true });
-        if (rqErr) throw new Error(rqErr.message);
+          // El código del documento anulado va en `ai_suggested`, no sólo dentro
+          // del texto de `reason`: la segunda pasada lo necesita como DATO, y
+          // sacarlo de una frase en prosa es la clase de acoplamiento que se
+          // rompe el día que alguien reescribe el mensaje.
+          ai_suggested: aiSuggested ?? null,
+        };
+        if (matchedDocumentId) {
+          await enlazarAvisoDeAnulacion(supabase, fila, matchedDocumentId);
+        } else {
+          // Sin `ignoreDuplicates`: la fila puede existir ya, pendiente, de una
+          // corrida vieja que la encoló sin `ai_suggested`. Si no se actualiza,
+          // la segunda pasada no tiene con qué reintentarla y queda pendiente
+          // para siempre — que es exactamente cómo llegaron acá las de agosto.
+          const { error: rqErr } = await supabase.from('purchase_dte_review_queue')
+            .upsert(fila, { onConflict: 'account_id,source_message_id,filename' });
+          if (rqErr) throw new Error(rqErr.message);
+        }
       } catch (e: any) {
         warnings.push(`JSON inválido ${part.filename} (msg ${id}): no se pudo encolar para revisión — ${e.message}`);
         messageHadFailedReviewOp = true;
@@ -1256,6 +1608,12 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
       warnings.push(`mensaje ${id}: no se marca como procesado (falló una operación de revisión/invalidado) — se reintentará`);
     }
   }
+
+  // Corre SIEMPRE, aunque la corrida se haya cortado por presupuesto: lo que
+  // reintenta es trabajo ya guardado en la cola, no depende de haber terminado
+  // de escanear Gmail. En dry_run no, que es de sólo lectura por contrato.
+  let anulacionesAplicadas = 0;
+  if (!dryRun) anulacionesAplicadas = await reintentarAnulacionesPendientes(supabase, account.id, warnings);
 
   if (messagesToMarkProcessed.length > 0) {
     try {
@@ -1276,6 +1634,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
 
   return {
     messagesScanned, documentsInserted, documentsSkipped, pdfsUnmatched, warnings,
+    anulacionesAplicadas,
     hasMore, remaining: Math.max(0, pendingIds.length - messagesScanned),
   };
 }

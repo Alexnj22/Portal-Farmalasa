@@ -4,7 +4,7 @@ import PdfZoomViewer from '../common/PdfZoomViewer';
 import { Archive, AlertTriangle, Download, ExternalLink, FileText, Receipt } from 'lucide-react';
 import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
 import { useAuth } from '../../context/AuthContext';
-import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSource } from '../../data/facturasCompra';
+import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSources } from '../../data/facturasCompra';
 import { dteTypeLabel } from '../../utils/dteTypes';
 import SegmentedControl from '../common/SegmentedControl';
 import { useToastStore } from '../../store/toastStore';
@@ -34,22 +34,33 @@ const FormPurchaseDteViewer = ({ formData }) => {
     const [pdfUrl, setPdfUrl] = useState(null);
     const [downloadingAll, setDownloadingAll] = useState(false);
     const [downloadAllError, setDownloadAllError] = useState('');
-    const [invalidacionSource, setInvalidacionSource] = useState(null);
-    const [openingInvalidacionPdf, setOpeningInvalidacionPdf] = useState(false);
+    // Una LISTA, no un archivo: una anulación puede venir con dos respaldos —el
+    // PDF con el sello y el JSON del evento, que trae su propio sello de
+    // recepción del Ministerio de Hacienda—. Mostrar sólo uno deja el otro sin
+    // forma de abrirse, y ofrecerlos con el mismo rótulo los vuelve
+    // indistinguibles justo cuando importa cuál es cuál.
+    const [respaldos, setRespaldos] = useState([]);
+    const [abriendoRespaldo, setAbriendoRespaldo] = useState(null);
 
-    const openInvalidacionPdf = async () => {
-        if (!invalidacionSource?.file_path) return;
-        setOpeningInvalidacionPdf(true);
+    const abrirRespaldo = async (r) => {
+        if (!r?.file_path) return;
+        setAbriendoRespaldo(r.id ?? r.file_path);
         try {
-            const url = await getSignedFileUrl(invalidacionSource.file_path);
+            const url = await getSignedFileUrl(r.file_path);
             if (url) window.open(url, '_blank', 'noopener');
         } catch (e) {
             console.error('FormPurchaseDteViewer.jsx: ', e);
-            useToastStore.getState().showToast('No se pudo abrir el PDF', 'El documento de invalidación no está disponible. Intenta de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudo abrir el archivo', 'El respaldo de la anulación no está disponible. Intenta de nuevo.', 'error');
         } finally {
-            setOpeningInvalidacionPdf(false);
+            setAbriendoRespaldo(null);
         }
     };
+
+    // El rótulo sale del `kind` de la fila, que es lo que la base sabe. Un
+    // rótulo fijo mentía en cuanto el respaldo no era un PDF.
+    const rotuloRespaldo = (r) => (
+        r?.kind === 'invalidacion_pendiente' ? 'Ver el aviso de anulación (JSON)' : 'Ver el PDF de anulación'
+    );
 
     const downloadAll = async () => {
         setDownloadingAll(true);
@@ -101,13 +112,17 @@ const FormPurchaseDteViewer = ({ formData }) => {
     // que el llamador tenía en la mano. El RPC queda solo de respaldo, para
     // cuando el modal se abre sin pasar por la lista (la fila no trae el campo).
     useEffect(() => {
-        if (!document?.invalidado || !document?.id) { setInvalidacionSource(null); return; }
-        if (document.invalidacion_source !== undefined) {
-            setInvalidacionSource(document.invalidacion_source);
-            return;
-        }
+        if (!document?.invalidado || !document?.id) { setRespaldos([]); return; }
+        // La fila de la lista trae UN respaldo (el principal) — con eso se pinta
+        // de una, sin parpadeo. Pero puede haber dos, y el listado sólo cabe en
+        // el RPC, así que se pide igual. Es una llamada por documento anulado
+        // abierto: cinco en todo el histórico, no la ruta caliente que la
+        // optimización H13 buscaba evitar.
+        setRespaldos(document.invalidacion_source ? [document.invalidacion_source] : []);
         let alive = true;
-        fetchPurchaseDteReviewSource(document.id).then((row) => { if (alive) setInvalidacionSource(row); }).catch(() => {});
+        fetchPurchaseDteReviewSources(document.id)
+            .then((filas) => { if (alive && filas.length) setRespaldos(filas); })
+            .catch(() => {});
         return () => { alive = false; };
     }, [document?.invalidado, document?.id, document?.invalidacion_source]);
 
@@ -171,9 +186,17 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 {document.invalidado_at ? ` (${document.invalidado_at.slice(0, 10)})` : ''}.
                                 No ampara deducciones ni crédito fiscal (Art. 119-E Código Tributario).
                             </p>
-                            {invalidacionSource?.file_path && (
-                                <Button variant="ghost" icon={ExternalLink} disabled={openingInvalidacionPdf} onClick={openInvalidacionPdf}>{openingInvalidacionPdf ? 'Abriendo…' : 'Ver PDF de anulación'}</Button>
-                            )}
+                            {respaldos.filter((r) => r?.file_path).map((r) => (
+                                <Button
+                                    key={r.id ?? r.file_path}
+                                    variant="ghost"
+                                    icon={ExternalLink}
+                                    disabled={abriendoRespaldo === (r.id ?? r.file_path)}
+                                    onClick={() => abrirRespaldo(r)}
+                                >
+                                    {abriendoRespaldo === (r.id ?? r.file_path) ? 'Abriendo…' : rotuloRespaldo(r)}
+                                </Button>
+                            ))}
                         </div>
                     </div>
                 )}

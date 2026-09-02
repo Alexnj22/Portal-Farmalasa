@@ -21,6 +21,159 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.937.0 — Las anulaciones de compra se aplican solas
+
+**Seis CCF que el proveedor anuló seguían contando como buenos.** Cinco de
+agosto y uno de julio, $1,759.25 en total: los avisos habían llegado, estaban
+guardados y esperando en Revisión, y ninguno se había aplicado. El portal los
+mostraba vigentes y el libro de compras los tomaba, porque las tres funciones
+del libro eligen el DTE con `coalesce(d.invalidado, false) = false`.
+
+Los seis ya están marcados, cada uno con su motivo y con el aviso del proveedor
+enlazado al documento. En el detalle aparecen como **«Ver el PDF de anulación»**
+y **«Ver el aviso de anulación (JSON)»** — hasta ahora sólo se ofrecía uno, con
+un rótulo fijo que mentía en cuanto el respaldo no era un PDF.
+
+### Cuatro proveedores, cuatro maneras de esconder la misma palabra
+
+Ninguna de las cuatro fallas era la misma, y ninguna daba error:
+
+| proveedor | dónde estaba la anulación | por qué no se veía |
+|---|---|---|
+| Farmaquímicos | «DOCUMENTO ANULADO» escrito en el PDF | el PDF se procesó **1.1 s antes** de que su propio CCF entrara a la base |
+| Uniserfa (×2) | la marca de agua, como texto | el `\b` de apertura |
+| Guardado (×3) | la marca de agua, **como imagen** | no hay texto que leer |
+| Brandstar | el JSON del evento | el JSON se procesó **25 s antes** que su CCF |
+
+**El `\b` de apertura.** El extractor no pone separador delante de la marca de
+agua: devuelve `$ 138.97ANULADO`. Entre `7` y `A` no hay límite de palabra —los
+dos son `\w`—, así que `\banulado` nunca matcheaba. Y quitarlo a secas no era la
+salida: en una farmacéutica **«GRANULADO»** está en las descripciones de
+producto, y sin límite habría marcado anulado un CCF vigente. El límite correcto
+no es «palabra» sino «que no venga pegado a otra LETRA»: un dígito o un símbolo
+delante sí valen. Verificado contra los diez PDF reales, con los tres originales
+sanos dando negativo.
+
+**El asunto del correo, cuando no hay nada que leer.** Los tres avisos de
+Guardado traen exactamente el mismo texto que el CCF original —4,345 caracteres,
+idénticos— y cuatro imágenes de más: el sello está dibujado. La única señal es
+el asunto, y nunca actúa sola: hace falta además un código de generación que ya
+resuelva a un documento guardado.
+
+**El orden de los correos ya no decide.** Al cerrar cada cuenta hay una segunda
+pasada que contrasta lo que quedó pendiente contra la base completa. Es lo que
+rescató la anulación de julio, que llevaba cinco semanas esperando.
+
+**Y el aviso del evento se enlaza por el correo que lo trajo.** Bajo la norma
+DTE 2.0 una invalidación llega como tres archivos, y sólo el JSON sabe a qué
+documento apunta: el código impreso en el PDF del evento es el **del evento**
+(Brandstar: `122A62A7…` en el PDF, `9F53BF27…` el CCF anulado). Ese PDF no se
+puede resolver solo — se resuelve porque llegó en el mismo correo.
+
+### Aviso cuando la anulación cae sobre un mes ya declarado
+
+El plazo del evento de invalidación se cuenta por receptor: para un
+contribuyente son los diez primeros días hábiles del mes siguiente. O sea que un
+CCF del 28 de agosto se puede anular con septiembre empezado, cuando el libro de
+agosto ya se imprimió y se declaró. Aplicarlo en silencio es el peor modo de
+falla: el libro en pantalla deja de dar el total del papel presentado, sin error
+y sin fila de menos, y se descubre cuadrando meses después.
+
+Ahora avisa a quien lee los libros, con el proveedor y el monto. Nace inerte —
+`periodos_fiscales` está vacío, nunca se cerró un mes— y se enciende solo el día
+que se cierre el primero.
+
+### El JSON del evento ya no se puede sólo tirar
+
+Para una fila `invalidacion_pendiente` la única acción en pantalla era
+**Descartar**, y esa fila es el JSON del evento: trae su propio sello de
+recepción del Ministerio de Hacienda («Invalidación Recibida y Procesada»). La
+prueba legal de la anulación no tenía otro destino. Ahora se clasifica igual que
+el PDF, con el documento ya preseleccionado cuando el propio aviso dice cuál es.
+
+## v2.937.1 — El invariante de las bolsas se mide con el saldo, y el aviso dice de qué lado
+
+Migración `20260902140259`. Salió de una pregunta del usuario sobre una tarjeta
+que **seguía mostrando el número viejo** después de que la corrección de anoche
+diera por cerrado el asunto.
+
+### La corrección de anoche llegó siete minutos tarde a esa bolsa
+
+`v2.931.2` arregló `bolsa_sugerida` para que restara el **saldo** de las bolsas
+del día y no su **etiqueta**. Pero `monto_inicial` se escribe UNA vez, al nacer
+la bolsa, y nada lo recalcula:
+
+| | hora (UTC) |
+|---|---|
+| nace S3-1225 con $787.01 | 02-sep **03:16:42** |
+| entra la migración `bolsa_sugerida_descuenta_el_saldo` | 02-sep **03:23:30** |
+
+Corregida a mano a **$906.39** con su evento en la bitácora de la bolsa, y la
+etiqueta vuelta a «sin imprimir» porque la pegada dice el monto viejo. Los
+$119.38 de diferencia son el vale `V-S3-1063`, que ya había salido de S3-1216
+antes del corte. Las dos bolsas del día suman ahora $1,146.61 = lo declarado.
+
+### Y ahí se vio que el invariante era una tautología
+
+El aviso de `/bolsas` saltó al instante — **disparado por el número bueno**. La
+razón es que `get_bolsas_invariante` y `reajustar_bolsas_del_dia` seguían sumando
+`monto_inicial`, o sea que la corrección llegó a **una de las tres piezas** que
+hacían la misma cuenta.
+
+Con la fórmula vieja esa suma **no podía fallar**: la bolsa nueva nacía como
+`declarado − suma de las etiquetas del día`, así que después de insertarla la
+suma daba el declarado **por construcción**. Medido sobre los 54 días-sala del
+circuito: **los 54** daban la igualdad exacta al centavo. El único control que
+mira el caso peor —«el corte dice que había $X y las bolsas suman menos»— estaba
+comparando un número contra sí mismo, y sólo podía detectar días sin ninguna
+bolsa y bolsas anuladas.
+
+La cuenta correcta, y fija en el tiempo:
+
+```
+suma de las etiquetas del día  +  vales que salieron ANTES  ==  declarado
+```
+
+«Antes» es antes de que se creara la última bolsa del día, que es el estado
+exacto que vio `bolsa_sugerida` al calcularla — las dos mitades miden con la
+misma vara. Y es estable: los vales que salen **después** bajan el saldo de hoy
+pero no mueven el invariante, que es lo que impide que un día viejo se ponga rojo
+solo a medida que su dinero va saliendo.
+
+**Con esa cuenta aparecen ocho días-sala que hasta hoy salían en verde**, todos
+con la misma firma —la última bolsa del día nació corta por exactamente lo que un
+vale ya le había sacado a una bolsa anterior—: 31-ago S2 $100.00 y S3 $300.00,
+28-ago S2 $243.86 y S4 $218.81, 27-ago S1 $400.00, 26-ago S1 $500.00 y S4 $50.00,
+24-ago S4 $750.00. **No está dicho que ese dinero falte**: lo más probable es que
+quedara suelto en el cajón y lo recogiera el corte siguiente. Lo que sí es seguro
+es que el respaldo escrito de esos días está corto, y hay que revisarlos uno por
+uno.
+
+### El reajuste mueve lo que la anulación se llevó, no una diferencia del día
+
+`reajustar_bolsas_del_dia` calculaba `declarado − suma de las etiquetas` y movía
+eso a la última bolsa abierta. Con el invariante tautológico esa resta daba
+**siempre** el monto de la bolsa recién anulada; con el invariante de verdad deja
+de darlo, y en un día que ya venía corto **absorbería también el hueco viejo** —
+o sea, le inventaría a una bolsa dinero que nadie contó. Medido en Salud 3 del
+31-ago: la resta vieja da $324.80 (correcto) y la nueva daría $624.80.
+
+Sus dos llamadores anulan una bolsa **sin vales adentro** —`anular_bolsa` lo
+exige y el disparador del corte descartado sólo entra con cero—, así que el hueco
+que abren es exactamente su `monto_inicial`. Ahora se lo pasan. La función quedó
+con un parámetro más y **se dejó una sola sobrecarga**: al cambiarle la firma a
+una función, la vieja se queda con sus permisos.
+
+### El aviso decía «faltan» sobre un sobrante
+
+El renglón hacía `Math.abs(descuadre)` y escribía «faltan» siempre. El primer
+descuadre real que midió el portal fue **positivo** —las bolsas guardaban más de
+lo declarado— y la pantalla anunció «faltan $119.38». Un aviso que dice lo
+contrario de lo que pasa manda a buscar dinero que está, y de paso esconde el
+caso que sí hay que mirar: guardar de más es que algo se contó dos veces. Son
+tres frases y no dos porque el conjunto puede ser mixto, y ahí ninguna de las dos
+sirve.
+
 ## v2.936.4 — Un crédito pagado no está vencido
 
 Con el filtro en **Todos**, Cuentas por cobrar pintaba de ámbar la pantalla

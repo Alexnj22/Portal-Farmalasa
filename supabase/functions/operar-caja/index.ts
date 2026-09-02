@@ -369,6 +369,30 @@ Deno.serve(async (req) => {
         return json({ ok: false, error: "Ese movimiento nunca llegó a la caja, así que no hay nada que corregir ahí." }, 409);
       }
 
+      /* ── El monto tiene que ser TODAVÍA el que la solicitud dice ────────
+       *
+       * `monto_actual` se guarda al PEDIR y hasta acá nadie lo volvía a mirar,
+       * así que quien aprobaba decidía sobre una foto vieja: si entre el pedido
+       * y la firma alguien editó el movimiento —en el sistema de la caja, por
+       * fuera del portal— la pantalla del supervisor seguía diciendo «$50 →
+       * $30» sobre un movimiento que ya valía $70, y al aplicar quedaba en $30
+       * sin que nadie hubiera decidido eso.
+       *
+       * Es la misma regla que ya rige los abonos a crédito: el saldo se relee
+       * antes de escribir. Acá se compara y se FRENA — corregir sobre una cifra
+       * que cambió no es corregir, es pisar. Quien decida lo vuelve a pedir con
+       * el número de hoy, que es una molestia y no un error de dinero. */
+      const montoAlPedir = Number(meta.monto_actual);
+      if (Number.isFinite(montoAlPedir)
+          && Math.abs(Number(mov.monto) - montoAlPedir) > 0.004) {
+        return json({
+          ok: false,
+          error: `Ese movimiento cambió: la solicitud se pidió cuando valía `
+               + `${montoAlPedir.toFixed(2)} y hoy vale ${Number(mov.monto).toFixed(2)}. `
+               + `Recházala y vuelve a pedirla con el monto de ahora.`,
+        }, 409);
+      }
+
       const anular = meta.que === "ANULAR";
       const montoNuevo = Number(meta.monto_nuevo);
       if (!anular && !(Number.isFinite(montoNuevo) && montoNuevo > 0)) {

@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.945.2 — La corrección se aplica sobre el monto de hoy
+
+Cierra el hueco que quedó señalado en la versión anterior.
+
+Una corrección de caja guarda el monto que el movimiento tenía **al pedirla**
+(`monto_actual`), y hasta acá nadie lo volvía a mirar. O sea que quien aprobaba
+decidía sobre una foto vieja: si entre el pedido y la firma alguien editaba el
+movimiento **en el sistema de la caja, por fuera del portal**, la pantalla del
+supervisor seguía diciendo «$50 → $30» sobre un movimiento que ya valía $70 — y
+al aplicarla quedaba en $30, que es un número que nadie decidió.
+
+Ahora se compara y se **frena**. Corregir sobre una cifra que cambió no es
+corregir, es pisar. Se rechaza y se vuelve a pedir con el número de hoy: una
+molestia, no un error de dinero.
+
+Es la misma regla que ya rige los abonos a crédito —el saldo se relee del origen
+antes de escribir— aplicada donde faltaba.
+
 ## v2.945.1 — Una sola solicitud viva por objeto
 
 Pregunta del usuario: *«verifica eso mismo con las demás solicitudes, ¿si tienen

@@ -55,6 +55,53 @@ export default function ValesDeCaja() {
         [pendientes],
     );
 
+    /* ── El aviso tiene que decir DÓNDE ────────────────────────────────────
+     *
+     * Reportado por el usuario (2-sep): «Faltan anotarle a la caja 2 salidas
+     * por $127.00 — ¿qué es eso? ¿de qué sucursal? no entiendo». Eran dos de
+     * Salud 3, y ni el aviso ni la lista de «Ver cuáles» lo decían.
+     *
+     * No es un olvido de redacción: este aviso vive FUERA del filtro de
+     * sucursal de la vista a propósito —es trabajo pendiente, y esconderlo
+     * detrás de un recorte sería no anunciarlo—, así que la sala tampoco se
+     * puede deducir de la pantalla. Sin el nombre, el aviso dice que hay algo
+     * que hacer y no dónde, que es lo mismo que no decir nada.
+     *
+     * El nombre viene en la fila (`caja_vales_pendientes` lo trae de
+     * `branches`) y no se cruza acá contra el store: el mismo dato lo usa la
+     * simulación, que lo recibe de la edge function. Un solo origen. */
+    const salas = useMemo(() => {
+        const vistas = [];
+        for (const p of pendientes) if (p.sala && !vistas.includes(p.sala)) vistas.push(p.sala);
+        return vistas;
+    }, [pendientes]);
+
+    /* «Salud 3», «Salud 3 y La Popular», «Salud 3, La Popular y Salud 1». Se
+     * nombran TODAS y no «3 salas»: son a lo sumo siete, y el número obliga a
+     * abrir el diálogo para saber si a uno le toca.
+     *
+     * `null` cuando no se pudo resolver ninguna, y ahí el aviso sale sin el
+     * rótulo en vez de con un hueco: un «de undefined» no es más informativo
+     * que la frase vieja, y este aviso no puede dejar de salir. */
+    const donde = salas.length
+        ? salas.slice(0, -1).join(', ') + (salas.length > 1 ? ` y ${salas[salas.length - 1]}` : salas[0])
+        : null;
+
+    /* Agrupada por sala, para que la lista se lea como el aviso. Se recorren
+     * las FILAS y no `salas`: agrupando por la lista de nombres, una fila sin
+     * nombre desaparecería del diálogo mientras sigue sumando en el total del
+     * aviso — un resumen que no cuenta todo dice «sin novedad» sobre algo que
+     * sí está. Sin nombre va a su propio grupo, sin rótulo. */
+    const porSala = useMemo(() => {
+        const grupos = new Map();
+        for (const p of pendientes) {
+            const k = p.sala || '';
+            if (!grupos.has(k)) grupos.set(k, []);
+            grupos.get(k).push(p);
+        }
+        return [...grupos].map(([sala, filas]) => ({ sala, filas }));
+    }, [pendientes]);
+
     if (!puedeVer || pendientes.length === 0) return null;
 
     const simular = async () => {
@@ -93,10 +140,16 @@ export default function ValesDeCaja() {
             <Notice variant="warning" icon={Landmark}>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
+                        {/* La sala PRIMERO. Es lo que se busca al leerlo —«¿me
+                            toca a mí?»— y además evita el «de Salud 3 2
+                            salidas», donde dos números pegados se leen como uno.
+                            Es la misma forma que el aviso de un corte nuevo:
+                            «<sala> — <lo que hay que hacer>». */}
                         <span className="font-bold">
+                            {donde && <span>{donde} — </span>}
                             {pendientes.length === 1
-                                ? `Falta anotarle a la caja una salida de ${formatMoney(total)}`
-                                : `Faltan anotarle a la caja ${pendientes.length} salidas por ${formatMoney(total)}`}
+                                ? `${donde ? 'falta' : 'Falta'} anotarle a la caja una salida de ${formatMoney(total)}`
+                                : `${donde ? 'faltan' : 'Faltan'} anotarle a la caja ${pendientes.length} salidas por ${formatMoney(total)}`}
                         </span>
                         <span className="block mt-0.5 font-normal text-content-2">
                             Salió de una bolsa del día que la caja tiene abierto, así que sigue
@@ -122,28 +175,49 @@ export default function ValesDeCaja() {
                         </p>
                     </div>
 
-                    <ul className="space-y-1.5">
-                        {pendientes.map((p) => (
-                            <li key={p.movimiento_id}
-                                className="flex items-center justify-between gap-3 text-body-sm">
-                                <span className="text-content truncate">{p.folio}</span>
-                                <span className="tabular-nums font-bold text-content">
-                                    {formatMoney(p.monto)}
-                                </span>
-                            </li>
+                    {/* Agrupada por sala: el vale se escribe por sala, así que
+                        la lista tiene que dejar ver de una qué le toca a cada
+                        una. Con las salidas sueltas, «2 salidas por $127.00»
+                        no decía si eran de la misma caja o de dos. */}
+                    <div className="space-y-3">
+                        {porSala.map(({ sala, filas }) => (
+                            <div key={sala}>
+                                <div className="flex items-baseline justify-between gap-3">
+                                    <span className="text-caption font-black uppercase tracking-widest text-content-2">
+                                        {sala}
+                                    </span>
+                                    <span className="tabular-nums text-caption font-bold text-content-2">
+                                        {formatMoney(filas.reduce((s, f) => s + Number(f.monto || 0), 0))}
+                                    </span>
+                                </div>
+                                <ul className="space-y-1.5 mt-1">
+                                    {filas.map((p) => (
+                                        <li key={p.movimiento_id}
+                                            className="flex items-center justify-between gap-3 text-body-sm">
+                                            <span className="text-content truncate">{p.folio}</span>
+                                            <span className="tabular-nums font-bold text-content">
+                                                {formatMoney(p.monto)}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
 
                     {simulacion && (
                         <div className="space-y-1.5 rounded-xl p-3" data-surface="card">
                             <p className="text-caption font-black uppercase tracking-widest text-content-2">
                                 Lo que se va a escribir
                             </p>
+                            {/* El NOMBRE de la sala, no su número. Decía
+                                «Sala 5», que es el identificador de la fila —
+                                nadie en sala sabe qué sucursal es ésa. */}
                             {simulacion.map((s, i) => (
                                 <p key={i} className="text-body-sm text-content-2">
                                     {s.error
-                                        ? `Sala ${s.branchId}: ${s.error}`
-                                        : `Sala ${s.branchId} · ${s.accion === 'crear' ? 'un vale de caja nuevo' : 'sumar al vale de caja abierto'} · ${formatMoney(s.monto_del_vale)}`}
+                                        ? `${s.sala}: ${s.error}`
+                                        : `${s.sala} · ${s.accion === 'crear' ? 'un vale de caja nuevo' : 'sumar al vale de caja abierto'} · ${formatMoney(s.monto_del_vale)}`}
                                 </p>
                             ))}
                         </div>

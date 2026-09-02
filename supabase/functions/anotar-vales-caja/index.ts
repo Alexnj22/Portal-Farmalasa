@@ -203,11 +203,20 @@ Deno.serve(async (req) => {
     if (errPend) throw new Error(`leyendo pendientes: ${errPend.message}`);
 
     // Agrupadas por sala: un vale por sala y por tramo.
-    const porSala = new Map<number, { dia: string; movs: number[]; folios: string[]; monto: number }>();
+    //
+    // `sala` es el NOMBRE, y viaja hasta `resultados`: la pantalla decía
+    // «Sala 5» —el número interno de la fila— sobre un aviso que ya no decía
+    // de qué sucursal era. Lo trae `caja_vales_pendientes` desde `branches`
+    // para que acá y en el aviso la sala se llame igual.
+    const porSala = new Map<number, {
+      sala: string; dia: string; movs: number[]; folios: string[]; monto: number;
+    }>();
     for (const p of pendientes ?? []) {
       if (soloSala && Number(p.branch_id) !== soloSala) continue;
       const k = Number(p.branch_id);
-      if (!porSala.has(k)) porSala.set(k, { dia: p.dia_abierto, movs: [], folios: [], monto: 0 });
+      if (!porSala.has(k)) {
+        porSala.set(k, { sala: p.sala, dia: p.dia_abierto, movs: [], folios: [], monto: 0 });
+      }
       const g = porSala.get(k)!;
       g.movs.push(Number(p.movimiento_id));
       g.folios.push(p.folio);
@@ -260,7 +269,7 @@ Deno.serve(async (req) => {
 
         if (simular) {
           resultados.push({
-            branchId, accion, dia: g.dia, folios: g.folios,
+            branchId, sala: g.sala, accion, dia: g.dia, folios: g.folios,
             monto_de_ahora: Number(g.monto.toFixed(2)),
             monto_del_vale: montoNuevo,
             vale_existente: vale?.id ?? null,
@@ -351,7 +360,7 @@ Deno.serve(async (req) => {
           .in("id", g.movs);
         if (errMarca) throw new Error(`marcando los movimientos: ${errMarca.message}`);
 
-        resultados.push({ branchId, accion, monto: montoNuevo, movimiento_en_caja: idMov, folios: g.folios });
+        resultados.push({ branchId, sala: g.sala, accion, monto: montoNuevo, movimiento_en_caja: idMov, folios: g.folios });
       } catch (e) {
         const msg = (e as Error)?.message ?? String(e);
         if (!simular) {
@@ -366,7 +375,7 @@ Deno.serve(async (req) => {
             .eq("branch_id", branchId).in("estado", ["PENDIENTE", "ANOTADO"]);
           if (errAnotar) console.error(`no se pudo anotar el error del vale (${branchId}): ${errAnotar.message}`);
         }
-        resultados.push({ branchId, error: msg });
+        resultados.push({ branchId, sala: g.sala, error: msg });
       }
     }
 

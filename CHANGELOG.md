@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.956.3 — El aviso de vales dice de qué sala es
+
+Reportado por el usuario sobre Bolsas: *«Faltan anotarle a la caja 2 salidas por
+$127.00 — ¿qué es eso? ¿de qué sucursal? no entiendo»*. Eran dos salidas de
+**Salud 3** de hoy (OTR-1062 $125.00 y GAS-1063 $2.00, las dos de la bolsa
+S3-1230).
+
+Y no era un olvido de redacción. Ese aviso vive **fuera del filtro de sucursal**
+a propósito —es trabajo pendiente, y esconderlo detrás de un recorte sería no
+anunciarlo—, así que la sala tampoco se podía deducir de la pantalla. Un aviso
+que dice que hay algo que hacer y no dónde es lo mismo que no decir nada.
+
+- **El aviso nombra la sala, y va primero**: «Salud 3 — faltan anotarle a la
+  caja 2 salidas por $127.00». Con varias las nombra a todas, no «2 salas»: el
+  número obliga a abrir el diálogo para saber si a uno le toca.
+- **«Ver cuáles» agrupa por sala**, con su subtotal. El vale se escribe por
+  sala, así que la lista tiene que dejar ver de una qué le toca a cada caja.
+- **La simulación dice el nombre, no el número.** Mostraba «Sala 5», que es el
+  identificador interno de la fila.
+- El nombre viaja **en la fila** (`caja_vales_pendientes` lo trae de `branches`)
+  y lo reusa `anotar-vales-caja`: un solo origen, para que las dos pantallas no
+  nombren distinto a la misma sala.
+
 ## v2.956.2 — El proceso de una diferencia: fecha, dos columnas y rótulos que dicen qué pasó
 
 Tres cosas que pidió el usuario sobre el carril de v2.956.0: *«¿qué pasa si son

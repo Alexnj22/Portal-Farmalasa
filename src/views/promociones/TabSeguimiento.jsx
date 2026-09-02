@@ -177,14 +177,27 @@ function TarjetaRenglon({ r }) {
             data-surface="card"
             className="rounded-card border border-border-card bg-surface-card shadow-card p-4 space-y-3"
         >
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 flex-wrap">
                 <h4 className="text-body font-semibold text-content flex-1 min-w-0 truncate">
                     {r.producto}
                 </h4>
                 <Badge variant={r.factor_unidades == null ? 'neutral' : 'info'} size="sm">
                     {rotuloPresentacion(r.factor_unidades)}
                 </Badge>
+                {/* Sin esto, «sólo mide» y «todavía no vendió nada» se leían
+                    iguales: los dos con las columnas de dinero en $0.00. */}
+                {!r.tiene_bono && (
+                    <Badge variant="neutral" size="sm">Sólo mide</Badge>
+                )}
             </div>
+
+            {r.tiene_bono && r.paga && (
+                <p className="text-caption text-content-3">
+                    Lo paga {r.paga === 'empresa'
+                        ? 'la empresa'
+                        : (r.proveedor || 'un proveedor sin nombre')}
+                </p>
+            )}
 
             {r.estado === 'cerrado' && (
                 <p className="text-caption text-content-3">
@@ -192,24 +205,35 @@ function TarjetaRenglon({ r }) {
                 </p>
             )}
 
-            <div>
-                <div className="flex items-baseline justify-between text-caption text-content-3 mb-1.5 tabular-nums">
-                    <span>
-                        <span className="text-content font-semibold">{fmtUnidades(r.vendido_base)}</span>
-                        {' de '}{fmtUnidades(r.lote_total)}
-                    </span>
-                    <span className="font-semibold text-content-2">{pct}%</span>
+            {/* Sin lote no hay techo contra el cual medir: una barra al 0%
+                sobre un total que no existe dice algo que no es. */}
+            {r.lote_total ? (
+                <div>
+                    <div className="flex items-baseline justify-between text-caption text-content-3 mb-1.5 tabular-nums">
+                        <span>
+                            <span className="text-content font-semibold">{fmtUnidades(r.vendido_base)}</span>
+                            {' de '}{fmtUnidades(r.lote_total)}
+                        </span>
+                        <span className="font-semibold text-content-2">{pct}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
+                        <div className={`h-full rounded-full ${tono}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                    </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
-                    <div className={`h-full rounded-full ${tono}`} style={{ width: `${Math.min(pct, 100)}%` }} />
-                </div>
-            </div>
+            ) : (
+                <p className="text-caption text-content-3 tabular-nums">
+                    <span className="text-content font-semibold">{fmtUnidades(r.vendido_base)}</span>
+                    {' unidades vendidas · sin lote declarado'}
+                </p>
+            )}
 
-            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border-muted">
-                <Mini rotulo="A vendedores" valor={fmtMoneda(r.costo_vendedor)} destacado />
-                <Mini rotulo="Fondo admón." valor={fmtMoneda(r.fondo_adm)} />
-                <Mini rotulo="Fondo bodega" valor={fmtMoneda(r.fondo_bodega)} />
-            </div>
+            {r.tiene_bono && (
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border-muted">
+                    <Mini rotulo="A vendedores" valor={fmtMoneda(r.costo_vendedor)} destacado />
+                    <Mini rotulo="Fondo admón." valor={fmtMoneda(r.fondo_adm)} />
+                    <Mini rotulo="Fondo bodega" valor={fmtMoneda(r.fondo_bodega)} />
+                </div>
+            )}
 
             {Array.isArray(r.reparto) && r.reparto.length > 0 && (
                 <ul className="space-y-1 pt-1 border-t border-border-muted">

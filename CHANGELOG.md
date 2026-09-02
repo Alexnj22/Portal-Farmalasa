@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.925.1 — Promociones — el seguimiento dice si paga bono y quién
+
+Desde que el bono es opcional, un producto marcado «sólo mide» se veía en
+Seguimiento con sus columnas de dinero en **$0.00** — exactamente igual que uno
+que sí paga pero todavía no ha vendido nada. Dos situaciones distintas que se
+leían idénticas: una es *no aplica* y la otra es *todavía no*, y confundirlas es
+cómo alguien termina esperando un pago que nunca se acordó.
+
+Ahora el renglón lleva su insignia **«Sólo mide»**, y el que sí paga dice quién
+lo cancela — la empresa o el proveedor **con su nombre**, que es el dato que
+hace falta cuando llega el momento de cobrarle. Estaba en la base desde que se
+creó la columna y la pantalla no podía verlo.
+
+Dos cosas más que dejaron de mostrarse donde no significaban nada: los tres
+montos ya no aparecen si el producto no paga, y un renglón **sin lote** ya no
+dibuja una barra de avance contra un techo que no existe — dice cuántas
+unidades lleva vendidas y que no hay lote declarado.
+
+Verificado con dos renglones reales en la misma promoción: uno paga y muestra
+*COFARSAL DE R.L.*; el otro sale sin bono, sin lote y sin quién.
+
 ## v2.925.0 — Promociones — el bono es opcional, el lote también, y la cola de excedentes
 
 Tres cosas que el diseño daba por hechas y se corrigieron al ver la pantalla.

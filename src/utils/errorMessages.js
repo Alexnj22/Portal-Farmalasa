@@ -143,6 +143,48 @@ const REGLAS = [
     // La causa ya está cerrada, pero el código nunca debe llegar al usuario.
     [/ACCION_INVALIDA/i, 'Ese interruptor ya no existe. Recarga la pantalla.'],
 
+    // — Promociones —
+    // Los códigos de este módulo llegaban CRUDOS a la pantalla: ni el prefijo
+    // en mayúsculas con guiones bajos ni la prosa que lo sigue disparan
+    // `esTextoTecnico`, así que «REPARTO_NO_CUADRA: el reparto sumaría…» se
+    // mostraba tal cual. El texto de la función queda como está —le sirve a
+    // quien depura— y acá se dice lo mismo en palabras del portal.
+    [/UMBRAL_NO_SUBE/i,
+        'Un nivel más alto tiene que pedir más venta que el anterior. Revisa los umbrales de esa sala.'],
+    [/NIVEL_INEXISTENTE/i,
+        'Hay un umbral escrito para un nivel que no existe. Agrega el nivel o borra ese umbral.'],
+    [/SIN_NIVELES/i, 'La promoción necesita al menos un nivel con su monto.'],
+    [/SIN_UMBRALES/i, 'Falta decir cuánto tiene que vender cada sala.'],
+    [/SIN_LABORATORIOS/i, 'Elige al menos un laboratorio.'],
+    [/MES_CERRADO/i,
+        'Ese mes ya cerró y sus números están congelados. No se puede cambiar lo que ya se pagó.'],
+    [/OTRO_TIPO/i, 'Esa promoción es de otro tipo. Recarga la pantalla.'],
+    [/REPARTO_NO_CUADRA/i,
+        'Lo repartido entre las salas no suma el lote. Ajusta las cantidades para que cuadren.'],
+    [/REPARTO_SIN_LOTE/i,
+        'Estás repartiendo unidades sin un lote que las respalde. Escribe el lote primero.'],
+    [/LOTE_AGOTADO/i,
+        'Ese lote ya se vendió entero. Extender la fecha no agrega producto.'],
+    [/LOTE_INVALIDO/i,
+        'El lote tiene que ser un número mayor que cero. Déjalo vacío si todavía no se sabe.'],
+    [/FALTA_QUIEN_PAGA/i,
+        'Si el producto paga bono, hay que decir si lo cancela la empresa o un proveedor.'],
+    [/FALTA_EL_PROVEEDOR/i, 'Lo paga un proveedor: falta decir cuál.'],
+    [/RENGLON_CERRADO/i,
+        'Ese producto ya terminó su promoción, así que sus montos no se tocan.'],
+    [/YA_FINALIZADA/i,
+        'Esa promoción ya terminó y no se reabre. Crea una nueva.'],
+    [/DEMASIADOS_PRODUCTOS/i, 'Una promoción admite hasta 50 productos.'],
+    [/PRODUCTO_INEXISTENTE/i, 'Uno de los productos ya no está en el portal. Recarga la pantalla.'],
+    [/SIN_PRODUCTOS/i, 'Una promoción sin productos no cuenta nada. Agrega al menos uno.'],
+    [/FECHA_REQUERIDA/i, 'Falta decir hasta cuándo.'],
+    [/FECHA_INVALIDA/i, 'La fecha de fin no puede ser anterior a la de inicio.'],
+    [/NOMBRE_REQUERIDO/i, 'Falta el nombre.'],
+    // `NO_EXISTE` lo lanzan varias funciones sobre cosas distintas —promoción,
+    // renglón, excedente—, así que el mensaje no nombra ninguna: decir «esa
+    // promoción» cuando era un renglón manda a mirar donde no está.
+    [/NO_EXISTE\b/i, 'Eso ya no existe. Recarga la pantalla.'],
+
     // — Reglas de negocio MIN/MAX (F1.2/F1.3) —
     [/psp_draft_pair_valid|chk_min_lt_max|psp_calc_max_gte_min|mmcr_pair_valid/i,
         'MIN y MAX no forman un par válido: con MIN ≥ 1, el MAX debe ser mayor; con MIN 0, el MAX solo puede ser 0 o 1.'],

@@ -463,8 +463,8 @@ export const AREAS = [
     },
     {
         id: 'promociones',
-        nombre: 'Promociones por producto',
-        resumen: 'La campaña por la que un laboratorio paga por unidad vendida: el lote declarado y repartido por sala, su avance contra las ventas reales, el cierre automático y el aviso a la sala que se queda sin producto.',
+        nombre: 'Promociones',
+        resumen: 'Los dos programas de bonificación de laboratorio. Por PRODUCTO: paga por unidad vendida, con el lote declarado y repartido por sala, su cierre automático y el aviso a la sala que se queda sin producto. Por LABORATORIO: si la sala vende el umbral del mes, cada persona gana el monto de ese nivel; el mes se congela al terminar.',
         modulos: ['promociones'],
         rutas: ['/promociones'],
         archivos: [
@@ -473,7 +473,9 @@ export const AREAS = [
         ],
         tablas: ['promociones', 'promocion_renglon', 'promocion_renglon_tarifa',
                  'promocion_reparto', 'promocion_reparto_mov', 'promocion_excedente',
-                 'promocion_historial'],
+                 'promocion_historial',
+                 'promocion_laboratorio', 'promocion_nivel', 'promocion_nivel_umbral',
+                 'promocion_cierre_sala'],
         edge: [],
         crons: ['promociones-ciclo-diario'],
         docs: ['docs/PLAN-PROMOCIONES-2026-09-01.md'],

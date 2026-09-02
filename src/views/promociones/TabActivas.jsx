@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Tag, Search, Plus, Power, PauseCircle, Pencil } from 'lucide-react';
+import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
 import { activarPromocion } from '../../data/promociones';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import {
-    fmtUnidades, fmtVigencia, diasRestantes, estadoVisible,
+    fmtUnidades, fmtVigencia, diasRestantes, estadoVisible, rotuloMes,
+    esLaboratorio,
 } from './promocionesUtils';
 
 /**
@@ -17,7 +18,9 @@ import {
  * en filas obligaría a una fila por renglón y perdería justo lo que hay que
  * leer de un vistazo — cuánto queda del lote.
  */
-export default function TabActivas({ promos, busqueda, puedeEditar, onCambio, onNueva, onEditar }) {
+export default function TabActivas({
+    promos, busqueda, puedeEditar, onCambio, onNueva, onEditar, onVerMatriz,
+}) {
     if (!promos.length) {
         // Buscar sin resultados NO es un vacío: uno se arregla borrando el
         // filtro y el otro no tiene arreglo (§26.2).
@@ -49,20 +52,22 @@ export default function TabActivas({ promos, busqueda, puedeEditar, onCambio, on
                     promo={p}
                     puedeEditar={puedeEditar}
                     onCambio={onCambio}
-                    onEditar={() => onEditar?.(p.id)}
+                    onEditar={() => onEditar?.({ id: p.id, tipo: p.tipo || 'producto' })}
+                    onVerMatriz={() => onVerMatriz?.(p.id)}
                 />
             ))}
         </div>
     );
 }
 
-function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar }) {
+function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz }) {
     const [ocupado, setOcupado] = useState(false);
     const [fallo, setFallo] = useState(null);
 
     const est = estadoVisible(promo);
     const dias = diasRestantes(promo.fin);
     const labs = Array.isArray(promo.laboratorios) ? promo.laboratorios : [];
+    const esLab = esLaboratorio(promo);
 
     const alternar = async () => {
         setOcupado(true);
@@ -86,7 +91,10 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar }) {
                 <div className="min-w-0 flex-1">
                     <h3 className="text-body-lg font-semibold text-content truncate">{promo.nombre}</h3>
                     <p className="text-caption text-content-3 tabular-nums mt-0.5">
-                        {fmtVigencia(promo.inicio, promo.fin)}
+                        {/* La de laboratorio se nombra por su MES, no por un par
+                            de fechas: «agosto 2026» es la unidad en la que se
+                            negoció, y «1 ago – 31 ago 2026» dice lo mismo peor. */}
+                        {esLab ? rotuloMes(promo.year_month) : fmtVigencia(promo.inicio, promo.fin)}
                         {dias !== null && dias >= 0 && promo.estado === 'activa' && (
                             <> · quedan {dias} {dias === 1 ? 'día' : 'días'}</>
                         )}
@@ -96,18 +104,43 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar }) {
             </div>
 
             {labs.length > 0 && (
-                <p className="text-caption text-content-2 truncate">
-                    {labs.join(' · ')}
+                <p className="text-caption text-content-2 truncate flex items-center gap-1.5">
+                    {esLab && <FlaskConical size={13} className="shrink-0 text-content-3" aria-hidden />}
+                    <span className="truncate">{labs.join(' · ')}</span>
                 </p>
             )}
 
+            {/* Los tres datos que resumen la promoción NO son los mismos en los
+                dos tipos, y forzarlos a serlo mostraría «Lote 0» en una que no
+                tiene lote — un cero que se lee como un dato y no como un campo
+                que ahí no existe. */}
             <div className="grid grid-cols-3 gap-2 rounded-lg bg-surface-card-hover p-2.5">
-                <Dato rotulo="Productos" valor={fmtUnidades(promo.renglones)} />
-                <Dato rotulo="Abiertos"  valor={fmtUnidades(promo.abiertos)} />
-                <Dato rotulo="Lote"      valor={fmtUnidades(promo.lote_total)} sufijo="u." />
+                {esLab ? (
+                    <>
+                        <Dato rotulo="Laboratorios" valor={fmtUnidades(labs.length)} />
+                        <Dato rotulo="Niveles"      valor={fmtUnidades(promo.niveles)} />
+                        <Dato rotulo="Salas"        valor={fmtUnidades(promo.salas)} />
+                    </>
+                ) : (
+                    <>
+                        <Dato rotulo="Productos" valor={fmtUnidades(promo.renglones)} />
+                        <Dato rotulo="Abiertos"  valor={fmtUnidades(promo.abiertos)} />
+                        <Dato rotulo="Lote"      valor={fmtUnidades(promo.lote_total)} sufijo="u." />
+                    </>
+                )}
             </div>
 
             {fallo && <p className="text-caption text-danger">{fallo}</p>}
+
+            {/* Ver la matriz NO exige poder editar: es la pantalla que le dice a
+                supervisión cómo va cada sala, y pedir permiso de escritura para
+                mirar un número deja afuera justo a quien lo consulta. */}
+            {esLab && (
+                <Button variant="secondary" size="sm" icon={BarChart3}
+                    onClick={onVerMatriz}>
+                    Ver cómo va cada sala
+                </Button>
+            )}
 
             {puedeEditar && (
                 <div className="flex gap-2">

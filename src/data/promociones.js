@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { fetchLaboratoriosBasic } from './laboratorios';
 
 /**
  * Promociones por producto — Fase 4 de `docs/PLAN-PROMOCIONES-2026-09-01.md`.
@@ -10,10 +11,11 @@ import { supabase } from '../supabaseClient';
  * navegador sería pedir el techo de las 1000 filas y perder.
  */
 
-/** La lista, sin ventas. El avance se ve al abrir una. */
-export async function fetchPromociones(estado = null) {
+/** La lista de los dos tipos, sin ventas. El avance se ve al abrir una. */
+export async function fetchPromociones(estado = null, tipo = null) {
     const { data, error } = await supabase.rpc('get_promociones', {
         p_estado: estado || null,
+        p_tipo: tipo || null,
     });
     if (error) throw error;
     return data ?? [];
@@ -209,4 +211,76 @@ export async function borrarPromocion(id) {
     const { data, error } = await supabase.rpc('borrar_promocion', { p_id: Number(id) });
     if (error) throw error;
     return data ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Promociones por LABORATORIO — niveles y umbral por sala
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * La matriz de una promoción de laboratorio: venta del mes por sala, nivel
+ * alcanzado, cuánto falta para el siguiente y el costo.
+ *
+ * `mes` mide el MISMO programa contra otro mes — es el simulador: «si hubiera
+ * corrido en julio, habría costado $X», con datos reales y sin escribir nada.
+ * Un mes ya cerrado siempre devuelve lo congelado, aunque se pida de nuevo.
+ */
+export async function fetchPromocionLaboratorio(id, mes = null) {
+    const { data, error } = await supabase.rpc('get_promocion_laboratorio', {
+        p_id: Number(id),
+        p_year_month: mes || null,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
+/**
+ * Crea la promoción entera de una vez: laboratorios, niveles y la matriz de
+ * umbrales. La base valida que los umbrales de cada sala SUBAN con el nivel —
+ * un nivel 3 más barato que el 2 haría que la sala cobre uno que no alcanzó.
+ */
+export async function crearPromocionLaboratorio({
+    nombre, mes, laboratorios, niveles, umbrales, paga, supplierId, nota,
+}) {
+    const { data, error } = await supabase.rpc('crear_promocion_laboratorio', {
+        p_nombre: nombre,
+        p_year_month: mes,
+        p_laboratorios: laboratorios,
+        p_niveles: niveles,
+        p_umbrales: umbrales,
+        p_paga: paga || null,
+        p_supplier_id: supplierId ?? null,
+        p_nota: nota || null,
+    });
+    if (error) throw error;
+    return data;
+}
+
+/** Lo mismo, sobre una que ya existe. Un mes congelado lo rechaza la base. */
+export async function editarPromocionLaboratorio({
+    id, nombre, laboratorios, niveles, umbrales, paga, supplierId, nota,
+}) {
+    const { data, error } = await supabase.rpc('editar_promocion_laboratorio', {
+        p_id: Number(id),
+        p_nombre: nombre,
+        p_laboratorios: laboratorios,
+        p_niveles: niveles,
+        p_umbrales: umbrales,
+        p_paga: paga || null,
+        p_supplier_id: supplierId ?? null,
+        p_nota: nota || null,
+    });
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * El catálogo de laboratorios, para elegir. Envuelve al canónico
+ * `fetchLaboratoriosBasic` en vez de repetir su consulta: escribirla otra vez
+ * es cómo dos lecturas de la misma tabla terminan ordenando distinto.
+ */
+export async function fetchLaboratorios() {
+    const { data, error } = await fetchLaboratoriosBasic();
+    if (error) throw error;
+    return data ?? [];
 }

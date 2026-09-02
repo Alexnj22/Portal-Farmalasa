@@ -21,6 +21,75 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.932.0 — Promociones por laboratorio: niveles y umbral por sala
+
+El segundo tipo de promoción, y es distinto del primero en casi todo. El de
+producto paga por unidad vendida y vive por lote. Éste pregunta otra cosa: **si
+la sala vende cierto monto de esos laboratorios en el mes, cada persona de la
+sala gana el monto de ese nivel.** Es la matriz que el usuario llevaba en Excel.
+
+Los **montos son globales** del programa —$10 / $20 / $30 / $40, iguales para
+las seis salas— y lo que cambia por sala es el **umbral de venta**: Salud 4
+necesita más que Salud 5 porque no venden lo mismo. La cantidad de niveles la
+decide quien lo crea. Una sala sin umbral escrito no participa, y una sala que
+no llega a ninguno no le paga a nadie.
+
+La venta se **deriva** de `products.laboratorio_id`: la matriz se llena sola con
+las ventas reales, no hay nada que capturar.
+
+**Es retroactivo, y hay simulador.** Cargar agosto en septiembre calcula agosto
+completo. Y el selector de mes de la matriz mide el MISMO programa contra otro
+mes: «si hubiera corrido en julio, habría costado $X», con datos reales y sin
+escribir nada.
+
+**Cuando el mes termina, se congela.** El ciclo diario escribe la venta, el
+nivel, el monto y a cuánta gente le tocó, y a partir de ahí la pantalla devuelve
+eso y no un recálculo: el padrón de la sala cambia —alguien renuncia el 3 del
+mes siguiente— y el número que se pagó tiene que seguir siendo el que se pagó.
+Editar un mes congelado lo rechaza la base.
+
+### La medición que decide la forma de la consulta
+
+Preguntar «cuánto vendió cada sala de estos laboratorios en agosto» costaba
+**1,511 ms** hecho de la manera obvia: el plan entraba por las 21,603 facturas
+del mes y sondeaba `sales_invoice_items` una por una — 28,954 *heap fetches*
+para devolver seis filas. Baja a **26 ms** con tres cosas, y las tres importan:
+
+1. El CTE de facturas trae **sólo `(id, branch_id)`**, que es exactamente lo que
+   cubre `idx_si_fecha_estado_branch`. Agregarle una columna más —probé con
+   `cod_vendedor`— rompe el *index-only* y el mismo plan sube a 210 ms.
+2. Una **cerca de ids**. Los ids de `sales_invoices` están correlacionados con
+   la fecha (agosto ocupa 25,140 ids consecutivos para 21,660 facturas), y
+   `idx_sii_product_invoice` es `(erp_product_id, invoice_id)`: con
+   `invoice_id BETWEEN lo AND hi` el rango entra como **condición de índice** y
+   no como filtro.
+3. La cerca sale **del CTE**, nunca de un `min(id) … WHERE fecha` suelto: así
+   escrito, el planificador recorre la PK descartando 338,764 filas y la
+   consulta entera sube a **3,130 ms**. Es la trampa que más se parece a la
+   corrección.
+
+`plan_cache_mode = 'force_custom_plan'` porque el plan bueno depende del rango
+de fechas. Medido con el flag: 36.6 ms la primera llamada y ~22 las siete
+siguientes, **sin el salto de la sexta**.
+
+### Tres cosas más que se corrigieron por el camino
+
+- **`suppliers` no tiene `name`, se llama `nombre`.** La función moría entera y
+  en pantalla no se veía como un error de una columna: la matriz salía vacía,
+  igual que una promoción sin umbrales. Los ocho gates estaban en verde y el
+  módulo compilaba; lo destapó abrir la vista en el navegador.
+- **Los códigos de error de Promociones llegaban crudos a la pantalla.** Ni el
+  prefijo en mayúsculas ni la prosa que lo sigue disparan el detector de texto
+  técnico, así que se leía «REPARTO_NO_CUADRA: el reparto sumaría…» tal cual.
+  Ahora los 21 códigos del módulo —de los dos tipos— tienen su traducción.
+- **El total decía «Personas 0» mientras la fila de abajo decía «6 personas».**
+  Contaba a quien cobra, no al padrón; el rótulo ahora lo dice: «Cobran bono».
+
+Migraciones `20260902025309`, `…025540`, `…025641`, `…030001`, `…030239` y
+`…032022`. Verificado contra producción: las seis salas cuadran al centavo
+contra un `SELECT` independiente, los cuatro frenos de la escritura disparan con
+su mensaje, y el cierre del mes es idempotente (segunda corrida: 0).
+
 ## v2.931.2 — La bolsa se mide contra el saldo, y el aviso del cierre se dice
 
 Migración `20260902032330`. Dos defectos del primer cierre real desde el portal.

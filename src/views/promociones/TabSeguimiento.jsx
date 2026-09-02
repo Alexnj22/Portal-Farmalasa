@@ -8,8 +8,10 @@ import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchPromocion } from '../../data/promociones';
 import { exportCsv } from '../../utils/csvExport';
+import MatrizLaboratorio from './MatrizLaboratorio';
 import {
     fmtMoneda, fmtUnidades, porLaboratorio, rotuloPresentacion, MOTIVO_CIERRE,
+    esLaboratorio,
 } from './promocionesUtils';
 
 /**
@@ -31,8 +33,17 @@ export default function TabSeguimiento({ promos, busqueda }) {
         if (!elegida && promos.length) setElegida(String(promos[0].id));
     }, [promos, elegida]);
 
+    // Una promoción de laboratorio no tiene renglones: pedirle `get_promocion`
+    // devolvería un detalle vacío que se leería como «no vendió nada». Su
+    // avance lo trae `MatrizLaboratorio`, así que acá no se consulta.
+    const elegidaObj = useMemo(
+        () => promos.find((p) => String(p.id) === String(elegida)) || null,
+        [promos, elegida],
+    );
+    const esLab = esLaboratorio(elegidaObj);
+
     useEffect(() => {
-        if (!elegida) { setDetalle(null); return undefined; }
+        if (!elegida || esLab) { setDetalle(null); return undefined; }
         let vivo = true;
         setCargando(true);
         setError(null);
@@ -41,10 +52,15 @@ export default function TabSeguimiento({ promos, busqueda }) {
             .catch((e) => { if (vivo) setError(e); })
             .finally(() => { if (vivo) setCargando(false); });
         return () => { vivo = false; };
-    }, [elegida]);
+    }, [elegida, esLab]);
 
+    // El tipo va en el rótulo: dos promociones pueden llamarse parecido y lo
+    // que se ve abajo es completamente distinto según cuál sea.
     const opciones = useMemo(
-        () => promos.map((p) => ({ value: String(p.id), label: p.nombre })),
+        () => promos.map((p) => ({
+            value: String(p.id),
+            label: esLaboratorio(p) ? `${p.nombre} · laboratorio` : p.nombre,
+        })),
         [promos],
     );
 
@@ -82,9 +98,13 @@ export default function TabSeguimiento({ promos, busqueda }) {
                 />
             </div>
 
-            {cargando && <LoadingState label="Calculando el avance…" />}
+            {esLab && elegida && (
+                <MatrizLaboratorio key={elegida} promocionId={elegida} />
+            )}
 
-            {error && (
+            {!esLab && cargando && <LoadingState label="Calculando el avance…" />}
+
+            {!esLab && error && (
                 <Notice variant="danger" icon={AlertTriangle}>
                     {error.code === '42501'
                         ? 'Tu cargo todavía no tiene el módulo de Promociones. Hay que otorgarlo en Ajustes → Permisos.'
@@ -92,7 +112,7 @@ export default function TabSeguimiento({ promos, busqueda }) {
                 </Notice>
             )}
 
-            {!cargando && !error && detalle && (
+            {!esLab && !cargando && !error && detalle && (
                 <>
                     {porLaboratorio(renglones).map(({ laboratorio, items }) => (
                         <section key={laboratorio} className="space-y-2">

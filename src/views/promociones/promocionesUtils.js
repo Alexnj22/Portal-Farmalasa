@@ -91,3 +91,39 @@ export const textoBuscable = (p) => [
     p.nombre, p.nota,
     ...(Array.isArray(p.laboratorios) ? p.laboratorios : []),
 ].filter(Boolean).join(' ').toLowerCase();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El tipo LABORATORIO — el mes es su unidad
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** «agosto 2026» a partir de «2026-08». Sin día: el programa es del mes entero. */
+export function rotuloMes(ym) {
+    if (!/^\d{4}-\d{2}$/.test(String(ym || ''))) return '—';
+    const [y, m] = String(ym).split('-').map(Number);
+    // Con componentes y no con `new Date('2026-08')`, que se lee como UTC y en
+    // El Salvador retrocede al mes anterior.
+    return new Intl.DateTimeFormat('es-SV', { month: 'long', year: 'numeric' })
+        .format(new Date(y, m - 1, 1));
+}
+
+/**
+ * Los meses que se pueden elegir: los 12 anteriores, el actual y el siguiente.
+ *
+ * El siguiente entra porque un programa se negocia ANTES de que empiece el mes;
+ * los anteriores, porque el usuario preguntó explícitamente si esto es
+ * retroactivo — y lo es: cargar agosto en septiembre calcula agosto completo
+ * con las ventas que ya están.
+ */
+export function mesesRecientes(cuantos = 13) {
+    const [y, m] = hoySV().split('-').map(Number);
+    const out = [];
+    for (let i = 1; i >= -(cuantos - 1); i--) {
+        const d = new Date(y, m - 1 - i, 1);
+        const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        out.push({ value, label: rotuloMes(value) });
+    }
+    return out;
+}
+
+/** El resumen de una promoción de laboratorio para la tarjeta. */
+export const esLaboratorio = (p) => p?.tipo === 'laboratorio';

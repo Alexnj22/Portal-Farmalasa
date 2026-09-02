@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Tag, Layers, History, Plus, AlertTriangle, Scale } from 'lucide-react';
+import { Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -15,13 +15,24 @@ import TabHistorico from './TabHistorico';
 import TabExcedentes from './TabExcedentes';
 import PromocionModal from './PromocionModal';
 import EditarPromocionModal from './EditarPromocionModal';
+import PromocionLaboratorioModal from './PromocionLaboratorioModal';
+import MatrizLaboratorioModal from './MatrizLaboratorioModal';
 
 /**
- * Promociones por producto — `docs/PLAN-PROMOCIONES-2026-09-01.md`.
+ * Promociones — `docs/PLAN-PROMOCIONES-2026-09-01.md`.
  *
- * Es la Fase 4 del plan de Metas §9a. Las bonificaciones están SUSPENDIDAS: el
- * módulo calcula y muestra todo, pero como «se habría ganado» — no genera nada
- * para pago hasta que se reactiven desde Metas → Bono.
+ * Es la Fase 4 del plan de Metas §9a y §9b. Hay DOS tipos y no se parecen:
+ *
+ *   · **por producto** — el laboratorio paga por cada unidad vendida de ciertos
+ *     productos. Vive por lote: empieza cuando llega la mercadería y termina
+ *     cuando se acaba o vence la fecha.
+ *   · **por laboratorio** — si la sala vende $X de esos laboratorios en el mes,
+ *     cada persona de la sala gana el monto de ese nivel. Vive por MES, y el
+ *     umbral cambia por sala porque las salas no venden lo mismo.
+ *
+ * Las bonificaciones están SUSPENDIDAS: el módulo calcula y muestra todo, pero
+ * como «se habría ganado» — no genera nada para pago hasta que se reactiven
+ * desde Metas → Bono.
  */
 export default function PromocionesView() {
     const { hasPermission, permsLoading } = useAuth();
@@ -44,7 +55,9 @@ export default function PromocionesView() {
     // distinguir «tu cargo no tiene el módulo» de «falló la consulta».
     const [error, setError] = useState(null);
     const [modal, setModal] = useState(false);
-    const [editando, setEditando] = useState(null);   // id de la promoción a corregir
+    const [modalLab, setModalLab] = useState(false);
+    const [editando, setEditando] = useState(null);   // {id, tipo} de la que se corrige
+    const [matriz, setMatriz] = useState(null);       // id de la de laboratorio que se mira
     const [recarga, setRecarga] = useState(0);
 
     const recargar = useCallback(() => setRecarga((n) => n + 1), []);
@@ -80,13 +93,25 @@ export default function PromocionesView() {
         />
     );
 
-    /* `rotuloFijo` porque ésta es LA acción de la pantalla: un botón relleno con
-       un «+» mudo no dice qué agrega, y es justo el control que la vista existe
-       para que se apriete. */
-    const acciones = puedeEditar ? [{
-        key: 'nueva', icon: Plus, label: 'Nueva promoción', rotulo: 'Nueva',
-        variant: 'primary', rotuloFijo: true, onClick: () => setModal(true),
-    }] : [];
+    /* Dos acciones y no una con un paso de «¿de qué tipo?»: quien crea una
+       promoción YA sabe cuál de las dos está negociando, y una pregunta que
+       siempre tiene respuesta es un clic de más.
+
+       `rotuloFijo` porque son LAS acciones de la pantalla: un botón relleno con
+       un «+» mudo no dice qué agrega. */
+    const acciones = puedeEditar ? [
+        {
+            key: 'nueva-producto', icon: Plus, label: 'Nueva promoción por producto',
+            rotulo: 'Por producto', variant: 'primary', rotuloFijo: true,
+            onClick: () => setModal(true),
+        },
+        {
+            key: 'nueva-laboratorio', icon: FlaskConical,
+            label: 'Nueva promoción por laboratorio',
+            rotulo: 'Por laboratorio', variant: 'secondary', rotuloFijo: true,
+            onClick: () => setModalLab(true),
+        },
+    ] : [];
 
     /* Los tres estados van separados a propósito. Un rechazo de permiso NO se
        puede ver como una lista vacía: deja a la persona sin nada que reportar
@@ -122,6 +147,7 @@ export default function PromocionesView() {
                 onCambio={recargar}
                 onNueva={() => setModal(true)}
                 onEditar={setEditando}
+                onVerMatriz={setMatriz}
             />
         );
     };
@@ -147,12 +173,32 @@ export default function PromocionesView() {
                 {cuerpo()}
             </div>
 
-            {editando && (
+            {/* Cada tipo se corrige con su propio modal: el de producto edita
+                renglones, lotes y reparto; el de laboratorio, niveles y
+                umbrales. No hay nada en común que valga la pena unificar. */}
+            {editando?.tipo === 'producto' && (
                 <EditarPromocionModal
-                    promocionId={editando}
-                    open={!!editando}
+                    promocionId={editando.id}
+                    open
                     onClose={() => setEditando(null)}
                     onCambio={recargar}
+                />
+            )}
+
+            {editando?.tipo === 'laboratorio' && (
+                <PromocionLaboratorioModal
+                    promocionId={editando.id}
+                    open
+                    onClose={() => setEditando(null)}
+                    onGuardada={() => { setEditando(null); recargar(); }}
+                />
+            )}
+
+            {matriz && (
+                <MatrizLaboratorioModal
+                    promocionId={matriz}
+                    open
+                    onClose={() => setMatriz(null)}
                 />
             )}
 
@@ -161,6 +207,14 @@ export default function PromocionesView() {
                     open={modal}
                     onClose={() => setModal(false)}
                     onGuardada={() => { setModal(false); recargar(); }}
+                />
+            )}
+
+            {modalLab && (
+                <PromocionLaboratorioModal
+                    open
+                    onClose={() => setModalLab(false)}
+                    onGuardada={() => { setModalLab(false); recargar(); }}
                 />
             )}
         </GlassViewLayout>

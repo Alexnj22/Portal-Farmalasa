@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { History, Search } from 'lucide-react';
+import Badge from '../../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { EmptyState } from '../../components/common/StateViews';
 import usePaginaEnUrl from '../../hooks/usePaginaEnUrl';
-import { fmtUnidades, fmtVigencia } from './promocionesUtils';
+import { fmtUnidades, fmtVigencia, rotuloMes, esLaboratorio } from './promocionesUtils';
 
 /**
  * Las promociones terminadas.
@@ -71,7 +72,12 @@ export default function TabHistorico({ promos, busqueda }) {
                 {visibles.map((p, i) => (
                     <DataRow key={p.id} index={i}>
                         <DataCell>
-                            <span className="font-medium text-content">{p.nombre}</span>
+                            <span className="font-medium text-content inline-flex items-center gap-1.5">
+                                {p.nombre}
+                                {esLaboratorio(p) && (
+                                    <Badge variant="neutral" size="sm">Laboratorio</Badge>
+                                )}
+                            </span>
                             {Array.isArray(p.laboratorios) && p.laboratorios.length > 0 && (
                                 <span className="block text-micro text-content-3 truncate">
                                     {p.laboratorios.join(' · ')}
@@ -80,11 +86,18 @@ export default function TabHistorico({ promos, busqueda }) {
                         </DataCell>
                         <DataCell hideBelow="md">
                             <span className="text-caption text-content-3 tabular-nums">
-                                {fmtVigencia(p.inicio, p.fin)}
+                                {esLaboratorio(p) ? rotuloMes(p.year_month) : fmtVigencia(p.inicio, p.fin)}
                             </span>
                         </DataCell>
-                        <DataCell align="right" hideBelow="lg">{fmtUnidades(p.renglones)}</DataCell>
-                        <DataCell align="right">{fmtUnidades(p.lote_total)}</DataCell>
+                        {/* Un guion y no un cero: la de laboratorio no tiene
+                            productos ni lote, y un «0» se lee como un dato — la
+                            promoción parecería no haber tenido nada. */}
+                        <DataCell align="right" hideBelow="lg">
+                            {esLaboratorio(p) ? '—' : fmtUnidades(p.renglones)}
+                        </DataCell>
+                        <DataCell align="right">
+                            {esLaboratorio(p) ? '—' : fmtUnidades(p.lote_total)}
+                        </DataCell>
                     </DataRow>
                 ))}
             </DataTable>

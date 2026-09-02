@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.938.4 — La sala sigue abierta a las 10
+
+La cartera se refrescaba de 7am a 9pm y el usuario lo corrigió: *«de 7 a 10 pm,
+a las 10 sigue abierto»*. La hora de las 10 cuenta entera, así que la ventana va
+hasta las 10:59pm — 102 corridas al día en vez de 90.
+
+Vale anotarlo porque es un defecto que no se ve: una ventana que termina cuando
+la sala **todavía está vendiendo** no da error ni deja hueco visible. Lo último
+del día simplemente aparece a la mañana siguiente, y eso se lee como «el portal
+no lo trajo».
+
 ## v2.938.3 — La cartera se refresca cada 10 minutos, y la pasada es diez veces más barata
 
 El usuario, dos veces, y las dos con razón: *«cada hora es mucho»* y después

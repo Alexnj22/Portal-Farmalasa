@@ -36,7 +36,7 @@ async function pedir(body) {
 /**
  * La cartera, del ESPEJO del portal.
  *
- * Se lee de `creditos_de_clientes` —que un cron refresca cada hora— y no del
+ * Se lee de `creditos_de_clientes` —que un cron refresca cada 10 minutos— y no del
  * sistema de la caja, y ese cambio es del 2-sep. Motivo: abrir la pantalla
  * costaba **seis peticiones en serie** al origen (la sucursal vive en su
  * sesión, así que no se pueden hacer a la vez) y eso son varios segundos de

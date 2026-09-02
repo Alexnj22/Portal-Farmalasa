@@ -103,15 +103,16 @@ const CRONS = [
   },
   // ── Los que hablan con el sistema en cada corrida ──────────────────────────
   {
-    job: 'creditos-cada-10min', slug: 'sync-creditos', cadencia: '*/10 13-23,0-3 * * *',
-    corridasDia: 90, sistema: 6,
+    job: 'creditos-cada-10min', slug: 'sync-creditos', cadencia: '*/10 13-23,0-4 * * *',
+    corridasDia: 102, sistema: 6,
     motivo: 'Trae al portal las cuentas por cobrar de las seis salas. Son 6 listados, uno por '
           + 'sala y EN SERIE: la sucursal vive en la sesión del origen, así que dos a la vez se '
           + 'pisan la sala y devuelven la cartera equivocada sin dar error. Mira SÓLO EL DÍA DE '
           + 'HOY, y eso es lo que la hace barata — medido el 2-sep: la ventana de un día son '
           + '1.8 s y 2 kB contra 17.3 s y 1.4 MB del histórico entero, o sea diez veces menos '
           + 'tiempo del origen y setecientas veces menos datos. Lo viejo ya está guardado y su '
-          + 'fecha no cambia. La VENTANA horaria (7am-9pm SV) saca 12 corridas nocturnas que no '
+          + 'fecha no cambia. La VENTANA horaria (7am-10:59pm SV, corregida por el usuario: «a las '
+          + '10 sigue abierto») saca las corridas nocturnas, que no '
           + 'cambian un dato. Escribe sólo lo que cambió (`IS DISTINCT FROM`): medido, una '
           + 'corrida sobre las 2,387 filas escribió 0.',
   },

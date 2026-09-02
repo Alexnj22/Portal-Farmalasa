@@ -712,7 +712,7 @@ sería el peor de los dos errores.
 
 | | cada cuánto | qué mira | cuesta |
 |---|---|---|---|
-| pasada frecuente | 10 min, 7am-9pm | **sólo el día de hoy** | 1.8 s · 2 kB |
+| pasada frecuente | 10 min, 7am-11pm | **sólo el día de hoy** | 1.8 s · 2 kB |
 | barrido completo | 1 vez, 2am SV | 2024 → hoy | 17.3 s · 1.4 MB |
 | relectura tras abonar | cada abono | esa sala, esa fecha | ~250 ms |
 

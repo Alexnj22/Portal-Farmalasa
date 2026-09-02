@@ -12,10 +12,27 @@ const SESION_URL = `${BASE}cambio_sesion.php`;
 const LISTA_URL  = `${BASE}admin_credito_dt.php`;
 export const ABONO_URL = `${BASE}abono_credito.php`;
 
-/** Las formas de pago que el origen acepta, tal cual las ofrece su desplegable. */
-export const FORMAS_DE_PAGO = [
+/** Las ocho que el ORIGEN acepta, tal cual las ofrece su desplegable. Se deja
+ *  escrita para saber qué se le puede mandar, pero NO es la lista que valida el
+ *  portal — ver `FORMAS_DEL_PORTAL`. */
+export const FORMAS_DEL_ORIGEN = [
   "Efectivo", "Recibo", "Voucher", "Transferencia", "Cheque", "Tarjeta", "Bitcoin", "Otro",
 ];
+
+/**
+ * Las CUATRO que el portal acepta, decidido por el usuario (2-sep): «voucher y
+ * recibo quítalo, otro y bitcoin también».
+ *
+ * Las que salieron no eran formas de pago sino papeles —«recibo», «voucher»— o
+ * un cajón de sastre —«otro»— que vuelve incontable lo que entró: con «otro»
+ * disponible, el corte de la caja no se puede cuadrar por método.
+ *
+ * ⚠️ Esta lista y la del desplegable de `CuentasPorCobrarView` son la MISMA
+ * dicha dos veces y se mueven juntas. Sólo acá, la pantalla ofrecería algo que
+ * el servidor rechaza; sólo allá, alguien podría mandar `Bitcoin` en la
+ * petición y el origen lo aceptaría.
+ */
+export const FORMAS_DEL_PORTAL = ["Efectivo", "Transferencia", "Tarjeta", "Cheque"];
 
 export interface CreditoDelOrigen {
   credito: string;

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.940.2 — Sólo cuatro formas de pago
+
+Pedido del usuario: *«voucher y recibo quítalo, otro y bitcoin también; sólo
+efectivo, transferencia, tarjeta y cheque»*. El sistema de la caja ofrece ocho;
+el portal ahora ofrece cuatro.
+
+Las que salieron no eran formas de pago: *recibo* y *voucher* son papeles, y
+*otro* es un cajón de sastre que vuelve incontable lo que entró — con «otro»
+disponible, el corte de la caja no se puede cuadrar por método.
+
+**El recorte se aplica también en el servidor**, no sólo en el desplegable. Sin
+eso, alguien podría mandar `Bitcoin` en la petición y el sistema de origen lo
+aceptaría igual: la pantalla se vería limpia y la restricción no existiría. Las
+dos listas quedan anotadas como la misma dicha dos veces, con la advertencia de
+que se mueven juntas.
+
 ## v2.940.1 — Los días tienen cuatro escalones, no dos
 
 La insignia de días era ámbar o gris, y con eso «va a vencer en tres días» y

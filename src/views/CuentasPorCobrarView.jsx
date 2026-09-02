@@ -56,8 +56,19 @@ import { tokenMatch } from '../utils/searchUtils';
  * `creditos_abonos_portal`.
  */
 
-/** Las formas de pago que la caja acepta, tal cual las ofrece su desplegable. */
-const FORMAS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque', 'Voucher', 'Recibo', 'Bitcoin', 'Otro'];
+/* Las formas de pago que el portal ACEPTA, decidido por el usuario (2-sep):
+ * «voucher y recibo quítalo, otro y bitcoin también».
+ *
+ * El sistema de la caja ofrece ocho; acá van cuatro. Las que salieron no eran
+ * formas de pago sino papeles («recibo», «voucher») o un cajón de sastre
+ * («otro») que vuelve incontable lo que entró — y con «otro» disponible, el
+ * corte de la caja no puede cuadrarse por método.
+ *
+ * ⚠️ Esta lista y la del servidor son la MISMA lista dicha dos veces y se
+ * mueven juntas. Sólo acá, alguien puede mandar `Bitcoin` en la petición y el
+ * origen lo aceptaría; sólo allá, la pantalla ofrecería algo que el servidor
+ * rechaza. La copia del servidor vive en `creditos-erp`. */
+const FORMAS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque'];
 
 const VER = [
     { value: 'DEBEN',    label: 'Con saldo' },

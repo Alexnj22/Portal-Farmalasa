@@ -2,7 +2,7 @@ import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
 import {
-  creditosDeLaSala, FORMAS_DE_PAGO as FORMAS, getCortesCreds, getSessionCookie, ABONO_URL,
+  creditosDeLaSala, FORMAS_DEL_PORTAL as FORMAS, getCortesCreds, getSessionCookie, ABONO_URL,
 } from "../_shared/creditos.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
         return responder({ ok: false, error: "Falta el monto." }, 400);
       }
       if (!FORMAS.includes(forma)) {
-        return responder({ ok: false, error: "Esa forma de pago no existe." }, 400);
+        return responder({ ok: false, error: "Esa forma de pago no se acepta." }, 400);
       }
 
       /* El saldo se relee del ORIGEN, no se cree el que mandó el navegador.

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.937.3 — El modal avisa cuando no puede abrir, y los anulados tienen filtro propio
+
+**Un formulario del modal que no cargaba dejaba la pantalla en blanco, sin
+decir nada.** Reportado al abrir el PDF de una anulación: el único rastro era un
+`404` de `FormDocumentViewer-…js` en la consola.
+
+No era un defecto de ese visor. **El modal vive fuera del `ErrorBoundary` de las
+rutas** —tiene que estar, porque se abre encima de cualquiera— y nadie había
+puesto uno propio, así que sus ~40 formularios `React.lazy` no estaban cubiertos
+por ninguno. Después de publicar una versión, el archivo con hash viejo deja de
+existir: el import revienta, el `<Suspense fallback={null}>` deja el hueco vacío
+y el aviso de «hay una versión nueva» —que vive justo en ese `ErrorBoundary`—
+nunca se dispara. La persona ve nada y no tiene forma de saber que lo único que
+hace falta es recargar.
+
+Ahora el modal tiene el suyo, y con eso recupera el aviso. Es una línea y cubre
+todos los formularios de una vez.
+
+**Y los anulados tienen su filtro en la barra.** La card «Invalidados» ya
+filtraba al tocarla, pero sólo se puede tocar si el período cargado trae alguno:
+en un mes sin anulaciones no hay dónde hacer clic y el filtro parecía no
+existir. El desplegable **Estado** está siempre, y además ofrece la pregunta
+inversa —«Sin anular»— que con un booleano no había forma de pedir. Un solo
+criterio detrás de los dos controles, para que no puedan decir cosas distintas.
+
 ## v2.937.2 — Un aviso descartado no es un aviso que no se mandó
 
 **El cierre de agosto llegó dos veces.** El 1 de septiembre y otra vez el 2 a

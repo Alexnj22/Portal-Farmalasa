@@ -947,6 +947,20 @@ function MainApp() {
                         </div>
 
                         {modalYaUsado && (
+                        /* El modal vive FUERA del ErrorBoundary de las rutas —
+                           tiene que estar, porque se abre encima de cualquiera—
+                           así que hasta hoy nada capturaba lo que fallara
+                           adentro. Sus formularios son `React.lazy`, o sea que
+                           después de publicar una versión el archivo con hash
+                           viejo ya no existe: el import revienta, el
+                           `fallback={null}` deja el hueco en blanco y el aviso
+                           de «versión nueva» —que vive en el ErrorBoundary—
+                           nunca se dispara. La persona ve nada, no sabe que
+                           tiene que recargar, y el único rastro es un 404 en la
+                           consola. Reportado el 2026-09-02 al abrir el PDF de
+                           una anulación (FormDocumentViewer, 404).
+                           Uno propio: cubre los ~40 formularios de una vez. */
+                        <ErrorBoundary>
                         <Suspense fallback={null}>
                         <UnifiedModal
                             isOpen={modalOpen}
@@ -958,6 +972,7 @@ function MainApp() {
                             activeEmployee={activeEmployee || user}
                         />
                         </Suspense>
+                        </ErrorBoundary>
                         )}
                         <AlertModal
                             isOpen={alertConfig.isOpen}

@@ -40,6 +40,15 @@ const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'otro', label: 'Otro documento relacionado — solo vincula' },
 ];
 
+// «Anulado» y no «invalidado»: es la palabra que usa el proveedor en su correo
+// y la que usa quien pregunta. La fila sigue mostrando el badge «Invalidado»
+// porque ése es el término del Código Tributario — el filtro se dice como se
+// pregunta, el badge como lo nombra la ley.
+const ESTADO_OPTIONS = [
+    { value: 'anulado', label: 'Anulados por el proveedor' },
+    { value: 'vigente', label: 'Sin anular' },
+];
+
 const TABS = [
     { key: 'documentos', label: 'Documentos' },
     { key: 'revision',   label: 'Revisión' },
@@ -644,7 +653,12 @@ function TabDocumentos({
     // necesitan emparejarse a mano, ver SupplierMatchCell) no tiene
     // equivalente de texto libre — se conserva como quick-filter clickeable
     // en la card de abajo en vez de un select dedicado.
-    const [filterInvalidados, setFilterInvalidados] = useState(false);
+    // Tri-estado y no un booleano: «sólo anulados» y «sólo vigentes» son dos
+    // preguntas distintas y las dos se hacen. Con un booleano, la segunda no
+    // tenía forma de pedirse. Un solo criterio para la card y para el
+    // desplegable, para que no puedan decir cosas distintas.
+    const [filterEstado, setFilterEstado] = useState('');   // '' | 'anulado' | 'vigente'
+    const filterInvalidados = filterEstado === 'anulado';
     const [filterSinProveedor, setFilterSinProveedor] = useState(false);
     // Tipo vuelve como filtro propio (pedido del usuario 2026-08-03). Lo de
     // arriba explica por qué se había quitado; el buscador lo sigue matcheando
@@ -738,7 +752,8 @@ function TabDocumentos({
 
     const filtered = useMemo(() => {
         return rowsDelTipo.filter(r => {
-            if (filterInvalidados && !r.invalidado) return false;
+            if (filterEstado === 'anulado' && !r.invalidado) return false;
+            if (filterEstado === 'vigente' && r.invalidado) return false;
             // H4: mismo criterio que la card — los tipos sin proveedor posible
             // no son "pendientes", así que tampoco entran a este filtro.
             if (filterSinProveedor && (r.proveedor_id || !dteAdmiteProveedor(r.tipo_dte))) return false;
@@ -749,9 +764,9 @@ function TabDocumentos({
             if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.proveedor_alias, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.items_text, dteTypeLabel(r.tipo_dte), r.invalidado ? 'invalidado anulado' : null)) return false;
             return true;
         });
-    }, [rowsDelTipo, filterInvalidados, filterSinProveedor, searchTerm]);
+    }, [rowsDelTipo, filterEstado, filterSinProveedor, searchTerm]);
 
-    useEffect(() => { setPage(1); }, [dateStart, dateEnd, filterTipo, filterInvalidados, filterSinProveedor, searchTerm]);
+    useEffect(() => { setPage(1); }, [dateStart, dateEnd, filterTipo, filterEstado, filterSinProveedor, searchTerm]);
 
     // Fase 3.2: candidatos para "Adjuntar JSON" — documentos con JSON completo
     // dentro del mismo rango de fechas ya cargado (no dispara un fetch aparte).
@@ -931,7 +946,7 @@ function TabDocumentos({
                         icon={XCircle} label="Invalidados" value={cardStats.invalidadosCount}
                         sub={cardStats.invalidadosCount > 0 ? fmt$(cardStats.invalidadosMonto) : 'sin invalidados'}
                         iconBg="bg-danger/10" iconCls="text-danger" valueCls="text-danger-text"
-                        onClick={cardStats.invalidadosCount > 0 ? () => setFilterInvalidados(v => !v) : undefined}
+                        onClick={cardStats.invalidadosCount > 0 ? () => setFilterEstado(v => (v === 'anulado' ? '' : 'anulado')) : undefined}
                         tono="danger" active={filterInvalidados}
                         loading={loading}
                     />
@@ -956,7 +971,7 @@ function TabDocumentos({
 
                 {/* H14: los quick-filters de las cards (Invalidados / Sin
                     Proveedor) SON filtros — deben contar en el badge y
-                    apagarse con "Limpiar". Faltaba filterInvalidados en ambos:
+                    apagarse con "Limpiar". Faltaba el de invalidados en ambos:
                     con la card activa la barra decía que no había filtros y
                     "Limpiar" no la apagaba, así que la tabla quedaba recortada
                     sin ninguna señal de por qué. */}
@@ -965,8 +980,8 @@ function TabDocumentos({
                     y por eso la píldora no quedaba justificada a la derecha: había
                     otro bloque disputándole el borde. */}
                 <FilterBar
-                    onClear={() => { setDateRange(defaultDateRange()); setFilterSinProveedor(false); setFilterInvalidados(false); setFilterTipo(''); }}
-                    activeCount={[dateDirty, filterSinProveedor, filterInvalidados, !!filterTipo].filter(Boolean).length}
+                    onClear={() => { setDateRange(defaultDateRange()); setFilterSinProveedor(false); setFilterEstado(''); setFilterTipo(''); }}
+                    activeCount={[dateDirty, filterSinProveedor, !!filterEstado, !!filterTipo].filter(Boolean).length}
                     acciones={[
                         ...(canDownload && filtered.length > 0 ? [{
                             key: 'descargar', icon: Download,
@@ -1025,6 +1040,25 @@ function TabDocumentos({
                             />
                         </FilterBar.Section>
                     )}
+
+                    {/* Un documento anulado no ampara crédito fiscal (Art. 119-E
+                        CT), así que «cuáles están anulados» es una pregunta de
+                        todos los meses. La card «Invalidados» ya filtraba, pero
+                        sólo se puede apretar si el período cargado trae alguno:
+                        en un mes sin anulaciones no hay dónde hacer clic y el
+                        filtro parecía no existir (reportado el 2026-09-02). Acá
+                        está siempre, y además ofrece la pregunta inversa.
+                        `umbral={0}` fuerza el desplegable: son tres opciones y
+                        el segmentado compite por el ancho con Tipo. */}
+                    <FilterBar.Section active={!!filterEstado}
+                        onClear={() => setFilterEstado('')} label="estado">
+                        <FilterBar.Opciones
+                            icon={XCircle} label="Estado" placeholder="Estado"
+                            ancho="200px" umbral={0}
+                            value={filterEstado} onChange={setFilterEstado}
+                            options={ESTADO_OPTIONS}
+                        />
+                    </FilterBar.Section>
                 </FilterBar>
             </div>
             </div>

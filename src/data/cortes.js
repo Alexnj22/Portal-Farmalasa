@@ -9,11 +9,24 @@ import { signPhotosDeep } from '../utils/storageFiles';
 // siempre la cifra buena — cuenta mal los cobros de crédito, ver
 // `utils/cortesDiagnostico.js`.
 
-// Las 21 columnas que ALGUIEN lee. Eran 28 hasta el 2026-08-20: `tk_venta`,
+// Las columnas que ALGUIEN lee. Eran 28 hasta el 2026-08-20: `tk_venta`,
 // `tk_ingresos`, `tk_subtotal`, `tk_vales`, `tk_retencion`, `capturado_at` y
 // `desfase_seg` no aparecían en una sola línea de `src/` fuera de esta lista
 // —verificado columna por columna—, así que viajaban en cada respuesta para que
 // nadie las mirara.
+//
+// `tk_subtotal` y `tk_vales` VOLVIERON el 2026-09-02, y por un motivo que vale
+// escribir: con ellas se DERIVA cuánto contó el comprobante de cobros de
+// crédito —`total_caja - subtotal + vales`— en vez de creerle a
+// `tk_cobros_credito`, que es un renglón parseado con una expresión regular.
+// Las dos dan lo mismo hoy (493 de 493 cortes, al centavo), pero la derivada no
+// puede quedar en cero porque el origen le cambie el nombre a la línea, y un
+// cero ahí inventaría un faltante del tamaño de los cobros del día. Ver
+// `contraste` en utils/cortesDiagnostico.js.
+//
+// `cobros_portal_efectivo` es lo que el portal cobró en efectivo hasta la hora
+// del corte. Lo sella un trigger en la propia fila —no se calcula acá— para que
+// las ocho pantallas que leen un corte no puedan decir números distintos.
 //
 // No es un detalle de arranque: `WidgetCortesSala` repite esta consulta **cada
 // 60 segundos** mientras el Inicio esté abierto, y son 7 días de cortes (187
@@ -26,7 +39,8 @@ import { signPhotosDeep } from '../utils/storageFiles';
 const CAMPOS = `
     id, branch_id, erp_corte_id, tipo, fecha, hora, turno, empleado_texto,
     total_declarado, diferencia_erp, esperado,
-    tk_cobros_credito, tk_total_caja, tk_devoluciones, tk_tarjeta, tk_credito,
+    tk_cobros_credito, tk_subtotal, tk_vales, tk_total_caja, tk_devoluciones,
+    tk_tarjeta, tk_credito, cobros_portal_efectivo,
     estado, motivo_descarte, observaciones, resuelto_por, resuelto_at
 `;
 
@@ -53,7 +67,8 @@ export function fetchCortes({ desde, hasta }) {
 // `tk_total_caja` y `tk_cobros_credito`. Nada más.
 const CAMPOS_RESUMEN = `
     id, branch_id, tipo, fecha, hora, estado,
-    total_declarado, diferencia_erp, esperado, tk_total_caja, tk_cobros_credito
+    total_declarado, diferencia_erp, esperado,
+    tk_subtotal, tk_vales, tk_total_caja, tk_cobros_credito, cobros_portal_efectivo
 `;
 
 /**

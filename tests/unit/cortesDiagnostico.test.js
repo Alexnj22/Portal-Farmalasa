@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     cobrosDeCredito, conTramo, desgloseDelCierre, diferenciaDelCorte,
-    formasFueraDelComprobante, repartirEnPartes, sugerenciasDeCorte,
+    formasFueraDelComprobante, notaDeCifra, repartirEnPartes, sugerenciasDeCorte,
 } from '../../src/utils/cortesDiagnostico';
 
 // Los casos son cortes REALES capturados el 13 y 14 de agosto de 2026. No son
@@ -271,12 +271,12 @@ describe('los cobros de crédito de un corte', () => {
         expect(c.cuadra).toBe(true);
     });
 
-    it('el comprobante sólo cuenta el efectivo, y por eso se compara con él', () => {
-        // Medido el 2-sep en Salud 4 contra los movimientos del origen: el cobro
-        // en efectivo aparece como movimiento (1 de 1) y los dos por
-        // transferencia no (0 de 2). Así que el comprobante trae $8.55, no
-        // $29.85 — y compararlo contra el total denunciaría una brecha falsa en
-        // cada corte donde alguien pagó por transferencia.
+    it('se compara contra lo que entró al cajón, no contra todo lo cobrado', () => {
+        // Un cobro por transferencia no entra al cajón, así que compararlo
+        // contra el total ($29.85) denunciaría una brecha falsa en cada corte
+        // donde alguien pagó por transferencia. Ojo: que el comprobante traiga
+        // $8.55 acá es el dato del caso, no una regla — el comprobante tampoco
+        // cuenta el efectivo del portal; eso lo corrige `contraste`.
         const c = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 8.55 }, ABONOS_S4);
         expect(c.hasta).toBe(29.85);
         expect(c.enCaja).toBe(8.55);
@@ -329,5 +329,96 @@ describe('los cobros de crédito de un corte', () => {
             { ...corte({ hora: '10:30:00' }), tramo: -3.00, tk_cobros_credito: 8.55 }, [], [], cobros,
         );
         expect(s.some((x) => x.titulo.includes('cobros de crédito'))).toBe(false);
+    });
+});
+
+/* ── El efectivo del portal que el comprobante no cuenta ─────────────────────
+ *
+ * Salud 4, 2-sep, corte de las 13:00 (id 666). Es el caso REAL que destapó el
+ * defecto, con las cifras del papel y de la base:
+ *
+ *     INGRESOS  6.00 + VENTA 274.85 − VALES 50.00 = TOTAL CAJA 230.85
+ *     sin línea COBROS CREDITO
+ *     dos cobros del portal EN EFECTIVO antes de contar: 8.55 + 79.70 = 88.25
+ *     se contaron 309.25
+ *
+ * El portal anunciaba +$78.40 de sobrante. Lo que había era un faltante de
+ * $9.85 — y ese número decide si a alguien se le señala un faltante, así que
+ * está anclado acá y no sólo en la base. */
+describe('el efectivo del portal que el comprobante deja fuera', () => {
+    const S4 = corte({
+        hora: '13:00:49', total_declarado: 309.25, diferencia_erp: 78.40,
+        tk_ingresos: 6.00, tk_venta: 274.85, tk_subtotal: 280.85, tk_vales: 50.00,
+        tk_cobros_credito: null, tk_total_caja: 230.85, cobros_portal_efectivo: 88.25,
+    });
+
+    it('lo suma al esperado y convierte el sobrante fantasma en el faltante real', () => {
+        const d = diferenciaDelCorte(S4);
+        expect(d.esperado).toBe(319.10);
+        expect(d.valor).toBe(-9.85);
+        expect(d.fuente).toBe('ticket');
+    });
+
+    it('no lo cuenta dos veces cuando el comprobante YA lo trae', () => {
+        // Mismo día, misma plata, pero con la línea impresa: el esperado del
+        // comprobante ya la incluye y sumarla otra vez inventaría un faltante
+        // de $88.25.
+        const conLinea = corte({
+            ...S4, tk_cobros_credito: 88.25, tk_total_caja: 319.10,
+        });
+        expect(diferenciaDelCorte(conLinea).esperado).toBe(319.10);
+        expect(diferenciaDelCorte(conLinea).valor).toBe(-9.85);
+    });
+
+    it('deriva lo que contó el comprobante de su propia suma, no del renglón', () => {
+        // El renglón se lee del papel con una expresión regular. Si el origen le
+        // cambia el nombre, `tk_cobros_credito` queda en null — y creerle a ese
+        // null inventaría un faltante del tamaño de los cobros del día.
+        const sinRenglon = corte({
+            ...S4, tk_cobros_credito: null, tk_total_caja: 319.10, tk_subtotal: 280.85, tk_vales: 50.00,
+        });
+        expect(diferenciaDelCorte(sinRenglon).esperado).toBe(319.10);
+    });
+
+    it('el comprobante contando MÁS que el portal no es un hallazgo', () => {
+        // Cobros hechos en la pantalla de la caja: el portal no los ve. El piso
+        // en cero evita que esa diferencia se reste del esperado.
+        const enLaCaja = corte({
+            ...S4, tk_cobros_credito: 150.00, tk_total_caja: 380.85, cobros_portal_efectivo: 88.25,
+        });
+        expect(diferenciaDelCorte(enLaCaja).esperado).toBe(380.85);
+    });
+
+    it('lo explica en pantalla en vez de marcarlo como plata sin explicar', () => {
+        const n = notaDeCifra(S4);
+        expect(n.alerta).toBe(false);
+        expect(n.titulo).toBe('El comprobante no contó los cobros de crédito');
+        expect(n.detalle).toContain('$88.25');
+        expect(n.detalle).toContain('$319.10');
+    });
+
+    it('el tramo del día sale del esperado corregido', () => {
+        // Un corte anterior confirmado corre la base; el de las 13:00 tiene que
+        // medirse contra el esperado bueno, no contra el del comprobante.
+        const [manana, tarde] = conTramo([
+            corte({ hora: '10:00:00', estado: 'CONFIRMADO', total_declarado: 100, diferencia_erp: 0,
+                tk_subtotal: 100, tk_vales: 0, tk_total_caja: 100, cobros_portal_efectivo: 0 }),
+            S4,
+        ]);
+        expect(manana.tramo).toBe(0);
+        expect(tarde.tramo).toBe(-9.85);
+        expect(tarde.esperadoUsado).toBe(319.10);
+    });
+
+    it('sin cobros del portal nada cambia', () => {
+        const limpio = corte({
+            hora: '21:03:45', total_declarado: 1146.37, diferencia_erp: 66.01,
+            tk_subtotal: 1334.54, tk_vales: 254.18, tk_cobros_credito: 66.10,
+            tk_total_caja: 1146.46, cobros_portal_efectivo: 0,
+        });
+        expect(diferenciaDelCorte(limpio).valor).toBe(-0.09);
+        // La nota que sale es la de siempre —el formulario contó los cobros de
+        // más—, no la nueva: no hay nada que el comprobante haya dejado fuera.
+        expect(notaDeCifra(limpio).titulo).toBe('Los cobros de crédito se contaron de más');
     });
 });

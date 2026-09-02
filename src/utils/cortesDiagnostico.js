@@ -198,9 +198,56 @@ export function contraste(corte) {
     const difErp = num(corte?.diferencia_erp);
     if (declarado == null || totalCaja == null || difErp == null) return null;
 
-    const difTicket = redondear(declarado - totalCaja);
-    const brecha = redondear(difErp - difTicket);
-    const cobros = num(corte?.tk_cobros_credito);
+    /* ── Cuánto contó el comprobante de cobros de crédito: DERIVADO ────────
+     *
+     * `tk_cobros_credito` es un renglón sacado del papel con una expresión
+     * regular, y el papel a veces no lo imprime. Su ausencia se lee igual que
+     * un cero, y las dos cosas no significan lo mismo.
+     *
+     * La suma del comprobante sí lo dice sin ambigüedad, porque cierra siempre:
+     * `subtotal − vales + cobros = total_caja`, verificado al centavo en los
+     * **493 cortes** capturados. Despejando, `cobros = total_caja − subtotal +
+     * vales`, y ese número no puede quedar en cero porque el origen le cambie
+     * el nombre a la línea — que es exactamente el modo de falla que importa,
+     * porque un cero de más acá inventa un faltante del tamaño de los cobros
+     * del día. */
+    const subtotal = num(corte?.tk_subtotal);
+    const vales = num(corte?.tk_vales);
+    const cobros = (subtotal != null && vales != null)
+        ? redondear(totalCaja - subtotal + vales)
+        : (num(corte?.tk_cobros_credito) ?? 0);
+
+    /* ── El efectivo que entró al cajón y el comprobante NO contó ──────────
+     *
+     * Cobrar un crédito desde el portal mete efectivo en la caja, pero el
+     * origen lo registra sólo como movimiento del día: no lo suma a INGRESOS
+     * ni a la línea COBROS CREDITO. O sea que el esperado del comprobante nace
+     * corto, y el conteo de la sala aparece como un sobrante que nadie hizo.
+     *
+     * Medido el 2026-09-02 en Salud 4, el primer día que hubo cobros desde el
+     * portal: el comprobante esperaba $230.85, en el cajón había además $88.25
+     * de dos cobros en efectivo (10:03 y 12:39, los dos ANTES del conteo), se
+     * contaron $309.25. El portal anunciaba **+$78.40 de sobrante** cuando lo
+     * que había era un **faltante de $9.85**.
+     *
+     * `cobros_portal_efectivo` lo sella un trigger en la fila del corte: la
+     * hora es lo que permite saber si el cobro ya había entrado cuando se
+     * contó, y los movimientos del origen no la traen. Suponerla ya costó un
+     * sobrante inventado de $66.01 (corte 14378 de Salud 3).
+     *
+     * Se resta lo que el comprobante YA contó para no sumarlo dos veces, y el
+     * piso en cero es deliberado: si el comprobante contó MÁS que el portal,
+     * son cobros hechos en la pantalla de la caja —que el portal no ve— y no
+     * un hallazgo. */
+    const enCaja = num(corte?.cobros_portal_efectivo) ?? 0;
+    const sinContar = Math.max(0, redondear(enCaja - cobros));
+    const esperado = redondear(totalCaja + sinContar);
+
+    const difTicket = redondear(declarado - esperado);
+    // Lo que NO explica nadie. `sinContar` sale de la resta porque ya está
+    // explicado —es la corrección, no un descuadre—: sin sacarlo, corregir un
+    // corte lo dejaría marcado como «hay plata sin explicar» para siempre.
+    const brecha = redondear(difErp - difTicket - sinContar);
 
     // Cuántas veces el cobro de crédito explica la brecha. Entero → es el
     // defecto conocido del origen y no hay nada que investigar en la sala.
@@ -212,6 +259,10 @@ export function contraste(corte) {
         difTicket,
         brecha,
         cobros,
+        // Lo que el comprobante dejó fuera y el portal le suma al esperado.
+        sinContar,
+        // El esperado que MANDA: el del comprobante más lo que no contó.
+        esperado,
         vecesElCobro: porCobrosCredito ? Math.round(veces) : null,
         porCobrosCredito,
         enDisputa: Math.abs(brecha) >= 0.01,
@@ -268,7 +319,7 @@ export function diferenciaDelCorte(corte) {
      *
      * Sin excepción no hay caso que distinguir: la cifra sale de la suma que
      * cierra siempre. */
-    return { valor: c.difTicket, fuente: 'ticket', esperado: num(corte?.tk_total_caja) };
+    return { valor: c.difTicket, fuente: 'ticket', esperado: c.esperado };
 }
 
 /** Las formas de pago de un abono que SÍ entran al cajón. Sólo una, pero se
@@ -302,29 +353,49 @@ export const entroEnEfectivo = (a) => FORMAS_EN_EFECTIVO.has(String(a?.forma || 
  * comprobante cuenta significa que algo entró después de contar, o que el
  * comprobante no lo sumó.
  *
- * ── El efectivo, aparte — y el comprobante YA lo separa ────────────────────
+ * ── El efectivo, aparte ────────────────────────────────────────────────────
  * Un abono por transferencia, tarjeta o cheque no entra al cajón (regla del
  * usuario: «sólo entra en efectivo, los otros no, es como pago con tarjeta»).
- *
- * **Medido el 2026-09-02 en Salud 4**, cruzando los tres cobros del portal
- * ($11.30 transferencia, $8.55 efectivo, $10.00 transferencia) contra el
- * listado de movimientos del sistema de la caja:
- *
- *     el de efectivo      → 1 de 1 aparece como movimiento
- *     los dos que no      → 0 de 2 aparecen
- *
- * O sea que **el origen ya distingue**: sólo el efectivo llega a la línea
- * COBROS CREDITO y al efectivo esperado. No hay nada que descontar, y
- * descontarlo habría inventado un sobrante de $21.30.
- *
  * Por eso `enCaja` —y no `hasta`— es lo que se compara contra el comprobante, y
  * `noEfectivo` queda como dato informativo: se cobró, pero no por la caja.
+ *
+ * ── Y el comprobante NO cuenta el efectivo del portal ──────────────────────
+ * Acá decía lo contrario, escrito el 2026-09-02 por la mañana: «el origen ya
+ * distingue, sólo el efectivo llega a la línea COBROS CREDITO y al efectivo
+ * esperado; no hay nada que descontar». La medición que lo sostenía era
+ * correcta —de los tres cobros de esa mañana en Salud 4, el de efectivo
+ * aparecía como movimiento y los dos por transferencia no— pero la conclusión
+ * no se seguía de ella: **aparecer en la lista de movimientos no es lo mismo
+ * que entrar en el esperado**.
+ *
+ * Lo destapó el corte de las 13:00 de ese mismo día, con un cobro de $79.70 a
+ * las 12:39 que hizo grande lo que con $8.55 no se notaba:
+ *
+ *     INGRESOS del comprobante        $  6.00   ← los seis de $1.00, y nada más
+ *     movimientos «POR ABONO A CREDITO» $ 88.25   ← $8.55 + $79.70, en el cajón
+ *     línea COBROS CREDITO             ausente
+ *
+ * O sea que los dos cobros en efectivo no estaban en ninguno de los dos
+ * términos de `TOTAL CAJA = INGRESOS + VENTA − VALES + COBROS`. El portal
+ * anunciaba **+$78.40 de sobrante** sobre un **faltante de $9.85**.
+ *
+ * Verificado sobre los 493 cortes capturados: `tk_ingresos` nunca incluye los
+ * abonos (111 de 112 sala-días medidos), y donde la línea existe recoge
+ * exactamente los movimientos de abono vivos (45 de 48). El único sala-día de
+ * toda la historia donde queda efectivo sin contar es ése.
+ *
+ * La corrección vive en `contraste`, que le suma al esperado lo que el
+ * comprobante dejó fuera. Acá sólo se informa.
  *
  * @param {object} corte   el corte, con `hora` y `tk_cobros_credito`
  * @param {Array}  abonos  los del día de esa sala, de `fetchAbonosDelDia`
  */
 export function cobrosDeCredito(corte, abonos = []) {
-    const cobros = num(corte?.tk_cobros_credito);
+    // Derivado de la suma del comprobante, no del renglón parseado: ver
+    // `contraste`. Sin esto, un comprobante sin la línea daba `cobros: null` y
+    // la reconciliación entera se apagaba justo en el caso que hay que mirar.
+    const c = contraste(corte);
+    const cobros = c ? c.cobros : num(corte?.tk_cobros_credito);
     const hora = String(corte?.hora || '');
     // Un abono anulado no entró: no cuenta ni antes ni después. Se deja fuera
     // acá y no en la consulta para poder listarlo si algún día hace falta.
@@ -356,6 +427,8 @@ export function cobrosDeCredito(corte, abonos = []) {
         // Se cobró, pero no por la caja. Informativo: NO se descuenta de nada.
         noEfectivo: redondear(hasta - enCaja),
         cobros,
+        // Lo que el comprobante dejó fuera y el portal le suma al esperado.
+        sinContar: c?.sinContar ?? 0,
         // Positiva = el portal registró más efectivo del que el comprobante
         // contó (algo entró después de contar, o no se sumó).
         // Negativa = hay cobros que no pasaron por el portal (no es un defecto).
@@ -378,7 +451,22 @@ export function cobrosDeCredito(corte, abonos = []) {
  */
 export function notaDeCifra(corte) {
     const c = contraste(corte);
-    if (!c?.enDisputa) return null;
+    if (!c) return null;
+
+    /* Lo que el comprobante dejó fuera se explica solo: no es un aviso, es la
+     * corrección. Va antes del `enDisputa` porque después de aplicarla las dos
+     * cifras del origen ya NO coinciden por construcción, y sin esta nota la
+     * pantalla diría «hay plata sin explicar» justamente sobre la plata que
+     * acaba de explicar. */
+    if (!c.enDisputa && c.sinContar >= 0.01) {
+        return {
+            alerta: false,
+            titulo: 'El comprobante no contó los cobros de crédito',
+            detalle: `Entraron ${formatMoney(c.sinContar)} en efectivo por cobros de crédito que el comprobante deja fuera de su cuenta. Con ellos, en la caja debía haber ${formatMoney(c.esperado)}.`,
+        };
+    }
+
+    if (!c.enDisputa) return null;
     const { fuente, valor } = diferenciaDelCorte(corte);
     const cobros = formatMoney(Math.abs(c.cobros ?? 0));
 
@@ -603,16 +691,21 @@ export function sugerenciasDeCorte(corte, movimientos = [], invisibles = [], cob
         }
     }
 
-    // ── 0-bis. NO hay pista por los cobros que no fueron en efectivo ────────
+    // ── 0-bis. NO hay pista por los cobros de crédito del portal ────────────
     // Acá vivió una, escrita el 2-sep: «el faltante es igual a $X de cobros que
-    // no entraron en efectivo». Era una hipótesis —«si el comprobante los cuenta
-    // como efectivo, ahí está el faltante»— y la medición del mismo día la
-    // desmintió: el origen NO los cuenta (Salud 4, el de efectivo aparece como
-    // movimiento, los dos que no, no). Mandaba a buscar una causa que no existe.
+    // no entraron en efectivo». La hipótesis era que el comprobante contaba
+    // como efectivo un cobro por transferencia, y eso sigue siendo falso: el
+    // comprobante no cuenta NINGÚN cobro del portal, ni el de transferencia ni
+    // el de efectivo.
+    //
+    // Y por eso tampoco hace falta una pista para el de efectivo: no es algo
+    // que haya que ir a mirar a la caja, es un término que le faltaba al
+    // esperado, y `contraste` se lo suma. Una pista sobre algo ya corregido le
+    // quita el turno a las que sí mandan a buscar.
     //
     // Se deja escrito y no se borra en silencio: la pista es plausible, alguien
-    // la va a volver a proponer, y lo que la descarta es una medición, no una
-    // opinión. Está en `cobrosDeCredito`.
+    // la va a volver a proponer, y lo que la descarta es una medición. El
+    // detalle está en `cobrosDeCredito`.
 
     // ── 1. ¿La diferencia es N veces un movimiento conocido? ────────────────
     const porMonto = new Map();

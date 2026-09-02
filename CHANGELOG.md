@@ -21,6 +21,67 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.953.0 — El efectivo del cobro de crédito entra al esperado del corte
+
+Cobrar un crédito desde el portal mete efectivo en el cajón, pero el sistema de
+origen lo registra sólo como movimiento del día: **no lo suma ni a INGRESOS ni a
+la línea COBROS CREDITO**, o sea a ninguno de los dos términos de
+`TOTAL CAJA = INGRESOS + VENTA − VALES + COBROS`. El esperado nacía corto y el
+conteo de la sala aparecía como un sobrante que nadie hizo.
+
+Salud 4, corte de las 13:00 del 2-sep — el primer día que hubo cobros desde el
+portal, y el caso que lo destapó:
+
+| | |
+|---|---:|
+| esperado del comprobante | $230.85 |
+| cobros en efectivo antes de contar ($8.55 a las 10:03, $79.70 a las 12:39) | +$88.25 |
+| esperado real | **$319.10** |
+| se contó | $309.25 |
+
+El portal anunciaba **+$78.40 de sobrante** sobre un **faltante de $9.85**.
+
+**La corrección se sella en la fila del corte, no se calcula en cada pantalla.**
+`cortes_caja.cobros_portal_efectivo` lo mantienen dos triggers —uno al nacer o
+cambiar el corte, otro al entrar, anularse o borrarse un cobro— y `contraste` se
+lo suma al esperado. Son ocho los lugares que leen un corte (la lista, el
+detalle, la tarjeta, el widget del Inicio, el resumen del mes, los avisos, Mi
+caja y el ticket que se imprime): calculado en cada uno, alcanza que uno se
+olvide para que dos pantallas señalen faltantes distintos sobre la misma
+persona.
+
+**Cuánto contó el comprobante ahora se DERIVA de su propia suma**
+(`total_caja − subtotal + vales`) en vez de leerse del renglón parseado.
+`tk_cobros_credito` sale del papel con una expresión regular y el papel a veces
+no imprime la línea — y su ausencia se lee igual que un cero. El despeje cierra
+al centavo en los 493 cortes capturados, y no puede quedar en cero porque el
+origen le cambie el nombre a la línea, que es el modo de falla que importa: un
+cero de más ahí inventa un faltante del tamaño de los cobros del día.
+
+En el detalle del corte, dos líneas nuevas hacen de puente hasta el papel que
+quien mira suele tener en la mano —«El comprobante dice $230.85» y «Cobros de
+crédito en efectivo +$88.25»—, más una nota al pie que dice por qué ese dinero
+sí está en el cajón. Sin ellas el número de arriba parece inventado.
+
+**Lo vigila `npm run gate:cortes`** (nuevo), que compara el efectivo que entró al
+cajón contra el que el esperado cuenta —por sala y por día, contra los
+movimientos del propio origen, o sea también para una fuente que nadie previó—,
+comprueba que la suma del comprobante siga cerrando y que el sello esté al día.
+Dos decisiones de medición que ya costaron: los movimientos con `desaparecido_at`
+**no cuentan** (el origen no anula, borra: el 1-sep en Salud 1 un abono de $54.99
+se borró a las 15:04 y el corte de esa hora cerró exacto — contándolo, el gate
+habría acusado a un corte impecable), y la referencia es el corte que **más llega
+a contar** en el día y no el último (hay cortes de apertura de turno que declaran
+$0.00). Sobre las 493 filas capturadas falla en UN sala-día de toda la historia:
+el del 2-sep.
+
+**La lección**, escrita en `CLAUDE.md` y en memoria: la medición que sostenía lo
+contrario —«el origen ya distingue, sólo el efectivo llega al esperado»— era
+correcta; lo que falló fue el salto de *aparece en la lista de movimientos* a
+*está en el esperado*. Y sobrevivió medio día porque el único cobro en efectivo
+de esa mañana era de $8.55: un defecto proporcional al monto se esconde solo
+mientras los montos son chicos.
+
 ## v2.952.0 — La salida de efectivo sale primero del cajón
 
 Regla del usuario: *«con las salidas de caja, que la prioridad sea caja; si no

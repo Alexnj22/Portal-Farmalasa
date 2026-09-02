@@ -53,7 +53,8 @@
     "medir:papel": "node scripts/medir-deteccion-de-papel.mjs",
     "medir:pdf": "node scripts/medir-hojas-en-pdf.mjs",
     "logos": "node scripts/preparar-logos.mjs",
-    "portal:lento": "node scripts/portal-lento.mjs"
+    "portal:lento": "node scripts/portal-lento.mjs",
+    "gate:cortes": "node scripts/cortes-gate.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

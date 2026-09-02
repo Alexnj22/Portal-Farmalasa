@@ -742,6 +742,59 @@ cada vez, el aviso no podría saber si ya avisó. Y **vencido exige SALDO**: un
 crédito de hace dos años ya pagado tiene 700 días y no debe nada — el plazo mide
 una deuda, no una fecha.
 
+### El efectivo del cobro entra al cajón y el comprobante NO lo cuenta (2026-09-02)
+
+Cobrar un crédito desde el portal mete efectivo en la caja. El sistema de origen
+lo registra como movimiento del día —`POR ABONO A CREDITO`— y **no lo suma ni a
+INGRESOS ni a la línea COBROS CREDITO**, o sea a ninguno de los dos términos de
+`TOTAL CAJA = INGRESOS + VENTA − VALES + COBROS`. El esperado nace corto y el
+conteo de la sala aparece como un **sobrante que nadie hizo**.
+
+Salud 4, corte de las 13:00 del primer día que hubo cobros desde el portal:
+
+| | |
+|---|---:|
+| esperado del comprobante | $230.85 |
+| cobros en efectivo antes de contar | +$88.25 |
+| esperado real | **$319.10** |
+| se contó | $309.25 |
+
+El portal anunciaba **+$78.40 de sobrante** sobre un **faltante de $9.85**.
+
+**La corrección se sella en la FILA del corte, no se calcula en cada pantalla.**
+`cortes_caja.cobros_portal_efectivo` lo mantienen dos triggers —uno en
+`cortes_caja` y otro en `creditos_abonos_portal`—, y `contraste` se lo suma al
+esperado. Son **ocho** los lugares que leen un corte (la lista, el detalle, la
+tarjeta, el widget del Inicio, el resumen del mes, los avisos, Mi caja y el
+ticket que se imprime): calculado en cada uno, alcanza que uno se olvide para
+que dos pantallas señalen faltantes distintos sobre la misma persona.
+
+**Cuánto contó el comprobante se DERIVA de su propia suma**, no del renglón:
+`cobros = total_caja − subtotal + vales`. `tk_cobros_credito` sale del papel con
+una expresión regular y el papel a veces no imprime la línea — y su ausencia se
+lee igual que un cero. El despeje cierra al centavo en los **493 cortes**
+capturados, y no puede quedar en cero porque el origen le cambie el nombre a la
+línea, que es el modo de falla que importa: un cero de más ahí inventa un
+faltante del tamaño de los cobros del día.
+
+**La lección, que es la cara general:** la medición que sostenía lo contrario
+—«el origen ya distingue, sólo el efectivo llega al esperado»— era **correcta**;
+lo que falló fue el salto de *aparece en la lista de movimientos* a *está en el
+esperado*. Ver
+[[feedback_aparecer_en_la_lista_de_movimientos_no_es_estar_en_el_esperado]]. Y
+sobrevivió medio día porque el único cobro en efectivo de esa mañana era de
+$8.55: **un defecto proporcional al monto se esconde solo mientras los montos
+son chicos.**
+
+Lo vigila **`npm run gate:cortes`**, que compara el efectivo que entró al cajón
+contra el que el esperado cuenta —por sala y por día, contra los movimientos del
+propio origen, o sea también para una fuente que nadie previó—. Dos decisiones
+de medición que ya costaron: los movimientos con `desaparecido_at` **no cuentan**
+(el origen no anula, borra: el 1-sep un abono de $54.99 se borró a las 15:04 y
+el corte de esa hora cerró exacto), y la referencia es el corte que **más llega a
+contar** en el día y no el último (hay cortes de apertura de turno que declaran
+$0.00).
+
 ---
 
 ## MIN·MAX: ABC/XYZ son SOLO clasificación (decisión, no bug)
@@ -1243,6 +1296,13 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   default es `false`: si la fila no existe, NO exige — un control mal escrito
   nunca deja a nadie afuera por accidente. Detalle en
   `docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md`.
+- **Antes de cerrar trabajo que toque cortes de caja, cobros de crédito o
+  movimientos de caja: `npm run gate:cortes`.** Mide contra producción y
+  pregunta una sola cosa: ¿el efectivo que entró al cajón está en el esperado
+  de algún corte del día? Nació el 2026-09-02, después de que el portal
+  anunciara +$78.40 de sobrante sobre un faltante de $9.85 — ver la sección de
+  cuentas por cobrar. **No va en el pre-commit**: necesita red, y un gate de
+  commit que falla sin conexión enseña a escribir `--no-verify`.
 - **Antes de cerrar trabajo que toque una tabla, una ficha o un diálogo:
   `npm run gate:movil`** (bloqueante en cero) y el barrido de la ruta que
   tocaste. El canon completo está arriba, en «el teléfono no es la pantalla

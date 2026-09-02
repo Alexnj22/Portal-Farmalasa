@@ -390,6 +390,23 @@ export default function CorteDetalleModal({
                                     <span>Debía haber en caja</span>
                                     <span className="tabular-nums">{formatMoney(visible.esperadoUsado ?? visible.esperado)}</span>
                                 </div>
+                                {/* El puente hasta el papel. Quien mira esta
+                                    pantalla suele tener el comprobante en la
+                                    mano, y ahí dice otro número: sin estas dos
+                                    líneas el de arriba parece inventado. Sólo
+                                    aparecen cuando hay algo que explicar. */}
+                                {cobros?.sinContar > 0.005 && (
+                                    <>
+                                        <div className="flex justify-between gap-3 pl-3 text-content-3">
+                                            <span>El comprobante dice</span>
+                                            <span className="tabular-nums">{formatMoney(visible.tk_total_caja)}</span>
+                                        </div>
+                                        <div className="flex justify-between gap-3 pl-3 text-content-3">
+                                            <span>Cobros de crédito en efectivo</span>
+                                            <span className="tabular-nums">+{formatMoney(cobros.sinContar)}</span>
+                                        </div>
+                                    </>
+                                )}
                                 <div className="flex justify-between gap-3">
                                     <span>Se contó</span>
                                     <span className="tabular-nums">{formatMoney(visible.total_declarado)}</span>
@@ -677,9 +694,23 @@ export default function CorteDetalleModal({
                                     pregunta distinta y ninguna es un veredicto,
                                     así que van como nota y no como aviso. */}
                                 {(cobros.noEfectivo > 0.005
+                                    || cobros.sinContar > 0.005
                                     || cobros.despues.length > 0
                                     || (cobros.antes.length > 0 && cobros.brecha < -0.005)) && (
                                     <div className="mt-2.5 pt-2 border-t border-divider space-y-1 text-caption text-content-2">
+                                        {/* Va primera porque es la única que
+                                            cambia la cifra de arriba: las otras
+                                            explican, ésta corrige. */}
+                                        {cobros.sinContar > 0.005 && (
+                                            <p>
+                                                <span className="font-bold text-content">
+                                                    {formatMoney(cobros.sinContar)} entraron en efectivo y el comprobante no los cuenta.
+                                                </span>{' '}
+                                                Ese dinero sí está en el cajón, así que se le suma a lo que
+                                                debía haber en caja. Sin sumarlo, el conteo aparece como un
+                                                sobrante que nadie hizo.
+                                            </p>
+                                        )}
                                         {cobros.noEfectivo > 0.005 && (
                                             <p>
                                                 <span className="font-bold text-content">

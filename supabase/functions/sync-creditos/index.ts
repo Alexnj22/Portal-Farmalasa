@@ -16,20 +16,34 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // abonar contra una copia de hace una hora es cobrarle de más a un cliente.
 // La regla es: *la lista se mira en el portal, el cobro se decide allá.*
 //
-// ── Por qué el rango arranca en 2024 y no en «los últimos 30 días» ────────
-// Porque un crédito viejo sigue vivo hasta que se paga: el más antiguo con
-// saldo tiene **462 días** (medido el 1-sep). Una ventana corta lo dejaría
-// fuera del espejo y de todo aviso — que es justamente el que hay que cobrar.
+// ── DOS MODOS, y la diferencia es de diez veces ───────────────────────────
+// Idea del usuario (2-sep): «no necesitás toda la fecha; si ya guardaste la
+// primera vez las anteriores, después sólo necesitás pasar y obtener las del
+// día». Medido, y tenía razón:
 //
-// ── El costo, y por qué cada hora ─────────────────────────────────────────
+//   `completo`  2024-01-01 → hoy     **17.3 s · 1.4 MB · 2,387 filas**
+//   `hoy`       sólo el día de hoy   **1.8 s · 2 kB · 1 fila**
+//
+// Así que la pasada frecuente mira SÓLO hoy, y la tanda entera corre una vez
+// al día de madrugada. Ese barrido diario no es opcional y es la parte que se
+// olvida: un abono hecho EN EL ORIGEN sobre un crédito de hace ocho meses no
+// aparece en la ventana de hoy —lo que cambió es su saldo, no su fecha—, así
+// que sin el completo el espejo se quedaría con una deuda ya pagada para
+// siempre. Corre a las 2am SV, con el origen quieto y sin nadie cobrando.
+//
+// Y la tercera pieza vive en `creditos-erp`: después de un abono se relee esa
+// sala en esa fecha para CONFIRMAR que entró. Es la que hace que el espejo no
+// tenga que esperar diez minutos justo cuando alguien acaba de pagar.
+//
+// ── El costo ──────────────────────────────────────────────────────────────
 // 6 peticiones por corrida (una por sala, EN SERIE porque la sucursal vive en
-// la sesión del origen). Cada hora son 144 al día, contra las 11,520 que ya
-// cuesta el sync de cortes. Más seguido no compra nada: lo que cambia entre
-// corridas son los abonos hechos por fuera del portal, y ésos no son urgentes
-// — los del portal ya quedan registrados al hacerlos.
+// la sesión del origen), pero en modo `hoy` son 6 peticiones de 250 ms sobre
+// cero filas. 90 corridas + 1 completa al día.
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Desde cuándo se mira. Ver arriba: un crédito no caduca. */
+/** Desde cuándo mira la tanda COMPLETA. Un crédito no caduca: el más antiguo
+ *  con saldo tiene 463 días, y una ventana corta lo dejaría fuera del espejo
+ *  y de todo aviso — que es justamente el que hay que cobrar. */
 const DESDE = "2024-01-01";
 
 /** Cuántos créditos por llamada al RPC. El payload va como UN `jsonb`, así que
@@ -65,7 +79,11 @@ Deno.serve(async (req) => {
   try {
     const hasta = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
     const body = await req.json().catch(() => ({}));
-    const desde = String(body?.desde ?? DESDE);
+    /* `hoy` es el default: la corrida frecuente es la de cada diez minutos, y
+     * un modo que hay que pedir es un modo que alguien olvida pedir. La tanda
+     * completa se nombra a propósito, que es la que cuesta. */
+    const modo = body?.modo === "completo" ? "completo" : "hoy";
+    const desde = String(body?.desde ?? (modo === "completo" ? DESDE : hasta));
 
     const mapa = getErpBranchMap().filter((e) => e.erpId !== 6);   // Bodega no vende al crédito
     const { username, password } = getCortesCreds();
@@ -89,6 +107,13 @@ Deno.serve(async (req) => {
     }
 
     if (!filas.length) {
+      /* En modo `hoy`, cero filas es lo NORMAL: hoy hubo un solo crédito en
+       * las seis salas. Sólo la tanda completa puede afirmar que cero es un
+       * fallo — ahí sí, 2,387 créditos no desaparecen de un día para otro. */
+      if (modo === "hoy" && !fallidas.length) {
+        await anotarCorrida(0, 0, true, null);
+        return responder({ ok: true, modo, procesadas: 0, cambiadas: 0, porSala });
+      }
       const msg = fallidas.length ? fallidas.join(" · ") : "el origen no devolvió ningún crédito";
       await anotarCorrida(0, 0, false, msg);
       return responder({ ok: false, error: msg }, 502);
@@ -112,6 +137,7 @@ Deno.serve(async (req) => {
 
     return responder({
       ok: fallidas.length === 0,
+      modo, desde, hasta,
       procesadas, cambiadas, porSala,
       fallidas: fallidas.length ? fallidas : undefined,
     }, fallidas.length ? 500 : 200);

@@ -708,6 +708,30 @@ es a propósito — un crédito cuya factura todavía no sincronizó entra igual
 toma el amarre en la corrida siguiente. Perder la deuda por no tener el amarre
 sería el peor de los dos errores.
 
+**El espejo se mantiene con TRES piezas, y ninguna sobra** (2026-09-02):
+
+| | cada cuánto | qué mira | cuesta |
+|---|---|---|---|
+| pasada frecuente | 10 min, 7am-9pm | **sólo el día de hoy** | 1.8 s · 2 kB |
+| barrido completo | 1 vez, 2am SV | 2024 → hoy | 17.3 s · 1.4 MB |
+| relectura tras abonar | cada abono | esa sala, esa fecha | ~250 ms |
+
+**El barrido diario NO es redundante y es el que se olvida.** Un abono hecho en
+el ORIGEN sobre un crédito de hace ocho meses **no aparece en la ventana de
+hoy** —lo que cambió es su saldo, no su fecha—, así que sin él el espejo
+mostraría una deuda ya pagada para siempre y el aviso del plazo cobraría lo que
+nadie debe.
+
+**Y la relectura tras abonar no es ceremonia**: sin ella, lo único que dice que
+el abono entró es el «success» del origen y el saldo que se muestra es una
+RESTA hecha acá. Si allá se aplicara distinto —o a otro crédito, que es lo que
+pasa si se manda el número equivocado y no da error—, el portal informaría el
+número bonito. Con ella, el saldo que se guarda es el que el origen dice tener.
+
+**Una ventana de un día en vez del histórico entero también acotó la
+comprobación PREVIA al abono**: 17 s → ~250 ms, y esos 17 s eran con el cliente
+enfrente. La fecha de un crédito no cambia nunca, así que sale del espejo.
+
 **El raspado vive en `_shared/creditos.ts` y no duplicado.** Lo usan la pantalla
 y el cron; escrito dos veces, el día que el origen cambie una columna una copia
 se queda vieja y nadie se entera.

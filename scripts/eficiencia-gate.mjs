@@ -103,17 +103,27 @@ const CRONS = [
   },
   // ── Los que hablan con el sistema en cada corrida ──────────────────────────
   {
-    job: 'creditos-cada-hora', slug: 'sync-creditos', cadencia: '0 * * * *',
-    corridasDia: 24, sistema: 6,
-    motivo: 'Trae las cuentas por cobrar de las seis salas al portal (2,387 créditos). Son 6 '
-          + 'listados, uno por sala y EN SERIE: la sucursal vive en la sesión del origen, así que '
-          + 'dos a la vez se pisan la sala y devuelven la cartera equivocada sin dar error. '
-          + 'Cada hora y no más seguido porque lo único que cambia entre corridas son los abonos '
-          + 'hechos POR FUERA del portal — los del portal ya quedan registrados al hacerlos. '
-          + 'Y no menos seguido porque de esta copia sale la pantalla: leerla en vivo costaba '
-          + 'esas mismas 6 peticiones en serie CADA VEZ que alguien abría la vista. '
-          + 'Escribe sólo lo que cambió (`IS DISTINCT FROM`): medido el 2-sep, la segunda '
-          + 'corrida procesó 2,387 y escribió 0.',
+    job: 'creditos-cada-10min', slug: 'sync-creditos', cadencia: '*/10 13-23,0-3 * * *',
+    corridasDia: 90, sistema: 6,
+    motivo: 'Trae al portal las cuentas por cobrar de las seis salas. Son 6 listados, uno por '
+          + 'sala y EN SERIE: la sucursal vive en la sesión del origen, así que dos a la vez se '
+          + 'pisan la sala y devuelven la cartera equivocada sin dar error. Mira SÓLO EL DÍA DE '
+          + 'HOY, y eso es lo que la hace barata — medido el 2-sep: la ventana de un día son '
+          + '1.8 s y 2 kB contra 17.3 s y 1.4 MB del histórico entero, o sea diez veces menos '
+          + 'tiempo del origen y setecientas veces menos datos. Lo viejo ya está guardado y su '
+          + 'fecha no cambia. La VENTANA horaria (7am-9pm SV) saca 12 corridas nocturnas que no '
+          + 'cambian un dato. Escribe sólo lo que cambió (`IS DISTINCT FROM`): medido, una '
+          + 'corrida sobre las 2,387 filas escribió 0.',
+  },
+  {
+    job: 'creditos-barrido-completo', slug: 'sync-creditos', cadencia: '0 8 * * *',
+    corridasDia: 1, sistema: 6,
+    motivo: 'El histórico entero, una vez al día a las 2am SV con el origen quieto. NO es '
+          + 'redundante con la pasada de los diez minutos y omitirlo deja un defecto silencioso: '
+          + 'un abono hecho EN EL ORIGEN sobre un crédito de hace ocho meses no aparece en la '
+          + 'ventana de hoy —lo que cambió es su saldo, no su fecha—, así que el espejo mostraría '
+          + 'una deuda ya pagada para siempre y el aviso del plazo cobraría lo que nadie debe. '
+          + 'Cuesta 17.3 s y 1.4 MB, una vez.',
   },
   {
     job: 'creditos-vencidos-0800-sv', slug: 'avisar-creditos-vencidos', cadencia: '0 14 * * *',

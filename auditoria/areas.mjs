@@ -513,7 +513,7 @@ export const AREAS = [
         edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja', 'hacer-corte-caja', 'operar-caja',
                'creditos-erp', 'sync-creditos', 'avisar-creditos-vencidos'],
         crons: ['cortes-caja-30s', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv',
-                'creditos-cada-hora', 'creditos-vencidos-0800-sv'],
+                'creditos-cada-10min', 'creditos-barrido-completo', 'creditos-vencidos-0800-sv'],
         docs: ['docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md', 'docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md',
                'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],
     },

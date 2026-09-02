@@ -21,38 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.938.3 — La cartera se refresca cada 10 minutos, no cada hora
+## v2.938.3 — La cartera se refresca cada 10 minutos, y la pasada es diez veces más barata
 
-El usuario: *«cada hora es mucho, ¿cada 5 minutos? o qué opinás»*. Se midió
-antes de contestar, porque la respuesta depende de un número que nadie tenía:
+El usuario, dos veces, y las dos con razón: *«cada hora es mucho»* y después
+*«no necesitás toda la fecha; si ya guardaste la primera vez las anteriores,
+después sólo necesitás pasar y obtener las del día»*.
 
-**Una corrida completa cuesta 17.3 s y 1.4 MB** — medio segundo de login más
-seis listados, y Salud 3 sola son 6.2 s. Y el origen **no** deja pedir sólo los
-que deben: su pantalla ofrece rango de fechas y nada más, así que es la tanda
-entera o nada.
+Lo segundo es lo que cambia el problema. Medido:
 
-| cadencia | corridas/día | peticiones/día | datos | % del tiempo del origen |
-|---|---:|---:|---:|---:|
-| cada hora | 24 | 144 | 34 MB | 0.5% |
-| cada 15 min | 96 | 576 | 134 MB | 1.9% |
-| **cada 10 min** | **90** | **540** | **126 MB** | **2.9%** |
-| cada 5 min | 288 | 1.728 | 403 MB | 5.8% |
+| | tiempo | datos | filas |
+|---|---:|---:|---:|
+| el histórico entero | **17.3 s** | 1.4 MB | 2.387 |
+| **sólo el día de hoy** | **1.8 s** | **2 kB** | 1 |
 
-Queda en **cada 10 minutos, de 7am a 9pm**. Dos razones:
+Diez veces menos tiempo del sistema de origen y setecientas veces menos datos.
+Lo viejo ya está guardado y su fecha no cambia nunca. Así que ahora son **tres
+piezas**, y cada una tapa lo que las otras no ven:
 
-1. **La frescura de esta lista no protege dinero.** El abono relee el saldo del
-   origen antes de escribir y rechaza el exceso, así que una lista atrasada
-   muestra una deuda ya pagada durante unos minutos — molesto, no peligroso.
-   Los 5 minutos cuestan el doble para ganar cinco minutos sobre algo que no
-   puede hacer daño, y ocuparían el 5.8% del tiempo de un sistema que es el
-   mismo con el que las salas facturan.
-2. **De noche no hay quien cobre ni quien mire.** Doce corridas nocturnas son 72
-   peticiones que no cambian un dato, y la de las 7am deja la lista al día antes
-   de que abra la primera sala.
+1. **Cada 10 minutos, de 7am a 9pm: sólo el día de hoy.** Trae las ventas al
+   crédito nuevas, y cuesta 1.8 s.
+2. **Una vez al día a las 2am: el histórico entero.** No es redundante, y
+   omitirlo dejaba un defecto silencioso: **un abono hecho en el sistema de la
+   caja sobre un crédito de hace ocho meses no aparece en la ventana de hoy**
+   —lo que cambió es su saldo, no su fecha—, así que el portal mostraría una
+   deuda ya pagada para siempre y el aviso del plazo cobraría lo que nadie debe.
+3. **Después de cada abono, se relee esa sala en esa fecha.** Idea del usuario:
+   *«luego de un abono verificar esa fecha y sucursal … para confirmar que sí se
+   hizo»*.
 
-Y el cron se llama **`creditos-cada-10min`**: uno que se llamara
-`creditos-cada-hora` corriendo cada diez minutos es una mentira que alguien iba
-a creer — el nombre es lo primero que se lee en el panel y en el manifiesto.
+### Lo tercero no es ceremonia
+
+Hasta acá lo único que decía que el abono había entrado era el «success» del
+otro sistema, y **el saldo que se mostraba era una resta hecha en el portal**.
+Si allá el abono se aplicara distinto —o a otro crédito, que es exactamente lo
+que pasa si se manda el número equivocado y **no da error**— el portal
+informaría el número bonito y nadie se enteraría.
+
+Ahora el saldo que se guarda y se muestra es **el que el origen dice tener**, y
+si no coincide con lo esperado la pantalla lo dice en vez de callarlo. De paso,
+el portal se actualiza al instante: quien acaba de cobrar no ve la deuda vieja
+durante diez minutos, que es justo lo que lleva a cobrarle dos veces al cliente.
+
+### Y la comprobación previa al abono también se acotó
+
+Antes de abonar hay que releer el saldo del origen —entre que la pantalla cargó
+y alguien aprieta pueden haber cobrado—, y eso leía **el histórico entero: 17
+segundos con el cliente enfrente**. La fecha de un crédito no cambia nunca, así
+que sale del portal y la relectura mira un solo día: ~250 ms.
 
 ## v2.938.2 — La guarda mira también quién manda el correo
 

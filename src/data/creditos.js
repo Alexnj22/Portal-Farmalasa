@@ -174,16 +174,17 @@ export function abonarCredito({
 export function pagarCreditos({
     sala, forma = 'Efectivo', documento = '', montoDocumento, aplicaciones,
     comprobanteUrl = null, lectura = null, fechaDocumento = null, pos = null,
-    motivo = null,
+    motivo = null, requiereAprobacion = false,
 }) {
     return pedir({
         accion: 'pagar', sala, forma, documento, montoDocumento, aplicaciones,
-        comprobanteUrl, lectura, fechaDocumento, pos, motivo,
+        comprobanteUrl, lectura, fechaDocumento, pos, motivo, requiereAprobacion,
     });
 }
 
 /**
- * Resolver un pago con «Otro»: se aprueba o se rechaza **crédito por crédito**.
+ * Resolver un abono en aprobación: se aprueba o se rechaza **crédito por
+ * crédito**.
  *
  * Pedido del usuario (2-sep): «en la solicitud se debe poder confirmar
  * individualmente si van más de 1 cuenta a abonar, si se rechaza 1 o más con
@@ -194,7 +195,7 @@ export function pagarCreditos({
  * la acción de borrado se auditó esta mañana— y devuelve el saldo al crédito.
  * Aprobar sólo confirma: el abono ya estaba aplicado.
  */
-export function resolverPagoOtro({ solicitud, decisiones }) {
+export function resolverAbonoEnAprobacion({ solicitud, decisiones }) {
     return pedir({ accion: 'resolver_otro', solicitud, decisiones });
 }
 

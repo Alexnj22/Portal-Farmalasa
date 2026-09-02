@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.950.0 — Solicitar aprobación es un interruptor, no una forma de pago
+
+Propuesta del usuario: *«¿y si en vez de otro, dice Solicitar aprobación, y la
+forma de pago sí sale como tarjeta, transferencia, cheque, otro (ahí sí)?»*.
+Mejor, y el motivo es que había **dos preguntas metidas en un solo control**:
+
+| | |
+|---|---|
+| ¿con qué pagó? | efectivo · transferencia · tarjeta · cheque · otro |
+| ¿esto necesita firma? | sí · no |
+
+Con «Otro» haciendo de las dos, un pago de MAPFRE hecho **por transferencia**
+que necesitaba aprobación había que registrarlo como «Otro» — o sea, **perder el
+dato real de con qué se pagó**, que es justamente lo que hace falta para cuadrar
+el banco. Y al revés: todo «Otro» pedía firma aunque no hiciera falta.
+
+Ahora son dos controles:
+
+- La **forma de pago** vuelve a ser el dato del pago: las cinco, «Otro»
+  incluido.
+- **«Solicitar aprobación»** es un interruptor que se puede pedir con
+  **cualquier** forma. El motivo pasa a ser obligatorio cuando está encendido.
+
+**«Otro» lo enciende y no lo deja apagar**, y eso conserva lo que se ganó al
+quitarlo por la mañana: un pago sin forma reconocible no puede entrar sin que
+alguien lo mire. El servidor lo vuelve a exigir por su cuenta — no depende de
+que el navegador mande la bandera.
+
+El tipo de solicitud se renombra a `ABONO_APROBACION` porque el nombre viejo
+pasó a mentir: ya no es «confirmar un Otro», es «aprobar un abono». Se pudo
+renombrar sin cuidado — cero filas de ese tipo en producción, medido antes.
+
 ## v2.949.0 — Un producto ya confirmado se puede encontrar y corregir
 
 Reporte del usuario sobre el pedido de Salud 5: *«confirmaron el producto

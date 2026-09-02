@@ -319,8 +319,8 @@ Deno.serve(async (req) => {
         .eq("id", solId).maybeSingle();
       if (eSol) throw new Error(`leyendo la solicitud: ${eSol.message}`);
       if (!sol) return responder({ ok: false, error: "Esa solicitud no existe." }, 404);
-      if (sol.type !== "ABONO_OTRO_CONFIRMAR") {
-        return responder({ ok: false, error: "Esa solicitud no es de un pago con «Otro»." }, 400);
+      if (sol.type !== "ABONO_APROBACION") {
+        return responder({ ok: false, error: "Esa solicitud no es de un abono en aprobación." }, 400);
       }
       if (sol.status !== "PENDING") {
         return responder({ ok: false, error: "Esa solicitud ya se resolvió." }, 409);
@@ -679,10 +679,20 @@ Deno.serve(async (req) => {
        * Su fallo NO tumba el cobro —el dinero ya se movió— pero sale como aviso:
        * un pago con «Otro» que nadie tiene que mirar es exactamente el cajón de
        * sastre que esta opción vino a evitar. */
+      /* La aprobación se PIDE con un interruptor, y no se deduce de la forma
+       * de pago: son dos preguntas distintas —«con qué pagó» y «esto necesita
+       * firma»— y meterlas en un solo control obligaba a registrar como «Otro»
+       * un pago hecho por transferencia, o sea a perder el dato con el que se
+       * cuadra el banco. Propuesta del usuario (2-sep).
+       *
+       * `Otro` la enciende SIEMPRE y del lado del servidor: un pago sin forma
+       * reconocible no puede entrar sin que alguien lo mire, y eso no puede
+       * depender de que el navegador mande la bandera. */
+      const pideAprobacion = forma === "Otro" || body.requiereAprobacion === true;
       let confirmacion: string | null = null;
-      if (forma === "Otro" && pago?.id) {
+      if (pideAprobacion && pago?.id) {
         const { error: eConf } = await supabase.from("approval_requests").insert({
-          type: "ABONO_OTRO_CONFIRMAR",
+          type: "ABONO_APROBACION",
           employee_id: quien.id,
           status: "PENDING",
           note: documento || "Sin detalle",
@@ -722,7 +732,7 @@ Deno.serve(async (req) => {
         ok: fallidos.length === 0,
         pago_id: pago?.id ?? null,
         aplicado,
-        confirmacionPedida: forma === "Otro" && !confirmacion,
+        aprobacionPedida: pideAprobacion && !confirmacion,
         aplicaciones: hechos.map((h) => ({
           credito: h.credito,
           monto: h.monto,

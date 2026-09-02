@@ -8,6 +8,10 @@ import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import LiquidModal from '../components/common/LiquidModal';
 import LiquidSelect from '../components/common/LiquidSelect';
+/* `Switch` es el canónico del portal (DESIGN.md A14). Los tres interruptores
+ * locales que competían se unificaron ahí; escribir un cuarto acá sería
+ * volver a abrir el mismo hueco. */
+import Switch from '../components/common/Switch';
 import Notice from '../components/common/Notice';
 import PortalInput from '../components/common/PortalInput';
 import PortalTextarea from '../components/common/PortalTextarea';
@@ -822,6 +826,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     // Sólo para «Otro»: es lo que quien aprueba va a leer, y por eso es
     // obligatorio. Con las otras formas el papel habla solo.
     const [motivo, setMotivo] = useState('');
+    const [aprobacion, setAprobacion] = useState(false);
     const [fechaDoc, setFechaDoc] = useState('');
     const [pos, setPos] = useState('');
     const [montoDoc, setMontoDoc] = useState('');
@@ -850,6 +855,16 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
      * que hace falta para poder confirmarlo después. */
     const esOtro = forma === OTRO;
     const conPapel = forma !== 'Efectivo' && !esOtro;
+    /* La aprobación se PIDE y no se deduce de la forma de pago: son dos
+     * preguntas distintas —«con qué pagó» y «esto necesita firma»— y meterlas
+     * en un solo control obligaba a registrar como «Otro» un pago hecho por
+     * transferencia, o sea a perder el dato con el que se cuadra el banco.
+     * Propuesta del usuario (2-sep).
+     *
+     * `Otro` la enciende y no la deja apagar: un pago sin forma reconocible no
+     * puede entrar sin que alguien lo mire, que es lo que se ganó al quitar
+     * «Otro» esta mañana. El servidor lo vuelve a exigir por su cuenta. */
+    const pideAprobacion = esOtro || aprobacion;
 
     useEffect(() => {
         let vivo = true;
@@ -874,6 +889,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         if (nueva === 'Efectivo') setRepartir(false);
         setArchivo(null); setLectura(null); setErrorLectura(null);
         setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc(''); setMotivo('');
+        if (nueva !== OTRO) setAprobacion(false);
     }, []);
 
     /* Los OTROS créditos del cliente, sin el que se está cobrando. */
@@ -957,7 +973,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         && Math.abs(sumaRepartida - totalPago) < 0.005;
     const listo = !bloqueado && cuadra
         && (!conPapel || (archivo && lectura))
-        && (!esOtro || motivo.trim().length >= 5);
+        && (!pideAprobacion || motivo.trim().length >= 5);
 
     const cobrar = useCallback(async () => {
         setOcupado(true);
@@ -967,10 +983,10 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         await onCobrar({
             forma, documento: documento.trim(), montoDocumento: Number(totalPago.toFixed(2)),
             aplicaciones, archivo, lectura, fechaDocumento: fechaDoc || null, pos: pos || null,
-            motivo: motivo.trim() || null,
+            motivo: motivo.trim() || null, requiereAprobacion: pideAprobacion,
         });
         setOcupado(false);
-    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, onCobrar]);
+    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, onCobrar]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Cobrar un crédito">
@@ -1022,25 +1038,37 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                     </div>
                 )}
 
+                {/* El interruptor va con CUALQUIER forma: un pago del ISSS por
+                    transferencia también necesita firma, y antes había que
+                    mentir eligiendo «Otro» para conseguirla. Con «Otro» viene
+                    encendido y no se apaga. */}
+                <div data-surface="card" className="rounded-xl p-3 flex items-center justify-between gap-3">
+                    <span className="min-w-0">
+                        <span className="block text-body-sm font-bold text-content">
+                            Solicitar aprobación
+                        </span>
+                        <span className="block text-micro text-content-3">
+                            {esOtro
+                                ? '«Otro» siempre va a aprobación.'
+                                : 'El abono entra ya y alguien lo revisa después.'}
+                        </span>
+                    </span>
+                    <Switch checked={pideAprobacion} disabled={esOtro} variant="success"
+                        size="sm" onChange={setAprobacion} />
+                </div>
+
                 {esOtro && (
-                    <div className="space-y-3">
-                        {/* Corto y en el orden en que importa: qué va a pasar, y
-                            qué hay que escribir. El párrafo largo que explicaba
-                            para qué sirve «Otro» sobra — quien lo eligió ya lo
-                            sabe, y se lo comía la mitad del diálogo. */}
-                        <Notice variant="info">
-                            Este abono entra ya y se envía a <strong>aprobación</strong>.
-                            Escribe el motivo.
-                        </Notice>
-                        <PortalInput label="Monto del pago" inputMode="decimal" value={montoDoc}
-                            onChange={(e) => setMontoDoc(e.target.value)} />
-                        {/* «Con qué se pagó» salió: la forma ya ES «Otro», así que
-                            era pedir dos veces el mismo dato. Lo que hace falta es
-                            el MOTIVO, y es lo que quien aprueba va a leer. */}
-                        <PortalTextarea label="Motivo" value={motivo} rows={2}
-                            placeholder="ISSS, planilla de agosto"
-                            onChange={(e) => setMotivo(e.target.value)} />
-                    </div>
+                    <PortalInput label="Monto del pago" inputMode="decimal" value={montoDoc}
+                        onChange={(e) => setMontoDoc(e.target.value)} />
+                )}
+
+                {pideAprobacion && (
+                    /* El motivo es lo que quien aprueba va a leer, así que es
+                       obligatorio. Con las otras formas el papel habla solo; acá
+                       no hay papel que hable. */
+                    <PortalTextarea label="Motivo" value={motivo} rows={2}
+                        placeholder="ISSS, planilla de agosto"
+                        onChange={(e) => setMotivo(e.target.value)} />
                 )}
 
                 {/* Los montos sólo después de que el papel pasó: pedirlos antes

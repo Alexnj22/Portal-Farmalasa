@@ -120,7 +120,13 @@ export default function CuentasPorCobrarView() {
      * decide allá. */
     const cargar = useCallback(async () => {
         setCargando(true);
-        const [r, l] = await Promise.all([fetchCreditos({ sala: sala || null }), fetchUltimaLectura()]);
+        const [r, l] = await Promise.all([
+            /* Sólo «Todos» baja el histórico entero (2,387 filas). Los otros dos
+             * recortes viven dentro de los que deben, así que la base manda 124
+             * y el navegador no filtra nada que ya podía no haber traído. */
+            fetchCreditos({ sala: sala || null, soloConSaldo: ver !== 'TODOS' }),
+            fetchUltimaLectura(),
+        ]);
         if (r?.error) {
             showToast('No se pudo leer la cartera', mensajeAmigable(r.error), 'error');
             setCreditos(VACIO);
@@ -129,7 +135,7 @@ export default function CuentasPorCobrarView() {
         }
         setLectura(l);
         setCargando(false);
-    }, [sala, showToast]);
+    }, [sala, ver, showToast]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
 

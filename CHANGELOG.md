@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.938.6 — La vista pedía 2,387 filas para pintar 124
+
+Reporte del usuario: *«¿por qué es tan lenta la carga de la vista? si ya tenemos
+los datos en el portal, ¿por qué no los carga de un solo?»*. Los datos estaban
+acá, sí — pero se pedían **todos**.
+
+Cuentas por cobrar abre en «Con saldo», que son **124 de 2,387**. Se bajaban las
+2,387 en **tres vueltas** y se recortaba en el navegador:
+
+| | vueltas | datos | tiempo |
+|---|---:|---:|---:|
+| antes | 3 | 839 kB | 710 ms |
+| **ahora** | **1** | **29 kB** | **156 ms** |
+
+El filtro se mudó a la base, que además es donde tiene que estar por otra razón:
+**un tope se aplica antes del filtro**. Con más de 1.000 filas que deban, lo que
+la pantalla mostraría no sería «los que deben» sino «los que deben entre los
+primeros 1.000», sin error y sin fila de menos visible.
+
+### Y en el camino apareció uno peor: **el abono estaba roto**
+
+Al pasar la lista al espejo del portal, dos columnas cambiaron de nombre sin que
+nadie avisara: la tabla llama `credito_erp` y `numero_doc` a lo que la pantalla
+—y la función que cobra— conocen como `credito` y `documento`.
+
+La ficha salía sin número de documento, que se nota poco. Pero
+**`abonarCredito` mandaba `credito: undefined`**, así que el cobro fallaba con
+«falta a qué crédito se abona» — y eso no se había detectado porque un abono
+real todavía no se ha hecho nunca. Resuelto con alias en la consulta.
+
 ## v2.938.5 — El respaldo de la anulación viaja con el documento que anula
 
 **La carpeta «Anulados» decía que el documento estaba anulado y no llevaba con

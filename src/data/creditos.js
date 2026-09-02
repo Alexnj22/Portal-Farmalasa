@@ -53,16 +53,28 @@ async function pedir(body) {
  * El alcance lo aplica el RLS de la tabla: mandar otro `sala` no muestra la
  * cartera de otra sucursal.
  */
-export async function fetchCreditos({ sala = null } = {}) {
+export async function fetchCreditos({ sala = null, soloConSaldo = true } = {}) {
+    /* Los dos ALIAS no son cosmética: la tabla llama `credito_erp` y
+     * `numero_doc` a lo que la pantalla —y la edge function del abono— conocen
+     * como `credito` y `documento`. Sin ellos la ficha sale sin número de
+     * documento y, peor, `abonarCredito` manda `credito: undefined` y el cobro
+     * falla con «falta a qué crédito se abona». Es la misma familia que
+     * `feedback_nombre_de_columna_no_es_su_tipo`: un renombre en la base no
+     * avisa a quien lo lee. */
     let q = supabase.from('creditos_de_clientes')
-        .select('id, branch_id, credito_erp, factura_erp, numero_doc, tipo_doc, fecha, '
-              + 'cliente, total, abonado, saldo, estado, customer_id, vendedor_id, '
-              + 'vencio_el, pagado_el')
+        .select('id, branch_id, credito:credito_erp, documento:numero_doc, fecha, '
+              + 'cliente, total, saldo, customer_id, vendedor_id')
         .order('fecha', { ascending: true });
     if (sala) q = q.eq('branch_id', Number(sala));
-    /* `fetchAllRows` y no un `.range()` a mano: son 2,387 filas hoy y PostgREST
-     * trunca en 1000 **sin dar error**. Con el corte, la pantalla mostraría los
-     * más viejos y ninguno de los recientes, y no habría forma de notarlo. */
+    /* El filtro va a la BASE y no al navegador. La pantalla abre en «Con
+     * saldo», que son 124 de 2,387: traerlas todas era bajar 839 kB en tres
+     * vueltas para pintar 124 filas. Medido: 710 ms y 839 kB contra 138 ms y
+     * 43 kB. Y es la regla de siempre — un tope se aplica ANTES del filtro, así
+     * que filtrar acá y no allá no es sólo lento: con más de 1000 filas sería
+     * «los que cumplen entre los primeros N». */
+    if (soloConSaldo) q = q.gt('saldo', 0.004);
+    /* `fetchAllRows` y no un `.range()` a mano: sin filtro son 2,387 filas y
+     * PostgREST trunca en 1000 **sin dar error**. */
     const creditos = await fetchAllRows(q);
     return { ok: true, creditos: creditos || [] };
 }

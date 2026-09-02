@@ -641,10 +641,25 @@ Deno.serve(async (req) => {
      * formulario de hoy, y el endpoint contesta vacío — probado el 2-sep en las
      * seis salas. No es una salida.)
      *
+     * ── DECISIÓN DEL USUARIO (2026-09-02): SE DEJA COMO ESTÁ ───────────────
+     *
+     *   «el error del ERP dejalo como está, es conocido que da el resultado
+     *    incorrectamente de diferencias, por eso en el portal lo dejamos bien»
+     *
+     * O sea: el portal **reproduce** la cuenta del origen y no la corrige en su
+     * registro. **No reproponerlo.** Se evaluó que el portal calculara el
+     * esperado por su cuenta —tiene todas las piezas: ventas en efectivo por
+     * `tipo_pago`, ingresos/vales/cobros del listado de movimientos, y el saldo
+     * de apertura— y se descartó: la empresa ya conoce el defecto del origen y
+     * el sitio donde el número tiene que estar bien es el portal.
+     *
      * Dónde SÍ se corrige: `diferenciaDelCorte` en el portal, que usa el
      * tiquete. Lo que la pantalla muestra y el papel que imprime el portal
      * llevan la cifra buena; lo que queda con la del origen es el registro del
-     * sistema de la caja y su propio tiquete. */
+     * sistema de la caja y su propio tiquete — **a propósito**.
+     *
+     * Y las BOLSAS no dependen de esto: `bolsa_sugerida` resta de
+     * `total_declarado`, que es el efectivo CONTADO, nunca el esperado. */
     const esperado = Number(campos.get("total_corte"));
     if (!campos.size || !Number.isFinite(esperado)) {
       throw new Error("no se pudo leer el formulario del corte");

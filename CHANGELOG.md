@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.945.4 — La diferencia del ERP se deja como está
+
+Sin cambio de comportamiento: es una **decisión del usuario**, escrita donde la
+va a leer quien la vuelva a proponer.
+
+> «el error del ERP dejalo como está, es conocido que da el resultado
+> incorrectamente de diferencias, por eso en el portal lo dejamos bien»
+
+Se evaluó que el portal calculara el efectivo esperado por su cuenta —tiene
+todas las piezas sin emitir ningún documento: ventas en efectivo por `tipo_pago`,
+ingresos/vales/cobros del listado de movimientos del origen, y el saldo de
+apertura— y se **descartó**. El defecto del origen es conocido en la empresa, y
+el sitio donde el número tiene que estar bien es el portal.
+
+**Dónde queda cada cifra, que es lo que importa:**
+
+| | cifra |
+|---|---|
+| **las bolsas** | **buena** — se calculan con el efectivo CONTADO, no con el esperado |
+| la pantalla del portal | **buena** |
+| el papel que imprime el portal | **buena** |
+| el registro del sistema de la caja | la del origen, **a propósito** |
+
+Queda anotado en `hacer-corte-caja`, en la auditoría y en la memoria del
+proyecto: **no reproponerlo.**
+
+Cierra el §2 de `docs/AUDITORIA-CORTE-DESDE-EL-PORTAL-2026-09-02.md`. Lo que
+sigue abierto ahí es otra cosa: **cerrar el día desde el portal nunca corrió**, y
+el Z se manda con `total_tarjeta` y `monto_ch` en cero — que para un corte C es
+el control, y para el cierre del día puede declararlo de menos. Un Z no se
+deshace.
+
 ## v2.945.3 — El esperado del origen es su propia fórmula, y le faltan los cobros
 
 Sin cambio de comportamiento: es lo que se averiguó, escrito donde se lee.

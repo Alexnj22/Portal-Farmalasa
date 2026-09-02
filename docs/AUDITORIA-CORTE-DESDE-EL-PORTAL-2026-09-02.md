@@ -3,12 +3,14 @@
 Pregunta del usuario: *«ahora sí funcionarían los cortes de caja desde el
 portal? ya tenemos todo el flujo aquí»*.
 
-**Respuesta corta: se puede usar, con dos advertencias.** El corte C funciona y
-el portal muestra e imprime la cifra correcta. Lo que queda mal es el número que
-el sistema de la caja guarda — **y eso ya pasaba antes del portal**, en el 21.5%
-de los cortes (§2). Lo que sí conviene no hacer todavía es **cerrar el día desde
-el portal**: ese camino nunca corrió y escribe una casilla que puede declarar de
-menos el Z, que no se deshace (§3).
+**Respuesta corta: el corte C se puede usar.** El portal muestra e imprime la
+cifra correcta, y las bolsas no dependen de ella. El número que guarda el sistema
+de la caja queda con el defecto del origen **por decisión del usuario** (§2) — ya
+era así antes del portal, en el 21.5% de los cortes.
+
+Lo que **sí** conviene no hacer todavía es **cerrar el día desde el portal**: ese
+camino nunca corrió y escribe una casilla que puede declarar de menos el Z, que
+no se deshace (§3).
 
 ---
 
@@ -33,7 +35,7 @@ sobre un acto que no se deshace.
 
 ---
 
-## 2. 🟠 La diferencia que se escribe está mal — pero el defecto NO es del portal
+## 2. ✅ CERRADO POR DECISIÓN — la diferencia del origen se deja como está
 
 ### Lo que decía esta sección, y por qué estaba mal
 
@@ -108,16 +110,23 @@ en la caja.
    | cobros de crédito | ese mismo listado (`POR ABONO A CREDITO`) |
    | saldo inicial | `cortes_caja_aperturas.monto_apertura` |
 
-   ⚠️ **Es una decisión, no un arreglo obvio**, y por eso no se hizo: rompe la
-   regla fundacional del módulo —*«el esperado lo sigue calculando la caja, no
-   nosotros»*— y significa que el portal deja de reproducir al origen y empieza
-   a **corregirlo** en el registro del origen. El riesgo es la venta: `tk_venta`
-   es la foto del momento del corte y la sincronización de facturas tiene
-   retraso, así que un corte hecho al minuto podría calcular con ventas que
-   todavía no llegaron.
+   ⚠️ **Evaluado y DESCARTADO por el usuario (2026-09-02):**
 
-   **Lo decide el usuario.** Mientras tanto, el portal no está peor que la
-   pantalla de la caja, y en lo que se ve —su pantalla y su papel— está mejor.
+   > «el error del ERP dejalo como está, es conocido que da el resultado
+   > incorrectamente de diferencias, por eso en el portal lo dejamos bien»
+
+   **No reproponerlo.** El defecto del origen es conocido en la empresa, y el
+   sitio donde el número tiene que estar bien es el portal — que ya lo está.
+
+### Entonces, ¿qué queda bien y qué no?
+
+| | cifra |
+|---|---|
+| **las bolsas** | **buena** — `bolsa_sugerida` resta de `total_declarado`, el efectivo CONTADO. Este defecto no las toca |
+| la pantalla del portal | **buena** (`diferenciaDelCorte`, del tiquete) |
+| el papel que imprime el portal | **buena** |
+| el registro del sistema de la caja | la del origen — **a propósito** |
+| el tiquete que imprime el origen | la del origen — **a propósito** |
 
 ## 3. 🟠 El corte Z nunca salió del portal, y zapatea dos casillas
 
@@ -235,12 +244,9 @@ reconstruya una regla que ya no existe.
 
 En orden, y el primero es el que bloquea:
 
-1. **Decidir qué hacer con la diferencia que se escribe** (§2). No es un
-   arreglo pendiente sino una decisión: los tres caminos que usaban números del
-   origen están descartados con medición, y el que queda —que el portal calcule
-   el esperado él mismo— hace que el portal deje de reproducir al origen y
-   empiece a corregirlo. **Y el defecto no lo causó el portal**: ya estaba en el
-   21.5% de los 428 cortes anteriores.
+1. ~~Decidir qué hacer con la diferencia que se escribe~~ — **decidido (§2)**:
+   se deja como está. El defecto es del origen, es conocido, y el portal es
+   donde el número queda bien.
 2. ~~Medir el cobro que no es efectivo~~ — **hecho** (§4): el origen ya lo deja
    fuera, no hay que descontar nada, y el aviso que decía lo contrario se
    corrigió.

@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.939.0 — El crédito cuenta su historia
+
+Pedido del usuario: *«necesito que tenga fecha de compra, y fecha de último
+abono … además necesito ver quién le vendió y el historial de abonos. Y al tocar
+la card que muestre toda la información, incluido la compra»*.
+
+**En la tarjeta**, sin abrir nada: cuándo compró, cuándo fue el último abono, y
+**quién le vendió**. Lo tercero es lo que el sistema de la caja no puede decir —
+sale de cruzar la factura contra las ventas del portal, y lo tiene el 98% de los
+créditos.
+
+**Al tocarla se abre la ficha completa**: lo que costó, lo que lleva pagado y lo
+que debe; la fecha, el vendedor y el documento; **los productos que se llevó**;
+y **cada abono** con su monto, forma, hora, quién lo cobró y con qué saldo
+quedó. Los renglones de la compra salen de las ventas del portal —verificado:
+los 124 créditos con saldo tienen sus 238 renglones acá—, así que abrir la ficha
+no sale a la red del otro sistema.
+
+**«Último abono» dice «ninguno desde el portal» y no un guion**, a propósito. El
+sistema de la caja da el acumulado abonado, no la fecha de cada abono: un guion
+se leería como «nunca pagó» sobre alguien que ya pagó la mitad. Cuando el saldo
+no cuadra con lo que el portal registró, la ficha lo dice con esas palabras.
+
+### La franja de color salió
+
+Corregido por el usuario: *«en design tienes prohibido usar franjas de
+colores»*. El estado del crédito iba en una banda de 3px arriba de la tarjeta, y
+el canon es `data-tono` sobre `data-surface="card"` (DESIGN.md §5.1) — la
+especificidad sube sola y el estado se lee en el marcado. La franja además
+obligaba a `overflow-hidden`, que recorta el anillo de foco.
+
+### Y el gate nuevo se acusó a sí mismo
+
+`gate:tdz` marcó deuda nueva en el archivo recién escrito. No la había: contaba
+como hallazgo los avisos del propio linter —«Definition for rule … was not
+found», uno por cada `eslint-disable-line` de una regla que su config mínima no
+carga—. **La deuda declarada baja de 241 a 62**, que es la real. Antes de
+creerle un número a un instrumento, mirar qué está contando.
+
 ## v2.938.8 — el buscador de Reglas de despacho no devolvía nada
 
 Escribir en el buscador de `/pedidos?tab=reglas` daba **«Sin resultados»

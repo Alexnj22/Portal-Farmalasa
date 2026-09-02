@@ -180,6 +180,13 @@ for (const archivo of archivos) {
   }
   for (const m of mensajes) {
     if (m.fatal) { ilegibles.push(`${archivo}:${m.line}`); continue; }
+    /* SÓLO lo que dijo esta regla. El linter emite también sus propios avisos
+     * —«Definition for rule … was not found» por cada `eslint-disable-line` de
+     * una regla que esta config mínima no carga— y contarlos inflaba la deuda
+     * con archivos que no tienen ni una lectura temprana. Lo cazó el propio
+     * gate acusando a un archivo recién escrito que estaba bien: antes de
+     * creerle un número al instrumento, mirar qué está contando. */
+    if (m.ruleId !== 'tdz/antes-del-const') continue;
     const h = { archivo, linea: m.line, mensaje: m.message };
     (m.messageId === 'inmediata' ? inmediatas : diferidas).push(h);
   }

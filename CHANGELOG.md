@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.956.5 — El aviso de vales no pide lo que el corte ya hace
+
+Segunda pregunta del usuario sobre el mismo aviso de Bolsas: *«pero no entiendo,
+ese vale se genera al realizar el corte»*. Tenía razón, y era lo importante.
+
+`hacer-corte-caja` escribe el vale con **todas** las salidas del día abierto como
+paso 1, antes de mandar el corte. O sea que por el camino normal ahí no hay nada
+que hacer y la lista se vacía sola. El aviso decía lo contrario —«**faltan
+anotarle** a la caja… **sin anotarlo**, el próximo corte marca un faltante que no
+existe»— o sea que exigía una acción que el portal ya hace, y en amarillo.
+
+Es un resto de fechas: el botón es del **28-ago**, cuando era el único camino; el
+corte desde el portal es del **29** y absorbió el trabajo. Nadie volvió a mirar
+el texto. Un aviso que pide lo que el camino normal ya ejecuta es exactamente el
+que enseña a ignorar los avisos.
+
+- **Ahora informa, no exige.** «Salud 3 — $127.00 de 2 salidas que la caja
+  todavía cuenta como suyas», en azul y no en amarillo.
+- **Dice que se resuelve solo**: al hacer el corte desde el portal el vale se
+  anota y el aviso desaparece.
+- **Y dice cuándo el botón sí hace falta**: si el corte se va a hacer en la
+  pantalla de la caja. Ese corte no pasa por el portal, nadie escribe el vale, y
+  ahí sí sale con el faltante inventado — que es lo único que el botón cubre.
+
 ## v2.956.4 — El acuse que falta se ve, y dice qué sala
 
 Reporte del usuario mirando la tarjeta del pedido #150: *«no dice que ya fue

@@ -1,4 +1,4 @@
-// El aviso de vales por anotar tiene que decir DE QUÉ SALA.
+// El aviso de lo que la caja todavía cuenta: qué dice, y de qué sala.
 //
 // Reportado por el usuario (2-sep) sobre Bolsas:
 //
@@ -11,8 +11,16 @@
 // se podía deducir de la pantalla. Un aviso que dice que hay algo que hacer y
 // no dónde es lo mismo que no decir nada.
 //
-// Se prueba el TEXTO, que es lo que falló: la lógica no cambió y seguía
-// devolviendo exactamente las mismas dos filas.
+// Y una segunda pregunta del mismo reporte destapó algo peor: *«pero no
+// entiendo, ese vale se genera al realizar el corte»*. Tenía razón —
+// `hacer-corte-caja` escribe el vale como paso 1, antes de mandar el corte— así
+// que el aviso exigía («faltan anotarle… sin anotarlo, el próximo corte marca
+// un faltante») una acción que el camino normal ya hace. Era un resto del
+// 28-ago, cuando el botón era el único camino; el corte desde el portal es del
+// 29 y nadie volvió a mirar el texto.
+//
+// Se prueba el TEXTO, que es lo que falló las dos veces: la lógica no cambió y
+// seguía devolviendo exactamente las mismas dos filas.
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -41,17 +49,17 @@ const pintar = async (lista) => {
     filas.valor = lista;
     const r = render(<ValesDeCaja />);
     // La carga es un efecto asíncrono: el aviso aparece después.
-    await screen.findByText(/anotarle a la caja/i);
+    await screen.findByText(/la caja todavía cuenta/i);
     return r;
 };
 
 describe('el aviso nombra la sala', () => {
-    it('con una sola: «Salud 3 — faltan anotarle a la caja 2 salidas por $127.00»', async () => {
+    it('con una sola: «Salud 3 — $127.00 de 2 salidas que la caja todavía cuenta»', async () => {
         const { container } = await pintar([
             vale(),
             vale({ movimiento_id: 2, operacion_id: 2, folio: 'GAS-1063', monto: 2 }),
         ]);
-        expect(container.textContent).toContain('Salud 3 — faltan anotarle a la caja 2 salidas por $127.00');
+        expect(container.textContent).toContain('Salud 3 — $127.00 de 2 salidas que la caja todavía cuenta como suyas');
     });
 
     it('con dos, las nombra a las dos: no «2 salas»', async () => {
@@ -64,7 +72,7 @@ describe('el aviso nombra la sala', () => {
 
     it('con una sola salida, la frase queda en singular', async () => {
         const { container } = await pintar([vale()]);
-        expect(container.textContent).toContain('Salud 3 — falta anotarle a la caja una salida de $125.00');
+        expect(container.textContent).toContain('Salud 3 — $125.00 de una salida que la caja todavía cuenta como suya');
     });
 
     it('sin nombre de sala el aviso igual sale, sin un hueco en la frase', async () => {
@@ -72,8 +80,32 @@ describe('el aviso nombra la sala', () => {
         // pasar es que el aviso deje de salir o diga «de undefined»: es dinero
         // que la caja sigue esperando.
         const { container } = await pintar([vale({ sala: null })]);
-        expect(container.textContent).toContain('Falta anotarle a la caja una salida de $125.00');
+        expect(container.textContent).toContain('$125.00 de una salida que la caja todavía cuenta');
         expect(container.textContent).not.toContain('undefined');
         expect(container.textContent).not.toContain('null');
+    });
+});
+
+/* ── El aviso NO puede pedir lo que el corte ya hace ─────────────────────────
+ *
+ * Es la mitad que hizo preguntar dos veces. `hacer-corte-caja` escribe el vale
+ * con todas las salidas del día como paso 1, antes de mandar el corte: por el
+ * camino normal acá no hay nada que hacer y la lista se vacía sola. El texto
+ * viejo decía lo contrario —«faltan anotarle… sin anotarlo, el próximo corte
+ * marca un faltante que no existe»— y era falso justo en el caso de todos los
+ * días.
+ *
+ * Lo que sí sigue siendo cierto: la sala todavía puede cortar en la pantalla de
+ * la caja, y ESE corte no pasa por el portal. */
+describe('el aviso dice que el corte lo anota solo', () => {
+    it('lo dice, y dice cuándo hace falta el botón', async () => {
+        const { container } = await pintar([vale()]);
+        expect(container.textContent).toContain('Al hacer el corte desde el portal se le anota solo');
+        expect(container.textContent).toContain('en la pantalla de la caja');
+    });
+
+    it('ya no exige nada: sin «faltan anotarle»', async () => {
+        const { container } = await pintar([vale()]);
+        expect(container.textContent).not.toMatch(/falta[n]? anotarle/i);
     });
 });

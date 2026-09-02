@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 
 /**
- * Lo que falta anotarle a la caja, y el botón que lo anota.
+ * Lo que la caja todavía cuenta como suyo, y el botón que se lo anota.
  *
  * ── Por qué existe ─────────────────────────────────────────────────────────
  * La caja cuenta, por día, todo lo que entró desde su cierre anterior, y meter
@@ -18,6 +18,26 @@ import { useToastStore } from '../../store/toastStore';
  * siendo caja para ella. Cuando una remesa se paga con esa plata, la caja
  * queda esperando dinero que ya salió, y el corte siguiente marca un faltante
  * que no existe. Medido: cinco salidas quedaron así, $1,700 en total.
+ *
+ * ── ESTO NO ES UNA TAREA PENDIENTE, y el aviso decía que sí ────────────────
+ * Corregido el 2-sep, por una pregunta del usuario: *«pero no entiendo, ese
+ * vale se genera al realizar el corte»*. Y tiene razón — `hacer-corte-caja`
+ * escribe el vale con TODAS las salidas del día abierto como paso 1, antes de
+ * mandar el corte. Si el corte se hace desde el portal, acá no hay nada que
+ * hacer y esta lista se vacía sola.
+ *
+ * El aviso venía del 28-ago, cuando el botón era el ÚNICO camino; el corte
+ * desde el portal es del 29 y absorbió el trabajo. Nadie volvió a mirar el
+ * texto, así que siguió diciendo «faltan anotarle a la caja… sin anotarlo, el
+ * próximo corte marca un faltante que no existe» sobre algo que el propio
+ * portal ya hace. Un aviso que exige una acción que el camino normal ya
+ * ejecuta es el que enseña a ignorar los avisos.
+ *
+ * Lo que SÍ sigue siendo cierto, y es lo único que el botón cubre: **la sala
+ * todavía puede cortar en la pantalla de la caja**. Ese corte no pasa por acá,
+ * nadie escribe el vale, y ahí sí sale con el faltante inventado. Entonces
+ * esto es información —cuánto le debe la caja al día de hoy— con una salida a
+ * mano para ese caso, no una tarea.
  *
  * ── Lo que NO aparece acá, y es la mitad de la regla ───────────────────────
  * Lo que salió de una bolsa de un día ya cerrado. Esa plata la caja no la
@@ -62,10 +82,11 @@ export default function ValesDeCaja() {
      * Salud 3, y ni el aviso ni la lista de «Ver cuáles» lo decían.
      *
      * No es un olvido de redacción: este aviso vive FUERA del filtro de
-     * sucursal de la vista a propósito —es trabajo pendiente, y esconderlo
-     * detrás de un recorte sería no anunciarlo—, así que la sala tampoco se
-     * puede deducir de la pantalla. Sin el nombre, el aviso dice que hay algo
-     * que hacer y no dónde, que es lo mismo que no decir nada.
+     * sucursal de la vista a propósito —lo que la caja espera de más es del
+     * día y de una sala concreta, y esconderlo detrás de un recorte sería no
+     * decirlo—, así que la sala tampoco se puede deducir de la pantalla. Sin
+     * el nombre, el aviso dice que hay dinero en el aire y no en cuál caja,
+     * que es lo mismo que no decir nada.
      *
      * El nombre viene en la fila (`caja_vales_pendientes` lo trae de
      * `branches`) y no se cruza acá contra el store: el mismo dato lo usa la
@@ -137,24 +158,29 @@ export default function ValesDeCaja() {
 
     return (
         <>
-            <Notice variant="warning" icon={Landmark}>
+            {/* `info` y no `warning`: no hay nada que corregir. El corte hecho
+                desde el portal lo anota solo — ver el encabezado. Pintarlo de
+                amarillo era pedir una acción que el camino normal ya hace. */}
+            <Notice variant="info" icon={Landmark}>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
                         {/* La sala PRIMERO. Es lo que se busca al leerlo —«¿me
                             toca a mí?»— y además evita el «de Salud 3 2
                             salidas», donde dos números pegados se leen como uno.
                             Es la misma forma que el aviso de un corte nuevo:
-                            «<sala> — <lo que hay que hacer>». */}
+                            «<sala> — <lo que pasa>». */}
                         <span className="font-bold">
                             {donde && <span>{donde} — </span>}
                             {pendientes.length === 1
-                                ? `${donde ? 'falta' : 'Falta'} anotarle a la caja una salida de ${formatMoney(total)}`
-                                : `${donde ? 'faltan' : 'Faltan'} anotarle a la caja ${pendientes.length} salidas por ${formatMoney(total)}`}
+                                ? `${formatMoney(total)} de una salida que la caja todavía cuenta como suya`
+                                : `${formatMoney(total)} de ${pendientes.length} salidas que la caja todavía cuenta como suyas`}
                         </span>
                         <span className="block mt-0.5 font-normal text-content-2">
-                            Salió de una bolsa del día que la caja tiene abierto, así que sigue
-                            esperando ese dinero. Sin anotarlo, el próximo corte marca un faltante
-                            que no existe.
+                            Salieron de una bolsa del día que la caja tiene abierto, así que sigue
+                            esperando ese dinero. <b>Al hacer el corte desde el portal se le anota
+                            solo</b>, y esto desaparece. Anotarlo a mano es sólo para cuando el corte
+                            se vaya a hacer en la pantalla de la caja: ese corte no pasa por aquí, y
+                            sin el vale marca un faltante de {formatMoney(total)} que no existe.
                         </span>
                     </div>
                     <Button variant="secondary" size="sm" onClick={() => setAbierto(true)}>
@@ -167,11 +193,13 @@ export default function ValesDeCaja() {
                 maxWidth="max-w-lg" ariaLabel="Salidas por anotar en la caja">
                 <div className="p-5 space-y-4">
                     <div>
-                        <h3 className="text-h3 font-bold text-content">Falta anotarle a la caja</h3>
+                        <h3 className="text-h3 font-bold text-content">Lo que la caja todavía cuenta</h3>
                         <p className="text-body-sm text-content-2 mt-1">
                             Un solo <b>vale de caja</b> por sala. El vale de papel y la etiqueta de
                             cada bolsa ya salieron al sacar el dinero: esto es el movimiento que
-                            le falta al sistema.
+                            le falta al sistema. <b>Hacer el corte desde el portal lo escribe
+                            solo</b> — anotarlo aquí es para cuando el corte se vaya a hacer en la
+                            pantalla de la caja.
                         </p>
                     </div>
 

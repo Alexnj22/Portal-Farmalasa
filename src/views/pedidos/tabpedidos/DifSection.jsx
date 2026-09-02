@@ -218,7 +218,78 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
             })}
             </div>
 
-            {/* ── Cierre de bodega (7A.1) ── */}
+            {hiddenCount > 0 && (
+                <Button tone="warning" onClick={() => setShowAll(s => !s)}>
+                    {showAll ? 'Ver menos ↑' : `Ver las ${mias.length} que te tocan ↓`}
+                </Button>
+            )}
+
+            {/* ── Lo acordado o propuesto que espera al otro lado ──
+                No pide nada a quien mira, pero tampoco está cerrado: el renglón
+                dice de qué se está esperando, y se abre si alguien quiere el
+                detalle o quiere adelantarse. */}
+            {esperando.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                    <p className="text-micro font-black text-content-3 uppercase tracking-widest">
+                        Esperando ({esperando.length})
+                    </p>
+                    {esperando.map(item => (
+                        <FilaCompacta key={item.id} item={item} tono="warning" Icono={Clock}
+                            abierta={verResuelta === item.id}
+                            onToggle={() => setVerResuelta(v => (v === item.id ? null : item.id))}
+                            derecha={<EsperandoA item={item} catalogo={catalogo} isBranch={isBranch} />}
+                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null}
+                            isBranch={isBranch} esSupervision={esSupervision}
+                            onDecidirDiferencia={onDecidirDiferencia}
+                            onConfirmarLlegada={onConfirmarLlegada}
+                            onMoverDevolucion={onMoverDevolucion}
+                            onProbarDevolucion={onProbarDevolucion}
+                            onRecibirDevolucion={onRecibirDevolucion} />
+                    ))}
+                </div>
+            )}
+
+            {/* ── Las resueltas, plegadas ──
+                Ocupaban lo mismo que una abierta y con una caja de color adentro
+                de otra. Una diferencia cerrada no pide nada: se dice en un
+                renglón —qué se hizo y quién lo cerró— y el detalle se abre si
+                alguien lo busca. El chevron es la afordancia de plegar (§5.3);
+                el ojo prometería «hay más para ver», que no es lo que hace.
+
+                Se pintan SIEMPRE. Llevaban un `!allConfirmed` delante, o sea que
+                desaparecían justo cuando TODAS estaban resueltas — el único
+                estado donde el encabezado dice «Diferencias resueltas» en verde
+                y debajo no quedaba una sola fila. Reportado el 2026-09-02:
+                «¿cómo veo las diferencias resueltas? por trazabilidad, para ver
+                qué pasó». El detalle ya existía entero —Enviado → Físico con su
+                diferencia, la salida acordada, quién propuso, quién cerró y el
+                traslado con su clave—: lo único que faltaba era poder llegar.
+
+                El rótulo del grupo sólo aparece cuando hay otra cosa al lado.
+                Con todas resueltas, el encabezado de la sección ya lo dijo. */}
+            {resueltas.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                    {!allConfirmed && (
+                        <p className="text-micro font-black text-content-3 uppercase tracking-widest">
+                            Ya resueltas ({resueltas.length})
+                        </p>
+                    )}
+                    {resueltas.map(item => (
+                        <FilaCompacta key={item.id} item={item} tono="success" Icono={CheckCircle2}
+                            abierta={verResuelta === item.id}
+                            onToggle={() => setVerResuelta(v => (v === item.id ? null : item.id))}
+                            derecha={<EmpChip emp={item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por) : null}
+                                              size="xs" tono="success-text" />}
+                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null}
+                            isBranch={isBranch} esSupervision={esSupervision} readOnly />
+                    ))}
+                </div>
+            )}
+
+            {/* ── Cierre de bodega (7A.1) ──
+                Va DESPUÉS de las diferencias y no antes: es el acuse que cierra
+                el ciclo, y arriba dejaba «Esperando confirmación de sucursal…»
+                pisando el lugar de lo que hay que leer. */}
             {allConfirmed && !readOnly && (
                 <div className="border-t border-warning/30 pt-2.5 space-y-2">
                     {!row?.confirmado_correccion_at ? (
@@ -260,60 +331,6 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                             <EmpChip emp={corrConfEmp} size="xs" tono="success-text" />
                         </div>
                     )}
-                </div>
-            )}
-
-            {hiddenCount > 0 && (
-                <Button tone="warning" onClick={() => setShowAll(s => !s)}>
-                    {showAll ? 'Ver menos ↑' : `Ver las ${mias.length} que te tocan ↓`}
-                </Button>
-            )}
-
-            {/* ── Lo acordado o propuesto que espera al otro lado ──
-                No pide nada a quien mira, pero tampoco está cerrado: el renglón
-                dice de qué se está esperando, y se abre si alguien quiere el
-                detalle o quiere adelantarse. */}
-            {esperando.length > 0 && (
-                <div className="space-y-1.5 pt-1">
-                    <p className="text-micro font-black text-content-3 uppercase tracking-widest">
-                        Esperando ({esperando.length})
-                    </p>
-                    {esperando.map(item => (
-                        <FilaCompacta key={item.id} item={item} tono="warning" Icono={Clock}
-                            abierta={verResuelta === item.id}
-                            onToggle={() => setVerResuelta(v => (v === item.id ? null : item.id))}
-                            derecha={<EsperandoA item={item} catalogo={catalogo} isBranch={isBranch} />}
-                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null}
-                            isBranch={isBranch} esSupervision={esSupervision}
-                            onDecidirDiferencia={onDecidirDiferencia}
-                            onConfirmarLlegada={onConfirmarLlegada}
-                            onMoverDevolucion={onMoverDevolucion}
-                            onProbarDevolucion={onProbarDevolucion}
-                            onRecibirDevolucion={onRecibirDevolucion} />
-                    ))}
-                </div>
-            )}
-
-            {/* ── Las resueltas, plegadas ──
-                Ocupaban lo mismo que una abierta y con una caja de color adentro
-                de otra. Una diferencia cerrada no pide nada: se dice en un
-                renglón —qué se hizo y quién lo cerró— y el detalle se abre si
-                alguien lo busca. El chevron es la afordancia de plegar (§5.3);
-                el ojo prometería «hay más para ver», que no es lo que hace. */}
-            {!allConfirmed && resueltas.length > 0 && (
-                <div className="space-y-1.5 pt-1">
-                    <p className="text-micro font-black text-content-3 uppercase tracking-widest">
-                        Ya resueltas ({resueltas.length})
-                    </p>
-                    {resueltas.map(item => (
-                        <FilaCompacta key={item.id} item={item} tono="success" Icono={CheckCircle2}
-                            abierta={verResuelta === item.id}
-                            onToggle={() => setVerResuelta(v => (v === item.id ? null : item.id))}
-                            derecha={<EmpChip emp={item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por) : null}
-                                              size="xs" tono="success-text" />}
-                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null}
-                            isBranch={isBranch} esSupervision={esSupervision} readOnly />
-                    ))}
                 </div>
             )}
 

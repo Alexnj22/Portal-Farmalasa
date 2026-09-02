@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.955.3 — Las diferencias resueltas se pueden ver
+
+Pedido del usuario: *«¿cómo veo las diferencias resueltas? por trazabilidad,
+para ver qué pasó»*. No se podían: la sección decía **DIFERENCIAS RESUELTAS** en
+verde y debajo no quedaba una sola fila.
+
+La lista de resueltas llevaba un `!allConfirmed` delante, o sea que
+**desaparecía justo cuando todas estaban resueltas** — el único estado donde el
+encabezado promete que hay algo que mirar. Con alguna todavía abierta sí se
+veían, plegadas bajo «Ya resueltas (N)».
+
+Y el detalle ya estaba escrito entero: al abrir el renglón salen **Solicitado →
+Enviado → Físico** con su diferencia, la salida que se acordó, quién la propuso,
+quién la cerró, la nota, y el traslado con su clave (`TRA-…`). Lo único que
+faltaba era poder llegar.
+
+- **Las resueltas se pintan siempre**, plegadas. El rótulo del grupo sólo
+  aparece si hay algo más al lado: con todas cerradas, el encabezado de la
+  sección ya lo dijo.
+- **El cierre de bodega bajó al final.** Estaba arriba de todo y dejaba
+  «Esperando confirmación de sucursal…» pisando el lugar de lo que hay que leer.
+  Es el acuse que cierra el ciclo: va después del registro, no antes.
+
 ## v2.955.2 — El abono: «Todo» alineado, quitar una cuenta agregada por error, y el crédito abierto marcado
 
 Tres correcciones al diálogo de recibir un pago, reportadas mirando la pantalla.

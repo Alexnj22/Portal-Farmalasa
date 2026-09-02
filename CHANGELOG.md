@@ -21,6 +21,70 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.955.2 — El abono: «Todo» alineado, quitar una cuenta agregada por error, y el crédito abierto marcado
+
+Tres correcciones al diálogo de recibir un pago, reportadas mirando la pantalla.
+
+### «Todo» no estaba a la altura del campo
+
+El botón se alineaba con `items-center` contra el ALTO ENTERO del campo, que no
+es su caja: es el rótulo (20px) más su margen (6) más la caja (40) — 66 en
+total. Centrar contra 66 deja el botón **13px arriba** de la caja con la que
+trabaja, y ésa era la diferencia que se veía.
+
+Es el mismo defecto que `rotuloCampo` cierra entre dos campos vecinos, un nivel
+más afuera: allá lo que se desalineaba eran dos campos entre sí, acá es un botón
+contra el campo de al lado. La regla también es la misma — **lo que alinea es el
+borde de abajo, no el centro**, porque el centro depende de cuánto mida lo que
+está encima.
+
+Medido con Playwright sobre el CSS compilado, las tres piezas terminan con el
+mismo borde inferior en las tres densidades:
+
+| | caja | «Todo» | ✕ |
+|---|---|---|---|
+| escritorio cómoda | 40px, base 77 | 40px, base 77 | 40px, base 77 |
+| escritorio compacta | 40px, base 77 | 36px, base 77 | 36px, base 77 |
+| iPhone 13 | 44px, base 122 | 44px, base 122 | 44px, base 122 |
+
+### Agregar otra cuenta por error no tenía deshacer
+
+«Abonar también a otra cuenta» trae TODAS las del cliente de una vez, y no había
+forma de sacar una: había que cancelar el pago entero y volver a empezar — con
+el comprobante ya cargado y leído. Ahora cada crédito que no es el que se abrió
+lleva su ✕.
+
+Quitar uno **también le borra lo que tuviera puesto**. Dejarle el monto lo haría
+seguir sumando al total desde una fila que ya no se ve, que es la peor forma de
+estar mal: el número no cuadra y no hay dónde mirar por qué. Y si se quitan
+todas, el reparto se cierra solo y vuelve el botón de agregar — una sola cuenta
+bajo el título «A qué créditos se aplica» dice que hay varias.
+
+`repartirSolo` («Repartir del más viejo») ya no repuebla lo que se quitó a mano.
+
+### El crédito que se abrió se ve, no se lee
+
+Decía «este» en una insignia. Con dos créditos del mismo cliente y el mismo día
+—que es exactamente para lo que existe esta tarjeta— una palabra de cuatro
+letras entre dos números se lee después de todo lo demás. Ahora la tarjeta lleva
+el aro de marca (`data-tono="brand"`) y su fecha·documento en color de marca:
+se ve antes de leer. Cede ante `danger` — pasarse del saldo importa más que cuál
+se abrió. Queda un `sr-only` porque un aro no lo anuncia un lector de pantalla.
+
+### Y una regresión que este mismo cambio estaba metiendo
+
+En el teléfono la ✕ nueva dejaba **108px de 335** para el texto, y el número del
+documento se recortaba: justo lo único que distingue dos créditos del mismo día.
+Los controles bajan ahora a su propio renglón bajo `sm:`. Es `flex-col` y no
+`flex-wrap` porque envolver deja que decida el ancho disponible, y acá la
+decisión es del tamaño de pantalla.
+
+Se comprobó con la versión ANTERIOR como control —recorta antes, no recorta
+después—, después de que el instrumento mintiera dos veces: el harness no tenía
+`<meta viewport>`, así que WebKit lo medía a 980px y aplicaba las reglas de
+escritorio sobre un contenedor angosto; y un `for` de zsh se comía `$c:src/…`
+como modificador de parámetro, dejando los archivos vacíos y todo «distinto».
+
 ## v2.955.1 — el papel del corte cuenta el efectivo de los cobros de crédito
 
 ### Dos números para el mismo corte, y el equivocado quedaba en papel

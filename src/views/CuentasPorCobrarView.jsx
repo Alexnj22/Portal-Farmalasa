@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Building2, CalendarClock, HandCoins, Pencil, RefreshCw, Search, ShoppingBag, UserCircle2 } from 'lucide-react';
+import { AlertTriangle, Building2, CalendarClock, HandCoins, Pencil, RefreshCw, Search, ShoppingBag, UserCircle2, X } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -850,6 +850,11 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
      * reparte, se cobra dos veces. */
     const [repartir, setRepartir] = useState(false);
     const [reparto, setReparto] = useState(() => ({ [credito.id]: '' }));
+    /* Los créditos extra que se QUITARON a mano. Existe porque agregar otra
+     * cuenta trae todas las del cliente de una vez, y agregarla por error no
+     * tenía deshacer: había que cancelar el pago entero y volver a empezar.
+     * Nunca puede contener el crédito que se abrió — ése no se quita. */
+    const [quitados, setQuitados] = useState(() => new Set());
 
     const [posDisponibles, setPosDisponibles] = useState(VACIO);
 
@@ -939,20 +944,38 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         const nuevo = {};
         // Del actual PRIMERO y después los otros por antigüedad: quien abrió
         // este crédito vino a cobrar éste, no el más viejo del cliente.
-        for (const h of [credito, ...otros]) {
+        for (const h of [credito, ...otros.filter((o) => !quitados.has(String(o.id)))]) {
             if (queda <= 0.004) break;
             const toma = Math.min(queda, Number(h.saldo) || 0);
             if (toma > 0.004) { nuevo[h.id] = toma.toFixed(2); queda = Number((queda - toma).toFixed(2)); }
         }
         setReparto(nuevo);
-    }, [credito, otros]);
+    }, [credito, otros, quitados]);
 
     /* En un `useMemo` y no suelto: lo consume un `useCallback`, y una lista
      * nueva en cada render le cambiaría las dependencias siempre. */
     const listaDeCreditos = useMemo(
-        () => (repartir && hermanos.length ? hermanos : [credito]),
-        [repartir, hermanos, credito],
+        () => (repartir && hermanos.length
+            ? hermanos.filter((h) => String(h.id) === String(credito.id) || !quitados.has(String(h.id)))
+            : [credito]),
+        [repartir, hermanos, credito, quitados],
     );
+
+    /* Quitar una cuenta agregada por error: sale de la lista Y se le borra lo
+     * que tuviera puesto. Dejarle el monto la haría seguir sumando al total
+     * desde una fila que ya no se ve, que es la peor forma de estar mal.
+     * Si no queda ninguna extra, el reparto se cierra solo: una sola cuenta
+     * con el título «A qué créditos se aplica» dice que hay varias. */
+    const quitarCredito = useCallback((id) => {
+        setQuitados((q) => new Set(q).add(String(id)));
+        setReparto((r) => {
+            const { [id]: _fuera, ...resto } = r;
+            return resto;
+        });
+        const quedan = otros.filter(
+            (o) => String(o.id) !== String(id) && !quitados.has(String(o.id)));
+        if (!quedan.length) { setQuitados(new Set()); setRepartir(false); }
+    }, [otros, quitados]);
     // Repartir sólo tiene sentido con un DOCUMENTO: un comprobante es uno y
     // puede cubrir varios créditos. El efectivo se cobra de a uno.
     const puedeRepartir = forma !== 'Efectivo' && otros.length > 0;
@@ -1106,16 +1129,38 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                        lado no decía qué era el campo ni contra qué
                                        tope. Ahora dice «Abona … de $X» y trae el
                                        atajo de poner todo. */
+                                    /* El que se abrió va MARCADO con el aro de
+                                       marca y su texto en color, no con una
+                                       insignia que dice «este»: con varias
+                                       cuentas iguales del mismo día, una
+                                       palabra de 4 letras entre dos números se
+                                       lee después de todo lo demás. El aro se
+                                       ve antes de leer. Cede ante `danger`:
+                                       pasarse del saldo importa más que cuál
+                                       se abrió. */
                                     <div key={h.id} data-surface="card"
-                                        data-tono={seExcede ? 'danger' : undefined}
-                                        className="rounded-xl p-2.5 flex items-center gap-3 min-w-0">
+                                        data-tono={seExcede ? 'danger' : (esEste && listaDeCreditos.length > 1 ? 'brand' : undefined)}
+                                        className="rounded-xl p-2.5 flex flex-col items-stretch sm:flex-row sm:items-center gap-2 min-w-0">
+                                        {/* En el teléfono los controles bajan a su propio
+                                            renglón. Medido en iPhone 13: en una sola fila
+                                            el grupo mide 219px de los 335, y el número
+                                            del documento —lo ÚNICO que distingue dos
+                                            créditos del mismo día, que es para lo que
+                                            existe esta tarjeta— se recortaba. Es
+                                            `flex-col` y no `flex-wrap`: envolver deja
+                                            que el ancho decida, y acá la decisión es
+                                            del tamaño de pantalla. */}
                                         <span className="min-w-0 flex-1">
                                             <span className="flex items-center gap-1.5 min-w-0">
-                                                <span className="text-body-sm text-content truncate">
+                                                <span className={`text-body-sm truncate ${
+                                                    esEste && listaDeCreditos.length > 1
+                                                        ? 'text-brand-text font-bold' : 'text-content'}`}>
                                                     {fechaCorta(h.fecha)} · {h.documento}
                                                 </span>
+                                                {/* El aro es visual; el lector de
+                                                    pantalla necesita la palabra. */}
                                                 {esEste && listaDeCreditos.length > 1 && (
-                                                    <Badge variant="brand" size="sm">este</Badge>
+                                                    <span className="sr-only">— el crédito que abriste</span>
                                                 )}
                                             </span>
                                             <span className="block text-micro text-content-3">
@@ -1123,20 +1168,46 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                             </span>
                                         </span>
 
-                                        <span className="shrink-0 flex items-center gap-1.5">
+                                        {/* `items-end` y no `items-center`, que es el
+                                            defecto que se reportó: el campo mide su
+                                            rótulo (20px + 6 de margen) MÁS su caja (40),
+                                            así que centrar el grupo entero contra esos
+                                            66px deja el botón **13px arriba** de la caja
+                                            con la que trabaja. Es el mismo desalineado
+                                            que `rotuloCampo` cierra entre dos campos
+                                            vecinos, un nivel más afuera: acá lo que se
+                                            alinea contra el campo es un botón.
+                                            Alineados por abajo quedan a ras. Y `md`
+                                            porque es la talla que mide 40px en la
+                                            densidad cómoda y 44 en táctil, que es
+                                            exactamente lo que mide la caja del campo en
+                                            cada una; en las densidades compactas el
+                                            botón queda algo más bajo, y el ras de abajo
+                                            —no el alto— es lo que sostiene la
+                                            alineación. */}
+                                        <span className="shrink-0 self-end sm:self-auto flex items-end gap-1.5">
                                             <span className="w-24">
-                                                <PortalInput label="Abona" inputMode="decimal" placeholder="0.00"
+                                                <PortalInput label="Abona" labelDenso inputMode="decimal" placeholder="0.00"
                                                     value={reparto[h.id] ?? ''}
                                                     onChange={(e) => setReparto((r) => ({ ...r, [h.id]: e.target.value }))} />
                                             </span>
                                             {/* «Todo» es el caso normal —se paga el
                                                 crédito completo— y escribir $35.57
                                                 a mano es donde se equivoca uno. */}
-                                            <Button variant="ghost" size="sm"
+                                            <Button variant="ghost" size="md"
                                                 title={`Abonar los ${formatMoney(debe)}`}
                                                 onClick={() => setReparto((r) => ({ ...r, [h.id]: debe.toFixed(2) }))}>
                                                 Todo
                                             </Button>
+                                            {/* Quitar la cuenta que se agregó por
+                                                error. Sólo las OTRAS: el crédito que
+                                                se abrió es de lo que trata el pago y
+                                                sacarlo dejaría un modal sin asunto. */}
+                                            {!esEste && (
+                                                <Button variant="ghost" size="md" iconOnly icon={X}
+                                                    title={`Quitar ${h.documento} del pago`}
+                                                    onClick={() => quitarCredito(h.id)} />
+                                            )}
                                         </span>
                                     </div>
                                 );
@@ -1150,7 +1221,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                 efectivo se cobra de a uno. */}
                             {puedeRepartir && !repartir && (
                                 <Button variant="ghost" size="sm" icon={HandCoins}
-                                    onClick={() => setRepartir(true)}>
+                                    onClick={() => { setQuitados(new Set()); setRepartir(true); }}>
                                     Abonar también a otra cuenta ({otros.length})
                                 </Button>
                             )}

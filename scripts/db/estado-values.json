@@ -2,29 +2,244 @@
   "_comment": "Retrato de los valores que puede tomar cada columna `estado` de public.* en prod. Lo usa la sección `literal-de-estado-inexistente` de scripts/data-gate.mjs (--remote) para detectar el bug de comparar contra un valor que la tabla no tiene: `inv.estado != 'ANULADA'` sobre sales_invoices, donde ese valor NO EXISTE, es una condición siempre verdadera que no descarta ni una fila. Regenerar con: npm run gate:data -- --regen-estados (imprime el SQL a correr).",
   "_por_que_no_da_error": "Una comparación contra un literal inexistente no falla, no deja log y no borra una fila: simplemente no filtra. Se ve idéntica a un filtro que funciona. Vivió desde el día uno en las cuatro funciones de MIN·MAX (corregidas el 2026-09-01, v2.904.0) y en las cuatro de última venta (migración 20260901171129), y una migración del 21-ago llegó a REESCRIBIR calculate_stock_params copiando el literal viejo sin que nada lo notara.",
   "_origen_check_vs_filas": "`check` = la lista sale del CHECK de la tabla, que es la verdad declarada y no depende de que haya filas — por eso una tabla vacía como `recetas` no produce falsos positivos. `filas` = la tabla no tiene CHECK y los valores son los observados; ahí la lista puede quedar corta si aparece un valor nuevo, y por eso se regenera. sales_invoices es de éstas: sus valores los escribe el sync desde el sistema de origen, no un CHECK.",
-  "_generado": "2026-09-01",
+  "_generado": "2026-09-02",
   "tablas": {
-    "bitacora_dispensaciones": { "origen": "check", "valores": ["anulada", "completa", "pendiente", "sin_receta"] },
-    "bolsa_faltante": { "origen": "check", "valores": ["abierto", "aparecio", "no_aparecio"] },
-    "bolsas": { "origen": "check", "valores": ["ABIERTA", "ANULADA", "CONTADA", "ENTREGADA", "RECIBIDA"] },
-    "caja_vales_portal": { "origen": "check", "valores": ["ANOTADO", "CERRADO", "FALLIDO", "PENDIENTE"] },
-    "cola_impresion": { "origen": "check", "valores": ["ERROR", "IMPRESO", "IMPRIMIENDO", "PENDIENTE"] },
-    "compra_pagos": { "origen": "check", "valores": ["anulado", "aprobado", "pendiente"] },
-    "cortes_caja": { "origen": "check", "valores": ["CONFIRMADO", "DESCARTADO", "PENDIENTE"] },
-    "dte_datos_pedidos": { "origen": "check", "valores": ["APLICADO", "CANCELADO", "PENDIENTE"] },
-    "envio_linea": { "origen": "check", "valores": ["aceptada", "devuelta", "devuelta_recibida", "enviada", "error", "no_llego", "por_enviar"] },
-    "metas_gasto": { "origen": "check", "valores": ["activo", "anulado"] },
-    "metas_gasto_cuota": { "origen": "check", "valores": ["anulada", "pendiente"] },
-    "metas_sucursal": { "origen": "check", "valores": ["confirmada_supervisor", "devuelta", "oficial", "propuesta"] },
-    "pedido_devolucion": { "origen": "check", "valores": ["aceptada", "enviada", "enviando", "error", "rechazada", "recibida", "recibiendo", "solicitada"] },
-    "pedido_traslado_erp": { "origen": "check", "valores": ["despachado", "en_curso", "error", "recibido", "verificado"] },
-    "pedido_traslado_linea": { "origen": "check", "valores": ["enviada", "enviando", "error", "omitida", "planificada", "recibida", "recibiendo"] },
-    "periodos_fiscales": { "origen": "check", "valores": ["abierto", "cerrado"] },
-    "practicantes": { "origen": "check", "valores": ["ACTIVO", "CANCELADO", "FINALIZADO"] },
-    "purchase_receipts": { "origen": "filas", "valores": ["anulada"] },
-    "recetas": { "origen": "check", "valores": ["abierta", "anulada", "cerrada"] },
-    "sales_invoices": { "origen": "filas", "valores": ["DTE INVALIDADO EN MH", "FINALIZADA", "NULA"] },
-    "security_config": { "origen": "check", "valores": ["avisar", "exigir", "observar"] },
-    "surveys": { "origen": "filas", "valores": ["activa"] }
-  }
+    "abonos_de_cliente": {
+      "origen": "check",
+      "valores": [
+        "ABIERTO",
+        "ANULADO",
+        "RETIRADO",
+        "VENCIDO"
+      ]
+    },
+    "bitacora_dispensaciones": {
+      "origen": "check",
+      "valores": [
+        "anulada",
+        "completa",
+        "pendiente",
+        "sin_receta"
+      ]
+    },
+    "bolsa_faltante": {
+      "origen": "check",
+      "valores": [
+        "abierto",
+        "aparecio",
+        "no_aparecio"
+      ]
+    },
+    "bolsas": {
+      "origen": "check",
+      "valores": [
+        "ABIERTA",
+        "ANULADA",
+        "CONTADA",
+        "ENTREGADA",
+        "RECIBIDA"
+      ]
+    },
+    "caja_vales_portal": {
+      "origen": "check",
+      "valores": [
+        "ANOTADO",
+        "CERRADO",
+        "FALLIDO",
+        "PENDIENTE"
+      ]
+    },
+    "cola_impresion": {
+      "origen": "check",
+      "valores": [
+        "ERROR",
+        "IMPRESO",
+        "IMPRIMIENDO",
+        "PENDIENTE"
+      ]
+    },
+    "compra_pagos": {
+      "origen": "check",
+      "valores": [
+        "anulado",
+        "aprobado",
+        "pendiente"
+      ]
+    },
+    "cortes_caja": {
+      "origen": "check",
+      "valores": [
+        "CONFIRMADO",
+        "DESCARTADO",
+        "PENDIENTE"
+      ]
+    },
+    "creditos_de_clientes": {
+      "origen": "filas",
+      "valores": [
+        "FINALIZADA",
+        "PENDIENTE"
+      ]
+    },
+    "dte_datos_pedidos": {
+      "origen": "check",
+      "valores": [
+        "APLICADO",
+        "CANCELADO",
+        "PENDIENTE"
+      ]
+    },
+    "envio_linea": {
+      "origen": "check",
+      "valores": [
+        "aceptada",
+        "devuelta",
+        "devuelta_recibida",
+        "enviada",
+        "error",
+        "no_llego",
+        "por_enviar"
+      ]
+    },
+    "liquidacion": {
+      "origen": "check",
+      "valores": [
+        "aprobada",
+        "borrador"
+      ]
+    },
+    "metas_gasto": {
+      "origen": "check",
+      "valores": [
+        "activo",
+        "anulado"
+      ]
+    },
+    "metas_gasto_cuota": {
+      "origen": "check",
+      "valores": [
+        "anulada",
+        "pendiente"
+      ]
+    },
+    "metas_sucursal": {
+      "origen": "check",
+      "valores": [
+        "confirmada_supervisor",
+        "devuelta",
+        "oficial",
+        "propuesta"
+      ]
+    },
+    "pedido_devolucion": {
+      "origen": "check",
+      "valores": [
+        "aceptada",
+        "enviada",
+        "enviando",
+        "error",
+        "rechazada",
+        "recibida",
+        "recibiendo",
+        "solicitada"
+      ]
+    },
+    "pedido_traslado_erp": {
+      "origen": "check",
+      "valores": [
+        "despachado",
+        "en_curso",
+        "error",
+        "recibido",
+        "verificado"
+      ]
+    },
+    "pedido_traslado_linea": {
+      "origen": "check",
+      "valores": [
+        "enviada",
+        "enviando",
+        "error",
+        "omitida",
+        "planificada",
+        "recibida",
+        "recibiendo"
+      ]
+    },
+    "periodos_fiscales": {
+      "origen": "check",
+      "valores": [
+        "abierto",
+        "cerrado"
+      ]
+    },
+    "practicantes": {
+      "origen": "check",
+      "valores": [
+        "ACTIVO",
+        "CANCELADO",
+        "FINALIZADO"
+      ]
+    },
+    "promocion_excedente": {
+      "origen": "check",
+      "valores": [
+        "aprobado",
+        "negado",
+        "por_decidir"
+      ]
+    },
+    "promocion_renglon": {
+      "origen": "check",
+      "valores": [
+        "abierto",
+        "cerrado"
+      ]
+    },
+    "promociones": {
+      "origen": "check",
+      "valores": [
+        "activa",
+        "borrador",
+        "finalizada"
+      ]
+    },
+    "purchase_receipts": {
+      "origen": "filas",
+      "valores": [
+        "anulada"
+      ]
+    },
+    "recetas": {
+      "origen": "check",
+      "valores": [
+        "abierta",
+        "anulada",
+        "cerrada"
+      ]
+    },
+    "sales_invoices": {
+      "origen": "filas",
+      "valores": [
+        "DTE INVALIDADO EN MH",
+        "FINALIZADA",
+        "NULA"
+      ]
+    },
+    "security_config": {
+      "origen": "check",
+      "valores": [
+        "avisar",
+        "exigir",
+        "observar"
+      ]
+    },
+    "surveys": {
+      "origen": "filas",
+      "valores": [
+        "activa"
+      ]
+    }
+  },
+  "_2026_09_02_seis_tablas_que_faltaban": "Regenerado: al retrato del 01-sep le faltaban SEIS tablas con columna `estado` (abonos_de_cliente, creditos_de_clientes, liquidacion, promocion_excedente, promocion_renglon, promociones), y eso no dejaba al detector callado sino MINTIENDO: como resuelve el alias contra la unión de las tablas con `estado` que la función nombra, `promocion_avance` —que compara r.estado de promocion_renglon y pm.estado de promociones— quedaba juzgada contra sales_invoices, la única que el retrato conocía. Ocho hallazgos falsos sobre dos funciones que filtran BIEN, y un gate que acusa al que hizo bien el trabajo es un gate que se termina desactivando. Una tabla nueva con columna `estado` se agrega acá el mismo día."
 }

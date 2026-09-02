@@ -331,6 +331,7 @@ const COLUMNAS_RETIRADAS = {
  * función viva de Postgres comparando contra un valor inexistente es un
  * hallazgo nuevo siempre, nunca deuda heredada. */
 const hallazgosRemotos = [];
+const hallazgosColumna = [];
 
 const push = (cat, archivo, linea, detalle) => {
   if (exento(archivo, cat)) return;
@@ -798,6 +799,205 @@ if (process.argv.includes('--remote')) {
   }
 }
 
+/* ── columna-inexistente — el filtro que devuelve 400 y se lee como vacío ───
+ *
+ * Sección REMOTA (`--remote`): compara cada `.from('tabla')` del portal y de
+ * las edge functions contra las columnas VIVAS de esa relación en producción.
+ * Tiene que medirse contra la base y no contra un retrato: el retrato se
+ * escribe una vez y una vista que se reescribe sin una columna lo deja viejo
+ * sin avisar, que es justo el modo de falla que esta categoría persigue.
+ *
+ * El bug (2026-09-02): el buscador de «Reglas de despacho» no devolvía NADA
+ * desde el 22-ago. Ese día se centralizó el filtro de producto en
+ * `filtroProductoOCodigo`, que busca por `nombre_norm` O por `codigo_barras`.
+ * Los otros cinco buscadores consultan `products`, que tiene las dos columnas;
+ * éste consulta la vista `products_with_lab`, que sólo exponía `nombre_norm`.
+ * PostgREST responde 400 `column products_with_lab.codigo_barras does not
+ * exist`, el `catch` de la vista pinta la lista vacía, y la pantalla dice «Sin
+ * resultados para "acet"». No hay error visible, no falta una fila, y nadie lo
+ * reporta como defecto: se reporta como «no encuentra nada».
+ *
+ * Es el mismo modo de falla que `tipo-booleano` —una consulta que devuelve 0
+ * filas no falla— con la diferencia de que acá SÍ hay un error, y el gate
+ * existe porque el error muere en un `catch` del navegador.
+ *
+ * ── La cadena rota, y por qué el corte por `.from()` no sobra ──
+ *
+ * El patrón de este repo no es una cadena sola: es
+ * `let q = supabase.from('t')…;` y más abajo `q = q.or(…)`. Un detector que
+ * sólo siga la cadena contigua NO ve el `.or()` — se probó, y con la corrección
+ * del día ya aplicada daba **0 hallazgos** sobre el bug que acababa de medirse.
+ * Así que se sigue la variable dentro de su bloque; y el bloque termina en el
+ * próximo `\n}` O en la próxima `.from(`, lo que llegue primero, porque el
+ * nombre `q` se reusa: sin ese segundo corte, `employees_safe` cargaba con el
+ * `.eq('employee_id')` de la consulta siguiente y salía acusada sin culpa.
+ */
+if (process.argv.includes('--remote')) {
+  const METODOS_DE_COLUMNA = new Set(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'like', 'ilike',
+    'is', 'in', 'contains', 'containedBy', 'overlaps', 'order', 'not',
+    'rangeGt', 'rangeLt', 'rangeGte', 'rangeLte', 'likeAllOf', 'ilikeAnyOf']);
+
+  /* Espacios y comentarios entre eslabones de la cadena. */
+  const saltar = (s, i) => {
+    while (i < s.length) {
+      if (' \t\r\n'.includes(s[i])) i++;
+      else if (s.startsWith('//', i)) { const j = s.indexOf('\n', i); i = j < 0 ? s.length : j + 1; }
+      else if (s.startsWith('/*', i)) { const j = s.indexOf('*/', i); i = j < 0 ? s.length : j + 2; }
+      else break;
+    }
+    return i;
+  };
+  /* i apunta al '('; devuelve dónde sigue y qué había adentro. Salta cadenas
+   * para no cerrar con un paréntesis que vive dentro de un literal. */
+  const cerrar = (s, i) => {
+    let hondo = 0;
+    for (let j = i; j < s.length; j++) {
+      const c = s[j];
+      if (c === "'" || c === '"' || c === '`') {
+        for (j++; j < s.length; j++) {
+          if (s[j] === '\\') { j++; continue; }
+          if (s[j] === c) break;
+        }
+      } else if ('([{'.includes(c)) hondo++;
+      else if (')]}'.includes(c)) {
+        hondo--;
+        if (hondo === 0) return { fin: j + 1, args: s.slice(i + 1, j) };
+      }
+    }
+    return { fin: s.length, args: s.slice(i + 1) };
+  };
+  const ESLABON = /\.([A-Za-z_$][\w$]*)\s*\(/y;
+  const cadena = (s, pos) => {
+    const out = [];
+    let i = pos;
+    for (;;) {
+      ESLABON.lastIndex = i;
+      const m = ESLABON.exec(s);
+      if (!m) break;
+      const { fin, args } = cerrar(s, i + m[0].length - 1);
+      out.push({ met: m[1], args });
+      i = saltar(s, fin);
+    }
+    return out;
+  };
+  const literal = (args) => (args.match(/^\s*['"`]([^'"`]*)['"`]/) ?? [])[1];
+
+  const columnasDeSelect = (args) => {
+    const lit = literal(args);
+    if (lit === undefined) return [];
+    const partes = []; let hondo = 0, cur = '';
+    for (const ch of lit) {
+      if (ch === '(') { hondo++; cur += ch; }
+      else if (ch === ')') { hondo--; cur += ch; }
+      else if (ch === ',' && hondo === 0) { partes.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    partes.push(cur);
+    return partes.map((p) => {
+      p = p.trim();
+      if (!p || p.includes('(') || p === '*') return null;        // recurso embebido o todo
+      if (p.includes(':')) p = p.split(':').slice(1).join(':').trim();
+      p = p.split('!')[0].split('->')[0].split('.')[0].trim();
+      return /^[a-z_]\w*$/.test(p) ? p : null;
+    }).filter(Boolean);
+  };
+
+  /* `.or('a.ilike.x,b.eq.y')` y el helper del repo, que expande a dos o tres
+   * columnas. Se nombra acá porque el `.or()` lo recibe ya construido. */
+  const columnasDeOr = (args) => {
+    const lit = literal(args);
+    if (lit !== undefined) {
+      return lit.split(',').map((cond) => {
+        const c = cond.trim().replace(/^\(+/, '').split('.')[0];
+        return /^[a-z_]\w*$/.test(c) ? c : null;
+      }).filter(Boolean);
+    }
+    if (args.includes('filtroProductoOCodigo')) {
+      const cols = ['nombre_norm', 'codigo_barras'];
+      if (/conPrincipioActivo\s*:\s*true/.test(args)) cols.push('pactivo_norm');
+      return cols;
+    }
+    return [];
+  };
+
+  const columnasDe = ({ met, args }) => {
+    if (met === 'select') return columnasDeSelect(args);
+    if (met === 'or') return columnasDeOr(args);
+    if (METODOS_DE_COLUMNA.has(met)) {
+      const c = literal(args);
+      return c && /^[a-z_]\w*$/.test(c) ? [c] : [];
+    }
+    return [];
+  };
+
+  let canal = null;
+  try {
+    canal = abrirCanal('data-gate-columnas');
+    const catalogo = new Map();
+    for (const { relname, cols } of canal.consultar(`
+      SELECT c.relname, string_agg(a.attname, ',' ORDER BY a.attnum) AS cols
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
+        JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+       WHERE c.relkind IN ('r','v','m','p','f')
+       GROUP BY c.relname`)) {
+      catalogo.set(relname, new Set(cols.split(',')));
+    }
+
+    for (const archivo of archivos) {
+      const src = soloCodigo(leerFuente(archivo));
+      for (const m of src.matchAll(/\.from\(/g)) {
+        const ini = m.index;
+        const enlaces = cadena(src, ini);
+        if (enlaces[0]?.met !== 'from') continue;
+        const tabla = literal(enlaces[0].args);
+        if (!tabla || !catalogo.has(tabla)) continue;   // variable, o no es una relación nuestra
+
+        const usos = enlaces.slice(1);
+        const antes = src.slice(Math.max(0, ini - 200), ini);
+        const mv = antes.match(/(?:let|const|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?[\w$]+\s*$/);
+        if (mv) {
+          const corteLlave = src.indexOf('\n}', ini);
+          const corteFrom  = src.indexOf('.from(', ini + 6);
+          const fin = Math.min(corteLlave < 0 ? src.length : corteLlave,
+                               corteFrom  < 0 ? src.length : corteFrom);
+          const bloque = src.slice(ini, fin);
+          for (const mu of bloque.matchAll(new RegExp(`\\b${mv[1]}\\s*\\.`, 'g'))) {
+            usos.push(...cadena(bloque, mu.index + mu[0].length - 1));
+          }
+        }
+
+        for (const uso of usos) {
+          /* `{ referencedTable: 'x' }` filtra por columnas de X, no de la
+           * tabla del `.from()`. Sin esto, el `.or()` de
+           * auto-copy-weekly-roster salía acusado por una columna de
+           * `employees` que su roster no tiene ni tiene por qué tener. */
+          const ref = uso.args.match(/(?:referencedTable|foreignTable)\s*:\s*['"](\w+)['"]/);
+          const destino = ref ? ref[1] : tabla;
+          const validas = catalogo.get(destino);
+          if (!validas) continue;
+          for (const col of columnasDe(uso)) {
+            if (validas.has(col)) continue;
+            hallazgosColumna.push({
+              archivo,
+              linea: lineaDe(src, ini),
+              detalle: `.${uso.met}() nombra '${col}', que ${destino} no tiene. `
+                + `PostgREST responde 400 y la pantalla lo pinta como lista vacía.`,
+            });
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error(`\n✗ data-gate --remote: no se pudo medir el catálogo de columnas — ${e.message}`);
+    if (e.detalleCli) console.error(e.detalleCli);
+    /* Un gate que no pudo medir NO puede dar verde. */
+    process.exit(1);
+  } finally {
+    canal?.cerrar();
+  }
+}
+
 // ── reporte + ratchet ──────────────────────────────────────────────────────
 const conteos = Object.fromEntries(Object.entries(hallazgos).map(([k, v]) => [k, v.length]));
 
@@ -834,6 +1034,15 @@ if (process.argv.includes('--remote')) {
     console.log(`     ${h.archivo}:${h.linea}\n       ${h.detalle}`);
   }
   if (n > 0) falla = true;
+
+  /* Misma regla: una columna que la base no tiene es un hallazgo nuevo
+   * siempre. Bloqueante en cero desde el día uno. */
+  const nc = hallazgosColumna.length;
+  console.log(`\n${nc === 0 ? '✓' : '✗ SUBIÓ'}  columna-inexistente: ${nc} (tope 0)`);
+  for (const h of hallazgosColumna) {
+    console.log(`     ${h.archivo}:${h.linea}\n       ${h.detalle}`);
+  }
+  if (nc > 0) falla = true;
 }
 
 if (falla) {

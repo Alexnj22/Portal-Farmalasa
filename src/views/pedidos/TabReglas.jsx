@@ -580,6 +580,11 @@ export default function TabReglas({ searchTerm = '' }) {
     const [products,        setProducts]        = useState([]);
     const [totalCount,      setTotalCount]      = useState(0);
     const [loadingProducts, setLoadingProducts] = useState(true);
+    // Una consulta que falla no puede verse como una lista vacía. El buscador
+    // de esta pantalla estuvo once días devolviendo 400 —la vista no exponía
+    // `codigo_barras`— y el `catch` de abajo pintaba «Sin resultados para…»:
+    // no hay error, no falta una fila, y nadie lo reporta como defecto.
+    const [errorProductos, setErrorProductos] = useState(null);
     const [page,            setPage]            = useState(1);
     // `?filas=N` era el instrumento de bisección de la pantalla negra del
     // iPhone, y su propio comentario decía que se quitaba al cerrar el caso.
@@ -689,6 +694,7 @@ export default function TabReglas({ searchTerm = '' }) {
     // en dos sitios y confiar en que coincidan.
     const loadProducts = useCallback(async (o) => {
         setLoadingProducts(true);
+        setErrorProductos(null);
         try {
             const dbSk = (o.sortKey === 'estado' || o.sortKey === 'despacho') ? 'laboratorio_nombre' : o.sortKey;
 
@@ -710,6 +716,7 @@ export default function TabReglas({ searchTerm = '' }) {
             setTotalCount(count ?? 0);
         } catch (err) {
             console.error('[loadProducts]', err?.message ?? err);
+            setErrorProductos(mensajeAmigable(err));
             setProducts([]);
             setTotalCount(0);
         } finally {
@@ -959,11 +966,13 @@ export default function TabReglas({ searchTerm = '' }) {
                 movil={{ usarAccionDeFila: true }}
                 loading={loadingProducts || loadingRules} skeletonRows={8}
                 empty={{
-                    icon: Package,
+                    icon: errorProductos ? AlertTriangle : Package,
                     // Los filtros se combinan, así que el mensaje ya no puede
                     // atribuirle el vacío a uno solo: con laboratorio + «sin regla»
                     // + «nuevos» activos, «todos tienen regla» sería falso.
-                    message: searchTerm.length >= 2 ? `Sin resultados para "${searchTerm}".`
+                    // Y el fallo va primero: un vacío por error no es un vacío.
+                    message: errorProductos ? `No se pudo cargar la lista. ${errorProductos}`
+                        : searchTerm.length >= 2 ? `Sin resultados para "${searchTerm}".`
                         : (filterLab !== null || filterRule || soloNuevos) ? 'Ningún producto cumple con los filtros aplicados.'
                         : 'Sin productos en catálogo.',
                 }}

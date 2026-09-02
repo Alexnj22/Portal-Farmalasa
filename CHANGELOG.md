@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.938.8 — el buscador de Reglas de despacho no devolvía nada
+
+Escribir en el buscador de `/pedidos?tab=reglas` daba **«Sin resultados»
+siempre**, con cualquier texto. **Desde el 22-ago**, o sea once días.
+
+Ese día se centralizó el filtro de producto en `filtroProductoOCodigo`, que
+busca por nombre **o por código de barras** — para poder escanear la caja en vez
+de escribir. Los otros cinco buscadores de producto consultan `products`, que
+tiene las dos columnas. Éste consulta la vista `products_with_lab`, que exponía
+el nombre normalizado y **no** el código de barras.
+
+La base contesta `400 · column products_with_lab.codigo_barras does not exist`,
+el `catch` de la pantalla pinta la lista vacía, y lo que se lee es
+«Sin resultados para "acet"». Sin error, sin fila de menos, sin nada que
+reportar salvo «no encuentra». Por eso vivió once días.
+
+**La vista ahora expone el código de barras**, así que escanear funciona también
+acá — que era la regla de aquel día: donde hay productos, se puede escanear.
+
+**Y una consulta que falla ya no se ve como una lista vacía**: la pantalla dice
+«No se pudo cargar la lista» con el motivo.
+
+**Lo vigila `columna-inexistente`, sección remota de `npm run gate:data`**, que
+compara cada `.from('tabla')` del portal y de las funciones contra las columnas
+vivas de esa relación en producción. Se barrieron los 924 pares (tabla, columna)
+de las 143 relaciones que el código consulta: **éste era el único**.
+
+El detector se escribió dos veces. La primera seguía sólo la cadena contigua y
+daba **0 hallazgos sobre el bug que acababa de medirse**, porque el patrón del
+repo no es una cadena sola —`let q = supabase.from('t')…` y más abajo
+`q = q.or(…)`—. Y al seguir la variable hay que cortar el bloque también en la
+próxima `.from(`: el nombre `q` se reusa, y sin ese corte `employees_safe`
+cargaba con el filtro de la consulta siguiente y salía acusada sin culpa.
+
+**De paso, `literal-de-estado-inexistente` estaba acusando a dos funciones que
+filtran bien.** A `scripts/db/estado-values.json` le faltaban seis tablas con
+columna `estado`; como ese detector resuelve el alias contra la unión de las
+tablas que la función nombra, `promocion_avance` quedaba juzgada contra
+`sales_invoices` — la única que el retrato conocía— y salían ocho hallazgos
+falsos. Retrato regenerado.
+
 ## v2.938.7 — La lista de créditos nunca cargó: se le pasaba la consulta armada
 
 `TypeError: e is not a function`, y Cuentas por cobrar vacía. **Desde la

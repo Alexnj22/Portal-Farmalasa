@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.958.8 — Cada movimiento del día dice su hora, quién lo anotó y su boleta
+
+Reportado por el usuario sobre la remesa de **$50 de MoneyGram** de Salud 4, en
+la lista de movimientos de Mi caja: *«1. no tiene hora. 2. no tiene foto ni
+nombre de quien lo hizo. 3. no se puede ver la foto»*.
+
+**Los tres datos estaban guardados.** `caja_movimientos_portal` tenía la hora
+(12:59), el autor (Idalia Serrano) y la URL de la boleta (018501). Lo que
+fallaba era el camino hasta la pantalla:
+
+- La consulta **no traía** `registrado_por` ni `foto_url` — ninguno de los dos
+  estaba en el `select`.
+- La hora **sí viajaba**, y se usaba **sólo para ordenar la lista**. Nunca se
+  pintó.
+
+Un movimiento de dinero sin autor no se puede reclamar y sin la boleta no se
+puede comprobar; era exactamente la mitad de un registro de dinero.
+
+Ahora cada renglón lleva la hora al frente, la cara y el nombre de quien lo
+anotó, y un botón **Ver boleta** que la muestra ahí mismo —con un clic más para
+ampliarla—. La URL se firma **al apretar** y no al cargar la lista: un día con
+veinte movimientos pediría veinte enlaces firmados que nadie va a mirar. Es el
+mismo camino que ya usaba el detalle de una bolsa para esa misma foto.
+
+Vale para las **dos** listas —lo del cajón y lo de las bolsas—, que se leen
+juntas: si una trae autor y comprobante, la otra también.
+
+La hora se pinta en el huso de **la sala** y no en el del navegador: leída en
+local, alguien mirando desde otro huso vería la remesa de las 12:59 a otra hora
+y no tendría cómo saberlo.
+
 ## v2.958.7 — Lo que la caja todavía cuenta es un renglón, no un aviso
 
 Tercera pregunta del usuario sobre el mismo bloque, el mismo día: *«no es la

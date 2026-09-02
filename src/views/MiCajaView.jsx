@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    AlertTriangle, ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
+    AlertTriangle, ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Paperclip, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
@@ -13,6 +13,8 @@ import Notice from '../components/common/Notice';
 import FileField from '../components/common/FileField';
 import PortalInput from '../components/common/PortalInput';
 import IdentidadDeQuienRetira from '../components/bolsas/IdentidadDeQuienRetira';
+import AvatarConEstado from '../components/common/AvatarConEstado';
+import PhotoLightbox from '../components/common/PhotoLightbox';
 import StatCard from '../components/common/StatCard';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -47,6 +49,7 @@ import { conceptoDelPapel } from '../utils/conceptoDelPapel';
 import { conSigno, formatMoney } from '../utils/formatNumber';
 import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
+import { getSignedFileUrl } from '../utils/storageFiles';
 
 /**
  * Mi caja — el turno de esta sala, ahora.
@@ -211,6 +214,12 @@ export default function MiCajaView({ comoPestana = false }) {
     const [firmantes, setFirmantes] = useState(() => new Map());
     /** Quién guardó cada bolsa (id → nombre), para la etiqueta que se reimprime. */
     const [embolsaron, setEmbolsaron] = useState(() => new Map());
+    /** Quién anotó cada movimiento del día (id → persona, con su foto).
+     *
+     * Va acá y no adentro de la lista porque son las DOS listas —lo del cajón y
+     * lo de las bolsas— resueltas de una vez: son la misma pantalla, y pedir
+     * las personas dos veces traería la misma gente dos veces. */
+    const [anotaron, setAnotaron] = useState(() => new Map());
 
     // Cómo se llama cada motivo de salida. Sale de la TABLA y no de una lista
     // escrita acá: un motivo nuevo aparecería en la base y no en la pantalla,
@@ -381,6 +390,15 @@ export default function MiCajaView({ comoPestana = false }) {
         ]);
         setMovimientos(movs);
         setDeBolsas(salidas);
+        /* Quién anotó cada movimiento. Un solo pedido para las dos listas: la
+         * misma persona suele aparecer en las dos, y `fetchPersonas` ya
+         * deduplica. Sin esto la lista del día decía qué pasó y no quién lo
+         * hizo, que es la mitad de un registro de dinero. */
+        const anotadores = await fetchPersonas([
+            ...(movs || []).map((m) => m.registrado_por),
+            ...(salidas || []).map((o) => o.registrado_por),
+        ]);
+        setAnotaron(new Map((anotadores || []).map((q) => [q.id, q])));
         setVentas((porPago || []).filter((p) => String(p.branch_id) === String(sala)));
         setEstado(vivo);
         setPendientes((v.filas || []).filter((p) => String(p.branch_id) === String(sala)));
@@ -803,7 +821,8 @@ export default function MiCajaView({ comoPestana = false }) {
 
                         <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas}
                             dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
-                            puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo} />
+                            puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo}
+                            anotaron={anotaron} />
 
                         {!puedeOperar && (
                             <Notice variant="info" icon={Lock}>
@@ -1043,6 +1062,16 @@ const fechaLegible = (f) => (f
     })
     : '');
 
+/* La hora de un movimiento, en el huso de la SALA y no en el del navegador.
+ * `registrado_at` es un instante con zona; leído en local, alguien mirando desde
+ * otro huso vería la remesa de las 12:59 a otra hora y no tendría cómo saberlo. */
+const horaLegible = (cuando) => (cuando
+    ? new Date(cuando).toLocaleTimeString('es-SV', {
+        hour: '2-digit', minute: '2-digit', hour12: false,
+        timeZone: 'America/El_Salvador',
+    })
+    : '');
+
 /** Sale del dato, no de una lista escrita a mano: `efectivo` → `Efectivo`. */
 const conMayuscula = (t) => {
     const s = String(t || '').trim();
@@ -1160,9 +1189,32 @@ function PanelDelDia({ estado, ventas, veLosMontos = true }) {
  * no toca la caja, porque su propio cierre ya lo descontó. Es la regla que
  * decide si el corte de esta tarde cuadra o falta.
  */
-function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, puedeVerBolsas, onCorregir }) {
+function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, puedeVerBolsas,
+    onCorregir, anotaron }) {
     const etiquetaDe = (codigo) =>
         tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo);
+
+    /* ── El comprobante se ve ACÁ, y se firma al apretar ────────────────────
+     *
+     * La URL guardada es un identificador, no algo que se pueda pintar:
+     * `payment-proofs` es un bucket privado. Se firma al apretar y no al cargar
+     * la lista — un día puede tener veinte movimientos, y pedir veinte enlaces
+     * firmados por si acaso es pedir veinte que nadie va a mirar. Es el mismo
+     * camino que `DetalleDeBolsa`. */
+    const [foto, setFoto] = useState(null);      // { clave, url } | { clave, error }
+    const [firmando, setFirmando] = useState(null);
+    const [ampliada, setAmpliada] = useState(null);
+    const verComprobante = useCallback(async (clave, url) => {
+        if (foto?.clave === clave) { setFoto(null); return; }
+        setFirmando(clave);
+        try {
+            const firmada = await getSignedFileUrl(url);
+            setFoto(firmada ? { clave, url: firmada } : { clave, error: true });
+        } catch {
+            setFoto({ clave, error: true });
+        }
+        setFirmando(null);
+    }, [foto]);
 
     const lineas = useMemo(() => {
         const delCajon = (movimientos || []).map((m) => ({
@@ -1177,6 +1229,8 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                 m.numero_boleta ? `boleta ${m.numero_boleta}` : null,
                 m.erp_movimiento_id ? null : 'sin llegar a la caja',
             ].filter(Boolean),
+            quien: m.registrado_por,
+            foto: m.foto_url || null,
             movimiento: m,
         }));
         const deLasBolsas = (deBolsas || []).map((o) => {
@@ -1192,6 +1246,8 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                 origen: 'De una bolsa',
                 avisa: o.tocaLaCaja,
                 detalle: [o.folio, o.numero_boleta ? `boleta ${o.numero_boleta}` : null].filter(Boolean),
+                quien: o.registrado_por,
+                foto: o.foto_url || null,
                 /* El DESGLOSE, no una frase.
                  *
                  * Una salida grande se reparte entre las bolsas que alcancen, y
@@ -1239,8 +1295,13 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                             <p className={`text-body-sm font-semibold ${l.anulado ? 'text-content-3 line-through' : 'text-content'}`}>
                                 {l.titulo}
                             </p>
+                            {/* La HORA primero. Es lo que se busca al reclamar
+                                un movimiento —«¿cuál de las tres remesas?»— y
+                                el dato viajaba desde siempre: se usaba sólo
+                                para ordenar la lista y no se pintaba. */}
                             <p className="text-caption text-content-3">
-                                {l.origen}{l.detalle.length ? ` · ${l.detalle.join(' · ')}` : ''}
+                                <span className="tabular-nums">{horaLegible(l.cuando)}</span>
+                                {` · ${l.origen}`}{l.detalle.length ? ` · ${l.detalle.join(' · ')}` : ''}
                             </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
@@ -1254,6 +1315,53 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                             )}
                         </div>
                     </div>
+
+                    {/* ── Quién lo anotó, y su comprobante ──────────────────
+                        Un movimiento de dinero sin autor no se puede reclamar,
+                        y sin la boleta no se puede comprobar. Los dos datos
+                        estaban guardados y ninguno se pintaba: la remesa de $50
+                        de Salud 4 se veía como una línea suelta sin hora, sin
+                        nombre y sin foto. Es el mismo bloque de firma que
+                        llevan las tarjetas de corte y de bolsa. */}
+                    {(l.quien || l.foto) && (
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                            {l.quien && anotaron?.get(l.quien) ? (
+                                <span className="flex items-center gap-1.5 min-w-0">
+                                    <AvatarConEstado emp={anotaron.get(l.quien)} px={20}
+                                        radio="rounded-full" marco="" />
+                                    <span className="text-caption text-content-3 truncate">
+                                        Lo anotó {anotaron.get(l.quien).name}
+                                    </span>
+                                </span>
+                            ) : <span />}
+                            {l.foto && (
+                                <Button variant="ghost" size="sm" icon={Paperclip}
+                                    loading={firmando === l.clave}
+                                    onClick={() => verComprobante(l.clave, l.foto)}>
+                                    {foto?.clave === l.clave ? 'Ocultar' : 'Ver boleta'}
+                                </Button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* La foto, adentro de la lista y no en otra pestaña: quien
+                        la mira está comparándola contra el monto de al lado.
+                        Ampliarla es un clic más, con el canónico de siempre. */}
+                    {foto?.clave === l.clave && (
+                        foto.error ? (
+                            <p className="text-caption text-danger-text">
+                                No se pudo abrir la boleta. Vuelve a intentarlo.
+                            </p>
+                        ) : (
+                            <button type="button" onClick={() => setAmpliada(foto.url)}
+                                aria-label={`Ampliar la boleta de ${l.titulo}`}
+                                className="block w-full rounded-lg overflow-hidden
+                                           min-h-[var(--tap-min)] active:scale-[0.99]">
+                                <img src={foto.url} alt={`Boleta de ${l.titulo}`}
+                                    className="w-full max-h-64 object-contain bg-surface-input/40" />
+                            </button>
+                        )
+                    )}
 
                     {/* De qué bolsa salió cada parte. Una fila por bolsa, con lo
                         que aporta y si toca el corte. Es lo que la frase no podía
@@ -1289,6 +1397,11 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                     )}
                 </div>
             ))}
+
+            {/* A pantalla completa. `PhotoLightbox` es el canónico — el mismo
+                que usa el detalle de una bolsa para la misma foto. */}
+            <PhotoLightbox src={ampliada} alt="Boleta del movimiento"
+                onClose={() => setAmpliada(null)} />
         </div>
     );
 }

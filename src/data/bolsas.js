@@ -1122,8 +1122,14 @@ export async function fetchMovimientosDelPortal(sala, dia = null) {
     // cerrar el reloj ya cambió de día y la caja no: filtrando por el reloj, lo
     // anotado en esa hora desaparece de la pantalla justo cuando todavía cuenta.
     const cual = dia || new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+    /* `registrado_por` y `foto_url` van en el select desde el 2026-09-02.
+     * Estaban en la tabla y no viajaban, así que la lista del día pintaba cada
+     * movimiento sin hora, sin autor y sin comprobante — reportado sobre la
+     * remesa de $50 de Salud 4: «no tiene hora, no tiene foto ni nombre de
+     * quien lo hizo, no se puede ver la foto». Los tres datos existían. */
     const { data, error } = await supabase.from('caja_movimientos_portal')
-        .select('id, tipo, monto, concepto, numero_boleta, erp_movimiento_id, anulado_at, registrado_at')
+        .select('id, tipo, monto, concepto, numero_boleta, erp_movimiento_id, anulado_at,'
+              + ' registrado_at, registrado_por, foto_url')
         .eq('branch_id', sala).eq('fecha', cual)
         .order('registrado_at', { ascending: false });
     if (error) { console.error('caja: movimientos del portal:', error.message); return []; }
@@ -1150,7 +1156,11 @@ export async function fetchSalidasDeSalaDelDia({ sala, dia }) {
     const finDelDia = new Date(`${dia}T00:00:00-06:00`);
     finDelDia.setDate(finDelDia.getDate() + 1);
     const { data, error } = await supabase.from('bolsas_operaciones')
+        // `registrado_por` y `foto_url`: los mismos que le faltaban a la lista
+        // del cajón. Una salida de bolsa y una del cajón se leen en la MISMA
+        // lista, así que si una trae autor y comprobante, la otra también.
         .select(`id, folio, tipo, monto, entidad, numero_boleta, registrado_at, anulada_at,
+                 registrado_por, foto_url,
                  bolsas_movimientos ( monto, caja_vale_id, bolsas ( fecha, folio ) )`)
         .eq('branch_id', sala)
         .gte('registrado_at', `${dia}T00:00:00-06:00`)

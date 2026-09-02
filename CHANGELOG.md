@@ -21,6 +21,74 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.931.0 — El login es sólido y entra de una vez
+
+A pedido del usuario: *«has que el diseño de login sea solid siempre. mejora la
+fluides, y que sea eficiente y rapido. que no se sienta lento en computadoras
+viejas.»*
+
+El login es la única vista que vive **fuera** de `ThemeProvider` —cuando se
+pinta todavía no hay perfil del que leer un tema—, así que era la única que
+seguía siendo de vidrio pasara lo que pasara. Ahora estampa `solid` /
+`solid-dark` según el sistema, que además es el tema **por defecto** del portal:
+la primera pantalla dejó de ser la excepción.
+
+**Estampar el atributo no es cosmético: es la mitad del arreglo.**
+`[data-theme="solid"]` de `index.css` ya endurece los radios, deja las sombras
+sin brillo interior, acorta las duraciones a curva lineal y **apaga los orbes
+ambientales**. Media pantalla se volvió barata sin tocarle una clase.
+
+**Lo que ningún token podía apagar era el `backdrop-filter`**, porque acá estaba
+escrito con valores *arbitrarios* de Tailwind (`backdrop-blur-[52px]
+backdrop-saturate-[200%]`) y ésos no consultan `--backdrop-*`. Eran **18 cajas**,
+la mayor de 480px, y una de ellas entraba con una transición de **escala** —o
+sea que el desenfoque del fondo se recalculaba en cada cuadro de la entrada—.
+Hoy son **0**.
+
+Y había cuatro animaciones **infinitas** encima: el latido del logo —que animaba
+`box-shadow`, o sea repintado puro— y los tres orbes de 60-70vw con
+`blur(100px)` que `GlobalBackground` ponía debajo del login. Esos tres **nadie
+los veía**: `LoginView` pinta su propio fondo opaco a pantalla completa por
+encima. Se pagaban sin mostrarse.
+
+**Medido con el procesador frenado 6×, que es lo que se parece a una computadora
+de sala.** Diez segundos con el login puesto y nadie tocando nada:
+
+| | antes | después |
+|---|---:|---:|
+| trabajo del hilo principal | **217.9 ms** | **9.7 ms** |
+| recálculo de estilo | 30.8 ms | 0 ms |
+| veces que recalculó el estilo | **147** | **0** |
+| animaciones infinitas | 4 | 0 |
+| cajas con `backdrop-filter` | 18 | 0 |
+
+Y la entrada ya no la hace React. Era un estado `mounted` con temporizador y
+retrasos escalonados de hasta 300ms sobre `--dur-lento`: la tarjeta terminaba de
+aparecer cerca de los **860ms**, casi un segundo mirando una pantalla que ya
+estaba lista. Ahora son `@keyframes` que arrancan en el primer pintado, sólo con
+`opacity` y `translate3d` —las dos propiedades que el compositor resuelve sin
+repintar— y todo termina antes de los **340ms**. La tarjeta queda puesta **410ms
+antes** (1,650 → 1,240 ms con el procesador frenado). Con `prefers-reduced-motion`
+la pantalla aparece puesta, sin entrada.
+
+Tres cosas más que costaban sin dar nada:
+
+- **La cuenta regresiva del lector repintaba el login 120 veces.** El reloj se
+  mira cuatro veces por segundo para no perder el cambio de segundo, pero ahora
+  sólo avisa cuando el número cambia —`useState` con el mismo valor no vuelve a
+  renderizar—: 120 renders del formulario entero pasaron a 30.
+- **La línea del escáner animaba `top`**, que es geometría: cada cuadro obligaba
+  a recalcular la posición. Ahora es `transform`, que resuelve el compositor.
+  Y el `filter: blur()` animado de su aparición se fue por lo mismo.
+- **Los accesos rápidos pintaban su halo desde JavaScript**, con
+  `onMouseEnter`/`onMouseLeave` escribiendo `style.boxShadow` a mano. En Solid
+  ese halo no va —el realce es tono, no luz— y el CSS lo hace solo.
+
+Verificado con los 17 casos de `tests/e2e/login-lector.spec.js` —el detector de
+ráfagas, el pegado y el primer carné de un equipo sin marca siguen intactos—,
+`gate:design` y `gate:movil` en verde, y capturas en escritorio, monitor bajo y
+teléfono, claro y oscuro.
+
 ## v2.930.0 — El vale identifica a quien recibe con el carné
 
 Migración `20260902024056`. Corrige un descuido de la versión anterior, señalado

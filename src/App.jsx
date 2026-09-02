@@ -667,10 +667,16 @@ function MainApp() {
                     <Navigate to="/login" replace />
                 )
             } />
+            {/* Sin `GlobalBackground`, y no por gusto: `LoginView` pinta su
+                propio fondo OPACO a pantalla completa (`--lgn-bg`), así que
+                los tres orbes de 60-70vw con `blur(100px)` quedaban debajo,
+                invisibles y animados para siempre. Nadie los veía y todos los
+                pagaban — tres capas que el compositor mantiene en memoria de
+                video y vuelve a mover cada cuadro, en la primera pantalla del
+                portal y en las computadoras más viejas de la empresa. */}
             <Route path="/login" element={
                 !isAuthenticated ? (
                     <div className="relative min-h-[100dvh] w-full bg-surface-page">
-                        <GlobalBackground />
                         <div className="relative z-base w-full min-h-[100dvh] flex flex-col">
                             <LoginView setView={setView} setActiveEmployee={setActiveEmployee} />
                         </div>

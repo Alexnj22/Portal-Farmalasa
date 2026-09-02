@@ -104,83 +104,126 @@ const esVelocidadDeLector = (tiempos) => {
 const inputCls = [
     'w-full',
     'bg-[var(--lgn-campo)] hover:bg-[var(--lgn-campo-hover)]',
-    'backdrop-blur-md',
-    'border border-border-card hover:border-border-card',
-    'text-content placeholder-content-3/80',
+    'border border-border-input',
+    'text-content placeholder-content-3',
     'outline-none',
-    'focus:bg-[var(--lgn-campo-foco)] focus:border-border-card',
-    'focus:shadow-[var(--shadow-shine-lg)]',
-    'transition-all duration-[var(--dur-base)]',
+    // El foco se anuncia con el color del borde y el aro nitido del tema, no
+    // con un brillo interior: en Solid `--shadow-shine-lg` vale `none`, asi
+    // que el campo enfocado no se distinguia del que no lo estaba.
+    'focus:bg-[var(--lgn-campo-foco)] focus:border-brand',
+    'focus:shadow-[var(--shadow-glow-brand)]',
+    // Las tres propiedades que cambian, y no `transition-all`: con `all` el
+    // navegador vigila TODA propiedad animable del campo en cada cuadro de la
+    // transicion, incluidas las que nadie toca.
+    'transition-[background-color,border-color,box-shadow] duration-[var(--dur-fast)]',
     'font-bold',
 ].join(' ');
 
-/* El login vive FUERA de `ThemeProvider` (es la única vista sin shell), así
-   que no puede consumir sus tokens de superficie: los define acá y los
-   duplica bajo `[data-theme="dark"]`, que es el atributo que esta misma
-   vista estampa según el modo claro/oscuro del sistema. Un solo juego de
-   variables en el contenedor raíz — así el material se decide en UN lugar y
-   no en veinte `bg-white/[0.xx]` sueltos que sólo servían para el fondo
-   claro. */
+/* El login vive FUERA de `ThemeProvider` (es la unica vista sin shell), asi
+   que no puede leer el tema del perfil: cuando se pinta, todavia no hay
+   perfil. Lo estampa el mismo, y ahora SIEMPRE es Solid Modern -claro u
+   oscuro segun el sistema-, que ademas es el tema por defecto del portal.
+
+   Estampar `solid` no es cosmetico: es la mitad del arreglo de velocidad.
+   `[data-theme="solid"]` de index.css ya redefine la rampa de radios, deja las
+   sombras sin brillo interior, acorta las duraciones con curva lineal y APAGA
+   los orbes ambientales -tres circulos de 60-70vw con `blur(100px)` animados
+   para siempre que `GlobalBackground` ponia debajo de esta pantalla-. O sea
+   que buena parte de este archivo se volvio barata sin tocarle una clase.
+
+   Lo unico que ningun token podia apagar era el `backdrop-filter`, porque aca
+   estaba escrito con valores ARBITRARIOS de Tailwind
+   (`backdrop-blur-[52px] backdrop-saturate-[200%]`) y esos no consultan
+   `--backdrop-*`. Y era el costo grande: un `backdrop-filter` obliga al
+   compositor a copiar, desenfocar y volver a componer todo lo que hay debajo
+   de la caja cada vez que algo cambia encima. La tarjeta media 480px, entraba
+   con una transicion de ESCALA -o sea que ese desenfoque se recalculaba
+   durante toda la entrada- y habia dieciocho cajas mas con blur adentro.
+
+   Por eso las superficies de aca abajo son OPACAS. Un color plano se pinta una
+   vez y no se vuelve a mirar.
+   (Sin acentos graves aca adentro: esto vive en un template literal.) */
 const keyframeStyles = `
     .lgn-fondo{
-        --lgn-bg:radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%);
-        --lgn-vidrio:rgba(255,255,255,0.20);
-        --lgn-vidrio-borde:rgba(255,255,255,0.84);
-        --lgn-brillo:rgba(255,255,255,0.26);
-        --lgn-campo:rgba(255,255,255,0.22);
-        --lgn-campo-hover:rgba(255,255,255,0.32);
-        --lgn-campo-foco:rgba(255,255,255,0.58);
-        /* Opaco: la sombra interior que tapa el amarillo del autocompletado
-           no puede ser translúcida, así que es el color que da el campo ya
-           mezclado sobre la tarjeta. */
-        --lgn-campo-solido:#eeecfb;
-        --lgn-linea:rgba(255,255,255,0.60);
-        --lgn-boton:rgba(255,255,255,0.18);
-        --lgn-boton-hover:rgba(255,255,255,0.38);
-        --lgn-logo-filo:rgba(255,255,255,1);
+        --lgn-bg:#f4f6fb;
+        --lgn-tarjeta:#ffffff;
+        --lgn-borde:rgba(148,163,184,0.28);
+        --lgn-campo:#f4f6fb;
+        --lgn-campo-hover:#eef1f7;
+        --lgn-campo-foco:#ffffff;
+        --lgn-linea:rgba(148,163,184,0.30);
+        --lgn-boton:#f8fafc;
+        --lgn-boton-hover:#f1f5f9;
     }
-    /* Los DOS temas oscuros del portal, no sólo "dark" (2026-08-16).
-       El bootstrap de index.html estampa el tema guardado ANTES del primer
-       pintado, y para quien nunca eligió tema con el sistema en oscuro ese
-       valor es "solid-dark". Con la regla escrita sólo para "dark", el login
-       caía en la paleta CLARA de arriba hasta que el efecto de abajo cambiaba
-       el atributo — o sea, la tarjeta se veía clara y después se oscurecía.
-       Acá el material del login queda bien pintado con CUALQUIERA de los dos
-       atributos oscuros, sin depender de que haya corrido JavaScript.
-       (Sin acentos graves acá adentro: esto vive en un template literal.) */
+    /* Los DOS temas oscuros, no solo "solid-dark": el bootstrap de index.html
+       estampa el tema GUARDADO antes del primer pintado, asi que si esa
+       persona tenia elegido "dark", ese es el atributo que hay puesto hasta
+       que corre el efecto de esta vista. Con la regla escrita para uno solo,
+       el login alcanzaba a pintarse claro y despues se oscurecia. */
     [data-theme="dark"] .lgn-fondo,
     [data-theme="solid-dark"] .lgn-fondo{
-        --lgn-bg:radial-gradient(ellipse at 38% 28%, #241a55 0%, #1b1445 22%, #150f36 50%, #0c0822 100%);
-        --lgn-vidrio:rgba(255,255,255,0.06);
-        --lgn-vidrio-borde:rgba(255,255,255,0.14);
-        --lgn-brillo:rgba(255,255,255,0.07);
-        --lgn-campo:rgba(255,255,255,0.07);
-        --lgn-campo-hover:rgba(255,255,255,0.11);
-        --lgn-campo-foco:rgba(255,255,255,0.17);
-        --lgn-campo-solido:#2a2258;
-        --lgn-linea:rgba(255,255,255,0.20);
-        --lgn-boton:rgba(255,255,255,0.05);
-        --lgn-boton-hover:rgba(255,255,255,0.12);
-        --lgn-logo-filo:rgba(255,255,255,0.16);
+        --lgn-bg:#0f172a;
+        --lgn-tarjeta:#1e293b;
+        --lgn-borde:rgba(148,163,184,0.22);
+        --lgn-campo:#0f172a;
+        --lgn-campo-hover:#182338;
+        --lgn-campo-foco:#182338;
+        --lgn-linea:rgba(148,163,184,0.22);
+        --lgn-boton:#1a2536;
+        --lgn-boton-hover:#22304a;
     }
-    @keyframes lgn-logo{0%,100%{transform:scale(1);box-shadow:0 12px 40px rgba(110,70,220,0.16),inset 0 2px 0 var(--lgn-logo-filo);}50%{transform:scale(1.04);box-shadow:0 20px 56px rgba(110,70,220,0.28),inset 0 2px 0 var(--lgn-logo-filo);}}
-    /* El relleno amarillo del autocompletado es del navegador y no entiende
-       de temas: en oscuro dejaba dos barras amarillo chillón con el texto
-       negro y el placeholder ilegible encima. Chrome no deja cambiar ese
-       fondo —lo pinta aparte—, pero sí se tapa con una sombra interior del
-       tamaño del campo, que es la receta de siempre. */
+    /* El relleno amarillo del autocompletado es del navegador y no entiende de
+       temas: en oscuro dejaba dos barras amarillo chillon con el texto negro y
+       el placeholder ilegible encima. Chrome no deja cambiar ese fondo -lo
+       pinta aparte-, pero si se tapa con una sombra interior del tamano del
+       campo, que es la receta de siempre. Ahora el color a poner es el del
+       campo tal cual: al ser opaco, ya no hay que calcular como queda mezclado
+       sobre la tarjeta -que era lo que obligaba a tener un token aparte-. */
     .lgn-fondo input:-webkit-autofill,
     .lgn-fondo input:-webkit-autofill:hover,
     .lgn-fondo input:-webkit-autofill:focus,
     .lgn-fondo input:-webkit-autofill:active{
         -webkit-text-fill-color:var(--text-primary);
         caret-color:var(--text-primary);
-        -webkit-box-shadow:0 0 0 1000px var(--lgn-campo-solido) inset;
-        box-shadow:0 0 0 1000px var(--lgn-campo-solido) inset;
+        -webkit-box-shadow:0 0 0 1000px var(--lgn-campo-foco) inset;
+        box-shadow:0 0 0 1000px var(--lgn-campo-foco) inset;
         transition:background-color 9999s ease-in-out 0s;
     }
-    @keyframes scan-ln{0%{top:10%}50%{top:88%}100%{top:10%}}
-    @keyframes scannerReveal{from{opacity:0;transform:scaleY(0.72) translateY(-12px);filter:blur(6px);transform-origin:top center;}to{opacity:1;transform:scaleY(1) translateY(0);filter:blur(0);transform-origin:top center;}}
+    /* ── LA ENTRADA ────────────────────────────────────────────────────────
+       Antes la hacia React: un estado "mounted" que se encendia a los 60ms con
+       un temporizador y disparaba transiciones escalonadas de hasta 300ms de
+       retraso, con "--dur-lento" encima. La tarjeta terminaba de aparecer cerca
+       de los 860ms -casi un segundo mirando una pantalla que ya estaba lista-.
+       Y cada etapa animaba "scale", asi que el navegador volvia a rasterizar
+       la tarjeta entera en cada cuadro.
+
+       Ahora es CSS y arranca en el primer pintado, sin el render extra de React
+       ni el temporizador. Solo "opacity" y "translate3d", que son las dos unicas
+       propiedades que el compositor resuelve sin repintar nada. Todo termina
+       antes de los 340ms. */
+    @keyframes lgn-entra{from{opacity:0;transform:translate3d(0,10px,0);}to{opacity:1;transform:none;}}
+    @keyframes lgn-baja{from{opacity:0;transform:translate3d(0,-8px,0);}to{opacity:1;transform:none;}}
+    @keyframes lgn-lado{from{opacity:0;transform:translate3d(14px,0,0);}to{opacity:1;transform:none;}}
+    .lgn-entra{animation:lgn-entra 220ms var(--ease-out) both;}
+    .lgn-baja{animation:lgn-baja 200ms var(--ease-out) both;}
+    .lgn-lado{animation:lgn-lado 220ms var(--ease-out) 120ms both;}
+    .lgn-d1{animation-delay:60ms;}
+    .lgn-d2{animation-delay:120ms;}
+    /* Quien pidio menos movimiento ve la pantalla PUESTA, no una sin entrada:
+       el "both" sin animacion dejaria congelado el "from" y la tarjeta
+       invisible para siempre. */
+    @media (prefers-reduced-motion: reduce){
+        .lgn-entra,.lgn-baja,.lgn-lado{animation:none;}
+    }
+    /* La linea del escaner movia "top", y "top" es geometria: cada cuadro
+       obligaba a recalcular la posicion dentro de la caja. Con "transform" el
+       recorrido lo resuelve el compositor. El alto viaja como variable porque
+       el recorrido es un porcentaje de la caja y "translateY(%)" se mide
+       contra el alto del ELEMENTO, que son 2px. */
+    @keyframes scan-ln{0%{transform:translateY(calc(var(--lgn-alto) * 0.10));}50%{transform:translateY(calc(var(--lgn-alto) * 0.86));}100%{transform:translateY(calc(var(--lgn-alto) * 0.10));}}
+    /* Sin "filter:blur()" animado: un filtro se recalcula por cuadro y repinta
+       toda la caja. El gesto -aparece desde arriba- se lee igual. */
+    @keyframes scannerReveal{from{opacity:0;transform:translate3d(0,-10px,0);}to{opacity:1;transform:none;}}
 `;
 
 /* ─── Static sub-components (fuera del render: no se remontan) ──────────── */
@@ -202,30 +245,38 @@ const keyframeStyles = `
    radial del contenedor sigue pintando el fondo entero, así que no queda hueco
    — se va el movimiento, no el color. */
 
-const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h-[54px]' }) => (
+/* Se llamaba `GlassButton` y ya no es de vidrio: color plano de marca, sin
+   degradado translucido sobre un `backdrop-blur-xl` -que en un boton no
+   desenfoca nada util, solo obliga al compositor a copiar lo de abajo-. El
+   `<span>` vacio de adentro tampoco hacia nada: quedo de un barrido que se
+   llevo el brillo y dejo el nodo. */
+const LoginButton = ({ type = 'submit', onClick, disabled, children, height = 'h-[54px]' }) => (
     <button type={type} onClick={onClick} disabled={disabled}
-        className={`relative overflow-hidden group w-full ${height}
-            bg-gradient-to-b from-brand/72 to-brand-hover/78
-            backdrop-blur-xl
-            border border-border-card hover:border-border-card
-            text-white rounded-3xl font-black text-body uppercase tracking-widest
-            shadow-[var(--shadow-glass-2)]
-            hover:shadow-[var(--shadow-glass-4)]
-            flex items-center justify-center gap-2 transition-all duration-[var(--dur-base)]
-            active:scale-[0.97] disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`}>
-        <span className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-        </span>
+        className={`w-full ${height}
+            bg-brand hover:bg-brand-hover
+            text-white rounded-card font-black text-body uppercase tracking-widest
+            shadow-[var(--btn-brand-shadow)] hover:shadow-[var(--btn-brand-shadow-hover)]
+            flex items-center justify-center gap-2
+            transition-[background-color,box-shadow,transform] duration-[var(--dur-fast)]
+            active:scale-[0.98] disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`}>
         {children}
     </button>
 );
 
-const CameraScanner = ({ videoRef, compact }) => (
-    <div style={{ animation: 'scannerReveal 450ms var(--ease-spring) both' }} className="flex flex-col gap-2.5">
-        <div className="relative w-full overflow-hidden border border-white/[0.14] shadow-[var(--shadow-glass-5)]"
-            style={{ height: compact ? 156 : 224, borderRadius: '1.5rem' }}>
-            <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-sm" />
+const CameraScanner = ({ videoRef, compact }) => {
+    const alto = compact ? 156 : 224;
+    return (
+    <div style={{ animation: 'scannerReveal 220ms var(--ease-out) both' }} className="flex flex-col gap-2.5">
+        {/* `--lgn-alto` alimenta el recorrido de la linea, que ahora es un
+            `transform` y no un `top` animado (ver el keyframe). */}
+        <div className="relative w-full overflow-hidden border border-[var(--lgn-borde)] shadow-[var(--shadow-glass-4)] rounded-card"
+            style={{ height: alto, '--lgn-alto': alto + 'px' }}>
+            {/* Fondo mientras la camara arranca. Llevaba `backdrop-blur-sm` y
+                no habia nada detras que desenfocar salvo la tarjeta: era un
+                pase de compositor por cuadro a cambio de nada. */}
+            <div className="absolute inset-0 bg-slate-950/65" />
             <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" autoPlay playsInline muted />
-            <div style={{ position:'absolute', left:'8%', right:'8%', height:'2px', background:'linear-gradient(90deg, transparent, rgba(0,82,204,0.95), transparent)', animation:'scan-ln 2s ease-in-out infinite', zIndex:10, boxShadow:'0 0 18px rgba(0,82,204,0.75), 0 0 50px rgba(0,82,204,0.25)' }} />
+            <div style={{ position:'absolute', top:0, left:'8%', right:'8%', height:'2px', background:'linear-gradient(90deg, transparent, rgba(0,82,204,0.95), transparent)', animation:'scan-ln 2s ease-in-out infinite', willChange:'transform', zIndex:10, boxShadow:'0 0 18px rgba(0,82,204,0.75)' }} />
             {[
                 { top:14, left:14, bTop:'2.5px solid rgba(0,82,204,0.90)', bLeft:'2.5px solid rgba(0,82,204,0.90)', br:'5px 0 0 0' },
                 { top:14, right:14, bTop:'2.5px solid rgba(0,82,204,0.90)', bRight:'2.5px solid rgba(0,82,204,0.90)', br:'0 5px 0 0' },
@@ -236,10 +287,13 @@ const CameraScanner = ({ videoRef, compact }) => (
             ))}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border border-border-card rounded-xl"
                 style={{ width:'62%', height:'52%' }} />
-            <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', background:'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.35) 100%)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'inset 0 0 32px rgba(0,0,0,0.30)', pointerEvents:'none' }} />
+            {/* Quedaba UNA sola capa de vineta encima del video: la segunda
+                -un aro con sombra interior de 32px- se apilaba sobre la misma
+                caja y no se distinguia de esta. */}
+            <div className="absolute inset-0 rounded-card pointer-events-none"
+                style={{ background:'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.35) 100%)' }} />
         </div>
-        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.22] backdrop-blur-xl border border-border-card rounded-2xl shadow-[var(--shadow-glass-1)]">
+        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[var(--lgn-campo)] border border-[var(--lgn-borde)] rounded-card">
             <div className="relative shrink-0">
                 <div className="w-2 h-2 rounded-full bg-brand" />
                 <div className="absolute inset-0 rounded-full bg-brand/40 animate-ping" />
@@ -247,7 +301,8 @@ const CameraScanner = ({ videoRef, compact }) => (
             <p className="text-caption font-black uppercase tracking-widest text-content-2">Apunta la cámara al código de barras</p>
         </div>
     </div>
-);
+    );
+};
 
 /* ─── LoginView ─────────────────────────────────────────────────────────── */
 
@@ -259,7 +314,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [scanFeedback,      setScanFeedback]      = useState(null);
     const [formEngaged,       setFormEngaged]       = useState(false);
     const [cameraActive,      setCameraActive]      = useState(false);
-    const [mounted,           setMounted]           = useState(false);
     const [leaving,           setLeaving]           = useState(false);
     const [newPassword,       setNewPassword]       = useState('');
     const [confirmPassword,   setConfirmPassword]   = useState('');
@@ -297,18 +351,18 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const scanHoldTimeoutRef  = useRef(null);
     const scanHoldIntervalRef = useRef(null);
 
-    useEffect(() => {
-        const t = setTimeout(() => setMounted(true), 60);
-        return () => clearTimeout(t);
-    }, []);
-
-    // ── Tema del login: claro u oscuro según el SISTEMA (2026-08-16) ─────
-    // Antes esta vista era siempre clara, pasara lo que pasara. Ahora sigue
+    // ── Tema del login: SOLID siempre, claro u oscuro según el SISTEMA ───
+    // Antes esta vista era siempre clara, pasara lo que pasara. Después siguió
     // el modo del sistema operativo, que es lo único que existe ANTES de que
     // haya sesión: el tema del portal es una preferencia del empleado y vive
     // en su perfil, o sea del otro lado del login.
-    // Son sólo dos estados a propósito (claro/oscuro), no los cuatro temas:
-    // acá no hay quién haya elegido «sólido» ni «líquido».
+    // Lo que se decidió después es CUÁL de los dos materiales: siempre Solid
+    // Modern, que además es el tema por defecto del portal. Sigue habiendo dos
+    // estados y no cuatro —acá no hay quién haya elegido «líquido»—, sólo que
+    // ahora son `solid` y `solid-dark` en vez de claro y `dark`.
+    // Y estamparlo hace la mitad del trabajo de velocidad solo: ese atributo
+    // es el que apaga los orbes del fondo, acorta las duraciones, endurece los
+    // radios y deja las sombras sin brillo interior (ver `keyframeStyles`).
     // El valor real de <html> se guarda al montar y se devuelve al salir —
     // como el kiosco, que fuerza `dark` mientras vive.
     //
@@ -342,11 +396,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     // de que éste lo pise.
     useLayoutEffect(() => {
         const root = document.documentElement;
-        if (modoOscuro) root.setAttribute('data-theme', 'dark');
-        else root.removeAttribute('data-theme');
+        root.setAttribute('data-theme', modoOscuro ? 'solid-dark' : 'solid');
         const meta = document.querySelector('meta[name="theme-color"]');
-        // Mismos valores que THEME_COLOR_MAP de ThemeContext (liquid / dark).
-        if (meta) meta.content = modoOscuro ? '#130d35' : '#e2defc';
+        // Mismos valores que THEME_COLOR_MAP de ThemeContext (solid /
+        // solid-dark), que son además los de `--lgn-bg`.
+        if (meta) meta.content = modoOscuro ? '#0f172a' : '#f4f6fb';
     }, [modoOscuro]);
 
     // Solo mostrar el botón de cámara si el dispositivo tiene una.
@@ -403,8 +457,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             return () => clearTimeout(t);
         }
         const start = Date.now();
+        // El reloj se mira cuatro veces por segundo para no perder el cambio de
+        // segundo, pero SÓLO se avisa cuando el número cambia: `useState` con
+        // el mismo valor no vuelve a renderizar. Sin esta guarda, los 30s de
+        // espera costaban 120 renders del login entero —con sus tres
+        // `matchMedia` y su formulario— para pintar un dígito 30 veces.
         scanHoldIntervalRef.current = setInterval(() => {
-            setScanHoldLeft(Math.max(0, Math.ceil((SCAN_FOCUS_WAIT_MS - (Date.now() - start)) / 1000)));
+            const quedan = Math.max(0, Math.ceil((SCAN_FOCUS_WAIT_MS - (Date.now() - start)) / 1000));
+            setScanHoldLeft(prev => (prev === quedan ? prev : quedan));
         }, 250);
         scanHoldTimeoutRef.current = setTimeout(() => {
             endScanHold();
@@ -807,7 +867,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     const goToKiosko = () => {
         setLeaving(true);
-        setTimeout(() => setView('timeclock'), 320);
+        // 200ms y no 320: es lo que dura la salida de abajo. El sobrante era
+        // tiempo mirando una pantalla ya vacía.
+        setTimeout(() => setView('timeclock'), 200);
     };
 
     /* ── Widgets (funciones que devuelven JSX inline: sin remounts) ──────── */
@@ -822,20 +884,19 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         return (
             <div className="flex flex-col gap-2.5">
                 <div className={[
-                    'flex items-center gap-3 px-4 rounded-3xl border backdrop-blur-md transition-all duration-[var(--dur-slow)]',
+                    'flex items-center gap-3 px-4 rounded-card border transition-[background-color,border-color] duration-[var(--dur-base)]',
                     compact ? 'py-2.5' : 'py-3',
                     st === 'error'   ? 'bg-danger/10 border-danger/30' :
                     st === 'success' ? 'bg-success/10 border-success/30' :
-                    paused           ? 'bg-white/[0.14] border-border-card' :
-                                       'bg-brand/[0.05] border-brand/25 shadow-[var(--shadow-shine)]',
+                    paused           ? 'bg-[var(--lgn-campo)] border-[var(--lgn-borde)]' :
+                                       'bg-brand/[0.06] border-brand/25',
                 ].join(' ')}>
                     <div className={[
-                        'relative shrink-0 flex items-center justify-center rounded-2xl border transition-all duration-[var(--dur-slow)]',
+                        'relative shrink-0 flex items-center justify-center rounded-xl border transition-[background-color,border-color] duration-[var(--dur-base)]',
                         compact ? 'w-10 h-10' : 'w-11 h-11',
                         st === 'error'   ? 'bg-danger/10 border-danger/30' :
                         st === 'success' ? 'bg-success/10 border-success/30' :
-                        paused           ? 'bg-surface-card border-border-card' :
-                                           'bg-surface-card border-border-card shadow-[var(--shadow-shine)]',
+                                           'bg-[var(--lgn-tarjeta)] border-[var(--lgn-borde)]',
                     ].join(' ')}>
                         {st === 'reading' || isLoading
                             ? <Loader2 size={compact?17:19} className="text-brand-text animate-spin" strokeWidth={2} />
@@ -903,12 +964,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 // con el pseudo-elemento canónico, y sólo en
                                 // punteros gruesos. Necesita `relative`.
                                 'relative blanco-tactil',
-                                'shrink-0 flex items-center justify-center rounded-2xl border backdrop-blur-md',
-                                'transition-all duration-[var(--dur-slow)] active:scale-[0.93]',
+                                'shrink-0 flex items-center justify-center rounded-xl border',
+                                'transition-[background-color,border-color,color,transform] duration-[var(--dur-fast)] active:scale-[0.94]',
                                 compact ? 'w-10 h-10' : 'w-11 h-11',
                                 cameraActive
-                                    ? 'bg-danger/[0.15] border-danger/45 text-danger shadow-[var(--shadow-shine)] hover:bg-danger/[0.25]'
-                                    : 'bg-white/[0.28] border-border-card text-content-3 shadow-[var(--shadow-shine)] hover:bg-white/[0.55] hover:border-border-card hover:text-brand-text',
+                                    ? 'bg-danger/[0.15] border-danger/45 text-danger hover:bg-danger/[0.25]'
+                                    : 'bg-[var(--lgn-boton)] border-[var(--lgn-borde)] text-content-3 hover:bg-[var(--lgn-boton-hover)] hover:text-brand-text',
                             ].join(' ')}
                         >
                             {cameraActive
@@ -999,20 +1060,20 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             // personal), la contraseña no.
                             onCopy={id === 'password' ? (e => e.preventDefault()) : undefined}
                             onCut={id === 'password' ? (e => e.preventDefault()) : undefined}
-                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-body-xl':'pl-12 pr-5 py-4 text-body-xl'} rounded-3xl`} />
+                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-body-xl':'pl-12 pr-5 py-4 text-body-xl'} rounded-card`} />
                     </div>
                 ))}
                 {error && (
-                    <div className="animate-in fade-in slide-in-from-top-1 duration-[var(--dur-base)] px-4 py-3 bg-danger/10 backdrop-blur-md border border-danger/30 rounded-2xl flex items-center gap-3">
+                    <div className="animate-in fade-in slide-in-from-top-1 duration-[var(--dur-base)] px-4 py-3 bg-danger/10 border border-danger/30 rounded-card flex items-center gap-3">
                         <AlertCircle size={15} className="text-danger shrink-0" strokeWidth={2.5} />
                         <p className="text-danger text-caption font-black uppercase tracking-widest">{error}</p>
                     </div>
                 )}
-                <GlassButton height={compact ? 'h-[46px]' : 'h-[54px]'} disabled={isLoading}>
+                <LoginButton height={compact ? 'h-[46px]' : 'h-[54px]'} disabled={isLoading}>
                     {isLoading
                         ? <Loader2 size={compact?16:20} className="animate-spin" />
                         : 'Ingresar al Portal'}
-                </GlassButton>
+                </LoginButton>
             </form>
         </div>
     );
@@ -1029,11 +1090,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             <div className="lgn-fondo relative flex items-start justify-center w-full h-[100dvh] overflow-y-auto overflow-x-hidden px-5 py-8"
                 style={{ background:'var(--lgn-bg)' }}>
                 <style>{keyframeStyles}</style>
-                <div className={`relative z-base w-full max-w-[420px] my-auto transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0 scale-100':'opacity-0 translate-y-6 scale-[0.96]'}`}>
-                    <div className="rounded-header p-8 [@media(max-height:820px)]:p-6 bg-[var(--lgn-vidrio)] backdrop-blur-[48px] backdrop-saturate-[200%] border border-[var(--lgn-vidrio-borde)] shadow-[var(--shadow-glass-5)] flex flex-col gap-6 [@media(max-height:820px)]:gap-4">
-                        <div className="absolute inset-0 bg-gradient-to-b from-[var(--lgn-brillo)] to-transparent pointer-events-none rounded-header" />
+                <div className="lgn-entra relative z-base w-full max-w-[420px] my-auto">
+                    <div className="rounded-header p-8 [@media(max-height:820px)]:p-6 bg-[var(--lgn-tarjeta)] border border-[var(--lgn-borde)] shadow-[var(--shadow-glass-5)] flex flex-col gap-6 [@media(max-height:820px)]:gap-4">
                         <div className="relative flex flex-col items-center gap-3">
-                            <div className="w-14 h-14 rounded-2xl bg-warning/10 border border-warning/40 flex items-center justify-center shadow-[var(--shadow-shine)]">
+                            <div className="w-14 h-14 rounded-card bg-warning/10 border border-warning/40 flex items-center justify-center">
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
                             </div>
                             <h3 className="text-title-lg font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>
@@ -1043,13 +1103,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
                                 <div key={i} className="relative group flex items-center">
                                     <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-base" />
-                                    <input aria-label={f.ph} type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-body-xl rounded-2xl`} />
+                                    <input aria-label={f.ph} type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-body-xl rounded-card`} />
                                 </div>
                             ))}
-                            {changePassError && <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2"><AlertCircle size={18} className="text-danger shrink-0" strokeWidth={2.5}/><span className="text-body-sm font-bold leading-relaxed">{changePassError}</span></div>}
-                            <GlassButton type="submit" disabled={changePassLoading||!newPassword||!confirmPassword} height="h-[52px]">
+                            {changePassError && <div className="flex items-center gap-3 text-danger-text bg-danger/10 px-4 py-3 rounded-card border border-danger/30 animate-in fade-in slide-in-from-top-2"><AlertCircle size={18} className="text-danger shrink-0" strokeWidth={2.5}/><span className="text-body-sm font-bold leading-relaxed">{changePassError}</span></div>}
+                            <LoginButton type="submit" disabled={changePassLoading||!newPassword||!confirmPassword} height="h-[52px]">
                                 {changePassLoading?<Loader2 size={18} className="animate-spin"/>:'Guardar contraseña'}
-                            </GlassButton>
+                            </LoginButton>
                         </form>
                     </div>
                 </div>
@@ -1063,12 +1123,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     const renderMobileLayout = () => (
         <div className="flex flex-col items-center justify-between flex-1 w-full px-5 py-8 [@media(max-height:700px)]:py-4 gap-4 [@media(max-height:700px)]:gap-2">
-            <div className={`flex flex-col items-center gap-2 transition-all duration-[var(--dur-lento)] delay-[80ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0':'opacity-0 -translate-y-4'}`}>
-                <div className="relative">
-                    <div className="absolute -inset-3 rounded-modal blur-xl opacity-40 bg-gradient-to-tr from-chart-3/60 to-chart-1/40" />
-                    <div className="relative w-16 h-16 [@media(max-height:700px)]:w-12 [@media(max-height:700px)]:h-12 rounded-3xl bg-[var(--lgn-campo-foco)] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-2)]">
-                        <img src="/Logo192.png" alt="FarmaLasa" className="w-10 h-10 [@media(max-height:700px)]:w-8 [@media(max-height:700px)]:h-8 object-contain" />
-                    </div>
+            <div className="lgn-baja flex flex-col items-center gap-2">
+                <div className="w-16 h-16 [@media(max-height:700px)]:w-12 [@media(max-height:700px)]:h-12 rounded-card bg-[var(--lgn-tarjeta)] border border-[var(--lgn-borde)] flex items-center justify-center shadow-[var(--shadow-glass-2)]">
+                    <img src="/Logo192.png" alt="FarmaLasa" width="40" height="40" className="w-10 h-10 [@media(max-height:700px)]:w-8 [@media(max-height:700px)]:h-8 object-contain" />
                 </div>
                 <div className="text-center mt-1">
                     <p className="font-black text-title text-content tracking-tight leading-none">Portal Farmalasa</p>
@@ -1076,15 +1133,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
             </div>
 
-            <div className={`relative w-full max-w-[420px] transition-all duration-[var(--dur-lento)] delay-[160ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.94] translate-y-5'}`}>
-                <div className="absolute inset-0 bg-gradient-to-b from-[var(--lgn-brillo)] to-transparent pointer-events-none rounded-header" />
-                <div className="rounded-header p-5 [@media(max-height:700px)]:p-3.5 bg-[var(--lgn-vidrio)] backdrop-blur-[48px] backdrop-saturate-[200%] border border-[var(--lgn-vidrio-borde)] shadow-[var(--shadow-glass-5)] flex flex-col gap-4 [@media(max-height:700px)]:gap-2.5">
+            <div className="lgn-entra lgn-d1 relative w-full max-w-[420px]">
+                <div className="rounded-header p-5 [@media(max-height:700px)]:p-3.5 bg-[var(--lgn-tarjeta)] border border-[var(--lgn-borde)] shadow-[var(--shadow-glass-5)] flex flex-col gap-4 [@media(max-height:700px)]:gap-2.5">
                     {renderLoginForm(true)}
                     {!isMobileOrApp() && (
                         <>
                             <div className="h-px bg-divider mx-2" />
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-3 [@media(max-height:700px)]:p-2 rounded-3xl bg-[var(--lgn-boton)] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:bg-[var(--lgn-boton-hover)] hover:border-border-card hover:shadow-[var(--shadow-elevation-sm)]">
+                                className="group w-full p-3 [@media(max-height:700px)]:p-2 rounded-card bg-[var(--lgn-boton)] border border-[var(--lgn-borde)] flex items-center justify-between transition-[background-color,transform] duration-[var(--dur-fast)] active:scale-[0.98] hover:bg-[var(--lgn-boton-hover)]">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-colors shadow-sm">
                                         <Clock size={15} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
@@ -1103,7 +1159,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
             </div>
 
-            <div className={`flex gap-2 transition-all duration-[var(--dur-lento)] delay-[260ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0':'opacity-0 translate-y-4'}`}>
+            <div className="lgn-entra lgn-d2 flex gap-2">
                 {[
                     {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Ventas',color:'#0052CC'},
                     {href:'https://farmalasa.com',Icon:Pill,label:'FarmaLasa',color:'#6929C4'},
@@ -1116,8 +1172,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                        vistas nunca medía el login porque entraba con sesión y
                        `/login` redirigía a la app. */
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                        className="group flex items-center gap-2 px-4 py-2.5 min-h-[var(--tap-min)] bg-[var(--lgn-campo)] hover:bg-[var(--lgn-campo-foco)] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:scale-[1.03] hover:translate-y-[var(--lift-card)]">
-                        <Icon size={14} strokeWidth={2} style={{color}} className="transition-transform duration-[var(--dur-base)] group-hover:scale-110" />
+                        className="group flex items-center gap-2 px-4 py-2.5 min-h-[var(--tap-min)] bg-[var(--lgn-boton)] hover:bg-[var(--lgn-boton-hover)] border border-[var(--lgn-borde)] rounded-card transition-[background-color,transform] duration-[var(--dur-fast)] active:scale-[0.98]">
+                        <Icon size={14} strokeWidth={2} style={{color}} />
                         <span className="text-caption font-black uppercase tracking-widest text-content-3 group-hover:text-content-2 transition-colors">{label}</span>
                     </a>
                 ))}
@@ -1130,23 +1186,23 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         // de cambio de contraseña. Con `items-center`, un monitor bajo
         // (1366×768, 1280×720) recortaba el logo y no había forma de subir.
         <div className={`relative flex items-start justify-center w-full flex-1 px-6 ${esBaja ? 'py-5' : 'py-10'}`}>
-            <div className={`relative w-full max-w-[480px] my-auto z-base transition-all duration-[var(--dur-lento)] delay-[80ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
-                {/* El halo de la tarjeta pesa distinto según el fondo: el mismo
-                    18% que apenas se insinúa sobre el degradado claro tiñe de
-                    violeta media pantalla sobre el oscuro. */}
-                <div className={`absolute -inset-6 rounded-header blur-2xl ${modoOscuro ? 'opacity-[0.09]' : 'opacity-18'} bg-gradient-to-b from-chart-3 via-chart-3/70 to-chart-1 pointer-events-none`} />
-
-                <div className={`relative rounded-header ${esBaja ? 'px-8 py-6 gap-4' : 'px-10 py-10 gap-6'} bg-[var(--lgn-vidrio)] backdrop-blur-[52px] backdrop-saturate-[200%] border border-[var(--lgn-vidrio-borde)] shadow-[var(--shadow-glass-5)] flex flex-col overflow-hidden`}>
-                    <div className="absolute inset-0 bg-gradient-to-b from-[var(--lgn-brillo)] via-transparent to-transparent pointer-events-none rounded-header" />
+            <div className="lgn-entra relative w-full max-w-[480px] my-auto z-base">
+                {/* Acá vivía un halo: un `-inset-6` con `blur-2xl` detrás de la
+                    tarjeta. Un `filter: blur()` sobre una caja de 530px es una
+                    capa aparte que el navegador rasteriza y guarda en memoria
+                    de video —y en Solid no hay halos: el relieve es tono y una
+                    sombra corta, no luz difusa. */}
+                <div className={`relative rounded-header ${esBaja ? 'px-8 py-6 gap-4' : 'px-10 py-10 gap-6'} bg-[var(--lgn-tarjeta)] border border-[var(--lgn-borde)] shadow-[var(--shadow-glass-5)] flex flex-col overflow-hidden`}>
 
                     {/* Logo */}
                     <div className={`relative flex flex-col items-center ${esBaja ? 'gap-1.5' : 'gap-3'}`}>
-                        <div className="relative group/logo">
-                            <div className="absolute -inset-4 rounded-header blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-[var(--dur-lento)] bg-gradient-to-tr from-chart-3/55 to-chart-1/40" />
-                            <div className={`relative ${esBaja ? 'w-[62px] h-[62px]' : 'w-[88px] h-[88px]'} rounded-card bg-[var(--lgn-campo-foco)] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-4)]`}
-                                style={{ animation:'lgn-logo 4.5s ease-in-out infinite' }}>
-                                <img src="/Logo192.png" alt="FarmaLasa" className={`${esBaja ? 'w-10 h-10' : 'w-[58px] h-[58px]'} object-contain`} />
-                            </div>
+                        {/* Sin halo y sin latido. El `lgn-logo` que estaba acá
+                            animaba `box-shadow` en bucle infinito, y una sombra
+                            difusa de 56px no se compone: se REPINTA, sesenta
+                            veces por segundo y para siempre, en la pantalla que
+                            todos ven antes de poder hacer nada. */}
+                        <div className={`${esBaja ? 'w-[62px] h-[62px]' : 'w-[88px] h-[88px]'} rounded-card bg-[var(--lgn-campo)] border border-[var(--lgn-borde)] flex items-center justify-center`}>
+                            <img src="/Logo192.png" alt="FarmaLasa" width="58" height="58" className={`${esBaja ? 'w-10 h-10' : 'w-[58px] h-[58px]'} object-contain`} />
                         </div>
                         <div className="text-center">
                             <h1 className={`${esBaja ? 'text-display' : 'text-display-lg'} font-black text-content tracking-tight leading-none`}>Portal</h1>
@@ -1164,9 +1220,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {!isMobileOrApp() && (
                         <div className="relative">
                             <button type="button" onClick={goToKiosko}
-                                className={`group w-full ${esBaja ? 'p-2.5' : 'p-4'} rounded-card bg-[var(--lgn-boton)] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:bg-[var(--lgn-boton-hover)] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:translate-y-[var(--lift-card)]`}>
+                                className={`group w-full ${esBaja ? 'p-2.5' : 'p-4'} rounded-card bg-[var(--lgn-boton)] border border-[var(--lgn-borde)] flex items-center justify-between transition-[background-color,transform] duration-[var(--dur-fast)] active:scale-[0.98] hover:bg-[var(--lgn-boton-hover)]`}>
                                 <div className="flex items-center gap-3.5">
-                                    <div className={`${esBaja ? 'w-9 h-9' : 'w-11 h-11'} rounded-2xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-all duration-[var(--dur-base)] shadow-sm group-hover:shadow-[var(--shadow-glow-brand)]`}>
+                                    <div className={`${esBaja ? 'w-9 h-9' : 'w-11 h-11'} rounded-xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-colors duration-[var(--dur-fast)]`}>
                                         <Clock size={esBaja ? 15 : 18} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">
@@ -1174,7 +1230,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <p className="text-micro font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
-                                <div className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-[var(--dur-base)] group-hover:shadow-[var(--shadow-glow-brand)]">
+                                <div className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-[background-color,border-color] duration-[var(--dur-fast)]">
                                     <ArrowRight size={14} className="text-content-3 group-hover:text-white transition-colors" strokeWidth={2.5} />
                                 </div>
                             </button>
@@ -1184,32 +1240,34 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             </div>
 
             {/* Quick links */}
-            <div className={`absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3 z-content transition-all duration-[var(--dur-lento)] delay-[300ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-x-0':'opacity-0 translate-x-8'}`}>
-                <div className="rounded-modal p-4 bg-[var(--lgn-vidrio)] backdrop-blur-[40px] backdrop-saturate-[200%] border border-[var(--lgn-vidrio-borde)] shadow-[var(--shadow-glass-5)] flex flex-col gap-3 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-[var(--lgn-brillo)] to-transparent pointer-events-none rounded-modal" />
+            <div className="lgn-lado absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3 z-content">
+                <div className="rounded-modal p-4 bg-[var(--lgn-tarjeta)] border border-[var(--lgn-borde)] shadow-[var(--shadow-glass-4)] flex flex-col gap-3 overflow-hidden">
                     <div className="relative flex items-center gap-2 px-1 mb-1">
                         <Sparkles size={11} className="text-chart-3-text" strokeWidth={2} />
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">Accesos rápidos</p>
                     </div>
                     {[
-                        {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Sistema de Ventas',sub:'DTE · OSS',color:'#0052CC',glow:'rgba(0,82,204,0.22)'},
-                        {href:'https://farmalasa.com',Icon:Pill,label:'Farmalasa',sub:'Sitio web oficial',color:'#6929C4',glow:'rgba(105,41,196,0.22)'},
-                    ].map(({href,Icon,label,sub,color,glow})=>(
+                        {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Sistema de Ventas',sub:'DTE · OSS',color:'#0052CC'},
+                        {href:'https://farmalasa.com',Icon:Pill,label:'Farmalasa',sub:'Sitio web oficial',color:'#6929C4'},
+                    ].map(({href,Icon,label,sub,color})=>(
+                        /* El halo de color se pintaba con `onMouseEnter` /
+                           `onMouseLeave` escribiendo `style.boxShadow` a mano:
+                           dos manejadores de JavaScript y un recálculo de
+                           estilo por cada vez que el puntero cruza el enlace,
+                           para un efecto que el CSS hace solo. Y en Solid ese
+                           halo no va: el realce es tono, no luz. El `<div>`
+                           vacío de adentro tampoco hacía nada. */
                         <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                            className="relative group flex items-center gap-3 px-3.5 py-3 bg-[var(--lgn-campo)] hover:bg-[var(--lgn-campo-foco)] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:scale-[1.02] hover:translate-y-[var(--lift-card)] w-[210px] overflow-hidden"
-                            onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 24px ${glow}, inset 0 1px 0 rgba(255,255,255,0.7)`; }}
-                            onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; }}>
-                            <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
-                            </div>
-                            <div className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-[var(--dur-base)] group-hover:scale-110"
+                            className="group flex items-center gap-3 px-3.5 py-3 bg-[var(--lgn-boton)] hover:bg-[var(--lgn-boton-hover)] border border-[var(--lgn-borde)] rounded-card transition-[background-color,transform] duration-[var(--dur-fast)] active:scale-[0.98] w-[210px] overflow-hidden">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                 style={{ background:`${color}16`, border:`1px solid ${color}28` }}>
                                 <Icon size={16} strokeWidth={2} style={{color}} />
                             </div>
-                            <div className="relative min-w-0">
+                            <div className="min-w-0">
                                 <p className="text-label font-black text-content-2 group-hover:text-content transition-colors truncate">{label}</p>
                                 <p className="text-micro font-bold text-content-3 uppercase tracking-wide">{sub}</p>
                             </div>
-                            <ChevronRight size={11} className="relative text-content-3 group-hover:text-content-3 ml-auto shrink-0 transition-all duration-[var(--dur-base)] group-hover:translate-x-0.5" strokeWidth={2.5} />
+                            <ChevronRight size={11} className="text-content-3 ml-auto shrink-0 transition-transform duration-[var(--dur-fast)] group-hover:translate-x-0.5" strokeWidth={2.5} />
                         </a>
                     ))}
                 </div>
@@ -1225,7 +1283,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         // de llegar. Con alto fijo, el scroll vive acá y es la red que evita
         // que la tarjeta quede cortada en un monitor bajo. Mismo cambio que ya
         // se le había hecho al kiosco.
-        <div className={`lgn-fondo relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] ${leaving?'opacity-0 scale-[1.03]':'opacity-100 scale-100'}`}
+        // Y la salida al kiosco es SOLO opacidad: el `scale-[1.03]` que estaba
+        // acá agrandaba el viewport entero durante la transición, o sea que el
+        // navegador volvía a rasterizar la pantalla completa —tarjeta, campos,
+        // texto— en cada cuadro, justo en el momento en que además está
+        // cargando la vista siguiente.
+        <div className={`lgn-fondo relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden transition-opacity duration-[var(--dur-slow)] ${leaving?'opacity-0':'opacity-100'}`}
             style={{ background:'var(--lgn-bg)' }}>
             <style>{keyframeStyles}</style>
             <div className="relative z-base w-full min-h-full flex flex-col">

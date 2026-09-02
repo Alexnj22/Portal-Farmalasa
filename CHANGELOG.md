@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.951.1 — El pie del modal de recepción entra en una fila
+
+Pregunta del usuario sobre lo que salió en v2.949.0: *«¿comprobaste que ese
+botón nuevo y el modal se mantuvieran en la pantalla? ¿no era mejor hacer 2
+columnas con el botón llegó producto extra?»*.
+
+No lo había comprobado. Puse las dos entradas del pie —«¿Llegó un producto
+extra?» y «Ya confirmados»— en un `flex-wrap` dando por hecho que acomodaban.
+Medido después con los componentes reales, en contexto táctil y sobre el ancho
+real del panel (`max-w-md`, y a pantalla completa en el teléfono porque
+`ModalShell` lo vuelve hoja), peor caso con los dos badges:
+
+| pie | 320 px | 390 px | 448 px |
+|---|---:|---:|---:|
+| `flex-wrap`, «¿Llegó un producto extra?» | 117 px | 117 px | 117 px |
+| 2 columnas, mismo rótulo | el texto **se sale** del botón | | |
+| 2 columnas, «Anotar un extra» | **69 px** | **69 px** | **69 px** |
+
+**Envolvía siempre**, en los tres anchos y también en escritorio. No se salía de
+la pantalla —por eso no había error ni nada roto que mirar— pero se comía 48 px
+de alto en la pantalla donde el alto *es* la lista de hojas.
+
+Y dos columnas a secas es **peor** que una fila: `Button` lleva
+`whitespace-nowrap`, así que el rótulo largo no envuelve, se sale del botón —
+32 px en un teléfono de 390.
+
+Entonces: **dos columnas, y «¿Llegó un producto extra?» pasó a «Anotar un
+extra»**. El ancho de la columna es el que manda, y de paso el rótulo cumple
+DESIGN.md §26.6 (los botones son verbos en infinitivo), que la pregunta no
+cumplía. Los dos pies quedaron en `px-4`: el de la pantalla de ítems era `px-5`
+y esos 4 px dejaban la columna en 173, donde «Ya confirmados» se sale 3 px. Con
+una sola puerta no hay grilla, para no dejar media fila vacía.
+
+**Y la pantalla «Ya confirmados» se midió entera**: fila cerrada, corrector
+abierto, nombre largo del catálogo, presentación ×12 y diferencia en curso —
+sin desborde horizontal en 390 ni en 448.
+
+Una nota sobre el instrumento, porque mintió primero: `--tap-min` vale 44 px
+**sólo bajo `pointer: coarse`**, así que la primera medición —en un Chromium de
+escritorio— acusó de «blanco de dedo chico» a cinco botones que en el teléfono
+miden 44. Se rehízo con contexto táctil y con un testigo que *tiene* que salir
+marcado, porque un detector que no caza su propia regresión no certifica nada.
+
 ## v2.951.0 — El cierre del día se dibuja, no se lee
 
 Pedido del usuario: un aviso de fin de día para supervisión y gerencia con la

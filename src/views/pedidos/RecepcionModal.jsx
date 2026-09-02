@@ -545,6 +545,46 @@ async function fetchPresOpts(productId) {
 //   · su borde cambia de color segun la diferencia contra lo facturado
 // Es el mismo criterio que el banco de horas de nómina (v2.116.0).
 
+/**
+ * ── PIE_DOS_PUERTAS — por qué son dos columnas y por qué cambió un rótulo ────
+ *
+ * El pie del modal tiene dos entradas: anotar lo que llegó de más, y mirar lo
+ * ya contado. La primera versión las puso en un `flex-wrap`, dando por hecho
+ * que acomodaban. **No acomodaban en ningún ancho.** Medido con los componentes
+ * reales sobre el ancho real del panel (`max-w-md`, y a pantalla completa en
+ * táctil porque `ModalShell` lo vuelve hoja), peor caso con los dos badges:
+ *
+ * | pie                                      | 320 px | 390 px | 448 px |
+ * |------------------------------------------|-------:|-------:|-------:|
+ * | `flex-wrap`, «¿Llegó un producto extra?»  | 117 px | 117 px | 117 px | ← 2 filas
+ * | 2 columnas, mismo rótulo                  | el texto SE SALE del botón      |
+ * | 2 columnas, «Anotar un extra»             |  69 px |  69 px |  69 px | ← 1 fila
+ *
+ * O sea que `flex-wrap` no se salía de la pantalla —por eso no hay error ni
+ * nada roto que mirar— pero envolvía **siempre**, en los tres anchos y también
+ * en escritorio, y se comía **48 px de alto** en la pantalla donde el alto es
+ * la lista de hojas.
+ *
+ * Y dos columnas con el rótulo viejo es PEOR que una fila: `Button` lleva
+ * `whitespace-nowrap`, así que el texto no envuelve, **se sale del botón** — 32
+ * px en un teléfono de 390, 18 en escritorio.
+ *
+ * Por eso «¿Llegó un producto extra?» pasó a **«Anotar un extra»**: el ancho de
+ * la columna es el que manda, y de paso el rótulo cumple §26.6 (los botones son
+ * verbos en infinitivo), que la pregunta no cumplía.
+ *
+ * Los dos pies son `px-4`. El de la pantalla de ítems era `px-5`, y esos 4 px
+ * de más dejan la columna en 173: ahí «Ya confirmados» se sale 3 px.
+ *
+ * Con una sola puerta —cuando todavía no se confirmó nada— NO hay grilla: el
+ * botón se queda en su ancho natural en vez de ocupar media fila y dejar la
+ * otra mitad vacía.
+ *
+ * Ojo con cómo se mide esto: `--tap-min` vale 44 px **sólo bajo
+ * `pointer: coarse`**, así que un Chromium de escritorio da 57 px de pie y
+ * acusa de «blanco de dedo chico» a botones que en el teléfono miden 44. La
+ * medición de arriba es con contexto táctil.
+ */
 export default function RecepcionModal({
     open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed, onCorregido,
     // Lo YA contado. Llega APARTE de `rows` a propósito: un renglón confirmado
@@ -1751,9 +1791,10 @@ export default function RecepcionModal({
                     )}
                 </PedidoModal.Body>
 
-                {/* Extras section on cajas screen */}
-                <div className="flex-none border-t border-divider px-4 py-3 flex flex-wrap items-center gap-x-1 gap-y-1">
-                    <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>¿Llegó un producto extra?
+                {/* Las dos puertas del pie — DOS COLUMNAS, y por eso el rótulo
+                    del extra se acortó. Ver la nota de `PIE_DOS_PUERTAS`. */}
+                <div className={`flex-none border-t border-divider px-4 py-3 ${confirmadosVivos.length > 0 ? 'grid grid-cols-2 gap-1' : ''}`}>
+                    <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>Anotar un extra
                         {extras.length > 0 && <Badge variant="info" uppercase={false}>{extras.length}</Badge>}</Button>
                     {confirmadosVivos.length > 0 && (
                         <Button variant="ghost" icon={ListChecks} onClick={() => { setPrevScreen('cajas'); setScreen('confirmados'); }}>Ya confirmados
@@ -2376,9 +2417,11 @@ export default function RecepcionModal({
               </div>
             </PedidoModal.Body>
 
-            {/* Extras — navigate to dedicated screen */}
-            <div className="flex-none border-t border-divider px-5 py-3 flex flex-wrap items-center gap-x-1 gap-y-1">
-                <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>¿Llegó un producto extra?
+            {/* Las dos puertas del pie. `px-4` y no `px-5` como estaba: con dos
+                columnas los 4 px de más dejan la segunda columna en 173 y
+                «Ya confirmados» se sale 3 px en un teléfono de 390. Medido. */}
+            <div className={`flex-none border-t border-divider px-4 py-3 ${confirmadosVivos.length > 0 ? 'grid grid-cols-2 gap-1' : ''}`}>
+                <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>Anotar un extra
                     {extras.length > 0 && <Badge variant="info" uppercase={false}>{extras.length}</Badge>}</Button>
                 {confirmadosVivos.length > 0 && (
                     <Button variant="ghost" icon={ListChecks} onClick={() => { setPrevScreen(screen); setScreen('confirmados'); }}>Ya confirmados

@@ -679,13 +679,13 @@ Deno.serve(async (req) => {
        * Su fallo NO tumba el cobro —el dinero ya se movió— pero sale como aviso:
        * un pago con «Otro» que nadie tiene que mirar es exactamente el cajón de
        * sastre que esta opción vino a evitar. */
-      /* La aprobación se PIDE con un interruptor, y no se deduce de la forma
-       * de pago: son dos preguntas distintas —«con qué pagó» y «esto necesita
-       * firma»— y meterlas en un solo control obligaba a registrar como «Otro»
-       * un pago hecho por transferencia, o sea a perder el dato con el que se
-       * cuadra el banco. Propuesta del usuario (2-sep).
+      /* La pantalla ofrece «Solicitar aprobación» como quinto camino, y adentro
+       * se elige la forma DE VERDAD —transferencia, tarjeta, cheque, otro—. Acá
+       * llega esa forma real y la bandera aparte, que es lo correcto: que un
+       * abono necesite firma no borra con qué se pagó, y sin ese dato no hay
+       * cómo cuadrarlo contra el banco.
        *
-       * `Otro` la enciende SIEMPRE y del lado del servidor: un pago sin forma
+       * `Otro` la enciende igual y del lado del SERVIDOR: un pago sin forma
        * reconocible no puede entrar sin que alguien lo mire, y eso no puede
        * depender de que el navegador mande la bandera. */
       const pideAprobacion = forma === "Otro" || body.requiereAprobacion === true;

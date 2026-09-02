@@ -8,10 +8,6 @@ import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import LiquidModal from '../components/common/LiquidModal';
 import LiquidSelect from '../components/common/LiquidSelect';
-/* `Switch` es el canónico del portal (DESIGN.md A14). Los tres interruptores
- * locales que competían se unificaron ahí; escribir un cuarto acá sería
- * volver a abrir el mismo hueco. */
-import Switch from '../components/common/Switch';
 import Notice from '../components/common/Notice';
 import PortalInput from '../components/common/PortalInput';
 import PortalTextarea from '../components/common/PortalTextarea';
@@ -79,16 +75,22 @@ import { tokenMatch } from '../utils/searchUtils';
  * mueven juntas. Sólo acá, alguien puede mandar `Bitcoin` en la petición y el
  * origen lo aceptaría; sólo allá, la pantalla ofrecería algo que el servidor
  * rechaza. La copia del servidor vive en `creditos-erp`. */
-const FORMAS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque', 'Otro'];
+/* La quinta opción NO es una forma de pago: es el camino del abono que necesita
+ * firma. Se llama por lo que hace —«Solicitar aprobación»— y adentro se elige la
+ * forma DE VERDAD, que es lo que el usuario pidió: «la forma de pago sí sale
+ * como tarjeta, transferencia, cheque, otro (ahí sí)».
+ *
+ * Es la corrección de haber puesto «Otro» ahí: con «Otro» ocupando ese lugar, un
+ * pago de MAPFRE hecho por transferencia se registraba como «Otro» y se perdía
+ * el dato con el que se cuadra el banco. */
+const APROBACION = 'APROBACION';
+const FORMAS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque', APROBACION];
+const ROTULO_DE_FORMA = { [APROBACION]: 'Solicitar aprobación' };
 
-/* «Otro» vuelve, y no contradice la decisión de la mañana de sacarlo. Aquél era
- * un cajón de sastre silencioso; éste es para el crédito que NO se paga con
- * ninguna de las cuatro —el del ISSS, el de una aseguradora, lo que se liquida
- * por planilla o convenio— y **exige decir con qué** y dispara una solicitud de
- * confirmación. Sin él, la sala tenía que mentir eligiendo «Transferencia» para
- * poder cerrar el crédito, y una opción que obliga a mentir es peor que un
- * cajón de sastre. */
-const OTRO = 'Otro';
+/** Las que se pueden elegir DENTRO de «Solicitar aprobación». Sin efectivo: un
+ *  pago en efectivo se cuenta en el cajón y no necesita que nadie lo apruebe. */
+const FORMAS_REALES = ['Transferencia', 'Tarjeta', 'Cheque', 'Otro'];
+
 
 const VER = [
     { value: 'DEBEN',    label: 'Con saldo' },
@@ -826,7 +828,8 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     // Sólo para «Otro»: es lo que quien aprueba va a leer, y por eso es
     // obligatorio. Con las otras formas el papel habla solo.
     const [motivo, setMotivo] = useState('');
-    const [aprobacion, setAprobacion] = useState(false);
+    // La forma DE VERDAD cuando el camino es «Solicitar aprobación».
+    const [formaReal, setFormaReal] = useState('Transferencia');
     const [fechaDoc, setFechaDoc] = useState('');
     const [pos, setPos] = useState('');
     const [montoDoc, setMontoDoc] = useState('');
@@ -853,18 +856,9 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     /* «Otro» no pide foto: lo que se liquida por planilla o convenio no viene
      * con un comprobante que se pueda leer. Pide DECIR con qué, que es el dato
      * que hace falta para poder confirmarlo después. */
-    const esOtro = forma === OTRO;
-    const conPapel = forma !== 'Efectivo' && !esOtro;
-    /* La aprobación se PIDE y no se deduce de la forma de pago: son dos
-     * preguntas distintas —«con qué pagó» y «esto necesita firma»— y meterlas
-     * en un solo control obligaba a registrar como «Otro» un pago hecho por
-     * transferencia, o sea a perder el dato con el que se cuadra el banco.
-     * Propuesta del usuario (2-sep).
-     *
-     * `Otro` la enciende y no la deja apagar: un pago sin forma reconocible no
-     * puede entrar sin que alguien lo mire, que es lo que se ganó al quitar
-     * «Otro» esta mañana. El servidor lo vuelve a exigir por su cuenta. */
-    const pideAprobacion = esOtro || aprobacion;
+    const pideAprobacion = forma === APROBACION;
+    const conPapel = forma !== 'Efectivo' && !pideAprobacion;
+
 
     useEffect(() => {
         let vivo = true;
@@ -889,7 +883,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         if (nueva === 'Efectivo') setRepartir(false);
         setArchivo(null); setLectura(null); setErrorLectura(null);
         setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc(''); setMotivo('');
-        if (nueva !== OTRO) setAprobacion(false);
+
     }, []);
 
     /* Los OTROS créditos del cliente, sin el que se está cobrando. */
@@ -966,7 +960,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         .reduce((t, v) => t + (Number(v) || 0), 0);
     // Con papel el total lo dice el comprobante; con «Otro» lo escribe quien
     // cobra —no hay documento que leer— y con efectivo es lo que se reparte.
-    const totalPago = (conPapel || esOtro) ? Number(montoDoc) : sumaRepartida;
+    const totalPago = (conPapel || pideAprobacion) ? Number(montoDoc) : sumaRepartida;
 
     const bloqueado = lectura && lectura.veredicto !== 'OK';
     const cuadra = Number.isFinite(totalPago) && totalPago > 0
@@ -981,12 +975,15 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
             .filter((h) => Number(reparto[h.id]) > 0.004)
             .map((h) => ({ credito: h.credito, monto: Number(reparto[h.id]) }));
         await onCobrar({
-            forma, documento: documento.trim(), montoDocumento: Number(totalPago.toFixed(2)),
+            // Se manda la forma DE VERDAD, no el camino: «Solicitar aprobación»
+            // es cómo entra el abono, no con qué se pagó.
+            forma: pideAprobacion ? formaReal : forma,
+            documento: documento.trim(), montoDocumento: Number(totalPago.toFixed(2)),
             aplicaciones, archivo, lectura, fechaDocumento: fechaDoc || null, pos: pos || null,
             motivo: motivo.trim() || null, requiereAprobacion: pideAprobacion,
         });
         setOcupado(false);
-    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, onCobrar]);
+    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, formaReal, onCobrar]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Cobrar un crédito">
@@ -1002,7 +999,8 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                 </div>
 
                 <LiquidSelect label="Con qué paga" value={forma} onChange={cambiarForma}
-                    options={FORMAS.map((f) => ({ value: f, label: f }))} clearable={false} />
+                    options={FORMAS.map((f) => ({ value: f, label: ROTULO_DE_FORMA[f] || f }))}
+                    clearable={false} />
 
                 {/* ── El papel, ANTES de los montos ───────────────────────── */}
                 {conPapel && (
@@ -1038,37 +1036,29 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                     </div>
                 )}
 
-                {/* El interruptor va con CUALQUIER forma: un pago del ISSS por
-                    transferencia también necesita firma, y antes había que
-                    mentir eligiendo «Otro» para conseguirla. Con «Otro» viene
-                    encendido y no se apaga. */}
-                <div data-surface="card" className="rounded-xl p-3 flex items-center justify-between gap-3">
-                    <span className="min-w-0">
-                        <span className="block text-body-sm font-bold text-content">
-                            Solicitar aprobación
-                        </span>
-                        <span className="block text-micro text-content-3">
-                            {esOtro
-                                ? '«Otro» siempre va a aprobación.'
-                                : 'El abono entra ya y alguien lo revisa después.'}
-                        </span>
-                    </span>
-                    <Switch checked={pideAprobacion} disabled={esOtro} variant="success"
-                        size="sm" onChange={setAprobacion} />
-                </div>
-
-                {esOtro && (
-                    <PortalInput label="Monto del pago" inputMode="decimal" value={montoDoc}
-                        onChange={(e) => setMontoDoc(e.target.value)} />
-                )}
-
                 {pideAprobacion && (
-                    /* El motivo es lo que quien aprueba va a leer, así que es
-                       obligatorio. Con las otras formas el papel habla solo; acá
-                       no hay papel que hable. */
-                    <PortalTextarea label="Motivo" value={motivo} rows={2}
-                        placeholder="ISSS, planilla de agosto"
-                        onChange={(e) => setMotivo(e.target.value)} />
+                    <div className="space-y-3">
+                        <Notice variant="info">
+                            El abono entra ya y se envía a <strong>aprobación</strong>.
+                        </Notice>
+                        {/* La forma REAL, adentro. Es lo que el usuario pidió —«la
+                            forma de pago sí sale como tarjeta, transferencia,
+                            cheque, otro (ahí sí)»— y es lo correcto: que un pago
+                            necesite firma no borra con qué se pagó, y sin ese
+                            dato no hay cómo cuadrarlo contra el banco. */}
+                        <LiquidSelect label="Forma de pago" value={formaReal}
+                            onChange={(v) => setFormaReal(v || 'Transferencia')}
+                            options={FORMAS_REALES.map((f) => ({ value: f, label: f }))}
+                            clearable={false} />
+                        <PortalInput label="Monto del pago" inputMode="decimal" value={montoDoc}
+                            onChange={(e) => setMontoDoc(e.target.value)} />
+                        {/* El motivo es lo que quien aprueba va a leer, así que es
+                            obligatorio. Con las otras formas el comprobante habla
+                            solo; acá no hay comprobante que hable. */}
+                        <PortalTextarea label="Motivo" value={motivo} rows={2}
+                            placeholder="ISSS, planilla de agosto"
+                            onChange={(e) => setMotivo(e.target.value)} />
+                    </div>
                 )}
 
                 {/* Los montos sólo después de que el papel pasó: pedirlos antes
@@ -1167,16 +1157,16 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
                             <div className="flex items-baseline justify-between gap-3 pt-2 border-t border-border/60">
                                 <span className="text-body-sm text-content-2">
-                                    {(conPapel || esOtro) ? 'Va aplicado' : 'Total a cobrar'}
+                                    {(conPapel || pideAprobacion) ? 'Va aplicado' : 'Total a cobrar'}
                                 </span>
                                 <span className={`text-body font-black tabular-nums ${
-                                    cuadra || (!conPapel && !esOtro) ? 'text-content' : 'text-danger-text'}`}>
+                                    cuadra || (!conPapel && !pideAprobacion) ? 'text-content' : 'text-danger-text'}`}>
                                     {formatMoney(sumaRepartida)}
-                                    {(conPapel || esOtro) && totalPago > 0 && ` de ${formatMoney(totalPago)}`}
+                                    {(conPapel || pideAprobacion) && totalPago > 0 && ` de ${formatMoney(totalPago)}`}
                                 </span>
                             </div>
 
-                            {(conPapel || esOtro) && totalPago > 0 && !cuadra && (
+                            {(conPapel || pideAprobacion) && totalPago > 0 && !cuadra && (
                                 /* La suma tiene que dar EXACTO. Aceptar menos
                                    dejaría una diferencia sin dueño: el banco
                                    movió $50 y el portal explicaría $45. */

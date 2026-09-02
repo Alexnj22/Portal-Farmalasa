@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.950.1 — «Solicitar aprobación» es el rótulo, y adentro va la forma real
+
+Corrección de la versión anterior: entendí de más. Lo que el usuario pidió era
+**cambiarle el nombre a la quinta opción**, no agregar un interruptor aparte —
+*«solicitar aprobación era solo en vez de otros como método de pago»*.
+
+Así que la lista queda: **Efectivo · Transferencia · Tarjeta · Cheque ·
+Solicitar aprobación**. Y al elegir la última, adentro se pide **la forma de
+verdad** — transferencia, tarjeta, cheque u «Otro», *«ahí sí»*— más el monto y
+el motivo.
+
+Sigue siendo lo correcto por la razón de siempre: que un abono necesite firma
+**no borra con qué se pagó**, y sin ese dato no hay cómo cuadrarlo contra el
+banco. La diferencia con lo de antes es que ahora eso se resuelve **dentro de un
+solo control** en vez de con dos, que es lo que se pidió y es más simple de leer.
+
+«Otro» sigue disparando la aprobación **del lado del servidor**, no sólo de la
+pantalla: un pago sin forma reconocible no puede entrar sin que alguien lo mire,
+y eso no puede depender de que el navegador mande la bandera.
+
 ## v2.950.0 — Solicitar aprobación es un interruptor, no una forma de pago
 
 Propuesta del usuario: *«¿y si en vez de otro, dice Solicitar aprobación, y la

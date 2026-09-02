@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.938.7 — La lista de créditos nunca cargó: se le pasaba la consulta armada
+
+`TypeError: e is not a function`, y Cuentas por cobrar vacía. **Desde la
+v2.938.0**, o sea desde que la lista pasó a leerse del espejo del portal.
+
+`fetchAllRows` recibe una **función** que arma la consulta, no la consulta ya
+armada: la vuelve a construir en cada página para pedirle otro `.range()`. Se le
+pasaba el `PostgrestFilterBuilder`, y al intentar invocarlo lanzaba.
+
+Lo que hace caro al defecto es cómo se presentó: el error salía como *unhandled
+promise rejection* con el nombre minificado, la pantalla quedaba **vacía sin
+cartel de error**, y eso se lee como «no hay datos» o «está lenta» — que fue el
+primer reporte. Tres versiones estuvieron midiendo y afinando la consulta que
+nunca llegó a ejecutarse.
+
+El único freno que la habría cazado antes es una prueba que abra la vista, y no
+existe. Sí queda el rastro: `fetchAllRows` recibe un CONSTRUCTOR.
+
 ## v2.938.6 — La vista pedía 2,387 filas para pintar 124
 
 Reporte del usuario: *«¿por qué es tan lenta la carga de la vista? si ya tenemos

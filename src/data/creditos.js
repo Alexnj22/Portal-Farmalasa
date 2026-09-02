@@ -61,21 +61,28 @@ export async function fetchCreditos({ sala = null, soloConSaldo = true } = {}) {
      * falla con «falta a qué crédito se abona». Es la misma familia que
      * `feedback_nombre_de_columna_no_es_su_tipo`: un renombre en la base no
      * avisa a quien lo lee. */
-    let q = supabase.from('creditos_de_clientes')
-        .select('id, branch_id, credito:credito_erp, documento:numero_doc, fecha, '
-              + 'cliente, total, saldo, customer_id, vendedor_id')
-        .order('fecha', { ascending: true });
-    if (sala) q = q.eq('branch_id', Number(sala));
+    /* `fetchAllRows` recibe una FUNCIÓN que arma la consulta, no la consulta
+     * armada: la vuelve a construir en cada página para pedirle otro `.range()`.
+     * Pasarle el constructor ya invocado lanza «e is not a function» y la vista
+     * queda vacía — que es exactamente lo que pasó entre v2.938.0 y v2.938.7. */
+    const armar = () => {
+        let q = supabase.from('creditos_de_clientes')
+            .select('id, branch_id, credito:credito_erp, documento:numero_doc, fecha, '
+                  + 'cliente, total, saldo, customer_id, vendedor_id')
+            .order('fecha', { ascending: true });
+        if (sala) q = q.eq('branch_id', Number(sala));
+        if (soloConSaldo) q = q.gt('saldo', 0.004);
+        return q;
+    };
     /* El filtro va a la BASE y no al navegador. La pantalla abre en «Con
      * saldo», que son 124 de 2,387: traerlas todas era bajar 839 kB en tres
      * vueltas para pintar 124 filas. Medido: 710 ms y 839 kB contra 138 ms y
      * 43 kB. Y es la regla de siempre — un tope se aplica ANTES del filtro, así
      * que filtrar acá y no allá no es sólo lento: con más de 1000 filas sería
      * «los que cumplen entre los primeros N». */
-    if (soloConSaldo) q = q.gt('saldo', 0.004);
     /* `fetchAllRows` y no un `.range()` a mano: sin filtro son 2,387 filas y
      * PostgREST trunca en 1000 **sin dar error**. */
-    const creditos = await fetchAllRows(q);
+    const creditos = await fetchAllRows(armar);
     return { ok: true, creditos: creditos || [] };
 }
 

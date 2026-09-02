@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.960.0 — Buscador en los movimientos, y el aviso de bolsas se va
+
+### Buscador en los movimientos del día
+
+Pedido del usuario: *«el buscador agregalo, que funcione en movimientos»*.
+
+Busca en todo lo que identifica un movimiento —concepto, boleta, folio, quién lo
+anotó y el monto—, sin tildes y sin mayúsculas de los dos lados. Con el concepto
+enriquecido de v2.959.0 eso alcanza para lo que pidió antes: escribir
+`77463090` encuentra el pago de esa línea.
+
+Sale sólo cuando hay más de dos movimientos —un buscador sobre dos es un control
+que estorba— y filtra **antes** de repartir por corte, así un tramo sin
+coincidencias no aparece vacío. Y cuando nada coincide lo dice: una lista vacía
+por el filtro se lee igual que un día sin movimientos, y no es lo mismo.
+
+### El aviso de bolsas se quitó
+
+*«Sigo sin entender (ya me siento cansado) sobre los cortes, los montos y el
+mensaje de bolsas de efectivo.»*
+
+Fue la **cuarta** pregunta sobre el mismo bloque en un día. Las tres anteriores
+se contestaron corrigiendo el texto (v2.956.3), la forma (v2.956.5) y el tono
+(v2.958.7). La cuarta es la respuesta: **un dato que hay que explicar cuatro
+veces no está mal escrito, está de más.**
+
+No pedía ninguna acción —hacer el corte desde el portal escribe el vale solo— y
+lo que informaba ya está en la tarjeta de cada bolsa, que muestra su saldo con
+las salidas descontadas y cuántas fueron.
+
+Lo que sí seguía haciendo falta —anotarlo a mano cuando el corte se va a hacer
+en la pantalla de la caja— se mudó a **Mi caja**, pegado al corte y acotado a
+esa sala: es el único momento en que alguien lo necesita, y una línea que
+nombrara otra sucursal ahí sería ruido.
+
 ## v2.959.1 — Los movimientos del día se separan por corte
 
 Pedido del usuario: *«¿por qué aquí no se separan los movimientos por el corte,

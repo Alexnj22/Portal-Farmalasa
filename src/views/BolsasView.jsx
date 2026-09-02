@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Package, Scale } from 'lucide-react';
-import ValesDeCaja from '../components/bolsas/ValesDeCaja';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -228,18 +227,26 @@ const BolsasView = () => {
         <GlassViewLayout icon={Package} title="Bolsas de efectivo" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 space-y-6">
 
-                {/* Lo que la caja todavía cuenta como suyo por las salidas de
-                    hoy. Un RENGLÓN, no un aviso: no hay nada que hacer —hacer
-                    el corte desde el portal escribe el vale solo— y con forma
-                    de alerta se leía como un faltante. El porqué completo y las
-                    tres veces que costó entenderlo están en el encabezado de
-                    `ValesDeCaja`.
+                {/* ── ACÁ NO VA NADA, y eso es la corrección ─────────────
+                    Vivía acá `ValesDeCaja`: cuánto le debe la caja por las
+                    salidas de bolsas del día. Se quitó el 2026-09-02 después de
+                    que el usuario preguntara CUATRO veces qué era —«¿de qué
+                    sucursal?», «¿ese vale no se genera al hacer el corte?»,
+                    «¿por qué salen aquí como error o faltante?», «sigo sin
+                    entender»—.
 
-                    Va acá arriba y no dentro de una pestaña ni bajo el filtro
-                    de sucursal porque nombra una sala y un día concretos, y el
-                    recorte de la vista lo escondería. Se pinta solo si hay algo
-                    y si quien mira tiene el permiso. */}
-                <ValesDeCaja />
+                    Las tres primeras se contestaron corrigiendo el texto y la
+                    forma. La cuarta es la respuesta: **un dato que hay que
+                    explicar cuatro veces no está mal escrito, está de más.** No
+                    pide ninguna acción —el corte desde el portal escribe el vale
+                    solo— y lo que informa ya está en la tarjeta de cada bolsa,
+                    que muestra su saldo con las salidas descontadas y cuántas
+                    fueron.
+
+                    Lo que sí seguía haciendo falta —anotarlo a mano cuando el
+                    corte se va a hacer en la pantalla de la caja— vive ahora en
+                    Mi caja, pegado al corte, que es el único momento en que
+                    alguien lo necesita. */}
 
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     {/* Las cuatro cifras que NINGUNA pestaña contesta, porque

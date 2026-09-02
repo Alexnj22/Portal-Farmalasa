@@ -60,7 +60,7 @@ import { useToastStore } from '../../store/toastStore';
  * guardar una bolsa. Y esconder el botón es comodidad, no candado: el permiso
  * lo vuelve a comprobar el servidor.
  */
-export default function ValesDeCaja() {
+export default function ValesDeCaja({ sala = null }) {
     const { hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const puedeVer = hasPermission('caja_vales', 'can_view');
@@ -71,11 +71,18 @@ export default function ValesDeCaja() {
     const [simulacion, setSimulacion] = useState(null);
     const [ocupado, setOcupado] = useState(false);
 
+    /* Con `sala`, sólo la de esa caja. Vive en Mi caja —pegado al corte, que es
+     * el único momento en que esto importa— y ahí una línea que nombrara otra
+     * sucursal sería ruido: quien está parado frente a una caja no puede hacer
+     * nada con lo que le falta a otra. El servidor sigue devolviendo lo que el
+     * permiso permite; el recorte es de pantalla. */
     const cargar = useCallback(async () => {
         if (!puedeVer) return;
         const { filas } = await fetchValesPendientes();
-        setPendientes(filas);
-    }, [puedeVer]);
+        setPendientes(sala
+            ? (filas || []).filter((f) => String(f.branch_id) === String(sala))
+            : filas);
+    }, [puedeVer, sala]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial
 
@@ -136,7 +143,7 @@ export default function ValesDeCaja() {
 
     const simular = async () => {
         setOcupado(true);
-        const r = await anotarValesEnCaja({ simular: true });
+        const r = await anotarValesEnCaja({ simular: true, sala });
         setOcupado(false);
         if (r.error) { showToast(mensajeAmigable(r.error), 'error'); return; }
         setSimulacion(r.resultados || []);
@@ -144,7 +151,7 @@ export default function ValesDeCaja() {
 
     const anotar = async () => {
         setOcupado(true);
-        const r = await anotarValesEnCaja({});
+        const r = await anotarValesEnCaja({ sala });
         setOcupado(false);
         if (r.error) { showToast(mensajeAmigable(r.error), 'error'); return; }
         const fallaron = (r.resultados || []).filter((x) => x.error);

@@ -13,8 +13,10 @@ import Notice from '../components/common/Notice';
 import FileField from '../components/common/FileField';
 import PortalInput from '../components/common/PortalInput';
 import IdentidadDeQuienRetira from '../components/bolsas/IdentidadDeQuienRetira';
+import ValesDeCaja from '../components/bolsas/ValesDeCaja';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import PhotoLightbox from '../components/common/PhotoLightbox';
+import SearchInput from '../components/common/SearchInput';
 import StatCard from '../components/common/StatCard';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -827,6 +829,17 @@ export default function MiCajaView({ comoPestana = false }) {
 
                         <PanelDelDia estado={estado} ventas={ventas} veLosMontos={veLosMontos} />
 
+                        {/* Lo que la caja todavía cuenta como suyo de esta sala.
+                            Estaba en Bolsas, arriba de todo, y se quitó de ahí:
+                            no pide ninguna acción —el corte desde el portal
+                            escribe el vale solo— y con forma de aviso se leía
+                            como un faltante. Acá está pegado al corte, que es
+                            el único momento en que alguien lo necesita: cuando
+                            el corte se va a hacer en la pantalla de la caja y
+                            no por el portal. Ver el encabezado de
+                            `ValesDeCaja`, donde vive el porqué completo. */}
+                        <ValesDeCaja sala={sala} />
+
                         <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas}
                             dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
                             puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo}
@@ -1080,6 +1093,12 @@ const horaLegible = (cuando) => (cuando
     })
     : '');
 
+/* Para buscar: sin tildes y en minúsculas de los dos lados. Quien escribe
+ * «aplicacion» tiene que encontrar «Aplicación», y el papel imprime todo en
+ * mayúsculas. */
+const plano = (t) => String(t ?? '')
+    .normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+
 /** Sale del dato, no de una lista escrita a mano: `efectivo` → `Efectivo`. */
 const conMayuscula = (t) => {
     const s = String(t || '').trim();
@@ -1212,6 +1231,7 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
     const [foto, setFoto] = useState(null);      // { clave, url } | { clave, error }
     const [firmando, setFirmando] = useState(null);
     const [ampliada, setAmpliada] = useState(null);
+    const [busqueda, setBusqueda] = useState('');
     const verComprobante = useCallback(async (clave, url) => {
         if (foto?.clave === clave) { setFoto(null); return; }
         setFirmando(clave);
@@ -1279,20 +1299,60 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
             .sort((a, b) => String(b.cuando || '').localeCompare(String(a.cuando || '')));
     }, [movimientos, deBolsas, tipos]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
 
+    /* ── El buscador ───────────────────────────────────────────────────────
+     *
+     * Pedido del usuario (2026-09-02), junto con el de que la boleta llene el
+     * concepto: «así cualquier cosa podemos buscar».
+     *
+     * Busca en TODO lo que identifica un movimiento —el concepto, la boleta, el
+     * folio de la operación, quién lo anotó y el monto— y no sólo en el título:
+     * el dato con el que alguien vuelve a encontrar un pago suele ser el número
+     * de teléfono o la boleta, que viven en el concepto y en el detalle, no en
+     * un campo aparte.
+     *
+     * Sin tildes y sin mayúsculas de los dos lados: quien escribe «aplicacion»
+     * tiene que encontrar «Aplicación», y en el papel todo viene en mayúsculas.
+     *
+     * Filtra ANTES de repartir por corte, no después: si un grupo se queda sin
+     * resultados no tiene que aparecer vacío — `repartirPorCorte` ya saca los
+     * grupos sin líneas. */
+    const filtradas = useMemo(() => {
+        const q = plano(busqueda);
+        if (!q) return lineas;
+        return lineas.filter((l) => plano([
+            l.titulo,
+            l.origen,
+            ...(l.detalle || []),
+            anotaron?.get(l.quien)?.name,
+            // El monto se busca como se lee: «300» encuentra −$300.00.
+            l.monto?.toFixed?.(2),
+        ].filter(Boolean).join(' ')).includes(q));
+    }, [lineas, busqueda, anotaron]);
+
     /* Repartidos por corte: qué ya contó un corte firmado y qué sigue
      * pendiente. La regla vive en `repartirPorCorte` y no acá — usa el mismo
      * criterio que `conTramo` para decidir qué corte corre la línea, y escrita
      * dos veces el día que cambie una, la pantalla diría «ya registrado» sobre
      * algo que la diferencia todavía va a medir. */
-    const grupos = useMemo(() => repartirPorCorte(lineas, cortes), [lineas, cortes]);
+    const grupos = useMemo(() => repartirPorCorte(filtradas, cortes), [filtradas, cortes]);
 
     if (!lineas.length && puedeVerBolsas) return null;
 
     return (
         <div className="space-y-2">
-            <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
-                Movimientos de este día{dia ? ` · ${fechaLegible(dia)}` : ''}
-            </h3>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                    Movimientos de este día{dia ? ` · ${fechaLegible(dia)}` : ''}
+                </h3>
+                {/* Sale sólo cuando hay algo que filtrar: un buscador sobre dos
+                    movimientos es un control que estorba. */}
+                {lineas.length > 2 && (
+                    <SearchInput value={busqueda} onChange={setBusqueda} size="sm"
+                        className="w-full sm:w-64"
+                        placeholder="Buscar por concepto, boleta, quién o monto"
+                        ariaLabel="Buscar en los movimientos de este día" />
+                )}
+            </div>
 
             {/* Sin el permiso del otro módulo la lista sale incompleta y sin
                 error: la policy devuelve cero filas. Decirlo es la diferencia
@@ -1306,6 +1366,15 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
 
             {lineas.length === 0 && (
                 <p className="text-body-sm text-content-3">Todavía no se ha movido efectivo en este día.</p>
+            )}
+
+            {/* Una lista vacía por el filtro se lee igual que un día sin
+                movimientos, y no es lo mismo: acá sí hubo, sólo que ninguno
+                coincide. */}
+            {lineas.length > 0 && filtradas.length === 0 && (
+                <p className="text-body-sm text-content-3">
+                    Ningún movimiento de este día coincide con «{busqueda.trim()}».
+                </p>
             )}
 
             {grupos.map((g) => (

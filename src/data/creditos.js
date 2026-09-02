@@ -75,11 +75,22 @@ export async function fetchAbonosDelPortal({ desde, hasta }) {
  * La fecha va a mediodía UTC: leída como medianoche retrocede un día en
  * cualquier huso al oeste, y acá un día de más o de menos mueve a un crédito
  * del lado bueno al malo.
+ *
+ * `saldo` es opcional y por eso su default no es `0`: sin él la función
+ * contesta sólo por la fecha, que es lo que sirve para preguntar la edad de
+ * algo. Con él —que es como la usa la pantalla— «vencido» significa *debe y se
+ * pasó*, no *es viejo*.
  */
-export function edadDelCredito(fecha, hoy = new Date()) {
+export function edadDelCredito(fecha, saldo = null, hoy = new Date()) {
     if (!fecha) return { dias: null, vencido: false };
     const d = new Date(`${fecha}T12:00:00Z`);
     const ahora = new Date(`${new Date(hoy.getTime() - 6 * 3600_000).toISOString().slice(0, 10)}T12:00:00Z`);
     const dias = Math.round((ahora - d) / 86_400_000);
-    return { dias, vencido: dias > DIAS_DE_PLAZO };
+    /* Vencido exige SALDO. Un crédito de hace dos años que ya se pagó tiene
+     * 700 días y no debe nada: pintarlo de ámbar diría que hay algo que ir a
+     * cobrar donde no hay nada, y con el filtro en «Todos» eso era la pantalla
+     * entera en ámbar sobre saldos en $0.00. El plazo mide una DEUDA, no una
+     * fecha. */
+    const debe = saldo === null || Number(saldo) > 0.004;
+    return { dias, vencido: debe && dias > DIAS_DE_PLAZO };
 }

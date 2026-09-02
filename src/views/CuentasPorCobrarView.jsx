@@ -118,7 +118,7 @@ export default function CuentasPorCobrarView() {
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
 
     const conEdad = useMemo(
-        () => creditos.map((c) => ({ ...c, ...edadDelCredito(c.fecha) })),
+        () => creditos.map((c) => ({ ...c, ...edadDelCredito(c.fecha, c.saldo) })),
         [creditos],
     );
 

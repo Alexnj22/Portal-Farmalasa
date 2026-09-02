@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.936.4 — Un crédito pagado no está vencido
+
+Con el filtro en **Todos**, Cuentas por cobrar pintaba de ámbar la pantalla
+entera sobre saldos en **$0.00**: la banda de «pasado del plazo» miraba sólo la
+FECHA, así que un crédito de hace dos años que ya se pagó salía marcado como si
+hubiera algo que ir a cobrar.
+
+El plazo mide una **deuda**, no una fecha: ahora vencido exige saldo. El
+contador de arriba ya lo hacía bien —por eso decía 15 mientras la lista mostraba
+decenas de bandas ámbar—, y esa diferencia entre los dos era el defecto a la
+vista.
+
 ## v2.936.3 — Cuentas por cobrar en el menú, y un gate para el error que no dice dónde
 
 **La vista existía y no se veía.** La ruta, el permiso y la pantalla estaban;

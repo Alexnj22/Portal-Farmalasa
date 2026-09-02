@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.954.2 — El chip de diferencias es de la sala, no del pedido
+
+Pregunta del usuario mirando la tarjeta de Salud 5 del pedido #150: *«no
+entiendo, ¿hay diferencias o no?»*. La tarjeta decía las dos cosas a la vez —
+chip **«Difs. pendientes»** arriba y **«DIFERENCIAS RESUELTAS»** en verde abajo.
+
+**No había ninguna.** La del SECUFEM se cerró entera: la sala corrigió lo
+contado (1 → 3), propuso «la sala se queda», bodega aceptó y el traslado de las
+2 unidades ya entró (`TRA-P150-S5-H1-I92549`). Su `resolucion_status` es
+`confirmada`.
+
+El chip se encendía con `pedido_status === 'parcial'`, que es del **pedido
+entero**. El pedido #150 va a dos salas, y la diferencia viva era el REGUTOL de
+**La Popular** — en contrapropuesta. Es el mismo defecto que ya había costado el
+rótulo de la tarjeta en agosto, corregido entonces con `estadoDeLaSala` y dejado
+en pie acá.
+
+Y aunque el pedido fuera de una sola sala seguiría mintiendo:
+`pedido_items.status` se queda en `'con_diferencia'` para siempre —es el
+registro de que hubo una— así que `pedidos.status` **no vuelve de `'parcial'`
+nunca**. Quien dice si falta algo es `resolucion_status`, cuyo único estado
+terminal es `confirmada`.
+
+Ahora el chip cuenta **las diferencias de esa sala que siguen esperando algo**
+(`difsSinResolver`, con sus casos en `tests/unit/`) y dice cuántas son. Mientras
+los renglones no se leyeron devuelve 0 y no se pinta nada: preferible a afirmar
+sobre lo que todavía no se miró.
+
+Lo que la tarjeta sí dice bien y conviene no confundir: **«Esperando confirmación
+de sucursal…»** y el paso **«Corregido»** vacío en la línea de tiempo no son una
+diferencia — son el acuse final del ciclo. Bodega ya marcó la corrección; falta
+que Salud 5 apriete «Confirmar corrección recibida» desde su propia pantalla.
+
 ## v2.954.1 — El conteo de la sala no se repite cuando hay una sola
 
 La lista de cortes lleva dos encabezados —el del día y el de cada sala— y cada uno

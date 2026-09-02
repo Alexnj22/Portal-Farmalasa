@@ -175,6 +175,35 @@ export function estadoDeLaSala(row) {
     return 'confirmado';
 }
 
+/**
+ * Cuántas diferencias de ESTA sala siguen esperando algo.
+ *
+ * El chip de la tarjeta se encendía con `pedido_status === 'parcial'`, y eso es
+ * del PEDIDO entero — el mismo defecto que ya costó el rótulo de arriba. Medido
+ * el 2026-09-02 en el pedido #150: Salud 5 mostraba «Difs. pendientes» con su
+ * única diferencia CERRADA (SECUFEM, `confirmada`, el traslado ya entró a la
+ * sala); la que seguía viva era el REGUTOL de **La Popular**, la otra sala del
+ * mismo pedido.
+ *
+ * Y aunque el pedido fuera de una sola sala seguiría mintiendo:
+ * `pedido_items.status` se queda en `'con_diferencia'` para siempre —es el
+ * registro de que hubo una— así que `pedidos.status` no vuelve de `'parcial'`
+ * nunca. Lo que dice si falta algo es `resolucion_status`, y su único estado
+ * terminal es `'confirmada'`: `'acordada'` todavía tiene un movimiento en vuelo,
+ * `'propuesta'`/`'contrapropuesta'`/`'escalada'` esperan a alguien, y `null` es
+ * que nadie propuso nada.
+ *
+ * `undefined` mientras los renglones no llegaron: devuelve 0 y no se pinta nada.
+ * Preferible a afirmar sobre lo que todavía no se leyó — el auto-cargado de
+ * `usePedidosData` los trae solos en cuanto el pedido está `parcial`.
+ */
+export function difsSinResolver(itemsDeLaSala) {
+    if (!Array.isArray(itemsDeLaSala)) return 0;
+    return itemsDeLaSala.filter(
+        r => r.status === 'con_diferencia' && r.resolucion_status !== 'confirmada',
+    ).length;
+}
+
 // solicitado = need in presentation units before dispatch rounding
 export function calcSolicitado(row) {
     if (row.max_qty_snapshot == null || row.stock_packs_snapshot == null) return null;

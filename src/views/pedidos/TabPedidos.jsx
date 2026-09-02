@@ -23,7 +23,7 @@ import { notifyBranch } from '../../utils/notify';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SucPill from './tabpedidos/SucPill';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse } from './tabpedidos/helpers';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, difsSinResolver } from './tabpedidos/helpers';
 import ItemSections from './tabpedidos/ItemSections';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
 import DifSection from './tabpedidos/DifSection';
@@ -308,6 +308,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const stage      = getBranchStage(row);
                             const estadoSala = estadoDeLaSala(row);
                             const cardKey    = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
+                            const difsDeLaSala = difsSinResolver(items[cardKey]);
                             const isExp      = expanded === cardKey;
                             const lcKey      = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
                             const isLCBusy   = busyLifecycle === lcKey;
@@ -572,8 +573,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {(row.falta_cajas ?? []).length > 0 && (
                                             <Badge variant="danger" icon={Package} uppercase={false}>Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}</Badge>
                                         )}
-                                        {row.pedido_status === 'parcial' && !(row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0) && row.pedido_status !== 'completado' && (
-                                            <Badge icon={ClipboardList} uppercase={false}>Difs. pendientes</Badge>
+                                        {/* De ESTA sala y sin resolver — ver `difsSinResolver`.
+                                            Con `pedido_status === 'parcial'` decía «Difs.
+                                            pendientes» sobre Salud 5 con su única diferencia
+                                            cerrada: la viva era de La Popular, la otra sala del
+                                            mismo pedido. Es el mismo defecto que ya costó el
+                                            rótulo de arriba (`estadoDeLaSala`). */}
+                                        {difsDeLaSala > 0 && !(row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0) && (
+                                            <Badge icon={ClipboardList} uppercase={false}>
+                                                {difsDeLaSala === 1 ? '1 dif. pendiente' : `${difsDeLaSala} difs. pendientes`}
+                                            </Badge>
                                         )}
                                         {elapsedPrep  && <span className="text-caption text-content-2 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && (

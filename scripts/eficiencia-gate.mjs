@@ -149,7 +149,14 @@ const CRONS = [
           + 'las 23:00 y las 07:00 con las salas cerradas. Hoy `HORA_DESDE`/`HORA_HASTA` de '
           + '`sync-cortes-caja` contestan sin gastar nada fuera de ese rango. El tope son las 23 y '
           + 'no las 22 porque los cortes reales llegan hasta las 22:xx (24 en esa hora, medidos '
-          + 'sobre 60 días) y cortar a las 22 en punto dejaría sin sincronizar justo los de cierre.',
+          + 'sobre 60 días) y cortar a las 22 en punto dejaría sin sincronizar justo los de cierre. '
+          + 'Desde el 2026-09-02 `hacer-corte-caja` además dispara un barrido de UNA sala apenas '
+          + 'hace el corte (~35 peticiones al día, una por corte): el papel sale al CONFIRMAR y la '
+          + 'fila hace falta para poder firmar, y la mediana de aparición era de 38 s. Eso NO '
+          + 'reemplaza a esta ronda y por eso la cadencia no bajó: el portal sólo puede avisar de '
+          + 'los cortes que hace ÉL, y la sala todavía puede cortar en la pantalla de la caja — ese '
+          + 'corte no avisa a nadie y sin la ronda sería invisible. Decisión del usuario '
+          + '(2026-09-02) de dejarla en 30 s.',
   },
   {
     job: 'puntos-vencer-mensual', slug: 'puntos-vencer', cadencia: '0 9 1 * *',

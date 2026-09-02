@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.958.5 — El corte le avisa al portal apenas se hace
+
+Desde v2.958.1 el papel del corte sale al **confirmar**, y para poder firmar hace
+falta que el portal ya tenga la fila del corte. Pero el corte se graba en la caja
+al instante y al portal llega por un barrido: medido sobre los **170 cortes** de
+la semana del 27-ago, la mediana tarda **38 s** y 147 de 170 aparecen bajo el
+minuto. Justo el rato en que alguien lee la diferencia y aprieta confirmar — y se
+chocaba con «todavía no aparece el corte, confírmalo desde Cortes».
+
+Ahora `hacer-corte-caja` **le pide el barrido de esa sala apenas hace el corte**,
+en vez de esperar el próximo turno del reloj. Va en segundo plano: la respuesta
+—que es la que le muestra la diferencia a quien está parado frente a la caja— no
+espera, y el barrido termina mientras esa persona lee. Un fallo ahí no puede
+tumbar nada: el corte ya está hecho, y lo peor que pasa es que la fila llegue
+cuando pase la ronda de siempre, o sea lo que pasaba antes.
+
+Dos detalles que hacen que sirva: acota el trabajo a **una sala** (la ronda
+completa son seis listados, y cinco no tienen nada nuevo), y **saltea la ventana
+horaria** — la ronda no trae nada fuera de 7–23 SV y está bien, pero acá el corte
+acaba de ocurrir: es la única prueba de que sí había trabajo. Sin eso, un corte
+de las 23:10 esperaría hasta las 7 de la mañana.
+
+**La ronda de cada 30 s se queda como está** (decisión del usuario). No es
+redundante: el portal sólo puede avisar de los cortes que hace **él**, y la sala
+todavía puede cortar en la pantalla de la caja — ese corte no avisa a nadie, y
+sin la ronda sería invisible para el portal. Queda anotado en el manifiesto de
+`gate:eficiencia`, junto al costo del disparo nuevo (~35 peticiones al día, una
+por corte).
+
 ## v2.958.4 — El concepto lo dice la línea impresa del voucher
 
 El usuario mandó **dos boletas reales** del mismo POS y del mismo día como

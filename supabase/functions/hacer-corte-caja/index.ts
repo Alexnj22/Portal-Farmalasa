@@ -1045,6 +1045,60 @@ Deno.serve(async (req) => {
               + ` (número ${idCorte}). Avisá a Sistemas antes de seguir.`
             : undefined;
 
+    /* ── El portal le avisa al sync que hay un corte nuevo EN ESTA SALA ────
+     *
+     * El corte queda en el sistema de la caja al instante, pero el portal se
+     * entera por `sync-cortes-caja`, que barre cada 30 s. Medido sobre los 170
+     * cortes de la semana del 27-ago: la mediana tarda **38 s** y 147 de 170
+     * aparecen bajo el minuto. Como el papel ahora sale al CONFIRMAR y la fila
+     * hace falta para poder firmar, esos segundos caen justo en el medio: quien
+     * lee la diferencia y aprieta confirmar enseguida se choca con «todavía no
+     * aparece el corte» y tiene que ir a firmarlo a la otra pantalla.
+     *
+     * Pidiéndoselo acá, el barrido de esa sala arranca en el mismo momento en
+     * que el corte existe, en vez de esperar el próximo turno del reloj.
+     *
+     * ── Por qué en segundo plano y no esperándolo ─────────────────────────
+     * La respuesta es lo que le muestra la diferencia a alguien que está parado
+     * frente a la caja: sumarle el barrido la haría esperar por un dato que no
+     * está mirando. Arranca ahora y termina mientras esa persona lee, que es
+     * justo el hueco que hay que tapar.
+     *
+     * Y NO puede tumbar el corte: el corte YA está hecho y su respuesta ya está
+     * armada. Un fallo acá sólo significa que la fila llega cuando pase el
+     * barrido de siempre — o sea, exactamente lo que pasaba antes.
+     *
+     * `branchId` acota el trabajo a UNA sala: el barrido completo son seis
+     * listados, y cinco de ellos no tienen nada nuevo que traer.
+     *
+     * Y va con `desde`, que es lo que le hace saltear su ventana horaria. El
+     * cron no puede traer nada fuera de 7–23 SV —y está bien, porque a esa hora
+     * no hay cortes que traer—, pero acá el corte ACABA de ocurrir: es la única
+     * prueba que existe de que sí había trabajo. Sin esto, un corte de las
+     * 23:10 esperaría hasta las 7 de la mañana. */
+    if (ok && idCorte && !simular) {
+      const disparar = async () => {
+        const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
+        if (!secreto) { console.error("hacer-corte-caja: sin ADMIN_INVOKE_SECRET, no se avisó al sync"); return; }
+        const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-cortes-caja`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` },
+          body: JSON.stringify({
+            branchId: sala,
+            desde: new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10),
+          }),
+          signal: AbortSignal.timeout(60_000),
+        });
+        if (!r.ok) console.error(`hacer-corte-caja: el sync contestó ${r.status}`);
+      };
+      // @ts-ignore — EdgeRuntime es global del runtime de Supabase
+      EdgeRuntime.waitUntil(disparar().catch((e: unknown) => {
+        // Nadie a quien contarle: la respuesta ya salió. Que quede en el log,
+        // o el aviso al sync falla en silencio.
+        console.error("hacer-corte-caja: no se pudo avisar al sync:", (e as Error)?.message ?? e);
+      }));
+    }
+
     return json({
       ok,
       aviso: avisoTipo,

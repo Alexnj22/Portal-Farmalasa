@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.925.2 — Cuando el portal no responde: qué mirar y en qué orden
+
+Después del corte del 01-sep quedaron dos cosas: un comando para diagnosticarlo
+y un detector para que no vuelva a llegar hasta ahí.
+
+**`npm run portal:lento`** — de sólo lectura, contesta en orden las cuatro
+preguntas que separan el problema: ¿está pasando ahora?, ¿hay alguna consulta
+viva de más de 3 s?, ¿quién cuesta más por llamada?, ¿y qué hago con eso?
+Existe porque el síntoma nunca nombra la causa: el reporte fue «Realtime no
+funciona, no se puede iniciar sesión» y las dos mitades eran falsas —Realtime
+devolvía 101 y Auth 200—, mientras el log decía «Timed out acquiring connection
+from connection pool», que manda a mirar las conexiones, donde tampoco estaba.
+
+**Sección F de `npm run gate:perf`** — vigila **bloques por llamada** contra
+`scripts/bloques-por-llamada.json`. Una función que lee 195 MB o más por llamada
+y no está declarada falla el gate; una declarada que crece por encima de su
+techo, también.
+
+Se mide en bloques y no en milisegundos, y ésa es la decisión que lo hace
+servir: un promedio de tiempo medido durante un corte dice quién **esperó**, no
+quién estaba lento —bajo saturación todo tarda—, mientras que los bloques son el
+trabajo que la consulta hace, el mismo número con el servidor vacío o saturado.
+Eso permite un techo ajustado sin falsos positivos, que es justo lo que la
+sección D no puede tener.
+
+**Ninguna de las otras cinco secciones podía ver esto, y la ceguera era
+estructural.** La sección C mira la forma del plan, pero `EXPLAIN` de una llamada
+a función devuelve un `Function Scan` y nada más. La sección B tapa ese hueco
+vigilando el código de funciones concretas, escritas a mano — o sea sólo lo que
+alguien ya sufrió, y la culpable era del día anterior. Y la sección D ya vigilaba
+el TIEMPO de `get_faltantes_con_stock_en_otra_sala` —159 ms contra un techo de
+400— sin ver que lee **467 MB cada vez**.
+
+**El instrumento se ensuciaba a sí mismo, y hubo que corregirlo antes de
+creerle.** La primera versión del listado acusaba a esa misma función de 2,720 MB
+por llamada cuando su caller real lee 467. La diferencia: un bloque `DO $$` que
+llama siete veces cuenta como UNA statement en `pg_stat_statements` — y esos
+bloques eran **las mediciones propias**, la sección D de este mismo gate
+incluida, que llama cinco veces adentro de un solo statement. La herramienta que
+mide ensuciaba lo que medía y después culpaba a otro. Hoy se excluyen
+`DO`/`EXPLAIN`/`VACUUM`/`ANALYZE`/`CREATE`.
+
+Quedan **cinco funciones declaradas, cuatro como deuda sin auditar** — el techo
+protege contra que crezcan, no promete que estén bien. Las dos que conviene
+mirar: `ventas_para_puntos` (301 MB × 210 llamadas, el cron de cada minuto, 63 GB
+en cuatro horas) y `get_faltantes_con_stock_en_otra_sala` (467 MB × 128, y su
+costo es **plano**: leer con `p_limite` 10 o 1000 cuesta lo mismo, así que hace
+todo el trabajo y recién después recorta).
+
+El procedimiento completo, en CLAUDE.md § «Cuando el portal no responde».
+
 ## v2.925.1 — Promociones — el seguimiento dice si paga bono y quién
 
 Desde que el bono es opcional, un producto marcado «sólo mide» se veía en

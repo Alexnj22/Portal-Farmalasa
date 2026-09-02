@@ -1,0 +1,34 @@
+{
+  "_comment": "Lo que cada función lee POR LLAMADA, en bloques de 8 kB. Sección F de `npm run gate:perf`. Una función que cruza el umbral y no está acá FALLA el gate — no porque leer mucho esté mal, sino porque tiene que estar DECIDIDO y escrito que lee mucho. Los techos se miden, no se inventan, y sólo bajan.",
+  "_medido": "2026-09-01, después del corte de las 16:35. Fuente: `npm run portal:lento`.",
+  "_umbral": 25000,
+  "_umbral_comment": "25,000 bloques = 195 MB por llamada. Por debajo no se declara nada: un umbral que obliga a declarar medio catálogo produce un manifiesto que nadie lee. La que tumbó el portal leía 1,528,584.",
+  "_como_se_lee": "`bloques` es el TECHO, ~1.3x lo medido — margen para el ruido, no para una regresión. `deuda: true` significa que el número está declarado pero NO auditado: nadie miró todavía si ese costo es el trabajo real o un plan malo. Un techo declarado protege contra que CREZCA; no promete que esté bien.",
+  "_cuidado": "La primera versión de este manifiesto tenía tres números inflados —uno de ellos 6x— porque el instrumento contaba los bloques `DO $$` de las PROPIAS mediciones (las de este gate incluidas: la sección D llama cinco veces adentro de un solo statement) como si fueran tráfico del portal. Hoy el SQL los excluye. Si un número acá parece absurdo, sospechar del instrumento antes que de la función.",
+  "funciones": {
+    "get_traslado_disponibilidad": {
+      "bloques": 145000,
+      "deuda": true,
+      "motivo": "869 MB, el más caro por llamada del portal. Cruza la existencia de las 7 salas para un producto, al componer un traslado. 20 llamadas en 4 horas: caro por llamada, barato por día. NO auditado."
+    },
+    "get_faltantes_con_stock_en_otra_sala": {
+      "bloques": 78000,
+      "deuda": true,
+      "motivo": "467 MB x 128 llamadas. Widget del tablero, o sea que corre para cada persona que lo abre. Verificado el 01-sep: el costo es PLANO —444 a 540 MB en las 7 salas, y no cambia con `p_limite` (10 o 1000 leen lo mismo)—, así que hace todo el trabajo y recién después recorta. Ahí está lo que hay que mirar. Es `LANGUAGE sql` + `SET`, pero la auditoría del 2026-08-25 ya midió que forzarle plan personalizado la deja PEOR: su plan no depende de los argumentos."
+    },
+    "upsert_product_precios_batch": {
+      "bloques": 53000,
+      "motivo": "Escritura del sync de precios, con el ON CONFLICT ... WHERE IS DISTINCT FROM. Lee mucho porque compara el lote contra lo guardado — que es exactamente lo que evita reescribir filas que no cambiaron, y el churn de WAL que costó los 935M de updates sobre inventory."
+    },
+    "ventas_para_puntos": {
+      "bloques": 50000,
+      "deuda": true,
+      "motivo": "PRIORIDAD por frecuencia. El cron `sync-puntos-1min`, cada minuto: 210 llamadas x 301 MB = 63 GB en 4 horas, el mayor consumidor del portal por día. No es cara por llamada, pero ocupa una de las 20 conexiones cada vez. NO auditada."
+    },
+    "get_pedido_generar_dashboard": {
+      "bloques": 43000,
+      "deuda": true,
+      "motivo": "258 MB, y 2,109 ms de media — el peor tiempo de la lista. El tablero de generar pedido, 6 llamadas. NO auditado."
+    }
+  }
+}

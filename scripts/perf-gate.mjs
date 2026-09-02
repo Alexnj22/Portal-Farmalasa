@@ -306,6 +306,62 @@ const PLANES = [
  * parámetros son un payload `json`/`jsonb`, NO puede tener este defecto** —
  * `jsonb_array_elements` se estima en 100 filas pase lo que pase, así que
  * conocer el valor no le aporta nada al planificador. */
+/* ── F. Bloques por llamada ──────────────────────────────────────────────────
+ *
+ * Nació del corte del 2026-09-01 (16:35–16:44), que ninguna de las cinco
+ * secciones anteriores podía ver — y el motivo de la ceguera vale escribirlo,
+ * porque es estructural y no un olvido.
+ *
+ * La sección C mira la forma del plan con `EXPLAIN`, pero `EXPLAIN` de una
+ * llamada a función devuelve un `Function Scan` y nada más: lo de adentro es
+ * una caja cerrada. La sección B tapa ese hueco vigilando el CÓDIGO de
+ * funciones concretas —una por una, escritas a mano—, así que sólo protege lo
+ * que alguien ya sufrió. `puntos_tickets_de_ficha_que_no_acumula` era nueva del
+ * día anterior, no estaba en ninguna lista, y leía **1,528,584 bloques (11.7 GB)
+ * por llamada, cada minuto, para devolver una lista vacía**.
+ *
+ * ── Por qué BLOQUES y no milisegundos ────────────────────────────────────────
+ * Porque los bloques no dependen de la carga del momento. La sección D mide
+ * tiempos y por eso sus techos están ~5× arriba de lo medido: contra una
+ * producción compartida el reloj es ruidoso, y un gate que falla al azar se
+ * termina ignorando. Los bloques son el TRABAJO que la consulta hace — el mismo
+ * número con el servidor vacío o saturado. Eso permite un techo ajustado sin
+ * falsos positivos, que es justo lo que la sección D no puede tener.
+ *
+ * ── Por qué no hay chequeo de fantasmas ──────────────────────────────────────
+ * A diferencia de la sección E, acá una entrada declarada que NO aparece en
+ * producción no es un hallazgo. `pg_stat_statements` se borra en cada reinicio
+ * de Postgres y las entradas se caen solas cuando la tabla se llena: no haber
+ * corrido todavía es lo normal, no una señal de que la función murió. */
+const MANIFIESTO_BLOQUES = 'scripts/bloques-por-llamada.json';
+
+const SQL_BLOQUES = `
+SELECT coalesce(
+         (regexp_match(query, '"public"\\."([a-z0-9_]+)"\\s*\\('))[1],
+         (regexp_match(query, 'public\\.([a-z0-9_]+)\\s*\\('))[1]
+       ) AS fn,
+       -- \`sum/sum\` y no \`max(bloques/calls)\`: una función aparece con varias
+       -- formas de statement, y quedarse con la peor reporta un caso raro como
+       -- si fuera el costo de todos los días.
+       sum(shared_blks_hit + shared_blks_read) / sum(calls) AS bloques,
+       sum(calls) AS llamadas
+FROM extensions.pg_stat_statements
+WHERE calls >= 3
+  -- ── Lo que NO es el portal leyendo ─────────────────────────────────────────
+  -- Un bloque \`DO $$\` que llama siete veces a la misma función cuenta como UNA
+  -- statement: \`bloques/calls\` le atribuye el trabajo de las siete. O sea que el
+  -- listado acusaba a la función del costo de MEDIRLA — medido acá mismo el
+  -- 2026-09-01, \`get_faltantes_con_stock_en_otra_sala\` figuraba en 2,720 MB por
+  -- llamada y su caller real leía 467. La herramienta que mide ensuciaba lo que
+  -- media y después culpaba a otro.
+  AND query !~* '^\\s*(DO|EXPLAIN|VACUUM|ANALYZE|CREATE|REINDEX|CLUSTER)\\M'
+GROUP BY 1
+HAVING coalesce(
+         (regexp_match(query, '"public"\\."([a-z0-9_]+)"\\s*\\('))[1],
+         (regexp_match(query, 'public\\.([a-z0-9_]+)\\s*\\('))[1]
+       ) IS NOT NULL
+ORDER BY 2 DESC`;
+
 const MANIFIESTO_PLANES = 'scripts/planes-genericos.json';
 
 const SQL_PLANES_GENERICOS = `
@@ -527,6 +583,49 @@ SELECT clave, plan FROM _pg_p`;
       const conMedicion = enProd.filter(fn => manifiesto[fn]?.ms != null).length;
       console.log(`  planes sql:  ${enProd.length - sinDeclarar.length}/${enProd.length} declaradas`
                 + ` (${conMedicion} con medición, ${enProd.length - conMedicion} deuda declarada)`);
+    }
+
+    // ── F. Bloques por llamada ───────────────────────────────────────────────
+    if (!existsSync(MANIFIESTO_BLOQUES)) {
+      fallas.push({ clave: 'bloques-por-llamada', porque: 'Sin manifiesto no hay contra qué cruzar.',
+        detalle: `falta ${MANIFIESTO_BLOQUES}` });
+    } else {
+      const mf = JSON.parse(readFileSync(MANIFIESTO_BLOQUES, 'utf8'));
+      const umbral = mf._umbral ?? 25000;
+      const declarado = mf.funciones ?? {};
+      const medidasBloques = canal.consultar(SQL_BLOQUES)
+        .map(r => ({ fn: r.fn, bloques: Number(r.bloques), llamadas: Number(r.llamadas) }));
+      const mb = (b) => `${Math.round(b * 8192 / 1024 / 1024)} MB`;
+      let dentro = 0;
+      for (const m of medidasBloques) {
+        const d = declarado[m.fn];
+        if (!d) {
+          // Sólo es hallazgo si CRUZA el umbral. Por debajo no se declara nada:
+          // un manifiesto con medio catálogo adentro no lo lee nadie.
+          if (m.bloques >= umbral) {
+            fallas.push({ clave: `bloques-sin-declarar:${m.fn}`,
+              porque: 'Lee mucho por llamada y nadie decidió que estuviera bien. Medila con '
+                    + '`EXPLAIN (ANALYZE, TIMING OFF, BUFFERS)`, mirá dónde `rows` estimadas y '
+                    + '`actual rows` se separan, y o la corregís o la declarás con su motivo escrito.',
+              detalle: `${mb(m.bloques)} por llamada (${m.bloques.toLocaleString('es-SV')} bloques, `
+                     + `${m.llamadas} llamadas) y no figura en ${MANIFIESTO_BLOQUES}` });
+          }
+          continue;
+        }
+        if (m.bloques > d.bloques) {
+          fallas.push({ clave: `bloques-cruzo-techo:${m.fn}`,
+            porque: 'Creció lo que lee por llamada. O volvió un barrido, o el planificador cambió de camino.',
+            detalle: `${mb(m.bloques)} contra un techo de ${mb(d.bloques)}` });
+        } else dentro++;
+      }
+      /* Se informan los DOS números por separado y no como una fracción: no son
+       * el mismo conjunto. `dentro` cuenta las declaradas que respetan su techo
+       * —incluidas las que hoy corrieron por debajo del umbral— y `sobreUmbral`
+       * cuenta las que hoy lo cruzaron, declaradas o no. Escrito como «7/5»
+       * parecía un error de conteo. */
+      const sobreUmbral = medidasBloques.filter(m => m.bloques >= umbral).length;
+      console.log(`  bloques:     ${dentro} declarada(s) dentro de su techo`
+                + ` · ${sobreUmbral} sobre ${mb(umbral)} por llamada en esta corrida`);
     }
 
     // ── D. Tiempos ───────────────────────────────────────────────────────────

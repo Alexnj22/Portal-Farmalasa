@@ -51,7 +51,8 @@
     "auditoria:sincronizar": "node scripts/auditoria-cli.mjs sincronizar",
     "medir:papel": "node scripts/medir-deteccion-de-papel.mjs",
     "medir:pdf": "node scripts/medir-hojas-en-pdf.mjs",
-    "logos": "node scripts/preparar-logos.mjs"
+    "logos": "node scripts/preparar-logos.mjs",
+    "portal:lento": "node scripts/portal-lento.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

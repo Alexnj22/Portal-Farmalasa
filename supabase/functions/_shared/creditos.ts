@@ -190,3 +190,35 @@ export async function abonosDelCredito(
     };
   }).filter((a) => a.monto > 0);
 }
+
+
+/**
+ * Borrar un abono del sistema de la caja.
+ *
+ * ⚠️ **`id_factura` lleva acá el id del ABONO** — es el TERCER significado del
+ * mismo parámetro en este origen: en el listado nombra la factura, al abonar
+ * lleva el id del CRÉDITO, y al borrar el del ABONO. Auditado el 2-sep
+ * probando con un id inexistente, que es la única forma de sondear un borrado
+ * sin arriesgar dinero de verdad.
+ *
+ * ⚠️ **Contesta «Success» aunque no haya borrado nada.** Con un id que no
+ * existe devuelve exactamente la misma respuesta que con uno bueno, así que su
+ * palabra no prueba nada: quien llama tiene que RELEER el crédito y comprobar
+ * que el abono ya no está. Eso lo hace `creditos-erp`.
+ */
+export async function quitarAbonoDelOrigen(
+  cookie: string, erpId: number, abonoErpId: string,
+): Promise<boolean> {
+  await abrirSala(cookie, erpId);
+  const t = await (await fetch(ABONO_URL, {
+    method: "POST",
+    headers: {
+      Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: new URLSearchParams({ process: "quitar", id_factura: abonoErpId }).toString(),
+    signal: AbortSignal.timeout(45_000),
+  })).text();
+  try { return String(JSON.parse(t)?.typeinfo ?? "").toLowerCase() === "success"; }
+  catch { return false; }
+}

@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.944.0 — Corregir un abono es una solicitud
+
+Pedido del usuario: *«si se quiere editar un abono, no permite; que sea como
+solicitud a supervisor … la solicitud sería de edición o anulación. Edición por
+monto o tipo de pago, y si es por tipo de pago es el mismo modal de la foto y
+reconocimiento»*.
+
+Quien cobró **no lo deshace**. Un abono aplicado es dinero, y borrarlo en
+silencio es justamente lo que la bitácora existe para impedir. Desde la ficha
+del crédito se **pide**, y lo decide quien tenga el permiso — con su bandeja,
+sus avisos y su rastro, como cualquier otra solicitud del portal.
+
+**Interruptor propio: «Decidir: cuentas por cobrar».** Aparte del de caja, por
+pedido del usuario: son dos públicos —quien corrige un vale del cajón no es
+necesariamente quien decide sobre la cartera— y con un solo interruptor dar uno
+regalaba el otro. Arranca en quien ya decide sobre la caja, así que funciona
+desde el primer día.
+
+### Editar es borrar y volver a abonar
+
+Decidido por el usuario, y es lo único que el sistema de la caja permite: su
+panel **abona y borra, no edita**. Así que corregir el monto se aplica como
+*quitar el viejo y hacer el nuevo*, y en el historial de allá quedan los dos
+renglones. Es más ruidoso que un UPDATE y es la verdad: un abono corregido no es
+el mismo abono. El diálogo lo dice **antes** de elegir, no después.
+
+Cuando lo que cambia es la forma de pago, se pide el comprobante con el mismo
+modal de foto y reconocimiento del cobro.
+
+### Lo que la auditoría del sistema de la caja destrabó
+
+La acción de borrado se llama **`quitar`** y —tercera vez con el mismo
+parámetro— **`id_factura` lleva acá el id del ABONO**: en el listado nombra la
+factura, al abonar lleva el id del crédito, y al borrar el del abono.
+
+Se encontró sondeando **con un id inexistente**, que es la única forma de probar
+un borrado sin arriesgar dinero de verdad. Y de paso apareció algo que hay que
+saber: **el origen contesta «Success» aunque no haya borrado nada** — con un id
+que no existe devuelve exactamente lo mismo que con uno bueno. Su palabra no
+prueba nada, así que el portal **relee el crédito** y comprueba que el abono ya
+no esté antes de dar la corrección por hecha.
+
+### Tres frenos que valen la pena
+
+- **Una sola solicitud viva por abono.** Sin eso, dos personas piden lo mismo,
+  un supervisor aprueba las dos, y la segunda corrección se aplica sobre un
+  abono que ya no existe.
+- **Quien pide no puede aprobarse.** La policy no alcanza: la escritura la hace
+  la función con la llave del servidor, que no pasa por RLS.
+- **Si el abono viejo se borró y el nuevo no entró**, se responde en rojo
+  diciendo exactamente cuánto hay que rehacer a mano. El origen no tiene
+  «restaurar», y callarlo dejaría una deuda inventada.
+
 ## v2.943.0 — El historial de abonos sale completo
 
 **Corrección de una afirmación que el portal dio por buena todo el día.** Acá

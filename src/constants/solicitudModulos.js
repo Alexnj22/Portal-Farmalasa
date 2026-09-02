@@ -38,4 +38,8 @@ export const MODULO_QUE_DECIDE = {
     // anotó NO puede deshacerlo: un movimiento ya contado es dinero, y borrarlo
     // en silencio es justamente lo que la bitácora existe para impedir.
     CAJA_MOVIMIENTO_CHANGE:    'requests_caja',
+    // Anular un abono ya cobrado, o corregirle el monto o la forma de pago.
+    // Módulo propio y no `requests_caja`: son dos públicos, y con un solo
+    // interruptor dar uno regala el otro.
+    ABONO_CREDITO_CHANGE:      'requests_cuentas_por_cobrar',
 };

@@ -109,6 +109,12 @@ const GRUPOS_CRUDOS = [
             { key: 'requests_inventario',  label: 'Decidir: inventario',  desc: 'Resolver las solicitudes de carga y de descarte de existencia: son las que mueven el inventario de la sala', icon: PackageMinus, hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
             { key: 'requests_minmax',      label: 'Decidir: Min/Max',     desc: 'Resolver las solicitudes de ajuste de stock mínimo y máximo. Distinto de publicar cambios de Min/Max, que vive en su propio módulo', icon: BarChart2, hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
             { key: 'requests_caja',        label: 'Decidir: caja',        desc: 'Resolver los pedidos de anular o corregir el monto de un movimiento de caja ya anotado. Quien lo anotó no puede deshacerlo: un movimiento ya contado es dinero', icon: Wallet, hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
+            /* Módulo aparte de `requests_caja` y no una capacidad suya, por pedido
+             * del usuario (2-sep): «para asignarle a otras personas también el
+             * permiso». Son dos públicos — quien corrige un vale del cajón no es
+             * necesariamente quien decide sobre la cartera de créditos—, y con un
+             * solo interruptor dar uno regala el otro. */
+            { key: 'requests_cuentas_por_cobrar', label: 'Decidir: cuentas por cobrar', desc: 'Resolver los pedidos de anular o corregir un abono ya cobrado. Quien lo cobró no puede deshacerlo: un abono aplicado es dinero. Corregirlo se aplica borrando el abono y volviendo a hacerlo, que es lo único que el sistema de la caja permite', icon: HandCoins, hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
             { key: 'requests_personales', label: 'Solicitudes personales', desc: 'Las que hablan de una persona y no de la sala: vacaciones, permiso, incapacidad, anticipo salarial y constancias. Ver aquí es ver datos sensibles del expediente ajeno', icon: Palmtree, hasApprove: true, hasScope: true },
             // Módulo aparte de `requests` a propósito: acá `can_approve` habilita
             // confirmar un traslado de la propia sala y NADA más. Metido dentro de

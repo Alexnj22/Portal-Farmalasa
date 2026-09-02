@@ -250,6 +250,37 @@ export async function fetchHistorialDelOrigen({ sala, credito }) {
     return pedir({ accion: 'historial', sala, credito });
 }
 
+/**
+ * Pedir que se anule o se corrija un abono ya cobrado.
+ *
+ * Quien cobró NO puede deshacerlo: un abono aplicado es dinero, y borrarlo en
+ * silencio es justamente lo que la bitácora existe para impedir. Va como
+ * solicitud, la decide `requests_cuentas_por_cobrar`, y se aplica desde la
+ * bandeja como cualquier otra.
+ *
+ * ⚠️ **Corregir se aplica BORRANDO el abono y volviendo a hacerlo** — decisión
+ * del usuario y lo único que el sistema de la caja permite: su panel abona y
+ * borra, no edita. Deja dos renglones en el historial de allá, y eso es la
+ * verdad: un abono corregido no es el mismo abono.
+ */
+export function pedirCorreccionDeAbono({
+    sala, credito, abonoErp, que, motivo,
+    montoActual = null, montoNuevo = null, formaActual = null, formaNueva = null,
+    documentoNuevo = null, fechaDocumento = null, pos = null,
+    comprobanteUrl = null, lectura = null, cliente = null,
+}) {
+    return pedir({
+        accion: 'pedir_correccion', sala, credito, abonoErp, que, motivo,
+        montoActual, montoNuevo, formaActual, formaNueva,
+        documentoNuevo, fechaDocumento, pos, comprobanteUrl, lectura, cliente,
+    });
+}
+
+/** Aplicar una corrección ya aprobada. La llama quien decide, no quien pidió. */
+export function aplicarCorreccionDeAbono(solicitudId) {
+    return pedir({ accion: 'aplicar_correccion', solicitud: solicitudId });
+}
+
 /** Los POS con los que se cobra con tarjeta. Salen de la tabla: sumar uno es
  *  una fila, no un despliegue. */
 export async function fetchPosProveedores() {

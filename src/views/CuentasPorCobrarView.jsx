@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Building2, CalendarClock, HandCoins, RefreshCw, Search, ShoppingBag, UserCircle2 } from 'lucide-react';
+import { AlertTriangle, Building2, CalendarClock, HandCoins, Pencil, RefreshCw, Search, ShoppingBag, UserCircle2 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -10,6 +10,7 @@ import LiquidModal from '../components/common/LiquidModal';
 import LiquidSelect from '../components/common/LiquidSelect';
 import Notice from '../components/common/Notice';
 import PortalInput from '../components/common/PortalInput';
+import PortalTextarea from '../components/common/PortalTextarea';
 import TablePagination from '../components/common/TablePagination';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import FileField from '../components/common/FileField';
@@ -21,7 +22,7 @@ import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
 import {
     DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchCreditosDelCliente,
     fetchHistorialDelOrigen, fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito,
-    pagarCreditos, severidadDeDias,
+    pagarCreditos, pedirCorreccionDeAbono, severidadDeDias,
     subirComprobanteDeAbono,
 } from '../data/creditos';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -153,6 +154,7 @@ export default function CuentasPorCobrarView() {
     const [cargando, setCargando] = useState(true);
     const [abonando, setAbonando] = useState(null);
     const [viendo, setViendo] = useState(null);
+    const [corrigiendo, setCorrigiendo] = useState(null);
     const [lectura, setLectura] = useState(null);
 
     /* Con alcance de una sala, el selector no se dibuja y la lista es la propia
@@ -504,8 +506,15 @@ export default function CuentasPorCobrarView() {
 
             {viendo && (
                 <FichaDelCredito credito={viendo} vendedor={vendedores.get(String(viendo.vendedor_id))}
+                    puedeAbonar={puedeAbonar}
+                    onCorregir={(a) => setCorrigiendo({ credito: viendo, abono: a })}
                     onClose={() => setViendo(null)}
                     onAbonar={puedeAbonar ? () => { setViendo(null); setAbonando(viendo); } : undefined} />
+            )}
+
+            {corrigiendo && (
+                <PedirCorreccion {...corrigiendo} onClose={() => setCorrigiendo(null)}
+                    onListo={() => { setCorrigiendo(null); cargar(); }} />
             )}
 
             {abonando && (
@@ -523,7 +532,7 @@ export default function CuentasPorCobrarView() {
  * créditos con saldo tienen los suyos— así que abrir esto no sale a la red del
  * otro sistema.
  */
-function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
+function FichaDelCredito({ credito, vendedor, puedeAbonar, onClose, onAbonar, onCorregir }) {
     const [datos, setDatos] = useState(null);
     const [delOrigen, setDelOrigen] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -555,6 +564,9 @@ function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
      * los dos lados comparten: el id del abono de allá no se guardaba acá.
      * Un abono sin pareja simplemente sale sin cara, que es la verdad. */
     const abonos = useMemo(() => {
+        // Sin el historial del origen no hay id que borrar, así que tampoco se
+        // ofrece corregir: un botón que no puede terminar su trabajo es peor
+        // que no tenerlo.
         if (!delOrigen) return delPortal.map((a) => ({ ...a, origen: 'portal' }));
         const libres = [...delPortal];
         return delOrigen.map((o) => {
@@ -563,6 +575,7 @@ function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
             const par = i >= 0 ? libres.splice(i, 1)[0] : null;
             return {
                 id: o.erp_id || `${o.fecha}-${o.monto}`,
+                erp_id_borrable: o.erp_id,
                 monto: o.monto, forma: o.forma, documento: o.documento,
                 fecha: o.fecha, hora: o.hora,
                 abonado_por: par?.abonado_por ?? null,
@@ -743,11 +756,21 @@ function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
                                                     </span>
                                                 </span>
                                             </span>
-                                            {a.saldo_despues != null && (
-                                                <span className="text-micro tabular-nums text-content-3 shrink-0">
-                                                    quedó {formatMoney(a.saldo_despues)}
-                                                </span>
-                                            )}
+                                            <span className="flex items-center gap-2 shrink-0">
+                                                {a.saldo_despues != null && (
+                                                    <span className="text-micro tabular-nums text-content-3">
+                                                        quedó {formatMoney(a.saldo_despues)}
+                                                    </span>
+                                                )}
+                                                {/* Quien cobró NO lo deshace: un abono
+                                                    aplicado es dinero. Se PIDE, y lo decide
+                                                    quien tenga el permiso. */}
+                                                {puedeAbonar && a.erp_id_borrable && (
+                                                    <Button variant="ghost" size="sm" iconOnly icon={Pencil}
+                                                        title="Pedir que se corrija o se anule"
+                                                        onClick={() => onCorregir(a)} />
+                                                )}
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
@@ -1029,4 +1052,136 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 function sumaDeSaldos(hermanos, credito) {
     const lista = hermanos?.length ? hermanos : [credito];
     return lista.reduce((t, h) => t + (Number(h.saldo) || 0), 0);
+}
+
+
+/**
+ * Pedir que se anule o se corrija un abono ya cobrado.
+ *
+ * Quien cobró NO lo deshace. «Si se quiere editar un abono, no permite; que sea
+ * como solicitud a supervisor» (usuario, 2-sep). Y corregir se aplica BORRANDO
+ * el abono y volviéndolo a hacer, que es lo único que el sistema de la caja
+ * permite: su panel abona y borra, no edita.
+ */
+function PedirCorreccion({ credito, abono, onClose, onListo }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const [que, setQue] = useState('ANULAR');
+    const [montoNuevo, setMontoNuevo] = useState(String(abono.monto ?? ''));
+    const [formaNueva, setFormaNueva] = useState(abono.forma || 'Efectivo');
+    const [documento, setDocumento] = useState(abono.documento || '');
+    const [motivo, setMotivo] = useState('');
+    const [ocupado, setOcupado] = useState(false);
+
+    // El comprobante, cuando lo que cambia es la forma de pago: es el mismo
+    // modal de foto y reconocimiento del cobro, por pedido del usuario.
+    const [archivo, setArchivo] = useState(null);
+    const [leyendo, setLeyendo] = useState(false);
+    const [lectura, setLectura] = useState(null);
+    const conPapel = que === 'FORMA' && formaNueva !== 'Efectivo';
+
+    const leer = useCallback(async (f) => {
+        setArchivo(f); setLectura(null);
+        if (!f) return;
+        setLeyendo(true);
+        const r = await leerPagoDeCredito(f, { forma: formaNueva, saldo: Number(abono.monto) || 0 });
+        setLeyendo(false);
+        if (r?.error) { showToast('No se pudo leer', mensajeAmigable(r.error), 'warning'); return; }
+        setLectura(r);
+        if (r.sugerido?.documento) setDocumento(String(r.sugerido.documento));
+    }, [formaNueva, abono.monto, showToast]);
+
+    const bloqueado = lectura && lectura.veredicto !== 'OK';
+    const valido = motivo.trim().length >= 5 && !bloqueado
+        && (que !== 'MONTO' || Number(montoNuevo) > 0)
+        && (!conPapel || (archivo && lectura));
+
+    const pedir = useCallback(async () => {
+        setOcupado(true);
+        const r = await pedirCorreccionDeAbono({
+            sala: credito.branch_id, credito: credito.credito,
+            abonoErp: abono.erp_id_borrable, que, motivo: motivo.trim(),
+            montoActual: Number(abono.monto), montoNuevo: Number(montoNuevo),
+            formaActual: abono.forma, formaNueva,
+            documentoNuevo: documento || null,
+            fechaDocumento: lectura?.sugerido?.fecha || null,
+            pos: lectura?.sugerido?.pos || null,
+            lectura: lectura || null,
+            cliente: credito.cliente,
+        });
+        setOcupado(false);
+        if (r?.error || r?.ok === false) {
+            showToast('No se pudo pedir', mensajeAmigable(r.error || r), 'error');
+            return;
+        }
+        showToast('Solicitud enviada', 'La decide quien tenga el permiso de cuentas por cobrar.', 'success');
+        onListo?.();
+    }, [credito, abono, que, motivo, montoNuevo, formaNueva, documento, lectura, showToast, onListo]);
+
+    return (
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Pedir una corrección">
+            <div className="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+                <div>
+                    <h3 className="text-h3 font-bold text-content">Pedir una corrección</h3>
+                    <p className="text-body-sm text-content-2 mt-1">
+                        {formatMoney(abono.monto)} · {abono.forma} · {fechaCorta(abono.fecha)}
+                    </p>
+                </div>
+
+                {/* Se dice ANTES de elegir: corregir no es un UPDATE allá, y
+                    quien pide tiene que saber qué va a pasar de verdad. */}
+                <Notice variant="info">
+                    Corregir un abono se aplica <strong>borrándolo y volviéndolo a hacer</strong> —
+                    es lo único que el sistema de la caja permite—, así que en su historial van a
+                    quedar los dos renglones.
+                </Notice>
+
+                <LiquidSelect label="Qué hay que hacer" value={que} onChange={(v) => setQue(v || 'ANULAR')}
+                    clearable={false}
+                    options={[
+                        { value: 'ANULAR', label: 'Anularlo: no debió cobrarse' },
+                        { value: 'MONTO',  label: 'Corregir el monto' },
+                        { value: 'FORMA',  label: 'Corregir la forma de pago' },
+                    ]} />
+
+                {que === 'MONTO' && (
+                    <PortalInput label="Monto correcto" inputMode="decimal" value={montoNuevo}
+                        onChange={(e) => setMontoNuevo(e.target.value)} />
+                )}
+
+                {que === 'FORMA' && (
+                    <>
+                        <LiquidSelect label="Forma correcta" value={formaNueva}
+                            onChange={(v) => { setFormaNueva(v || 'Efectivo'); setArchivo(null); setLectura(null); }}
+                            options={FORMAS.map((f) => ({ value: f, label: f }))} clearable={false} />
+                        {conPapel && (
+                            <>
+                                <FileField label="Foto del comprobante" accept="image/*" value={archivo}
+                                    onChange={leer} onClear={() => leer(null)} />
+                                {leyendo && <LoadingState label="Leyendo el comprobante" />}
+                                {bloqueado && (
+                                    <Notice variant="danger" icon={AlertTriangle}>
+                                        {MOTIVO_DEL_FRENO[lectura.veredicto]
+                                            || 'El comprobante no se pudo dar por bueno.'}
+                                    </Notice>
+                                )}
+                                <PortalInput label="Número del comprobante" value={documento} maxLength={40}
+                                    onChange={(e) => setDocumento(e.target.value)} />
+                            </>
+                        )}
+                    </>
+                )}
+
+                <PortalTextarea label="Por qué" value={motivo} rows={3}
+                    placeholder="Qué pasó, en una frase"
+                    onChange={(e) => setMotivo(e.target.value)} />
+
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                    <Button variant="primary" disabled={ocupado || !valido} onClick={pedir}>
+                        Pedir
+                    </Button>
+                </div>
+            </div>
+        </LiquidModal>
+    );
 }

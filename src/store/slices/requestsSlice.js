@@ -66,6 +66,7 @@ export const REQUEST_TYPES = {
     // rótulo la bandeja agrupaba la sección bajo la clave cruda
     // `CAJA_MOVIMIENTO_CHANGE` — el mismo defecto que arriba, y por eso va con
     // el mismo comentario a la vista.
+    ABONO_CREDITO_CHANGE:      { label: 'Corrección de un abono', color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
     CAJA_MOVIMIENTO_CHANGE:    { label: 'Corrección de caja',     color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
     // Vive en otra tabla (`minmax_change_requests`) pero se muestra en el mismo
     // centro: para quien mira la sala es una solicitud más. Ver `adaptarMinMax`.
@@ -119,6 +120,7 @@ export const INVENTARIO_REQUEST_TYPES = new Set([
  */
 export const CAJA_REQUEST_TYPES = new Set([
     'CAJA_MOVIMIENTO_CHANGE',
+    'ABONO_CREDITO_CHANGE',
 ]);
 
 /** Las que se aplican en un sistema externo al aprobarlas. */

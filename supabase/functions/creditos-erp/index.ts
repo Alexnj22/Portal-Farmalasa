@@ -3,7 +3,7 @@ import {
 } from "../_shared/security.ts";
 import {
   abonosDelCredito, creditosDeLaSala, FORMAS_DEL_PORTAL as FORMAS,
-  getCortesCreds, getSessionCookie, ABONO_URL,
+  getCortesCreds, getSessionCookie, quitarAbonoDelOrigen, ABONO_URL,
 } from "../_shared/creditos.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -87,6 +87,198 @@ Deno.serve(async (req) => {
         for (const c of filas) creditos.push({ ...c, branch_id: branchId });
       }
       return responder({ ok: true, creditos });
+    }
+
+    // ── PEDIR CORRECCIÓN — anular o corregir un abono ya cobrado ─────────
+    //
+    // «Si se quiere editar un abono, no permite; que sea como solicitud a
+    // supervisor» (usuario, 2-sep). Quien cobró NO puede deshacerlo: un abono
+    // ya aplicado es dinero, y borrarlo en silencio es justamente lo que la
+    // bitácora existe para impedir.
+    //
+    // Un tipo solo, `ABONO_CREDITO_CHANGE`, con el qué adentro del `metadata`:
+    // anular y corregir son la misma pregunta —«esto quedó mal, arréglalo»— y
+    // separarlas obligaría a duplicar el enrutador de aprobadores por una
+    // diferencia que sólo importa al aplicarla.
+    if (accion === "pedir_correccion") {
+      const sala = Number(body.sala);
+      const credito = String(body.credito ?? "").trim();
+      const abonoErp = String(body.abonoErp ?? "").trim();
+      const que = String(body.que ?? "");
+      const motivo = String(body.motivo ?? "").trim();
+
+      if (!["ANULAR", "MONTO", "FORMA"].includes(que)) {
+        return responder({ ok: false, error: "No se dijo qué corregir." }, 400);
+      }
+      if (!abonoErp) return responder({ ok: false, error: "Falta el abono." }, 400);
+      if (motivo.length < 5) {
+        return responder({ ok: false, error: "Escribe por qué hay que corregirlo." }, 400);
+      }
+      if (que === "MONTO" && !(Number(body.montoNuevo) > 0)) {
+        return responder({ ok: false, error: "Falta el monto nuevo." }, 400);
+      }
+      if (que === "FORMA" && !FORMAS.includes(String(body.formaNueva))) {
+        return responder({ ok: false, error: "Esa forma de pago no se acepta." }, 400);
+      }
+
+      /* Una sola solicitud viva por abono. Sin esto, dos personas piden lo
+       * mismo, un supervisor aprueba las dos, y el abono se borra una vez y la
+       * segunda corrección se aplica sobre un abono que ya no existe. */
+      const { data: yaHay, error: eYaHay } = await supabase.from("approval_requests")
+        .select("id").eq("type", "ABONO_CREDITO_CHANGE").eq("status", "PENDING")
+        .eq("metadata->>abono_erp", abonoErp).maybeSingle();
+      /* Nunca descartar el error de un query. Si esta lectura falla en silencio
+       * el freno desaparece: dos solicitudes vivas sobre el mismo abono, y la
+       * segunda se aplicaría sobre un abono que la primera ya borró. */
+      if (eYaHay) throw new Error(`buscando solicitudes vivas: ${eYaHay.message}`);
+      if (yaHay) {
+        return responder({ ok: false, error: "Ya hay una solicitud pendiente sobre ese abono." }, 409);
+      }
+
+      const { data: sol, error: eSol } = await supabase.from("approval_requests").insert({
+        type: "ABONO_CREDITO_CHANGE",
+        employee_id: quien.id,
+        status: "PENDING",
+        note: motivo,
+        metadata: {
+          branch_id: sala, credito_erp: credito, abono_erp: abonoErp,
+          que,
+          monto_actual: body.montoActual ?? null,
+          monto_nuevo: que === "MONTO" ? Number(body.montoNuevo) : null,
+          forma_actual: body.formaActual ?? null,
+          forma_nueva: que === "FORMA" ? String(body.formaNueva) : null,
+          documento_nuevo: body.documentoNuevo ?? null,
+          fecha_documento: body.fechaDocumento ?? null,
+          pos: body.pos ?? null,
+          comprobante_url: body.comprobanteUrl ?? null,
+          lectura: body.lectura ?? null,
+          cliente: body.cliente ?? null,
+        },
+      }).select("id").single();
+      if (eSol) throw new Error(`creando la solicitud: ${eSol.message}`);
+      return responder({ ok: true, solicitud: sol.id });
+    }
+
+    // ── APLICAR una corrección ya aprobada ───────────────────────────────
+    //
+    // Editar es BORRAR y volver a abonar, decidido por el usuario y por lo que
+    // el origen permite: su panel abona y borra, no edita. Deja dos renglones
+    // en el historial de allá, y eso es la verdad — un abono corregido no es el
+    // mismo abono.
+    if (accion === "aplicar_correccion") {
+      const solId = String(body.solicitud ?? "");
+      if (!solId) return responder({ ok: false, error: "Falta la solicitud." }, 400);
+
+      const { data: sol, error: eSol } = await supabase.from("approval_requests")
+        .select("id, type, status, metadata, employee_id, note")
+        .eq("id", solId).maybeSingle();
+      if (eSol) throw new Error(`leyendo la solicitud: ${eSol.message}`);
+      if (!sol) return responder({ ok: false, error: "Esa solicitud no existe." }, 404);
+      if (sol.type !== "ABONO_CREDITO_CHANGE") {
+        return responder({ ok: false, error: "Esa solicitud no es de un abono." }, 400);
+      }
+      if (sol.status !== "PENDING") {
+        return responder({ ok: false, error: "Esa solicitud ya se resolvió." }, 409);
+      }
+      /* Quien pidió no puede aprobarse a sí mismo. La policy no alcanza: la
+       * escritura la hace esta función con la llave del servidor, que no pasa
+       * por RLS. Es la misma lección del kiosco, que aceptaba el PIN del propio
+       * jefe que marcaba. */
+      if (String(sol.employee_id) === String(quien.id)) {
+        return responder({ ok: false, error: "No puedes aprobar tu propia solicitud." }, 403);
+      }
+
+      const meta = (sol.metadata ?? {}) as Record<string, unknown>;
+      const sala = Number(meta.branch_id);
+      const credito = String(meta.credito_erp ?? "");
+      const abonoErp = String(meta.abono_erp ?? "");
+      const que = String(meta.que ?? "");
+      const entrada = mapa.find((e) => e.branchId === sala);
+      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+
+      const permisoDecidir = await permisoDeModulo(
+        supabase, quien.id, "requests_cuentas_por_cobrar", "can_approve");
+      if (permisoDecidir.roto) return responder({ ok: false, error: permisoDecidir.roto }, 503);
+      if (!permisoDecidir.puede) {
+        return responder({ ok: false, error: "No tienes permiso para decidir esto." }, 403);
+      }
+
+      // 1. Borrar el abono viejo, y COMPROBARLO releyendo: el origen contesta
+      //    «Success» aunque no haya borrado nada, así que su palabra no prueba.
+      const dijoQueSi = await quitarAbonoDelOrigen(cookie, entrada.erpId, abonoErp);
+      const quedan = await abonosDelCredito(cookie, entrada.erpId, credito);
+      if (quedan.some((a) => a.erp_id === abonoErp)) {
+        return responder({
+          ok: false,
+          error: dijoQueSi
+            ? "El sistema de la caja dijo que lo borró, pero el abono sigue ahí."
+            : "No se pudo borrar el abono.",
+        }, 502);
+      }
+
+      // 2. Si era una corrección, se vuelve a abonar con los datos nuevos.
+      let nuevo: Record<string, unknown> | null = null;
+      if (que !== "ANULAR") {
+        const monto = que === "MONTO" ? Number(meta.monto_nuevo) : Number(meta.monto_actual);
+        const forma = que === "FORMA" ? String(meta.forma_nueva) : String(meta.forma_actual ?? "Efectivo");
+        const resp = await (await fetch(ABONO_URL, {
+          method: "POST",
+          headers: {
+            Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: new URLSearchParams({
+            process: "abonar", id_factura: credito, monto: monto.toFixed(2),
+            tipo_doc: forma, num_doc: String(meta.documento_nuevo ?? ""),
+          }).toString(),
+          signal: AbortSignal.timeout(45_000),
+        })).text();
+        try { nuevo = JSON.parse(resp); } catch { nuevo = null; }
+        if (String(nuevo?.typeinfo ?? "").toLowerCase() !== "success") {
+          /* El viejo YA se borró. No hay forma de deshacerlo —el origen no tiene
+           * «restaurar»— así que se contesta en rojo con el detalle: el crédito
+           * quedó con MÁS saldo del que debe y alguien tiene que abonarlo a
+           * mano. Callarlo sería dejar una deuda inventada. */
+          console.error(`[creditos-erp] recolocar abono credito=${credito}: ${resp.slice(0, 600)}`);
+          return responder({
+            ok: false,
+            error: `Se borró el abono viejo pero NO se pudo poner el nuevo de `
+                 + `${monto.toFixed(2)}. Ese abono hay que rehacerlo a mano en la caja.`,
+          }, 502);
+        }
+      }
+
+      // 3. Cerrar la solicitud y dejar el rastro del lado del portal.
+      const { error: eCerrar } = await supabase.from("approval_requests")
+        .update({ status: "APPROVED", approver_id: quien.id, resolved_at: new Date().toISOString() })
+        .eq("id", solId);
+      if (eCerrar) console.error("[creditos-erp] cerrando la solicitud:", eCerrar.message);
+
+      /* El abono del portal se marca anulado —el trigger recalcula la fecha del
+       * último abono— y, si hubo uno nuevo, se anota como otra fila. No se EDITA
+       * la vieja: la bitácora dice lo que pasó, no lo que hubiera querido. */
+      const { error: eAnular } = await supabase.from("creditos_abonos_portal")
+        .update({ anulado_at: new Date().toISOString(), anulado_por: quien.id })
+        .eq("branch_id", sala).eq("credito_erp", credito).is("anulado_at", null)
+        .eq("monto", Number(meta.monto_actual));
+      if (eAnular) console.error("[creditos-erp] anulando el abono del portal:", eAnular.message);
+
+      // Refrescar el espejo para que la pantalla no muestre el saldo viejo.
+      try {
+        const { data: enEspejo, error: eLee } = await supabase.from("creditos_de_clientes")
+          .select("fecha").eq("branch_id", sala).eq("credito_erp", credito).maybeSingle();
+        if (eLee) console.error(`[creditos-erp] espejo lee: ${eLee.message}`);
+        if (enEspejo?.fecha) {
+          const filas = await creditosDeLaSala(cookie, entrada.erpId,
+            String(enEspejo.fecha), String(enEspejo.fecha));
+          await supabase.rpc("sync_creditos_batch",
+            { p_filas: filas.map((c) => ({ ...c, branch_id: sala })) });
+        }
+      } catch (e) {
+        console.error(`[creditos-erp] espejo tras corregir: ${(e as Error).message}`);
+      }
+
+      return responder({ ok: true, que, nuevo });
     }
 
     // ── HISTORIAL — los abonos que el ORIGEN tiene de un crédito ─────────

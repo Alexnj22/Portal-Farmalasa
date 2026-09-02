@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.960.1 — «Ya está abierta» deja de decir «vuelve a intentarlo»
+
+Medido el 2026-09-02 en Salud 3: **seis intentos de abrir la caja en cuatro
+minutos** (13:04–13:08), los seis con la misma respuesta del sistema de la caja
+—«Ya existe una apertura de caja vigente en esta caja»— y el portal contestando
+*«La caja no aceptó la apertura. Vuelve a intentarlo»*.
+
+O sea que el aviso invitaba a repetir exactamente lo único que no podía
+funcionar, y la persona lo hizo seis veces. El motivo lo decía el origen y el
+portal lo tenía: sólo que lo mandaba al registro y a la pantalla le daba la
+frase genérica.
+
+Ahora ese caso se distingue y se dice, porque cambia lo que hay que hacer: no es
+reintentar ni avisar a Sistemas —**la caja ya está abierta**— sino recargar la
+pantalla, o cerrar el turno que está si se va a empezar otro.
+
 ## v2.960.0 — Buscador en los movimientos, y el aviso de bolsas se va
 
 ### Buscador en los movimientos del día

@@ -690,6 +690,27 @@ Deno.serve(async (req) => {
        * registro de la función y la pantalla dice lo que hay que hacer. */
       if (!exito(resp)) {
         console.error(`[operar-caja] abrir sala=${sala} caja=${estado.idCaja} turno=${turno}: ${resp.slice(0, 1000)}`);
+        /* ── «Ya está abierta» NO es «volvé a intentar» ─────────────────────
+         *
+         * Medido el 2026-09-02 en Salud 3: SEIS intentos en cuatro minutos
+         * (13:04–13:08), los seis con la misma respuesta del origen —«Ya existe
+         * una apertura de caja vigente en esta caja»— y el portal contestando
+         * «vuelve a intentarlo». O sea que el aviso invitaba a repetir
+         * exactamente lo único que no podía funcionar, y la persona lo hizo
+         * seis veces.
+         *
+         * El motivo lo dice el origen y el portal lo sabía: sólo que lo mandaba
+         * al registro y a la pantalla le daba la frase genérica. Este caso se
+         * distingue y se dice, porque cambia lo que hay que hacer: no es
+         * reintentar ni avisar a Sistemas — la caja ya está abierta y hay que
+         * recargar para verla. */
+        if (/apertura de caja vigente|ya existe una apertura/i.test(resp)) {
+          return json({
+            ok: false, ya_estaba: true,
+            error: "Esta caja ya está abierta. Recarga la pantalla para verla; "
+                 + "si vas a empezar otro turno, primero hay que cerrar el que está.",
+          }, 409);
+        }
         return json({ ok: false, error: "La caja no aceptó la apertura. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
       }
 

@@ -377,6 +377,61 @@ Deno.serve(async (req) => {
     const viva = await aperturaViva(cookie);
     if (!viva) return json({ ok: false, error: "Esa sala no tiene una caja abierta ahora." }, 409);
 
+    /* ── UN DÍA TIENE UN SOLO Z, y hay que frenarlo ANTES de emitirlo ───────
+     *
+     * Lo pide el arreglo mismo: desde que el cierre del día se PARA cuando el
+     * comprobante no confirma que salió un Z, aparece un reintento — y sin este
+     * freno el reintento emite un SEGUNDO Z del mismo día. Un Z no se deshace,
+     * así que serían dos cierres fiscales de una jornada.
+     *
+     * Y el caso no es raro: el aviso también salta cuando el comprobante no se
+     * pudo LEER, que es un fallo de red sobre un Z que salió perfecto. Ahí quien
+     * cierra ve «no se pudo confirmar», aprieta de nuevo, y sin esto se lleva el
+     * duplicado.
+     *
+     * Se pregunta al ORIGEN y no a `cortes_caja`: la tabla del portal se llena
+     * con la captura, que corre después, así que recién emitido diría «no hay Z»
+     * siempre. Es la misma lectura que hace `operar-caja` para comprobar el
+     * cierre, con el mismo recorrido de la tabla.
+     *
+     * Si la comprobación no se puede hacer, NO se sigue: emitir un Z a ciegas es
+     * justo lo que este freno viene a evitar. */
+    if (esZ) {
+      const dia = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+      let yaHayZ: boolean | null = null;
+      try {
+        const listado = await (await fetch(CORTE_URL, {
+          method: "POST",
+          headers: {
+            Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: new URLSearchParams({ process: "ok", fecha1: dia, fecha2: dia }).toString(),
+          signal: AbortSignal.timeout(45_000),
+        })).text();
+        yaHayZ = [...listado.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].some(([, tr]) => {
+          const tds = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)]
+            .map((m) => m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+          return tds.length >= 8 && tds[5].toUpperCase() === "Z";
+        });
+      } catch (e) {
+        console.error("hacer-corte-caja: no se pudo revisar si ya hay Z:", e);
+      }
+      if (yaHayZ === null) {
+        return json({
+          ok: false,
+          error: "No se pudo comprobar si el día ya tiene su corte Z. No se emite otro:"
+            + " un Z de más no se deshace. Volvé a intentarlo en un momento.",
+        }, 503);
+      }
+      if (yaHayZ) {
+        return json({
+          ok: false, ya_estaba: true,
+          error: "Este día ya tiene su corte Z. No se emite otro.",
+        }, 409);
+      }
+    }
+
     /* ── 1. El vale de las salidas del día, ANTES del corte ────────────────
      *
      * El Z NO lo escribe: el corte de caja que lo precede ya lo hizo, y volver

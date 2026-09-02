@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.937.4 — El invariante arranca donde arrancó la fórmula que puede cumplirlo
+
+Migración `20260902142037`. Los ocho días-sala que marcó `v2.937.1` **dejan de
+juzgarse**, por pedido del usuario y con motivo: son días en que la bolsa del
+segundo corte se calculó restando la **etiqueta** de la bolsa de la mañana en vez
+de lo que de verdad le quedaba adentro, y esa fórmula se corrigió el 2026-09-02 a
+las 03:23:30 UTC. Medirlos con la vara nueva marca un defecto que ya no existe y
+que nadie puede ir a arreglar — y una alarma siempre roja se ignora, que es el
+mismo motivo por el que existe `bolsas_circuito_desde`.
+
+No se borró nada: los ocho quedan escritos en la entrada de `v2.937.1`, y los dos
+del 31-ago con su vale, su boleta y su hora — Salud 3 $300 (remesa MoneyGram de
+$100 a las 14:50 y $200 de «retira don ruti» a las 15:47, las dos sobre S3-1206)
+y Salud 2 $100 (remesa TransNetwork, boleta 000435, a las 17:20 sobre S2-1203).
+
+`bolsas_invariante_desde()` es **una fecha distinta** de `bolsas_circuito_desde()`
+a propósito: ésa marca cuándo empezó a existir el circuito y la usa además
+`get_cortes_por_embolsar`, así que moverla habría dejado de mostrar cortes que
+todavía hay que embolsar.
+
+### Y lo que este control NO puede ver, escrito donde vive
+
+Su nombre promete lo contrario, así que quedó anotado en `fetchInvariante`: **no
+detecta efectivo contado que nunca se guardó.** El monto de la bolsa se CALCULA a
+partir de lo declarado por el corte —no se cuenta—, así que la igualdad se cumple
+sola en cuanto la crea `bolsa_sugerida`. Era tautológico por un motivo hasta
+ayer y lo sigue siendo por otro; la diferencia es que ahora está dicho.
+
+Lo que sí ve, y son reales: que las bolsas del día sumen **más** que lo declarado
+—un mismo efectivo contado dos veces, o un corte que no generó bolsa porque lo
+declarado ya estaba cubierto—, una bolsa anulada cuyo respaldo no se repartió, un
+día sin ninguna bolsa, y cualquier `monto_inicial` editado a mano.
+
+**El faltante lo detecta el CONTEO de la bolsa**, que es el único número que no
+sale de la misma fórmula porque lo pone una persona contando billetes. Está vivo
+y se usa: **184 de 208 bolsas contadas, 22 con diferencia y las 22 con causa
+escrita**, una sola sin resolver.
+
 ## v2.937.3 — El modal avisa cuando no puede abrir, y los anulados tienen filtro propio
 
 **Un formulario del modal que no cargaba dejaba la pantalla en blanco, sin

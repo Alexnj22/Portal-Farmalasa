@@ -78,10 +78,25 @@ export async function fetchCortesPorEmbolsar({ desde, hasta }) {
  * **Σ etiquetas del día + vales que salieron ANTES == declarado del último corte
  * confirmado**.
  *
- * Detecta el caso peor —efectivo contado que nunca se guardó— y es lo único que
- * lo detecta: un corte que cuadra no dice nada sobre si el dinero llegó a una
- * bolsa. Estaba escrito en el plan como algo que «sale gratis» y no existía en
- * ninguna pantalla.
+ * 🔴 **Lo que este control NO puede ver, y hay que decirlo porque su nombre
+ * promete lo contrario: efectivo contado que nunca se guardó.** El monto de la
+ * bolsa se CALCULA a partir de lo declarado por el corte —no se cuenta—, así que
+ * la igualdad se cumple sola en cuanto la bolsa la crea `bolsa_sugerida`. Fue
+ * tautológico por un motivo hasta el 2026-09-02 y lo sigue siendo por otro; la
+ * diferencia es que ahora se sabe.
+ *
+ * Lo que SÍ ve, y son reales: que las bolsas del día sumen **más** que lo
+ * declarado —un mismo efectivo contado dos veces, o un `crear_bolsa_al_confirmar`
+ * que no creó bolsa porque lo declarado ya estaba cubierto—, una bolsa anulada
+ * cuyo respaldo no se repartió, un día sin ninguna bolsa, y cualquier
+ * `monto_inicial` editado a mano después.
+ *
+ * **El que sí detecta el faltante es el CONTEO de la bolsa** — `conteo_marcado`
+ * contra su saldo, que es lo que arma «Sin resolver». Ahí el número lo pone una
+ * persona contando billetes, que es el único dato que no sale de la misma
+ * fórmula. Al 2026-09-02: 184 de 208 bolsas contadas, 22 con diferencia y las 22
+ * con causa escrita. Ver
+ * `feedback_un_control_alimentado_por_la_formula_que_verifica_no_puede_fallar`.
  *
  * ⚠️ **Hasta el 2026-09-02 esa suma no podía fallar.** Sumaba `monto_inicial` a
  * secas, y la bolsa nueva nacía como `declarado − suma de las etiquetas del día`:
@@ -104,9 +119,16 @@ export async function fetchCortesPorEmbolsar({ desde, hasta }) {
  *
  * El servidor devuelve TAMBIÉN los días que cuadran, a propósito: una lista que
  * sólo trae problemas no se distingue de una que no se cargó — ver
- * `feedback_cero_hallazgos_y_cero_datos_se_ven_igual`. Y sólo mira los días
- * nacidos dentro del circuito; antes del disparador hay cortes confirmados sin
- * bolsa que no son dinero perdido, y una alarma siempre roja se ignora.
+ * `feedback_cero_hallazgos_y_cero_datos_se_ven_igual`. Y **arranca el 2026-09-02
+ * 03:23:30 UTC** (`bolsas_invariante_desde`), que es cuando `bolsa_sugerida`
+ * empezó a restar el saldo: con la vara nueva, los días anteriores marcan un
+ * defecto que ya no existe y que nadie puede ir a arreglar, y una alarma siempre
+ * roja se ignora. Son ocho días-sala, todos con la misma firma, listados en el
+ * changelog de v2.937.1 — no se borraron, se dejaron de juzgar.
+ *
+ * Es una fecha DISTINTA de `bolsas_circuito_desde` a propósito: ésa marca cuándo
+ * empezó a existir el circuito y la usa además `get_cortes_por_embolsar`, así que
+ * moverla dejaría de mostrar cortes que todavía hay que embolsar.
  *
  * ⚠️ **Estuvo escrita y sin consumidor hasta el 2026-08-26.** La función, su
  * RPC y sus permisos existían; no la llamaba ninguna pantalla, así que el único

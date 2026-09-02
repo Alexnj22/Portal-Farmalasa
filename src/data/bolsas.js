@@ -1006,6 +1006,20 @@ export async function cerrarElDia(sala) {
     if (z && z.ok === false) {
         return { error: new Error(z.error || 'No se pudo emitir el corte Z. El día sigue abierto.') };
     }
+    /* ── Si el Z no salió Z, NO se cierra el turno ─────────────────────────
+     *
+     * El servidor comprueba el TIPO que emitió leyendo el comprobante, porque
+     * «pedí un Z» y «salió un Z» no son la misma afirmación: el formulario del
+     * origen trae X marcado por defecto y ya salió una LECTURA en vez de un
+     * corte el 31-ago, con la respuesta diciendo «success».
+     *
+     * Cerrando igual, el día quedaría cerrado y SIN su Z —que es exactamente lo
+     * que pasó el 1-sep y hubo que arreglar a mano en el sistema de la caja—.
+     * Parando acá, el día sigue abierto, que es lo reparable: el Z se puede
+     * volver a intentar y el cierre todavía no ocurrió. */
+    if (z?.aviso) {
+        return { error: new Error(`${z.aviso} El día NO se cerró: sigue abierto para poder arreglarlo.`) };
+    }
     const cierre = await cerrarTurno(sala);
     // El número del Z viaja de vuelta: es lo que alguien va a buscar en el
     // sistema de la caja si algo no cuadra al cerrar el mes.

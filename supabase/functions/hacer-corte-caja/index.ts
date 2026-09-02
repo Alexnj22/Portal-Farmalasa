@@ -692,13 +692,43 @@ Deno.serve(async (req) => {
      * escribe una diferencia: inventarle un conteo al cierre del día sería
      * declarar un número que nadie contó. */
     const diferencia = esZ ? 0 : Number(efectivo) - esperado;
-    if (!esZ) {
+    if (esZ) {
+      /* ── EL Z SE MANDA COMO VINO. NO SE LE ESCRIBE NINGUNA CASILLA ────────
+       *
+       * Hasta acá el portal le ponía `total_tarjeta` y `monto_ch` en CERO
+       * también al Z, y le forzaba `diferencia = 0`. Eso está bien para un
+       * corte C —poner tarjeta y cheque en cero ES el control, son las dos
+       * casillas por las que se tapa un faltante— y está mal para el Z, por dos
+       * motivos:
+       *
+       * 1. **El cierre del día no cuenta efectivo: cuenta lo VENDIDO**, con la
+       *    tarjeta y el crédito adentro. Es lo mismo que ya dice
+       *    `desgloseDelCierre` en el portal, y lo que corrigió la pantalla el
+       *    13-ago cuando afirmaba que se habían contado $1,678.83 habiendo
+       *    $1,602.88 en la caja.
+       * 2. **No es lo que hace la pantalla de la caja.** Su `corte1()` serializa
+       *    el formulario ENTERO y lo manda tal cual (leído en
+       *    `js/funciones/funciones_corte_caja.js`): nadie escribe esas casillas
+       *    al cerrar el día. El portal estaba inventando tres valores que el
+       *    dependiente no manda.
+       *
+       * Y un Z **no se deshace**, así que la regla acá es reproducir, no
+       * mejorar: se cambia sólo el tipo de documento, que es lo único que
+       * «reenviar el formulario tal cual» no puede acertar —su default es X—.
+       *
+       * El efectivo tampoco se toca: el formulario del Z lo trae calculado y de
+       * sólo lectura («el corte Z no se ingresa nada, ya el ERP lo hace solo y
+       * finaliza», usuario). Escribirle uno sería declarar un conteo que nadie
+       * hizo. */
+    } else {
       campos.set("total_efectivo", dosDecimales(efectivo));
       campos.set("total_efectivo1", dosDecimales(efectivo));
+      // Tarjeta y cheque en CERO: no pasan por la caja, y son las dos casillas
+      // por las que se tapa un faltante. Es el control del conteo a ciegas.
+      campos.set("total_tarjeta", "0");
+      campos.set("monto_ch", "0");
+      campos.set("diferencia", dosDecimales(diferencia));
     }
-    campos.set("total_tarjeta", "0");
-    campos.set("monto_ch", "0");
-    campos.set("diferencia", dosDecimales(diferencia));
     if (body.observaciones) campos.set("observaciones", String(body.observaciones).slice(0, 200));
 
     const cuerpo = new URLSearchParams();
@@ -726,8 +756,31 @@ Deno.serve(async (req) => {
       try { tiquete = await leerTiquete(cookie, String(idCorte), entrada.erpId); }
       catch (e) { console.error("hacer-corte-caja: tiquete:", e); }
     }
+
+    /* ── El tipo que SALIÓ se comprueba, no se supone ──────────────────────
+     *
+     * El formulario trae **X** marcado por defecto y el portal lo reenviaba tal
+     * cual: el 31-ago el primer corte hecho desde acá salió una LECTURA en vez
+     * de un corte de efectivo, la respuesta dijo «success», y nadie se enteró.
+     * O sea que «pedí un C» y «salió un C» no son la misma afirmación.
+     *
+     * En el Z importa el doble, porque el cierre del día no se deshace y quien
+     * cierra no tiene una segunda oportunidad de mirar. Si el tiquete dice otra
+     * cosa —o no se pudo leer— se contesta con aviso, nunca en silencio. */
+    const tipoQueSalio = tiquete?.tipo?.trim().toUpperCase() ?? null;
+    const avisoTipo = !ok || !idCorte
+      ? undefined
+      : tipoQueSalio === null
+        ? `El ${tipo} se registró (número ${idCorte}), pero no se pudo leer su comprobante`
+          + " para confirmar que salió del tipo correcto."
+        : tipoQueSalio !== tipo
+          ? `Se pidió un corte ${tipo} y el sistema emitió uno de tipo ${tipoQueSalio}`
+            + ` (número ${idCorte}). Avisá a Sistemas antes de seguir.`
+          : undefined;
+
     return json({
       ok,
+      aviso: avisoTipo,
       /* Recién ACÁ viaja el esperado: después del conteo, nunca antes.
        *
        * Y viajan LAS DOS CUENTAS, sin elegir: la del formulario —que arrastra

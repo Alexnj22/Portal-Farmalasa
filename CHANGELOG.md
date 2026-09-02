@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.947.0 — El cierre del día se manda como viene y se comprueba
+
+Pedido del usuario: *«todo el proceso se debe hacer desde el portal, enviando los
+datos al ERP y recibiendo el resultado claro»*. Las dos mitades de esa frase, en
+el único acto del circuito que no se deshace.
+
+### El Z ya no lleva tres casillas inventadas
+
+El portal le escribía al corte Z lo mismo que a un corte C:
+
+```ts
+campos.set("total_tarjeta", "0");   // estaba fuera del if (!esZ)
+campos.set("monto_ch", "0");        // idem
+campos.set("diferencia", "0");
+```
+
+En un corte C, poner tarjeta y cheque en cero **es el control**: no pasan por la
+caja y son las dos casillas por las que se tapa un faltante. En el Z es lo
+contrario — **el cierre del día cuenta lo VENDIDO**, con la tarjeta y el crédito
+adentro.
+
+Y tampoco era lo que hace la pantalla de la caja: su `corte1()` **serializa el
+formulario entero y lo manda tal cual** (leído en su propio JavaScript). Nadie
+toca esas casillas al cerrar el día. El portal inventaba tres valores.
+
+**Ahora el Z se manda como vino**, cambiando sólo el tipo de documento — que es
+lo único que «reenviar el formulario tal cual» no puede acertar, porque su
+default es **X**. Reproducir, no mejorar: un Z no se deshace.
+
+### «Pedí un Z» y «salió un Z» no son la misma afirmación
+
+El 31-ago el primer corte hecho desde el portal salió una **lectura X**, el
+sistema contestó `success`, y nadie se enteró hasta que alguien lo repitió — así
+quedaron dos cortes de la misma caja con dos minutos de diferencia.
+
+Ahora la función **lee el comprobante y compara el tipo que salió** contra el que
+se pidió. Si no coincide, o si no se pudo leer:
+
+- en un **corte C**, el aviso sale en rojo en el panel del resultado;
+- en el **cierre del día, NO se cierra el turno**.
+
+Esa segunda es la que importa. Cerrando igual, el día quedaría cerrado y **sin su
+Z** — exactamente lo que pasó el 1-sep en Salud 3 y hubo que arreglar a mano en
+el sistema de la caja. Parando antes, el día sigue abierto, que es lo reparable:
+el Z se puede reintentar y el cierre todavía no ocurrió.
+
+⚠️ **Sigue sin haber corrido en producción.** Esto lo deja fiel y observable, no
+probado: el primer cierre real desde el portal va a ser el primero. La diferencia
+es que ahora, si sale mal, se ve — y el día no queda cerrado.
+
 ## v2.946.0 — El pago que no entra en las cuatro formas
 
 Pedido del usuario, mirando un crédito de MAPFRE: *«cuando es del ISSS, MAPFRE…

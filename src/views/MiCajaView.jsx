@@ -1613,6 +1613,17 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
                             El corte no quedó registrado: {resultado.respuesta || 'el sistema lo rechazó'}
                         </p>
                     )}
+                    {/* El corte se registró pero NO del tipo que se pidió, o no
+                        se pudo comprobar cuál salió. Es un aviso y no una nota
+                        al pie porque cambia lo que hay que hacer: el 31-ago el
+                        primer corte desde el portal salió una LECTURA, el
+                        sistema contestó «success», y nadie se enteró hasta que
+                        alguien lo repitió. */}
+                    {resultado.ok && resultado.aviso && (
+                        <p className="text-caption text-danger-text font-bold">
+                            {resultado.aviso}
+                        </p>
+                    )}
                 </div>
                 {/* ── La decisión, acá mismo ────────────────────────────
                     Un corte queda PENDIENTE hasta que alguien lo firma, y sin

@@ -8,9 +8,10 @@ cifra correcta, y las bolsas no dependen de ella. El número que guarda el siste
 de la caja queda con el defecto del origen **por decisión del usuario** (§2) — ya
 era así antes del portal, en el 21.5% de los cortes.
 
-Lo que **sí** conviene no hacer todavía es **cerrar el día desde el portal**: ese
-camino nunca corrió y escribe una casilla que puede declarar de menos el Z, que
-no se deshace (§3).
+**Cerrar el día desde el portal** ya no escribe casillas que el dependiente no
+escribe, y si el Z no sale del tipo pedido **no cierra el turno** (§3). Sigue sin
+haber corrido nunca: el primero será en vivo, pero ahora falla a la vista y
+dejando el día abierto.
 
 ---
 
@@ -128,36 +129,54 @@ en la caja.
 | el registro del sistema de la caja | la del origen — **a propósito** |
 | el tiquete que imprime el origen | la del origen — **a propósito** |
 
-## 3. 🟠 El corte Z nunca salió del portal, y zapatea dos casillas
+## 3. ✅ CORREGIDO — el Z se manda como viene, y el tipo que sale se comprueba
 
-`cerrarElDia` (v2.932.1) hace lo correcto en el orden correcto: primero el Z por
-el formulario del corte con `tipo_corte = Z`, después `cerrar_turno`. **Y nunca
-se ejecutó**: el único Z del 1-sep se hizo a mano, antes de que ese arreglo
-existiera.
+Decisión del usuario (2026-09-02): *«todo el proceso se debe hacer desde el
+portal, enviando los datos al ERP y recibiendo el resultado claro»*.
 
-Además, en `hacer-corte-caja` estas dos líneas quedan **fuera** del `if (!esZ)`:
+### Lo que estaba mal
+
+El portal le escribía tres casillas al Z que el dependiente **no escribe**:
 
 ```ts
-campos.set("total_tarjeta", "0");
-campos.set("monto_ch", "0");
+campos.set("total_tarjeta", "0");   // fuera del if (!esZ)
+campos.set("monto_ch", "0");        // fuera del if (!esZ)
+campos.set("diferencia", "0");
 ```
 
 Para un corte C poner tarjeta y cheque en cero **es el control** — no pasan por
-la caja y son las dos casillas por las que se tapa un faltante. Para el Z es otra
-cosa: el cierre del día **es todo lo vendido, con la tarjeta y el crédito
-adentro** (es exactamente lo que dice `desgloseDelCierre`, y lo que corrigió la
-pantalla el 13-ago cuando decía que se contaron $1,678.83 habiendo $1,602.88 en
-la caja). Un Z emitido con la tarjeta en cero declararía de menos el cierre del
-día, **y un Z no se deshace.**
+la caja y son las dos casillas por las que se tapa un faltante. Para el Z no:
+**el cierre del día cuenta lo VENDIDO, con la tarjeta y el crédito adentro**.
 
-No está comprobado que el formulario del Z use esos campos —su efectivo viene
-calculado y de sólo lectura, así que puede ignorarlos—. Pero es una casilla que
-el portal escribe a propósito sobre un documento que no se puede corregir, y hoy
-no hay ninguna medición que diga qué pasa.
+Y no era lo que hace la pantalla de la caja. Leído en su JavaScript, su
+`corte1()` **serializa el formulario entero y lo manda tal cual** — nadie toca
+esas casillas al cerrar el día. El portal inventaba tres valores.
 
-**Antes del primer cierre real desde el portal, esto se verifica.**
+### Lo que hace ahora
 
----
+**El Z se manda como vino**, cambiando sólo `tipo_corte` — que es lo único que
+«reenviar el formulario tal cual» no puede acertar, porque su default es **X**.
+El efectivo tampoco se toca: el formulario del Z lo trae calculado y de sólo
+lectura. Reproducir, no mejorar: **un Z no se deshace**.
+
+### Y el resultado se comprueba, que es la otra mitad del pedido
+
+«Pedí un Z» y «salió un Z» no son la misma afirmación. El 31-ago el primer corte
+hecho desde el portal salió una **LECTURA X**, el sistema contestó `success`, y
+nadie se enteró hasta que alguien lo repitió.
+
+Ahora la función **lee el comprobante y compara el tipo**. Si no coincide —o no
+se pudo leer— contesta con aviso, y:
+
+- **en un corte C**, el aviso sale en rojo en el panel del resultado;
+- **en el cierre del día, NO se cierra el turno.** El día queda abierto, que es
+  lo reparable: el Z se puede reintentar y el cierre todavía no ocurrió. Cerrando
+  igual, el día quedaría cerrado y sin su Z — que es exactamente lo que pasó el
+  1-sep y hubo que arreglar a mano.
+
+⚠️ **Sigue sin correr en producción.** Esto lo deja fiel y observable, no
+probado: el primer cierre real desde el portal va a ser el primero. La diferencia
+es que ahora, si sale mal, se ve y el día no queda cerrado.
 
 ## 4. ✅ CERRADO — el origen ya distingue el cobro que no es efectivo
 
@@ -250,6 +269,8 @@ En orden, y el primero es el que bloquea:
 2. ~~Medir el cobro que no es efectivo~~ — **hecho** (§4): el origen ya lo deja
    fuera, no hay que descontar nada, y el aviso que decía lo contrario se
    corrigió.
-3. **Probar el Z una vez**, con la casilla de tarjeta resuelta (§3).
+3. ~~Probar el Z con la casilla de tarjeta resuelta~~ — **la casilla está
+   resuelta (§3)**; queda hacer el primer cierre real, que ahora falla a la
+   vista y sin cerrar el día.
 4. **Abrir una caja desde el portal**, aunque sea una vez: es el único tramo del
    circuito que no tiene ni una fila.

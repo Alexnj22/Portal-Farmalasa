@@ -355,7 +355,7 @@ export const AREAS = [
             'src/utils/pushEquipo.js',
             'src/components/forms/FormAnnouncements.jsx',
         ],
-        tablas: ['announcements', 'notifications', 'push_subscriptions',
+        tablas: ['announcements', 'notifications', 'avisos_emitidos', 'push_subscriptions',
                  'surveys', 'survey_bloques', 'survey_preguntas', 'survey_responses'],
         edge: ['send-push-notification'],
         crons: ['purge-notifications-daily'],
@@ -510,7 +510,7 @@ export const AREAS = [
         // `creditos-erp` va acá y no en Facturación: abonar a un crédito mete
         // EFECTIVO al cajón, y ese dinero cuenta para el corte del mismo día.
         edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja', 'hacer-corte-caja', 'operar-caja',
-               'creditos-erp'],
+               'creditos-erp', 'sync-creditos', 'avisar-creditos-vencidos'],
         crons: ['cortes-caja-30s', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv'],
         docs: ['docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md', 'docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md',
                'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],

@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.937.2 — Un aviso descartado no es un aviso que no se mandó
+
+**El cierre de agosto llegó dos veces.** El 1 de septiembre y otra vez el 2 a
+las 8 de la mañana, a **10 personas** — 8 de sala y 2 de administración. No fue
+un cron duplicado ni un destinatario nuevo: la marca de «ya avisado» era **la
+notificación misma**.
+
+```sql
+WHERE NOT EXISTS (SELECT 1 FROM notifications n WHERE ... ym_cerrado = ...)
+```
+
+La campana deja borrar: la X de cada tarjeta y el bote que las vacía todas. Así
+que la pregunta que se hacía la guarda no era *«¿ya se lo mandé?»* sino
+*«¿todavía la tiene?»* — y quien limpió su campana lo volvió a recibir. Como la
+ventana del aviso va del 1 al 5, iba a repetirse **hasta cuatro veces**.
+
+El defecto es invisible mirando la tabla: no queda ni una fila duplicada,
+porque la evidencia se borra junto con el aviso. Lo que lo delató fue el log de
+la API — dos «vaciar todo» entre las dos corridas.
+
+**La marca se mudó a `avisos_emitidos`**, una tabla que el destinatario no
+puede tocar: sin policies de escritura, la escriben sólo las funciones que
+emiten el aviso. La clave es `TIPO:identificador`
+(`METAS_CIERRE_SALA:2026-08`), y el rastro de lo ya emitido se sembró de las
+notificaciones que seguían vivas.
+
+Verificado como regresión, que es lo único que prueba el arreglo: se borraron
+los 10 avisos repetidos y se volvieron a correr las dos funciones — **0 y 0**.
+Con la guarda vieja habrían salido 10 otra vez.
+
+**El mismo error estaba latente en `avisar_traslados_por_respaldo`**, que se
+marcaba con `metadata.request_ids` de su propia notificación. Ahí la guarda es
+global —basta que una persona de la sala la conserve— así que sólo se repetía
+si la sala entera vaciaba su campana. Menos probable, mismo error, corregido
+igual.
+
+La retención de la marca (400 días) va dentro del purgado de la campana, que ya
+existía: sobrevive a los 90 días de la notificación sin ser eterna.
+
 ## v2.937.0 — Las anulaciones de compra se aplican solas
 
 **Seis CCF que el proveedor anuló seguían contando como buenos.** Cinco de

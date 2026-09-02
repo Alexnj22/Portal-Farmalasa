@@ -913,6 +913,35 @@ export default function MiCajaView({ comoPestana = false }) {
                         return;
                     }
                     if (!await resolver(mio, estado, { motivo })) return;
+                    /* ── El papel sale al CONFIRMAR, no al cortar ──────────
+                     *
+                     * Pedido del usuario (2-sep): «si se confirma debería
+                     * imprimirse el corte de caja y el de bolsa de efectivo. Si
+                     * se descarta ninguno de los dos, para ahorrar papel».
+                     *
+                     * Hasta acá el comprobante salía apenas se hacía el corte,
+                     * o sea ANTES de que existiera la decisión — así que cada
+                     * conteo descartado ya había gastado su papel. Medido sobre
+                     * los 7 días anteriores: 170 cortes, **91 descartados**. Más
+                     * de la mitad del papel se tiraba, y la tasa es estable
+                     * (43%–60% todos los días), no es de la semana de arranque.
+                     *
+                     * La etiqueta de la bolsa ya salía acá: la manda `resolver`
+                     * —o sea `useResolverCorte`— justo arriba, para las cuatro
+                     * pantallas que confirman. Este es el otro papel del acto.
+                     *
+                     * Se imprime DESPUÉS de que la confirmación quedó guardada,
+                     * no antes: un papel de un corte que no se pudo firmar es
+                     * exactamente el desperdicio que esto viene a cortar. Y un
+                     * fallo de impresión NO deshace nada —el corte ya está
+                     * firmado—: `imprimirCorte` avisa y el botón «Imprimir» del
+                     * diálogo lo repite.
+                     *
+                     * El caso que el botón sigue cubriendo: cuando el corte
+                     * todavía no llegó al portal, arriba se sale por `return` y
+                     * la confirmación se hace desde Cortes — ahí este papel no
+                     * sale solo, y se manda a mano desde acá. */
+                    if (estado === 'CONFIRMADO' && resultado?.ok) await imprimirCorte(resultado);
                     /* Confirmar CIERRA EL TURNO (regla del usuario, 1-sep): «al
                      * hacer un corte y confirmarlo deben abrir caja de nuevo la
                      * persona responsable». El corte cuenta lo que hay; cerrar
@@ -945,16 +974,14 @@ export default function MiCajaView({ comoPestana = false }) {
                     const r = conLaCuentaBuena(bruto);
                     setResultado(r);
                     cargar();
-                    /* El papel sale solo, como parte del acto — igual que al
-                     * resolver una diferencia. El sistema de la caja arma su
-                     * tiquete pero sólo lo imprime desde SU pantalla, que es de
-                     * la que las salas salieron: cortar desde el portal dejaba
-                     * al turno sin el papel que se anexa al corte del día.
+                    /* ── ACÁ NO SE IMPRIME NADA ────────────────────────────
                      *
-                     * Va después de `setResultado` a propósito: si la ticketera
-                     * no contesta, la pantalla ya muestra el resultado y el
-                     * corte no se deshace por un problema de impresión. */
-                    if (r.ok) imprimirCorte(r);
+                     * El papel del corte salía justo acá, apenas hecho el corte
+                     * — o sea antes de que existiera la decisión, así que un
+                     * conteo descartado ya se había gastado su papel. Se movió
+                     * a `onResolver`, donde se firma; el porqué y la medición
+                     * están ahí. El comprobante existe igual y se puede mandar
+                     * cuando se quiera con el botón «Imprimir» del diálogo. */
                 }} />
 
             {dialogo === 'salida' && (

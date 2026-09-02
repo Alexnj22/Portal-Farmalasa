@@ -54,7 +54,8 @@
     "medir:pdf": "node scripts/medir-hojas-en-pdf.mjs",
     "logos": "node scripts/preparar-logos.mjs",
     "portal:lento": "node scripts/portal-lento.mjs",
-    "gate:cortes": "node scripts/cortes-gate.mjs"
+    "gate:cortes": "node scripts/cortes-gate.mjs",
+    "comparar:diferencia-de-corte": "npx --yes vite-node scripts/comparar-diferencia-de-corte.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

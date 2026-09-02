@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.958.1 — El papel del corte sale al confirmar, y la base cuenta igual que la pantalla
+
+Dos cosas del módulo de cortes, las dos pedidas/destapadas el 2-sep.
+
+### El papel sale al confirmar, no al cortar
+
+Pedido del usuario: *«si se confirma debería imprimirse el corte de caja y el de
+bolsa de efectivo. Si se descarta ninguno de los dos, para ahorrar papel»*.
+
+El comprobante salía **apenas se hacía el corte**, o sea antes de que existiera
+la decisión: cada conteo descartado ya había gastado su papel. Medido sobre los
+7 días anteriores: **170 cortes, 91 descartados** — más de la mitad del papel se
+tiraba, y la tasa es estable (43%–60% todos los días), no era de la semana de
+arranque.
+
+Ahora sale al **confirmar**, junto a la etiqueta de la bolsa (que ya salía ahí,
+desde `useResolverCorte`). Al **descartar no sale nada**. El botón «Imprimir»
+del diálogo queda para el caso en que el corte todavía no llegó al portal y hay
+que confirmarlo desde Cortes.
+
+### La base cuenta igual que la pantalla
+
+`corte_diferencia` —el gemelo SQL de `diferenciaDelCorte`— estaba **dos arreglos
+atrás**, y es el número que `resolver_diferencia_corte` usa para decidir cuánto
+se le cobra a alguien:
+
+| sala · hora | la pantalla | la base | por qué |
+|---|---:|---:|---|
+| Salud 4 · 15:02 | $0.00 | +$88.25 | no conocía `cobros_portal_efectivo` (v2.953.0) |
+| Salud 3 · 13:43 | $0.00 | +$25.35 | conservaba la excepción del «+1× cobros» que el portal quitó el 1-sep |
+
+No cobraba de más —`resolver_diferencia_corte` rechaza si su monto no coincide
+con el que mostró la pantalla— pero dejaba esos cortes **sin poder resolverse**,
+con un mensaje («la diferencia cambió mientras se resolvía») que manda a mirar
+donde no está el problema.
+
+Los dos gemelos se enfrentaron sobre los **501 cortes** capturados con
+`npm run comparar:diferencia-de-corte`: **500 comparados, 500 iguales, 0
+distintas** (el que falta es el único sin conteo, que en SQL lo ataja
+`corte_tramo` antes de llamar a la función). Cambiar cualquiera de los dos lados
+exige volver a correrlo.
+
 ## v2.958.0 — Lo que necesita atención va arriba, sin importar la fecha
 
 Pedido del usuario: *«si hay un pedido pendiente, sea de recibir, o un producto

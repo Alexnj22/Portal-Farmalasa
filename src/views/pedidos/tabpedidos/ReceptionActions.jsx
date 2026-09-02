@@ -153,8 +153,20 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
             )}
 
             {/* Completado en ERP */}
+            {/* Con «Revisar lo contado»: hasta el 2026-09-02 este aviso era el
+                final del camino y con él se iba el único botón que abre la
+                pantalla de recepción. Quien nota el error al terminar —que es
+                cuando se nota— se quedaba sin ninguna puerta: el renglón
+                confirmado no está en `rows`, no sale en la búsqueda y
+                `receive_pedido_sucursal` sólo toca los `pendiente`. */}
             {erpOk && (
-                <Notice variant="success" icon={Database} action={empChip(erpEmp)}>
+                <Notice variant="success" icon={Database}
+                    action={canEdit ? (
+                        <span className="flex items-center gap-1.5">
+                            {empChip(erpEmp)}
+                            <Button variant="secondary" disabled={!!busy} onClick={onOpenRecibir}>Revisar lo contado</Button>
+                        </span>
+                    ) : empChip(erpEmp)}>
                     Confirmado en Sistema de Ventas
                 </Notice>
             )}

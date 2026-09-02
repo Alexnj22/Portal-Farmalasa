@@ -96,3 +96,25 @@ export function actualizarExtraDePedido({ itemId, cantidad, factor, tipo, nota }
 export function quitarExtraDePedido(itemId) {
     return supabase.rpc('quitar_extra_de_pedido', { p_item_id: itemId });
 }
+
+/**
+ * Corregir lo contado de un producto que YA se confirmó.
+ *
+ * El hueco era exacto: `receive_pedido_sucursal` sólo toca renglones
+ * `pendiente` —eso es lo que impide contar dos veces el mismo producto— así
+ * que un renglón confirmado no se puede volver a escribir, y
+ * `agregar_extra_a_pedido` lo rechaza porque «ese producto tiene su propio
+ * renglón». Entre las dos reglas no quedaba ninguna puerta.
+ *
+ * NO mueve existencias. Deja el renglón `con_diferencia` y de ahí lo toma la
+ * conversación que ya existe: la sala propone, bodega contesta, y el traslado
+ * de la cantidad de más sale de ese acuerdo. Una sala no le puede bajar la
+ * existencia a bodega sin que bodega se entere.
+ */
+export function corregirRecepcionDeItem({ itemId, cantidad, nota }) {
+    return supabase.rpc('corregir_recepcion_de_item', {
+        p_item_id: itemId,
+        p_cantidad: cantidad,
+        p_nota: nota ?? null,
+    });
+}

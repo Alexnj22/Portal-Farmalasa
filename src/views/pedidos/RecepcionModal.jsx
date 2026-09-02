@@ -10,6 +10,7 @@ import useCapaFlotante from '../../utils/capaFlotante';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
     Plus, Trash2, PackagePlus, Check, ChevronLeft, FileText, Truck, Star,
+    ListChecks, Pencil,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -22,6 +23,7 @@ import {
     fetchProductPreciosOpts, fetchProductPreciosOptsForProducts,
     searchAvailableProducts, fetchLastDispatchInfo,
     agregarExtraAPedido, actualizarExtraDePedido, quitarExtraDePedido,
+    corregirRecepcionDeItem,
 } from '../../data/recepcion';
 import { updatePedidoSucursalStatus, recibirTrasladoPedido } from '../../data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -191,12 +193,23 @@ function PanelProblema({ id, fQty, campos, onListo }) {
  * no dar por bueno lo que decía el papel. Con sólo un botón «Recibir» no había
  * forma de decir que llegó uno menos o que venía dañado.
  */
-function SueltoRapido({ rows, hojaDe, sueltosOk, saving, onRecibir, campos }) {
+function SueltoRapido({ rows, confirmados = [], hojaDe, sueltosOk, saving, onRecibir, campos, correccion }) {
     const [q, setQ] = useState('');
     const { presMap, fQtyVals, setFQtyVals, fPresVals, setFPresVals, tieneProblema, setTieneProblema } = campos;
     const term = q.trim();
     const hits = term.length < 2 ? [] : rows
         .filter(r => !sueltosOk.has(r.id) && r.status !== 'recibido')
+        .filter(r => tokenMatch(term, r.products?.nombre))
+        .slice(0, 4);
+    // Lo que ya se contó también se busca acá.
+    //
+    // Antes este filtro decía `r.status !== 'recibido'` sobre una lista que
+    // ADEMÁS venía sin los confirmados, o sea que un producto ya contado no
+    // salía por dos motivos a la vez y la pantalla contestaba «sin resultados»
+    // — que se lee como «ese producto no vino en el pedido». Buscar es la única
+    // forma que tiene la sala de llegar a un renglón, así que si el renglón
+    // existe, la búsqueda lo tiene que encontrar.
+    const yaHits = term.length < 2 ? [] : confirmados
         .filter(r => tokenMatch(term, r.products?.nombre))
         .slice(0, 4);
 
@@ -208,7 +221,7 @@ function SueltoRapido({ rows, hojaDe, sueltosOk, saving, onRecibir, campos }) {
                 placeholder="¿Necesitas un producto ya? Búscalo…"
                 ariaLabel="Buscar un producto para recibirlo ahora"
             />
-            {term.length >= 2 && hits.length === 0 && (
+            {term.length >= 2 && hits.length === 0 && yaHits.length === 0 && (
                 <p className="text-label text-content-3 mt-2 px-1">Sin resultados entre lo que llegó.</p>
             )}
             {hits.map(r => {
@@ -305,6 +318,25 @@ function SueltoRapido({ rows, hojaDe, sueltosOk, saving, onRecibir, campos }) {
                     </div>
                 );
             })}
+
+            {yaHits.length > 0 && (
+                <div className="mt-3">
+                    <p className="text-caption font-bold text-content-3 uppercase tracking-wide px-1">
+                        Ya lo contaste
+                    </p>
+                    {yaHits.map(r => (
+                        <FilaConfirmada
+                            key={r.id} row={r} hoja={hojaDe(r.id)}
+                            presMap={presMap} saving={saving}
+                            puedeCorregir
+                            abierta={correccion?.abiertaId === r.id}
+                            onAbrir={() => correccion?.abrir(r.id)}
+                            onCerrar={() => correccion?.cerrar()}
+                            onGuardar={correccion?.guardar}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
@@ -325,6 +357,157 @@ const ERROR_TIPOS = [
     { value: 'vencido', label: 'Vencido' },
     { value: 'otro',    label: 'Otro'    },
 ];
+
+/**
+ * En qué quedó un renglón ya contado: el número y qué significa.
+ *
+ * Se dice con PALABRAS y no sólo con un signo. «+2» junto a un «de 1» se lee
+ * como cuántos hay, no como cuántos sobran — es el mismo error de lectura que
+ * costó el modal de llegada (ver `feedback_un_numero_junto_a_un_total_se_lee_
+ * como_cuantas_hay`). Acá el rótulo dice el verbo: «sobran 2», «faltan 2».
+ */
+function estadoDeLoContado(row) {
+    const enviado  = enviadoDe(row);
+    const contado  = Number(row.cantidad_recibida) || 0;
+    const delta    = contado - enviado;
+    if (delta > 0)  return { tono: 'warning', texto: `Sobran ${delta}`,  hayDif: true };
+    if (delta < 0)  return { tono: 'danger',  texto: `Faltan ${-delta}`, hayDif: true };
+    if (row.error_tipo === 'danado')  return { tono: 'chart-4', texto: 'Dañado',  hayDif: true };
+    if (row.error_tipo === 'vencido') return { tono: 'chart-4', texto: 'Vencido', hayDif: true };
+    if (row.error_tipo)               return { tono: 'chart-4', texto: 'Con nota', hayDif: true };
+    return { tono: 'success', texto: 'Coincide', hayDif: false };
+}
+
+/**
+ * Reescribir cuántos llegaron de un producto que YA se confirmó.
+ *
+ * Tiene estado PROPIO y no el `campos` compartido de la grilla: ése está
+ * indexado por id de renglón y lo usa el conteo de la hoja, así que escribir
+ * acá movería la celda de allá para el mismo producto.
+ *
+ * Lo que NO promete: mover existencias. La corrección deja el renglón con su
+ * diferencia y de ahí sigue la conversación con bodega — el aviso del pie lo
+ * dice antes de guardar, porque «corregí y ya está» es exactamente lo que
+ * alguien supondría si no se lo dijeran.
+ */
+function CorrectorDeConteo({ row, presMap, saving, onGuardar, onCancelar }) {
+    const erpFactor  = Number(row.factor) || 1;
+    const dispFactor = Number(row.dispatch_factor) || erpFactor;
+    const enviado    = enviadoDe(row);
+    const contado    = Number(row.cantidad_recibida) || 0;
+    const presOpts   = opcionesDePresentacion(row, presMap);
+
+    const [fPres, setFPres] = useState(dispFactor);
+    const [fQty,  setFQty]  = useState(() => toDispatch(contado, erpFactor, dispFactor));
+    const [nota,  setNota]  = useState(row.nota_diferencia ?? '');
+
+    const fRaw  = Math.round(fQty * fPres / erpFactor);
+    const delta = fRaw - enviado;
+    const sinCambio = fRaw === contado && (nota.trim() || null) === (row.nota_diferencia ?? null);
+
+    return (
+        <div className="mt-2 pt-2 border-t border-divider">
+            <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-caption text-content-3">¿Cuántos contaste?</span>
+                <div className="w-32 shrink-0">
+                    <LiquidSelect
+                        value={String(fPres)}
+                        onChange={v => setFPres(Number(v))}
+                        options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                        compact clearable={false} />
+                </div>
+                <div className="relative w-14 shrink-0">
+                    <PortalInput
+                        aria-label="Cuántos contaste" compact
+                        tono={delta !== 0 ? 'warning' : 'chart-9'}
+                        type="number" min={0} value={fQty}
+                        onChange={e => setFQty(Math.max(0, parseInt(e.target.value) || 0))}
+                        inputClassName="text-center font-bold tabular-nums" />
+                </div>
+                <span className="text-caption text-content-3">
+                    {delta === 0 ? 'coincide con lo enviado'
+                        : delta > 0 ? `sobran ${delta}` : `faltan ${-delta}`}
+                </span>
+            </div>
+
+            <PortalInput
+                aria-label="Nota de la corrección"
+                type="text" compact className="mt-1.5"
+                value={nota}
+                onChange={e => setNota(e.target.value)}
+                placeholder="¿Qué pasó? (opcional)" />
+
+            {delta !== 0 && (
+                <p className="text-micro text-warning-text mt-1.5 leading-snug">
+                    Queda anotado como diferencia y pasa a la conversación con bodega:
+                    el producto no entra ni sale del inventario hasta que las dos partes
+                    acuerden qué hacer.
+                </p>
+            )}
+
+            <div className="flex items-center justify-end gap-1.5 mt-2">
+                <Button variant="secondary" size="sm" disabled={saving} onClick={onCancelar}>Cancelar</Button>
+                <Button tone="success" size="sm" icon={Check} disabled={saving || sinCambio}
+                    onClick={() => onGuardar(row, fRaw, nota.trim() || null)}>Guardar</Button>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Un producto ya contado, con lo que quedó escrito y la puerta para corregirlo.
+ *
+ * Se dicen los DOS números —lo enviado y lo contado— y no sólo el que se
+ * escribió: sin el otro al lado no hay forma de ver que no coinciden, que es
+ * justo lo que alguien viene a revisar.
+ */
+function FilaConfirmada({ row, hoja, presMap, saving, abierta, onAbrir, onCerrar, onGuardar, puedeCorregir }) {
+    const erpFactor  = Number(row.factor) || 1;
+    const dispFactor = Number(row.dispatch_factor) || erpFactor;
+    const est        = estadoDeLoContado(row);
+    const enCurso    = row.resolucion_status != null;
+    const etiqueta   = opcionesDePresentacion(row, presMap).find(o => o.factor === dispFactor)?.label ?? '';
+
+    return (
+        <div data-surface="card" data-tono={est.hayDif ? 'warning' : undefined} className="mt-1.5 px-3 py-2.5">
+            <div className="flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                    <p className="text-body-sm font-semibold text-content-2 leading-tight">
+                        {row.products?.nombre}
+                        {row.products?.es_antibiotico && (
+                            <Badge variant="danger" size="sm" uppercase={false} className="ml-1 align-middle">Bajo Receta</Badge>
+                        )}
+                    </p>
+                    <p className="text-micro text-content-3 mt-0.5">
+                        {hoja ? `Hoja ${hoja} · ` : ''}
+                        Enviado: {toDispatch(enviadoDe(row), erpFactor, dispFactor)}{etiqueta ? ` × ${etiqueta}` : ''}
+                        {' · '}
+                        Contaste: {toDispatch(Number(row.cantidad_recibida) || 0, erpFactor, dispFactor)}
+                    </p>
+                </div>
+                <Badge variant={est.tono} size="sm" uppercase={false} className="shrink-0">{est.texto}</Badge>
+            </div>
+
+            {/* Con una propuesta en vuelo la cantidad es la que aceptó la otra
+                parte: se muestra, no se toca. Mismo freno que el extra, y lo
+                vuelve a aplicar la base. */}
+            {enCurso ? (
+                <p className="text-micro text-content-3 mt-1.5">
+                    Esta diferencia ya se está resolviendo con bodega — la cantidad es la que se acordó.
+                </p>
+            ) : !puedeCorregir ? null : abierta ? (
+                <CorrectorDeConteo row={row} presMap={presMap} saving={saving}
+                    onGuardar={onGuardar} onCancelar={onCerrar} />
+            ) : (
+                <div className="flex justify-end mt-1.5">
+                    <Button variant="ghost" size="sm" icon={Pencil} disabled={saving} onClick={onAbrir}>
+                        Corregir lo contado
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+}
 
 // Items screen: producto | enviado | presentación | cantidad | acción
 //
@@ -363,7 +546,12 @@ async function fetchPresOpts(productId) {
 // Es el mismo criterio que el banco de horas de nómina (v2.116.0).
 
 export default function RecepcionModal({
-    open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed,
+    open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed, onCorregido,
+    // Lo YA contado. Llega APARTE de `rows` a propósito: un renglón confirmado
+    // no se vuelve a contar, así que mezclarlo lo metería en la grilla y en
+    // «Confirmar todo» sin que hiciera nada. Su lugar es la búsqueda y su
+    // propia pantalla.
+    confirmados  = [],
     cajaDanada   = [],   // cajas que llegaron dañadas (sus productos sí están)
     cajaMap      = {},   // {"1":[1,2],"2":[3,4]} → caja → hojas que trae adentro
     paginaItems  = {},   // {"1":[itemId,...],...} → hoja → pedido_item IDs
@@ -420,6 +608,15 @@ export default function RecepcionModal({
     const [saveError, setSaveError] = useState(null);
     const [prodSearch, setProdSearch] = useState('');
     const [showSearch, setShowSearch] = useState(false);
+
+    // ── Corregir lo ya contado ─────────────────────────────────────────────────
+    // `correcciones` guarda lo que se acaba de reescribir para pintarlo sin
+    // recargar el pedido entero — el mismo truco que `sueltosOk`. La lista de
+    // la base se refresca al cerrar.
+    const [correcciones,  setCorrecciones]  = useState({});
+    const [corrigiendoId, setCorrigiendoId] = useState(null);
+    const [huboCorreccion, setHuboCorreccion] = useState(false);
+    const [confirmadosQ,  setConfirmadosQ]  = useState('');
 
     // ── Extras ─────────────────────────────────────────────────────────────────
     //
@@ -655,7 +852,11 @@ export default function RecepcionModal({
     // ── Init on open ────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!open) return;
-        setScreen(hayHojas ? 'cajas' : 'items');
+        // Sin nada por contar, la pantalla que se abre es la de lo ya contado.
+        // Es el caso de quien vuelve a mirar un pedido terminado: las hojas
+        // salen todas «Contadas» y el pie ofrecería «Finalizar recepción» otra
+        // vez sobre algo que ya se finalizó.
+        setScreen(rows.length === 0 ? 'confirmados' : (hayHojas ? 'cajas' : 'items'));
         setSelectedHoja(null);
         setSelectedEspecial(null);
         setConfirmedEspecialIds(new Set());
@@ -665,6 +866,7 @@ export default function RecepcionModal({
         setConfirmarHoja(null);
         setConfirmarTodoOpen(false);
         setSaveError(null);
+        setCorrecciones({}); setCorrigiendoId(null); setHuboCorreccion(false); setConfirmadosQ('');
         setPresMap({});
         setExtras([]); setExtraSearch(''); setExtraResults([]);
         setProdSearch(''); setShowSearch(false); setPrevScreen(null);
@@ -679,7 +881,9 @@ export default function RecepcionModal({
         setFQtyVals(fQ); setFPresVals(fP);
         setNotaVals(notas); setErrorVals(errs); setTieneProblema({}); setCantProblemaVals({});
 
-        const productIds = [...new Set(rows.map(r => r.erp_product_id))];
+        // Los ya contados también: su corrector ofrece las mismas presentaciones,
+        // y sin ellos `opcionesDePresentacion` cae al único factor del despacho.
+        const productIds = [...new Set([...rows, ...confirmados].map(r => r.erp_product_id))];
         if (productIds.length > 0) {
             (async () => {
                 const allData = await fetchProductPreciosOptsForProducts(productIds) ?? [];
@@ -947,6 +1151,74 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [buildPItems, pedido, sucursalId, user]);
+
+    // ── Corregir lo que YA se contó ─────────────────────────────────────────────
+    //
+    // El único camino de vuelta. `receive_pedido_sucursal` sólo toca renglones
+    // `pendiente` —eso es lo que impide contar dos veces— y `agregar_extra_a_
+    // pedido` rechaza un producto que tiene su propio renglón, así que entre
+    // las dos reglas un conteo equivocado quedaba escrito para siempre.
+    //
+    // NO mueve existencias: deja el renglón con su diferencia y de ahí lo toma
+    // la conversación con bodega. Por eso tampoco llama a `recibirTrasladoPedido`
+    // — la sala no le puede bajar la existencia a bodega sin que bodega conteste.
+    const guardarCorreccion = useCallback(async (row, cantidadRaw, nota) => {
+        setSaving(true); setSaveError(null);
+        try {
+            const { data, error } = await corregirRecepcionDeItem({
+                itemId: row.id, cantidad: cantidadRaw, nota,
+            });
+            if (error) throw error;
+            setCorrecciones(prev => ({
+                ...prev,
+                [row.id]: {
+                    cantidad_recibida: cantidadRaw,
+                    nota_diferencia:   nota,
+                    error_tipo:        data?.error_tipo ?? null,
+                    status:            data?.status ?? 'recibido',
+                },
+            }));
+            setCorrigiendoId(null);
+            setHuboCorreccion(true);
+            useStaff.getState().appendAuditLog('CORREGIR_CONTEO_PEDIDO', pedido.id, {
+                sucursal_id: sucursalId, pedido_item_id: row.id,
+                producto: row.products?.nombre ?? null,
+                antes: Number(row.cantidad_recibida) || 0, ahora: cantidadRaw,
+            });
+            useToastStore.getState().showToast(
+                'Corregido',
+                data?.error_tipo
+                    ? 'Quedó anotado como diferencia. Bodega tiene que contestar antes de que el producto se mueva.'
+                    : 'El conteo ahora coincide con lo enviado.',
+                data?.error_tipo ? 'warning' : 'success', 6000,
+            );
+        } catch (e) {
+            setSaveError(mensajeAmigable(e));
+        } finally {
+            setSaving(false);
+        }
+    }, [pedido?.id, sucursalId]);
+
+    // Lo ya contado, con lo que se acaba de corregir encima.
+    const confirmadosVivos = useMemo(() => confirmados
+        .map(r => (correcciones[r.id] ? { ...r, ...correcciones[r.id] } : r))
+        .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es')),
+    [confirmados, correcciones]);
+
+    const correccionBag = useMemo(() => ({
+        abiertaId: corrigiendoId,
+        abrir:  (id) => setCorrigiendoId(id),
+        cerrar: ()   => setCorrigiendoId(null),
+        guardar: guardarCorreccion,
+    }), [corrigiendoId, guardarCorreccion]);
+
+    // Cerrar el modal después de corregir tiene que refrescar la tarjeta: la
+    // diferencia recién nacida vive en la sección de Diferencias, que lee de la
+    // base y no de este estado.
+    const cerrarModal = useCallback(() => {
+        if (huboCorreccion) onCorregido?.();
+        onClose();
+    }, [huboCorreccion, onCorregido, onClose]);
 
     // ── Cerrar lo que se acaba de confirmar ─────────────────────────────────────
     // Estos dos bloques vivían duplicados dentro de «Confirmar» y de «Todo OK», y
@@ -1258,7 +1530,7 @@ export default function RecepcionModal({
         const todasContadas = contables.length > 0 && contadas.length === contables.length;
 
         return (
-            <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-md">
+            <PedidoModal open={open} onClose={saving ? undefined : cerrarModal} maxWidth="max-w-md">
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
@@ -1273,7 +1545,7 @@ export default function RecepcionModal({
                             <Badge variant={todasContadas ? 'success' : 'warning'} uppercase={false}>
                                 {contadas.length}/{contables.length} contadas
                             </Badge>
-                            <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={onClose} />
+                            <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={cerrarModal} />
                         </div>
                     </div>
                 </PedidoModal.Header>
@@ -1285,11 +1557,13 @@ export default function RecepcionModal({
                         contesta. */}
                     <SueltoRapido
                         rows={sortedRows}
+                        confirmados={confirmadosVivos}
                         hojaDe={hojaDeItem}
                         sueltosOk={sueltosOk}
                         saving={saving}
                         onRecibir={handleRecibirSolo}
                         campos={campos}
+                        correccion={correccionBag}
                     />
 
                     <p className="text-caption font-bold text-content-2 uppercase tracking-wide mb-2 mt-4">Hojas del despacho</p>
@@ -1478,9 +1752,13 @@ export default function RecepcionModal({
                 </PedidoModal.Body>
 
                 {/* Extras section on cajas screen */}
-                <div className="flex-none border-t border-divider px-4 py-3">
+                <div className="flex-none border-t border-divider px-4 py-3 flex flex-wrap items-center gap-x-1 gap-y-1">
                     <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>¿Llegó un producto extra?
                         {extras.length > 0 && <Badge variant="info" uppercase={false}>{extras.length}</Badge>}</Button>
+                    {confirmadosVivos.length > 0 && (
+                        <Button variant="ghost" icon={ListChecks} onClick={() => { setPrevScreen('cajas'); setScreen('confirmados'); }}>Ya confirmados
+                            <Badge variant="success" uppercase={false}>{confirmadosVivos.length}</Badge></Button>
+                    )}
                 </div>
 
                 {allAccessibleDone && (
@@ -1515,6 +1793,101 @@ export default function RecepcionModal({
                     isDestructive={false}
                     isProcessing={saving}
                 />
+            </PedidoModal>
+        );
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // SCREEN: CONFIRMADOS — lo que ya se contó, y la puerta para corregirlo
+    // ════════════════════════════════════════════════════════════════
+    //
+    // No existía ninguna. Un producto confirmado desaparecía de la pantalla —de
+    // `rows`, de la búsqueda y de las hojas, que quedan «Contadas»— así que la
+    // única forma de saber en qué había quedado era mirar la tarjeta del pedido,
+    // y no había ninguna de corregirlo. Medido el 2026-09-02 en Salud 5:
+    // SECUFEM se confirmó en 1 y en la caja venían 3.
+    if (screen === 'confirmados') {
+        // Sin nada por contar no hay pantalla atrás: volver es cerrar, y la
+        // flecha no se dibuja — una flecha «atrás» que cierra la ventana miente
+        // sobre a dónde lleva.
+        const hayAtras = rows.length > 0;
+        const volver = hayAtras
+            ? () => { setConfirmadosQ(''); setCorrigiendoId(null); setScreen(prevScreen ?? (hayHojas ? 'cajas' : 'items')); }
+            : cerrarModal;
+        const term   = confirmadosQ.trim();
+        const lista  = term.length >= 2
+            ? confirmadosVivos.filter(r => tokenMatch(term, r.products?.nombre))
+            : confirmadosVivos;
+        const conDif = confirmadosVivos.filter(r => estadoDeLoContado(r).hayDif).length;
+
+        return (
+            <PedidoModal open={open} onClose={saving ? undefined : volver} maxWidth="max-w-md">
+                <PedidoModal.Header className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                        {hayAtras && (
+                            <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={saving} iconOnly onClick={volver} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-subtitle font-bold text-content leading-snug">Ya confirmados</h3>
+                            <p className="text-label text-content-3 mt-0.5">
+                                {sucursalNombre} · {confirmadosVivos.length} producto{confirmadosVivos.length !== 1 ? 's' : ''} contado{confirmadosVivos.length !== 1 ? 's' : ''}
+                                {conDif > 0 ? ` · ${conDif} con diferencia` : ''}
+                            </p>
+                        </div>
+                        <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={volver} />
+                    </div>
+                </PedidoModal.Header>
+
+                <PedidoModal.Body className="px-4 py-4 scrollbar-hide">
+                    {confirmadosVivos.length > 6 && (
+                        <SearchInput
+                            value={confirmadosQ}
+                            onChange={setConfirmadosQ}
+                            placeholder="Buscar entre lo contado…"
+                            ariaLabel="Buscar un producto ya confirmado"
+                        />
+                    )}
+
+                    {saveError && (
+                        <div className="flex items-center gap-2 text-danger text-body-sm bg-danger/10 border border-danger/30 rounded-lg px-3 py-2 mt-2">
+                            <AlertTriangle size={13} /> {saveError}
+                        </div>
+                    )}
+
+                    {lista.length === 0 && (
+                        <p className="text-label text-content-3 mt-3 px-1">
+                            {term.length >= 2 ? 'Ningún producto contado se llama así.' : 'Todavía no se confirmó ningún producto.'}
+                        </p>
+                    )}
+
+                    {lista.map(r => (
+                        <FilaConfirmada
+                            key={r.id} row={r} hoja={hojaDeItem(r.id)}
+                            presMap={presMap} saving={saving}
+                            puedeCorregir
+                            abierta={corrigiendoId === r.id}
+                            onAbrir={() => setCorrigiendoId(r.id)}
+                            onCerrar={() => setCorrigiendoId(null)}
+                            onGuardar={guardarCorreccion}
+                        />
+                    ))}
+
+                    {/* Lo que la corrección NO hace, dicho una vez arriba de todo
+                        y no repetido por fila: el producto no se mueve. */}
+                    {confirmadosVivos.length > 0 && (
+                        <p className="text-micro text-content-3 mt-4 leading-snug px-1">
+                            Corregir reescribe cuántos contaste. Si el número no coincide con lo
+                            enviado queda como diferencia y bodega tiene que contestar: el producto
+                            no entra ni sale del inventario hasta que las dos partes acuerden.
+                        </p>
+                    )}
+                </PedidoModal.Body>
+
+                <PedidoModal.Footer>
+                    <div className="flex justify-end">
+                        <Button variant="secondary" disabled={saving} onClick={volver}>{hayAtras ? 'Volver' : 'Cerrar'}</Button>
+                    </div>
+                </PedidoModal.Footer>
             </PedidoModal>
         );
     }
@@ -1741,7 +2114,7 @@ export default function RecepcionModal({
             : `Se van a dar por recibidos ${nPorContar} producto${nPorContar !== 1 ? 's' : ''} de ${rotuloAbierto} con las cantidades que están en pantalla, y entran al inventario de la sala automáticamente.${colaYaRecibido} Después ${rotuloAbierto} ya no se vuelve a contar.`;
 
     return (
-        <PedidoModal open={open} onClose={saving ? undefined : ((hayHojas || selectedEspecial !== null) ? goBack : onClose)} maxWidth="max-w-2xl">
+        <PedidoModal open={open} onClose={saving ? undefined : ((hayHojas || selectedEspecial !== null) ? goBack : cerrarModal)} maxWidth="max-w-2xl">
 
             {/* Header — COMPACTO (2026-08-17)
                 Lo que se mira en esta pantalla es la lista de productos: el
@@ -1829,7 +2202,7 @@ export default function RecepcionModal({
                         >
                             <Search size={15} />
                         </motion.button>
-                        <Button variant="ghost" icon={X} disabled={!showSearch && saving} iconOnly onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hayHojas ? goBack : onClose)} />
+                        <Button variant="ghost" icon={X} disabled={!showSearch && saving} iconOnly onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hayHojas ? goBack : cerrarModal)} />
                     </div>
                 </div>
             </PedidoModal.Header>
@@ -2004,9 +2377,13 @@ export default function RecepcionModal({
             </PedidoModal.Body>
 
             {/* Extras — navigate to dedicated screen */}
-            <div className="flex-none border-t border-divider px-5 py-3">
+            <div className="flex-none border-t border-divider px-5 py-3 flex flex-wrap items-center gap-x-1 gap-y-1">
                 <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>¿Llegó un producto extra?
                     {extras.length > 0 && <Badge variant="info" uppercase={false}>{extras.length}</Badge>}</Button>
+                {confirmadosVivos.length > 0 && (
+                    <Button variant="ghost" icon={ListChecks} onClick={() => { setPrevScreen(screen); setScreen('confirmados'); }}>Ya confirmados
+                        <Badge variant="success" uppercase={false}>{confirmadosVivos.length}</Badge></Button>
+                )}
             </div>
 
             {/* Sin franja de «Responsables» (2026-08-17). Quien cuenta ya sabe
@@ -2021,7 +2398,7 @@ export default function RecepcionModal({
                     </div>
                 )}
                 <div className="flex justify-between gap-2">
-                    <Button variant="secondary" disabled={saving} onClick={hayHojas ? goBack : onClose}>{hayHojas ? 'Volver' : 'Cancelar'}</Button>
+                    <Button variant="secondary" disabled={saving} onClick={hayHojas ? goBack : cerrarModal}>{hayHojas ? 'Volver' : 'Cancelar'}</Button>
                     <div className="flex items-center gap-2">
                         {/* Sin «Todo OK» en una hoja que venía en una caja dañada o
                             que no llegó: es justo la que hay que mirar de a uno. */}

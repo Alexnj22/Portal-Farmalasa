@@ -21,48 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.948.0 — El pago con «Otro» se resuelve crédito por crédito
-
-Tres correcciones del usuario sobre el diálogo de cobro.
-
-**«Otro» pide lo que hace falta y nada más.** El aviso era un párrafo que
-explicaba para qué sirve la opción y se comía media pantalla — quien la eligió
-ya lo sabe. Ahora dice lo que va a pasar en dos líneas: *«Este abono entra ya y
-se envía a aprobación. Escribe el motivo.»*. **«Con qué se pagó» salió**: la
-forma ya **es** «Otro», así que era pedir dos veces el mismo dato. Quedan el
-**monto** y un **motivo obligatorio**, que es lo que quien aprueba va a leer.
-
-**Los renglones del reparto se entienden.** Eran dos líneas con un campo suelto
-al lado, sin decir qué era el campo ni contra qué tope. Ahora cada crédito es su
-propia tarjeta, el campo se llama **«Abona»**, el que se vino a cobrar lleva la
-insignia **«este»**, hay un botón **«Todo»** por renglón —pagar el crédito
-completo es el caso normal, y escribir $35.57 a mano es donde uno se equivoca— y
-la tarjeta se pone en rojo si se pasa del saldo.
-
-### La solicitud se resuelve uno por uno
-
-*«En la solicitud se debe poder confirmar individualmente si van más de 1 cuenta
-a abonar, si se rechaza 1 o más con motivo»*. Una liquidación del ISSS puede
-cubrir tres créditos y que dos correspondan y el tercero no; resolverla en
-bloque obligaría a rechazar los tres.
-
-- **Aprobar sólo confirma**: el abono ya se aplicó cuando la sala lo registró.
-- **Rechazar lo DESHACE** en el sistema de la caja y le devuelve el saldo al
-  crédito. Eso se puede desde esta mañana, cuando se auditó la acción de
-  borrado — y el portal **comprueba releyendo**, porque el origen contesta
-  «Success» aunque no haya borrado nada.
-- **Un rechazo sin motivo no es un rechazo.** Se exige, y queda escrito: quien
-  pagó tiene derecho a saber por qué se le devolvió el abono.
-
-La solicitud queda aprobada aunque se rechace algún renglón, y el detalle de qué
-se aceptó y qué no vive en la propia solicitud. Marcarla rechazada por un
-renglón diría que no se aprobó nada, y sería falso.
-
-⚠️ Falta la pantalla desde la que se resuelve: hoy el circuito existe del lado
-del servidor y la solicitud se ve en la bandeja, pero decidir renglón por
-renglón todavía no tiene su diálogo.
-
-## v2.948.0 — Un producto ya confirmado se puede encontrar y corregir
+## v2.949.0 — Un producto ya confirmado se puede encontrar y corregir
 
 Reporte del usuario sobre el pedido de Salud 5: *«confirmaron el producto
 SECUFEM, y era incorrecto, llegó 3 en físico y 1 en sistema, así que hay 2
@@ -113,6 +72,47 @@ no se pisa, así que sigue diciendo quién contó.
 
 Medido contra el caso real (renglón 92549, ensayo revertido): enviado 1,
 contado 3 → `con_diferencia · sobrante`, diferencia **2**.
+
+## v2.948.0 — El pago con «Otro» se resuelve crédito por crédito
+
+Tres correcciones del usuario sobre el diálogo de cobro.
+
+**«Otro» pide lo que hace falta y nada más.** El aviso era un párrafo que
+explicaba para qué sirve la opción y se comía media pantalla — quien la eligió
+ya lo sabe. Ahora dice lo que va a pasar en dos líneas: *«Este abono entra ya y
+se envía a aprobación. Escribe el motivo.»*. **«Con qué se pagó» salió**: la
+forma ya **es** «Otro», así que era pedir dos veces el mismo dato. Quedan el
+**monto** y un **motivo obligatorio**, que es lo que quien aprueba va a leer.
+
+**Los renglones del reparto se entienden.** Eran dos líneas con un campo suelto
+al lado, sin decir qué era el campo ni contra qué tope. Ahora cada crédito es su
+propia tarjeta, el campo se llama **«Abona»**, el que se vino a cobrar lleva la
+insignia **«este»**, hay un botón **«Todo»** por renglón —pagar el crédito
+completo es el caso normal, y escribir $35.57 a mano es donde uno se equivoca— y
+la tarjeta se pone en rojo si se pasa del saldo.
+
+### La solicitud se resuelve uno por uno
+
+*«En la solicitud se debe poder confirmar individualmente si van más de 1 cuenta
+a abonar, si se rechaza 1 o más con motivo»*. Una liquidación del ISSS puede
+cubrir tres créditos y que dos correspondan y el tercero no; resolverla en
+bloque obligaría a rechazar los tres.
+
+- **Aprobar sólo confirma**: el abono ya se aplicó cuando la sala lo registró.
+- **Rechazar lo DESHACE** en el sistema de la caja y le devuelve el saldo al
+  crédito. Eso se puede desde esta mañana, cuando se auditó la acción de
+  borrado — y el portal **comprueba releyendo**, porque el origen contesta
+  «Success» aunque no haya borrado nada.
+- **Un rechazo sin motivo no es un rechazo.** Se exige, y queda escrito: quien
+  pagó tiene derecho a saber por qué se le devolvió el abono.
+
+La solicitud queda aprobada aunque se rechace algún renglón, y el detalle de qué
+se aceptó y qué no vive en la propia solicitud. Marcarla rechazada por un
+renglón diría que no se aprobó nada, y sería falso.
+
+⚠️ Falta la pantalla desde la que se resuelve: hoy el circuito existe del lado
+del servidor y la solicitud se ve en la bandeja, pero decidir renglón por
+renglón todavía no tiene su diálogo.
 
 ## v2.947.2 — Un día tiene un solo corte Z
 

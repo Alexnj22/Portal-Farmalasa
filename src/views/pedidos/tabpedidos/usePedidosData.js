@@ -1327,7 +1327,27 @@ export function usePedidosData({ searchTerm = '' }) {
             ...(loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja),
             ...extrasAnotados,
         ];
-        if (!rows.length) return;
+        // Lo YA contado, aparte y nunca dentro de `rows`.
+        //
+        // Un renglón confirmado no se vuelve a contar —`receive_pedido_sucursal`
+        // sólo toca los `pendiente`— así que mezclarlo acá lo metería en la
+        // grilla de conteo y en «Confirmar todo» sin que hiciera nada. Pero
+        // tampoco puede faltar: sin él, buscar un producto ya confirmado no
+        // devolvía NADA y no existía pantalla donde verlo. Medido el 2026-09-02
+        // en Salud 5 con SECUFEM — se confirmó 1 sobre 3 que llegaron y las
+        // otras 2 no tenían dónde escribirse.
+        //
+        // Y con la misma criba de cantidad que `rows`: un pedido trae CIEN
+        // renglones con `cantidad_asignada = 0` que nacen `recibido` con cero
+        // —lo que la regla decidió no pedir— y sin este filtro la lista de lo
+        // contado los mostraría a todos. Medido en el pedido #150 de Salud 5:
+        // 100 renglones fantasma sobre el único que de verdad se contó.
+        const confirmados = (loaded || []).filter((r) => {
+            if (r.es_extra || !['recibido', 'con_diferencia'].includes(r.status)) return false;
+            const enviado = r.cantidad_enviada ?? r.cantidad_asignada ?? 0;
+            return enviado > 0 || (r.cantidad_recibida ?? 0) > 0;
+        });
+        if (!rows.length && !confirmados.length) return;
         const hasFaltaItems = (loaded || []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0);
         const activeRow  = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
         // cajas_danadas y falta_cajas son ahora arrays independientes (soporta 'mixto')
@@ -1357,7 +1377,7 @@ export function usePedidosData({ searchTerm = '' }) {
         const itemsEnReenvio  = (loaded || []).filter(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0).map(r => r.id);
         const itemsYaContados = (loaded || []).filter(r => r.status !== 'pendiente').map(r => r.id);
 
-        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, paginas, hojasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas, itemsEnReenvio, itemsYaContados });
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, confirmados, cajaDanada, cajaMap, paginaItems, paginas, hojasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas, itemsEnReenvio, itemsYaContados });
     }, [fetchItems, activeRows]);
 
     const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {

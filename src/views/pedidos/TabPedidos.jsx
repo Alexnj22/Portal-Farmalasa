@@ -976,6 +976,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     sucursalId={modal.sucId}
                     sucursalNombre={branchName}
                     rows={modal.rows}
+                    confirmados={modal.confirmados ?? []}
                     cajaDanada={modal.cajaDanada   ?? []}
                     cajaMap={modal.cajaMap         ?? {}}
                     paginaItems={modal.paginaItems  ?? {}}
@@ -986,6 +987,29 @@ export default function TabPedidos({ searchTerm = '' }) {
                     especialesLlegadas={modal.especialesLlegadas ?? {}}
                     itemsEnReenvio={modal.itemsEnReenvio ?? []}
                     itemsYaContados={modal.itemsYaContados ?? []}
+                    /* Corregir un conteo NO cierra el modal —la sala puede
+                       corregir varios— pero sí tiene que refrescar la tarjeta al
+                       salir: la diferencia recién nacida vive en la sección de
+                       Diferencias, que lee de la base. Y si nació una, bodega
+                       tiene que enterarse: una diferencia que espera a que
+                       alguien mire la pantalla no cierra el circuito. */
+                    onCorregido={async () => {
+                        const { pedido, sucId, key } = modal;
+                        const loaded = await fetchItems(key, pedido.id, sucId);
+                        if ((loaded || []).some(r => r.status === 'con_diferencia')) {
+                            await handleReportarDiferencias(pedido.id, sucId);
+                            fetchBodegaBranchId().then(({ data: b }) => {
+                                if (!b?.branch_id) return;
+                                notifyBranch(b.branch_id, {
+                                    type: 'PEDIDO_PROBLEMA',
+                                    title: `Problemas en pedido #${pedido.numero} — ${branchName}`,
+                                    body: `${branchName} corrigió lo contado del pedido #${pedido.numero}. Revisa la diferencia y contesta.`,
+                                    link: '/pedidos', push: true,
+                                });
+                            }).catch(() => {});
+                        }
+                        await loadActive();
+                    }}
                     onConfirmed={async ({ hasDiff, allDone }) => {
                         const { pedido, sucId, key } = modal;
                         setModal(null);

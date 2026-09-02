@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Landmark } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
-import Notice from '../common/Notice';
 import { anotarValesEnCaja, fetchValesPendientes } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -38,6 +36,17 @@ import { useToastStore } from '../../store/toastStore';
  * nadie escribe el vale, y ahí sí sale con el faltante inventado. Entonces
  * esto es información —cuánto le debe la caja al día de hoy— con una salida a
  * mano para ese caso, no una tarea.
+ *
+ * ── Y ARREGLARLE EL TEXTO DOS VECES NO ALCANZÓ ────────────────────────────
+ * La tercera pregunta del usuario, el mismo día, fue la que lo dijo: *«no es la
+ * lógica ya del portal, registrar los vales / ingresos en el portal y al hacer
+ * el corte reflejarlos todos? ¿por qué salen aquí como error o faltante?»*.
+ *
+ * Las dos correcciones anteriores fueron a las PALABRAS —quién es la sala, que
+ * el corte lo anota solo— y ninguna tocó lo que en realidad lo hacía leerse
+ * como un problema: **la forma**. Un recuadro con marco e ícono, arriba de
+ * todo, es como el portal dice «pasa algo»; ninguna redacción adentro de esa
+ * caja iba a decir «no pasa nada». Hoy es un renglón. Ver la nota del render.
  *
  * ── Lo que NO aparece acá, y es la mitad de la regla ───────────────────────
  * Lo que salió de una bolsa de un día ya cerrado. Esa plata la caja no la
@@ -158,36 +167,40 @@ export default function ValesDeCaja() {
 
     return (
         <>
-            {/* `info` y no `warning`: no hay nada que corregir. El corte hecho
-                desde el portal lo anota solo — ver el encabezado. Pintarlo de
-                amarillo era pedir una acción que el camino normal ya hace. */}
-            <Notice variant="info" icon={Landmark}>
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div className="min-w-0">
-                        {/* La sala PRIMERO. Es lo que se busca al leerlo —«¿me
-                            toca a mí?»— y además evita el «de Salud 3 2
-                            salidas», donde dos números pegados se leen como uno.
-                            Es la misma forma que el aviso de un corte nuevo:
-                            «<sala> — <lo que pasa>». */}
-                        <span className="font-bold">
-                            {donde && <span>{donde} — </span>}
-                            {pendientes.length === 1
-                                ? `${formatMoney(total)} de una salida que la caja todavía cuenta como suya`
-                                : `${formatMoney(total)} de ${pendientes.length} salidas que la caja todavía cuenta como suyas`}
-                        </span>
-                        <span className="block mt-0.5 font-normal text-content-2">
-                            Salieron de una bolsa del día que la caja tiene abierto, así que sigue
-                            esperando ese dinero. <b>Al hacer el corte desde el portal se le anota
-                            solo</b>, y esto desaparece. Anotarlo a mano es sólo para cuando el corte
-                            se vaya a hacer en la pantalla de la caja: ese corte no pasa por aquí, y
-                            sin el vale marca un faltante de {formatMoney(total)} que no existe.
-                        </span>
-                    </div>
-                    <Button variant="secondary" size="sm" onClick={() => setAbierto(true)}>
-                        Ver cuáles
-                    </Button>
-                </div>
-            </Notice>
+            {/* ── UN RENGLÓN, NO UN AVISO ───────────────────────────────────
+                Corregido el 2-sep, después de que el usuario preguntara tres
+                veces qué era esto: *«no es la lógica ya del portal, registrar
+                los vales / ingresos en el portal y al hacer el corte
+                reflejarlos todos? ¿por qué salen aquí como error o
+                faltante?»*.
+
+                Tiene razón, y las dos veces anteriores le corregí el texto sin
+                tocar lo que en realidad estaba mal: **la forma**. Era un
+                recuadro con marco, ícono y cuatro renglones, arriba de todo —
+                todo lo que el portal usa para decir «pasa algo». Y no pasa
+                nada: son salidas registradas como corresponde, que el corte va
+                a reflejar solo. El texto encima nombraba un «faltante de
+                $427.00», que existe sólo si NO se anota; puesto en un recuadro
+                de aviso, se lee como que está pasando.
+
+                Ahora es un renglón al pie del encabezado, con la cifra y a
+                dónde va. Lo que hay que hacer —nada— se dice de la única forma
+                que no se puede malinterpretar: no dando la alarma. El detalle
+                largo vive en el diálogo, que es donde alguien lo pide. */}
+            <div className="flex items-center justify-between gap-3 flex-wrap
+                            text-body-sm text-content-2">
+                <p className="min-w-0">
+                    {donde && <span className="font-semibold text-content">{donde} · </span>}
+                    <span className="font-semibold text-content tabular-nums">{formatMoney(total)}</span>
+                    {pendientes.length === 1
+                        ? ' de una salida de bolsa de hoy que la caja todavía cuenta como suya.'
+                        : ` de ${pendientes.length} salidas de bolsas de hoy que la caja todavía cuenta como suyas.`}
+                    {' '}Se le anota al hacer el corte.
+                </p>
+                <Button variant="ghost" size="sm" onClick={() => setAbierto(true)}>
+                    Ver cuáles
+                </Button>
+            </div>
 
             <LiquidModal open={abierto} onClose={() => { setAbierto(false); setSimulacion(null); }}
                 maxWidth="max-w-lg" ariaLabel="Salidas por anotar en la caja">

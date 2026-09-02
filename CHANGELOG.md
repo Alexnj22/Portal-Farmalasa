@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.958.7 — Lo que la caja todavía cuenta es un renglón, no un aviso
+
+Tercera pregunta del usuario sobre el mismo bloque, el mismo día: *«no es la
+lógica ya del portal, registrar los vales / ingresos en el portal y al hacer el
+corte reflejarlos todos? ¿por qué salen aquí como error o faltante?»*.
+
+Tiene razón, y las dos correcciones anteriores erraron el blanco. Fueron a las
+**palabras** —de qué sala es, que el corte lo anota solo— y ninguna tocó lo que
+lo hacía leerse como un problema: **la forma**. Un recuadro con marco e ícono,
+arriba de todo, es como el portal dice «pasa algo»; ninguna redacción adentro de
+esa caja iba a decir «no pasa nada». Y encima el texto nombraba un «faltante de
+$427.00» —que existe sólo si NO se anota— dentro de un recuadro de aviso, donde
+se lee como que está pasando.
+
+Ahora es **un renglón** al pie del encabezado: la sala, la cifra y «se le anota
+al hacer el corte». Sin marco, sin ícono, sin la palabra faltante. El detalle
+largo queda en el diálogo de «Ver cuáles», que es donde alguien lo pide.
+
+La lección, que costó tres vueltas: **arreglarle el texto a un bloque con forma
+de alarma no lo saca de alarma.** Lo que hay que hacer —nada— sólo se puede
+decir de una manera que no se malinterprete: no dando la alarma.
+
 ## v2.958.6 — Quien cobra no es quien procesa el pago
 
 Pregunta del usuario: *«¿y así para los demás verdad? cuando sea pago de

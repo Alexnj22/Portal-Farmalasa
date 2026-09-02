@@ -229,16 +229,16 @@ const BolsasView = () => {
             <div className="p-4 md:p-6 space-y-6">
 
                 {/* Lo que la caja todavía cuenta como suyo por las salidas de
-                    hoy. Va arriba de todo y no dentro de una pestaña ni bajo el
-                    filtro de sucursal: es dinero que una caja concreta espera
-                    de más, y esconderlo detrás de un recorte sería no decirlo —
-                    el mismo criterio que el aviso de diferencias sin asentar en
-                    Cortes. Se pinta solo si hay algo y si quien mira tiene el
-                    permiso.
+                    hoy. Un RENGLÓN, no un aviso: no hay nada que hacer —hacer
+                    el corte desde el portal escribe el vale solo— y con forma
+                    de alerta se leía como un faltante. El porqué completo y las
+                    tres veces que costó entenderlo están en el encabezado de
+                    `ValesDeCaja`.
 
-                    NO es una tarea: hacer el corte desde el portal escribe el
-                    vale solo. Ver el encabezado de `ValesDeCaja`, donde vive el
-                    porqué — el texto decía lo contrario hasta el 2-sep. */}
+                    Va acá arriba y no dentro de una pestaña ni bajo el filtro
+                    de sucursal porque nombra una sala y un día concretos, y el
+                    recorte de la vista lo escondería. Se pinta solo si hay algo
+                    y si quien mira tiene el permiso. */}
                 <ValesDeCaja />
 
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">

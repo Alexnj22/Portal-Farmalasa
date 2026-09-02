@@ -769,6 +769,23 @@ tarjeta, el widget del Inicio, el resumen del mes, los avisos, Mi caja y el
 ticket que se imprime): calculado en cada uno, alcanza que uno se olvide para
 que dos pantallas señalen faltantes distintos sobre la misma persona.
 
+**Y el noveno lector NO tiene fila: es el corte RECIÉN HECHO** (2026-09-02). La
+escribe `sync-cortes-caja` medio minuto después, así que el papel que imprime el
+portal se arma antes de que el trigger selle nada. Ahí la respuesta de
+`hacer-corte-caja` se traduce a una fila de `cortes_caja` **a mano**
+(`conLaCuentaBuena`, en `cortesDiagnostico.js`), y esa traducción se había
+quedado con **cinco de las ocho columnas** que `contraste` lee: sin
+`cobros_portal_efectivo` da por cero la corrección, sin error y sin línea
+faltante. El corte 14399 de Salud 4 salió impreso con **+$88.40** mientras su
+tarjeta —ya sellada— decía **+$0.15**.
+
+O sea que **usar el mismo juez no alcanza si no se le dan las mismas piezas**, y
+el objeto armado a mano es la mitad frágil: no falla, se queda corto. Por eso
+vive pegado a `contraste` y no en la vista. Al agregarle una columna al juez, se
+agrega ahí — y el dato que no sale del tiquete se le pregunta al MISMO canónico
+que usa el trigger (`cobros_portal_en_efectivo`), nunca a una suma escrita
+aparte. Ver [[feedback_el_mismo_juez_con_menos_piezas_da_otro_numero]].
+
 **Cuánto contó el comprobante se DERIVA de su propia suma**, no del renglón:
 `cobros = total_caja − subtotal + vales`. `tk_cobros_credito` sale del papel con
 una expresión regular y el papel a veces no imprime la línea — y su ausencia se

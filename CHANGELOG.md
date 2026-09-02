@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.958.6 — Quien cobra no es quien procesa el pago
+
+Pregunta del usuario: *«¿y así para los demás verdad? cuando sea pago de
+telefonía, agua, CAESS, etc.»*. Sí — y al ir a comprobarlo apareció que **eso ya
+estaba saliendo mal en producción**.
+
+Las entradas de POS Promerica del 2-sep, tal como quedaron escritas:
+
+| boleta | concepto guardado |
+|---|---|
+| 001098, 001099, 001100 | POS Promerica · **Pago de Banco Promerica** |
+| 018502, 018505, 018506 | POS Promerica · **Pago de Banco Promerica** |
+| 001089, 001104 | POS Promerica · **Depósito Banco Promerica** |
+| 001102 | POS Promerica · **Compra en Banco Promerica** |
+
+Nueve movimientos, ninguno diciendo qué se pagó. Y ninguno dio error: el nombre
+**estaba impreso en el papel** — sólo que era el del aparato que procesa el
+cobro, no el de la empresa del recibo.
+
+Es la misma trampa que costó una remesa trabada el 21-ago y que ahí se había
+resuelto con `red_remesas`: **la cabecera de una boleta de POS nunca nombra a la
+contraparte.** Del lado de los pagos nadie la había cerrado, así que se cobraba
+sola con cada recibo de luz.
+
+**`leer-boleta` devuelve ahora `servicio`**: la empresa a la que se le paga,
+tomada del mismo renglón donde una remesa lleva su red —debajo de la línea de la
+operación—, con la advertencia escrita de que «BANCO PROMERICA» es el aparato de
+la farmacia. La excepción está dicha: en un recibo propio de la empresa de
+servicio, el nombre de arriba sí es a quién se le paga, y eso lo decide el lector
+mirando el papel. El enum también reconoce ahora las de acá: CAESS, DELSUR, EEO,
+DEUSEM, ANDA, CLARO, TIGO, MOVISTAR, DIGICEL, JAPAN, y las palabras COLECTURIA y
+PAGO DE SERVICIOS.
+
+**Y `conceptoDelPapel` deja de caer a la cabecera.** Sin el dato del detalle,
+«Pago de servicio» a secas — decir menos antes que decir el nombre equivocado con
+seguridad; el campo queda abierto para completarlo. `DEPOSITO` igual.
+
+**`COMPRA` es la excepción y sigue usando la cabecera**, porque ahí sí es
+correcta: en el tiquete de una tienda el nombre de arriba ES el comercio —
+«FERRETERIA DON GENARO» es justo a quién se le compró.
+
+Los nueve movimientos ya escritos **no se tocan**: son movimientos de caja de un
+día cerrándose, y su foto está guardada. Lo que cambia es lo que se escriba de
+acá en adelante.
+
 ## v2.958.5 — El corte le avisa al portal apenas se hace
 
 Desde v2.958.1 el papel del corte sale al **confirmar**, y para poder firmar hace

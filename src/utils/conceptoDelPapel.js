@@ -18,12 +18,26 @@
  * usuario nombró al dar la referencia. Por eso el lector devuelve además
  * `operacion_impresa`, y ésa es la que se escribe cuando existe.
  *
- * ── La remesa sale SÓLO de `red_remesas` ───────────────────────────────────
- * Y no de `entidad`, que es el nombre de la cabecera. La boleta de una remesa
- * la imprime el POS y arriba lleva el banco que procesa el cobro —«BANCO
- * PROMERICA»—, no la red que entrega el dinero: tomarlo de ahí escribiría
- * «Remesa BANCO PROMERICA», que nombra al aparato y no a la operación. Es la
- * misma trampa que costó una remesa trabada el 2026-08-21.
+ * ── LA CABECERA NO ES LA CONTRAPARTE ───────────────────────────────────────
+ * Es la regla que gobierna todo este archivo. La boleta la imprime el POS y
+ * arriba lleva el banco que procesa el cobro —«BANCO PROMERICA»—, que es el
+ * aparato de la farmacia y NUNCA con quién se hizo la operación. Quién es la
+ * contraparte vive en el renglón de abajo de la línea de la operación, y el
+ * lector lo devuelve con el nombre que le corresponde: `red_remesas` para una
+ * remesa, `servicio` para el pago de un recibo.
+ *
+ * Costó una remesa trabada el 2026-08-21, y del lado de los pagos se estaba
+ * cobrando sola: el 2-sep había **siete entradas del día** diciendo «Pago de
+ * Banco Promerica», «Depósito Banco Promerica» y «Compra en Banco Promerica»
+ * sobre recibos de luz, agua y teléfono. Ninguna decía qué se pagó, y ninguna
+ * dio error — el nombre estaba impreso en el papel, sólo que era el del
+ * procesador.
+ *
+ * Por eso `PAGO_SERVICIO` y `DEPOSITO` NO caen a `entidad`: sin el dato del
+ * detalle prefieren decir menos («Pago de servicio») antes que decir el
+ * nombre equivocado con seguridad. `COMPRA` sí lo usa, y es la excepción real:
+ * en el tiquete de una tienda la cabecera ES el comercio —«FERRETERIA DON
+ * GENARO»—, que es justo a quién se le compró.
  *
  * Cuando el papel no nombra a nadie queda la operación sola («Remesa»,
  * «Depósito»): decir menos es correcto, inventar el nombre no. Y si tampoco se
@@ -63,20 +77,25 @@ function enTitulo(texto) {
 
 export function conceptoDelPapel(leido) {
     const impresa = enTitulo(leido?.operacion_impresa);
+    // Los dos salen del DETALLE, no de la cabecera. Ver el comentario de arriba.
     const red = String(leido?.red_remesas || '').trim();
-    const quien = red || String(leido?.entidad || '').trim();
+    const servicio = String(leido?.servicio || '').trim();
+    // La cabecera. Se usa en un solo caso, y está dicho por qué.
+    const cabecera = String(leido?.entidad || '').trim();
     switch (String(leido?.tipo_operacion || '').toUpperCase()) {
         // La red va primero aunque haya línea impresa: ésta dice «REMESA» a
         // secas y la red es lo que distingue una remesa de otra.
         case 'REMESA':        return red ? `Remesa ${red}` : (impresa || 'Remesa');
-        case 'PAGO_SERVICIO': return quien ? `Pago de ${quien}` : (impresa || 'Pago de servicio');
+        case 'PAGO_SERVICIO': return servicio ? `Pago de ${servicio}` : (impresa || 'Pago de servicio');
         // El POS entrega efectivo contra una tarjeta, un token o una cuenta. No
         // lleva a quién: el nombre impreso ahí es el banco del aparato — lo que
         // sí distingue es CÓMO se retiró, y eso lo dice la línea del papel.
         case 'RETIRO':        return impresa || 'Retiro de efectivo';
-        case 'DEPOSITO':      return quien ? `Depósito ${quien}` : (impresa || 'Depósito');
-        case 'COMPRA':        return quien ? `Compra en ${quien}` : (impresa || 'Compra');
-        default:              return impresa || quien;
+        case 'DEPOSITO':      return servicio ? `Depósito ${servicio}` : (impresa || 'Depósito');
+        // La única que usa la cabecera, y a propósito: en el tiquete de una
+        // tienda el nombre de arriba ES el comercio donde se compró.
+        case 'COMPRA':        return cabecera ? `Compra en ${cabecera}` : (impresa || 'Compra');
+        default:              return impresa || cabecera;
     }
 }
 

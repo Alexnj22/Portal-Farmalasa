@@ -148,6 +148,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
   "tipo_operacion": "REMESA | PAGO_SERVICIO | RETIRO | DEPOSITO | COMPRA | OTRO — lo que DICE el papel",
   "operacion_impresa": "la línea que NOMBRA la operación, tal como está impresa, o null",
   "red_remesas": "la red de remesas del detalle (MoneyGram, Ria, Western Union...), o null",
+  "servicio": "la empresa a la que se le PAGA (CAESS, ANDA, CLARO...), del detalle, o null",
   "monto": 0.00,
   "moneda": "USD" | null,
   "fecha": "YYYY-MM-DD o null",
@@ -183,7 +184,9 @@ Reglas:
   haya leído mal.
 - "tipo_operacion" sale de lo que el papel DICE, no de lo que parezca: "REMESA"
   si aparece esa palabra o el nombre de una red de remesas; "PAGO_SERVICIO" si
-  nombra un servicio (CAESS, CLARO, TIGO, agua, luz); "RETIRO" si el POS
+  nombra una empresa de servicio o el pago de un recibo —CAESS, DELSUR, EEO,
+  DEUSEM, ANDA, CLARO, TIGO, MOVISTAR, DIGICEL, JAPAN, cable, internet, agua,
+  luz, telefono— o si dice COLECTURIA o PAGO DE SERVICIOS; "RETIRO" si el POS
   ENTREGA efectivo contra una tarjeta, un token o una cuenta —"RETIRO",
   "RETIRO SIN TARJETA", "ADELANTO" o "AVANCE DE EFECTIVO"—; "DEPOSITO" si dice
   depósito o abono a cuenta; "COMPRA" si es la compra de un producto. Si no se
@@ -214,6 +217,21 @@ Reglas:
         red_remesas       = "MONEY GRAM WS"
 
   Si el papel no tiene una línea así, null. No la deduzcas del resto.
+- "servicio" es la empresa A LA QUE SE LE PAGA, y vive en el MISMO renglón
+  donde una remesa lleva su red: debajo de la línea de la operación.
+
+  NO es el nombre de la cabecera. En una boleta de POS arriba va el banco que
+  procesa el cobro —«BANCO PROMERICA»—, que es el banco del aparato de la
+  farmacia y no la empresa del recibo. Escribirlo ahí da «Pago de Banco
+  Promerica» sobre el recibo de la luz, que es exactamente lo que pasaba antes
+  de pedir este campo. Es la misma trampa que "red_remesas" resuelve del lado de
+  las remesas.
+
+  La excepción es un recibo propio de la empresa de servicio —no una boleta de
+  POS—: ahí el nombre de arriba SÍ es a quién se le paga. Decidilo mirando el
+  papel, no por una regla fija.
+
+  Si el papel no nombra ninguna empresa de servicio, null.
 - "recuadro" es la caja que encierra SÓLO el papel dentro de la foto, en fracciones
   de 0 a 1 sobre el ancho y el alto de la imagen (x,y = esquina superior izquierda).
   Si el papel ocupa toda la foto, devuelve {"x":0,"y":0,"w":1,"h":1}.

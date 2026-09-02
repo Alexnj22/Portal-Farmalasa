@@ -71,15 +71,40 @@ describe('conceptoDelPapel', () => {
             .toBe('Retiro Token Pago CTK');
         // Y la entidad NO se toca: capitalizarla rompe los nombres que son
         // siglas con vocales, que es como se llaman casi todos los servicios.
-        expect(conceptoDelPapel({ tipo_operacion: 'PAGO_SERVICIO', entidad: 'CAESS' }))
+        expect(conceptoDelPapel({ tipo_operacion: 'PAGO_SERVICIO', servicio: 'CAESS' }))
             .toBe('Pago de CAESS');
         expect(conceptoDelPapel({ tipo_operacion: 'REMESA', red_remesas: 'MoneyGram' }))
             .toBe('Remesa MoneyGram');
     });
 
-    it('el pago de un servicio sí lleva a quién se le paga', () => {
-        expect(conceptoDelPapel({ tipo_operacion: 'PAGO_SERVICIO', entidad: 'CAESS' }))
-            .toBe('Pago de CAESS');
+    /* ── El pago de un recibo: quién COBRA no es quién PROCESA ─────────────
+     * Medido en producción el 2026-09-02: siete entradas del día decían «Pago
+     * de Banco Promerica», «Depósito Banco Promerica» y «Compra en Banco
+     * Promerica» sobre recibos de luz, agua y teléfono. El nombre estaba
+     * impreso en el papel — sólo que era el del POS de la farmacia. */
+    it('el pago de un servicio nombra a la empresa del recibo', () => {
+        expect(conceptoDelPapel({
+            tipo_operacion: 'PAGO_SERVICIO',
+            servicio: 'CAESS',
+            entidad: 'Banco Promerica',
+            nombres: ['Banco Promerica', 'AB FARMACIA LA SALUD 3', 'CAESS'],
+        })).toBe('Pago de CAESS');
+    });
+
+    it('sin la empresa del detalle NO cae a la cabecera: dice menos', () => {
+        expect(conceptoDelPapel({
+            tipo_operacion: 'PAGO_SERVICIO', servicio: null, entidad: 'Banco Promerica',
+        })).toBe('Pago de servicio');
+        expect(conceptoDelPapel({
+            tipo_operacion: 'DEPOSITO', servicio: null, entidad: 'Banco Promerica',
+        })).toBe('Depósito');
+    });
+
+    // La excepción: en el tiquete de una tienda la cabecera ES el comercio.
+    it('la compra sí se nombra con la cabecera, que ahí es el comercio', () => {
+        expect(conceptoDelPapel({
+            tipo_operacion: 'COMPRA', entidad: 'FERRETERIA DON GENARO',
+        })).toBe('Compra en FERRETERIA DON GENARO');
     });
 
     it('sin operación legible queda el nombre impreso, y sin nada, vacío', () => {

@@ -320,7 +320,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * en billetes redondos y las monedas se quedan en las bolsas, $125.75 sale
      * exacto. Ver la cabecera de `utils/bolsasReparto`. */
     const eleccion = useMemo(
-        () => elegirBolsas(lista, Number.isFinite(n) ? n : 0, t?.multiplo),
+        () => elegirBolsas(lista, Number.isFinite(n) ? n : 0),
         [lista, n, t],
     );
 

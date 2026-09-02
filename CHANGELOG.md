@@ -21,6 +21,95 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.931.1 — El corte cuadra con los cobros de crédito, y cerrar exige confirmarlo
+
+Migración `20260902030218`. Tres cosas, las tres salidas del primer corte hecho
+en sala desde el portal.
+
+### El corte 14378 marcó +$66.01 y en realidad faltaban 9 centavos
+
+El comprobante de Salud 3 del 1-sep a las 21:03 decía **+$66.01** de sobrante.
+No existía. El tiquete de la caja suma así, con sus propias líneas:
+
+```
+  ingresos          339.25
++ venta             995.29
+− vales             254.18
++ cobros crédito     66.10
+────────────────────────────
+  TOTAL CAJA      1,146.46
+  contado         1,146.37   →   −$0.09
+```
+
+El portal calculó el esperado en **$1,080.36** — el mismo número **sin los
+cobros de crédito**, que son efectivo que entró al cajón.
+
+**Por qué.** `diferenciaDelCorte` tenía una excepción: si la brecha entre las
+dos cifras es exactamente **una vez** el cobro de crédito, se usaba la del
+formulario, leyendo esa firma como *«el tiquete sumó cobros del día a un corte
+hecho antes de que entraran»*. Y ese caso es real — está medido contra el aviso
+de Telegram del 13-ago en Salud 3, un testigo independiente de la misma hora.
+
+Pero **la misma firma aparece en el caso opuesto**, que es éste: el formulario
+omitió cobros que sí habían entrado. La aritmética es idéntica en los dos.
+
+**El discriminador no es el múltiplo: es la hora.** Un corte hecho antes de que
+entrara un cobro tiene cortes después; el último del día no — a esa hora ya pasó
+todo. Los dos casos medidos salen con esa regla:
+
+| | 13-ago 12:39 | 1-sep 21:03 |
+|---|---|---|
+| firma | +1× los cobros | +1× los cobros |
+| ¿último del día? | no | **sí** |
+| gana | el formulario (+$0.75) | el tiquete (−$0.09) |
+
+`ultimoDelDia` lo pone `conTramoPorSalaYDia`, que es quien ve el grupo — un
+corte solo no puede saber si vino otro después. Cuando no se sabe se toma como
+último: es lo que vale en el momento de contar, y es el lado con evidencia
+(sobre 480 cortes con tiquete la firma `+1×` se vio **una** vez y fue el falso
+sobrante; las 99 con firma negativa ya usaban el tiquete).
+
+### Cerrar el día exige un corte CONFIRMADO
+
+> «que se cierre caja si se confirma el corte, no al hacer el corte, ya que si
+> fue prueba el corte no es final» (usuario)
+
+El candado pedía sólo que existiera un corte de tipo C — y un corte se puede
+**descartar**, que es la salida para un conteo mal hecho. Pasó el mismo 1-sep:
+se hizo un corte de prueba, se descartó, y el cierre quedaba habilitado igual.
+Cerrar sobre un conteo que nadie firmó deja el efectivo del día sin contar ni
+una vez, y **el cierre no se deshace**.
+
+Ahora exige `estado = 'CONFIRMADO'`, en el servidor y en la pantalla. Y son dos
+avisos distintos: «falta el corte» manda a cortar; «el corte no está confirmado»
+manda a revisar lo que ya se contó.
+
+### El paso de un vale sale del monto, y vale para todos
+
+> «a todos los vales ponla si el monto es entero… así en un corte nunca salen
+> monedas o billetes de 5» (usuario)
+
+Salió mirando el reparto de `REM-1058`: $500 en $55.82 + $324.80 + $119.38, o
+sea monedas contadas a mano de tres bolsas para completar un total redondo.
+
+```
+monto múltiplo de 10  →  cada bolsa aporta múltiplos de 10
+monto múltiplo de 5   →  cada bolsa aporta múltiplos de 5
+monto con centavos    →  exacto, como siempre
+```
+
+**Derivado del monto y ya no declarado por motivo.** Era
+`bolsas_tipos_salida.multiplo` y sólo «Cambio por monedas» lo tenía: los otros
+cinco partían monedas y nada lo decía. Un campo por motivo obliga a acertarle a
+cada uno, y el que se olvide vuelve a romper la bolsa en silencio.
+
+El paso tiene que **dividir** al monto o la salida no puede cuadrar: por eso $55
+va en pasos de 5 y no de 10, y un monto que no es múltiplo de 5 sale exacto —
+que es la otra mitad de la regla del 28-ago.
+
+Los dos gemelos —`pasoDeMonto` en JavaScript y `paso_de_monto` en Postgres— se
+enfrentaron sobre ocho casos: **iguales, 0 distintas**.
+
 ## v2.931.0 — El login es sólido y entra de una vez
 
 A pedido del usuario: *«has que el diseño de login sea solid siempre. mejora la

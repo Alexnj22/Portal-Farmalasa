@@ -418,7 +418,16 @@ export default function MiCajaView({ comoPestana = false }) {
      * efectivo de toda la jornada sin contar ni una vez — y el cierre no se
      * deshace. El candado de verdad está en el servidor; esto es para decirlo
      * ANTES y no después de que alguien escriba la palabra. */
-    const sinCorteHoy = !(estado?.cortes || []).some((c) => c.tipo === 'C');
+    /* CONFIRMADO y no sólo hecho (regla del usuario, 1-sep): «si fue prueba, el
+     * corte no es final». Un corte se puede DESCARTAR —es la salida para un
+     * conteo mal hecho— y aun así habilitaba el cierre. El candado de verdad
+     * está en el servidor; esto es para decirlo ANTES de que alguien escriba la
+     * palabra. */
+    const cortesC = (estado?.cortes || []).filter((c) => c.tipo === 'C');
+    const sinCorteHoy = !cortesC.some((c) => c.estado === 'CONFIRMADO');
+    // «No hay corte» y «hay uno sin confirmar» son dos avisos distintos: el
+    // primero manda a cortar, el segundo a revisar lo que ya se contó.
+    const corteSinConfirmar = sinCorteHoy && cortesC.length > 0;
 
     /* ── LO QUE YA ESTÁ EMBOLSADO DE HOY ───────────────────────────────────
      *
@@ -819,7 +828,7 @@ export default function MiCajaView({ comoPestana = false }) {
                 ).then(() => setCorrigiendo(null))} />
 
             {dialogo === 'cerrar' && (
-                <DialogoCerrar ocupado={ocupado} sinCorte={sinCorteHoy}
+                <DialogoCerrar ocupado={ocupado} sinCorte={sinCorteHoy} sinConfirmar={corteSinConfirmar}
                     onClose={() => setDialogo(null)}
                     onCerrar={() => correr(() => cerrarElDia(sala), 'El día quedó cerrado.')} />
             )}
@@ -1594,17 +1603,25 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
  *
  * Lo monta el llamador sólo cuando está abierto.
  */
-function DialogoCerrar({ ocupado, sinCorte, onClose, onCerrar }) {
-    /* Sin corte no se cierra, y se dice ANTES. El servidor lo rechaza igual
-     * —ahí está el candado— pero enterarse recién al apretar es hacer perder el
-     * tiempo por una condición que la pantalla ya conocía al pintar. */
+function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, onClose, onCerrar }) {
+    /* Sin corte CONFIRMADO no se cierra, y se dice ANTES. El servidor lo
+     * rechaza igual —ahí está el candado— pero enterarse recién al apretar es
+     * hacer perder el tiempo por una condición que la pantalla ya conocía al
+     * pintar. */
     if (sinCorte) {
         return (
-            <Marco abierto onClose={onClose} titulo="Falta el corte"
-                bajada="Esta caja todavía no tiene ningún corte del día.">
+            <Marco abierto onClose={onClose}
+                titulo={sinConfirmar ? 'El corte no está confirmado' : 'Falta el corte'}
+                bajada={sinConfirmar
+                    ? 'Se hizo un corte, pero nadie lo confirmó todavía.'
+                    : 'Esta caja todavía no tiene ningún corte del día.'}>
                 <Notice variant="warning" icon={AlertTriangle}>
-                    Si cierras ahora, el efectivo de toda la jornada queda sin contar ni una vez,
-                    y el cierre no se deshace. Haz el corte primero.
+                    {sinConfirmar
+                        ? <>Un corte descartado o sin revisar no cuenta como conteo del día:
+                            si fue una prueba, no es final. Confírmalo en <b>Cortes</b> antes de
+                            cerrar — el cierre no se deshace.</>
+                        : <>Si cierras ahora, el efectivo de toda la jornada queda sin contar ni una vez,
+                            y el cierre no se deshace. Haz el corte primero.</>}
                 </Notice>
                 <div className="flex justify-end">
                     <Button variant="primary" onClick={onClose}>Entendido</Button>

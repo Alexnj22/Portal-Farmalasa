@@ -101,8 +101,16 @@ export function conTramoPorSalaYDia(cortes) {
         // JavaScript, y el tramo de los dos sale de una resta distinta a la que
         // hace la base — que es la que manda al firmar. El sistema de origen no
         // anula cortes: los REHACE, a veces dentro del mismo minuto.
-        out.push(...conTramo([...lista].sort(
+        const enOrden = [...lista].sort(
             (a, b) => String(a.hora).localeCompare(String(b.hora)) || (a.id - b.id),
+        );
+        /* Cuál es el ÚLTIMO de su día, que es lo que `diferenciaDelCorte`
+         * necesita para desempatar la firma `+1×` de los cobros de crédito. Se
+         * marca acá y no allá porque es una propiedad del GRUPO: un corte solo
+         * no puede saber si vino otro después. */
+        const ultimo = enOrden[enOrden.length - 1];
+        out.push(...conTramo(enOrden.map(
+            (c) => ({ ...c, ultimoDelDia: c === ultimo }),
         )));
     }
     return out;
@@ -236,18 +244,38 @@ export function diferenciaDelCorte(corte) {
     if (!c) {
         return { valor: num(corte?.diferencia_erp) ?? 0, fuente: 'guardada', esperado: num(corte?.esperado) };
     }
-    // El caso `−1×` es el único donde manda la guardada: significa que el ticket
-    // sumó los cobros de crédito del DÍA a un corte que se hizo ANTES de que
-    // entraran. Ahí el formulario tenía razón —contó cero porque todavía no
-    // había— y el ticket es el que sobra. En cualquier otro múltiplo el que
-    // cuenta de más es el formulario.
-    //
-    // Contrastado contra el aviso de Telegram del 13-ago en Salud 3, que es un
-    // testigo independiente y de la misma hora del corte: 12:39 → +$0.75,
-    // 12:41 → exacto, 21:03 → −$511.18, 21:21 → −$22.38. Los cuatro salen.
-    // `brecha = difErp − difTicket = tk_total_caja − esperado`, o sea el INVERSO
-    // del desvío: el caso «el ticket sumó un cobro de más» es brecha = +1×.
-    if (c.vecesElCobro === 1) {
+    /* ── `+1×` los cobros: DOS casos reales con la misma aritmética ────────
+     *
+     * La firma «la brecha es exactamente una vez el cobro de crédito» aparece en
+     * dos situaciones opuestas, y la aritmética no las distingue:
+     *
+     *   · **el ticket se adelantó** — sumó cobros del DÍA a un corte hecho antes
+     *     de que entraran. Manda la guardada. Salud 3, 13-ago 12:39: declarado
+     *     $488.80, ticket $542.70; el aviso de Telegram de esa misma hora
+     *     —testigo independiente— dijo **+$0.75**, que es la guardada.
+     *
+     *   · **el formulario se quedó corto** — omitió los cobros, que sí habían
+     *     entrado. Manda el ticket. Salud 3, 1-sep 21:03 (corte 14378): el
+     *     ticket dice TOTAL CAJA $1,146.46 —1334.54 − 254.18 + 66.10, su propia
+     *     suma—, se contaron $1,146.37, o sea **−$0.09**. La regla vieja
+     *     devolvía **+$66.01**: un sobrante que no existía.
+     *
+     * ── El discriminador es la HORA, no el múltiplo ───────────────────────
+     *
+     * Un corte que se hizo ANTES de que entrara un cobro tiene cortes después.
+     * El ÚLTIMO del día no: a esa hora ya pasó todo lo que iba a pasar, así que
+     * los cobros del ticket son reales y el que resta de menos es el formulario.
+     *
+     * Los dos casos medidos salen con esta regla, y es la única señal que los
+     * separa — el 13-ago era de mediodía y el 1-sep era el último.
+     *
+     * `ultimoDelDia` lo pone `conTramoPorSalaYDia`, que es quien ve el grupo.
+     * Cuando no viene —un corte recién hecho, que en ese instante ES el último—
+     * se toma como último: es lo que vale en el momento de contar, y es además
+     * el lado con evidencia (sobre 480 cortes con ticket, la firma `+1×` se vio
+     * UNA vez y fue el falso sobrante; las 99 con firma negativa ya usaban el
+     * ticket). */
+    if (c.vecesElCobro === 1 && corte?.ultimoDelDia === false) {
         return { valor: c.difErp, fuente: 'guardada', esperado: num(corte?.esperado) };
     }
     return { valor: c.difTicket, fuente: 'ticket', esperado: num(corte?.tk_total_caja) };
@@ -271,10 +299,6 @@ export function notaDeCifra(corte) {
     const { fuente, valor } = diferenciaDelCorte(corte);
     const cobros = formatMoney(Math.abs(c.cobros ?? 0));
 
-    // Ojo con lo que se nombra: `valor` es el ACUMULADO del día hasta este
-    // corte, y el título del modal muestra el TRAMO. Llamar «la diferencia de
-    // este corte» al acumulado ponía dos números distintos con el mismo rótulo
-    // en la misma pantalla — el usuario lo leyó y no se entendía.
     if (c.porCobrosCredito && fuente === 'guardada') {
         return {
             alerta: false,
@@ -282,6 +306,11 @@ export function notaDeCifra(corte) {
             detalle: `El comprobante suma ${cobros} de cobros que a esta hora todavía no entraban. Por eso vale ${conSigno(c.difErp)} y no ${conSigno(c.difTicket)}.`,
         };
     }
+
+    // Ojo con lo que se nombra: `valor` es el ACUMULADO del día hasta este
+    // corte, y el título del modal muestra el TRAMO. Llamar «la diferencia de
+    // este corte» al acumulado ponía dos números distintos con el mismo rótulo
+    // en la misma pantalla — el usuario lo leyó y no se entendía.
     if (c.porCobrosCredito) {
         const veces = Math.abs(c.vecesElCobro);
         return {

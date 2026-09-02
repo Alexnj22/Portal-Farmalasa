@@ -113,7 +113,7 @@ const laPopular = [
 
 describe('cuando el motivo paga en billetes', () => {
     it('un monto redondo toma múltiplos del paso y deja el impar adentro', () => {
-        const r = elegirBolsas(laPopular, 2000, 10);
+        const r = elegirBolsas(laPopular, 2000);
         expect(r.redondo).toBe(true);
         expect(r.repartos).toEqual([
             { bolsa_id: 145, folio: 'LP-1144', monto: 370 },
@@ -130,8 +130,8 @@ describe('cuando el motivo paga en billetes', () => {
     it('el techo baja: lo que hay en monedas no se puede pedir', () => {
         // $2,466.25 en la sala, pero sólo $2,450 en billetes de $10.
         expect(totalDisponible(laPopular)).toBeCloseTo(2466.25, 10);
-        expect(elegirBolsas(laPopular, 2000, 10).disponible).toBeCloseTo(2450, 10);
-        const r = elegirBolsas(laPopular, 2460, 10);
+        expect(elegirBolsas(laPopular, 2000).disponible).toBeCloseTo(2450, 10);
+        const r = elegirBolsas(laPopular, 2460);
         expect(r.alcanza).toBe(false);
         expect(r.falta).toBeCloseTo(10, 10);
     });
@@ -140,30 +140,48 @@ describe('cuando el motivo paga en billetes', () => {
         // «solo si la salida de dinero es 125.75 ahi si debe permitirlo y decir
         // de que bolsa sacarlo» (usuario, 2026-08-28). La regla la dispara el
         // monto, no el motivo: si la disparara el motivo, esto se rechazaría.
-        const r = elegirBolsas(laPopular, 125.75, 10);
+        const r = elegirBolsas(laPopular, 125.75);
         expect(r.redondo).toBe(false);
         expect(r.repartos).toEqual([{ bolsa_id: 145, folio: 'LP-1144', monto: 125.75 }]);
         expect(r.disponible).toBeCloseTo(2466.25, 10);
     });
 
-    it('sin paso el reparto es el de siempre, monedas incluidas', () => {
-        // La garantía de que agregar la regla no tocó a los otros cinco motivos.
+    it('el paso sale del MONTO y ya no del motivo: $2,000 va en billetes de $10', () => {
+        /* Antes esto probaba lo contrario —«sin paso el reparto es el de
+         * siempre, monedas incluidas»— porque el paso era un campo por motivo y
+         * sólo «Cambio por monedas» lo tenía. Se dio vuelta el 1-sep por regla
+         * del usuario: vale para TODOS los vales, y el paso lo decide el monto.
+         *
+         * Lo destapó `REM-1058`: $500 repartidos en $55.82 + $324.80 + $119.38,
+         * o sea monedas contadas a mano para completar un total redondo. */
         const r = elegirBolsas(laPopular, 2000);
+        expect(r.redondo).toBe(true);
+        for (const x of r.repartos) expect(Math.round(x.monto * 100) % 1000).toBe(0);
+    });
+
+    it('un monto múltiplo de 5 va en billetes de $5, no de $10', () => {
+        // «si es 55 por ejemplo, salen 55 en múltiplos de 5 mínimo» (usuario).
+        // Con paso 10, $55 no se podría cuadrar nunca — el paso tiene que
+        // dividir al monto o la salida queda sin poder cerrar.
+        const r = elegirBolsas(laPopular, 55);
+        expect(r.redondo).toBe(true);
+        expect(r.alcanza).toBe(true);
+        for (const x of r.repartos) expect(Math.round(x.monto * 100) % 500).toBe(0);
+    });
+
+    it('un monto que no es múltiplo de 5 sale exacto', () => {
+        // $7 es entero y no tiene paso: forzarlo dejaría la salida sin cuadrar.
+        const r = elegirBolsas(laPopular, 7);
         expect(r.redondo).toBe(false);
-        expect(r.repartos).toEqual([
-            { bolsa_id: 145, folio: 'LP-1144', monto: 373.85 },
-            { bolsa_id: 148, folio: 'LP-1147', monto: 563.07 },
-            { bolsa_id: 150, folio: 'LP-1149', monto: 211.91 },
-            { bolsa_id: 160, folio: 'LP-1159', monto: 851.17 },
-        ]);
+        expect(r.repartos).toEqual([{ bolsa_id: 145, folio: 'LP-1144', monto: 7 }]);
     });
 
     it('la más vieja que alcance sola, medida en billetes y no en saldo', () => {
         // LP-1159 tiene $941.40 y LP-1147 $563.07. Para $560 la más vieja que
         // alcanza sola es LP-1147: $560 <= $560 redondeado. Para $570 ya no.
-        expect(elegirBolsas(laPopular, 560, 10).repartos)
+        expect(elegirBolsas(laPopular, 560).repartos)
             .toEqual([{ bolsa_id: 148, folio: 'LP-1147', monto: 560 }]);
-        expect(elegirBolsas(laPopular, 570, 10).repartos)
+        expect(elegirBolsas(laPopular, 570).repartos)
             .toEqual([{ bolsa_id: 160, folio: 'LP-1159', monto: 570 }]);
     });
 });

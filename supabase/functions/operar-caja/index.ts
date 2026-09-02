@@ -776,11 +776,25 @@ Deno.serve(async (req) => {
 
     {
       // La lista ya se leyó arriba, con su error tratado como error.
-      if (!(cortesDelDia ?? []).some((c) => c.tipo === "C")) {
+      /* CONFIRMADO, no sólo hecho (regla del usuario, 1-sep): «que se cierre
+       * caja si se confirma el corte, no al hacer el corte, ya que si fue
+       * prueba el corte no es final».
+       *
+       * Pedía sólo que existiera un corte de tipo C, y un corte se puede
+       * DESCARTAR —es la salida para un conteo mal hecho—. Pasó el 1-sep en
+       * Salud 3: se hizo un corte de prueba, se descartó, y el cierre quedaba
+       * habilitado igual. Cerrar sobre un conteo que nadie firmó deja el
+       * efectivo del día sin contar ni una vez, y el cierre no se deshace. */
+      const confirmados = (cortesDelDia ?? []).filter((c) => c.tipo === "C" && c.estado === "CONFIRMADO");
+      if (!confirmados.length) {
+        const hechos = (cortesDelDia ?? []).filter((c) => c.tipo === "C").length;
         return json({
           ok: false,
-          error: "Esta caja no tiene ningún corte del día. Haz el corte antes de cerrar: "
-               + "si cierras ahora, el efectivo de toda la jornada queda sin contar y el cierre no se deshace.",
+          error: hechos
+            ? "El corte de esta caja todavía no está confirmado. Confírmalo antes de cerrar: "
+              + "un corte descartado o sin revisar no cuenta, y el cierre no se deshace."
+            : "Esta caja no tiene ningún corte del día. Haz el corte antes de cerrar: "
+              + "si cierras ahora, el efectivo de toda la jornada queda sin contar y el cierre no se deshace.",
         }, 409);
       }
     }

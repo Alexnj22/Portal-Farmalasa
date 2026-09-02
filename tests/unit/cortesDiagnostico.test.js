@@ -29,13 +29,42 @@ describe('la diferencia propia de un corte', () => {
     });
 
     it('deja mandar a la guardada cuando el comprobante sumó un cobro que aún no entraba', () => {
-        // Salud 3, 13-ago 12:39: brecha de exactamente +1× el cobro de crédito.
+        // Salud 3, 13-ago 12:39: brecha de exactamente +1× el cobro de crédito,
+        // y NO es el último del día — hubo cortes después. El aviso de Telegram
+        // de esa misma hora, testigo independiente, dijo +$0.75.
         const c = corte({
             hora: '12:39:10', total_declarado: 488.80, diferencia_erp: 0.75,
-            tk_total_caja: 542.70, tk_cobros_credito: 54.65,
+            tk_total_caja: 542.70, tk_cobros_credito: 54.65, ultimoDelDia: false,
         });
         expect(diferenciaDelCorte(c).valor).toBe(0.75);
         expect(diferenciaDelCorte(c).fuente).toBe('guardada');
+    });
+
+    it('con la MISMA firma, el último del día usa el comprobante', () => {
+        /* Salud 3, 1-sep 21:03 (corte 14378). Misma aritmética que el de
+         * arriba —brecha = +1× los cobros— y la verdad opuesta: a esa hora los
+         * cobros YA habían entrado (el corte de las 12:51 traía
+         * `tk_cobros_credito` en NULL), así que el que resta de menos es el
+         * formulario. El ticket suma bien: 1334.54 − 254.18 + 66.10 = 1146.46.
+         *
+         * La regla vieja devolvía +$66.01 —un sobrante que no existía— sobre un
+         * conteo que estaba nueve centavos corto. */
+        const c = corte({
+            hora: '21:03:45', total_declarado: 1146.37, diferencia_erp: 66.01,
+            tk_total_caja: 1146.46, tk_cobros_credito: 66.10, ultimoDelDia: true,
+        });
+        expect(diferenciaDelCorte(c).valor).toBe(-0.09);
+        expect(diferenciaDelCorte(c).fuente).toBe('ticket');
+    });
+
+    it('sin saber si es el último, se toma como último', () => {
+        // Un corte recién hecho: en ese instante ES el último, y es lo que vale
+        // en el momento de contar. Es además el lado con evidencia.
+        const c = corte({
+            hora: '21:03:45', total_declarado: 1146.37, diferencia_erp: 66.01,
+            tk_total_caja: 1146.46, tk_cobros_credito: 66.10,
+        });
+        expect(diferenciaDelCorte(c).fuente).toBe('ticket');
     });
 });
 

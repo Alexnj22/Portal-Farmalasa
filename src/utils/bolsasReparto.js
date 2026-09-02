@@ -12,20 +12,29 @@
 // pantalla lo dice antes de registrar: dos papeles adentro de dos bolsas no es
 // lo mismo que uno.
 //
-// ── Y las monedas se quedan adentro cuando no hacen falta (2026-08-28) ──────
+// ── Las monedas se quedan adentro: EL PASO SALE DEL MONTO (2026-09-01) ─────
 //
-// Segunda regla del usuario, dictada mirando un retiro de $2,000 para cambiar
-// monedas: «no se debe tomar en cuenta los impares de 10, porque no se entregan
-// monedas». De una bolsa con $373.85 salen $370 y los $3.85 se quedan: lo que
-// se entrega son billetes, y romper la bolsa para completar un centavo obliga a
-// contar monedas que nadie pidió.
+// Nació el 28-ago mirando un retiro de $2,000 para cambiar monedas —«no se debe
+// tomar en cuenta los impares de 10, porque no se entregan monedas»— y vivía
+// como un campo por motivo: sólo «Cambio por monedas» lo tenía, y una remesa
+// salía al centavo. Se vio en `REM-1058`: $500 repartidos en $55.82 + $324.80 +
+// $119.38, tres bolsas con monedas contadas a mano para completar un total
+// redondo.
 //
-// Y la otra mitad, que es la que evita que la regla estorbe: «sólo si la salida
-// de dinero es 125.75, ahí sí debe permitirlo y decir de qué bolsa sacarlo».
-// O sea que **la regla la dispara el MONTO PEDIDO, no el motivo**: si el monto
-// es múltiplo del paso, cada bolsa aporta múltiplos y su impar se queda; si el
-// monto trae impar, sale exacto como siempre. Un motivo sin `multiplo` en el
-// catálogo (hoy todos menos «Cambio por monedas») no cambia en nada.
+// Regla del usuario (1-sep), y ahora vale para **todos los vales**:
+//
+//   el monto es múltiplo de 10   →  cada bolsa aporta múltiplos de **10**
+//   el monto es múltiplo de 5    →  cada bolsa aporta múltiplos de **5**
+//   el monto trae centavos       →  sale **exacto**, como siempre
+//
+// «Así en un corte nunca salen monedas o billetes de 5.» El paso lo dispara el
+// MONTO PEDIDO y no el motivo: $500 sale en billetes de $10, $55 en billetes de
+// $5, y $125.75 sale exacto — que es lo que el mismo usuario pidió expresamente
+// que se permitiera el 28-ago.
+//
+// Por eso el paso se DERIVA y ya no se declara por tipo: un campo por motivo
+// obligaba a acertarle a cada uno, y el que se olvidara volvía a partir monedas
+// sin que nada lo dijera. Derivado, la regla no se puede olvidar.
 //
 // La consecuencia que hay que decir en pantalla: con la regla activa el TECHO
 // BAJA. Cinco bolsas con $2,466.25 sólo pueden entregar $2,450 en billetes de
@@ -38,6 +47,20 @@
 // cierre, que cada bolsa tenga saldo y que cada aporte respete el paso.
 
 const centavos = (n) => Math.round(Number(n || 0) * 100);
+
+/**
+ * El paso que le corresponde a un monto, en centavos. 0 = sale exacto.
+ *
+ * Se prueba de mayor a menor: el de $10 primero, porque es el que deja menos
+ * papeles sueltos. Un monto que no es múltiplo de 5 —$7, o cualquiera con
+ * centavos— no tiene paso: forzarlo dejaría la salida sin poder cuadrar.
+ */
+export function pasoDeMonto(montoEnCentavos) {
+    if (montoEnCentavos <= 0) return 0;
+    if (montoEnCentavos % 1000 === 0) return 1000;
+    if (montoEnCentavos % 500 === 0) return 500;
+    return 0;
+}
 
 /**
  * Las que están en la sala y tienen algo, de la más vieja a la más nueva.
@@ -61,8 +84,9 @@ export function disponibles(bolsas, saldos) {
  *
  * @param lista     las de la sala, ya ordenadas por `disponibles`
  * @param monto     lo que se quiere sacar
- * @param multiplo  el paso del motivo (`bolsas_tipos_salida.multiplo`), o null.
- *                  Sólo actúa cuando `monto` es múltiplo de él.
+ * El paso ya NO se pasa: se deriva del monto (ver `pasoDeMonto`). El parámetro
+ * viejo se quitó a propósito y no se dejó ignorado — un argumento que no hace
+ * nada se sigue pasando durante años y hace creer que decide algo.
  * @returns {{ repartos: Array<{bolsa_id, folio, monto}>, alcanza: boolean,
  *            combinada: boolean, falta: number, redondo: boolean, disponible: number }}
  *   `alcanza` false = entre todas no hay tanto. `combinada` true = hizo falta
@@ -70,13 +94,13 @@ export function disponibles(bolsas, saldos) {
  *   regla del paso está actuando y las monedas se quedan en las bolsas.
  *   `disponible` es el techo bajo la regla vigente.
  */
-export function elegirBolsas(lista, monto, multiplo = null) {
+export function elegirBolsas(lista, monto) {
     const objetivo = centavos(monto);
-    const paso = centavos(multiplo);
-    // La regla la dispara el monto pedido: $2,000 sale en billetes, $125.75 sale
-    // exacto. Sin esto, «Cambio por monedas» rechazaría el impar que el usuario
-    // pidió expresamente que se permitiera.
-    const redondo = paso > 0 && objetivo > 0 && objetivo % paso === 0;
+    const paso = pasoDeMonto(objetivo);
+    // `redondo` es cierto por construcción cuando hay paso: `pasoDeMonto` sólo
+    // devuelve uno que divide al monto. Se conserva la bandera porque la
+    // pantalla la usa para explicar por qué el techo bajó.
+    const redondo = paso > 0;
     const puede = (b) => {
         const s = centavos(b.saldo);
         return redondo ? Math.floor(s / paso) * paso : s;

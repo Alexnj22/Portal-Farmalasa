@@ -21,6 +21,73 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.927.2 — El inventario deja de pagar un peaje fijo en cada lectura
+
+Las dos funciones que el detector de bloques había dejado marcadas quedaron
+verificadas. Una era un defecto y la otra no, y conviene distinguirlas porque el
+número solo no lo decía.
+
+**`traslados_en_vuelo()` cobraba un peaje fijo a todo el inventario.** Costaba
+**5,513 bloques para devolver una fila**, y su mismo cuerpo escrito a mano
+costaba 292. La diferencia entera estaba en un CTE sin cerca: `ultima` lee el
+reloj de la última sincronización de cada sala —7 filas, 33 bloques— y sin
+`MATERIALIZED` se inlinea en el join y se recalcula **una vez por cada solicitud
+de traslado**, 694 vueltas releyendo lo mismo.
+
+Lo caro no era lo que devolvía sino lo que costaba antes de devolver nada: el
+precio era idéntico con cero traslados en vuelo. Y no es una función de una
+pantalla — la lee `v_inventario_disponible`, o sea **todo el módulo de
+inventario**. Con la cerca: **4,418 → 346 bloques, 12.8× más barato.**
+
+**`get_faltantes_con_stock_en_otra_sala` preguntaba por todo para contestar
+sobre 122.** Calculaba la existencia disponible de las 7 salas para los 1,350
+productos con mínimo —13,678 combinaciones, cada una resolviendo el factor de
+presentación— cuando la respuesta necesita 122. Ahora pregunta primero por la
+sala propia, saca los que faltan, y recién entonces mira las otras salas.
+
+El detalle que lo hace funcionar: la vista **sí** acepta que le empujen un filtro
+por producto, pero `IN (SELECT … FROM cte)` **no** se empuja —se vuelve un
+semi-join que corre después del `GROUP BY`— y `= ANY(ARRAY(…))` sí. Sin eso,
+partirla en dos la dejaba **peor**: el primer intento midió 83,642 bloques contra
+los 57,265 del original.
+
+Las dos juntas, medido en las 7 salas:
+
+| sala | antes | ahora | |
+|---|---:|---:|---:|
+| 1 | 60,507 | 27,317 | −55% |
+| 2 | 57,871 | 23,283 | −60% |
+| 3 | 57,967 | 23,697 | −59% |
+| 4 | 57,674 | 22,409 | −61% |
+| 5 | 57,698 | 21,292 | −63% |
+| 6 | 69,155 | 66,283 | −4% |
+| 7 | 56,870 | 14,130 | −75% |
+
+Bodega (sala 6) es la que casi no baja, y es la misma razón por la que con la
+primera migración sola había quedado **8% peor**: tiene 594 faltantes contra ~100
+de las demás, así que el ahorro de preguntar sólo por lo que falta no alcanzaba a
+pagar el peaje de evaluar `traslados_en_vuelo` dos veces. Con el peaje casi
+eliminado, las 7 mejoran.
+
+Resultado idéntico, verificado y no deducido: enfrentadas las dos versiones en
+las 7 salas (85, 63, 72, 60, 57, 200 y 33 filas), md5 igual en las 7. Y para
+`traslados_en_vuelo`, como con el filtro real las dos ramas devuelven cero filas
+—y comparar dos conjuntos vacíos no prueba nada—, se corrió el reloj 30 días
+atrás para forzar un conjunto de verdad: **660 filas cada una, 0 diferencias,
+suma idéntica**.
+
+**`ventas_para_puntos` NO es un defecto**, y queda anotado para que nadie lo
+vuelva a auditar. 39,821 bloques y 51 ms, con el plan correcto de punta a punta:
+índices en todos los nodos, ningún barrido, ninguna estimación reventada. El
+costo son 8,222 sondeos por clave primaria — para cada una de las 4,111 facturas
+de la ventana de 7 días pregunta a `customers` si el cliente acumula y a
+`puntos_enviados` si ya se envió. Quedan 181 candidatas y hoy devuelve 0.
+
+O sea que el costo no está en cómo está escrita sino en la **cadencia**: rehace
+la ventana de 7 días cada minuto. Bajarlo es una decisión sobre el comportamiento
+—acortar la ventana pierde la red que atrapa las facturas que llegan tarde—, no
+un arreglo.
+
 ## v2.927.1 — Promociones — un borrador no vence
 
 Salió de una pregunta del usuario: *«¿es retroactivo? si agrego una promoción de

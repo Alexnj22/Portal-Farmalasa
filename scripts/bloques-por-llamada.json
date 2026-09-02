@@ -12,9 +12,8 @@
       "motivo": "869 MB, el más caro por llamada del portal. Cruza la existencia de las 7 salas para un producto, al componer un traslado. 20 llamadas en 4 horas: caro por llamada, barato por día. NO auditado."
     },
     "get_faltantes_con_stock_en_otra_sala": {
-      "bloques": 78000,
-      "deuda": true,
-      "motivo": "467 MB x 128 llamadas. Widget del tablero, o sea que corre para cada persona que lo abre. Verificado el 01-sep: el costo es PLANO —444 a 540 MB en las 7 salas, y no cambia con `p_limite` (10 o 1000 leen lo mismo)—, así que hace todo el trabajo y recién después recorta. Ahí está lo que hay que mirar. Es `LANGUAGE sql` + `SET`, pero la auditoría del 2026-08-25 ya midió que forzarle plan personalizado la deja PEOR: su plan no depende de los argumentos."
+      "bloques": 90000,
+      "motivo": "CORREGIDA el 2026-09-02 (migraciones 20260902022747 y 20260902023011). Antes leía 467 MB por llamada; ahora 110 a 213 MB en seis salas y 518 en Bodega, que tiene 2,604 productos con mínimo y 594 faltantes contra ~100 de las demás. El techo lo fija Bodega, que es el caso real más caro. Verificado idéntica en las 7 salas (85/63/72/60/57/200/33 filas, md5 igual). Lo que le queda: resolver el factor de presentación de los ~1,717 renglones de la sala propia, que son la mitad de lo que lee. Para la pregunta que hace —«¿tengo alguna unidad?»— el factor es un multiplicador positivo y sólo cambia la respuesta cuando hay un traslado en vuelo; ahí hay otro tanto, pero cambia la semántica."
     },
     "upsert_product_precios_batch": {
       "bloques": 53000,
@@ -22,8 +21,7 @@
     },
     "ventas_para_puntos": {
       "bloques": 50000,
-      "deuda": true,
-      "motivo": "PRIORIDAD por frecuencia. El cron `sync-puntos-1min`, cada minuto: 210 llamadas x 301 MB = 63 GB en 4 horas, el mayor consumidor del portal por día. No es cara por llamada, pero ocupa una de las 20 conexiones cada vez. NO auditada."
+      "motivo": "AUDITADA el 2026-09-02: NO es un defecto. 39,821 bloques / 51 ms, y el plan es correcto de punta a punta — índices en todos los nodos, ningún barrido, ninguna estimación reventada. El costo son 8,222 sondeos por clave primaria: para cada una de las 4,111 facturas de la ventana de 7 días pregunta a `customers` si el cliente acumula y a `puntos_enviados` si ya se envió. De las 4,111 quedan 181 candidatas y hoy devuelve 0. O sea que el costo NO está en cómo está escrita sino en la CADENCIA: rehace la ventana de 7 días cada minuto. Bajarlo es una decisión sobre el comportamiento (acortar la ventana pierde la red que atrapa facturas que llegan tarde), no un arreglo. 236 MB de los 311 se van en esos sondeos."
     },
     "get_pedido_generar_dashboard": {
       "bloques": 43000,

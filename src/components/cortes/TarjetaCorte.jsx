@@ -79,7 +79,19 @@ const TarjetaCorte = memo(function TarjetaCorte({
     /* Y uno tipo C que salió con el efectivo en cero tampoco contó: el 2-sep a
      * las 13:09 el papel decía «EFECTIVO $: 0.00 · EXACTO FELICIDADES» y el
      * portal ofrecía cobrar un faltante de $319.10. Ver `noContoEfectivo`. */
-    const noEsConteo = esZ || esX || noContoEfectivo(corte);
+    const sinConteo = noContoEfectivo(corte);
+    /* ── «No contó» y «no hay nada que decidir» NO son lo mismo ────────────
+     * El cierre del día y la lectura no admiten NINGUNA decisión. Un corte sin
+     * conteo admite exactamente UNA —descartarlo— y hay que tomarla: mientras
+     * siga pendiente, la sala no puede cerrar el día.
+     *
+     * Estaban juntos en un solo `noEsConteo`, y por eso Salud 4 quedó trabada
+     * el 2-sep: la pantalla decía «lo que corresponde es descartarlo» y no
+     * había ningún botón para hacerlo, porque el mismo criterio que quitó el
+     * faltante inventado apagó también la salida. Cada mitad estaba bien y
+     * juntas no dejaban puerta. */
+    const sinDecision = esZ || esX;
+    const noEsConteo = sinDecision || sinConteo;
     const desc = corte.estado === 'DESCARTADO';
     const pendiente = corte.estado === 'PENDIENTE';
     const sev = severidad(corte.tramo);
@@ -113,12 +125,15 @@ const TarjetaCorte = memo(function TarjetaCorte({
     // está. En la vista completa siguen en renglones separados — ahí sobra
     // ancho y la fila de acciones alineada a la derecha es la forma del portal.
     const hayEtiquetas = noEsConteo || !pendiente || revisar || (!cuadra && !desc);
-    const hayAcciones = pendiente && !noEsConteo && puedeResolver;
+    const hayAcciones = pendiente && !sinDecision && puedeResolver;
 
     const etiquetas = hayEtiquetas ? (
         <div className="flex items-center gap-1.5 flex-wrap min-w-0">
             {esZ && <Badge variant="info" size="sm">Cierre del día</Badge>}
             {esX && <Badge variant="neutral" size="sm">Lectura</Badge>}
+            {/* Se nombra el hecho, no el número: la cifra de este corte no
+                existe, y sin la etiqueta la tarjeta no dice por qué le falta. */}
+            {sinConteo && <Badge variant="warning" size="sm" icon={AlertTriangle}>Sin conteo</Badge>}
             {!noEsConteo && !desc && !cuadra && (
                 <Badge variant={SEVERIDAD_BADGE[sev].variant} size="sm" dot>
                     {SEVERIDAD_BADGE[sev].label}
@@ -146,10 +161,16 @@ const TarjetaCorte = memo(function TarjetaCorte({
             <Button variant="secondary" size="sm" icon={Ban} onClick={descartar}>
                 Descartar
             </Button>
-            <Button variant="primary" size="sm" icon={CheckCircle2} loading={ocupado}
-                onClick={confirmar}>
-                Confirmar
-            </Button>
+            {/* Sin «Confirmar» cuando no se contó: no hay conteo que dar por
+                bueno, y firmarlo correría la base de los cortes siguientes
+                contra un cero que nadie contó. Lo rechaza también
+                `resolver_corte_caja`, que es donde manda. */}
+            {!sinConteo && (
+                <Button variant="primary" size="sm" icon={CheckCircle2} loading={ocupado}
+                    onClick={confirmar}>
+                    Confirmar
+                </Button>
+            )}
         </div>
     ) : null;
 
@@ -183,7 +204,11 @@ const TarjetaCorte = memo(function TarjetaCorte({
                             se le mandó al formulario, no un dinero contado ni
                             unas ventas. Imprimir cualquiera de los dos sería
                             darle sentido a algo que no lo tiene. */}
-                        {esX
+                        {/* Un corte que no contó el efectivo tampoco tiene
+                            cifra. Sin esto la tarjeta pintaba `$0.00` sobre un
+                            `tramo` nulo, que se lee «cuadró exacto» — el mismo
+                            número falso que el detalle ya se había quitado. */}
+                        {esX || sinConteo
                             ? <span className="text-caption font-normal text-content-3">sin conteo</span>
                             : esZ
                                 ? <>{formatMoney(corte.total_declarado)}<span className="block text-caption font-normal text-content-3">en ventas</span></>
@@ -216,7 +241,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 usuario: al confirmar o rechazar se ve SIEMPRE el nombre, la
                 foto y la fecha/hora — un estado sin autor no se puede
                 reclamar. */}
-            {!pendiente && !noEsConteo && (
+            {!pendiente && !sinDecision && (
                 <div className="flex items-center gap-2 pt-2 border-t border-divider">
                     <AvatarConEstado emp={persona} px={24} radio="rounded-full" marco="" />
                     <div className="min-w-0 flex-1">

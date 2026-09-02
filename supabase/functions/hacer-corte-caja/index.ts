@@ -822,6 +822,40 @@ Deno.serve(async (req) => {
       throw new Error("no se pudo leer el formulario del corte");
     }
 
+    /* ── UN CORTE DE $0.00 NO ES UN CONTEO, Y EL ORIGEN LO DA POR EXACTO ────
+     *
+     * Salud 4, 2-sep 13:09 (corte 14393). Se mandó el corte con el efectivo en
+     * cero sobre una caja que esperaba $230.85, y el comprobante salió así:
+     *
+     *     TOTAL CAJA $:   230.85
+     *     EFECTIVO  $:      0.00
+     *     EXACTO FELICIDADES $:  0.00
+     *
+     * O sea: el origen NO calcula la diferencia cuando el declarado es cero —
+     * la da por exacta— y publica el corte con total 0.00 y diferencia 0.00. El
+     * documento nace inservible: dice haber cuadrado sobre una caja que nadie
+     * contó, y no hay forma de arreglarlo después porque el origen no anula
+     * cortes. Lo único que queda es descartarlo en el portal y volver a cortar,
+     * con el turno ya cerrado del otro lado.
+     *
+     * Por eso el freno va ACÁ y no en la pantalla: es lo último antes de crear
+     * un documento que no se deshace. La pantalla ya exige el campo escrito
+     * (`efectivo !== ''`), pero un cero tecleado la pasa igual — y `efectivo`
+     * llega por HTTP, así que la pantalla no es donde se decide.
+     *
+     * Las tres condiciones son las de `noContoEfectivo` en el portal y las de
+     * `corte_no_conto_efectivo` en la base, dichas antes de que el corte
+     * exista: si la caja NO espera dinero (`esperado <= 0`), un conteo de cero
+     * es legítimo y pasa. */
+    if (!simular && !esZ && Number(efectivo) === 0 && esperado > 0) {
+      return json({
+        ok: false,
+        error: "No se puede cortar con $0.00: el sistema de la caja da por exacto "
+             + "un corte sin efectivo contado, y el comprobante sale sin diferencia. "
+             + "Hay que contar el efectivo del cajón y escribir cuánto hay.",
+      }, 400);
+    }
+
     // ── 3. El envío: sólo se cambia lo que teclea una persona ──────────────
     // Tarjeta y cheque van en CERO y no en lo que traiga la pantalla: no pasan
     // por la caja, y son las dos casillas por las que se tapa un faltante.

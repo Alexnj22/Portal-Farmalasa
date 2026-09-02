@@ -48,6 +48,11 @@ import useResolverCorte from '../../hooks/useResolverCorte';
 
 const MOTIVOS = ['Conteo de prueba', 'Se contó mal', 'Corte repetido'];
 
+// El motivo del descarte de un corte SIN CONTEO no se elige: ya se sabe cuál
+// es. Ofrecerle «Se contó mal» a un corte donde no se contó nada invita a
+// escribir en la bitácora algo que no pasó.
+const MOTIVO_SIN_CONTEO = 'No se contó el efectivo';
+
 // Por qué se reabre una firma. Salen de los casos reales del 13 y 14 de agosto:
 // un corte confirmado sobre un conteo malo (Salud 1, −$621.17), uno que había
 // que descartar porque la sala lo rehizo, y la diferencia que después apareció.
@@ -238,18 +243,30 @@ export default function CorteDetalleModal({
      * «esto contó dinero», que era lo mismo mientras sólo hubiera dos tipos. */
     const esX = visible?.tipo === 'X';
     /* Y uno tipo C que salió con el efectivo en cero tampoco contó — ver
-     * `noContoEfectivo`. Va acá y no en un `if` propio porque las tres
-     * decisiones que gobierna (firmar, reabrir, el desglose) son las mismas. */
+     * `noContoEfectivo`. */
     const sinConteo = noContoEfectivo(visible);
-    const noEsConteo = esZ || esX || sinConteo;
+    /* ── «No contó» y «no hay nada que decidir» NO son lo mismo ────────────
+     * El cierre del día y la lectura no admiten NINGUNA decisión. Un corte sin
+     * conteo admite exactamente UNA —descartarlo— y hay que tomarla: mientras
+     * siga pendiente la sala no cierra el día.
+     *
+     * Estaban juntos en un solo `noEsConteo` y por eso Salud 4 quedó trabada el
+     * 2-sep: este mismo modal decía «lo que corresponde es descartarlo» con el
+     * pie sin un solo botón. El texto y los botones se leen en la misma
+     * pantalla; que se contradigan no lo caza ningún gate. */
+    const sinDecision = esZ || esX;
+    const noEsConteo = sinDecision || sinConteo;
     // El desglose del cierre: su monto es venta, no efectivo. Ver el bloque de
     // `desgloseDelCierre`, que es donde vive el porqué.
     const cierre = useMemo(() => desgloseDelCierre(visible, ventas), [visible, ventas]);
     const pendiente = visible?.estado === 'PENDIENTE';
-    const puedeFirmar = pendiente && !noEsConteo && puedeResolver;
+    const puedeFirmar = pendiente && !sinDecision && puedeResolver;
+    // Confirmar es lo único que el sin conteo NO puede: no hay conteo que dar
+    // por bueno. Lo rechaza también `resolver_corte_caja`, que es donde manda.
+    const puedeConfirmar = puedeFirmar && !sinConteo;
     // Reabrir es de la propia sala (decisión del usuario, 2026-08-14): la misma
     // gente que firma puede corregir su firma, escribiendo por qué.
-    const puedeReabrir = !pendiente && !noEsConteo && puedeResolver;
+    const puedeReabrir = !pendiente && !sinDecision && puedeResolver;
 
     const abrirReapertura = useCallback(() => {
         setMotivo(MOTIVOS_REABRIR[0]);
@@ -260,13 +277,13 @@ export default function CorteDetalleModal({
         if (!corte || !modo) return;
         const estado = modo === 'confirmar' ? 'CONFIRMADO' : 'DESCARTADO';
         const ok = await resolver(corte, estado, {
-            motivo: modo === 'descartar' ? motivo : null,
+            motivo: modo === 'descartar' ? (sinConteo ? MOTIVO_SIN_CONTEO : motivo) : null,
             observaciones: nota,
         });
         if (!ok) return;
         onResuelto?.(corte, estado);
         onClose?.();
-    }, [corte, modo, motivo, nota, resolver, onResuelto, onClose]);
+    }, [corte, modo, motivo, nota, sinConteo, resolver, onResuelto, onClose]);
 
     /**
      * Volver a abrir una firma. El motivo es obligatorio y queda en la bitácora:
@@ -497,7 +514,7 @@ export default function CorteDetalleModal({
                                     (§15.3). Además de verse igual en todo el
                                     portal, trae el `radiogroup` que hace que un
                                     lector anuncie «2 de 3». */}
-                                {modo === 'descartar' && (
+                                {modo === 'descartar' && !sinConteo && (
                                     <div>
                                         <div className="text-caption font-black uppercase tracking-widest text-content-3 mb-1.5">
                                             Motivo del descarte
@@ -805,8 +822,11 @@ export default function CorteDetalleModal({
                         </>
                     ) : (
                         <>
-                            <Button variant="secondary" icon={Ban} onClick={() => setModo('descartar')}>Descartar</Button>
-                            <Button variant="primary" icon={CheckCircle2} onClick={() => setModo('confirmar')}>Confirmar</Button>
+                            <Button variant={sinConteo ? 'destructive' : 'secondary'} icon={Ban}
+                                onClick={() => setModo('descartar')}>Descartar</Button>
+                            {puedeConfirmar && (
+                                <Button variant="primary" icon={CheckCircle2} onClick={() => setModo('confirmar')}>Confirmar</Button>
+                            )}
                         </>
                     )
                 ) : modo === 'reabrir' ? (

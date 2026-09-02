@@ -39,6 +39,7 @@ const SalidaDeBolsa = lazy(() => import('../components/bolsas/SalidaDeBolsa'));
 const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
 import { construirComprobanteDeAbono } from '../utils/abonoTicket';
 import { construirComprobanteDeCorte } from '../utils/corteTicket';
+import { construirComprobanteDeMovimiento } from '../utils/movimientoTicket';
 import { conSigno, formatMoney } from '../utils/formatNumber';
 import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -150,6 +151,26 @@ export default function MiCajaView({ comoPestana = false }) {
     const puedeVerBolsas = hasPermission('bolsas', 'can_view');
     // Los cortes son del OTRO módulo, igual que las bolsas.
     const puedeVerCortes = hasPermission('cortes_caja', 'can_view');
+
+    /* ── QUIÉN PUEDE VER CUÁNTO DEBERÍA HABER ──────────────────────────────
+     *
+     * Regla del usuario (1-sep): «no quiero que vean montos totales, o algo que
+     * les diga cuánto deben tener sin ingresar el monto, por transparencia».
+     *
+     * El conteo a ciegas es TODO el control del corte, y esta pantalla lo
+     * estaba entregando por la puerta de al lado: «En la caja $1,134.80» y «De
+     * eso, en efectivo $976.10» son exactamente el número que hay que contar.
+     * Con eso a la vista, teclear el conteo no es contar — es copiar, y un
+     * faltante nunca aparece.
+     *
+     * El corte es el ALCANCE y no un permiso nuevo: quien mira todas las salas
+     * —supervisión, administración— no es quien cuenta ese cajón, así que para
+     * él la cifra es información y no una respuesta anticipada. Quien opera una
+     * sala la cuenta, y para él es la respuesta.
+     *
+     * Lo que se esconde es el DINERO, no la actividad: cuántas ventas hubo, a
+     * qué hora abrió y quién, todo eso se queda. No dice cuánto hay. */
+    const veLosMontos = getScope('cortes_caja') === 'ALL';
 
     /* El ALCANCE, que es el de `caja_vales` y no el de Cortes.
      *
@@ -318,6 +339,27 @@ export default function MiCajaView({ comoPestana = false }) {
         return salida.ok;
     }, [nombreSala, sala, showToast, user]);
 
+    /* El papel de un ingreso o un vale del cajón.
+     *
+     * Sale como parte del acto, igual que el del corte y el del abono: en la
+     * salida es lo que la persona que se lleva el dinero firma, y en el ingreso
+     * es lo que se lleva quien lo trajo. Un fallo de impresión NO deshace el
+     * movimiento —ya está escrito en la caja—: se avisa y se sigue. */
+    const imprimirMovimiento = useCallback(async (mov, tipo, extra) => {
+        if (!mov) return false;
+        const ticket = construirComprobanteDeMovimiento({
+            movimiento: mov,
+            etiqueta: tipo?.etiqueta || '',
+            detalle: extra?.detalle || '',
+            persona: extra?.persona || '',
+            sala: nombreSala, hechoPor: user?.name || '',
+            hechoAt: new Date().toISOString(),
+        });
+        const salida = await imprimirDocumento(ticket, { sala });
+        if (!salida.ok) showToast('No se pudo imprimir el comprobante', salida.detalle, 'error');
+        return salida.ok;
+    }, [nombreSala, sala, showToast, user]);
+
     const cargar = useCallback(async () => {
         if (!sala) { setCargando(false); return; }
         setCargando(true);
@@ -404,6 +446,13 @@ export default function MiCajaView({ comoPestana = false }) {
     // adentro hace que el compilador infiera `estado` entero como dependencia y
     // no pueda conservar la memoización.
     const diaAbierto = estado?.dia ?? null;
+    // Cuántas ventas lleva el día. Reemplaza al monto en la tarjeta cuando el
+    // monto no se puede mostrar: es actividad, no la respuesta del corte.
+    const ventasDelDia = useMemo(
+        () => (ventas || []).reduce((n, v) => n + (Number(v.documentos) || 0), 0),
+        [ventas],
+    );
+
     const bolsasDeHoy = useMemo(
         () => (bolsas || []).filter((b) => b.fecha && diaAbierto && b.fecha === diaAbierto),
         [bolsas, diaAbierto],
@@ -527,8 +576,15 @@ export default function MiCajaView({ comoPestana = false }) {
                     <CarrilCards className="flex-1" ariaLabel="Estado de la caja de esta sala">
                         {/* 1 · ¿Cuánto hay? Lo que el sistema espera adentro
                             AHORA, que hasta v2.886 no estaba en ninguna pantalla. */}
-                        <StatCard icon={Landmark} label="En la caja"
-                            value={sala && !noSePudo && estado?.registrado != null ? formatMoney(estado.registrado) : '—'}
+                        {/* Con el conteo a ciegas puesto, esta tarjeta cambia de
+                            pregunta: en vez de «cuánto hay» dice «cuántas ventas
+                            van», que es actividad y no la respuesta del corte. */}
+                        <StatCard icon={Landmark} label={veLosMontos ? 'En la caja' : 'Ventas de hoy'}
+                            value={!sala || noSePudo ? '—'
+                                : veLosMontos
+                                    ? (estado?.registrado != null ? formatMoney(estado.registrado) : '—')
+                                    : ventasDelDia}
+                            sub={veLosMontos ? undefined : 'se cuenta al cortar'}
                             iconBg="bg-brand/10" iconCls="text-brand-text"
                             loading={cargando} />
 
@@ -638,7 +694,7 @@ export default function MiCajaView({ comoPestana = false }) {
                             </Notice>
                         )}
 
-                        <PanelDelDia estado={estado} ventas={ventas} />
+                        <PanelDelDia estado={estado} ventas={ventas} veLosMontos={veLosMontos} />
 
                         <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas}
                             dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
@@ -703,10 +759,20 @@ export default function MiCajaView({ comoPestana = false }) {
                 tipos={tiposDeCaja}
                 onComprobante={() => setDialogo('abono')}
                 onClose={() => setDialogo(null)}
-                onAnotar={(datos) => correr(
-                    () => (dialogo === 'ingreso' ? anotarIngreso : anotarSalida)({ sala, ...datos }),
-                    dialogo === 'ingreso' ? 'Ingreso anotado.' : 'Salida anotada.',
-                )} />
+                onAnotar={async (datos, tipoElegido) => {
+                    const r = await correr(
+                        () => (dialogo === 'ingreso' ? anotarIngreso : anotarSalida)({ sala, ...datos }),
+                        dialogo === 'ingreso' ? 'Ingreso anotado.' : 'Salida anotada.',
+                    );
+                    // El papel se arma con la fila que devolvió el servidor —con
+                    // su número y su fecha—, no con lo que el formulario mandó.
+                    if (r?.movimiento) {
+                        await imprimirMovimiento(r.movimiento, tipoElegido, {
+                            detalle: datos.detalle,
+                            persona: datos.recibe || datos.vendedor || '',
+                        });
+                    }
+                }} />
 
             <DialogoCorte abierto={dialogo === 'corte'} ocupado={ocupado} resultado={resultado}
                 pendientes={pendientes.length} onImprimir={imprimirCorte}
@@ -797,7 +863,7 @@ const conMayuscula = (t) => {
  * cosa: quien cuenta billetes no puede derivar el esperado de esto sin sumarle
  * la apertura y restarle los vales, y ése es justo el trabajo que hace el corte.
  */
-function PanelDelDia({ estado, ventas }) {
+function PanelDelDia({ estado, ventas, veLosMontos = true }) {
     if (!estado?.abierta) return null;
 
     const filas = [...(ventas || [])]
@@ -826,35 +892,52 @@ function PanelDelDia({ estado, ventas }) {
                     </p>
                 ) : (
                     <>
+                        {/* Las formas de pago SIN monto cuando no se pueden ver.
+                            Se quedan porque dicen algo que no es la respuesta:
+                            cuántas ventas hubo de cada forma, que sirve para
+                            saber si el día fue de tarjeta o de efectivo sin
+                            decir cuánto. */}
                         <ul className="divide-y divide-border/60">
                             {filas.map((f) => (
                                 <li key={f.tipo} className="flex items-baseline justify-between gap-3 py-1.5">
                                     <span className="text-body-sm text-content">
                                         {conMayuscula(f.tipo)}
-                                        <span className="text-caption text-content-3">
-                                            {' '}· {f.docs} venta{f.docs === 1 ? '' : 's'}
-                                        </span>
                                     </span>
                                     <span className="tabular-nums font-semibold text-content">
-                                        {formatMoney(f.total)}
+                                        {veLosMontos
+                                            ? formatMoney(f.total)
+                                            : `${f.docs} venta${f.docs === 1 ? '' : 's'}`}
                                     </span>
                                 </li>
                             ))}
                         </ul>
-                        <div className="flex items-baseline justify-between gap-3 pt-1">
-                            <span className="text-body-sm font-bold text-content">Total vendido</span>
-                            <span className="tabular-nums font-black text-content">{formatMoney(total)}</span>
-                        </div>
-                        <div className="flex items-baseline justify-between gap-3">
-                            <span className="text-body-sm text-content-2">De eso, en efectivo</span>
-                            <span className="tabular-nums font-bold text-brand-text">{formatMoney(efectivo)}</span>
-                        </div>
-                        <div className="flex items-baseline justify-between gap-3">
-                            <span className="text-body-sm text-content-2">Con lo que abrió la caja</span>
-                            <span className="tabular-nums text-content-2">
-                                {estado.apertura != null ? formatMoney(estado.apertura) : '—'}
-                            </span>
-                        </div>
+                        {veLosMontos ? (
+                            <>
+                                <div className="flex items-baseline justify-between gap-3 pt-1">
+                                    <span className="text-body-sm font-bold text-content">Total vendido</span>
+                                    <span className="tabular-nums font-black text-content">{formatMoney(total)}</span>
+                                </div>
+                                <div className="flex items-baseline justify-between gap-3">
+                                    <span className="text-body-sm text-content-2">De eso, en efectivo</span>
+                                    <span className="tabular-nums font-bold text-brand-text">{formatMoney(efectivo)}</span>
+                                </div>
+                                <div className="flex items-baseline justify-between gap-3">
+                                    <span className="text-body-sm text-content-2">Con lo que abrió la caja</span>
+                                    <span className="tabular-nums text-content-2">
+                                        {estado.apertura != null ? formatMoney(estado.apertura) : '—'}
+                                    </span>
+                                </div>
+                            </>
+                        ) : (
+                            /* Se DICE por qué no está, en vez de dejar el hueco.
+                               Un total que desaparece sin explicación se lee como
+                               que la pantalla falló, y el primero que lo vea va a
+                               reportarlo como defecto. */
+                            <p className="text-caption text-content-3 pt-1">
+                                Los montos no se muestran antes del corte: el conteo se hace contando,
+                                y verlos de antemano sería copiarlos.
+                            </p>
+                        )}
                     </>
                 )}
             </div>
@@ -896,43 +979,33 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
             ].filter(Boolean),
             movimiento: m,
         }));
-        const deLasBolsas = (deBolsas || []).map((o) => ({
-            clave: `bolsa-${o.id}`,
-            cuando: o.registrado_at,
-            titulo: `${etiquetaDe(o.tipo)}${o.entidad ? ` · ${o.entidad}` : ''}`,
-            entra: false,
-            monto: Math.abs(Number(o.monto || 0)),
-            anulado: !!o.anulada_at,
-            /* El nombre completo del origen, porque de eso depende el corte —
-             * y CUÁL bolsa, que es lo que faltaba: «de una bolsa de un corte
-             * anterior» no dice a cuál ir a buscar. Con varias se nombran
-             * todas: una salida grande se reparte entre las que alcancen. */
-            origen: (o.bolsasUsadas || []).length
-                ? `De la bolsa ${o.bolsasUsadas.map((b) => b.folio).join(' y ')}`
-                : o.tocaLaCaja ? 'De una bolsa de hoy' : 'De una bolsa de un corte anterior',
-            avisa: o.tocaLaCaja,
-            detalle: [
-                o.folio,
-                // De qué día es esa bolsa. El folio la identifica; la fecha dice
-                // por qué su dinero ya no le mueve nada a la caja de hoy.
-                !o.tocaLaCaja && (o.dias || []).length
-                    ? `del ${o.dias.map(fechaLegible).join(' y ')}` : null,
-                o.numero_boleta ? `boleta ${o.numero_boleta}` : null,
-                /* CUÁNTO se anota como vale, no si se anota.
+        const deLasBolsas = (deBolsas || []).map((o) => {
+            const total = Math.abs(Number(o.monto || 0));
+            const deHoy = Number(o.montoDeHoy || 0);
+            return {
+                clave: `bolsa-${o.id}`,
+                cuando: o.registrado_at,
+                titulo: `${etiquetaDe(o.tipo)}${o.entidad ? ` · ${o.entidad}` : ''}`,
+                entra: false,
+                monto: total,
+                anulado: !!o.anulada_at,
+                origen: 'De una bolsa',
+                avisa: o.tocaLaCaja,
+                detalle: [o.folio, o.numero_boleta ? `boleta ${o.numero_boleta}` : null].filter(Boolean),
+                /* El DESGLOSE, no una frase.
                  *
-                 * Una salida repartida entre bolsas de días distintos toca la
-                 * caja SÓLO por la parte que salió de la bolsa del día abierto.
-                 * Decir «se anota como vale al cortar» sobre el monto entero
-                 * hace esperar un descuento que no va a pasar — y la diferencia
-                 * puede ser casi toda la operación: en REM-1058 fueron $119.38
-                 * de $500. */
-                !o.tocaLaCaja
-                    ? 'no toca la caja de hoy'
-                    : o.montoDeHoy != null && o.montoDeHoy < Math.abs(Number(o.monto || 0)) - 0.005
-                        ? `se anota como vale al cortar sólo ${formatMoney(o.montoDeHoy)}`
-                        : 'se anota como vale al cortar',
-            ].filter(Boolean),
-        }));
+                 * Una salida grande se reparte entre las bolsas que alcancen, y
+                 * de días distintos: la remesa REM-1058 son $500 en tres bolsas
+                 * —$119.38 de hoy y $380.62 de dos del 31-ago— y sólo la primera
+                 * parte toca el corte que viene. Escrito como frase única, la
+                 * pantalla tenía que elegir UNA de las dos verdades y decía «de
+                 * una bolsa de hoy» sobre los $500 enteros. Bolsa por bolsa no
+                 * hay que elegir. */
+                reparto: o.bolsasUsadas || [],
+                afectaElCorte: deHoy,
+                parcial: deHoy > 0.005 && deHoy < total - 0.005,
+            };
+        });
         return [...delCajon, ...deLasBolsas]
             .sort((a, b) => String(b.cuando || '').localeCompare(String(a.cuando || '')));
     }, [movimientos, deBolsas, tipos]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
@@ -960,29 +1033,60 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
             )}
 
             {lineas.map((l) => (
-                <div key={l.clave} data-surface="card"
-                    className="rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-                    <div className="min-w-0">
-                        <p className={`text-body-sm font-medium ${l.anulado ? 'text-content-3 line-through' : 'text-content'}`}>
-                            {l.titulo}
-                        </p>
-                        <p className="text-caption text-content-3">
-                            <span className={l.avisa ? 'text-warning-text font-semibold' : undefined}>
-                                {l.origen}
+                <div key={l.clave} data-surface="card" className="rounded-xl px-4 py-3 space-y-2">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                            <p className={`text-body-sm font-semibold ${l.anulado ? 'text-content-3 line-through' : 'text-content'}`}>
+                                {l.titulo}
+                            </p>
+                            <p className="text-caption text-content-3">
+                                {l.origen}{l.detalle.length ? ` · ${l.detalle.join(' · ')}` : ''}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                            <span className={`tabular-nums font-bold ${l.entra ? 'text-success-text' : 'text-warning-text'}`}>
+                                {l.entra ? '' : '−'}{formatMoney(l.monto)}
                             </span>
-                            {l.detalle.length ? ` · ${l.detalle.join(' · ')}` : ''}
-                        </p>
+                            {puedeOperar && l.movimiento && !l.anulado && (
+                                <Button variant="ghost" size="sm" onClick={() => onCorregir(l.movimiento)}>
+                                    Corregir
+                                </Button>
+                            )}
+                        </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <span className={`tabular-nums font-bold ${l.entra ? 'text-success-text' : 'text-warning-text'}`}>
-                            {l.entra ? '' : '−'}{formatMoney(l.monto)}
-                        </span>
-                        {puedeOperar && l.movimiento && !l.anulado && (
-                            <Button variant="ghost" size="sm" onClick={() => onCorregir(l.movimiento)}>
-                                Corregir
-                            </Button>
-                        )}
-                    </div>
+
+                    {/* De qué bolsa salió cada parte. Una fila por bolsa, con lo
+                        que aporta y si toca el corte. Es lo que la frase no podía
+                        decir sin elegir una de las dos verdades. */}
+                    {(l.reparto || []).length > 0 && (
+                        <div className="rounded-lg bg-surface-input/40 px-3 py-2 space-y-1">
+                            {l.reparto.map((b) => (
+                                <div key={b.folio} className="flex items-baseline justify-between gap-3 text-caption">
+                                    <span className="text-content-2 min-w-0 truncate">
+                                        {b.folio}
+                                        <span className="text-content-3"> · {fechaLegible(b.fecha)}</span>
+                                    </span>
+                                    <span className="flex items-baseline gap-2 shrink-0">
+                                        <span className="tabular-nums text-content-2">{formatMoney(b.monto)}</span>
+                                        <span className={b.deHoy ? 'text-warning-text font-semibold' : 'text-content-3'}>
+                                            {b.deHoy ? 'entra al corte' : 'ya cerrada'}
+                                        </span>
+                                    </span>
+                                </div>
+                            ))}
+                            {/* La suma sólo cuando hay más de una bolsa: con una
+                                sola repetiría el monto de arriba. */}
+                            {l.reparto.length > 1 && (
+                                <div className="flex items-baseline justify-between gap-3 pt-1 border-t border-border/60
+                                                text-caption font-bold">
+                                    <span className="text-content">Afecta el corte de hoy</span>
+                                    <span className={`tabular-nums ${l.afectaElCorte > 0 ? 'text-warning-text' : 'text-content-3'}`}>
+                                        {l.afectaElCorte > 0 ? formatMoney(l.afectaElCorte) : 'nada'}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             ))}
         </div>
@@ -1195,7 +1299,9 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             ...(entra
                 ? (tipo?.pide_persona ? { vendedor: recibe.trim() } : {})
                 : { recibe: recibe.trim() }),
-        });
+            // Para el papel: el detalle suelto y quién, sin el rótulo pegado.
+            detalle: concepto.trim(),
+        }, tipo);
     };
 
     return (

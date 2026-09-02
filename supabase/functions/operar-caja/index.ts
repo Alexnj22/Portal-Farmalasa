@@ -620,7 +620,7 @@ Deno.serve(async (req) => {
           fecha: diaAbierto, erp_apertura_id: Number(estado.aper),
           registrado_por: quien.id,
         })
-        .select("id").single();
+        .select("*").single();
       if (errFila) throw new Error(`guardando el movimiento: ${errFila.message}`);
 
       let abono: Record<string, unknown> | null = null;
@@ -714,7 +714,11 @@ Deno.serve(async (req) => {
       // quedó escrita —con su folio y su vencimiento—, no con lo que el
       // navegador creía que estaba mandando. Si los dos difieren, el papel
       // tiene que decir lo que dice la base.
-      return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono });
+      // `fila` entera: el comprobante se arma con lo que QUEDÓ ESCRITO —su
+      // número, su fecha, su boleta—, no con lo que el formulario creía estar
+      // mandando. Mismo criterio que el papel del abono.
+      return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono,
+        movimiento: fila });
     }
 
     // ── CERRAR EL DÍA ───────────────────────────────────────────────────────

@@ -996,10 +996,32 @@ export async function fetchSalidasDeSalaDelDia({ sala, dia }) {
              * corte anterior» y no cuál — y ese dinero salió de una bolsa
              * concreta, que es la que alguien va a tener que ir a buscar. El
              * folio ya viajaba en la consulta un nivel más abajo. */
-            bolsasUsadas: [...new Map(lineas
+            /* De qué bolsa salió CADA PARTE, con su monto.
+             *
+             * No alcanza con la lista de folios: una salida grande se reparte
+             * entre las bolsas que alcancen, y de días distintos. La remesa
+             * REM-1058 de Salud 3 son $500 repartidos en $119.38 de la bolsa de
+             * hoy y $380.62 de dos del 31-ago — y sólo la primera parte toca la
+             * caja de hoy. Sin el monto por bolsa, la pantalla sólo puede decir
+             * «de una bolsa de hoy» sobre los $500 enteros, que es lo que
+             * hacía. */
+            bolsasUsadas: [...lineas
                 .filter((l) => l.bolsas?.folio)
-                .map((l) => [l.bolsas.folio, { folio: l.bolsas.folio, fecha: l.bolsas.fecha }]))
-                .values()],
+                .reduce((m, l) => {
+                    const k = l.bolsas.folio;
+                    const previo = m.get(k);
+                    m.set(k, {
+                        folio: k,
+                        fecha: l.bolsas.fecha,
+                        deHoy: l.bolsas.fecha === dia,
+                        monto: (previo?.monto || 0) + Math.abs(Number(l.monto) || 0),
+                    });
+                    return m;
+                }, new Map())
+                .values()]
+                // Las de hoy primero: son las que afectan el corte que viene.
+                .sort((a, b) => Number(b.deHoy) - Number(a.deHoy)
+                    || String(b.fecha).localeCompare(String(a.fecha))),
             tocaLaCaja: lineas.some((l) => l.bolsas?.fecha === dia),
             /* CUÁNTO de la operación sale de una bolsa del día abierto — que no
              * es lo mismo que su monto.

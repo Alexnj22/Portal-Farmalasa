@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.928.0 — La sala no ve los montos antes de contar, y los movimientos sacan papel
+
+Tres cosas reportadas mirando la pantalla en vivo.
+
+### El conteo a ciegas se estaba entregando por la puerta de al lado
+
+> «no quiero que vean montos totales, o algo que les diga cuánto deben tener sin
+> ingresar el monto, por transparencia» (usuario, 1-sep)
+
+La pantalla mostraba **«En la caja $1,134.80»** y **«De eso, en efectivo
+$976.10»** — que es exactamente el número que hay que contar. Con eso a la
+vista, teclear el conteo no es contar: es copiar, y un faltante nunca aparece.
+El control entero del corte estaba anulado por dos renglones.
+
+Ahora, **con alcance de una sala** (`cortes_caja` distinto de `ALL`):
+
+- La tarjeta cambia de pregunta: en vez de «En la caja $1,134.80» dice
+  **«Ventas de hoy · 116»**, que es actividad y no la respuesta.
+- El desglose por forma de pago conserva las **formas y su cuenta** —«Efectivo ·
+  107 ventas»— y esconde los montos, el total vendido y el efectivo del día.
+
+Se esconde el DINERO, no la actividad: a qué hora abrió, quién, cuántas ventas
+van, todo se queda. Y **se dice por qué falta**, en vez de dejar el hueco: un
+total que desaparece sin explicación se lee como que la pantalla falló.
+
+Quien mira todas las salas —supervisión, administración— sigue viendo todo: no
+es quien cuenta ese cajón, así que para él la cifra es información y no una
+respuesta anticipada.
+
+### La salida repartida entre bolsas se ve bolsa por bolsa
+
+> «la remesa de 500 no salió toda de la bolsa de ahora, mejora eso»
+
+`REM-1058` son $500 en **tres** bolsas —$119.38 de hoy y $380.62 de dos del
+31-ago— y sólo la primera parte toca el corte que viene. Escrito como frase
+única, la pantalla tenía que elegir una de las dos verdades y elegía la
+peligrosa: «De una bolsa de hoy» sobre los $500 enteros.
+
+Ahora cada movimiento es una tarjeta con su reparto:
+
+```
+Remesa entregada a un cliente · RIA          −$500.00
+De una bolsa · REM-1058 · boleta 001082
+
+  S3-1216 · lun, 01 sept    $119.38   entra al corte
+  S3-1211 · dom, 31 ago     $324.80   ya cerrada
+  S3-1206 · dom, 31 ago      $55.82   ya cerrada
+  ─────────────────────────────────────────────────
+  Afecta el corte de hoy    $119.38
+```
+
+Bolsa por bolsa no hay que elegir ninguna verdad.
+
+### Los movimientos del cajón sacan comprobante
+
+Todo lo demás que mueve efectivo ya sacaba papel —el corte, la salida de bolsa,
+el abono— menos los dos que dejan a alguien con dinero en la mano. Ahora:
+
+- **VALE DE CAJA** para una salida, **con raya de firma**: hay un receptor, y su
+  firma es el único dato que ni la sesión ni el sistema pueden aportar.
+- **INGRESO A CAJA** para una entrada, sin firma: quien entrega es el cliente y
+  el papel es suyo — pedirle que firme el comprobante que se lleva no prueba
+  nada.
+
+Los dos llevan el número del portal (`P42`), que es el mismo que va adelante del
+concepto del lado de la caja. Y se arman con **la fila que quedó escrita**, no
+con lo que el formulario mandó.
+
+**El Z no lleva papel** y no se le pone: lo emite el sistema de la caja al
+cerrar.
+
 ## v2.927.2 — El inventario deja de pagar un peaje fijo en cada lectura
 
 Las dos funciones que el detector de bloques había dejado marcadas quedaron

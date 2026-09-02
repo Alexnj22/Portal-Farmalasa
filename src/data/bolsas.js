@@ -922,8 +922,34 @@ export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta 
     });
 }
 
+/**
+ * Cerrar el día: primero el **corte Z**, después el cierre del turno.
+ *
+ * ── El Z es un tipo de CORTE, no un efecto de cerrar ──────────────────────
+ * El portal llamaba sólo a `cerrar_turno` y daba por hecho que eso emitía el Z.
+ * No lo emite: cierra el turno y nada más. El 1-sep en Salud 3 el día quedó sin
+ * Z y hubo que hacerlo a mano en el sistema de la caja. El Z sale por el mismo
+ * formulario del corte con `tipo_corte = Z`, y no se le declara nada: su
+ * pantalla trae el efectivo ya calculado.
+ *
+ * ── El ORDEN importa y no es libre ────────────────────────────────────────
+ * Z primero, cierre después. Al revés —cerrar y después el Z— el turno queda
+ * cerrado y el formulario del corte ya no tiene apertura viva de la que salir:
+ * el día se quedaría sin Z otra vez y sin forma de emitirlo desde acá.
+ *
+ * Si el Z falla NO se cierra: se devuelve el error y el día sigue abierto, que
+ * es lo reparable. Cerrar igual sería repetir el defecto a propósito.
+ */
 export async function cerrarElDia(sala) {
-    return operar({ accion: 'cerrar', sala });
+    const z = await hacerCorte({ sala, efectivo: 0, tipo: 'Z' });
+    if (z?.error) return { error: z.error };
+    if (z && z.ok === false) {
+        return { error: new Error(z.error || 'No se pudo emitir el corte Z. El día sigue abierto.') };
+    }
+    const cierre = await operar({ accion: 'cerrar', sala });
+    // El número del Z viaja de vuelta: es lo que alguien va a buscar en el
+    // sistema de la caja si algo no cuadra al cerrar el mes.
+    return cierre?.error ? cierre : { ...cierre, z_corte: z?.id_corte ?? null };
 }
 
 async function operar(body) {
@@ -944,10 +970,10 @@ async function operar(body) {
  * toda la idea. Si el portal lo mostrara antes, sería la misma pantalla que hoy
  * deja teclear hasta que la diferencia dé cero.
  */
-export async function hacerCorte({ sala, efectivo, observaciones = null, simular = false }) {
+export async function hacerCorte({ sala, efectivo, observaciones = null, simular = false, tipo = 'C' }) {
     try {
         const { data, error } = await supabase.functions.invoke('hacer-corte-caja', {
-            body: { sala, efectivo, observaciones, simular },
+            body: { sala, efectivo, observaciones, simular, tipo },
         });
         if (error) return { error };
         if (!data) return { error: new Error('NO_SE_PUDO') };

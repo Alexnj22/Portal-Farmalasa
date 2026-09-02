@@ -322,8 +322,29 @@ Deno.serve(async (req) => {
     const simular = body.simular === true;
     const sala = Number(body.sala);
     const efectivo = Number(body.efectivo);
+    /* ── EL Z ES UN TIPO DE CORTE, NO UN EFECTO DE CERRAR EL TURNO ─────────
+     *
+     * Descubierto el 1-sep, cerrando de verdad por primera vez: el portal
+     * llamaba `apertura_caja.php process=cerrar_turno` y daba por hecho que eso
+     * emitía el Z. **No lo emite.** Cierra el turno y nada más. El día quedó
+     * sin Z y hubo que hacerlo a mano en el sistema de la caja.
+     *
+     * El Z sale por ESTE mismo formulario, el del corte, con `tipo_corte = Z`:
+     *
+     *     <option value="C">Corte de caja
+     *     <option value="X">Corte X          ← el que viene marcado
+     *     <option value="Z">Corte Z
+     *
+     * Y no se le declara nada: el formulario del Z trae el efectivo ya
+     * calculado y de sólo lectura. Es lo que dijo el usuario —«el corte Z no se
+     * ingresa nada, ya el ERP lo hace solo y finaliza»— y es lo que se ve en su
+     * pantalla: `Total Efectivo en Caja` gris con la cifra puesta.
+     *
+     * Por eso `efectivo` no se exige con `tipo: 'Z'`. */
+    const tipo = String(body.tipo ?? "C").toUpperCase() === "Z" ? "Z" : "C";
+    const esZ = tipo === "Z";
     if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sala." }, 400);
-    if (!simular && !(Number.isFinite(efectivo) && efectivo >= 0)) {
+    if (!simular && !esZ && !(Number.isFinite(efectivo) && efectivo >= 0)) {
       return json({ ok: false, error: "Falta el efectivo contado." }, 400);
     }
 
@@ -356,8 +377,16 @@ Deno.serve(async (req) => {
     const viva = await aperturaViva(cookie);
     if (!viva) return json({ ok: false, error: "Esa sala no tiene una caja abierta ahora." }, 409);
 
-    // ── 1. El vale de las salidas del día, ANTES del corte ──────────────────
-    const { data: pend, error: errPend } = await supabase.rpc("caja_vales_pendientes");
+    /* ── 1. El vale de las salidas del día, ANTES del corte ────────────────
+     *
+     * El Z NO lo escribe: el corte de caja que lo precede ya lo hizo, y volver
+     * a intentarlo con la lista vacía no haría nada — pero con una salida que
+     * llegara entre medio escribiría un SEGUNDO vale por dinero que el corte C
+     * ya descontó, o sea un faltante fabricado en el cierre del día, que no se
+     * deshace. El vale pertenece al conteo, y el Z no cuenta nada. */
+    const { data: pend, error: errPend } = esZ
+      ? { data: [], error: null }
+      : await supabase.rpc("caja_vales_pendientes");
     if (errPend) throw new Error(`leyendo pendientes: ${errPend.message}`);
     const mias = (pend ?? []).filter((p: { branch_id: number }) => Number(p.branch_id) === sala);
     const montoVale = mias.reduce((s: number, p: { monto: number }) => s + Number(p.monto), 0);
@@ -477,10 +506,17 @@ Deno.serve(async (req) => {
     // minutos de diferencia.
     //
     // Los de caja son C. No es una preferencia: el X no cuenta el dinero.
-    campos.set("tipo_corte", "C");
-    const diferencia = Number(efectivo) - esperado;
-    campos.set("total_efectivo", dosDecimales(efectivo));
-    campos.set("total_efectivo1", dosDecimales(efectivo));
+    campos.set("tipo_corte", tipo);
+    /* El Z NO declara: su formulario trae el efectivo calculado y de sólo
+     * lectura —«el corte Z no se ingresa nada, ya el ERP lo hace solo y
+     * finaliza» (usuario)—. Se reenvía lo que la pantalla trajo y no se le
+     * escribe una diferencia: inventarle un conteo al cierre del día sería
+     * declarar un número que nadie contó. */
+    const diferencia = esZ ? 0 : Number(efectivo) - esperado;
+    if (!esZ) {
+      campos.set("total_efectivo", dosDecimales(efectivo));
+      campos.set("total_efectivo1", dosDecimales(efectivo));
+    }
     campos.set("total_tarjeta", "0");
     campos.set("monto_ch", "0");
     campos.set("diferencia", dosDecimales(diferencia));

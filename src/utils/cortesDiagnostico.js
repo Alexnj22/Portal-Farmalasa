@@ -101,16 +101,8 @@ export function conTramoPorSalaYDia(cortes) {
         // JavaScript, y el tramo de los dos sale de una resta distinta a la que
         // hace la base — que es la que manda al firmar. El sistema de origen no
         // anula cortes: los REHACE, a veces dentro del mismo minuto.
-        const enOrden = [...lista].sort(
+        out.push(...conTramo([...lista].sort(
             (a, b) => String(a.hora).localeCompare(String(b.hora)) || (a.id - b.id),
-        );
-        /* Cuál es el ÚLTIMO de su día, que es lo que `diferenciaDelCorte`
-         * necesita para desempatar la firma `+1×` de los cobros de crédito. Se
-         * marca acá y no allá porque es una propiedad del GRUPO: un corte solo
-         * no puede saber si vino otro después. */
-        const ultimo = enOrden[enOrden.length - 1];
-        out.push(...conTramo(enOrden.map(
-            (c) => ({ ...c, ultimoDelDia: c === ultimo }),
         )));
     }
     return out;
@@ -244,40 +236,38 @@ export function diferenciaDelCorte(corte) {
     if (!c) {
         return { valor: num(corte?.diferencia_erp) ?? 0, fuente: 'guardada', esperado: num(corte?.esperado) };
     }
-    /* ── `+1×` los cobros: DOS casos reales con la misma aritmética ────────
+    /* ── EL TIQUETE SIEMPRE GANA, y está medido (2026-09-01) ──────────────
      *
-     * La firma «la brecha es exactamente una vez el cobro de crédito» aparece en
-     * dos situaciones opuestas, y la aritmética no las distingue:
+     * Había una excepción: con `brecha = +1×` los cobros de crédito se usaba la
+     * cifra del formulario, leyendo esa firma como «el tiquete sumó cobros del
+     * DÍA a un corte hecho ANTES de que entraran». Se quitó, y con datos.
      *
-     *   · **el ticket se adelantó** — sumó cobros del DÍA a un corte hecho antes
-     *     de que entraran. Manda la guardada. Salud 3, 13-ago 12:39: declarado
-     *     $488.80, ticket $542.70; el aviso de Telegram de esa misma hora
-     *     —testigo independiente— dijo **+$0.75**, que es la guardada.
+     * **Sobre 485 cortes con todas las líneas del tiquete:**
      *
-     *   · **el formulario se quedó corto** — omitió los cobros, que sí habían
-     *     entrado. Manda el ticket. Salud 3, 1-sep 21:03 (corte 14378): el
-     *     ticket dice TOTAL CAJA $1,146.46 —1334.54 − 254.18 + 66.10, su propia
-     *     suma—, se contaron $1,146.37, o sea **−$0.09**. La regla vieja
-     *     devolvía **+$66.01**: un sobrante que no existía.
+     *   la suma del tiquete cierra sola      485 / 485   (100%)
+     *   el formulario coincide con ella      373
+     *   el formulario se aparta              112         (23%)
      *
-     * ── El discriminador es la HORA, no el múltiplo ───────────────────────
+     * O sea: `subtotal − vales + cobros = total_caja` **nunca** falla, y el
+     * `total_corte` del formulario falla en uno de cada cuatro cortes.
      *
-     * Un corte que se hizo ANTES de que entrara un cobro tiene cortes después.
-     * El ÚLTIMO del día no: a esa hora ya pasó todo lo que iba a pasar, así que
-     * los cobros del ticket son reales y el que resta de menos es el formulario.
+     * Y la premisa de la excepción es falsa. Si el tiquete imprimiera el total
+     * del DÍA, `tk_cobros_credito` sería igual en todos los cortes de una misma
+     * jornada; **crece 40 veces sobre 371 pares consecutivos**, así que reporta
+     * lo que YA entró. Un tiquete no puede adelantarse a un cobro que no ocurrió.
      *
-     * Los dos casos medidos salen con esta regla, y es la única señal que los
-     * separa — el 13-ago era de mediodía y el 1-sep era el último.
+     * El «testigo independiente» que sostenía la excepción —el aviso de Telegram
+     * del 13-ago— se arma con el número del FORMULARIO, o sea el mismo origen
+     * que decía tener razón. No era independiente: era circular.
      *
-     * `ultimoDelDia` lo pone `conTramoPorSalaYDia`, que es quien ve el grupo.
-     * Cuando no viene —un corte recién hecho, que en ese instante ES el último—
-     * se toma como último: es lo que vale en el momento de contar, y es además
-     * el lado con evidencia (sobre 480 cortes con ticket, la firma `+1×` se vio
-     * UNA vez y fue el falso sobrante; las 99 con firma negativa ya usaban el
-     * ticket). */
-    if (c.vecesElCobro === 1 && corte?.ultimoDelDia === false) {
-        return { valor: c.difErp, fuente: 'guardada', esperado: num(corte?.esperado) };
-    }
+     * Lo destapó el corte 14378 de Salud 3: tiquete $1,146.46 (su propia suma),
+     * contado $1,146.37 —**−$0.09**— y la excepción devolvió **+$66.01**, un
+     * sobrante inexistente. Y el intento de arreglarla mirando si era el último
+     * del día tampoco servía: un corte de media mañana con la misma firma habría
+     * fallado igual. La pregunta del usuario fue exactamente ésa.
+     *
+     * Sin excepción no hay caso que distinguir: la cifra sale de la suma que
+     * cierra siempre. */
     return { valor: c.difTicket, fuente: 'ticket', esperado: num(corte?.tk_total_caja) };
 }
 

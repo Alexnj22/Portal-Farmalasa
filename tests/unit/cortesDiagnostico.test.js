@@ -28,42 +28,36 @@ describe('la diferencia propia de un corte', () => {
         expect(diferenciaDelCorte(SALUD5[1]).fuente).toBe('ticket');
     });
 
-    it('deja mandar a la guardada cuando el comprobante sumó un cobro que aún no entraba', () => {
-        // Salud 3, 13-ago 12:39: brecha de exactamente +1× el cobro de crédito,
-        // y NO es el último del día — hubo cortes después. El aviso de Telegram
-        // de esa misma hora, testigo independiente, dijo +$0.75.
-        const c = corte({
-            hora: '12:39:10', total_declarado: 488.80, diferencia_erp: 0.75,
-            tk_total_caja: 542.70, tk_cobros_credito: 54.65, ultimoDelDia: false,
-        });
-        expect(diferenciaDelCorte(c).valor).toBe(0.75);
-        expect(diferenciaDelCorte(c).fuente).toBe('guardada');
-    });
-
-    it('con la MISMA firma, el último del día usa el comprobante', () => {
-        /* Salud 3, 1-sep 21:03 (corte 14378). Misma aritmética que el de
-         * arriba —brecha = +1× los cobros— y la verdad opuesta: a esa hora los
-         * cobros YA habían entrado (el corte de las 12:51 traía
-         * `tk_cobros_credito` en NULL), así que el que resta de menos es el
-         * formulario. El ticket suma bien: 1334.54 − 254.18 + 66.10 = 1146.46.
+    it('el tiquete gana aunque la brecha sea +1x los cobros de crédito', () => {
+        /* Salud 3, 1-sep 21:03 (corte 14378). El tiquete suma
+         * 1334.54 − 254.18 + 66.10 = 1146.61 y se contaron 1146.37: **−$0.09**.
+         * El formulario decía +$66.01 —un sobrante inexistente— porque omitió
+         * los cobros de crédito, que son efectivo que entró al cajón.
          *
-         * La regla vieja devolvía +$66.01 —un sobrante que no existía— sobre un
-         * conteo que estaba nueve centavos corto. */
-        const c = corte({
-            hora: '21:03:45', total_declarado: 1146.37, diferencia_erp: 66.01,
-            tk_total_caja: 1146.46, tk_cobros_credito: 66.10, ultimoDelDia: true,
-        });
-        expect(diferenciaDelCorte(c).valor).toBe(-0.09);
-        expect(diferenciaDelCorte(c).fuente).toBe('ticket');
-    });
-
-    it('sin saber si es el último, se toma como último', () => {
-        // Un corte recién hecho: en ese instante ES el último, y es lo que vale
-        // en el momento de contar. Es además el lado con evidencia.
+         * Hubo una excepción que le daba la razón al formulario con esta firma.
+         * Se quitó con datos: sobre 485 cortes la suma del tiquete cierra en
+         * 485; el formulario se aparta en 112. Y su premisa era falsa —si el
+         * tiquete imprimiera el total del día, `tk_cobros_credito` sería igual
+         * en todos los cortes de la jornada, y crece 40 veces sobre 371 pares. */
         const c = corte({
             hora: '21:03:45', total_declarado: 1146.37, diferencia_erp: 66.01,
             tk_total_caja: 1146.46, tk_cobros_credito: 66.10,
         });
+        expect(diferenciaDelCorte(c).valor).toBe(-0.09);
+        expect(diferenciaDelCorte(c).fuente).toBe('ticket');
+        expect(diferenciaDelCorte(c).esperado).toBe(1146.46);
+    });
+
+    it('y también en un corte de media mañana: la hora no cambia la cuenta', () => {
+        /* La pregunta del usuario: «¿qué pasa si hay 3 cortes en el día?». Un
+         * intento anterior desempataba mirando si era el ÚLTIMO — con eso, un
+         * corte del mediodía con la misma firma habría vuelto a inventar el
+         * sobrante. Sin excepción no hay nada que desempatar. */
+        const c = corte({
+            hora: '12:39:10', total_declarado: 488.80, diferencia_erp: 55.40,
+            tk_total_caja: 488.80, tk_cobros_credito: 54.65,
+        });
+        expect(diferenciaDelCorte(c).valor).toBe(0);
         expect(diferenciaDelCorte(c).fuente).toBe('ticket');
     });
 });

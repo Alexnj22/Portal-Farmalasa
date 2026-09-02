@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.932.1 — El cierre emite el corte Z, y el tiquete siempre gana
+
+### El Z es un tipo de CORTE, no un efecto de cerrar el turno
+
+El portal llamaba `apertura_caja.php process=cerrar_turno` y **daba por hecho**
+que eso emitía el Z. No lo emite: cierra el turno y nada más. El 1-sep en Salud
+3 el día quedó sin Z y hubo que hacerlo a mano.
+
+El Z sale por el **mismo formulario del corte**, con `tipo_corte = Z` — el
+desplegable que ofrece «Corte de caja / Corte X / Corte Z». Ahora «Cerrar el
+día» hace las dos cosas: **primero el Z, después el cierre**.
+
+**El orden no es libre.** Al revés, el turno queda cerrado y el formulario del
+corte ya no tiene apertura viva de la que salir: el día se quedaría sin Z otra
+vez y sin forma de emitirlo. Y si el Z falla **no se cierra** — se devuelve el
+error y el día sigue abierto, que es lo reparable.
+
+Dos cosas que el Z **no** hace, y las dos son a propósito:
+
+- **No declara un conteo.** Su formulario trae el efectivo calculado y de sólo
+  lectura — «el corte Z no se ingresa nada, ya el ERP lo hace solo y finaliza»
+  (usuario). Inventarle un número al cierre del día sería declarar algo que
+  nadie contó.
+- **No escribe vale.** El corte de caja que lo precede ya lo hizo. Con una
+  salida que llegara entre medio, el Z escribiría un **segundo** vale por dinero
+  ya descontado: un faltante fabricado en el cierre, que no se deshace.
+
+### El tiquete siempre gana, y ahora está medido
+
+Anoche desempaté la firma «brecha = +1× los cobros de crédito» mirando si el
+corte era el último del día. **Pregunta del usuario: «¿qué pasa si hay 3 cortes
+en el día?»** — y tenía razón: con esa regla, un corte de media mañana con la
+misma firma habría vuelto a inventar el sobrante.
+
+La excepción se quitó entera, con datos. Sobre **485 cortes** con todas las
+líneas:
+
+| | |
+|---|---:|
+| la suma del tiquete cierra sola | **485 / 485 (100%)** |
+| el formulario coincide con ella | 373 |
+| **el formulario se aparta** | **112 (23%)** |
+
+`subtotal − vales + cobros = total_caja` **nunca** falla; el `total_corte` del
+formulario falla en uno de cada cuatro.
+
+**Y la premisa de la excepción era falsa.** Si el tiquete imprimiera el total
+del día, `tk_cobros_credito` sería igual en todos los cortes de la jornada:
+**crece 40 veces sobre 371 pares consecutivos**, así que reporta lo que ya
+entró. Un tiquete no puede adelantarse a un cobro que no ocurrió.
+
+El «testigo independiente» que la sostenía —el aviso de Telegram del 13-ago— se
+arma con el número del **formulario**, o sea el mismo origen que decía tener
+razón. Era circular.
+
+Sin excepción no hay caso que distinguir, y la hora deja de importar.
+
 ## v2.932.0 — Promociones por laboratorio: niveles y umbral por sala
 
 El segundo tipo de promoción, y es distinto del primero en casi todo. El de

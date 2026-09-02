@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-    conTramo, desgloseDelCierre, diferenciaDelCorte, formasFueraDelComprobante,
-    repartirEnPartes, sugerenciasDeCorte,
+    cobrosDeCredito, conTramo, desgloseDelCierre, diferenciaDelCorte,
+    formasFueraDelComprobante, repartirEnPartes, sugerenciasDeCorte,
 } from '../../src/utils/cortesDiagnostico';
 
 // Los casos son cortes REALES capturados el 13 y 14 de agosto de 2026. No son
@@ -246,5 +246,67 @@ describe('la pista de una forma que no pasa por la caja', () => {
         const movimientos = [{ tipo: 'ENTRADA', concepto: 'algo', monto: 2.20 }];
         const s = sugerenciasDeCorte(conTramoDe(2.20), movimientos, [{ tipo: 'cheque', total: 2.20 }]);
         expect(s[0].titulo).toContain('cheque');
+    });
+});
+
+// ── A qué corte pertenece cada cobro de crédito ─────────────────────────────
+// El caso base son los tres cobros que Salud 4 hizo desde el portal el 2-sep
+// entre las 10:01 y las 10:04 —dos por transferencia y uno en efectivo—, que es
+// justo la mezcla que el comprobante no distingue.
+const ABONOS_S4 = [
+    { id: 1, hora: '10:01:01', monto: 11.30, forma: 'Transferencia', cliente: 'AUDELIA CALLEJAS' },
+    { id: 2, hora: '10:03:15', monto: 8.55, forma: 'Efectivo', cliente: 'GLENDA ANAYA' },
+    { id: 3, hora: '10:04:18', monto: 10.00, forma: 'Transferencia', cliente: 'AUDELIA CALLEJAS' },
+];
+
+describe('los cobros de crédito de un corte', () => {
+    it('parte el día por la hora del corte, no por el día entero', () => {
+        const c = cobrosDeCredito({ hora: '10:03:30', tk_cobros_credito: 19.85 }, ABONOS_S4);
+        expect(c.antes.map((a) => a.id)).toEqual([1, 2]);
+        expect(c.despues.map((a) => a.id)).toEqual([3]);
+        expect(c.hasta).toBe(19.85);
+        expect(c.cuadra).toBe(true);
+    });
+
+    it('separa lo que NO entró al cajón', () => {
+        // Es la mitad que el comprobante no distingue: de los $29.85, sólo
+        // $8.55 llegaron en billetes. Si el corte los espera todos en efectivo,
+        // el faltante es exactamente $21.30 y no hay nada que buscar.
+        const c = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 29.85 }, ABONOS_S4);
+        expect(c.efectivo).toBe(8.55);
+        expect(c.noEfectivo).toBe(21.30);
+    });
+
+    it('un abono anulado no cuenta ni antes ni después', () => {
+        const c = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 19.85 },
+            [...ABONOS_S4, { id: 9, hora: '11:00:00', monto: 50, forma: 'Efectivo', anulado: true }]);
+        expect(c.hasta).toBe(29.85);
+        expect(c.antes.some((a) => a.id === 9)).toBe(false);
+    });
+
+    it('registrar menos que el comprobante NO es un hallazgo', () => {
+        // Los $66.10 de Salud 3 del 1-sep fueron nueve cobros cargados en la
+        // pantalla de la caja: ninguno pasó por el portal. La brecha negativa es
+        // eso, no un descuadre.
+        const c = cobrosDeCredito({ hora: '21:03:45', tk_cobros_credito: 66.10 }, []);
+        expect(c.hasta).toBe(0);
+        expect(c.brecha).toBe(-66.10);
+        expect(c.cuadra).toBe(false);
+    });
+
+    it('ofrece el cobro que no es efectivo cuando falta dinero', () => {
+        const cobros = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 29.85 }, ABONOS_S4);
+        const s = sugerenciasDeCorte({ ...corte({ hora: '13:00:00' }), tramo: -21.30 }, [], [], cobros);
+        expect(s[0].titulo).toContain('21.30');
+        expect(s[0].titulo).toContain('no entraron en efectivo');
+    });
+
+    it('se calla sobre los cobros cuando el detalle ya los explica', () => {
+        const cobros = cobrosDeCredito({ hora: '10:30:00', tk_cobros_credito: 8.55 },
+            [ABONOS_S4[1]]);
+        const s = sugerenciasDeCorte(
+            { ...corte({ hora: '10:30:00' }), tramo: -3.00, tk_cobros_credito: 8.55 }, [], [], cobros,
+        );
+        expect(s.some((x) => x.titulo.includes('cobros de crédito'))).toBe(false);
     });
 });

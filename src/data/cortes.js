@@ -307,6 +307,39 @@ export async function fetchTurnoDelCorte(corteId) {
     return data || [];
 }
 
+/**
+ * Los cobros de crédito de UNA sala en UN día, con la hora real de cada uno.
+ *
+ * Es la única forma de saber a qué corte pertenece cada cobro. El sistema de la
+ * caja los publica como movimientos SIN hora, todos con el mismo concepto
+ * («POR ABONO A CREDITO») y sin decir de quién ni cómo pagó: el 1-sep en Salud 3
+ * la línea «COBROS CREDITO» valía $66.10 y detrás había nueve renglones
+ * idénticos. Desde que el abono se hace en el portal, la hora existe.
+ *
+ * ── `{ filas, pude }` y no una lista a secas ───────────────────────────────
+ * Mismo motivo que `fetchEntradasParaCruce`: una lista vacía tiene DOS causas
+ * que se ven idénticas —que ese día no hubo cobros, o que quien mira no puede
+ * verlos—. Y acá el segundo caso no es raro: la tabla pide `caja_vales`, y
+ * medido en producción **Gerente General y Subjefe/a de Sala ven cortes y no
+ * ven vales**. Sin la distinción, a las dos personas que más revisan un
+ * descuadre la pantalla les diría «no hubo cobros de crédito» sobre un día que
+ * los tuvo. El RPC lanza en ese caso, por eso se puede distinguir.
+ *
+ * OJO con lo que esta lista NO es: son los cobros hechos DESDE EL PORTAL. Un
+ * abono cargado en la pantalla de la caja no está acá, así que sumar menos que
+ * el comprobante NO es un hallazgo — es la parte que todavía no pasa por acá.
+ */
+export async function fetchAbonosDelDia({ branchId, fecha }) {
+    const { data, error } = await supabase.rpc('get_abonos_del_dia', {
+        p_branch: Number(branchId), p_fecha: fecha,
+    });
+    if (error) {
+        console.warn('cortes: no se pudieron leer los cobros de crédito:', error.message);
+        return { filas: [], pude: false };
+    }
+    return { filas: data || [], pude: true };
+}
+
 /** Las resoluciones de un rango, con sus personas y quién las firmó. */
 export async function fetchDiferencias({ desde, hasta }) {
     const { data, error } = await supabase.rpc('get_cortes_diferencias', {

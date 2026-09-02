@@ -21,6 +21,91 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.941.0 — El corte dice a qué corte pertenece cada cobro de crédito
+
+Migración `20260902163013`. El detalle de un corte ya no muestra la línea
+«cobros de crédito» como un número suelto: la abre uno por uno, **con la hora
+de cada cobro**.
+
+### Por qué hacía falta
+
+El comprobante imprime esa línea como un solo total del día, y los movimientos
+que publica el sistema de la caja llegan **sin hora** y con el mismo concepto
+para todos: los 113 que hay capturados dicen «POR ABONO A CREDITO» y nada más —
+ni quién pagó, ni cómo, ni cuándo.
+
+El 1-sep en Salud 3 esa línea valía **$66.10 en nueve cobros**, y detrás había
+nueve renglones idénticos. No se podía saber cuáles ya habían entrado cuando se
+contó el efectivo, así que la única salida era **deducirlo** — y deducirlo fue
+exactamente lo que marcó **+$66.01** de un sobrante que no existía (v2.931.1).
+
+Desde que el cobro se hace desde el portal, esa hora es un dato. Ya no se
+deduce.
+
+### Qué se ve ahora
+
+Cada cobro con su hora, su cliente y su monto, partido por la hora del corte:
+
+```
+Cobros de crédito                                    $29.85
+  10:01  AUDELIA CALLEJAS      Transferencia         $11.30
+  10:03  GLENDA ANAYA                                 $8.55
+  ────────────────────────────────────────────────────────
+  $21.30 no entraron en efectivo. Ese dinero no pasó por la caja.
+  Un cobro más entró después de este corte ($10.00). Pertenece al siguiente.
+```
+
+**La forma de pago sólo se nombra cuando NO es efectivo**, que es el renglón que
+hay que mirar. Escribir «Efectivo» en todas gasta la atención justo ahí.
+
+### Lo que este detalle destapa
+
+**Un cobro por transferencia, tarjeta o cheque no entra al cajón.** Si el
+comprobante lo suma dentro de «cobros de crédito», el corte va a esperar en
+efectivo un dinero que nunca estuvo — y eso se ve como un **faltante exacto por
+ese monto**. Es el defecto de los $66 con otra cara, y ahora el portal lo puede
+producir él mismo: la prueba de Salud 4 del 2-sep fueron $29.85 en tres cobros,
+de los cuales **$21.30 fueron transferencias**.
+
+Por eso el monto va separado y a la vista, y ante un faltante aparece como la
+primera pista de «Qué revisar»: *«$21.30 de los cobros de crédito no entraron en
+efectivo… si el comprobante lo cuenta ahí, no hay nada que buscar en el cajón»*.
+
+⚠️ **Falta medir si el comprobante los cuenta.** Salud 4 todavía no cortaba
+cuando esto se escribió, y su próximo corte lo contesta: si `COBROS CREDITO`
+vuelve con $29.85, los cuenta; si vuelve con $8.55, no. Hasta saberlo el aviso
+está redactado como hipótesis, que es lo que es.
+
+### Lo que esta cuenta NO afirma
+
+**Registrar menos que el comprobante no es un hallazgo.** Sólo están los cobros
+hechos desde el portal; los que se cargan en la pantalla de la caja no. Los
+$66.10 de Salud 3 fueron nueve de ésos, y la pantalla lo dice con esas palabras
+en vez de denunciar un descuadre que no existe. Al revés sí es señal: registrar
+**más** significa que algo entró después de contar, o que el comprobante no lo
+sumó.
+
+Medido sobre las 48 sala-días capturadas: la suma de los movimientos de abono
+coincide **al centavo con la línea del comprobante en 47**. La que falla es
+Salud 3 del 31-ago, con $60.00 que entraron después del último corte del día —
+justo el caso que esta pantalla ahora nombra.
+
+### Dos cosas que se decidieron aparte
+
+**No es un `select` desde el navegador, es una función.** La tabla de abonos
+pide el permiso de la caja, y el detalle del corte pide el de cortes. Medido:
+**Gerente General y Subjefe/a de Sala ven cortes y NO ven vales** — o sea que a
+las dos personas que más revisan un descuadre la consulta les habría devuelto
+una lista vacía, indistinguible de «ese día no hubo cobros». La función acepta
+cualquiera de los dos permisos y **lanza** cuando no hay ninguno, así que la
+pantalla puede decir «no puedes verlo» en vez de mentir con un cero.
+
+**La pista vieja se calla cuando ya no hace falta.** «Revisa los $X de cobros de
+crédito» se ofrecía siempre, porque hasta ahora esa línea era un número sin nada
+detrás. Cuando todos los cobros pasaron por el portal, en efectivo, y suman lo
+mismo que el comprobante, no queda nada que ir a mirar — y una pista que manda a
+revisar algo ya resuelto le quita el turno a las que sí valen.
+
 ## v2.940.3 — La fecha del abono la escribe el abono
 
 **Se hicieron los tres primeros abonos reales desde el portal** —$8.55 en

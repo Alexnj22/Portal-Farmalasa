@@ -10,12 +10,14 @@ import SegmentedControl from '../common/SegmentedControl';
 import ResolverDiferencia from './ResolverDiferencia';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
 import {
-    fetchDiferencias, fetchMovimientos, fetchPersonas, fetchVentasPorPago, reabrirCorte,
+    fetchAbonosDelDia, fetchDiferencias, fetchMovimientos, fetchPersonas, fetchVentasPorPago,
+    reabrirCorte,
 } from '../../data/cortes';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
 import {
-    desgloseDelCierre, formasFueraDelComprobante, notaDeCifra, severidad, sugerenciasDeCorte,
+    cobrosDeCredito, desgloseDelCierre, entroEnEfectivo, formasFueraDelComprobante, notaDeCifra,
+    severidad, sugerenciasDeCorte,
 } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
@@ -54,6 +56,7 @@ const MOTIVOS_REABRIR = ['Se firmó por error', 'El corte se rehizo', 'Apareció
 const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
 
 const hhmm = (hora) => String(hora || '').slice(0, 5);
+
 const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
 
 // Se capitaliza acá y NO con `capitalize` de CSS: la clase toca cada palabra,
@@ -106,6 +109,10 @@ export default function CorteDetalleModal({
     const [recarga, setRecarga] = useState(0);
     const [reabriendo, setReabriendo] = useState(false);
     const [ventas, setVentas] = useState(null);
+    // `null` mientras no se pidió; después `{ filas, pude }`. Los tres estados
+    // son distintos y la pantalla los dice distinto: sin pedir, sin permiso, y
+    // sin cobros ese día.
+    const [abonos, setAbonos] = useState(null);
 
     const abierto = !!corte;
     const corteId = corte?.id ?? null;
@@ -129,6 +136,7 @@ export default function CorteDetalleModal({
         setMovs([]);
         setDiferencia(null);
         setVentas(null);
+        setAbonos(null);
     }
 
     // Cómo se resolvió su diferencia, si ya se resolvió. Se pide por fecha
@@ -167,6 +175,16 @@ export default function CorteDetalleModal({
         return () => { vivo = false; };
     }, [abierto, branchId, fecha]);
 
+    // Los cobros de crédito del día, con su hora. Es lo que permite decir a QUÉ
+    // corte pertenece cada uno en vez de suponerlo — la suposición es lo que
+    // marcó +$66.01 de sobrante inexistente en Salud 3 el 1-sep.
+    useEffect(() => {
+        if (!abierto || branchId == null || !fecha) return;
+        let vivo = true;
+        fetchAbonosDelDia({ branchId, fecha }).then((r) => { if (vivo) setAbonos(r); });
+        return () => { vivo = false; };
+    }, [abierto, branchId, fecha]);
+
     // Quién firmó la decisión. Se pide por corte porque el nombre y la foto
     // tienen que verse SIEMPRE que haya una decisión, y el listado de personal
     // no está cargado para quien sólo tiene el módulo de cortes. Se guarda en
@@ -193,9 +211,16 @@ export default function CorteDetalleModal({
     // Las formas que el comprobante no nombra: transferencia, cheque, bitcoin.
     const invisibles = useMemo(() => formasFueraDelComprobante(ventas), [ventas]);
 
+    // Antes de `sugerencias`, que lo usa: leerlo después de su `const` lanza en
+    // cada render y el aviso llega minificado (`gate:tdz`).
+    const cobros = useMemo(
+        () => (visible ? cobrosDeCredito(visible, abonos?.filas || []) : null),
+        [visible, abonos],
+    );
+
     const sugerencias = useMemo(
-        () => (visible ? sugerenciasDeCorte(visible, movs, invisibles) : []),
-        [visible, movs, invisibles],
+        () => (visible ? sugerenciasDeCorte(visible, movs, invisibles, cobros) : []),
+        [visible, movs, invisibles, cobros],
     );
     const explicacion = useMemo(() => (visible ? notaDeCifra(visible) : null), [visible]);
 
@@ -581,6 +606,109 @@ export default function CorteDetalleModal({
                                 </span>{' '}
                                 Ese dinero no pasa por la caja y el comprobante no lo nombra.
                             </p>
+                        )}
+
+                        {/* ── Los cobros de crédito, uno por uno y con su hora ──
+                            El comprobante imprime «COBROS CREDITO» como un solo
+                            número del día, y los movimientos del sistema de la
+                            caja llegan sin hora y con el mismo concepto para
+                            todos («POR ABONO A CREDITO»). Con eso, el 1-sep en
+                            Salud 3 esa línea valía $66.10 y detrás había nueve
+                            renglones idénticos: no se podía saber cuáles habían
+                            entrado antes de contar el efectivo.
+
+                            Desde que el cobro se hace en el portal esa hora es
+                            un dato, así que acá se dice a qué corte pertenece
+                            cada uno en vez de deducirlo — deducirlo es lo que
+                            marcó +$66.01 de un sobrante que no existía. */}
+                        {!noEsConteo && cobros
+                            && (cobros.cobros > 0 || cobros.antes.length > 0 || cobros.despues.length > 0) && (
+                            <div data-surface="card" className="p-3">
+                                <div className="flex items-baseline justify-between gap-3 mb-2">
+                                    <span className="text-caption font-black uppercase tracking-widest text-content-3">
+                                        Cobros de crédito
+                                    </span>
+                                    <span className="text-label font-bold tabular-nums text-content">
+                                        {formatMoney(cobros.cobros ?? cobros.hasta)}
+                                    </span>
+                                </div>
+
+                                {/* Sin permiso NO se pinta una lista vacía: eso se
+                                    lee igual que «ese día no hubo cobros», y quien
+                                    revisa un descuadre se quedaría sin buscar. */}
+                                {abonos && !abonos.pude ? (
+                                    <p className="text-caption text-content-2">
+                                        No puedes ver el detalle de estos cobros. El comprobante los suma,
+                                        pero para verlos uno por uno hace falta el permiso de la caja.
+                                    </p>
+                                ) : cobros.antes.length === 0 && cobros.despues.length === 0 ? (
+                                    <p className="text-caption text-content-2">
+                                        Ninguno se cobró desde el portal, así que no se sabe a qué hora entró
+                                        cada uno. Los que se cobren desde el portal sí quedan con su hora.
+                                    </p>
+                                ) : (
+                                    <ul className="space-y-1.5">
+                                        {cobros.antes.map((a) => (
+                                            <li key={a.id} className="flex items-baseline justify-between gap-3">
+                                                <span className="min-w-0 flex items-baseline gap-2">
+                                                    <span className="text-caption tabular-nums text-content-3 shrink-0">
+                                                        {hhmm(a.hora)}
+                                                    </span>
+                                                    <span className="text-caption text-content truncate">{a.cliente}</span>
+                                                </span>
+                                                <span className="flex items-baseline gap-2 shrink-0">
+                                                    {/* La forma se nombra SÓLO cuando no
+                                                        es efectivo: escribir «Efectivo» en
+                                                        todas las filas gasta la atención
+                                                        justo en la que hay que mirar. */}
+                                                    {!entroEnEfectivo(a) && (
+                                                        <span className="text-caption text-warning-text">{a.forma}</span>
+                                                    )}
+                                                    <span className="text-caption font-bold tabular-nums text-content">
+                                                        {formatMoney(a.monto)}
+                                                    </span>
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+
+                                {/* Las tres notas al pie. Cada una contesta una
+                                    pregunta distinta y ninguna es un veredicto,
+                                    así que van como nota y no como aviso. */}
+                                {(cobros.noEfectivo > 0.005
+                                    || cobros.despues.length > 0
+                                    || (cobros.antes.length > 0 && cobros.brecha < -0.005)) && (
+                                    <div className="mt-2.5 pt-2 border-t border-divider space-y-1 text-caption text-content-2">
+                                        {cobros.noEfectivo > 0.005 && (
+                                            <p>
+                                                <span className="font-bold text-content">
+                                                    {formatMoney(cobros.noEfectivo)} no entraron en efectivo.
+                                                </span>{' '}
+                                                Ese dinero no pasó por la caja, así que no tiene que estar en el cajón.
+                                            </p>
+                                        )}
+                                        {cobros.despues.length > 0 && (
+                                            <p>
+                                                <span className="font-bold text-content">
+                                                    {cobros.despues.length === 1
+                                                        ? 'Un cobro más entró después de este corte'
+                                                        : `${cobros.despues.length} cobros más entraron después de este corte`}
+                                                    {' '}({formatMoney(cobros.despues.reduce((t, a) => t + Number(a.monto || 0), 0))}).
+                                                </span>{' '}
+                                                Pertenecen al corte siguiente, no a éste.
+                                            </p>
+                                        )}
+                                        {cobros.antes.length > 0 && cobros.brecha < -0.005 && (
+                                            <p>
+                                                De los {formatMoney(cobros.cobros)} que cuenta el comprobante,{' '}
+                                                {formatMoney(cobros.hasta)} se cobraron desde el portal. El resto se
+                                                cargó en la pantalla de la caja y no tiene hora.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         )}
 
                         {sugerencias.length > 0 && (

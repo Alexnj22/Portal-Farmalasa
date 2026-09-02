@@ -149,3 +149,64 @@ export async function decidirExcedente(id, aprobar, motivo = null) {
     if (error) throw error;
     return data ?? null;
 }
+
+/**
+ * Corrige el lote, la presentación y quién paga.
+ *
+ * Su efecto es retroactivo a propósito: son declaraciones sobre el acuerdo con
+ * el laboratorio, y el cálculo vuelve a leer las ventas con el dato bueno. Los
+ * MONTOS no pasan por acá — ésos van con fecha por `editarTarifaRenglon`, para
+ * que corregirlos no reescriba lo que alguien ya se ganó.
+ *
+ * `null` en un campo significa «no lo toques». Para BORRAR el lote o volver a
+ * «cualquier presentación» hay que decirlo aparte, con las dos banderas.
+ */
+export async function editarRenglon({
+    renglonId, loteTotal = null, factorUnidades = null,
+    tieneBono = null, paga = null, supplierId = null,
+    borrarLote = false, cualquierPresentacion = false,
+    // El reparto viaja CON el lote: son una sola decisión. Por separado se
+    // bloqueaban entre sí — bajar el lote pedía arreglar el reparto, y el
+    // reparto no se podía cambiar por no cuadrar con el lote viejo.
+    reparto = null,
+}) {
+    const { data, error } = await supabase.rpc('editar_renglon', {
+        p_renglon_id:      Number(renglonId),
+        p_lote_total:      loteTotal === null || loteTotal === '' ? null : Number(loteTotal),
+        p_factor_unidades: factorUnidades === null || factorUnidades === '' ? null : Number(factorUnidades),
+        p_tiene_bono:      tieneBono,
+        p_paga:            paga,
+        p_supplier_id:     supplierId === null || supplierId === '' ? null : Number(supplierId),
+        p_borrar_lote:     !!borrarLote,
+        p_cualquier_pres:  !!cualquierPresentacion,
+        p_reparto:         reparto,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
+/** Reemplaza el reparto de un renglón. Reemplaza y no parchea: tiene que sumar. */
+export async function editarReparto(renglonId, reparto) {
+    const { data, error } = await supabase.rpc('editar_reparto', {
+        p_renglon_id: Number(renglonId),
+        p_reparto: reparto,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
+/** Quita un producto. No se puede si ya se decidió algún excedente suyo. */
+export async function quitarRenglon(renglonId) {
+    const { data, error } = await supabase.rpc('quitar_renglon', {
+        p_renglon_id: Number(renglonId),
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
+/** Borra una promoción que sigue en borrador. La que ya corrió es historia. */
+export async function borrarPromocion(id) {
+    const { data, error } = await supabase.rpc('borrar_promocion', { p_id: Number(id) });
+    if (error) throw error;
+    return data ?? null;
+}

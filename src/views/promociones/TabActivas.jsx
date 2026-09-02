@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, Search, Plus, Power, PauseCircle } from 'lucide-react';
+import { Tag, Search, Plus, Power, PauseCircle, Pencil } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
@@ -17,7 +17,7 @@ import {
  * en filas obligaría a una fila por renglón y perdería justo lo que hay que
  * leer de un vistazo — cuánto queda del lote.
  */
-export default function TabActivas({ promos, busqueda, puedeEditar, onCambio, onNueva }) {
+export default function TabActivas({ promos, busqueda, puedeEditar, onCambio, onNueva, onEditar }) {
     if (!promos.length) {
         // Buscar sin resultados NO es un vacío: uno se arregla borrando el
         // filtro y el otro no tiene arreglo (§26.2).
@@ -49,13 +49,14 @@ export default function TabActivas({ promos, busqueda, puedeEditar, onCambio, on
                     promo={p}
                     puedeEditar={puedeEditar}
                     onCambio={onCambio}
+                    onEditar={() => onEditar?.(p.id)}
                 />
             ))}
         </div>
     );
 }
 
-function TarjetaPromocion({ promo, puedeEditar, onCambio }) {
+function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar }) {
     const [ocupado, setOcupado] = useState(false);
     const [fallo, setFallo] = useState(null);
 
@@ -108,16 +109,25 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio }) {
 
             {fallo && <p className="text-caption text-danger">{fallo}</p>}
 
-            {puedeEditar && promo.estado !== 'finalizada' && (
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    icon={promo.estado === 'activa' ? PauseCircle : Power}
-                    loading={ocupado}
-                    onClick={alternar}
-                >
-                    {promo.estado === 'activa' ? 'Volver a borrador' : 'Activar'}
-                </Button>
+            {puedeEditar && (
+                <div className="flex gap-2">
+                    {promo.estado !== 'finalizada' && (
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={promo.estado === 'activa' ? PauseCircle : Power}
+                            loading={ocupado}
+                            onClick={alternar}
+                            className="flex-1"
+                        >
+                            {promo.estado === 'activa' ? 'Volver a borrador' : 'Activar'}
+                        </Button>
+                    )}
+                    <Button variant="secondary" size="sm" icon={Pencil}
+                        onClick={onEditar} className="flex-1">
+                        Editar
+                    </Button>
+                </div>
             )}
         </div>
     );

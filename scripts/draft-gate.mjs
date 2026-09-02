@@ -96,6 +96,18 @@ const RE_BORRADOR = /\bfrom\s+['"][^'"]*(draftUtils|useBorrador)['"]|\b(saveDraf
  * una excepción: es deuda, y va al baseline.
  */
 const EXCEPCIONES = {
+  'src/views/promociones/EditarPromocionModal.jsx':
+    'Los campos NO están vacíos esperando que alguien los llene: vienen ' +
+    'PRECARGADOS del servidor con lo que la promoción tiene hoy, y cada bloque ' +
+    '—lote y reparto, montos, fecha— se guarda con su propio botón apenas se ' +
+    'toca. No hay un estado largo sin guardar que una pausa se pueda llevar. ' +
+    'Y un borrador acá sería peor que no tenerlo: restauraría valores viejos ' +
+    'ENCIMA de los que el servidor ya tiene —que pueden haber cambiado por otra ' +
+    'sesión, o por el propio ciclo nocturno al cerrar un renglón— y el siguiente ' +
+    'clic en «guardar» los escribiría como si fueran la corrección de alguien. ' +
+    'Es la misma familia que el conteo de MiCajaView: no protegería trabajo, ' +
+    'fabricaría un dato. El de CREAR una promoción sí lleva borrador, porque ' +
+    'ahí no hay nada en el servidor contra lo cual chocar.',
   'src/views/MiCajaView.jsx':
     'Los 6 controles NO son un formulario: están repartidos en CUATRO diálogos ' +
     'distintos —abrir, anotar un movimiento, cortar, cerrar— y el más largo tiene ' +

@@ -14,6 +14,7 @@ import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';
 import TabExcedentes from './TabExcedentes';
 import PromocionModal from './PromocionModal';
+import EditarPromocionModal from './EditarPromocionModal';
 
 /**
  * Promociones por producto — `docs/PLAN-PROMOCIONES-2026-09-01.md`.
@@ -43,6 +44,7 @@ export default function PromocionesView() {
     // distinguir «tu cargo no tiene el módulo» de «falló la consulta».
     const [error, setError] = useState(null);
     const [modal, setModal] = useState(false);
+    const [editando, setEditando] = useState(null);   // id de la promoción a corregir
     const [recarga, setRecarga] = useState(0);
 
     const recargar = useCallback(() => setRecarga((n) => n + 1), []);
@@ -119,6 +121,7 @@ export default function PromocionesView() {
                 puedeEditar={puedeEditar}
                 onCambio={recargar}
                 onNueva={() => setModal(true)}
+                onEditar={setEditando}
             />
         );
     };
@@ -143,6 +146,15 @@ export default function PromocionesView() {
 
                 {cuerpo()}
             </div>
+
+            {editando && (
+                <EditarPromocionModal
+                    promocionId={editando}
+                    open={!!editando}
+                    onClose={() => setEditando(null)}
+                    onCambio={recargar}
+                />
+            )}
 
             {modal && (
                 <PromocionModal

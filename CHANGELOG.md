@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.928.1 — Promociones — corregir una promoción ya creada
+
+Una promoción guardada no se podía tocar. Dos de las funciones para corregirla
+existían desde el primer día y **ninguna pantalla las llamaba**; para el lote, la
+presentación, el reparto y quitar un producto no había función. Un error de dedo
+obligaba a rehacerla entera — y borrarla tampoco se podía.
+
+Ahora cada promoción tiene su botón **Editar**, y adentro la pantalla separa dos
+cosas que no se corrigen igual, porque mezclarlas engaña:
+
+- El **lote**, la **presentación**, **quién paga** y el **reparto** son
+  declaraciones sobre el acuerdo. Corregirlas es retroactivo a propósito: el
+  cálculo vuelve a leer las ventas con el dato bueno.
+- Los **montos** ya se ganaron. Cambiarlos **no reescribe el pasado**: rigen
+  desde el día del cambio, y lo vendido antes se sigue pagando con el monto que
+  regía ese día. Por eso tienen su propio botón, que lo dice.
+
+Se puede además quitar un producto y borrar la promoción — esto último **sólo
+mientras esté en borrador**: una que ya corrió es historia y se finaliza, no se
+borra. Y ninguna de las dos si ya se decidió algún excedente suyo: una decisión
+tomada es un hecho del que alguien tiene que poder rendir cuentas.
+
+**Lo que la prueba encontró, y sólo aparecía con datos reales:** el lote y el
+reparto se bloqueaban entre sí. Bajar el lote pedía arreglar el reparto primero,
+y el reparto no se podía cambiar porque no cuadraba con el lote viejo — un
+candado sin llave, con cada función defendiendo bien su parte y el mensaje de
+error mandando a hacer justo lo que la otra iba a rechazar. La corrección no fue
+aflojar la validación sino reconocer que **son una sola decisión**, como ya lo
+eran al crear la promoción: viajan juntos y se validan contra el estado final.
+
+Siete casos verificados contra producción, incluidos los frenos: bajar el lote
+con su reparto nuevo, un reparto que no cuadra, quitar lote y reparto de una,
+pasar a «sólo mide», quitar un producto, borrar un borrador y **el rechazo al
+intentar borrar una promoción activa**.
+
 ## v2.928.0 — La sala no ve los montos antes de contar, y los movimientos sacan papel
 
 Tres cosas reportadas mirando la pantalla en vivo.

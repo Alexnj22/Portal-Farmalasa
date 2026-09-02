@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Building2, CalendarClock, HandCoins, Search, UserCircle2 } from 'lucide-react';
+import { AlertTriangle, Building2, CalendarClock, HandCoins, RefreshCw, Search, UserCircle2 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -16,7 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
-import { abonarCredito, DIAS_DE_PLAZO, edadDelCredito, fetchCreditos } from '../data/creditos';
+import { abonarCredito, DIAS_DE_PLAZO, edadDelCredito, fetchCreditos, fetchUltimaLectura } from '../data/creditos';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { formatMoney } from '../utils/formatNumber';
 import { tokenMatch } from '../utils/searchUtils';
@@ -61,6 +61,16 @@ const VER = [
 
 const VACIO = [];
 
+/** Hace cuánto se leyó la cartera, en palabras. Un reloj exacto obliga a restar
+ *  de cabeza; lo que se quiere saber es sólo si está al día. */
+function desdeLaLectura(iso) {
+    const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    if (min < 2)  return 'Al día';
+    if (min < 60) return `Leído hace ${min} min`;
+    const h = Math.round(min / 60);
+    return `Leído hace ${h} h`;
+}
+
 export default function CuentasPorCobrarView() {
     const { hasPermission, getScope, user } = useAuth();
     const branches = useStaff((s) => s.branches) || VACIO;
@@ -88,6 +98,7 @@ export default function CuentasPorCobrarView() {
     const [creditos, setCreditos] = useState(VACIO);
     const [cargando, setCargando] = useState(true);
     const [abonando, setAbonando] = useState(null);
+    const [lectura, setLectura] = useState(null);
 
     /* Con alcance de una sala, el selector no se dibuja y la lista es la propia
      * —el servidor la acota igual—, así que no hay forma de mirar otra. */
@@ -100,18 +111,23 @@ export default function CuentasPorCobrarView() {
 
     const nombreDeSala = useMemo(() => new Map(branches.map((b) => [b.id, b.name])), [branches]);
 
-    /* Se lee EN VIVO del sistema de la caja, sin copia en el portal. El saldo
-     * cambia cada vez que alguien cobra, y una copia de hace media hora
-     * mostraría una deuda ya pagada — o sea, cobrarle dos veces a un cliente. */
+    /* Sale del ESPEJO del portal, que un cron refresca cada hora. Antes se leía
+     * en vivo del sistema de la caja y abrir la pantalla costaba seis
+     * peticiones EN SERIE —la sucursal vive en su sesión, no se pueden hacer a
+     * la vez—, o sea varios segundos de espera cada vez.
+     *
+     * El cobro sigue releyendo el origen: la lista se mira acá, el cobro se
+     * decide allá. */
     const cargar = useCallback(async () => {
         setCargando(true);
-        const r = await fetchCreditos({ sala: sala || null });
+        const [r, l] = await Promise.all([fetchCreditos({ sala: sala || null }), fetchUltimaLectura()]);
         if (r?.error) {
             showToast('No se pudo leer la cartera', mensajeAmigable(r.error), 'error');
             setCreditos(VACIO);
         } else {
             setCreditos(r?.creditos || VACIO);
         }
+        setLectura(l);
         setCargando(false);
     }, [sala, showToast]);
 
@@ -195,6 +211,17 @@ export default function CuentasPorCobrarView() {
                                 {vencidos}
                             </span>
                         </span>
+
+                        {/* Cuándo se leyó. Una lista congelada se ve exactamente
+                            igual de bien que una fresca, así que el sello es lo
+                            único que las distingue. Y se dice en horas y no con
+                            un reloj: lo que importa es si está al día. */}
+                        {lectura?.corrio_el && (
+                            <span className="min-w-0 flex items-center gap-1.5 text-micro text-content-3">
+                                <RefreshCw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                {desdeLaLectura(lectura.corrio_el)}
+                            </span>
+                        )}
                     </div>
 
                     <FilterBar

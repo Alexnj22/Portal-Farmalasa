@@ -1,6 +1,9 @@
 import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
+import {
+  creditosDeLaSala, FORMAS_DE_PAGO as FORMAS, getCortesCreds, getSessionCookie, ABONO_URL,
+} from "../_shared/creditos.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -26,91 +29,9 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // se llama `credito` y la traducción al nombre ajeno se hace en un solo sitio.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const BASE      = "https://clientesdte3.oss.com.sv/farma_salud/";
-const LOGIN_URL = `${BASE}login.php`;
-const SESION_URL = `${BASE}cambio_sesion.php`;
-const LISTA_URL = `${BASE}admin_credito_dt.php`;
-const ABONO_URL = `${BASE}abono_credito.php`;
-
-/** Las formas de pago que el origen acepta, tal cual las ofrece su desplegable. */
-const FORMAS = ["Efectivo", "Recibo", "Voucher", "Transferencia", "Cheque", "Tarjeta", "Bitcoin", "Otro"];
-
-/* Las MISMAS credenciales que `operar-caja` y `hacer-corte-caja`: es la misma
- * sesión de la caja, y el abono entra por la misma puerta que un ingreso. */
-function getCortesCreds(): { username: string; password: string } {
-  const raw = Deno.env.get("ERP_CORTES_CREDS");
-  if (!raw) throw new Error("ERP_CORTES_CREDS secret no configurado.");
-  return JSON.parse(raw);
-}
 
 const json = (b: unknown, s = 200, h: HeadersInit = {}) =>
   new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json", ...h } });
-
-async function getSessionCookie(u: string, p: string): Promise<string> {
-  const res = await fetch(LOGIN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ username: u, password: p, m: "1" }).toString(),
-    redirect: "manual", signal: AbortSignal.timeout(20_000),
-  });
-  const cookie = res.headers.get("set-cookie")?.split(";")[0];
-  if (!cookie) throw new Error("login sin cookie de sesión");
-  return cookie;
-}
-
-async function abrirSala(cookie: string, erpId: number): Promise<void> {
-  const r = await fetch(SESION_URL, {
-    method: "POST",
-    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ process: "set_sucursal", id_sucursal: String(erpId) }).toString(),
-    signal: AbortSignal.timeout(20_000),
-  });
-  let ok = false;
-  try { ok = Boolean(JSON.parse(await r.text())?.success); } catch { ok = false; }
-  // La lista y el abono son POR SUCURSAL: sin fijarla, se leería —o se
-  // abonaría— en la sala equivocada, y eso no se deshace.
-  if (!ok) throw new Error(`no se pudo abrir la sala ${erpId}`);
-}
-
-/** El HTML de una celda, en texto. El listado del origen viene con marcas. */
-const soloTexto = (s: string) => String(s ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-
-/**
- * Los créditos de UNA sala.
- *
- * `length` alto y una sola pasada: son ~800 por sala en año y medio, y el
- * listado del origen pagina del lado del servidor. Pedir de a poco costaría una
- * vuelta de red por página para armar la misma lista.
- */
-async function creditosDeLaSala(cookie: string, erpId: number, desde: string, hasta: string) {
-  await abrirSala(cookie, erpId);
-  const url = `${LISTA_URL}?fechai=${desde}&fechaf=${hasta}&draw=1&start=0&length=5000`;
-  const txt = await (await fetch(url, {
-    headers: { Cookie: cookie, "X-Requested-With": "XMLHttpRequest" },
-    signal: AbortSignal.timeout(60_000),
-  })).text();
-  let datos: { data?: unknown[][] };
-  try { datos = JSON.parse(txt); } catch { throw new Error("el listado de créditos no vino en JSON"); }
-
-  return (datos.data ?? []).map((f) => {
-    const total   = Number(f[6]) || 0;
-    const abonado = Number(f[7]) || 0;
-    const saldo   = Number(f[8]) || 0;
-    // El id de la FACTURA sale del enlace «Ver Detalles»; el de la fila es el
-    // del CRÉDITO. Los dos hacen falta y no son el mismo número.
-    const factura = /id_factura=(\d+)/.exec(String(f[10] ?? ""))?.[1] ?? null;
-    return {
-      credito: String(f[0]),
-      fecha: String(f[1]),
-      cliente: soloTexto(String(f[2])),
-      tipo_doc: String(f[3] ?? ""),
-      documento: String(f[4] ?? ""),
-      total, abonado, saldo,
-      estado: soloTexto(String(f[9] ?? "")),
-      factura_erp: factura,
-    };
-  });
-}
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);

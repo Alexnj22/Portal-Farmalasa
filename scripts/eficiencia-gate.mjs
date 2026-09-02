@@ -103,6 +103,29 @@ const CRONS = [
   },
   // ── Los que hablan con el sistema en cada corrida ──────────────────────────
   {
+    job: 'creditos-cada-hora', slug: 'sync-creditos', cadencia: '0 * * * *',
+    corridasDia: 24, sistema: 6,
+    motivo: 'Trae las cuentas por cobrar de las seis salas al portal (2,387 créditos). Son 6 '
+          + 'listados, uno por sala y EN SERIE: la sucursal vive en la sesión del origen, así que '
+          + 'dos a la vez se pisan la sala y devuelven la cartera equivocada sin dar error. '
+          + 'Cada hora y no más seguido porque lo único que cambia entre corridas son los abonos '
+          + 'hechos POR FUERA del portal — los del portal ya quedan registrados al hacerlos. '
+          + 'Y no menos seguido porque de esta copia sale la pantalla: leerla en vivo costaba '
+          + 'esas mismas 6 peticiones en serie CADA VEZ que alguien abría la vista. '
+          + 'Escribe sólo lo que cambió (`IS DISTINCT FROM`): medido el 2-sep, la segunda '
+          + 'corrida procesó 2,387 y escribió 0.',
+  },
+  {
+    job: 'creditos-vencidos-0800-sv', slug: 'avisar-creditos-vencidos', cadencia: '0 14 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Avisa a quien vendió y a la jefatura de sala cuando un crédito se pasó del mes. '
+          + '`sistema: 0` porque lee el espejo del portal, no el origen. Un aviso por SALA y no '
+          + 'uno por crédito —34 avisos serían ruido que se aprende a ignorar en una semana—, y '
+          + 'la clave antiduplicado lleva el día adentro, así que suena una vez por día mientras '
+          + 'haya algo vencido. A las 8 SV y DESPUÉS de la corrida de las 13:00 UTC: al revés '
+          + 'avisaría sobre créditos que alguien ya pagó ayer.',
+  },
+  {
     job: 'cortes-caja-30s', slug: 'sync-cortes-caja', cadencia: '30 seconds',
     corridasDia: 1920, sistema: 6,
     motivo: 'Cada 30 s de 7 a 23 SV porque quien corta la caja revisa la diferencia EN EL MOMENTO '

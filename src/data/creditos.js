@@ -1,16 +1,21 @@
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 /**
  * Los créditos de los clientes — verlos y abonarles.
  *
- * ── La lista se lee EN VIVO del sistema de origen ─────────────────────────
- * No hay copia en el portal a propósito. El saldo de un crédito cambia cada vez
- * que alguien cobra en la caja, y una copia que se sincroniza cada media hora
- * mostraría una deuda que ya se pagó — que es peor que no mostrarla: alguien le
- * cobraría dos veces a un cliente. Son ~800 filas por sala y la lectura es una
- * sola petición.
+ * ── Dos fuentes, y cada una para lo suyo ──────────────────────────────────
  *
- * Lo que SÍ vive en el portal es quién cobró y a qué hora
+ *   **la lista** sale del espejo del portal (`creditos_de_clientes`), que un
+ *                cron refresca cada hora. Es instantánea y trae amarrada la
+ *                ficha del cliente y quién vendió.
+ *
+ *   **el cobro** relee el saldo del ORIGEN antes de escribir. Ahí no hay copia
+ *                que valga: entre la última corrida y el clic pueden haber
+ *                cobrado en la caja, y abonar de más deja el crédito en
+ *                negativo con el cliente habiendo pagado dos veces.
+ *
+ * Y lo que sólo vive en el portal es quién cobró y a qué hora
  * (`creditos_abonos_portal`), que es justo lo que el origen no guarda.
  */
 
@@ -29,17 +34,46 @@ async function pedir(body) {
 }
 
 /**
- * Todos los créditos del rango, de las salas que la sesión pueda ver.
+ * La cartera, del ESPEJO del portal.
  *
- * El alcance lo decide el SERVIDOR: mandar otro `sala` no muestra la cartera de
- * otra sucursal.
+ * Se lee de `creditos_de_clientes` —que un cron refresca cada hora— y no del
+ * sistema de la caja, y ese cambio es del 2-sep. Motivo: abrir la pantalla
+ * costaba **seis peticiones en serie** al origen (la sucursal vive en su
+ * sesión, así que no se pueden hacer a la vez) y eso son varios segundos de
+ * espera cada vez que alguien entra.
+ *
+ * Lo que se gana no es sólo velocidad: acá el crédito viene amarrado a la
+ * FICHA del cliente y a QUIÉN VENDIÓ, que el origen no puede decir.
+ *
+ * ⚠️ **El cobro NO se decide con esto.** `abonarCredito` relee el saldo del
+ * origen antes de escribir, y ahí no hay copia que valga: entre la última
+ * corrida y el clic pueden haber cobrado en la caja. La regla es *la lista se
+ * mira acá, el cobro se decide allá*.
+ *
+ * El alcance lo aplica el RLS de la tabla: mandar otro `sala` no muestra la
+ * cartera de otra sucursal.
  */
-export function fetchCreditos({ desde = '2025-01-01', hasta = null, sala = null } = {}) {
-    return pedir({
-        accion: 'listar', desde,
-        hasta: hasta || new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10),
-        sala,
-    });
+export async function fetchCreditos({ sala = null } = {}) {
+    let q = supabase.from('creditos_de_clientes')
+        .select('id, branch_id, credito_erp, factura_erp, numero_doc, tipo_doc, fecha, '
+              + 'cliente, total, abonado, saldo, estado, customer_id, vendedor_id, '
+              + 'vencio_el, pagado_el')
+        .order('fecha', { ascending: true });
+    if (sala) q = q.eq('branch_id', Number(sala));
+    /* `fetchAllRows` y no un `.range()` a mano: son 2,387 filas hoy y PostgREST
+     * trunca en 1000 **sin dar error**. Con el corte, la pantalla mostraría los
+     * más viejos y ninguno de los recientes, y no habría forma de notarlo. */
+    const creditos = await fetchAllRows(q);
+    return { ok: true, creditos: creditos || [] };
+}
+
+/** Cuándo se leyó la cartera por última vez. Una pantalla congelada se ve igual
+ *  de bien que una fresca: sin esto no hay forma de distinguirlas. */
+export async function fetchUltimaLectura() {
+    const { data, error } = await supabase.from('creditos_sync')
+        .select('corrio_el, filas, cambios, ok, error').maybeSingle();
+    if (error) { console.error('creditos: fetchUltimaLectura failed:', error.message); return null; }
+    return data;
 }
 
 /**

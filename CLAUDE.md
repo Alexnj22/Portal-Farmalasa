@@ -682,6 +682,44 @@ redeploy, leer el valor VIVO en vez de confiar en la lista — `list_edge_functi
 lo trae en `verify_jwt`, y ahí se vio que cuatro de las cinco coincidían y una
 no.
 
+## Cuentas por cobrar: la lista se mira acá, el cobro se decide allá (2026-09-02)
+
+Los créditos de los clientes viven en el sistema de la caja y el portal tiene un
+**espejo** (`creditos_de_clientes`, cron `creditos-cada-hora`). Las dos mitades
+NO son intercambiables y confundirlas cuesta dinero real:
+
+| | de dónde sale | por qué |
+|---|---|---|
+| **la lista** | el espejo del portal | leerla en vivo son **6 peticiones EN SERIE** al origen —la sucursal vive en su sesión, no se pueden hacer a la vez— cada vez que alguien abre la vista |
+| **el cobro** | se relee el ORIGEN | entre la última corrida y el clic pueden haber cobrado en la caja; abonar de más deja el crédito en negativo y al cliente pagando dos veces |
+
+**`id_factura` lleva el ID DEL CRÉDITO.** Es el nombre que usa el formulario del
+origen y su propio campo oculto viaja con el número del crédito — medido: el
+crédito 1912 tiene la factura 299063. Mandar el de la factura abona al crédito
+de otra persona **sin dar error**, y **el origen no tiene forma de deshacer un
+abono**: no hay borrar ni anular. La traducción vive en UNA línea de
+`creditos-erp` y el parámetro se llama `credito` de punta a punta.
+
+**El amarre con la ficha y el vendedor sale de `sales_invoices`.** El origen
+sólo da el NOMBRE escrito en la factura; `factura_erp` → `erp_invoice_id` trae
+`customer_id` y `cod_vendedor`, y `cod_vendedor` → `employees.code`. Medido el
+2-sep: **2,386 de 2,387 créditos con ficha, 2,328 con vendedor**. El `LEFT JOIN`
+es a propósito — un crédito cuya factura todavía no sincronizó entra igual y
+toma el amarre en la corrida siguiente. Perder la deuda por no tener el amarre
+sería el peor de los dos errores.
+
+**El raspado vive en `_shared/creditos.ts` y no duplicado.** Lo usan la pantalla
+y el cron; escrito dos veces, el día que el origen cambie una columna una copia
+se queda vieja y nadie se entera.
+
+**`vencio_el` y `pagado_el` se OBSERVAN, no se calculan.** Se escriben la
+primera vez que se ven (`COALESCE(viejo, nuevo)`). Derivadas de `fecha + 30`
+cada vez, el aviso no podría saber si ya avisó. Y **vencido exige SALDO**: un
+crédito de hace dos años ya pagado tiene 700 días y no debe nada — el plazo mide
+una deuda, no una fecha.
+
+---
+
 ## MIN·MAX: ABC/XYZ son SOLO clasificación (decisión, no bug)
 
 Confirmado el 2026-07-29 (F4.3 de

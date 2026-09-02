@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.938.0 — Las cuentas por cobrar viven en el portal, y el plazo avisa
+
+Pedido del usuario: *«haz un cron que traiga las cuentas por cobrar, así
+amarramos a los clientes con los usuarios y empleados, y podemos avisar cuando
+una venta ya pasó el plazo»*. Las tres cosas.
+
+### El espejo
+
+`creditos_de_clientes`, que el cron **`creditos-cada-hora`** refresca. Primera
+corrida: **2,387 créditos** de las seis salas, y de ellos **124 con saldo —
+$4,618.86**.
+
+Y el amarre, que es lo que el sistema de origen **no puede** dar: allá sólo
+existe el nombre escrito en la factura. Cruzando `factura_erp` contra las
+ventas del portal salen la ficha del cliente y quién vendió:
+
+| | |
+|---|---:|
+| créditos con **ficha de cliente** | **2,386 de 2,387** |
+| créditos con **vendedor** | **2,328** |
+| clientes distintos | 385 |
+
+### El aviso
+
+**`creditos-vencidos-0800-sv`**, a las 8 de la mañana. Le avisa a **quien
+vendió** —que es quien sabe a quién llamar; el cliente le fió a esa persona, no
+a la empresa— **y a la jefatura de la sala**, porque quien vendió puede estar de
+vacaciones, haberse ido, o simplemente no hacerlo. Un aviso que llega sólo a
+quien ya lo sabe no cierra ningún circuito.
+
+**Uno por SALA, no uno por crédito.** Hoy son 34 vencidos en cinco salas: 34
+avisos son ruido que se aprende a ignorar en una semana; cinco que dicen «7
+créditos, $X, el más viejo lleva N días» son cinco que se leen. Y la clave
+antiduplicado lleva el día adentro, así que suena una vez por día mientras haya
+algo vencido — no una sola vez para siempre.
+
+### La regla que hay que tener presente
+
+**La lista se mira en el portal, el cobro se decide en el origen.** La pantalla
+ahora abre al instante porque lee la copia; **el abono sigue releyendo el saldo
+del sistema de la caja antes de escribir**, y ahí no hay copia que valga: entre
+la última corrida y el clic pueden haber cobrado, y abonar de más deja el
+crédito en negativo con el cliente habiendo pagado dos veces.
+
+### Lo que se cuidó de paso
+
+- **El sync escribe SÓLO lo que cambió** (`IS DISTINCT FROM`). Verificado: la
+  segunda corrida procesó las 2,387 y escribió **0**. Un `upsert` incondicional
+  cada hora serían 57,264 escrituras diarias para reflejar un puñado de abonos.
+- **`vencio_el` y `pagado_el` se observan, no se calculan** — se escriben la
+  primera vez que se ven. Derivadas de `fecha + 30` cada vez, el aviso no podría
+  saber si ya avisó.
+- **El raspado del origen se mudó a un solo sitio** (`_shared/creditos.ts`), que
+  usan la pantalla y el cron. Escrito dos veces, el día que el origen cambie una
+  columna una copia se queda vieja y nadie se entera.
+- **La pantalla dice cuándo se leyó.** Una lista congelada se ve exactamente
+  igual de bien que una fresca.
+
+⚠️ El costo declarado sube de 12.374 a **12.518** peticiones diarias al sistema
+de origen. En el neto **ahorra**: leer la cartera en vivo eran esas mismas 6
+peticiones en serie **cada vez que alguien abría la vista**, sin techo.
+
 ## v2.937.4 — El invariante arranca donde arrancó la fórmula que puede cumplirlo
 
 Migración `20260902142037`. Los ocho días-sala que marcó `v2.937.1` **dejan de

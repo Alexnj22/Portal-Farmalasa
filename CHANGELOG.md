@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.960.2 — El motivo de la salida no viene elegido, y «Todos» deja de ser una opción
+
+Reportado por el usuario sobre «Sacar efectivo»: *«¿por qué la salida de efectivo
+se selecciona en esa opción al entrar? y aparece todos como opción»*. Dos cosas,
+y las dos las contradecía el propio código.
+
+### El motivo venía elegido
+
+El diálogo abría con «Gasto o compra» ya puesto. Lo reponía **el borrador**, en
+silencio — y este mismo archivo dice, doce líneas más abajo:
+
+> *El motivo NO viene elegido de fábrica. Elegirlo por alguien mostraba
+> «Remesadora», «Número de boleta» y «Foto del comprobante» sobre una decisión
+> que nadie tomó, y un motivo preseleccionado se registra sin mirarlo.*
+
+La regla estaba escrita y el borrador la rompía sin decirlo: reponía el motivo de
+una salida que alguien empezó y abandonó, sin ninguna señal de dónde salía.
+
+Ahora **se ofrece** con `AvisoDeBorrador` —el canónico, que ya existía— y con la
+hora, que es lo que permite contestar: lo que decide a una persona no es «hay un
+borrador», es «hay uno de hace diez minutos». Y sólo se ofrece si trae algo: el
+borrador vacío del formulario recién abierto no es trabajo de nadie.
+
+Acá pesa más que en un alta común: lo que se repone no es un nombre a medio
+escribir, es **el motivo por el que sale dinero**.
+
+### «Todos» no es un motivo
+
+El desplegable ofrecía «Todos» arriba de «Remesa» y «Gasto o compra». Es el
+default de `LiquidSelect`, pensado para filtrar una lista, y su propio contrato
+lo dice: *«en formularios de datos usar algo como 'Ninguno'»*. Este select no lo
+pasaba. Ahora dice **«Sin elegir»**, que es lo que hace.
+
 ## v2.960.1 — «Ya está abierta» deja de decir «vuelve a intentarlo»
 
 Medido el 2026-09-02 en Salud 3: **seis intentos de abrir la caja en cuatro

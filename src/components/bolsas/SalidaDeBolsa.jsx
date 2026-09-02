@@ -7,6 +7,7 @@ import IdentidadDeQuienRetira from './IdentidadDeQuienRetira';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
+import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import {
@@ -227,21 +228,54 @@ export default function SalidaDeBolsa({
      * El paso tampoco se guarda: se vuelve a «FORMULARIO» a propósito. Reponer
      * a alguien en la pantalla de confirmación sobre datos que no revisó en esta
      * sesión es pedirle que confirme a ciegas un movimiento de dinero. */
-    const { recuperado, descartar } = useBorrador(
+    const { recuperado, cuando, descartar } = useBorrador(
         'salida_de_bolsa', { tipo, monto, entidad, boleta, nota }, { activo: abierto },
     );
 
-    const repuesto = useRef(false);
+    /* ── El borrador se OFRECE, no se repone solo ──────────────────────────
+     *
+     * Reportado por el usuario (2026-09-02): «¿por qué la salida de efectivo se
+     * selecciona en esa opción al entrar?». El diálogo abría con «Gasto o
+     * compra» ya elegido.
+     *
+     * Y lo contradecía este mismo archivo, doce líneas más abajo: «El motivo NO
+     * viene elegido de fábrica… un motivo preseleccionado se registra sin
+     * mirarlo». La regla estaba escrita y el borrador la rompía en silencio —
+     * reponía el motivo de una salida que alguien empezó y abandonó, sin decir
+     * de dónde salía.
+     *
+     * `AvisoDeBorrador` es el canónico y ya existía. Con la hora, que es lo que
+     * permite contestar: lo que decide a una persona no es «hay un borrador»,
+     * es «hay uno de hace diez minutos».
+     *
+     * Y acá pesa más que en un alta común: lo que se repone no es un nombre a
+     * medio escribir, es el MOTIVO por el que sale dinero. */
+    const [ofrecerBorrador, setOfrecerBorrador] = useState(false);
+    const visto = useRef(false);
     useEffect(() => {
-        if (!abierto) { repuesto.current = false; return; }
-        if (repuesto.current || !recuperado) return;
-        repuesto.current = true;
-        if (recuperado.tipo) setTipo(recuperado.tipo);
-        if (recuperado.monto) setMonto(recuperado.monto);
-        if (recuperado.entidad) setEntidad(recuperado.entidad);
-        if (recuperado.boleta) setBoleta(recuperado.boleta);
-        if (recuperado.nota) setNota(recuperado.nota);
+        if (!abierto) { visto.current = false; setOfrecerBorrador(false); return; }
+        if (visto.current) return;
+        visto.current = true;
+        // Sólo se ofrece si trae ALGO. Un borrador vacío —el que guarda el
+        // formulario recién abierto— no es trabajo de nadie.
+        setOfrecerBorrador(!!recuperado && Object.values(recuperado).some(
+            (v) => String(v ?? '').trim() !== '',
+        ));
     }, [abierto, recuperado]);
+
+    const reponerBorrador = useCallback(() => {
+        if (recuperado?.tipo) setTipo(recuperado.tipo);
+        if (recuperado?.monto) setMonto(recuperado.monto);
+        if (recuperado?.entidad) setEntidad(recuperado.entidad);
+        if (recuperado?.boleta) setBoleta(recuperado.boleta);
+        if (recuperado?.nota) setNota(recuperado.nota);
+        setOfrecerBorrador(false);
+    }, [recuperado]);
+
+    const tirarBorrador = useCallback(() => {
+        descartar();
+        setOfrecerBorrador(false);
+    }, [descartar]);
 
     useEffect(() => {
         if (!abierto) return;
@@ -1178,15 +1212,34 @@ export default function SalidaDeBolsa({
                             tomó pide un número para una salida que todavía no
                             se sabe qué es, y el motivo puede cambiar cuánto se
                             puede sacar y de qué bolsa. */}
+                        {/* ── El borrador se OFRECE ──────────────────────────
+                            Va acá, arriba del motivo, porque el motivo es el
+                            campo que el borrador llenaba en silencio y el aviso
+                            tiene que estar donde se mira la consecuencia. Ver
+                            el bloque de `ofrecerBorrador`. */}
+                        {ofrecerBorrador && (
+                            <AvisoDeBorrador cuando={cuando}
+                                onRecuperar={reponerBorrador} onDescartar={tirarBorrador} />
+                        )}
+
                         <div className={acompanaAlMotivo ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : ''}>
                             <div>
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
                                     Motivo
                                 </span>
+                                {/* `clearLabel` explícito: el default de
+                                    `LiquidSelect` es «Todos», que sirve para
+                                    filtrar una lista y no significa nada sobre
+                                    el motivo de una salida de dinero — abrir el
+                                    desplegable ofrecía «Todos» arriba de
+                                    «Remesa» y «Gasto o compra». Lo dice el
+                                    propio componente en su contrato: en un
+                                    formulario de datos va otra palabra. */}
                                 <LiquidSelect
                                     value={tipo} onChange={elegirMotivo}
                                     options={ofrecidos.map((x) => ({ value: x.codigo, label: x.etiqueta }))}
-                                    placeholder="Elegir…" ariaLabel="Motivo de la salida"
+                                    placeholder="Elegir…" clearLabel="Sin elegir"
+                                    ariaLabel="Motivo de la salida"
                                 />
                             </div>
                             {acompanaAlMotivo}

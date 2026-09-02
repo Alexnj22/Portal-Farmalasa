@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.956.2 — El proceso de una diferencia: fecha, dos columnas y rótulos que dicen qué pasó
+
+Tres cosas que pidió el usuario sobre el carril de v2.956.0: *«¿qué pasa si son
+2 o más productos, se pone en 2 columnas para ahorrar espacio? Los textos
+explícalos mejor, siempre cortos, pero mejor explicados. Y fecha y hora, sólo
+veo hora de cada acción»*.
+
+**Fecha Y hora en cada paso**, en dos renglones (`1 sept` sobre `11:43 a.m.`).
+Sólo la hora se lee bien el mismo día y deja de decir nada la semana siguiente,
+que es justo cuando alguien viene a ver qué pasó. En dos renglones entra en un
+teléfono de 390 sin empujar al verbo.
+
+**Dos columnas mientras están plegadas.** Tres diferencias cerradas pasan de
+190 a **130 px** de alto y se leen de un vistazo, que es para lo que se miran.
+
+**Y vuelve a UNA columna en cuanto se abre alguna** — esto salió de mirar la
+medición, no de suponerla: con una abierta (390 px) al lado de una plegada
+(40 px), la grilla dejaba media pantalla en blanco, y encima le daba al carril
+la mitad del ancho justo cuando es lo que hay que leer.
+
+**Rótulos que dicen con qué:**
+
+| antes | ahora |
+|---|---|
+| propuso cómo se arregla | **propuso qué hacer** |
+| estuvo de acuerdo | **aceptó la propuesta** |
+| confirmó la entrada del producto | **confirmó la entrada al inventario** |
+
+Y la cifra **`FÍSICO` pasó a `CONTADO`**: es el mismo número que la pantalla de
+recepción pide como «¿cuántos contaste?» y que el carril llama «corrigió lo
+contado». Tres nombres para un dato hacen dudar de si son el mismo.
+
+**El carril tiene tope de ancho.** Sin él, en una tarjeta de 1900 px el verbo y
+su hora terminaban a 1.500 px de distancia y dejaban de leerse como el mismo
+renglón.
+
 ## v2.956.1 — Un corte sin conteo se descarta y no traba a los demás
 
 Salud 4, 2-sep 13:09. El corte salió del sistema de la caja con el efectivo en

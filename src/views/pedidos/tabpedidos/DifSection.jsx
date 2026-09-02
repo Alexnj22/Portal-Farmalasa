@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight, Clock } from 'lucide-react';
-import { calcSolicitado, fmtRelative, fmtMomento } from './helpers';
+import { calcSolicitado, fmtRelative, fmtDia, fmtHM } from './helpers';
 import Badge from '../../../components/common/Badge';
 import PortalInput from '../../../components/common/PortalInput';
 import DevolucionBloque from './DevolucionBloque';
@@ -47,9 +47,12 @@ const EVENTO_LABEL = {
     resolucion_propuesta:    'propuso resolución',
     resolucion_confirmada:   'confirmó resolución',
     resolucion_rechazada:    'rechazó resolución',
-    diferencia_proponer:     'propuso cómo se arregla',
+    // Cortos, pero que digan qué pasó. «propuso cómo se arregla» y «estuvo de
+    // acuerdo» no decían con QUÉ, y el paso siguiente quedaba colgado del
+    // anterior para entenderse.
+    diferencia_proponer:     'propuso qué hacer',
     diferencia_contraproponer:'propuso la otra salida',
-    diferencia_aceptar:      'estuvo de acuerdo',
+    diferencia_aceptar:      'aceptó la propuesta',
     diferencia_escalada:     'no estuvo de acuerdo — pasó a supervisión',
     diferencia_supervisar:   'lo decidió supervisión',
     diferencia_llegada:      'confirmó que lo tiene',
@@ -62,7 +65,7 @@ const EVENTO_LABEL = {
     // del pedido #150 mostraba «traslado_recibido» tal cual, que además nombra
     // la tubería y no el negocio. Un rótulo que falta no da error: imprime la
     // clave interna y parece un dato.
-    traslado_recibido:       'confirmó la entrada del producto',
+    traslado_recibido:       'confirmó la entrada al inventario',
     extra_anotado:           'anotó un producto que llegó de más',
     extra_quitado:           'quitó lo que había anotado de más',
 };
@@ -286,8 +289,17 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
 
                 El rótulo del grupo sólo aparece cuando hay otra cosa al lado.
                 Con todas resueltas, el encabezado de la sección ya lo dijo. */}
+            {/* Dos columnas mientras están PLEGADAS. Tres cerradas pasan de
+                190 a 130 px de alto y se leen de un vistazo, que es para lo que
+                se miran.
+                Con una abierta vuelve a UNA columna: la abierta mide 390 px y
+                su vecina 40, así que la grilla dejaba media pantalla en blanco
+                al lado de una fila corta — y encima le daba al carril la mitad
+                del ancho justo cuando es lo que hay que leer. Medido en 1440. */}
             {resueltas.length > 0 && (
-                <div className="space-y-1.5 pt-1">
+                <div className={`pt-1 ${resueltas.length > 1 && !resueltas.some(r => r.id === verResuelta)
+                    ? 'grid grid-cols-1 xl:grid-cols-2 gap-2 items-start'
+                    : 'space-y-1.5'}`}>
                     {!allConfirmed && (
                         <p className="text-micro font-black text-content-3 uppercase tracking-widest">
                             Ya resueltas ({resueltas.length})
@@ -516,7 +528,10 @@ function ProcesoDeLaDiferencia({ item, eventos = [], empMap, catalogo, dev }) {
             <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-2">
                 Cómo se resolvió
             </p>
-            <ol className="space-y-2">
+            {/* Con el tope, la hora queda a la derecha DEL PASO. Sin él, en una
+                tarjeta de 1900 px el verbo y su hora terminan a 1.500 px de
+                distancia y dejan de leerse como el mismo renglón. */}
+            <ol className="space-y-2 max-w-2xl">
                 {pasos.map((ev, i) => {
                     const ultimo  = i === pasos.length - 1;
                     const emp     = ev.hecho_por ? empMap.get(ev.hecho_por) : null;
@@ -553,8 +568,14 @@ function ProcesoDeLaDiferencia({ item, eventos = [], empMap, catalogo, dev }) {
                                 {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
                                 {emp && <span className="ms-1.5"><EmpChip emp={emp} size="xs" /></span>}
                             </span>
-                            <span className="text-micro text-content-3 tabular-nums whitespace-nowrap">
-                                {fmtMomento(ev.created_at)}
+                            {/* Fecha Y hora, en dos renglones. Sólo la hora se
+                                lee bien el mismo día y deja de decir nada la
+                                semana siguiente, que es cuando alguien viene a
+                                ver qué pasó. En dos renglones entra en 390 sin
+                                empujar al verbo. */}
+                            <span className="text-micro text-content-3 tabular-nums whitespace-nowrap text-right leading-tight">
+                                <span className="block text-content-3/70">{fmtDia(ev.created_at)}</span>
+                                {fmtHM(ev.created_at)}
                             </span>
                             {(salida || ev.nota) && (
                                 <div className="col-span-2">
@@ -598,7 +619,11 @@ function Cifras({ item }) {
             {sol != null && <Cifra rotulo="Solicitado" valor={sol} tono="text-content-2" />}
             <Cifra rotulo="Enviado" valor={enviado} tono="text-content-2" />
             <ArrowRight size={13} className="text-content-3 mb-1.5 shrink-0" />
-            <Cifra rotulo="Físico" valor={fisico} tono={tonoFis} />
+            {/* «Contado» y no «Físico»: es el mismo número que la pantalla de
+                recepción pide como «¿cuántos contaste?» y que el carril de abajo
+                llama «corrigió lo contado». Tres nombres para un dato hacen
+                dudar de si son el mismo. */}
+            <Cifra rotulo="Contado" valor={fisico} tono={tonoFis} />
             {delta != null && delta !== 0 && (
                 <Badge variant={delta < 0 ? 'danger' : 'success'} size="sm" uppercase={false} className="mb-1">
                     {delta < 0 ? `Faltan ${-delta}` : `${delta} de más`}

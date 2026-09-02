@@ -40,18 +40,14 @@ export function fmtHM(iso) {
         .replace(/\s*([ap])\.\s*m\./i, ' $1.m.');
 }
 
-// Cuándo pasó algo, para leerlo dentro de una secuencia.
-//
-// La hora sola alcanza mientras todo pasó hoy —que es el caso normal de un
-// pedido— y el día se agrega sólo cuando NO fue hoy. Sin eso, un pedido de la
-// semana pasada muestra cuatro horas sueltas y parece de esta mañana.
-export function fmtMomento(iso) {
+// El día de un momento, corto: «2 sep». Va arriba de la hora en el carril de
+// pasos — la hora sola se lee bien el mismo día y deja de decir nada la semana
+// siguiente, que es justo cuando alguien viene a ver qué pasó.
+export function fmtDia(iso) {
     if (!iso) return '';
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '';
-    const hoy = new Date();
-    if (d.toDateString() === hoy.toDateString()) return fmtHM(iso);
-    return `${d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' })} · ${fmtHM(iso)}`;
+    return d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' }).replace('.', '');
 }
 
 export function fmtRelative(iso) {

@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.951.0 — El cierre del día se dibuja, no se lee
+
+Pedido del usuario: un aviso de fin de día para supervisión y gerencia con la
+venta de cada sala, el cumplimiento, las diferencias de caja y cuánto subió o
+bajó. La primera versión salió como **párrafo** y el usuario la devolvió: *«nada
+que ver, quiero una notificación al estilo de como se envía el 1 de mes la meta,
+no un texto plano»*.
+
+Tenía razón, y no es cuestión de gusto: seis salas con cuatro números cada una
+en un párrafo son 24 cifras en prosa. Hay que **leerlo** para saber si el día
+estuvo bien, que es justo lo que un aviso de cada noche no puede pedir.
+
+### La misma tarjeta que el 1 de mes
+
+`CIERRE_DEL_DIA` reusa el **anillo** —el arco ES el cumplimiento y el color el
+estado— y la **barra por sala**, que ya existían para el cierre de mes de la
+empresa. Aprender a leerla dos veces sería trabajo de más para quien la mira
+treinta veces al mes.
+
+Comparte con ellos lo único que importa que no se desincronice: **la escala de
+colores**. Que un 96% se pinte igual el 1 del mes que cada noche es la mitad de
+para qué sirve la escala; en dos archivos, el día que alguien mueva un umbral lo
+mueve en uno solo.
+
+### Y dos cosas que sólo existen a diario
+
+**La variación va en palabras**: «11% menos que el martes pasado». Un «−11%» hay
+que interpretarlo y además no dice contra qué — el «contra qué» viaja con el
+dato, así que el día que se cambie la comparación el aviso lo dice solo. Se
+calla debajo de medio punto: un «0.2% más» no es una noticia.
+
+**La caja se menciona sólo cuando hay algo que mirar.** En un día normal las seis
+cuadran, y una línea que diga «0 diferencias» todas las noches se deja de leer
+justo antes de la noche que importa. Cuando algo pasa, nombra la sala y el monto,
+en rojo si faltó y en ámbar si sobró.
+
+Y **`diferencia: null` no es cero**: es «no se pudo saber» —la sala no cortó, o
+su corte quedó descartado— y sale como «Sin corte confirmado». Confundirlos daría
+por cuadrada una caja que nadie contó.
+
+### Todavía no se manda solo
+
+Esto es el aviso. El disparador —cuando las seis salas hayan cerrado— queda para
+la decisión que sigue: hoy tendría que mirar el corte Z de cada sala en el
+sistema de la caja, porque cerrar el día desde el portal no ha corrido nunca.
+
 ## v2.950.1 — «Solicitar aprobación» es el rótulo, y adentro va la forma real
 
 Corrección de la versión anterior: entendí de más. Lo que el usuario pidió era

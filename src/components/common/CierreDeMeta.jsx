@@ -340,3 +340,119 @@ export function CuerpoDeCierreDeEmpresa({ datos, claseTenue, isDark, buscarEmple
         </div>
     );
 }
+
+
+/* ── El cierre del DÍA, para supervisión y gerencia ────────────────────────
+ *
+ * La misma tarjeta que el cierre de mes de la empresa —anillo, venta grande,
+ * una barra por sala— porque es la misma pregunta hecha cada noche, y aprender
+ * a leerla dos veces sería trabajo de más para quien la mira 30 veces al mes.
+ *
+ * Dos cosas que sólo tiene la del día:
+ *
+ * 1. **La variación**, que va en PALABRAS y no como un signo. «11% menos que el
+ *    martes pasado» se entiende de un vistazo; «−11%» hay que interpretarlo, y
+ *    además no dice contra qué. El «contra qué» viaja con el dato.
+ * 2. **La caja**, que sólo se menciona cuando hay algo que mirar. En un día
+ *    normal las seis cuadran, y una línea que diga «0 diferencias» todas las
+ *    noches se deja de leer justo antes de la noche que importa.
+ */
+function LineaDeCaja({ datos, claseTenue, isDark }) {
+    const { cajas, cajasCuadraron, salasSinCerrar, sucursales } = datos;
+    const conDif = sucursales.filter((s) => s.diferencia != null && Math.abs(s.diferencia) >= 0.005);
+    const sinContar = sucursales.filter((s) => s.diferencia == null);
+
+    // Todo en orden y todas contadas: una línea corta y en verde. No se calla
+    // del todo porque «no dice nada» y «no lo comprobé» se ven igual.
+    if (!conDif.length && !sinContar.length && !salasSinCerrar.length) {
+        return (
+            <p className={`text-caption font-semibold ${tonoDeCumplimiento(100, isDark).texto}`}>
+                {cajas === 1 ? 'La caja cuadró' : `Las ${cajasCuadraron ?? cajas} cajas cuadraron`}
+            </p>
+        );
+    }
+
+    return (
+        <div className="flex flex-col gap-1">
+            {conDif.map((s) => (
+                <p key={s.sala} className="text-caption font-semibold flex items-baseline gap-1.5">
+                    <span className="truncate">{s.sala}</span>
+                    <span className={`tabular-nums font-black ${
+                        s.diferencia < 0 ? tonoDeCumplimiento(0, isDark).texto : tonoDeCumplimiento(97, isDark).texto}`}>
+                        {s.diferencia > 0 ? '+' : ''}{formatMoney(s.diferencia)}
+                    </span>
+                    <span className={claseTenue}>{s.diferencia < 0 ? 'faltaron' : 'sobraron'}</span>
+                </p>
+            ))}
+            {sinContar.length > 0 && (
+                <p className={`text-caption font-semibold ${claseTenue}`}>
+                    Sin corte confirmado: {sinContar.map((s) => s.sala).join(', ')}
+                </p>
+            )}
+            {salasSinCerrar.length > 0 && (
+                <p className={`text-caption font-semibold ${tonoDeCumplimiento(97, isDark).texto}`}>
+                    No cerraron: {salasSinCerrar.join(', ')}
+                </p>
+            )}
+        </div>
+    );
+}
+
+export function CuerpoDeCierreDelDia({ datos, claseTenue, isDark }) {
+    const { venta, meta, sucursales, variacion, contra } = datos;
+
+    return (
+        <div className="flex flex-col gap-2 mt-1">
+            {venta != null && (
+                <div className="flex items-baseline gap-2 flex-wrap tabular-nums">
+                    <span className="text-body-lg font-black tracking-tight">{formatMoney(venta)}</span>
+                    {meta != null && (
+                        <span className={`text-body-sm font-semibold ${claseTenue}`}>de {formatMoney(meta)}</span>
+                    )}
+                </div>
+            )}
+
+            {/* La variación en palabras. Se calla debajo de medio punto: un
+                «0.2% más» no es una noticia, es ruido con forma de dato. */}
+            {variacion != null && Math.abs(variacion) >= 0.5 && (
+                <p className={`text-caption font-semibold ${
+                    variacion > 0 ? tonoDeCumplimiento(100, isDark).texto : tonoDeCumplimiento(0, isDark).texto}`}>
+                    {Math.abs(variacion).toFixed(0)}% {variacion > 0 ? 'más' : 'menos'}
+                    {contra ? ` que ${contra}` : ''}
+                </p>
+            )}
+
+            {sucursales?.length > 0 && (
+                <ul className="flex flex-col gap-1">
+                    {sucursales.map(({ sala, pct, venta: vs }) => (
+                        <li key={sala} className="flex items-center gap-2 min-w-0">
+                            <span className={`text-caption font-semibold truncate w-24 flex-shrink-0 ${claseTenue}`}>
+                                {sala}
+                            </span>
+                            {/* El tope de la barra es 130% igual que en el cierre
+                                de mes: con el tope en 100 una sala que hizo 135%
+                                se ve idéntica a una que hizo justo la meta. */}
+                            <span className="flex-1 h-1.5 rounded-full bg-border-card overflow-hidden">
+                                <span
+                                    className={`block h-full rounded-full ${tonoDeCumplimiento(pct, isDark).fondo}`}
+                                    style={{ width: `${Math.min(pct, 130) / 130 * 100}%` }}
+                                />
+                            </span>
+                            {vs != null && (
+                                <span className={`text-caption tabular-nums text-right flex-shrink-0 ${claseTenue}`}>
+                                    {formatMoney(vs)}
+                                </span>
+                            )}
+                            <span className={`text-caption font-black tabular-nums w-11 text-right flex-shrink-0 ${tonoDeCumplimiento(pct, isDark).texto}`}>
+                                {Math.round(pct)}%
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            <div className="h-px bg-border-card" />
+            <LineaDeCaja datos={datos} claseTenue={claseTenue} isDark={isDark} />
+        </div>
+    );
+}

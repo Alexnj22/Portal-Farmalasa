@@ -24,8 +24,8 @@ import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/soli
 import Contador from './Contador';
 import AvatarConEstado from './AvatarConEstado';
 import NotificacionDetalle from './NotificacionDetalle';
-import { AnilloDeMeta, CuerpoDeCierreDeMeta, CuerpoDeCierreDeEmpresa } from './CierreDeMeta';
-import { datosDeCierreDeMeta, datosDeCierreDeEmpresa } from '../../utils/cierreDeMeta';
+import { AnilloDeMeta, CuerpoDeCierreDeMeta, CuerpoDeCierreDeEmpresa, CuerpoDeCierreDelDia } from './CierreDeMeta';
+import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 
 /* El diálogo canónico de la solicitud, para el rechazo.
  *
@@ -968,7 +968,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                 /* Y su gemelo de administración, que mira las seis salas
                                                    a la vez. Comparten el anillo y nada más. */
                                                 const empresa  = datosDeCierreDeEmpresa(n);
-                                                const conAnillo = cierre || empresa;
+                                                /* Y el de cada noche. Comparte el anillo y la escala de
+                                                   colores con los dos de arriba —que un 96% se pinte igual
+                                                   el 1 del mes que cada noche es la mitad de para qué
+                                                   sirve la escala— y agrega lo que sólo existe a diario:
+                                                   cómo quedó la caja y contra qué se compara. */
+                                                const delDia   = datosDeCierreDelDia(n);
+                                                const conAnillo = cierre || empresa || delDia;
 
                                                 // Fila en ventana de deshacer (borrado individual)
                                                 if (pendingOne) {
@@ -1070,6 +1076,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                         claseTenue={cx.rowBody}
                                                                         isDark={isDark}
                                                                         buscarEmpleado={buscarEmpleadoPorId}
+                                                                    />
+                                                                )}
+                                                                {delDia && (
+                                                                    <CuerpoDeCierreDelDia
+                                                                        datos={delDia}
+                                                                        claseTenue={cx.rowBody}
+                                                                        isDark={isDark}
                                                                     />
                                                                 )}
                                                                 {empresa && (

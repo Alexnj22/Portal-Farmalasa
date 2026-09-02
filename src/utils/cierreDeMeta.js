@@ -115,6 +115,65 @@ export function datosDeCierreDeEmpresa(n) {
     };
 }
 
+/**
+ * El cierre del DÍA visto desde administración: cómo quedaron las seis salas.
+ *
+ * Vive junto a los de mes y no en su propio archivo porque comparte con ellos
+ * lo único que importa que no se desincronice: **la escala de colores**. Que un
+ * 96% se pinte igual el 1 del mes que cada noche es la mitad del valor de la
+ * escala; con dos archivos, el día que alguien mueva un umbral lo mueve en uno.
+ *
+ * Lo que NO comparte es la noticia. El de mes cuenta cómo cerró un mes y cuánto
+ * toca el que empieza; éste cuenta un día, y agrega dos cosas que sólo existen
+ * a diario: **cómo quedó la caja de cada sala** y **contra qué se compara**.
+ *
+ * Devuelve `null` si falta el porcentaje —sin él no hay anillo que dibujar— y
+ * entonces la campana vuelve sola a su fila de texto de siempre.
+ */
+export function datosDeCierreDelDia(n) {
+    if (n?.type !== 'CIERRE_DEL_DIA') return null;
+    const m = n.metadata || {};
+    const pct = Number(m.pct);
+    if (!Number.isFinite(pct)) return null;
+
+    const num = (v) => (v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+
+    return {
+        pct,
+        cumplida: pct >= 100,
+        venta: num(m.venta),
+        meta:  num(m.meta),
+        fecha: m.fecha_texto || '',
+        /* Contra qué se compara, en palabras y no sólo el número: «−11%» no
+         * dice contra qué, y el mismo aviso puede comparar contra el mismo día
+         * de la semana pasada o contra otra cosa el día que se decida cambiar.
+         * El texto viaja con el dato para que no haya que adivinarlo. */
+        variacion: num(m.variacion),
+        contra: m.contra_texto || '',
+        /* Las cajas. `conDiferencia` es lo que decide si esto se menciona: en un
+         * día normal las seis cuadran, y una línea que dice «0 diferencias»
+         * todas las noches se deja de leer justo antes de la noche que importa. */
+        cajas: num(m.cajas),
+        cajasCuadraron: num(m.cajas_cuadraron),
+        salasSinCerrar: Array.isArray(m.salas_sin_cerrar)
+            ? m.salas_sin_cerrar.map(String).filter(Boolean) : [],
+        sucursales: Array.isArray(m.sucursales)
+            ? m.sucursales.filter((s) => s && Number.isFinite(Number(s.pct)))
+                .map((s) => ({
+                    sala: String(s.sala || ''),
+                    pct: Number(s.pct),
+                    venta: num(s.venta),
+                    /* La diferencia de caja de esa sala. `null` NO es cero: es
+                     * «no se pudo saber» —la sala no cortó, o su corte quedó
+                     * descartado— y se dice distinto. Confundirlos daría por
+                     * cuadrada una caja que nadie contó. */
+                    diferencia: s.diferencia === undefined ? null : num(s.diferencia),
+                    variacion: num(s.variacion),
+                }))
+            : [],
+    };
+}
+
 /* ── La escala del cumplimiento, decidida por el usuario ───────────────────
  * Verde a partir de 100, naranja a partir de 95, rojo debajo. Tres tramos y no
  * dos: entre «cumplió» y «no cumplió» hay una franja que en la práctica se

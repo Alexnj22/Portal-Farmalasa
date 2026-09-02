@@ -869,11 +869,9 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
              * y CUÁL bolsa, que es lo que faltaba: «de una bolsa de un corte
              * anterior» no dice a cuál ir a buscar. Con varias se nombran
              * todas: una salida grande se reparte entre las que alcancen. */
-            origen: o.tocaLaCaja
-                ? 'De una bolsa de hoy'
-                : (o.bolsasUsadas || []).length
-                    ? `De la bolsa ${o.bolsasUsadas.map((b) => b.folio).join(' y ')}`
-                    : 'De una bolsa de un corte anterior',
+            origen: (o.bolsasUsadas || []).length
+                ? `De la bolsa ${o.bolsasUsadas.map((b) => b.folio).join(' y ')}`
+                : o.tocaLaCaja ? 'De una bolsa de hoy' : 'De una bolsa de un corte anterior',
             avisa: o.tocaLaCaja,
             detalle: [
                 o.folio,
@@ -882,7 +880,19 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                 !o.tocaLaCaja && (o.dias || []).length
                     ? `del ${o.dias.map(fechaLegible).join(' y ')}` : null,
                 o.numero_boleta ? `boleta ${o.numero_boleta}` : null,
-                o.tocaLaCaja ? 'se anota como vale al cortar' : 'no toca la caja de hoy',
+                /* CUÁNTO se anota como vale, no si se anota.
+                 *
+                 * Una salida repartida entre bolsas de días distintos toca la
+                 * caja SÓLO por la parte que salió de la bolsa del día abierto.
+                 * Decir «se anota como vale al cortar» sobre el monto entero
+                 * hace esperar un descuento que no va a pasar — y la diferencia
+                 * puede ser casi toda la operación: en REM-1058 fueron $119.38
+                 * de $500. */
+                !o.tocaLaCaja
+                    ? 'no toca la caja de hoy'
+                    : o.montoDeHoy != null && o.montoDeHoy < Math.abs(Number(o.monto || 0)) - 0.005
+                        ? `se anota como vale al cortar sólo ${formatMoney(o.montoDeHoy)}`
+                        : 'se anota como vale al cortar',
             ].filter(Boolean),
         }));
         return [...delCajon, ...deLasBolsas]

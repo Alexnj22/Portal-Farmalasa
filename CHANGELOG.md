@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.924.2 — La salida dice de qué bolsa salió y cuánto se anota como vale
+
+Salió de verificar a mano una salida de $500 en Salud 3, a pedido del usuario.
+**El dinero siempre estuvo bien; el rótulo mentía.**
+
+`REM-1058` — remesa de **$500** a RIA, entregada por Rodrigo Márquez el 1-sep a
+las 15:51 — salió de **tres bolsas**: $119.38 de la de hoy (`S3-1216`) y $380.62
+de dos del 31-ago (`S3-1211`, `S3-1206`). La pantalla decía:
+
+> De una bolsa de hoy · REM-1058 · **se anota como vale al cortar** — −$500.00
+
+Y el vale real es de **$119.38**. `caja_vales_pendientes` filtra **por bolsa** y
+no por operación, así que el vale nunca estuvo mal — lo que estaba mal era la
+línea que alguien lee **antes** de cortar, y miente en la dirección peligrosa:
+hace esperar que la caja descuente $500.
+
+Dos correcciones:
+
+1. **Ahora dice cuánto**, no si: «se anota como vale al cortar **sólo $119.38**»
+   cuando la parte del día es menor que el total. Cuando coinciden, el texto
+   queda como estaba.
+2. **Y nombra las bolsas siempre**, no sólo cuando ninguna es de hoy: una
+   operación repartida entre días es exactamente el caso donde saber cuáles
+   importa, y era el único donde no se decían.
+
+La otra mitad del hallazgo es que **nada registra desde qué pantalla se hizo**.
+La misma operación se hace desde Efectivo → Salida y desde Bolsas, escriben la
+misma fila, y ninguna de las dos escribe en la bitácora — así que «¿desde dónde
+se hizo?» sólo se puede contestar hasta «desde el portal, no desde la caja».
+Queda anotado.
+
 ## v2.924.1 — El barrido de puntos ya no recorre 359,000 filas para devolver nada
 
 El portal se puso lento y dejó de dejar entrar entre las **16:35 y las 16:44**.

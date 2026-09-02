@@ -1001,6 +1001,23 @@ export async function fetchSalidasDeSalaDelDia({ sala, dia }) {
                 .map((l) => [l.bolsas.folio, { folio: l.bolsas.folio, fecha: l.bolsas.fecha }]))
                 .values()],
             tocaLaCaja: lineas.some((l) => l.bolsas?.fecha === dia),
+            /* CUÁNTO de la operación sale de una bolsa del día abierto — que no
+             * es lo mismo que su monto.
+             *
+             * Una salida grande se reparte entre las bolsas que alcancen, y esas
+             * pueden ser de días distintos. Medido en Salud 3 el 1-sep: la
+             * remesa REM-1058 de **$500** salió de tres bolsas —$119.38 de la de
+             * hoy y $380.62 de dos del 31-ago—, y la pantalla decía «De una
+             * bolsa de hoy · se anota como vale al cortar» sobre los $500
+             * enteros. El vale real es de $119.38: `caja_vales_pendientes`
+             * filtra por bolsa, no por operación, así que el dinero SIEMPRE
+             * estuvo bien — lo que mentía era el rótulo.
+             *
+             * Y miente en la dirección peligrosa: quien lee eso antes de cortar
+             * espera que la caja descuente $500. */
+            montoDeHoy: lineas
+                .filter((l) => l.bolsas?.fecha === dia)
+                .reduce((t, l) => t + Math.abs(Number(l.monto) || 0), 0),
         };
     });
 }

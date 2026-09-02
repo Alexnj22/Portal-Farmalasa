@@ -42,4 +42,8 @@ export const MODULO_QUE_DECIDE = {
     // Módulo propio y no `requests_caja`: son dos públicos, y con un solo
     // interruptor dar uno regala el otro.
     ABONO_CREDITO_CHANGE:      'requests_cuentas_por_cobrar',
+    // Un pago con «Otro» —ISSS, una aseguradora, un convenio— entra ya y va a
+    // revisión. La confirmación es por PAGO y no por abono: una liquidación que
+    // cubre tres créditos no necesita tres firmas.
+    ABONO_OTRO_CONFIRMAR:      'requests_cuentas_por_cobrar',
 };

@@ -528,18 +528,58 @@ Deno.serve(async (req) => {
       );
       if (eAbonos) console.error("[creditos-erp] abonos:", eAbonos.message);
 
+      /* ── «Otro» no se aplica en silencio ────────────────────────────────
+       *
+       * Pedido del usuario (2-sep): «cuando es del ISSS, MAPFRE… agrega otro
+       * como método de pago, y que llegue solicitud de confirmación a admin».
+       *
+       * El abono YA entró y no se hace esperar: el dinero de una aseguradora ya
+       * estaba acordado cuando la sala lo registra, y dejar el crédito abierto
+       * hasta que alguien firme lo dejaría figurando como deuda del cliente —
+       * falso, y encima entraría al aviso del plazo. La confirmación es una
+       * revisión, no un permiso previo.
+       *
+       * Una por PAGO y no por abono: lo que se confirma es el documento, y una
+       * liquidación que cubre tres créditos no necesita tres firmas.
+       *
+       * Su fallo NO tumba el cobro —el dinero ya se movió— pero sale como aviso:
+       * un pago con «Otro» que nadie tiene que mirar es exactamente el cajón de
+       * sastre que esta opción vino a evitar. */
+      let confirmacion: string | null = null;
+      if (forma === "Otro" && pago?.id) {
+        const { error: eConf } = await supabase.from("approval_requests").insert({
+          type: "ABONO_OTRO_CONFIRMAR",
+          employee_id: quien.id,
+          status: "PENDING",
+          note: documento || "Sin detalle",
+          metadata: {
+            branch_id: sala, pago_id: String(pago.id),
+            cliente: ficha?.cliente ?? hechos[0].vivo.cliente,
+            monto: aplicado, detalle: documento || null,
+            creditos: hechos.map((h) => ({ credito: h.credito, monto: h.monto })),
+            comprobante_url: body.comprobanteUrl || null,
+          },
+        });
+        if (eConf) {
+          console.error("[creditos-erp] confirmacion de Otro:", eConf.message);
+          confirmacion = "no se pudo crear la solicitud de confirmación";
+        }
+      }
+
       const avisos = [
         fallidos.length
           ? `Entraron ${hechos.length} de ${limpias.length}. NO entró: ${fallidos.join(", ")}. `
             + "Ese dinero no se aplicó; vuelve a intentarlo sólo por lo que faltó."
           : null,
         eAbonos ? "El pago entró, pero no se pudo anotar quién lo recibió. Avísale a Sistemas." : null,
+        confirmacion ? `El pago entró, pero ${confirmacion}. Avísale a Sistemas.` : null,
       ].filter(Boolean);
 
       return responder({
         ok: fallidos.length === 0,
         pago_id: pago?.id ?? null,
         aplicado,
+        confirmacionPedida: forma === "Otro" && !confirmacion,
         aplicaciones: hechos.map((h) => ({
           credito: h.credito,
           monto: h.monto,

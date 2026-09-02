@@ -191,11 +191,17 @@ const Toggle = ({ value, onChange, color = 'chart-1', disabled = false, size = '
  * eso se encarga la cascada de `handleToggle`—, y por eso no se duplica en la
  * base: es una sola fila.
  */
+/* ⚠️ Esta lista se escribe a mano y por eso se desincroniza sola: el módulo
+ * `requests_cuentas_por_cobrar` existió una hora sin aparecer acá —estaba en el
+ * registro de permisos, en la base y en la policy, y esta tarjeta no lo
+ * mostraba—, así que no había forma de asignárselo a nadie. Al agregar una
+ * familia de aprobación, agregarla ACÁ también. */
 const FAMILIAS_DECIDIR = [
     { key: 'requests_facturacion', label: 'Facturación', desc: 'Anular una factura, o cambiarle el pago, el vendedor o el cliente' },
     { key: 'requests_inventario',  label: 'Inventario',  desc: 'Cargas y descartes de existencia' },
     { key: 'requests_minmax',      label: 'Min / Max',   desc: 'Ajustes de stock mínimo y máximo' },
     { key: 'requests_caja',        label: 'Caja',        desc: 'Anular o corregir el monto de un movimiento de caja ya anotado' },
+    { key: 'requests_cuentas_por_cobrar', label: 'Cuentas por cobrar', desc: 'Anular o corregir un abono ya cobrado, y confirmar los que se pagaron con «Otro» — el del ISSS, una aseguradora o un convenio' },
     { key: 'traslados',            label: 'Traslados',   desc: 'Confirmar el envío de producto que otra sala pide' },
 ];
 

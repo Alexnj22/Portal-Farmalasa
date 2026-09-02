@@ -35,7 +35,13 @@ export const FORMAS_DEL_ORIGEN = [
  * el servidor rechaza; sólo allá, alguien podría mandar `Bitcoin` en la
  * petición y el origen lo aceptaría.
  */
-export const FORMAS_DEL_PORTAL = ["Efectivo", "Transferencia", "Tarjeta", "Cheque"];
+export const FORMAS_DEL_PORTAL = ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Otro"];
+
+/** «Otro» no es un cajón de sastre: es para el crédito que NO se paga con
+ *  ninguna de las cuatro —el del ISSS, el de una aseguradora, lo que se liquida
+ *  por planilla o por convenio—. Exige escribir con qué se pagó y dispara una
+ *  solicitud de confirmación, así que queda contado y con nombre. */
+export const FORMA_OTRO = "Otro";
 
 export interface CreditoDelOrigen {
   credito: string;

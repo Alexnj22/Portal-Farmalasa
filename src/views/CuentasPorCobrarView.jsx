@@ -75,7 +75,16 @@ import { tokenMatch } from '../utils/searchUtils';
  * mueven juntas. Sólo acá, alguien puede mandar `Bitcoin` en la petición y el
  * origen lo aceptaría; sólo allá, la pantalla ofrecería algo que el servidor
  * rechaza. La copia del servidor vive en `creditos-erp`. */
-const FORMAS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque'];
+const FORMAS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque', 'Otro'];
+
+/* «Otro» vuelve, y no contradice la decisión de la mañana de sacarlo. Aquél era
+ * un cajón de sastre silencioso; éste es para el crédito que NO se paga con
+ * ninguna de las cuatro —el del ISSS, el de una aseguradora, lo que se liquida
+ * por planilla o convenio— y **exige decir con qué** y dispara una solicitud de
+ * confirmación. Sin él, la sala tenía que mentir eligiendo «Transferencia» para
+ * poder cerrar el crédito, y una opción que obliga a mentir es peor que un
+ * cajón de sastre. */
+const OTRO = 'Otro';
 
 const VER = [
     { value: 'DEBEN',    label: 'Con saldo' },
@@ -827,7 +836,11 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
     const [posDisponibles, setPosDisponibles] = useState(VACIO);
 
-    const conPapel = forma !== 'Efectivo';
+    /* «Otro» no pide foto: lo que se liquida por planilla o convenio no viene
+     * con un comprobante que se pueda leer. Pide DECIR con qué, que es el dato
+     * que hace falta para poder confirmarlo después. */
+    const esOtro = forma === OTRO;
+    const conPapel = forma !== 'Efectivo' && !esOtro;
 
     useEffect(() => {
         let vivo = true;
@@ -889,12 +902,16 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     const listaDeCreditos = useMemo(() => (hermanos.length ? hermanos : [credito]), [hermanos, credito]);
     const sumaRepartida = Object.values(reparto)
         .reduce((t, v) => t + (Number(v) || 0), 0);
-    const totalPago = conPapel ? Number(montoDoc) : sumaRepartida;
+    // Con papel el total lo dice el comprobante; con «Otro» lo escribe quien
+    // cobra —no hay documento que leer— y con efectivo es lo que se reparte.
+    const totalPago = (conPapel || esOtro) ? Number(montoDoc) : sumaRepartida;
 
     const bloqueado = lectura && lectura.veredicto !== 'OK';
     const cuadra = Number.isFinite(totalPago) && totalPago > 0
         && Math.abs(sumaRepartida - totalPago) < 0.005;
-    const listo = !bloqueado && cuadra && (!conPapel || (archivo && lectura));
+    const listo = !bloqueado && cuadra
+        && (!conPapel || (archivo && lectura))
+        && (!esOtro || documento.trim().length >= 3);
 
     const cobrar = useCallback(async () => {
         setOcupado(true);
@@ -953,6 +970,25 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                     </div>
                 )}
 
+                {esOtro && (
+                    <div className="space-y-3">
+                        {/* Se dice ANTES de escribir nada: quien cobra tiene que
+                            saber que esto va a revisión, no enterarse después. */}
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            «Otro» es para lo que <strong>no</strong> se paga con ninguna de las
+                            cuatro formas —el ISSS, una aseguradora, lo que se liquida por
+                            planilla o convenio—. El abono entra ya, y va una
+                            <strong> solicitud de confirmación</strong> a quien decide sobre
+                            cuentas por cobrar.
+                        </Notice>
+                        <PortalInput label="Con qué se pagó" value={documento} maxLength={80}
+                            placeholder="ISSS · planilla de agosto"
+                            onChange={(e) => setDocumento(e.target.value)} />
+                        <PortalInput label="Monto del pago" inputMode="decimal" value={montoDoc}
+                            onChange={(e) => setMontoDoc(e.target.value)} />
+                    </div>
+                )}
+
                 {/* Los montos sólo después de que el papel pasó: pedirlos antes
                     es invitar a escribir lo que se esperaba. */}
                 {(!conPapel || (lectura && !bloqueado)) && (
@@ -1006,16 +1042,16 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
                             <div className="flex items-baseline justify-between gap-3 pt-2 border-t border-border/60">
                                 <span className="text-body-sm text-content-2">
-                                    {conPapel ? 'Repartido' : 'Total a cobrar'}
+                                    {(conPapel || esOtro) ? 'Repartido' : 'Total a cobrar'}
                                 </span>
                                 <span className={`text-body font-black tabular-nums ${
-                                    cuadra || !conPapel ? 'text-content' : 'text-danger-text'}`}>
+                                    cuadra || (!conPapel && !esOtro) ? 'text-content' : 'text-danger-text'}`}>
                                     {formatMoney(sumaRepartida)}
-                                    {conPapel && totalPago > 0 && ` de ${formatMoney(totalPago)}`}
+                                    {(conPapel || esOtro) && totalPago > 0 && ` de ${formatMoney(totalPago)}`}
                                 </span>
                             </div>
 
-                            {conPapel && totalPago > 0 && !cuadra && (
+                            {(conPapel || esOtro) && totalPago > 0 && !cuadra && (
                                 /* La suma tiene que dar EXACTO. Aceptar menos
                                    dejaría una diferencia sin dueño: el banco
                                    movió $50 y el portal explicaría $45. */

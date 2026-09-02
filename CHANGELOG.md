@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.946.0 — El pago que no entra en las cuatro formas
+
+Pedido del usuario, mirando un crédito de MAPFRE: *«cuando es del ISSS, MAPFRE…
+agrega otro como método de pago, y que llegue solicitud de confirmación a
+admin»*.
+
+**«Otro» vuelve, y no contradice haberlo quitado esta mañana.** Aquél era un
+cajón de sastre silencioso, y con él disponible el corte de la caja no se podía
+cuadrar por método — eso sigue siendo cierto para un cliente de mostrador.
+
+Pero el crédito de una **aseguradora o del ISSS no se paga con ninguna de las
+cuatro**: se liquida por planilla, por compensación o contra un convenio. Hasta
+hoy la sala tenía que **mentir eligiendo «Transferencia»** para poder cerrarlo,
+y una opción que obliga a mentir es peor que un cajón de sastre.
+
+La diferencia es que éste **no es silencioso**:
+
+- **Exige decir con qué se pagó** («ISSS · planilla de agosto»).
+- **Dispara una solicitud de confirmación** a quien decide sobre cuentas por
+  cobrar, y el diálogo lo avisa **antes** de escribir nada.
+- Queda contado como «Otro», con nombre y con alguien obligado a mirarlo.
+
+**El abono entra ya; la confirmación va después.** No se hace esperar al
+crédito: el dinero de una aseguradora ya estaba acordado cuando la sala lo
+registra, y dejarlo abierto hasta que alguien firme lo dejaría figurando como
+deuda del cliente — falso, y encima entraría al aviso del plazo. Es una
+revisión, no un permiso previo.
+
+**Una confirmación por PAGO, no por abono.** Lo que se confirma es el documento;
+una liquidación que cubre tres créditos no necesita tres firmas.
+
+### Y el permiso ya se puede asignar
+
+«Decidir: cuentas por cobrar» existía desde la versión anterior —en el registro,
+en la base y en la policy— y **no aparecía en la tarjeta de «Decidir
+solicitudes»**, así que no había forma de dárselo a nadie. Esa tarjeta lleva su
+lista **escrita a mano**, que es justo cómo se desincroniza del registro sin que
+nada falle. Queda anotado en el archivo: al agregar una familia, agregarla ahí
+también.
+
 ## v2.945.4 — La diferencia del ERP se deja como está
 
 Sin cambio de comportamiento: es una **decisión del usuario**, escrita donde la

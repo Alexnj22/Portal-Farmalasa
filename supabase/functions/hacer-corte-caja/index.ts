@@ -445,6 +445,10 @@ Deno.serve(async (req) => {
        * esperado no viaja antes del conteo. */
       let cajon: string | null = null;
       let cuantosAbonosEnLaCaja: number | null = null;
+      // Los montos de los «POR ABONO A CREDITO» del día. Se declara afuera
+      // porque también los usa la comprobación del esperado, más abajo: son la
+      // misma lista y pedirla dos veces sería consultar dos veces al origen.
+      let montosDeAbono: number[][] = [];
       try {
         const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
         const dt = await (await fetch(
@@ -457,6 +461,7 @@ Deno.serve(async (req) => {
             .map((f) => f.map((c) => Number(String(c).replace(/[^0-9.-]/g, "")))
               .filter((n) => Number.isFinite(n) && n > 0));
           cuantosAbonosEnLaCaja = montos.length;
+          montosDeAbono = montos;
           /* El `error` NO se descarta, y acá menos que en otros lados: si el
            * select falla, `abonos` llega vacío y el veredicto diría «hoy no
            * hubo cobros que no fueran efectivo» sobre un día que sí los tuvo.
@@ -492,6 +497,17 @@ Deno.serve(async (req) => {
         console.error("hacer-corte-caja: no se pudo leer los movimientos:", e);
       }
 
+      /* ── Quién llena los campos vacíos ─────────────────────────────────
+       *
+       * Los campos que hacen falta para armar el esperado llegan vacíos en el
+       * HTML porque los completa el JavaScript de la pantalla del origen. Eso
+       * significa que **existe una llamada que devuelve esos números**, y que
+       * el portal la puede hacer igual — sin emitir ningún documento, que es la
+       * condición (el usuario: «el X nunca se hace, sólo C y Z»).
+       *
+       * Acá se listan los `process:` y las URLs que aparecen en los scripts de
+       * la página, que es el mapa de esas llamadas. Son NOMBRES: no hay un solo
+       * monto, así que no filtra el esperado antes del conteo. */
       // Devuelve lo que va a hacer SIN el esperado: decirlo antes del conteo
       // sería devolver justo lo que el conteo a ciegas viene a esconder.
       return json({
@@ -602,6 +618,33 @@ Deno.serve(async (req) => {
       headers: { Cookie: cookie }, signal: AbortSignal.timeout(45_000),
     })).text();
     const campos = camposDelFormulario(html);
+    /* ── `total_corte` NO es un esperado del origen: es SU fórmula ───────────
+     *
+     * Leído del JavaScript del propio origen
+     * (`js/funciones/funciones_corte_caja.js`, 2-sep):
+     *
+     *     total_corte = total_tike + total_factura + total_credito
+     *                 + monto_apertura + total_entrada − total_salida
+     *     diferencia  = total_efectivo − total_corte
+     *
+     * O sea que **NO suma los cobros de crédito** y **SÍ suma las ventas que no
+     * fueron en efectivo**. Por eso se aparta de su propio tiquete —cuya cuenta
+     * es `ingresos + venta − vales + cobros`— en el 23% de los cortes.
+     *
+     * ⚠️ **Eso NO lo introdujo el portal: es la misma cuenta que hace la
+     * pantalla de la caja.** Medido sobre los 428 cortes anteriores al primer
+     * corte hecho desde el portal: **92 (21.5%) ya discrepaban, el peor por
+     * $970.40**. El portal reproduce fielmente lo que haría el dependiente.
+     *
+     * (Hay un `process=total_sistema` en ese JavaScript que sí traería el
+     * esperado bueno. Está MUERTO: el campo `#total_sistema` no existe en el
+     * formulario de hoy, y el endpoint contesta vacío — probado el 2-sep en las
+     * seis salas. No es una salida.)
+     *
+     * Dónde SÍ se corrige: `diferenciaDelCorte` en el portal, que usa el
+     * tiquete. Lo que la pantalla muestra y el papel que imprime el portal
+     * llevan la cifra buena; lo que queda con la del origen es el registro del
+     * sistema de la caja y su propio tiquete. */
     const esperado = Number(campos.get("total_corte"));
     if (!campos.size || !Number.isFinite(esperado)) {
       throw new Error("no se pudo leer el formulario del corte");

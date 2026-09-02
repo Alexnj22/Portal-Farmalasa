@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.945.3 — El esperado del origen es su propia fórmula, y le faltan los cobros
+
+Sin cambio de comportamiento: es lo que se averiguó, escrito donde se lee.
+Corrige el diagnóstico de la auditoría del corte
+(`docs/AUDITORIA-CORTE-DESDE-EL-PORTAL-2026-09-02.md`), que llamó «bloqueante
+del portal» a un defecto que no es del portal.
+
+### Qué es `total_corte`
+
+El portal manda `diferencia = contado − total_corte` y la pregunta era qué es
+ese campo. La respuesta está en el JavaScript del propio origen:
+
+```js
+total_corte = total_tike + total_factura + total_credito
+            + monto_apertura + total_entrada − total_salida
+diferencia  = total_efectivo − total_corte
+```
+
+**No suma los cobros de crédito y sí suma las ventas que no fueron en
+efectivo.** Por eso se aparta de su propio tiquete —`ingresos + venta − vales +
+cobros`— en el 23% de los cortes.
+
+### Y ésa es la misma cuenta que hace la pantalla de la caja
+
+| cortes con tiquete **anteriores** al primer corte desde el portal | **428** |
+|---|--:|
+| de ésos, cuántos ya discrepaban de su propio tiquete | **92 (21.5%)** |
+| la peor separación, sin que el portal existiera | **$970.40** |
+
+Así que los $411.55 de Salud 3 no fueron un daño que el portal causó: fueron el
+mismo defecto de siempre, esta vez **visible** porque el portal además leyó el
+tiquete y puso la cifra buena al lado. El portal reproduce campo por campo lo
+que haría el dependiente — y en su pantalla y en su papel, corrige.
+
+### Tres salidas descartadas, con medición
+
+1. **Armar el esperado con las piezas del formulario.** Los campos existen pero
+   **llegan vacíos**: los llena el JavaScript después de cargar. Con número
+   vienen sólo `total_entrada`, `total_corte`, `t_factuta` y `total_factura`.
+2. **Un X antes del C.** Descartado por el usuario: *«el X nunca se hace, sólo C
+   y Z»*.
+3. **`process=total_sistema`.** El JavaScript tiene una llamada que traería el
+   esperado bueno — y **está muerta**: el campo `#total_sistema` no existe en el
+   formulario de hoy y el endpoint contesta **vacío**, probado en las seis salas.
+
+Queda una sola, y es una **decisión**, no un arreglo: que el portal calcule el
+esperado él mismo (tiene todas las piezas sin emitir ningún documento). Rompe la
+regla fundacional del módulo —*el esperado lo calcula la caja, no nosotros*— y
+hace que el portal pase de reproducir el origen a corregirlo.
+
+### `simular` quedó como instrumento
+
+Sigue sin escribir una línea, y ahora contesta tres cosas **sin devolver un solo
+monto** —el esperado no puede viajar antes del conteo—: los nombres de los 50
+campos del formulario, cuáles traen número, y si un cobro que no fue en efectivo
+entró al cajón.
+
 ## v2.945.2 — La corrección se aplica sobre el monto de hoy
 
 Cierra el hueco que quedó señalado en la versión anterior.

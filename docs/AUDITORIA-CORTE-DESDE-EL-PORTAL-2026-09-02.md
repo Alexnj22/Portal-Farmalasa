@@ -3,10 +3,12 @@
 Pregunta del usuario: *«ahora sí funcionarían los cortes de caja desde el
 portal? ya tenemos todo el flujo aquí»*.
 
-**Respuesta corta: el flujo está completo, pero NO está listo para reemplazar a
-la pantalla de la caja.** Falta una pieza que sí es bloqueante —el número que el
-portal ESCRIBE en el sistema de la caja— y hay tres tramos del circuito que
-nunca corrieron una sola vez en producción.
+**Respuesta corta: se puede usar, con dos advertencias.** El corte C funciona y
+el portal muestra e imprime la cifra correcta. Lo que queda mal es el número que
+el sistema de la caja guarda — **y eso ya pasaba antes del portal**, en el 21.5%
+de los cortes (§2). Lo que sí conviene no hacer todavía es **cerrar el día desde
+el portal**: ese camino nunca corrió y escribe una casilla que puede declarar de
+menos el Z, que no se deshace (§3).
 
 ---
 
@@ -31,105 +33,91 @@ sobre un acto que no se deshace.
 
 ---
 
-## 2. 🔴 BLOQUEANTE — el portal escribe una diferencia que sabe que está mal
+## 2. 🟠 La diferencia que se escribe está mal — pero el defecto NO es del portal
 
-### El defecto
+### Lo que decía esta sección, y por qué estaba mal
 
-`hacer-corte-caja` arma lo que le manda al sistema de la caja así:
+La primera versión de esta auditoría llamó a esto «bloqueante» y dijo que el
+portal *«ya sabe que ese número miente y sigue escribiendo el equivocado»*.
+Medir cambió el diagnóstico. Se deja escrito porque la conclusión anterior era
+razonable con lo que se sabía, y porque el error de lectura es el hallazgo.
 
-```ts
-const esperado   = Number(campos.get("total_corte"));   // el número del formulario
-const diferencia = esZ ? 0 : Number(efectivo) - esperado;
-campos.set("diferencia", dosDecimales(diferencia));
+### Qué es `total_corte`, leído del propio origen
+
+`hacer-corte-caja` manda `diferencia = contado − total_corte`. La pregunta era
+qué es ese campo. La respuesta está en el JavaScript del origen
+(`js/funciones/funciones_corte_caja.js`, leído el 2-sep):
+
+```js
+total_corte = total_tike + total_factura + total_credito
+            + monto_apertura + total_entrada − total_salida
+diferencia  = total_efectivo − total_corte
 ```
 
-Y el propio archivo, sesenta líneas más arriba, dice por qué eso no sirve:
+O sea que el esperado del origen **no suma los cobros de crédito** y **sí suma
+las ventas que no fueron en efectivo**. Por eso se aparta de su propio tiquete
+—cuya cuenta es `ingresos + venta − vales + cobros`— en el 23% de los cortes.
 
-> `total_corte` del formulario **NO es el efectivo esperado** […] El sistema
-> imprime la diferencia que se le manda, **sin recalcularla**, así que un
-> esperado equivocado se vuelve una afirmación falsa sobre dinero en el papel.
+**Y ésa es exactamente la cuenta que hace la pantalla de la caja.** El portal no
+inventa nada: reproduce, campo por campo, lo que haría el dependiente.
 
-O sea: **el portal ya sabe que ese número miente, corrigió lo que MUESTRA, y
-sigue escribiendo el equivocado.**
+### La medición que lo demuestra
 
-### El tamaño, medido sobre los 486 cortes con tiquete
-
-| | |
+| cortes con tiquete **anteriores** al primer corte hecho desde el portal | **428** |
 |---|--:|
-| cortes cuyo `diferencia_erp` **no** coincide con la cuenta del tiquete | **112 (23%)** |
-| la peor separación | **$970.40** |
+| de ésos, cuántos ya discrepaban de su propio tiquete | **92 (21.5%)** |
+| la peor separación, sin que el portal existiera | **$970.40** |
 
-Dos casos concretos, los dos hechos desde el portal:
+**El defecto es del sistema de la caja y afecta a todos los cortes de la
+empresa**, se hagan donde se hagan. Los $411.55 de Salud 3 no fueron un daño que
+el portal causó: fueron el mismo defecto, esta vez visible porque el portal
+además leyó el tiquete y mostró la cifra buena al lado.
 
-| corte | el sistema guardó | la verdad del tiquete |
-|---|--:|--:|
-| 14319 · Salud 3 · 31-ago 12:43 | **−$411.55** | −$9.75 |
-| 14378 · Salud 3 · 1-sep 21:03 | **+$66.01** | −$0.09 |
+### Dónde queda el portal, entonces
 
-### Por qué importa aunque el portal muestre lo correcto
+| | qué cifra lleva |
+|---|---|
+| la pantalla del portal | **la buena** (`diferenciaDelCorte`, del tiquete) |
+| el papel que imprime el portal | **la buena** |
+| el registro del sistema de la caja | la del origen |
+| el tiquete que imprime el origen | la del origen |
 
-`conLaCuentaBuena` (MiCajaView) y `diferenciaDelCorte` corrigen la cifra para la
-pantalla **y para el papel que imprime el portal**. Eso está bien y funciona.
+Las dos últimas son las que quedan mal — igual que si el corte se hubiera hecho
+en la caja.
 
-Lo que queda mal es todo lo demás:
+### Los caminos, y el que queda
 
-- el registro del sistema de la caja, que es el que ve contabilidad y cualquiera
-  fuera del portal;
-- **el tiquete que sale de la impresora del origen**, que lleva su `TOTAL CAJA`
-  correcto y, tres renglones abajo, una `DIFERENCIA` que lo contradice;
-- el mes cerrado con esas cifras.
+1. ~~Leer las piezas del formulario~~ — **descartado, medido.** Los campos
+   existen pero llegan vacíos: los llena el JavaScript después de cargar. Con
+   número vienen sólo `total_entrada`, `total_corte`, `t_factuta` y
+   `total_factura`.
+2. ~~Un X antes del C~~ — **descartado por el usuario**: *«el X nunca se hace,
+   sólo C y Z»*.
+3. ~~`process=total_sistema`~~ — el JavaScript tiene una llamada que traería el
+   esperado bueno, y **está muerta**: el campo `#total_sistema` no existe en el
+   formulario de hoy y el endpoint contesta **vacío** (probado en las seis salas
+   el 2-sep).
+4. **Que el portal calcule el esperado él mismo.** ← el único que queda.
 
-### Por qué no tiene una corrección aritmética obvia
+   Tiene todas las piezas sin emitir ningún documento:
 
-Lo primero que uno intenta es `esperado_real = total_corte + cobros_de_credito`.
-**No alcanza**, y está medido: en el corte 14378 la corrección es exacta
-(`1080.36 + 66.10 = 1146.46`, el `TOTAL CAJA` al centavo), pero en el 14319 el
-propio `total_corte` venía **+5× los cobros** (`893.50` contra los `391.25` que
-había leído el X de las 12:41). El número del origen se desvía por un **múltiplo
-entero impredecible** de los cobros de crédito — el mismo defecto que este módulo
-lleva persiguiendo desde el 13-ago.
+   | pieza | de dónde |
+   |---|---|
+   | ventas **en efectivo** | `sales_invoices.tipo_pago` (ya se usa en `fetchVentasPorPago`) |
+   | ingresos y vales | el listado de movimientos del origen, que la función ya consulta |
+   | cobros de crédito | ese mismo listado (`POR ABONO A CREDITO`) |
+   | saldo inicial | `cortes_caja_aperturas.monto_apertura` |
 
-### Los tres caminos posibles
+   ⚠️ **Es una decisión, no un arreglo obvio**, y por eso no se hizo: rompe la
+   regla fundacional del módulo —*«el esperado lo sigue calculando la caja, no
+   nosotros»*— y significa que el portal deja de reproducir al origen y empieza
+   a **corregirlo** en el registro del origen. El riesgo es la venta: `tk_venta`
+   es la foto del momento del corte y la sincronización de facturas tiene
+   retraso, así que un corte hecho al minuto podría calcular con ventas que
+   todavía no llegaron.
 
-1. ~~**Leer las piezas del formulario, no su total.**~~ **DESCARTADO, y está
-   medido** (2-sep, Salud 4, apertura 2893, vía `simular` — que no escribe nada).
-
-   Los campos **existen**: de los 50 del formulario están `total_entrada`,
-   `total_salida`, `total_cobros`, `retencion` y `monto_apertura`. Pero en el
-   HTML **llegan vacíos**: los llena el JavaScript de la pantalla del origen
-   después de cargar. Con número vienen sólo cuatro:
-
-   ```
-   total_entrada · total_corte · t_factuta · total_factura
-   ```
-
-   O sea que la cuenta `ingresos + venta − vales + cobros` **no se puede armar
-   leyendo el formulario**.
-
-   ⚠️ Y el primer detector que escribí para esto **se creyó el cero**: comparó
-   `total_cobros` contra los abonos del portal y dictaminó «por debajo del
-   efectivo», sobre un campo que no traía dato. Es
-   [[feedback_un_gate_que_no_pudo_medir_no_puede_dar_verde]] otra vez — un campo
-   vacío no es un cero medido. Se quitó.
-2. **Un X antes del C.** ← **el que queda.** La lectura X imprime las mismas
-   líneas del tiquete y **no cuenta dinero**; se lee su tiquete —que la función
-   ya sabe leer, `leerTiquete`—, se calcula el esperado con la cuenta que cierra
-   en el 100% de los 486, y recién ahí sale el C con la diferencia buena. Cuesta
-   un documento de más por corte, y un X suelto ya confundió una vez (31-ago),
-   pero desde v2.886.0 el X se captura y se muestra como lo que es.
-3. **Corregir después.** Requiere un endpoint para editar un corte ya hecho. No
-   se encontró ninguno.
-4. **Los movimientos del origen.** `admin_movimiento_caja_dt.php` —que la
-   función ya consulta para el freno del vale— lista los `POR ABONO A CREDITO`
-   del día, y su suma coincide al centavo con la línea del tiquete en 47 de 48
-   sala-días. Da los **cobros**, que es la pieza que más se desvía; faltarían
-   venta e ingresos.
-
-⚠️ **Mientras esto no se resuelva, un corte hecho desde el portal deja escrito en
-el sistema de la caja un faltante que puede ser de cientos de dólares y que no
-existe.** Es la razón por la que la respuesta a la pregunta es «todavía no».
-
----
+   **Lo decide el usuario.** Mientras tanto, el portal no está peor que la
+   pantalla de la caja, y en lo que se ve —su pantalla y su papel— está mejor.
 
 ## 3. 🟠 El corte Z nunca salió del portal, y zapatea dos casillas
 
@@ -247,8 +235,12 @@ reconstruya una regla que ya no existe.
 
 En orden, y el primero es el que bloquea:
 
-1. **Arreglar la diferencia que se escribe** (§2). El camino del formulario
-   quedó descartado con medición; el que queda es **el X antes del C**.
+1. **Decidir qué hacer con la diferencia que se escribe** (§2). No es un
+   arreglo pendiente sino una decisión: los tres caminos que usaban números del
+   origen están descartados con medición, y el que queda —que el portal calcule
+   el esperado él mismo— hace que el portal deje de reproducir al origen y
+   empiece a corregirlo. **Y el defecto no lo causó el portal**: ya estaba en el
+   21.5% de los 428 cortes anteriores.
 2. ~~Medir el cobro que no es efectivo~~ — **hecho** (§4): el origen ya lo deja
    fuera, no hay que descontar nada, y el aviso que decía lo contrario se
    corrigió.

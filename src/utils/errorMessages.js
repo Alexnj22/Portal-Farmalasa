@@ -45,6 +45,13 @@ const MARCAS_TECNICAS = [
     // Prosa de Postgres / PostgREST / supabase-js. Toda en inglés: el portal no
     // muestra inglés a nadie, así que estas frases no pueden ser copy legítima.
     /\b(constraint|relation|column|schema cache|violates|duplicate key|syntax error|permission denied|null value in|does not exist|invalid input syntax|out of range|deadlock detected|could not find|unexpected token|failed to fetch|network ?error|internal server error)\b/i,
+    // La frase que supabase-js pone en TODO rechazo de una edge function:
+    // «Edge Function returned a non-2xx status code». Pasaba el filtro —no es
+    // snake_case, no es un código, no está en la lista de arriba— y llegó a la
+    // pantalla de Salud 3 el 2-sep tapando el motivo real, que viajaba en el
+    // cuerpo. La cura de fondo es leer ese cuerpo (`motivoDelServidor`); esto
+    // es la red para el sitio que mañana se olvide de hacerlo.
+    /\bnon-2xx\b|\bedge function\b/i,
     // Rastros de stack y rutas de archivo.
     /\bat [A-Za-z$_][\w$.]*\s*\(|\.(js|jsx|ts|tsx|mjs):\d+|\bstack\b|\bTypeError\b|\bReferenceError\b/,
     // URLs y hosts: nunca van en un mensaje al usuario.

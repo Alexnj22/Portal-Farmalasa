@@ -21,6 +21,92 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.954.0 — el corte del portal ya no cierra el turno del sistema
+
+Reportado por el usuario el 2-sep, con la frase exacta: *«al hacer el corte
+desde el portal cierra turno en el ERP. Y si se hace desde el ERP no pasa.»*
+Medido sobre los cortes reales y es cierto:
+
+| | cortes en un día | secuencia de turnos |
+|---|---|---|
+| Salud 1, 31-ago (todos en el sistema) | 9 | `1→1→1→1→1→1→1→1→1` |
+| Salud 3, 24 al 31-ago | 2 por día | siempre `1` |
+| **Salud 3, 1-sep** (cortando desde el portal) | 5 | **`1→2→3→3→3`** |
+| **Salud 3 y Salud 4, 2-sep** | 2 | **`1→2`** |
+
+Las salas que no usan el portal siguieron en turno 1 esos mismos días. **El
+cierre lo agregaba el portal.**
+
+**La vía era la serialización.** `camposDelFormulario` leía el HTML y mandaba
+TODOS los campos con `name`, incluidos los **deshabilitados** y las casillas
+**sin marcar** — dos cosas que `new FormData(form)` no manda nunca, y
+`new FormData` es exactamente lo que hace `corte1()` en la pantalla del origen.
+Ahora se saltean las dos. `readonly` sigue viajando: un navegador lo manda, y
+así viaja el efectivo del Z.
+
+Es la misma lección que ya había dejado el `tipo_corte` —que venía con **X**
+marcado por defecto y se reenviaba tal cual, y sacó una lectura en vez de un
+corte el 31-ago—: **reenviar un formulario «tal cual» no es reproducir la
+pantalla, es reproducir lo que el NAVEGADOR hace con ese formulario.**
+
+Queda anotado en el registro del servidor, por corte, qué campos se mandan y
+cuáles se dejaron afuera. Si el turno vuelve a saltar, el dato ya está.
+
+### El corte dejaba al portal ciego, y con eso no se podía ni rehacer
+
+El panel del origen publica el `id_apertura` de dos formas: en el **enlace** de
+«hacer corte» y en un **campo escondido**. El enlace desaparece en cuanto el
+turno tiene su corte. `operar-caja` y `hacer-corte-caja` leían sólo el enlace,
+así que **daban la caja por cerrada sobre una apertura viva**.
+
+Medido en Salud 3: corte 14389 a las 12:38, y a las 13:04 la pantalla ofrecía
+«Abrir la caja» mientras el origen contestaba cinco veces *«Ya existe una
+apertura de caja vigente en esta caja!»*. Con la caja leída como cerrada no se
+podía anotar la salida ni rehacer el corte — o sea que la sala quedaba sin poder
+cortar justo después de cortar.
+
+`sync-aperturas-caja` ya leía las dos formas, y por eso el barrido la seguía
+viendo abierta: **tres lectores del mismo panel, dos ciegos**, con la base y la
+pantalla diciendo lo contrario durante media hora sin que nada lo señalara.
+
+Y `aperturaViva` exigía las tres piezas (`aper && emp && turno`) del mismo
+enlace, así que rehacer un corte a los dos minutos —el caso normal cuando el
+conteo sale mal— era imposible.
+
+**Falta la otra mitad**: «apertura vigente» y «turno corriendo» no son lo mismo,
+y la pantalla dice «Abierta» en los dos casos. Ya viaja `turno_corriendo` en la
+respuesta del estado; lo que falta es que el botón ofrezca **«Iniciar turno»** en
+vez de mandar a la sala al sistema.
+
+### Un corte C disparaba una alarma roja en cada corte
+
+El comprobante rotula el tipo con una ETIQUETA, no con la letra: un C sale como
+«CORTE DE CAJA» y un X sale como «X». Comparando la etiqueta contra la letra,
+**todo corte C** avisaba «Se pidió un corte C y el sistema emitió uno de tipo
+CORTE DE CAJA», en rojo y justo cuando alguien está por confirmar dinero
+contado. Una alarma que grita en el caso normal se aprende a ignorar, y entonces
+no sirve el día del X mudo, que es para lo que existe. Ahora se traduce la
+etiqueta; lo que no se reconoce se reporta como «no se pudo confirmar», nunca
+como tipo equivocado.
+
+### Un rechazo de la caja salía con el ícono de festejo
+
+`showToast` es `(título, mensaje, tipo)` y en tres sitios de Mi caja estaba
+escrito `showToast(mensaje, 'error')` — la palabra «error» caía en el MENSAJE y
+el tipo se quedaba en su default, que es `'success'`. Un 502 del origen salía
+con 🎉 y «error» de subtítulo.
+
+Y el motivo real no llegaba nunca: ante un non-2xx, supabase-js devuelve un
+`FunctionsHttpError` cuyo `.message` es siempre *«Edge function returned a
+non-2xx status code»* y deja el cuerpo sin abrir en `.context`. Todos los frenos
+contestan con código —«Esa caja ya está abierta» es 409, «La caja no aceptó la
+apertura» es 502—, o sea que **el mensaje bueno viajaba siempre por el camino
+que nadie leía**. `motivoDelServidor` lo abre, para el corte y para los
+movimientos. El patrón ya vivía en otros siete archivos del repo.
+
+De red, «non-2xx» y «edge function» entran a las marcas técnicas de
+`errorMessages.js`, para el sitio que mañana se olvide de leer el cuerpo.
+
 ## v2.953.1 — Un corte sin efectivo contado no es un faltante
 
 Salud 4, 2-sep 13:09 (corte 14393), nueve minutos después del de las 13:00 y con

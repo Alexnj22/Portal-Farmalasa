@@ -1033,10 +1033,37 @@ export async function cerrarElDia(sala) {
     return cierre?.error ? cierre : { ...cierre, z_corte: z?.id_corte ?? null };
 }
 
+/**
+ * El motivo que escribió la función, no el que inventa supabase-js.
+ *
+ * Ante cualquier código que no sea 2xx, `functions.invoke` devuelve un
+ * `FunctionsHttpError` cuyo `.message` es siempre la misma frase —«Edge
+ * function returned a non-2xx status code»— y deja el cuerpo sin abrir en
+ * `.context`. Todos los frenos de `operar-caja` contestan con código: «Esa caja
+ * ya está abierta» es 409, «La caja no aceptó la apertura» es 502, «No tienes
+ * permiso» es 403. O sea que **el mensaje bueno viaja siempre por el camino que
+ * nadie leía**.
+ *
+ * Medido el 2026-09-02 en Salud 3: la pantalla mostró la frase de supabase-js
+ * mientras el origen decía «Ya existe una apertura de caja vigente en esta
+ * caja!» —que era exactamente lo que había que saber— y el registro de la
+ * función lo tenía escrito. El portal TENÍA el motivo y lo tiraba.
+ *
+ * El patrón ya vivía en `facturasCompra.js`, `misPuntos.js`, `pedidos.js` y
+ * cuatro más; lo que faltaba era acá.
+ */
+async function motivoDelServidor(error) {
+    try {
+        const cuerpo = await error?.context?.json?.();
+        if (cuerpo?.error) return new Error(cuerpo.error);
+    } catch { /* la respuesta no era JSON: queda el error tal cual */ }
+    return error;
+}
+
 async function operar(body) {
     try {
         const { data, error } = await supabase.functions.invoke('operar-caja', { body });
-        if (error) return { error };
+        if (error) return { error: await motivoDelServidor(error) };
         if (!data || data.ok !== true) return { error: new Error(data?.error || 'NO_SE_PUDO') };
         return data;
     } catch (err) {
@@ -1056,7 +1083,11 @@ export async function hacerCorte({ sala, efectivo, observaciones = null, simular
         const { data, error } = await supabase.functions.invoke('hacer-corte-caja', {
             body: { sala, efectivo, observaciones, simular, tipo },
         });
-        if (error) return { error };
+        // Igual que en `operar`: el motivo del rechazo viaja en el cuerpo y
+        // `.message` es siempre la misma frase genérica. Acá pesa más todavía
+        // —«Este día ya tiene su corte Z» y «Esa sala no tiene una caja abierta
+        // ahora» son las dos cosas que hay que saber antes de volver a apretar.
+        if (error) return { error: await motivoDelServidor(error) };
         if (!data) return { error: new Error('NO_SE_PUDO') };
         // `ok:false` con `esperado` adentro NO es un error de red: es un corte
         // que el sistema rechazó, y la pantalla tiene que poder decirlo distinto.

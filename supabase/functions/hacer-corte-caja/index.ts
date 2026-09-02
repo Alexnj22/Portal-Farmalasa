@@ -95,9 +95,25 @@ async function aperturaViva(cookie: string) {
       body: new URLSearchParams({ process: "caja", id_caja: m[1], id_empleado: idEmple }).toString(),
       signal: AbortSignal.timeout(30_000),
     })).text();
-    const aper = panel.match(/id_apertura=(\d+)/)?.[1];
-    const emp = panel.match(/emp=(\d+)/)?.[1];
-    const turno = panel.match(/turno=(\d+)/)?.[1];
+    /* Las tres piezas viajan en el ENLACE de «hacer corte», y ese enlace
+     * DESAPARECE en cuanto el turno ya tiene su corte — que es justo cuando
+     * hay que rehacerlo. El número sobrevive en el campo escondido y el turno
+     * en el rótulo del panel; el empleado cae al de la sesión, igual que en
+     * `operar-caja`. Ver el bloque largo de `estadoDeLaCaja` allá: son dos
+     * lectores del mismo panel y se mueven juntos, con `leerPanel` de
+     * `sync-aperturas-caja` como tercero.
+     *
+     * Exigir los tres con `&&` era además lo que convertía un dato ausente en
+     * «esta sala no tiene una caja abierta»: un corte rehecho a los dos
+     * minutos —el caso normal cuando el conteo salió mal— quedaba imposible. */
+    const campo = (etiqueta: string) =>
+      (panel.match(new RegExp(`${etiqueta}:\\s*([^<]*)<`))?.[1] ?? "")
+        .replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || null;
+    const aper = panel.match(/id_apertura=(\d+)/)?.[1]
+      ?? panel.match(/id=["']id_apertura["'][^>]*value=["'](\d+)["']/)?.[1];
+    const emp = panel.match(/emp=(\d+)/)?.[1] ?? idEmple;
+    const turno = panel.match(/turno=(\d+)/)?.[1]
+      ?? campo("Turno")?.match(/\d+/)?.[0];
     if (aper && emp && turno) return { aper, emp, turno };
   }
   return null;
@@ -112,19 +128,62 @@ async function aperturaViva(cookie: string) {
  */
 function camposDelFormulario(html: string): Map<string, string> {
   const campos = new Map<string, string>();
+  /* Lo que un navegador DEJA FUERA. Se junta para el registro: es la lista de
+   * campos que el portal venía mandando de más. */
+  const fuera: string[] = [];
+  /* Atributo suelto, no la palabra en cualquier lado: `disabled` dentro de una
+   * clase o de un valor no deshabilita nada. */
+  const tiene = (t: string, attr: string) =>
+    new RegExp(`\\s${attr}(?=[\\s>=/])`, "i").test(t);
   for (const m of html.matchAll(/<input\b[^>]*>/gi)) {
     const t = m[0];
     const name = t.match(/name=["']([^"']+)["']/)?.[1];
     if (!name) continue;
     const tipo = (t.match(/type=["']([^"']+)["']/)?.[1] || "text").toLowerCase();
-    if (tipo === "button" || tipo === "submit") continue;
+    if (tipo === "button" || tipo === "submit" || tipo === "reset" || tipo === "image") continue;
+    /* ── SE SERIALIZA COMO UN NAVEGADOR, NO COMO UN LECTOR DE HTML ─────────
+     *
+     * `new FormData(form)` —lo que hace `corte1()` en la pantalla del origen—
+     * NO manda dos cosas: los campos **deshabilitados** y las casillas
+     * (`checkbox`/`radio`) **sin marcar**. Este lector las mandaba las dos, así
+     * que el portal enviaba campos que ningún dependiente envía nunca.
+     *
+     * Lo destapó el usuario el 2026-09-02: **un corte hecho desde el portal
+     * cierra el turno en el origen y uno hecho desde su pantalla no.** Medido
+     * sobre los cortes reales: del 24 al 31-ago, con todos los cortes hechos
+     * allá, el turno NUNCA avanzó —nueve cortes en un día en Salud 1, todos
+     * turno 1—; desde que corta el portal, Salud 3 va `1→2→3` y Salud 4 `1→2`,
+     * y las salas que no lo usan siguen en 1. O sea que el cierre lo agrega el
+     * portal, y la vía por la que puede agregarlo es ésta.
+     *
+     * `readonly` NO se saltea: un navegador sí lo manda, y el efectivo del Z
+     * viaja justamente así.
+     *
+     * Es la misma lección del `tipo_corte`, que venía con **X** marcado por
+     * defecto y se reenviaba tal cual: reenviar un formulario «tal cual» no es
+     * reproducir lo que hace la pantalla — hay que reproducir lo que hace el
+     * NAVEGADOR con ese formulario. */
+    if (tiene(t, "disabled")) { fuera.push(`${name}[deshabilitado]`); continue; }
+    if ((tipo === "checkbox" || tipo === "radio") && !tiene(t, "checked")) {
+      fuera.push(`${name}[${tipo} sin marcar]`);
+      continue;
+    }
     campos.set(name, t.match(/value=["']([^"']*)["']/)?.[1] ?? "");
   }
   for (const m of html.matchAll(/<select\b[^>]*name=["']([^"']+)["'][\s\S]{0,900}?<\/select>/gi)) {
+    const abre = m[0].match(/<select\b[^>]*?>/i)?.[0] ?? "";
+    if (tiene(abre, "disabled")) { fuera.push(`${m[1]}[select deshabilitado]`); continue; }
     const sel = m[0].match(/<option[^>]*selected[^>]*value=["']([^"']*)["']/i)
       ?? m[0].match(/<option[^>]*value=["']([^"']*)["']/i);
     campos.set(m[1], sel?.[1] ?? "");
   }
+  /* Al registro del servidor, nunca a la respuesta: sirve para ver si quedó
+   * algún campo que decida el cierre del turno y que todavía se esté mandando.
+   * Los valores van acá y no a la pantalla —el esperado no viaja antes del
+   * conteo—, y son los que permiten reconocer un `process` o una bandera. */
+  console.error(`[hacer-corte-caja] formulario · manda: ${
+    [...campos].map(([k, v]) => `${k}=${v}`).join("&").slice(0, 1800)
+  } · fuera: ${fuera.join(", ") || "nada"}`);
   return campos;
 }
 
@@ -822,16 +881,49 @@ Deno.serve(async (req) => {
      * En el Z importa el doble, porque el cierre del día no se deshace y quien
      * cierra no tiene una segunda oportunidad de mirar. Si el tiquete dice otra
      * cosa —o no se pudo leer— se contesta con aviso, nunca en silencio. */
-    const tipoQueSalio = tiquete?.tipo?.trim().toUpperCase() ?? null;
+    /* ── EL COMPROBANTE ROTULA EL TIPO, NO LO DELETREA (2026-09-02) ────────
+     *
+     * `CORTE TIPO:` trae una ETIQUETA y no la letra que se pidió. Medido:
+     *
+     *     un C  →  «CORTE DE CAJA»   (14389 y 14394, Salud 3, 2-sep)
+     *     un X  →  «X»               (31-ago, el que destapó esta comprobación)
+     *
+     * Comparándola contra la letra, **todo corte C disparaba la alarma**: «Se
+     * pidió un corte C y el sistema emitió uno de tipo CORTE DE CAJA». En rojo,
+     * sobre un corte perfecto, y en pantalla justo cuando alguien está por
+     * confirmar dinero contado. Una alarma que grita en el caso normal es peor
+     * que no tenerla: se aprende a ignorarla, y entonces no sirve el día del
+     * caso real —que es el X mudo del 31-ago, el motivo por el que existe—.
+     *
+     * Se traduce la etiqueta a la letra en vez de compararla cruda, y lo que no
+     * se reconoce NO se denuncia como tipo equivocado: se dice que no se pudo
+     * confirmar. Afirmar «salió del tipo equivocado» sobre una etiqueta nueva
+     * sería el mismo error al revés.
+     *
+     * La Z va primero a propósito: si algún día el Z se rotula «CORTE DE CAJA
+     * Z», preguntar por «CORTE DE CAJA» antes lo leería como un C. */
+    const letraDelTiquete = (etiqueta: string | null): "C" | "X" | "Z" | null => {
+      const t = (etiqueta ?? "").trim().toUpperCase();
+      if (!t) return null;
+      if (/\bZ\b/.test(t)) return "Z";
+      if (t === "C" || /CORTE DE CAJA/.test(t)) return "C";
+      if (/\bX\b/.test(t)) return "X";
+      return null;
+    };
+    const rotulo = tiquete?.tipo?.trim() ?? null;
+    const tipoQueSalio = letraDelTiquete(rotulo);
     const avisoTipo = !ok || !idCorte
       ? undefined
-      : tipoQueSalio === null
+      : !tiquete
         ? `El ${tipo} se registró (número ${idCorte}), pero no se pudo leer su comprobante`
           + " para confirmar que salió del tipo correcto."
-        : tipoQueSalio !== tipo
-          ? `Se pidió un corte ${tipo} y el sistema emitió uno de tipo ${tipoQueSalio}`
-            + ` (número ${idCorte}). Avisá a Sistemas antes de seguir.`
-          : undefined;
+        : tipoQueSalio === null
+          ? `El ${tipo} se registró (número ${idCorte}), pero su comprobante dice «${rotulo}»`
+            + " y el portal no reconoce ese tipo. Avisá a Sistemas antes de seguir."
+          : tipoQueSalio !== tipo
+            ? `Se pidió un corte ${tipo} y el sistema emitió uno de tipo ${rotulo}`
+              + ` (número ${idCorte}). Avisá a Sistemas antes de seguir.`
+            : undefined;
 
     return json({
       ok,

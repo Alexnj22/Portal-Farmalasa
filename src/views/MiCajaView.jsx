@@ -515,7 +515,13 @@ export default function MiCajaView({ comoPestana = false }) {
         setOcupado(true);
         const r = await fn();
         setOcupado(false);
-        if (r.error) { showToast(mensajeAmigable(r.error), 'error'); return null; }
+        /* `showToast` es (título, mensaje, tipo). Los tres avisos de error de
+         * esta vista estaban escritos `showToast(mensaje, 'error')`, o sea con
+         * la palabra «error» cayendo en el MENSAJE y el tipo quedándose en su
+         * default — que es `'success'`. Un rechazo de la caja salía con el
+         * ícono de festejo y «error» de subtítulo (visto en Salud 3 el 2-sep
+         * al intentar abrir una caja que ya estaba abierta). */
+        if (r.error) { showToast('No se pudo', mensajeAmigable(r.error), 'error'); return null; }
         /* ── El `aviso` del servidor GANA sobre el mensaje de éxito ─────────
          *
          * `operar-caja` contesta `ok: true` con un `aviso` cuando el acto salió
@@ -876,7 +882,7 @@ export default function MiCajaView({ comoPestana = false }) {
                                 venceEl: datos.vence_el,
                             });
                             setOcupado(false);
-                            if (r.error) { showToast(mensajeAmigable(r.error), 'error'); return; }
+                            if (r.error) { showToast('No se pudo anotar el abono', mensajeAmigable(r.error), 'error'); return; }
                             setDialogo(null);
                             cargar();
                             showToast(`Abono anotado · ${r.abono?.folio || ''}`,
@@ -974,7 +980,7 @@ export default function MiCajaView({ comoPestana = false }) {
                     setOcupado(true);
                     const bruto = await hacerCorte({ sala, efectivo });
                     setOcupado(false);
-                    if (bruto.error) { showToast(mensajeAmigable(bruto.error), 'error'); return; }
+                    if (bruto.error) { showToast('No se pudo hacer el corte', mensajeAmigable(bruto.error), 'error'); return; }
                     const r = conLaCuentaBuena(bruto);
                     setResultado(r);
                     cargar();

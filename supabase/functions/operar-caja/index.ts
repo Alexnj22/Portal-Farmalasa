@@ -115,23 +115,70 @@ async function estadoDeLaCaja(cookie: string) {
       body: new URLSearchParams({ process: "caja", id_caja: idCaja, id_empleado: idEmple }).toString(),
       signal: AbortSignal.timeout(30_000),
     })).text();
-    const aper = panel.match(/id_apertura=(\d+)/)?.[1];
+    // Lo que el sistema espera adentro AHORA, quién abrió y a qué hora. Está
+    // en el mismo panel: no cuesta una petición más y es la primera pregunta
+    // de quien mira la pantalla — «¿cuánto hay?».
+    const campo = (etiqueta: string) =>
+      (panel.match(new RegExp(`${etiqueta}:\\s*([^<]*)<`))?.[1] ?? "")
+        .replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || null;
+    /* ── EL PANEL DICE LA APERTURA DE DOS FORMAS, Y LA SEGUNDA ES LA QUE
+     *    QUEDA DESPUÉS DEL CORTE (2026-09-02) ──────────────────────────────
+     *
+     * `id_apertura=` sale en el ENLACE de «hacer corte». En cuanto el turno ya
+     * tiene su corte ese enlace desaparece, y el número sobrevive sólo en el
+     * campo escondido `<input id="id_apertura" value="…">`. Leyendo únicamente
+     * el enlace, esta función daba la caja por CERRADA sobre un turno que el
+     * origen tiene bien vivo.
+     *
+     * Medido en Salud 3 el 2-sep: corte 14389 a las 12:38, y a las 13:04 la
+     * pantalla ofrecía «Abrir la caja» mientras el origen contestaba cinco
+     * veces «Ya existe una apertura de caja vigente en esta caja!». Con la
+     * caja leída como cerrada NADA se puede hacer: ni la salida, ni rehacer el
+     * corte —`hacer-corte-caja` tenía el mismo lector—, así que la sala queda
+     * sin poder cortar justo después de cortar.
+     *
+     * `sync-aperturas-caja` ya leía las dos formas (`leerPanel`) y por eso el
+     * barrido de las 13:00 la seguía viendo abierta. Eran DOS lectores del
+     * MISMO panel con distinta regla, y el que decide si se puede operar era
+     * el ciego. Al tocar uno hay que tocar los tres.
+     *
+     * `emp` y `turno` viajan en ese mismo enlace y se caen con él: el turno se
+     * recupera del rótulo del panel —que es de donde lo saca el barrido, y el
+     * que dio «2» bien ese día— y el empleado cae al de la sesión, que es el
+     * respaldo que esta función ya tenía. */
+    const aper = panel.match(/id_apertura=(\d+)/)?.[1]
+      ?? panel.match(/id=["']id_apertura["'][^>]*value=["'](\d+)["']/)?.[1];
     if (aper) {
-      // Lo que el sistema espera adentro AHORA, quién abrió y a qué hora. Está
-      // en el mismo panel: no cuesta una petición más y es la primera pregunta
-      // de quien mira la pantalla — «¿cuánto hay?».
-      const campo = (etiqueta: string) =>
-        (panel.match(new RegExp(`${etiqueta}:\\s*([^<]*)<`))?.[1] ?? "")
-          .replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || null;
       const num = (v: string | null) => {
         const limpio = String(v ?? "").replace(/[^0-9.-]/g, "");
         const n = Number(limpio);
         return limpio && Number.isFinite(n) ? n : null;
       };
+      /* ── «APERTURA VIGENTE» NO ES «TURNO CORRIENDO» ────────────────────
+       *
+       * El enlace del corte sólo está mientras el turno corre. Sin él, el panel
+       * muestra «Apertura Vigente» y un botón verde **Iniciar Turno**: la
+       * apertura del día sigue viva y no hay turno con el que vender ni cortar.
+       *
+       * Devolver `abierta: true` a secas —lo que hace este arreglo— es correcto
+       * para no volver a perder la apertura, y a la vez esconde ese estado: la
+       * pantalla dice «Abierta» y no ofrece nada, así que la sala termina yendo
+       * al sistema a apretar el botón. Es el mismo defecto de antes al revés.
+       *
+       * `turno_corriendo` lo separa. La sonda de abajo es para escribir el
+       * «Iniciar turno» del portal con el dato en la mano y no adivinando —que
+       * es lo que ya costó un corte X el 31-ago— y se quita en cuanto esté. */
+      const turnoCorriendo = /id_apertura=\d+/.test(panel);
+      if (!turnoCorriendo) {
+        const trozos = [...panel.matchAll(/<(?:button|form|a|input)\b[^>]*>(?:[^<]{0,60})/gi)]
+          .map((m) => m[0].replace(/\s+/g, " ")).join(" | ").slice(0, 2000);
+        console.error(`[operar-caja] sonda turno caja=${idCaja}: ${trozos}`);
+      }
       return {
-        abierta: true, idCaja,
+        abierta: true, turnoCorriendo, idCaja,
         aper, emp: panel.match(/emp=(\d+)/)?.[1] ?? idEmple,
-        turno: panel.match(/turno=(\d+)/)?.[1] ?? "1",
+        turno: panel.match(/turno=(\d+)/)?.[1]
+          ?? campo("Turno")?.match(/\d+/)?.[0] ?? "1",
         idEmple,
         registrado: num(campo("Monto Registrado")),
         apertura: num(campo("Monto Apertura")),
@@ -140,7 +187,7 @@ async function estadoDeLaCaja(cookie: string) {
       };
     }
   }
-  return { abierta: false, idCaja: cajas[0] ?? null, aper: null, emp: null, turno: null, idEmple };
+  return { abierta: false, turnoCorriendo: false, idCaja: cajas[0] ?? null, aper: null, emp: null, turno: null, idEmple };
 }
 
 const dosDecimales = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
@@ -394,6 +441,9 @@ Deno.serve(async (req) => {
       const registrado = (estado as { registrado?: number | null }).registrado ?? null;
       return json({
         ok: true, abierta: estado.abierta, caja: estado.idCaja, turno: estado.turno,
+        // «Vigente» y «corriendo» son dos estados y la pantalla necesita los dos:
+        // con la apertura viva y el turno sin iniciar no se puede vender ni cortar.
+        turno_corriendo: (estado as { turnoCorriendo?: boolean }).turnoCorriendo ?? true,
         registrado,
         apertura: (estado as { apertura?: number | null }).apertura ?? null,
         quien: (estado as { quien?: string | null }).quien ?? null,

@@ -271,8 +271,13 @@ Deno.serve(async (req) => {
         if (enEspejo?.fecha) {
           const filas = await creditosDeLaSala(cookie, entrada.erpId,
             String(enEspejo.fecha), String(enEspejo.fecha));
-          await supabase.rpc("sync_creditos_batch",
+          // El error NO se descarta: si el espejo no se refresca, la pantalla
+          // sigue mostrando el saldo VIEJO de un crédito que ya se corrigió, y
+          // eso se ve exactamente igual que un saldo bueno. No lanza —la
+          // corrección ya ocurrió y no se deshace por esto— pero queda anotado.
+          const { error: eEspejo } = await supabase.rpc("sync_creditos_batch",
             { p_filas: filas.map((c) => ({ ...c, branch_id: sala })) });
+          if (eEspejo) console.error(`[creditos-erp] espejo tras corregir: ${eEspejo.message}`);
         }
       } catch (e) {
         console.error(`[creditos-erp] espejo tras corregir: ${(e as Error).message}`);

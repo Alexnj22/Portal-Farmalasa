@@ -261,26 +261,34 @@ const ABONOS_S4 = [
 
 describe('los cobros de crédito de un corte', () => {
     it('parte el día por la hora del corte, no por el día entero', () => {
-        const c = cobrosDeCredito({ hora: '10:03:30', tk_cobros_credito: 19.85 }, ABONOS_S4);
+        const c = cobrosDeCredito({ hora: '10:03:30', tk_cobros_credito: 8.55 }, ABONOS_S4);
         expect(c.antes.map((a) => a.id)).toEqual([1, 2]);
         expect(c.despues.map((a) => a.id)).toEqual([3]);
         expect(c.hasta).toBe(19.85);
+        // Cuadra contra lo que ENTRÓ AL CAJÓN, no contra todo lo cobrado: la
+        // transferencia de las 10:01 no llega al comprobante.
+        expect(c.enCaja).toBe(8.55);
         expect(c.cuadra).toBe(true);
     });
 
-    it('separa lo que NO entró al cajón', () => {
-        // Es la mitad que el comprobante no distingue: de los $29.85, sólo
-        // $8.55 llegaron en billetes. Si el corte los espera todos en efectivo,
-        // el faltante es exactamente $21.30 y no hay nada que buscar.
-        const c = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 29.85 }, ABONOS_S4);
-        expect(c.efectivo).toBe(8.55);
+    it('el comprobante sólo cuenta el efectivo, y por eso se compara con él', () => {
+        // Medido el 2-sep en Salud 4 contra los movimientos del origen: el cobro
+        // en efectivo aparece como movimiento (1 de 1) y los dos por
+        // transferencia no (0 de 2). Así que el comprobante trae $8.55, no
+        // $29.85 — y compararlo contra el total denunciaría una brecha falsa en
+        // cada corte donde alguien pagó por transferencia.
+        const c = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 8.55 }, ABONOS_S4);
+        expect(c.hasta).toBe(29.85);
+        expect(c.enCaja).toBe(8.55);
         expect(c.noEfectivo).toBe(21.30);
+        expect(c.cuadra).toBe(true);
     });
 
     it('un abono anulado no cuenta ni antes ni después', () => {
-        const c = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 19.85 },
+        const c = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 8.55 },
             [...ABONOS_S4, { id: 9, hora: '11:00:00', monto: 50, forma: 'Efectivo', anulado: true }]);
         expect(c.hasta).toBe(29.85);
+        expect(c.enCaja).toBe(8.55);
         expect(c.antes.some((a) => a.id === 9)).toBe(false);
     });
 
@@ -294,16 +302,29 @@ describe('los cobros de crédito de un corte', () => {
         expect(c.cuadra).toBe(false);
     });
 
-    it('ofrece el cobro que no es efectivo cuando falta dinero', () => {
-        const cobros = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 29.85 }, ABONOS_S4);
+    it('NO culpa al cobro que no fue efectivo por un faltante', () => {
+        // Fue una hipótesis del 2-sep y la medición del mismo día la desmintió:
+        // el comprobante no cuenta esos cobros, así que no pueden explicar un
+        // faltante. Ofrecerla mandaba a buscar una causa que no existe.
+        const cobros = cobrosDeCredito({ hora: '13:00:00', tk_cobros_credito: 8.55 }, ABONOS_S4);
         const s = sugerenciasDeCorte({ ...corte({ hora: '13:00:00' }), tramo: -21.30 }, [], [], cobros);
-        expect(s[0].titulo).toContain('21.30');
-        expect(s[0].titulo).toContain('no entraron en efectivo');
+        expect(s.some((x) => x.titulo.includes('no entraron en efectivo'))).toBe(false);
     });
 
     it('se calla sobre los cobros cuando el detalle ya los explica', () => {
         const cobros = cobrosDeCredito({ hora: '10:30:00', tk_cobros_credito: 8.55 },
             [ABONOS_S4[1]]);
+        const s = sugerenciasDeCorte(
+            { ...corte({ hora: '10:30:00' }), tramo: -3.00, tk_cobros_credito: 8.55 }, [], [], cobros,
+        );
+        expect(s.some((x) => x.titulo.includes('cobros de crédito'))).toBe(false);
+    });
+
+    it('y se calla también con una transferencia en el medio', () => {
+        // El cobro que no es efectivo ya no impide dar por explicada la línea:
+        // el comprobante tampoco lo cuenta.
+        const cobros = cobrosDeCredito({ hora: '10:30:00', tk_cobros_credito: 8.55 },
+            [ABONOS_S4[0], ABONOS_S4[1]]);
         const s = sugerenciasDeCorte(
             { ...corte({ hora: '10:30:00' }), tramo: -3.00, tk_cobros_credito: 8.55 }, [], [], cobros,
         );

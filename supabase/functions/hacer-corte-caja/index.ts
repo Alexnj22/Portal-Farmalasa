@@ -392,12 +392,133 @@ Deno.serve(async (req) => {
     const montoVale = mias.reduce((s: number, p: { monto: number }) => s + Number(p.monto), 0);
 
     if (simular) {
+      /* ── El formulario se LEE, y sus valores van al log, no a la respuesta ──
+       *
+       * `simular` no escribe una línea —ni el vale, ni el corte— y leer la
+       * pantalla del corte es un GET. Se hace acá porque es la única forma de
+       * mirar qué trae ese formulario sin cortarle la caja a una sala.
+       *
+       * Lo que se buscaba: si trae la venta, los ingresos, los vales y los
+       * cobros de crédito POR SEPARADO, para armar acá el esperado
+       * —`ingresos + venta − vales + cobros`, la cuenta que cierra en los 486
+       * tiquetes medidos— en vez de mandar `contado − total_corte`, que arrastra
+       * un número del origen que se desvía por un múltiplo entero impredecible
+       * de los cobros (+5× en el corte 14319, 0× en el 14378).
+       *
+       * ⚠️ **La respuesta fue que NO** (medido el 2-sep en Salud 4): los campos
+       * existen —los 50 están listados— pero `total_cobros`, `total_salida`,
+       * `retencion` y `monto_apertura` llegan VACÍOS en el HTML; los llena el
+       * JavaScript de la pantalla del origen después de cargar. Con número sólo
+       * vienen `total_entrada`, `total_corte`, `t_factuta` y `total_factura`.
+       *
+       * O sea que la cuenta por piezas NO se puede armar leyendo el formulario.
+       * El camino que queda es el tiquete, que sí trae todo y que esta función
+       * ya lee — pero recién DESPUÉS de que el corte salió.
+       *
+       * ⚠️ Los VALORES van sólo al log del servidor. Devolverlos sería entregar
+       * el esperado antes del conteo, que es exactamente lo que el conteo a
+       * ciegas viene a esconder — y `simular` es parte del mismo flujo. A la
+       * respuesta van los NOMBRES, que no dicen cuánto hay. */
+      let campos: Map<string, string> | null = null;
+      try {
+        const htmlSim = await (await fetch(`${PANTALLA}?aper_id=${viva.aper}`, {
+          headers: { Cookie: cookie }, signal: AbortSignal.timeout(45_000),
+        })).text();
+        campos = camposDelFormulario(htmlSim);
+      } catch (e) {
+        console.error("hacer-corte-caja: no se pudo leer el formulario:", e);
+      }
+
+      /* ── ¿El sistema de la caja mete al cajón un cobro que no fue efectivo? ──
+       *
+       * El listado de movimientos del origen es la fuente que ya se usa para el
+       * freno del vale, y es la MISMA de la que salen los «POR ABONO A CREDITO»
+       * que el portal captura: medido sobre 48 sala-días, su suma coincide al
+       * centavo con la línea COBROS CREDITO del tiquete en 47.
+       *
+       * Entonces: si un abono cobrado por transferencia aparece ahí, el origen
+       * lo está tratando como efectivo que entró al cajón — y el corte lo va a
+       * pedir en billetes. Se cruza por MONTO, que es lo único que el concepto
+       * («POR ABONO A CREDITO», idéntico en los 112 medidos) permite comparar.
+       *
+       * Se devuelve el veredicto y la CANTIDAD de renglones, nunca su suma: el
+       * esperado no viaja antes del conteo. */
+      let cajon: string | null = null;
+      let cuantosAbonosEnLaCaja: number | null = null;
+      try {
+        const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+        const dt = await (await fetch(
+          `${MOV_URL}?fechai=${hoy}&fechaf=${hoy}&draw=1&start=0&length=1000`,
+          { headers: { Cookie: cookie, "X-Requested-With": "XMLHttpRequest" }, signal: AbortSignal.timeout(60_000) },
+        )).json();
+        if (Array.isArray(dt?.data)) {
+          const montos = (dt.data as string[][])
+            .filter((f) => /ABONO A CREDITO/i.test(String(f[1] ?? "")))
+            .map((f) => f.map((c) => Number(String(c).replace(/[^0-9.-]/g, "")))
+              .filter((n) => Number.isFinite(n) && n > 0));
+          cuantosAbonosEnLaCaja = montos.length;
+          /* El `error` NO se descarta, y acá menos que en otros lados: si el
+           * select falla, `abonos` llega vacío y el veredicto diría «hoy no
+           * hubo cobros que no fueran efectivo» sobre un día que sí los tuvo.
+           * Un instrumento que confunde «no pude leer» con «no hay» es peor que
+           * no tenerlo. */
+          const { data: abonos, error: errAbonos } = await supabase
+            .from("creditos_abonos_portal")
+            .select("monto, forma, anulado_at")
+            .eq("branch_id", sala)
+            .gte("created_at", `${hoy}T00:00:00-06:00`)
+            .lte("created_at", `${hoy}T23:59:59-06:00`);
+          if (errAbonos) throw new Error(`leyendo los cobros del portal: ${errAbonos.message}`);
+          const noEfvo = (abonos ?? []).filter((a) => !a.anulado_at
+            && String(a.forma ?? "").toLowerCase() !== "efectivo");
+          const aparece = (m: number) => montos.some((fila) => fila.some((n) => Math.abs(n - m) < 0.005));
+          /* Los de EFECTIVO también se miran, y no es por completitud: si
+           * ninguno apareciera, «no entra el que no es efectivo» no probaría
+           * nada — sería que el origen no anota NINGÚN abono del portal, que es
+           * un defecto peor y con la misma cara. Los dos veredictos juntos son
+           * los que distinguen una cosa de la otra. */
+          const efvo = (abonos ?? []).filter((a) => !a.anulado_at
+            && String(a.forma ?? "").toLowerCase() === "efectivo");
+          const cuenta = (l: typeof efvo) => l.filter((a) => aparece(Number(a.monto))).length;
+          const veredicto = (l: typeof efvo, n: number) => (!l.length
+            ? "no_hubo"
+            : n === l.length ? "entran_todos_" + n + "_de_" + l.length
+              : n === 0 ? "no_entra_ninguno_de_" + l.length
+                : "entran_" + n + "_de_" + l.length);
+          cajon = "efectivo:" + veredicto(efvo, cuenta(efvo))
+            + " | no_efectivo:" + veredicto(noEfvo, cuenta(noEfvo));
+        }
+      } catch (e) {
+        console.error("hacer-corte-caja: no se pudo leer los movimientos:", e);
+      }
+
       // Devuelve lo que va a hacer SIN el esperado: decirlo antes del conteo
       // sería devolver justo lo que el conteo a ciegas viene a esconder.
       return json({
+        abonos_en_la_caja: cuantosAbonosEnLaCaja,
+        un_cobro_que_no_es_efectivo: cajon,
         ok: true, simulado: true, sala,
         apertura: viva.aper, turno: viva.turno,
         vale_a_escribir: mias.length ? { salidas: mias.length, monto: Number(montoVale.toFixed(2)) } : null,
+        campos_del_formulario: campos ? [...campos.keys()] : null,
+        /* Cuáles de esos campos traen un número distinto de cero EN EL HTML.
+         * Importa porque la pantalla del origen llena varios con JavaScript
+         * después de cargar, y `camposDelFormulario` lee el `value=` estático:
+         * un campo que existe pero llega en cero no sirve para armar la cuenta,
+         * y confundirlo con un dato daría un esperado de menos.
+         *
+         * Medido el 2-sep en Salud 4: de los 50 campos, sólo `total_entrada`,
+         * `total_corte`, `t_factuta` y `total_factura` traen número. Los que
+         * harían falta para armar el esperado —`total_cobros`, `total_salida`,
+         * `retencion`, `monto_apertura`— llegan VACÍOS. O sea que la cuenta por
+         * piezas no se puede armar desde este HTML, y el primer detector que se
+         * escribió creyó que un `total_cobros` vacío era un cero medido.
+         *
+         * Son NOMBRES: no dicen cuánto hay. */
+        campos_con_numero: campos
+          ? [...campos].filter(([, v]) => Number.isFinite(Number(v)) && Number(v) !== 0)
+            .map(([k]) => k)
+          : null,
       });
     }
 
@@ -555,10 +676,12 @@ Deno.serve(async (req) => {
        * el defecto conocido del origen, que suma los cobros de crédito un
        * número entero de veces de más— y las piezas del tiquete. Quién gana lo
        * decide `diferenciaDelCorte` en el portal, que es la MISMA función con
-       * la que se lee la tabla de cortes desde el 13-ago y la única que conoce
-       * el caso en que la buena es la del formulario (un corte hecho antes de
-       * que entraran los cobros del día). Elegir también acá sería contestar
-       * dos veces la misma pregunta, y esta respuesta sabe menos. */
+       * la que se lee la tabla de cortes desde el 13-ago.
+       *
+       * (Hasta v2.931.1 acá decía que esa función «conoce el caso en que la
+       * buena es la del formulario». Esa excepción se ELIMINÓ: medido sobre 485
+       * cortes, la suma del tiquete cierra sola en el 100% y la del formulario
+       * se aparta en el 23%. Hoy el tiquete siempre gana.) */
       esperado, contado: Number(efectivo),
       diferencia: Number(dosDecimales(diferencia)),
       tipo: tiquete?.tipo ?? null,

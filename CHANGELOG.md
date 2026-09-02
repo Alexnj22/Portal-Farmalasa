@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.945.0 — El origen ya deja fuera el cobro que no es efectivo
+
+Ayer salió v2.941.0 con una hipótesis escrita como aviso. Hoy se midió y era
+falsa. Esto la corrige, y de paso contesta si el corte desde el portal ya se
+puede usar: **`docs/AUDITORIA-CORTE-DESDE-EL-PORTAL-2026-09-02.md`**.
+
+### Lo que se midió
+
+Regla del usuario: *«sólo entra en efectivo, los otros no, es como pago con
+tarjeta»*. La pregunta era si el sistema de la caja la cumple o si había que
+descontarlo a mano. Se cruzaron los tres cobros que Salud 4 hizo hoy desde el
+portal contra el listado de movimientos del origen:
+
+| cobro | forma | ¿entró al cajón? |
+|---|---|---|
+| $11.30 | Transferencia | **no** |
+| $8.55 | Efectivo | **sí** |
+| $10.00 | Transferencia | **no** |
+
+**El origen ya distingue.** Y esos movimientos son de donde sale la línea
+`COBROS CREDITO`: su suma coincide al centavo con ella en **47 de 48 sala-días**.
+
+### Lo que se corrigió
+
+`cobrosDeCredito` comparaba **todo** lo cobrado contra el comprobante. Ahora
+compara **`enCaja`** — sólo el efectivo, que es lo único que el comprobante
+cuenta. Con la comparación vieja, cualquier corte donde alguien pagara por
+transferencia habría denunciado una brecha que no existe.
+
+Y se quitó la pista *«el faltante es igual a $X de cobros que no entraron en
+efectivo»*: mandaba a buscar una causa imposible. **Se dejó escrito en su lugar
+por qué se fue**, con la medición — la hipótesis es plausible y alguien la va a
+volver a proponer.
+
+⚠️ **Descontar esos $21.30 del esperado, que es lo que ayer parecía correcto,
+habría inventado un sobrante por ese monto.**
+
+### El instrumento mintió primero
+
+Vale anotarlo porque casi decide mal. El primer detector leía `total_cobros` del
+formulario del corte y lo comparaba con los abonos del portal: dictaminó «por
+debajo del efectivo». **El campo llega vacío** — lo llena el JavaScript de la
+pantalla del origen después de cargar, y `camposDelFormulario` lee el `value=`
+estático. Un campo vacío no es un cero medido. El detector bueno es el que mira
+los movimientos, que es donde el dinero de verdad aparece o no.
+
+### Y de paso: la cuenta por piezas no se puede armar
+
+Se inspeccionó el formulario del corte con `simular` —que no escribe una línea—
+buscando armar el esperado como `ingresos + venta − vales + cobros`, la cuenta
+que cierra en el 100% de los 486 tiquetes medidos. Los 50 campos están, pero de
+los que hacen falta **sólo `total_entrada` trae número**; `total_cobros`,
+`total_salida`, `retencion` y `monto_apertura` llegan vacíos.
+
+Así que el bloqueante sigue abierto y con un camino menos: el que queda es
+emitir una lectura X antes del corte y sacar el esperado de su tiquete.
+
+`simular` ahora devuelve ese diagnóstico —los nombres de los campos, cuáles
+traen número, y si un cobro que no fue efectivo entró al cajón— **sin ningún
+monto**: el esperado no viaja antes del conteo, y `simular` es parte del mismo
+flujo.
+
 ## v2.944.0 — Corregir un abono es una solicitud
 
 Pedido del usuario: *«si se quiere editar un abono, no permite; que sea como

@@ -685,7 +685,8 @@ export default function CorteDetalleModal({
                                                 <span className="font-bold text-content">
                                                     {formatMoney(cobros.noEfectivo)} no entraron en efectivo.
                                                 </span>{' '}
-                                                Ese dinero no pasó por la caja, así que no tiene que estar en el cajón.
+                                                Ese dinero no pasó por la caja y el comprobante tampoco lo cuenta,
+                                                así que no hay que buscarlo en el cajón.
                                             </p>
                                         )}
                                         {cobros.despues.length > 0 && (

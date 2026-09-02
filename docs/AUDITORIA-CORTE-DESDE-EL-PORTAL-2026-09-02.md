@@ -91,17 +91,39 @@ lleva persiguiendo desde el 13-ago.
 
 ### Los tres caminos posibles
 
-1. **Leer las piezas del formulario, no su total.** El formulario del corte trae
-   50 campos. Si entre ellos vienen la venta, los ingresos, los vales y los
-   cobros por separado, el portal arma `ingresos + venta − vales + cobros` —que
-   es la cuenta que **cierra en los 486 tiquetes, 100%**— y manda la diferencia
-   buena. **Es el camino preferible y sólo hay que averiguar si esos campos
-   están.** Se averigua sin escribir nada: `simular: true` no toca la caja.
-2. **Un X antes del C.** La lectura X imprime las mismas líneas y no cuenta
-   dinero; se lee su tiquete, se calcula el esperado y recién ahí sale el C.
-   Cuesta un documento de más por corte, y un X suelto ya confundió una vez.
+1. ~~**Leer las piezas del formulario, no su total.**~~ **DESCARTADO, y está
+   medido** (2-sep, Salud 4, apertura 2893, vía `simular` — que no escribe nada).
+
+   Los campos **existen**: de los 50 del formulario están `total_entrada`,
+   `total_salida`, `total_cobros`, `retencion` y `monto_apertura`. Pero en el
+   HTML **llegan vacíos**: los llena el JavaScript de la pantalla del origen
+   después de cargar. Con número vienen sólo cuatro:
+
+   ```
+   total_entrada · total_corte · t_factuta · total_factura
+   ```
+
+   O sea que la cuenta `ingresos + venta − vales + cobros` **no se puede armar
+   leyendo el formulario**.
+
+   ⚠️ Y el primer detector que escribí para esto **se creyó el cero**: comparó
+   `total_cobros` contra los abonos del portal y dictaminó «por debajo del
+   efectivo», sobre un campo que no traía dato. Es
+   [[feedback_un_gate_que_no_pudo_medir_no_puede_dar_verde]] otra vez — un campo
+   vacío no es un cero medido. Se quitó.
+2. **Un X antes del C.** ← **el que queda.** La lectura X imprime las mismas
+   líneas del tiquete y **no cuenta dinero**; se lee su tiquete —que la función
+   ya sabe leer, `leerTiquete`—, se calcula el esperado con la cuenta que cierra
+   en el 100% de los 486, y recién ahí sale el C con la diferencia buena. Cuesta
+   un documento de más por corte, y un X suelto ya confundió una vez (31-ago),
+   pero desde v2.886.0 el X se captura y se muestra como lo que es.
 3. **Corregir después.** Requiere un endpoint para editar un corte ya hecho. No
    se encontró ninguno.
+4. **Los movimientos del origen.** `admin_movimiento_caja_dt.php` —que la
+   función ya consulta para el freno del vale— lista los `POR ABONO A CREDITO`
+   del día, y su suma coincide al centavo con la línea del tiquete en 47 de 48
+   sala-días. Da los **cobros**, que es la pieza que más se desvía; faltarían
+   venta e ingresos.
 
 ⚠️ **Mientras esto no se resuelva, un corte hecho desde el portal deja escrito en
 el sistema de la caja un faltante que puede ser de cientos de dólares y que no
@@ -140,33 +162,35 @@ no hay ninguna medición que diga qué pasa.
 
 ---
 
-## 4. 🟠 El cobro de crédito que no entra al cajón
+## 4. ✅ CERRADO — el origen ya distingue el cobro que no es efectivo
 
 Regla del usuario (2-sep): *«sólo entra en efectivo, los otros no, es como pago
 con tarjeta»*.
 
-La prueba de Salud 4 de hoy fueron **$29.85 en tres cobros**, de los cuales
-**$21.30 son transferencias**. Si el sistema de la caja los suma dentro de
-`COBROS CREDITO` —que es la línea que alimenta `TOTAL CAJA`, o sea el efectivo
-esperado—, el corte va a pedir en el cajón $21.30 que nunca estuvieron ahí y va a
-marcar un faltante exacto por ese monto.
+**El sistema de la caja ya la cumple.** Medido cruzando los tres cobros que
+Salud 4 hizo hoy desde el portal contra el listado de movimientos del origen:
 
-**Está medido a medias.** Lo que sí se sabe: los movimientos de abono del sistema
-de la caja suman **al centavo lo mismo que la línea `COBROS CREDITO`** en 47 de
-48 sala-días (la excepción es Salud 3 del 31-ago, con $60.00 que entraron después
-del último corte). Lo que falta: si esos movimientos incluyen los cobros que no
-fueron en efectivo.
+| cobro del portal | forma | ¿aparece como movimiento de caja? |
+|---|---|---|
+| $11.30 | Transferencia | **no** |
+| $8.55 | Efectivo | **sí** |
+| $10.00 | Transferencia | **no** |
 
-**Lo contesta el próximo corte de Salud 4.** Si `tk_cobros_credito` vuelve con
-$29.85, los cuenta y hay que restar los $21.30 del esperado. Si vuelve con $8.55,
-no los cuenta y no hay nada que hacer.
+`efectivo: entran_todos_1_de_1 · no_efectivo: no_entra_ninguno_de_2`
 
-Desde v2.941.0 el portal ya separa y muestra ese monto (`cobrosDeCredito`
-→ `noEfectivo`), y lo ofrece como primera pista ante un faltante. **Lo que
-todavía no hace es descontarlo del esperado**, y no debe hacerlo antes de la
-medición: si el origen ya los excluye, restarlos otra vez inventaría un sobrante.
+Y esos movimientos son exactamente de donde sale la línea `COBROS CREDITO`: su
+suma coincide al centavo con ella en **47 de 48 sala-días**. Entonces sólo el
+efectivo llega al efectivo esperado, y **no hay nada que descontar**.
 
----
+⚠️ **Descontarlo habría inventado un sobrante de $21.30.** El aviso que salió
+ayer en v2.941.0 —«si el comprobante los cuenta, ahí está el faltante»— era una
+hipótesis razonable y quedó desmentida por la medición del día siguiente.
+Corregido en v2.945.0: `cobrosDeCredito` ahora compara contra **`enCaja`** (sólo
+el efectivo) y no contra el total, y la pista que culpaba a la transferencia se
+quitó, con el porqué escrito en su lugar para que nadie la vuelva a proponer.
+
+Comparar contra el total, además, habría **denunciado una brecha falsa en cada
+corte donde alguien pagó por transferencia**.
 
 ## 5. 🟡 Quién puede cortar la caja de quién
 
@@ -223,10 +247,11 @@ reconstruya una regla que ya no existe.
 
 En orden, y el primero es el que bloquea:
 
-1. **Arreglar la diferencia que se escribe** (§2). Empezar por averiguar si el
-   formulario trae las piezas sueltas — se puede con `simular`, sin escribir.
-2. **Medir el cobro que no es efectivo** con el próximo corte de Salud 4 (§4), y
-   sólo entonces decidir si se descuenta del esperado.
+1. **Arreglar la diferencia que se escribe** (§2). El camino del formulario
+   quedó descartado con medición; el que queda es **el X antes del C**.
+2. ~~Medir el cobro que no es efectivo~~ — **hecho** (§4): el origen ya lo deja
+   fuera, no hay que descontar nada, y el aviso que decía lo contrario se
+   corrigió.
 3. **Probar el Z una vez**, con la casilla de tarjeta resuelta (§3).
 4. **Abrir una caja desde el portal**, aunque sea una vez: es el único tramo del
    circuito que no tiene ni una fila.

@@ -302,12 +302,23 @@ export const entroEnEfectivo = (a) => FORMAS_EN_EFECTIVO.has(String(a?.forma || 
  * comprobante cuenta significa que algo entró después de contar, o que el
  * comprobante no lo sumó.
  *
- * ── El efectivo, aparte ────────────────────────────────────────────────────
- * Un abono por transferencia, tarjeta o cheque **no entra al cajón**. Si el
- * comprobante lo cuenta dentro de COBROS CREDITO —que es lo que hay que
- * medir—, el corte va a esperar en efectivo un dinero que nunca estuvo ahí, y
- * eso se ve como un faltante exacto por ese monto. Es el mismo defecto de los
- * $66 con otra cara, así que el número va separado y a la vista.
+ * ── El efectivo, aparte — y el comprobante YA lo separa ────────────────────
+ * Un abono por transferencia, tarjeta o cheque no entra al cajón (regla del
+ * usuario: «sólo entra en efectivo, los otros no, es como pago con tarjeta»).
+ *
+ * **Medido el 2026-09-02 en Salud 4**, cruzando los tres cobros del portal
+ * ($11.30 transferencia, $8.55 efectivo, $10.00 transferencia) contra el
+ * listado de movimientos del sistema de la caja:
+ *
+ *     el de efectivo      → 1 de 1 aparece como movimiento
+ *     los dos que no      → 0 de 2 aparecen
+ *
+ * O sea que **el origen ya distingue**: sólo el efectivo llega a la línea
+ * COBROS CREDITO y al efectivo esperado. No hay nada que descontar, y
+ * descontarlo habría inventado un sobrante de $21.30.
+ *
+ * Por eso `enCaja` —y no `hasta`— es lo que se compara contra el comprobante, y
+ * `noEfectivo` queda como dato informativo: se cobró, pero no por la caja.
  *
  * @param {object} corte   el corte, con `hora` y `tk_cobros_credito`
  * @param {Array}  abonos  los del día de esa sala, de `fetchAbonosDelDia`
@@ -330,21 +341,26 @@ export function cobrosDeCredito(corte, abonos = []) {
 
     const suma = (l) => redondear(l.reduce((s, a) => s + (num(a.monto) ?? 0), 0));
     const hasta = suma(antes);
-    const efectivo = suma(antes.filter(entroEnEfectivo));
+    const enCaja = suma(antes.filter(entroEnEfectivo));
 
     return {
         antes,
         despues,
+        // Todo lo cobrado hasta esta hora, entrara al cajón o no.
         hasta,
-        efectivo,
-        // Lo que el comprobante puede estar esperando en el cajón sin que haya
-        // entrado nunca. Cero cuando todo se cobró en efectivo.
-        noEfectivo: redondear(hasta - efectivo),
+        // Lo que SÍ entró al cajón. Es lo único comparable contra el
+        // comprobante — ver el bloque de arriba: el origen ya deja fuera lo que
+        // no fue efectivo, así que compararlo contra `hasta` denunciaría una
+        // brecha en cada corte donde alguien pagó por transferencia.
+        enCaja,
+        // Se cobró, pero no por la caja. Informativo: NO se descuenta de nada.
+        noEfectivo: redondear(hasta - enCaja),
         cobros,
-        // Positiva = el portal registró más de lo que el comprobante contó.
+        // Positiva = el portal registró más efectivo del que el comprobante
+        // contó (algo entró después de contar, o no se sumó).
         // Negativa = hay cobros que no pasaron por el portal (no es un defecto).
-        brecha: cobros == null ? null : redondear(hasta - cobros),
-        cuadra: cobros != null && Math.abs(redondear(hasta - cobros)) < CENTAVO,
+        brecha: cobros == null ? null : redondear(enCaja - cobros),
+        cuadra: cobros != null && Math.abs(redondear(enCaja - cobros)) < CENTAVO,
     };
 }
 
@@ -587,29 +603,16 @@ export function sugerenciasDeCorte(corte, movimientos = [], invisibles = [], cob
         }
     }
 
-    // ── 0-bis. Un cobro de crédito que no entró en efectivo ─────────────────
-    // Va arriba por el mismo motivo que la anterior: no se puede encontrar
-    // mirando el papel. El comprobante imprime «COBROS CREDITO» como un solo
-    // número y no dice cómo pagó cada quien, así que una transferencia queda
-    // adentro de esa línea sin dejar rastro — y el corte espera en el cajón un
-    // dinero que nunca estuvo. Se ve como un faltante exacto por ese monto, que
-    // es la firma de los $66 de Salud 3 con otra cara.
+    // ── 0-bis. NO hay pista por los cobros que no fueron en efectivo ────────
+    // Acá vivió una, escrita el 2-sep: «el faltante es igual a $X de cobros que
+    // no entraron en efectivo». Era una hipótesis —«si el comprobante los cuenta
+    // como efectivo, ahí está el faltante»— y la medición del mismo día la
+    // desmintió: el origen NO los cuenta (Salud 4, el de efectivo aparece como
+    // movimiento, los dos que no, no). Mandaba a buscar una causa que no existe.
     //
-    // Sólo ante un FALTANTE, y es deliberado: contar como efectivo algo que no
-    // lo es hace que falte dinero, nunca que sobre.
-    if (falta && cobrosDelDia?.noEfectivo > 0.005) {
-        const monto = formatMoney(cobrosDelDia.noEfectivo);
-        const cuantos = cobrosDelDia.antes.filter((a) => !entroEnEfectivo(a)).length;
-        const calza = Math.abs(cobrosDelDia.noEfectivo - objetivo) <= CENTAVO;
-        out.push({
-            titulo: calza
-                ? `El faltante es igual a ${monto} de cobros que no entraron en efectivo`
-                : `${monto} de los cobros de crédito no entraron en efectivo`,
-            detalle: `${cuantos === 1 ? 'Un cobro se cobró' : `${cuantos} cobros se cobraron`} por transferencia, `
-                + 'tarjeta o cheque, así que ese dinero no pasó por la caja. Si el comprobante lo cuenta '
-                + 'dentro de los cobros de crédito, ahí está el faltante y no hay nada que buscar en el cajón.',
-        });
-    }
+    // Se deja escrito y no se borra en silencio: la pista es plausible, alguien
+    // la va a volver a proponer, y lo que la descarta es una medición, no una
+    // opinión. Está en `cobrosDeCredito`.
 
     // ── 1. ¿La diferencia es N veces un movimiento conocido? ────────────────
     const porMonto = new Map();
@@ -678,9 +681,11 @@ export function sugerenciasDeCorte(corte, movimientos = [], invisibles = [], cob
     // que ir a revisar — y una pista que manda a mirar algo ya resuelto le
     // quita el turno a las que sí valen. Antes se ofrecía siempre, porque hasta
     // ahora esa línea era un número sin detrás.
-    const yaExplicados = !!cobrosDelDia?.cuadra
-        && cobrosDelDia.noEfectivo <= CENTAVO
-        && cobrosDelDia.despues.length === 0;
+    // `noEfectivo` NO entra en la condición: el comprobante tampoco lo cuenta
+    // (medido, ver `cobrosDeCredito`), así que un cobro por transferencia no
+    // deja nada sin explicar. Lo que importa es que el efectivo cuadre y que no
+    // haya entrado ninguno después de contar.
+    const yaExplicados = !!cobrosDelDia?.cuadra && cobrosDelDia.despues.length === 0;
     const cobros = num(corte.tk_cobros_credito);
     if (cobros != null && cobros > 0 && !yaExplicados) {
         out.push({

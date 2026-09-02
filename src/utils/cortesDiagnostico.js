@@ -111,6 +111,75 @@ export function conTramo(cortesDeLaSala) {
 }
 
 /**
+ * Los movimientos del día, repartidos POR CORTE.
+ *
+ * Pedido del usuario (2026-09-02) sobre la lista de Mi caja: «¿por qué aquí no
+ * se separan los movimientos por el corte, para saber cuáles ya fueron
+ * registrados y cuáles están pendientes?».
+ *
+ * Es el modelo correcto y la lista no lo mostraba: un día es una SERIE de
+ * cortes, y cada movimiento pertenece al tramo entre dos. Lo que hace falta
+ * saber antes de contar no es qué pasó hoy —eso es la lista entera— sino qué
+ * pasó DESDE EL ÚLTIMO CORTE, que es lo único que el próximo va a medir.
+ *
+ * ── La línea la marca un corte CONFIRMADO, no cualquiera ──────────────────
+ * Un descartado no contó nada: su conteo se tiró, y el tramo que abarcaba sigue
+ * abierto para el que venga. Es el mismo criterio que `conTramo` usa para la
+ * diferencia, y **tiene que ser el mismo**: si acá la línea se corriera con un
+ * descartado, la pantalla diría «ya registrado» sobre un movimiento que el
+ * próximo corte todavía va a medir — y eso es justo lo que alguien mira para
+ * decidir si su conteo debería cuadrar.
+ *
+ * El cierre del día (Z) sí cierra, aunque nazca pendiente y muera pendiente:
+ * después de él no queda nada por medir.
+ *
+ * ── Se comparan INSTANTES, no horas ──────────────────────────────────────
+ * `cortes_caja.hora` es una hora sin zona y `registrado_at` un instante. Con las
+ * horas sueltas, un día de caja que cruce la medianoche pondría un movimiento de
+ * las 00:10 antes de un corte de las 23:59. El instante se arma con la FECHA del
+ * propio corte, que es la que sabe de qué día es esa hora.
+ *
+ * @param {Array} lineas  movimientos con `cuando` (ISO) — en cualquier orden
+ * @param {Array} cortes  filas de `cortes_caja` del día
+ * @returns {Array} `[{ corte, lineas }]` de lo más nuevo a lo más viejo.
+ *   `corte: null` es el primer grupo: lo que todavía no contó nadie. Los grupos
+ *   vacíos no salen.
+ */
+export function repartirPorCorte(lineas, cortes) {
+    const marcas = (cortes || [])
+        .filter((c) => (c.tipo === 'C' && c.estado === 'CONFIRMADO') || c.tipo === 'Z')
+        .map((c) => ({
+            id: c.id,
+            tipo: c.tipo,
+            hora: String(c.hora || '').slice(0, 5),
+            en: Date.parse(`${c.fecha}T${c.hora}-06:00`),
+        }))
+        .filter((c) => Number.isFinite(c.en))
+        // De la más nueva a la más vieja: la lista se lee así.
+        .sort((a, b) => b.en - a.en);
+
+    const salida = [{ corte: null, lineas: [] }];
+    for (const m of marcas) salida.push({ corte: m, lineas: [] });
+
+    for (const l of lineas || []) {
+        const en = Date.parse(l?.cuando);
+        /* El primer corte POSTERIOR al movimiento es el que lo contó. `marcas`
+         * va de nueva a vieja, así que se recorre desde el final —de la más
+         * vieja a la más nueva— y se corta en la primera que ya lo abarca.
+         *
+         * `<=` y no `<`: un movimiento anotado en el mismo segundo que el corte
+         * ya estaba cuando el sistema de la caja armó su cuenta. Al revés
+         * quedaría como pendiente y aparecería de más en el corte siguiente. */
+        let i = 0;
+        for (let k = marcas.length - 1; k >= 0; k -= 1) {
+            if (Number.isFinite(en) && en <= marcas[k].en) { i = k + 1; break; }
+        }
+        salida[i].lineas.push(l);
+    }
+    return salida.filter((g) => g.lineas.length > 0);
+}
+
+/**
  * `conTramo` aplicado a una lista MEZCLADA de salas y de días.
  *
  * El tramo se mide POR SALA Y POR DÍA: los cortes son acumulativos dentro del

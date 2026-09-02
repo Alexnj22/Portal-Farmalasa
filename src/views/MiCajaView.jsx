@@ -30,7 +30,7 @@ import {
     subirComprobante,
 } from '../data/bolsas';
 import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '../data/cortes';
-import { conLaCuentaBuena } from '../utils/cortesDiagnostico';
+import { conLaCuentaBuena, repartirPorCorte } from '../utils/cortesDiagnostico';
 
 /* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
  * 29-ago): todo lo que mueve efectivo vive en la caja. Es el MISMO componente,
@@ -830,7 +830,7 @@ export default function MiCajaView({ comoPestana = false }) {
                         <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas}
                             dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
                             puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo}
-                            anotaron={anotaron} />
+                            anotaron={anotaron} cortes={cortesDelDia} />
 
                         {!puedeOperar && (
                             <Notice variant="info" icon={Lock}>
@@ -1198,7 +1198,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true }) {
  * decide si el corte de esta tarde cuadra o falta.
  */
 function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, puedeVerBolsas,
-    onCorregir, anotaron }) {
+    onCorregir, anotaron, cortes }) {
     const etiquetaDe = (codigo) =>
         tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo);
 
@@ -1279,6 +1279,13 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
             .sort((a, b) => String(b.cuando || '').localeCompare(String(a.cuando || '')));
     }, [movimientos, deBolsas, tipos]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
 
+    /* Repartidos por corte: qué ya contó un corte firmado y qué sigue
+     * pendiente. La regla vive en `repartirPorCorte` y no acá — usa el mismo
+     * criterio que `conTramo` para decidir qué corte corre la línea, y escrita
+     * dos veces el día que cambie una, la pantalla diría «ya registrado» sobre
+     * algo que la diferencia todavía va a medir. */
+    const grupos = useMemo(() => repartirPorCorte(lineas, cortes), [lineas, cortes]);
+
     if (!lineas.length && puedeVerBolsas) return null;
 
     return (
@@ -1301,7 +1308,31 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                 <p className="text-body-sm text-content-3">Todavía no se ha movido efectivo en este día.</p>
             )}
 
-            {lineas.map((l) => (
+            {grupos.map((g) => (
+                <div key={g.corte?.id ?? 'sin-cortar'} className="space-y-2">
+                    {/* ── El encabezado del tramo ────────────────────────────
+                        El de arriba es el que importa: es lo que el próximo
+                        corte va a medir, y por eso lleva su suma. Los de abajo
+                        ya los contó un corte firmado, y ahí lo que hace falta
+                        es sólo saber cuál. */}
+                    <div className={`flex items-baseline justify-between gap-3 flex-wrap
+                                     pt-1 ${g.corte ? '' : 'border-b border-divider pb-1.5'}`}>
+                        <span className="text-caption font-bold text-content-2">
+                            {!g.corte
+                                ? 'Sin cortar todavía'
+                                : g.corte.tipo === 'Z'
+                                    ? `Después del cierre del día · ${g.corte.hora}`
+                                    : `Ya contados en el corte de las ${g.corte.hora}`}
+                        </span>
+                        <span className="text-caption text-content-3 tabular-nums">
+                            {g.lineas.length}{g.lineas.length === 1 ? ' movimiento' : ' movimientos'}
+                            {!g.corte && ` · ${conSigno(g.lineas.reduce(
+                                (t, l) => t + (l.anulado ? 0 : (l.entra ? l.monto : -l.monto)), 0,
+                            ))}`}
+                        </span>
+                    </div>
+
+                    {g.lineas.map((l) => (
                 <div key={l.clave} data-surface="card" className="rounded-xl px-4 py-3 space-y-2">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                         <div className="min-w-0">
@@ -1408,6 +1439,8 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                             )}
                         </div>
                     )}
+                    </div>
+                    ))}
                 </div>
             ))}
 

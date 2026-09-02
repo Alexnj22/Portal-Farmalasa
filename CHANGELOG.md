@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.959.1 — Los movimientos del día se separan por corte
+
+Pedido del usuario: *«¿por qué aquí no se separan los movimientos por el corte,
+para saber cuáles ya fueron registrados y cuáles están pendientes?»*.
+
+Es el modelo correcto y la lista no lo mostraba. Un día es una **serie de
+cortes**, y cada movimiento pertenece al tramo entre dos. Lo que hace falta saber
+antes de contar no es qué pasó hoy —eso es la lista entera— sino qué pasó **desde
+el último corte**, que es lo único que el próximo va a medir.
+
+Ahora la lista abre con **Sin cortar todavía**, con su cantidad y su suma, y
+debajo cada tramo bajo el corte que lo contó. Salud 4 del 2-sep queda así:
+
+```
+Sin cortar todavía                    3 movimientos · −$252.00
+  16:04  POS Promerica            $13.00
+  16:03  POS Promerica            $35.00
+  15:41  Remesa MONEYGRAM       −$300.00
+
+Ya contados en el corte de las 15:02  4 movimientos
+  14:23  POS Promerica            $40.87
+  12:59  Remesa MONEYGRAM        −$50.00
+  …
+```
+
+**La línea la marca un corte CONFIRMADO, no cualquiera.** Un descartado no contó
+nada: su conteo se tiró y el tramo sigue abierto. Es el mismo criterio que usa
+`conTramo` para la diferencia, y tiene que ser el mismo — si acá la línea se
+corriera con un descartado, la pantalla diría «ya registrado» sobre un
+movimiento que el próximo corte todavía va a medir. Salud 4 tuvo cinco cortes ese
+día y sólo uno confirmado: la línea la marca ése.
+
+Y se comparan **instantes**, no horas: `hora` no lleva zona, así que un día de
+caja que cruce la medianoche pondría un movimiento de las 00:10 antes de un
+corte de las 23:59.
+
+La regla vive en `repartirPorCorte` (`cortesDiagnostico.js`), junto a `conTramo`
+y con sus **9 pruebas** sobre el día real de Salud 4.
+
 ## v2.959.0 — La boleta llena el concepto, y el portal guarda el texto completo
 
 Pedido del usuario sobre la boleta de Claro de Salud 4: *«por qué no se agrega

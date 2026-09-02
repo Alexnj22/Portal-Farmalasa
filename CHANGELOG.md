@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.927.1 — Promociones — un borrador no vence
+
+Salió de una pregunta del usuario: *«¿es retroactivo? si agrego una promoción de
+hace 2 meses para tenerlo lleno, ¿haría el cálculo?»*
+
+**Sí, y del todo** — verificado con una promoción de julio creada hoy: la
+pantalla dio 2,349 unidades en 290 documentos, idéntico a contar las facturas de
+julio a mano. El cálculo lee las ventas del rango cada vez que se abre; no hay
+nada que procesar ni un momento en el que haya que registrarla.
+
+Pero la pregunta destapó un defecto **en ese caso exacto**. El paso que cierra
+por fecha miraba sólo el renglón, no el estado de la promoción, así que una
+cargada como borrador —guardarla, revisarla, activarla al día siguiente— salía
+del proceso nocturno con sus renglones ya **cerrados**. Un borrador no está
+corriendo: su vigencia no debería vencer.
+
+Y el daño no se veía: el seguimiento seguía mostrando los números bien. Lo que
+se perdía era la **cola de excedentes**, que sólo se abre para promociones fuera
+de borrador — para cuando se activaba, el renglón ya estaba cerrado y no volvía
+a mirarse. La cola quedaba vacía para siempre con la pantalla en orden.
+
+Medido antes y después con el mismo caso: un borrador de julio con lote de 30.
+Antes salía cerrado el primer día y con **0 excedentes**. Ahora sobrevive
+abierto, y al activarlo abre **22 excedentes por $38.00** y recién entonces
+cierra.
+
 ## v2.927.0 — El corte: la sala cuenta el cajón y el portal suma las bolsas del día
 
 **Esto arregla faltantes que no existen.** Y salió de una pregunta del usuario:

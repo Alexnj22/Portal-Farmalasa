@@ -1188,6 +1188,31 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   vista se vea bien** — lee el fuente, y hay filas que desde el fuente son una
   caja cerrada. Eso lo cierra el barrido, y las dos capas juntas no cubren los
   diálogos: ésos los abre `dialogos-movil`.
+- **`npm run gate:tdz` — leer una variable antes de su `const`.** Corre en el
+  pre-commit cuando el commit toca `src/` y **bloquea en cero**. Es hermano de
+  `gate:undefinidos`: aquél caza la variable que NO EXISTE, éste la que existe
+  pero **todavía no**.
+
+  Nació el 2026-09-02 con Efectivo reventando entera al entrar. Un hook leía
+  `nombreSala` **68 líneas antes** de su `const`, y eso **no da `undefined`**
+  —que habría pasado inadvertido—: lanza en CADA render. Lo caro no es el
+  defecto, es el AVISO: `Cannot access 'E' before initialization`, con el
+  nombre **minificado** y la pila apuntando a `react-dom`, porque quien llama
+  al componente es React. O sea que no dice ni qué variable ni qué archivo — se
+  buscó primero en imports circulares, que eran **cero en todo `src/`**.
+
+  **Encender `no-use-before-define` a secas no sirve: denuncia 241 y sólo una
+  puede fallar.** Por eso el gate las separa, y el corte es DECIDIBLE, no una
+  corazonada: si entre la lectura y el ámbito que declara la variable **no hay
+  ninguna función**, las dos corren en la misma pasada y la lectura llega
+  antes — *lanza seguro*. Si hay una función en el medio, lo que corre es su
+  definición y no su cuerpo: cuando alguien la llame, el `const` ya está. Sale
+  del árbol de ámbitos del propio linter.
+
+  El baseline (`scripts/tdz-baseline.json`) lleva SÓLO las diferidas y **sólo
+  baja**. «Diferida» significa *no puede fallar por llegar temprano*, no *está
+  bien escrita*. **Al mover un hook o un `useMemo`, comprobar que todo lo que
+  lee ya esté declarado.**
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
   crudos, elementos nativos del navegador), correr `npm run gate:design`.**
   Debe pasar en verde — las excepciones legítimas viven en

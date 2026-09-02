@@ -118,6 +118,25 @@ if git diff --cached --name-only | grep -qE '^src/'; then
   node scripts/undefinidos-gate.mjs --hook || exit 1
 fi
 
+# tdz-gate: hermano del de arriba, y también sólo si el commit toca `src/`.
+# Aquél caza la variable que NO EXISTE; éste, la que existe pero TODAVÍA NO —
+# leída antes de su propio `const`.
+#
+# Bloquea sólo las lecturas INMEDIATAS: las que corren en la misma pasada que
+# la declaración y por eso llegan antes. Las que están dentro de una función no
+# pueden fallar —cuando alguien la llame, el `const` ya está— y van al
+# baseline: son 241 y meterlas acá haría fallar el commit desde el primer día.
+#
+# Nació el 2026-09-02: Efectivo reventaba entera al entrar porque un hook leía
+# `nombreSala` 68 líneas antes de su `const`. Eso no da `undefined` —que habría
+# pasado inadvertido—: lanza en CADA render. Y el aviso trae el nombre
+# MINIFICADO («Cannot access 'E' before initialization») con una pila que
+# apunta a react-dom, así que no dice dónde: se buscó primero en imports
+# circulares, que eran cero.
+if git diff --cached --name-only | grep -qE '^src/'; then
+  node scripts/tdz-gate.mjs --hook || exit 1
+fi
+
 # permissions-gate: solo si el commit toca el registro de permisos o código que
 # los consulta. Cruza lo declarado en Permisos contra lo que el código realmente
 # gatea (por sus cinco caminos: literal, plantilla, variable, indirecta y guard

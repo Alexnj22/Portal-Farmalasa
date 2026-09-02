@@ -107,7 +107,12 @@ const MENU_GROUPS = [
     // `caja_vales` va PRIMERO del grupo: es la pantalla con la que se trabaja
     // —abrir, anotar, cortar, cerrar— y las otras dos son de mirar lo que ya
     // pasó. Y va acá y no en un grupo propio porque es el mismo dinero.
-    { key: 'cortes',       label: 'Efectivo',      icon: Wallet,       modules: ['caja_vales', 'cortes_caja', 'bolsas'] },
+    // `cuentas_por_cobrar` va en ESTE grupo y no en uno propio: es el mismo
+    // dinero. Pero es su propia ENTRADA porque es su propia pantalla —Efectivo
+    // pregunta «¿cuadra el dinero de hoy?» y la cartera «¿quién nos debe de los
+    // últimos dos años?»—, y el `dedupe` de abajo la deja pasar porque su ruta
+    // es distinta.
+    { key: 'cortes',       label: 'Efectivo',      icon: Wallet,       modules: ['caja_vales', 'cortes_caja', 'cuentas_por_cobrar', 'bolsas'] },
     // Metas salió de Comercial a menú propio (2026-08-04, pedido del usuario).
     // Con un solo módulo el grupo se pinta plano (renderGroup → renderNavItem),
     // así que queda a un click desde cualquier pantalla en vez de detrás del

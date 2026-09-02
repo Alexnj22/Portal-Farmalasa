@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.936.3 — Cuentas por cobrar en el menú, y un gate para el error que no dice dónde
+
+**La vista existía y no se veía.** La ruta, el permiso y la pantalla estaban;
+lo que faltaba era la entrada en el menú lateral, que se arma de una lista
+propia y no del registro de módulos. Ahora aparece dentro de **Efectivo**,
+junto a la caja y las bolsas: es el mismo dinero, pero su propia entrada porque
+es su propia pregunta. También responde al buscador del menú por *crédito*,
+*fiado*, *deuda*, *cartera*, *quién debe* y *mora*.
+
+### `npm run gate:tdz` — leer una variable antes de su `const`
+
+Hermano de `gate:undefinidos`: aquél caza la variable que **no existe**, éste
+la que existe pero **todavía no**. Corre en el pre-commit cuando el commit toca
+`src/` y bloquea en cero.
+
+Nace del defecto de la versión anterior, y lo caro no era el defecto sino el
+**aviso**: `Cannot access 'E' before initialization`, con el nombre minificado
+y la pila apuntando a `react-dom` —porque quien llama al componente es React—.
+No decía ni qué variable ni qué archivo, así que se buscó primero en imports
+circulares, que eran cero en todo `src/`.
+
+**Encender `no-use-before-define` a secas no servía: denuncia 241 y sólo una
+podía fallar.** Sesenta hallazgos de los cuales uno importa es un gate que se
+termina desactivando. Así que el gate las separa, y el corte es decidible:
+
+- **inmediata** — entre la lectura y el ámbito que declara la variable **no hay
+  ninguna función**: las dos corren en la misma pasada, así que la lectura
+  llega antes. **Lanza seguro.** Hoy: **cero en todo `src/`**.
+- **diferida** — hay una función en el medio. Lo que corre es su *definición*,
+  no su cuerpo; cuando alguien la llame, el `const` ya está. Van al baseline:
+  **241**, y el baseline sólo baja.
+
+El corte sale del árbol de ámbitos del propio linter, no de una corazonada — es
+exactamente lo que separó el defecto de Efectivo de los otros 240. Y antes de
+creerle el cero se le fabricó la regresión que debe cazar: un archivo con las
+dos formas, del que denunció la inmediata y dejó pasar la diferida.
+
+⚠️ «Diferida» significa *no puede fallar por llegar temprano*, no *está bien
+escrita*.
+
 ## v2.936.2 — Efectivo abría con error
 
 **Efectivo reventaba entera al entrar** y el aviso no decía dónde:

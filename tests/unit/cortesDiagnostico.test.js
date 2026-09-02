@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    cobrosDeCredito, conTramo, desgloseDelCierre, diferenciaDelCorte,
+    cobrosDeCredito, conLaCuentaBuena, conTramo, desgloseDelCierre, diferenciaDelCorte,
     formasFueraDelComprobante, noContoEfectivo, notaDeCifra, repartirEnPartes,
     seConfirmaDeUnClic, sugerenciasDeCorte, resumenDeCortes,
 } from '../../src/utils/cortesDiagnostico';
@@ -507,5 +507,56 @@ describe('la pista del múltiplo mide en dólares, no en la razón', () => {
             [{ tipo: 'ENTRADA', monto: 79.70, concepto: 'POR ABONO A CREDITO' }],
         );
         expect(s.some((x) => x.titulo.includes('79.70'))).toBe(true);
+    });
+});
+
+/* ── El corte RECIÉN HECHO se cuenta igual que el mismo corte en la tabla ────
+ *
+ * Corte 14399 de Salud 4, 2026-09-02 14:11. El papel que imprimió el portal
+ * decía **+$88.40** y la tarjeta —ya con la fila sellada por el trigger— decía
+ * **+$0.15**: dos números para el mismo corte, y el equivocado es el que queda
+ * en papel.
+ *
+ * La causa no fue el juez sino las PIEZAS. La traducción de la respuesta de
+ * `hacer-corte-caja` a una fila de `cortes_caja` vivía en la vista y se había
+ * quedado con cinco de las ocho columnas que `contraste` lee: sin
+ * `cobros_portal_efectivo` da por cero el efectivo de cobros de crédito que el
+ * comprobante no cuenta, y la corrección no se aplica. No hay error, no falta
+ * ninguna línea, y en la tabla se ve bien — por eso se imprimió. */
+describe('la cuenta del corte recién hecho', () => {
+    const RESPUESTA_14399 = {
+        ok: true, contado: 339.25, esperado: 250.85, diferencia: 88.40,
+        cobros_portal_efectivo: 88.25,
+        tiquete: {
+            total_caja: 250.85, subtotal: 300.85, vales: 50.00, cobros_credito: 0,
+        },
+    };
+
+    it('le suma el efectivo de los cobros del portal, como la tabla', () => {
+        const r = conLaCuentaBuena(RESPUESTA_14399);
+        expect(r.esperado).toBe(339.10);
+        expect(r.diferencia).toBe(0.15);
+        expect(r.fuente).toBe('ticket');
+        // Y la explicación acompaña al número: sin ella la pantalla diría «hay
+        // plata sin explicar» sobre la plata que acaba de explicar.
+        expect(r.nota.titulo).toContain('cobros de crédito');
+        // La del origen se conserva, no se pisa: es lo que quedó en su registro.
+        expect(r.segun_el_sistema).toEqual({ esperado: 250.85, diferencia: 88.40 });
+    });
+
+    it('da lo mismo que leer la fila ya sellada — es el mismo corte', () => {
+        const enLaTabla = corte({
+            hora: '14:11:50', total_declarado: 339.25, diferencia_erp: 88.40,
+            tk_subtotal: 300.85, tk_vales: 50.00, tk_cobros_credito: null,
+            tk_total_caja: 250.85, cobros_portal_efectivo: 88.25,
+        });
+        const d = diferenciaDelCorte(enLaTabla);
+        const r = conLaCuentaBuena(RESPUESTA_14399);
+        expect([r.esperado, r.diferencia]).toEqual([d.esperado, d.valor]);
+    });
+
+    it('sin tiquete devuelve la respuesta tal cual: no hay qué comparar', () => {
+        const sinTiquete = { ...RESPUESTA_14399, tiquete: { total_caja: null } };
+        expect(conLaCuentaBuena(sinTiquete)).toBe(sinTiquete);
     });
 });

@@ -24,6 +24,10 @@ import { textoParaElRollo } from '../../src/utils/ticketPrint';
 const CORTE_14323 = {
     ok: true, id_corte: 14323, fuente: 'ticket',
     esperado: 520.41, contado: 490.85, diferencia: -29.56,
+    // Ese día no hubo cobros de crédito desde el portal — el módulo todavía no
+    // existía. Va como CERO y no ausente: `null` significa «no se pudo leer», y
+    // el papel lo declara. Ver el bloque de aviso en `construirComprobanteDeCorte`.
+    cobros_portal_efectivo: 0,
     segun_el_sistema: { esperado: 922.21, diferencia: -431.36 },
     nota: {
         titulo: 'Los cobros de crédito se contaron de más',
@@ -32,6 +36,9 @@ const CORTE_14323 = {
     tiquete: {
         empleado: 'RODRIGO EDUARDO MARQUEZ', caja: '4', turno: '1',
         total_caja: 520.41, cobros_credito: 100.45, contado: 490.85,
+        // Las piezas con las que se DERIVA el cobro de la propia suma:
+        // 581.61 - 161.65 + 100.45 = 520.41, y 581.61 = 11.31 + 570.30.
+        subtotal: 581.61, vales: 161.65,
         // Como vinieron del tiquete: el rótulo es del origen, no una lista de acá.
         formas: [
             { rotulo: 'Pagos con tarjeta', monto: 59.20 },
@@ -141,6 +148,17 @@ describe('comprobante del corte', () => {
         };
         expect(enRollo(armar(sinTiquete)).toUpperCase()).toContain('ATENCION');
         // Y cuando sí se leyó, no hay ningún aviso que distraiga.
+        expect(enRollo(armar(CORTE_14323)).toUpperCase()).not.toContain('ATENCION');
+    });
+
+    it('avisa cuando no se pudo leer el efectivo de los cobros del portal', () => {
+        /* Ese efectivo está en el cajón y el comprobante del sistema no lo suma
+         * a su esperado. Sin el dato la diferencia impresa está de más justo por
+         * ese monto, y un cero silencioso ahí ya costó anunciar +$78.40 de
+         * sobrante sobre un faltante de $9.85 (Salud 4, 2026-09-02). */
+        const sinDato = { ...CORTE_14323, cobros_portal_efectivo: null };
+        expect(enRollo(armar(sinDato)).toUpperCase()).toContain('ATENCION');
+        // Y cero NO es lo mismo que ausente: un día sin cobros no lleva aviso.
         expect(enRollo(armar(CORTE_14323)).toUpperCase()).not.toContain('ATENCION');
     });
 

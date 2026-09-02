@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.955.1 — el papel del corte cuenta el efectivo de los cobros de crédito
+
+### Dos números para el mismo corte, y el equivocado quedaba en papel
+
+Corte 14399 de Salud 4, 2-sep 14:11. El comprobante que imprimió el portal decía
+**+$88.40** de sobrante; la tarjeta de Efectivo, sobre el mismo corte, decía
+**+$0.15**. Los $88.25 de distancia son dos cobros de crédito cobrados en
+efectivo desde el portal antes de contar —$8.55 a las 10:03 y $79.70 a las
+12:39— que entraron al cajón y que el comprobante del sistema no suma a su
+esperado. La tarjeta tenía razón: 250.85 + 88.25 = 339.10 contra 339.25
+contados.
+
+**La causa no era el juez sino las PIEZAS.** Desde v2.953.0 el portal corrige
+ese esperado, y lo hace en `contraste`, que es la misma función para la pantalla
+y para el papel. Pero la traducción «respuesta de `hacer-corte-caja` → fila de
+`cortes_caja`» vivía en `MiCajaView` y se había quedado con **cinco de las ocho
+columnas** que esa función lee: sin `cobros_portal_efectivo` da por cero el
+efectivo que el comprobante no cuenta, y la corrección no se aplica. Sin error,
+sin línea faltante, y bien en la tabla — que es por qué se imprimió.
+
+Medio minuto después `sync-cortes-caja` guarda la fila, el trigger sella los
+$88.25 y la tarjeta ya sale bien. De ahí que los dos números difirieran
+exactamente en esa cantidad.
+
+### Qué se hizo
+
+- **`hacer-corte-caja` devuelve las tres piezas que faltaban**:
+  `cobros_portal_efectivo` —preguntado al MISMO canónico que usa el trigger,
+  `cobros_portal_en_efectivo(sala, fecha, hora)`, no a una suma escrita aparte—
+  y `subtotal`/`vales` del tiquete, con los que los cobros de crédito se
+  **derivan de la propia suma** (`total_caja − subtotal + vales`) en vez de
+  leerse de un renglón que el papel a veces no imprime.
+- **La traducción se mudó a `cortesDiagnostico.js`**, pegada a `contraste`. Es
+  la mitad frágil del asunto y estaba a dos archivos de distancia del juez: el
+  juez era el mismo y las piezas no.
+- **`null` no es cero.** Si no se pudo leer ese efectivo, el papel imprime un
+  bloque «Atencion» que lo dice. Un cero silencioso ahí ya costó anunciar
+  +$78.40 de sobrante sobre un faltante de $9.85.
+- Tres casos nuevos en `cortesDiagnostico.test.js` con los números reales del
+  14399 —uno de ellos enfrenta el corte recién hecho contra la fila ya sellada y
+  exige que den lo mismo— y uno en `corteTicket.test.js` para el aviso.
+
 ## v2.955.0 — el corte va a `corte_caja_diario.php`, y el pie del modal vuelve a existir
 
 ### El corte del portal cerraba el turno: era el ENDPOINT

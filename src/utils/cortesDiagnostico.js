@@ -867,3 +867,65 @@ export function sugerenciasDeCorte(corte, movimientos = [], invisibles = [], cob
 
     return out;
 }
+
+/**
+ * La cuenta del corte recién hecho, resuelta por el MISMO juez que la tabla.
+ *
+ * `hacer-corte-caja` devuelve las dos cuentas sin elegir: la del formulario del
+ * origen —que arrastra su defecto conocido, sumar los cobros de crédito un
+ * número entero de veces de más— y las piezas del tiquete. Quién gana lo decide
+ * `diferenciaDelCorte`, que es la función con la que se lee la tabla de cortes
+ * desde el 13-ago, se contrastó contra un testigo independiente (el aviso de
+ * sala) y conoce el único caso en que la buena es la del formulario: un corte
+ * hecho ANTES de que entraran los cobros del día, donde el tiquete suma uno que
+ * a esa hora no existía.
+ *
+ * Va en el portal y no en la edge function por eso mismo: el corte recién
+ * hecho no puede contarse distinto que el mismo corte mirado mañana en la
+ * tabla. Dos jueces para la misma pregunta es cómo se llega a dos números.
+ *
+ * Y vive en ESTE archivo, pegada a `contraste`, no en la vista que la usa. La
+ * traducción «respuesta de la edge function → fila de `cortes_caja`» es la
+ * mitad frágil del asunto: estuvo en `MiCajaView` y se quedó con cinco de las
+ * ocho columnas que el juez lee, así que el juez era el mismo y las piezas no.
+ * Al agregar una columna a `contraste`, se agrega acá — a dos funciones de
+ * distancia, no a dos archivos.
+ *
+ * Sin tiquete no hay qué comparar y queda la del formulario, que es todo lo que
+ * hay — el papel lo declara.
+ */
+export function conLaCuentaBuena(r) {
+    if (!r?.ok || !r?.tiquete?.total_caja) return r;
+    /* La forma que espera el canónico: es una fila de `cortes_caja`.
+     *
+     * ⚠️ **Van TODAS las columnas que el canónico lee, no las que parecen
+     * bastar.** Faltaban tres —`tk_subtotal`, `tk_vales` y
+     * `cobros_portal_efectivo`— y el modo de falla no fue un error: `contraste`
+     * las leyó como ausentes, dio por cero el efectivo de cobros de crédito que
+     * el comprobante no cuenta, y el papel salió con la cuenta SIN corregir.
+     * Medido en el corte 14399 de Salud 4 (2-sep): el papel imprimió **+$88.40**
+     * y la tarjeta —ya con la fila sellada por el trigger— decía **+$0.15**.
+     * Dos números para el mismo corte, y el equivocado es el que queda en papel.
+     *
+     * O sea que «el mismo juez» no alcanza si no se le dan las mismas piezas.
+     * Al agregar una columna a `contraste`, agregarla también acá. */
+    const comoCorte = {
+        total_declarado: r.contado,
+        esperado: r.esperado,
+        diferencia_erp: r.diferencia,
+        tk_total_caja: r.tiquete.total_caja,
+        tk_subtotal: r.tiquete.subtotal,
+        tk_vales: r.tiquete.vales,
+        tk_cobros_credito: r.tiquete.cobros_credito,
+        cobros_portal_efectivo: r.cobros_portal_efectivo,
+    };
+    const d = diferenciaDelCorte(comoCorte);
+    return {
+        ...r,
+        esperado: d.esperado, diferencia: d.valor, fuente: d.fuente,
+        // Por qué este número y no el que guardó el sistema. `null` cuando no
+        // hay nada que explicar, y entonces el papel no dice nada.
+        nota: notaDeCifra(comoCorte),
+        segun_el_sistema: { esperado: r.esperado, diferencia: r.diferencia },
+    };
+}

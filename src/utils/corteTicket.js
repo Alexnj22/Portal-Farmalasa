@@ -25,6 +25,15 @@
 // comprobante que dijera sólo «faltan 9.75» pediría creerle, y este módulo ya
 // demostró que el número puede venir mal.
 //
+// Con una salvedad que el papel NO puede mostrar y por eso se dice acá: el
+// esperado lleva además el efectivo de los cobros de crédito hechos desde el
+// portal, que entró al cajón y que el comprobante del sistema no suma a su
+// cuenta. O sea que las líneas impresas pueden sumar MENOS que el esperado, y la
+// diferencia sigue siendo la buena. Lo declara el bloque «Atencion» sólo cuando
+// ese dato no se pudo leer — ver más abajo. Costó el corte 14399 de Salud 4
+// (2-sep): papel **+$88.40**, tarjeta **+$0.15**, y los $88.25 de distancia eran
+// dos cobros de crédito cobrados en efectivo antes de contar.
+//
 // ── Por qué es MÁS CORTO que el del origen (usuario, 2026-08-31) ────────────
 //
 // El tiquete del sistema mide **38 renglones con texto** (medido sobre el corte
@@ -126,6 +135,23 @@ export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt
             titulo: 'Atencion',
             texto: 'Esta cuenta la calculo el portal: no se pudo leer el tiquete de la caja.'
                  + ' Hay que cotejarla contra el corte antes de darla por buena.',
+        });
+    }
+    /* Y si no se pudo saber cuanto entro por cobros de credito desde el portal,
+     * el papel lo dice.
+     *
+     * Ese efectivo esta en el cajon y el comprobante del sistema NO lo suma a su
+     * esperado, asi que sin el dato la diferencia de abajo esta de mas justo por
+     * ese monto. `null` significa «no se pudo leer», nunca «no hubo»: un cero
+     * silencioso ahi ya costo anunciar +$78.40 de sobrante sobre un faltante de
+     * $9.85 (Salud 4, 2-sep). Solo sale cuando la lectura fallo — en un corte
+     * normal el papel no dice nada de esto. */
+    if (resultado?.cobros_portal_efectivo == null) {
+        bloques.push({
+            titulo: 'Atencion',
+            texto: 'No se pudo comprobar si hoy se cobraron creditos en efectivo desde el portal.'
+                 + ' Si los hubo, ese dinero esta en la caja y la diferencia de abajo esta de mas'
+                 + ' por ese monto.',
         });
     }
     /* NO va la explicacion de por que la otra cifra es distinta.

@@ -67,6 +67,15 @@ const VER = [
 
 const VACIO = [];
 
+/** Cuánto del crédito está pagado, en enteros. Acotado a [0,100]: un abono de
+ *  más —o un total en cero— no puede pintar una barra que se sale de su caja. */
+function pagadoPct(c) {
+    const total = Number(c?.total) || 0;
+    if (total <= 0) return 0;
+    const pagado = total - (Number(c?.saldo) || 0);
+    return Math.max(0, Math.min(100, Math.round((pagado / total) * 100)));
+}
+
 /** Hace cuánto se leyó la cartera, en palabras. Un reloj exacto obliga a restar
  *  de cabeza; lo que se quiere saber es sólo si está al día. */
 function desdeLaLectura(iso) {
@@ -80,6 +89,7 @@ function desdeLaLectura(iso) {
 export default function CuentasPorCobrarView() {
     const { hasPermission, getScope, user } = useAuth();
     const branches = useStaff((s) => s.branches) || VACIO;
+    const empleados = useStaff((s) => s.employees) || VACIO;
     const showToast = useToastStore((s) => s.showToast);
 
     const puedeAbonar = hasPermission('cuentas_por_cobrar', 'can_edit');
@@ -117,6 +127,13 @@ export default function CuentasPorCobrarView() {
     }, [branches, alcance, user]);
 
     const nombreDeSala = useMemo(() => new Map(branches.map((b) => [b.id, b.name])), [branches]);
+
+    /* La ficha COMPLETA de quien vendió, del store. No alcanza con `{id, name}`:
+     * `AvatarConEstado` saca la foto del objeto que recibe —el store sólo lo usa
+     * para el aro de estado—, así que con medio objeto salían las iniciales y
+     * nunca la cara. Y del store porque ahí las fotos ya vienen firmadas: pedir
+     * 124 URLs firmadas para 124 círculos de 22 px no tiene sentido. */
+    const vendedores = useMemo(() => new Map(empleados.map((e) => [String(e.id), e])), [empleados]);
 
 
     /* Sale del ESPEJO del portal, que un cron refresca cada hora. Antes se leía
@@ -297,97 +314,102 @@ export default function CuentasPorCobrarView() {
                         <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
                             {pagina.map((c) => (
                                 <div key={`${c.branch_id}-${c.credito}`}
-                                    /* El estado va en el TONO de la tarjeta y no
-                                       en una franja de color: DESIGN.md §5.1 —
-                                       `[data-surface][data-tono]` sube la
-                                       especificidad sola y el estado se lee en el
-                                       marcado. Una franja además obligaba a
-                                       `overflow-hidden`, que recorta el foco. */
                                     /* Sin `data-tono`: el aro de color decía lo
                                        mismo que la insignia de días y el usuario
                                        lo pidió fuera —«con el badge se
                                        entiende»—. Dos señales para un solo dato
-                                       es ruido, y con 25 tarjetas en pantalla el
-                                       aro ámbar se comía la jerarquía. */
+                                       es ruido. */
                                     data-surface="card"
                                     data-interactive
+                                    data-destino="ficha"
                                     role="button" tabIndex={0}
                                     onClick={() => setViendo(c)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViendo(c); }
                                     }}
-                                    className="rounded-2xl p-3 flex flex-col gap-2 min-w-0 text-left
+                                    className="rounded-2xl p-3.5 flex flex-col gap-3 min-w-0 text-left
                                                min-h-[var(--tap-min)] active:scale-[0.97] transition-transform">
+
+                                    {/* 1 · QUIÉN. El documento debajo y en micro:
+                                        hace falta para buscar el papel, pero no
+                                        es lo que se lee primero. La sala sólo
+                                        cuando se están mirando todas — con una
+                                        elegida, repetirla 47 veces es ruido. */}
                                     <div className="flex items-start justify-between gap-2">
                                         <span className="min-w-0">
-                                            <span className="block text-body-sm font-bold text-content truncate">
+                                            <span className="block text-body-sm font-bold text-content truncate leading-tight">
                                                 {c.cliente}
                                             </span>
-                                            <span className="block text-micro text-content-3 truncate">
-                                                {nombreDeSala.get(c.branch_id) || `Sucursal ${c.branch_id}`} · {c.documento}
+                                            <span className="block text-micro text-content-3 truncate mt-0.5">
+                                                {!sala && `${nombreDeSala.get(c.branch_id) || `Sucursal ${c.branch_id}`} · `}
+                                                {c.documento}
                                             </span>
                                         </span>
-                                        {c.saldo > 0.004 && (
-                                            <Badge variant={c.vencido ? 'warning' : 'neutral'} size="sm">
-                                                {c.dias} día{c.dias === 1 ? '' : 's'}
-                                            </Badge>
-                                        )}
+                                        <Badge variant={c.vencido ? 'warning' : 'neutral'} size="sm">
+                                            {c.dias} d
+                                        </Badge>
                                     </div>
 
-                                    {/* Las dos fechas que el usuario pidió ver sin
-                                        abrir nada: cuándo compró y cuándo pagó por
-                                        última vez. Lo segundo sólo existe para lo
-                                        cobrado DESDE el portal, así que se dice con
-                                        esas palabras y no con un guion — un guion
-                                        se leería como «nunca abonó». */}
-                                    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-micro text-content-3">
-                                        <span>Compró el {fechaCorta(c.fecha)}</span>
-                                        <span aria-hidden="true">·</span>
-                                        <span>{c.ultimo_abono_el
-                                            ? `Último abono ${fechaCorta(c.ultimo_abono_el)}`
-                                            : 'Sin abonos desde el portal'}</span>
-                                    </span>
+                                    {/* 2 · CUÁNTO, con la barra de cuánto lleva
+                                        pagado. La barra no es adorno: «$19.40 de
+                                        $139.40» obliga a dividir de cabeza para
+                                        saber si es una deuda que ya casi se pagó
+                                        o uno que no ha dado nada, y eso decide a
+                                        quién se llama primero.
 
-                                    {c.vendedor?.name && (
-                                        <span className="flex items-center gap-1.5 text-micro text-content-3 min-w-0">
-                                            {/* `AvatarConEstado` y no `LiquidAvatar` a secas: es
-                                                el canónico (DESIGN.md §5.4) y resuelve la ficha
-                                                por id contra el store, así que la foto —ya
-                                                firmada en el arranque— y el aro de vacaciones o
-                                                incapacidad salen sin que esta vista sepa nada.
-                                                Sin chip: a 20 px no cabe, y acá lo que importa
-                                                es la cara. */}
-                                            <AvatarConEstado emp={{ id: c.vendedor_id, name: c.vendedor.name }}
-                                                px={20} mostrarChip={false} radio="rounded-full" />
-                                            <span className="truncate">Le vendió {c.vendedor.name}</span>
-                                        </span>
-                                    )}
-
-                                    <div className="flex items-end justify-between gap-3 pt-1 border-t border-border/60">
-                                        <span className="min-w-0">
-                                            <span className="block text-micro font-black uppercase tracking-widest text-content-3">Debe</span>
-                                            <span className={`block text-body font-black tabular-nums ${
-                                                c.saldo > 0.004 ? 'text-content' : 'text-success-text'}`}>
+                                        `data-medida="dato"` porque el ANCHO ES el
+                                        dato: estirarla al blanco de dedo mínimo
+                                        sería mentir sobre la proporción. */}
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-baseline gap-1.5 min-w-0">
+                                            <span className="text-h3 font-black tabular-nums text-content leading-none">
                                                 {formatMoney(c.saldo)}
                                             </span>
-                                        </span>
-                                        <span className="min-w-0 text-right">
-                                            <span className="block text-micro font-black uppercase tracking-widest text-content-3">De</span>
-                                            <span className="block text-body-sm tabular-nums text-content-2">
-                                                {formatMoney(c.total)}
+                                            <span className="text-micro text-content-3 truncate">
+                                                de {formatMoney(c.total)}
                                             </span>
-                                        </span>
+                                        </div>
+                                        <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden"
+                                            data-medida="dato" role="img"
+                                            aria-label={`Lleva ${pagadoPct(c)}% pagado`}>
+                                            <span className="block h-full rounded-full bg-success transition-[width]"
+                                                style={{ width: `${pagadoPct(c)}%` }} />
+                                        </div>
                                     </div>
 
-                                    {puedeAbonar && c.saldo > 0.004 && (
-                                        /* `stopPropagation` porque la tarjeta entera
-                                           abre el detalle: sin esto, cobrar abriría
-                                           además el panel detrás del diálogo. */
-                                        <Button variant="secondary" size="sm" icon={HandCoins}
-                                            onClick={(e) => { e.stopPropagation(); setAbonando(c); }}>
-                                            Abonar
-                                        </Button>
-                                    )}
+                                    {/* 3 · QUIÉN VENDIÓ y CUÁNDO, en un renglón.
+                                        Antes eran tres renglones —fecha, «sin
+                                        abonos desde el portal» y el vendedor— y
+                                        el del medio decía lo mismo en las 124
+                                        tarjetas, o sea que no decía nada. La
+                                        fecha del último abono queda para cuando
+                                        EXISTE, que es cuando informa. */}
+                                    <div className="flex items-center justify-between gap-2 min-w-0
+                                                    pt-2.5 border-t border-border/50">
+                                        <span className="flex items-center gap-1.5 min-w-0 text-micro text-content-3">
+                                            {c.vendedor?.name && (
+                                                <AvatarConEstado
+                                                    emp={vendedores.get(String(c.vendedor_id))
+                                                         || { id: c.vendedor_id, name: c.vendedor.name }}
+                                                    px={22} mostrarChip={false} radio="rounded-full" />
+                                            )}
+                                            <span className="truncate">
+                                                {c.vendedor?.name || 'Sin vendedor'} · {fechaCorta(c.fecha)}
+                                                {c.ultimo_abono_el && ` · abonó ${fechaCorta(c.ultimo_abono_el)}`}
+                                            </span>
+                                        </span>
+
+                                        {puedeAbonar && c.saldo > 0.004 && (
+                                            /* `stopPropagation` porque la tarjeta
+                                               entera abre la ficha: sin esto,
+                                               cobrar abriría además el panel
+                                               detrás del diálogo. */
+                                            <Button variant="secondary" size="sm" icon={HandCoins}
+                                                onClick={(e) => { e.stopPropagation(); setAbonando(c); }}>
+                                                Abonar
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -402,7 +424,8 @@ export default function CuentasPorCobrarView() {
             </div>
 
             {viendo && (
-                <FichaDelCredito credito={viendo} onClose={() => setViendo(null)}
+                <FichaDelCredito credito={viendo} vendedor={vendedores.get(String(viendo.vendedor_id))}
+                    onClose={() => setViendo(null)}
                     onAbonar={puedeAbonar ? () => { setViendo(null); setAbonando(viendo); } : undefined} />
             )}
 
@@ -421,7 +444,7 @@ export default function CuentasPorCobrarView() {
  * créditos con saldo tienen los suyos— así que abrir esto no sale a la red del
  * otro sistema.
  */
-function FichaDelCredito({ credito, onClose, onAbonar }) {
+function FichaDelCredito({ credito, vendedor, onClose, onAbonar }) {
     const [datos, setDatos] = useState(null);
     const [cargando, setCargando] = useState(true);
 
@@ -457,22 +480,41 @@ function FichaDelCredito({ credito, onClose, onAbonar }) {
 
                 {cargando ? <LoadingState label="Abriendo la ficha" /> : (
                     <>
-                        {/* Las tres cifras juntas: lo que costó, lo que lleva
-                            pagado y lo que falta. Separadas obligan a restar de
-                            cabeza, que es de donde salen los errores de cobro. */}
-                        <div className="grid grid-cols-3 gap-2">
-                            {[['Compró por', c?.total ?? credito.total, 'text-content-2'],
-                              ['Lleva pagado', c?.abonado ?? 0, 'text-success-text'],
-                              ['Debe', c?.saldo ?? credito.saldo, 'text-content']].map(([r, v, tono]) => (
-                                <span key={r} data-surface="card" className="rounded-xl p-2.5 min-w-0">
-                                    <span className="block text-micro font-black uppercase tracking-widest text-content-3">{r}</span>
-                                    <span className={`block text-body font-black tabular-nums ${tono}`}>{formatMoney(v)}</span>
+                        {/* El dinero, como una sola idea y no como tres cajas.
+                            Lo que se pregunta al abrir esto es «¿cuánto falta?»,
+                            y en segundo lugar «¿cuánto lleva?» — la barra
+                            contesta las dos de un vistazo, y el de/pagado queda
+                            de nota al pie en vez de competir por el tamaño. */}
+                        <div data-surface="card" className="rounded-2xl p-4 space-y-2">
+                            <div className="flex items-end justify-between gap-3 flex-wrap">
+                                <span className="min-w-0">
+                                    <span className="block text-micro font-black uppercase tracking-widest text-content-3">
+                                        Debe
+                                    </span>
+                                    <span className="block text-h1 font-black tabular-nums text-content leading-none">
+                                        {formatMoney(c?.saldo ?? credito.saldo)}
+                                    </span>
                                 </span>
-                            ))}
+                                <span className="text-body-sm text-content-2 tabular-nums">
+                                    <span className="text-success-text font-bold">
+                                        {formatMoney(c?.abonado ?? 0)}
+                                    </span>
+                                    {' '}pagados de {formatMoney(c?.total ?? credito.total)}
+                                </span>
+                            </div>
+                            <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden"
+                                data-medida="dato" role="img"
+                                aria-label={`Lleva ${pagadoPct(c || credito)}% pagado`}>
+                                <span className="block h-full rounded-full bg-success transition-[width]"
+                                    style={{ width: `${pagadoPct(c || credito)}%` }} />
+                            </div>
                         </div>
 
-                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
-                            {[['Fecha de compra', fechaCorta(c?.fecha || credito.fecha)],
+                        {/* Los cuatro datos de contexto, en dos columnas. «Le
+                            vendió» lleva cara, así que la fila se alinea al
+                            centro y no a la línea de base. */}
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2.5 text-body-sm">
+                            {[['Compró el', fechaCorta(c?.fecha || credito.fecha)],
                               ['Último abono', c?.ultimo_abono_el
                                   ? fechaCorta(c.ultimo_abono_el)
                                   : 'ninguno desde el portal'],
@@ -482,14 +524,11 @@ function FichaDelCredito({ credito, onClose, onAbonar }) {
                                     <dd className="text-content font-medium text-right truncate">{v}</dd>
                                 </div>
                             ))}
-                            {/* «Le vendió» va aparte de la lista de arriba porque
-                                lleva CARA: en una fila de texto la foto obligaría
-                                a alinear por la línea de base y quedaría cortada. */}
                             <div className="flex items-center justify-between gap-3 min-w-0">
                                 <dt className="text-content-3 shrink-0">Le vendió</dt>
                                 <dd className="flex items-center gap-2 min-w-0">
                                     {c?.vendedor && (
-                                        <AvatarConEstado emp={{ id: c.vendedor_id, name: c.vendedor }}
+                                        <AvatarConEstado emp={vendedor || { id: c.vendedor_id, name: c.vendedor }}
                                             px={26} mostrarChip={false} radio="rounded-full" />
                                     )}
                                     <span className="text-content font-medium truncate">
@@ -500,9 +539,16 @@ function FichaDelCredito({ credito, onClose, onAbonar }) {
                         </dl>
 
                         <section className="space-y-2">
-                            <h4 className="flex items-center gap-1.5 text-body-sm font-bold text-content">
-                                <ShoppingBag className="w-4 h-4 shrink-0" aria-hidden="true" />
-                                Lo que se llevó
+                            <h4 className="flex items-center justify-between gap-2 text-body-sm font-bold text-content">
+                                <span className="flex items-center gap-1.5">
+                                    <ShoppingBag className="w-4 h-4 shrink-0" aria-hidden="true" />
+                                    Lo que se llevó
+                                </span>
+                                {compra.length > 0 && (
+                                    <span className="text-micro font-normal text-content-3">
+                                        {compra.length} producto{compra.length === 1 ? '' : 's'}
+                                    </span>
+                                )}
                             </h4>
                             {compra.length === 0 ? (
                                 <p className="text-body-sm text-content-3">
@@ -512,18 +558,18 @@ function FichaDelCredito({ credito, onClose, onAbonar }) {
                                 /* Lista y no tabla: en el teléfono una tabla de
                                    cuatro columnas se parte o se sale, y acá lo
                                    que importa es el nombre del producto. */
-                                <ul className="space-y-1.5">
+                                <ul className="space-y-0">
                                     {compra.map((r) => (
-                                        <li key={r.id} className="flex items-baseline justify-between gap-3 min-w-0
-                                                                   border-b border-border/40 pb-1.5 last:border-0">
+                                        <li key={r.id} className="flex items-center justify-between gap-3 min-w-0
+                                                                   py-2 border-b border-border/40 last:border-0">
                                             <span className="min-w-0">
                                                 <span className="block text-body-sm text-content truncate">{r.descripcion}</span>
-                                                <span className="block text-micro text-content-3">
+                                                <span className="block text-micro text-content-3 truncate">
                                                     {Number(r.cantidad)} × {formatMoney(r.precio_unitario)}
                                                     {r.presentacion ? ` · ${r.presentacion}` : ''}
                                                 </span>
                                             </span>
-                                            <span className="text-body-sm tabular-nums text-content shrink-0">
+                                            <span className="text-body-sm tabular-nums font-medium text-content shrink-0">
                                                 {formatMoney(r.total_linea)}
                                             </span>
                                         </li>
@@ -533,9 +579,16 @@ function FichaDelCredito({ credito, onClose, onAbonar }) {
                         </section>
 
                         <section className="space-y-2">
-                            <h4 className="flex items-center gap-1.5 text-body-sm font-bold text-content">
-                                <HandCoins className="w-4 h-4 shrink-0" aria-hidden="true" />
-                                Abonos
+                            <h4 className="flex items-center justify-between gap-2 text-body-sm font-bold text-content">
+                                <span className="flex items-center gap-1.5">
+                                    <HandCoins className="w-4 h-4 shrink-0" aria-hidden="true" />
+                                    Abonos
+                                </span>
+                                {abonos.length > 0 && (
+                                    <span className="text-micro font-normal text-content-3">
+                                        {abonos.length} desde el portal
+                                    </span>
+                                )}
                             </h4>
                             {abonos.length === 0 ? (
                                 /* Se dice «desde el portal» a propósito: el otro
@@ -547,14 +600,15 @@ function FichaDelCredito({ credito, onClose, onAbonar }) {
                                     {(c?.abonado ?? 0) > 0.004 && ` Lleva ${formatMoney(c.abonado)} abonados desde la caja.`}
                                 </p>
                             ) : (
-                                <ul className="space-y-1.5">
+                                <ul className="space-y-0">
                                     {abonos.map((a) => (
-                                        <li key={a.id} className="flex items-baseline justify-between gap-3 min-w-0
-                                                                   border-b border-border/40 pb-1.5 last:border-0">
+                                        <li key={a.id} className="flex items-center justify-between gap-3 min-w-0
+                                                                   py-2 border-b border-border/40 last:border-0">
                                             <span className="min-w-0">
                                                 <span className="block text-body-sm text-content">
-                                                    {formatMoney(a.monto)} · {a.forma}
-                                                    {a.documento ? ` (${a.documento})` : ''}
+                                                    {formatMoney(a.monto)}
+                                                    <span className="text-content-3 font-normal"> · {a.forma}</span>
+                                                    {a.documento ? <span className="text-content-3 font-normal"> ({a.documento})</span> : null}
                                                 </span>
                                                 <span className="block text-micro text-content-3 truncate">
                                                     {new Date(a.created_at).toLocaleString('es-SV', {

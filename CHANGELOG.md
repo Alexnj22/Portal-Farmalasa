@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.940.0 — Las tarjetas dicen cuánto lleva pagado
+
+Cuentas por cobrar, rehecha. Antes cada tarjeta eran seis renglones planos y uno
+de ellos —«sin abonos desde el portal»— decía lo mismo en las 124, o sea que no
+decía nada. Ahora son **tres bloques**: quién, cuánto, y quién le vendió.
+
+**La barra de cuánto lleva pagado** es el cambio que importa, y no es adorno.
+«$19.40 de $139.40» obliga a dividir de cabeza para saber si es una deuda casi
+saldada o alguien que no ha dado un centavo — y eso es exactamente lo que decide
+a quién se llama primero. Con la barra se ve de un vistazo. El ancho **es** el
+dato, así que va marcada como medida: estirarla al blanco de dedo mínimo sería
+mentir sobre la proporción.
+
+También:
+
+- **La sala sólo aparece cuando se están mirando todas.** Con una elegida,
+  repetirla 47 veces era ruido.
+- **La fecha del último abono sólo cuando existe.** Su ausencia no informa; su
+  presencia sí.
+- El monto pasa a ser lo más grande de la tarjeta, y las acciones bajan a un
+  pie junto a la cara de quien vendió.
+
+**Y ahora sí se ven las fotos.** No salían porque se le pasaba `{id, name}` a
+`AvatarConEstado`, y ese componente saca la foto **del objeto que recibe** — el
+store sólo lo consulta para el aro de estado. Con medio objeto se veían las
+iniciales y nunca la cara. Ahora recibe la ficha completa del store, donde las
+fotos ya vienen firmadas del arranque.
+
+**La ficha que se abre** sigue el mismo criterio: el saldo como una sola idea
+grande con su barra, el «pagado de» como nota al pie en vez de tres cajas
+compitiendo por el tamaño, y las listas de productos y abonos con su conteo en
+el encabezado.
+
 ## v2.939.2 — La cara de quien vendió, y la lista sin partir
 
 Tres correcciones del usuario sobre Cuentas por cobrar.

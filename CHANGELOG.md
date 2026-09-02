@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.955.0 — el corte va a `corte_caja_diario.php`, y el pie del modal vuelve a existir
+
+### El corte del portal cerraba el turno: era el ENDPOINT
+
+v2.954.0 apostó a la serialización y **no era**. El registro del corte de Salud 4
+de las 14:11 lo descartó solo: `fuera: nada` —ni un campo deshabilitado, ni una
+casilla sin marcar— y el turno se cerró igual.
+
+Se leyó el JavaScript del origen (`js/funciones/funciones_corte.js`) y ahí está,
+completo:
+
+```js
+function corte() {
+  var form = $("#formulario");
+  var formdata = new FormData(form[0]);
+  var formAction = form.attr('action');   // se lee y NO se usa
+  $.ajax({ type:'POST', url:'corte_caja_diario.php', data: formdata,
+           contentType:false, processData:false, dataType:'json', ... });
+}
+```
+
+**La pantalla manda el mismo formulario a su propia página.** El portal lo
+mandaba a `cierre_turno.php` — otro script, el que cierra el turno — y por eso
+creaba el corte *y además* cerraba el turno. La URL está escrita a mano dentro
+de la función, no en el `action` del `<form>`, que está vacío: **no se puede
+deducir del HTML.**
+
+Tercera vez que el mismo formulario cobra lo mismo, y ya son tres formas
+distintas: el `tipo_corte` con **X** por defecto (31-ago), los campos que un
+navegador no manda (v2.954.0) y ahora el destino. La regla que queda escrita:
+**lo que hace la pantalla del origen no se deduce de su HTML — hay que leer su
+JavaScript.**
+
+`cierre_turno.php` queda en el archivo como `CIERRE_TURNO_NO_USAR`, con el
+motivo al lado: su nombre suena a lo que hace un corte y no lo es.
+
+### «Anotar un ingreso» no tenía botón de guardar
+
+Reportado así: *«no me sale guardar ni nada»*. La tarjeta llegaba hasta «La foto
+leyó mal: corregir a mano» y se terminaba — un formulario lleno, con su foto y
+su monto, que no se podía enviar.
+
+`Marco` —el marco de los diálogos de Mi caja— metía cabecera, campos y botones
+en un solo `div`, salteándose la anatomía de `LiquidModal`. La tarjeta tiene tope
+de alto (`max-h-[88dvh]`), así que sin un cuerpo que scrollee lo que sobra se
+corta, y **lo primero que se corta es lo último: el pie**.
+
+Es el MISMO defecto que `LiquidModal` documenta haber cerrado el 2026-08-15
+—*«el pie, donde vive Confirmar, era lo primero en irse»*— reaparecido porque
+esta vista no usaba `Header`/`Body`/`Footer`. **Un canónico que se puede saltear
+se saltea.** Hoy `Marco` recibe el pie por `pie` y lo pinta en
+`LiquidModal.Footer`; los ocho diálogos de la vista quedan con el pie fijo y el
+cuerpo scrolleando.
+
+En un monitor alto no se veía. Se vio en el de la sala, y en el diálogo más
+largo: el tipo con foto obligatoria.
+
+(`SalidaDeBolsa` ya usaba el pie canónico y no estaba afectado.)
+
 ## v2.954.2 — El chip de diferencias es de la sala, no del pedido
 
 Pregunta del usuario mirando la tarjeta de Salud 5 del pedido #150: *«no

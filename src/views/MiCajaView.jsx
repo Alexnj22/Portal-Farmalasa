@@ -28,7 +28,7 @@ import {
     subirComprobante,
 } from '../data/bolsas';
 import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '../data/cortes';
-import { diferenciaDelCorte, notaDeCifra } from '../utils/cortesDiagnostico';
+import { conLaCuentaBuena } from '../utils/cortesDiagnostico';
 
 /* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
  * 29-ago): todo lo que mueve efectivo vive en la caja. Es el MISMO componente,
@@ -90,46 +90,6 @@ const PISTA_DE_DETALLE = {
     BONIFICACION:   'de que linea',
     DEVOLUCION:     'por que se devuelve',
 };
-
-/**
- * La cuenta del corte recién hecho, resuelta por el MISMO juez que la tabla.
- *
- * `hacer-corte-caja` devuelve las dos cuentas sin elegir: la del formulario del
- * origen —que arrastra su defecto conocido, sumar los cobros de crédito un
- * número entero de veces de más— y las piezas del tiquete. Quién gana lo decide
- * `diferenciaDelCorte`, que es la función con la que se lee la tabla de cortes
- * desde el 13-ago, se contrastó contra un testigo independiente (el aviso de
- * sala) y conoce el único caso en que la buena es la del formulario: un corte
- * hecho ANTES de que entraran los cobros del día, donde el tiquete suma uno que
- * a esa hora no existía.
- *
- * Va acá y no en la edge function por eso mismo: el corte recién hecho no puede
- * contarse distinto que el mismo corte mirado mañana en la tabla. Dos jueces
- * para la misma pregunta es cómo se llega a dos números.
- *
- * Sin tiquete no hay qué comparar y queda la del formulario, que es todo lo que
- * hay — el papel lo declara.
- */
-function conLaCuentaBuena(r) {
-    if (!r?.ok || !r?.tiquete?.total_caja) return r;
-    // La forma que espera el canónico: es una fila de `cortes_caja`.
-    const comoCorte = {
-        total_declarado: r.contado,
-        esperado: r.esperado,
-        diferencia_erp: r.diferencia,
-        tk_total_caja: r.tiquete.total_caja,
-        tk_cobros_credito: r.tiquete.cobros_credito,
-    };
-    const d = diferenciaDelCorte(comoCorte);
-    return {
-        ...r,
-        esperado: d.esperado, diferencia: d.valor, fuente: d.fuente,
-        // Por qué este número y no el que guardó el sistema. `null` cuando no
-        // hay nada que explicar, y entonces el papel no dice nada.
-        nota: notaDeCifra(comoCorte),
-        segun_el_sistema: { esperado: r.esperado, diferencia: r.diferencia },
-    };
-}
 
 /**
  * `comoPestana` — esta vista es la pestaña «Hoy» de Efectivo desde v2.914.0.
@@ -1305,17 +1265,42 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
     );
 }
 
-function Marco({ abierto, onClose, titulo, bajada, children }) {
+/**
+ * El marco de los diálogos de esta vista.
+ *
+ * ── EL PIE VA EN `pie`, NO ENTRE LOS HIJOS (2026-09-02) ────────────────────
+ *
+ * Reportado por el usuario sobre «Anotar un ingreso»: *«no me sale guardar ni
+ * nada»*. La tarjeta llegaba hasta «La foto leyó mal: corregir a mano» y ahí se
+ * terminaba — sin Cancelar y sin Anotar, o sea un formulario lleno que no se
+ * puede enviar.
+ *
+ * `Marco` metía TODO —cabecera, campos y botones— en un solo `div`, saltándose
+ * la anatomía de `LiquidModal`. La tarjeta tiene tope de alto (`max-h-[88dvh]`),
+ * así que sin un cuerpo que scrollee lo que sobra se corta, y **lo primero que
+ * se corta es lo último: el pie**. En un monitor alto no se nota; en el de la
+ * sala, sí — y el tipo con foto obligatoria es justo el diálogo más largo.
+ *
+ * Es el MISMO defecto que `LiquidModal` documenta haber cerrado el 2026-08-15
+ * («el pie —donde vive Confirmar— era lo primero en irse»), reaparecido porque
+ * esta vista no usa `Header`/`Body`/`Footer`. Un canónico que se puede saltear
+ * se saltea: la corrección es usarlo.
+ */
+function Marco({ abierto, onClose, titulo, bajada, pie, children }) {
     if (!abierto) return null;
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-sm" ariaLabel={titulo}>
-            <div className="p-5 space-y-4">
-                <div>
-                    <h3 className="text-h3 font-bold text-content">{titulo}</h3>
-                    {bajada && <p className="text-body-sm text-content-2 mt-1">{bajada}</p>}
-                </div>
-                {children}
-            </div>
+            <LiquidModal.Header>
+                <h3 className="text-h3 font-bold text-content">{titulo}</h3>
+                {bajada && <p className="text-body-sm text-content-2 mt-1">{bajada}</p>}
+            </LiquidModal.Header>
+            <LiquidModal.Body className="space-y-4">{children}</LiquidModal.Body>
+            {/* `justify-end` en escritorio: el pie canónico reparte con
+                `justify-between`, y con dos botones eso los manda a las
+                esquinas opuestas. Acá son «Cancelar» y la acción, que van
+                juntos a la derecha. En táctil el canónico los apila y esta
+                clase no interviene. */}
+            {pie && <LiquidModal.Footer className="gap-2 md:justify-end">{pie}</LiquidModal.Footer>}
         </LiquidModal>
     );
 }
@@ -1324,16 +1309,17 @@ function DialogoAbrir({ abierto, ocupado, onClose, onAbrir }) {
     const [monto, setMonto] = useState('');
     return (
         <Marco abierto={abierto} onClose={onClose} titulo="Abrir la caja"
-            bajada="Con cuánto efectivo arranca la caja. Si arranca en cero, déjalo vacío.">
+            bajada="Con cuánto efectivo arranca la caja. Si arranca en cero, déjalo vacío."
+            pie={<>
+                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                <Button variant="primary" disabled={ocupado}
+                    onClick={() => onAbrir(Number(monto || 0))}>Abrir</Button>
+            </>}
+        >
             {/* Texto y no `type="number"`: el campo numérico nativo no tiene
                 separador decimal en el teléfono, y esto es dinero. */}
             <PortalInput label="Monto de apertura" inputMode="decimal" value={monto}
                 onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
-            <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button variant="primary" disabled={ocupado}
-                    onClick={() => onAbrir(Number(monto || 0))}>Abrir</Button>
-            </div>
         </Marco>
     );
 }
@@ -1543,7 +1529,14 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     if (paso === 'IDENTIDAD') {
         return (
             <Marco abierto={abierto} onClose={onClose} titulo="Quién se lleva el efectivo"
-                bajada={`${formatMoney(Number(monto) || 0)} · ${tipo?.etiqueta || ''}${concepto.trim() ? ` · ${concepto.trim()}` : ''}`}>
+                bajada={`${formatMoney(Number(monto) || 0)} · ${tipo?.etiqueta || ''}${concepto.trim() ? ` · ${concepto.trim()}` : ''}`}
+                pie={<>
+                    <Button variant="ghost" onClick={() => setPaso('DATOS')}>Atrás</Button>
+                    <Button variant="primary" disabled={ocupado || !persona || !vale} onClick={guardar}>
+                        Anotar
+                    </Button>
+                </>}
+            >
                 <IdentidadDeQuienRetira
                     activo={!!abierto && !ocupado}
                     persona={persona}
@@ -1551,12 +1544,6 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                     onOlvidar={() => { setPersona(null); setVale(null); }}
                     bloqueado={ocupado}
                 />
-                <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={() => setPaso('DATOS')}>Atrás</Button>
-                    <Button variant="primary" disabled={ocupado || !persona || !vale} onClick={guardar}>
-                        Anotar
-                    </Button>
-                </div>
             </Marco>
         );
     }
@@ -1566,7 +1553,18 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             titulo={entra ? 'Anotar un ingreso' : 'Anotar una salida'}
             bajada={entra
                 ? 'Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.'
-                : 'Sale del cajón porque ninguna bolsa de cortes anteriores alcanza. Esto sí se le anota a la caja.'}>
+                : 'Sale del cajón porque ninguna bolsa de cortes anteriores alcanza. Esto sí se le anota a la caja.'}
+            pie={<>
+                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                {/* Con identidad el botón no anota: pasa al carné. Anotar antes
+                    de comprobar dejaría plata salida a nombre de nadie si la
+                    comprobación falla. */}
+                <Button variant="primary" disabled={ocupado || leyendo || !valido}
+                    onClick={() => (identifica ? setPaso('IDENTIDAD') : guardar())}>
+                    {identifica ? 'Continuar' : 'Anotar'}
+                </Button>
+            </>}
+        >
             {/* Lo primero, y de la TABLA: una lista escrita a mano en el
                 `.jsx` se desincroniza de la base sin avisar. */}
             {/* `clearable={false}`: sin eso el desplegable ofrece «Todos»
@@ -1645,16 +1643,6 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 </>
             )}
 
-            <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                {/* Con identidad el botón no anota: pasa al carné. Anotar antes
-                    de comprobar dejaría plata salida a nombre de nadie si la
-                    comprobación falla. */}
-                <Button variant="primary" disabled={ocupado || leyendo || !valido}
-                    onClick={() => (identifica ? setPaso('IDENTIDAD') : guardar())}>
-                    {identifica ? 'Continuar' : 'Anotar'}
-                </Button>
-            </div>
         </Marco>
     );
 }
@@ -1673,7 +1661,29 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
         const dif = Number(resultado.diferencia || 0);
         const cuadro = Math.abs(dif) < 0.005;
         return (
-            <Marco abierto={abierto} onClose={onClose} titulo={cuadro ? 'El corte cuadró' : 'El corte tiene diferencia'}>
+            <Marco abierto={abierto} onClose={onClose} titulo={cuadro ? 'El corte cuadró' : 'El corte tiene diferencia'}
+                pie={<>
+                    {resultado.ok && (
+                        <Button variant="secondary" icon={Printer} onClick={() => onImprimir(resultado)}>
+                            Imprimir
+                        </Button>
+                    )}
+                    {resultado.ok && onResolver ? (
+                        <>
+                            <Button variant="ghost" disabled={resolviendo}
+                                onClick={() => onResolver('DESCARTADO', 'Conteo descartado desde la caja')}>
+                                Descartar
+                            </Button>
+                            <Button variant="primary" disabled={resolviendo}
+                                onClick={() => onResolver('CONFIRMADO')}>
+                                Confirmar el corte
+                            </Button>
+                        </>
+                    ) : (
+                        <Button variant="primary" onClick={onClose}>Entendido</Button>
+                    )}
+                </>}
+            >
                 <div className="space-y-1 text-body-sm">
                     <p className="text-content-2">Contaste <b className="text-content tabular-nums">{formatMoney(resultado.contado)}</b></p>
                     <p className={`text-h3 font-bold tabular-nums ${cuadro ? 'text-success-text' : dif > 0 ? 'text-warning-text' : 'text-danger-text'}`}>
@@ -1759,34 +1769,19 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
                         </span>
                     </Notice>
                 )}
-                <div className="flex justify-end gap-2 flex-wrap">
-                    {resultado.ok && (
-                        <Button variant="secondary" icon={Printer} onClick={() => onImprimir(resultado)}>
-                            Imprimir
-                        </Button>
-                    )}
-                    {resultado.ok && onResolver ? (
-                        <>
-                            <Button variant="ghost" disabled={resolviendo}
-                                onClick={() => onResolver('DESCARTADO', 'Conteo descartado desde la caja')}>
-                                Descartar
-                            </Button>
-                            <Button variant="primary" disabled={resolviendo}
-                                onClick={() => onResolver('CONFIRMADO')}>
-                                Confirmar el corte
-                            </Button>
-                        </>
-                    ) : (
-                        <Button variant="primary" onClick={onClose}>Entendido</Button>
-                    )}
-                </div>
             </Marco>
         );
     }
 
     return (
         <Marco abierto={abierto} onClose={onClose} titulo="Hacer el corte"
-            bajada="Cuenta SÓLO el efectivo que hay en el cajón ahora. Lo que ya está en las bolsas de hoy lo suma el portal.">
+            bajada="Cuenta SÓLO el efectivo que hay en el cajón ahora. Lo que ya está en las bolsas de hoy lo suma el portal."
+            pie={<>
+                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                <Button variant="primary" disabled={ocupado || !valido}
+                    onClick={() => onCortar(declarado)}>Hacer el corte</Button>
+            </>}
+        >
             {pendientes > 0 && (
                 <Notice variant="info" icon={Landmark}>
                     Antes del corte se anota un <b>vale de caja</b> con {pendientes} salida{pendientes === 1 ? '' : 's'} del día.
@@ -1821,11 +1816,6 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
                 </div>
             )}
 
-            <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button variant="primary" disabled={ocupado || !valido}
-                    onClick={() => onCortar(declarado)}>Hacer el corte</Button>
-            </div>
         </Marco>
     );
 }
@@ -1869,7 +1859,14 @@ function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, onClose, onCerrar }) {
 
     return (
         <Marco abierto onClose={onClose} titulo="Cerrar el día"
-            bajada="Esto cierra la caja de hoy y emite el cierre del día.">
+            bajada="Esto cierra la caja de hoy y emite el cierre del día."
+            pie={<>
+                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                <Button variant="primary" disabled={ocupado} onClick={onCerrar}>
+                    Cerrar el día
+                </Button>
+            </>}
+        >
             <Notice variant="danger" icon={AlertTriangle}>
                 <span className="font-bold">No se puede deshacer.</span>
                 <span className="block mt-0.5 font-normal">
@@ -1877,12 +1874,6 @@ function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, onClose, onCerrar }) {
                     podrá anotar, y las bolsas de hoy pasan a ser de un día cerrado.
                 </span>
             </Notice>
-            <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button variant="primary" disabled={ocupado} onClick={onCerrar}>
-                    Cerrar el día
-                </Button>
-            </div>
         </Marco>
     );
 }
@@ -1905,7 +1896,15 @@ function DialogoCorregir({ movimiento, ocupado, onClose, onPedir }) {
 
     return (
         <Marco abierto onClose={onClose} titulo="Pedir una corrección"
-            bajada={`${movimiento.concepto} · ${formatMoney(movimiento.monto)}`}>
+            bajada={`${movimiento.concepto} · ${formatMoney(movimiento.monto)}`}
+            pie={<>
+                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                <Button variant="primary" disabled={ocupado || !valido}
+                    onClick={() => onPedir(que, motivo.trim(), que === 'MONTO' ? Number(montoNuevo) : null)}>
+                    Pedir
+                </Button>
+            </>}
+        >
             <div className="flex gap-2">
                 <Button size="sm" variant={que === 'ANULAR' ? 'primary' : 'secondary'}
                     onClick={() => setQue('ANULAR')}>Anularlo</Button>
@@ -1919,13 +1918,6 @@ function DialogoCorregir({ movimiento, ocupado, onClose, onPedir }) {
             <PortalInput label="Motivo" value={motivo} maxLength={200}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Se anotó dos veces" />
-            <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button variant="primary" disabled={ocupado || !valido}
-                    onClick={() => onPedir(que, motivo.trim(), que === 'MONTO' ? Number(montoNuevo) : null)}>
-                    Pedir
-                </Button>
-            </div>
         </Marco>
     );
 }

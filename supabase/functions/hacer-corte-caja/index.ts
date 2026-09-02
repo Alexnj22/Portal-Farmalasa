@@ -39,7 +39,33 @@ const LOGIN_URL  = `${BASE}login.php`;
 const SESION_URL = `${BASE}cambio_sesion.php`;
 const CORTE_URL  = `${BASE}admin_corte.php`;
 const PANTALLA   = `${BASE}corte_caja_diario.php`;
-const CIERRE_URL = `${BASE}cierre_turno.php`;
+/* ── EL CORTE VA A `corte_caja_diario.php`, NO A `cierre_turno.php` ─────────
+ *
+ * Leído en el JavaScript del origen (`js/funciones/funciones_corte.js`) el
+ * 2026-09-02, después de que el usuario reportara que **un corte hecho desde el
+ * portal cierra el turno en el sistema y uno hecho desde su pantalla no**:
+ *
+ *     function corte() {
+ *       var form = $("#formulario");
+ *       var formdata = new FormData(form[0]);
+ *       var formAction = form.attr('action');   // se lee y NO se usa
+ *       $.ajax({ type:'POST', url:'corte_caja_diario.php', data: formdata,
+ *                contentType:false, processData:false, dataType:'json', ... });
+ *     }
+ *
+ * O sea: la pantalla manda el MISMO formulario, pero a **su propia página**.
+ * `cierre_turno.php` es otro script —el que cierra el turno— y el portal lo
+ * venía usando desde que existe el módulo.
+ *
+ * Medido antes de saberlo: del 24 al 31-ago, con todos los cortes hechos en el
+ * sistema, el turno NUNCA avanzó (nueve cortes en un día en Salud 1, todos
+ * turno 1); desde que corta el portal, Salud 3 fue `1→2→3→3→3` y Salud 4
+ * `1→2`, y las salas que no lo usan siguieron en 1.
+ *
+ * Se deja nombrada la constante vieja para que nadie la vuelva a elegir por su
+ * nombre: «cierre de turno» suena a lo que hace un corte y no lo es. */
+const CIERRE_TURNO_NO_USAR = `${BASE}cierre_turno.php`;
+void CIERRE_TURNO_NO_USAR;   // documenta, no se llama
 const CREAR_VALE = `${BASE}agregar_salida_caja.php`;
 const MOV_URL    = `${BASE}admin_movimiento_caja_dt.php`;
 const TICKET_URL = `${BASE}corte_caja_diario.php`;
@@ -219,6 +245,12 @@ interface Tiquete {
   /** TOTAL CAJA del tiquete — la pieza con la que el portal decide. */
   total_caja: number | null;
   cobros_credito: number | null;
+  /**
+   * SUBTOTAL y (-) VALES, para DERIVAR los cobros de crédito de la suma del
+   * propio tiquete en vez de fiarse del renglón. Ver la nota en `leerTiquete`.
+   */
+  subtotal: number | null;
+  vales: number | null;
   retencion?: number;
   devoluciones?: number;
   /**
@@ -265,6 +297,16 @@ async function leerTiquete(
   };
   const totalCaja = linea(/TOTAL CAJA \$:\s*([\d.,-]+)/i);
   const efectivo  = linea(/EFECTIVO \$:\s*([\d.,-]+)/i);
+  /* SUBTOTAL y VALES: las dos piezas con las que el portal DERIVA los cobros de
+   * crédito de la propia suma del tiquete —`total_caja − subtotal + vales`, que
+   * cierra al centavo en los 493 cortes capturados— en vez de leer el renglón
+   * «COBROS CREDITO». El papel a veces no lo imprime y su ausencia se lee igual
+   * que un cero; un cero de más ahí inventa un faltante del tamaño de los
+   * cobros del día. Es exactamente la cuenta que `contraste` ya hace sobre la
+   * tabla, y viajan para que el corte recién hecho no se cuente distinto que el
+   * mismo corte mirado mañana. */
+  const subtotal  = linea(/SUBTOTAL\s*\$:\s*([\d.,-]+)/i);
+  const vales     = linea(/\(-\)\s*VALES\s*\$:\s*([\d.,-]+)/i);
   const retencion = linea(/RETENCION \$:\s*([\d.,-]+)/i) ?? 0;
   const devol     = linea(/DEVOLUCIONES\s*\$:\s*([\d.,-]+)/i) ?? 0;
   const texto = String(mov);
@@ -349,7 +391,7 @@ async function leerTiquete(
   if (totalCaja === null || efectivo === null) {
     return {
       texto, ...cabecera, contado: null, formas, lineas,
-      total_caja: null, cobros_credito: null,
+      total_caja: null, cobros_credito: null, subtotal: null, vales: null,
     };
   }
   /* Se devuelven las PIEZAS, no un veredicto.
@@ -365,6 +407,7 @@ async function leerTiquete(
     texto, ...cabecera, contado: efectivo, formas, lineas,
     total_caja: totalCaja,
     cobros_credito: linea(/\(\+\)\s*COBROS CREDITO \$:\s*([\d.,-]+)/i) ?? 0,
+    subtotal, vales,
     retencion, devoluciones: devol,
   };
 }
@@ -848,7 +891,10 @@ Deno.serve(async (req) => {
     const cuerpo = new URLSearchParams();
     for (const [k, v] of campos) cuerpo.set(k, v);
 
-    const respCorte = await (await fetch(CIERRE_URL, {
+    // A `corte_caja_diario.php`, que es a donde lo manda `corte()` en la pantalla
+    // del origen. Ver el bloque de la constante: mandarlo a `cierre_turno.php`
+    // creaba el corte igual y ADEMÁS cerraba el turno.
+    const respCorte = await (await fetch(PANTALLA, {
       method: "POST",
       headers: {
         Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
@@ -869,6 +915,46 @@ Deno.serve(async (req) => {
     if (ok && idCorte) {
       try { tiquete = await leerTiquete(cookie, String(idCorte), entrada.erpId); }
       catch (e) { console.error("hacer-corte-caja: tiquete:", e); }
+    }
+
+    /* ── El efectivo de los cobros de crédito que el comprobante NO cuenta ──
+     *
+     * Cobrar un crédito desde el portal mete efectivo en el cajón, y el sistema
+     * de la caja lo anota como movimiento del día pero no lo suma ni a INGRESOS
+     * ni a la línea COBROS CREDITO: su esperado nace corto y el conteo de la
+     * sala aparece como un sobrante que nadie hizo. Ver la sección de cuentas
+     * por cobrar de CLAUDE.md — el 2-sep costó anunciar +$78.40 de sobrante
+     * sobre un faltante de $9.85.
+     *
+     * En la tabla eso ya lo sella un trigger en `cobros_portal_efectivo`. Pero
+     * el corte RECIÉN HECHO todavía no tiene fila —la escribe `sync-cortes-caja`
+     * medio minuto después—, así que el papel que imprime el portal salía con la
+     * cuenta sin corregir: el corte 14399 de Salud 4 se imprimió **+$88.40** y
+     * la tarjeta, ya con la fila sellada, decía **+$0.15**. Dos números para el
+     * mismo corte, y el equivocado es el que queda en papel.
+     *
+     * Se pregunta por el MISMO canónico que usa el trigger
+     * (`cobros_portal_en_efectivo`) y no por una suma escrita acá: dos sumas
+     * para la misma pregunta es cómo se vuelve a llegar a dos números. La hora
+     * de corte es AHORA, que es lo que la fila va a tener; los abonos que
+     * entren después no estaban en el cajón cuando se contó.
+     *
+     * `null` cuando no se pudo leer, nunca 0: un cero acá se lee como «no hubo
+     * cobros» y devuelve en silencio la cifra equivocada. El papel lo declara. */
+    let cobrosPortalEfectivo: number | null = null;
+    if (ok) {
+      const ahoraSv = new Date(Date.now() - 6 * 3600_000).toISOString();
+      const { data: cobros, error: errCobros } = await supabase
+        .rpc("cobros_portal_en_efectivo", {
+          p_branch: sala,
+          p_fecha: ahoraSv.slice(0, 10),
+          p_hasta: ahoraSv.slice(11, 19),
+        });
+      if (errCobros) {
+        console.error("hacer-corte-caja: cobros del portal:", errCobros.message);
+      } else {
+        cobrosPortalEfectivo = Number(cobros ?? 0);
+      }
     }
 
     /* ── El tipo que SALIÓ se comprueba, no se supone ──────────────────────
@@ -942,6 +1028,10 @@ Deno.serve(async (req) => {
        * se aparta en el 23%. Hoy el tiquete siempre gana.) */
       esperado, contado: Number(efectivo),
       diferencia: Number(dosDecimales(diferencia)),
+      /* La tercera pieza de la cuenta, y la única que no sale del tiquete: el
+       * efectivo de cobros de crédito hechos desde el portal que el comprobante
+       * deja fuera de su esperado. `null` = no se pudo leer, y el papel lo dice. */
+      cobros_portal_efectivo: cobrosPortalEfectivo,
       tipo: tiquete?.tipo ?? null,
       id_corte: idCorte,
       // Lo que necesita el comprobante que imprime el portal, y las piezas con
@@ -954,6 +1044,7 @@ Deno.serve(async (req) => {
           caja: tiquete.caja, turno: tiquete.turno, formas: tiquete.formas,
           contado: tiquete.contado, total_caja: tiquete.total_caja,
           cobros_credito: tiquete.cobros_credito,
+          subtotal: tiquete.subtotal, vales: tiquete.vales,
         }
         : null,
       vale: valeId ? { id: valeId, movimiento_en_caja: movVale, monto: Number(montoVale.toFixed(2)) } : null,

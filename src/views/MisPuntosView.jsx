@@ -60,27 +60,19 @@ import { EMPRESA } from '../constants/empresa';
 const FORMA_DEL_CODIGO = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/;
 
 /**
- * Lo que trae la dirección: el código, y si ese código necesita el teléfono.
+ * El código que trae la dirección, si trae uno con forma buena.
  *
- * El QR del papel es `…/mis-puntos?codigo=K7MP4XN`, y lleva `&tel=1` cuando la
- * ficha NO es extranjera — que son casi todas. Ahí el código solo NO entra: la
- * base exige además el teléfono, y el papel ya lo sabía al imprimirse.
- *
- * Sin esa pista la pantalla tendría que descubrirlo probando, y probar cuesta:
- * un fallo gasta uno de los cinco del freno, que se cuenta **por IP y no se
- * limpia al acertar**. Cinco clientes escaneando desde el wifi de la misma sala
- * la dejarían sin consultar quince minutos.
- *
- * Se valida la FORMA del código antes de usarlo por lo mismo: ningún intento se
- * va a gastar por un enlace mal copiado.
+ * El QR del papel es `…/mis-puntos?codigo=K7MP4XN`: quien lo escanea llega con
+ * el campo lleno y la consulta ya hecha. Se valida la FORMA antes de usarlo
+ * porque un intento fallido gasta uno de los cinco del freno, y ninguno se va a
+ * gastar por un enlace mal copiado.
  */
-function deLaDireccion() {
+function codigoDeLaDireccion() {
     try {
-        const q = new URLSearchParams(window.location.search);
-        const limpio = (q.get('codigo') ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-        const codigo = FORMA_DEL_CODIGO.test(limpio) ? limpio : '';
-        return { codigo, pideTel: !!codigo && q.get('tel') === '1' };
-    } catch { return { codigo: '', pideTel: false }; }
+        const c = new URLSearchParams(window.location.search).get('codigo') ?? '';
+        const limpio = c.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        return FORMA_DEL_CODIGO.test(limpio) ? limpio : '';
+    } catch { return ''; }
 }
 
 /** Cuántos puntos hacen falta para poder canjear. Lo dice el reglamento §4. */
@@ -289,22 +281,14 @@ export default function MisPuntosView() {
     // Se lee UNA vez, al construir el estado, y no dentro de un efecto: así el
     // campo ya nace lleno en el primer render —nadie ve el formulario vacío
     // parpadear— y no hay un setState sincrónico encadenando renders.
-    const [codigo, setCodigo] = useState(() => deLaDireccion().codigo);
+    const [codigo, setCodigo] = useState(codigoDeLaDireccion);
     const [tel, setTel] = useState('');
-    // Nace encendido sólo si la dirección trae un código que entra SOLO: quien
-    // llega así está esperando su saldo desde el primer pixel, y la pantalla
-    // dice «cargando» en vez de mostrar un formulario que se va a llenar solo un
-    // instante después. Con `&tel=1` no se consulta nada todavía —falta un
-    // dato—, así que ahí el formulario tiene que verse.
-    const [cargando, setCargando] = useState(() => {
-        const d = deLaDireccion();
-        return !!d.codigo && !d.pideTel;
-    });
+    // Nace encendido si la dirección trae código: quien llega por el QR está
+    // esperando su saldo desde el primer pixel, así que la pantalla dice
+    // «cargando» de entrada en vez de mostrar un formulario que se va a llenar
+    // solo un instante después.
+    const [cargando, setCargando] = useState(() => !!codigoDeLaDireccion());
     const [error, setError] = useState('');
-    // «Con este código hace falta además el teléfono». Nace de la pista del QR y
-    // se enciende también cuando el intento con el código solo no encontró nada:
-    // el papel viejo no traía la pista, y un papel impreso vive en una cartera.
-    const [faltaTel, setFaltaTel] = useState(() => deLaDireccion().pideTel);
     const [datos, setDatos] = useState(null);
     const [todos, setTodos] = useState(false);
 
@@ -317,13 +301,12 @@ export default function MisPuntosView() {
     const telOk = tel.replace(/\D/g, '').length >= 8;
     const codigoLimpio = codigo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     const codigoOk = FORMA_DEL_CODIGO.test(codigoLimpio);
-    // Con código el teléfono es OPCIONAL en la pantalla, no innecesario. Sólo la
-    // ficha extranjera entra sin él —su teléfono no sirve de llave: el circuito
-    // de facturación se lo reemplaza por el de la farmacia—; en todas las demás
-    // la base lo exige igual. Cuando ya se sabe que hace falta, el botón espera
-    // a que esté: mandarlo sin él sería gastar un intento del freno a ciegas.
-    const puedeConsultar =
-        ((codigoOk && (!faltaTel || telOk)) || (duiOk && telOk)) && !cargando;
+    // Con código no se pide teléfono, y no es una excepción para el extranjero:
+    // el código es NUESTRO, lo emite una persona en la caja y son 6,100 millones
+    // de combinaciones contra un freno de cinco intentos por IP. Ahí el segundo
+    // dato no agrega nada. Por documento sí hace falta — un DUI no es secreto,
+    // así que solo convertiría esto en un detector de «este DUI es cliente».
+    const puedeConsultar = (codigoOk || (duiOk && telOk)) && !cargando;
 
     /**
      * La consulta, con lo que se va a preguntar dicho explícitamente.
@@ -332,22 +315,11 @@ export default function MisPuntosView() {
      * `true`: sin él habría que encenderlo otra vez desde el efecto, y un
      * setState sincrónico ahí encadena renders sin necesidad.
      */
-    const pedir = async (llave, { yaEncendido = false, soloCodigo = false } = {}) => {
+    const pedir = async (llave, { yaEncendido = false } = {}) => {
         if (!yaEncendido) { setCargando(true); setError(''); }
         const r = await consultarMisPuntos(llave);
         setCargando(false);
         if (r.ok) { setDatos(r); setTodos(false); return; }
-        // Fue con el código SOLO y no encontró ficha. La causa casi segura es
-        // que esa ficha no es extranjera y le falta el teléfono, así que se
-        // pide en vez de dejar «no encontramos una ficha» como final: es cierto
-        // y no sirve —no dice qué hacer, y quien llegó escaneando un QR no
-        // escribió nada que pueda ir a revisar—. Sólo ante `no_encontrado`: un
-        // freno o una caída no se arreglan agregando un dato.
-        if (soloCodigo && r.motivo === 'no_encontrado') {
-            setFaltaTel(true);
-            setError('');
-            return;
-        }
         setError(r.mensaje);
     };
 
@@ -356,14 +328,8 @@ export default function MisPuntosView() {
         if (!puedeConsultar) return;
         // El código manda si está completo: es el camino de quien no puede
         // entrar con su documento, y si escribió los dos, ése es el que quiso.
-        // El teléfono viaja CON el código cuando lo escribió — es la única
-        // combinación que abre una ficha que no sea extranjera.
-        return pedir(
-            codigoOk
-                ? { documento: codigoLimpio, ...(telOk ? { telefono: tel } : {}) }
-                : { documento: dui, telefono: tel },
-            { soloCodigo: codigoOk && !telOk },
-        );
+        return pedir(codigoOk ? { documento: codigoLimpio }
+                              : { documento: dui, telefono: tel });
     };
 
     // Quien llegó por el QR del papel no tiene que apretar nada: el código ya
@@ -373,11 +339,10 @@ export default function MisPuntosView() {
     const yaConsultoSolo = useRef(false);
     useEffect(() => {
         if (yaConsultoSolo.current) return;
-        const { codigo: delEnlace, pideTel } = deLaDireccion();
-        // Con `&tel=1` no se consulta: falta un dato y el papel ya lo dijo.
-        if (!delEnlace || pideTel) return;
+        const delEnlace = codigoDeLaDireccion();
+        if (!delEnlace) return;
         yaConsultoSolo.current = true;
-        pedir({ documento: delEnlace }, { yaEncendido: true, soloCodigo: true }); // eslint-disable-line react-hooks/set-state-in-effect -- con `yaEncendido` no toca el estado hasta después del await, pero la regla no puede verlo
+        pedir({ documento: delEnlace }, { yaEncendido: true }); // eslint-disable-line react-hooks/set-state-in-effect -- con `yaEncendido` no toca el estado hasta después del await, pero la regla no puede verlo
     }, []);
 
     const volver = () => { setDatos(null); setError(''); setDui(''); setTel(''); };
@@ -425,16 +390,11 @@ export default function MisPuntosView() {
                                 disabled={codigoOk}
                                 onChange={e => setDui(e.target.value)}
                             />
-                            {/* El teléfono NO se apaga con el código puesto: el
-                                código reemplaza al DUI, no al teléfono. Sólo la
-                                ficha extranjera entra con el código solo; en
-                                todas las demás la base pide los dos, así que
-                                apagarlo dejaba a esa gente sin ninguna
-                                combinación posible en la pantalla. */}
                             <PortalInput
                                 name="telefono" label="Teléfono" icon={Phone}
                                 maskType="PHONE" inputMode="tel"
                                 placeholder="0000-0000" value={tel} autoComplete="tel"
+                                disabled={codigoOk}
                                 onChange={e => setTel(e.target.value)}
                             />
 
@@ -444,8 +404,8 @@ export default function MisPuntosView() {
                                 usa casi todo el mundo. */}
                             <div className="pt-1">
                                 <p className="text-body-sm text-content-3 mb-2">
-                                    ¿La sala te dio un código? Escríbelo aquí con tu
-                                    teléfono y no hace falta el DUI.
+                                    ¿La sala te dio un código? Úsalo aquí y no hace
+                                    falta lo de arriba.
                                 </p>
                                 <PortalInput
                                     name="codigo" label="Código" icon={KeyRound}
@@ -455,14 +415,9 @@ export default function MisPuntosView() {
                                 />
                             </div>
 
-                            {error
-                                ? <Notice variant="warning" icon={AlertTriangle}>{error}</Notice>
-                                : faltaTel && (
-                                    <Notice variant="info" icon={Phone}>
-                                        Con tu código hace falta además el teléfono de tu
-                                        registro. Escríbelo arriba y toca «Ver mis puntos».
-                                    </Notice>
-                                )}
+                            {error && (
+                                <Notice variant="warning" icon={AlertTriangle}>{error}</Notice>
+                            )}
 
                             <Button type="submit" variant="primary" className="w-full"
                                 disabled={!puedeConsultar}>

@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.964.5 — Mis puntos: el código entra solo, en cualquier ficha
+
+Corrige de verdad lo que v2.964.3 corrigió por el lado equivocado, y **revierte
+aquel cambio de pantalla entero**.
+
+El síntoma era el mismo: se entregó el primer código de acceso en sala, se
+escaneó su QR y la pantalla contestó «no encontramos una ficha con ese documento
+y ese teléfono» sobre un código recién emitido.
+
+`puntos_cliente_por_documento` aceptaba el código **solo** cuando la ficha era
+`Extranjero`; en cualquier otra pedía además el teléfono. El QR lleva únicamente
+el código, así que para casi todos los clientes esa consulta no podía acertar
+nunca. En v2.964.3 se dio por buena la regla de la base y se puso a la pantalla a
+pedir el teléfono. **La regla era lo que estaba mal**: si es por código, el
+código alcanza — y esa es la decisión.
+
+Así que la corrección vive en la base
+(`20260903164641_puntos_el_codigo_entra_solo`) y la pantalla vuelve exactamente a
+como estaba, sin la pista `&tel=1` en el QR, sin el aviso de «falta el teléfono»
+y sin el `motivo` que nadie iba a leer. El QR promete «escaneá y entrás», y
+ahora la base lo cumple.
+
+**Por qué el código puede cargar todo el peso, que es lo que el largo ya
+suponía:** son siete caracteres de un alfabeto de 25 sin parecidos —6,103,515,625
+combinaciones— contra un freno de cinco fallos por IP cada quince minutos, o sea
+480 intentos por día y por IP. Con mil códigos emitidos, una sola IP necesitaría
+del orden de 8,000 años para tener la mitad de probabilidad de pegarle a alguno.
+Y lo que se gana es MIRAR un nombre y un saldo: esta puerta no canjea, no edita
+la ficha y no devuelve el documento con el que se entró. El teléfono nunca fue
+una contraseña —lo sabe la familia y sale en papeles—; lo que hacía era volver el
+ataque «adivinar el par de fulano», y para eso el código ya alcanza solo.
+
+**No cambia el camino del documento.** Con DUI, NIT o pasaporte el teléfono
+sigue haciendo falta: ese primer dato no es secreto ni lo emitimos nosotros, así
+que sin el par esto sería un detector de «este DUI es cliente».
+
+La ficha del cliente deja de explicar dos reglas —antes distinguía la ficha
+extranjera— y dice una sola: «El cliente entra a Mis puntos con este código, sin
+ningún otro dato».
+
+`tests/unit/puntosCodigoTicket.test.js` ancla el otro extremo del contrato: que
+el QR siga llevando el código y NADA más, y que el papel no le pida al cliente un
+segundo dato que ya no hace falta.
+
 ## v2.964.4 — El papel nunca salía: `noopener` hace que `window.open` devuelva `null`
 
 Reportado sobre Bitácoras → Cierre de mes: «hice la prueba de cierre, y descargar

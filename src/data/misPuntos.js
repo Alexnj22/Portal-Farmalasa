@@ -29,27 +29,18 @@ export async function consultarMisPuntos({ documento, dui, telefono }) {
         // manda a revisar su señal en vez de a esperar unos minutos.
         if (error && !data) {
             const cuerpo = await error?.context?.json?.().catch(() => null);
-            if (cuerpo?.mensaje) {
-                return { ok: false, motivo: cuerpo.motivo ?? 'no_disponible', mensaje: cuerpo.mensaje };
-            }
+            if (cuerpo?.mensaje) return { ok: false, mensaje: cuerpo.mensaje };
             throw error;
         }
         if (data?.ok) return data;
-        // `motivo` viaja además del mensaje: la pantalla decide con él, no
-        // leyendo el texto. Un final que se distingue por su redacción se rompe
-        // el día que alguien mejora la frase — y sólo uno de los tres se arregla
-        // agregando un dato («no encontrado»: falta el teléfono). Al freno y a
-        // la caída no hay dato que los cure.
         return {
             ok: false,
-            motivo: data?.motivo ?? 'no_disponible',
             mensaje: data?.mensaje ?? 'No se pudo consultar en este momento. Intenta de nuevo en un rato.',
         };
     } catch (e) {
         console.error('misPuntos.js:', e);
         return {
             ok: false,
-            motivo: 'sin_conexion',
             mensaje: 'No se pudo consultar en este momento. Revisa tu conexión e intenta de nuevo.',
         };
     }

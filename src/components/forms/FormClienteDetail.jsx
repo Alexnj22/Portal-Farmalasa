@@ -208,7 +208,7 @@ function PanelActividad({ actividad, facturas, bitacora }) {
  * farmacia—; para el resto va acompañado del teléfono, y eso es lo que permite
  * que el código sea de siete caracteres y no de una docena.
  */
-function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
+function CodigoDeAcceso({ customerId, nombre, puedeEditar }) {
     // `showToast(titulo, mensaje, tipo)` — así lo expone el store, y así lo usa
     // el resto de este archivo. `addToast` no existe.
     const aviso = (titulo, mensaje, tipo) =>
@@ -324,15 +324,7 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
         if (!valor) { aviso('Sin código', 'Este cliente todavía no tiene uno. Genéralo primero.', 'error'); return; }
         const { imprimirTicketDeCodigo } = await import('../../utils/puntosCodigoTicket');
         await imprimirTicketDeCodigo(
-            {
-                nombre, codigo: valor, emitidoPor: user?.name || user?.email || '',
-                // El papel dice con qué se entra, y su QR lo lleva adentro. Sólo
-                // la ficha extranjera entra con el código solo: en las demás la
-                // base exige además el teléfono, así que un QR que no lo avise
-                // manda al cliente a una pantalla que le va a decir que no
-                // existe. Ver `puntosCodigoTicket.js`.
-                pideTelefono: !esExtranjero,
-            },
+            { nombre, codigo: valor, emitidoPor: user?.name || user?.email || '' },
             { sala: salaId },
         );
     });
@@ -351,10 +343,13 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
                     : <Badge size="sm" variant="neutral">Sin código</Badge>}
             </div>
 
+            {/* Ya no se distingue la ficha extranjera: el código entra SOLO en
+                todas. Distinguirla obligaba a explicar dos reglas a quien
+                atiende, y la que sobraba era la del teléfono — ver la migración
+                `20260903164641_puntos_el_codigo_entra_solo`. */}
             <p className="text-sm text-content-2">
-                {esExtranjero
-                    ? 'Con este código el cliente entra a Mis puntos sin su teléfono, porque su ficha es de una persona extranjera.'
-                    : 'El cliente entra a Mis puntos con este código y su teléfono. Sirve cuando no tiene su documento a mano.'}
+                El cliente entra a Mis puntos con este código, sin ningún otro dato.
+                Sirve cuando no tiene su documento a mano.
             </p>
 
             {legible && (
@@ -737,7 +732,6 @@ const FormClienteDetail = ({ formData }) => {
                     <CodigoDeAcceso
                         customerId={id}
                         nombre={form.name || cliente?.name || ''}
-                        esExtranjero={(form.categoria || '') === 'Extranjero'}
                         puedeEditar={editable} />
                     <PanelPuntos customerId={id} />
                 </div>

@@ -31,6 +31,7 @@ import {
     leerBoleta, pedirCorreccion,
     subirComprobante,
 } from '../data/bolsas';
+import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
 import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '../data/cortes';
 /* Los cobros de crédito son la TERCERA fuente de efectivo del día, junto con
  * el cajón y las bolsas. Viven en `creditos` porque el cobro se decide allá;
@@ -428,7 +429,15 @@ export default function MiCajaView({ comoPestana = false }) {
             const delDia = (await fetchCortes({ desde: dia, hasta: dia }) || [])
                 .filter((c) => String(c.branch_id) === String(sala));
             setCortesDelDia(delDia);
-            const quienes = await fetchPersonas(delDia.map((c) => c.resuelto_por));
+            /* Los TRES roles que un corte nombra, no sólo quien confirmó:
+             * `EntregaDelTurno` pinta la cara de quien entregó y la de quien
+             * recibió, y una persona que sólo recibe cajas no está en el padrón
+             * de resolutores — saldría con la inicial, que se lee igual que
+             * «no tiene foto». La función de la base se amplió el 3-sep por lo
+             * mismo (`get_cortes_resolutores`). */
+            const quienes = await fetchPersonas(delDia.flatMap(
+                (c) => [c.resuelto_por, c.recibido_por, c.employee_id],
+            ));
             setFirmantes(new Map(quienes.map((q) => [q.id, q])));
         } else {
             setCortesDelDia(VACIO);
@@ -708,23 +717,24 @@ export default function MiCajaView({ comoPestana = false }) {
         [cortesDelDia],
     );
 
-    /* A QUIÉN se le entregó la caja en ese corte.
+    /* EL CORTE QUE DICE DÓNDE ESTÁ LA CAJA — el último del día que ya
+     * cambió de manos, o que se confirmó sin que nadie la recibiera.
      *
-     * Confirmar cierra el turno, así que «¿ya está todo bien para el que
-     * sigue?» —la pregunta con la que se hizo la entrega— se contesta con un
-     * nombre, y hasta hoy ese nombre no salía en NINGUNA pantalla de «Hoy»: se
-     * pedía al confirmar, se guardaba, y después no se veía. Lo reportó el
-     * usuario el 3-sep («en ningún lado me sale quién recibe»).
+     * No es `ultimoCorte`: si el de las 4 se entregó y el de las 7 todavía no
+     * se confirma, quien tiene la caja sigue siendo la persona de las 4. Mirar
+     * sólo el último diría «nadie», que es la respuesta contraria.
      *
-     * Va en la cuarta tarjeta y no en una quinta: el carril es de cuatro fijas
-     * (§17.0 y el pedido del 1-sep, «no des tanta información en las cards»), y
-     * la entrega no es una pregunta nueva sino el final de la misma —la cuarta
-     * ya era «¿alguien lo revisó?»—. Por eso cuando hay entrega la tarjeta
-     * CAMBIA de rótulo en vez de agregar una línea: decir «Confirmado · Karen»
-     * sería nombrar a Karen como quien confirmó, que es otra persona. */
-    const recibio = ultimoCorte?.entrega === 'RECIBIDO'
-        ? corto(ultimoCorte.recibe?.name)
-        : null;
+     * `CIERRE` y `SIN_HORARIO` quedan fuera a propósito: el primero es el
+     * último corte del día —no hay a quién entregarle— y el segundo es el
+     * instrumento diciendo que no pudo medir. Ninguno de los dos es una entrega
+     * que faltó, y pintarlos como tal enseñaría a ignorar el aviso.
+     */
+    const corteDeLaEntrega = useMemo(
+        () => [...cortesDelDia]
+            .filter((c) => c.entrega === 'RECIBIDO' || c.entrega === 'SIN_ENTREGA')
+            .pop() || null,
+        [cortesDelDia],
+    );
 
     const cuerpo = (
         <div className="p-4 md:p-6 space-y-6">
@@ -806,33 +816,23 @@ export default function MiCajaView({ comoPestana = false }) {
                             valueCls={!ultimoCorte && sala && puedeVerCortes ? 'text-warning-text' : undefined}
                             loading={cargando} />
 
-                        {/* 4 · ¿Alguien lo revisó, y con quién quedó la caja?
-                            Un corte sin confirmar es trabajo pendiente de otra
-                            persona, y es la última pregunta de «¿está todo
-                            bien?». Cuando ya se confirmó, la respuesta se
-                            corre un paso: quien recibió la caja es quien se
-                            hace cargo del dinero desde ese momento, así que el
-                            nombre que hace falta pasa a ser ése y el de quien
-                            confirmó baja a la línea de abajo. Ver `recibio`.
+                        {/* 4 · ¿Alguien lo revisó? Un corte sin confirmar es
+                            trabajo pendiente de otra persona, y es la última
+                            pregunta de «¿está todo bien?».
 
-                            «Se confirmó sin entregar» se DICE, no se calla: es
-                            la mitad «avisar» de la decisión del usuario (3-sep,
-                            «avisar primero, medir, después bloquear»). El
-                            cierre del día no lleva marca — ahí no hay a quién
-                            entregarle, y por eso `SIN_HORARIO` tampoco. */}
-                        <StatCard icon={ShieldCheck}
-                            label={recibio ? 'Recibió la caja' : 'Confirmado'}
+                            La ENTREGA no vive acá: se probó en esta tarjeta y el
+                            usuario la rechazó («quiero algo más visual, con la
+                            foto»). Y tenía razón de forma: 148px de ancho no dan
+                            para una cara, y un nombre suelto bajo el rótulo
+                            «Confirmado» nombra a quien confirmó, que es otra
+                            persona. Vive en `EntregaDelTurno`. */}
+                        <StatCard icon={ShieldCheck} label="Confirmado"
                             value={!sala || !puedeVerCortes || !ultimoCorte ? '—'
-                                : recibio
-                                    || (ultimoCorte.estado === 'CONFIRMADO' ? 'Sí'
-                                        : ultimoCorte.estado === 'DESCARTADO' ? 'Descartado' : 'Falta')}
-                            sub={recibio
-                                ? `lo confirmó ${corto(firmantes.get(ultimoCorte.resuelto_por)?.name) || 'alguien sin nombre'}`
-                                : ultimoCorte?.entrega === 'SIN_ENTREGA'
-                                    ? 'se confirmó sin entregar la caja'
-                                    : ultimoCorte?.resuelto_por
-                                        ? (corto(firmantes.get(ultimoCorte.resuelto_por)?.name) || 'sin nombre')
-                                        : ultimoCorte ? 'nadie lo ha revisado' : undefined}
+                                : ultimoCorte.estado === 'CONFIRMADO' ? 'Sí'
+                                    : ultimoCorte.estado === 'DESCARTADO' ? 'Descartado' : 'Falta'}
+                            sub={ultimoCorte?.resuelto_por
+                                ? (corto(firmantes.get(ultimoCorte.resuelto_por)?.name) || 'sin nombre')
+                                : ultimoCorte ? 'nadie lo ha revisado' : undefined}
                             iconBg={ultimoCorte?.estado === 'CONFIRMADO' ? 'bg-success/10' : 'bg-warning/10'}
                             iconCls={ultimoCorte?.estado === 'CONFIRMADO' ? 'text-success-text' : 'text-warning-text'}
                             valueCls={ultimoCorte && ultimoCorte.estado !== 'CONFIRMADO' ? 'text-warning-text' : undefined}
@@ -899,6 +899,13 @@ export default function MiCajaView({ comoPestana = false }) {
                                 esperando ese dinero.
                             </Notice>
                         )}
+
+                        {/* En manos de quién quedó la caja. Va ARRIBA del
+                            panel del día porque contesta «¿está todo bien para
+                            el turno que empieza?», que es con lo que alguien
+                            entra a esta pantalla — el desglose de ventas es
+                            para después. */}
+                        <EntregaDelTurno corte={corteDeLaEntrega} personas={firmantes} />
 
                         <PanelDelDia estado={estado} ventas={ventas} veLosMontos={veLosMontos} />
 

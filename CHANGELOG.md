@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.969.3 — La entrega de la caja se ve con la cara de quien recibe
+
+v2.969.2 puso la entrega en la cuarta tarjeta del carril y el usuario la
+rechazó: *«quiero algo más moderno, más visual, con la foto»*. Tenía razón, y
+por dos motivos que se pueden medir, no de gusto: una tarjeta del carril mide
+148–200px —ahí no entra una cara, y el nombre trunca, que es «no me sale quién
+recibe» otra vez— y bajo el rótulo «Confirmado» el nombre de quien recibe se lee
+como el de quien confirmó, que es **otra persona a propósito** (el servidor
+rechaza que quien hizo el corte reciba su propia caja).
+
+**`EntregaDelTurno`** dibuja el traspaso como lo que es: dos caras y una flecha.
+Quien recibe va a la derecha y en verde —es quien se hace cargo del efectivo
+desde ese momento—, y en el teléfono se apila con la flecha hacia abajo, porque
+dos nombres y dos fotos no entran en 340px sin cortar justo el dato. Cuando
+nadie recibió, el hueco se dibuja igual de grande: círculo punteado en ámbar y
+el motivo escrito. Un aviso que se esconde cuando la respuesta es la mala no es
+un aviso.
+
+Lo que muestra **no es siempre el último corte**: es el último que ya cambió de
+manos. Si el de las 4 se entregó y el de las 7 todavía no se confirma, quien
+tiene la caja sigue siendo la persona de las 4 — mirar sólo el último diría
+«nadie», la respuesta contraria. El cierre del día y el `SIN_HORARIO` quedan
+fuera: ninguno es una entrega que faltó.
+
+**Y la foto no salía.** `get_cortes_resolutores` —el padrón con el que estas
+pantallas resuelven cara y nombre— tenía su guarda escrita sobre `resuelto_por`,
+la única columna de persona que un corte tenía cuando se escribió. Desde
+v2.964.0 hay tres, así que **quien sólo recibe cajas devolvía cero filas**: sin
+nombre y sin foto, que se ve exactamente igual que una persona sin retrato. La
+función ahora acepta los tres roles que la fila nombra, y «Hoy» le pide el
+padrón para los tres.
+
 ## v2.969.2 — Hoy dice quién recibió la caja
 
 La entrega salió a producción el 3-sep y esa misma tarde Salud 2 la usó por

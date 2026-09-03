@@ -228,7 +228,16 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           se dibuja con el mismo ancho que el ícono. Debajo de 48 px no hay
           chip y queda sólo el aro, igual que siempre: ahí la frase completa la
           lleva el `title`, que existe a cualquier tamaño. */}
-      {conChip && (estado.faltan > 0 || Icono) && (
+      {/* `estado` va PRIMERO en la cadena, y esa posición es el arreglo: la
+          guarda anterior era `conChip && Icono`, y `Icono` ya nace null cuando
+          no hay estado —así que preguntaba por el estado sin nombrarlo—. Al
+          agregarle la cuenta regresiva quedó `estado.faltan` a la cabeza, o sea
+          una lectura sobre `null` para TODA persona presente con la foto de 48
+          px o más: el aro dejó de ser un adorno opcional y pasó a tirar la
+          vista entera al ErrorBoundary. Lo reportó el usuario como «el buscador
+          de Carnés del día no funciona» y «Conexiones tampoco» — dos pantallas
+          que no comparten nada salvo esta foto. */}
+      {conChip && estado && (estado.faltan > 0 || Icono) && (
         <span
           className={`absolute -bottom-1 -right-1 flex items-center justify-center rounded-full
             border-2 border-surface-card shadow-sm ${marca.chip}`}

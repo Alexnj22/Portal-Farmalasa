@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.963.3 — El aro de la foto ya no tumba la vista de quien está presente
+
+Reportado como dos defectos que no parecían tener nada que ver: «el buscador en
+impresión de carné del día no funciona» y «la vista Conexiones tampoco». Era el
+mismo, y estaba en la foto que las dos pintan.
+
+La cuenta regresiva del aro (v2.963.0) cambió la guarda del chip de
+`conChip && Icono` a `conChip && (estado.faltan > 0 || Icono)`. `Icono` ya nacía
+`null` cuando la persona no tiene ningún estado —o sea que preguntaba por el
+estado sin nombrarlo—, y la nueva expresión lo lee de frente: para **toda
+persona presente** con la foto de 48 px o más, `estado` es `null` y
+`estado.faltan` lanza. No es un adorno que no se dibuja: la vista entera se va
+al ErrorBoundary con «Algo salió mal».
+
+Por eso los dos síntomas se veían tan distintos. Conexiones pinta una tarjeta
+por persona apenas abre, así que reventaba de entrada. Carnés del día abría bien
+—hoy nadie tiene un carné vigente, así que no había ninguna foto— y sólo
+reventaba al escribir en el buscador, que es cuando aparecen las tarjetas de
+«Imprimir un carné». De ahí que se reportara como «el buscador no funciona».
+
+Alcanzaba a **quince** archivos con foto de 48 px o más: Conexiones, Carnés del
+día, la ficha del empleado, el perfil, Equipos, los chips y el escaneo de apoyo
+de Pedidos, las personas de una solicitud, quién retira una bolsa, y cinco
+formularios (reincorporar, recontratar, empleados de un rol, de una sucursal y
+jefaturas). La corrección es poner `estado` primero en la cadena, así que se
+arregla una vez para los quince.
+
+**La prueba que lo cazaba ya existía y estaba escrita**: `avatarConEstado.test.jsx`
+tiene «quien está presente no lleva ninguna marca» montando a `PRESENTE` con
+`px={64}`. Falla con el código de v2.963.0. O sea que no faltaba cobertura —
+faltaba correr `npx vitest run` antes de cerrar.
+
 ## v2.963.2 — El corte dice quién lo hizo, no el nombre de la cuenta de la sala
 
 La otra mitad de v2.963.1. Arreglada la apertura, el mismo defecto quedaba en el

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.968.1 — El aviso de movimientos tardíos exige que haya un corte
+
+La Popular, 3-sep, sin ningún corte hecho todavía: la pantalla de Movimientos
+avisaba «**6 movimientos se vieron después del corte de su día**» sobre los
+únicos 6 movimientos del día.
+
+El contador recorre las filas de más nueva a más vieja y cuenta todo lo que
+aparece **antes** de cruzar la línea del corte. La lectura es correcta cuando la
+línea existe — pero si la sala no cortó, la línea nunca llega, la bandera se
+queda en `false` hasta el final y el aviso termina contando **el día entero**,
+que es justo lo contrario de lo que dice.
+
+Sin un corte no hay «después»: el grupo sin ninguna fila de corte se saltea.
+
 ## v2.968.0 — El cobro que espera firma no se aplica: el crédito sigue con saldo
 
 Decisión del usuario mirando la pantalla: *«ahorita sale como pagado, ¿no

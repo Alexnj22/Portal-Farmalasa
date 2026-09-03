@@ -434,6 +434,12 @@ export default function MovimientosDeCaja({
         let n = 0;
         for (const d of dias) {
             for (const g of d.grupos) {
+                // Sin una línea de corte no hay «después»: una sala que todavía
+                // no cortó tiene todos sus movimientos ANTES del primer corte,
+                // no después de ninguno. Sin esta guarda, `vistoCorte` se queda
+                // en false hasta el final y el aviso cuenta el día entero —que
+                // es exactamente lo contrario de lo que dice.
+                if (!g.filas.some((f) => f.tipoFila === 'corte')) continue;
                 let vistoCorte = false;
                 // Las filas van de más nueva a más vieja: todo lo que aparece
                 // ANTES de cruzar la primera línea de corte es posterior a él.

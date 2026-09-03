@@ -752,11 +752,20 @@ export default function MiCajaView({ comoPestana = false }) {
 
                         {/* 3 · ¿Se cortó, y quién? Sin `cortes_caja` la lista
                             llega vacía por policy, así que se dice «—» en vez de
-                            «sin cortar»: son respuestas opuestas. */}
+                            «sin cortar»: son respuestas opuestas.
+
+                            El nombre es el de quien apretó «Hacer corte» en el
+                            PORTAL, sellado en la fila. Antes salía de
+                            `empleado_texto` —el nombre de la CUENTA con la que
+                            la sala corta— y era el mismo defecto que la tarjeta
+                            de la caja mostraba como «Mi La»: en tres salas no es
+                            una persona y en las otras tres es una que no cortó.
+                            Sin fila del portal no se inventa un nombre. */}
                         <StatCard icon={Scale} label="Último corte"
                             value={!sala || !puedeVerCortes ? '—'
                                 : ultimoCorte ? String(ultimoCorte.hora).slice(0, 5) : 'Sin cortar'}
-                            sub={ultimoCorte ? (corto(ultimoCorte.empleado_texto) || 'sin nombre')
+                            sub={ultimoCorte
+                                ? (corto(ultimoCorte.hizo?.name) || 'se hizo desde la caja')
                                 : !puedeVerCortes ? 'sin permiso para verlos' : undefined}
                             iconBg={ultimoCorte ? 'bg-brand/10' : 'bg-warning/10'}
                             iconCls={ultimoCorte ? 'text-brand-text' : 'text-warning-text'}

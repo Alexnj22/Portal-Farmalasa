@@ -23,6 +23,14 @@ import { formatMoney } from '../../utils/formatNumber';
  * o sea 185 de los 452 cortes desde el 14-ago. «¿Quién cortó?» no tenía
  * respuesta, y esa es la pregunta que estas fichas existen para contestar.
  *
+ * Desde el 3-sep la respuesta existe **cuando se abre desde el portal**, y sale
+ * de ahí y de ningún otro lado: `caja_aperturas_del_portal` anota quién apretó
+ * el botón. El nombre que da el sistema de la caja NO es una alternativa peor,
+ * es una respuesta FALSA — en las otras tres salas es el de una persona que
+ * tampoco abrió, porque el portal reusa el empleado del origen que la sala ya
+ * venía usando. Sin fila del portal, la ficha se queda sin cara: eso significa
+ * «se abrió desde la caja», que es la verdad y además es accionable.
+ *
  * ── El cruce con la marcación NO acusa a nadie ─────────────────────────────
  * La regla del usuario (2026-08-28) es que por ahora **cualquiera de la sala
  * puede abrir la caja**: el cruce contra la marcación es un HALLAZGO, no un
@@ -56,13 +64,16 @@ function minutosAntes(abiertaA, marcaIso) {
 /**
  * Las iniciales de un nombre, para el avatar.
  *
- * Devuelve `null` —y no una inicial cualquiera— cuando el texto no es el nombre
- * de una persona: «MI CAJA LA SALUD 5» daría «ML», que se lee como si alguien
- * se llamara así. Sin iniciales, la ficha pinta el avatar de «nadie», que es
+ * Devuelve `null` —y no una inicial cualquiera— cuando no hay nombre de
+ * persona. Sin iniciales, la ficha pinta el avatar de «nadie», que es
  * exactamente lo que hay que ver.
+ *
+ * Hasta el 3-sep esto recibía `empleado_texto`, el nombre de la CUENTA con la
+ * que la sala abre: «MI CAJA LA SALUD 5» daba «ML», que se lee como si alguien
+ * se llamara así. Hoy recibe el nombre de quien apretó el botón en el portal.
  */
-function iniciales(texto, esPersona) {
-    if (!esPersona || !texto) return null;
+function iniciales(texto) {
+    if (!texto) return null;
     const partes = String(texto).trim().split(/\s+/).filter(Boolean);
     if (!partes.length) return null;
     const primera = partes[0][0];
@@ -72,15 +83,23 @@ function iniciales(texto, esPersona) {
 
 function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
     const abierta = !apertura.cerrada_at;
-    const esPersona = !!apertura.employee_id;
-    const ini = iniciales(apertura.empleado_texto, esPersona);
+    /* QUIÉN abrió, y sólo desde el portal.
+     *
+     * `empleado_texto` NO es una alternativa: es el nombre de la cuenta con la
+     * que la sala abre siempre. En tres salas no es una persona («MI CAJA LA
+     * POPULAR») y en las otras tres es una persona que tampoco abrió, porque
+     * el portal reusa a propósito el empleado del origen que la sala ya venía
+     * usando. Poner ese nombre acá es firmar el acto con quien no lo hizo —
+     * exactamente el defecto que la tarjeta mostraba como «Mi La». */
+    const quien = apertura.abrio?.name || null;
+    const ini = iniciales(quien);
     const dif = minutosAntes(apertura.abierta_a, marca);
 
     /* Tres colores y tres significados, no decoración:
      *  · verde   — la caja está abierta ahora.
      *  · ámbar   — abrió alguien que el portal no puede nombrar.
      *  · apagado — ya cerró; es historia. */
-    const banda = !esPersona ? 'bg-warning' : abierta ? 'bg-success' : 'bg-content-3/40';
+    const banda = !quien ? 'bg-warning' : abierta ? 'bg-success' : 'bg-content-3/40';
 
     return (
         <div data-surface="card" className="rounded-2xl overflow-hidden flex flex-col">
@@ -96,17 +115,17 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
 
                 <div className="flex items-center gap-2 min-w-0">
                     <span className={`shrink-0 w-8 h-8 rounded-full grid place-items-center text-caption font-black ${
-                        esPersona ? 'bg-brand/10 text-brand-text' : 'bg-warning/10 text-warning-text'
+                        quien ? 'bg-brand/10 text-brand-text' : 'bg-warning/10 text-warning-text'
                     }`} aria-hidden="true">
                         {ini || <UserX className="w-4 h-4" />}
                     </span>
                     <span className="min-w-0">
                         <span className="block text-body-sm font-semibold text-content truncate">
-                            {apertura.empleado_texto || 'Sin nombre'}
+                            {quien || 'Sin identificar'}
                         </span>
                         <span className="block text-micro text-content-3">
-                            {!esPersona
-                                ? 'cuenta compartida · no se sabe quién'
+                            {!quien
+                                ? 'se abrió desde la caja · no se sabe quién'
                                 : !hayConQueCruzar
                                     ? `turno ${apertura.turno ?? '—'} · caja ${apertura.caja_erp ?? '—'}`
                                     : dif == null

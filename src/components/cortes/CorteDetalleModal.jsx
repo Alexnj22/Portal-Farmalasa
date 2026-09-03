@@ -319,7 +319,10 @@ export default function CorteDetalleModal({
                     <p className="text-caption text-content-3 truncate">
                         {nombreSala[visible?.branch_id] || (visible ? `Sucursal ${visible.branch_id}` : '')}
                         {visible?.fecha ? ` · ${fechaLarga(visible.fecha)}` : ''}
-                        {visible?.empleado_texto ? ` · ${visible.empleado_texto}` : ''}
+                        {/* El nombre sale de quién lo hizo en el portal. El del
+                            sistema de la caja es el de la cuenta de la sala, y en
+                            tres salas lleva el nombre de una persona que no cortó. */}
+                        {visible?.hizo?.name ? ` · ${visible.hizo.name}` : ''}
                     </p>
                 </div>
             </LiquidModal.Header>

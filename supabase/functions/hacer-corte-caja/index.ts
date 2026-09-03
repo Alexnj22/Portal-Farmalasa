@@ -1175,6 +1175,42 @@ Deno.serve(async (req) => {
       }
     }
 
+    /* ── QUIÉN HIZO EL CORTE, que hasta hoy no quedaba en ninguna parte ────
+     *
+     * El nombre que da el sistema de la caja —el renglón `EMPLEADO:` del
+     * tiquete, que viaja como `empleado_texto`— es el de la CUENTA con la que
+     * la sala corta, no el de quien cortó. En tres salas ni siquiera es una
+     * persona («MI CAJA LA POPULAR») y en las otras tres es una persona que
+     * tampoco cortó: el portal opera con las credenciales de la sala. Es el
+     * mismo defecto que la apertura mostraba como «Mi La».
+     *
+     * Y acá era peor, porque no había NADA que preferirle: medido el 3-sep,
+     * `cortes_caja.employee_id` estaba en NULL en los 635 cortes capturados.
+     *
+     * El amarre sale gratis y es exacto: `id_corte` viene en la respuesta del
+     * propio corte. No hace falta releer ninguna pantalla —como sí hizo falta
+     * en la apertura— ni cruzar por «el último de la sala», que le atribuiría
+     * el corte de las 13:00 a quien hizo el de las 09:00.
+     *
+     * Se escribe ANTES de avisarle al sync, y en el mismo `await`: el sync
+     * arranca en cuanto sale esta respuesta y es el que copia `employee_id` a
+     * `cortes_caja`. Al revés, la fila del corte nacería sin nombre y sólo lo
+     * tomaría en el barrido siguiente. Es la lección de
+     * `feedback_el_orden_dentro_de_una_misma_corrida_decide_el_resultado`.
+     *
+     * No se lanza si falla: el corte YA está hecho y su respuesta es lo que
+     * alguien está esperando frente a la caja. Queda en el log — y lo que se
+     * pierde es la atribución, no el corte. */
+    if (ok && idCorte && !simular) {
+      const { error: errQuien } = await supabase.from("caja_cortes_del_portal").insert({
+        branch_id: sala, erp_corte_id: Number(idCorte), hecho_por: quien.id, tipo,
+      });
+      if (errQuien) {
+        console.error(`hacer-corte-caja: el corte ${idCorte} se hizo y no se pudo`
+          + ` anotar quién lo hizo: ${errQuien.message}`);
+      }
+    }
+
     /* ── El portal le avisa al sync que hay un corte nuevo EN ESTA SALA ────
      *
      * El corte queda en el sistema de la caja al instante, pero el portal se

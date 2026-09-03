@@ -188,8 +188,13 @@ const TarjetaCorte = memo(function TarjetaCorte({
                         )}
                         <span className="text-caption text-content-2 font-semibold tabular-nums">{hhmm(corte.hora)}</span>
                     </div>
+                    {/* QUIÉN cortó, y sólo desde el portal.
+                        `empleado_texto` es el nombre de la CUENTA con la que la
+                        sala corta: en tres salas no es una persona («MI CAJA LA
+                        POPULAR») y en las otras tres es una que tampoco cortó.
+                        Sin fila del portal no se nombra a nadie. */}
                     <div className="text-caption text-content-3 truncate">
-                        {corte.empleado_texto || 'Sin nombre'}
+                        {corte.hizo?.name || 'se hizo desde la caja'}
                     </div>
                 </div>
 

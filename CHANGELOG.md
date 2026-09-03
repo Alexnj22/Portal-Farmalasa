@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.963.2 — El corte dice quién lo hizo, no el nombre de la cuenta de la sala
+
+La otra mitad de v2.963.1. Arreglada la apertura, el mismo defecto quedaba en el
+corte: las cuatro pantallas que muestran un corte pintaban `empleado_texto`, que
+es el renglón `EMPLEADO:` del tiquete del sistema de la caja — o sea el nombre
+de la **cuenta** con la que la sala corta, no de quien cortó. En tres salas no es
+una persona (`MI CAJA LA SALUD 2`) y en las otras tres es una persona que
+tampoco cortó, porque el portal opera con las credenciales de la sala.
+
+**Y acá era peor que en la apertura, porque no había nada que preferirle:**
+medido el 3-sep, `cortes_caja.employee_id` estaba en **NULL en los 635 cortes**
+capturados. La columna existía desde agosto y no la escribía nadie —
+`hacer-corte-caja` no anotaba en ninguna parte quién había apretado el botón, y
+`MiCajaView` no llama a `appendAuditLog`, así que del corte hecho desde el
+portal no quedaba ni un rastro con nombre.
+
+**Lo que se agregó**
+
+- `caja_cortes_del_portal` — la gemela de `caja_aperturas_del_portal`: quién
+  apretó «Hacer corte», amarrado al corte concreto por `erp_corte_id`. Acá el
+  amarre sale gratis y es exacto: el origen devuelve `id_corte` en la respuesta
+  del propio corte, así que no hay que releer ninguna pantalla como sí hubo que
+  hacer en la apertura. Su INSERT no tiene policy a propósito: la escribe
+  `hacer-corte-caja` con la llave de servicio, en la misma petición que emite el
+  corte. Que el navegador pudiera insertar ahí sería poder firmar un corte que
+  no hizo.
+- **Dos triggers**, y ninguno sobra. `hacer-corte-caja` escribe la fila del
+  portal y enseguida le pide al sync que traiga el corte, así que normalmente la
+  fila llega primero y el `BEFORE INSERT` de `cortes_caja` la encuentra. Pero el
+  corte existe en el origen en el instante en que se emite: el barrido de cada
+  30 s puede traerlo en el hueco de un segundo que hay entre emitirlo y anotar
+  quién lo hizo — y el `ignoreDuplicates` del sync no lo volvería a tocar nunca.
+  Ese caso lo cierra el `AFTER INSERT` del lado del portal. Con los dos, el
+  resultado no depende de quién llegó antes; verificado midiendo los dos órdenes.
+- El nombre se **sella en la fila del corte** (`cortes_caja.employee_id`) y no
+  se cruza en cada pantalla. Son nueve las que leen un corte: cruzado en cada
+  una, alcanza que una se olvide para que dos pantallas digan cosas distintas
+  del mismo corte. Es exactamente la receta de `cobros_portal_efectivo`, que ya
+  costó un papel impreso con `+$88.40` sobre una tarjeta que decía `+$0.15`.
+
+**Las cinco pantallas corregidas**
+
+| dónde | decía | dice |
+|---|---|---|
+| tarjeta «Último corte» de Efectivo | el nombre de la cuenta | quien cortó |
+| tarjeta de un corte (lista e Inicio) | idem | idem |
+| encabezado del detalle del corte | idem | idem |
+| búsqueda de la lista de cortes | cruzaba contra la cuenta | cruza contra quien cortó |
+| comprobante de una diferencia | `Caja: <cuenta>` | `Caja a nombre de` + `Hizo el corte` |
+
+Sin fila del portal ninguna inventa un nombre: dicen **«se hizo desde la caja»**,
+que es la verdad y además es accionable. Y la búsqueda importaba más de lo que
+parece: con el nombre de la cuenta ahí, buscar a una persona devolvía los cortes
+de las tres salas cuya cuenta lleva su nombre y que ella no hizo.
+
+**Una regresión de v2.963.1, encontrada al hacer esto.** Las fichas de apertura
+usaban `employee_id` sólo como bandera de «es una persona» y pintaban
+`empleado_texto` al lado. Al pasar `employee_id` a ser la persona real, la ficha
+quedó mostrando iniciales de la cuenta —`MP` de «MI CAJA LA POPULAR»— con el
+avatar en verde de «sí sé quién es». Hoy pinta el nombre real, y sin fila del
+portal se queda sin cara: eso significa «se abrió desde la caja».
+
+**Lo que NO se pudo hacer:** un backfill de los 635 cortes ya capturados. No hay
+de dónde sacarlo — el dato nunca se escribió, y `empleado_texto` es justamente
+la respuesta falsa. Los cortes de hoy hacia adelante sí quedan con nombre.
+
+**El papel del corte ya estaba bien**, y vale anotar por qué: `corteTicket.js`
+imprime los dos nombres con el rótulo que los distingue —«Caja a nombre de» para
+la cuenta y «Hizo el corte» para la persona, que sale de la sesión del
+navegador—. Ese fue el modelo que se copió a las pantallas.
+
 ## v2.963.1 — La tarjeta de Efectivo dice quién abrió la caja
 
 Reporte del usuario, mirando La Popular: *«¿por qué no sale quién aperturó desde

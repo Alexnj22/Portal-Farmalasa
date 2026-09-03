@@ -36,8 +36,15 @@ import { signPhotosDeep } from '../utils/storageFiles';
 //
 // Antes de sacar una de acá: `grep -rlw <columna> src/`. Si aparece en algún
 // lado, se queda — la lista existe para no traer de más, no para adivinar.
+//
+// `hizo` es quién apretó «Hacer corte» EN EL PORTAL, sellado en la fila por el
+// trigger `cortes_caja_quien_corto`. `empleado_texto` sigue viajando porque es
+// el nombre de la CUENTA con la que la sala corta —«MI CAJA LA POPULAR»— y el
+// papel lo imprime con ese rótulo; lo que NO se puede hacer es usarlo para
+// nombrar a quien cortó, que es lo que hacían las cuatro pantallas.
 const CAMPOS = `
     id, branch_id, erp_corte_id, tipo, fecha, hora, turno, empleado_texto,
+    employee_id, hizo:employees!cortes_caja_employee_id_fkey(name),
     total_declarado, diferencia_erp, esperado,
     tk_cobros_credito, tk_subtotal, tk_vales, tk_total_caja, tk_devoluciones,
     tk_tarjeta, tk_credito, cobros_portal_efectivo,
@@ -191,15 +198,19 @@ export function fetchHistorialDeMovimientos({ desde, hasta, branchId = null }) {
 /**
  * Las aperturas de caja de un rango: quién abrió, a qué hora y con cuánto.
  *
- * `employee_id` viene resuelto por la captura y puede ser NULL — y eso NO es un
- * fallo: tres de las seis salas abren con una cuenta compartida («MI CAJA LA
- * POPULAR»), que no es una persona. La pantalla tiene que mostrar las dos cosas.
+ * `employee_id` —y con él `abrio.name`— sale de `caja_aperturas_del_portal`:
+ * quién apretó «Abrir la caja», amarrado a ESA apertura. Puede ser NULL, y eso
+ * NO es un fallo: significa que la caja se abrió desde su propia pantalla, y
+ * ahí no hay a quién nombrar. `empleado_texto` no sirve para taparlo — es el
+ * nombre de la CUENTA de la sala («MI CAJA LA POPULAR»), y en las tres salas
+ * cuya cuenta lleva un nombre de persona señalaría a quien no abrió.
  */
 export function fetchAperturas({ desde, hasta, branchId = null }) {
     return fetchAllRows(() => {
         let q = supabase.from('cortes_caja_aperturas')
             .select(`id, branch_id, erp_apertura_id, caja_erp, turno, empleado_texto,
-                     employee_id, abierta_el, abierta_a, monto_apertura, monto_registrado,
+                     employee_id, abrio:employees!cortes_caja_aperturas_employee_id_fkey(name),
+                     abierta_el, abierta_a, monto_apertura, monto_registrado,
                      vista_at, cerrada_at`)
             .gte('abierta_el', desde)
             .lte('abierta_el', hasta)

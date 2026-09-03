@@ -442,8 +442,11 @@ const CortesView = () => {
         }
 
         if (!busqueda.trim()) return true;
+        // Se busca por quien CORTÓ, no por el nombre de la cuenta de la sala:
+        // con `empleado_texto` acá, buscar a una persona devolvía los cortes de
+        // las tres salas cuya cuenta lleva su nombre y que ella no hizo.
         return tokenMatch(busqueda,
-            nombreSala[c.branch_id], c.empleado_texto, c.fecha, c.hora,
+            nombreSala[c.branch_id], c.hizo?.name, c.fecha, c.hora,
             String(c.total_declarado ?? ''), String(c.tramo ?? ''),
             String(c.erp_corte_id ?? ''), c.motivo_descarte);
     }), [conTramoTodos, estado, diferencia, busqueda, sala, nombreSala]);

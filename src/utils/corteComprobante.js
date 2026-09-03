@@ -134,8 +134,14 @@ export function construirComprobante({ corte, sala, diferencia, personas = [], r
     const datos = [
         ['Sala', recortar(sala || '', 34)],
         ['Corte del', `${fechaCorta(corte?.fecha)}  ${hhmm(corte?.hora)}`],
-        ['Caja', recortar(corte?.empleado_texto || '', 34)],
+        // Los DOS nombres, con el rótulo que los distingue — el mismo que usa
+        // el papel del corte. `empleado_texto` es la cuenta con la que la sala
+        // corta: en tres salas no es una persona («MI CAJA LA POPULAR») y en
+        // las otras tres es una que tampoco cortó, así que bajo el rótulo
+        // «Caja» a secas el papel firmaba el conteo con quien no lo hizo.
+        ['Caja a nombre de', recortar(corte?.empleado_texto || '', 24)],
     ];
+    if (corte?.hizo?.name) datos.push(['Hizo el corte', recortar(corte.hizo.name, 26)]);
 
     const bloques = [{
         titulo: 'MOTIVO',

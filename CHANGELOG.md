@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.960.3 — El corte reutiliza o cierra el vale de la sala, y ya no choca con el que quedó abierto
+
+Reportado por el usuario haciendo un corte de prueba en Salud 3: **«NO SE PUDO
+HACER EL CORTE · Ya existe un registro con esos datos»**, sobre un corte que por
+lo demás estaba bien armado.
+
+### Qué pasaba
+
+`caja_vales_portal_abierto_unico` deja **un solo vale abierto por sala**
+(`PENDIENTE`/`ANOTADO`) — es lo que hace que «sumarle una salida» sea una
+decisión sin ambigüedad. `hacer-corte-caja` insertaba uno **sin mirar si ya
+había otro**, así que el índice contestaba 23505 y el traductor de errores lo
+convertía en un aviso genérico que no nombra ni al vale ni a la sala.
+
+Y el vale que estorbaba llevaba ahí desde el día anterior: **`hacer-corte-caja`
+no cerraba nunca el vale de su tramo.** El diseño de la tabla ya lo decía
+—«cuando aparece un corte, ese vale se cierra y la próxima salida abre otro»— y
+lo hacía sólo `anotar-vales-caja`, que **entra a una sala únicamente si tiene
+salidas pendientes**. Sin salidas nuevas detrás, el vale se queda abierto para
+siempre.
+
+Medido en Salud 3: el vale 1, ANOTADO desde el 1-sep con $119.38 y el asiento
+43814 escrito, con **ocho cortes encima** —el Z del día incluido— y nadie que lo
+cerrara. Hacían falta las dos cosas a la vez (un vale abierto y salidas nuevas)
+para que se viera, y por eso el defecto no había aparecido antes.
+
+### Qué cambia
+
+**El corte toma la misma decisión que el cron, dicha una sola vez de las dos.**
+Antes de escribir mira el vale abierto de la sala: si pasó un corte o cambió el
+día, pertenece a un tramo ya cortado y lo **CIERRA**; si es del mismo tramo, le
+**SUMA** editando su asiento (`editar_movimiento_caja.php`) en vez de escribir
+un segundo movimiento — dos vales del mismo tramo harían que el corte
+descontara ese dinero dos veces. El concepto anuncia las salidas que cubre **en
+total**, no las de este corte.
+
+**Y el corte cierra el vale de su tramo.** No es sólo orden: mientras siga
+abierto ocupa la única ranura de la sala —el 23505 de arriba— y además el cron
+le puede sumar salidas nuevas editando un asiento que este corte ya contó, que
+es el hallazgo que la auditoría de v2.838.0 marca. Si el cierre falla no se
+lanza: el corte ya está hecho y su respuesta es lo que alguien espera frente a
+la caja; queda en el log y el próximo corte lo encuentra con otro
+`corte_id_al_abrir` y lo cierra.
+
+El vale que trabó a Salud 3 se cerró a mano, con su tramo (corte 654) anotado.
+Ninguna sala queda hoy con un vale abierto.
+
+### El aviso también
+
+`caja_vales_portal_abierto_unico` tiene ahora su propia línea en
+`errorMessages.js`, **antes** del genérico de clave duplicada: «esta sala ya
+tiene un vale de caja abierto de un corte anterior». «Ya existe un registro con
+esos datos» no dice qué registro ni qué hacer — mandó a mirar el corte, que era
+el único sitio donde no estaba el problema.
+
 ## v2.960.2 — El motivo de la salida no viene elegido, y «Todos» deja de ser una opción
 
 Reportado por el usuario sobre «Sacar efectivo»: *«¿por qué la salida de efectivo

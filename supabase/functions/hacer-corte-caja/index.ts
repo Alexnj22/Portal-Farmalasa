@@ -67,6 +67,9 @@ const PANTALLA   = `${BASE}corte_caja_diario.php`;
 const CIERRE_TURNO_NO_USAR = `${BASE}cierre_turno.php`;
 void CIERRE_TURNO_NO_USAR;   // documenta, no se llama
 const CREAR_VALE = `${BASE}agregar_salida_caja.php`;
+// Editar el asiento del vale en vez de escribir otro: un tramo tiene UN vale, y
+// dos movimientos por las mismas salidas descontarían ese dinero dos veces.
+const EDITAR_VALE = `${BASE}editar_movimiento_caja.php`;
 const MOV_URL    = `${BASE}admin_movimiento_caja_dt.php`;
 const TICKET_URL = `${BASE}corte_caja_diario.php`;
 
@@ -695,17 +698,85 @@ Deno.serve(async (req) => {
       });
     }
 
+    /* ── El vale abierto de la sala se REUTILIZA o se CIERRA, nunca se duplica ─
+     *
+     * `caja_vales_portal_abierto_unico` deja UN vale abierto por sala
+     * (`PENDIENTE`/`ANOTADO`). Acá se insertaba uno sin mirar si ya había otro,
+     * y el índice contestaba 23505 — que el portal traduce a «Ya existe un
+     * registro con esos datos», un aviso que no nombra ni al vale ni a la sala.
+     *
+     * Medido el 2-sep en Salud 3: el vale 1 quedó ANOTADO desde el 1-sep,
+     * pasaron OCHO cortes encima —el Z del día incluido— y ninguno lo cerró, así
+     * que la sala no podía volver a cortar desde el portal en cuanto tuviera una
+     * salida pendiente. Hacían falta las dos cosas a la vez —un vale abierto y
+     * salidas nuevas— y por eso el defecto vivió sin que nadie lo viera.
+     *
+     * La decisión es la que ya toma `anotar-vales-caja`, dicha una sola vez de
+     * las dos: si pasó un corte o cambió el día, el vale pertenece a un tramo ya
+     * cortado y se CIERRA; si es del mismo tramo, se le SUMA. Un asiento allá y
+     * el detalle acá, que es el diseño de la tabla. */
+    const { data: ultimoCorte, error: errUltimo } = await supabase
+      .from("cortes_caja").select("id")
+      .eq("branch_id", sala)
+      .order("fecha", { ascending: false }).order("hora", { ascending: false })
+      .limit(1);
+    if (errUltimo) throw new Error(`leyendo el último corte: ${errUltimo.message}`);
+    const corteAlAbrir = ultimoCorte?.[0]?.id ?? null;
+
+    type ValeAbierto = {
+      id: number; erp_movimiento_id: number | null; monto: number | string;
+      fecha: string; corte_id_al_abrir: number | null;
+    };
+    const { data: abiertos, error: errAbierto } = await supabase
+      .from("caja_vales_portal")
+      .select("id, erp_movimiento_id, monto, fecha, corte_id_al_abrir")
+      .eq("branch_id", sala).in("estado", ["PENDIENTE", "ANOTADO"]).limit(1);
+    if (errAbierto) throw new Error(`leyendo el vale abierto: ${errAbierto.message}`);
+    let vale: ValeAbierto | null = (abiertos?.[0] as ValeAbierto | undefined) ?? null;
+
+    /* El del tramo anterior se cierra ACÁ, y no cuando aparezcan salidas nuevas.
+     * Dejárselo al cron es lo que trabó a Salud 3: el cron sólo entra a una sala
+     * que TIENE pendientes, así que un vale sin salidas nuevas detrás se queda
+     * abierto para siempre y le tapa la ranura a todos los cortes que vengan. */
+    if (vale && (vale.corte_id_al_abrir !== corteAlAbrir
+      || (mias.length > 0 && vale.fecha !== mias[0].dia_abierto))) {
+      const ahora = new Date().toISOString();
+      const { error } = await supabase.from("caja_vales_portal")
+        .update({ estado: "CERRADO", cerrado_at: ahora, updated_at: ahora })
+        .eq("id", vale.id);
+      if (error) throw new Error(`cerrando el vale del tramo anterior: ${error.message}`);
+      vale = null;
+    }
+
     let valeId: number | null = null;
     let movVale: number | null = null;
+    let montoDelVale = 0;
     if (mias.length) {
-      const { data: creado, error } = await supabase.from("caja_vales_portal")
-        .insert({
-          branch_id: sala, fecha: mias[0].dia_abierto, monto: 0,
-          anotado_por: quien.id,
-        })
-        .select("id").single();
-      if (error) throw new Error(`abriendo el vale: ${error.message}`);
-      valeId = creado.id;
+      montoDelVale = Number((Number(vale?.monto ?? 0) + montoVale).toFixed(2));
+      if (!vale) {
+        const { data: creado, error } = await supabase.from("caja_vales_portal")
+          .insert({
+            branch_id: sala, fecha: mias[0].dia_abierto, monto: 0,
+            corte_id_al_abrir: corteAlAbrir, anotado_por: quien.id,
+          })
+          .select("id, erp_movimiento_id").single();
+        if (error) throw new Error(`abriendo el vale: ${error.message}`);
+        vale = {
+          id: creado.id, erp_movimiento_id: creado.erp_movimiento_id ?? null,
+          monto: 0, fecha: mias[0].dia_abierto, corte_id_al_abrir: corteAlAbrir,
+        };
+      }
+      valeId = vale.id;
+
+      /* Cuántas salidas cubre EN TOTAL, no cuántas trae este corte. El concepto
+       * es lo único que se lee del otro lado, y un vale que ya cubría tres no
+       * puede anunciarse con las dos de ahora. */
+      const { count: yaCubiertas, error: errCuenta } = await supabase
+        .from("bolsas_movimientos").select("id", { count: "exact", head: true })
+        .eq("caja_vale_id", valeId);
+      if (errCuenta) throw new Error(`contando lo que ya cubre el vale: ${errCuenta.message}`);
+      const cuantas = (yaCubiertas ?? 0) + mias.length;
+      const concepto = `VALE DE CAJA ${valeId} (${cuantas} salida${cuantas === 1 ? "" : "s"})`;
 
       // Freno: ¿ya está escrito? Un reintento no puede duplicar un vale.
       const marca = `VALE DE CAJA ${valeId} `;
@@ -715,11 +786,26 @@ Deno.serve(async (req) => {
       )).json().catch(() => null);
       if (!Array.isArray(dt?.data)) throw new Error("no se pudo revisar si el vale ya estaba escrito");
       const yaEsta = (dt.data as string[][]).find((f) => String(f[1] ?? "").startsWith(marca));
+      movVale = vale.erp_movimiento_id ?? (yaEsta ? Number(yaEsta[0]) : null);
 
-      if (yaEsta) {
-        movVale = Number(yaEsta[0]);
-      } else {
-        const resp = await (await fetch(CREAR_VALE, {
+      /* Con asiento ya escrito se EDITA con el monto nuevo. Escribir un segundo
+       * movimiento por las salidas de ahora dejaría DOS vales del mismo tramo y
+       * el corte descontaría ese dinero dos veces. */
+      const resp = movVale
+        ? await (await fetch(EDITAR_VALE, {
+          method: "POST",
+          headers: {
+            Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: new URLSearchParams({
+            process: "editar", id_movimiento: String(movVale), id_apertura: viva.aper,
+            id_empleado: viva.emp, turno: viva.turno,
+            monto: dosDecimales(montoDelVale), concepto,
+          }).toString(),
+          signal: AbortSignal.timeout(45_000),
+        })).text()
+        : await (await fetch(CREAR_VALE, {
           method: "POST",
           headers: {
             Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
@@ -727,17 +813,15 @@ Deno.serve(async (req) => {
           },
           body: new URLSearchParams({
             process: "salida", id_apertura: viva.aper, id_empleado: viva.emp, turno: viva.turno,
-            monto: dosDecimales(montoVale),
-            concepto: `VALE DE CAJA ${valeId} (${mias.length} salida${mias.length === 1 ? "" : "s"})`,
+            monto: dosDecimales(montoDelVale), concepto,
             proveedor: "", tipo_doc: "", n_doc: "", recibe: "PORTAL", id_tipo: ID_TIPO_SALIDA,
           }).toString(),
           signal: AbortSignal.timeout(45_000),
         })).text();
-        if (!/"typeinfo"\s*:\s*"Success"/i.test(resp)) {
-          throw new Error(`el sistema no aceptó el vale: ${resp.slice(0, 160)}`);
-        }
-        movVale = Number(JSON.parse(resp)?.id_mov) || null;
+      if (!/"typeinfo"\s*:\s*"Success"/i.test(resp)) {
+        throw new Error(`el sistema no aceptó el vale: ${resp.slice(0, 160)}`);
       }
+      if (!movVale) movVale = Number(JSON.parse(resp)?.id_mov) || null;
 
       /* ── Estas DOS escrituras pasan DESPUÉS de mover dinero ─────────────
        *
@@ -754,8 +838,8 @@ Deno.serve(async (req) => {
        */
       const ahora = new Date().toISOString();
       const { error: errVale } = await supabase.from("caja_vales_portal").update({
-        erp_movimiento_id: movVale, monto: Number(montoVale.toFixed(2)),
-        estado: "ANOTADO", anotado_at: ahora, updated_at: ahora,
+        erp_movimiento_id: movVale, monto: montoDelVale,
+        estado: "ANOTADO", anotado_at: ahora, updated_at: ahora, ultimo_error: null,
       }).eq("id", valeId);
       if (errVale) {
         throw new Error(`el vale se escribió en el sistema (${movVale}) pero no se pudo`
@@ -1045,6 +1129,37 @@ Deno.serve(async (req) => {
               + ` (número ${idCorte}). Avisá a Sistemas antes de seguir.`
             : undefined;
 
+    /* ── El corte CIERRA el vale de su tramo ──────────────────────────────
+     *
+     * El vale existe para que las salidas de bolsa estén descontadas cuando se
+     * cuenta el cajón. Hecho el corte, ese tramo terminó: la próxima salida
+     * abre otro. Estaba escrito en el diseño de la tabla —«cuando aparece un
+     * corte, ese vale se cierra»— y no lo hacía nadie acá.
+     *
+     * Sin esto el vale se queda ANOTADO indefinidamente, y no es sólo desorden:
+     * ocupa la única ranura abierta de la sala (`caja_vales_portal_abierto_unico`),
+     * así que el siguiente corte con salidas pendientes muere con un 23505. Fue
+     * lo que pasó en Salud 3, con OCHO cortes encima del vale 1.
+     *
+     * Y el otro daño es peor de leer: mientras siga abierto, el cron le puede
+     * SUMAR salidas nuevas editando un asiento que este corte ya contó — que es
+     * exactamente el hallazgo que la auditoría de v2.838.0 marca, con el portal
+     * generando la señal que el portal vigila.
+     *
+     * No se lanza si falla: el corte ya está hecho y su respuesta es lo que
+     * alguien está esperando frente a la caja. Queda en el log y se cura solo —
+     * el próximo corte lo encuentra con OTRO `corte_id_al_abrir` y lo cierra. */
+    if (ok && !simular && vale) {
+      const ahora = new Date().toISOString();
+      const { error: errCerrar } = await supabase.from("caja_vales_portal")
+        .update({ estado: "CERRADO", cerrado_at: ahora, updated_at: ahora })
+        .eq("id", vale.id).in("estado", ["PENDIENTE", "ANOTADO"]);
+      if (errCerrar) {
+        console.error(`hacer-corte-caja: el corte se hizo pero el vale ${vale.id}`
+          + ` quedó abierto: ${errCerrar.message}`);
+      }
+    }
+
     /* ── El portal le avisa al sync que hay un corte nuevo EN ESTA SALA ────
      *
      * El corte queda en el sistema de la caja al instante, pero el portal se
@@ -1135,7 +1250,7 @@ Deno.serve(async (req) => {
           subtotal: tiquete.subtotal, vales: tiquete.vales,
         }
         : null,
-      vale: valeId ? { id: valeId, movimiento_en_caja: movVale, monto: Number(montoVale.toFixed(2)) } : null,
+      vale: valeId ? { id: valeId, movimiento_en_caja: movVale, monto: montoDelVale } : null,
       respuesta: ok ? undefined : respCorte.slice(0, 300),
     });
   } catch (e) {

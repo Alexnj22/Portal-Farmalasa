@@ -224,6 +224,12 @@ const REGLAS = [
         'El servidor no está respondiendo. Intenta de nuevo en unos minutos.'],
 
     // — Integridad de datos —
+    // El vale de caja va ANTES del genérico de arriba: «ya existe un registro»
+    // no dice ni qué registro ni qué hacer, y acá la salida es concreta. Pasó
+    // el 2-sep en Salud 3 y el aviso mandó a mirar el corte, no el vale.
+    [/caja_vales_portal_abierto_unico/i,
+        'Esta sala ya tiene un vale de caja abierto de un corte anterior. '
+        + 'Avisa al equipo de sistemas para cerrarlo antes de volver a cortar.'],
     [/duplicate key|unique constraint|23505/i, 'Ya existe un registro con esos datos.'],
     [/foreign key constraint|23503/i, 'No se puede completar: hay otros registros que dependen de este.'],
     [/not-null constraint|null value in column|23502/i, 'Falta llenar un campo obligatorio.'],

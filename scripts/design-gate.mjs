@@ -2121,6 +2121,48 @@ function scanFile(path) {
           category: 'foto-condicionada', text: linea.trim().slice(0, 120),
         });
       });
+
+      // ── `foto-sin-identidad`, la cuarta forma (2026-09-03) ─────────────
+      //
+      // Una persona armada a mano SIN su `id`. Sin id `AvatarConEstado` no
+      // tiene a quién buscar —ni en el padrón ni preguntándole a la base—, así
+      // que la cara puede salir y **el aro no sale nunca**.
+      //
+      // Y es el silencio más limpio de los cuatro: una firma sin aro se ve
+      // EXACTAMENTE igual que la de alguien que está presente. No hay hueco,
+      // no hay ícono raro, no hay error. Sólo falta un dato que nadie mira.
+      //
+      // El caso que lo fundó: las firmas de bitácoras. La RPC ya devolvía
+      // `registrado_por` y `realizada_por` —los ids—, la pantalla armaba
+      // `{ nombre, nombres, apellidos, foto }` y `Firma` los copiaba a un
+      // objeto nuevo. Dos objetos escritos a mano, y el dato estaba en la fila
+      // desde el día uno. Su propio comentario ya advertía que «un objeto
+      // armado a mano que se olvida la clave no falla»; se lo dijo de `foto` y
+      // le pasó con `id`.
+      //
+      // Sólo mira literales —lo único decidible desde el fuente— y sólo si el
+      // objeto NOMBRA a alguien: un `{ photo }` suelto no es una persona.
+      const NOMBRA_PERSONA = /\b(name|nombre|first_names|last_names|nombres|apellidos)\s*:/;
+      const PROPS_PERSONA = /\b(emp|persona|quien|employee|firmante|autor|responsable)\s*=\s*\{\{/g;
+      let mi4;
+      while ((mi4 = PROPS_PERSONA.exec(sinComentarios2))) {
+        const abre = mi4.index + mi4[0].length - 1;
+        let d = 0, fin = -1;
+        for (let j = abre; j < sinComentarios2.length; j++) {
+          if (sinComentarios2[j] === '{') d++;
+          else if (sinComentarios2[j] === '}') { d--; if (!d) { fin = j; break; } }
+        }
+        if (fin < 0) continue;
+        const cuerpo = sinComentarios2.slice(abre + 1, fin);
+        if (!NOMBRA_PERSONA.test(cuerpo)) continue;
+        if (/\bid\s*[:,}]/.test(cuerpo)) continue;
+        findings.push({
+          line: sinComentarios2.slice(0, mi4.index).split('\n').length,
+          label: 'persona sin `id` — sin él no hay aro de estado, y se ve igual que estar presente (DESIGN.md §5.4)',
+          category: 'foto-sin-identidad',
+          text: `${mi4[1]}={{ ${cuerpo.replace(/\s+/g, ' ').trim().slice(0, 90)} }}`,
+        });
+      }
     }
 
     // ── `tarjeta-a-mano` (2026-07-28) ───────────────────────────────────

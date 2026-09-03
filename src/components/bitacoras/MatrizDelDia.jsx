@@ -99,6 +99,7 @@ function Celda({ area, franja, fecha, puedeAnotar, cerrado, onRecargar, onCorreg
                 </div>
                 <Firma hora={horaDe(l.registrado_at)} tarde={l.tarde}
                     quien={{
+                        id: l.registrado_por,
                         nombre: l.registrado_por_nombre,
                         nombres: l.registrado_por_nombres,
                         apellidos: l.registrado_por_apellidos,
@@ -213,6 +214,7 @@ function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetall
                                     <ResumenDePuntos registro={r} />
                                     <Firma hora={horaDe(r.registrado_at)} tarde={r.tarde}
                                         quien={{
+                                            id: r.realizada_por,
                                             nombre: r.realizada_por_nombre,
                                             nombres: r.realizada_por_nombres,
                                             apellidos: r.realizada_por_apellidos,

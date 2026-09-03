@@ -21,39 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.969.0 — Sacar dinero vive solo en Efectivo
-
-> «debes quitar sacar dinero de aquí. todo debe pasar desde efectivo»
-> (usuario, 3-sep, mirando Bolsas de efectivo).
-
-El botón estaba en **tres** pantallas y sólo una hacía las dos cosas que hay que
-hacer al sacar efectivo:
-
-| | qué hacía |
-|---|---|
-| Bolsas de efectivo | abría el diálogo **derecho contra las bolsas** |
-| widget del Inicio | lo mismo |
-| **Efectivo** | pasa `onSalidaDeCaja`: busca primero en el **cajón** y anota el **vale en la caja** |
-
-Las dos cosas importan y ninguna es cosmética. El cajón primero es la regla de
-`la_salida_sale_primero_del_cajon` — abrir una bolsa sellada del día anterior
-para pagar $3.37 con el cajón lleno rompe el control que la bolsa existe para
-dar. Y el vale anotado es lo que hace que el corte **deje de esperar** ese
-dinero: sin él, la bolsa que nace del corte siguiente se calcula sobre un
-declarado que todavía cuenta plata que ya salió. Es exactamente la cadena que
-dejó a S2-1229 con una etiqueta de $957.55 sobre $497.55 reales el 2-sep
-(v2.968.2).
-
-- **Bolsas de efectivo**: se fue el botón, el diálogo y su impresión. Queda
-  «Entregar dinero», que sí es de esta pantalla.
-- **Widget del Inicio**: el botón se queda —el atajo lo pidió el usuario el
-  20-ago— pero ya no abre nada: **lleva a Efectivo**.
-- El aviso de «anotar cero» y el buscador del menú («sacar dinero», «remesa»)
-  apuntan a Efectivo. Mandar a quien busca la palabra a una pantalla donde el
-  botón ya no está es peor que no tener la palabra.
-
-
-## v2.968.6 — Sin id no hay aro: las firmas de bitácoras nunca lo mostraron
+## v2.969.1 — Sin id no hay aro: las firmas de bitácoras nunca lo mostraron
 
 La pregunta era si las 72 fotos del portal tienen aro de estado. Censadas una
 por una: **71 podían y una no.**
@@ -88,6 +56,38 @@ identidad` (usarlo sin decirle a quién).
 - **El comentario de `TarjetaCorte`** decía `persona = { name, photo_url }` y
   daba a entender que no había id. Lo hay: `fetchPersonas` devuelve la fila
   entera. Comentario viejo, código correcto.
+
+## v2.969.0 — Sacar dinero vive solo en Efectivo
+
+> «debes quitar sacar dinero de aquí. todo debe pasar desde efectivo»
+> (usuario, 3-sep, mirando Bolsas de efectivo).
+
+El botón estaba en **tres** pantallas y sólo una hacía las dos cosas que hay que
+hacer al sacar efectivo:
+
+| | qué hacía |
+|---|---|
+| Bolsas de efectivo | abría el diálogo **derecho contra las bolsas** |
+| widget del Inicio | lo mismo |
+| **Efectivo** | pasa `onSalidaDeCaja`: busca primero en el **cajón** y anota el **vale en la caja** |
+
+Las dos cosas importan y ninguna es cosmética. El cajón primero es la regla de
+`la_salida_sale_primero_del_cajon` — abrir una bolsa sellada del día anterior
+para pagar $3.37 con el cajón lleno rompe el control que la bolsa existe para
+dar. Y el vale anotado es lo que hace que el corte **deje de esperar** ese
+dinero: sin él, la bolsa que nace del corte siguiente se calcula sobre un
+declarado que todavía cuenta plata que ya salió. Es exactamente la cadena que
+dejó a S2-1229 con una etiqueta de $957.55 sobre $497.55 reales el 2-sep
+(v2.968.2).
+
+- **Bolsas de efectivo**: se fue el botón, el diálogo y su impresión. Queda
+  «Entregar dinero», que sí es de esta pantalla.
+- **Widget del Inicio**: el botón se queda —el atajo lo pidió el usuario el
+  20-ago— pero ya no abre nada: **lleva a Efectivo**.
+- El aviso de «anotar cero» y el buscador del menú («sacar dinero», «remesa»)
+  apuntan a Efectivo. Mandar a quien busca la palabra a una pantalla donde el
+  botón ya no está es peor que no tener la palabra.
+
 
 ## v2.968.5 — El campo de fecha deja de pedir la fila entera
 

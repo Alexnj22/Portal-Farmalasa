@@ -28,7 +28,14 @@ export default function Firma({ quien, hora, tarde }) {
     // `normalizarPersona` acepta `foto` — pero un objeto armado a mano que se
     // olvida la clave no falla, cae a las iniciales y se ve igual de bien. Es
     // por lo que la cara no salió desde que la RPC empezó a traerla.
+    //
+    // Y el `id` va SIEMPRE por el mismo motivo, una vuelta más abajo: sin él
+    // `AvatarConEstado` no tiene a quién buscar en el padrón, así que **el aro
+    // de estado no aparece nunca** — y una firma sin aro se ve idéntica a la de
+    // alguien que está. Las dos RPC ya lo traían (`registrado_por`,
+    // `realizada_por`); lo que faltaba era pasarlo.
     const emp = {
+        id: quien?.id,
         first_names: quien?.nombres,
         last_names: quien?.apellidos,
         name: quien?.nombre,

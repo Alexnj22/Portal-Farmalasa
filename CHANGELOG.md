@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.962.0 — Unas vacaciones pueden empezar a media jornada
+
+`vacation_plans` guardaba sólo fechas, o sea días completos. Asentar las del
+supervisor —«desde el sábado a las 12 pm al 21 del mes a las 8 am»— obligaba a
+redondear por los dos lados. Ahora la tabla lleva `start_time` y `end_time`, y
+**NULL sigue siendo día completo**: ninguna fila vieja se toca ni estrena una
+hora que nadie escribió.
+
+### La hora cambia la cuenta de días, y ése es el punto
+
+La pantalla contaba `fin − inicio + 1`. Del 5 al 21 de septiembre eso da **17**,
+y el saldo del año son **15** — o sea que asentar el rango real pasaba el tope
+por dos días que la persona sí trabaja.
+
+Con las horas la cuenta cierra sola: sale el sábado 5 al mediodía y vuelve el 21
+a las 8, así que los días enteros libres son del 6 al 20 = **15**. La regla no es
+una fórmula aparte: **un extremo con hora no es un día completo, así que no se
+cuenta**. Sin horas, nada cambia.
+
+### En la pantalla
+
+Los dos selectores salen debajo del rango, con `TimePicker12` —el mismo control
+que el horario de la sala— y vacíos por defecto. No van detrás de un
+interruptor: el interruptor sería un control de más para el caso raro y uno de
+menos para entender el normal, y dos campos vacíos ya dicen «todo el día».
+
+El renglón de días explica por qué son menos («15 días calendario · el primer
+día y el último se trabaja») y la lista pega cada hora a su fecha, porque una
+hora suelta no dice si el día se trabajó antes o después.
+
+No se tocó `payroll.js`: cruza por solapamiento de fechas y la hora le da igual.
+
 ## v2.961.0 — El cierre del día se manda solo, con el último Z
 
 La tarjeta del cierre del día existía desde v2.951.0 y se aprobó con una

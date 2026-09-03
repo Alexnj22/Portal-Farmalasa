@@ -44,7 +44,7 @@ export function updateVacationPlan(planId, patch, returning = false) {
 
 export function fetchVacationPlans(year, branchId) {
     let q = supabase.from('vacation_plans')
-        .select('id, year, plan_header_id, employee_id, branch_id, start_date, end_date, days, status, notes, metadata, change_requested_start, change_requested_end, created_at')
+        .select('id, year, plan_header_id, employee_id, branch_id, start_date, end_date, start_time, end_time, days, status, notes, metadata, change_requested_start, change_requested_end, created_at')
         .eq('year', year)
         .order('start_date', { ascending: true });
     if (branchId) q = q.eq('branch_id', branchId);

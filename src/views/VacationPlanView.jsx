@@ -22,6 +22,7 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 import RangeDatePicker from '../components/common/RangeDatePicker';
+import TimePicker12 from '../components/common/TimePicker12';
 import { smartFilter } from '../utils/searchUtils';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
@@ -31,6 +32,34 @@ import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
 const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtShort = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' }) : '—';
 const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000) + 1;
+
+/* ── Un extremo con hora NO es un día de vacación ──────────────────────────
+ *
+ * `daysBetween` cuenta el rango entero. Del 5 al 21 de septiembre son 17, y el
+ * saldo del año son 15 — o sea que asentar unas vacaciones que empiezan el
+ * sábado al mediodía y terminan el 21 a las 8 pasaba el tope por dos días que
+ * la persona SÍ trabaja.
+ *
+ * La regla no es una fórmula aparte: si el día de inicio tiene hora, esa
+ * mañana se trabajó y ese día no cuenta; lo mismo el de fin. Con las dos horas
+ * puestas, el 5→21 da los 15 que corresponden. Sin horas nada cambia, que es
+ * lo que son todas las filas de antes.
+ */
+const diasDeVacacion = (inicio, fin, horaInicio, horaFin) => {
+    if (!inicio || !fin || fin < inicio) return 0;
+    const enteros = daysBetween(inicio, fin) - (horaInicio ? 1 : 0) - (horaFin ? 1 : 0);
+    return Math.max(0, enteros);
+};
+
+/* «12:00» → «12:00 md». La hora sola no dice si el día se trabajó antes o
+ * después, así que en la lista viaja pegada a su fecha. */
+const fmtHora = (t) => {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    const suf = h === 12 && m === 0 ? 'md' : h === 0 && m === 0 ? 'mn' : h < 12 ? 'am' : 'pm';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${suf}`;
+};
 
 const STATUS_META = {
     DRAFT:            { label: 'Borrador',      bg: 'bg-surface-card-hover',   text: 'text-content-3',   border: 'border-divider',   bar: 'bg-content-3', variante: 'neutral'   },
@@ -359,6 +388,9 @@ const VacationPlanView = () => {
     const [empId, setEmpId]         = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate]     = useState('');
+    // Vacías = día completo, que es lo que fueron todas hasta hoy.
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime]     = useState('');
     const [notes, setNotes]         = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -522,10 +554,10 @@ const VacationPlanView = () => {
         };
     }, [selectedEmployee]);
 
-    const computedDays = useMemo(() => {
-        if (!startDate || !endDate || endDate < startDate) return 0;
-        return daysBetween(startDate, endDate);
-    }, [startDate, endDate]);
+    const computedDays = useMemo(
+        () => diasDeVacacion(startDate, endDate, startTime, endTime),
+        [startDate, endDate, startTime, endTime],
+    );
 
     const handleRangeChange = (start, end) => {
         setStartDate(start || '');
@@ -537,6 +569,8 @@ const VacationPlanView = () => {
         setEmpId(String(plan.employee_id));
         setStartDate(plan.start_date);
         setEndDate(plan.end_date);
+        setStartTime(plan.start_time ? plan.start_time.slice(0, 5) : '');
+        setEndTime(plan.end_time ? plan.end_time.slice(0, 5) : '');
         setNotes(plan.notes || '');
         setConfirmingEdit(false);
         // Only scroll on mobile (panel is always visible on desktop)
@@ -546,7 +580,7 @@ const VacationPlanView = () => {
     const handleCancelEdit = () => {
         setEditingPlan(null);
         setConfirmingEdit(false);
-        setEmpId(''); setStartDate(''); setEndDate(''); setNotes('');
+        setEmpId(''); setStartDate(''); setEndDate(''); setStartTime(''); setEndTime(''); setNotes('');
     };
 
     const handleSubmit = async (ev) => {
@@ -568,6 +602,8 @@ const VacationPlanView = () => {
             const ok = await updateVacationPlan(editingPlan.id, {
                 start_date: startDate,
                 end_date:   endDate,
+                start_time: startTime || null,
+                end_time:   endTime   || null,
                 days:       computedDays,
                 notes:      notes.trim() || null,
             });
@@ -591,12 +627,14 @@ const VacationPlanView = () => {
                 branch_id:   emp?.branch_id || emp?.branchId,
                 start_date:  startDate,
                 end_date:    endDate,
+                start_time:  startTime || null,
+                end_time:    endTime   || null,
                 days:        computedDays,
                 notes:       notes.trim() || null,
                 created_by:  user?.id,
             });
             useToastStore.getState().showToast('Listo', 'Vacaciones asignadas correctamente.', 'success');
-            setEmpId(''); setStartDate(''); setEndDate(''); setNotes('');
+            setEmpId(''); setStartDate(''); setEndDate(''); setStartTime(''); setEndTime(''); setNotes('');
         } catch (err) {
             const msg = err.message || '';
             if (msg.startsWith('WINDOW_ERROR:')) {
@@ -838,11 +876,49 @@ const VacationPlanView = () => {
                                     />
                                 </div>
 
+                                {/* ── La hora, cuando no es un día entero ──────────────────
+                                    Vacías = día completo, que es el caso normal. Se ofrecen
+                                    igual y no detrás de un interruptor porque el interruptor
+                                    sería un control más para el caso raro y uno menos para
+                                    entender el caso normal: dos campos vacíos ya dicen «todo
+                                    el día». */}
+                                {startDate && endDate && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <InputLabel>Empieza a las (opcional)</InputLabel>
+                                            <div className="rounded-2xl bg-surface-card">
+                                                <TimePicker12
+                                                    value={startTime}
+                                                    defaultMeridiem="PM"
+                                                    onChange={setStartTime}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <InputLabel>Se reincorpora a las (opcional)</InputLabel>
+                                            <div className="rounded-2xl bg-surface-card">
+                                                <TimePicker12
+                                                    value={endTime}
+                                                    defaultMeridiem="AM"
+                                                    onChange={setEndTime}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Días calculados */}
                                 {computedDays > 0 && (
                                     <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-[var(--dur-lento)] ${editingPlan ? 'bg-warning/10 border-warning/20' : 'bg-brand/8 border-brand/15'}`}>
                                         <Calendar size={13} className={editingPlan ? 'text-warning' : 'text-brand-text'} strokeWidth={2.5} />
-                                        <span className={`text-body-sm font-black ${editingPlan ? 'text-warning-text' : 'text-brand-text'}`}>{computedDays} días calendario</span>
+                                        <span className={`text-body-sm font-black ${editingPlan ? 'text-warning-text' : 'text-brand-text'}`}>
+                                            {computedDays} días calendario
+                                            {(startTime || endTime) && (
+                                                <span className="font-bold opacity-70">
+                                                    {' '}· {[startTime && 'el primer día', endTime && 'el último'].filter(Boolean).join(' y ')} se trabaja
+                                                </span>
+                                            )}
+                                        </span>
                                     </div>
                                 )}
 
@@ -1020,7 +1096,9 @@ const VacationPlanView = () => {
                                                                 </div>
                                                             </DataCell>
                                                             <DataCell hideBelow="2xl" className="text-content-3 font-medium">{p.branch?.name || '—'}</DataCell>
-                                                            <DataCell className="text-content-2 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</DataCell>
+                                                            <DataCell className="text-content-2 font-medium whitespace-nowrap">
+                                                                {fmtShort(p.start_date)}{p.start_time ? ` ${fmtHora(p.start_time.slice(0, 5))}` : ''} → {fmtShort(p.end_date)}{p.end_time ? ` ${fmtHora(p.end_time.slice(0, 5))}` : ''}
+                                                            </DataCell>
                                                             <DataCell hideBelow="2xl" className="font-black text-content-2">{p.days}</DataCell>
                                                             <DataCell hideBelow="2xl">
                                                                 <Badge variant={remaining >= 0 ? 'info' : 'danger'} size="sm">
@@ -1044,7 +1122,7 @@ const VacationPlanView = () => {
                                                                             tone="warning"
                                                                             soft
                                                                             title="Editar"
-                                                                            onClick={() => handleStartEdit({ id: p.id, employee_id: p.employee_id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '', employee: p.employee })}
+                                                                            onClick={() => handleStartEdit({ id: p.id, employee_id: p.employee_id, start_date: p.start_date, end_date: p.end_date, start_time: p.start_time, end_time: p.end_time, notes: p.notes || '', employee: p.employee })}
                                                                             disabled={!canEdit}
                                                                         />
                                                                     )}

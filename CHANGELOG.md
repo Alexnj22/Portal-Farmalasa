@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.964.4 — El papel nunca salía: `noopener` hace que `window.open` devuelva `null`
+
+Reportado sobre Bitácoras → Cierre de mes: «hice la prueba de cierre, y descargar
+el pdf, pero no me funciona». No era del cierre ni del PDF — era de la ventana.
+
+Cinco sitios del portal la abrían así:
+
+```js
+const win = window.open('', '_blank', 'width=1000,height=900,noopener');
+```
+
+y **`window.open` con `noopener` entre los rasgos devuelve `null` por
+especificación**, en todos los navegadores. Medido con Playwright sobre Chromium
+y WebKit: `null` en los dos, y la misma llamada sin el rasgo devuelve el objeto.
+O sea que la ventana se abre —en blanco— y quien la abrió no tiene con qué
+escribirle. **El papel no salió nunca, en ninguna computadora.**
+
+Lo que lo hizo durar es que ninguno de los cinco lo decía, y cada uno callaba de
+una forma distinta:
+
+| | qué hacía | qué se veía |
+|---|---|---|
+| bitácoras del mes | `if (!win) return` | nada, ni un aviso |
+| cotización | `if (!win) return` | nada |
+| boleta de pago | `null.document.write` | `TypeError` en consola |
+| carné (ficha) | toast | «el navegador bloqueó la ventana» — culpa equivocada |
+| carné nuevo (novedad) | descartaba el resultado | nada |
+
+El del carné es el peor de los cinco: manda a revisar la configuración del
+navegador por algo que había pedido el propio código.
+
+**`noopener` tampoco servía para lo que parecía.** Una ventana abierta con
+`window.open('')` hereda el origen del portal —eso no lo cambia ningún rasgo—,
+así que la protección real es que el documento no lleve ni un `<script>`, que es
+lo que ya hacen los cinco. Cortarle al hijo la referencia al padre se consigue
+igual con `win.opener = null` después de escribirlo, sin perder el handle.
+
+**Y había un segundo defecto tapado por el primero, en bitácoras.** La ventana se
+abría *después* del `await` de la consulta del mes, así que aun arreglando el
+`noopener` el bloqueador de emergentes la habría matado por no venir de un gesto.
+Ahora se abre sincrónica dentro del clic, se busca el mes, y si la consulta falla
+se cierra: una ventana en blanco que se queda abierta se lee como que el papel
+salió mal, no como que no salió.
+
+Los cinco pasan hoy por `src/utils/ventanaDeImpresion.js`
+(`abrirVentanaDeImpresion` + `escribirEImprimir`), que devuelve
+`{ok, motivo}` — o sea que un papel que no sale ya no se ve igual que uno que sí.
+
+Lo vigila la categoría `ventana-noopener` de `npm run gate:design`, bloqueante en
+cero. Sólo cuenta cuando la URL es vacía o `about:blank`: `window.open(url, …,
+'noopener')` está bien —la pestaña abre igual y nadie usa el retorno—, que es lo
+que hacen los enlaces a documentos. Verificado fabricándole las cuatro
+variantes: caza las dos que fallan e ignora las dos que no.
+
 ## v2.964.3 — Mis puntos: el código y el teléfono viajan juntos
 
 Se generó un código de acceso para una clienta, se escaneó su QR y la pantalla

@@ -29,6 +29,8 @@ import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { rotuloCampo } from '../utils/rotuloDeCampo';
+import { abrirVentanaDeImpresion, escribirEImprimir } from '../utils/ventanaDeImpresion';
+import { useToastStore } from '../store/toastStore';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -709,10 +711,12 @@ export default function CotizacionesView() {
 
     const handlePrint = (cot, itemsData) => {
         const branchName = branches.find(b => b.id === cot.branch_id)?.name || '';
-        const win = window.open('', '_blank', 'width=820,height=720,noopener');
-        if (!win) return;
-        win.document.write(buildPrintHTML(cot, itemsData, branchName));
-        win.document.close();
+        const win = abrirVentanaDeImpresion({ ancho: 820, alto: 720 });
+        // `imprimir: false` a propósito: acá la ventana se deja abierta para
+        // mirar la cotización, y quien quiera papel usa el diálogo del
+        // navegador. Lo que sí cambia es que un fallo ahora se dice.
+        const r = escribirEImprimir(win, buildPrintHTML(cot, itemsData, branchName), { imprimir: false });
+        if (!r.ok) useToastStore.getState().showToast('No se pudo abrir la cotización', r.motivo, 'error');
     };
 
     // ─────────────────────────────────────────────────────────────────────────

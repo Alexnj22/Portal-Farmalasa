@@ -25,6 +25,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
 
 import { registrarEgreso } from '../data/egreso';
+import { abrirVentanaDeImpresion, escribirEImprimir } from '../utils/ventanaDeImpresion';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -167,12 +168,14 @@ ${(entry.edit_history||[]).length>0?`<div style="font-size:9px;color:#555;margin
 <div class="sig"><div>F. ____________________<br/>PATRONO</div><div>F. ____________________<br/>EMPLEADO</div></div>`;
 }
 
+// Los cinco papeles de planilla salen por acá. Se abre y se escribe en la
+// misma pasada porque el HTML ya está armado: no hay `await` en el medio que
+// le quite el gesto a la ventana.
 function openPrintWindow(html, w = 840, h = 920) {
-    const win = window.open('', '_blank', `width=${w},height=${h},noopener`);
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    setTimeout(() => win.print(), 400);
+    const win = abrirVentanaDeImpresion({ ancho: w, alto: h });
+    const r = escribirEImprimir(win, html);
+    if (!r.ok) useToastStore.getState().showToast('No se pudo imprimir', r.motivo, 'error');
+    return r;
 }
 
 function printBoleta(entry, period, branches) {

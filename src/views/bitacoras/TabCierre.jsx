@@ -11,6 +11,7 @@ import {
     cerrarMes, correrPeriodo, fetchCierres, fetchMesImpreso, fetchResumenMes, hoySV, periodoDe, reabrirMes,
 } from '../../data/bitacoras';
 import { imprimirMesDeBitacoras } from '../../utils/bitacoraPrint';
+import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../utils/ventanaDeImpresion';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El cierre de mes del regente.
@@ -112,13 +113,25 @@ export default function TabCierre({ branchId, fechaVista }) {
     // El papel se arma con SU PROPIA consulta, no con el resumen que ya está en
     // pantalla: lo impreso tiene que ser una foto coherente del mes entero
     // —grilla, limpieza y libro— tomada en un solo momento.
+    //
+    // La ventana se abre SINCRÓNICA acá, antes de la consulta: después de un
+    // `await` el bloqueador de emergentes la mata por no venir de un gesto. Y
+    // si la consulta falla, hay que cerrarla — una ventana en blanco que se
+    // queda abierta se lee como que el papel salió mal, no como que no salió.
     const imprimir = useCallback(async () => {
+        const win = abrirVentanaDeImpresion({ ancho: 1000, alto: 900 });
+        if (!win) { setError(VENTANA_BLOQUEADA); return; }
         setImprimiendo(true);
         setError(null);
         const { mes, error: err } = await fetchMesImpreso(branchId, periodo);
         setImprimiendo(false);
-        if (err) { setError(err.message ?? 'No se pudo armar el mes para imprimir.'); return; }
-        imprimirMesDeBitacoras(mes);
+        if (err) {
+            try { win.close(); } catch { /* ya no está */ }
+            setError(err.message ?? 'No se pudo armar el mes para imprimir.');
+            return;
+        }
+        const r = imprimirMesDeBitacoras(win, mes);
+        if (!r.ok) setError(r.motivo);
     }, [branchId, periodo]);
 
     const reabrir = useCallback(async () => {

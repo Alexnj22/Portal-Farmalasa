@@ -19,6 +19,8 @@
 // ticket. Este HTML no llega nunca al DOM de la app: va a una ventana propia.
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { escribirEImprimir } from './ventanaDeImpresion';
+
 const CSS = `
   @page { size: letter; margin: 12mm; }
   body { font-family: Arial, Helvetica, sans-serif; font-size: 9px; color: #000; margin: 0; }
@@ -254,9 +256,20 @@ function tablaLibro(mes) {
     presentación, laboratorio, lote, fecha de expiración, fecha y cantidad dispensada, y quién despachó.</p>`;
 }
 
-/** Arma el documento entero y abre la ventana de impresión. */
-export function imprimirMesDeBitacoras(mes) {
-    if (!mes) return;
+/**
+ * Arma el documento entero y lo escribe en la ventana YA ABIERTA.
+ *
+ * Recibe la ventana hecha —no la abre— porque quien llama tiene que abrirla
+ * sincrónica dentro del clic, antes de ir a buscar el mes: después de un
+ * `await` el bloqueador de emergentes la mata. Ver `ventanaDeImpresion.js`.
+ *
+ * @returns {{ok: boolean, motivo?: string}}
+ */
+export function imprimirMesDeBitacoras(win, mes) {
+    if (!mes) {
+        try { win?.close(); } catch { /* ya no está */ }
+        return { ok: false, motivo: 'No hay nada que imprimir de ese mes.' };
+    }
 
     const areas = mes.areas || [];
     // Un área de sólo limpieza —vitrinas, servicio sanitario— no tiene franjas,
@@ -284,12 +297,5 @@ export function imprimirMesDeBitacoras(mes) {
         <title>Bitácoras ${esc(mes.sucursal)} ${esc(mes.periodo)}</title>
         <style>${CSS}</style></head><body>${secciones.join('')}</body></html>`;
 
-    const win = window.open('', '_blank', 'width=1000,height=900,noopener');
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    // El retardo es el mismo que usa la boleta de pago: sin él, Safari imprime
-    // antes de aplicar el CSS y sale el HTML sin formato.
-    setTimeout(() => win.print(), 400);
+    return escribirEImprimir(win, html);
 }

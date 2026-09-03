@@ -22,6 +22,7 @@ import Badge from '../common/Badge';
 import PortalInput from '../common/PortalInput';
 import { formatMoney } from '../../utils/formatNumber';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { abrirVentanaDeImpresion } from '../../utils/ventanaDeImpresion';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -637,12 +638,15 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 onClick={async () => {
                                     // Sincrónica dentro del gesto: después de un
                                     // `await` el bloqueador de emergentes la mata.
-                                    const win = window.open('', '_blank', 'noopener');
+                                    const win = abrirVentanaDeImpresion();
                                     const { imprimirEtiquetaDeCarne } = await import('../../utils/carnePrint');
-                                    await imprimirEtiquetaDeCarne(win, {
+                                    const r = await imprimirEtiquetaDeCarne(win, {
                                         nombre: activeEmployee?.name || '',
                                         valor: formData.newKioskPin || '',
                                     });
+                                    // Sin esto un carné que no sale se ve
+                                    // exactamente igual que uno que sí.
+                                    if (!r.ok) useToastStore.getState().showToast('No se pudo imprimir el carné', r.motivo, 'error');
                                 }}
                             >
                                 Imprimir Nuevo Carné

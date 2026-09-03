@@ -21,6 +21,7 @@
 // para que el papel conteste cuál lee el lector de verdad. Si contesta CODE39,
 // lo que cambia es esta línea y nada más.
 import { imprimirDocumento, fechaHora, limpiarValorDeBarras } from './ticketPrint';
+import { VENTANA_BLOQUEADA } from './ventanaDeImpresion';
 
 export const SIMBOLOGIA_DEL_CARNE = 'CODE128';
 
@@ -101,7 +102,7 @@ export function imprimirCarneDePapel(datos, { sala = null } = {}) {
 // tercero adentro vería el `localStorage` entero, token de sesión incluido.
 // El código de barras se dibuja acá y a la ventana viaja el SVG ya hecho.
 export async function imprimirEtiquetaDeCarne(win, { nombre, valor }) {
-    if (!win) return { ok: false, motivo: 'El navegador bloqueó la ventana de impresión.' };
+    if (!win) return { ok: false, motivo: VENTANA_BLOQUEADA };
     const limpio = limpiarValorDeBarras(valor);
     if (!limpio) { win.close(); return { ok: false, motivo: 'Esa persona no tiene código de carné.' }; }
 

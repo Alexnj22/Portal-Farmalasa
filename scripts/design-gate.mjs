@@ -1503,6 +1503,37 @@ function scanFile(path) {
     });
   }
 
+  // ── `window.open('')` con `noopener` DEVUELVE null ──────────────────────
+  //
+  // Por especificación, y medido en Chromium y WebKit. O sea que la ventana se
+  // abre en blanco y quien la abrió no tiene con qué escribirle: el papel no
+  // sale nunca. Estuvo así en CINCO sitios —las bitácoras del mes, la boleta de
+  // pago, la cotización y los dos carnés— y ninguno lo decía: tres se iban por
+  // un `if (!win) return`, uno lanzaba sobre `null.document` y el otro culpaba
+  // al navegador de haberla bloqueado.
+  //
+  // Sólo cuenta cuando la URL es vacía o `about:blank`: `window.open(url, …,
+  // 'noopener')` está BIEN —la pestaña abre igual y nadie usa el retorno—, que
+  // es lo que hacen los enlaces a documentos del portal.
+  if (!hasException(path, 'ventana-noopener')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      const m = /window\.open\(\s*(?:''|""|``|['"`]about:blank['"`])\s*[,)]/.exec(line);
+      if (!m) return;
+      // Los rasgos pueden seguir en la línea siguiente si la llamada se partió.
+      const ventana = lines.slice(i, i + 3).join(' ');
+      const cierre = ventana.indexOf(')', ventana.indexOf('window.open('));
+      const args = cierre === -1 ? ventana : ventana.slice(0, cierre);
+      if (!/noopener/.test(args)) return;
+      findings.push({
+        line: i + 1,
+        label: 'window.open(\'\') con `noopener` — devuelve null y el papel no sale nunca',
+        category: 'ventana-noopener',
+        text: line.trim().slice(0, 120),
+      });
+    });
+  }
+
   if (!hasException(path, 'inline-color')) {
     lines.forEach((line, i) => {
       if (isComment[i]) return;

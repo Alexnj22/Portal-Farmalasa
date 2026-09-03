@@ -46,6 +46,7 @@ import { clickable } from '../utils/clickable';
 import ModalShell from '../components/common/ModalShell';
 
 import { rotuloCampo } from '../utils/rotuloDeCampo';
+import { abrirVentanaDeImpresion } from '../utils/ventanaDeImpresion';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -370,7 +371,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const reimprimirCarne = async () => {
         // La ventana se abre SINCRÓNICA dentro del gesto: después de un `await`
         // el bloqueador de emergentes la mata.
-        const win = window.open('', '_blank', 'noopener');
+        const win = abrirVentanaDeImpresion();
         const { showToast } = useToastStore.getState();
         try {
             const mapa = await fetchCredenciales([emp.id]);

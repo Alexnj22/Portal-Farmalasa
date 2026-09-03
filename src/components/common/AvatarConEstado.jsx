@@ -165,7 +165,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   // La base manda `{clave, hasta}`; el rótulo y el color los pone
   // `estadoDesdeClave`, el mismo que usa la rama local. Dos caminos, una sola
   // tabla de rótulos.
-  const estado = local || (remoto ? estadoDesdeClave(remoto.clave, remoto.hasta) : null);
+  const estado = local || (remoto ? estadoDesdeClave(remoto.clave, remoto.hasta, remoto.faltan) : null);
 
   const marca = estado ? MARCA[estado.variante] : null;
   const Icono = estado ? ICONO[estado.clave] : null;
@@ -175,8 +175,12 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   const grosor = px >= 28 ? 'ring-[2.5px]' : 'ring-2';
   const conChip = mostrarChip && px >= 48;
 
+  /* Durante la cuenta regresiva el rótulo YA dice cuándo empieza («Vacaciones
+     en 3 días»), así que «vuelve el 21» al lado sería una segunda fecha sobre
+     algo que todavía no pasó: la frase quedaría con dos números y ninguno
+     sería el que importa. Cuando ya empezó, la vuelta es justo lo que se busca. */
   const titulo = estado
-    ? `${estado.texto}${estado.hasta ? ` · vuelve el ${estado.hasta}` : ''}`
+    ? `${estado.texto}${estado.hasta && !estado.faltan ? ` · vuelve el ${estado.hasta}` : ''}`
     : undefined;
 
   return (
@@ -214,7 +218,17 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
         />
       </span>
 
-      {conChip && Icono && (
+      {/* ── El chip: la palmera cuando YA está, el número mientras falta ─────
+          «−3» y no un ícono, porque un ícono sólo puede decir QUÉ pasa y acá lo
+          que hace falta es CUÁNDO. El signo menos va adelante: sin él, un «3»
+          dentro de un círculo ámbar se lee como una cantidad —tres pendientes,
+          tres avisos— y no como una cuenta regresiva.
+
+          Cabe porque son dos caracteres como máximo (el aviso arranca en −5) y
+          se dibuja con el mismo ancho que el ícono. Debajo de 48 px no hay
+          chip y queda sólo el aro, igual que siempre: ahí la frase completa la
+          lleva el `title`, que existe a cualquier tamaño. */}
+      {conChip && (estado.faltan > 0 || Icono) && (
         <span
           className={`absolute -bottom-1 -right-1 flex items-center justify-center rounded-full
             border-2 border-surface-card shadow-sm ${marca.chip}`}
@@ -223,8 +237,18 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
              conjunto, y anunciarlo aparte sería decir «palmera» después de
              decir «en vacaciones». */
           aria-hidden="true" data-chip-estado={estado.clave}
+          data-faltan={estado.faltan > 0 ? estado.faltan : undefined}
         >
-          <Icono size={Math.round(px * 0.19)} strokeWidth={2.5} className="text-white" />
+          {estado.faltan > 0 ? (
+            <span
+              className="font-black leading-none text-white tabular-nums"
+              style={{ fontSize: Math.round(px * 0.17) }}
+            >
+              −{estado.faltan}
+            </span>
+          ) : (
+            <Icono size={Math.round(px * 0.19)} strokeWidth={2.5} className="text-white" />
+          )}
         </span>
       )}
     </span>

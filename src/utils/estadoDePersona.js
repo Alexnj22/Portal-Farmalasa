@@ -40,6 +40,34 @@ const ROTULO_TEMPORAL = {
     SUSPENSION: { texto: 'Suspendido',    variante: 'danger'  },
 };
 
+// ── El aro avisa CINCO DÍAS ANTES, con la cuenta regresiva ────────────────
+//
+// Pedido del usuario: «para todos los últimos 5 días diga eso, un conteo,
+// -5 -4 …». Su gemelo es `get_estados_de_personas`, que devuelve `faltan`; acá
+// se arma la frase.
+//
+// Es un sustantivo aparte y no el rótulo de arriba porque «En vacaciones» sobre
+// alguien que HOY está trabajando es sencillamente falso: la persona está, y lo
+// que hay que decir es cuándo deja de estar. El color sí es el mismo — el aro
+// ámbar significa «vacaciones», empezadas o no, y cambiarle el tono a la
+// espera daría dos colores para una sola cosa.
+const SUSTANTIVO = {
+    VACATION:   'Vacaciones',
+    DISABILITY: 'Incapacidad',
+    SUPPORT:    'Apoyo',
+    INDUCTION:  'Inducción',
+    PERMIT:     'Permiso',
+    SUSPENSION: 'Suspensión',
+    AUSENTE:    'Ausencia',
+};
+
+// «Vacaciones en 3 días» · «Vacaciones mañana». El singular tiene su frase
+// propia porque «en 1 día» se lee como un error de plantilla, no como mañana.
+export function textoDeEspera(clave, faltan) {
+    const nombre = SUSTANTIVO[clave] || 'Ausencia';
+    return faltan === 1 ? `${nombre} mañana` : `${nombre} en ${faltan} días`;
+}
+
 // «No está» y nada más. Es lo que recibe quien no tiene permiso para leer los
 // eventos de los demás: sabe que esa persona no está —que es lo que necesita
 // para no confundirla con alguien presente— y no se entera de si es una
@@ -58,6 +86,20 @@ const hoyISO = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+
+// Cinco, igual que `v_aviso` en `get_estados_de_personas`. Los dos números son
+// el mismo y por eso los dos llevan nombre.
+const AVISO_DIAS = 5;
+
+// Mediodía a propósito en las dos: restar fechas ISO a medianoche se corre un
+// día con el cambio de horario, y este número decide si el chip dice «−3».
+const sumarDias = (iso, n) => {
+    const d = new Date(`${iso}T12:00:00`);
+    d.setDate(d.getDate() + n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const diasHasta = (desde, hasta) => Math.max(0, Math.round(
+    (new Date(`${hasta}T12:00:00`) - new Date(`${desde}T12:00:00`)) / 86400000));
 
 // «Vuelve el 2 de septiembre», no «2026-09-02». La fecha cruda obliga a contar
 // días con los dedos; lo que se necesita saber es si la persona está mañana.
@@ -79,12 +121,19 @@ export function fechaDeVuelta(iso) {
  * rótulo y el color se ponen acá para que la foto y el texto de al lado no
  * puedan decir cosas distintas.
  */
-export function estadoDesdeClave(clave, hasta = null) {
+export function estadoDesdeClave(clave, hasta = null, faltan = 0) {
     if (!clave) return null;
-    if (clave === 'AUSENTE') return { clave, ...ROTULO_AUSENTE, hasta: null };
+    const n = Number(faltan) > 0 ? Number(faltan) : 0;
+    if (clave === 'AUSENTE') {
+        return { clave, ...ROTULO_AUSENTE, hasta: null, faltan: n,
+                 ...(n ? { texto: textoDeEspera(clave, n) } : {}) };
+    }
     const cfg = ROTULO_TEMPORAL[clave] || ROTULO_FIJO[clave];
     if (!cfg) return null;
-    return { clave, ...cfg, hasta: fechaDeVuelta(hasta) };
+    // Un estado FIJO (inactivo, liquidado) no tiene cuenta regresiva: ya es.
+    const espera = n && ROTULO_TEMPORAL[clave];
+    return { clave, ...cfg, hasta: fechaDeVuelta(hasta), faltan: espera ? n : 0,
+             ...(espera ? { texto: textoDeEspera(clave, n) } : {}) };
 }
 
 /**
@@ -97,16 +146,41 @@ export function estadoDePersona(emp) {
     if (fijo) return { clave: String(emp.status).toUpperCase(), ...fijo, hasta: null };
 
     const t = hoyISO();
-    const ev = (emp?.history || []).find(h =>
+    const tope = sumarDias(t, AVISO_DIAS);
+    const fin = (h) => h.metadata?.endDate ?? h.endDate;
+    // Misma ventana y mismo orden que `get_estados_de_personas`: lo que ya
+    // empezó manda sobre lo que está por empezar. Los dos gemelos se mueven
+    // juntos — si divergen, la foto y el texto de al lado dicen cosas
+    // distintas y nadie puede decir cuál miente.
+    const candidatos = (emp?.history || []).filter(h =>
         TEMPORALES.includes(h.type) &&
-        h.date <= t &&
-        ((h.metadata?.endDate ?? h.endDate) >= t || !(h.metadata?.endDate ?? h.endDate))
+        h.date <= tope &&
+        (fin(h) >= t || !fin(h))
     );
+    const ev = candidatos.sort((a, b) =>
+        (a.date > t) - (b.date > t) || b.date.localeCompare(a.date))[0];
     if (!ev) return null;
 
     const cfg = ROTULO_TEMPORAL[ev.type];
     if (!cfg) return null;
-    return { clave: ev.type, ...cfg, hasta: fechaDeVuelta(ev.metadata?.endDate ?? ev.endDate) };
+    return estadoDesdeClave(ev.type, fin(ev), diasHasta(t, ev.date));
+}
+
+/**
+ * ¿Esta persona NO está hoy?
+ *
+ * Existe por culpa de la cuenta regresiva: desde que el aro avisa cinco días
+ * antes, `estadoDePersona` devuelve algo para gente que SÍ está trabajando, y
+ * los tres sitios que preguntaban `!!estadoDePersona(e)` empezarían a contar a
+ * quien está presente como ausente — la lista «Activos» de Personal perdería a
+ * alguien que está en la sala, y sin un error a la vista.
+ *
+ * Así que la pregunta «¿hay algo que decir?» y la pregunta «¿no está?» dejan de
+ * ser la misma, y ésta lleva nombre propio.
+ */
+export function estaAusenteHoy(emp) {
+    const e = estadoDePersona(emp);
+    return !!e && !e.faltan;
 }
 
 // ── Una persona, venga como venga ──────────────────────────────────────────

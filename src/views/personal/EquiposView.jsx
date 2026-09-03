@@ -27,7 +27,7 @@ import Button from '../../components/common/Button';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { clickable } from '../../utils/clickable';
-import { estadoDePersona } from '../../utils/estadoDePersona';
+import { estadoDePersona, estaAusenteHoy } from '../../utils/estadoDePersona';
 import { getRoleTheme } from '../../utils/scheduleHelpers';
 import { cadenaDeSuperiores } from '../../utils/roles';
 import { repartirSala } from '../../utils/mandoDeSala';
@@ -180,7 +180,9 @@ const pesoDeSucursal = (nombre) => {
 // categoría `tarjeta-a-mano` de `gate:design`.
 function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = false, conSuperior = false, lugar, abrir, editar, recontratar, puedeEditar }) {
   const estado = useMemo(() => estadoDePersona(emp), [emp]);
-  const ausente = !!estado;
+  // `!!estado` ya no alcanza: durante la cuenta regresiva hay estado y la
+  // persona está en la sala. Ver `estaAusenteHoy`.
+  const ausente = !!estado && !estado.faltan;
   const alertas = useMemo(() => alertasDe(emp), [emp]);
   const cargos = cargosDe(emp);
   const tel = soloDigitos(emp.phone);
@@ -427,7 +429,9 @@ function PulsoDeSala({ personas }) {
     const m = new Map();
     personas.forEach(p => {
       const e = estadoDePersona(p);
-      const k = e ? e.texto : 'Activos';
+      // Quien tiene la cuenta regresiva corriendo TODAVÍA está: cuenta como
+      // activo. Si no, el pulso de la sala restaría gente presente.
+      const k = e && !e.faltan ? e.texto : 'Activos';
       m.set(k, (m.get(k) || 0) + 1);
     });
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
@@ -609,8 +613,8 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
       // separaran. «Ausentes» incluye a quien ya no trabaja acá a propósito:
       // es la vista donde se lo va a buscar para reincorporarlo.
       .filter(e => {
-        if (vista === 'activos') return !estadoDePersona(e);
-        if (vista === 'ausentes') return !!estadoDePersona(e);
+        if (vista === 'activos') return !estaAusenteHoy(e);
+        if (vista === 'ausentes') return estaAusenteHoy(e);
         return true;
       })
       .filter(e => !selectedBranch || selectedBranch === 'ALL' ||

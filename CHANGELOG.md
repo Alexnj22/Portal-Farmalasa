@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.963.0 — El aro avisa cinco días antes, con su cuenta regresiva
+
+Pedido del usuario: *«para todos los últimos 5 días diga eso, un conteo, -5 -4
+…»*. La ausencia deja de anunciarse el día que empieza y se anuncia **cinco días
+antes**, contando.
+
+El motivo es operativo: lo que más recibe el supervisor son **solicitudes que
+trancan trabajo de sala** —anulaciones, descargos, cambios de forma de pago—.
+Enterarse de que se fue el mismo día que se fue no sirve; enterarse cinco días
+antes es lo que permite mandarle lo pendiente a tiempo.
+
+### El chip lleva el número, no la palmera
+
+Mientras falta, el chip dice **«−3»** en vez del ícono. Un ícono sólo puede
+decir QUÉ pasa y acá lo que hace falta es CUÁNDO. El signo menos va adelante a
+propósito: un «3» suelto dentro de un círculo ámbar se lee como una cantidad
+—tres pendientes, tres avisos— y no como una cuenta regresiva. Cuando la
+vacación empieza, vuelve la palmera.
+
+El aro es el MISMO ámbar antes y durante: es el color de «vacaciones»,
+empezadas o no. Un tono aparte para la espera daría dos colores para una sola
+cosa. Y el rótulo sí cambia —«Vacaciones en 3 días», «Vacaciones mañana»—
+porque «En vacaciones» sobre alguien que hoy está trabajando es simplemente
+falso.
+
+### `faltan` es un número, y por eso viaja desde la base
+
+`get_estados_de_personas` devuelve `faltan`: 0 = ya empezó, 1..5 = los días que
+quedan. Un booleano «por empezar» obligaría a que el navegador reste fechas otra
+vez, y eso sería la misma pregunta respondida en dos sitios — que es como se
+desincronizan el aro y el texto de al lado.
+
+Los días que faltan viajan **siempre**, aun para quien sólo puede ver «AUSENTE»:
+saber que alguien no va a estar la semana que viene no dice de qué. El motivo
+sigue tapado; la fecha no es el motivo.
+
+### Dos cosas que se habrían roto en silencio
+
+- **El orden.** Al abrir la ventana a futuro, una persona puede tener algo
+  vigente y algo por empezar a la vez. Con el `ORDER BY date DESC` de antes
+  ganaba el futuro: alguien incapacitado HOY habría aparecido como «vacaciones
+  en 4 días» y su estado real desaparecía. Ahora lo que ya empezó manda.
+- **«Activos» habría perdido gente presente.** Tres sitios de Personal
+  preguntaban `!!estadoDePersona(e)` para decir «no está»; desde hoy eso devuelve
+  algo para quien SÍ está trabajando. La pregunta «¿hay algo que decir?» y
+  «¿no está?» dejaron de ser la misma, así que la segunda tiene nombre propio:
+  `estaAusenteHoy`. Sin eso, la lista de activos y el pulso de la sala habrían
+  restado a alguien que está en la sala, sin un error a la vista.
+
 ## v2.962.0 — Unas vacaciones pueden empezar a media jornada
 
 `vacation_plans` guardaba sólo fechas, o sea días completos. Asentar las del

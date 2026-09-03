@@ -867,6 +867,187 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
         );
     }
 
+    /* ── Las tres del dinero: la caja y los abonos ─────────────────────────
+     *
+     * No tenían bloque hasta el 2026-09-03 y caían al genérico, que pinta la
+     * nota y nada más. Sobre un descarte eso ya era malo; acá se decide sobre
+     * dinero YA MOVIDO —aprobar una corrección borra una línea de la caja del
+     * día, y rechazar un abono lo deshace y le devuelve el saldo al crédito—,
+     * así que decidir sin ver el monto es decidir a ciegas.
+     *
+     * Van juntas y no repartidas por familia porque las tres contestan la misma
+     * pregunta —¿sobre qué plata es y qué se le quiere hacer?— y separarlas
+     * sería tres copias del mismo `Antes → Después`. */
+    if (t === 'CAJA_MOVIMIENTO_CHANGE' || t === 'ABONO_CREDITO_CHANGE') {
+        const anula = meta.que === 'ANULAR';
+        const esAbono = t === 'ABONO_CREDITO_CHANGE';
+        return (
+            <div className="space-y-2">
+                <Caja tono="hover">
+                    <div className="flex items-start gap-2">
+                        <Banknote size={14} className="text-content-2 shrink-0 mt-0.5" strokeWidth={2} />
+                        <div className="flex-1 min-w-0">
+                            <Rotulo>{esAbono ? 'Abono a un crédito' : 'Movimiento de caja'}</Rotulo>
+                            <p className="text-body-sm font-bold text-content-2 leading-tight">
+                                {esAbono
+                                    ? (meta.cliente || `Crédito ${meta.credito_erp ?? '—'}`)
+                                    : (meta.concepto || 'Sin concepto')}
+                            </p>
+                            {esAbono && meta.credito_erp && (
+                                <p className="text-micro text-content-3 mt-0.5 tabular-nums">
+                                    Crédito {meta.credito_erp}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </Caja>
+
+                {/* Qué se pide hacerle. «Anular» no es un cambio de valor, así
+                    que no se dibuja como un par: mostrar «$18.50 → —» se lee
+                    como que queda en cero, y lo que queda es NADA. */}
+                {anula ? (
+                    <Caja>
+                        <Rotulo>Se pide anularlo</Rotulo>
+                        <p className="text-body-sm font-black text-content-2 tabular-nums">
+                            {formatMoney(meta.monto_actual)}
+                            <span className="text-micro font-bold text-content-3 ml-1.5 uppercase tracking-wide">
+                                {esAbono ? 'vuelve al saldo del crédito' : 'sale de la caja del día'}
+                            </span>
+                        </p>
+                    </Caja>
+                ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                        <Caja>
+                            <Rotulo>{meta.que === 'FORMA' ? 'Forma actual' : 'Monto actual'}</Rotulo>
+                            <p className="text-body-sm font-black text-content-2 tabular-nums">
+                                {meta.que === 'FORMA'
+                                    ? (meta.forma_actual || '—')
+                                    : formatMoney(meta.monto_actual)}
+                            </p>
+                        </Caja>
+                        <Caja tono="hover">
+                            <Rotulo>Cambiar a</Rotulo>
+                            <p className="text-body-sm font-black text-content-2 tabular-nums">
+                                {meta.que === 'FORMA'
+                                    ? (meta.forma_nueva || '—')
+                                    : formatMoney(meta.monto_nuevo)}
+                            </p>
+                            {meta.documento_nuevo && (
+                                <p className="text-micro text-content-3 font-mono mt-0.5">{meta.documento_nuevo}</p>
+                            )}
+                        </Caja>
+                    </div>
+                )}
+
+                {/* Corregir un abono es BORRARLO y volver a hacerlo: el origen
+                    abona y borra, no edita. Se dice acá porque cambia qué
+                    esperar del historial, no sólo el número. */}
+                {esAbono && !anula && (
+                    <p className="text-micro text-content-3 leading-snug px-1">
+                        Se corrige quitando el abono y volviéndolo a hacer, así que
+                        el crédito va a mostrar los dos movimientos.
+                    </p>
+                )}
+
+                <EvidenciaFotos urls={meta.comprobante_url ? [meta.comprobante_url] : null} />
+            </div>
+        );
+    }
+
+    /* ── Un abono que espera confirmación ──────────────────────────────────
+     *
+     * Se resuelve CRÉDITO POR CRÉDITO —«se debe poder confirmar individualmente
+     * si van más de 1 cuenta a abonar, si se rechaza 1 o más con motivo»
+     * (usuario, 2026-09-02)—, así que cada renglón lleva su casilla igual que
+     * las líneas de un movimiento. Y el aviso de arriba dice lo que la casilla
+     * no puede: destildarla no es «no aprobar», es DESHACER ese abono en la
+     * caja y devolverle el saldo al crédito. */
+    if (t === 'ABONO_APROBACION') {
+        const renglones = Array.isArray(meta.creditos) ? meta.creditos : [];
+        const resuelto = renglones.some(r => r?.decision);
+        return (
+            <div className="space-y-2">
+                <Caja tono="hover">
+                    <div className="flex items-start gap-2">
+                        <Banknote size={14} className="text-content-2 shrink-0 mt-0.5" strokeWidth={2} />
+                        <div className="flex-1 min-w-0">
+                            <Rotulo>El pago</Rotulo>
+                            <p className="text-body-sm font-bold text-content-2 leading-tight">
+                                {meta.cliente || 'Sin nombre'}
+                            </p>
+                            <p className="text-label font-black text-content-2 tabular-nums mt-0.5">
+                                {formatMoney(meta.monto)}
+                                {meta.forma && (
+                                    <span className="text-micro font-bold text-content-3 ml-1.5 uppercase tracking-wide">
+                                        {meta.forma}
+                                    </span>
+                                )}
+                            </p>
+                            {meta.detalle && (
+                                <p className="text-micro text-content-3 font-mono mt-0.5">{meta.detalle}</p>
+                            )}
+                        </div>
+                    </div>
+                </Caja>
+
+                {renglones.length > 0 && (
+                    <Caja>
+                        <Rotulo>
+                            {renglones.length === 1 ? 'El crédito que cubre' : `Los ${renglones.length} créditos que cubre`}
+                        </Rotulo>
+                        <div className="space-y-1 mt-1">
+                            {renglones.map((r, i) => {
+                                const devuelto = r?.decision === 'RECHAZADO';
+                                const marcado = seleccion ? seleccion.has(i) : !devuelto;
+                                return (
+                                    <div key={`${r?.credito ?? i}`}
+                                        className="flex items-start gap-2 py-1 border-b border-divider last:border-0">
+                                        {onToggle && (
+                                            <Checkbox checked={marcado} onChange={() => onToggle(i)}
+                                                ariaLabel={`Confirmar el crédito ${r?.credito ?? i + 1}`} />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`text-label font-bold leading-tight ${devuelto ? 'text-content-3 line-through' : 'text-content-2'}`}>
+                                                Crédito {r?.credito ?? '—'}
+                                            </p>
+                                            {r?.fecha && (
+                                                <p className="text-micro text-content-3 tabular-nums">{r.fecha}</p>
+                                            )}
+                                            {devuelto && r?.motivo && (
+                                                <p className="text-micro text-danger-text leading-snug mt-0.5">{r.motivo}</p>
+                                            )}
+                                        </div>
+                                        <p className={`text-label font-black tabular-nums shrink-0 ${devuelto ? 'text-content-3 line-through' : 'text-content-2'}`}>
+                                            {formatMoney(r?.monto)}
+                                        </p>
+                                        {/* Ya resuelto: se dice qué pasó con cada uno.
+                                            Un renglón devuelto y uno confirmado se ven
+                                            iguales sin esto, y son lo contrario. */}
+                                        {resuelto && !onToggle && (
+                                            <Badge variant={devuelto ? 'danger' : 'success'}>
+                                                {devuelto ? (r?.deshecho === false ? 'Falta quitarlo' : 'Devuelto') : 'Confirmado'}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </Caja>
+                )}
+
+                {onToggle && (
+                    <p className="text-micro text-content-3 leading-snug px-1">
+                        El dinero ya entró. Lo que queda es revisarlo: el crédito que
+                        dejes sin marcar se le devuelve al cliente y su saldo vuelve a
+                        subir.
+                    </p>
+                )}
+
+                <EvidenciaFotos urls={meta.comprobante_url ? [meta.comprobante_url] : null} />
+            </div>
+        );
+    }
+
     return null;
 };
 

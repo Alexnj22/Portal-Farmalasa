@@ -364,11 +364,21 @@ Deno.serve(async (req) => {
         }
         /* Para deshacerlo hay que saber QUÉ abono es, y el id se lo puso el
          * origen. Se relee el crédito y se busca por monto: es lo único que los
-         * dos lados comparten, y un pago con «Otro» del mismo monto y el mismo
-         * día sobre el mismo crédito no existe en la práctica. */
+         * dos lados comparten, y un abono del mismo monto y el mismo día sobre
+         * el mismo crédito no existe en la práctica.
+         *
+         * La forma acota, pero NO se exige: hasta el 2026-09-03 esto pedía
+         * `a.forma === "Otro"` y desde v2.950.0 la forma real es la del pago
+         * —transferencia, tarjeta, cheque u otro—, así que la condición
+         * descartaba justo el abono que había que deshacer. Ahora sale de la
+         * solicitud (`meta.forma`), y si no la trae —las creadas antes de este
+         * arreglo— se busca sólo por monto, que es como se identificaba de
+         * hecho. Un filtro que no puede acertar es peor que no filtrar. */
         const suyos = await abonosDelCredito(cookie, entrada.erpId, credito);
-        const abono = suyos.find((a) =>
-          Math.abs(a.monto - Number(r.monto)) < 0.005 && a.forma === "Otro");
+        const formaEsperada = String(meta.forma ?? "");
+        const delMonto = suyos.filter((a) => Math.abs(a.monto - Number(r.monto)) < 0.005);
+        const abono = (formaEsperada && delMonto.find((a) => a.forma === formaEsperada))
+          || delMonto[0];
         if (!abono?.erp_id) {
           fallidos.push(`${credito}: no se encontró el abono para deshacerlo`);
           resultado.push({ ...r, decision: "RECHAZADO", motivo: d.motivo, deshecho: false });
@@ -700,6 +710,15 @@ Deno.serve(async (req) => {
             branch_id: sala, pago_id: String(pago.id),
             cliente: ficha?.cliente ?? hechos[0].vivo.cliente,
             monto: aplicado, detalle: documento || null,
+            /* La forma DE VERDAD, y no por adorno: al rechazar hay que
+             * encontrar el abono en el origen para deshacerlo, y se lo busca
+             * por monto y forma. Sin esto la búsqueda se hacía contra el
+             * literal `"Otro"`, que dejó de ser la forma real el día que
+             * «Solicitar aprobación» se separó de la forma de pago
+             * (v2.950.0): un abono de MAPFRE por transferencia nunca se
+             * habría encontrado, y el rechazo respondía «no se encontró el
+             * abono para deshacerlo» sobre uno que estaba ahí. */
+            forma,
             /* Cada crédito con su renglón: la solicitud se resuelve UNO POR UNO
              * —«se debe poder confirmar individualmente si van más de 1 cuenta»—
              * y para eso hace falta saber cuál abono es cuál. `abono_erp` se

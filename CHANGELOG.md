@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.966.0 — Las solicitudes de caja y de abonos salen en la bandeja, y la de aprobación se creaba nunca
+
+Salió de una pregunta del usuario sobre la bandeja de Solicitudes: *«¿saldrán
+aquí las nuevas categorías de solicitudes, como aprobación de abono al crédito,
+o los de movimientos de caja?»*. La respuesta era **no**, y detrás había cuatro
+defectos encadenados que ninguno da error.
+
+**1. La solicitud de aprobación no se creaba NUNCA.** El diálogo de cobro manda
+`requiereAprobacion` desde v2.950.0, y la vista que lo recibe re-armaba el pago
+**campo por campo** para pasárselo a `pagarCreditos` — ocho campos copiados a
+mano, y los dos nuevos se quedaron afuera. `pagarCreditos` los tiene con default
+`false`/`null`, así que la Edge Function veía `pideAprobacion = false` y no
+insertaba nada. El cobro entraba igual y el toast decía «Pago registrado».
+Medido el 3-sep: **dos abonos de MAPFRE por transferencia** ($35.57 y $10.07,
+pagos 5 y 6) pedidos con aprobación, y **cero filas** en `approval_requests`. Hoy
+el pago viaja entero (`{ archivo, ...loPedido }`), así que un campo nuevo llega
+solo. Y el aviso distingue: *«Pago registrado, falta confirmarlo»*.
+
+**2. La bandeja las tiraba.** `es_solicitud_operativa()` en Postgres sumó
+`CAJA_MOVIMIENTO_CHANGE`, `ABONO_CREDITO_CHANGE` y `ABONO_APROBACION` entre el
+31-ago y el 2-sep; el `TIPOS_OPERATIVOS` del navegador no. El RLS las dejaba
+pasar como operativas —la fila **llegaba**— y `esOperativa(r.type) === esSucursal`
+la descartaba. Quien la pedía la veía en la bandeja **personal**, mezclada con
+vacaciones; quien tenía que decidirla no la veía en ninguna pantalla, sólo en la
+campana. Es exactamente el desfase que el comentario de ese archivo advertía.
+
+**3. Aprobar las de cuentas por cobrar habría ido a la función equivocada.** El
+enrutado mandaba las tres a `operar-caja`, que sólo sabe de movimientos de caja.
+`aplicarCorreccionDeAbono` y `resolverAbonoEnAprobacion` estaban escritas y **sin
+un solo llamador**. Ahora se enruta por TIPO y no por familia: la familia es de
+permisos, y eso no dice quién aplica.
+
+**4. Rechazar un abono no deshacía nada.** Un abono en aprobación YA ENTRÓ a la
+caja —a propósito: dejar el crédito abierto hasta que alguien firme lo mostraría
+como deuda del cliente, que es falso—, así que rechazarlo es **deshacerlo en el
+origen y devolverle el saldo al crédito**. Con el rechazo genérico la solicitud
+quedaba `REJECTED`, la pantalla decía «rechazada» y el dinero seguía aplicado.
+
+**Y un quinto, en el servidor:** al deshacer, el abono se buscaba con
+`a.forma === "Otro"`. Desde v2.950.0 la forma real es la del pago —transferencia,
+tarjeta, cheque u otro—, así que la condición descartaba justo el abono que había
+que quitar y el rechazo contestaba «no se encontró el abono para deshacerlo»
+sobre uno que estaba ahí. Hoy la forma se guarda en la solicitud y acota la
+búsqueda; sin ella (las de antes de este arreglo) se busca sólo por monto.
+
+**Lo que ahora se ve.** Las tres tienen bloque de detalle propio —antes caían al
+genérico, que pinta la nota y nada más, sobre decisiones que mueven dinero ya
+movido—: el movimiento o el crédito, el `Antes → Después`, el comprobante. Y el
+abono en aprobación se resuelve **crédito por crédito** con casillas, como pidió
+el usuario el 2-sep: lo que quede sin marcar se le devuelve al cliente y su saldo
+vuelve a subir, y el aviso y los botones lo dicen con esas palabras
+(«Confirmar», «Devolver todo») en vez de «Aprobar/Rechazar».
+
+`creditos-erp` desplegada (v18, `verify_jwt: true` sin cambios).
+
 ## v2.965.0 — Bitácoras: el mes impreso se rehizo (carta, logo, una hoja por área)
 
 Pedido del usuario sobre el formulario en papel que las salas ya usan: carta,

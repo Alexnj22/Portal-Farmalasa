@@ -330,7 +330,14 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
     const { hasPermission } = useAuth();
 
     const meta      = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
-    const lineas    = lineasDe(meta);
+    /* Un abono en aprobación se decide crédito por crédito, y sus renglones no
+     * viven en `items` sino en `creditos`: el mismo mecanismo de casillas, otra
+     * clave. Se resuelve acá y no adentro para que `seleccion`, `fuera` y
+     * `parcial` —que ya sabían contar renglones— sirvan sin tocarlos. */
+    const esAbonoPorConfirmar = req.type === 'ABONO_APROBACION';
+    const lineas    = esAbonoPorConfirmar
+        ? (Array.isArray(meta.creditos) ? meta.creditos : [])
+        : lineasDe(meta);
     const esTraslado = req.type === 'INVENTORY_TRANSFER_REQUEST';
     /* El traslado NO pasa por la decisión genérica, y nunca pasó: aprobarlo con
      * `approveRequest` lo marcaría APROBADO sin mover un solo producto. Lo que
@@ -364,7 +371,10 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
      *
      * Se ofrecen mientras no se esté rechazando: al rechazar no hay nada que
      * recortar y las casillas sólo confundirían. */
-    const editable = decidible && esMovimiento(req.type) && modo !== 'reject';
+    /* Un abono entra o no entra: no hay cantidad que recortar —el monto lo fijó
+     * el comprobante—, así que lleva casillas y no los `+/−`. */
+    const editable = decidible && (esMovimiento(req.type) || esAbonoPorConfirmar) && modo !== 'reject';
+    const conCantidad = editable && !esAbonoPorConfirmar;
     const porLinea = editable && lineas.length > 1;
 
     const [seleccion, setSeleccion] = useState(() => new Set(lineas.map((_, i) => i)));
@@ -384,7 +394,9 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
     });
 
     const fuera    = lineas.length - seleccion.size;
-    const recortes = [...seleccion].filter(i => (cantidades.get(i) ?? 0) < (Number(lineas[i]?.cantidad) || 0)).length;
+    const recortes = conCantidad
+        ? [...seleccion].filter(i => (cantidades.get(i) ?? 0) < (Number(lineas[i]?.cantidad) || 0)).length
+        : 0;
     // «Parcial» es cualquier cosa que no sea exactamente lo que pidieron: falta
     // un renglón, o falta cantidad en alguno.
     const parcial  = editable && seleccion.size > 0 && (fuera > 0 || recortes > 0);
@@ -401,9 +413,15 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
         // Qué entra y cuánto — sólo cuando de verdad se cambió algo. Van los
         // ÍNDICES con su cantidad, nunca las líneas: el servidor las resuelve
         // contra lo que se guardó al crear la solicitud.
+        //
+        // El abono manda los índices PELADOS: su renglón no tiene cantidad, y
+        // un `{i, cantidad: 0}` diría que entra por cero, que no es lo mismo
+        // que «se devuelve».
         aceptadas: parcial
             ? [...seleccion].sort((a, b) => a - b)
-                .map(i => ({ i, cantidad: cantidades.get(i) ?? (Number(lineas[i]?.cantidad) || 0) }))
+                .map(i => (esAbonoPorConfirmar
+                    ? i
+                    : { i, cantidad: cantidades.get(i) ?? (Number(lineas[i]?.cantidad) || 0) }))
             : null,
     });
 
@@ -447,14 +465,22 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                             <Button tone="success" icon={Check} loading={ocupado}
                                 disabled={faltaMotivo || nadaSeleccionado}
                                 onClick={() => confirmar('approve')}>
-                                {parcial ? 'Aplicar lo marcado' : 'Aprobar'}
+                                {esAbonoPorConfirmar
+                                    ? (parcial ? 'Confirmar lo marcado' : 'Confirmar')
+                                    : (parcial ? 'Aplicar lo marcado' : 'Aprobar')}
                             </Button>
                             {/* La nota NO se borra al entrar: si venía escrita
                                 es porque el parcial la exigía, y es la misma
                                 explicación. Volviéndola a pedir en blanco, el
                                 motivo se escribe dos veces. */}
+                            {/* «Rechazar» sobre un abono no es archivar una
+                                solicitud: deshace el abono en la caja y le
+                                devuelve el saldo al crédito. El botón lo dice,
+                                porque el aviso de arriba no se lee dos veces. */}
                             <Button variant="destructive" icon={X} disabled={ocupado}
-                                onClick={() => setModo('reject')}>Rechazar</Button>
+                                onClick={() => setModo('reject')}>
+                                {esAbonoPorConfirmar ? 'Devolver todo' : 'Rechazar'}
+                            </Button>
                         </>
                     )}
                     {decidible && modo === 'reject' && (
@@ -462,7 +488,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                             <Button onClick={() => confirmar('reject')} loading={ocupado}
                                 disabled={faltaMotivo}
                                 tone="danger" icon={X}>
-                                Confirmar rechazo
+                                {esAbonoPorConfirmar ? 'Confirmar la devolución' : 'Confirmar rechazo'}
                             </Button>
                             <Button variant="ghost" disabled={ocupado} onClick={() => { setModo(null); setNota(''); }}>
                                 Volver
@@ -496,25 +522,39 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                         <DetalleSolicitud req={req} employeesById={employeesById}
                             seleccion={porLinea ? seleccion : undefined}
                             onToggle={porLinea ? alternar : undefined}
-                            onCantidad={editable ? fijarCantidad : undefined}
-                            cantidades={editable ? cantidades : undefined} />
+                            onCantidad={conCantidad ? fijarCantidad : undefined}
+                            cantidades={conCantidad ? cantidades : undefined} />
                     </Suspense>
 
                     {editable && (
                         <div>
+                            {/* El aviso habla de PRODUCTOS porque nació con los
+                                movimientos, y sobre un abono eso sería mentira:
+                                lo que queda afuera no es un renglón que no
+                                entra, es dinero que se le DEVUELVE al cliente y
+                                un saldo que vuelve a subir. Dos textos, un solo
+                                mecanismo. */}
                             <Notice variant={nadaSeleccionado ? 'danger' : parcial ? 'warning' : 'info'} icon={Check}>
-                                {nadaSeleccionado
-                                    ? 'No dejaste ninguna línea marcada. Si no entra nada, rechazá la solicitud.'
-                                    : parcial
-                                        ? [
-                                            fuera > 0 && (fuera === 1
-                                                ? 'Queda 1 producto afuera'
-                                                : `Quedan ${fuera} productos afuera`),
-                                            recortes > 0 && (recortes === 1
-                                                ? 'a 1 le bajaste la cantidad'
-                                                : `a ${recortes} les bajaste la cantidad`),
-                                          ].filter(Boolean).join(' y ') + '. Cuenta por qué abajo.'
-                                        : 'Entra todo lo que se pidió, completo.'}
+                                {esAbonoPorConfirmar
+                                    ? (nadaSeleccionado
+                                        ? 'No dejaste ningún crédito marcado. Si no se confirma ninguno, rechazá la solicitud: se le devuelve todo.'
+                                        : parcial
+                                            ? (fuera === 1
+                                                ? 'Un crédito queda sin confirmar: ese abono se deshace y el saldo vuelve a subir. Cuenta por qué abajo.'
+                                                : `${fuera} créditos quedan sin confirmar: esos abonos se deshacen y sus saldos vuelven a subir. Cuenta por qué abajo.`)
+                                            : 'Se confirman todos.')
+                                    : nadaSeleccionado
+                                        ? 'No dejaste ninguna línea marcada. Si no entra nada, rechazá la solicitud.'
+                                        : parcial
+                                            ? [
+                                                fuera > 0 && (fuera === 1
+                                                    ? 'Queda 1 producto afuera'
+                                                    : `Quedan ${fuera} productos afuera`),
+                                                recortes > 0 && (recortes === 1
+                                                    ? 'a 1 le bajaste la cantidad'
+                                                    : `a ${recortes} les bajaste la cantidad`),
+                                              ].filter(Boolean).join(' y ') + '. Cuenta por qué abajo.'
+                                            : 'Entra todo lo que se pidió, completo.'}
                             </Notice>
                         </div>
                     )}

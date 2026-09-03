@@ -13,11 +13,17 @@ import {
     aplicarCorreccionDeCaja,
     fetchPersonasDeSolicitudes,
 } from '../../data/requests';
+/* Las dos de cuentas por cobrar. Van por `creditos-erp` y no por `operar-caja`
+ * aunque las tres sean «de caja»: son tres acciones distintas en dos funciones
+ * distintas, y el enrutado por familia las mandaba a las tres al mismo sitio.
+ * Ver `_aprobarCaja`. */
+import { aplicarCorreccionDeAbono, resolverAbonoEnAprobacion } from '../../data/creditos';
 // El horario se escribe UN día a la vez desde el 2026-08-27: leer el roster,
 // tocarle una clave y reescribirlo entero pierde lo que otra sesión haya
 // guardado en otro día de esa misma semana.
 import { guardarDiaDeHorario } from '../../data/schedules';
 import { signStorageUrls } from '../../utils/storageFiles';
+import { formatMoney } from '../../utils/formatNumber';
 import { claveDeDia } from '../../utils/scheduleHelpers';
 
 // ============================================================================
@@ -143,10 +149,20 @@ export const REQUEST_TYPES_QUE_SE_APLICAN = new Set([
  * Si acá se agrega un tipo y allá no —o al revés— la pantalla y el RLS dejan de
  * coincidir, y el síntoma es de los mudos: la lista llega vacía sin error, o
  * peor, muestra de más. Al tocar uno, tocar el otro en la misma sesión.
+ *
+ * **Y ya pasó** (2026-09-03): las tres de caja se agregaron a
+ * `es_solicitud_operativa()` entre el 31-ago y el 2-sep y acá no. El RLS las
+ * dejaba pasar como operativas, o sea que la fila LLEGABA al navegador, y esta
+ * línea la tiraba — `esOperativa(r.type) === esSucursal` da `false === true`.
+ * Quien la pedía la veía en la bandeja PERSONAL, mezclada con vacaciones (entra
+ * por `employee_id = auth_employee_id()`); quien tenía que decidirla no la veía
+ * en ninguna pantalla, sólo en la campana. Cero filas de esos tipos en
+ * producción, así que nadie lo topó — pero el defecto estaba servido.
  */
 export const TIPOS_OPERATIVOS = new Set([
     ...FACTURACION_REQUEST_TYPES,
     ...INVENTARIO_REQUEST_TYPES,
+    ...CAJA_REQUEST_TYPES,
     'INVENTORY_TRANSFER_REQUEST',
 ]);
 
@@ -1112,7 +1128,34 @@ export const createRequestsSlice = (set, get) => ({
     },
 
     /**
-     * Aprobar una corrección de caja = anularla o reescribirla de verdad.
+     * Los renglones de un abono en aprobación, con la decisión de cada uno.
+     *
+     * `aceptadas` son ÍNDICES dentro de `metadata.creditos` —el mismo contrato
+     * que las líneas de un movimiento— y lo que no está adentro se rechaza con
+     * el motivo escrito. Sin `aceptadas` entran todos: es aprobar en bloque.
+     *
+     * El motivo va en CADA renglón rechazado y no una sola vez al pie porque
+     * quien pagó recibe la devolución de ESE abono y tiene derecho a saber por
+     * qué se le devolvió — la función del servidor lo exige (≥5 caracteres) y
+     * lo hace antes de tocar nada.
+     */
+    _decisionesDeAbono: (meta, aceptadas, nota, modo) => {
+        const renglones = Array.isArray(meta?.creditos) ? meta.creditos : [];
+        const entra = aceptadas === null || aceptadas === undefined
+            ? null
+            : new Set(aceptadas.map(a => (typeof a === 'object' ? a.i : a)));
+        return renglones.map((r, i) => {
+            const aprobado = modo === 'reject' ? false : (entra === null || entra.has(i));
+            return {
+                credito: String(r?.credito ?? ''),
+                decision: aprobado ? 'APROBADO' : 'RECHAZADO',
+                ...(aprobado ? {} : { motivo: nota }),
+            };
+        });
+    },
+
+    /**
+     * Aprobar una solicitud de la familia de caja = hacerlo de verdad.
      *
      * Misma forma que las dos de al lado y por el mismo motivo: la función
      * valida el permiso contra el JWT, relee QUÉ se pidió (nada de eso viaja
@@ -1122,24 +1165,53 @@ export const createRequestsSlice = (set, get) => ({
      *
      * También rechaza que quien la pidió la apruebe. Ese freno vive allá y no
      * acá a propósito: escondido en el navegador sería una sugerencia.
+     *
+     * ── Son TRES acciones en DOS funciones, no una ────────────────────────
+     * Hasta el 2026-09-03 esto mandaba las tres a `operar-caja`, que sólo sabe
+     * de movimientos de caja: aprobar cualquiera de las dos de cuentas por
+     * cobrar habría muerto en «Esa solicitud no existe» —`operar-caja` la busca
+     * con su propio filtro de tipo— y la solicitud se quedaba PENDING sin que
+     * el motivo dijera nada útil. `aplicarCorreccionDeAbono` y
+     * `resolverAbonoEnAprobacion` estaban escritas y **sin un solo llamador**.
+     *
+     * Se enruta por TIPO y no por familia porque la familia es de permisos: los
+     * tres se deciden con `requests_caja`/`requests_cuentas_por_cobrar`, y eso
+     * no dice quién los aplica.
      */
-    _aprobarCaja: async (requestId, req, approverId, approverNote) => {
+    _aprobarCaja: async (requestId, req, approverId, approverNote, aceptadas = null, modo = 'approve') => {
         const meta = parseMeta(req.metadata);
-        const { ok, error, aplicado, aviso } =
-            await aplicarCorreccionDeCaja(requestId, meta.branch_id, approverNote);
 
-        if (!ok) {
-            useToastStore.getState().showToast('No se aplicó la corrección', error, 'error');
+        const r = req.type === 'CAJA_MOVIMIENTO_CHANGE'
+            ? await aplicarCorreccionDeCaja(requestId, meta.branch_id, approverNote)
+            : req.type === 'ABONO_CREDITO_CHANGE'
+                ? await aplicarCorreccionDeAbono(requestId)
+                : await resolverAbonoEnAprobacion({
+                    solicitud: requestId,
+                    decisiones: get()._decisionesDeAbono(meta, aceptadas, approverNote, modo),
+                });
+        const { ok, error, aplicado, aviso } = r ?? {};
+
+        if (!ok && !aviso) {
+            useToastStore.getState().showToast('No se aplicó la corrección',
+                error || 'El servidor no devolvió respuesta.', 'error');
             return YA_AVISADO;
         }
 
+        /* Un abono resuelto queda APPROVED aunque se haya rechazado algún
+         * renglón, y así lo escribe el servidor: lo que se resolvió fue la
+         * SOLICITUD, y el detalle de qué entró y qué no vive en `creditos`.
+         * Marcarla REJECTED por un renglón diría que no se aprobó nada. */
         set(state => ({
-            requests: state.requests.map(r =>
-                r.id === requestId
-                    ? { ...r, status: 'APPROVED', ...selloDeQuienDecidio(get, approverId),
+            requests: state.requests.map(x =>
+                x.id === requestId
+                    ? { ...x, status: 'APPROVED', ...selloDeQuienDecidio(get, approverId),
                         approver_note: approverNote,
-                        metadata: { ...meta, caja_aplicado: aplicado } }
-                    : r
+                        metadata: {
+                            ...meta,
+                            ...(aplicado ? { caja_aplicado: aplicado } : {}),
+                            ...(r?.creditos ? { creditos: r.creditos } : {}),
+                        } }
+                    : x
             ),
         }));
         apagarAviso(get, requestId, 'APPROVED');
@@ -1149,16 +1221,47 @@ export const createRequestsSlice = (set, get) => ({
                 approverNote, meta);
         }
 
-        useToastStore.getState().showToast(
-            aviso ? 'Se corrigió, con un pero' : 'Corrección aplicada',
-            aviso || (aplicado?.que === 'ANULAR'
-                ? 'El movimiento quedó anulado en la caja.'
-                : `El movimiento quedó en ${aplicado?.monto ?? '—'}.`),
-            aviso ? 'info' : 'success',
-            aviso ? 8000 : undefined,
-        );
+        useToastStore.getState().showToast(...get()._avisoDeCaja(req.type, r, modo));
         window.dispatchEvent(new CustomEvent('requests-updated'));
         return true;
+    },
+
+    /** Qué decir después. Cada una de las tres hizo algo distinto, y un toast
+     *  genérico —«Solicitud aprobada»— no dice si el dinero se movió. */
+    _avisoDeCaja: (tipo, r, modo) => {
+        const { aviso, aplicado } = r ?? {};
+        if (aviso) return ['Se resolvió, con un pero', aviso, 'info', 8000];
+
+        if (tipo === 'CAJA_MOVIMIENTO_CHANGE') {
+            return ['Corrección aplicada',
+                aplicado?.que === 'ANULAR'
+                    ? 'El movimiento quedó anulado en la caja.'
+                    : `El movimiento quedó en ${aplicado?.monto ?? '—'}.`,
+                'success'];
+        }
+        if (tipo === 'ABONO_CREDITO_CHANGE') {
+            return ['Corrección aplicada',
+                r?.que === 'ANULAR'
+                    ? 'El abono quedó anulado y el saldo volvió al crédito.'
+                    : `El abono quedó en ${formatMoney(r?.nuevo?.monto ?? r?.nuevo ?? 0)}.`,
+                'success'];
+        }
+        // ABONO_APROBACION: lo que importa es cuántos entraron y cuántos se
+        // devolvieron, porque rechazar DESHACE el abono en la caja.
+        const filas = Array.isArray(r?.creditos) ? r.creditos : [];
+        const fuera = filas.filter(f => f?.decision === 'RECHAZADO').length;
+        if (modo === 'reject' || fuera === filas.length) {
+            return ['Abono devuelto',
+                filas.length === 1
+                    ? 'El abono se deshizo en la caja y el saldo volvió al crédito.'
+                    : `Se deshicieron ${filas.length} abonos; los saldos volvieron a sus créditos.`,
+                'info', 8000];
+        }
+        return ['Abono confirmado',
+            fuera === 0
+                ? (filas.length === 1 ? 'Queda confirmado.' : `Quedan confirmados los ${filas.length}.`)
+                : `${filas.length - fuera} confirmado${filas.length - fuera === 1 ? '' : 's'} y ${fuera} devuelto${fuera === 1 ? '' : 's'} a su crédito.`,
+            'success'];
     },
 
     /**
@@ -1418,10 +1521,16 @@ export const createRequestsSlice = (set, get) => ({
             if (INVENTARIO_REQUEST_TYPES.has(req.type))
                 return await get()._aprobarInventario(requestId, req, approverId, approverNote, aceptadas);
 
-            // Caja: igual, pero borrando o reescribiendo una línea de la caja
-            // del día. Rechazar tampoco toca nada afuera.
+            /* Caja: igual, pero borrando o reescribiendo una línea de la caja
+             * del día — o confirmando un abono, crédito por crédito. `aceptadas`
+             * viaja porque un abono que cubre tres créditos se puede confirmar
+             * en dos y devolver el tercero.
+             *
+             * Rechazar tampoco toca nada afuera, SALVO un abono en aprobación:
+             * ése ya se aplicó en la caja, así que rechazarlo es DESHACERLO.
+             * Eso se enruta en `rejectRequest`. */
             if (CAJA_REQUEST_TYPES.has(req.type))
-                return await get()._aprobarCaja(requestId, req, approverId, approverNote);
+                return await get()._aprobarCaja(requestId, req, approverId, approverNote, aceptadas);
 
             const currentLevel = req.current_level || 1;
             const nextLevel = currentLevel + 1;
@@ -1545,6 +1654,19 @@ export const createRequestsSlice = (set, get) => ({
     rejectRequest: async (requestId, approverId, approverNote = '', _reqOverride = null) => {
         try {
             const req = await get()._solicitudParaDecidir(requestId, _reqOverride);
+
+            /* Un abono en aprobación YA ENTRÓ a la caja cuando la sala lo
+             * registró —a propósito: dejar el crédito abierto hasta que alguien
+             * firme lo mostraría como deuda del cliente, que es falso—. Así que
+             * rechazarlo no es cambiarle el estado a una fila: es DESHACER el
+             * abono en el sistema de la caja y devolverle el saldo al crédito.
+             *
+             * Con el rechazo genérico, la solicitud quedaba REJECTED, la
+             * pantalla decía «rechazada» y el dinero seguía aplicado. Nadie
+             * habría visto un error. */
+            if (req?.type === 'ABONO_APROBACION') {
+                return await get()._aprobarCaja(requestId, req, approverId, approverNote, null, 'reject');
+            }
 
             /* Mismo candado que al aprobar, y por el mismo motivo: rechazar dos
              * veces manda dos avisos al empleado. El nivel también entra —si la

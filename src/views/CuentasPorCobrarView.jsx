@@ -269,16 +269,29 @@ export default function CuentasPorCobrarView() {
             }
         }
 
+        /* El pago viaja ENTERO, no campo por campo.
+         *
+         * Estaba re-armado a mano —ocho campos copiados uno por uno— y el día
+         * que el diálogo aprendió a pedir aprobación (v2.950.0) los dos campos
+         * nuevos, `motivo` y `requiereAprobacion`, se quedaron afuera. El
+         * diálogo los mandaba, esto los tiraba, y `pagarCreditos` los tiene con
+         * default `false`/`null`: la Edge Function nunca veía la bandera, así
+         * que `pideAprobacion` era false y NO creaba la solicitud. El cobro
+         * entraba igual y el toast decía «Pago registrado» — o sea que el
+         * defecto no tenía ni un síntoma.
+         *
+         * Medido el 2026-09-03: dos abonos de MAPFRE por transferencia
+         * ($35.57 y $10.07, pagos 5 y 6) pedidos con aprobación y cero filas en
+         * `approval_requests`.
+         *
+         * `archivo` es lo único que NO viaja: es el File del navegador y ya se
+         * convirtió en `comprobanteUrl` unas líneas arriba. */
+        const { archivo: _elFile, ...loPedido } = pago;
         const r = await pagarCreditos({
             sala: abonando.branch_id,
-            forma: pago.forma,
-            documento: pago.documento,
-            montoDocumento: pago.montoDocumento,
-            aplicaciones: pago.aplicaciones,
-            fechaDocumento: pago.fechaDocumento,
-            pos: pago.pos,
-            comprobanteUrl,
+            ...loPedido,
             lectura: pago.lectura || null,
+            comprobanteUrl,
         });
         if (r?.error || (r?.ok === false && !r?.aviso)) {
             showToast('No se pudo cobrar', mensajeAmigable(r.error || r), 'error');
@@ -287,9 +300,19 @@ export default function CuentasPorCobrarView() {
         if (r.aviso) showToast('El pago quedó a medias', r.aviso, 'warning');
         else {
             const n = r.aplicaciones?.length || 1;
-            showToast('Pago registrado',
-                `${abonando.cliente} · ${formatMoney(r.aplicado)} en ${n} crédito${n === 1 ? '' : 's'}`,
-                'success');
+            const cuantos = `${abonando.cliente} · ${formatMoney(r.aplicado)} en ${n} crédito${n === 1 ? '' : 's'}`;
+            /* Que el abono ENTRÓ y que además queda por confirmar son dos cosas,
+             * y el mismo toast que decía sólo la primera se lee como que no hay
+             * nada más que esperar. El dinero ya se aplicó a propósito —dejar el
+             * crédito abierto hasta que alguien firme lo dejaría figurando como
+             * deuda del cliente, falso, y entraría al aviso del plazo—, así que
+             * lo que falta es la revisión, no el cobro. */
+            if (r.aprobacionPedida) {
+                showToast('Pago registrado, falta confirmarlo',
+                    `${cuantos}. Queda en Solicitudes para que lo revisen.`, 'info', 8000);
+            } else {
+                showToast('Pago registrado', cuantos, 'success');
+            }
         }
         setAbonando(null);
         cargar();

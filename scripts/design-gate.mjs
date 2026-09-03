@@ -1619,6 +1619,35 @@ function scanFile(path) {
     }
   }
 
+  // ── El editor abierto dos veces sobre la misma foto ───────────────────
+  // Categoría agregada el 2026-09-03. Una pantalla puede apagar el editor
+  // del canónico (`conEditor={false}`) y abrir el suyo, con el tipo de papel
+  // que sabe que va a recibir — hay tres así. Pero entonces tiene que mirar
+  // el `yaPreparado` de `onChange`: cuando la foto llegó del teléfono ya se
+  // recortó, se enderezó y se le dio el acabado allá, y volver a abrir el
+  // editor es pedir dos veces el mismo trabajo sobre una foto que alguien ya
+  // cuadró.
+  //
+  // Lo reportó el usuario: «si ya en el teléfono cuadré y confirmé la foto,
+  // al mandarla, en la computadora me vuelve a pedir que la cuadre». Pasaba
+  // en los TRES. `FileField` ya evitaba abrir el SUYO desde la v2.842.0 —el
+  // dato existía— y lo perdía al llamar a `onChange` sin decirlo.
+  //
+  // No falla nada: la foto se guarda bien. Sólo cuesta el trabajo de la
+  // persona, dos veces, y sólo se ve usándolo con un teléfono en la mano.
+  {
+    const sinComentarios = blanquearComentarios(text);
+    if (/<FileField\b/.test(sinComentarios)
+        && /\bconEditor\s*=\s*\{\s*false\s*\}/.test(sinComentarios)
+        && /\b(EditorDeDocumento|PhotoEditorModal)\b/.test(sinComentarios)
+        && !/\byaPreparado\b/.test(sinComentarios)) {
+      const i = lines.findIndex(l => /\bconEditor\s*=\s*\{\s*false\s*\}/.test(l));
+      findings.push({ line: i + 1,
+        label: 'abre su propio editor y no mira `yaPreparado` — la foto del teléfono se cuadra dos veces',
+        category: 'editor-dos-veces', text: (lines[i] || '').trim().slice(0, 120) });
+    }
+  }
+
   if (!hasException(path, 'inert')) {
     lines.forEach((line, i) => {
       if (isComment[i] || /group-hover:opacity|hover:opacity-100/.test(line)) return;

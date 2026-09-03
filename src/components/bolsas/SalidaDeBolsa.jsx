@@ -447,7 +447,7 @@ export default function SalidaDeBolsa({
      * Se lee la foto CRUDA, antes de recortar: es la que tiene el recuadro que
      * hay que devolver, y recortar primero volvería el recuadro un sinsentido.
      */
-    const alElegirFoto = useCallback(async (f) => {
+    const alElegirFoto = useCallback(async (f, { yaPreparado = false } = {}) => {
         if (!f) { setFoto(null); setLectura(null); setDeLaFoto([]); setPisadosPorLaFoto([]); return; }
         setLeyendo(true);
         setLectura(null);
@@ -588,6 +588,13 @@ export default function SalidaDeBolsa({
         setDeLaFoto(puestos);
         setPisadosPorLaFoto(pisados);
 
+        /* `yaPreparado` = la foto vino del teléfono, donde ya se recortó, se
+         * enderezó y se le dio el acabado. Volver a abrir el editor acá es
+         * pedir dos veces el mismo trabajo, sobre una foto que alguien ya
+         * cuadró — lo reportó el usuario el 2026-09-03. La LECTURA de arriba sí
+         * corre igual: es la que llena el monto y el número, y no tiene nada
+         * que ver con encuadrar. Ver el contrato de `onChange` en `FileField`. */
+        if (yaPreparado) { setFoto(f); return; }
         setPorEditar(f);
     }, [entidad, boleta, monto, nota, n, opciones, t, laFotoManda]);
 

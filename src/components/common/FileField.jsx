@@ -102,6 +102,28 @@ const FileField = memo(({
     // mostraban (`EmployeeFormModal` guarda `file_name` justamente para eso).
     // Un expediente con seis adjuntos donde los seis dicen lo mismo no sirve.
     name,
+    /* ── `onChange(archivo, { yaPreparado })` — el segundo argumento importa ─
+     *
+     * `yaPreparado: true` significa que ESA imagen ya se recortó, se enderezó y
+     * se le dio su acabado: salió del editor —el de acá o el del teléfono— o la
+     * preparó el portal solo. Quien recibe NO tiene que volver a pedir que la
+     * cuadren.
+     *
+     * Existe porque el dato se sabía y se perdía en el camino. `FileField` ya
+     * evitaba abrir SU editor sobre una foto que llegó lista del teléfono
+     * (v2.842.0, sobre este mismo reporte), pero llamaba a `onChange` igual que
+     * con un archivo recién elegido — así que los tres formularios que apagan
+     * el editor de acá (`conEditor={false}`) y abren el suyo lo abrían igual:
+     * la salida de efectivo, el circuito de bolsas y el renglón de bitácoras.
+     *
+     * Reportado por el usuario el 2026-09-03: «si ya en el teléfono cuadré y
+     * confirmé la foto, al mandarla, en la computadora me vuelve a pedir que la
+     * cuadre y arregle». Tenía razón dos veces: pasaba, y pasaba en más de un
+     * sitio.
+     *
+     * Sin el flag —un archivo recién elegido, un PDF— el trato es el de
+     * siempre: no se preparó nada, y quien lo recibe decide qué hacer. Quien no
+     * le importe simplemente ignora el segundo argumento. */
     onChange,
     accept,
     // `maxSizeMB` no es una prop inventada: `FormPharmacovigilance` ya validaba
@@ -226,9 +248,12 @@ const FileField = memo(({
 
     // Lo que sale del editor ya pasó por acá una vez, así que entrega directo:
     // volver a mandarlo a `aceptar` lo devolvería al editor en un bucle.
+    //
+    // Y va con `yaPreparado`: salió del editor, o sea recortado, enderezado y
+    // con su acabado. Ver el contrato de `onChange` en la cabecera.
     const entregar = useCallback(archivo => {
         setRechazo(null);
-        onChange?.(archivo);
+        onChange?.(archivo, { yaPreparado: true });
     }, [onChange]);
 
     /**
@@ -251,7 +276,7 @@ const FileField = memo(({
         /* Lo que ya se preparó no se vuelve a preparar. Ver el efecto de la
          * foto del teléfono: allá se recortó, se enderezó y se le dio el
          * acabado, y repetirlo acá es pedir dos veces el mismo trabajo. */
-        if (yaPreparado) { onChange?.(archivo); return; }
+        if (yaPreparado) { onChange?.(archivo, { yaPreparado: true }); return; }
         /* Una IMAGEN se prepara sola; un PDF va derecho. Recortar un PDF
          * exigiría rasterizarlo para no ganar nada: ya viene encuadrado.
          *
@@ -271,7 +296,7 @@ const FileField = memo(({
                 setPreparando(false);
                 if (r.ok) {
                     setPreparado({ original: archivo, esquinas: r.esquinas, formato: r.formato });
-                    onChange?.(r.archivo);
+                    onChange?.(r.archivo, { yaPreparado: true });
                 } else {
                     setPorEditar(archivo);
                 }

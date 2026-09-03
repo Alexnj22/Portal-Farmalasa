@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.10 — La foto que ya se cuadró en el teléfono no se vuelve a pedir
+
+Reportado por el usuario: *«si ya en el teléfono cuadré y confirmé la foto (por
+QR), al mandarla, en la computadora me vuelve a pedir que la cuadre y arregle.
+Verifica en qué otro lado pasa»*.
+
+Tenía razón dos veces: pasaba, y pasaba en **más de un sitio**.
+
+### El dato existía y se perdía en el camino
+
+`FileField` ya sabía distinguirlo. Cuando la foto llega del teléfono la acepta
+con `yaPreparado: true` y **no abre su editor** — se corrigió en la v2.842.0,
+sobre este mismo reporte. Lo que faltaba es que se lo dijera a quien la recibe:
+llamaba a `onChange(archivo)` exactamente igual que con un archivo recién
+elegido.
+
+Y hay **tres** pantallas que apagan el editor del canónico (`conEditor={false}`)
+para abrir el suyo, con el tipo de papel que saben que van a recibir:
+
+| pantalla | qué adjunta |
+|---|---|
+| `SalidaDeBolsa` | la boleta del POS de una salida de efectivo |
+| `CircuitoDeBolsas` | la foto de respaldo de una diferencia |
+| `CompletarRenglon` | la receta del libro de Bajo receta |
+
+Las tres abrían su editor sobre una foto que ya venía recortada, enderezada y
+con su acabado. **En las tres**, no en la que se reportó.
+
+### El arreglo va en el contrato, no en las tres pantallas
+
+`onChange(archivo, { yaPreparado })`. `yaPreparado: true` significa que esa
+imagen ya se preparó — salió del editor (el de acá o el del teléfono) o la
+preparó el portal solo — y quien la recibe no tiene que volver a pedir que la
+cuadren. Sin el flag, el trato es el de siempre. Quien no le importe ignora el
+segundo argumento.
+
+En `SalidaDeBolsa` hay un matiz que importa: la **lectura** de la boleta sigue
+corriendo igual. Es la que llena el monto y el número, y no tiene nada que ver
+con encuadrar; lo único que se saltea es el editor.
+
+### Categoría nueva en `gate:design`: `editor-dos-veces`
+
+Un archivo que renderiza `<FileField conEditor={false}>` y abre su propio editor
+tiene que mirar `yaPreparado`. Bloqueante en cero, y con su regresión fabricada
+para comprobar que el cero significa algo.
+
+Es la misma lección que el ✕ invisible de ayer y que la prop opt-in de las
+tablas: **no falla nada**. La foto se guarda bien, no hay error, no hay dato de
+menos. Sólo cuesta el trabajo de la persona, dos veces, y sólo se ve con un
+teléfono en la mano.
+
 ## v2.970.9 — El arranque deja de traer el código de bolsas y cortes
 
 `gate:bundle` estaba en rojo con el **entry en 310 kB gzip contra un tope de

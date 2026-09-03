@@ -814,7 +814,15 @@ function Resolver({ bolsa, ocupado, onResolver, onCancelar, salaId, userId }) {
                     accept="image/*"
                     maxSizeMB={10}
                     file={foto}
-                    onChange={(f) => { setErrorFoto(''); if (!f) { setFoto(null); return; } setPorEditar(f); }}
+                    /* `yaPreparado` = vino del teléfono, donde ya se recortó y se
+                       enderezó: abrir el editor otra vez es pedir dos veces el
+                       mismo trabajo. Ver el contrato de `onChange` en `FileField`. */
+                    onChange={(f, { yaPreparado } = {}) => {
+                        setErrorFoto('');
+                        if (!f) { setFoto(null); return; }
+                        if (yaPreparado) { setFoto(f); return; }
+                        setPorEditar(f);
+                    }}
                     emptyState="neutral"
                     hint="El vale, la boleta del depósito o lo que respalde la causa. Antes de guardarla vas a poder recortarla."
                 />

@@ -608,11 +608,17 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     conEditor={false}
                     label="Foto de la receta"
                     file={archivo}
-                    onChange={(f) => {
+                    onChange={(f, { yaPreparado } = {}) => {
                         // Un PDF ya viene de un escáner: no hay nada que
                         // recortar ni aclarar, y meterlo por el editor lo
                         // convertiría en una imagen peor que el original.
-                        if (f && f.type?.startsWith('image/')) setPorEditar(f);
+                        //
+                        // Y `yaPreparado` significa que la foto llegó del
+                        // teléfono ya recortada y enderezada: volver a abrir el
+                        // editor es pedir dos veces el mismo trabajo, sobre una
+                        // foto que alguien ya cuadró. Ver el contrato de
+                        // `onChange` en `FileField`.
+                        if (f && !yaPreparado && f.type?.startsWith('image/')) setPorEditar(f);
                         else setArchivo(f);
                     }}
                     accept="image/*,application/pdf"

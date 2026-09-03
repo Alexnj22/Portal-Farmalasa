@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.969.4 — La tarjeta de la entrega, más chica
+
+Salió al doble de tamaño del que necesita. Dos cosas la inflaban, y la segunda
+es la que se veía en pantalla: cada lado del traspaso llevaba `flex-1`, así que
+en un monitor ancho **las dos caras quedaban a 800px una de la otra** — un
+traspaso dibujado así deja de leerse como un traspaso, porque la flecha ya no
+une nada. Ahora los dos lados se juntan a la izquierda y la flecha hace su
+trabajo.
+
+Lo demás es medida: fotos de 48 a 36px, la flecha de 36 a 28, el rótulo y la
+hora a `text-micro`, el nombre a `text-body-sm` y el relleno de la tarjeta de
+`p-4 md:p-5` a `px-4 py-3`. El teléfono sigue apilando con la flecha hacia
+abajo: dos caras y dos nombres miden ~356px y no entran en 340 sin cortar el
+nombre, que es el dato.
+
 ## v2.969.3 — La entrega de la caja se ve con la cara de quien recibe
 
 v2.969.2 puso la entrega en la cuarta tarjeta del carril y el usuario la

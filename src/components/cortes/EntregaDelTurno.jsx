@@ -73,29 +73,35 @@ export default function EntregaDelTurno({ corte, personas }) {
     const hora = String(corte.hora || '').slice(0, 5);
 
     return (
-        <div data-surface="card" className="rounded-2xl p-4 md:p-5 space-y-3">
+        <div data-surface="card" className="rounded-2xl px-4 py-3 space-y-2">
             <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                <h3 className="text-micro font-black uppercase tracking-widest text-content-3">
                     La caja de este turno
                 </h3>
                 {hora && (
-                    <span className="text-caption text-content-3 tabular-nums">
+                    <span className="text-micro text-content-3 tabular-nums">
                         se entregó en el corte de las {hora}
                     </span>
                 )}
             </div>
 
-            {/* En el teléfono el traspaso se apila y la flecha apunta hacia
-                abajo: dos caras, dos nombres y una flecha no entran en 340px sin
-                cortar los dos nombres, que es el dato. */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            {/* Los dos lados se JUNTAN, no se reparten la fila. Con `flex-1`
+                cada uno se llevaba media pantalla y en un monitor ancho las dos
+                caras quedaban a 800px una de la otra: un traspaso dibujado así
+                deja de leerse como un traspaso. Pegados, la flecha hace el
+                trabajo que le toca.
+
+                En el teléfono se apila con la flecha hacia abajo: dos caras y
+                dos nombres miden ~356px y no entran en 340 sin cortar el
+                nombre, que es el dato. */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                 {izquierda && <Persona emp={izquierda.emp} rotulo={izquierda.rotulo} />}
 
-                <div className={`shrink-0 self-start sm:self-center ml-6 sm:ml-0
-                    w-9 h-9 rounded-full flex items-center justify-center
+                <div className={`shrink-0 self-start sm:self-center ml-5 sm:ml-0
+                    w-7 h-7 rounded-full flex items-center justify-center
                     ${recibida ? 'bg-success/15 text-success-text' : 'bg-warning/15 text-warning-text'}`}>
-                    <ArrowDown size={18} strokeWidth={2.5} className="sm:hidden" />
-                    <ArrowRight size={18} strokeWidth={2.5} className="hidden sm:block" />
+                    <ArrowDown size={15} strokeWidth={2.5} className="sm:hidden" />
+                    <ArrowRight size={15} strokeWidth={2.5} className="hidden sm:block" />
                 </div>
 
                 {recibida
@@ -108,17 +114,17 @@ export default function EntregaDelTurno({ corte, personas }) {
 
 function Persona({ emp, rotulo, destacada = false }) {
     return (
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-            <AvatarConEstado emp={emp} px={48} radio="rounded-full"
-                marco="border-2 border-border-card" className="shadow shrink-0" />
+        <div className="flex items-center gap-2.5 min-w-0">
+            <AvatarConEstado emp={emp} px={36} radio="rounded-full"
+                marco="border-2 border-border-card" className="shadow-sm shrink-0" />
             <div className="min-w-0">
-                <p className={`text-label font-bold ${destacada ? 'text-success-text' : 'text-content-3'}`}>
+                <p className={`text-micro font-bold ${destacada ? 'text-success-text' : 'text-content-3'}`}>
                     {rotulo}
                 </p>
                 {/* El nombre CORTO, el mismo del resto del portal: la caja
                     escribe «RODRIGO EDUARDO MARQUEZ» y truncado se pierde el
                     apellido, que es lo que distingue a dos Rodrigos. */}
-                <p className={`text-body font-bold truncate ${destacada ? 'text-success-text' : 'text-content'}`}
+                <p className={`text-body-sm font-bold truncate leading-tight ${destacada ? 'text-success-text' : 'text-content'}`}
                     title={emp?.name || undefined}>
                     {shortEmployeeName(emp)}
                 </p>
@@ -129,16 +135,16 @@ function Persona({ emp, rotulo, destacada = false }) {
 
 function SinRecibir({ motivo }) {
     return (
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-2.5 min-w-0">
             {/* Punteado y vacío: el hueco ES el dato. Un avatar gris se leería
                 como una persona que no tiene foto. */}
-            <div className="w-12 h-12 rounded-full shrink-0 border-2 border-dashed border-warning/60
+            <div className="w-9 h-9 rounded-full shrink-0 border-2 border-dashed border-warning/60
                 flex items-center justify-center">
-                <UserX size={20} strokeWidth={2} className="text-warning-text" />
+                <UserX size={16} strokeWidth={2} className="text-warning-text" />
             </div>
             <div className="min-w-0">
-                <p className="text-label font-bold text-warning-text">Nadie la recibió</p>
-                <p className="text-body-sm text-content-2 truncate" title={motivo || undefined}>
+                <p className="text-micro font-bold text-warning-text">Nadie la recibió</p>
+                <p className="text-body-sm text-content-2 truncate leading-tight" title={motivo || undefined}>
                     {motivo || 'se confirmó sin entregar la caja'}
                 </p>
             </div>

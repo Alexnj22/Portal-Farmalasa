@@ -928,9 +928,69 @@ export async function anotarValesEnCaja({ simular = false, sala = null } = {}) {
 // Abrir, anotar un ingreso y cerrar el día. El corte va aparte (`hacerCorte`)
 // porque tiene su propia regla: el conteo a ciegas.
 
-/** ¿La caja de esta sala está abierta ahora? Lo contesta el sistema, no el portal. */
+/**
+ * ¿La caja de esta sala está abierta ahora, y con cuánto?
+ *
+ * **Lo contesta el PORTAL.** Hasta v2.969.0 esta línea era una raspada al
+ * sistema de la caja —login, fijar la sucursal, la pantalla de cajas y un panel
+ * por cada caja, todo en serie— y estaba PRIMERA y SOLA en la carga de la
+ * vista: nada más arrancaba hasta que contestara. Medido sobre 813 llamadas:
+ * p50 815 ms, p90 1,427 ms, p99 6,903 ms.
+ *
+ * Lo que iba a buscar allá ya estaba acá: el día, los cortes, quién abrió y el
+ * efectivo la propia función los leía de la base DESPUÉS de raspar, y la caja,
+ * el turno, la hora y el monto de apertura los escribe el barrido de aperturas
+ * mirando ese mismo panel. El único que no estaba —«Monto Registrado»— resultó
+ * ser `apertura + ventas FINALIZADAS del día`, verificado al centavo en las
+ * seis salas; el detalle de la medición está en la migración
+ * `20260903184944_caja_estado_sin_raspar_el_origen`.
+ *
+ * Y sale MÁS FRESCO que antes: las ventas sincronizan cada minuto, contra los
+ * 30 del barrido que alimentaba al panel.
+ */
 export async function estadoDeCaja(sala) {
+    const { data, error } = await supabase.rpc('caja_estado', { p_branch_id: Number(sala) });
+    if (error) return { error };
+    if (!data || data.ok !== true) return { error: new Error(data?.error || 'NO_SE_PUDO') };
+    return data;
+}
+
+/**
+ * El mismo estado, pero preguntado al sistema de la caja.
+ *
+ * Queda para REVALIDAR, no para pintar: ver `hayQuePreguntarleAlOrigen`. Sigue
+ * siendo la única respuesta que sabe algo que el portal no puede saber —que
+ * alguien abrió o cerró el turno desde la caja misma, sin pasar por acá—.
+ */
+export async function estadoDeCajaEnElOrigen(sala) {
     return operar({ accion: 'estado', sala });
+}
+
+/** La cadencia del barrido de aperturas (30 min) más un margen. */
+const FRESCURA_MAXIMA_SEG = 40 * 60;
+
+/**
+ * ¿La respuesta local alcanza, o además hay que preguntarle al origen?
+ *
+ * Dos casos y nada más, porque son los dos únicos en los que el portal puede
+ * estar diciendo algo que ya no es cierto:
+ *
+ * 1. **Dice que está CERRADA.** Abrir el turno desde la caja misma no pasa por
+ *    el portal, así que ese cambio el espejo no lo tiene hasta el próximo
+ *    barrido. Es además el momento del día en que la sala mira la pantalla.
+ * 2. **El espejo dejó de mantenerse.** Su cadencia son 30 minutos; más de 40
+ *    quiere decir que el barrido no está corriendo, y entonces la respuesta es
+ *    de otro rato aunque parezca de ahora.
+ *
+ * Con la caja ABIERTA y el espejo al día no se pregunta: lo único que podría
+ * haber cambiado es que se cerrara, y cerrar es el acto que el portal hace. Si
+ * aun así se cerró por fuera, lo que la pantalla ofrece —cortar, sacar— pasa
+ * por `operar-caja`, que lee el panel vivo y lo rechaza con su motivo.
+ */
+export function hayQuePreguntarleAlOrigen(estado) {
+    if (!estado || estado.error) return true;
+    if (!estado.abierta) return true;
+    return (estado.frescura_seg ?? Infinity) > FRESCURA_MAXIMA_SEG;
 }
 
 /**

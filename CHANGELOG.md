@@ -21,6 +21,91 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.0 — El estado de la caja se contesta sin salir del portal
+
+Reporte: *«por qué es tan lento entrar aquí, tarda mucho en ver los datos»*
+(`/caja?sala=4`).
+
+La base no tenía nada que ver: todas sus consultas están por debajo de 150 ms.
+Lo lento eran **doce saltos en serie** antes de pintar un dato, y el primero de
+los doce era una raspada al sistema de la caja — login, fijar la sucursal, la
+pantalla de cajas y un panel por cada caja, todo encadenado — con la pantalla en
+blanco esperándola. Medido sobre 813 llamadas: **p50 815 ms, p90 1,427 ms, p99
+6,903 ms**; 13 pasaron de cinco segundos.
+
+**Lo que iba a buscar allá ya estaba acá.** De los diez campos que devolvía, el
+día, los cortes, quién abrió y el efectivo los leía de la base *después* de
+raspar; la caja, el turno, la hora y el monto de apertura los escribe el barrido
+de aperturas mirando ese mismo panel. Quedaban dos:
+
+- **«Monto Registrado» resultó ser `apertura + ventas FINALIZADAS del día`.**
+  Verificado dos veces contra el panel, con las ventas cortadas a la hora exacta
+  del snapshot: **seis salas de seis, exacto al centavo**, en dos momentos
+  distintos del día. Dos cosas que la medición decidió y que leyendo el SQL se
+  habrían escrito al revés: las entradas y salidas **no** entran (el residuo de
+  las seis dio exactamente `entradas − salidas`), y el filtro por FINALIZADA es
+  lo único que separa las dos fórmulas — los días sin ninguna anulada no
+  distinguen, y sobre los que sí tienen una la diferencia es justo el monto de la
+  anulada. Y el número derivado sale **más fresco** que el que traía el panel:
+  las ventas sincronizan cada minuto, contra los 30 del barrido.
+- **`turno_corriendo` era el único que no estaba, y no lo leía nadie.** Se guarda
+  igual (`cortes_caja_aperturas.turno_corriendo`, lo observa el barrido con el
+  mismo panel que ya descarga) para que la respuesta local diga exactamente lo
+  mismo que decía la raspada. En la primera corrida ya distinguió una sala con
+  apertura vigente y el turno sin iniciar.
+
+Lo contesta `caja_estado(sala)`: **17.5 ms**, con los mismos dos frenos que
+`operar-caja` —`caja_vales can_view` y el alcance— verificados los dos.
+
+**Y se le sigue preguntando al origen, pero sólo cuando puede saber algo que el
+portal no.** Dos casos: que la caja figure cerrada (abrir el turno desde la caja
+misma no pasa por el portal) o que el espejo haya dejado de mantenerse. Con la
+caja abierta y el espejo al día no se pregunta, que es el caso de casi todo el
+día. Va **después** de pintar: su respuesta corrige la tarjeta, no la estrena.
+Y cerrar el día ahora cierra el espejo en el acto — sin eso, la sala que acaba
+de cerrar vería «Abierta» hasta media hora después, que es justo el momento en
+que se mira la pantalla para comprobar que pasó.
+
+**Los otros cinco pasos en serie eran dos.** Los cortes del día sólo necesitaban
+la fecha, que ya estaba: entraron a la misma tanda paralela. Los tres pedidos de
+caras —los movimientos, los cortes y las bolsas— son uno solo, y cada uno además
+firmaba fotos, así que eran seis viajes para lo mismo. Y `setCargando(false)`
+estaba en la última línea: ahora se pinta apenas los datos están, y las caras y
+los saldos llegan después, que es la regla que la vista de Cortes ya seguía.
+
+**El chunk de «Hoy» ya no espera al de la vista.** `MiCajaView` es una pestaña
+diferida dentro de `CortesView`, así que el navegador no se enteraba de que
+existía hasta bajar y evaluar la primera: dos viajes en fila de ~215 ms cada
+uno, medidos contra producción. Ahora la promesa se empieza en el cuerpo del
+módulo y la precarga de la ruta pide las dos juntas. Siguen siendo dos chunks
+—Contabilidad, que no tiene `caja_vales`, no evalúa el de «Hoy»—: cambia cuándo
+se piden, no quién los paga.
+
+**Lo medido, de punta a punta** (latencia de origen de producción + 77 ms por
+viaje de red, medidos con la conexión abierta):
+
+| | antes | ahora |
+|---|---:|---:|
+| saltos en serie antes de pintar | 12 | **3** |
+| hasta el primer dato en pantalla (p50) | 2,465 ms | **473 ms** |
+| ídem (p90) | 3,575 ms | **612 ms** |
+| cola de p99 del origen en el camino crítico | 6,903 ms | **no está** |
+| raspadas al sistema de la caja por día | ~800 × (3+N peticiones) | **sólo al abrir** |
+
+Y con la conexión mala el ahorro crece, porque lo que se quitó son nueve de doce
+saltos y no una cantidad fija de milisegundos.
+
+Un efecto que no es de velocidad y vale igual: **la pantalla ahora funciona con
+el sistema de la caja caído**. Antes decía «No se pudo leer».
+
+- `caja_estado(sala)` — plpgsql, DEFINER, 17.5 ms · migración
+  `20260903184944_caja_estado_sin_raspar_el_origen`
+- `cortes_caja_aperturas.turno_corriendo` — lo observa `sync-aperturas-caja`
+- `operar-caja` — cierra el espejo al cerrar el día
+- `MiCajaView` — dos tandas paralelas en vez de siete pasos, con token de carrera
+  para que una tanda que vuelve tarde no escriba sobre la sala de otra
+- `routeImporters` — `CajaCompleta` precarga los dos chunks a la vez
+
 ## v2.969.6 — La entrega vive en el panel del día, y son todas
 
 Tercera forma y la que quedó, elegida sobre cinco maquetas. La tarjeta propia

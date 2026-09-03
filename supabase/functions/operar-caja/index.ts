@@ -1106,6 +1106,29 @@ Deno.serve(async (req) => {
      * diría «no hay Z» siempre. Y si la comprobación falla, el cierre YA ocurrió
      * — se contesta `ok: true` con el aviso, nunca un error que invite a
      * cerrar de nuevo. */
+    /* ── EL ESPEJO SE CIERRA ACÁ MISMO ───────────────────────────────────
+     *
+     * `cortes_caja_aperturas` es lo que ahora contesta «¿está abierta?» —la
+     * pantalla dejó de raspar el panel para pintarse (`caja_estado`)— y quien
+     * lo mantiene es un barrido cada 30 minutos. Sin esta línea, la sala que
+     * acaba de cerrar el día vería «Abierta» hasta media hora después, y el
+     * cierre es justo el momento en que se mira la pantalla para comprobar que
+     * pasó.
+     *
+     * Abrir no necesita su gemela: con la caja figurando cerrada, el portal le
+     * pregunta al origen igual (ver `hayQuePreguntarleAlOrigen`). Cerrar sí,
+     * porque ahí el espejo dice «abierta» y esa respuesta no se revalida.
+     *
+     * El error se registra y NO corta: la caja YA cerró, y devolver un fallo
+     * acá invitaría a cerrar de nuevo sobre un día que ya emitió su Z. */
+    {
+      const { error: errEspejo } = await supabase.from("cortes_caja_aperturas")
+        .update({ cerrada_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("branch_id", sala).eq("erp_apertura_id", Number(estado.aper))
+        .is("cerrada_at", null);
+      if (errEspejo) console.error(`[operar-caja] cerrando el espejo sala=${sala}: ${errEspejo.message}`);
+    }
+
     let zEmitido: boolean | null = null;
     try {
       const listado = await (await fetch(CORTE_URL, {

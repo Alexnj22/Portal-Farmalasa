@@ -20,7 +20,26 @@ import FichasDeCaja from '../components/cortes/FichasDeCaja';
  * la boleta— y quien entra sólo a mirar cortes (Contabilidad no tiene
  * `caja_vales`) no los va a abrir nunca. Cargarla con la vista fundiría los dos
  * chunks y le cobraría a todo el mundo el peso de operar. */
-const MiCajaView = lazy(() => import('./MiCajaView'));
+/* ── Y SE EMPIEZA A BAJAR APENAS ESTE ARCHIVO CORRE ──────────────────────────
+ *
+ * Diferida no quiere decir tarde. Con el `lazy()` solo, el navegador no se
+ * entera de que existe hasta que React va a pintarla: primero baja y evalúa el
+ * chunk de esta vista, y RECIÉN AHÍ pide el de «Hoy». Son dos viajes en fila
+ * —medidos contra producción, ~215 ms cada uno— y el segundo no podía arrancar
+ * antes del primero aunque la conexión estuviera libre.
+ *
+ * La promesa se empieza acá, en el cuerpo del módulo: los dos chunks viajan a
+ * la vez y `lazy` se cuelga de la que ya está en vuelo. Lo que NO cambia es
+ * quién paga el peso —sigue fuera del chunk de esta vista, así que Contabilidad
+ * no lo evalúa nunca— sólo cuándo se pide.
+ *
+ * `catch` vacío a propósito: si falla, `lazy` lo vuelve a pedir por su cuenta y
+ * muestra su propio error. Un rechazo sin manejar acá sería un error de consola
+ * sobre un archivo que quizá nadie iba a abrir. */
+const traerMiCaja = () => import('./MiCajaView');
+const miCajaEnVuelo = traerMiCaja();
+miCajaEnVuelo.catch(() => {});
+const MiCajaView = lazy(() => miCajaEnVuelo.catch(traerMiCaja));
 import MovimientosDeCaja from '../components/cortes/MovimientosDeCaja';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
 import { useStaffStore as useStaff } from '../store/staffStore';

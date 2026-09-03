@@ -39,6 +39,21 @@ export const IMPORTADORES = {
     BolsasView: () => import("../views/BolsasView"),
     CuentasPorCobrarView: () => import("../views/CuentasPorCobrarView"),
     MiCajaView: () => import("../views/MiCajaView"),
+    /* «Efectivo» son DOS chunks y el segundo no se puede descubrir solo.
+     *
+     * `CortesView` es el anfitrión y `MiCajaView` su pestaña «Hoy», diferida
+     * adentro. Precargando sólo al anfitrión, el navegador no se entera de que
+     * la otra existe hasta que baja y EVALÚA la primera: dos viajes en fila de
+     * ~215 ms cada uno, medidos contra producción, y el segundo no podía
+     * arrancar antes aunque la conexión estuviera libre.
+     *
+     * Pedirlas juntas las pone a viajar a la vez. No cambia quién paga el peso
+     * —siguen siendo dos chunks, así que Contabilidad, que no tiene
+     * `caja_vales`, nunca evalúa el de «Hoy»— sólo cuándo se piden. */
+    CajaCompleta: () => Promise.all([
+        import("../views/CortesView"),
+        import("../views/MiCajaView"),
+    ]).then(([anfitrion]) => anfitrion),
     ProductosView: () => import("../views/ProductosView"),
     LaboratoriosView: () => import("../views/LaboratoriosView"),
     PedidosView: () => import("../views/PedidosView"),
@@ -158,9 +173,10 @@ export const IMPORTADOR_POR_RUTA = {
     'bolsas': IMPORTADORES.BolsasView,
     'cuentas-por-cobrar': IMPORTADORES.CuentasPorCobrarView,
     // «Efectivo» ES `CortesView` desde v2.914.0 — `MiCajaView` es su pestaña
-    // «Hoy» y viaja adentro, así que precargar la ruta tiene que traer el
-    // anfitrión y no la pestaña.
-    'caja': IMPORTADORES.CortesView,
+    // «Hoy» y viaja adentro. Precargar la ruta tiene que traer LAS DOS: con el
+    // anfitrión solo, el chunk de la pestaña esperaba a que éste terminara de
+    // evaluarse. Ver `CajaCompleta`.
+    'caja': IMPORTADORES.CajaCompleta,
     'ventas-perdidas': IMPORTADORES.VentasPperdidasView,
 };
 

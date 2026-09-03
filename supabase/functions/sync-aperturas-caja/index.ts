@@ -151,6 +151,7 @@ type Panel = {
   turno: number | null;
   monto_apertura: number | null;
   monto_registrado: number | null;
+  turno_corriendo: boolean;
 };
 
 /**
@@ -169,6 +170,14 @@ function leerPanel(html: string): Panel | null {
   const hora = campo("Hora Apertura");
   return {
     erp_apertura_id: Number(id),
+    /* «Apertura vigente» y «turno corriendo» son dos estados, y el segundo se
+     * lee de CUÁL de las dos formas trajo el id: el enlace `id_apertura=` sólo
+     * está mientras el turno corre; en cuanto tiene su corte, el número
+     * sobrevive nada más en el campo escondido y el panel ofrece «Iniciar
+     * Turno». Se guarda porque es el único dato del panel que el espejo no
+     * tenía, y sin él `caja_estado` no podría contestar lo mismo que la
+     * raspada que reemplaza. */
+    turno_corriendo: /id_apertura=\d+/.test(html),
     // El número con el que la CAJA identifica a quien abrió; viene en el enlace
     // del cierre. No es la ficha del portal, y hace falta para que el portal
     // pueda abrir después con el mismo empleado que esa sala ya usa.
@@ -338,6 +347,7 @@ Deno.serve(async (req) => {
             abierta_a: panel.abierta_a,
             monto_apertura: panel.monto_apertura,
             monto_registrado: panel.monto_registrado,
+            turno_corriendo: panel.turno_corriendo,
             vista_at: ahora,
             cerrada_at: null,
             updated_at: ahora,

@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.969.2 — Hoy dice quién recibió la caja
+
+La entrega salió a producción el 3-sep y esa misma tarde Salud 2 la usó por
+primera vez: el corte de las 12:05 lo confirmó Cristian Humberto y la caja la
+recibió Karen Figueroa. **Ese nombre no se veía en «Hoy».** Se pedía al
+confirmar, se guardaba en la fila y después la pantalla donde trabaja la sala no
+lo mostraba en ninguna parte — lo reportó el usuario: *«en ningún lado me sale
+quién recibe»*. En Cortes sí salía, en la tarjeta y en el detalle.
+
+Dos sitios, porque ninguno de los dos alcanza solo:
+
+- **La cuarta tarjeta del carril.** Cuando el último corte tiene entrega, cambia
+  de rótulo: «Recibió la caja · Karen Figueroa», y quien confirmó baja a la
+  línea de abajo. No es una quinta tarjeta —el carril es de cuatro fijas (§17.0,
+  y el pedido del 1-sep de no cargar las cards)— ni una línea agregada a
+  «Confirmado», porque «Confirmado · Karen» nombraría a Karen como quien
+  confirmó, que es otra persona. Sin entrega la tarjeta dice lo de siempre, y un
+  corte confirmado **sin** entregar lo dice con todas sus letras: es la mitad
+  «avisar» de la decisión del 3-sep.
+- **El encabezado de cada tramo de movimientos**, donde cabe el nombre completo
+  y queda pegado a lo que ese corte contó. `repartirPorCorte` arma una marca
+  reducida del corte, así que ahí no viajaban ni `recibe` ni `entrega`.
+
+La tarjeta va **además** del encabezado y no en su lugar porque el encabezado
+puede no existir: un corte sin movimientos no arma grupo, y la respuesta
+desaparecería sin que nada avisara. El carril se pinta siempre.
+
 ## v2.969.1 — Sin id no hay aro: las firmas de bitácoras nunca lo mostraron
 
 La pregunta era si las 72 fotos del portal tienen aro de estado. Censadas una

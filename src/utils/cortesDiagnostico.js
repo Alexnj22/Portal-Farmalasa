@@ -297,6 +297,16 @@ export function repartirPorCorte(lineas, cortes) {
             tipo: c.tipo,
             hora: String(c.hora || '').slice(0, 5),
             en: Date.parse(`${c.fecha}T${c.hora}-06:00`),
+            /* A QUIÉN se le entregó la caja al confirmarlo. Confirmar un corte
+             * cierra el turno, así que es el mismo acto: el encabezado del
+             * tramo es el único sitio de «Hoy» donde ese nombre puede salir
+             * pegado a lo que ese corte contó.
+             *
+             * Sale de `cortes_caja`; con `CAMPOS_RESUMEN` esas dos columnas no
+             * viajan y quedan en `null` — la ausencia, que es la verdad, y no
+             * un nombre inventado. */
+            recibe: c.recibe?.name || null,
+            entrega: c.entrega || null,
         }))
         .filter((c) => Number.isFinite(c.en))
         // De la más nueva a la más vieja: la lista se lee así.

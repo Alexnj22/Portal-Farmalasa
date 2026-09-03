@@ -13,11 +13,6 @@ import {
     aplicarCorreccionDeCaja,
     fetchPersonasDeSolicitudes,
 } from '../../data/requests';
-/* Las dos de cuentas por cobrar. Van por `creditos-erp` y no por `operar-caja`
- * aunque las tres sean «de caja»: son tres acciones distintas en dos funciones
- * distintas, y el enrutado por familia las mandaba a las tres al mismo sitio.
- * Ver `_aprobarCaja`. */
-import { aplicarCorreccionDeAbono, resolverAbonoEnAprobacion } from '../../data/creditos';
 // El horario se escribe UN día a la vez desde el 2026-08-27: leer el roster,
 // tocarle una clave y reescribirlo entero pierde lo que otra sesión haya
 // guardado en otro día de esa misma semana.
@@ -1181,11 +1176,24 @@ export const createRequestsSlice = (set, get) => ({
     _aprobarCaja: async (requestId, req, approverId, approverNote, aceptadas = null, modo = 'approve') => {
         const meta = parseMeta(req.metadata);
 
+        /* ── Las dos de cuentas por cobrar entran por `await import()` ─────
+         *
+         * Van por `creditos-erp` y no por `operar-caja` aunque las tres sean
+         * «de caja»: son tres acciones distintas en dos funciones distintas, y
+         * el enrutado por familia las mandaba a las tres al mismo sitio.
+         *
+         * Y se traen ACÁ y no arriba con un `import` estático. Este slice lo
+         * carga `staffStore`, que lo carga `App.jsx`, así que todo lo que
+         * importe viaja en el chunk de arranque: **dos funciones que sólo corren
+         * cuando alguien aprueba una corrección** metían `data/creditos` entero
+         * —18.8 kB— en lo que baja el portal en frío. Aprobar ya es una acción
+         * con red de por medio, así que el viaje del módulo no se nota; el
+         * arranque sí. Medido con `npm run gate:bundle`. */
         const r = req.type === 'CAJA_MOVIMIENTO_CHANGE'
             ? await aplicarCorreccionDeCaja(requestId, meta.branch_id, approverNote)
             : req.type === 'ABONO_CREDITO_CHANGE'
-                ? await aplicarCorreccionDeAbono(requestId)
-                : await resolverAbonoEnAprobacion({
+                ? await (await import('../../data/creditos')).aplicarCorreccionDeAbono(requestId)
+                : await (await import('../../data/creditos')).resolverAbonoEnAprobacion({
                     solicitud: requestId,
                     decisiones: get()._decisionesDeAbono(meta, aceptadas, approverNote, modo),
                 });

@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { aBase64Reducido } from '../utils/fotoParaLeer';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { repartoDeUnaSalida } from '../utils/cortesDiagnostico';
@@ -618,41 +619,6 @@ export async function fetchEntidadesDeSalida() {
 }
 
 /**
- * La foto del comprobante del POS. Bucket privado; se guarda la URL en formato
- * público como identificador porque la firmada expira (regla 10 de CLAUDE.md).
- */
-// La foto viaja REDUCIDA, no como salió del teléfono.
-//
-// Un teléfono actual saca 4000 px y 3–4 MB. Eso son tres problemas a la vez: la
-// subida se arrastra en la conexión de una sala, y un lector cobra la imagen por
-// PÍXELES —así que la foto cruda cuesta unas cinco veces más que ésta y tarda
-// más en contestar—. 1400 px de lado largo alcanza de sobra para leer el número
-// y el monto de una boleta térmica; el archivo que se GUARDA no pasa por acá,
-// sale del editor a su tamaño de siempre.
-const LADO_PARA_LEER = 1400;
-
-export function aBase64Reducido(archivo) {
-    return new Promise((res, rej) => {
-        const url = URL.createObjectURL(archivo);
-        const img = new Image();
-        img.onload = () => {
-            URL.revokeObjectURL(url);
-            // Nunca se AGRANDA: estirar una foto chica no agrega información.
-            const escala = Math.min(1, LADO_PARA_LEER / Math.max(img.width, img.height));
-            const c = document.createElement('canvas');
-            c.width  = Math.max(1, Math.round(img.width * escala));
-            c.height = Math.max(1, Math.round(img.height * escala));
-            const ctx = c.getContext('2d');
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, 0, 0, c.width, c.height);
-            res(c.toDataURL('image/jpeg', 0.8).split(',')[1] || '');
-        };
-        img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('No se pudo leer la foto.')); };
-        img.src = url;
-    });
-}
-
-/**
  * Lee la foto del comprobante y la cuadra contra lo que se escribió.
  *
  * Se llama ANTES de guardar y ANTES de subir nada: la imagen viaja en base64 a
@@ -693,6 +659,10 @@ export async function guardarLecturaDeBoleta(operacionId, lectura) {
     if (error) console.error('bolsas: no se pudo guardar la lectura de la boleta:', error.message);
 }
 
+/**
+ * La foto del comprobante del POS. Bucket privado; se guarda la URL en formato
+ * público como identificador porque la firmada expira (regla 10 de CLAUDE.md).
+ */
 export async function subirComprobante(archivo, { salaId, userId }) {
     const ext = (archivo.name.split('.').pop() || 'jpg').toLowerCase();
     const path = `bolsas/${salaId ?? 'sin-sala'}/${userId ?? 'anon'}/${Date.now()}.${ext}`;

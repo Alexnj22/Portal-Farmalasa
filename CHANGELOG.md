@@ -21,6 +21,98 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.967.7 — Los dos procedimientos que habilitan las bitácoras digitales, en borrador
+
+Son lo único que faltaba para poder llevar las bitácoras sólo en digital, y no
+son software. Quedaron en `docs/legal/procedimientos/`, redactados con lo que el
+sistema hace **hoy** —medido, no supuesto— y con corchetes sólo donde la decisión
+es de la empresa:
+
+- **`BORRADOR-A-manejo-de-documentacion-digital.md`** (RTS 6.1.14). Qué
+  registros son digitales, cómo se anotan, qué pasa con una lectura fuera de
+  rango, cómo se corrige sin borrar, cómo se cierra el mes y cómo se imprime. Con
+  la tabla de cómo se cumple cada uno de los cinco adjetivos ALCOA.
+- **`BORRADOR-B-supervision-del-sistema-electronico.md`** (RTS 6.1.15 · Guía
+  3.6). Las cinco secciones que la norma nombra, con esos mismos nombres para que
+  el inspector las encuentre: nivel de acceso, resguardo de datos, forma de
+  registro, respaldo y evaluación periódica.
+
+**Y redactarlos destapó algo que hay que resolver antes de firmar.** El cierre
+mensual es el equivalente digital de la firma y sello del regente (6.1.12), y
+midiendo los permisos resultó que **lo pueden hacer cinco cargos**: Regente,
+Supervisor/a de Ventas, Gerente General, Administrador y Jefe/a de Talento
+Humano. El único cierre que existe en la base —La Popular, agosto— **no lo hizo
+el regente**.
+
+O sea que el documento **no se puede firmar diciendo que el regente autoriza el
+mes** mientras eso sea así. Las dos salidas están escritas en el punto 2.3 del
+borrador B: dejar el cierre sólo al regente (con suplente nombrado por escrito si
+hace falta), o mantener los cinco cargos y declarar que lo que vale es su firma
+en la hoja impresa. Es una decisión de la empresa, así que **no se tocó ningún
+permiso**.
+
+La otra sección con hueco real es la **evaluación periódica**: es la única de las
+cinco que no existía ni como práctica. El borrador propone semestral con ocho
+puntos concretos de revisión —incluido «quién puede cerrar el mes»— para que se
+ajuste, no para que se acepte tal cual.
+
+Contexto y citas completas en
+`docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.
+
+## v2.968.0 — El cobro que espera firma no se aplica: el crédito sigue con saldo
+
+Decisión del usuario mirando la pantalla: *«ahorita sale como pagado, ¿no
+debería quedar como pendiente y con saldo? Cambiaría hasta la aprobación: si se
+aprueba pasa a pagado, si se descarta continúa con saldo»*.
+
+Invierte lo del 2-sep —«el abono YA entró y no se hace esperar»— con el motivo
+enfrente. El argumento viejo era bueno (un crédito abierto figuraría como deuda
+falsa y entraría al aviso del plazo) pero el nuevo pesa más: **un abono aplicado
+deja el crédito en $0.00, y un cero que todavía puede volver a subir se lee como
+cobrado.** Nadie mira la solicitud que hay detrás.
+
+Ahora el cobro se **guarda** con todo lo necesario para aplicarlo —forma, monto,
+documento, comprobante, los renglones con su saldo—, y no toca el origen.
+Confirmar es **abonar de verdad**; devolver no deshace nada, porque el saldo
+nunca bajó.
+
+**El efectivo queda afuera, y no es una preferencia.** Ese dinero está en el
+cajón desde que el cliente lo puso: sin registrarlo, el conteo del día daría un
+sobrante del tamaño del cobro — el mismo defecto que costó anunciar +$78.40
+sobre un faltante de $9.85, al revés. La pantalla ya no lo ofrecía; ahora el
+servidor también lo rechaza, porque el navegador puede mandar la bandera con
+cualquier forma.
+
+**El agujero que abre el modelo nuevo, y su tapa.** Con el modelo viejo el
+crédito quedaba en cero y nadie lo volvía a cobrar. Ahora sigue con saldo y **se
+ve idéntico a uno libre**: dos personas lo cobran y el cliente paga dos veces.
+Lo cierra `creditos_cobros_por_aprobar`, una reserva por (sala, crédito) con
+índice único — los renglones viven en un array `jsonb` y ahí no hay unicidad
+posible—, y la pantalla la lee con su propio permiso: marcar un crédito
+reservado desde Cuentas por cobrar no puede exigir el permiso de Solicitudes.
+
+Un fallo al leer la reserva **no se lee como «no hay ninguna»**: apaga el botón
+de cobrar y lo dice. Al revés dejaría cobrar dos veces justo el día que la
+consulta falla, sin nada visible.
+
+**Las dos de MAPFRE del 3-sep** se crearon con el modelo viejo —su abono sí
+entró— y quedan marcadas `ya_aplicado`: confirmarlas sólo cierra la solicitud y
+devolverlas sí deshace el abono. Se las deja andar por su camino en vez de
+reescribir su historia: ese dinero se movió de verdad.
+
+**Y todo lo que la pantalla dice cambió con el modelo.** El aviso del diálogo
+decía «El abono entra ya y se envía a aprobación» —lo contrario de lo que pasa—;
+el toast decía «Pago registrado»; el detalle de la solicitud decía «El dinero ya
+entró»; y el toast de la decisión, «el abono se deshizo en la caja». Las cuatro
+frases mandaban a buscar un movimiento que no existe, o peor, hacían creer que
+el crédito estaba cobrado.
+
+`abonarEnOrigen` se extrajo a `_shared/creditos.ts`: lo usan el cobro directo, la
+recolocación de una corrección y la aprobación. Con tres copias del mismo `POST`,
+el día que el origen cambie un campo dos se quedan viejas.
+
+Migración `20260903173747`. `creditos-erp` desplegada.
+
 ## v2.967.6 — Las salidas de bolsa entran a Movimientos y el vale se abre en sus salidas
 
 Segunda mitad de v2.967.0. El usuario preguntó si con eso ya se veían **todos**

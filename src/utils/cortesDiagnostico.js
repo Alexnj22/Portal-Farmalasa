@@ -110,6 +110,99 @@ export function conTramo(cortesDeLaSala) {
     });
 }
 
+/** El día de El Salvador de un instante. La fecha de un movimiento es la de la
+ *  SALA, no la del reloj de quien mira. */
+const diaDeSala = (iso) => (iso
+    ? new Date(new Date(iso).getTime() - 6 * 3600_000).toISOString().slice(0, 10)
+    : null);
+
+/** El concepto con el que el sistema de la caja anota un cobro de crédito. Es
+ *  idéntico en los 112 medidos — no lleva ni el cliente ni el número. */
+const ES_ABONO = /ABONO A CREDITO/i;
+
+/**
+ * Cada cobro de crédito del portal, junto al renglón que el sistema de la caja
+ * anotó por él.
+ *
+ * ── Por qué hay que emparejarlos y no basta con listar los dos ─────────────
+ * Son el MISMO dinero contado dos veces. Un cobro en efectivo de $17.90 entra
+ * al cajón, y el sistema de la caja lo anota como `POR ABONO A CREDITO $17.90`;
+ * puestos uno debajo del otro, la pantalla dice que se cobró $35.80. En una
+ * lista de dinero eso no es un detalle de presentación.
+ *
+ * Y hacen falta los dos lados: el renglón de la caja tiene el número de
+ * movimiento y su historia —se editó, se borró—, y el del portal tiene lo que
+ * allá no existe: el cliente, el crédito, la forma de pago y quién cobró.
+ * Emparejados, la fila dice las dos cosas.
+ *
+ * ── Se cruza por MONTO, porque es lo único que hay ─────────────────────────
+ * El concepto es la misma cadena en todos, así que no distingue uno de otro; y
+ * el id del abono no tiene nada que ver con el del movimiento (medido: abonos
+ * ~2.800, movimientos ~43.900). Queda el monto, que es el mismo cruce que ya
+ * hace `hacer-corte-caja` para avisar si un cobro que no es efectivo se le
+ * coló al cajón.
+ *
+ * Uno a uno y por orden de hora: dos cobros del mismo monto el mismo día se
+ * reparten los dos renglones en vez de pelearse por el primero. Cuál de los dos
+ * se lleva cuál es indistinguible —el origen no guarda nada que los separe— y
+ * por eso da igual, mientras cada renglón se use una sola vez.
+ *
+ * ── Lo que queda suelto es información, no un error ────────────────────────
+ * Un cobro con tarjeta o transferencia **no entra al cajón**, así que el
+ * sistema de la caja no lo anota nunca: queda suelto siempre, y está bien. Uno
+ * en efectivo que quede suelto es otra cosa —o la captura todavía no pasó, o
+ * allá no se anotó— y por eso `sueltos` distingue las dos formas en vez de
+ * devolver una sola bolsa.
+ *
+ * @param {Array} movimientos filas de `cortes_caja_movimientos`
+ * @param {Array} cobros      filas de `creditos_abonos_portal`
+ * @param {Function} esEfectivo  cómo se decide si un cobro entró al cajón
+ * @returns {{ porMovimiento: Map<number, object>, sueltos: Array }}
+ *   `porMovimiento` va por `id` del movimiento. `sueltos` son los cobros sin
+ *   renglón, cada uno con `entroAlCajon` para que quien pinte no tenga que
+ *   volver a decidirlo.
+ */
+export function emparejarCobrosConMovimientos(movimientos, cobros, esEfectivo) {
+    const porMovimiento = new Map();
+    const sueltos = [];
+
+    // Los renglones de abono, agrupados por sala y día. Los ya usados salen del
+    // grupo: es lo que garantiza el uno a uno.
+    const candidatos = new Map();
+    for (const m of movimientos || []) {
+        if (!ES_ABONO.test(String(m.concepto ?? ''))) continue;
+        const clave = `${m.branch_id}:${m.fecha}`;
+        if (!candidatos.has(clave)) candidatos.set(clave, []);
+        candidatos.get(clave).push(m);
+    }
+
+    // De la más vieja a la más nueva: el reparto tiene que dar lo mismo sin
+    // importar en qué orden vino la lista.
+    const enOrden = [...(cobros || [])].sort(
+        (a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')),
+    );
+
+    for (const c of enOrden) {
+        const entroAlCajon = esEfectivo ? !!esEfectivo(c) : true;
+        // Un cobro anulado no movió dinero: emparejarlo le colgaría el cliente
+        // equivocado a un renglón que sí lo movió.
+        const grupo = c.anulado_at
+            ? null
+            : candidatos.get(`${c.branch_id}:${diaDeSala(c.created_at)}`);
+        const i = (grupo || []).findIndex(
+            (m) => Math.abs(Number(m.monto) - Number(c.monto)) < 0.005,
+        );
+        if (i >= 0) {
+            const [mov] = grupo.splice(i, 1);
+            porMovimiento.set(mov.id, { ...c, entroAlCajon });
+        } else {
+            sueltos.push({ ...c, entroAlCajon });
+        }
+    }
+
+    return { porMovimiento, sueltos };
+}
+
 /**
  * Los movimientos del día, repartidos POR CORTE.
  *

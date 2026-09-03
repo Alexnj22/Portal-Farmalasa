@@ -1,14 +1,17 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, History, Pencil, Scale, Search, Trash2, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, HandCoins, History, Pencil, Scale, Search, Trash2, Wallet } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import TablePagination from '../common/TablePagination';
 import { EmptyState } from '../common/StateViews';
+import AvatarConEstado from '../common/AvatarConEstado';
 import { formatMoney } from '../../utils/formatNumber';
 import { tokenMatch } from '../../utils/searchUtils';
 import { usePaginaEnUrl } from '../../hooks/usePaginaEnUrl';
+import { emparejarCobrosConMovimientos } from '../../utils/cortesDiagnostico';
+import { cobroEnEfectivo } from '../../data/creditos';
 
 /**
  * Los movimientos de caja de un período: verlos y buscarlos TODOS.
@@ -62,6 +65,29 @@ import { usePaginaEnUrl } from '../../hooks/usePaginaEnUrl';
  * sería inventarla. Y sólo se marca cuando la captura lo vio EL MISMO DÍA de su
  * fecha; en un movimiento traído por un relleno hacia atrás, `created_at` es la
  * fecha del relleno y la comparación no significaría nada.
+ *
+ * ── Los cobros de crédito, y por qué no son una lista aparte ───────────────
+ * Cobrar un crédito desde el portal mete efectivo en ESTA caja. El sistema de
+ * la caja lo anota como un renglón que dice `POR ABONO A CREDITO` y nada más
+ * —sin cliente, sin crédito, sin quién cobró—, así que la pregunta que trae a
+ * alguien acá al minuto de cobrar («¿se hizo o no se hizo?») no se podía
+ * contestar con esta lista: el renglón tarda en llegar, y cuando llega no dice
+ * de quién es.
+ *
+ * Los dos lados se juntan en UNA fila (`emparejarCobrosConMovimientos`), y
+ * tiene que ser una: son el mismo dinero, y uno debajo del otro la pantalla
+ * diría que se cobró el doble. Lo que no encontró renglón sale como fila
+ * propia, y ahí la forma de pago decide qué significa:
+ *
+ *   con tarjeta o transferencia   nunca entra al cajón, así que allá no se
+ *                                 anota NUNCA. Suelto es su estado normal.
+ *   en efectivo                   o la captura todavía no pasó, o allá no se
+ *                                 anotó. Eso sí hay que poder verlo.
+ *
+ * El neto del grupo es el mismo antes y después de que la captura pase: un
+ * cobro suelto en efectivo suma por su cuenta, y cuando aparece su renglón deja
+ * de sumar por su cuenta para sumar como renglón. Sin esa invariante, el neto
+ * de una sala cambiaría solo a media tarde sin que nadie hubiera movido nada.
  */
 
 const fechaLarga = (f) => (f
@@ -114,6 +140,8 @@ export default function MovimientosDeCaja({
     movimientos = [],
     historial = [],
     cortes = [],
+    cobros = [],
+    cobraron,
     salas,
     cargando = false,
     busqueda = '',
@@ -152,13 +180,61 @@ export default function MovimientosDeCaja({
         [historiaDe],
     );
 
-    const filtrados = useMemo(() => movimientos.filter((m) => {
+    /* Cada cobro del portal con el renglón que la caja anotó por él, y los que
+     * no encontraron ninguno. La regla vive en `cortesDiagnostico` —el mismo
+     * archivo que reparte los movimientos por corte— y no acá: es una decisión
+     * sobre DINERO, y escrita dentro de un componente no se puede probar. */
+    const { porMovimiento, sueltos } = useMemo(
+        () => emparejarCobrosConMovimientos(movimientos, cobros, cobroEnEfectivo),
+        [movimientos, cobros],
+    );
+
+    /* La lista mezclada: los renglones de la caja y los cobros que quedaron
+     * sueltos. Se mezclan ANTES de paginar —y no al pintar cada día— porque de
+     * otro modo un cobro suelto podría caer fuera de la página y desaparecer
+     * sin que nada lo diga. */
+    const items = useMemo(() => ([
+        ...movimientos.map((mv) => ({
+            kind: 'mov', clave: `m${mv.id}`, mv, cobro: porMovimiento.get(mv.id) || null,
+            fecha: mv.fecha, branchId: mv.branch_id, orden: mv.created_at,
+            desempate: mv.erp_movimiento_id,
+        })),
+        ...sueltos.map((cb) => ({
+            kind: 'cobro', clave: `c${cb.id}`, cb,
+            fecha: diaSV(cb.created_at), branchId: cb.branch_id, orden: cb.created_at,
+            desempate: cb.id,
+        })),
+    ]).sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
+        || String(b.orden || '').localeCompare(String(a.orden || ''))
+        || (Number(b.desempate) - Number(a.desempate))),
+    [movimientos, sueltos, porMovimiento]);
+
+    const filtrados = useMemo(() => items.filter((it) => {
+        if (it.kind === 'cobro') {
+            const c = it.cb;
+            // Un cobro es siempre una ENTRADA de dinero; y de los tres estados
+            // que recorta la ranura —vigente, editado, ya no está— sólo el
+            // primero le cabe: los otros dos hablan de lo que pasó con un
+            // renglón del sistema de la caja, y un cobro suelto no tiene.
+            if (tipo === 'SALIDA') return false;
+            if (estado === 'VIGENTES' && c.anulado_at) return false;
+            if (estado === 'EDITADOS' || estado === 'DESAPARECIDOS') return false;
+            return tokenMatch(busqueda, c.cliente, `crédito ${c.credito_erp}`, c.forma,
+                c.documento, cobraron?.get(c.abonado_por)?.name,
+                salas?.get(c.branch_id), String(c.monto), 'ENTRADA');
+        }
+        const m = it.mv;
         if (tipo !== 'TODOS' && m.tipo !== tipo) return false;
         if (estado === 'VIGENTES'      && m.desaparecido_at) return false;
         if (estado === 'DESAPARECIDOS' && !m.desaparecido_at) return false;
         if (estado === 'EDITADOS'      && !fueEditado(m)) return false;
-        return tokenMatch(busqueda, m.concepto, salas?.get(m.branch_id), String(m.monto), m.tipo);
-    }), [movimientos, tipo, estado, busqueda, salas, fueEditado]);
+        // El cobro emparejado también se busca: quien escribe el nombre de la
+        // clienta tiene que encontrar el renglón que dice «POR ABONO A
+        // CREDITO», que es donde ese nombre no está escrito.
+        return tokenMatch(busqueda, m.concepto, salas?.get(m.branch_id), String(m.monto), m.tipo,
+            it.cobro?.cliente, it.cobro && `crédito ${it.cobro.credito_erp}`,
+            it.cobro && cobraron?.get(it.cobro.abonado_por)?.name);
+    }), [items, tipo, estado, busqueda, salas, fueEditado, cobraron]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     const pagina = useMemo(
@@ -195,11 +271,11 @@ export default function MovimientosDeCaja({
      * cruzar ninguna línea: no se puede afirmar de qué lado cayó. */
     const dias = useMemo(() => {
         const porDia = new Map();
-        for (const mv of pagina) {
-            if (!porDia.has(mv.fecha)) porDia.set(mv.fecha, new Map());
-            const salasDelDia = porDia.get(mv.fecha);
-            if (!salasDelDia.has(mv.branch_id)) salasDelDia.set(mv.branch_id, []);
-            salasDelDia.get(mv.branch_id).push(mv);
+        for (const it of pagina) {
+            if (!porDia.has(it.fecha)) porDia.set(it.fecha, new Map());
+            const salasDelDia = porDia.get(it.fecha);
+            if (!salasDelDia.has(it.branchId)) salasDelDia.set(it.branchId, []);
+            salasDelDia.get(it.branchId).push(it);
         }
 
         return [...porDia.entries()]
@@ -207,12 +283,18 @@ export default function MovimientosDeCaja({
             .map(([fecha, salasDelDia]) => {
                 const grupos = [...salasDelDia.entries()]
                     .map(([branchId, lista]) => {
-                        // El minuto comparable de cada movimiento, o `null`.
-                        const conMinuto = lista.map((mv) => ({
-                            tipoFila: 'mov',
-                            mv,
-                            minuto: diaSV(mv.created_at) === mv.fecha ? minutosDeIso(mv.created_at) : null,
-                        }));
+                        /* El minuto comparable de cada fila. En un renglón de la
+                         * caja es el de la CAPTURA (ver el ⚠️ del encabezado);
+                         * en un cobro del portal es la hora real del cobro, que
+                         * el portal sí guarda — y por eso un cobro nunca queda
+                         * «sin hora comparable». */
+                        const conMinuto = lista.map((it) => (it.kind === 'cobro'
+                            ? { tipoFila: 'cobro', it, minuto: minutosDeIso(it.cb.created_at) }
+                            : {
+                                tipoFila: 'mov', it,
+                                minuto: diaSV(it.mv.created_at) === it.mv.fecha
+                                    ? minutosDeIso(it.mv.created_at) : null,
+                            }));
                         const cortesAqui = (cortesPorGrupo.get(`${fecha}:${branchId}`) || []).map((c) => ({
                             tipoFila: 'corte', corte: c, minuto: minutosDeHora(c.hora),
                         }));
@@ -223,11 +305,24 @@ export default function MovimientosDeCaja({
                             .sort((a, b) => (b.minuto ?? 0) - (a.minuto ?? 0))
                             .concat(sinHora);
 
-                        // El neto sólo con lo que SIGUE en la caja: un
-                        // movimiento que ya no está tampoco está en el dinero, y
-                        // sumarlo daría un neto que no coincide con ningún tiquete.
-                        const neto = lista.reduce((s, mv) => (mv.desaparecido_at ? s
-                            : s + (mv.tipo === 'ENTRADA' ? 1 : -1) * (Number(mv.monto) || 0)), 0);
+                        /* El neto, con las dos reglas que lo mantienen honesto:
+                         *
+                         *  · un movimiento que ya no está tampoco está en el
+                         *    dinero, y sumarlo daría un neto que no coincide con
+                         *    ningún tiquete;
+                         *  · un cobro suelto suma sólo si entró al CAJÓN. Los
+                         *    emparejados no se cuentan acá —ya los cuenta su
+                         *    renglón— y por eso el neto no cambia solo cuando la
+                         *    captura pasa. */
+                        const neto = lista.reduce((s, it) => {
+                            if (it.kind === 'cobro') {
+                                return (it.cb.anulado_at || !it.cb.entroAlCajon)
+                                    ? s : s + (Number(it.cb.monto) || 0);
+                            }
+                            const mv = it.mv;
+                            return mv.desaparecido_at ? s
+                                : s + (mv.tipo === 'ENTRADA' ? 1 : -1) * (Number(mv.monto) || 0);
+                        }, 0);
 
                         return {
                             branchId,
@@ -255,6 +350,9 @@ export default function MovimientosDeCaja({
                     if (f.tipoFila === 'corte') { vistoCorte = true; continue; }
                     if (!vistoCorte && f.minuto != null) n++;
                 }
+                // Los cobros del portal cuentan igual, y con más razón: su hora
+                // es la real y no la de la captura, así que «cayó después del
+                // corte» es un hecho y no una estimación.
             }
         }
         return n;
@@ -270,7 +368,7 @@ export default function MovimientosDeCaja({
         ) : (
             <EmptyState
                 compact icon={Wallet} title="Sin movimientos"
-                subtitle="No se anotó ninguna entrada ni salida de efectivo en estas fechas."
+                subtitle="No se anotó ninguna entrada ni salida de efectivo en estas fechas, ni se cobró ningún crédito."
             />
         );
     }
@@ -312,18 +410,32 @@ export default function MovimientosDeCaja({
                             </div>
 
                             <div className="space-y-1.5">
-                                {g.filas.map((f) => (f.tipoFila === 'corte' ? (
-                                    <LineaDeCorte key={`c${f.corte.id}`} corte={f.corte} />
-                                ) : (
-                                    <Renglon
-                                        key={f.mv.id}
-                                        mov={f.mv}
-                                        minuto={f.minuto}
-                                        editado={fueEditado(f.mv)}
-                                        edicion={ultimaEdicion(f.mv)}
-                                        onAbrir={() => setAbierto(f.mv)}
-                                    />
-                                )))}
+                                {g.filas.map((f) => {
+                                    if (f.tipoFila === 'corte') {
+                                        return <LineaDeCorte key={`x${f.corte.id}`} corte={f.corte} />;
+                                    }
+                                    if (f.tipoFila === 'cobro') {
+                                        return (
+                                            <RenglonDeCobro
+                                                key={f.it.clave}
+                                                cobro={f.it.cb}
+                                                quien={cobraron?.get(f.it.cb.abonado_por)}
+                                            />
+                                        );
+                                    }
+                                    return (
+                                        <Renglon
+                                            key={f.it.clave}
+                                            mov={f.it.mv}
+                                            cobro={f.it.cobro}
+                                            quien={f.it.cobro && cobraron?.get(f.it.cobro.abonado_por)}
+                                            minuto={f.minuto}
+                                            editado={fueEditado(f.it.mv)}
+                                            edicion={ultimaEdicion(f.it.mv)}
+                                            onAbrir={() => setAbierto(f.it.mv)}
+                                        />
+                                    );
+                                })}
                             </div>
                         </div>
                     ))}
@@ -387,7 +499,7 @@ function LineaDeCorte({ corte }) {
  * anterior tachado AL LADO del nuevo — que es el dato, y estaba escondido
  * detrás de un clic.
  */
-function Renglon({ mov, minuto, editado, edicion, onAbrir }) {
+function Renglon({ mov, cobro, quien, minuto, editado, edicion, onAbrir }) {
     const ido = Boolean(mov.desaparecido_at);
     const entra = mov.tipo === 'ENTRADA';
     const Glifo = ido ? Trash2 : entra ? ArrowDownLeft : ArrowUpRight;
@@ -416,17 +528,36 @@ function Renglon({ mov, minuto, editado, edicion, onAbrir }) {
                 </span>
 
                 <span className="flex-1 min-w-0">
+                    {/* El nombre de quien pagó GANA al concepto cuando lo hay.
+                        «POR ABONO A CREDITO» es la misma cadena en todos los
+                        renglones de abono: como título no distingue uno de otro,
+                        y el dato con el que alguien vuelve a encontrar un cobro
+                        es el cliente. El concepto no se pierde — baja al
+                        renglón de abajo, donde sigue diciendo de qué es. */}
                     <span className={`block text-body-sm font-semibold truncate ${
                         ido ? 'text-content-3 line-through' : 'text-content'}`}>
-                        {mov.concepto || 'Sin concepto'}
+                        {cobro ? `Cobro de crédito · ${cobro.cliente || 'Sin nombre'}`
+                            : (mov.concepto || 'Sin concepto')}
                     </span>
                     <span className="flex items-center gap-1.5 flex-wrap text-micro text-content-3">
                         {ido && <Badge variant="danger" size="sm">Ya no está</Badge>}
                         {!ido && editado && <Badge variant="warning" size="sm">Se modificó</Badge>}
-                        {mov.origen === 'PORTAL' && <Badge variant="info" size="sm">Del portal</Badge>}
+                        {(cobro || mov.origen === 'PORTAL') && <Badge variant="info" size="sm">Del portal</Badge>}
+                        {cobro && `crédito ${cobro.credito_erp} · `}
                         {hora ? `se vio ${hora}` : 'sin hora comparable'}
                         {ido && ` · dejó de estar ${cuando(mov.desaparecido_at)}`}
                     </span>
+                    {/* Quién cobró. Es lo que el sistema de la caja no guarda de
+                        ningún renglón, y lo primero que se pregunta cuando un
+                        cobro no cuadra. */}
+                    {cobro && quien && (
+                        <span className="flex items-center gap-1.5 mt-1 min-w-0">
+                            <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />
+                            <span className="text-micro text-content-3 truncate">
+                                Lo cobró {quien.name}
+                            </span>
+                        </span>
+                    )}
                 </span>
 
                 <span className="shrink-0 text-right">
@@ -441,6 +572,79 @@ function Renglon({ mov, minuto, editado, edicion, onAbrir }) {
                 </span>
             </span>
         </button>
+    );
+}
+
+/**
+ * Un cobro de crédito que todavía no tiene renglón en el sistema de la caja.
+ *
+ * No es una fila de segunda: para los cobros que no son efectivo es la ÚNICA
+ * que va a existir —allá no se anotan nunca porque no entran al cajón— y para
+ * los de efectivo es la que llega primero, al minuto de cobrar, mientras la
+ * captura pasa.
+ *
+ * Por eso el aviso de la derecha depende de la forma de pago y no de estar
+ * suelto: «no entra al cajón» es una explicación y «todavía no aparece en la
+ * caja» es algo que mirar. Escritos igual, el segundo se aprendería a ignorar
+ * por culpa del primero, que sale todos los días.
+ */
+function RenglonDeCobro({ cobro, quien }) {
+    const anulado = Boolean(cobro.anulado_at);
+    const entra = Boolean(cobro.entroAlCajon);
+    const hora = horaDe(cobro.created_at);
+
+    const carril = anulado ? 'bg-danger' : entra ? 'bg-success' : 'bg-content-3/40';
+    const cajaGlifo = anulado ? 'bg-danger/10 text-danger-text'
+        : entra ? 'bg-success/10 text-success-text' : 'bg-surface-input text-content-3';
+
+    return (
+        <div data-surface="card"
+            className="w-full rounded-xl overflow-hidden flex items-stretch gap-0 min-h-[var(--tap-min)]">
+            <span className={`w-1 shrink-0 ${carril}`} aria-hidden="true" />
+            <span className="flex items-center gap-3 flex-1 min-w-0 p-2.5">
+                <span className={`shrink-0 w-8 h-8 rounded-lg grid place-items-center ${cajaGlifo}`} aria-hidden="true">
+                    <HandCoins className="w-4 h-4" />
+                </span>
+
+                <span className="flex-1 min-w-0">
+                    <span className={`block text-body-sm font-semibold truncate ${
+                        anulado ? 'text-content-3 line-through' : 'text-content'}`}>
+                        Cobro de crédito · {cobro.cliente || 'Sin nombre'}
+                    </span>
+                    <span className="flex items-center gap-1.5 flex-wrap text-micro text-content-3">
+                        {anulado && <Badge variant="danger" size="sm">Anulado</Badge>}
+                        <Badge variant="info" size="sm">Del portal</Badge>
+                        {!anulado && (entra
+                            ? <Badge variant="warning" size="sm">Todavía no aparece en la caja</Badge>
+                            : <Badge variant="neutral" size="sm">No entra al cajón</Badge>)}
+                        {`crédito ${cobro.credito_erp} · ${String(cobro.forma || 'sin forma').toLowerCase()}`}
+                        {hora && ` · ${hora}`}
+                    </span>
+                    {quien && (
+                        <span className="flex items-center gap-1.5 mt-1 min-w-0">
+                            <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />
+                            <span className="text-micro text-content-3 truncate">Lo cobró {quien.name}</span>
+                        </span>
+                    )}
+                </span>
+
+                <span className="shrink-0 text-right">
+                    {/* Apagado cuando no toca el cajón: en verde y junto a las
+                        entradas, una transferencia se lee como billetes que
+                        tienen que estar en la caja al contar. */}
+                    <span className={`block text-body font-black tabular-nums ${
+                        anulado ? 'text-danger-text line-through'
+                            : entra ? 'text-success-text' : 'text-content-3'}`}>
+                        +{formatMoney(cobro.monto)}
+                    </span>
+                    <span className="block text-micro text-content-3">
+                        {Number(cobro.saldo_despues) > 0.004
+                            ? `queda ${formatMoney(cobro.saldo_despues)}`
+                            : 'saldado'}
+                    </span>
+                </span>
+            </span>
+        </div>
     );
 }
 

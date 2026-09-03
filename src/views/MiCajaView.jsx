@@ -32,6 +32,10 @@ import {
     subirComprobante,
 } from '../data/bolsas';
 import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '../data/cortes';
+/* Los cobros de crédito son la TERCERA fuente de efectivo del día, junto con
+ * el cajón y las bolsas. Viven en `creditos` porque el cobro se decide allá;
+ * acá se miran porque el dinero entra por esta caja. */
+import { cobroEnEfectivo, fetchCobrosDelPortal } from '../data/creditos';
 import { conLaCuentaBuena, repartirPorCorte } from '../utils/cortesDiagnostico';
 
 /* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
@@ -201,6 +205,11 @@ export default function MiCajaView({ comoPestana = false }) {
     const [bolsas, setBolsas] = useState(VACIO);
     const [movimientos, setMovimientos] = useState(VACIO);
     const [deBolsas, setDeBolsas] = useState(VACIO);
+    /* Los cobros de crédito de este día en esta sala. Van con los movimientos y
+     * no en una sección aparte: quien acaba de cobrar viene a esta lista a ver
+     * que quedó anotado, y una lista de movimientos a la que le falta la
+     * entrada de efectivo más grande del día no es una lista de movimientos. */
+    const [cobros, setCobros] = useState(VACIO);
     const [ventas, setVentas] = useState(VACIO);
     const [tipos, setTipos] = useState(VACIO);
     // Lo que puede entrar y salir del CAJÓN. Otro catálogo que el de arriba:
@@ -380,7 +389,7 @@ export default function MiCajaView({ comoPestana = false }) {
         const vivo = e.error ? null : e;
         setNoSePudo(e.error ? mensajeAmigable(e.error) : null);
         const dia = vivo?.dia || new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
-        const [v, abiertas, movs, porPago, salidas] = await Promise.all([
+        const [v, abiertas, movs, porPago, salidas, cobrados] = await Promise.all([
             fetchValesPendientes(),
             fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'CONTADA'] }),
             fetchMovimientosDelPortal(sala, dia),
@@ -389,9 +398,15 @@ export default function MiCajaView({ comoPestana = false }) {
             // error: preguntar antes es lo que separa «no hubo ninguna» de «no
             // las puedo ver», que en pantalla se leen igual.
             puedeVerBolsas ? fetchSalidasDeSalaDelDia({ sala, dia }) : Promise.resolve(VACIO),
+            /* Los cobros de crédito del MISMO día de caja. El rango va de `dia`
+             * a `dia` y no del reloj por lo mismo que los movimientos: a las
+             * once de la noche con la caja sin cerrar el reloj ya cambió de día
+             * y la caja no. */
+            fetchCobrosDelPortal({ desde: dia, hasta: dia, branchId: sala }),
         ]);
         setMovimientos(movs);
         setDeBolsas(salidas);
+        setCobros(cobrados || VACIO);
         /* Quién anotó cada movimiento. Un solo pedido para las dos listas: la
          * misma persona suele aparecer en las dos, y `fetchPersonas` ya
          * deduplica. Sin esto la lista del día decía qué pasó y no quién lo
@@ -399,6 +414,7 @@ export default function MiCajaView({ comoPestana = false }) {
         const anotadores = await fetchPersonas([
             ...(movs || []).map((m) => m.registrado_por),
             ...(salidas || []).map((o) => o.registrado_por),
+            ...(cobrados || []).map((c) => c.abonado_por),
         ]);
         setAnotaron(new Map((anotadores || []).map((q) => [q.id, q])));
         setVentas((porPago || []).filter((p) => String(p.branch_id) === String(sala)));
@@ -863,6 +879,7 @@ export default function MiCajaView({ comoPestana = false }) {
                         <ValesDeCaja sala={sala} />
 
                         <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas}
+                            cobros={cobros}
                             dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
                             puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo}
                             anotaron={anotaron} cortes={cortesDelDia} />
@@ -1245,7 +1262,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true }) {
  * no toca la caja, porque su propio cierre ya lo descontó. Es la regla que
  * decide si el corte de esta tarde cuadra o falta.
  */
-function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, puedeVerBolsas,
+function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOperar, puedeVerBolsas,
     onCorregir, anotaron, cortes }) {
     const etiquetaDe = (codigo) =>
         tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo);
@@ -1324,9 +1341,50 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                 parcial: deHoy > 0.005 && deHoy < total - 0.005,
             };
         });
-        return [...delCajon, ...deLasBolsas]
+        /* ── Los cobros de crédito ─────────────────────────────────────────
+         *
+         * Son la tercera fuente, y hasta hoy no se veían por ningún lado. El
+         * dinero de un cobro en efectivo entra a ESTE cajón —el corte lo va a
+         * pedir en billetes, y por eso `cortes_caja.cobros_portal_efectivo` se
+         * lo suma al esperado— así que su sitio es esta lista y no otra
+         * pantalla.
+         *
+         * Lo que el sistema de la caja anota de un cobro es un renglón que dice
+         * `POR ABONO A CREDITO` y nada más: sin cliente, sin crédito y sin
+         * quién cobró. Acá van los tres, que es lo que convierte «entró plata»
+         * en «se le cobró a fulana el crédito 2288».
+         *
+         * ⚠️ **El que no es efectivo NO toca el cajón** y por eso lleva
+         * `sinEfectivo`: sale en la lista —se hizo, y hay que poder verlo— pero
+         * fuera de la suma del tramo. Sumado, inventaría un sobrante del
+         * tamaño de la transferencia. */
+        const deCreditos = (cobros || []).map((c) => {
+            const efvo = cobroEnEfectivo(c);
+            return {
+                clave: `cobro-${c.id}`,
+                cuando: c.created_at,
+                titulo: `Cobro de crédito · ${c.cliente || 'Sin nombre'}`,
+                entra: true,
+                monto: Number(c.monto || 0),
+                anulado: !!c.anulado_at,
+                origen: 'Cobro de un crédito',
+                sinEfectivo: !efvo,
+                detalle: [
+                    `crédito ${c.credito_erp}`,
+                    efvo ? 'en efectivo' : `${String(c.forma || 'otra forma').toLowerCase()} · no entra al cajón`,
+                    c.documento ? `documento ${c.documento}` : null,
+                    Number(c.saldo_despues) > 0.004
+                        ? `queda debiendo ${formatMoney(c.saldo_despues)}`
+                        : 'crédito saldado',
+                ].filter(Boolean),
+                quien: c.abonado_por,
+                foto: c.comprobante_url || null,
+            };
+        });
+
+        return [...delCajon, ...deLasBolsas, ...deCreditos]
             .sort((a, b) => String(b.cuando || '').localeCompare(String(a.cuando || '')));
-    }, [movimientos, deBolsas, tipos]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
+    }, [movimientos, deBolsas, cobros, tipos]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
 
     /* ── El buscador ───────────────────────────────────────────────────────
      *
@@ -1424,8 +1482,12 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                         </span>
                         <span className="text-caption text-content-3 tabular-nums">
                             {g.lineas.length}{g.lineas.length === 1 ? ' movimiento' : ' movimientos'}
+                            {/* `sinEfectivo` fuera de la suma: es lo que se cobró
+                                con tarjeta o transferencia, y ese dinero no está
+                                en el cajón que el corte va a contar. */}
                             {!g.corte && ` · ${conSigno(g.lineas.reduce(
-                                (t, l) => t + (l.anulado ? 0 : (l.entra ? l.monto : -l.monto)), 0,
+                                (t, l) => t + ((l.anulado || l.sinEfectivo) ? 0
+                                    : (l.entra ? l.monto : -l.monto)), 0,
                             ))}`}
                         </span>
                     </div>
@@ -1447,7 +1509,12 @@ function MovimientosDelDia({ movimientos, deBolsas, dia, tipos, puedeOperar, pue
                             </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                            <span className={`tabular-nums font-bold ${l.entra ? 'text-success-text' : 'text-warning-text'}`}>
+                            {/* Apagado cuando no toca el cajón: en verde y con
+                                el resto de las entradas, un cobro con tarjeta se
+                                lee como billetes que hay que tener. */}
+                            <span className={`tabular-nums font-bold ${
+                                l.sinEfectivo ? 'text-content-3'
+                                    : l.entra ? 'text-success-text' : 'text-warning-text'}`}>
                                 {l.entra ? '' : '−'}{formatMoney(l.monto)}
                             </span>
                             {puedeOperar && l.movimiento && !l.anulado && (

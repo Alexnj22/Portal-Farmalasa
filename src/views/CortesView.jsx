@@ -31,6 +31,11 @@ import {
     fetchAperturas, fetchCortes, fetchDiferencias, fetchEntradasParaCruce,
     fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas,
 } from '../data/cortes';
+/* Los cobros de crédito viven en `creditos` —el cobro se decide allá— y se
+ * miran acá porque el dinero entra por esta caja. Es la misma lectura que hace
+ * «Hoy»; la policy de la tabla acepta las dos puertas, `caja_vales` para operar
+ * y `cortes_caja` para mirar. */
+import { fetchCobrosDelPortal } from '../data/creditos';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { formatMoney } from '../utils/formatNumber';
@@ -272,6 +277,12 @@ const CortesView = () => {
 
     const [movs, setMovs] = useState(VACIO);
     const [historial, setHistorial] = useState(VACIO);
+    /* Los cobros de crédito del período, y quién los cobró. El nombre va aparte
+     * porque la tabla guarda la FICHA (`employees.id`) y no el nombre: pintarlo
+     * exige resolverlo, y es el mismo `fetchPersonas` que ya resuelve quién
+     * firmó cada corte. */
+    const [cobros, setCobros] = useState(VACIO);
+    const [cobraron, setCobraron] = useState(() => new Map());
     const [cargandoMovs, setCargandoMovs] = useState(false);
     const [tipoMov, setTipoMov] = useState('TODOS');
     const [estadoMov, setEstadoMov] = useState('TODOS');
@@ -310,13 +321,19 @@ const CortesView = () => {
     const cargarMovs = useCallback(async () => {
         if (!enMovimientos) return;
         setCargandoMovs(true);
-        const [filas, cambios] = await Promise.all([
+        const [filas, cambios, cobrados] = await Promise.all([
             fetchMovimientosDeCaja({ desde, hasta, branchId: sala || null }),
             fetchHistorialDeMovimientos({ desde, hasta, branchId: sala || null }),
+            fetchCobrosDelPortal({ desde, hasta, branchId: sala || null }),
         ]);
         setMovs(filas || VACIO);
         setHistorial(cambios || VACIO);
+        setCobros(cobrados || VACIO);
         setCargandoMovs(false);
+        // Después de pintar: la lista se lee con o sin la cara, y esperar a las
+        // fotos retrasaría lo único que la pestaña tiene que hacer.
+        const quienes = await fetchPersonas((cobrados || []).map((c) => c.abonado_por));
+        setCobraron(new Map((quienes || []).map((q) => [q.id, q])));
     }, [enMovimientos, desde, hasta, sala]);
 
     useEffect(() => { cargarMovs(); }, [cargarMovs]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la pestaña y al cambiar sala o rango
@@ -563,7 +580,7 @@ const CortesView = () => {
             // En «Hoy» no hay nada que buscar: es un turno, no una lista.
             showSearch={!enHoy}
             placeholder={enMovimientos
-                ? 'Buscar por concepto, sala o monto…'
+                ? 'Buscar por concepto, cliente, sala o monto…'
                 : 'Buscar por sala, persona, hora o monto…'}
         />
     );
@@ -736,6 +753,10 @@ const CortesView = () => {
                         // Los cortes del período, para dibujar la línea contra la
                         // que se mide cada movimiento. Ya están cargados.
                         cortes={cortes}
+                        // Los cobros de crédito del portal: la mitad del dinero
+                        // que el sistema de la caja no sabe nombrar.
+                        cobros={cobros}
+                        cobraron={cobraron}
                         salas={salasMap}
                         cargando={cargandoMovs}
                         busqueda={busqueda}

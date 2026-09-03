@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.967.0 — El cobro de un crédito se ve en Efectivo, y los movimientos del día ya no esperan al primer corte
+
+Reportado por el usuario: *«al hacer un abono al crédito no sale en /caja, así
+que no veo si se hizo o no, o todos los movimientos por trazabilidad»*. Eran dos
+agujeros distintos y ninguno daba error.
+
+**1 · El cobro no se veía en ninguna pantalla.** `creditos_abonos_portal` guarda
+quién cobró, a quién, cuánto y con qué forma de pago —lo único que guarda esos
+cuatro datos— y **nadie la leía**: `fetchAbonosDelPortal` existía sin un solo
+llamador. Lo que el sistema de la caja anota es un renglón que dice
+`POR ABONO A CREDITO` y nada más: el mismo texto en los 112 medidos, sin cliente,
+sin crédito y sin quién cobró. Y la mitad que se cobra con tarjeta o
+transferencia no entra al cajón, así que allá **no se anota nunca**.
+
+Ahora los cobros salen en los dos sitios donde se mira el efectivo: la lista del
+día de «Hoy» y la pestaña «Movimientos». Emparejados con el renglón de la caja
+cuando lo hay (`emparejarCobrosConMovimientos`, 12 pruebas), porque son el MISMO
+dinero: uno debajo del otro la pantalla diría que se cobró el doble. El que no
+encontró renglón sale solo, y la forma de pago decide qué significa — «no entra
+al cajón» es una explicación, «todavía no aparece en la caja» es algo que mirar.
+
+El neto de cada grupo es el mismo antes y después de que la captura pase: un
+cobro suelto en efectivo suma por su cuenta, y cuando aparece su renglón deja de
+sumar por su cuenta para sumar como renglón. Sin esa invariante el neto de una
+sala cambiaría solo a media tarde sin que nadie hubiera movido nada.
+
+**2 · La lista de movimientos estaba vacía toda la mañana.** Se pedían al
+sistema de origen **sólo cuando aparecía un corte nuevo**, y el primer corte es a
+la una de la tarde: medido a las 11:00 SV del 3-sep, **cero movimientos del día
+en las seis salas**. Un vale hecho a las nueve no existía para el portal hasta la
+tarde. Hoy se repasan cada 5 minutos por sala.
+
+El reloj de esa cadencia vive en `cortes_caja_vistazos` y no en el `visto_at` de
+las filas: esa columna no existe cuando no hay movimientos, así que «todavía no
+miré» y «miré y no había nada» se leen igual —las dos son cero filas— y una sala
+cerrada un domingo pediría su lista en las 1.920 corridas de la ventana. Cuesta
+1.152 peticiones más al día (0.6 por corrida), declaradas en `gate:eficiencia`.
+
+**3 · La policy negaba en silencio.** `creditos_abonos_portal` sólo se leía con
+`caja_vales` —el permiso de OPERAR la caja—, así que la pestaña «Movimientos»,
+que pide `cortes_caja`, habría recibido cero filas para Contabilidad: justo quien
+entra ahí a rastrear el dinero. Hoy acepta las dos puertas, cada una con su
+alcance.
+
 ## v2.966.1 — Bitácoras impresas: código de formulario, nombre corto y la fecha en una fila
 
 Segunda pasada sobre el papel, con la maqueta enfrente.

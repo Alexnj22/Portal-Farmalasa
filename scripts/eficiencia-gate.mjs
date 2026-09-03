@@ -138,7 +138,7 @@ const CRONS = [
   },
   {
     job: 'cortes-caja-30s', slug: 'sync-cortes-caja', cadencia: '30 seconds',
-    corridasDia: 1920, sistema: 6,
+    corridasDia: 1920, sistema: 6.6,
     motivo: 'Cada 30 s de 7 a 23 SV porque quien corta la caja revisa la diferencia EN EL MOMENTO '
           + 'y rehace el corte; la cadencia es requisito del usuario y no se espacia. '
           + 'Son 6 listados, uno por sala: desde v2.671.1 la sesión de cada sala sobrevive a la '
@@ -156,7 +156,19 @@ const CRONS = [
           + 'reemplaza a esta ronda y por eso la cadencia no bajó: el portal sólo puede avisar de '
           + 'los cortes que hace ÉL, y la sala todavía puede cortar en la pantalla de la caja — ese '
           + 'corte no avisa a nadie y sin la ronda sería invisible. Decisión del usuario '
-          + '(2026-09-02) de dejarla en 30 s.',
+          + '(2026-09-02) de dejarla en 30 s. '
+          + '`sistema: 6.6` y no 6 desde el 2026-09-03: los 6 son los listados de cortes, y el 0.6 '
+          + 'es el repaso de MOVIMIENTOS, que antes sólo se pedía al aparecer un corte nuevo. Con '
+          + 'esa regla la pestaña «Movimientos» estaba VACÍA hasta el primer corte —medido a las '
+          + '11:00 SV del 3-sep: cero movimientos del día en las seis salas, y el primer corte es a '
+          + 'la una—, así que un vale hecho a las nueve no existía para el portal hasta la tarde. '
+          + 'Hoy se repasan cada 5 minutos por sala (`MINUTOS_ENTRE_REPASOS`): 6 × 12 × 16 h = '
+          + '1.152 peticiones al día, o sea 0.6 por corrida. Cada 30 s serían ~11.500, que es el '
+          + 'orden de magnitud que obligó a poner la ventana horaria. El reloj vive en '
+          + '`cortes_caja_vistazos` y no en el `visto_at` de las filas: esa columna no existe '
+          + 'cuando no hay movimientos, así que una sala cerrada un domingo pediría su lista en '
+          + 'las 1.920 corridas. Baja el día que el origen avise sus movimientos en vez de haber '
+          + 'que preguntárselos.',
   },
   {
     job: 'puntos-vencer-mensual', slug: 'puntos-vencer', cadencia: '0 9 1 * *',

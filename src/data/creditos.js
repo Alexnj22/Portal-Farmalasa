@@ -322,17 +322,50 @@ export async function fetchCreditoDetalle(id) {
     return data || null;
 }
 
-/** Quién cobró cada abono, del lado del portal. */
-export async function fetchAbonosDelPortal({ desde, hasta }) {
-    let q = supabase.from('creditos_abonos_portal')
-        .select('id, branch_id, credito_erp, cliente, monto, forma, documento, saldo_despues, abonado_por, created_at')
-        .order('created_at', { ascending: false });
-    if (desde) q = q.gte('created_at', `${desde}T00:00:00-06:00`);
-    if (hasta) q = q.lte('created_at', `${hasta}T23:59:59-06:00`);
-    const { data, error } = await q;
-    if (error) { console.error('creditos: fetchAbonosDelPortal failed:', error.message); return []; }
-    return data || [];
+/**
+ * Los cobros de crédito que hizo el PORTAL — quién, a quién y con qué.
+ *
+ * ── Por qué esta lista existe, y por qué el movimiento de la caja no alcanza ─
+ * Un cobro en efectivo entra al cajón, y el sistema de la caja lo anota como
+ * un renglón que dice `POR ABONO A CREDITO` y **nada más**: ni el cliente, ni
+ * el crédito, ni quién cobró. Es el mismo texto en los 112 medidos. Así que
+ * ese renglón sirve para cuadrar el dinero y no sirve para lo otro —«¿se hizo
+ * o no se hizo?»—, que es justo lo que se pregunta al minuto de cobrar.
+ *
+ * Y hay una mitad que allá no aparece nunca: un cobro por transferencia o con
+ * tarjeta no entra al cajón, así que el sistema de la caja no lo anota. Sin
+ * esta lista, esos cobros no se ven en ninguna pantalla de efectivo.
+ *
+ * ── El rango va por `created_at`, con el huso escrito ───────────────────────
+ * La tabla no tiene columna de fecha: la hora del cobro es todo lo que hay.
+ * Los bordes se anclan a −06:00 y no al huso del navegador — el día de un
+ * cobro es el de la SALA, y un equipo en otro huso movería la frontera sin
+ * avisar.
+ *
+ * Por `fetchAllRows` y no a secas: son pocos hoy, pero el techo de PostgREST
+ * son 1000 filas y un mes de seis salas lo cruza en cuanto la costumbre se
+ * asiente. Truncado en silencio, el síntoma sería un día sin cobros — que se
+ * lee como una sala que no cobró, no como una lista cortada.
+ */
+export function fetchCobrosDelPortal({ desde, hasta, branchId = null }) {
+    return fetchAllRows(() => {
+        let q = supabase.from('creditos_abonos_portal')
+            .select(`id, branch_id, credito_erp, factura_erp, cliente, monto, forma,
+                     documento, saldo_antes, saldo_despues, abonado_por, comprobante_url,
+                     erp_abono_id, anulado_at, created_at`)
+            .order('created_at', { ascending: false });
+        if (branchId) q = q.eq('branch_id', branchId);
+        if (desde) q = q.gte('created_at', `${desde}T00:00:00-06:00`);
+        if (hasta) q = q.lte('created_at', `${hasta}T23:59:59-06:00`);
+        return q;
+    });
 }
+
+/** Si un cobro entró al CAJÓN. Lo decide la forma, y por eso se escribe una
+ *  sola vez: el efectivo lo va a pedir el corte en billetes; lo demás no
+ *  toca la caja y sumarlo al tramo inventaría un sobrante. */
+export const cobroEnEfectivo = (a) =>
+    String(a?.forma ?? '').trim().toLowerCase() === 'efectivo';
 
 /**
  * Los días que lleva un crédito, y si ya se pasó del plazo.

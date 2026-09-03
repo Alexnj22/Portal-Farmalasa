@@ -288,6 +288,36 @@ function horaSV(): number {
 const HORA_DESDE = 7;
 const HORA_HASTA = 23;   // exclusivo: la última corrida es a las 22:59:30
 
+/**
+ * Cada cuánto se releen los movimientos cuando NO apareció un corte nuevo.
+ *
+ * ── El agujero que cierra ─────────────────────────────────────────────────
+ * Hasta hoy los movimientos sólo se pedían al aparecer un corte. El razonamiento
+ * era de volumen y era correcto —hasta 1000 filas por sala, 120 veces por hora,
+ * casi siempre para nada—, pero deja la lista de movimientos **vacía toda la
+ * mañana**: medido el 3-sep a las 11:00 SV, cero movimientos del día en las seis
+ * salas, porque el primer corte es a la una. Quien entra a «Movimientos» a ver
+ * qué pasó hoy no ve nada, y un vale hecho a las nueve no existe para el portal
+ * hasta la tarde.
+ *
+ * Y no es sólo mirar: lo que la captura no vio todavía tampoco puede
+ * emparejarse con el cobro que lo produjo.
+ *
+ * ── Por qué cinco minutos y no cada corrida ───────────────────────────────
+ * Cada corrida son 6 salas × 1 petición = 6 más. Cada 30 segundos serían ~11.500
+ * peticiones diarias de más al sistema de origen, que es el orden de magnitud
+ * que ya obligó a poner la ventana horaria de arriba. Cada 5 minutos son
+ * 6 × 12 × 16 h = **1.152 al día**, y una lista de movimientos con cinco minutos
+ * de atraso contesta la pregunta igual de bien.
+ *
+ * El reloj sale de la BASE y no de una variable del proceso: un isolate se
+ * recicla sin avisar y con una variable en memoria la cuenta arrancaría de cero
+ * cada vez, o sea que volvería a pedir siempre. `visto_at` es la marca que la
+ * captura ya escribe en cada fila que encuentra — no hace falta ninguna columna
+ * nueva.
+ */
+const MINUTOS_ENTRE_REPASOS = 5;
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -430,12 +460,17 @@ Deno.serve(async (req) => {
         }
 
         // ── Movimientos de caja (vales e ingresos) ──────────────────────────
-        // Sólo cuando apareció un corte nuevo. La corrida es de cada minuto
-        // —el dependiente verifica apenas corta— y en la enorme mayoría no hay
-        // nada nuevo: pedir los movimientos igual sería traer hasta 1000 filas
-        // por sala, 1440 veces al día, para nada. Cuando hay corte nuevo es
-        // justo cuando hacen falta, y el último corte del día se lleva el
-        // estado final. `movimientos: true` los fuerza para un repaso.
+        // Se piden en tres casos, y cada uno tapa lo que el otro no ve:
+        //
+        //   · apareció un CORTE NUEVO — es justo cuando hacen falta, y el
+        //     último corte del día se lleva el estado final;
+        //   · pasaron `MINUTOS_ENTRE_REPASOS` desde la última vez que se vio
+        //     alguno — sin esto la lista del día está vacía hasta el primer
+        //     corte, que es a la una de la tarde (ver la constante);
+        //   · `movimientos: true`, que es el repaso a mano.
+        //
+        // Lo que NO se hace es pedirlos en cada corrida: son hasta 1000 filas
+        // por sala, 120 veces por hora, casi siempre para nada.
         let movsGuardados = 0;
         let movsDesaparecidos = 0;
         let movs: {
@@ -443,7 +478,42 @@ Deno.serve(async (req) => {
           concepto: string | null; fecha: string | null;
           monto: number | null; tipo: string;
         }[] = [];
-        if (aInsertar.length || body.movimientos === true) {
+
+        /* Cuándo se MIRÓ por última vez la lista de esta sala.
+         *
+         * Sale de `cortes_caja_vistazos` y no del `visto_at` de las filas: esa
+         * columna no existe cuando no hay movimientos, así que «todavía no miré
+         * hoy» y «miré y no había nada» se leerían igual — y una sala cerrada un
+         * domingo pediría su lista en las 1.920 corridas de la ventana.
+         *
+         * ⚠️ Un error acá NO se convierte en «hay que repasar». Si la base no
+         * contesta, dar por vencido el plazo haría que TODAS las corridas
+         * pidieran los movimientos, que es exactamente el gasto que la cadencia
+         * viene a evitar. Sin respuesta se deja pasar el turno; la siguiente
+         * corrida vuelve a preguntar en 30 segundos.
+         *
+         * Un backfill con fechas explícitas no consulta el reloj ni lo escribe:
+         * mira otro rango, y dejar su marca haría que el día de hoy se creyera
+         * recién mirado. */
+        let tocaRepasar = false;
+        if (!aInsertar.length && body.movimientos !== true && !conFechas) {
+          const { data: reloj, error: errReloj } = await supabase
+            .from("cortes_caja_vistazos")
+            .select("mirado_el")
+            .eq("branch_id", branchId)
+            .maybeSingle();
+          if (errReloj) {
+            console.error(`sync-cortes-caja: sala ${branchId}, no se pudo leer el reloj:`, errReloj.message);
+          } else {
+            // Sin fila, nunca se miró: ése es el arranque, y es el caso que más
+            // hay que atender.
+            const desde = reloj?.mirado_el ? Date.parse(reloj.mirado_el) : NaN;
+            tocaRepasar = !Number.isFinite(desde)
+              || (Date.now() - desde) >= MINUTOS_ENTRE_REPASOS * 60_000;
+          }
+        }
+
+        if (aInsertar.length || body.movimientos === true || tocaRepasar) {
           const resMov = await fetch(
             `${MOV_URL}?fechai=${fecha1}&fechaf=${fecha2}&draw=1&start=0&length=1000`,
             {
@@ -596,6 +666,21 @@ Deno.serve(async (req) => {
                 .from("cortes_caja_movimientos_historial").insert(historial);
               if (error) throw new Error(`guardando el historial: ${error.message}`);
             }
+
+            /* El reloj se pone SÓLO con la lista válida. Un vistazo que no se
+             * pudo leer no es un vistazo: marcarlo dejaría la sala cinco
+             * minutos sin volver a intentar, y el modo de falla que importa
+             * —sesión vencida, que devuelve HTML con 200— duraría más que el
+             * problema. Sin marca, la corrida de dentro de 30 segundos
+             * reintenta.
+             *
+             * `encontrados` no se usa para decidir nada: está para que un cero
+             * se pueda leer como «se miró y no había», que es justo lo que las
+             * filas no pueden decir. */
+            const { error: errReloj } = await supabase.from("cortes_caja_vistazos")
+              .upsert({ branch_id: branchId, mirado_el: ahora, encontrados: movs.length },
+                { onConflict: "branch_id" });
+            if (errReloj) throw new Error(`marcando el vistazo: ${errReloj.message}`);
           }
         }
 

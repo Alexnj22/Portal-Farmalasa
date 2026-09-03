@@ -502,6 +502,7 @@ export const AREAS = [
         tablas: ['cortes_caja', 'cortes_caja_diferencia_personas', 'cortes_caja_diferencias',
                  'cortes_caja_eventos', 'cortes_caja_movimientos',
                  'cortes_caja_movimientos_historial', 'cortes_caja_aperturas',
+                 'cortes_caja_vistazos',
                  'caja_vales_portal', 'caja_aperturas_del_portal', 'caja_movimientos_portal',
                  'caja_tipos_movimiento', 'abonos_de_cliente', 'creditos_abonos_portal',
                  'creditos_de_clientes', 'creditos_sync', 'pos_proveedores',

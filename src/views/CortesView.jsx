@@ -36,6 +36,10 @@ import {
  * «Hoy»; la policy de la tabla acepta las dos puertas, `caja_vales` para operar
  * y `cortes_caja` para mirar. */
 import { fetchCobrosDelPortal } from '../data/creditos';
+/* Las salidas pagadas con una bolsa de efectivo. Van acá porque son la tercera
+ * forma en que sale dinero de una sala, y la única que no dejaba rastro en
+ * ninguna pantalla de Efectivo. */
+import { fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '../data/bolsas';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { formatMoney } from '../utils/formatNumber';
@@ -186,6 +190,11 @@ const CortesView = () => {
     const branches = useStaff((s) => s.branches) || VACIO;
     const { hasPermission, getScope } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
+    /* Las salidas de bolsa son de OTRO módulo, con su propio permiso. Se
+     * pregunta antes de pedirlas: la policy de `bolsas` devuelve cero filas y no
+     * un error, y leer ese vacío como «no hubo ninguna» es cómo se pierde
+     * dinero de vista. */
+    const puedeVerBolsas = hasPermission('bolsas', 'can_view');
     // Quien ve una sola sala no elige sala: la policy de `cortes_caja` ya se lo
     // resolvió, y ofrecerle el filtro sería un control que no recorta nada.
     const alcanceTodas = getScope('cortes_caja') === 'ALL';
@@ -283,6 +292,21 @@ const CortesView = () => {
      * firmó cada corte. */
     const [cobros, setCobros] = useState(VACIO);
     const [cobraron, setCobraron] = useState(() => new Map());
+    /* Las salidas de bolsa del período, su catálogo de motivos y quién las
+     * hizo. El catálogo sale de la TABLA y no de una lista escrita acá: un
+     * motivo nuevo aparecería en la base y no en la pantalla. */
+    const [salidasDeBolsa, setSalidasDeBolsa] = useState(VACIO);
+    const [tiposDeSalida, setTiposDeSalida] = useState(VACIO);
+    const [sacaron, setSacaron] = useState(() => new Map());
+
+    // El catálogo de motivos, una sola vez: es una tabla chica y no cambia
+    // dentro de la sesión.
+    useEffect(() => {
+        if (!puedeVerBolsas) return undefined;
+        let vivo = true;
+        fetchTiposDeSalida().then((t) => { if (vivo) setTiposDeSalida(t || VACIO); });
+        return () => { vivo = false; };
+    }, [puedeVerBolsas]);
     const [cargandoMovs, setCargandoMovs] = useState(false);
     const [tipoMov, setTipoMov] = useState('TODOS');
     const [estadoMov, setEstadoMov] = useState('TODOS');
@@ -321,20 +345,33 @@ const CortesView = () => {
     const cargarMovs = useCallback(async () => {
         if (!enMovimientos) return;
         setCargandoMovs(true);
-        const [filas, cambios, cobrados] = await Promise.all([
+        const [filas, cambios, cobrados, salidas] = await Promise.all([
             fetchMovimientosDeCaja({ desde, hasta, branchId: sala || null }),
             fetchHistorialDeMovimientos({ desde, hasta, branchId: sala || null }),
             fetchCobrosDelPortal({ desde, hasta, branchId: sala || null }),
+            /* Sin el permiso de bolsas la policy devuelve cero filas y NO un
+             * error, así que pedirlas igual haría que «no salió dinero de
+             * ninguna bolsa» y «no lo puedo ver» se leyeran idénticas. Se
+             * pregunta antes, y el componente lo dice en pantalla. */
+            puedeVerBolsas
+                ? fetchSalidasDeBolsaDelRango({ desde, hasta, branchId: sala || null })
+                : Promise.resolve(VACIO),
         ]);
         setMovs(filas || VACIO);
         setHistorial(cambios || VACIO);
         setCobros(cobrados || VACIO);
+        setSalidasDeBolsa(salidas || VACIO);
         setCargandoMovs(false);
         // Después de pintar: la lista se lee con o sin la cara, y esperar a las
         // fotos retrasaría lo único que la pestaña tiene que hacer.
-        const quienes = await fetchPersonas((cobrados || []).map((c) => c.abonado_por));
-        setCobraron(new Map((quienes || []).map((q) => [q.id, q])));
-    }, [enMovimientos, desde, hasta, sala]);
+        const quienes = await fetchPersonas([
+            ...(cobrados || []).map((c) => c.abonado_por),
+            ...(salidas || []).map((o) => o.registrado_por),
+        ]);
+        const porId = new Map((quienes || []).map((q) => [q.id, q]));
+        setCobraron(porId);
+        setSacaron(porId);
+    }, [enMovimientos, desde, hasta, sala, puedeVerBolsas]);
 
     useEffect(() => { cargarMovs(); }, [cargarMovs]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la pestaña y al cambiar sala o rango
 
@@ -580,7 +617,7 @@ const CortesView = () => {
             // En «Hoy» no hay nada que buscar: es un turno, no una lista.
             showSearch={!enHoy}
             placeholder={enMovimientos
-                ? 'Buscar por concepto, cliente, sala o monto…'
+                ? 'Buscar por concepto, cliente, folio, sala o monto…'
                 : 'Buscar por sala, persona, hora o monto…'}
         />
     );
@@ -757,6 +794,12 @@ const CortesView = () => {
                         // que el sistema de la caja no sabe nombrar.
                         cobros={cobros}
                         cobraron={cobraron}
+                        // Las salidas pagadas con una bolsa: la tercera forma en
+                        // que sale dinero de una sala.
+                        salidasDeBolsa={salidasDeBolsa}
+                        tiposDeSalida={tiposDeSalida}
+                        sacaron={sacaron}
+                        puedeVerBolsas={puedeVerBolsas}
                         salas={salasMap}
                         cargando={cargandoMovs}
                         busqueda={busqueda}

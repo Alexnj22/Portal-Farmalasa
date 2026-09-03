@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.967.6 — Las salidas de bolsa entran a Movimientos y el vale se abre en sus salidas
+
+Segunda mitad de v2.967.0. El usuario preguntó si con eso ya se veían **todos**
+los movimientos; se midió, y faltaba una pieza grande.
+
+**Lo que no se veía.** Las salidas pagadas con una bolsa de efectivo no estaban
+en la pestaña. Van 72 y **65 nunca se vuelven vale en la caja: $15,072.74**. Y
+las que sí llegan aparecían agregadas en una sola línea —`VALE DE CAJA 8
+(3 salidas) · $180.00`—, así que ni ésas se veían una por una.
+
+**El vale se abre.** Debajo de su renglón van ahora las salidas que lo componen,
+con folio, motivo y lo que cada una aportó **a ese vale** —que no es su monto:
+una salida grande se reparte entre las bolsas que alcancen, y la remesa REM-1058
+de $500 puso $119.38 en el vale del 1-sep y $380.62 salió de dos bolsas del
+31-ago—. No se adivina por monto: la cadena `bolsas_movimientos.caja_vale_id →
+caja_vales_portal.erp_movimiento_id` es exacta, verificada contra los tres vales
+que existen (las sumas cierran al centavo).
+
+**Lo que ningún vale contó sale como fila propia**, marcada «salió de una bolsa»
+y **fuera del neto**. Ese dinero salió de la caja en un corte anterior, cuando se
+embolsó —y eso sí se ve, es el vale de aquel día—, así que restarlo otra vez
+sería contarlo dos veces. La fila existe para poder rastrearlo, no para mover el
+número. El monto va apagado por lo mismo que los cobros por transferencia: en
+ámbar y junto a las salidas de la caja se leería como billetes que el próximo
+corte va a echar de menos.
+
+**Y el permiso se dice en voz alta.** Las tres tablas de bolsas piden
+`bolsas.can_view` y la pestaña pide `cortes_caja`: quien tenga uno y no el otro
+recibiría cero filas **sin ningún error**. Se pregunta antes de pedirlas y la
+pantalla lo explica —también con la lista vacía, que es donde «no salió dinero de
+ninguna bolsa» y «no lo puedo ver» se leen idénticas—.
+
+El reparto vive en `repartoDeUnaSalida` (`utils/cortesDiagnostico`) y no dentro
+del `.then()` de la consulta: es una decisión sobre dinero, y ahí adentro no se
+puede probar. 7 pruebas con los casos reales.
+
 ## v2.967.5 — Bitácoras digitales: qué pide la SRS, y el respaldo que no las alcanzaba
 
 Pregunta del usuario: *«si es sólo digital, cómo debería ser o qué pide la SRS

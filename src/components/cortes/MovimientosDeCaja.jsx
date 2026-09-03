@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, HandCoins, History, Pencil, Scale, Search, Trash2, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, HandCoins, History, Pencil, Scale, Search, ShoppingBag, Trash2, Wallet } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
@@ -116,6 +116,16 @@ const diaSV = (iso) => (iso
     ? new Date(new Date(iso).getTime() - 6 * 3600_000).toISOString().slice(0, 10)
     : null);
 
+/* El último desempate del orden. Los renglones de la caja se desempatan por
+ * `erp_movimiento_id`, que es un NÚMERO —comparado como texto, «9» quedaría
+ * después de «43912»—, y una salida de bolsa por su id, que es un uuid. */
+const desempatar = (a, b) => {
+    const na = Number(a); const nb = Number(b);
+    return (Number.isFinite(na) && Number.isFinite(nb))
+        ? nb - na
+        : String(b ?? '').localeCompare(String(a ?? ''));
+};
+
 /** Minutos desde medianoche, en hora de sala. Para ordenar y comparar. */
 const minutosDeIso = (iso) => {
     if (!iso) return null;
@@ -142,6 +152,10 @@ export default function MovimientosDeCaja({
     cortes = [],
     cobros = [],
     cobraron,
+    salidasDeBolsa = [],
+    tiposDeSalida = [],
+    sacaron,
+    puedeVerBolsas = true,
     salas,
     cargando = false,
     busqueda = '',
@@ -189,13 +203,56 @@ export default function MovimientosDeCaja({
         [movimientos, cobros],
     );
 
-    /* La lista mezclada: los renglones de la caja y los cobros que quedaron
-     * sueltos. Se mezclan ANTES de paginar —y no al pintar cada día— porque de
-     * otro modo un cobro suelto podría caer fuera de la página y desaparecer
-     * sin que nada lo diga. */
+    /* ── El renglón «VALE DE CAJA 8 (3 salidas)», abierto ──────────────────
+     *
+     * Ese renglón es un TOTAL: $180.00 que la caja descontó de una vez, y las
+     * tres salidas que lo componen no estaban en ninguna pantalla de Efectivo.
+     * Acá se ponen debajo, y no hay que adivinar cuál es cuál — la cadena
+     * `bolsas_movimientos.caja_vale_id → caja_vales_portal.erp_movimiento_id`
+     * es exacta (verificado sobre los 3 vales que existen: las sumas cierran al
+     * centavo). Es lo contrario del cruce por monto que hay que hacer con los
+     * cobros, y por eso acá no hay reparto que resolver.
+     *
+     * La clave lleva la SALA además del id del movimiento: `erp_movimiento_id`
+     * es del sistema de origen y se repite entre salas. */
+    const desglosePorVale = useMemo(() => {
+        const m = new Map();
+        for (const op of salidasDeBolsa) {
+            for (const [erp, monto] of op.porVale || []) {
+                const clave = `${op.branch_id}:${erp}`;
+                if (!m.has(clave)) m.set(clave, []);
+                m.get(clave).push({ op, monto });
+            }
+        }
+        for (const lista of m.values()) lista.sort((a, b) => b.monto - a.monto);
+        return m;
+    }, [salidasDeBolsa]);
+
+    /* Las salidas de bolsa que NINGÚN vale contó. Son las que hasta hoy no
+     * aparecían en ninguna pantalla de Efectivo: 65 salidas y $15,072.74
+     * medidos el 2026-09-03. Su dinero salió de la caja en un corte anterior
+     * —cuando se embolsó, que es un vale que sí se ve—, así que la fila existe
+     * para poder rastrearla y NO suma al neto. */
+    const sueltasDeBolsa = useMemo(
+        () => salidasDeBolsa.filter((op) => op.montoSinVale > 0.005),
+        [salidasDeBolsa],
+    );
+
+    /** El rótulo de un motivo de salida sale de la TABLA, nunca de una lista
+     *  escrita acá: un motivo nuevo aparecería en la base y no en la pantalla. */
+    const etiquetaDeSalida = useCallback(
+        (codigo) => tiposDeSalida.find((t) => t.codigo === codigo)?.etiqueta || codigo || 'Salida',
+        [tiposDeSalida],
+    );
+
+    /* La lista mezclada: los renglones de la caja, los cobros que quedaron
+     * sueltos y las salidas de bolsa que ningún vale contó. Se mezclan ANTES de
+     * paginar —y no al pintar cada día— porque de otro modo una fila podría
+     * caer fuera de la página y desaparecer sin que nada lo diga. */
     const items = useMemo(() => ([
         ...movimientos.map((mv) => ({
             kind: 'mov', clave: `m${mv.id}`, mv, cobro: porMovimiento.get(mv.id) || null,
+            desglose: desglosePorVale.get(`${mv.branch_id}:${mv.erp_movimiento_id}`) || null,
             fecha: mv.fecha, branchId: mv.branch_id, orden: mv.created_at,
             desempate: mv.erp_movimiento_id,
         })),
@@ -204,10 +261,15 @@ export default function MovimientosDeCaja({
             fecha: diaSV(cb.created_at), branchId: cb.branch_id, orden: cb.created_at,
             desempate: cb.id,
         })),
+        ...sueltasDeBolsa.map((op) => ({
+            kind: 'bolsa', clave: `b${op.id}`, op,
+            fecha: diaSV(op.registrado_at), branchId: op.branch_id, orden: op.registrado_at,
+            desempate: op.id,
+        })),
     ]).sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
         || String(b.orden || '').localeCompare(String(a.orden || ''))
-        || (Number(b.desempate) - Number(a.desempate))),
-    [movimientos, sueltos, porMovimiento]);
+        || desempatar(a.desempate, b.desempate)),
+    [movimientos, sueltos, porMovimiento, desglosePorVale, sueltasDeBolsa]);
 
     const filtrados = useMemo(() => items.filter((it) => {
         if (it.kind === 'cobro') {
@@ -223,6 +285,19 @@ export default function MovimientosDeCaja({
                 c.documento, cobraron?.get(c.abonado_por)?.name,
                 salas?.get(c.branch_id), String(c.monto), 'ENTRADA');
         }
+        if (it.kind === 'bolsa') {
+            const op = it.op;
+            // Sacar dinero de una bolsa es siempre una SALIDA. Y de los tres
+            // estados de la ranura sólo le cabe «vigente»: los otros dos hablan
+            // de lo que pasó con un renglón del sistema de la caja, y esto no
+            // tiene ninguno — ése es justamente el motivo de que exista la fila.
+            if (tipo === 'ENTRADA') return false;
+            if (estado === 'VIGENTES' && op.anulada_at) return false;
+            if (estado === 'EDITADOS' || estado === 'DESAPARECIDOS') return false;
+            return tokenMatch(busqueda, op.folio, etiquetaDeSalida(op.tipo), op.entidad,
+                op.numero_boleta, sacaron?.get(op.registrado_por)?.name,
+                salas?.get(op.branch_id), String(op.monto), 'SALIDA');
+        }
         const m = it.mv;
         if (tipo !== 'TODOS' && m.tipo !== tipo) return false;
         if (estado === 'VIGENTES'      && m.desaparecido_at) return false;
@@ -231,10 +306,14 @@ export default function MovimientosDeCaja({
         // El cobro emparejado también se busca: quien escribe el nombre de la
         // clienta tiene que encontrar el renglón que dice «POR ABONO A
         // CREDITO», que es donde ese nombre no está escrito.
+        // El cobro emparejado y las salidas que un vale cubre también se buscan:
+        // quien escribe el nombre de la clienta —o el folio de una remesa— tiene
+        // que encontrar el renglón que las esconde detrás de un total.
         return tokenMatch(busqueda, m.concepto, salas?.get(m.branch_id), String(m.monto), m.tipo,
             it.cobro?.cliente, it.cobro && `crédito ${it.cobro.credito_erp}`,
-            it.cobro && cobraron?.get(it.cobro.abonado_por)?.name);
-    }), [items, tipo, estado, busqueda, salas, fueEditado, cobraron]);
+            it.cobro && cobraron?.get(it.cobro.abonado_por)?.name,
+            ...(it.desglose || []).flatMap((d) => [d.op.folio, d.op.entidad, etiquetaDeSalida(d.op.tipo)]));
+    }), [items, tipo, estado, busqueda, salas, fueEditado, cobraron, sacaron, etiquetaDeSalida]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     const pagina = useMemo(
@@ -288,13 +367,19 @@ export default function MovimientosDeCaja({
                          * en un cobro del portal es la hora real del cobro, que
                          * el portal sí guarda — y por eso un cobro nunca queda
                          * «sin hora comparable». */
-                        const conMinuto = lista.map((it) => (it.kind === 'cobro'
-                            ? { tipoFila: 'cobro', it, minuto: minutosDeIso(it.cb.created_at) }
-                            : {
+                        const conMinuto = lista.map((it) => {
+                            if (it.kind === 'cobro') {
+                                return { tipoFila: 'cobro', it, minuto: minutosDeIso(it.cb.created_at) };
+                            }
+                            if (it.kind === 'bolsa') {
+                                return { tipoFila: 'bolsa', it, minuto: minutosDeIso(it.op.registrado_at) };
+                            }
+                            return {
                                 tipoFila: 'mov', it,
                                 minuto: diaSV(it.mv.created_at) === it.mv.fecha
                                     ? minutosDeIso(it.mv.created_at) : null,
-                            }));
+                            };
+                        });
                         const cortesAqui = (cortesPorGrupo.get(`${fecha}:${branchId}`) || []).map((c) => ({
                             tipoFila: 'corte', corte: c, minuto: minutosDeHora(c.hora),
                         }));
@@ -319,6 +404,12 @@ export default function MovimientosDeCaja({
                                 return (it.cb.anulado_at || !it.cb.entroAlCajon)
                                     ? s : s + (Number(it.cb.monto) || 0);
                             }
+                            // La salida de bolsa NUNCA suma. Ese dinero salió de
+                            // la caja en un corte anterior —cuando se embolsó, y
+                            // ESO sí es un vale que se ve—, así que restarlo acá
+                            // lo contaría dos veces. La fila existe para poder
+                            // rastrearla, no para mover el número.
+                            if (it.kind === 'bolsa') return s;
                             const mv = it.mv;
                             return mv.desaparecido_at ? s
                                 : s + (mv.tipo === 'ENTRADA' ? 1 : -1) * (Number(mv.monto) || 0);
@@ -358,23 +449,41 @@ export default function MovimientosDeCaja({
         return n;
     }, [dias]);
 
+    /* El aviso del permiso que falta. Va acá arriba y no dentro del cuerpo
+     * porque también tiene que salir con la lista VACÍA: sin él, «no salió
+     * dinero de ninguna bolsa» y «no lo puedo ver» son la misma pantalla, y la
+     * policy de `bolsas` devuelve cero filas sin ningún error. */
+    const avisoDeBolsas = !puedeVerBolsas && (
+        <Notice variant="info" icon={ShoppingBag}>
+            Aquí ves lo que la caja anotó y los cobros de crédito. Las salidas pagadas con
+            una bolsa de efectivo necesitan el permiso de Bolsas.
+        </Notice>
+    );
+
     if (!cargando && filtrados.length === 0) {
-        return busqueda ? (
-            <EmptyState
-                compact icon={Search} title="Sin resultados"
-                subtitle={`Ningún movimiento coincide con «${busqueda}».`}
-                action={<Button variant="secondary" onClick={onLimpiarBusqueda}>Limpiar la búsqueda</Button>}
-            />
-        ) : (
-            <EmptyState
-                compact icon={Wallet} title="Sin movimientos"
-                subtitle="No se anotó ninguna entrada ni salida de efectivo en estas fechas, ni se cobró ningún crédito."
-            />
+        return (
+            <div className="space-y-5">
+                {avisoDeBolsas}
+                {busqueda ? (
+                    <EmptyState
+                        compact icon={Search} title="Sin resultados"
+                        subtitle={`Ningún movimiento coincide con «${busqueda}».`}
+                        action={<Button variant="secondary" onClick={onLimpiarBusqueda}>Limpiar la búsqueda</Button>}
+                    />
+                ) : (
+                    <EmptyState
+                        compact icon={Wallet} title="Sin movimientos"
+                        subtitle="No se anotó ninguna entrada ni salida de efectivo en estas fechas, ni se cobró ningún crédito."
+                    />
+                )}
+            </div>
         );
     }
 
     return (
         <div className="space-y-5">
+            {avisoDeBolsas}
+
             {tardios > 0 && (
                 <Notice variant="warning" icon={Scale}>
                     <span className="font-bold">
@@ -423,12 +532,24 @@ export default function MovimientosDeCaja({
                                             />
                                         );
                                     }
+                                    if (f.tipoFila === 'bolsa') {
+                                        return (
+                                            <RenglonDeBolsa
+                                                key={f.it.clave}
+                                                op={f.it.op}
+                                                etiqueta={etiquetaDeSalida(f.it.op.tipo)}
+                                                quien={sacaron?.get(f.it.op.registrado_por)}
+                                            />
+                                        );
+                                    }
                                     return (
                                         <Renglon
                                             key={f.it.clave}
                                             mov={f.it.mv}
                                             cobro={f.it.cobro}
                                             quien={f.it.cobro && cobraron?.get(f.it.cobro.abonado_por)}
+                                            desglose={f.it.desglose}
+                                            etiquetaDeSalida={etiquetaDeSalida}
                                             minuto={f.minuto}
                                             editado={fueEditado(f.it.mv)}
                                             edicion={ultimaEdicion(f.it.mv)}
@@ -499,7 +620,7 @@ function LineaDeCorte({ corte }) {
  * anterior tachado AL LADO del nuevo — que es el dato, y estaba escondido
  * detrás de un clic.
  */
-function Renglon({ mov, cobro, quien, minuto, editado, edicion, onAbrir }) {
+function Renglon({ mov, cobro, quien, desglose, etiquetaDeSalida, minuto, editado, edicion, onAbrir }) {
     const ido = Boolean(mov.desaparecido_at);
     const entra = mov.tipo === 'ENTRADA';
     const Glifo = ido ? Trash2 : entra ? ArrowDownLeft : ArrowUpRight;
@@ -515,7 +636,7 @@ function Renglon({ mov, cobro, quien, minuto, editado, edicion, onAbrir }) {
 
     const hora = minuto != null ? horaDe(mov.created_at) : null;
 
-    return (
+    const fila = (
         <button type="button" onClick={onAbrir} data-interactive
             className="w-full text-left rounded-xl overflow-hidden flex items-stretch gap-0
                        min-h-[var(--tap-min)] active:scale-[0.99] transition-transform"
@@ -572,6 +693,46 @@ function Renglon({ mov, cobro, quien, minuto, editado, edicion, onAbrir }) {
                 </span>
             </span>
         </button>
+    );
+
+    if (!desglose?.length) return fila;
+
+    /* ── El vale, abierto ──────────────────────────────────────────────────
+     *
+     * `VALE DE CAJA 8 (3 salidas) · $180.00` es un TOTAL, y las tres salidas
+     * que lo componen no estaban en ninguna pantalla de Efectivo. Van DEBAJO y
+     * fuera del botón: son datos, no un segundo destino — el detalle de cada
+     * salida vive en Bolsas, y llevar de una lista a otra al tocar un renglón
+     * sería un destino que nadie pidió.
+     *
+     * Cada línea lleva lo que aportó a ESTE vale y no el monto de la operación:
+     * una salida grande se reparte entre las bolsas que alcancen, así que su
+     * total puede ser mucho mayor que lo que este vale descontó. */
+    return (
+        <div className="space-y-1">
+            {fila}
+            <div className="ml-4 rounded-lg bg-surface-input/40 px-3 py-2 space-y-1">
+                {desglose.map(({ op, monto }) => (
+                    <div key={op.id} className="flex items-baseline justify-between gap-3 text-caption">
+                        <span className="text-content-2 min-w-0 truncate">
+                            {op.folio}
+                            <span className="text-content-3">
+                                {' · '}{etiquetaDeSalida ? etiquetaDeSalida(op.tipo) : op.tipo}
+                                {op.entidad ? ` · ${op.entidad}` : ''}
+                            </span>
+                        </span>
+                        <span className="flex items-baseline gap-2 shrink-0 tabular-nums">
+                            <span className="text-content-2">{formatMoney(monto)}</span>
+                            {Math.abs(Number(op.monto) - monto) > 0.005 && (
+                                <span className="text-content-3">
+                                    de {formatMoney(op.monto)}
+                                </span>
+                            )}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }
 
@@ -641,6 +802,73 @@ function RenglonDeCobro({ cobro, quien }) {
                         {Number(cobro.saldo_despues) > 0.004
                             ? `queda ${formatMoney(cobro.saldo_despues)}`
                             : 'saldado'}
+                    </span>
+                </span>
+            </span>
+        </div>
+    );
+}
+
+/**
+ * Una salida pagada con una bolsa de efectivo que ningún vale contó.
+ *
+ * ── Por qué está en una lista de movimientos de CAJA ───────────────────────
+ * Porque es dinero que salió de la sala y no aparecía en ninguna pantalla de
+ * Efectivo: 65 salidas y $15,072.74 medidos el 2026-09-03. El sistema de la
+ * caja no la anota, y con razón — ese dinero ya había salido de la caja en un
+ * corte anterior, cuando se embolsó, y ESO sí se ve (es el vale de aquel día).
+ *
+ * Por eso la fila NO suma al neto y lo dice en su propio rótulo. Contarla sería
+ * restar dos veces el mismo dinero; esconderla era no poder rastrearlo.
+ */
+function RenglonDeBolsa({ op, etiqueta, quien }) {
+    const anulada = Boolean(op.anulada_at);
+    const hora = horaDe(op.registrado_at);
+    const parcial = op.cubiertoPorVales > 0.005;
+
+    return (
+        <div data-surface="card"
+            className="w-full rounded-xl overflow-hidden flex items-stretch gap-0 min-h-[var(--tap-min)]">
+            <span className={`w-1 shrink-0 ${anulada ? 'bg-danger' : 'bg-content-3/40'}`} aria-hidden="true" />
+            <span className="flex items-center gap-3 flex-1 min-w-0 p-2.5">
+                <span className={`shrink-0 w-8 h-8 rounded-lg grid place-items-center ${
+                    anulada ? 'bg-danger/10 text-danger-text' : 'bg-surface-input text-content-3'}`}
+                    aria-hidden="true">
+                    <ShoppingBag className="w-4 h-4" />
+                </span>
+
+                <span className="flex-1 min-w-0">
+                    <span className={`block text-body-sm font-semibold truncate ${
+                        anulada ? 'text-content-3 line-through' : 'text-content'}`}>
+                        {etiqueta}{op.entidad ? ` · ${op.entidad}` : ''}
+                    </span>
+                    <span className="flex items-center gap-1.5 flex-wrap text-micro text-content-3">
+                        {anulada && <Badge variant="danger" size="sm">Anulada</Badge>}
+                        <Badge variant="neutral" size="sm">Salió de una bolsa</Badge>
+                        {op.folio}
+                        {op.numero_boleta && ` · boleta ${op.numero_boleta}`}
+                        {hora && ` · ${hora}`}
+                    </span>
+                    {quien && (
+                        <span className="flex items-center gap-1.5 mt-1 min-w-0">
+                            <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />
+                            <span className="text-micro text-content-3 truncate">La hizo {quien.name}</span>
+                        </span>
+                    )}
+                </span>
+
+                <span className="shrink-0 text-right">
+                    {/* Apagado, como los cobros que no tocan el cajón: en ámbar y
+                        junto a las salidas de la caja, se leería como billetes
+                        que el próximo corte va a echar de menos. */}
+                    <span className={`block text-body font-black tabular-nums ${
+                        anulada ? 'text-danger-text line-through' : 'text-content-3'}`}>
+                        −{formatMoney(op.montoSinVale)}
+                    </span>
+                    <span className="block text-micro text-content-3">
+                        {parcial
+                            ? `de ${formatMoney(op.monto)} · el resto, en el vale`
+                            : 'de una bolsa ya cerrada'}
                     </span>
                 </span>
             </span>

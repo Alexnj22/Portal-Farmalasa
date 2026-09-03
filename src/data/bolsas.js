@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep } from '../utils/storageFiles';
+import { repartoDeUnaSalida } from '../utils/cortesDiagnostico';
 
 // Bolsas de efectivo — el dinero que la sala guarda al confirmar un corte, hasta
 // que administración lo cuenta.
@@ -1235,6 +1236,58 @@ export async function fetchSalidasDeSalaDelDia({ sala, dia }) {
                 .reduce((t, l) => t + Math.abs(Number(l.monto) || 0), 0),
         };
     });
+}
+
+/**
+ * Las salidas pagadas con una bolsa de efectivo, de un RANGO y de todas las
+ * salas — para la pestaña «Movimientos» de Efectivo.
+ *
+ * ── Por qué existe aparte de `fetchSalidasDeSalaDelDia` ────────────────────
+ * Aquélla contesta «¿qué va a medir el próximo corte de MI sala?» y por eso
+ * gira alrededor de un día concreto (`deHoy`, `montoDeHoy`, `tocaLaCaja`). Ésta
+ * contesta otra: «¿dónde está toda la plata que salió de esta sala?», sobre un
+ * período y sin un «hoy» contra el que comparar.
+ *
+ * ── Lo que devuelve, y por qué no es sólo la fila ─────────────────────────
+ * Una salida grande se reparte entre las bolsas que alcancen, y sólo las partes
+ * que salen de una bolsa del día abierto se convierten en un VALE DE CAJA — que
+ * es un renglón que el sistema de la caja SÍ anota. O sea que una misma
+ * operación puede estar mitad adentro y mitad afuera de la lista de
+ * movimientos, y por eso cada una vuelve con:
+ *
+ *   `porVale`      cuánto aportó a cada vale, por `erp_movimiento_id`.
+ *   `montoSinVale` cuánto NO lo contó ningún vale.
+ *
+ * Las dos las calcula `repartoDeUnaSalida` (`utils/cortesDiagnostico`), con sus
+ * pruebas y el porqué de cada regla.
+ *
+ * ⚠️ Requiere el permiso de `bolsas`. Sin él la policy devuelve cero filas y NO
+ * un error, así que quien llama tiene que preguntar antes en vez de leer el
+ * vacío como «no hubo ninguna» — es lo que ya hace `MiCajaView`.
+ */
+export async function fetchSalidasDeBolsaDelRango({ desde, hasta, branchId = null }) {
+    if (!desde || !hasta) return [];
+    const fin = new Date(`${hasta}T00:00:00-06:00`);
+    fin.setDate(fin.getDate() + 1);
+    return fetchAllRows(() => {
+        let q = supabase.from('bolsas_operaciones')
+            .select(`id, branch_id, folio, tipo, monto, entidad, numero_boleta,
+                     registrado_at, anulada_at, registrado_por, foto_url,
+                     bolsas_movimientos ( monto, anulado_at, caja_vale_id,
+                       caja_vales_portal ( erp_movimiento_id ) )`)
+            .gte('registrado_at', `${desde}T00:00:00-06:00`)
+            .lt('registrado_at', fin.toISOString())
+            .order('registrado_at', { ascending: false });
+        if (branchId) q = q.eq('branch_id', branchId);
+        return q;
+    }).then((filas) => (filas || []).map((o) => ({
+        ...o,
+        monto: Math.abs(Number(o.monto) || 0),
+        // El reparto vive en `cortesDiagnostico` y no acá: es una decisión sobre
+        // DINERO —qué parte ya la contó un vale— y escrita dentro de un `.then()`
+        // no se puede probar.
+        ...repartoDeUnaSalida(o),
+    })));
 }
 
 /**

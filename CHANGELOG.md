@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.971.5 — Auditoría de personal, documentos y nómina
+
+Sólo documentación: `docs/AUDITORIA-PERSONAL-2026-09-03.md`. Barrido del área
+completa después del arreglo de v2.971.3 — **nueve hallazgos, dos graves**, y
+ninguno da error.
+
+El que está pasando hoy: **el expediente tiene tres puertas en la base y ninguna
+en el almacén.** Las cuatro policies del bucket `documents` comprueban sólo
+`bucket_id`, así que cualquiera de las 48 cuentas puede ver, reemplazar y
+**borrar** el DUI o el contrato de cualquier persona — y las rutas se las da
+`employees_safe.employee_documents`, que viaja en el arranque a todo el mundo.
+Lo mismo el bucket `empleados`. En el repo ya hay cuatro buckets hechos bien
+(`recetas`, `sales-dte`, `purchase-dte`, `inventario-evidencia`): lo que faltaba
+era mirarlo.
+
+El segundo: **la lectura de la ficha se reparte en tres llaves y la escritura es
+una sola.** A `authenticated` se le revocó el SELECT de las 12 columnas
+sensibles y se le dejó INSERT y UPDATE sobre las doce; las tres policies de
+escritura de `employees` piden `staff_list.can_edit` y nada más. «Gestionar» en
+el Listado alcanza para cambiarle a cualquiera el sueldo, la cuenta donde se le
+deposita y el código con el que entra — sin poder verlos.
+
+Los otros siete, con su medición, en el informe: la bitácora de cambios críticos
+no mira `bank_name` ni `account_number`; generar la quincena sin la llave del
+sueldo borra el borrador y lo reemplaza por 46 renglones en cero; **46 de 48
+fichas no tienen sueldo y `payroll_entries` está en 0**, o sea que la nómina
+todavía no se puede correr; la autogestión está apagada para 43 de 47 personas y
+los cinco auxiliares de bodega no reciben ni los comunicados; y una cadena de
+cuatro saltos manda a quien no tiene Listado ni Inicio a «Acceso denegado» al
+entrar — leída en el código, sin confirmar en el navegador, y así queda escrito.
+
+
 ## v2.971.4 — El formulario de completar un renglón, en cuatro pasos
 
 Pedido del usuario: *«mejora ese modal y mejoralo visualmente todo»*. La

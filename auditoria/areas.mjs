@@ -245,7 +245,8 @@ export const AREAS = [
                'soltar-captura'],
         crons: ['apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily',
                 'soltar-capturas-abandonadas'],
-        docs: ['docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md'],
+        docs: ['docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md',
+               'docs/AUDITORIA-PERSONAL-2026-09-03.md'],
     },
     {
         id: 'asistencia',

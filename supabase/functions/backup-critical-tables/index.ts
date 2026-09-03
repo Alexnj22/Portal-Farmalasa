@@ -13,6 +13,26 @@ const TABLES = [
   "product_categories", "erp_sucursal_map",
   "kiosk_devices", "overtime_bank", "payroll_periods", "payroll_entries",
   "vacation_plan_headers", "vacation_plans", "audit_logs",
+  // ── Bitácoras: el registro que la norma manda conservar MÁS tiempo ──────
+  // RTS 11.02.04:24 §6.2.16 conserva temperatura y humedad **2 años**, y la
+  // Guía de Verificación de BPAD 3.12 la dispensación bajo receta 1 año. No
+  // se recuperan por resync: se anotan a mano en la sala y no existen en
+  // ningún otro sistema.
+  //
+  // Y el respaldo es una de las CINCO secciones obligatorias del protocolo de
+  // supervisión del sistema electrónico que exige el §6.1.15 para llevar las
+  // bitácoras en digital. Hasta el 2026-09-03 ninguna de las 7 tablas estaba
+  // acá: el control existía como frase y no alcanzaba lo que iba a declarar.
+  // Pesan 1.3 MB en total.
+  //
+  // ⚠️ Esta lista y el whitelist de `backup_dump_table` (migración
+  // 20260903174328) son la MISMA lista dicha dos veces, y se mueven juntas.
+  // Una tabla agregada sólo acá vuelve `TABLE_NOT_ALLOWED`, y como el contador
+  // de fallos hace que la corrida entera reporte `ok: false`, se cae el
+  // respaldo COMPLETO — no sólo la tabla nueva.
+  "bitacora_areas", "bitacora_lecturas", "bitacora_limpiezas",
+  "bitacora_correcciones", "bitacora_cierres", "bitacora_dispensaciones",
+  "bitacora_folios",
 ];
 
 const RETENTION_DAYS = 60;

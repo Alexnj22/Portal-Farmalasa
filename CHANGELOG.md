@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.967.5 — Bitácoras digitales: qué pide la SRS, y el respaldo que no las alcanzaba
+
+Pregunta del usuario: *«si es sólo digital, cómo debería ser o qué pide la SRS
+para que funcione de esa forma?»*. El análisis completo, con las citas, en
+`docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.
+
+**Sí se puede llevar sólo digital**, y la norma lo contempla explícitamente. Lo
+permite con carga extra: **dos documentos escritos y firmados por el regente**
+(RTS 6.1.14 y 6.1.15, verificados por la Guía 3.6) más un sistema que demuestre
+las cinco propiedades ALCOA. El portal **cumple** lo que esos documentos
+describirían; los documentos hay que escribirlos, y no existen.
+
+**Y midiendo eso apareció un hueco real: ninguna de las 7 tablas de bitácoras
+estaba en el respaldo semanal.** Ni `bitacora_lecturas`, ni `bitacora_limpiezas`,
+ni `bitacora_correcciones`, ni `bitacora_cierres`, ni `bitacora_dispensaciones`,
+ni `bitacora_areas`, ni `bitacora_folios`. Es justo el registro que la norma
+manda conservar más tiempo —**2 años** temperatura y humedad (RTS 6.2.16), **1
+año** la dispensación bajo receta (Guía 3.12)— y no se recupera por resync: se
+anota a mano en la sala y no existe en ningún otro sistema.
+
+O sea que **«respaldo», que es una de las cinco secciones obligatorias del
+protocolo, no alcanzaba lo que el protocolo iba a declarar.** El control existía
+como frase y nada verificaba hasta dónde llegaba.
+
+**La lista estaba escrita DOS veces**, y ahí estaba la trampa: el array `TABLES`
+de la Edge Function y el whitelist de `backup_dump_table` en Postgres. Agregar
+las tablas de un solo lado las habría hecho fallar con `TABLE_NOT_ALLOWED`, y
+como el contador de fallos vuelve `ok: false` a la corrida entera, **se habría
+caído el respaldo completo, no sólo las 7 nuevas**. Las dos se movieron juntas
+(migración `20260903174328`) y quedaron con la advertencia escrita en ambos
+lados.
+
+Corrido contra producción para comprobarlo, no supuesto: **30 tablas, 0 fallos,
+1,940 kB** — antes 23 y 1,659 kB.
+
+De paso quedó medido lo que ya se cumple: `registrado_por` obligatorio, la franja
+decidida por la base y no por el reloj del navegador, `bitacora_correcciones` con
+antes/después/motivo/quién, RLS con policy explícita en las 7 tablas, y ningún
+cron que las purgue. **Lo único que no existe es la evaluación periódica**, y va
+en el Documento B.
+
 ## v2.967.4 — La cara de quien cobró un abono sale del store, no de medio objeto
 
 En la ficha de un crédito, el vendedor salía con su foto y quien cobró cada

@@ -40,9 +40,6 @@ import { useToastStore } from '../../store/toastStore';
  * pasaba de 72 a 75 kB y su tope es 72. */
 const DetalleDeBolsa = lazy(() => import('../../components/bolsas/DetalleDeBolsa'));
 
-/* Y el formulario de salida igual: arrastra `FileField` y el selector de
- * personas, y sólo hace falta al apretar «Sacar dinero». */
-const SalidaDeBolsa = lazy(() => import('../../components/bolsas/SalidaDeBolsa'));
 const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBolsas'));
 
 /* Y el depósito al banco: sólo hace falta al cerrar el día, después de haber
@@ -118,7 +115,9 @@ const EditorDeDocumento = lazy(() => import('../../components/common/EditorDeDoc
  * «los botones de sacar dinero, entregar dinero, deben estar en el filterpill»
  * (usuario, 2026-08-17). Es §17 al pie de la letra: `FilterBar` lleva los
  * filtros de la vista **y sus acciones**. Estaban colgados de la etapa «En la
- * sala», que además las escondía al hacer scroll.
+ * sala», que además las escondía al hacer scroll. De esos dos hoy queda uno:
+ * sacar dinero se mudó entero a Efectivo el 3-sep (ver el comentario de
+ * `acciones`).
  *
  * La píldora la dibuja `BolsasView` —una por vista—, así que este motor las
  * PUBLICA por `onAcciones` y sigue siendo dueño de sus diálogos. Al revés (que
@@ -458,9 +457,9 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
      * efectivo que salió por fuera y se explicó al contar, hasta una semana
      * después.
      *
-     * El circuito ya tiene el camino correcto —«Sacar dinero», que baja el saldo
-     * esperado y deja su vale—. Si se usa, esas bolsas CUADRAN: no hay
-     * diferencia que justificar porque lo esperado ya es menos.
+     * El circuito ya tiene el camino correcto —Efectivo → «Sacar efectivo», que
+     * baja el saldo esperado y deja su vale—. Si se usa, esas bolsas CUADRAN: no
+     * hay diferencia que justificar porque lo esperado ya es menos.
      *
      * Pregunta una vez y NO bloquea. Un candado acá se saltea escribiendo un
      * centavo, y de paso rompe el caso legítimo —la bolsa que de verdad vino
@@ -669,8 +668,9 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
                     <span className="font-bold">Anotar cero dice que la bolsa vino vacía</span>
                     <span className="block mt-1 font-normal text-content-2">
                         Si alguien retiró ese efectivo, eso es una salida y va con su vale:
-                        se registra desde «Sacar dinero» en la bolsa, y entonces el conteo cuadra
-                        solo. Anotarlo aquí deja una diferencia que hay que explicar a mano.
+                        se registra desde Efectivo → «Sacar efectivo», y entonces el conteo
+                        cuadra solo. Anotarlo aquí deja una diferencia que hay que explicar
+                        a mano.
                     </span>
                 </Notice>
             )}
@@ -1221,7 +1221,6 @@ export default function CircuitoDeBolsas({
     const [refrescando, setRefrescando] = useState(false);
     const [elegidas, setElegidas] = useState(() => new Set());
     const [ocupado, setOcupado] = useState(null);
-    const [sacando, setSacando] = useState(false);
     const [entregando, setEntregando] = useState(false);
     // Qué bolsa está abierta en el detalle: es donde viven la foto del
     // comprobante, la bitácora y las dos anulaciones.
@@ -1235,7 +1234,7 @@ export default function CircuitoDeBolsas({
         ? `del ${fechaLarga(desde)}`
         : `del ${fechaLarga(desde)} al ${fechaLarga(hasta)}`), [desde, hasta]);
 
-    const { imprimir, imprimirTrasLaSalida } = useCerrarBolsa({ nombreSala, origen: 'modulo' });
+    const { imprimir } = useCerrarBolsa({ nombreSala, origen: 'modulo' });
     const nombrePersona = useMemo(() => {
         const m = new Map();
         for (const e of empleados || []) m.set(e.id, e.name);
@@ -1672,7 +1671,7 @@ export default function CircuitoDeBolsas({
      * que callarse EXACTAMENTE en ese mismo rato. Con dos expresiones separadas
      * el día que alguien agregue un quinto diálogo se arregla una sola, y la
      * pantalla avisaría de una pausa que ella misma pidió. */
-    const refrescoActivo = !abierta && !depositando && !entregando && !sacando;
+    const refrescoActivo = !abierta && !depositando && !entregando;
 
     useRefrescoEnVivo(recargarEnSilencio, {
         tabla: 'bolsas',
@@ -1783,18 +1782,6 @@ export default function CircuitoDeBolsas({
         onIrAEtapa?.('finalizadas');
     }, [correr, onIrAEtapa]);
 
-    /**
-     * Después de sacar dinero sale UN vale —el de la operación, con el detalle
-     * de cada bolsa— y una etiqueta nueva por bolsa. Las etiquetas se
-     * reimprimen solas porque la anterior dejó de ser cierta en ese mismo
-     * momento: dejarlas pendientes sería dejar una bolsa con un número
-     * equivocado pegado encima.
-     */
-    const traslimSalida = useCallback(async (oper, repartos) => {
-        await imprimirTrasLaSalida(oper, repartos, bolsas, nombrePersona);
-        cargar({ silencioso: true });
-    }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
-
     const resolver = useCallback((bolsa, via, causa, fotoUrl) => correr(`resolver-${bolsa.id}`,
         () => resolverDiferenciaBolsa(bolsa.id, via, causa, fotoUrl),
         `${bolsa.folio} · ${rotuloDeVia(via).toLowerCase()}`,
@@ -1853,14 +1840,23 @@ export default function CircuitoDeBolsas({
         });
     }, [nombreSala, personas, elegidas, alternar, setAbierta, verMontos]);
 
-    // ── Las dos acciones, publicadas a la píldora de la vista ───────────────
-    // Ninguna depende de haber marcado bolsas: quien va a pagar una remesa sabe
-    // el monto, no de qué bolsa sale —eso lo elige el portal—, y la entrega
-    // pregunta por DÍAS, que es como la sala piensa lo que se lleva.
+    // ── La acción, publicada a la píldora de la vista ──────────────────────
+    // No depende de haber marcado bolsas: la entrega pregunta por DÍAS, que es
+    // como la sala piensa lo que se lleva.
     //
-    // Son de la etapa «En la sala» y por eso sólo salen ahí: sacar dinero de una
-    // bolsa que ya salió de la sala no es una operación que exista, y ofrecerla
-    // desde «Por contar» sería un botón que abre un diálogo con la lista vacía.
+    // Es de la etapa «En la sala» y por eso sólo sale ahí: entregar una bolsa
+    // que ya salió de la sala no es una operación que exista, y ofrecerla desde
+    // «Por contar» sería un botón que abre un diálogo con la lista vacía.
+    //
+    // ⚠️ **«Sacar dinero» ya NO vive acá** (pedido del usuario, 3-sep: «todo
+    // debe pasar desde efectivo»). Y no es sólo orden: el diálogo abierto desde
+    // esta pantalla iba DERECHO a las bolsas, saltándose el cajón. Desde
+    // Efectivo el mismo componente recibe `onSalidaDeCaja`, así que primero
+    // busca en el cajón —la regla de `la_salida_sale_primero_del_cajon`— y
+    // además la salida queda anotada como vale en la caja, que es lo que hace
+    // que el corte deje de esperar ese dinero. Sacándolo desde acá, ese vale no
+    // se anotaba: es la cadena que dejó a S2-1229 con una etiqueta de $957.55
+    // sobre $497.55 reales el 2-sep.
     //
     // Las otras tres etapas no publican acciones a la píldora, y es deliberado:
     // confirmar la recepción, confirmar el conteo y depositar al banco llevan
@@ -1871,14 +1867,10 @@ export default function CircuitoDeBolsas({
     // ciegas.
     const acciones = useMemo(() => (puedeEntregar && etapa === 'sala' ? [
         {
-            key: 'sacar', icon: HandCoins, label: 'Sacar dinero', rotulo: 'Sacar',
-            disabled: !enSala.length, onClick: () => setSacando(true),
-        },
-        {
             key: 'entregar', icon: Send, label: 'Entregar dinero', rotulo: 'Entregar',
             variant: 'primary', disabled: !enSala.length, onClick: () => setEntregando(true),
         },
-    ] : VACIO), [puedeEntregar, etapa, enSala.length, setSacando, setEntregando]);
+    ] : VACIO), [puedeEntregar, etapa, enSala.length, setEntregando]);
 
     // ── El número de cada pestaña, publicado a la píldora del header ───────
     //
@@ -2750,17 +2742,6 @@ export default function CircuitoDeBolsas({
                 </Suspense>
             )}
 
-            {sacando && (
-                <Suspense fallback={null}>
-                    <SalidaDeBolsa
-                abierto={sacando}
-                bolsas={enSala}
-                saldos={null}
-                onClose={() => setSacando(false)}
-                onHecho={traslimSalida}
-            />
-                </Suspense>
-            )}
         </div>
     );
 }

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Banknote, HandCoins, Package, Printer, Send, ShieldCheck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -11,10 +12,9 @@ import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
-/* Los dos formularios se bajan al apretar su botón, no al entrar al Inicio:
- * arrastra el canónico de archivo y el selector de personas, y la baldosa se ve
- * entera sin tocar nada. */
-const SalidaDeBolsa = lazy(() => import('../../components/bolsas/SalidaDeBolsa'));
+/* El formulario se baja al apretar su botón, no al entrar al Inicio: arrastra el
+ * canónico de archivo y el selector de personas, y la baldosa se ve entera sin
+ * tocar nada. */
 const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBolsas'));
 
 /**
@@ -24,9 +24,16 @@ const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBols
  * ── Es el ATAJO; el proceso vive en Cortes de caja → Bolsas ────────────────
  * «El widget es para acceder fácil, pero debe haber una vista donde se haga todo
  * el proceso» (usuario, 2026-08-15). Acá está lo que la sala necesita en el día:
- * cuánto efectivo hay guardado, sacar dinero para una remesa, ENTREGARLO, e
- * imprimir la etiqueta. Recibir y contar viven en la pestaña: son de
- * administración, no de la sala.
+ * cuánto efectivo hay guardado, ENTREGARLO e imprimir la etiqueta. Recibir y
+ * contar viven en la pestaña: son de administración, no de la sala.
+ *
+ * ⚠️ **«Sacar dinero» no saca dinero acá: LLEVA a Efectivo** (pedido del
+ * usuario, 3-sep: «todo debe pasar desde efectivo»). El botón se queda porque
+ * el atajo lo pidió él mismo el 20-ago, pero el diálogo abierto desde el Inicio
+ * iba DERECHO a las bolsas: se saltaba el cajón —la regla de
+ * `la_salida_sale_primero_del_cajon`— y no anotaba el vale en la caja, que es
+ * lo que hace que el corte deje de esperar ese dinero. Desde Efectivo el mismo
+ * componente recibe `onSalidaDeCaja` y hace las dos cosas.
  *
  * «Entregar» estuvo en la pestaña y sólo ahí hasta el 2026-08-20, con el
  * argumento de que el widget es el atajo del día — pero entregar el efectivo ES
@@ -101,10 +108,10 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [imprimiendo, setImprimiendo] = useState(null);
-    const [sacando, setSacando] = useState(false);
+    const navigate = useNavigate();
     const [entregando, setEntregando] = useState(false);
 
-    const { cerrar, imprimir, imprimirTrasLaSalida, ocupadoId } = useCerrarBolsa({ nombreSala, origen: 'inicio' });
+    const { cerrar, imprimir, ocupadoId } = useCerrarBolsa({ nombreSala, origen: 'inicio' });
 
     const cargar = useCallback(async () => {
         const hasta = hoySV();
@@ -184,18 +191,6 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     }, [imprimir, nombrePersona, cargar]);
 
     /**
-     * Después de una remesa sale UN vale —el de la operación, con el detalle de
-     * cada bolsa— y una etiqueta nueva por bolsa. Las etiquetas se reimprimen
-     * solas porque la anterior dejó de ser cierta en ese mismo momento. Todo lo
-     * arma `imprimirTrasLaSalida`, que es el mismo código que corre la pestaña
-     * de Cortes — acá estaba copiado.
-     */
-    const trasLaSalida = useCallback(async (oper, repartos) => {
-        await imprimirTrasLaSalida(oper, repartos, bolsas, nombrePersona);
-        cargar();
-    }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
-
-    /**
      * Entregar NO imprime nada — ver el mismo comentario en `CircuitoDeBolsas`. El
      * comprobante de entrega se quitó el 2026-08-24 por pedido del usuario: la
      * entrega ya queda registrada con folio, hora y las dos personas.
@@ -236,26 +231,21 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                         valueCls="text-success-text" />
                 </CarrilCards>
 
-                {/* Las MISMAS dos acciones que la píldora de Cortes de caja, y
-                    con los mismos nombres.
-                    - «Sacar dinero»: cuando hay que pagar una remesa y la caja no
-                      alcanza, el dinero sale de acá. Se llamaba «Entrega de
-                      remesas», o sea que la misma acción tenía dos nombres según
-                      la pantalla, y encima uno arrancaba con la palabra de la
-                      OTRA acción. El usuario preguntó por ella el 2026-08-20 —«¿y
-                      el widget para sacar dinero o entregarlo?»— teniéndola
-                      delante.
-                    - «Entregar dinero»: faltaba. Vivía sólo en la pestaña con el
-                      argumento de que el widget es el atajo del día de la sala —
-                      pero entregar el efectivo ES lo que la sala hace en el día,
-                      y mandarla a otra pantalla para eso es justo lo que el
-                      atajo tenía que evitar.
+                {/* - «Sacar dinero»: no abre nada, LLEVA a Efectivo. Ver el
+                      encabezado: el efectivo sale del cajón primero y la salida
+                      tiene que quedar anotada como vale en la caja, y las dos
+                      cosas sólo pasan allá.
+                    - «Entregar dinero»: sí se hace acá. Vivía sólo en la pestaña
+                      con el argumento de que el widget es el atajo del día de la
+                      sala — pero entregar el efectivo ES lo que la sala hace en
+                      el día, y mandarla a otra pantalla para eso es justo lo que
+                      el atajo tenía que evitar.
                     Los dos sólo aparecen si hay de dónde sacar: un botón que
                     siempre termina en «no hay bolsas» enseña a no apretarlo. */}
                 {puedeGuardar && enSala.length > 0 && (
                     <div className="flex gap-1.5 mt-1.5">
                         <Button variant="secondary" size="sm" icon={HandCoins} className="flex-1"
-                            onClick={() => setSacando(true)}>
+                            onClick={() => navigate('/caja?tab=hoy')}>
                             Sacar dinero
                         </Button>
                         <Button variant="primary" size="sm" icon={Send} className="flex-1"
@@ -408,17 +398,6 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                 </Suspense>
             )}
 
-            {sacando && (
-                <Suspense fallback={null}>
-                    <SalidaDeBolsa
-                abierto={sacando}
-                bolsas={enSala}
-                saldos={null}
-                onClose={() => setSacando(false)}
-                onHecho={trasLaSalida}
-            />
-                </Suspense>
-            )}
         </div>
     );
 }

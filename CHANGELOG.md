@@ -21,6 +21,74 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.969.0 — Sacar dinero vive solo en Efectivo
+
+> «debes quitar sacar dinero de aquí. todo debe pasar desde efectivo»
+> (usuario, 3-sep, mirando Bolsas de efectivo).
+
+El botón estaba en **tres** pantallas y sólo una hacía las dos cosas que hay que
+hacer al sacar efectivo:
+
+| | qué hacía |
+|---|---|
+| Bolsas de efectivo | abría el diálogo **derecho contra las bolsas** |
+| widget del Inicio | lo mismo |
+| **Efectivo** | pasa `onSalidaDeCaja`: busca primero en el **cajón** y anota el **vale en la caja** |
+
+Las dos cosas importan y ninguna es cosmética. El cajón primero es la regla de
+`la_salida_sale_primero_del_cajon` — abrir una bolsa sellada del día anterior
+para pagar $3.37 con el cajón lleno rompe el control que la bolsa existe para
+dar. Y el vale anotado es lo que hace que el corte **deje de esperar** ese
+dinero: sin él, la bolsa que nace del corte siguiente se calcula sobre un
+declarado que todavía cuenta plata que ya salió. Es exactamente la cadena que
+dejó a S2-1229 con una etiqueta de $957.55 sobre $497.55 reales el 2-sep
+(v2.968.2).
+
+- **Bolsas de efectivo**: se fue el botón, el diálogo y su impresión. Queda
+  «Entregar dinero», que sí es de esta pantalla.
+- **Widget del Inicio**: el botón se queda —el atajo lo pidió el usuario el
+  20-ago— pero ya no abre nada: **lleva a Efectivo**.
+- El aviso de «anotar cero» y el buscador del menú («sacar dinero», «remesa»)
+  apuntan a Efectivo. Mandar a quien busca la palabra a una pantalla donde el
+  botón ya no está es peor que no tener la palabra.
+
+
+## v2.968.6 — Sin id no hay aro: las firmas de bitácoras nunca lo mostraron
+
+La pregunta era si las 72 fotos del portal tienen aro de estado. Censadas una
+por una: **71 podían y una no.**
+
+El aro necesita el `id` de la persona — sin él `AvatarConEstado` no tiene a
+quién buscar, ni en el padrón ni preguntándole a la base. Las firmas de
+bitácoras armaban la persona a mano dos veces (`MatrizDelDia` construía
+`{ nombre, nombres, apellidos, foto }` y `Firma` lo copiaba a otro objeto) y en
+las dos se perdía el id. Las RPC ya lo traían —`registrado_por`,
+`realizada_por`— desde el día uno.
+
+**Es el silencio más limpio de los cuatro que llevamos:** una firma sin aro se
+ve exactamente igual que la de alguien que está presente. No hay hueco, no hay
+ícono raro, no hay error — sólo falta un dato que nadie mira. El propio
+comentario de `Firma.jsx` ya advertía que «un objeto armado a mano que se
+olvida la clave no falla, cae a las iniciales y se ve igual de bien»; lo decía
+de `foto`, y le pasó con `id`.
+
+Lo vigila la categoría **`foto-sin-identidad`** de `npm run gate:design`,
+bloqueante en cero. Es la cuarta del juego: `foto-sin-aro` (no usar el
+canónico), `foto-condicionada` (usarlo detrás de un `if`) y ahora `foto-sin-
+identidad` (usarlo sin decirle a quién).
+
+### Lo que se descartó, todo medido
+
+- **Los 11 objetos escritos en la vista** llevan `id`: 11 de 11.
+- **Los 61 que pasan una variable** salen de mapas armados por id
+  (`new Map(...map(q => [q.id, q]))`) o del padrón del store. El de Facturación
+  cruza por NOMBRE pero devuelve la ficha entera, así que el id llega.
+- **El objeto de la sesión** (`user`, la foto del sidebar) trae `id: emp.id` —
+  la ficha, no la cuenta.
+- **El comentario de `TarjetaCorte`** decía `persona = { name, photo_url }` y
+  daba a entender que no había id. Lo hay: `fetchPersonas` devuelve la fila
+  entera. Comentario viejo, código correcto.
+
 ## v2.968.5 — El campo de fecha deja de pedir la fila entera
 
 En «Modificar facturación» el buscador salía reducido a un cuadrito con la lupa
@@ -54,6 +122,7 @@ ancho** — acá el `w-full` se conserva por los padres en columna con
 De los 66 usos del campo, once viven en una fila flex y **uno solo** tenía un
 hermano al que aplastar: éste. Los otros diez son pares de fechas o campos
 solos, que ya medían lo suyo.
+
 ## v2.968.4 — Los procedimientos escritos salen en PDF, con el formato aprobado
 
 `npm run procedimientos:pdf` genera los `.pdf` de `docs/legal/procedimientos/`

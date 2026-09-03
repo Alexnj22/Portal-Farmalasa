@@ -22,9 +22,14 @@ export const MODULE_SEARCH_KEYWORDS = {
     carne_temporal:     ['carne', 'carnet', 'carne temporal', 'gafete', 'codigo de barras', 'acceso temporal', 'anular carne'],
     cortes_caja:        ['corte de caja', 'cuadre', 'arqueo', 'faltante', 'sobrante', 'diferencia de caja', 'efectivo'],
     cuentas_por_cobrar: ['credito', 'creditos', 'fiado', 'deuda', 'deben', 'cartera', 'abono', 'abonar', 'cobrar', 'quien debe', 'mora', 'vencido'],
+    // «sacar dinero» y «remesa» apuntan acá y NO a Bolsas desde el 3-sep: el
+    // efectivo sale del cajón primero y la salida se anota como vale en la
+    // caja, y las dos cosas sólo pasan en Efectivo. Mandar a quien lo busca a
+    // una pantalla donde ya no está el botón es peor que no tener la palabra.
     caja_vales:         ['mi caja', 'abrir caja', 'abrir turno', 'apertura', 'hacer corte',
-                         'cerrar el dia', 'corte z', 'anotar ingreso', 'anotar salida', 'vale de caja'],
-    bolsas:             ['bolsa de efectivo', 'entregar dinero', 'sacar dinero', 'contar el dinero', 'remesa', 'deposito al banco', 'etiqueta de la bolsa', 'vale'],
+                         'cerrar el dia', 'corte z', 'anotar ingreso', 'anotar salida', 'vale de caja',
+                         'sacar dinero', 'sacar efectivo', 'remesa'],
+    bolsas:             ['bolsa de efectivo', 'entregar dinero', 'contar el dinero', 'deposito al banco', 'etiqueta de la bolsa', 'vale'],
     ios_test:           ['prueba de app movil'],
     sync_health:        ['estado de los datos', 'tareas programadas', 'salud del sistema'],
     orphan_objects:     ['archivos huerfanos', 'storage sin usar', 'limpieza'],

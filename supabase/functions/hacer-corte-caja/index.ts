@@ -752,7 +752,6 @@ Deno.serve(async (req) => {
     let movVale: number | null = null;
     let montoDelVale = 0;
     if (mias.length) {
-      montoDelVale = Number((Number(vale?.monto ?? 0) + montoVale).toFixed(2));
       if (!vale) {
         const { data: creado, error } = await supabase.from("caja_vales_portal")
           .insert({
@@ -768,14 +767,30 @@ Deno.serve(async (req) => {
       }
       valeId = vale.id;
 
-      /* Cuántas salidas cubre EN TOTAL, no cuántas trae este corte. El concepto
-       * es lo único que se lee del otro lado, y un vale que ya cubría tres no
-       * puede anunciarse con las dos de ahora. */
-      const { count: yaCubiertas, error: errCuenta } = await supabase
-        .from("bolsas_movimientos").select("id", { count: "exact", head: true })
-        .eq("caja_vale_id", valeId);
+      /* ── El total del vale se DERIVA de sus salidas, no se acumula ────────
+       *
+       * Cuántas cubre EN TOTAL y por cuánto, contadas desde las salidas que lo
+       * apuntan. El concepto es lo único que se lee del otro lado, y un vale que
+       * ya cubría tres no puede anunciarse con las dos de ahora.
+       *
+       * Derivarlo —en vez de `vale.monto + lo de ahora`— es lo que hace que un
+       * reintento sea inocuo. Las dos escrituras que ligan las salidas pasan
+       * DESPUÉS de mover el dinero, así que un fallo entre medio deja el vale
+       * con su monto ya escrito y las salidas todavía pendientes: sumando, el
+       * reintento las contaría dos veces y editaría el asiento al doble. Con la
+       * derivación el número sale de lo que está ligado más lo que se va a
+       * ligar, que es la verdad en cualquier punto de esa secuencia.
+       *
+       * Y las anuladas no cuentan: `caja_vales_pendientes` las excluye, así que
+       * incluirlas acá haría que las dos mitades de la misma suma no coincidan. */
+      const { data: ligadas, error: errCuenta } = await supabase
+        .from("bolsas_movimientos").select("monto")
+        .eq("caja_vale_id", valeId).is("anulado_at", null).lt("monto", 0);
       if (errCuenta) throw new Error(`contando lo que ya cubre el vale: ${errCuenta.message}`);
-      const cuantas = (yaCubiertas ?? 0) + mias.length;
+      const yaCubiertas = (ligadas ?? []).length;
+      montoDelVale = Number(((ligadas ?? [])
+        .reduce((t: number, m: { monto: number }) => t - Number(m.monto), 0) + montoVale).toFixed(2));
+      const cuantas = yaCubiertas + mias.length;
       const concepto = `VALE DE CAJA ${valeId} (${cuantas} salida${cuantas === 1 ? "" : "s"})`;
 
       // Freno: ¿ya está escrito? Un reintento no puede duplicar un vale.

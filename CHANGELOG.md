@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.960.4 — El total del vale sale de sus salidas, no de una suma acumulada
+
+Pregunta del usuario sobre v2.960.3: *«si descarto el corte, y vuelvo a hacer el
+corte, ¿no se vuelven a procesar los ingresos y vales que ya se habían
+ingresado?»*. La respuesta es que no, y verificarlo destapó un hueco que la
+versión anterior había dejado abierto.
+
+### Lo que ya estaba bien
+
+Una salida deja de estar pendiente en cuanto queda ligada a un vale:
+`caja_vales_pendientes` filtra por `m.caja_vale_id IS NULL`. Un segundo corte
+no la vuelve a ver, así que no se escribe otro asiento por el mismo dinero.
+
+Y el corte del sistema de la caja **no re-suma**: es la foto del turno abierto,
+no un delta. Medido en los cuatro cortes de Salud 3 del 2-sep —tres descartados
+y el último confirmado— `tk_ingresos` vale **413.28 en los cuatro**, y los vales
+pasan de 0.00 a 60.00 y se quedan en 60.00. Lo único que sube es la venta, que
+es la que de verdad ocurrió entre corte y corte.
+
+### El hueco
+
+El monto del vale se calculaba **acumulando**: `vale.monto + lo de ahora`. Las
+dos escrituras que ligan las salidas pasan DESPUÉS de mover el dinero, así que
+un fallo entre medio deja el vale con su monto ya escrito y las salidas todavía
+pendientes — y el reintento las habría contado dos veces, editando el asiento al
+doble.
+
+Ahora se **deriva**: el total sale de las salidas que apuntan al vale más las
+que se van a ligar. Es la verdad en cualquier punto de esa secuencia, así que un
+reintento da el mismo número. Las anuladas no cuentan, igual que en
+`caja_vales_pendientes`, para que las dos mitades de la suma coincidan.
+
 ## v2.960.3 — El corte reutiliza o cierra el vale de la sala, y ya no choca con el que quedó abierto
 
 Reportado por el usuario haciendo un corte de prueba en Salud 3: **«NO SE PUDO

@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.4 — El cobro guarda borrador, y el equis de descartar se ve
+
+### El ✕ del aviso de borrador era un cuadro vacío, en TODOS
+
+Reportado por el usuario mirando la salida de efectivo: *«en algunos borradores
+veo que el botón x de borrar no se ve, sólo se ve un cuadro»*.
+
+`AvisoDeBorrador` pasaba el ícono como HIJO —`<Button iconOnly …><X/></Button>`—
+y `Button` **no dibuja sus `children` cuando lleva `iconOnly`**: la línea es
+`{!iconOnly && <span>…}`, y es a propósito, porque ahí los hijos son el rótulo
+que la hoja de acciones recupera aparte. Así que el ✕ nunca se pintó y quedaba
+un cuadro que igual se podía apretar.
+
+Y como `AvisoDeBorrador` es el canónico, el cuadro estaba en **todos** los
+avisos de borrador del portal — o sea que «descartar lo guardado» era un botón
+invisible. No falla el build, no falla el lint y no falla en ejecución: el botón
+existe, responde y está vacío. Sólo se ve mirándolo.
+
+**Categoría nueva en `gate:design`: `boton-sin-icono`**, bloqueante en cero. Un
+`<Button iconOnly>` sin `icon=` y sin `loading` no dibuja nada. Barridos los
+**240** `iconOnly` del proyecto: éste era el único. Y antes de creerle ese cero
+se le fabricó la regresión —volver a poner el ícono como hijo— y la cazó.
+
+### El cobro de un crédito guarda borrador
+
+`gate:borradores` estaba en rojo desde la v2.968.0 de hoy:
+`CuentasPorCobrarView` con **16 controles de captura** y ninguno. La sesión de
+los cargos de sala se cierra sola a los 5 minutos, y leer un comprobante, elegir
+con qué se paga y repartirlo entre los créditos del cliente pasa de ahí con
+facilidad — 24 de los 43 clientes con saldo tienen más de uno.
+
+**La clave lleva el crédito adentro** (`abono_de_credito:<id>`), y eso es lo que
+importa: con una clave común, abrir el crédito de otro cliente ofrecería
+repartir un pago entre cuentas que no son suyas, y el reparto son montos
+aplicados a una deuda. Con el id adentro no se puede ni ofrecer.
+
+El comprobante y su lectura **no entran** — es un `File` sin subir, y guardar su
+nombre sin el contenido prometería un papel que al recuperar no está, que es
+justo el dato del que depende el monto (acá el total lo dice el documento, no
+quien cobra). Al recuperar, el botón sigue pidiendo la foto. Mismo trato que en
+`SalidaDeBolsa` y por el mismo motivo.
+
+Se OFRECE, no se repone solo, y el borrador se tira sólo cuando el cobro entró:
+si el origen lo rechaza, el diálogo queda abierto y borrarlo perdería justo lo
+que hay que reintentar.
+
 ## v2.970.3 — El aviso de error dura lo que cuesta leerlo
 
 Corrección de la v2.970.2, pedida por el usuario: *«¿cómo va a salir el aviso

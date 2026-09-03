@@ -1590,6 +1590,35 @@ function scanFile(path) {
     }
   }
 
+  // ── `iconOnly` sin `icon=`: un botón que no dibuja nada ───────────────
+  // Categoría agregada el 2026-09-03. `Button` no renderiza sus `children`
+  // cuando lleva `iconOnly` —la línea es `{!iconOnly && <span>…}`, y es a
+  // propósito: ahí los hijos son el RÓTULO, que la hoja de acciones recupera
+  // aparte—. Así que un ícono pasado como HIJO no se dibuja y queda un
+  // cuadro vacío que igual se puede apretar.
+  //
+  // Lo reportó el usuario mirando el aviso de borrador de la salida de
+  // efectivo: «el botón x de borrar no se ve, sólo se ve un cuadro». Estaba
+  // en `AvisoDeBorrador`, que es el canónico — o sea en TODOS los avisos de
+  // borrador del portal, y era la única forma de descartar lo guardado.
+  //
+  // No falla el build, no falla el lint y no falla en tiempo de ejecución:
+  // el botón existe, responde y está vacío. Sólo se ve mirándolo.
+  {
+    const sinComentarios = blanquearComentarios(text);
+    const BOTON = /<Button\b((?:[^>]|\n)*?)(\/>|>)/g;
+    let m;
+    while ((m = BOTON.exec(sinComentarios)) !== null) {
+      const attrs = m[1];
+      if (!/\biconOnly\b/.test(attrs)) continue;
+      // `icon={…}` o `loading` alcanzan: los dos dibujan algo.
+      if (/\bicon\s*=/.test(attrs) || /\bloading\b/.test(attrs)) continue;
+      const line = sinComentarios.slice(0, m.index).split('\n').length;
+      findings.push({ line, label: '<Button iconOnly> sin `icon=` — se dibuja un cuadro vacío',
+        category: 'boton-sin-icono', text: (lines[line - 1] || '').trim().slice(0, 120) });
+    }
+  }
+
   if (!hasException(path, 'inert')) {
     lines.forEach((line, i) => {
       if (isComment[i] || /group-hover:opacity|hover:opacity-100/.test(line)) return;

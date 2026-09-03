@@ -49,8 +49,16 @@ export default function AvisoDeBorrador({ cuando, onRecuperar, onDescartar, clas
                         `max()` de cada tamaño, así que en táctil sigue siendo de
                         44px. */}
                     <Button size="sm" variant="secondary" onClick={onRecuperar}>Recuperar</Button>
-                    <Button size="sm" variant="secondary" iconOnly title="Descartar lo guardado"
-                            onClick={onDescartar}><X size={14} strokeWidth={3} /></Button>
+                    {/* El ✕ va como `icon={X}` y NO como hijo: con `iconOnly`,
+                        `Button` no dibuja sus `children` (`{!iconOnly && …}`),
+                        así que el ícono pasado adentro no se veía y quedaba un
+                        cuadro vacío. Lo reportó el usuario mirando la salida de
+                        efectivo el 2026-09-03, y como esto es el canónico del
+                        aviso de borrador, el cuadro estaba en TODOS: la única
+                        forma de descartar lo guardado era un botón que no se
+                        veía. */}
+                    <Button size="sm" variant="secondary" iconOnly icon={X}
+                            title="Descartar lo guardado" onClick={onDescartar} />
                 </span>
             }
         >

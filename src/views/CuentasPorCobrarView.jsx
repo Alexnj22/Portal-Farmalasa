@@ -13,8 +13,10 @@ import PortalInput from '../components/common/PortalInput';
 import PortalTextarea from '../components/common/PortalTextarea';
 import TablePagination from '../components/common/TablePagination';
 import AvatarConEstado from '../components/common/AvatarConEstado';
+import AvisoDeBorrador from '../components/common/AvisoDeBorrador';
 import FileField from '../components/common/FileField';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
+import useBorrador from '../hooks/useBorrador';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
@@ -905,6 +907,26 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
  * que el reparto no es un extra: es el caso normal. El pago es el documento y
  * los abonos dicen cuánto de él fue a cada crédito.
  */
+/* Si un borrador guardado trae algo que alguien ESCRIBIÓ, o sólo la forma
+ * vacía con la que abre el diálogo.
+ *
+ * Se compara contra los valores de arranque uno por uno y no con «tiene alguna
+ * clave con valor»: dos de los campos nacen con contenido —`forma` en
+ * «Efectivo» y `formaReal` en «Transferencia»—, así que la regla genérica
+ * ofrecería recuperar un formulario en el que nadie tocó nada. Y la comparación
+ * es por campo y no contra el objeto entero porque `reparto` arranca con una
+ * clave por el crédito abierto, con el monto vacío adentro. */
+const ARRANQUE = { forma: 'Efectivo', documento: '', motivo: '', formaReal: 'Transferencia',
+    fechaDoc: '', pos: '', montoDoc: '' };
+
+function trabajoDeAlguien(b) {
+    if (!b) return false;
+    if (Object.entries(ARRANQUE).some(([k, v]) => String(b[k] ?? v).trim() !== v)) return true;
+    if (b.repartir === true) return true;
+    if ((b.quitados || []).length) return true;
+    return Object.values(b.reparto || {}).some((m) => String(m ?? '').trim() !== '');
+}
+
 function DialogoAbono({ credito, onClose, onCobrar }) {
     const [forma, setForma] = useState('Efectivo');
     const [documento, setDocumento] = useState('');
@@ -940,6 +962,63 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     const [quitados, setQuitados] = useState(() => new Set());
 
     const [posDisponibles, setPosDisponibles] = useState(VACIO);
+
+    /* ── El cobro a medio escribir se guarda solo ───────────────────────────
+     *
+     * Dieciséis controles de captura, y la sesión de los cargos de sala se
+     * cierra sola a los 5 minutos: leer un comprobante, elegir con qué se paga
+     * y repartirlo entre los créditos del cliente pasa de ahí con facilidad —y
+     * 24 de los 43 clientes con saldo tienen más de uno—. Lo levantó
+     * `npm run gate:borradores` el 2026-09-03.
+     *
+     * ── La clave lleva el CRÉDITO adentro, y eso es lo importante ──────────
+     * `abono_de_credito:<id>` y no un nombre suelto: un borrador es de ESE
+     * cobro. Con una clave común, abrir el crédito de otro cliente ofrecería
+     * repartir un pago entre cuentas que no son suyas — y el reparto son
+     * montos, o sea plata aplicada a la deuda equivocada. Con el id adentro eso
+     * no se puede ni ofrecer.
+     *
+     * ── Lo que NO entra ───────────────────────────────────────────────────
+     * El comprobante y su lectura. Es un `File` sin subir: no se serializa, y
+     * guardar su nombre sin el contenido prometería un papel que al recuperar
+     * no está — justo el dato del que depende el monto, porque acá el total lo
+     * dice el documento y no quien cobra. Al recuperar, el botón sigue pidiendo
+     * la foto (`listo` exige `archivo && lectura`), que es la falla segura.
+     *
+     * Es el mismo trato que en `SalidaDeBolsa`, y por el mismo motivo. */
+    const { recuperado, cuando, descartar } = useBorrador(
+        `abono_de_credito:${credito.id}`,
+        { forma, documento, motivo, formaReal, fechaDoc, pos, montoDoc,
+            repartir, reparto, quitados: [...quitados] },
+    );
+
+    /* Se OFRECE, no se repone solo. Reponer sin preguntar deja a alguien
+     * confirmando montos que no escribió en esta sesión, y esto aplica dinero a
+     * una deuda. `AvisoDeBorrador` muestra la hora, que es lo que permite
+     * contestar: no decide «hay un borrador», decide «hay uno de hace diez
+     * minutos». */
+    const [ofrecerBorrador, setOfrecerBorrador] = useState(
+        () => trabajoDeAlguien(recuperado),
+    );
+
+    const reponerBorrador = useCallback(() => {
+        if (recuperado?.forma) setForma(recuperado.forma);
+        if (recuperado?.documento) setDocumento(recuperado.documento);
+        if (recuperado?.motivo) setMotivo(recuperado.motivo);
+        if (recuperado?.formaReal) setFormaReal(recuperado.formaReal);
+        if (recuperado?.fechaDoc) setFechaDoc(recuperado.fechaDoc);
+        if (recuperado?.pos) setPos(recuperado.pos);
+        if (recuperado?.montoDoc) setMontoDoc(recuperado.montoDoc);
+        if (recuperado?.repartir) setRepartir(true);
+        if (recuperado?.reparto) setReparto(recuperado.reparto);
+        if (recuperado?.quitados) setQuitados(new Set(recuperado.quitados));
+        setOfrecerBorrador(false);
+    }, [recuperado]);
+
+    const tirarBorrador = useCallback(() => {
+        descartar();
+        setOfrecerBorrador(false);
+    }, [descartar]);
 
     /* «Otro» no pide foto: lo que se liquida por planilla o convenio no viene
      * con un comprobante que se pueda leer. Pide DECIR con qué, que es el dato
@@ -1080,7 +1159,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         const aplicaciones = listaDeCreditos
             .filter((h) => Number(reparto[h.id]) > 0.004)
             .map((h) => ({ credito: h.credito, monto: Number(reparto[h.id]) }));
-        await onCobrar({
+        const entro = await onCobrar({
             // Se manda la forma DE VERDAD, no el camino: «Solicitar aprobación»
             // es cómo entra el abono, no con qué se pagó.
             forma: pideAprobacion ? formaReal : forma,
@@ -1088,8 +1167,12 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
             aplicaciones, archivo, lectura, fechaDocumento: fechaDoc || null, pos: pos || null,
             motivo: motivo.trim() || null, requiereAprobacion: pideAprobacion,
         });
+        // El borrador se tira sólo cuando el cobro ENTRÓ. `onCobrar` devuelve
+        // `false` cuando el origen lo rechazó y ahí el diálogo queda abierto:
+        // borrarlo entonces perdería justo lo que hay que volver a intentar.
+        if (entro !== false) descartar();
         setOcupado(false);
-    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, formaReal, onCobrar]);
+    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, formaReal, onCobrar, descartar]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Cobrar un crédito">
@@ -1103,6 +1186,13 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                         {fechaCorta(credito.fecha)} · {credito.documento} · debe {formatMoney(credito.saldo)}
                     </p>
                 </div>
+
+                {/* Va ARRIBA de todo: si se va a recuperar, conviene decidirlo
+                    antes de empezar a escribir encima. */}
+                {ofrecerBorrador && (
+                    <AvisoDeBorrador cuando={cuando}
+                        onRecuperar={reponerBorrador} onDescartar={tirarBorrador} />
+                )}
 
                 <LiquidSelect label="Con qué paga" value={forma} onChange={cambiarForma}
                     options={FORMAS.map((f) => ({ value: f, label: ROTULO_DE_FORMA[f] || f }))}

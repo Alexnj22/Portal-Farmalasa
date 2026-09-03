@@ -725,13 +725,26 @@ export default function MiCajaView({ comoPestana = false }) {
                             dos: abierta, cerrada, y **no se pudo leer**. El
                             tercero decía «Cerrada · Nadie puede vender» sobre una
                             caja abierta desde las 6:58 — la respuesta contraria a
-                            la verdad, sin nada que avisara que era una falla. */}
+                            la verdad, sin nada que avisara que era una falla.
+
+                            El nombre sale de quién apretó «Abrir la caja» en el
+                            PORTAL, y de nadie más. Antes salía del sistema de la
+                            caja, que da el nombre de la cuenta con la que la sala
+                            abre siempre: La Popular decía «Mi La» —lo que queda
+                            de «MI CAJA LA POPULAR» al recortarlo a dos palabras—
+                            y las salas cuya cuenta sí lleva un nombre de persona
+                            mostraban a ESA persona aunque hubiera abierto otra.
+                            Sin fila del portal no se inventa un nombre: se dice
+                            que se abrió por fuera, que es la verdad y además es
+                            accionable. */}
                         <StatCard icon={noSePudo ? AlertTriangle : estado?.abierta ? DoorOpen : Lock}
                             label={!sala ? 'La caja' : noSePudo ? 'Sin respuesta' : estado?.abierta ? 'Abierta' : 'Cerrada'}
                             value={!sala ? '—' : noSePudo ? 'No se pudo leer'
                                 : estado?.abierta ? (estado.desde || 'Abierta') : 'Sin turno'}
                             sub={!sala || noSePudo ? undefined
-                                : estado?.abierta ? (corto(estado.quien) || 'sin nombre') : 'Nadie puede vender'}
+                                : estado?.abierta
+                                    ? (corto(estado.quien) || 'se abrió fuera del portal')
+                                    : 'Nadie puede vender'}
                             iconBg={estado?.abierta && !noSePudo ? 'bg-success/10' : 'bg-warning/10'}
                             iconCls={estado?.abierta && !noSePudo ? 'text-success-text' : 'text-warning-text'}
                             valueCls={estado?.abierta && !noSePudo ? 'text-success-text' : 'text-warning-text'}

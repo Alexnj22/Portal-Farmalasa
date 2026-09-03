@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.963.1 — La tarjeta de Efectivo dice quién abrió la caja
+
+Reporte del usuario, mirando La Popular: *«¿por qué no sale quién aperturó desde
+el portal?»*. La tarjeta decía **«MI LA»**.
+
+### El nombre venía del sistema de la caja, y ahí no está la respuesta
+
+La tarjeta pintaba el campo «Nombre» del panel del origen, que es el de la
+**cuenta** con la que la sala abre siempre. En tres salas esa cuenta se llama
+literalmente `MI CAJA LA POPULAR` / `MI CAJA LA SALUD 2` / `MI CAJA LA SALUD 5`
+—recortado a primera y tercera palabra, «Mi La»— y en las otras tres lleva el
+nombre de una persona que **tampoco** es la que abrió: al abrir desde el portal
+se reusa a propósito el mismo empleado del origen que esa sala ya venía usando.
+
+Medido el 3-sep sobre las seis aperturas del día:
+
+| sala | lo que decía el origen | quién abrió de verdad |
+|---|---|---|
+| La Popular | `MI CAJA LA POPULAR` | Katherine Salinas |
+| Salud 1 | `NATHALY MICHELLE ESTRADA` | Alexander Melgar |
+| Salud 2 | `MI CAJA LA SALUD 2` | Cristian Humberto |
+| Salud 3 | `RODRIGO EDUARDO MARQUEZ` | Maribel Alberto |
+| Salud 4 | `AUDELIA ELIZABETH CALLEJAS` | Kevin Zamora |
+| Salud 5 | `MI CAJA LA SALUD 5` | EDWIN NUÑEZ |
+
+O sea que el nombre del origen **nunca** es evidencia de quién abrió: en tres
+salas no es una persona y en las otras tres es la persona equivocada. Las tres
+que traían un nombre de persona son las peores, porque se leen como correctas.
+
+### El dato existía desde el primer día y no lo leía nadie
+
+`caja_aperturas_del_portal` guarda quién apretó «Abrir la caja» desde que la
+pantalla existe. Ningún lector la tocaba — su único uso en el repo era el mapeo
+de áreas de la auditoría.
+
+Lo que faltaba era el **amarre**: la fila no decía a qué apertura correspondía.
+Sin eso la única forma de cruzarlas es «la más reciente de la sala», y con dos
+turnos en el día —uno abierto desde el portal y otro desde la caja— eso firma el
+segundo con el nombre de quien abrió el primero. Ahora `operar-caja` relee el
+panel justo después de abrir y guarda el `erp_apertura_id`; las seis filas de hoy
+quedaron amarradas (cinco por la migración, la sexta la escribió el código nuevo
+en una apertura real de Salud 2 a las 07:07).
+
+### Sin fila del portal no se inventa un nombre
+
+La tarjeta dice **«se abrió fuera del portal»**. Devolver el nombre de la cuenta
+sería firmar un acto con el nombre de alguien que no lo hizo, que es justo el
+defecto que esto cierra. El «Nombre» del panel ya no se lee en ninguna parte.
+
+### El historial también quedó corregido
+
+`sync-aperturas-caja` cruzaba el texto del origen contra la nómina
+(`resolverFicha`), y ese cruce sólo acierta cuando la caja se abrió desde su
+propia pantalla. Ahora la fila del portal gana cuando existe, así que
+`cortes_caja_aperturas.employee_id` —el historial de aperturas— nombra a la
+persona real. Verificado corriendo el sync: las seis de hoy.
+
 ## v2.963.0 — El aro avisa cinco días antes, con su cuenta regresiva
 
 Pedido del usuario: *«para todos los últimos 5 días diga eso, un conteo, -5 -4

@@ -13,6 +13,10 @@ import { getCorsHeaders, requireInvokeSecret, getErpBranchMap, getErpCredsByBran
 // tiene respuesta, y no por falta de acceso: el dato no existe del lado de la
 // caja. Esto es lo que permite verlo, y cruzarlo contra la marcación.
 //
+// Desde que el portal abre cajas (03-sep-2026) hay una respuesta MEJOR que el
+// cruce por nombre: `caja_aperturas_del_portal` anota quién apretó el botón. Se
+// prefiere siempre que exista — ver el comentario de `quienAbrio` más abajo.
+//
 // LOS DOS ENDPOINTS, ANOTADOS PORQUE NO SE ADIVINAN
 // Ninguno aparece en el HTML de la pantalla; salen de `funciones_corte_caja.js`.
 //
@@ -252,6 +256,30 @@ Deno.serve(async (req) => {
       tokens: norm(`${e.first_names ?? ""} ${e.last_names ?? ""}`).split(" ").filter(Boolean),
     }));
 
+    /* Las aperturas que se hicieron DESDE EL PORTAL, que son las únicas con una
+     * respuesta de verdad a «¿quién abrió?».
+     *
+     * `resolverFicha(empleado_texto)` cruza el nombre que da el panel del
+     * origen, y ese nombre es el de la CUENTA con la que la sala abre siempre:
+     * en tres salas no es una persona («MI CAJA LA POPULAR») y en las otras
+     * tres es una que tampoco abrió, porque el portal reusa a propósito el
+     * mismo empleado del origen que la sala ya venía usando. O sea que el
+     * cruce por texto acierta sólo cuando la caja se abrió desde su pantalla.
+     *
+     * Por eso la fila del portal GANA cuando existe: es la observación directa
+     * de quién apretó el botón, no una coincidencia de nombres. Se amarra por
+     * `erp_apertura_id` y nunca por «la última de la sala». */
+    const { data: delPortal, error: errPortal } = await supabase
+      .from("caja_aperturas_del_portal")
+      .select("branch_id, erp_apertura_id, abierta_por")
+      .not("erp_apertura_id", "is", null);
+    // Descartarlo dejaría el historial atribuido al nombre de la cuenta sin que
+    // nada lo dijera, que es exactamente el defecto que esto viene a cerrar.
+    if (errPortal) throw new Error(`leyendo las aperturas del portal: ${errPortal.message}`);
+    const quienAbrio = new Map<string, string>(
+      (delPortal ?? []).map((f) => [`${f.branch_id}:${f.erp_apertura_id}`, f.abierta_por as string]),
+    );
+
     const { username, password } = getCortesCreds();
     const cookie = await getSessionCookie(username, password);
     const ahora = new Date().toISOString();
@@ -304,7 +332,8 @@ Deno.serve(async (req) => {
             turno: panel.turno,
             erp_empleado_id: panel.erp_empleado_id,
             empleado_texto: panel.empleado_texto,
-            employee_id: resolverFicha(panel.empleado_texto, fichas),
+            employee_id: quienAbrio.get(`${branchId}:${panel.erp_apertura_id}`)
+              ?? resolverFicha(panel.empleado_texto, fichas),
             abierta_el: panel.abierta_el,
             abierta_a: panel.abierta_a,
             monto_apertura: panel.monto_apertura,

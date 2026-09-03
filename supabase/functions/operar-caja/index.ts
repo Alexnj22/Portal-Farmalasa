@@ -115,9 +115,13 @@ async function estadoDeLaCaja(cookie: string) {
       body: new URLSearchParams({ process: "caja", id_caja: idCaja, id_empleado: idEmple }).toString(),
       signal: AbortSignal.timeout(30_000),
     })).text();
-    // Lo que el sistema espera adentro AHORA, quién abrió y a qué hora. Está
-    // en el mismo panel: no cuesta una petición más y es la primera pregunta
-    // de quien mira la pantalla — «¿cuánto hay?».
+    // Lo que el sistema espera adentro AHORA y a qué hora se abrió. Está en el
+    // mismo panel: no cuesta una petición más y es la primera pregunta de quien
+    // mira la pantalla — «¿cuánto hay?».
+    //
+    // El «Nombre» del panel NO se lee: es el de la cuenta con la que la sala
+    // abre siempre, no el de quien abrió. Quién abrió sale de
+    // `caja_aperturas_del_portal` (ver la acción `estado`).
     const campo = (etiqueta: string) =>
       (panel.match(new RegExp(`${etiqueta}:\\s*([^<]*)<`))?.[1] ?? "")
         .replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || null;
@@ -182,7 +186,6 @@ async function estadoDeLaCaja(cookie: string) {
         idEmple,
         registrado: num(campo("Monto Registrado")),
         apertura: num(campo("Monto Apertura")),
-        quien: campo("Nombre"),
         desde: campo("Hora Apertura"),
       };
     }
@@ -439,6 +442,37 @@ Deno.serve(async (req) => {
 
     if (accion === "estado") {
       const registrado = (estado as { registrado?: number | null }).registrado ?? null;
+      /* ── QUIÉN ABRIÓ LA CAJA ────────────────────────────────────────────
+       *
+       * NO sale del panel del origen. El panel da el nombre de la CUENTA con
+       * la que esa sala abre siempre, que no es quien abrió: en tres salas es
+       * literalmente «MI CAJA LA POPULAR» —la tarjeta mostraba «Mi La», que es
+       * lo que queda al recortarlo a dos palabras— y en las otras tres es el
+       * nombre de una persona que tampoco es la que apretó el botón, porque
+       * `abrir` reusa a propósito el mismo empleado que la sala ya venía
+       * usando (ver el bloque ABRIR).
+       *
+       * La respuesta está en `caja_aperturas_del_portal`, que se escribía desde
+       * el primer día y no la leía NADIE. Se amarra por `erp_apertura_id` —la
+       * apertura concreta— y nunca por «la última de la sala»: eso le
+       * atribuiría el segundo turno, abierto desde la caja por otra persona, a
+       * quien abrió el primero desde el portal.
+       *
+       * Si no hay fila, `quien` va en `null` y la pantalla lo dice. Devolver el
+       * nombre de la cuenta sería firmar un acto con el nombre de alguien que
+       * no lo hizo. */
+      const aperturaId = Number((estado as { aper?: string | null }).aper);
+      let quienAbrio: string | null = null;
+      if (estado.abierta && Number.isFinite(aperturaId)) {
+        const { data: fila, error: errQuien } = await supabase
+          .from("caja_aperturas_del_portal")
+          .select("employees!caja_aperturas_del_portal_abierta_por_fkey(name)")
+          .eq("branch_id", sala).eq("erp_apertura_id", aperturaId).maybeSingle();
+        // Un error acá NO se puede leer como «no se abrió desde el portal»:
+        // sería decir que nadie del portal la abrió porque no se pudo mirar.
+        if (errQuien) throw new Error(`leyendo quién abrió la caja: ${errQuien.message}`);
+        quienAbrio = (fila as { employees?: { name?: string | null } } | null)?.employees?.name ?? null;
+      }
       return json({
         ok: true, abierta: estado.abierta, caja: estado.idCaja, turno: estado.turno,
         // «Vigente» y «corriendo» son dos estados y la pantalla necesita los dos:
@@ -446,7 +480,7 @@ Deno.serve(async (req) => {
         turno_corriendo: (estado as { turnoCorriendo?: boolean }).turnoCorriendo ?? true,
         registrado,
         apertura: (estado as { apertura?: number | null }).apertura ?? null,
-        quien: (estado as { quien?: string | null }).quien ?? null,
+        quien: quienAbrio,
         desde: (estado as { desde?: string | null }).desde ?? null,
         dia: diaAbierto,
         cortes: cortesDelDia ?? [],
@@ -714,11 +748,31 @@ Deno.serve(async (req) => {
         return json({ ok: false, error: "La caja no aceptó la apertura. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
       }
 
-      // Quién la abrió DE VERDAD. La captura de cada media hora va a traer el
-      // resto (hora, monto, id de apertura); esto es lo que ella no puede saber.
+      /* Quién la abrió DE VERDAD, y a CUÁL apertura corresponde.
+       *
+       * El número de apertura lo acaba de crear el origen, así que se relee el
+       * panel: es la única forma de saberlo, y sin él esta fila dice «alguien
+       * del portal abrió una caja de esta sala hoy» y no cuál. Con dos turnos
+       * en el día —uno desde el portal y otro desde la caja— eso alcanza para
+       * firmar el segundo con el nombre de quien abrió el primero.
+       *
+       * Cuesta una relectura del panel por apertura (seis al día). Si falla,
+       * la fila se escribe igual con el número en NULL: perder quién abrió por
+       * no poder amarrarlo sería el peor de los dos errores — pero sin amarre
+       * la pantalla NO se lo atribuye a nadie, que es lo correcto. */
+      const recien = await estadoDeLaCaja(cookie).catch((e) => {
+        console.error(`[operar-caja] abrir sala=${sala}: no se pudo releer la apertura: ${e}`);
+        return null;
+      });
+      const aperturaNueva = Number((recien as { aper?: string | null } | null)?.aper);
+      if (!Number.isFinite(aperturaNueva)) {
+        console.error(`[operar-caja] abrir sala=${sala}: la caja abrió y el panel no dio el número de apertura`);
+      }
+
       const { error: errApertura } = await supabase.from("caja_aperturas_del_portal").insert({
         branch_id: sala, abierta_por: quien.id, erp_empleado_id: empErp,
         caja_erp: Number(estado.idCaja), monto_apertura: monto,
+        erp_apertura_id: Number.isFinite(aperturaNueva) ? aperturaNueva : null,
       });
       // La caja YA está abierta cuando llegamos acá. Si la anotación falla, la
       // apertura existe y el portal no sabe quién la hizo — que es justo el dato

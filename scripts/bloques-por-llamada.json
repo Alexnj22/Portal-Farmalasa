@@ -1,19 +1,47 @@
 {
   "_comment": "Lo que cada función lee POR LLAMADA, en bloques de 8 kB. Sección F de `npm run gate:perf`. Una función que cruza el umbral y no está acá FALLA el gate — no porque leer mucho esté mal, sino porque tiene que estar DECIDIDO y escrito que lee mucho. Los techos se miden, no se inventan, y sólo bajan.",
-  "_medido": "2026-09-01, después del corte de las 16:35. Fuente: `npm run portal:lento`.",
+  "_medido": "2026-09-01 (las seis primeras) y 2026-09-03 (las cuatro que el gate levantó ese día). Fuente: `npm run portal:lento` y la sección F de `npm run gate:perf`.",
   "_umbral": 25000,
   "_umbral_comment": "25,000 bloques = 195 MB por llamada. Por debajo no se declara nada: un umbral que obliga a declarar medio catálogo produce un manifiesto que nadie lee. La que tumbó el portal leía 1,528,584.",
   "_como_se_lee": "`bloques` es el TECHO, ~1.3x lo medido — margen para el ruido, no para una regresión. `deuda: true` significa que el número está declarado pero NO auditado: nadie miró todavía si ese costo es el trabajo real o un plan malo. Un techo declarado protege contra que CREZCA; no promete que esté bien.",
   "_cuidado": "La primera versión de este manifiesto tenía tres números inflados —uno de ellos 6x— porque el instrumento contaba los bloques `DO $$` de las PROPIAS mediciones (las de este gate incluidas: la sección D llama cinco veces adentro de un solo statement) como si fueran tráfico del portal. Hoy el SQL los excluye. Si un número acá parece absurdo, sospechar del instrumento antes que de la función.",
   "funciones": {
+    "get_faltantes_con_stock_en_otra_sala": {
+      "bloques": 90000,
+      "motivo": "CORREGIDA el 2026-09-02 (migraciones 20260902022747 y 20260902023011). Antes leía 467 MB por llamada; ahora 110 a 213 MB en seis salas y 518 en Bodega, que tiene 2,604 productos con mínimo y 594 faltantes contra ~100 de las demás. El techo lo fija Bodega, que es el caso real más caro. Verificado idéntica en las 7 salas (85/63/72/60/57/200/33 filas, md5 igual). Lo que le queda: resolver el factor de presentación de los ~1,717 renglones de la sala propia, que son la mitad de lo que lee. Para la pregunta que hace —«¿tengo alguna unidad?»— el factor es un multiplicador positivo y sólo cambia la respuesta cuando hay un traslado en vuelo; ahí hay otro tanto, pero cambia la semántica."
+    },
+    "get_pedido_generar_dashboard": {
+      "bloques": 43000,
+      "deuda": true,
+      "motivo": "258 MB, y 2,109 ms de media — el peor tiempo de la lista. El tablero de generar pedido, 6 llamadas. NO auditado."
+    },
+    "get_pedido_preview": {
+      "bloques": 76000,
+      "deuda": true,
+      "motivo": "346 a 892 MB por llamada según con cuántas salas se llame (58,289 de media sobre 5 llamadas; 114,173 en la forma con `p_target_ids`). La vista previa de generar pedido. NO auditado. Lee `mv_product_factor`, que es la vista materializada del factor de presentación."
+    },
+    "get_pending_mh_invoices": {
+      "bloques": 130000,
+      "deuda": true,
+      "motivo": "770 MB por llamada (98,558 bloques, 8 llamadas) y **6,308 ms de media, el peor tiempo de la lista**. La cola de «Pendiente MH» de Facturación. NO auditado — y es el que más pinta tiene de ser un plan malo y no trabajo real: busca facturas sin sello sobre `sales_invoices`, que es la tabla más grande de la base."
+    },
+    "get_products_sold_no_minmax_jsonb": {
+      "bloques": 385000,
+      "deuda": true,
+      "motivo": "2,302 MB por llamada (294,659 bloques, 4 llamadas). La otra pestaña de «Sin venta» — «Sin Min/Max». NO auditado. Comparte forma con `get_stagnant_inventory`: es de esperar que su costo también sea un agregado de renglones de venta sobre el universo entero de la sala, así que la auditoría de una sirve para la otra."
+    },
+    "get_stagnant_inventory_jsonb": {
+      "bloques": 570000,
+      "motivo": "AUDITADA el 2026-09-03: el costo es REAL para Bodega y evitable para las salas de venta, pero las dos formas no caben en una sola consulta. La pestaña «Stock retenido» de Inventario. Producción muestra 436,158 bloques por llamada sobre 5 llamadas; medido a mano da bastante menos —sala 1: 33,995 bloques y 1,895 ms; Bodega: 107,377 y 2,242 ms—, así que el techo se pone sobre lo que ve el gate y no sobre la medición directa. El 94% de sala 1 (32,029 bloques) se iba en el CTE `sales_6m`, que agrega 216,067 renglones de las seis salas recorriendo entero el índice de `sales_invoice_items` (620,722 filas) para devolver 84 productos. Se reescribió (20260903211042) preguntándole a `product_last_sale` qué se vendió acá —verificado: 2,430 productos por renglones contra 2,429 por esa tabla, y el que sobra no existe en `products`— y buscando «dónde sí se vende» producto por producto: **sala 1 bajó a 12,090 bloques y 837 ms, salida idéntica en las 7 salas**. Pero Bodega tiene 3,288 candidatos contra ~100 de una sala normal y subió a **622,556**: por producto son 3,288 entradas al índice con salto al heap, contra un recorrido secuencial del índice cubridor. Se revirtió (20260903211319). Quedarse con la mejora exige que la función ELIJA la forma según cuántos candidatos haya —`plpgsql` con un `IF` sobre el conteo, más `plan_cache_mode = 'force_custom_plan'`—, porque el planificador no puede verlo: `candidates_agg` es un CTE y se estima en 200 filas valga 96 o 3,288. La otra salida, volver cubridor a `idx_sii_product_invoice`, es DDL sobre tabla caliente."
+    },
+    "get_stock_analysis_jsonb": {
+      "bloques": 41000,
+      "motivo": "AUDITADA el 2026-09-02: NO es un defecto, es lo que Bodega mira. Medidas las 7 salas con el mismo EXPLAIN, todas devolviendo las mismas 4,245 filas: seis leen 5,000–7,000 bloques (40–55 MB) y Bodega 31,483 (246 MB). La diferencia NO es volumen —Bodega tiene 4,731 filas de inventario contra 2,538–3,571 de las demás, o sea 1.5×, no 6×— sino alcance: el cuerpo tiene tres `p_erp_sucursal_id = 6 OR …` que para Bodega abren el rollup de ventas, el inventario y la última venta a LAS SIETE SALAS. Es la pregunta que hace esa pantalla («¿cuánto hay en toda la empresa?»), así que el costo es el trabajo. El techo lo fija Bodega, que es el caso real más caro; las otras seis ni se acercan. `get_stock_analysis_jsonb` es sólo el `json_agg` alrededor: el trabajo es de `get_stock_analysis`, y aparece con este nombre porque es el que llama el portal."
+    },
     "get_traslado_disponibilidad": {
       "bloques": 145000,
       "deuda": true,
       "motivo": "869 MB, el más caro por llamada del portal. Cruza la existencia de las 7 salas para un producto, al componer un traslado. 20 llamadas en 4 horas: caro por llamada, barato por día. NO auditado."
-    },
-    "get_faltantes_con_stock_en_otra_sala": {
-      "bloques": 90000,
-      "motivo": "CORREGIDA el 2026-09-02 (migraciones 20260902022747 y 20260902023011). Antes leía 467 MB por llamada; ahora 110 a 213 MB en seis salas y 518 en Bodega, que tiene 2,604 productos con mínimo y 594 faltantes contra ~100 de las demás. El techo lo fija Bodega, que es el caso real más caro. Verificado idéntica en las 7 salas (85/63/72/60/57/200/33 filas, md5 igual). Lo que le queda: resolver el factor de presentación de los ~1,717 renglones de la sala propia, que son la mitad de lo que lee. Para la pregunta que hace —«¿tengo alguna unidad?»— el factor es un multiplicador positivo y sólo cambia la respuesta cuando hay un traslado en vuelo; ahí hay otro tanto, pero cambia la semántica."
     },
     "upsert_product_precios_batch": {
       "bloques": 53000,
@@ -22,15 +50,6 @@
     "ventas_para_puntos": {
       "bloques": 50000,
       "motivo": "AUDITADA el 2026-09-02: NO es un defecto. 39,821 bloques / 51 ms, y el plan es correcto de punta a punta — índices en todos los nodos, ningún barrido, ninguna estimación reventada. El costo son 8,222 sondeos por clave primaria: para cada una de las 4,111 facturas de la ventana de 7 días pregunta a `customers` si el cliente acumula y a `puntos_enviados` si ya se envió. De las 4,111 quedan 181 candidatas y hoy devuelve 0. O sea que el costo NO está en cómo está escrita sino en la CADENCIA: rehace la ventana de 7 días cada minuto. Bajarlo es una decisión sobre el comportamiento (acortar la ventana pierde la red que atrapa facturas que llegan tarde), no un arreglo. 236 MB de los 311 se van en esos sondeos."
-    },
-    "get_pedido_generar_dashboard": {
-      "bloques": 43000,
-      "deuda": true,
-      "motivo": "258 MB, y 2,109 ms de media — el peor tiempo de la lista. El tablero de generar pedido, 6 llamadas. NO auditado."
-    },
-    "get_stock_analysis_jsonb": {
-      "bloques": 41000,
-      "motivo": "AUDITADA el 2026-09-02: NO es un defecto, es lo que Bodega mira. Medidas las 7 salas con el mismo EXPLAIN, todas devolviendo las mismas 4,245 filas: seis leen 5,000–7,000 bloques (40–55 MB) y Bodega 31,483 (246 MB). La diferencia NO es volumen —Bodega tiene 4,731 filas de inventario contra 2,538–3,571 de las demás, o sea 1.5×, no 6×— sino alcance: el cuerpo tiene tres `p_erp_sucursal_id = 6 OR …` que para Bodega abren el rollup de ventas, el inventario y la última venta a LAS SIETE SALAS. Es la pregunta que hace esa pantalla («¿cuánto hay en toda la empresa?»), así que el costo es el trabajo. El techo lo fija Bodega, que es el caso real más caro; las otras seis ni se acercan. `get_stock_analysis_jsonb` es sólo el `json_agg` alrededor: el trabajo es de `get_stock_analysis`, y aparece con este nombre porque es el que llama el portal."
     }
   }
 }

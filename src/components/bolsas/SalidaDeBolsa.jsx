@@ -894,10 +894,25 @@ export default function SalidaDeBolsa({
                 });
                 if (!r?.ok) {
                     if (t.pide_receptor) olvidarLaIdentidad();
-                    // `error` puede venir vacío a propósito: quien escribe ya
-                    // mostró el motivo. Repetirlo en rojo acá diría lo mismo
-                    // dos veces con dos redacciones.
-                    setError(r?.error || null);
+                    /* El motivo se escribe ACÁ, en el diálogo, aunque quien
+                     * escribe ya lo haya mostrado en un aviso flotante. No es
+                     * decirlo dos veces: el aviso se va solo a los pocos
+                     * segundos y quien está mirando este formulario se queda
+                     * con la identidad soltada y sin explicación.
+                     *
+                     * Medido el 2026-09-03 en Salud 3: tres comprobaciones de
+                     * carné seguidas para una salida de $40, las tres escrituras
+                     * fallaron, y al preguntar qué decía el error nadie lo
+                     * recordaba. No podían: el único sitio donde se dijo ya no
+                     * estaba. Y sin el motivo tampoco se puede saber si hay que
+                     * volver a intentar o si falta algo.
+                     *
+                     * El respaldo importa igual que el motivo: un rechazo sin
+                     * texto —una llamada que no llegó a salir— dejaba el cartel
+                     * vacío, que se ve idéntico a que no hubiera pasado nada. */
+                    setError(r?.error
+                        || 'No se pudo registrar la salida y el servidor no dijo por qué. '
+                         + 'Revisa la conexión y vuelve a intentarlo.');
                     return;
                 }
                 descartar();

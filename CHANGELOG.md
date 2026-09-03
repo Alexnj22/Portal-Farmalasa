@@ -21,6 +21,84 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.2 — El diálogo dice por qué no se pudo, y las cuatro consultas caras quedan declaradas
+
+### El aviso que se va solo no sirve para contestar «qué decía el error»
+
+Salud 3, 3-sep: Maribel comprobó el carné de Rutilio **tres veces seguidas** para
+sacar $40 y las tres escrituras fallaron. Al preguntar qué decía el error, nadie
+lo recordaba — y no podían: el único sitio donde se dijo era un aviso flotante
+que se va solo a los pocos segundos.
+
+Lo que quedaba en pantalla era un formulario que **había soltado la identidad
+comprobada y no decía por qué**, que se ve igual que si no hubiera pasado nada.
+Ahora el motivo se devuelve además de mostrarse, y el diálogo lo escribe donde
+la persona está mirando. Con respaldo propio: un rechazo sin texto —una llamada
+que no llegó a salir— dejaba el cartel vacío, así que ahora dice que no se pudo
+y que revise la conexión.
+
+Los $40 descartan la causa que parecía: a esa hora el cajón tenía $81.85, así
+que la salida entraba sin tocar bolsas. Del lado del servidor no quedó ni un
+rastro —ni RPC, ni vale consumido, ni fila, ni error en Postgres—, que es lo que
+deja una llamada que falla antes de llegar.
+
+### `gate:perf`: las cinco de la sección E y F, cerradas
+
+**`creditos_del_cliente`** era `LANGUAGE sql` con `SET` y sin declarar. Medida:
+3.0 ms por la función contra 1.0 ms con literales, **mismo plan**. No puede
+tener el defecto de plan genérico: su único parámetro entra como Index Cond de
+una clave primaria que devuelve exactamente una fila, y `branch_id`/
+`customer_id` salen de ESA fila en tiempo de ejecución, nunca como constantes.
+Declarada como sana, sin migración.
+
+Las cuatro de la sección F quedan declaradas en `scripts/bloques-por-llamada.json`
+con su medición. Una auditada, tres como deuda escrita:
+
+| función | bloques/llamada | estado |
+|---|---:|---|
+| `get_stagnant_inventory_jsonb` | 436,158 | auditada — ver abajo |
+| `get_products_sold_no_minmax_jsonb` | 294,659 | deuda declarada |
+| `get_pending_mh_invoices` | 98,558 · **6,308 ms** | deuda declarada |
+| `get_pedido_preview` | 58,289 | deuda declarada |
+
+### «Stock retenido»: la mejora existe, y todavía no se puede quedar
+
+`get_stagnant_inventory` gastaba el **94%** de su trabajo (32,029 de 33,995
+bloques en sala 1) en un CTE que agregaba **216,067 renglones de venta de las
+seis salas** recorriendo entero el índice de `sales_invoice_items` —620,722
+filas— para devolver **84 productos**.
+
+Ese CTE contestaba dos preguntas distintas de una sola pasada, y sólo una
+necesitaba los renglones: «¿qué NO se vendió acá?» ya está en
+`product_last_sale` (verificado: 2,430 productos por renglones contra 2,429 por
+esa tabla, y el único que sobra no existe en `products`, así que nunca podía
+salir), y «¿dónde SÍ se vende?» sólo hace falta para los ~84 candidatos.
+
+Reescrita así (`20260903211042`), **sala 1 pasó de 33,995 a 12,090 bloques y de
+1,895 a 837 ms, con salida idéntica en las siete salas**. Y Bodega pasó de
+107,377 a **622,556**: tiene 3,288 candidatos contra ~100 de una sala normal, y
+ahí buscar por producto son 3,288 saltos al heap contra un recorrido secuencial
+del índice cubridor.
+
+O sea que **las dos formas son correctas y cada una gana en un caso**, y cuál
+conviene lo decide el tamaño del conjunto de candidatos — que es justo lo que el
+planificador no puede ver: `candidates_agg` es un CTE y se estima en 200 filas
+valga 96 o 3,288. Leer 4.8 GB por llamada en la página de Bodega es la clase de
+lectura que llenó el pool el 1-sep, así que se revirtió (`20260903211319`).
+Quedarse con la mejora pide `plpgsql` con un `IF` sobre el conteo; la otra
+salida —volver cubridor a `idx_sii_product_invoice`— es DDL sobre tabla
+caliente y no se hace de paso.
+
+**Lo que sí se queda es el defecto que la reescritura destapó.** `unit_costs`
+resolvía el costo unitario con `DISTINCT ON … ORDER BY product_id, factor ASC`,
+**sin desempate**. El producto 1379 tiene dos precios activos con el mismo
+`factor = 1` y distinto costo —$8.60 y $8.937—, así que cuál ganaba lo decidía
+el orden en que el plan leyera las filas: el mismo informe podía costar dos
+cosas distintas en dos corridas seguidas sin que nada cambiara en la base. Fue
+la ÚNICA fila que no coincidió al enfrentar las dos versiones sobre las siete
+salas, y por eso apareció. Hoy desempata por costo y por `id`; verificado con
+dos corridas seguidas de Bodega.
+
 ## v2.970.1 — El retiro por token del POS se puede registrar aunque salga de una bolsa
 
 Reporte de Salud 3: *«siempre fui a retirar dinero por token en el pos, al

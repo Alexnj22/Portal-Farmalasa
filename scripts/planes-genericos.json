@@ -1,7 +1,7 @@
 {
   "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
   "actualizado": "2026-09-03",
-  "medidas": 44,
+  "medidas": 45,
   "sin_medir": 24,
   "funciones": {
     "auth_module_scope": {
@@ -51,6 +51,12 @@
       "casos": null,
       "divergencia": null,
       "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+    },
+    "creditos_del_cliente": {
+      "ms": "3.0",
+      "casos": "crédito 691 · 10 créditos del mismo cliente en Salud 1",
+      "divergencia": "imposible",
+      "nota": "medida el 2026-09-03: 3.0 ms por la función contra 1.0 ms con literales, y el plan es el MISMO —Index Scan por la PK para el CTE `base`, BitmapAnd de `creditos_clientes_con_saldo_idx` + `creditos_clientes_branch_idx` para el resto—. El plan NO puede depender del argumento: `p_credito_id` sólo entra como Index Cond de una clave primaria que devuelve exactamente 1 fila, y `branch_id`/`customer_id` salen de ESA fila en tiempo de ejecución, nunca como constantes. Conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción y forzar el personalizado sólo agregaría el costo de replanificar"
     },
     "envios_por_continuar": {
       "ms": null,

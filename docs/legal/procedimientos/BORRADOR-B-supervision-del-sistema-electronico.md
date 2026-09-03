@@ -123,7 +123,7 @@ no puede omitir a nadie que pueda:
   permisos a propósito — a una cuenta que mide, un permiso que falta no le da
   error, le da un resultado vacío que se lee igual que uno bueno.
 
-### 2.3 · Qué vale como firma del regente, y lo que hay que decidir
+### 2.3 · Qué vale como firma del regente, y quién puede cerrar el mes
 
 **Lo que cumple el numeral 6.1.12** —«revisado o autorizado por el regente, con
 su **firma y sello profesional**»— **es la hoja impresa del mes, firmada y
@@ -137,21 +137,19 @@ el **sello** profesional es del colegiado, no del sistema.
 
 Escrito así, este documento es cierto con los cargos que el sistema tiene hoy.
 
-**Lo que igual hay que decidir.** El cierre lo pueden hacer **seis** cargos
-—Regente, Supervisor/a de Ventas, Gerente General, Administrador, Jefe/a de
-Talento Humano y la cuenta de pruebas del punto 2.2— y de hecho el único cierre
-registrado hasta la fecha **lo hizo un Supervisor/a de Ventas**. Los mensajes del
-propio sistema dicen «Sólo el regente puede dar por finalizado el mes», que no es
-lo que el permiso hace.
+**Y quién lo hace, resuelto.** Hasta el 2026-09-03 el cierre lo podían hacer
+**seis** cargos, y el único cierre registrado hasta esa fecha lo había hecho un
+Supervisor/a de Ventas — mientras el propio sistema decía «Sólo el regente
+puede dar por finalizado el mes». Se corrigieron las dos mitades: **el permiso
+quedó en el Regente**, y el mensaje dejó de afirmar algo que el permiso no
+sostenía.
 
-- **(a)** Dejar el cierre **sólo al Regente** (y, si se quiere, a un suplente
-  nombrado por escrito). Es lo más limpio y hace que el mensaje del sistema sea
-  cierto.
-- **(b)** Mantenerlo en varios cargos, como control operativo, y dejar la firma
-  del 6.1.12 en la hoja impresa — como quedó escrito arriba. En ese caso hay que
-  **corregir el mensaje del sistema**, que hoy afirma algo falso.
+Se le quitó a Administrador, Gerente General, Jefe/a de Talento Humano y
+Supervisor/a de Ventas. Los cuatro **siguen viendo** el mes y su resumen: lo que
+ya no pueden es darlo por cerrado. Las dos excepciones declaradas están en el
+punto 2.2.
 
-`[Decisión: ____________________ ]`
+`[Suplente del regente, si se nombra uno por escrito: ____________________ ]`
 
 ### 2.4 · Alta y baja de cuentas
 
@@ -251,7 +249,7 @@ Electrónica.
 
 **Continuidad.** Si el sistema no está disponible, las lecturas **no se
 suspenden**: se toman en la hoja de contingencia y se cargan al volver, según el
-`[FLS-PRO-01]` punto 4.7. `[Definir a quién se avisa y en cuánto tiempo se espera
+`[FLS-PRO-01]` punto 4.7. Se avisa al **supervisor** apenas se ve. `[Definir en cuánto tiempo se espera
 tener el sistema de vuelta.]`
 
 ---
@@ -274,8 +272,12 @@ Un incidente es cualquier falla del sistema o error de datos que afecte a un
 registro de los del `[FLS-PRO-01]`: una caída, una lectura que no se pudo anotar
 a tiempo, un dato cargado mal.
 
-`[Definir: a quién se reporta, en cuánto tiempo, dónde queda la constancia, y
-quién decide la acción correctiva.]`
+**Se reporta al supervisor**, apenas se ve, y la constancia queda en la hoja de
+contingencia `[FLS-BIT-99]`, que tiene un bloque para eso: cuándo se cayó, cuándo
+volvió, qué pasó y a quién se avisó. Esa hoja se archiva con el mes impreso, así
+que el incidente y las lecturas que provocó quedan juntos y no en dos lugares.
+`[El regente define quién decide la acción correctiva cuando el incidente se
+repite.]`
 
 Un incidente que haya impedido anotar a tiempo se resuelve por la vía de
 **contingencia** del `[FLS-PRO-01]` punto 4.7 —la lectura se toma en papel y se

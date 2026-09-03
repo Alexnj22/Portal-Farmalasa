@@ -117,20 +117,46 @@ El rango permitido lo fija la norma: **no más de 30 °C** en sala de ventas y
 bodega (RTS 6.2.15) y **de 2 °C a 8 °C** dentro del refrigerador (RTS 6.2.20), o
 lo que declare el empaque del producto.
 
+**La humedad relativa se registra pero no tiene rango, y es correcto**: el
+RTS 6.2.16 dice que «el registro del parámetro de humedad relativa será
+**informativo**». Se anota porque la norma manda registrarla; no dispara acción
+correctiva porque la norma no le fija límite. Ponerle uno sería inventar un
+incumplimiento propio.
+
 El sistema **no acepta** una lectura fuera de ese rango sin que se anote la acción
 correctiva tomada. La acción queda unida a la lectura y se imprime al pie de la
 hoja del mes.
 
-La acción correctiva debe dejar constancia de:
+**Qué se anota siempre.** Toda lectura fuera de rango deja constancia de **qué
+se hizo** para devolver el área a su rango.
 
-- **qué se hizo** para devolver el área a su rango,
+**Y cuándo, además, decide el regente.** No toda desviación es igual: una que se
+pasa por poco y se corrige en la misma jornada no pone en riesgo un producto de
+temperatura ambiente, y una del refrigerador sí.
+
+| situación | qué se hace |
+|---|---|
+| **Sala de ventas o bodega**, hasta `[32]` °C, y vuelve al rango **antes de la lectura siguiente** | Se anota la acción correctiva y **se sigue dispensando**. No hace falta revisar lote por lote |
+| **Sala de ventas o bodega**, por encima de `[32]` °C, **o** dos lecturas seguidas fuera de rango | **Decide el regente**, con el detalle de abajo |
+| **Refrigerador**, cualquier desviación de 2 °C a 8 °C | **Decide siempre el regente.** La cadena de frío es donde el producto se pierde de verdad, y el margen es estrecho |
+
+Cuando decide el regente, la constancia agrega:
+
 - **qué productos y lotes** estuvieron expuestos,
-- **cuántas horas** estuvieron fuera de rango y **a qué temperatura** (si no hay
-  registrador continuo, se cuenta desde la última lectura buena),
-- la **decisión del regente**: si el producto se sigue dispensando o se separa.
+- **cuántas horas** estuvieron fuera de rango y **a qué temperatura** — sin
+  registrador continuo se cuenta desde la **última lectura buena**, no desde que
+  alguien lo notó,
+- **la decisión**: si el producto se sigue dispensando o se separa.
 
-`[El regente define el criterio de decisión.]` Mientras esa decisión no esté
-tomada y anotada, **el producto afectado no se dispensa**.
+**Mientras esa decisión no esté tomada y anotada, el producto afectado no se
+dispensa.**
+
+`[El regente confirma el umbral de 32 °C, o pone el suyo.]` La propuesta sale de
+lo medido: en **614 lecturas** de sala de ventas y bodega, una sola pasó de
+30 °C —**31.2 °C**, bodega de Salud 4, el 21 de agosto, corregida encendiendo el
+aire— y la máxima de sala de ventas fue **29.9 °C**. O sea que el segundo renglón
+de la tabla es para lo que todavía no pasó, que es exactamente para lo que existe
+un procedimiento.
 
 ### 4.3 · Correcciones
 
@@ -189,9 +215,8 @@ imprime en formulario controlado, en tamaño carta, **una hoja por área**, con:
 
 - el código y la versión del formulario,
 - el establecimiento, el área, el mes y el rango permitido,
-- el instrumento con el que se mide, y **sólo en la hoja del refrigerador** su
-  calibración (`[hay que cargar el instrumento en la configuración de cada área:
-  hoy está en blanco en las 14 que miden temperatura]`),
+- el instrumento con el que se mide —**termómetro digital** en las catorce áreas
+  que miden temperatura— y, **sólo en la hoja del refrigerador**, su calibración,
 - cada día con su valor, la persona y la hora,
 - las desviaciones con su acción correctiva,
 - la firma del jefe de sala y la firma y sello del regente.
@@ -224,8 +249,10 @@ disponible. Si al momento de una franja el sistema no responde:
 3. **La hoja de papel se archiva junto al mes impreso** y no se destruye. Es el
    respaldo de que la lectura se tomó a tiempo aunque se haya cargado después.
 
-`[El regente define a quién se avisa cuando el sistema no responde y a partir de
-cuánto tiempo.]`
+**A quién se avisa.** Al **supervisor**, apenas se ve que el sistema no responde
+—no al terminar el turno—: es quien puede conseguir que vuelva o decidir que se
+siga en papel. Se avisa aunque la lectura ya se haya anotado en la hoja: lo que
+se reporta es que el sistema está caído, no que faltó el registro.
 
 Ésta es la única vía por la que un dato entra transcrito de papel, y por eso
 queda identificada: en cualquier otro caso el registro del sistema es el

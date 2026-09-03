@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.13 — El criterio de desviación, el aviso al supervisor y el termómetro cargado
+
+Las tres decisiones que faltaban en los procedimientos, contestadas por el usuario
+y escritas con lo medido detrás.
+
+**El criterio ante una lectura fuera de rango.** Antes el sistema exigía anotar
+*algo*; ahora el procedimiento dice **qué**, y en tres renglones en vez de un
+protocolo de cuarentena para todo:
+
+| situación | qué se hace |
+|---|---|
+| Sala o bodega, hasta `[32]` °C, y vuelve antes de la lectura siguiente | se anota la acción y **se sigue dispensando** |
+| Sala o bodega, sobre `[32]` °C, o dos lecturas seguidas fuera | **decide el regente**, lote por lote |
+| **Refrigerador**, cualquier desviación de 2–8 °C | **decide siempre el regente** |
+
+El umbral sale de lo medido, no de una plantilla: en **614 lecturas** de sala y
+bodega **una sola** pasó de 30 °C —31.2 °C, bodega de Salud 4, el 21-ago,
+corregida encendiendo el aire— y la máxima de sala de ventas fue 29.9 °C. El
+segundo renglón es para lo que todavía no pasó, que es para lo que existe un
+procedimiento. El refrigerador va aparte porque la cadena de frío es donde el
+producto se pierde de verdad y el margen es estrecho: sus 5 lecturas van de 6.7 a
+**8.0**, o sea rozando el techo.
+
+**La humedad no tiene rango, y queda escrito por qué.** El RTS 6.2.16 dice que su
+registro «será **informativo**». Se anota porque la norma manda registrarla; no
+dispara acción correctiva porque la norma no le fija límite. Sin esa línea, el
+día que alguien vea 13 áreas con `hr_min`/`hr_max` en blanco lo va a «arreglar» y
+se va a inventar un incumplimiento propio.
+
+**Cuando el sistema no está se le avisa al supervisor**, apenas se ve y no al
+terminar el turno. Escrito en los tres documentos, y la hoja de contingencia
+pasó a pedir su nombre y la hora.
+
+**El instrumento, cargado.** `Termómetro digital` en las **14 áreas** que miden
+temperatura — estaban las 27 en blanco, y el mes impreso lo pide. La
+**calibración sigue sin cargarse a propósito**: el RTS 6.2.11 no la exige para
+sala ni bodega, y el 5.6.14 que sí pide certificado es del capítulo 5
+(droguerías). Sólo el refrigerador, y sólo con cadena de frío.
+
+**Un hallazgo del propio trabajo:** el §2.3 del `BORRADOR-B` seguía planteando la
+decisión del cierre como abierta, con su `[Decisión: ___]`, aunque el permiso ya
+estaba cambiado. El reemplazo había fallado en silencio porque **un solo `assert`
+cubría dos sustituciones** y pasó con una. Es la misma familia que
+`feedback_un_pathspec_elige_archivos_no_lineas`: una comprobación que el problema
+no puede romper no es una comprobación floja, mide otra cosa.
+
 ## v2.970.12 — Las bitácoras digitales quedan como el procedimiento dice
 
 Las cinco afirmaciones que el `BORRADOR-A`/`BORRADOR-B` hacían sobre el sistema y

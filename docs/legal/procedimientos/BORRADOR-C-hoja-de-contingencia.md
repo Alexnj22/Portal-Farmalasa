@@ -33,7 +33,8 @@ es el original.
 
 ## Cómo se llena
 
-1. **Tomar la lectura a su hora**, como siempre.
+1. **Tomar la lectura a su hora**, como siempre, y **avisarle al supervisor** que
+   el sistema no responde — apenas se ve, no al final del turno.
 2. Anotar en un renglón: fecha, hora **real** de la lectura, área, franja, el
    valor, y **nombre y firma de quien la toma**. Con lapicero, no con lápiz.
 3. **Un error no se borra ni se tapa**: se traza una raya sobre el dato, se
@@ -93,7 +94,7 @@ campo que el sistema exige.
 
 ## Por qué no estuvo el sistema
 
-| Fecha y hora en que se cayó | Fecha y hora en que volvió | Qué pasó | A quién se avisó |
+| Fecha y hora en que se cayó | Fecha y hora en que volvió | Qué pasó | Supervisor avisado (nombre y hora) |
 |---|---|---|---|
 |  |  |  |  |
 |  |  |  |  |

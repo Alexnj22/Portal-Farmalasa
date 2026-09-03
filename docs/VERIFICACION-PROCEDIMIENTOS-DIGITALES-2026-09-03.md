@@ -447,6 +447,11 @@ Ver B9. Es la que más falta hace y la más barata de agregar.
 
 ## 6 · Qué hacer, en orden
 
+> **Actualizado el mismo día.** Los puntos 1 a 6 y el 8 quedaron cerrados
+> (v2.970.7 y v2.970.12). Sigue abierto el **7**: correr el respaldo una vez a
+> mano. Y de las decisiones de la empresa quedan los datos de trámite —códigos,
+> fechas, nombre y JVPM del regente— más la confirmación del umbral de 32 °C.
+
 **Antes de que el regente firme:**
 
 1. Corregir la cita `5.6.5` → `6.2.15` / `6.2.16` / `6.2.20` **(A1)**.

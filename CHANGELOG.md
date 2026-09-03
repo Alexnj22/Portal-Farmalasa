@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.964.2 — Bitácoras: la firma vuelve a mostrar la foto de quien anotó
+
+En Registro diario la firma salía con las iniciales («K», «D») en vez de la cara,
+aunque las dos personas tienen foto cargada y la RPC la traía —la migración
+`20260825195240_bitacoras_el_dia_trae_la_cara_de_quien_anoto` existe justamente
+para eso, y `MatrizDelDia` ya le pasaba `foto` a `Firma`.
+
+`Firma` armaba a mano el objeto que le da a `AvatarConEstado` y **se quedó sin la
+clave de la foto**: copiaba `nombres`, `apellidos` y `nombre`, y dejaba `foto`
+afuera. `AvatarConEstado` lee `photo`/`photo_url` (y `normalizarPersona` acepta
+`foto`), así que sin esa clave cae a las iniciales —que es su comportamiento
+correcto para alguien sin foto— y **se ve igual de bien**. Ningún error, ninguna
+celda vacía: es la misma familia que
+`feedback_el_mismo_juez_con_menos_piezas_da_otro_numero`, un objeto armado a mano
+para un canónico al que le falta una columna.
+
+De paso se borró el `emp || quien` del render: `emp` es un literal, o sea
+siempre verdadero, y esa mitad nunca se ejecutó — parecía la red que cubría
+exactamente este caso.
+
 ## v2.964.1 — El hook viejo que Vite elegía por encima del nuevo
 
 v2.964.0 renombró `useResolverCorte.js` a `.jsx` —hace falta porque el hook ahora

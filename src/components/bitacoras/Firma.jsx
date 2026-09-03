@@ -24,14 +24,19 @@ import { shortEmployeeName } from '../../utils/nameUtils';
  * @param {boolean} tarde si entró fuera de su franja
  */
 export default function Firma({ quien, hora, tarde }) {
+    // `foto` va SIEMPRE: `AvatarConEstado` lee `photo`/`photo_url` y
+    // `normalizarPersona` acepta `foto` — pero un objeto armado a mano que se
+    // olvida la clave no falla, cae a las iniciales y se ve igual de bien. Es
+    // por lo que la cara no salió desde que la RPC empezó a traerla.
     const emp = {
         first_names: quien?.nombres,
         last_names: quien?.apellidos,
         name: quien?.nombre,
+        foto: quien?.foto,
     };
     return (
         <span className="flex items-center gap-1.5 min-w-0">
-            <AvatarConEstado emp={emp || quien} px={20} radio="rounded-full" />
+            <AvatarConEstado emp={emp} px={20} radio="rounded-full" />
             <span className="text-micro text-content-3 truncate">
                 {shortEmployeeName(emp)}
                 {hora && <> · <span className="tabular-nums">{hora}</span></>}

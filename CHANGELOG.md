@@ -21,6 +21,70 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.971.3 — El listado no acusa de faltar lo que no le dejan ver
+
+Salió de una pregunta sobre permisos: dejar al Administrador con «Listado de
+personal» y sin «Expediente completo» destapó que la tarjeta le iba a decir
+**«Faltan 2 datos: DUI, ISSS / AFP»** sobre las 48 fichas de la empresa, todas
+con su DUI cargado.
+
+### El defecto, y por qué nadie lo había visto
+
+El DUI, el ISSS y la AFP salieron de `employees_safe` el 2026-08-24 y hoy llegan
+por `get_employee_identidad`, que contesta según quien pregunta: **sin
+`staff_detail` devuelve la fila propia y nada más**. La tarjeta los leía crudos
+de la fila, y `undefined` es indistinguible de «esta persona no lo tiene».
+
+No se había visto porque hasta ayer **ningún cargo estaba en esa combinación**:
+los cuatro que abrían el expediente eran los cuatro que veían el listado. La
+protección era una coincidencia de configuración, igual que la del sueldo antes
+del 2026-08-23 — y la pantalla de Permisos invita a romperla con dos clics.
+
+**Y le pasaba a TODOS por un instante.** `persistEmployees` borra esos campos del
+caché del disco, así que la primera pintura de cada recarga —la que sale del
+caché, antes de que `fetchBoot` conteste— los tiene vacíos.
+
+### La marca la pone la RESPUESTA, no el permiso
+
+`identidad_conocida` se escribe desde la fila que volvió, no desde
+`hasPermission`. La diferencia importa: una fila que volvió **con todo en
+`null`** sí es un dato que falta, y ésa es justamente la distinción que había que
+poder decir. Y se borra junto con los campos al persistir — si sobreviviera al
+caché, mentiría sobre datos que se acaban de borrar ahí mismo.
+
+Sin la marca **no se acusa**, que es el lado correcto en el que equivocarse: un
+pendiente que no se ve es más barato que uno inventado, y el expediente tiene la
+lista completa del Art. 23 donde el dato no se esconde.
+
+### Los otros tres, del mismo barrido
+
+- **El directorio en CSV** llevaba dos columnas que no siempre se pueden llenar
+  —DUI (llave `staff_detail`) y Código de carné (llave `ventas`)—. Cuarenta y
+  ocho celdas vacías en un archivo que se llama «Directorio_Personal» y se
+  comparte por correo no se leen como «no me dejaron verlo»: se leen como «acá
+  nadie tiene DUI». La columna que no se puede llenar **ya no va**; un archivo
+  de nueve columnas dice la verdad sobre sí mismo.
+- **La edición de un renglón de nómina** mostraba `Salario diario: $0.00` cuando
+  el sueldo no venía —`(emp.base_salary || 0) / 30`—, y es la pantalla donde se
+  editan las horas que se le van a pagar a alguien. Nómina y Salarios son dos
+  llaves distintas, así que la combinación existe. Hoy es un guion, por
+  `formatMoney`.
+- **A un menor de edad ya no se le pide DUI.** En El Salvador no se tramita
+  hasta los 18 y el Art. 23 nº2 le acepta un documento alterno; pedírselo igual
+  era una alerta que no se podía apagar cargando el dato.
+
+Cuatro casos nuevos en `tests/unit/equiposPorSucursal.test.jsx`, y los dos que
+importan se probaron al revés: sin el arreglo, fallan.
+
+### Lo que queda mirado y sin tocar
+
+`FormNovedad` deja el salario en «—» cuando no lo tiene (muestra menos, no
+miente) y el `employee_dui` del kiosco se redacta antes de guardarse. Pero
+**guardar una ficha exige el código de carné**, que llega por `get_vendedores`:
+un cargo con `staff_list.can_edit` y sin `ventas` chocaría con «El Código es
+obligatorio» sobre un campo que no puede leer. Hoy no hay ninguno así.
+
+
 ## v2.971.2 — El libro cargado de agosto y septiembre, y un gate que lo vigila
 
 ### El libro tiene con qué practicar

@@ -99,10 +99,40 @@ function alertasDe(emp) {
   const salida = [];
 
   const faltan = [];
-  if (!emp.dui) faltan.push('DUI');
-  if (!emp.birth_date) faltan.push('fecha de nacimiento');
-  if (!emp.isss_number && !emp.afp_number) faltan.push('ISSS / AFP');
   const menor = (calcAge(emp.birth_date) ?? 99) < MINOR_AGE;
+  if (!emp.birth_date) faltan.push('fecha de nacimiento');
+
+  // ── Sólo se acusa de faltar lo que se pudo mirar ─────────────────────────
+  // El DUI, el ISSS y la AFP salieron de `employees_safe` el 2026-08-24 y hoy
+  // llegan por `get_employee_identidad`, que contesta según quien pregunta:
+  // sin `staff_detail` devuelve la fila PROPIA y nada más. Leerlos de la fila
+  // sin más daba `undefined`, y `undefined` es indistinguible de «no lo tiene»
+  // — o sea que a un cargo con el listado y sin el expediente la pantalla le
+  // decía «Faltan 2 datos» sobre las 48 fichas, todas con su DUI cargado.
+  //
+  // Y le pasaba a TODOS por un instante: `persistEmployees` borra esos campos
+  // del caché del disco, así que la primera pintura de cada recarga —la que
+  // sale del caché, antes de que `fetchBoot` conteste— los tiene vacíos.
+  //
+  // `identidad_conocida` es la respuesta del servidor, no el permiso: una fila
+  // que volvió con todo en `null` SÍ es un dato que falta. Sin ella no se
+  // acusa, que es el lado correcto en el que equivocarse — el expediente tiene
+  // la lista completa del Art. 23 y ahí el dato no se esconde.
+  if (emp.identidad_conocida) {
+    // A un menor no se le pide DUI: en El Salvador no se tramita hasta los 18,
+    // y el Art. 23 nº2 le pide el documento alterno. Pedírselo igual era una
+    // alerta que no se podía apagar cargando el dato.
+    // «número de…» y no «documento de identidad» a secas: unas líneas abajo
+    // se revisa la IMAGEN con ese mismo nombre, y la lista se muestra unida
+    // por comas — repetido, se leería como un solo dato dicho dos veces.
+    if (menor) {
+      if (!emp.alt_identity_document) faltan.push('número de documento de identidad');
+    } else if (!emp.dui) {
+      faltan.push('DUI');
+    }
+    if (!emp.isss_number && !emp.afp_number) faltan.push('ISSS / AFP');
+  }
+
   const docs = emp.employee_documents || [];
   const tieneIdentidad = menor
     ? docs.some(d => d.category === 'DOCUMENTO_IDENTIDAD' && d.url)
@@ -550,6 +580,15 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
   // El CSV se lleva el padrón fuera del portal — permiso aparte de consultarlo
   // en pantalla (canon 2026-08-03).
   const canDownload = hasPermission('staff_list_descargar');
+  // Qué columnas del directorio se pueden llenar. El DUI llega por
+  // `get_employee_identidad` (llave `staff_detail`) y el código de carné por
+  // `get_vendedores` (llave `ventas`): sin la llave vienen vacías, y una
+  // columna vacía en un CSV que se comparte por correo se lee como «acá nadie
+  // tiene DUI». La columna que no se puede llenar no va — ver `directorioCsv`.
+  const llavesDelDirectorio = {
+    identidad: hasPermission('staff_detail', 'can_view'),
+    credenciales: hasPermission('ventas', 'can_view'),
+  };
 
   const busqueda = (searchTerm || '').trim();
 
@@ -775,7 +814,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     // el directorio de PERSONAL, y ahí no hay ninguno.
     ...(canDownload && !esExternos && !esPracticantes ? [{ key: 'exportar', icon: Download,
       label: 'Exportar', soloIcono: true,
-      onClick: () => exportarDirectorio(visibles, nombreDeSucursal) }] : []),
+      onClick: () => exportarDirectorio(visibles, nombreDeSucursal, llavesDelDirectorio) }] : []),
   ];
 
   return (

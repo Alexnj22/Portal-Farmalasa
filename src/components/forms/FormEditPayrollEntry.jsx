@@ -24,7 +24,19 @@ const EMPTY_OBJ = {};
 const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
     const entry = formData._entry || EMPTY_OBJ;
     const emp   = entry.employee || EMPTY_OBJ;
-    const daily = round2((emp.base_salary || 0) / 30);
+    // El sueldo base ya NO viene con la fila del empleado: sale de
+    // `get_employee_salarios`, que contesta según quien pregunta y sin la llave
+    // «Salarios e ingresos» devuelve vacío. `(emp.base_salary || 0) / 30`
+    // convertía ese vacío en **$0.00**, que no se lee como «no me dejaron
+    // verlo» sino como «esta persona gana cero» — y estamos en la pantalla
+    // donde se editan las horas que se le van a pagar. Nómina y Salarios son
+    // dos llaves distintas, así que la combinación existe.
+    //
+    // `daily` sólo se muestra (no entra en ningún cálculo), así que la
+    // corrección es no inventar el número: `null` viaja tal cual hasta
+    // `formatMoney`, que ya sabe pintar «—» y es quien decide cómo se ve una
+    // cifra en este portal.
+    const daily = emp.base_salary == null ? null : round2(emp.base_salary / 30);
 
     // Bank state per subtype: { diurnal: number|null, nocturnal: number|null }
     const [otBank,    setOtBank]    = useState(null); // null = loading
@@ -111,7 +123,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
         <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 bg-brand/5 border border-brand/15 rounded-2xl px-4 py-2.5">
                 <p className="text-label font-black text-brand-text">
-                    {shortEmployeeName(emp)} — Salario diario: ${daily.toFixed(2)}
+                    {shortEmployeeName(emp)} — Salario diario: {formatMoney(daily)}
                 </p>
             </div>
 

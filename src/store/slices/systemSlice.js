@@ -431,27 +431,40 @@ export const createSystemSlice = (set, get) => ({
                             // aunque quien mira no tenga la llave del expediente. Por eso
                             // «Mi perfil» sigue mostrando el documento de uno sin consultar
                             // ningún permiso acá.
+                            //
+                            // ── Y que el navegador SEPA si le contestaron ──────────────
+                            // Misma decisión que `historialCompleto` unas líneas más
+                            // arriba, por el mismo motivo: sin la llave estos campos
+                            // llegan `undefined`, que es INDISTINGUIBLE de «esta persona
+                            // no tiene DUI». El listado de personal acusaba de «Faltan 2
+                            // datos» a las 48 fichas por eso.
+                            //
+                            // La marca es POR PERSONA y no una bandera global: la función
+                            // devuelve SIEMPRE la fila propia, así que quien no tiene la
+                            // llave igual sabe de sí mismo. Y se pone desde la fila que
+                            // volvió —no desde el permiso— porque una fila que volvió con
+                            // todo en `null` sí es un dato que falta, y ésa es justamente
+                            // la diferencia que hay que poder decir.
                             try {
                                 const identidades = await fetchIdentidades(mappedEmployees.map(e => e.id));
-                                if (identidades.size) {
-                                    mappedEmployees.forEach(e => {
-                                        const i = identidades.get(e.id);
-                                        if (i) {
-                                            e.dui                   = i.dui;
-                                            e.alt_identity_document = i.alt_identity_document;
-                                            e.isss_number           = i.isss_number;
-                                            e.afp_number            = i.afp_number;
-                                            // Art. 23 nº2: el lugar y la fecha de expedición
-                                            // son parte del MISMO dato que el número, así que
-                                            // llegan por acá y no por `employees_safe` —
-                                            // igual que el número. Sin estas dos líneas el
-                                            // expediente los pediría de nuevo en cada
-                                            // edición aunque ya estuvieran guardados.
-                                            e.dui_lugar_expedicion  = i.dui_lugar_expedicion;
-                                            e.dui_fecha_expedicion  = i.dui_fecha_expedicion;
-                                        }
-                                    });
-                                }
+                                mappedEmployees.forEach(e => {
+                                    const i = identidades.get(e.id);
+                                    e.identidad_conocida = !!i;
+                                    if (i) {
+                                        e.dui                   = i.dui;
+                                        e.alt_identity_document = i.alt_identity_document;
+                                        e.isss_number           = i.isss_number;
+                                        e.afp_number            = i.afp_number;
+                                        // Art. 23 nº2: el lugar y la fecha de expedición
+                                        // son parte del MISMO dato que el número, así que
+                                        // llegan por acá y no por `employees_safe` —
+                                        // igual que el número. Sin estas dos líneas el
+                                        // expediente los pediría de nuevo en cada
+                                        // edición aunque ya estuvieran guardados.
+                                        e.dui_lugar_expedicion  = i.dui_lugar_expedicion;
+                                        e.dui_fecha_expedicion  = i.dui_fecha_expedicion;
+                                    }
+                                });
                             } catch (e) {
                                 console.warn('fetchBoot: no se pudo traer la identidad:', e?.message || e);
                             }

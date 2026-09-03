@@ -310,3 +310,86 @@ describe('Equipos por sucursal — quién manda y quién responde a quién', () 
         }
     });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// La píldora de pendientes — y por qué «no lo veo» no es «no lo tiene»
+//
+// El DUI, el ISSS y la AFP salieron de `employees_safe` el 2026-08-24: hoy
+// llegan por `get_employee_identidad`, que devuelve la fila PROPIA a quien no
+// tiene `staff_detail`. Leídos crudos de la fila daban `undefined`, y la
+// tarjeta lo empujaba a la lista de faltantes — o sea que el cargo que tiene el
+// listado y no el expediente veía «Faltan 2 datos» sobre las 48 fichas de la
+// empresa, todas con su DUI cargado.
+//
+// El mismo instante lo vive TODO EL MUNDO en cada recarga: `persistEmployees`
+// borra esos campos del caché del disco, así que la primera pintura sale sin
+// ellos y con la marca ausente.
+//
+// La marca `identidad_conocida` la pone el store desde la RESPUESTA —no desde
+// el permiso— porque una fila que volvió con todo en `null` sí es un dato que
+// falta, y ésa es exactamente la diferencia que había que poder decir.
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Equipos por sucursal — sólo se acusa de faltar lo que se pudo mirar', () => {
+    beforeEach(() => cleanup());
+
+    // Todos los papeles del expediente cargados, para que el único pendiente
+    // posible sea el que cada caso está midiendo.
+    const CON_PAPELES = [
+        { category: 'DUI_FRENTE',  url: 'x' },
+        { category: 'DUI_REVERSO', url: 'x' },
+    ];
+
+    const conFicha = (parches) => {
+        const previo = estado.employees;
+        estado.employees = [
+            { ...persona(1, 'Jefa de Salud 4', 19, 'Jefe/a de Sala', 44),
+              employee_documents: CON_PAPELES, ...parches },
+        ];
+        return { previo, restaurar: () => { estado.employees = previo; } };
+    };
+
+    const pendientesDe = (container) =>
+        container.querySelector('[title^="Información pendiente"]')?.getAttribute('title') ?? null;
+
+    it('sin la marca del servidor NO acusa de que falten DUI, ISSS ni AFP', () => {
+        // La fila del caché: los campos con llave se borran al persistir, así
+        // que llegan vacíos y sin marca. Antes esto pintaba «Faltan 2 datos».
+        const { restaurar } = conFicha({ dui: undefined, isss_number: undefined, afp_number: undefined });
+        try {
+            expect(pendientesDe(montar().container)).toBeNull();
+        } finally { restaurar(); }
+    });
+
+    it('CON la marca del servidor, un DUI que de verdad falta sí se acusa', () => {
+        // La otra mitad, y es la que hace útil a la prueba anterior: si el
+        // arreglo hubiera sido «no mirar nunca el DUI», este caso pasaría a
+        // callar un pendiente real y nadie lo notaría.
+        const { restaurar } = conFicha({ identidad_conocida: true, dui: null, isss_number: '123456' });
+        try {
+            expect(pendientesDe(montar().container)).toContain('DUI');
+        } finally { restaurar(); }
+    });
+
+    it('sin ISSS ni AFP, con la marca puesta, también', () => {
+        const { restaurar } = conFicha({ identidad_conocida: true, dui: '00000000-0', isss_number: null, afp_number: null });
+        try {
+            expect(pendientesDe(montar().container)).toContain('ISSS / AFP');
+        } finally { restaurar(); }
+    });
+
+    it('a un menor de edad NO se le pide DUI: se le pide su documento alterno', () => {
+        // En El Salvador el DUI no se tramita hasta los 18, y el Art. 23 nº2 le
+        // acepta un documento alterno. Pedírselo igual era una alerta que no se
+        // podía apagar cargando el dato — el mismo defecto por otra causa.
+        const hoy = new Date();
+        const nacio = `${hoy.getFullYear() - 16}-01-15`;
+        const { restaurar } = conFicha({
+            identidad_conocida: true, birth_date: nacio, dui: null,
+            alt_identity_document: 'CARNE-MINORIDAD-1', isss_number: '123456',
+            employee_documents: [{ category: 'DOCUMENTO_IDENTIDAD', url: 'x' }],
+        });
+        try {
+            expect(pendientesDe(montar().container)).toBeNull();
+        } finally { restaurar(); }
+    });
+});

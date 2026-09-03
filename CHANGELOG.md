@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.961.0 — El cierre del día se manda solo, con el último Z
+
+La tarjeta del cierre del día existía desde v2.951.0 y se aprobó con una
+notificación **insertada a mano**. Lo que faltaba era el emisor: no había
+ninguna función que la armara, ningún cron que la disparara, y `notifications`
+no tenía ni una fila de ese tipo. O sea que el aviso estaba dibujado y no iba a
+salir ninguna noche.
+
+### El disparador es el último Z, no una hora
+
+Las salas no cierran a la misma hora — el 2-sep, entre las 19:03 y las 21:02.
+Una hora fija llega temprano con salas abiertas o llega tarde siempre. El
+trigger corre en el INSERT de cada corte Z y la función se encarga de callarse
+mientras falte una sala: dispara seis veces y sólo la última hace algo.
+
+Y como un disparador que espera a TODOS necesita una salida, el cron
+`cierre-del-dia-hora-tope` (23:50 SV, diez minutos después del repaso de cortes)
+lo manda igual con `p_forzado`, y la tarjeta dice **«No cerraron: …»** — que esa
+noche es la noticia. Sin esa red, el día que una sala no cierre el aviso no
+saldría nunca, y «no llegó» se lee igual que «no pasó nada».
+
+### Los números, verificados contra la tarjeta aprobada
+
+`avisar_cierre_del_dia` reproduce al centavo el aviso del 1-sep que se aprobó:
+$7,302.34 de $7,781.63 · 94% · 11% menos que el martes pasado · Salud 5 135% ·
+Salud 2 107% · Salud 1 96% · Salud 4 88% · La Popular 85% · Salud 3 77%, con las
+seis variaciones por sala incluidas.
+
+- **La venta es neta y sin lo que no es producto** (`sum_total - sum_no_producto`),
+  la misma fuente y la misma resta que el cierre de mes. Nada de ingresos ni
+  vales: eso es movimiento de caja, no venta.
+- **La meta del día es la del mes repartida entre sus días.** El concepto no
+  existía en la base; se define acá y el aviso lo dice.
+- **El % global se calcula sumando, no promediando.** El promedio de los seis
+  porcentajes le daría el mismo peso a Salud 5 ($717) que a Salud 1 ($1,569).
+- **La comparación es contra el mismo día de la semana pasada**, y el «contra
+  qué» viaja dentro del dato para que la tarjeta no lo adivine.
+- **La diferencia de caja sale del último corte CONFIRMADO**, con
+  `corte_diferencia` — el canónico, gemelo del de la pantalla. `NULL` no es
+  cero: es «no se pudo saber», y la tarjeta lo dice distinto («Sin corte
+  confirmado: …»). Confundirlos daría por cuadrada una caja que nadie contó.
+
+### Una sola vez por día
+
+La marca va en `avisos_emitidos` (`CIERRE_DEL_DIA:<fecha>`), no en la
+notificación misma. Es la lección del mismo día: el cierre de agosto salió dos
+veces porque la guarda preguntaba «¿todavía la tiene?» y la campana se puede
+vaciar. Acá hay siete disparadores posibles por día (seis Z más el cron), así
+que sin marca durable saldría siete veces.
+
+Va a Gerente General y Supervisor/a de Ventas, resueltos por cargo y no por una
+lista de ids: el día que cambie la persona, el aviso la alcanza sola.
+
 ## v2.960.4 — El total del vale sale de sus salidas, no de una suma acumulada
 
 Pregunta del usuario sobre v2.960.3: *«si descarto el corte, y vuelvo a hacer el

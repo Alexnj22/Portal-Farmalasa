@@ -288,6 +288,18 @@ const CRONS = [
           + 'que hacer.',
   },
   {
+    job: 'cierre-del-dia-hora-tope', slug: null, cadencia: '50 5 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'SQL puro: no llama a ninguna función ni toca el sistema de origen. Es la RED del '
+          + 'aviso de cierre del día, que normalmente lo manda el trigger del último corte Z. '
+          + 'Corre una vez, a las 23:50 SV —diez minutos después del repaso de cortes de las '
+          + '23:40, que es el que puede traer un Z capturado tarde— y sólo hace algo si alguna '
+          + 'sala no cerró: la marca en `avisos_emitidos` evita el duplicado cuando el trigger ya '
+          + 'lo mandó. Se declara acá aunque no cueste peticiones por el mismo motivo que '
+          + '`promociones-ciclo-diario`: un cron de SQL puro es invisible al barrido de '
+          + '`functions/v1/`, así que si no está escrito no lo vigila nadie.',
+  },
+  {
     job: 'avisar-diferencias-vencidas', slug: null, cadencia: '0 15 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'No llama a ninguna función: es una consulta y un aviso. Cuando una sala y bodega '

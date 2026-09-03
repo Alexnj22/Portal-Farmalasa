@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.965.0 — Bitácoras: el mes impreso se rehizo (carta, logo, una hoja por área)
+
+Pedido del usuario sobre el formulario en papel que las salas ya usan: carta,
+vertical, con el logo nuevo, «no repliques, mejoralo». El libro de dispensación
+va acostado, que también lo pidió.
+
+**Lo primero que apareció no era estético.** El papel viejo tenía
+`th { background:#000; color:#fff }` para los encabezados de columna y
+`.falta { background:#eee }` para las lecturas sin anotar. **Chrome no imprime
+fondos por defecto** (la casilla «Gráficos de fondo» del diálogo viene apagada),
+así que los encabezados salían en **blanco sobre blanco** —invisibles— y la marca
+de «nadie anotó» desaparecía entera. No da error: la hoja sale y el dato no está.
+
+De ahí la regla dura del archivo nuevo: **ningún significado puede depender de un
+fondo.** Lo que distingue una celda de otra son reglas, peso y glifos —`▲` fuera
+de rango, `—` sin anotar, `*` fuera de hora, `(c)` corregida— que se imprimen
+siempre y sobreviven a la fotocopia, que es lo que un inspector se lleva. Un gris
+del 15% vuelve del 40% o desaparece según la máquina.
+
+**Qué cambió en la hoja**
+
+- **Banda de control** arriba: el logo de la empresa, el título del formulario y
+  las casillas de código y período. Es lo que convierte una tabla en un registro.
+- **Franja de identidad**: establecimiento, área, mes, rango permitido,
+  instrumento y hasta cuándo está calibrado. En el formulario de papel son rayas
+  para llenar a mano; acá el portal ya lo sabe, así que va impreso.
+- **T, H y quién son tres columnas**, no una celda apilada. Antes la celda decía
+  «26° / 61%» y debajo, en 7 px, el nombre y la hora: recorrer la columna de
+  temperaturas obligaba a saltear dos líneas de otra cosa en cada renglón.
+- **Una hoja por área**, con sus dos firmas al pie —jefe de sala y regente—, que
+  es la unidad que se archiva y se entrega suelta.
+- **Regla gruesa cada domingo**: en 31 filas iguales el ojo pierde el renglón, y
+  una trama de fondo no se imprime.
+- Las listas largas al pie —desviaciones con su acción correctiva, los muebles
+  del área, los renglones anulados— en vez de estirar una celda de 6%.
+
+**Y una fila de identificación DENTRO del `thead`.** Un mes que no entra en una
+hoja sigue en la siguiente, y esa segunda hoja se archiva igual que la primera.
+El `thead` se repite en cada página; la banda de arriba, no. Sin eso, la página 2
+es una tabla de números que no dice de qué sala es. (Con los ajustes de altura,
+hoy el mes entra completo con sus firmas: medido, 250 mm sobre 258 de área útil.)
+
+**El logo puede no llegar a la hoja, y eso también se cerró.** `escribirEImprimir`
+mandaba a imprimir con un `setTimeout` de 400 ms. Con una imagen en el documento
+eso es una carrera: si `print()` sale antes de que decodifique, **el papel se
+imprime sin logo y nadie se entera** — no hay error y en pantalla la ventana
+termina mostrándolo bien. Ahora espera a las imágenes, con dos frenos para que no
+cuelgue: una imagen rota cuenta como lista, y a los 4 s se imprime igual.
+
+**El papel se puede ver sin imprimir en producción.** Era la única superficie del
+portal que no se podía revisar de otra forma. `src/utils/bitacoraPapel.js` no
+tiene un solo import justamente para eso, y `npm run maqueta:bitacoras` lo carga
+con node, arma el documento con datos de muestra —los seis casos que importan:
+fuera de rango, fuera de hora, corregida, día sin anotar, turno incompleto y
+renglón anulado— y saca el PDF con Playwright. Del PDF y no de una captura: lo
+que se mira es la paginación de verdad.
+
 ## v2.964.6 — Mis puntos: el código entra de verdad, y el aviso deja de ser un óvalo
 
 El código seguía sin entrar después de v2.964.5, y esta vez la base estaba bien.

@@ -66,10 +66,40 @@ export function escribirEImprimir(win, html, { retardo = 400, imprimir = true } 
         // Lo que `noopener` prometía, pero conservando el handle.
         try { win.opener = null; } catch { /* otro origen: no pasa */ }
         win.focus();
-        if (imprimir) setTimeout(() => { try { win.print(); } catch { /* la cerraron */ } }, retardo);
+        if (imprimir) cuandoEsteDibujado(win, retardo);
         return { ok: true };
     } catch (err) {
         try { win.close(); } catch { /* ya no está */ }
         return { ok: false, motivo: err?.message || 'No se pudo armar el papel.' };
     }
+}
+
+/**
+ * Espera a que las imágenes estén decodificadas y recién ahí manda a imprimir.
+ *
+ * ── Por qué no alcanza un `setTimeout` ────────────────────────────────────
+ * El retardo existe porque sin él Safari imprime antes de aplicar el CSS y sale
+ * el HTML crudo. Pero desde que el papel de bitácoras lleva el logo, hay algo
+ * más lento que el CSS: una imagen. Si `print()` sale antes de que decodifique,
+ * **el documento se imprime sin logo y nadie se entera** — no hay error, no
+ * falta ninguna fila, y en pantalla la ventana termina mostrándolo bien.
+ *
+ * Así que se espera a las imágenes, con dos frenos para que no cuelgue: una
+ * imagen rota cuenta como lista (`onerror`), y a los 4 s se imprime igual. Un
+ * papel sin logo es mejor que un botón que no hace nada.
+ */
+function cuandoEsteDibujado(win, retardo) {
+    const arrancar = () => { try { win.print(); } catch { /* la cerraron */ } };
+    let listo = false;
+    const unaVez = () => { if (!listo) { listo = true; setTimeout(arrancar, retardo); } };
+
+    let imgs = [];
+    try { imgs = Array.from(win.document.images || []); } catch { /* ya no está */ }
+    const faltan = imgs.filter(im => !im.complete);
+    if (!faltan.length) { unaVez(); return; }
+
+    let quedan = faltan.length;
+    const bajaUna = () => { if (--quedan <= 0) unaVez(); };
+    for (const im of faltan) { im.addEventListener('load', bajaUna); im.addEventListener('error', bajaUna); }
+    setTimeout(unaVez, 4000);
 }

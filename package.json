@@ -21,6 +21,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "gate:borradores": "node scripts/draft-gate.mjs",
+    "maqueta:bitacoras": "node scripts/maqueta-bitacoras.mjs",
     "gate:design": "node scripts/design-gate.mjs",
     "gate:pdf": "node scripts/corte-z-una-hoja.mjs",
     "gate:movil": "node scripts/mobile-gate.mjs",

@@ -12,6 +12,7 @@ import {
 } from '../../data/bitacoras';
 import { imprimirMesDeBitacoras } from '../../utils/bitacoraPrint';
 import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../utils/ventanaDeImpresion';
+import { logoComoDataUrl, LOGO_DE_LA_EMPRESA } from '../../utils/marcaDeLaSala';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El cierre de mes del regente.
@@ -123,14 +124,20 @@ export default function TabCierre({ branchId, fechaVista }) {
         if (!win) { setError(VENTANA_BLOQUEADA); return; }
         setImprimiendo(true);
         setError(null);
-        const { mes, error: err } = await fetchMesImpreso(branchId, periodo);
+        // El logo se pide EN PARALELO: es una imagen chica y no tiene por qué
+        // sumarle su ida y vuelta a la del mes. Si no viene, el papel sale
+        // igual con el nombre de la empresa en texto.
+        const [{ mes, error: err }, logo] = await Promise.all([
+            fetchMesImpreso(branchId, periodo),
+            logoComoDataUrl(LOGO_DE_LA_EMPRESA),
+        ]);
         setImprimiendo(false);
         if (err) {
             try { win.close(); } catch { /* ya no está */ }
             setError(err.message ?? 'No se pudo armar el mes para imprimir.');
             return;
         }
-        const r = imprimirMesDeBitacoras(win, mes);
+        const r = imprimirMesDeBitacoras(win, mes, logo);
         if (!r.ok) setError(r.motivo);
     }, [branchId, periodo]);
 

@@ -630,6 +630,23 @@ const LiquidDatePicker = ({
                 // El campo entero es el control que abre el calendario, y sólo
                 // respondía al puntero. `active:` en el contenedor y no en cada
                 // casilla: lo que se toca es el campo.
+                // ── `w-full` + `basis-*`: por qué las DOS (2026-09-03) ──────────
+                // `w-full` es lo que hace que el campo llene a un padre en
+                // bloque o a una columna con `items-start`. Pero en una FILA
+                // flex, `flex-basis: auto` lee ese mismo `width: 100%` y el
+                // campo pide la fila entera: el reparto se resuelve dejando a
+                // los hermanos en CERO. Y un hermano en cero no desaparece —
+                // un `<input>` no baja de su propio relleno—, así que se
+                // desborda y pinta ENCIMA del campo de fecha, tapándole el
+                // icono y el día. Medido el 2026-09-03 en «Modificar
+                // facturación»: el buscador quedó en 68px (su `pl-9 pr-8`) y
+                // del campo de fecha sólo se veía un «MM» suelto.
+                //
+                // El `basis` explícito lo corta: en una fila flex el campo
+                // pide lo que mide y el hermano se queda con el resto; fuera
+                // de una fila flex el `basis` es inerte y manda `w-full`.
+                // `PortalInput` no tiene el problema porque nunca declaró
+                // ancho — acá `w-full` se conserva por los padres en columna.
                 data-surface={tono ? undefined : 'input'}
                 className={`w-full flex items-center gap-1 transition-all active:scale-[0.99] group/picker
                     ${compact ? 'h-8' : 'h-[max(40px,var(--tap-min))]'}
@@ -638,7 +655,7 @@ const LiquidDatePicker = ({
                       : 'hover:bg-surface-card-hover focus-within:bg-surface-card-hover'}
                     ${hasError ? 'rounded-input outline outline-2 outline-danger/50 !border-danger !bg-danger/10' : ''}
                     ${esTactil ? 'cursor-pointer' : 'cursor-text'}
-                    ${compact ? "px-2.5 min-w-[112px]" : "px-3 md:px-4 min-w-[140px]"}`}
+                    ${compact ? "px-2.5 min-w-[112px] basis-[112px]" : "px-3 md:px-4 min-w-[140px] basis-[140px]"}`}
                 onClick={() => {
                     if (!isOpen) openPicker();
                     if (esTactil) return;

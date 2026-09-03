@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.968.5 — El campo de fecha deja de pedir la fila entera
+
+En «Modificar facturación» el buscador salía reducido a un cuadrito con la lupa
+y del filtro de fecha sólo se veía un «MM» suelto, sin su icono ni el día.
+
+`LiquidDatePicker` declara `w-full` —es lo que lo hace llenar a un padre en
+bloque o a una columna con `items-start`—, pero en una **fila** flex
+`flex-basis: auto` lee ese mismo `width: 100%` y el campo pide la fila entera:
+el reparto deja al hermano en **cero**. Y un hermano en cero no desaparece: un
+`<input>` no baja de su propio relleno, así que sobrevive con sus 68px de
+`pl-9 pr-8`, se desborda y pinta **encima** del campo de fecha. Medido con
+Chromium sobre la fila real (598px): envoltorio del buscador **0px**, input
+70px, campo de fecha 590px empezando en x=8 — o sea 62px del campo de fecha
+tapados, que son justo el icono y el «DD».
+
+El `w-full` no es nuevo; lo que cambió fue quitarle el envoltorio. Hasta
+v2.807.0 la llamada era
+`<div className="h-8 shrink-0 …"><LiquidDatePicker …/></div>`, y ese `shrink-0`
+sin ancho dejaba el `100%` resolviéndose contra una caja de contenido. Al
+volverse el campo su propia caja —que era el objetivo de aquel cambio y sigue
+siendo lo correcto— el `w-full` quedó suelto en la fila.
+
+La corrección va en el canónico y no en la llamada: `basis-[112px]` (compacto)
+/ `basis-[140px]`, los mismos números que ya tenía en `min-w-*`. En una fila
+flex el campo pide lo que mide y el hermano se queda con el resto (buscador
+478px, fecha 112px); fuera de una fila flex el `basis` es inerte y sigue
+mandando `w-full`. `PortalInput` nunca tuvo el problema porque **nunca declaró
+ancho** — acá el `w-full` se conserva por los padres en columna con
+`items-start`.
+
+De los 66 usos del campo, once viven en una fila flex y **uno solo** tenía un
+hermano al que aplastar: éste. Los otros diez son pares de fechas o campos
+solos, que ya medían lo suyo.
 ## v2.968.4 — Los procedimientos escritos salen en PDF, con el formato aprobado
 
 `npm run procedimientos:pdf` genera los `.pdf` de `docs/legal/procedimientos/`

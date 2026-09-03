@@ -21,9 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.970.8 — El arranque deja de traer el codigo de bolsas y cortes
+## v2.970.9 — El arranque deja de traer el código de bolsas y cortes
 
-_(pendiente de redactar)_
+`gate:bundle` estaba en rojo con el **entry en 310 kB gzip contra un tope de
+296**. El entry es lo que baja TODO el mundo, en frío y después de cada
+despliegue.
+
+Es un solo chunk, así que no hay nada que atribuir mirando archivos: hubo que
+sacar el desglose por módulo y seguir la cadena de `import` estáticos desde
+`main.jsx`. Dos hallazgos, los dos de la misma forma.
+
+**Uno: una función arrastraba dos módulos enteros.**
+
+```
+App.jsx → staffStore → requestsSlice → data/creditos → data/bolsas → cortesDiagnostico
+```
+
+`data/creditos` importaba **una sola función** de `data/bolsas`,
+`aBase64Reducido` — la que encoge una foto antes de mandarla a leer. Pero un
+`import` no trae una función: trae el módulo entero y todo lo que ese módulo
+importa. Esa línea metía los **63 kB de `data/bolsas`** y, con ellos, los **58 kB
+de `utils/cortesDiagnostico`** en el arranque del portal, para gente que nunca
+abre una bolsa ni un corte.
+
+La función se mudó a `utils/fotoParaLeer`, que no importa nada. Los dos módulos
+salieron del arranque.
+
+**Dos: dos acciones de aprobación traían su módulo de datos.** `requestsSlice`
+importaba `aplicarCorreccionDeAbono` y `resolverAbonoEnAprobacion` de forma
+estática — 18.8 kB que sólo corren cuando alguien aprueba una corrección de un
+cobro. Pasaron a `await import()` dentro de la acción: aprobar ya es una acción
+con red de por medio, así que el viaje del módulo no se nota; el arranque sí.
+
+```
+ENTRY:  310 → 302 → 300 kB gzip
+```
+
+Es la misma forma del defecto que ya tenía `pedidoPrint.js` con `pdfmake` (regla
+«librerías pesadas SOLO por `await import()`»), con una diferencia que la vuelve
+más difícil de ver: **acá la librería pesada es código propio**, así que no
+aparece en ninguna lista de dependencias y el `import` se lee como barato.
+
+**Lo que queda, dicho como está.** El entry sigue 4 kB sobre su tope y no se
+subió el tope: lo que quedó adentro es el núcleo —los slices del store,
+`AppLayout`, `AuthContext`, la caja negra que `main.jsx` carga a propósito— y
+bajarlo es otra decisión, no una limpieza. Y el peso que salió del arranque
+aparece ahora en las rutas que sí lo usan (`CortesView`, `MiCajaView`,
+`BolsasView`, la campana), que es el intercambio buscado y el mismo que se hizo
+al diferir `UnifiedModal`: el arranque lo paga todo el mundo en cada despliegue;
+una ruta se paga una vez y queda en caché. Sus techos **no se tocaron** — subir
+un techo es una decisión con nombre y fecha, no un efecto secundario.
 
 ## v2.970.7 — Los dos procedimientos digitales, verificados contra la norma y contra producción
 

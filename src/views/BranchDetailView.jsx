@@ -419,8 +419,12 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             <TabStaff liveBranch={liveBranch} currentStaff={currentStaff} employees={employees} goToProfile={goToProfile} openModal={openModal} />
                         )}
 
+                        {/* `canEdit` baja al expediente, que hasta el 2026-09-03 no lo
+                            recibía: sus botones de subir y reemplazar estaban siempre
+                            encendidos aunque la cabecera de acá arriba ya los escondía
+                            sin `branches.can_edit`. Ver el comentario de `TabExpediente`. */}
                         {activeTab === 'dossier' && (
-                            <TabExpediente liveBranch={liveBranch} openModal={openModal} />
+                            <TabExpediente liveBranch={liveBranch} openModal={openModal} puedeEditar={canEdit} />
                         )}
                         {activeTab === 'expenses' && (
                             <TabExpenses liveBranch={liveBranch} openModal={openModal} branchType={branchType} />

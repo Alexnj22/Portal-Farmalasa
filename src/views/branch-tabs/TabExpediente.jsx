@@ -35,7 +35,20 @@ const formatDate = (dateStr) => {
 // ============================================================================
 // 🚀 TARJETA DE DOCUMENTO (CON UI PARA INTELIGENCIA ARTIFICIAL ESTANDARIZADA)
 // ============================================================================
-const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
+// ── `puedeEditar` no es decoración: es lo que la base ya exige ─────────────
+//
+// Hasta el 2026-09-03 este archivo no recibía el permiso y no tenía UN SOLO
+// `disabled`: el botón «Nuevo», los de editar cada documento y «Subir Archivo»
+// estaban siempre encendidos. Y la ruta que trae acá sólo pide
+// `branches.can_view` (`App.jsx`, `PermissionGuard` mira `can_view`), así que
+// **ver el expediente de una sala alcanzaba para reemplazar su permiso del SRS**
+// — mientras la cabecera de `BranchDetailView` sí escondía sus botones tras
+// `can_edit`. El mismo permiso, dicho de dos maneras en la misma pantalla.
+//
+// Desde que la policy de Storage pide `branches.can_edit` para escribir en
+// `documents/branches/…`, dejarlos encendidos ya no sería sólo incoherente:
+// convertiría un botón que anda en un error de PostgREST.
+const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick, puedeEditar }) => {
     const effectiveExpDate = doc.hasExpiration === false ? null : doc.expDate;
     const effectiveIssueDate = doc.hasIssueDate === false ? null : doc.issueDate;
 
@@ -53,9 +66,11 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                     <Button variant="secondary" size="sm" icon={Eye} title="Ver PDF" iconOnly onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })} />
                 )}
 
-                <Button variant="secondary" size="sm" icon={Pencil} title="Editar/actualizar datos" iconOnly onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })} />
+                {puedeEditar && (
+                    <Button variant="secondary" size="sm" icon={Pencil} title="Editar/actualizar datos" iconOnly onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })} />
+                )}
 
-                {doc.isCustom && !doc.url && (
+                {puedeEditar && doc.isCustom && !doc.url && (
                     <Button variant="destructive" size="sm" icon={Trash2} title="Eliminar espacio" iconOnly onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }} />
                 )}
             </div>
@@ -153,7 +168,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 </div>
             </div>
 
-            {isMissing && (
+            {isMissing && puedeEditar && (
                 <div className="mt-4 relative z-base">
                     <Button icon={UploadCloud} onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}>Subir Archivo</Button>
                 </div>
@@ -165,7 +180,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 // ============================================================================
 // 🚀 CONTENEDOR PRINCIPAL DEL EXPEDIENTE
 // ============================================================================
-const TabExpediente = ({ liveBranch, openModal }) => {
+const TabExpediente = ({ liveBranch, openModal, puedeEditar = false }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showAllDocs, setShowAllDocs] = useState(false);
 
@@ -366,7 +381,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             onClick={() => setShowAllDocs(!showAllDocs)}
                         >{showAllDocs ? 'Ocultar' : 'Ver todos'}</Button>
 
-                        <Button variant="secondary" icon={Plus} onClick={() => openModal('addCustomDocument', liveBranch)}>Nuevo</Button>
+                        {puedeEditar && <Button variant="secondary" icon={Plus} onClick={() => openModal('addCustomDocument', liveBranch)}>Nuevo</Button>}
 
                         <div className="w-px h-6 bg-content-3/60 mx-1"></div>
 
@@ -417,8 +432,8 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         <ShieldCheck size={12} className="text-success" strokeWidth={3} /> Licencias y Permisos
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {permisosDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
-                        {customDocsByCategory['PERMISOS']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
+                        {permisosDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} puedeEditar={puedeEditar} />)}
+                        {customDocsByCategory['PERMISOS']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} puedeEditar={puedeEditar} />)}
                     </div>
                 </div>
             )}
@@ -430,8 +445,8 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         <Users size={12} className="text-chart-3-text" strokeWidth={3} /> Credenciales de Personal
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {personalDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
-                        {customDocsByCategory['RRHH']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
+                        {personalDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} puedeEditar={puedeEditar} />)}
+                        {customDocsByCategory['RRHH']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} puedeEditar={puedeEditar} />)}
                     </div>
                 </div>
             )}
@@ -443,8 +458,8 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         <Building2 size={12} className="text-warning" strokeWidth={3} /> Infraestructura y Locales
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {infraDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
-                        {customDocsByCategory['OPERATIVO']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
+                        {infraDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} puedeEditar={puedeEditar} />)}
+                        {customDocsByCategory['OPERATIVO']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} puedeEditar={puedeEditar} />)}
                     </div>
                 </div>
             )}
@@ -460,7 +475,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             <Tags size={12} className="text-brand-text" strokeWidth={3} /> {CATEGORIAS_DOCUMENTO[category].label}
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {docs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
+                            {docs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} puedeEditar={puedeEditar} />)}
                         </div>
                     </div>
                 );

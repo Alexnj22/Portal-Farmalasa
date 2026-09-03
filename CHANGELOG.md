@@ -21,6 +21,81 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.971.7 — El expediente también tiene puerta en el almacén
+
+Primer paso del plan que salió de `docs/AUDITORIA-PERSONAL-2026-09-03.md`. Es el
+hallazgo que **estaba pasando hoy**, sin que nadie tuviera que equivocarse de
+permiso.
+
+### El archivo no tenía ninguna puerta
+
+`employee_documents` (la tabla) exige `staff_detail`. `get_employee_identidad`
+exige `staff_detail`. Pero el ARCHIVO —la foto del DUI, el contrato firmado—
+vive en el bucket `documents`, y sus cuatro policies decían nada más que
+`USING (bucket_id = 'documents')`. Ninguna preguntaba quién es.
+
+O sea que **cualquiera de las 48 cuentas del portal podía ver, reemplazar y
+borrar cualquier documento del expediente de cualquier persona** — y no hacía
+falta adivinar la ruta: `employees_safe` publica la columna
+`employee_documents` (el jsonb con las URLs) a toda sesión, así que viaja en el
+arranque a todo el mundo. En el mismo bucket viven los 25 documentos legales de
+las sucursales. El bucket `empleados` (47 fotos) tenía las mismas cuatro.
+
+Es la regla 3 de CLAUDE.md —`USING (true)` prohibido para UPDATE/DELETE— con
+`bucket_id` haciendo de `true`. El portal ya lo hacía bien en cuatro buckets
+(`recetas` pide `bitacoras`, `sales-dte` pide `libros_iva`, `purchase-dte` hasta
+acota por sala): lo que faltaba era mirar estos dos.
+
+**Medido en producción, después:** un dependiente de farmacia pasó de ver los
+**55** archivos de `documents` a ver **cero**, y Talento Humano sigue viendo los
+55. Las 47 fotos de perfil las sigue viendo todo el mundo, a propósito.
+
+### El predicado va inline, y ése es el detalle que importa
+
+La forma obvia es un `puede_ver_documento(name)` STABLE. No sirve: una función
+que recibe la fila **no se puede izar**, así que Postgres la evalúa una vez por
+ARCHIVO y adentro cada `auth_*` vuelve a consultar employees+role_permissions.
+Escrito inline, cada `(SELECT auth_…())` es un initplan que corre **una vez por
+consulta** y lo único que queda por fila es comparar texto. Es la lección del
+incidente del 2026-07-08 (25,000 ms → 19 ms) aplicada antes de que duela.
+
+### El reparto sale de las rutas reales, no de lo que uno supone
+
+Son **cinco** formas de ruta en `documents`, no una: el expediente
+(`employees/<id>/…`), las sucursales (`branches/<id>/…`), los practicantes, el
+adjunto de una incapacidad (`disability/…` — pertenece a la SOLICITUD, no a la
+ficha, así que su llave es `requests_personales`) y el buzón de la foto que
+llega del teléfono (`capturas/…`, que sólo toca `service_role` y cuyo dueño
+recibe una URL firmada). Cada una con su módulo.
+
+**Lo que no cae en ningún prefijo conocido queda con la llave más cerrada, no
+con la más abierta** — ahí viven la ruta vieja `employee-documents/…` y dos
+archivos sueltos en la raíz, que son del expediente.
+
+Y el DELETE se pudo cerrar entero porque el barrido no encontró **ni un
+`.remove()`** sobre estos dos buckets desde `src/`: lo único que borra es
+`soltar-captura`, con `service_role`.
+
+### La policy duplicada que habría anulado todo
+
+`empleados` tenía DOS policies de INSERT: la del repo y una
+`Permitir todo a usuarios autenticados 17gkcnc_1` que quedó de la consola. Las
+permisivas se OR-ean, así que **la más floja gana siempre**: dejarla habría
+hecho que la nueva no sirviera para nada, sin un solo error a la vista.
+
+### Y un botón que la base ya no iba a dejar apretar
+
+`TabExpediente` no recibía `canEdit` y no tenía **un solo `disabled`**: el botón
+«Nuevo», los de reemplazar cada documento legal y «Subir Archivo» estaban
+siempre encendidos, y la ruta que lleva ahí sólo pide `branches.can_view`. O sea
+que **ver el expediente de una sala alcanzaba para reemplazar su permiso del
+SRS** — mientras la cabecera de la misma pantalla sí los escondía sin
+`can_edit`. El mismo permiso dicho de dos maneras a un metro de distancia.
+
+Ensayado antes en el branch `staging` con dos identidades y archivos en los
+siete prefijos.
+
+
 ## v2.971.6 — Confirmar un corte ya no cierra el turno: lo que se entrega es la bolsa
 
 Decisión del usuario, dicha así: *«confirmar no cierra turno, eso es incorrecto,

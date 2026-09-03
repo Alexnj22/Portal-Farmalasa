@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.964.3 — Mis puntos: el código y el teléfono viajan juntos
+
+Se generó un código de acceso para una clienta, se escaneó su QR y la pantalla
+contestó **«no encontramos una ficha con ese documento y ese teléfono»**. El
+portal estaba bien y el papel prometía algo imposible.
+
+`puntos_cliente_por_documento` acepta el código **solo** cuando la ficha es
+extranjera —ahí el teléfono no puede ser llave: el circuito de Hacienda exige
+ocho dígitos exactos y reemplaza lo que no cumple por el de la farmacia—. En
+todas las demás pide además el teléfono, y así lo dice la migración que la creó:
+*«el largo lo decide el ataque de pegarle al de cualquiera, por eso el código
+solo vale sin teléfono en las fichas extranjeras, que son pocas»*.
+
+Tres piezas asumían lo contrario:
+
+- **El QR** llevaba únicamente `?codigo=…` y la pantalla consultaba sola al
+  abrirse. Para una ficha que no fuera extranjera esa consulta **no podía
+  acertar nunca**.
+- **El campo del teléfono se APAGABA** en cuanto el código tenía forma buena
+  (`disabled={codigoOk}`). O sea que la única combinación que abre una ficha
+  normal —código + teléfono— tampoco se podía escribir a mano. No había salida
+  en toda la pantalla.
+- **El papel** no decía con qué se entra.
+
+Ahora el papel sabe la respuesta al imprimirse, porque la ficha la tiene ahí
+mismo: el QR sale con `&tel=1` cuando la ficha no es extranjera, y el pie lo
+dice en letras. Con esa pista la pantalla llega con el código puesto y pide el
+teléfono, en vez de descubrirlo probando — **probar cuesta**: un fallo gasta uno
+de los cinco del freno, que se cuenta por IP y no se limpia al acertar, así que
+cinco clientes escaneando desde el wifi de la misma sala la dejaban sin
+consultar quince minutos.
+
+Un papel viejo no trae la pista, así que el intento con el código solo sigue
+existiendo — pero cuando vuelve `no_encontrado` la pantalla pide el teléfono en
+lugar de terminar en un aviso que es cierto y no sirve. Sólo ante ese motivo: al
+freno y a una caída no hay dato que los cure, y por eso `motivo` ahora viaja
+junto al mensaje (decidir leyendo el texto se rompe el día que alguien mejora la
+frase).
+
+`tests/unit/puntosCodigoTicket.test.js` ancla las dos mitades: que el QR lo
+avise, y que el papel lo diga en letras. Son dos porque el QR lo lee la pantalla
+y las letras las lee la persona.
+
 ## v2.964.2 — Bitácoras: la firma vuelve a mostrar la foto de quien anotó
 
 En Registro diario la firma salía con las iniciales («K», «D») en vez de la cara,

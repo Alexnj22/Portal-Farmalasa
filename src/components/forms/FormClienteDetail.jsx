@@ -324,7 +324,15 @@ function CodigoDeAcceso({ customerId, nombre, esExtranjero, puedeEditar }) {
         if (!valor) { aviso('Sin código', 'Este cliente todavía no tiene uno. Genéralo primero.', 'error'); return; }
         const { imprimirTicketDeCodigo } = await import('../../utils/puntosCodigoTicket');
         await imprimirTicketDeCodigo(
-            { nombre, codigo: valor, emitidoPor: user?.name || user?.email || '' },
+            {
+                nombre, codigo: valor, emitidoPor: user?.name || user?.email || '',
+                // El papel dice con qué se entra, y su QR lo lleva adentro. Sólo
+                // la ficha extranjera entra con el código solo: en las demás la
+                // base exige además el teléfono, así que un QR que no lo avise
+                // manda al cliente a una pantalla que le va a decir que no
+                // existe. Ver `puntosCodigoTicket.js`.
+                pideTelefono: !esExtranjero,
+            },
             { sala: salaId },
         );
     });

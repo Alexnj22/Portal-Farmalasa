@@ -11,11 +11,24 @@
 // credencial de un empleado— mientras que esto sólo deja MIRAR un saldo. El
 // cliente tiene que poder teclearlo en su teléfono, así que tiene que verlo.
 //
-// El QR **lleva el código adentro**: `…/mis-puntos?codigo=K7MP4XN`. Quien lo
-// escanea entra ya con su saldo en pantalla, sin teclear nada. Y el código
+// El QR **lleva el código adentro**: `…/mis-puntos?codigo=K7MP4XN`. Y el código
 // igual va escrito grande abajo, porque los dos casos que este papel existe
 // para cubrir son gente sin teléfono con cámara o sin datos en ese momento: el
 // QR es el atajo, el código escrito es el que nunca falla.
+//
+// ── El código SOLO no alcanza, salvo en una ficha extranjera ────────────────
+// Es la regla de `puntos_cliente_por_documento` y no una decisión de este
+// archivo: el largo del código lo decidió el ataque de «pegarle al de
+// cualquiera», así que sin teléfono sólo vale donde el teléfono no puede valer
+// —la ficha extranjera, a la que el circuito de Hacienda le reemplaza el
+// teléfono por el de la farmacia—. En todas las demás hace falta el teléfono.
+//
+// Por eso el QR lo DICE (`&tel=1`) en vez de dejar que la pantalla lo
+// descubra probando: un intento fallido gasta uno de los cinco del freno, que
+// se cuenta **por IP y no se limpia al acertar**, así que cinco personas
+// escaneando desde el wifi de la misma sala dejarían a la sala sin consultar
+// durante quince minutos. El papel ya sabe la respuesta al imprimirse; la
+// pantalla, no.
 //
 // ── El código se parte en dos grupos ────────────────────────────────────────
 // `K7M - P4XN`. Son siete caracteres de un alfabeto sin parecidos, y partirlos
@@ -27,10 +40,17 @@ import { imprimirDocumento, fechaHora } from './ticketPrint';
 /** A dónde lleva el QR del papel. Es la misma que el afiche de la vitrina. */
 export const URL_MIS_PUNTOS = 'https://portal.farmasalud.lat/mis-puntos';
 
-/** La misma pantalla, pero ya con el código puesto. */
-export const urlConCodigo = (codigo) => {
+/**
+ * La misma pantalla, pero ya con el código puesto.
+ *
+ * `pideTelefono` viaja como `&tel=1` y es sólo una PISTA para no gastar un
+ * intento del freno: quien decide sigue siendo la base. Un cliente que borre el
+ * parámetro no gana nada — la consulta sin teléfono le va a fallar igual.
+ */
+export const urlConCodigo = (codigo, { pideTelefono = false } = {}) => {
     const c = String(codigo ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    return c ? `${URL_MIS_PUNTOS}?codigo=${c}` : URL_MIS_PUNTOS;
+    if (!c) return URL_MIS_PUNTOS;
+    return `${URL_MIS_PUNTOS}?codigo=${c}${pideTelefono ? '&tel=1' : ''}`;
 };
 
 /** `K7MP4XN` → `K7M - P4XN`, sólo para leerlo. */
@@ -46,8 +66,12 @@ export const codigoLegible = (codigo) => {
  * @param {string} datos.nombre   a quién se le entrega
  * @param {string} datos.codigo   los siete caracteres
  * @param {string} [datos.emitidoPor]
+ * @param {boolean} [datos.pideTelefono]  la ficha NO es extranjera: con el
+ *   código solo no entra, hace falta además su teléfono
  */
-export function construirTicketDeCodigo({ nombre, codigo, emitidoPor = '', ahora = new Date() }) {
+export function construirTicketDeCodigo({
+    nombre, codigo, emitidoPor = '', pideTelefono = false, ahora = new Date(),
+}) {
     return {
         // **Sin `titulo`, a propósito**: el encabezado ya dice PUNTOS SALUD en
         // grande, y `titulo` se imprime OTRA VEZ unos renglones más abajo. Un
@@ -76,12 +100,15 @@ export function construirTicketDeCodigo({ nombre, codigo, emitidoPor = '', ahora
         ],
         // La impresora lo dibuja por la cola (`GS ( k`) y el programa de la caja
         // lo recibe como URL. Los dos salen de acá, así que no pueden divergir.
-        qr: urlConCodigo(codigo),
-        // Cuatro renglones de instrucciones era un instructivo, y un instructivo
-        // en un papel de caja no lo lee nadie. El QR ya no necesita explicación
-        // —abre la pantalla con el saldo puesto—, así que lo único que queda por
-        // decir es lo que el papel NO puede hacer solo: sobrevivir.
+        qr: urlConCodigo(codigo, { pideTelefono }),
+        // Lo único que el papel tiene que decir es lo que no puede hacer solo:
+        // sobrevivir. Y, cuando hace falta, con qué se acompaña el código —
+        // decirlo acá evita el único final sin salida que tiene este circuito:
+        // escanear, que no entre, y no saber qué falta.
         pie: [
+            ...(pideTelefono
+                ? ['Entra con este codigo y el telefono', 'de tu registro de cliente.']
+                : []),
             'Guarda este papel o copia tu codigo',
             'en un lugar seguro para poder entrar.',
         ],

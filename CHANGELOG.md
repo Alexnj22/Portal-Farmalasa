@@ -21,6 +21,106 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.8 — El arranque deja de traer el codigo de bolsas y cortes
+
+_(pendiente de redactar)_
+
+## v2.970.7 — Los dos procedimientos digitales, verificados contra la norma y contra producción
+
+Los dos borradores que habilitan llevar las bitácoras en digital —el del
+**6.1.14** y el del **6.1.15**— revisados cita por cita contra el RTS y la Guía
+de la SRS, y afirmación por afirmación contra producción. El informe completo en
+`docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md`.
+
+**Lo que estaba mal:**
+
+- **Se citaba el capítulo de las droguerías.** El §4.2 del A cerraba «conforme al
+  numeral 5.6.5», que es del **capítulo 5** (laboratorios, droguerías y centros de
+  almacenamiento). El capítulo 6 —el nuestro— **no tiene ninguna cláusula de
+  desviaciones**: cero coincidencias de `desviaci|correctiv` en todo el §6. Es la
+  misma trampa que ya costó la calibración del termómetro de sala.
+- **El refrigerador no estaba en el alcance.** Producción registra un área
+  `refrigerador` con rango 2–8 °C y dos franjas al día. Es RTS 6.2.20 y **tres
+  ítems CRÍTICOS** de la Guía (2.29, 2.32, 2.33). Un registro digital que existe y
+  queda fuera del procedimiento autorizado es justo el hueco que castiga el
+  6.1.14. Faltaban también vitrinas y servicio sanitario.
+- **Cinco afirmaciones que el sistema no sostiene.** «Ningún dato se borra»
+  (`anular_limpieza_bitacora` hace `DELETE`, pide motivo y **no lo guarda**);
+  «conserva el valor anterior» (falso para limpiezas: `corregir_limpieza_bitacora`
+  pisa `puntos` y `observaciones`); «el instrumento con el que se mide» (**0 de 27
+  áreas** lo tienen cargado); «toda salida de datos queda anotada» (`export_log`
+  no tiene una sola fila de bitácoras); «toda acción queda en la bitácora de
+  auditoría» (**0 filas** para anotar, corregir, cerrar o reabrir, sobre 619
+  lecturas y 3 correcciones).
+- **No había contingencia.** El §4.1 prohibía transcribir de papel y no ofrecía
+  alternativa. Las lecturas del 6.2.16 no se suspenden porque el portal esté
+  caído —y se cayó dos veces con incidente escrito—, así que el personal quedaba
+  sin salida legal: anotar en papel violaba el procedimiento, no anotar violaba el
+  RTS.
+
+**Lo que faltaba y se agregó**: la **Ley de Firma Electrónica de El Salvador**
+(D.L. 133/2015), que es la norma que hace defendible «el registro del sistema es
+el original» —Art. 13-A fija los mínimos del archivo por cuenta propia y Art. 12
+dice que quien almacena para sí **no necesita acreditarse**—; el proveedor tratado
+como tercero con sus responsabilidades; control de cambios; incidentes;
+capacitación (RTS 6.3.2/6.3.4); y la reconciliación entre los 60 días de respaldo
+y los 2 años de conservación.
+
+**El §2.3 del B queda desatascado.** El cierre en el sistema es una **firma
+electrónica simple** (Art. 6: misma validez jurídica, menor fuerza probatoria);
+lo que cumple el 6.1.12 es **la hoja impresa firmada y sellada**. Con eso el
+documento es cierto con los cargos que hay hoy, sin tener que restringir nada
+para poder firmarlo. Aparte: el cierre lo pueden hacer **seis** cargos y el
+documento decía cinco —faltaba la cuenta de pruebas—, y los mensajes del propio
+sistema afirman «Sólo el regente puede…» sobre un permiso que tienen seis.
+
+**Quedan dos correcciones de sistema pendientes**, marcadas con ⛔ en los
+borradores: el borrado sin rastro de una limpieza y la corrección que pisa. Hasta
+que estén hechas, **el procedimiento no se puede firmar** — diría lo contrario de
+lo que el sistema hace.
+
+Los marcos que se usaron para medir lo que faltaba: **Anexo 11** de las BPM de la
+UE, **21 CFR Part 11** de la FDA, y el **PN/L/PG/009/00** de la SEFH, un
+procedimiento de farmacia real y publicado.
+
+## v2.970.5 — Auditoría del libro Bajo receta contra la SRS
+
+Sólo documentación: `docs/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md`. Cruce de
+`/bitacoras?tab=libro` contra el RTS 11.02.04:24 §6 y la Guía de Verificación de
+BPAD, con todo medido contra producción hoy.
+
+**Lo que salió, en dos números.** El libro tiene 421 renglones foliados, el
+100% con lote, vencimiento, presentación y hora — y **0 completos**: 414
+esperan paciente, médico y foto desde el 3 de julio, con 0 recetas y 0 médicos
+registrados. Y la condición que decide qué entra al libro (`products.
+es_antibiotico`, una lista de 79 mantenida a mano en el ERP) deja fuera el
+**80.4%** de los antibacterianos sistémicos que se dispensan: 1,827 renglones
+de venta contra 444. Los que faltan son los genéricos de casa —AMOXICILINA 500
+MG X 30 MK, 783 ventas— y adentro hay una RANITIDINA marcada como antibiótico.
+Los dos hallazgos son los ítems **3.3 y 3.4 de la Guía, los dos CRÍTICOS**.
+
+**La lista no hay que inventarla.** El RTS 6.4.3 manda usar «el listado emitido
+oficialmente por SRS», y ese listado existe: el **Listado Oficial de
+Medicamentos 2025**, capítulo J01, trae los 40 antibacterianos sistémicos con
+su código ATC y **la clasificación AWaRe marcada adentro** (`*(1)` Acceso,
+`*(2)` Precaución). Derivar `es_antibiotico` de ahí cierra además el ítem 1.13,
+que hoy no está en ninguna parte del portal.
+
+**Y el cierre de mes es la puerta que sella el problema.** `cerrar_mes_bitacora`
+no mira el libro ni una vez, pero `completar_dispensacion` sí rechaza escribir
+en un mes cerrado. Medido: La Popular cerró agosto hoy a las 16:23 **con 39
+renglones pendientes**, que ya no se pueden completar sin reabrir el mes.
+
+El resto —el folio que retrocede una vez por sala (artefacto de los dos
+backfills del 17-ago), los 50 renglones con dos lotes fundidos en un campo, los
+2 con lote vencido al vender, los dos días de julio que nunca entraron, `recetas`
+/ `receta_items` / `medicos` fuera del respaldo, el permiso
+`bitacoras_tab_libro.can_edit` que nadie lee, y el rol Regente con 0 personas—
+está en el documento con su medición al lado.
+
+⚠️ No se pudo abrir la vista en el navegador (la extensión de Chrome no estaba
+conectada): falta el barrido visual y el de teléfono sobre esa ruta.
+
 ## v2.970.4 — El cobro guarda borrador, y el equis de descartar se ve
 
 ### El ✕ del aviso de borrador era un cuadro vacío, en TODOS

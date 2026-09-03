@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.3 — El aviso de error dura lo que cuesta leerlo
+
+Corrección de la v2.970.2, pedida por el usuario: *«¿cómo va a salir el aviso
+ahora? Si no le dabas más tiempo al toast mejor, así manteníamos el diseño.»*
+
+Tenía razón, y el diagnóstico de ayer apuntaba a la pieza equivocada. El
+problema medido era que **nadie recordaba qué decía el error** —tres intentos
+seguidos de sacar $40 en Salud 3, tres fallos, y ningún testigo del motivo—,
+pero la causa no era dónde se decía sino **cuánto duraba**: 3.5 segundos para una
+frase de 90 caracteres que además hay que decidir qué hacer con ella.
+
+Escribirlo también dentro del diálogo lo decía dos veces con dos redacciones y
+metía un cartel rojo donde no había ninguno. Se revierte: `MiCajaView` vuelve
+byte por byte a lo que era, y `SalidaDeBolsa` sólo conserva el comentario que
+dice dónde vive ahora la respuesta.
+
+**Un aviso de error vive 10 segundos; los demás siguen en 3.5.** «Ingreso
+anotado» se reconoce de un vistazo y no hay nada que hacer con él; un error hay
+que leerlo entero. El plazo va en `toastStore` y no en cada llamada por el mismo
+motivo que el saneo de texto técnico que vive tres líneas más arriba: un sitio
+nuevo escrito mañana no se va a acordar de pasar el número. Un `duration`
+explícito sigue mandando — hoy sólo lo pasa el aviso de RRHH, que queda igual.
+
+Y alargarlo no deja a nadie esperando: el aviso ya tenía su ✕.
+
 ## v2.970.2 — El diálogo dice por qué no se pudo, y las cuatro consultas caras quedan declaradas
 
 ### El aviso que se va solo no sirve para contestar «qué decía el error»
@@ -36,6 +61,10 @@ Ahora el motivo se devuelve además de mostrarse, y el diálogo lo escribe donde
 la persona está mirando. Con respaldo propio: un rechazo sin texto —una llamada
 que no llegó a salir— dejaba el cartel vacío, así que ahora dice que no se pudo
 y que revise la conexión.
+
+> **Revertido en v2.970.3.** El defecto medido era real, pero la pieza era otra:
+> no había que decirlo en dos sitios, había que **darle al aviso el tiempo que
+> cuesta leerlo**. Este párrafo describe una versión que vivió una hora.
 
 Los $40 descartan la causa que parecía: a esa hora el cajón tenía $81.85, así
 que la salida entraba sin tocar bolsas. Del lado del servidor no quedó ni un

@@ -574,25 +574,7 @@ export default function MiCajaView({ comoPestana = false }) {
          * default — que es `'success'`. Un rechazo de la caja salía con el
          * ícono de festejo y «error» de subtítulo (visto en Salud 3 el 2-sep
          * al intentar abrir una caja que ya estaba abierta). */
-        /* El motivo se DEVUELVE además de mostrarse, y no es redundancia.
-         *
-         * El aviso flotante se va solo a los pocos segundos, y quien está
-         * mirando el diálogo —no la esquina de la pantalla— se queda con un
-         * formulario que soltó la identidad comprobada y no dice por qué.
-         * Medido el 2026-09-03 en Salud 3: Maribel comprobó el carné de Rutilio
-         * TRES veces seguidas para sacar $40 y las tres escrituras fallaron; al
-         * preguntarle qué decía el error, nadie lo recordaba. No podían: el
-         * único lugar donde se dijo ya no estaba.
-         *
-         * Se devuelve `{ error }` y no `null` para que el llamador pueda
-         * escribirlo donde la persona está mirando. Los dos que leen esta
-         * respuesta usan `r?.…`, así que un objeto falsy-en-`ok` no les cambia
-         * nada. */
-        if (r.error) {
-            const motivo = mensajeAmigable(r.error);
-            showToast('No se pudo', motivo, 'error');
-            return { error: motivo };
-        }
+        if (r.error) { showToast('No se pudo', mensajeAmigable(r.error), 'error'); return null; }
         /* ── El `aviso` del servidor GANA sobre el mensaje de éxito ─────────
          *
          * `operar-caja` contesta `ok: true` con un `aviso` cuando el acto salió
@@ -673,11 +655,9 @@ export default function MiCajaView({ comoPestana = false }) {
             // parecidos con dos trabajos distintos.
             detalle: datos.conceptoCompleto,
         }), 'Salida anotada.');
-        // El motivo viaja de vuelta para que el DIÁLOGO lo escriba. `correr` ya
-        // lo mostró en un aviso flotante, y eso no alcanza: el aviso se va solo
-        // y el diálogo se queda con la identidad soltada y sin decir por qué
-        // (ver la nota de `correr`).
-        if (!r?.ok) return { ok: false, error: r?.error || null };
+        // `correr` ya mostró el motivo en un aviso y dejó el diálogo abierto:
+        // se devuelve sin texto para no decir lo mismo dos veces.
+        if (!r?.ok) return { ok: false };
         // El papel se arma con la fila que devolvió el servidor —con su número y
         // su fecha—, no con lo que el formulario mandó.
         if (r.movimiento) {

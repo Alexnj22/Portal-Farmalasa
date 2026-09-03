@@ -17,15 +17,25 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { imprimirMesDeBitacoras } from '../../src/utils/bitacoraPrint';
 
-/** Abre el mes y devuelve el HTML que se habría impreso. */
+/**
+ * Escribe el mes en una ventana falsa y devuelve el HTML que se habría impreso.
+ *
+ * La ventana se le PASA a `imprimirMesDeBitacoras` y no la abre él: quien
+ * llama tiene que abrirla sincrónica dentro del clic, porque después de un
+ * `await` el bloqueador de emergentes la mata. Esta prueba llamaba con la
+ * firma vieja de un solo argumento —`imprimirMesDeBitacoras(mes)`— así que el
+ * mes viajaba en el lugar de la ventana, la función devolvía
+ * `{ok:false}` sin escribir nada, y las once comprobaciones del papel medían
+ * la cadena vacía. Estuvieron en rojo sin que nadie lo mirara.
+ */
 function imprimir(mes) {
     let html = '';
     const win = {
         document: { write: (h) => { html += h; }, close: () => {} },
-        focus: () => {}, print: () => {},
+        focus: () => {}, print: () => {}, close: () => {},
     };
-    vi.stubGlobal('open', vi.fn(() => win));
-    imprimirMesDeBitacoras(mes);
+    const r = imprimirMesDeBitacoras(win, mes);
+    if (!r.ok) throw new Error(`no se imprimió: ${r.motivo}`);
     return html;
 }
 
@@ -55,9 +65,12 @@ describe('el hueco se imprime', () => {
 
     it('el día que nadie anotó sale con su casilla, marcada', () => {
         const html = imprimir(conUnaFalta);
-        expect(html).toContain('class="falta"');
+        // `vacio` puede venir con `sep` al lado —la primera columna de cada
+        // franja lleva el separador— así que se busca la clase, no la cadena
+        // exacta.
+        expect(html).toMatch(/class="vacio\b/);
         // Dos franjas × dos días = 4 casillas; una anotada y tres vacías.
-        expect(html.match(/class="falta"/g)).toHaveLength(3);
+        expect(html.match(/class="vacio\b/g)).toHaveLength(3);
     });
 
     it('el día anotado lleva quién y a qué hora', () => {
@@ -118,18 +131,40 @@ describe('qué secciones salen y cuáles no', () => {
         });
         // La PORTADA siempre lleva los dos resúmenes —cumplimiento de lectura y
         // de limpieza—, así que lo que se comprueba es la tabla de DETALLE: el
-        // área sale bajo «Limpieza y orden» y no tiene encabezado propio de
-        // temperatura (que es el que llevaría su rango en °C).
-        expect(html).toContain('Limpieza y orden — Vitrinas');
+        // área se identifica en el encabezado que viaja dentro del `<thead>`
+        // —por eso se repite si la tabla se pasa de página— y no tiene
+        // encabezado propio de temperatura (el que llevaría su rango en °C).
+        expect(html).toContain('Limpieza y orden');
+        expect(html).toMatch(/class="ident"><th colspan="2">Salud 4 [^<]*Vitrinas/);
         expect(html).not.toContain('<h3>Vitrinas ·');
         expect(html).not.toContain('sin rango');
+    });
+
+    it('cada hoja va numerada, y el total cuenta todas las del mes', () => {
+        // Guía de Verificación de BPAD 3.7: un libro controlado lleva
+        // **numeración de hoja**. Acá el mes impreso ES el archivo físico, así
+        // que sin ella una hoja traspapelada no deja hueco visible.
+        const html = imprimir({
+            ...MES_BASE,
+            areas: [{ nombre: 'Sala', temp_max: 30, mide_humedad: false,
+                      franjas: [{ clave: 'am', label: 'Mañana' }],
+                      limpiezas: [{ clave: 'am', label: 'Mañana' }], dias: [] }],
+        });
+        // Resumen + temperatura + limpieza + libro de antibióticos = 4.
+        // Va en la cejilla y no como fila propia del sello: una fila más
+        // ensancha la banda de control y parte dos hojas en dos páginas — lo
+        // cazó `npm run maqueta:bitacoras`, que mide el PDF de verdad.
+        const hojas = html.match(/Hoja (\d+) de (\d+)/g) || [];
+        expect(hojas).toHaveLength(4);
+        expect(html).toContain('Hoja 1 de 4');
+        expect(html).toContain('Hoja 4 de 4');
     });
 
     it('el libro de receta sale SIEMPRE, aunque esté vacío', () => {
         // Es el que el inspector pide primero. Que no salga porque no hubo
         // renglones se lee como que no se lleva.
         const html = imprimir(MES_BASE);
-        expect(html).toContain('Libro de dispensación bajo receta');
+        expect(html).toContain('Dispensación de antibióticos bajo receta');
         expect(html).toContain('Sin renglones en el período');
     });
 

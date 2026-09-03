@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.971.1 — Definiciones, capacitación, control de copias, anexos y la hoja numerada
+
+Lo que faltaba en los procedimientos, y una regresión que cazó la maqueta.
+
+**La hoja impresa va numerada.** La Guía de Verificación de BPAD 3.7 define un
+libro controlado por cuatro cosas: **numeración de hoja**, responsables de
+registro, responsables de autorización y control de correcciones. Las otras tres
+ya estaban; la numeración faltaba, y acá **el mes impreso ES el archivo físico**:
+sin ella, una hoja traspapelada no deja hueco visible. Numera la HOJA del mes, no
+la página impresa — `counter(page)` en un margin box de `@page` no lo soporta la
+impresión de Chromium desde `window.print()`, y prometerlo sería prometer algo
+que en el papel sale vacío.
+
+⚠️ **La primera versión rompió la paginación y `npm run maqueta:bitacoras` lo
+cazó**: la fila nueva en el sello ensanchaba la banda de control y partía dos
+hojas en dos páginas — **8 páginas para 6 hojas**. Ese script mide el PDF de
+verdad, no el DOM, justamente porque la paginación no se puede leer del CSS. La
+numeración se movió a la cejilla, que no suma alto.
+
+**Los tests del papel llevaban tiempo en rojo y nadie lo miraba.** Once de trece
+fallaban porque el arnés llamaba `imprimirMesDeBitacoras(mes)` con la firma
+vieja de un argumento: el mes viajaba en el lugar de la ventana, la función
+devolvía `{ok:false}` sin escribir nada, y las comprobaciones medían **la cadena
+vacía**. Las otras tres eran expectativas viejas (`class="falta"` que hoy es
+`vacio`, títulos que cambiaron). Ahora 14 pasan, incluida la de la numeración —
+y el arnés **lanza** si no se imprimió, para que no vuelva a medir el vacío.
+
+**Y la cita del capítulo equivocado también estaba en el código.** Un comentario
+de `bitacoraPapel.js` decía «el ítem 5.6.5 pide investigar y dejar constancia».
+El 5.6.5 es del capítulo 5 del RTS —droguerías— y el capítulo 6 no tiene ninguna
+cláusula de desviaciones. Tercera aparición de la misma confusión.
+
+**En el `BORRADOR-A`:** sección de **definiciones** (ALCOA, franja, anotación
+tardía, corrección, anulación, cierre, contingencia); **capacitación** con lo que
+el RTS 6.3.2/6.3.4 exige —programa anual bajo responsabilidad del regente y
+**registro** del material y la evaluación—; **cada quien responde por lo hecho
+con su cuenta** (21 CFR Part 11 §11.10(j)), que es la regla de no prestar la
+sesión; **control de copias** numeradas, porque el procedimiento se reparte a 7
+salas y una copia vieja circulando es indistinguible de la buena; y los
+**anexos** con los cinco formularios y su espécimen.
+
+El espécimen (`ANEXOS-formularios-del-mes.pdf`) no va vacío a propósito: lleva
+los seis estados que el papel tiene que saber decir sin ayuda de color. Un
+formulario en blanco no muestra ninguno.
+
 ## v2.971.0 — El libro bajo receta son dos, y arrancan el 1 de octubre
 
 Las bitácoras arrancan el **1 de octubre**; hasta ahora el módulo estaba

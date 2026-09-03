@@ -78,7 +78,22 @@ lleva en **libro físico** por decisión propia (Guía 2.23 · RTS 6.3.7), ni a 
 documentación que por su naturaleza es un original en papel (licencias,
 facturas, certificados, contratos).
 
-## 3 · Responsabilidades
+## 3 · Definiciones
+
+| término | qué significa acá |
+|---|---|
+| **ALCOA** | Las cinco propiedades que el numeral 6.1.14 le exige a un registro digital: **a**tribuible, **l**egible, **c**ontemporáneo, **o**riginal y preciso (*accurate*). Es la vara con la que se mide si un registro electrónico sirve |
+| **Franja** | La ventana horaria en la que toca una lectura (por ejemplo, media mañana). La define la configuración del área y la resuelve el servidor, no el reloj del equipo |
+| **Turno** | Lo mismo para una limpieza: el momento del día en que corresponde hacerla |
+| **Anotación tardía** | La que se hizo fuera de su franja. El sistema la marca; no se puede presentar como hecha a tiempo |
+| **Corrección** | Cambiar el valor de un registro ya anotado. **Agrega** un registro nuevo con el valor anterior, el motivo y quién corrigió: no pisa el original |
+| **Anulación** | Quitar un registro que no debió existir. Deja la foto completa de lo anulado, con el motivo y quién lo quitó. **No es un borrado** |
+| **Cierre del mes** | La revisión y autorización del período por el regente. Un mes cerrado no admite anotaciones nuevas ni correcciones |
+| **Reapertura** | Volver a abrir un mes cerrado. Exige motivo escrito y queda registrada |
+| **Contingencia** | El registro en papel cuando el sistema no está disponible, y su carga posterior (punto 5.7) |
+| **Formulario controlado** | Una hoja con código, versión y numeración, que se emite y se reparte de forma que siempre se sepa cuál es la vigente |
+
+## 4 · Responsabilidades
 
 | quién | qué |
 |---|---|
@@ -87,13 +102,13 @@ facturas, certificados, contratos).
 | **Regente** | Revisar el mes, autorizar su cierre en el sistema, y firmar y sellar la hoja impresa |
 | **Administración del sistema** | Alta y baja de cuentas, respaldo, y la evaluación periódica descrita en el `[FLS-PRO-02]` |
 
-## 4 · Desarrollo
+## 5 · Desarrollo
 
-### 4.1 · Cómo se registra
+### 5.1 · Cómo se registra
 
 La lectura se anota **directamente en el sistema**, en el momento en que se
 toma. No se transcribe de un papel: el registro del sistema **es el original**.
-La única excepción es la contingencia del punto 4.7.
+La única excepción es la contingencia del punto 5.7.
 
 Cada anotación queda con:
 
@@ -109,9 +124,9 @@ puede presentar como hecha a tiempo.
 
 **Verificación de exactitud.** La temperatura se teclea a mano, así que el valor
 depende de quien lee el instrumento. La revisión diaria del jefe/a de sala
-descrita en el punto 3 es la segunda mirada sobre ese dato.
+descrita en el punto 4 es la segunda mirada sobre ese dato.
 
-### 4.2 · Cuando el valor está fuera del rango permitido
+### 5.2 · Cuando el valor está fuera del rango permitido
 
 El rango permitido lo fija la norma: **no más de 30 °C** en sala de ventas y
 bodega (RTS 6.2.15) y **de 2 °C a 8 °C** dentro del refrigerador (RTS 6.2.20), o
@@ -158,7 +173,7 @@ aire— y la máxima de sala de ventas fue **29.9 °C**. O sea que el segundo re
 de la tabla es para lo que todavía no pasó, que es exactamente para lo que existe
 un procedimiento.
 
-### 4.3 · Correcciones
+### 5.3 · Correcciones
 
 **Ninguna corrección pisa lo que había.** En los cuatro registros del punto 2:
 
@@ -174,7 +189,7 @@ valor original sigue siendo consultable, y las correcciones se imprimen en la
 hoja del mes.
 
 **Un mes ya cerrado no admite correcciones ni anulaciones**: hay que reabrirlo
-(punto 4.4), y reabrirlo también queda registrado.
+(punto 5.4), y reabrirlo también queda registrado.
 
 **Además, cada alta, cambio y baja queda en una segunda bitácora**, la de
 auditoría del sistema, escrita automáticamente y aparte del registro mismo. Es
@@ -186,7 +201,7 @@ Esto es lo que el numeral 6.1.14 llama «originales y precisos», y lo que el
 dice que una alteración que afecte la integridad **hace perder el valor legal**
 del documento almacenado.
 
-### 4.4 · Cierre mensual
+### 5.4 · Cierre mensual
 
 Terminado el mes, el regente revisa el resumen —cumplimiento, casillas sin
 anotar, desviaciones y su acción correctiva— y **autoriza el cierre en el
@@ -202,13 +217,13 @@ misma validez jurídica que la autógrafa, pero **no la misma fuerza probatoria*
 colegiado y no del sistema.
 
 Por eso el mes **no queda cerrado del todo hasta que la hoja está impresa,
-firmada y sellada** (punto 4.5).
+firmada y sellada** (punto 5.5).
 
 Un mes cerrado **no admite anotaciones nuevas ni correcciones**. Reabrirlo exige
 un motivo escrito, sólo lo puede hacer quien tenga esa facultad según el
 `[FLS-PRO-02]`, y queda registrado con su nombre, fecha y hora.
 
-### 4.5 · Impresión
+### 5.5 · Impresión
 
 El numeral 6.1.14 **prefiere la documentación física**. Por eso el mes se
 imprime en formulario controlado, en tamaño carta, **una hoja por área**, con:
@@ -228,13 +243,13 @@ lugar]`— porque el numeral 6.1.14 exige que la documentación esté disponible
 La copia impresa se entrega a la autoridad cuando la requiera, sin necesidad de
 acceder al sistema.
 
-### 4.6 · Consulta
+### 5.6 · Consulta
 
 Cualquier persona autorizada consulta los registros desde el sistema. La
-autoridad reguladora los recibe en la copia impresa del punto 4.5 o, si lo
+autoridad reguladora los recibe en la copia impresa del punto 5.5 o, si lo
 solicita, en archivo.
 
-### 4.7 · Cuando el sistema no está disponible
+### 5.7 · Cuando el sistema no está disponible
 
 Las lecturas del punto 2 **no se suspenden** porque el sistema no esté
 disponible. Si al momento de una franja el sistema no responde:
@@ -258,7 +273,53 @@ se reporta es que el sistema está caído, no que faltó el registro.
 queda identificada: en cualquier otro caso el registro del sistema es el
 original.
 
-## 5 · Cómo se cumple el numeral 6.1.14
+### 5.8 · Cada quien responde por lo hecho con su cuenta
+
+La cuenta es personal e intransferible. **No se presta la sesión abierta ni se
+anota por otro**: lo que se registra desde una cuenta se le atribuye a su
+titular, y esa atribución es lo que hace del registro una evidencia.
+
+Quien deja su sesión abierta y otro anota en su nombre está firmando lo que no
+hizo. Si alguien no puede anotar con su cuenta, la lectura la toma y la anota
+quien sí puede — nunca se anota «de parte de».
+
+## 6 · Capacitación
+
+Este procedimiento es uno de los temas del **programa anual de capacitaciones**
+del establecimiento, cuya revisión, aprobación e implementación son
+responsabilidad del regente (RTS 6.3.2).
+
+- Se capacita a **todo el personal que anota** —sala y bodega— y a quienes
+  verifican y cierran.
+- **Al ingresar** y cuando cambie el procedimiento; el repaso, con la
+  periodicidad del programa anual.
+- **Debe quedar registro** con el material impartido y la evaluación de lo
+  aprendido (RTS 6.3.4).
+
+`[El programa anual ya existe fuera del portal. Anotar acá dónde se archiva su
+registro y quién lo lleva.]`
+
+## 7 · Control de copias
+
+Este procedimiento **se imprime y se reparte a las salas**, así que hay que poder
+saber en todo momento cuál es la versión vigente y quién tiene cada copia. Una
+copia vieja circulando es indistinguible de la buena.
+
+- Cada copia impresa lleva **número**, y se anota a quién se entrega.
+- Al emitir una versión nueva, **se recogen las anteriores** antes de repartir.
+- El original firmado y sellado por el regente queda en `[dónde]`.
+
+| N.º de copia | Entregada a | Cargo | Firma | Fecha |
+|---|---|---|---|---|
+| 1 |  |  |  |  |
+| 2 |  |  |  |  |
+| 3 |  |  |  |  |
+| 4 |  |  |  |  |
+| 5 |  |  |  |  |
+| 6 |  |  |  |  |
+| 7 |  |  |  |  |
+
+## 8 · Cómo se cumple el numeral 6.1.14
 
 | lo que exige | cómo se cumple |
 |---|---|
@@ -266,19 +327,49 @@ original.
 | **Legible** | El mes se imprime en formulario controlado, y el sistema lo muestra en pantalla |
 | **Contemporáneo** | Se anota en el momento; la hora la fija el servidor y una anotación tardía queda marcada |
 | **Original** | El registro del sistema es el primario; el papel es su copia impresa, no al revés |
-| **Preciso** | Nada se pisa ni se borra: toda corrección o anulación conserva lo que decía antes, con motivo y autor, y queda además en la bitácora de auditoría (punto 4.3) |
+| **Preciso** | Nada se pisa ni se borra: toda corrección o anulación conserva lo que decía antes, con motivo y autor, y queda además en la bitácora de auditoría (punto 5.3) |
 
-## 6 · Documentos relacionados
+## 9 · Anexos — los formularios
+
+Los formularios del mes se generan desde el sistema y se imprimen firmados; acá
+van como **espécimen**, para que se sepa qué se está autorizando. Cada uno lleva
+su **código, versión y numeración de hoja** en la banda de control, y las **dos
+firmas** al pie — quien registra y quien autoriza.
+
+| anexo | código | qué registra | orientación |
+|---|---|---|---|
+| **I** | `FLS-BIT-00` | Resumen del mes: cumplimiento, desviaciones y el cierre | carta vertical |
+| **II** | `FLS-BIT-01` | Toma de temperatura y humedad, **una hoja por área** | carta vertical |
+| **III** | `FLS-BIT-02` | Limpieza y orden, una hoja por área | carta vertical |
+| **IV** | `FLS-BIT-03` | Dispensación bajo receta (libro foliado) | carta **acostada** |
+| **V** | `[FLS-BIT-99]` | Hoja de contingencia — es el `BORRADOR-C`, documento aparte | carta vertical |
+
+**El espécimen está en `ANEXOS-formularios-del-mes.pdf`**, junto a este
+procedimiento. No va vacío a propósito: lleva un mes de muestra con los seis
+estados que el papel tiene que saber decir sin ayuda de color —la lectura fuera
+de rango, la que entró tarde, la corregida, el día sin anotar, el turno de
+limpieza incompleto y la dispensación anulada—, que es lo que hay que mirar para
+autorizarlo. Un formulario en blanco no muestra ninguno.
+
+Se regenera con `npm run maqueta:bitacoras`, que además comprueba que **cada
+hoja sigue entrando en una página**: si un cambio de tipografía o un renglón de
+más empujan las firmas a una hoja en blanco, falla ahí y no en la sala.
+
+Los anexos II y III salen **una hoja por área**, así que el número de hojas del
+mes depende de cuántas áreas tenga la sala. Por eso la banda dice «Hoja *n* de
+*m*»: es lo que permite ver que no falta ninguna.
+
+## 10 · Documentos relacionados
 
 - `[FLS-PRO-02]` — Protocolo de supervisión del sistema electrónico (RTS 6.1.15)
 - Formularios `FLS-BIT-00` a `FLS-BIT-03` — hojas impresas del mes `[adjuntar
   como anexos de este procedimiento]`
-- Formulario `[FLS-BIT-99]` — **Hoja de contingencia de lecturas** (punto 4.7).
+- Formulario `[FLS-BIT-99]` — **Hoja de contingencia de lecturas** (punto 5.7).
   Se imprime en blanco y queda una copia en cada sala, junto al instrumento
 - `[Programa anual de capacitaciones]` (RTS 6.3.2) — este procedimiento es uno de
   sus temas, y su capacitación debe quedar registrada (RTS 6.3.4)
 
-## 7 · Referencias
+## 11 · Referencias
 
 - RTS 11.02.04:24 — **capítulo 6** (farmacias, botiquines y otros
   establecimientos que dispensan), numerales 6.1.12, 6.1.14, 6.1.15, 6.2.11,
@@ -291,7 +382,7 @@ original.
 > El capítulo **5** del RTS es de laboratorios, droguerías y centros de
 > almacenamiento: **no aplica a este establecimiento** y no se cita acá.
 
-## 8 · Control de cambios
+## 12 · Control de cambios
 
 | versión | fecha | qué cambió |
 |---|---|---|

@@ -84,8 +84,10 @@ Cada persona entra con una **cuenta propia y una contraseña propia**. No existe
 cuentas compartidas para anotar registros: la anotación queda a nombre de quien
 entró.
 
-En sala, el personal también puede identificarse con su **carné con código de
-barras**, que resuelve a la misma persona. `[Describir aquí si se usa o no.]`
+El **carné con código de barras** se usa en sala para marcar asistencia, **no
+para anotar bitácoras**: una lectura o una limpieza sólo se registran desde una
+sesión abierta con cuenta y contraseña, y quedan a nombre de esa cuenta. El
+equipo de marcación no puede escribir en los registros de este procedimiento.
 
 La sesión **se cierra sola por inactividad**: a los **5 minutos** para los cargos
 de sala y bodega, y a las **12 horas** para los cargos administrativos.
@@ -159,6 +161,11 @@ punto 2.2.
 - **Baja** — al terminar la relación laboral, `[cargo]` **bloquea el acceso el
   mismo día**. Las anotaciones que la persona hizo **no se borran ni cambian de
   autor**: el registro histórico conserva quién lo hizo.
+
+**Cada quien responde por lo hecho con su cuenta.** No se presta la sesión
+abierta ni se anota por otro: lo que se registra desde una cuenta se le atribuye
+a su titular. Está escrito en el `[FLS-PRO-01]` punto 5.8, y quien usa el sistema
+se capacita en él (RTS 6.3.2 y 6.3.4).
 
 **Todo alta, cambio o baja de permisos queda registrado.** El sistema anota cada
 cambio de permisos en su bitácora de auditoría, con quién lo hizo y cuándo

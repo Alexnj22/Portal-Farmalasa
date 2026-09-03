@@ -253,7 +253,7 @@ const rangoDe = (area) => (area.temp_min != null && area.temp_max != null
  * son ~3.55:1 y el de la empresa 7.34:1, así que un alto escrito a mano
  * aplastaría uno de los dos, y un logo aplastado no da error: se imprime igual.
  */
-function banda(mes, titulo, logo, form) {
+function banda(mes, titulo, logo, form, hoja = null) {
     const marca = logo?.dataUrl
         ? `<img src="${logo.dataUrl}" alt="Farmacias La Popular y La Salud"/>`
         : '<div class="empresa">FARMACIAS<br/>LA POPULAR Y LA SALUD</div>';
@@ -261,7 +261,7 @@ function banda(mes, titulo, logo, form) {
     return `<div class="banda">
         <div class="logo">${marca}</div>
         <div class="centro">
-            <div class="cejilla">Formulario para registro</div>
+            <div class="cejilla">Formulario para registro${hoja ? ` &nbsp;·&nbsp; Hoja ${hoja.n} de ${hoja.total}` : ''}</div>
             <div class="titulo">${esc(titulo)}</div>
         </div>
         <div class="sello">
@@ -322,7 +322,7 @@ function firmas(cierre) {
  * El nombre va COMPLETO. ALCOA pide que el registro sea «atribuible», y en una
  * sala con dos Merlyn el nombre de pila no atribuye a nadie.
  */
-export function hojaDeArea(mes, area, logo) {
+export function hojaDeArea(mes, area, logo, hoja = null) {
     const franjas = area.franjas || [];
     const conH = !!area.mide_humedad;
     const sub = conH ? 3 : 2;
@@ -363,8 +363,14 @@ export function hojaDeArea(mes, area, logo) {
             ${celdas}</tr>`;
     }).join('');
 
-    // Las desviaciones van al pie con su acción: el ítem 5.6.5 pide investigar
-    // y dejar constancia, y en la celda no cabe.
+    // Las desviaciones van al pie con su acción, porque en la celda no cabe.
+    //
+    // Acá decía «el ítem 5.6.5 pide investigar y dejar constancia», y el 5.6.5
+    // es del capítulo 5 del RTS —laboratorios, droguerías y centros de
+    // almacenamiento—, que a una farmacia no la obliga: el capítulo 6 no tiene
+    // ninguna cláusula de desviaciones. Lo que fija el rango es 6.2.15 (≤30 °C)
+    // y 6.2.20 (2–8 °C en el refrigerador); anotar la acción correctiva es
+    // decisión de la empresa, y buena. Ver el `FLS-PRO-01` punto 4.2.
     const desvios = [];
     for (const d of (area.dias || [])) {
         for (const l of (d.lecturas || [])) {
@@ -377,7 +383,7 @@ export function hojaDeArea(mes, area, logo) {
 
     const vacia = `<tr><td colspan="${franjas.length * sub + 1}" class="c">Sin días en el período</td></tr>`;
 
-    return `${banda(mes, 'Toma de temperatura y humedad', logo, FORMULARIOS.temperatura)}
+    return `${banda(mes, 'Toma de temperatura y humedad', logo, FORMULARIOS.temperatura, hoja)}
     ${identidad([
         { k: 'Establecimiento', v: esc(mes.sucursal) },
         { k: 'Área', v: esc(area.nombre) },
@@ -409,7 +415,7 @@ export function hojaDeArea(mes, area, logo) {
 }
 
 /** La hoja de limpieza de un área. */
-export function hojaDeLimpieza(mes, area, logo) {
+export function hojaDeLimpieza(mes, area, logo, hoja = null) {
     const turnos = area.limpiezas || [];
     if (!turnos.length) return '';
 
@@ -447,7 +453,7 @@ export function hojaDeLimpieza(mes, area, logo) {
 
     const muebles = (area.puntos || []).map(p => p.label);
 
-    return `${banda(mes, 'Limpieza y orden', logo, FORMULARIOS.limpieza)}
+    return `${banda(mes, 'Limpieza y orden', logo, FORMULARIOS.limpieza, hoja)}
     ${identidad([
         { k: 'Establecimiento', v: esc(mes.sucursal) },
         { k: 'Área', v: esc(area.nombre) },
@@ -477,15 +483,23 @@ export function hojaDeLimpieza(mes, area, logo) {
  * es la única hoja del documento que va horizontal (pedido del usuario,
  * 2026-09-03).
  */
-export function hojaDelLibro(mes, logo) {
+export function hojaDelLibro(mes, logo, clase = 'antibiotico', hoja = null) {
+    // Cada libro sale en SU hoja. Mezclados, la hoja de antibióticos traería
+    // renglones que el inventario de antibióticos no tiene, y el ítem 3.4
+    // —CRÍTICO— pide justamente que esos dos números cuadren.
+    const renglones = (mes.libro || []).filter(r => (r.clase || 'antibiotico') === clase);
+    const titulo = clase === 'bajo_receta'
+        ? 'Dispensación de otros productos bajo receta'
+        : 'Dispensación de antibióticos bajo receta';
+
     // El motivo de una anulación es una frase, y una frase adentro de una
     // columna de 6% estira el renglón entero a cinco veces su alto. Va al pie,
     // como las desviaciones de temperatura: en la fila queda la marca.
-    const anuladas = (mes.libro || [])
+    const anuladas = renglones
         .filter(r => r.estado === 'anulada')
         .map(r => `${esc(r.folio)} · ${fecha(r.fecha)}: ${esc(r.motivo_anulacion || 'sin motivo anotado')}`);
 
-    const filas = (mes.libro || []).map(r => `<tr>
+    const filas = renglones.map(r => `<tr>
         <td class="c folio"><strong>${esc(r.folio)}</strong>${
         r.estado === 'anulada' ? '<br/><span class="quien">ANULADA</span>' : ''}</td>
         <td>${fecha(r.fecha)}${r.hora ? `<br/><span class="quien">${esc(r.hora)}</span>` : ''}</td>
@@ -500,12 +514,12 @@ export function hojaDelLibro(mes, logo) {
         <td>${esc(r.vendedor || '')}</td>
     </tr>`).join('');
 
-    return `${banda(mes, 'Dispensación bajo receta', logo, FORMULARIOS.receta)}
+    return `${banda(mes, titulo, logo, FORMULARIOS.receta, hoja)}
     ${identidad([
         { k: 'Establecimiento', v: esc(mes.sucursal) },
         { k: 'Mes', v: esc(nombreMes(mes.periodo)) },
         { k: 'Período cubierto', v: `Del ${fecha(mes.desde)} al ${fecha(mes.hasta)}`, chico: true },
-        { k: 'Renglones foliados', v: String((mes.libro || []).length) },
+        { k: 'Renglones foliados', v: String(renglones.length) },
     ])}
     <table class="reg">
         <colgroup>
@@ -514,7 +528,7 @@ export function hojaDelLibro(mes, logo) {
             <col style="width:11%"/><col style="width:6%"/><col style="width:9%"/>
         </colgroup>
         <thead>
-            ${identEnCabeza(11, [mes.sucursal, 'Dispensación bajo receta', nombreMes(mes.periodo)])}
+            ${identEnCabeza(11, [mes.sucursal, titulo, nombreMes(mes.periodo)])}
             <tr class="sub">
                 <th>Folio</th><th>Fecha</th><th>Medicamento</th><th>Cant.</th><th>Lote</th><th>Vence</th>
                 <th>Paciente</th><th>Documento</th><th>Prescriptor</th><th>Receta</th><th>Despachó</th>
@@ -531,7 +545,7 @@ export function hojaDelLibro(mes, logo) {
 }
 
 /** La portada: el resumen que el regente mira antes de firmar. */
-export function portada(mes, logo) {
+export function portada(mes, logo, hoja = null) {
     const r = mes.resumen || {};
     const L = r.lecturas || {}; const Li = r.limpiezas || {};
     const cierre = mes.cierre;
@@ -547,7 +561,7 @@ export function portada(mes, logo) {
     const cifra = (k, v, chica) =>
         `<td><span class="k">${esc(k)}</span><span class="v${chica ? ' chica' : ''}">${esc(v)}</span></td>`;
 
-    return `${banda(mes, 'Bitácoras del mes', logo, FORMULARIOS.resumen)}
+    return `${banda(mes, 'Bitácoras del mes', logo, FORMULARIOS.resumen, hoja)}
     ${identidad([
         { k: 'Establecimiento', v: esc(mes.sucursal) },
         { k: 'Mes', v: esc(nombreMes(mes.periodo)) },
@@ -598,6 +612,21 @@ export function portada(mes, logo) {
  * Se devuelve la LISTA y no el documento entero para que el generador de
  * maquetas pueda dibujarlas de a una. `armarHtmlDelMes` las pega.
  *
+ * ── Por qué cada hoja va numerada ────────────────────────────────────────
+ * La Guía de Verificación de BPAD, ítem 3.7, define un libro controlado por
+ * cuatro cosas: **numeración de hoja**, responsables de registro, responsables
+ * de autorización y control de correcciones. Las otras tres ya estaban (el
+ * código y la versión del formulario, y las dos firmas del pie). La numeración
+ * faltaba, y acá el mes impreso **ES** el archivo físico: sin ella, una hoja
+ * que se traspapela no deja hueco visible.
+ *
+ * Numera la HOJA del documento del mes, no la página impresa. Un contador de
+ * páginas de verdad —`counter(page)` en un margin box de `@page`— no lo
+ * soporta la impresión de Chromium desde `window.print()`, así que prometerlo
+ * sería prometer algo que en el papel sale vacío. La banda de control se repite
+ * arriba de cada hoja, y si una tabla se pasa de página, su encabezado la
+ * vuelve a identificar (ver `tr.ident`).
+ *
  * @returns {Array<{titulo: string, html: string, acostada: boolean}>}
  */
 export function hojasDelMes(mes, logo = null) {
@@ -607,20 +636,43 @@ export function hojasDelMes(mes, logo = null) {
     const conLecturas = areas.filter(a => (a.franjas || []).length);
     const conLimpieza = areas.filter(a => (a.limpiezas || []).length);
 
-    return [
-        { titulo: 'Resumen del mes', html: portada(mes, logo), acostada: false },
+    // El PLAN primero y el dibujo después: para poder poner «Hoja 3 de 7» hay
+    // que saber cuántas son ANTES de dibujar la primera.
+    const plan = [
+        { titulo: 'Resumen del mes', acostada: false, pinta: (h) => portada(mes, logo, h) },
         ...conLecturas.map(a => ({
             titulo: `Temperatura y humedad · ${a.nombre}`,
-            html: hojaDeArea(mes, a, logo),
             acostada: false,
+            pinta: (h) => hojaDeArea(mes, a, logo, h),
         })),
         ...conLimpieza.map(a => ({
             titulo: `Limpieza y orden · ${a.nombre}`,
-            html: hojaDeLimpieza(mes, a, logo),
             acostada: false,
+            pinta: (h) => hojaDeLimpieza(mes, a, logo, h),
         })),
-        { titulo: 'Dispensación bajo receta', html: hojaDelLibro(mes, logo), acostada: true },
+        // El de antibióticos SIEMPRE, aunque venga vacío: es la hoja que el
+        // inspector pide por su nombre, y una hoja ausente se lee como «no la
+        // llevan», no como «ese mes no hubo».
+        {
+            titulo: 'Dispensación de antibióticos',
+            acostada: true,
+            pinta: (h) => hojaDelLibro(mes, logo, 'antibiotico', h),
+        },
+        // El segundo sólo si tiene renglones: no lo exige ningún ítem de la
+        // Guía —es decisión de la empresa— y una hoja en blanco de un registro
+        // voluntario invita a preguntas que no tienen que ver con la norma.
+        ...((mes.libro || []).some(r => r.clase === 'bajo_receta') ? [{
+            titulo: 'Otros productos bajo receta',
+            acostada: true,
+            pinta: (h) => hojaDelLibro(mes, logo, 'bajo_receta', h),
+        }] : []),
     ];
+
+    return plan.map(({ titulo, acostada, pinta }, i) => ({
+        titulo,
+        acostada,
+        html: pinta({ n: i + 1, total: plan.length }),
+    }));
 }
 
 /** El CSS del papel, para quien quiera dibujarlo fuera de la impresión. */

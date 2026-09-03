@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BadgeCheck, Camera, Search, Stethoscope, User, X } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, Check, Search, Stethoscope, User, X } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
@@ -57,6 +57,54 @@ const MODOS = [
     { value: 'numero', label: 'Por número' },
     { value: 'nombre', label: 'Por nombre' },
 ];
+
+/**
+ * El rótulo de un control que no lo trae puesto.
+ *
+ * `PortalInput` pone su `<label htmlFor>` solo; `LiquidSelect`,
+ * `SegmentedControl` y `LiquidDatePicker` no reciben etiqueta, así que en este
+ * archivo el mismo bloque de cinco clases estaba escrito **cinco veces** — y
+ * con dos separaciones distintas. No es un componente compartido nuevo: es la
+ * misma línea, dicha una vez, en el único archivo que la repetía.
+ *
+ * Envuelve al control en el `<label>` en vez de ponerlo al lado, así que hacer
+ * clic en el texto enfoca el control — que es exactamente lo que el §15.11 de
+ * DESIGN.md cuenta que NINGUNO de los ~20 campos a mano hacía.
+ */
+const Rotulo = ({ texto, ayuda, children }) => (
+    <label className="block">
+        <span className="block text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
+            {texto}
+        </span>
+        {children}
+        {ayuda && <span className="block mt-1 text-label text-content-3">{ayuda}</span>}
+    </label>
+);
+
+/**
+ * Una de las cuatro cosas que hay que llenar, con su número y su palomita.
+ *
+ * El formulario eran doce bloques apilados con la misma separación y ningún
+ * título: para saber dónde estaba uno había que releer los campos. El ordinal
+ * da la espina —cuatro pasos, en orden— y la palomita contesta «¿éste ya?» sin
+ * subir al riel del encabezado.
+ *
+ * Es una fila con una regla arriba, no una tarjeta: adentro de un modal, una
+ * tarjeta es una tarjeta dentro de otra.
+ */
+const Seccion = ({ n, titulo, listo, children }) => (
+    <section className="space-y-2.5">
+        <div className="flex items-center gap-2">
+            <span aria-hidden className={`flex items-center justify-center w-5 h-5 shrink-0 rounded-full text-label font-black tabular-nums transition-colors duration-[var(--dur-fast)] ${
+                listo ? 'bg-success/15 text-success-text' : 'bg-surface-card text-content-3 border border-border-card'}`}>
+                {listo ? <Check className="w-3 h-3" /> : n}
+            </span>
+            <h4 className="text-label font-black uppercase tracking-widest text-content-2">{titulo}</h4>
+            <span aria-hidden className="flex-1 h-px bg-border-card" />
+        </div>
+        {children}
+    </section>
+);
 
 const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
 
@@ -280,6 +328,17 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
 
     const puedeGuardar = paciente.trim() && !faltaMedico && Number(prescrita) > 0 && !entregoDeMas;
 
+    // Guardar SIN la copia se puede —una cámara que falla no puede dejar el
+    // libro sin renglón— pero el botón lo dice con todas las letras. El ítem
+    // 3.12 pide la copia de la receta resguardada al menos un año, y un renglón
+    // que dice «completa» sin ella es un renglón que miente en silencio.
+    const sinCopia = Boolean(puedeGuardar) && !archivo;
+
+    // Un lote vencido al momento de dispensar es un ítem CRÍTICO de la guía
+    // (6.1). Acá se marca en rojo el vencimiento: quien completa el renglón
+    // tiene el frasco en la mano y es el último que puede notarlo.
+    const venceAntes = Boolean(renglon.vence && renglon.fecha && renglon.vence < renglon.fecha);
+
     const guardar = useCallback(async () => {
         setGuardando(true);
         setError(null);
@@ -327,76 +386,95 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         paciente, prescrita, fechaReceta, edad, documento, recetaId, notas,
         claveBorrador, onCerrar]);
 
+
+    // ── Los cuatro requisitos, y en qué va cada uno ─────────────────────────
+    //
+    // Están acá y no adentro del botón porque un botón deshabilitado no dice
+    // QUÉ falta: dice que no. Con la receta en una mano y el cliente enfrente,
+    // «te falta la foto» y «te falta el médico» son dos trabajos distintos, y
+    // el que los tiene que hacer no puede averiguarlo a fuerza de bajar y subir
+    // por un formulario de doce bloques.
+    //
+    // La foto NO impide guardar —una cámara que falla no puede dejar el libro
+    // sin renglón— pero cuenta como requisito y el botón lo dice: el ítem 3.12
+    // de la guía pide la copia de la receta, y guardarla sin ella en silencio
+    // es sembrar renglones que dicen «completa» y no lo están.
+    const requisitos = [
+        { clave: 'paciente', label: 'Paciente',  ok: Boolean(paciente.trim()) },
+        { clave: 'medico',   label: 'Médico',    ok: !faltaMedico },
+        { clave: 'cantidad', label: 'Cantidad',  ok: Number(prescrita) > 0 && !entregoDeMas },
+        { clave: 'foto',     label: 'Copia',     ok: Boolean(archivo) },
+    ];
+    const listos = requisitos.filter(r => r.ok).length;
+
     return (
         <LiquidModal open onClose={guardando ? undefined : () => onCerrar(false)}
             maxWidth="max-w-2xl" ariaLabel="Completar el renglón del libro">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Completar el folio {renglon.folio_txt}</h3>
-                    <p className="text-caption text-content-3 truncate">
-                        {fmtFecha(renglon.fecha)}
-                        {renglon.correlativo_doc ? ` · documento ${renglon.correlativo_doc}` : ''}
-                    </p>
-                </div>
-            </LiquidModal.Header>
 
-            <LiquidModal.Body className="space-y-4">
-                {/* Lo que se entregó, en grande y arriba. Es lo que hay que
-                    comparar contra la receta que se tiene en la mano, y estaba
-                    en el subtítulo del encabezado —gris, a 10px y truncado—.
-                    Reportado: «dame más clara la info, casi no se nota ni se ve». */}
-                <div data-surface="card" className="p-3 space-y-2">
-                    <p className="text-body-lg font-black text-content leading-snug">
+            {/* ── El encabezado ES la comparación contra el papel ────────────
+                Lo que se entregó vivía en una tarjeta dentro del cuerpo, o sea
+                una tarjeta adentro de otra, y competía en peso con los campos
+                que hay que llenar. Acá arriba tiene el lugar que le toca: es
+                contexto de sólo lectura, se mira una vez, y no se vuelve a
+                tocar. Reportado antes como «dame más clara la info, casi no se
+                nota ni se ve». */}
+            <LiquidModal.Header>
+                <div className="min-w-0 space-y-1.5">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-label font-black tabular-nums text-content-2">
+                            {renglon.folio_txt}
+                        </span>
+                        <span className="text-caption text-content-3">
+                            {fmtFecha(renglon.fecha)}
+                            {renglon.correlativo_doc ? ` · ${renglon.correlativo_doc}` : ''}
+                            {renglon.vendedor ? ` · ${renglon.vendedor}` : ''}
+                        </span>
+                    </div>
+
+                    <h3 className="text-body-lg font-black text-content leading-tight">
                         {renglon.producto_nombre}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    </h3>
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span className="text-body font-black text-brand-text tabular-nums">
-                            {num(renglon.cantidad)} <span className="text-body-sm font-bold text-content-2">
+                            {num(renglon.cantidad)}
+                            <span className="ml-1 text-caption font-bold uppercase tracking-wider text-content-3">
                                 {Number(renglon.cantidad) === 1 ? 'entregada' : 'entregadas'}
                             </span>
                         </span>
-                        {renglon.laboratorio && (
-                            <span className="text-body-sm text-content-2">{renglon.laboratorio}</span>
-                        )}
                         {renglon.lote && (
                             <Badge variant="chart-3" size="sm" uppercase={false}>Lote {renglon.lote}</Badge>
                         )}
                         {renglon.vence && (
-                            <Badge variant="neutral" size="sm" uppercase={false}>Vence {fmtVence(renglon.vence)}</Badge>
+                            <Badge variant={venceAntes ? 'danger' : 'neutral'} size="sm" uppercase={false}>
+                                Vence {fmtVence(renglon.vence)}
+                            </Badge>
+                        )}
+                        {renglon.laboratorio && (
+                            <span className="text-caption text-content-3 truncate">{renglon.laboratorio}</span>
                         )}
                     </div>
-                    <p className="text-label text-content-3">
-                        Vendido a {renglon.cliente || 'sin cliente'}
-                        {renglon.vendedor ? ` · atendió ${renglon.vendedor}` : ''}
-                    </p>
-                </div>
-                {/* ── ¿Es la segunda entrega de una receta que ya existe? ── */}
-                {compatibles.length > 0 && (
-                    <div data-surface="card" className="p-3 space-y-2">
-                        <p className="text-body-sm font-bold text-content">
-                            Hay {compatibles.length === 1 ? 'una receta abierta' : `${compatibles.length} recetas abiertas`} en esta sala
-                        </p>
-                        <p className="text-label text-content-3">
-                            Ligala a la misma receta si es el resto de una entrega que ya se empezó,
-                            <strong className="font-bold"> o si es otro medicamento del mismo papel</strong> —
-                            una receta con dos medicamentos es UNA receta. De ahí sale que la dispensación
-                            sea parcial o total.
-                        </p>
-                        <LiquidSelect
-                            value={recetaId ? String(recetaId) : ''}
-                            onChange={elegirReceta}
-                            options={compatibles.map(r => ({
-                                value: String(r.id),
-                                label: r.continuacion
-                                    ? `${r.correlativo_txt} · ${r.paciente} — faltan ${num(r.pendiente)} de este medicamento`
-                                    : `${r.correlativo_txt} · ${r.paciente} — otro medicamento de esta receta`,
-                            }))}
-                            placeholder="Es una receta nueva"
-                        />
-                    </div>
-                )}
 
-                {/* ── Paciente ── */}
+                    {/* El riel de requisitos. Cuatro pasos, siempre visibles. */}
+                    <ul className="flex flex-wrap items-center gap-x-1.5 gap-y-1 pt-1">
+                        {requisitos.map((r, i) => (
+                            <li key={r.clave} className="flex items-center gap-1.5">
+                                {i > 0 && <span aria-hidden className="text-content-3 opacity-40">·</span>}
+                                <span className={`flex items-center gap-1 text-label font-bold ${
+                                    r.ok ? 'text-success-text' : 'text-content-3'}`}>
+                                    {r.ok
+                                        ? <Check className="w-3 h-3 shrink-0" aria-hidden />
+                                        : <span aria-hidden
+                                            className="w-3 h-3 shrink-0 rounded-full border border-current opacity-60" />}
+                                    {r.label}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </LiquidModal.Header>
+
+            <LiquidModal.Body className="space-y-5">
                 {!clase.sirve && (
                     <Notice variant="warning" icon={AlertTriangle}>
                         <span className="font-bold">{clase.titulo}</span>
@@ -407,224 +485,263 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     </Notice>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                    <PortalInput
-                        label="Paciente" name="paciente" icon={User} required colSpan={2}
-                        value={paciente} onChange={(e) => setPaciente(e.target.value)}
-                        placeholder="Nombre completo, como está en la receta"
-                        helperText={clase.sirve ? 'Se tomó del cliente de la venta' : undefined}
-                        hasError={!paciente.trim()}
-                    />
-                    <PortalInput
-                        label="Edad" name="edad" type="number" inputMode="numeric" min="0" max="130"
-                        value={edad} onChange={(e) => setEdad(e.target.value)}
-                        placeholder="—" inputClassName="tabular-nums"
-                    />
-                    <PortalInput
-                        label="Documento" name="documento"
-                        value={documento} onChange={(e) => setDocumento(e.target.value)}
-                        placeholder="DUI"
-                        inputClassName="tabular-nums"
-                    />
-                </div>
-
-                {/* ── Médico ── */}
-                {/* Las tres juntas del Art. 19 de la Ley de Medicamentos y
-                    ninguna más: médico, odontólogo y médico veterinario.
-                    Enfermería y químico farmacéutico NO prescriben, y ofrecerlas
-                    invitaría a registrar una receta que la ley no reconoce. */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
-                            Quién recetó
-                        </p>
-                        <LiquidSelect
-                            value={junta} onChange={(v) => { setJunta(v || 'P01'); invalidar(); }}
-                            options={JUNTAS_QUE_PRESCRIBEN} clearable={false}
-                        />
-                    </div>
-                    <div>
-                        <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
-                            Cómo buscarlo
-                        </p>
-                        <SegmentedControl
-                            value={modo}
-                            onChange={(v) => { setModo(v); invalidar(); }}
-                            options={MODOS}
-                        />
-                    </div>
-                </div>
-
-                {!medico && (modo === 'numero' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                {/* ── 1 · Paciente ────────────────────────────────────────── */}
+                <Seccion n={1} titulo="Quién se lo lleva" listo={requisitos[0].ok}>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                         <PortalInput
-                            label="N.º de junta" name="numero_junta" icon={Stethoscope} required
-                            value={numJunta} onChange={(e) => { setNumJunta(e.target.value); invalidar(); }}
-                            placeholder="12345" inputClassName="tabular-nums"
+                            label="Paciente" name="paciente" icon={User} required colSpan={2}
+                            value={paciente} onChange={(e) => setPaciente(e.target.value)}
+                            placeholder="Nombre completo, como está en la receta"
+                            helperText={clase.sirve ? 'Se tomó del cliente de la venta' : undefined}
+                            hasError={!paciente.trim()}
                         />
-                        <Button variant="secondary" icon={Search} onClick={buscarMedico}
-                            loading={buscando} disabled={!numJunta.trim()}>
-                            Buscar
-                        </Button>
+                        <PortalInput
+                            label="Edad" name="edad" type="number" inputMode="numeric" min="0" max="130"
+                            value={edad} onChange={(e) => setEdad(e.target.value)}
+                            placeholder="—" inputClassName="tabular-nums"
+                        />
+                        <PortalInput
+                            label="Documento" name="documento"
+                            value={documento} onChange={(e) => setDocumento(e.target.value)}
+                            placeholder="DUI" inputClassName="tabular-nums"
+                        />
                     </div>
-                ) : (
-                    <>
-                        {/* DOS campos y no uno. Medido contra el registro del
-                            Consejo: «JOSE ROBERTO JULE SEGURA» escrito entero en
-                            el campo de nombres devuelve CERO resultados, que en
-                            pantalla se lee igual que «ese médico no existe». */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                            <PortalInput
-                                label="Nombres" name="med_nombres" icon={User}
-                                value={nombresBusca} onChange={(e) => { setNombresBusca(e.target.value); invalidar(); }}
-                                placeholder="José Roberto"
-                            />
-                            <PortalInput
-                                label="Apellidos" name="med_apellidos"
-                                value={apellidosBusca} onChange={(e) => { setApellidosBusca(e.target.value); invalidar(); }}
-                                placeholder="Jule Segura"
-                            />
-                            <Button variant="secondary" icon={Search} onClick={buscarMedico}
-                                loading={buscando} disabled={!nombresBusca.trim() && !apellidosBusca.trim()}>
-                                Buscar
-                            </Button>
-                        </div>
-                        <p className="text-label text-content-3">
-                            Nombres y apellidos van separados, como en el registro del Consejo. Con sólo el
-                            apellido también busca.
-                        </p>
-                    </>
-                ))}
+                </Seccion>
 
-                {medico && (
-                    <Notice variant="success" icon={BadgeCheck}
-                        action={(
-                            <Button variant="ghost" size="xs" icon={X} onClick={quitarMedico}>
-                                Cambiar
-                            </Button>
-                        )}>
-                        <span className="font-bold">{medico.nombre}</span>
-                        <span className="block mt-0.5 font-normal text-content-2">
-                            N.º {medico.numero_junta}
-                            {medico.carrera ? ` · ${medico.carrera}` : ''}
-                            {medico.verificado_at || medico.delConsejo
-                                ? ' · confirmado contra el registro del Consejo'
-                                : ' · tomado de una receta'}
-                        </span>
-                    </Notice>
-                )}
-
-                {/* Varios resultados: se elige, no se adivina. Elegir por la
-                    máquina el primero de doce sería guardar otro médico con
-                    apellido parecido. */}
-                {candidatos.length > 0 && !medico && (
-                    <div data-surface="card" className="p-3 space-y-2">
-                        <p className="text-body-sm font-bold text-content">
-                            {candidatos.length} coinciden — elige cuál
-                        </p>
-                        <ul className="space-y-1.5 max-h-56 overflow-y-auto">
-                            {candidatos.map((c) => (
-                                <li key={`${c.junta}-${c.numero_junta}`}>
-                                    <ListRow
-                                        surface="row" density="sm"
-                                        icon={Stethoscope}
-                                        title={c.nombre}
-                                        subtitle={`N.º ${c.numero_junta}${c.carrera ? ` · ${c.carrera}` : ''}${c.local ? ' · ya está en el portal' : ''}`}
-                                        onClick={() => elegirCandidato(c)}
+                {/* ── 2 · Prescriptor ──────────────────────────────────────
+                    Resuelto, la sección se PLIEGA a una línea. Dejar los cuatro
+                    controles de búsqueda abiertos después de encontrar al
+                    médico es dejar en pantalla un trabajo que ya se hizo, y en
+                    un formulario largo eso cuesta el doble: ocupa y confunde. */}
+                <Seccion n={2} titulo="Quién la recetó" listo={requisitos[1].ok}>
+                    {medico ? (
+                        /* El médico resuelto es un VALOR, no una alerta. Estaba
+                           pintado con un `Notice` verde, que es el mismo envase
+                           que usa «se entregó de más»: gastar el vocabulario de
+                           aviso en un dato que salió bien es lo que hace que los
+                           avisos de verdad dejen de mirarse. Es una fila, y la
+                           fila canónica es `ListRow`. */
+                        <ListRow
+                            surface="row" density="sm"
+                            icon={BadgeCheck} iconClass="text-success-text"
+                            title={medico.nombre}
+                            subtitle={`N.º ${medico.numero_junta}${
+                                medico.carrera ? ` · ${medico.carrera}` : ''}${
+                                medico.verificado_at || medico.delConsejo
+                                    ? ' · confirmado en el registro del Consejo'
+                                    : ' · tomado de una receta'}`}
+                            trailing={(
+                                <Button variant="ghost" size="xs" icon={X} onClick={quitarMedico}>
+                                    Cambiar
+                                </Button>
+                            )}
+                        />
+                    ) : (
+                        <div className="space-y-3">
+                            {/* Las tres juntas del Art. 19 de la Ley de Medicamentos y
+                                ninguna más: médico, odontólogo y médico veterinario.
+                                Enfermería y químico farmacéutico NO prescriben, y
+                                ofrecerlas invitaría a registrar una receta que la ley
+                                no reconoce. */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Rotulo texto="Profesión">
+                                    <LiquidSelect
+                                        value={junta} onChange={(v) => { setJunta(v || 'P01'); invalidar(); }}
+                                        options={JUNTAS_QUE_PRESCRIBEN} clearable={false}
                                     />
-                                </li>
-                            ))}
-                        </ul>
+                                </Rotulo>
+                                <Rotulo texto="Cómo buscarlo">
+                                    <SegmentedControl
+                                        value={modo}
+                                        onChange={(v) => { setModo(v); invalidar(); }}
+                                        options={MODOS}
+                                    />
+                                </Rotulo>
+                            </div>
+
+                            {modo === 'numero' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                                    <PortalInput
+                                        label="N.º de junta" name="numero_junta" icon={Stethoscope} required
+                                        value={numJunta} onChange={(e) => { setNumJunta(e.target.value); invalidar(); }}
+                                        placeholder="12345" inputClassName="tabular-nums"
+                                    />
+                                    <Button variant="secondary" icon={Search} onClick={buscarMedico}
+                                        loading={buscando} disabled={!numJunta.trim()}>
+                                        Buscar
+                                    </Button>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* DOS campos y no uno. Medido contra el registro del
+                                        Consejo: «JOSE ROBERTO JULE SEGURA» escrito entero
+                                        en el campo de nombres devuelve CERO resultados, y
+                                        eso en pantalla se lee igual que «no existe». */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                                        <PortalInput
+                                            label="Nombres" name="med_nombres" icon={User}
+                                            value={nombresBusca} onChange={(e) => { setNombresBusca(e.target.value); invalidar(); }}
+                                            placeholder="José Roberto"
+                                        />
+                                        <PortalInput
+                                            label="Apellidos" name="med_apellidos"
+                                            value={apellidosBusca} onChange={(e) => { setApellidosBusca(e.target.value); invalidar(); }}
+                                            placeholder="Jule Segura"
+                                        />
+                                        <Button variant="secondary" icon={Search} onClick={buscarMedico}
+                                            loading={buscando} disabled={!nombresBusca.trim() && !apellidosBusca.trim()}>
+                                            Buscar
+                                        </Button>
+                                    </div>
+                                    <p className="text-label text-content-3">
+                                        Van separados, como en el registro del Consejo. Con sólo el apellido
+                                        también busca.
+                                    </p>
+                                </>
+                            )}
+
+                            {/* Varios resultados: se elige, no se adivina. Que la
+                                máquina tome el primero de doce sería guardar a otro
+                                médico con apellido parecido. */}
+                            {candidatos.length > 0 && (
+                                <div className="space-y-1.5">
+                                    <p className="text-label font-bold uppercase tracking-widest text-content-3">
+                                        {candidatos.length} coinciden — elige cuál
+                                    </p>
+                                    <ul className="space-y-1.5 max-h-56 overflow-y-auto">
+                                        {candidatos.map((c) => (
+                                            <li key={`${c.junta}-${c.numero_junta}`}>
+                                                <ListRow
+                                                    surface="row" density="sm" icon={Stethoscope}
+                                                    title={c.nombre}
+                                                    subtitle={`N.º ${c.numero_junta}${c.carrera ? ` · ${c.carrera}` : ''}${c.local ? ' · ya está en el portal' : ''}`}
+                                                    onClick={() => elegirCandidato(c)}
+                                                />
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {avisoBusqueda && <Notice variant="info" compact>{avisoBusqueda}</Notice>}
+
+                            {/* NO hay alta a mano. Decisión del usuario: «si agregamos
+                                un dato irreal sería falso; si no está ahí, no existe».
+                                Un prescriptor inventado es peor que un renglón
+                                incompleto — el incompleto se ve y se corrige, el
+                                inventado se lee como un dato bueno y sostiene una
+                                dispensación que quizá nadie recetó. La base lo rechaza
+                                también, no sólo esta pantalla. */}
+                            {buscado && candidatos.length === 0 && !avisoBusqueda && (
+                                <Notice variant="danger" icon={AlertTriangle}>
+                                    <span className="font-bold">
+                                        Ese profesional no está en el registro del Consejo.
+                                    </span>
+                                    <span className="block mt-0.5 font-normal text-content-2">
+                                        Revisa el número o el apellido del sello: un dígito de más no
+                                        encuentra a nadie. Si de verdad no está, esa receta no la firmó un
+                                        profesional inscrito y no se puede registrar como tal; hay que
+                                        hablarlo con el regente.
+                                    </span>
+                                </Notice>
+                            )}
+                        </div>
+                    )}
+                </Seccion>
+
+                {/* ── 3 · La receta ────────────────────────────────────────
+                    Ligar la entrega a una receta abierta vive ACÁ y no arriba
+                    de todo. Es la misma pregunta que «cuánto recetó»: de qué
+                    papel es esta entrega. Al principio del formulario
+                    interrumpía antes de que se supiera de qué se estaba
+                    hablando. */}
+                <Seccion n={3} titulo="Qué dice la receta" listo={requisitos[2].ok}>
+                    <div className="space-y-3">
+                        {compatibles.length > 0 && (
+                            <Rotulo texto="¿Es de una receta que ya existe?"
+                                ayuda="Una receta con dos medicamentos es UNA receta. De ahí sale que la dispensación sea parcial o total.">
+                                <LiquidSelect
+                                    value={recetaId ? String(recetaId) : ''}
+                                    onChange={elegirReceta}
+                                    options={compatibles.map(r => ({
+                                        value: String(r.id),
+                                        label: r.continuacion
+                                            ? `${r.correlativo_txt} · ${r.paciente} — faltan ${num(r.pendiente)} de este medicamento`
+                                            : `${r.correlativo_txt} · ${r.paciente} — otro medicamento de esta receta`,
+                                    }))}
+                                    placeholder="Es una receta nueva"
+                                />
+                            </Rotulo>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <PortalInput
+                                label="Cuánto recetó el médico" name="prescrita" type="number" inputMode="decimal"
+                                step="0.001" min="0" required alto
+                                value={prescrita} onChange={(e) => setPrescrita(e.target.value)}
+                                inputClassName="tabular-nums"
+                                hasError={entregoDeMas}
+                                readOnly={Boolean(recetaElegida?.item)}
+                            />
+                            <Rotulo texto="Fecha de la receta">
+                                <LiquidDatePicker value={fechaReceta} onChange={(v) => setFechaReceta(v || '')} />
+                            </Rotulo>
+                        </div>
+
+                        {/* Parcial o total no se elige: se LEE. Y por eso no es un
+                            aviso —no hay nada que atender— sino el resultado de la
+                            resta, dicho donde se hizo la resta. Haber entregado de
+                            más sí es un error, y ahí sí grita. */}
+                        {entregoDeMas ? (
+                            <Notice variant="danger" icon={AlertTriangle}>
+                                <span className="font-bold">
+                                    Se entregaron {num(renglon.cantidad)} y la receta dice {num(prescrita)}.
+                                </span>
+                                <span className="block mt-0.5 font-normal text-content-2">
+                                    No se puede entregar más de lo recetado. Revisa la receta: si el médico
+                                    recetó {num(renglon.cantidad)} o más, corregí el número; si de verdad se
+                                    entregó de más, el renglón se anula y se rehace la venta.
+                                </span>
+                            </Notice>
+                        ) : Number(prescrita) > 0 && (
+                            <p className={`text-body-sm font-bold ${
+                                pendiente > 0 ? 'text-warning-text' : 'text-success-text'}`}>
+                                {pendiente > 0
+                                    ? `Entrega parcial: quedan ${num(pendiente)} de ${num(prescrita)}.`
+                                    : `Entrega total: se dio todo lo recetado (${num(prescrita)}).`}
+                            </p>
+                        )}
                     </div>
-                )}
+                </Seccion>
 
-                {avisoBusqueda && <Notice variant="info" compact>{avisoBusqueda}</Notice>}
-
-                {/* NO hay alta a mano. Decisión del usuario: «si agregamos un
-                    dato irreal sería falso; si no está ahí, no existe». Un
-                    prescriptor inventado es peor que un renglón incompleto — el
-                    incompleto se ve y se corrige, el inventado se lee como un
-                    dato bueno y sostiene una dispensación que quizá nadie
-                    recetó. La base lo rechaza también, no sólo esta pantalla. */}
-                {buscado && !medico && candidatos.length === 0 && !avisoBusqueda && (
-                    <Notice variant="danger" icon={AlertTriangle}>
-                        <span className="font-bold">
-                            Ese profesional no está en el registro del Consejo.
-                        </span>
-                        <span className="block mt-0.5 font-normal text-content-2">
-                            Revisa el número o el apellido del sello — un dígito de más no encuentra a
-                            nadie. Si de verdad no está, esa receta no la firmó un profesional inscrito y
-                            no se puede registrar como tal: hay que hablarlo con el regente.
-                        </span>
-                    </Notice>
-                )}
-
-                {/* ── Lo prescrito ── */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <PortalInput
-                        label="Cuánto recetó el médico" name="prescrita" type="number" inputMode="decimal"
-                        step="0.001" min="0" required alto
-                        value={prescrita} onChange={(e) => setPrescrita(e.target.value)}
-                        inputClassName="tabular-nums"
-                        hasError={entregoDeMas}
-                        readOnly={Boolean(recetaElegida?.item)}
+                {/* ── 4 · La copia ─────────────────────────────────────────── */}
+                <Seccion n={4} titulo="La copia de la receta" listo={requisitos[3].ok}>
+                    <FileField
+                        /* Sin el editor de `FileField`: esta pantalla abre el suyo, con
+                        el tipo de papel que sabe que va a recibir. Que lo abriera
+                        también el canónico serían DOS editores encadenados sobre la
+                        misma foto. El QR del teléfono sí queda. */
+                        conEditor={false}
+                        label="Foto de la receta"
+                        file={archivo}
+                        onChange={(f, { yaPreparado } = {}) => {
+                            // Un PDF ya viene de un escáner: no hay nada que recortar
+                            // ni aclarar, y meterlo por el editor lo convertiría en
+                            // una imagen peor que el original.
+                            //
+                            // Y `yaPreparado` significa que la foto llegó del teléfono
+                            // ya recortada y enderezada: volver a abrir el editor es
+                            // pedir dos veces el mismo trabajo, sobre una foto que
+                            // alguien ya cuadró. Ver el contrato de `onChange` en
+                            // `FileField`.
+                            if (f && !yaPreparado && f.type?.startsWith('image/')) setPorEditar(f);
+                            else setArchivo(f);
+                        }}
+                        accept="image/*,application/pdf"
+                        maxSizeMB={10}
+                        hint="Se recorta y se endereza antes de guardarla, y todas salen del mismo tamaño. La norma manda retener una copia por al menos un año."
                     />
-                    <div>
-                        <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
-                            Fecha de la receta
-                        </p>
-                        <LiquidDatePicker value={fechaReceta} onChange={(v) => setFechaReceta(v || '')} />
-                    </div>
-                </div>
-
-                {/* Parcial o total no se elige: se ve. Y el tercer caso —haber
-                    entregado de más— no es un estado de la dispensación: es un
-                    error, y por eso corta el guardado en vez de pintarse verde. */}
-                {entregoDeMas ? (
-                    <Notice variant="danger" icon={AlertTriangle}>
-                        <span className="font-bold">
-                            Se entregaron {num(renglon.cantidad)} pero la receta dice {num(prescrita)}.
-                        </span>
-                        <span className="block mt-0.5 font-normal text-content-2">
-                            No se puede entregar más de lo recetado. Revisa la receta: si el médico
-                            recetó {num(renglon.cantidad)} o más, corregí el número; si de verdad se
-                            entregó de más, el renglón se anula y se rehace la venta.
-                        </span>
-                    </Notice>
-                ) : Number(prescrita) > 0 && (
-                    <Notice variant={pendiente > 0 ? 'warning' : 'success'}>
-                        {pendiente > 0
-                            ? `Dispensación PARCIAL — quedan ${num(pendiente)} por entregar de ${num(prescrita)}.`
-                            : `Dispensación TOTAL — se entregó todo lo recetado (${num(prescrita)}).`}
-                    </Notice>
-                )}
-
-                {/* ── La foto ── */}
-                <FileField
-                    /* Sin el editor de `FileField`: esta pantalla abre el suyo, con el
-                    tipo de papel que sabe que va a recibir. Que lo abriera también
-                    el canónico serían DOS editores encadenados sobre la misma
-                    foto. El QR del teléfono sí queda. */
-                    conEditor={false}
-                    label="Foto de la receta"
-                    file={archivo}
-                    onChange={(f, { yaPreparado } = {}) => {
-                        // Un PDF ya viene de un escáner: no hay nada que
-                        // recortar ni aclarar, y meterlo por el editor lo
-                        // convertiría en una imagen peor que el original.
-                        //
-                        // Y `yaPreparado` significa que la foto llegó del
-                        // teléfono ya recortada y enderezada: volver a abrir el
-                        // editor es pedir dos veces el mismo trabajo, sobre una
-                        // foto que alguien ya cuadró. Ver el contrato de
-                        // `onChange` en `FileField`.
-                        if (f && !yaPreparado && f.type?.startsWith('image/')) setPorEditar(f);
-                        else setArchivo(f);
-                    }}
-                    accept="image/*,application/pdf"
-                    maxSizeMB={10}
-                    hint="Se recorta y se endereza antes de guardarla, y todas salen del mismo tamaño. La norma manda retener una copia por al menos un año."
-                />
+                </Seccion>
 
                 {porEditar && (
                     <Suspense fallback={null}>
@@ -647,12 +764,19 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
+                {/* Lo que falta, dicho en palabras. Un contador «3 de 4» obliga a
+                    volver a buscar cuál es el que falta. */}
+                <p className="mr-auto text-label text-content-3 hidden sm:block">
+                    {listos === requisitos.length
+                        ? 'Todo listo'
+                        : `Falta ${requisitos.filter(r => !r.ok).map(r => r.label.toLowerCase()).join(', ')}`}
+                </p>
                 <Button variant="ghost" onClick={() => onCerrar(false)} disabled={guardando}>
                     Cancelar
                 </Button>
-                <Button variant="primary" icon={Camera} onClick={guardar}
+                <Button variant="primary" icon={sinCopia ? AlertTriangle : Check} onClick={guardar}
                     loading={guardando} disabled={!puedeGuardar}>
-                    Guardar en el libro
+                    {sinCopia ? 'Guardar sin la copia' : 'Guardar en el libro'}
                 </Button>
             </LiquidModal.Footer>
         </LiquidModal>

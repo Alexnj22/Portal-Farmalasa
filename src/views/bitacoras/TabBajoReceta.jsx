@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
-import { AlertTriangle, BookOpen, Check, Download, PenLine } from 'lucide-react';
+import { AlertTriangle, BookOpen, Check, Download, ImageOff, PenLine } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -150,37 +150,49 @@ export default function TabBajoReceta({
     }
 
     const pendientes = renglones.filter(r => r.estado === 'pendiente').length;
+    const completos  = renglones.filter(r => r.estado === 'completa').length;
+    // Un renglón «completo» sin la copia de la receta no cumple el ítem 3.12, y
+    // desde afuera se ve idéntico a uno que sí. Se cuenta aparte para poder
+    // decirlo, en vez de dejarlo escondido detrás de una insignia verde.
+    const sinCopia = renglones.filter(r => r.estado === 'completa' && !r.tiene_foto).length;
 
     return (
         <div className="space-y-4">
-            {/* El libro se saca solo, sin arrastrar las hojas de temperatura y
-                limpieza que van con el mes completo. Las columnas son las que
-                nombra el ítem 3.5, en su orden, para que se pueda cotejar sin
-                traducir. `exportCsv` con su módulo: sin él la descarga queda
-                anotada como «sin-declarar» en la bitácora de egresos. */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-                <p className="text-caption text-content-3">
-                    Libro de {rotularLibro(clase).toLowerCase()}
-                    {periodo ? ` · ${periodo}` : ''} · {renglones.length} {renglones.length === 1 ? 'renglón' : 'renglones'}
-                </p>
+            {/* ── La barra del libro ────────────────────────────────────────
+                Antes eran DOS renglones diciendo cosas que se pisaban: una
+                línea con el conteo y, debajo, un aviso amarillo con los
+                pendientes. Y ese aviso salía SIEMPRE —lo normal es que el libro
+                tenga pendientes—, o sea una alarma que se dispara por lo
+                normal, que es como se aprende a ignorarlas.
+
+                Ahora es una sola fila: de qué libro es, cuánto lleva, y cuánto
+                falta dicho en el tono que le toca. `exportCsv` con su módulo:
+                sin él la descarga queda anotada como «sin-declarar» en la
+                bitácora de egresos, y las columnas son las del ítem 3.5, en su
+                orden, para poder cotejar sin traducir. */}
+            <div className="flex items-end justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                    <h3 className="text-body font-black text-content leading-tight">
+                        Libro de {rotularLibro(clase).toLowerCase()}
+                    </h3>
+                    <p className="text-caption text-content-3 mt-0.5">
+                        {periodo ? `${periodo} · ` : ''}
+                        {renglones.length} {renglones.length === 1 ? 'renglón' : 'renglones'}
+                        {completos > 0 && ` · ${completos} con receta`}
+                        {pendientes > 0 && (
+                            <span className="text-warning-text font-bold"> · {pendientes} sin completar</span>
+                        )}
+                        {sinCopia > 0 && (
+                            <span className="text-danger-text font-bold"> · {sinCopia} sin la copia</span>
+                        )}
+                    </p>
+                </div>
                 {renglones.length > 0 && (
                     <Button variant="secondary" size="sm" icon={Download} onClick={descargar}>
                         Descargar
                     </Button>
                 )}
             </div>
-
-            {pendientes > 0 && (
-                <Notice variant="warning" icon={AlertTriangle}>
-                    <span className="font-bold">
-                        {pendientes} {pendientes === 1 ? 'renglón espera' : 'renglones esperan'} que se complete la receta.
-                    </span>
-                    <span className="block mt-0.5 font-normal text-content-2">
-                        El medicamento, la cantidad, el lote y el vencimiento ya están: falta el paciente,
-                        el médico y la foto de la receta. Toca un renglón para completarlo.
-                    </span>
-                </Notice>
-            )}
 
             <DataTable
                 columns={COLUMNAS}
@@ -272,8 +284,14 @@ export default function TabBajoReceta({
                                     {r.estado === 'anulada' && (
                                         <Badge variant="neutral" size="sm" uppercase={false}>{est.label}</Badge>
                                     )}
+                                    {/* «Completa» sin la copia de la receta NO es
+                                        completa para el ítem 3.12, y pintarla verde
+                                        la esconde: desde afuera se ve igual que una
+                                        que sí la tiene. */}
                                     {r.estado === 'completa' && (
-                                        <Badge variant="success" size="sm" uppercase={false} icon={Check}>Completa</Badge>
+                                        r.tiene_foto
+                                            ? <Badge variant="success" size="sm" uppercase={false} icon={Check}>Completa</Badge>
+                                            : <Badge variant="danger" size="sm" uppercase={false} icon={ImageOff}>Sin la copia</Badge>
                                     )}
                                     {pendiente && puedeCompletar && (
                                         <Button variant="primary" size="xs" icon={PenLine}

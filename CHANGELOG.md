@@ -21,6 +21,74 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.971.4 — El formulario de completar un renglón, en cuatro pasos
+
+Pedido del usuario: *«mejora ese modal y mejoralo visualmente todo»*. La
+búsqueda del médico contra el registro del Consejo **sí funciona** — confirmado
+por el usuario—, así que esto es trabajo de forma, no de arreglo.
+
+### El botón deshabilitado no dice QUÉ falta
+
+Eran doce bloques apilados con la misma separación, sin un solo título, y la
+única señal de progreso era un botón gris. Con la receta en una mano y el
+cliente enfrente, «te falta la foto» y «te falta el médico» son dos trabajos
+distintos, y el que los tiene que hacer no puede averiguarlo bajando y subiendo
+por el formulario.
+
+Ahora son **cuatro pasos numerados** —paciente, prescriptor, receta, copia— cada
+uno con su palomita, un **riel de requisitos** siempre visible en el encabezado,
+y el pie que dice en palabras lo que falta. Un contador «3 de 4» obligaba a
+volver a buscar cuál era el que faltaba.
+
+### El encabezado ES la comparación contra el papel
+
+Lo que se entregó vivía en una tarjeta **dentro** del cuerpo del modal —o sea
+una tarjeta adentro de otra— compitiendo en peso con los campos que hay que
+llenar. Subió al encabezado, que es donde va el contexto de sólo lectura: se
+mira una vez y no se vuelve a tocar. Y el vencimiento se pinta **en rojo si el
+lote ya estaba vencido el día de la venta**: quien completa el renglón tiene el
+frasco en la mano y es el último que puede notarlo.
+
+### El médico resuelto es un valor, no una alerta
+
+Estaba pintado con un `Notice` verde, el mismo envase que usa «se entregó de
+más». Gastar el vocabulario de aviso en un dato que salió bien es lo que hace
+que los avisos de verdad dejen de mirarse: ahora es un `ListRow`, el canónico de
+fila, y **la sección se pliega** — dejar los cuatro controles de búsqueda
+abiertos después de encontrar al médico es dejar en pantalla un trabajo ya
+hecho. Lo mismo con «parcial / total»: no es un aviso, es el resultado de una
+resta, y se lee donde se hizo la resta.
+
+### Ligar a una receta abierta se mudó al paso 3
+
+Estaba arriba de todo, interrumpiendo antes de que se supiera de qué se estaba
+hablando. Es la misma pregunta que «cuánto recetó»: de qué papel es esta
+entrega.
+
+### Guardar sin la copia ya no es silencioso
+
+La foto **no** impide guardar —una cámara que falla no puede dejar el libro sin
+renglón— pero el botón ahora dice **«Guardar sin la copia»**, y en la lista ese
+renglón sale con una insignia roja **«Sin la copia»** en vez de la verde de
+«Completa». El ítem 3.12 de la Guía pide la copia de la receta resguardada al
+menos un año, y un renglón que dice «completa» sin ella miente en silencio.
+
+### La lista
+
+La barra del libro eran dos renglones que se pisaban: una línea con el conteo y,
+debajo, un aviso amarillo con los pendientes que salía **siempre** —lo normal es
+que el libro tenga pendientes—, o sea una alarma que se dispara por lo normal.
+Ahora es una sola fila: de qué libro es, cuánto lleva, y cuánto falta dicho en el
+tono que le toca.
+
+### Y el rótulo que estaba escrito cinco veces
+
+`LiquidSelect`, `SegmentedControl` y `LiquidDatePicker` no reciben etiqueta, así
+que el mismo bloque de cinco clases estaba copiado **cinco veces** en el archivo,
+con dos separaciones distintas. Quedó dicho una vez, y envolviendo al control en
+el `<label>`: hacer clic en el texto ahora enfoca el control, que es exactamente
+lo que el §15.11 de DESIGN.md cuenta que ninguno de los ~20 campos a mano hacía.
+
 ## v2.971.3 — El listado no acusa de faltar lo que no le dejan ver
 
 Salió de una pregunta sobre permisos: dejar al Administrador con «Listado de

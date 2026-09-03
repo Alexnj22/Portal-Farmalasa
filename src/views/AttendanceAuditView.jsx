@@ -38,7 +38,7 @@ import { resolverApprovalRequest } from '../data/requests';
 import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { mensajeAmigable } from '../utils/errorMessages';
-import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
+import { shortEmployeeName } from '../utils/nameUtils';
 import { registrarEgreso } from '../data/egreso';
 import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, isAutoPunch,
          isPendingPunch, getCurrentQuincenaStart, getQuincenaEnd, prevQuincena, nextQuincena }
@@ -691,9 +691,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
         {/* Avatar + alert dot */}
         <div className="relative shrink-0">
           <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-surface-card shadow-sm flex items-center justify-center font-black text-content-3 text-body-lg overflow-hidden">
-            {emp.photo
-              ? <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
-              : <span className="text-body-xl">{employeeInitials(emp)}</span>}
+            <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
           </div>
           {alertColor ? (
             <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-micro font-black shadow-sm`}>

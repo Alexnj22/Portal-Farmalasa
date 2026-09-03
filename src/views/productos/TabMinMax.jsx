@@ -1415,7 +1415,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             {/* ── Toast notification (portal → fuera de backdrop-filter, siempre en viewport) ── */}
             {toast && createPortal(
                 <div className={`fixed bottom-6 right-6 z-toast flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-body font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-danger-solid' : 'bg-brand'}`}>
-                    {currentEmployee?.photo_url
+                    {/* La condición es la PERSONA, no su foto: sin foto el avatar
+                        pinta su inicial, y preguntar por `photo_url` cambiaba la
+                        cara por un ícono genérico a quien no la tuviera cargada. */}
+                    {currentEmployee
                         ? <AvatarConEstado emp={currentEmployee} px={24} radio="rounded-full" marco="" />
                         : <Info size={15} className="shrink-0" />}
                     <span>{toast.message}</span>

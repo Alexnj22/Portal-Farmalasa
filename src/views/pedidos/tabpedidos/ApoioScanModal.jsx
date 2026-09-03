@@ -11,7 +11,7 @@ import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 import EsperaDeCarne from '../../../components/common/EsperaDeCarne';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
-import { Users, Loader2, AlertTriangle, UserCircle2, Check } from 'lucide-react';
+import { Users, Loader2, AlertTriangle, Check } from 'lucide-react';
 import { signPhotosDeep } from '../../../utils/storageFiles';
 import useCapturaDeCarne from '../../../hooks/useCapturaDeCarne';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
@@ -121,10 +121,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                     {reconocido && (
                         <div className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30
                             animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
-                            {reconocido.photo_url
-                                ? <AvatarConEstado emp={reconocido} px={48} radio="rounded-full" marco="" />
-                                : <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
-                            }
+                            <AvatarConEstado emp={reconocido} px={48} radio="rounded-full" marco="" />
                             <div>
                                 <p className="font-bold text-success-text text-body-lg">{shortEmployeeName(reconocido)}</p>
                                 <p className="text-label text-success-text mt-0.5">Confirma para registrar como apoyo</p>

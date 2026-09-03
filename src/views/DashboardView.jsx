@@ -95,7 +95,7 @@ import { reacomodar } from '../utils/acomodoWidgets';
 import { permitirEscapeDelScroll } from '../utils/scrollEncadenado';
 import { formatMoney } from '../utils/formatNumber';
 import useCapaFlotante from '../utils/capaFlotante';
-import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
+import { shortEmployeeName } from '../utils/nameUtils';
 import {
     catalogoDePestana, pestanasVisibles, ordenDeLaPestana, widgetsSinUbicar,
     hospedaBaldosasDeSucursal,
@@ -3025,7 +3025,6 @@ const DashboardView = ({ openModal }) => {
             ) : (
               <div className="space-y-1.5">
                 {displayBirthdays.map((e,i)=>{
-                  const initials=employeeInitials(e);
                   const dayLabel=`${e.day} ${new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day).toLocaleDateString('es-SV',{month:'short'})}`;
                   const cardCls = e.isToday
                     ? 'bg-brand/5 border-brand/20 shadow-[var(--shadow-glow-brand)]'
@@ -3038,10 +3037,7 @@ const DashboardView = ({ openModal }) => {
                     <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-[background-color,border-color,box-shadow] duration-[var(--dur-base)] ${cardCls}`}>
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
-                        {e.photo_url||e.photo
-                          ?<AvatarConEstado emp={e} px={36} radio="rounded-full" marco="" />
-                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-body-sm ${e.isToday?'bg-brand text-white border-brand/30':e.isTomorrow?'bg-warning-solid text-white border-warning/40':'bg-surface-card-hover text-content-3 border-surface-card'}`}>{initials}</div>
-                        }
+                        <AvatarConEstado emp={e} px={36} radio="rounded-full" marco="" />
                         {e.isToday&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand flex items-center justify-center ring-2 ring-surface-card shadow-sm"><Gift size={8} className="text-white" strokeWidth={3}/></div>}
                         {e.isTomorrow&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-surface-card shadow-sm"><Clock size={8} className="text-white" strokeWidth={3}/></div>}
                       </div>

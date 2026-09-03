@@ -116,8 +116,36 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   // Así que si el objeto no trae historial, se resuelve por id contra el store,
   // que es la única fuente. `find` devuelve la referencia que ya está en el
   // array, no un objeto nuevo, así que el selector no dispara renders de más.
+  //
+  // ── Y la FOTO se resuelve igual, por la misma razón (2026-09-03) ─────────
+  //
+  // Durante un año esto valió sólo para el estado, y la foto salía del objeto
+  // que llegara. O sea que `emp={{ id, name }}` —que es lo que uno escribe
+  // cuando la consulta ya trae el id de la persona— pintaba la INICIAL. Y no
+  // se ve como un defecto: dibujar la inicial es exactamente lo que este
+  // componente debe hacer cuando de verdad no hay foto, así que el resultado
+  // de pasarle medio objeto es indistinguible del de una persona sin retrato.
+  //
+  // Lo reportó el usuario dos veces sobre la misma pantalla —la ficha de un
+  // crédito, donde el vendedor salía con cara y quien cobró con la inicial—, y
+  // la segunda vez ya existían tanto el comentario que lo explicaba como la
+  // migración que había agregado el id al RPC *para* poder resolverlo. Faltaba
+  // que alguien resolviera; ahora resuelve el componente y no el llamador.
+  //
+  // La ficha del store MANDA sobre lo que traiga el llamador: ahí `photo` es la
+  // URL FIRMADA (la pone el arranque) y `photo_url` la cruda, que en un bucket
+  // privado no se puede mostrar. Una consulta suelta que devuelva `photo_url`
+  // sin pasar por `signPhotosDeep` trae la cruda, así que preferir la del store
+  // arregla de paso la foto rota — no sólo la ausente.
+  //
+  // Si la persona no está en el store —la lista está ACOTADA por permisos, y
+  // hay llamadores que pasan el id de la CUENTA y no el de la ficha— se cae a
+  // lo que trajo el llamador, que es el comportamiento de siempre.
   const ficha = useStaffStore(s => {
-    if (!emp?.id || Array.isArray(emp.history)) return null;
+    if (!emp?.id) return null;
+    const faltaHistorial = !Array.isArray(emp.history);
+    const faltaFoto = !emp.photo && !emp.photo_url;
+    if (!faltaHistorial && !faltaFoto) return null;
     return (s.employees || []).find(e => String(e.id) === String(emp.id)) || null;
   });
 
@@ -211,7 +239,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
       <span className={`block h-full w-full overflow-hidden ${radio}
         ${marca ? `${grosor} ${marca.anillo}` : marco}`}>
         <LiquidAvatar
-          src={emp?.photo || emp?.photo_url}
+          src={ficha?.photo || ficha?.photo_url || emp?.photo || emp?.photo_url}
           alt={emp?.name || 'Empleado'}
           fallbackText={shortEmployeeName(emp)}
           className="h-full w-full"

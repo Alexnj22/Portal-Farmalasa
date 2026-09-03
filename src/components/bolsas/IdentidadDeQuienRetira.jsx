@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import AvatarConEstado from '../common/AvatarConEstado';
-import { AlertTriangle, KeyRound, ScanLine, UserCircle2 } from 'lucide-react';
+import { AlertTriangle, KeyRound, ScanLine } from 'lucide-react';
 import Button from '../common/Button';
 import EsperaDeCarne from '../common/EsperaDeCarne';
 import Notice from '../common/Notice';
@@ -137,14 +137,8 @@ export default function IdentidadDeQuienRetira({
         return (
             <div className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30
                 animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
-                {persona.photo_url
-                    ? <AvatarConEstado emp={persona} px={48} radio="rounded-full"
-                        marco="border-2 border-border-card" className="shadow" />
-                    : (
-                        <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0">
-                            <UserCircle2 size={24} className="text-success" />
-                        </div>
-                    )}
+                <AvatarConEstado emp={persona} px={48} radio="rounded-full"
+                    marco="border-2 border-border-card" className="shadow" />
                 <div className="min-w-0 flex-1">
                     <p className="font-bold text-success-text text-body-lg truncate">{persona.name}</p>
                     <p className="text-label text-success-text mt-0.5">{rotulo}</p>

@@ -4,7 +4,7 @@ import Button from '../../../components/common/Button';
 import Checkbox from '../../../components/common/Checkbox';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Bot, Clock, Flame, AlertTriangle, CircleUserRound, Building2 } from 'lucide-react';
+import { X, Bot, Clock, Flame, AlertTriangle, Building2 } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect'; 
 import TimePicker12 from '../../../components/common/TimePicker12'; 
 import { useStaffStore } from '../../../store/staffStore'; 
@@ -286,9 +286,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     const encabezado = (
         <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-surface-card overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
-                {employee?.photo_url
-                    ? <AvatarConEstado emp={employee} px={28} radio="rounded-full" marco="" />
-                    : <CircleUserRound size={18} className="text-content-3" strokeWidth={1.5} />}
+                <AvatarConEstado emp={employee} px={28} radio="rounded-full" marco="" />
             </div>
             <div className="min-w-0">
                 <p className="text-body font-black text-content truncate leading-tight" title={employee?.name}>{shortEmployeeName(employee)}</p>

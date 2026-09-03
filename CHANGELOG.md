@@ -21,6 +21,73 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.968.3 — La foto de una persona la resuelve el componente, no el llamador
+
+Cierre de lo que empezó en v2.967.4, que había arreglado **un** llamador. El
+usuario preguntó si quedaba canónico y bajo reglas; medido, no lo estaba, y
+faltaban dieciséis lugares.
+
+### La mitad que faltaba
+
+`AvatarConEstado` ya buscaba la ficha en el store cuando el llamador no traía
+el historial —así el **aro de estado** aparece en todas las pantallas y no sólo
+en las que pasan un empleado completo—. La foto no: salía del objeto que
+llegara. O sea que la mitad del razonamiento estaba escrita y aplicada a una
+sola de las dos cosas que el componente muestra.
+
+Ahora la cara se resuelve igual, y la del store **manda**: ahí `photo` es la
+URL firmada y `photo_url` la cruda, que en un bucket privado no se puede
+mostrar. Eso arregla de paso la foto **rota** —una consulta que devuelve
+`photo_url` sin pasar por `signPhotosDeep`—, no sólo la ausente. Si la persona
+no está en el store (la lista está acotada por permisos) se cae a lo que trajo
+el llamador, como siempre.
+
+Anclado en `tests/unit/avatarConEstado.test.jsx`, y las pruebas se verificaron
+al revés: revirtiendo la línea del componente fallan las dos que deben.
+
+### La tercera forma del defecto: la foto decide si se pinta el avatar
+
+El censo de las **72 fotos de persona** del portal encontró dieciséis sitios así:
+
+```jsx
+{emp.photo ? <AvatarConEstado emp={emp} …/> : <CircleUserRound/>}
+```
+
+La vista pregunta por un dato que el componente sabe buscar solo, y contesta
+que no antes de dejarlo intentar. Se pierden **dos** cosas, y la segunda es la
+que importa: la cara, y el **aro**. Con el aro adentro del `then`, la categoría
+`foto-sin-aro` daba verde sobre pantallas donde el aro no aparece nunca — un
+gate en cero sobre un defecto vivo, que es el modo de falla que esa categoría
+ya había tenido antes.
+
+Trece rehacían a mano el respaldo que `LiquidAvatar` ya hace (la inicial) y
+**tres lo hacían peor**, cambiando a la persona por un ícono genérico: un camión
+para el conductor de una ruta, un `CircleUserRound` en el calendario de
+horarios. Donde la condición tiene sentido —puede no haber persona— quedó sobre
+la **persona** y no sobre su foto.
+
+Tocados: Asistencia (auditoría y monitor), Vacaciones (3), Horarios (4), Inicio,
+Personal por sucursal, Mi perfil, Rutas, Bolsas, el escaneo de apoyo y Mín·Máx.
+
+Lo vigila la categoría **`foto-condicionada`** de `npm run gate:design`,
+bloqueante en cero.
+
+### Lo que se descartó, medido
+
+Los ids: ocho columnas del portal apuntan a `auth.users` y no a `employees`
+—`rutas.conductor_id`, `ruta_pedidos.entregado_por`, `ventas_perdidas.reportado_por`
+entre otras—, así que una cara alimentada desde ahí no resolvería contra el
+store. En producción **todas sus filas resuelven igual**: 42/42 conductores,
+50/50 entregas, 5/5 ventas perdidas. No hay defecto ahí.
+
+### Y el instrumento volvió a mentir primero
+
+El primer barrido midió **40 caracteres** entre la condición y el avatar. En
+este repo la indentación sola son 64, así que se le escapó un sitio de
+Vacaciones y reportó **15** con toda naturalidad — un número que se veía
+completo. Lo delató eslint por un import que quedó huérfano, no el barrido. La
+ventana del detector va por líneas, y el porqué quedó escrito en su comentario.
+
 ## v2.968.2 — El aviso de bolsas juzga con la vara del corte
 
 Salud 2, 2-sep: «**Un día cerró con menos efectivo guardado del que declaró el

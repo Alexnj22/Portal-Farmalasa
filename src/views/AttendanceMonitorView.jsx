@@ -30,7 +30,7 @@ import {
 
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
-import { shortEmployeeName, employeeInitials } from "../utils/nameUtils";
+import { shortEmployeeName } from "../utils/nameUtils";
 import { tokenMatch } from '../utils/searchUtils';
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from "../components/common/LiquidSelect";
@@ -458,11 +458,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 : "border-border-card bg-surface-card text-content-3",
             ].join(" ")}
           >
-            {emp.photo ? (
-              <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
-            ) : (
-              employeeInitials(emp)
-            )}
+            <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
           </div>
           {emp.hasLactation && (
             <div

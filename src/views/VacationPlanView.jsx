@@ -25,7 +25,7 @@ import RangeDatePicker from '../components/common/RangeDatePicker';
 import TimePicker12 from '../components/common/TimePicker12';
 import { smartFilter } from '../utils/searchUtils';
 import PortalTextarea from '../components/common/PortalTextarea';
-import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
+import { shortEmployeeName } from '../utils/nameUtils';
 import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -289,10 +289,7 @@ const GanttChart = ({ plans, year }) => {
                                 <div className="flex items-center gap-2 group/row">
                                     <div className="w-[160px] shrink-0 flex items-center gap-2 pr-2">
                                         <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
-                                            {(emp?.photo || emp?.photo_url)
-                                                ? <AvatarConEstado emp={emp} px={36} radio="rounded-full" marco="" />
-                                                : employeeInitials(emp)
-                                            }
+                                            <AvatarConEstado emp={emp} px={36} radio="rounded-full" marco="" />
                                         </div>
                                         <span className="text-label font-bold text-content-2 truncate group-hover/row:text-brand-text transition-colors" title={emp?.name}>{shortEmployeeName(emp)}</span>
                                     </div>
@@ -1076,10 +1073,7 @@ const VacationPlanView = () => {
                                                             <DataCell>
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
                                                                     <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
-                                                                        {p.employee?.photo
-                                                                            ? <AvatarConEstado emp={p.employee} px={28} radio="rounded-full" marco="" />
-                                                                            : employeeInitials(p.employee)
-                                                                        }
+                                                                        <AvatarConEstado emp={p.employee} px={28} radio="rounded-full" marco="" />
                                                                     </div>
                                                                     <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee ? shortEmployeeName(p.employee) : '—'}</p>
                                                                     {p.metadata?.original_start_date && (
@@ -1158,10 +1152,7 @@ const VacationPlanView = () => {
                                                 <div className="flex flex-wrap items-start gap-3 justify-between">
                                                     <div className="flex items-center gap-2.5">
                                                         <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-label">
-                                                            {emp?.photo_url
-                                                                ? <AvatarConEstado emp={emp} px={36} radio="rounded-full" marco="" />
-                                                                : employeeInitials(emp)
-                                                            }
+                                                            <AvatarConEstado emp={emp} px={36} radio="rounded-full" marco="" />
                                                         </div>
                                                         <div>
                                                             <p className="text-body-sm font-black text-content">{shortEmployeeName(emp)}</p>

@@ -831,7 +831,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     <div className="flex items-center gap-3 px-4 py-2.5 border-b border-divider bg-surface-card" onClick={e => e.stopPropagation()}>
                                         {/* Foto/icono conductor */}
                                         <div className="relative shrink-0">
-                                            {conductorEmp?.photo
+                                            {conductorEmp
                                                 ? <AvatarConEstado emp={conductorEmp} px={28} radio="rounded-full" marco="" />
                                                 : <div data-surface={isCompletada ? 'card' : undefined} className={`w-7 h-7 rounded-xl flex items-center justify-center border ${isCompletada ? 'bg-surface-card-hover' : 'bg-chart-3/10 border-chart-3/30'}`}>
                                                     <Truck size={13} className={isCompletada ? 'text-content-3' : 'text-chart-3-text'} />

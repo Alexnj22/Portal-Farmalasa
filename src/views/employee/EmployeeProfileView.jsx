@@ -225,12 +225,7 @@ const EmployeeProfileView = ({ openModal }) => {
         <div className="flex items-center gap-3.5">
             <div className="relative shrink-0">
                 <div className="w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden border-2 border-border-card shadow-md">
-                    {emp.photo || emp.photo_url
-                        ? <AvatarConEstado emp={emp} px={96} radio="rounded-full" marco="" />
-                        : <div className="w-full h-full bg-gradient-to-br from-chart-8 to-chart-8-text flex items-center justify-center text-white">
-                            <User size={18} strokeWidth={2} />
-                          </div>
-                    }
+                    <AvatarConEstado emp={emp} px={96} radio="rounded-full" marco="" />
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-2 border-border-card shadow-sm" />
             </div>

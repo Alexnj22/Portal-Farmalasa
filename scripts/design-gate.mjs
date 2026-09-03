@@ -2076,6 +2076,51 @@ function scanFile(path) {
         if (/\bfotos?\s*\??\.\s*url\b|\bevidencia|comprobante|etiqueta/i.test(src)) continue;
         marcar(mi3.index, tag);
       }
+
+      // ── `foto-condicionada`, la tercera forma (2026-09-03) ─────────────
+      //
+      // Usar `AvatarConEstado` no alcanza si la vista decide ANTES si vale la
+      // pena llamarlo:
+      //
+      //     {emp.photo ? <AvatarConEstado emp={emp} …/> : <CircleUserRound/>}
+      //
+      // Eso pregunta por un dato que el componente sabe buscar solo —desde el
+      // 3-sep resuelve la foto contra el store, igual que el estado— y contesta
+      // que no antes de dejarlo intentar. Se pierden las dos cosas: la cara de
+      // quien la tiene cargada pero llegó en un objeto sin ese campo, y **el
+      // aro**, que es justo lo que esta categoría existe para garantizar. Con
+      // el aro adentro del `then` de la condición, `foto-sin-aro` da verde
+      // sobre una pantalla donde el aro no aparece nunca.
+      //
+      // Eran **16 sitios** el día que se escribió, y ninguno estaba mal
+      // intencionado: todos rehacían a mano el respaldo que `LiquidAvatar` ya
+      // hace —la inicial—, y tres lo hacían PEOR, cambiando la persona por un
+      // ícono genérico (un camión, un `CircleUserRound`) que no la nombra.
+      //
+      // La condición legítima es sobre la PERSONA (`{emp ? <Avatar/> : …}`),
+      // nunca sobre su foto: si no hay persona no hay nada que pintar, y si la
+      // hay, quien decide es el componente.
+      //
+      // ── La ventana va por LÍNEAS, y esto ya costó un hallazgo ──────────
+      // El primer barrido midió 40 caracteres entre la condición y el `?`. En
+      // este repo la indentación sola son 64, así que se le escapó un sitio de
+      // `VacationPlanView` — y el número que reportó, 15, se veía completo.
+      const CAMPO_FOTO = /\b\w+\s*\??\.\s*(photo|photo_url|photoPreview|foto|avatar|profilePicture)\b/;
+      const lineas = sinComentarios2.split('\n');
+      lineas.forEach((linea, i) => {
+        if (!/<AvatarConEstado\b/.test(linea)) return;
+        const ventana = lineas.slice(Math.max(0, i - 5), i + 1).join('\n');
+        const cond = ventana.slice(0, ventana.lastIndexOf('<AvatarConEstado'));
+        if (!CAMPO_FOTO.test(cond)) return;
+        // Sólo si ese campo es lo que DECIDE: un `?` o un `&&` entre la
+        // lectura de la foto y el avatar.
+        if (!/(\?|&&)[^<]*$/.test(cond)) return;
+        findings.push({
+          line: i + 1,
+          label: 'la foto decide si se pinta el avatar — condicionar sobre la PERSONA, no sobre `photo` (DESIGN.md §5.4)',
+          category: 'foto-condicionada', text: linea.trim().slice(0, 120),
+        });
+      });
     }
 
     // ── `tarjeta-a-mano` (2026-07-28) ───────────────────────────────────

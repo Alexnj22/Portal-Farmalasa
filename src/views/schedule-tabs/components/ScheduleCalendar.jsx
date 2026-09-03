@@ -2,7 +2,7 @@ import React, { memo, useMemo, useState } from 'react';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
-import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon } from 'lucide-react';
+import { Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon } from 'lucide-react';
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../hooks/useSearchToggle';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -289,7 +289,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
             <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
                 <div className="min-h-[72px] h-full bg-surface-card border border-border-card shadow-[var(--shadow-glass-sm)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-[var(--dur-fast)] group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-surface-card border border-border-card shadow-[var(--shadow-shine)] overflow-hidden flex items-center justify-center shrink-0">
-                        {emp.photo_url ? <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" /> : <CircleUserRound size={24} className="text-content-3" />}
+                        <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" />
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden">
                         <h4 className="font-black text-content text-body-sm 2xl:text-body truncate leading-tight mb-1" title={emp.name}>{shortName}</h4>
@@ -483,7 +483,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
             <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
                 <div className="min-h-[72px] h-full bg-chart-3/10 border border-chart-3/30 shadow-[var(--shadow-glass-2)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-[var(--dur-fast)] group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 rounded-xl bg-surface-card border border-chart-3/30 overflow-hidden flex items-center justify-center shrink-0">
-                        {emp.photo_url ? <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" /> : <CircleUserRound size={22} className="text-chart-3/40" />}
+                        <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" />
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden gap-0.5">
                         <h4 className="font-black text-content text-body-sm truncate leading-tight" title={emp.name}>{shortName}</h4>
@@ -894,7 +894,7 @@ const ScheduleCalendar = memo(({
                                                                 onClick={() => { onAddCoverageEmployee?.(e.id); setShowCoverageSearch(false); setCoverageSearchTerm(''); }}
                                                                 className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-chart-3/10 transition-colors text-left w-full">
                                                                 <div className="w-8 h-8 rounded-xl bg-surface-card-hover overflow-hidden shrink-0 flex items-center justify-center">
-                                                                    {e.photo_url ? <AvatarConEstado emp={e} px={28} radio="rounded-full" marco="" /> : <CircleUserRound size={18} className="text-content-3" />}
+                                                                    <AvatarConEstado emp={e} px={28} radio="rounded-full" marco="" />
                                                                 </div>
                                                                 <div className="min-w-0">
                                                                     <p className="text-body-sm font-black text-content truncate" title={e.name}>{shortEmployeeName(e)}</p>

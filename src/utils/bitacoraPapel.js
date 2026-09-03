@@ -158,6 +158,13 @@ const CSS = `
   td.val.fuera { font-weight: bold; }
   .marca { font-size: 6.2pt; }
   td.quien { font-size: 6.2pt; line-height: 1.05; overflow-wrap: anywhere; }
+  /* ── La hora NO es un adorno: la exige el RTS ──────────────────────────
+     6.2.21: «En los registros debe existir evidencia de la FECHA, HORA y
+     PERSONA que realiza la lectura de la temperatura y humedad relativa».
+     La Guía de Verificación 2.34 sólo pregunta por fecha y persona, así que
+     mirando la guía sola parece opcional — y no lo es. Va chica y al lado del
+     nombre para que no le gane la columna, pero va. */
+  td.quien .hora { font-size: 5.4pt; }
   td.folio { white-space: nowrap; }
   .hora { font-variant-numeric: tabular-nums; }
   td.vacio { text-align: center; font-size: 9pt; }
@@ -348,7 +355,8 @@ export function hojaDeArea(mes, area, logo) {
             const aviso = l.fuera_de_rango ? '<span class="marca">▲</span> ' : '';
             return `<td class="val sep${fuera}">${aviso}${esc(num(l.temperatura))}</td>${
                 conH ? `<td class="val${fuera}">${l.humedad != null ? esc(num(l.humedad)) : '—'}</td>` : ''
-            }<td class="quien">${esc(quienAnoto(l))}</td>`;
+            }<td class="quien">${esc(quienAnoto(l))}${
+                l.hora ? ` <span class="hora">${esc(l.hora)}</span>` : ''}</td>`;
         }).join('');
         return `<tr${abreSemana(d.dia) ? ' class="semana"' : ''}>
             <td class="dia">${esc(diaNumero(d.dia))}<span class="dow">${esc(diaSemana(d.dia))}</span></td>
@@ -392,7 +400,9 @@ export function hojaDeArea(mes, area, logo) {
         </thead>
         <tbody>${filas || vacia}</tbody>
     </table>
-    <p class="leyenda"><b>—</b> sin anotar &nbsp;·&nbsp; <b>▲</b> fuera del rango permitido.</p>
+    <p class="leyenda"><b>—</b> sin anotar &nbsp;·&nbsp; <b>▲</b> fuera del rango permitido
+    &nbsp;·&nbsp; cada lectura lleva la hora y la persona que la realizó (RTS 6.2.21).
+    La humedad relativa es informativa (RTS 6.2.16).</p>
     ${desvios.length ? `<div class="desvios"><span class="t">Desviaciones y acción correctiva</span>${
         desvios.join('<br/>')}</div>` : ''}
     ${firmas(mes.cierre)}`;

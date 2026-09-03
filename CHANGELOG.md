@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.967.4 — La cara de quien cobró un abono sale del store, no de medio objeto
+
+En la ficha de un crédito, el vendedor salía con su foto y quien cobró cada
+abono salía con la inicial. Los dos usan el mismo componente, así que se leía
+como «esa persona no tiene foto».
+
+`AvatarConEstado` saca la **foto** del objeto que recibe. El id le sirve para
+otra cosa —resolver el ESTADO contra el store, que es lo que pinta el aro—, y
+esa resolución por id es lo que hace creer que con `{ id, name }` alcanza: el
+componente sí busca en el store, pero no la cara.
+
+Ese detalle ya estaba escrito seis líneas más arriba en el mismo archivo, en el
+comentario de `vendedores`, porque el vendedor había fallado igual y se corrigió
+igual. Y la migración del 2-sep (`el_abono_dice_quien_con_su_cara`) agregó
+`abonado_por` al RPC **exactamente para poder resolver la ficha por id** — dice
+eso en su encabezado. Lo que faltó fue la otra mitad: el JSX siguió armando
+`{ id: a.abonado_por, name: a.cobrado_por }` y nunca llegó a mirar el store.
+
+Ahora el mapa de fichas del store baja a `FichaDelCredito` como `fichas` y el
+abono resuelve contra él, con el medio objeto de siempre como respaldo para
+quien no esté en la lista acotada de la sesión.
+
+Ninguna de las dos mitades falla: sin foto el avatar dibuja la inicial, que es
+su comportamiento correcto cuando de verdad no hay foto. Por eso un arreglo a
+medias se ve exactamente igual que el defecto original.
+
 ## v2.967.3 — Bitácoras: la hora vuelve al papel, y la calibración no era lo que dije
 
 Dos correcciones, las dos por leer bien la norma. El usuario levantó la primera:

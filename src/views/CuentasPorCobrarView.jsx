@@ -89,6 +89,11 @@ const ROTULO_DE_FORMA = { [APROBACION]: 'Solicitar aprobación' };
 
 /** Las que se pueden elegir DENTRO de «Solicitar aprobación». Sin efectivo: un
  *  pago en efectivo se cuenta en el cajón y no necesita que nadie lo apruebe. */
+/* La forma DE VERDAD cuando se pide aprobación. **Sin efectivo, y no por
+ * descuido**: desde el 2026-09-03 el cobro que espera firma no se aplica, y un
+ * efectivo sin aplicar deja el dinero en el cajón sin registrar — el conteo del
+ * día daría un sobrante del tamaño del cobro. El servidor lo rechaza igual: el
+ * navegador puede mandar la bandera con cualquier forma. */
 const FORMAS_REALES = ['Transferencia', 'Tarjeta', 'Cheque', 'Otro'];
 
 
@@ -301,15 +306,13 @@ export default function CuentasPorCobrarView() {
         else {
             const n = r.aplicaciones?.length || 1;
             const cuantos = `${abonando.cliente} · ${formatMoney(r.aplicado)} en ${n} crédito${n === 1 ? '' : 's'}`;
-            /* Que el abono ENTRÓ y que además queda por confirmar son dos cosas,
-             * y el mismo toast que decía sólo la primera se lee como que no hay
-             * nada más que esperar. El dinero ya se aplicó a propósito —dejar el
-             * crédito abierto hasta que alguien firme lo dejaría figurando como
-             * deuda del cliente, falso, y entraría al aviso del plazo—, así que
-             * lo que falta es la revisión, no el cobro. */
             if (r.aprobacionPedida) {
-                showToast('Pago registrado, falta confirmarlo',
-                    `${cuantos}. Queda en Solicitudes para que lo revisen.`, 'info', 8000);
+                /* NO dice «Pago registrado»: no se aplicó nada. Decirlo haría
+                 * que quien cobra le informara al cliente que ya está pagado, y
+                 * el crédito sigue debiendo hasta que alguien firme. */
+                showToast('Queda esperando aprobación',
+                    `${abonando.cliente} · ${formatMoney(pago.montoDocumento)}. `
+                    + 'El crédito sigue con saldo hasta que lo confirmen.', 'info', 8000);
             } else {
                 showToast('Pago registrado', cuantos, 'success');
             }
@@ -544,6 +547,7 @@ export default function CuentasPorCobrarView() {
 
             {viendo && (
                 <FichaDelCredito credito={viendo} vendedor={vendedores.get(String(viendo.vendedor_id))}
+                    fichas={vendedores}
                     puedeAbonar={puedeAbonar}
                     onCorregir={(a) => setCorrigiendo({ credito: viendo, abono: a })}
                     onClose={() => setViendo(null)}
@@ -570,7 +574,7 @@ export default function CuentasPorCobrarView() {
  * créditos con saldo tienen los suyos— así que abrir esto no sale a la red del
  * otro sistema.
  */
-function FichaDelCredito({ credito, vendedor, puedeAbonar, onClose, onAbonar, onCorregir }) {
+function FichaDelCredito({ credito, vendedor, fichas, puedeAbonar, onClose, onAbonar, onCorregir }) {
     const [datos, setDatos] = useState(null);
     const [delOrigen, setDelOrigen] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -769,10 +773,19 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, onClose, onAbonar, on
                                                 {/* La cara de quien cobró, igual que la de
                                                     quien vendió: quién recibió el dinero es
                                                     justo lo que el sistema de la caja no
-                                                    guarda, así que acá se ve. */}
+                                                    guarda, así que acá se ve.
+
+                                                    La ficha COMPLETA sale del store —igual que
+                                                    la del vendedor, y por la misma razón:
+                                                    `AvatarConEstado` saca la foto del objeto
+                                                    que recibe, así que `{ id, name }` pinta las
+                                                    iniciales y nunca la cara. El id se agregó
+                                                    al RPC para poder resolverla, y acá se
+                                                    resuelve. */}
                                                 {a.abonado_por && (
                                                     <AvatarConEstado
-                                                        emp={{ id: a.abonado_por, name: a.cobrado_por }}
+                                                        emp={fichas?.get(String(a.abonado_por))
+                                                             || { id: a.abonado_por, name: a.cobrado_por }}
                                                         px={26} mostrarChip={false} radio="rounded-full" />
                                                 )}
                                                 <span className="min-w-0">
@@ -1084,8 +1097,15 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
                 {pideAprobacion && (
                     <div className="space-y-3">
+                        {/* Decía «El abono entra ya y se envía a aprobación», y
+                            desde el 2026-09-03 eso es al revés: el cobro se
+                            guarda y NO se aplica hasta que alguien firme, así
+                            que el crédito sigue debiendo. Un aviso que promete
+                            lo contrario de lo que pasa es peor que ninguno —
+                            quien cobra le diría al cliente que ya está pagado. */}
                         <Notice variant="info">
-                            El abono entra ya y se envía a <strong>aprobación</strong>.
+                            El cobro queda <strong>esperando aprobación</strong>. El crédito
+                            sigue con saldo hasta que lo confirmen.
                         </Notice>
                         {/* La forma REAL, adentro. Es lo que el usuario pidió —«la
                             forma de pago sí sale como tarjeta, transferencia,

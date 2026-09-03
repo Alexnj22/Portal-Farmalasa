@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.966.1 — Bitácoras impresas: código de formulario, nombre corto y la fecha en una fila
+
+Segunda pasada sobre el papel, con la maqueta enfrente.
+
+- **Código y versión de formulario.** El usuario los pidió asignados: hoy la
+  banda dice `FLS-BIT-00` (resumen), `-01` (temperatura), `-02` (limpieza) y
+  `-03` (dispensación), cada uno con su versión. Lo que se mueve es la
+  **versión**, y se mueve cuando cambia la FORMA de la hoja —una columna nueva,
+  un campo que se va— no cuando cambian los datos. Sin ese par, dos hojas del
+  mismo mes con distinta distribución son indistinguibles.
+- **El período va mes/año** (`08/2026`) en vez de `2026-08`.
+- **Quien anotó: sólo nombre y apellido, sin la hora.** La hora se sigue
+  guardando; lo que sale del papel es la columna. La Guía SRS 2.34 pide *«la
+  fecha y persona que realiza la lectura»* — la hora no la pide.
+- **La fecha en una fila**: número y día de la semana uno al lado del otro. El
+  día apilado en dos líneas mandaba la altura de todo el renglón, y con eso el
+  nombre pudo subir de 5.2 a 6.2 pt sin que el mes deje de entrar en una hoja.
+- **Fuera la leyenda de `*` y `(c)`** y sus marcas en la celda, por pedido del
+  usuario. La hoja queda con `—` sin anotar y `▲` fuera de rango.
+
+**El nombre corto NO se saca partiendo `employees.name`.** Es una columna
+generada, y «DOLORES CONCEPCION TEJADA HERNANDEZ» cortada a dos palabras da
+«DOLORES CONCEPCION»: dos nombres y ningún apellido. La migración
+`20260903171958` agrega `first_names`/`last_names` al mes impreso y el papel usa
+`shortEmployeeName`, el mismo canónico que la firma en pantalla.
+
+**Y la maqueta ahora COMPRUEBA la paginación.** «Una hoja por área» es una
+afirmación sobre el corte de página, y el corte no se puede leer del CSS:
+depende de cuánto envuelve cada nombre al ancho real de la hoja. Medir el alto
+en el navegador con el viewport por defecto dio un número que **no era el de la
+página** —el texto envuelve distinto— y por eso una versión daba 8 páginas
+mientras la medición decía que las 6 entraban. El único juez es el PDF, así que
+`npm run maqueta:bitacoras` cuenta sus páginas y falla si no coinciden con las
+hojas. Es la trampa de siempre: antes de creerle un número a un instrumento,
+comprobarlo contra lo que el instrumento dice medir.
+
+**El instrumento SÍ se calibra**, contra lo que se suponía. RTS 11.02.04:24
+**5.6.14**: *«Los instrumentos de medición de temperatura y humedad que se
+utilicen en el almacenamiento o transporte de los productos regulados deben
+estar calibrados con su respectivo certificado de calibración vigente»*, y la
+Guía SRS **2.32** lo verifica como **CRÍTICO** para el termómetro del
+refrigerador. El campo de calibración se queda en la hoja.
+
 ## v2.966.0 — Las solicitudes de caja y de abonos salen en la bandeja, y la de aprobación se creaba nunca
 
 Salió de una pregunta del usuario sobre la bandeja de Solicitudes: *«¿saldrán

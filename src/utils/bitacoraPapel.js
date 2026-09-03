@@ -58,6 +58,27 @@
 // conviven en el mismo documento.
 // ═══════════════════════════════════════════════════════════════════════════
 
+// El nombre corto sale del canónico. `nameUtils.js` tampoco tiene imports, así
+// que la maqueta lo sigue cargando con node; la extensión va explícita porque
+// node ESM no la adivina y Vite la acepta igual.
+import { shortEmployeeName } from './nameUtils.js';
+
+// ── El código del formulario ──────────────────────────────────────────────
+// Se lo asignó el usuario al portal (2026-09-03): «el cod. asignale uno tú, si
+// lo actualizamos sería un código nuevo». O sea que la VERSIÓN es lo que se
+// mueve, y se mueve cuando cambia la FORMA de la hoja —una columna nueva, un
+// campo que se va, otra distribución—, no cuando cambian los datos que trae.
+//
+// Un formulario controlado se identifica por ese par: dos hojas del mismo mes
+// con distinta versión son dos formularios distintos, y sin el par no hay forma
+// de saber cuál se archivó. Al cambiar una hoja, subir SU versión acá.
+const FORMULARIOS = {
+    resumen:     { codigo: 'FLS-BIT-00', version: '1.0' },
+    temperatura: { codigo: 'FLS-BIT-01', version: '1.0' },
+    limpieza:    { codigo: 'FLS-BIT-02', version: '1.0' },
+    receta:      { codigo: 'FLS-BIT-03', version: '1.0' },
+};
+
 const CSS = `
   @page { size: letter portrait; margin: 11mm 9mm 10mm; }
   @page libro { size: letter landscape; margin: 10mm 9mm; }
@@ -122,28 +143,27 @@ const CSS = `
                               font-weight: bold; }
   table.reg thead tr:last-child th { border-bottom: 1.2pt solid #000; }
   table.reg thead th.sep, table.reg tbody td.sep { border-left: 1pt solid #000; }
-  table.reg tbody td { padding: .35mm .6mm; height: 4.8mm; vertical-align: middle; }
+  table.reg tbody td { padding: .4mm .8mm; height: 4.9mm; vertical-align: middle; }
   /* Un renglón grueso cada domingo: en 31 filas iguales el ojo pierde el
      renglón, y una trama de fondo no se imprime. La regla sí. */
   table.reg tbody tr.semana td { border-top: 1.1pt solid #000; }
 
-  /* El día manda la ALTURA de la fila, no el nombre: son dos líneas —número y
-     abreviatura— contra las dos del nombre, pero en cuerpos mayores. Bajarlo un
-     punto le quita 1 mm a cada renglón, o sea 31 mm a la hoja, que es lo que
-     hace que el mes entre entero con sus firmas al pie. */
-  td.dia { text-align: center; font-weight: bold; font-size: 7.6pt; line-height: .95; }
-  td.dia .dow { display: block; font-size: 4.4pt; font-weight: 400; letter-spacing: .08em;
-                text-transform: uppercase; margin-top: .2mm; line-height: 1; }
-  td.val { text-align: center; font-variant-numeric: tabular-nums; font-size: 8pt; }
+  /* El día en UNA línea (pedido del usuario, 2026-09-03: la fecha ahorra alto
+     vertical). El número y la abreviatura apilados eran dos líneas en cuerpos
+     mayores que el nombre, así que el día mandaba la altura de todo el renglón. */
+  td.dia { text-align: center; font-weight: bold; font-size: 8pt; line-height: 1.1; white-space: nowrap; }
+  td.dia .dow { font-size: 5pt; font-weight: 400; letter-spacing: .08em;
+                text-transform: uppercase; margin-left: .8mm; }
+  td.val { text-align: center; font-variant-numeric: tabular-nums; font-size: 8.5pt; }
   td.val.fuera { font-weight: bold; }
   .marca { font-size: 6.2pt; }
-  td.quien { font-size: 5.2pt; line-height: 1.05; overflow-wrap: anywhere; }
+  td.quien { font-size: 6.2pt; line-height: 1.05; overflow-wrap: anywhere; }
   td.folio { white-space: nowrap; }
   .hora { font-variant-numeric: tabular-nums; }
   td.vacio { text-align: center; font-size: 9pt; }
   td.c { text-align: center; }
   td.n { text-align: right; font-variant-numeric: tabular-nums; }
-  td.limpio { font-size: 5.6pt; line-height: 1.1; }
+  td.limpio { font-size: 6.2pt; line-height: 1.1; }
   td.limpio .ok { font-size: 7.5pt; font-weight: bold; }
 
   /* ── Pies ─────────────────────────────────────────────────────────────── */
@@ -152,7 +172,7 @@ const CSS = `
   .desvios .t { font-size: 6pt; letter-spacing: .16em; text-transform: uppercase; font-weight: bold;
                 display: block; margin-bottom: 1mm; }
 
-  .firmas { display: table; width: 100%; margin-top: 4mm; }
+  .firmas { display: table; width: 100%; margin-top: 3mm; }
   .firmas > div { display: table-cell; width: 50%; padding: 0 7mm; vertical-align: bottom; }
   .firmas .linea { border-top: .9pt solid #000; padding-top: 1.4mm; text-align: center; }
   .firmas .rol { font-size: 8.5pt; font-weight: bold; }
@@ -192,6 +212,17 @@ const nombreMes = (p) => {
 
 const diaNumero = (f) => (f ? String(f).slice(8, 10).replace(/^0/, '') : '');
 
+/** «08/2026» — el período como lo pidió el usuario: mes sobre año. */
+const periodoCorto = (p) => {
+    const [a, m] = String(p).split('-');
+    return `${m}/${a}`;
+};
+
+/** Primer nombre y primer apellido de quien anotó. */
+const quienAnoto = (r) => shortEmployeeName({
+    first_names: r?.por_nombres, last_names: r?.por_apellidos, name: r?.por,
+});
+
 const diaSemana = (f) => (f
     ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { weekday: 'short', timeZone: 'UTC' })
         .replace(/\./g, '').slice(0, 3)
@@ -215,7 +246,7 @@ const rangoDe = (area) => (area.temp_min != null && area.temp_max != null
  * son ~3.55:1 y el de la empresa 7.34:1, así que un alto escrito a mano
  * aplastaría uno de los dos, y un logo aplastado no da error: se imprime igual.
  */
-function banda(mes, titulo, logo) {
+function banda(mes, titulo, logo, form) {
     const marca = logo?.dataUrl
         ? `<img src="${logo.dataUrl}" alt="Farmacias La Popular y La Salud"/>`
         : '<div class="empresa">FARMACIAS<br/>LA POPULAR Y LA SALUD</div>';
@@ -227,8 +258,9 @@ function banda(mes, titulo, logo) {
             <div class="titulo">${esc(titulo)}</div>
         </div>
         <div class="sello">
-            <div class="fila"><span class="k">Código</span><span class="rayita"></span></div>
-            <div class="fila"><span class="k">Período</span><span class="v">${esc(mes.periodo)}</span></div>
+            <div class="fila"><span class="k">Código</span><span class="v">${esc(form.codigo)}</span></div>
+            <div class="fila"><span class="k">Versión</span><span class="v">${esc(form.version)}</span></div>
+            <div class="fila"><span class="k">Período</span><span class="v">${esc(periodoCorto(mes.periodo))}</span></div>
         </div>
     </div>
     ${mes.cerrado ? '' : `<div class="borrador">BORRADOR<span> · el regente todavía no ha dado por
@@ -294,9 +326,9 @@ export function hojaDeArea(mes, area, logo) {
     const porFranja = (100 - anchoDia) / Math.max(franjas.length, 1);
     const cols = [`<col style="width:${anchoDia}%"/>`];
     for (let i = 0; i < franjas.length; i++) {
-        cols.push(`<col style="width:${(porFranja * (conH ? 0.24 : 0.3)).toFixed(3)}%"/>`);
-        if (conH) cols.push(`<col style="width:${(porFranja * 0.22).toFixed(3)}%"/>`);
-        cols.push(`<col style="width:${(porFranja * (conH ? 0.54 : 0.7)).toFixed(3)}%"/>`);
+        cols.push(`<col style="width:${(porFranja * (conH ? 0.27 : 0.34)).toFixed(3)}%"/>`);
+        if (conH) cols.push(`<col style="width:${(porFranja * 0.24).toFixed(3)}%"/>`);
+        cols.push(`<col style="width:${(porFranja * (conH ? 0.49 : 0.66)).toFixed(3)}%"/>`);
     }
 
     const grupo = franjas.map(f =>
@@ -316,8 +348,7 @@ export function hojaDeArea(mes, area, logo) {
             const aviso = l.fuera_de_rango ? '<span class="marca">▲</span> ' : '';
             return `<td class="val sep${fuera}">${aviso}${esc(num(l.temperatura))}</td>${
                 conH ? `<td class="val${fuera}">${l.humedad != null ? esc(num(l.humedad)) : '—'}</td>` : ''
-            }<td class="quien">${esc(l.por || '')} <span class="hora">${
-                esc(l.hora || '')}</span>${l.tarde ? ' *' : ''}${l.correcciones > 0 ? ' (c)' : ''}</td>`;
+            }<td class="quien">${esc(quienAnoto(l))}</td>`;
         }).join('');
         return `<tr${abreSemana(d.dia) ? ' class="semana"' : ''}>
             <td class="dia">${esc(diaNumero(d.dia))}<span class="dow">${esc(diaSemana(d.dia))}</span></td>
@@ -338,7 +369,7 @@ export function hojaDeArea(mes, area, logo) {
 
     const vacia = `<tr><td colspan="${franjas.length * sub + 1}" class="c">Sin días en el período</td></tr>`;
 
-    return `${banda(mes, 'Toma de temperatura y humedad', logo)}
+    return `${banda(mes, 'Toma de temperatura y humedad', logo, FORMULARIOS.temperatura)}
     ${identidad([
         { k: 'Establecimiento', v: esc(mes.sucursal) },
         { k: 'Área', v: esc(area.nombre) },
@@ -361,9 +392,7 @@ export function hojaDeArea(mes, area, logo) {
         </thead>
         <tbody>${filas || vacia}</tbody>
     </table>
-    <p class="leyenda"><b>—</b> sin anotar &nbsp;·&nbsp; <b>▲</b> fuera del rango permitido
-    &nbsp;·&nbsp; <b>*</b> anotada fuera de su franja &nbsp;·&nbsp; <b>(c)</b> el valor se corrigió;
-    el original y el motivo quedan registrados.</p>
+    <p class="leyenda"><b>—</b> sin anotar &nbsp;·&nbsp; <b>▲</b> fuera del rango permitido.</p>
     ${desvios.length ? `<div class="desvios"><span class="t">Desviaciones y acción correctiva</span>${
         desvios.join('<br/>')}</div>` : ''}
     ${firmas(mes.cierre)}`;
@@ -399,7 +428,7 @@ export function hojaDeLimpieza(mes, area, logo) {
             // Todo en un párrafo que fluye, no en tres líneas apiladas: con un
             // nombre corto el renglón ocupa UNA línea y el mes entra en la hoja.
             return `<td class="limpio sep"><span class="ok">✓</span>${esc(cuenta)} · ${
-                esc(li.por || '')}${li.observaciones ? ` · ${esc(li.observaciones)}` : ''}${faltan}</td>`;
+                esc(quienAnoto(li))}${li.observaciones ? ` · ${esc(li.observaciones)}` : ''}${faltan}</td>`;
         }).join('');
         return `<tr${abreSemana(d.dia) ? ' class="semana"' : ''}>
             <td class="dia">${esc(diaNumero(d.dia))}<span class="dow">${esc(diaSemana(d.dia))}</span></td>
@@ -408,7 +437,7 @@ export function hojaDeLimpieza(mes, area, logo) {
 
     const muebles = (area.puntos || []).map(p => p.label);
 
-    return `${banda(mes, 'Limpieza y orden', logo)}
+    return `${banda(mes, 'Limpieza y orden', logo, FORMULARIOS.limpieza)}
     ${identidad([
         { k: 'Establecimiento', v: esc(mes.sucursal) },
         { k: 'Área', v: esc(area.nombre) },
@@ -461,7 +490,7 @@ export function hojaDelLibro(mes, logo) {
         <td>${esc(r.vendedor || '')}</td>
     </tr>`).join('');
 
-    return `${banda(mes, 'Dispensación bajo receta', logo)}
+    return `${banda(mes, 'Dispensación bajo receta', logo, FORMULARIOS.receta)}
     ${identidad([
         { k: 'Establecimiento', v: esc(mes.sucursal) },
         { k: 'Mes', v: esc(nombreMes(mes.periodo)) },
@@ -508,7 +537,7 @@ export function portada(mes, logo) {
     const cifra = (k, v, chica) =>
         `<td><span class="k">${esc(k)}</span><span class="v${chica ? ' chica' : ''}">${esc(v)}</span></td>`;
 
-    return `${banda(mes, 'Bitácoras del mes', logo)}
+    return `${banda(mes, 'Bitácoras del mes', logo, FORMULARIOS.resumen)}
     ${identidad([
         { k: 'Establecimiento', v: esc(mes.sucursal) },
         { k: 'Mes', v: esc(nombreMes(mes.periodo)) },

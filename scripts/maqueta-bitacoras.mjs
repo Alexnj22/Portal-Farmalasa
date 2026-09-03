@@ -17,7 +17,7 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { armarHtmlDelMes } from '../src/utils/bitacoraPapel.js';
+import { armarHtmlDelMes, hojasDelMes } from '../src/utils/bitacoraPapel.js';
 
 const SALIDA = process.argv[2] || 'maquetas-bitacoras';
 
@@ -27,11 +27,15 @@ const SALIDA = process.argv[2] || 'maquetas-bitacoras';
 // tarde, la corregida, el día sin anotar, el turno de limpieza incompleto y la
 // dispensación anulada — que son los seis estados que el papel tiene que saber
 // decir sin ayuda de un fondo de color.
+// Con los nombres SEPARADOS, igual que los manda la RPC: el papel dice «primer
+// nombre + primer apellido», y eso no se puede sacar partiendo el concatenado.
 const PERSONAS = [
-    'Katherine Salinas',
-    'DOLORES CONCEPCION TEJADA HERNANDEZ',
-    'Merlyn Aguilar',
+    { name: 'Katherine Salinas', first_names: 'Katherine Yamileth', last_names: 'Salinas Rivas' },
+    { name: 'DOLORES CONCEPCION TEJADA HERNANDEZ', first_names: 'DOLORES CONCEPCION', last_names: 'TEJADA HERNANDEZ' },
+    { name: 'Merlyn Aguilar', first_names: 'Merlyn Beatriz', last_names: 'Aguilar Portillo' },
 ];
+
+const comoLaRpc = (p) => ({ por: p.name, por_nombres: p.first_names, por_apellidos: p.last_names });
 
 const FRANJAS = [
     { clave: 'manana', label: 'Mañana', desde: '07:00:00', hasta: '09:00:00' },
@@ -69,7 +73,7 @@ function lecturasDe(dia, i, conHumedad) {
             humedad: conHumedad ? 55 + ((i * 5 + j * 11) % 18) : null,
             fuera_de_rango: fuera,
             accion: fuera ? 'Se encendió el aire acondicionado y se reubicaron los termolábiles. Se verificó a las 13:20 con 27.8 °C.' : null,
-            por: PERSONAS[(i + j) % PERSONAS.length],
+            ...comoLaRpc(PERSONAS[(i + j) % PERSONAS.length]),
             hora: [`0${7 + j * 5}`.slice(-2), ':', String((12 + i * 7) % 60).padStart(2, '0')].join(''),
             tarde: n === 4 && j === 0,
             correcciones: n === 11 && j === 1 ? 1 : 0,
@@ -86,7 +90,7 @@ function limpiezasDe(dia, i) {
             turno: t.clave,
             label: t.label,
             hecha: true,
-            por: PERSONAS[(i + j) % PERSONAS.length],
+            ...comoLaRpc(PERSONAS[(i + j) % PERSONAS.length]),
             observaciones: n === 19 && j === 0 ? 'Se repuso alcohol gel' : null,
             puntos_hechos: MUEBLES.length - faltan.length,
             puntos_total: MUEBLES.length,
@@ -180,7 +184,7 @@ const MES = {
             cantidad: 10, prescrito: 14, lote: 'CP-2291', vence: '2027-11-30',
             paciente: 'José Rutilio Alemán', documento: '01128844-0',
             medico: 'Dra. Silvia Lorena Portillo', numero_junta: 'JVPM-6120',
-            receta: '2026-00119', vendedor: 'DOLORES CONCEPCION TEJADA HERNANDEZ', estado: 'activa',
+            receta: '2026-00119', vendedor: 'Dolores Tejada', estado: 'activa',
         },
         {
             folio: '2026-00043', fecha: '2026-08-12', hora: '09:11',
@@ -226,8 +230,25 @@ async function main() {
     await pagina.pdf({ path: pdf, printBackground: true, preferCSSPageSize: true });
     await navegador.close();
 
+    // ── Una hoja por área, y esto lo COMPRUEBA ────────────────────────────
+    // «Una hoja por área» es una afirmación sobre la paginación, y la
+    // paginación no se puede leer del CSS: depende de cuánto envuelve cada
+    // nombre al ancho real de la página. Medir el alto en el navegador con el
+    // viewport por defecto da un número que NO es el de la hoja —el texto
+    // envuelve distinto— así que el único juez es el PDF. Si un cambio de
+    // tipografía empuja las firmas a una página en blanco, esto falla acá y no
+    // en la sala.
+    const paginas = (await fs.readFile(pdf)).toString('latin1').match(/\/Type\s*\/Page[^s]/g)?.length ?? 0;
+    const esperadas = hojasDelMes(MES, logo).length;
     console.log(`  ✓ ${htmlPath}`);
     console.log(`  ✓ ${pdf}`);
+    if (paginas !== esperadas) {
+        console.error(`\n  ✗ ${paginas} páginas para ${esperadas} hojas: alguna se partió en dos.`);
+        console.error('    Revisá la hoja que sobra: casi siempre son las firmas empujadas por un renglón de más.');
+        process.exitCode = 1;
+        return;
+    }
+    console.log(`  ✓ ${paginas} páginas para ${esperadas} hojas — una hoja por área`);
     console.log('\n  Para verlas como imagen:');
     console.log(`    pdftoppm -r 110 -png ${pdf} ${path.join(SALIDA, 'hoja')}`);
 }

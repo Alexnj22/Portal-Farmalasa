@@ -1320,6 +1320,28 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   anunciara +$78.40 de sobrante sobre un faltante de $9.85 — ver la sección de
   cuentas por cobrar. **No va en el pre-commit**: necesita red, y un gate de
   commit que falla sin conexión enseña a escribir `--no-verify`.
+- **Antes de cerrar trabajo que toque el libro bajo receta, el catálogo de
+  antibióticos o `dispensacion_clases`: `npm run gate:receta`.** Mide contra
+  producción y pregunta si el libro ve todo lo que la norma manda que vea.
+  Nació el 2026-09-03: el contenido del libro lo decide `products
+  .es_antibiotico`, una casilla que mantiene el ERP **a mano**, y el día que
+  entre una presentación nueva de una molécula controlada sin marcar se
+  despacha en el mostrador y no aparece en el libro — sin error y sin fila de
+  menos visible.
+
+  **La regla NO es «todo antibiótico».** El RTS 6.4.3 remite «al listado
+  emitido oficialmente por SRS», y son **seis moléculas** (cefixima,
+  azitromicina, claritromicina, levofloxacina, moxifloxacina, norfloxacina)
+  **más todo antibiótico inyectable**. Lo demás —amoxicilina, metronidazol,
+  ciprofloxacina oral— es venta libre. Auditar contra ATC J01 da un número
+  grande y falso: pasó, y decía que faltaba el 80%.
+
+  **El gate detecta por PRINCIPIO ACTIVO, nunca por marca.** Su primera versión
+  tenía un mapa de marcas y acusó a `BACTIVANZ 300` de ser claritromicina —su
+  principio activo dice CEFDINIR—. Por eso `products.principio_activo` es
+  deuda declarada en `scripts/receta-baseline.json`, con trinquete que **sólo
+  baja**: cada producto sin él es uno que el gate no puede mirar. **No va en el
+  pre-commit** (necesita red).
 - **Antes de cerrar trabajo que toque una tabla, una ficha o un diálogo:
   `npm run gate:movil`** (bloqueante en cero) y el barrido de la ruta que
   tocaste. El canon completo está arriba, en «el teléfono no es la pantalla

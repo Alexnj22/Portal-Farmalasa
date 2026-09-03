@@ -1,0 +1,4 @@
+{
+  "nota": "La deuda del día que se escribió gate:receta (2026-09-03). SÓLO BAJA. Se baja cargando `products.principio_activo`, nunca subiendo el número: cada producto sin él es un producto que las secciones A y B del gate no pueden mirar, porque la única defensa que queda es acertarle al nombre comercial. Y acertarle al nombre ya falló una vez — BACTIVANZ 300 resultó ser cefdinir, no claritromicina.",
+  "sin_principio_activo": 47
+}

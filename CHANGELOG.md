@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.971.2 — El libro cargado de agosto y septiembre, y un gate que lo vigila
+
+### El libro tiene con qué practicar
+
+Pedido del usuario: *«llenalo de agosto y septiembre como prueba»*. La apertura
+quedó en **2026-08-01** y el backfill cargó **223 renglones** —209 antibióticos y
+14 en el segundo libro— del 1-ago al 3-sep, en las seis salas. Los folios salen
+en orden de fecha: **0 retrocesos**, o sea que el libro nace cronológico y sin la
+costura que tenía la carga anterior.
+
+> ⚠️ **Es PRÁCTICA, no el libro.** Antes del 1 de octubre hay que vaciarlo y
+> volver a poner la fecha, o el libro real estrena con dos meses de renglones a
+> medio completar y el folio 00400 en su primera hoja. Los cuatro pasos están
+> escritos en la cabecera de la migración `20260903223836` — ahí y no en la
+> cabeza de nadie, porque es justo el paso que se olvida: nada falla si no se
+> hace, y el defecto sólo se ve el día de la inspección.
+
+### `npm run gate:receta` — lo que faltaba no era la lista, era mirarla
+
+El contenido del libro lo decide `products.es_antibiotico`, una casilla que
+mantiene el ERP **a mano**. Está bien hoy; el día que entre una presentación
+nueva de una molécula controlada sin marcar, se despacha en el mostrador y no
+aparece en el libro — sin error y sin fila de menos visible.
+
+Mide seis cosas contra producción: las seis moléculas controladas sin clasificar,
+los inyectables sin clasificar, **el libro contra las ventas** (¿le falta algún
+renglón dentro de la ventana abierta?), los motivos de `dispensacion_clases` que
+no explican nada, la deuda de principio activo con trinquete, y las ventas que no
+nombran ningún producto del catálogo.
+
+**Se equivocó en su primera corrida, y valió la pena.** Tenía un mapa de marcas
+comerciales y acusó a `BACTIVANZ 300 X 10 CAPSULAS` de ser claritromicina: su
+principio activo dice **CEFDINIR 300 mg**. Un gate que acusa a quien hizo bien el
+trabajo es cómo un gate se termina desactivando, así que el mapa de marcas se fue
+y quedó lo verificable — el principio activo y el genérico escrito en el nombre.
+
+El costo de esa honestidad es que una marca sin principio activo se le escapa, y
+por eso esa deuda se mide y **sólo baja**: de **62 a 47**, llenando únicamente lo
+que el propio nombre declara. AXTAR, DENVAR, KOPTIN, ELEQUINE y UNICIL **no se
+completaron a ojo** — un principio activo inventado es peor que uno ausente,
+porque el ausente se ve.
+
+Y antes de creerle el cero se le fabricó la regresión que debería cazar: con el
+patrón `amoxicil` —venta libre, sin clasificar a propósito— el detector devuelve
+**23 productos**. El cero de las seis moléculas es real, no un instrumento
+apagado.
+
+### Lo que el gate deja al descubierto y no puede arreglar
+
+**130 renglones de venta en 90 días** (seis salas, 5-jun → 3-sep) **no nombran
+ningún producto del catálogo**: se digitaron como genérico, con
+`erp_product_id = 0` y `lote = 'GENERICO'`. El libro se arma cruzando contra
+`products`, así que un antibiótico despachado así **no entra, y no hay forma de
+notarlo**. No es un defecto del portal — es cómo se digitó la venta, y hay que
+decírselo a la sala.
+
 ## v2.971.1 — Definiciones, capacitación, control de copias, anexos y la hoja numerada
 
 Lo que faltaba en los procedimientos, y una regresión que cazó la maqueta.

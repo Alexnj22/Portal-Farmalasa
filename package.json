@@ -57,6 +57,7 @@
     "logos": "node scripts/preparar-logos.mjs",
     "portal:lento": "node scripts/portal-lento.mjs",
     "gate:cortes": "node scripts/cortes-gate.mjs",
+    "gate:receta": "node scripts/receta-gate.mjs",
     "comparar:diferencia-de-corte": "npx --yes vite-node scripts/comparar-diferencia-de-corte.mjs"
   },
   "dependencies": {

@@ -21,6 +21,95 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.971.0 — El libro bajo receta son dos, y arrancan el 1 de octubre
+
+Las bitácoras arrancan el **1 de octubre**; hasta ahora el módulo estaba
+construido y sin usar. Esta tanda lo deja listo para ese día. Todo salió de la
+auditoría de `docs/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md` y de una decisión
+del usuario: *«Ranitidina estaría en su propio registro; no es antibiótico pero
+es bajo receta»*.
+
+### Son DOS libros, y la mezcla rompía un ítem CRÍTICO
+
+`RANITIDINA 50MG AMPOLLA` tiene `es_antibiotico` en el ERP —porque esa casilla
+significa **bajo receta**, no **antibiótico**— y por eso vivía dentro del libro
+del capítulo 3 con **21 renglones, el 5%**. La **Guía de Verificación de BPAD
+3.4 (CRÍTICO)** pide que «las existencias físicas **de antibióticos** concuerden
+con las detalladas en el registro»: con un antiácido adentro ese cuadre **no
+puede cerrar por construcción**, y al revés el inspector encuentra una
+diferencia del 5% que no existe.
+
+Ahora hay una tabla **`dispensacion_clases`** que decide de qué libro es cada
+producto **con el motivo escrito** al lado. Va en tabla propia y no en una
+columna de `products` por dos razones medidas: `sync-products` reescribe
+`es_antibiotico` desde el ERP en cada corrida —así que una corrección local se
+pierde sin dar error— y `products` es tabla caliente, donde un `ALTER` pide
+ACCESS EXCLUSIVE con los crons escribiendo cada minuto, que es el outage del
+2026-07-08. De yapa, el motivo escrito **es** la respuesta a la pregunta del
+inspector.
+
+Cada libro lleva **su propio correlativo** (`disp` y `disp_rx`), y el del
+segundo se escribe `2026-R-00001`. Compartir el correlativo dejaba a cada libro
+con huecos justo donde está el otro, y un folio que falta es lo primero que un
+inspector persigue. El único único pasó a `(branch_id, anio, clase, folio)`, y
+el papel sale en **dos hojas** — la de antibióticos siempre, aunque venga vacía,
+porque una hoja ausente se lee como «no la llevan».
+
+### El cierre de mes miraba todo menos el libro
+
+`cerrar_mes_bitacora` no nombraba `bitacora_dispensaciones` ni una vez, mientras
+`completar_dispensacion` **sí** rechaza escribir en un mes cerrado. Las dos
+mitades juntas hacían que la única puerta capaz de exigir el libro completo
+fuera justamente la que lo sella incompleto: **La Popular cerró agosto el 3-sep
+a las 16:23 con 39 renglones pendientes** que ya no se podían completar sin
+reabrir el mes.
+
+El freno **no** es un bloqueo duro —un candado sin salida produce el atajo, y si
+la receta nunca va a llegar la sala necesita poder cerrar—: se exige un **motivo
+escrito** y el número de pendientes queda **sellado dentro del resumen del
+cierre**. `bitacora_libro_pendientes` es la única cuenta, y la pantalla del
+cierre le pregunta a ella en vez de contar por su lado.
+
+### El libro abre el 1 de octubre, y eso ahora es un dato
+
+Se borraron los **421 renglones de práctica** (ninguno completo) y los
+contadores volvieron a 0: el primer renglón real será el `2026-00001`. Y
+`branches.libro_receta_desde` guarda la fecha de apertura por sala —hoy
+2026-10-01 en las seis—, porque sin ella el sync seguía cargando septiembre y el
+libro estrenaba con un mes de pendientes y el folio 00200 en la primera hoja: el
+mismo problema, de vuelta por no haber puesto la fecha. `NULL` = no abrió, que
+es la falla segura.
+
+### Lo demás que se cerró
+
+- **El repaso diario mira 120 días**, no 45. Lo que llegara del ERP más tarde no
+  entraba **nunca**, y sin dar error.
+- **`GENTAMICINA 160MG X 2 ML VIJOSA`** entra al libro: es inyectable —todo
+  antibiótico inyectable exige receta desde la resolución de la DNM de jul-2015—
+  y sus tres hermanas de marca ya estaban. Eran 30 ventas afuera. Con ella, tres
+  inactivos controlados (AVELOX x20, AZITROMICINA 200MG SM, CLARITROMICINA
+  125MG MK), para que no entren invisibles el día que se reactiven.
+- **El respaldo alcanzaba el renglón y no la receta.** `recetas`,
+  `receta_items`, `medicos` y `dispensacion_clases` entraron a
+  `backup-critical-tables` **y a la lista blanca de `backup_dump_table`**, que
+  son la misma lista dicha dos veces: una tabla agregada sólo en una vuelve
+  `TABLE_NOT_ALLOWED` y **se cae el respaldo completo**.
+- **El pendiente que envejecía desaparecía.** El widget del Inicio miraba 30
+  días, así que a los 31 el renglón salía de la pantalla y no volvía nunca —
+  justo al revés de lo que ese widget existe para hacer.
+- **El libro se descarga desde su pestaña**, en el orden de sus folios y no en
+  el que quedó la tabla, por `exportCsv` con su módulo: el egreso queda anotado.
+
+### Y una corrección de la auditoría anterior
+
+La v2.970.5 decía que el libro «ve el 19.6% de los antibióticos». **Estaba
+mal**: medía contra ATC J01 dando por hecho que todo antibiótico se dispensa con
+receta. En El Salvador el RTS 6.4.3 remite «al listado emitido oficialmente por
+SRS», y ese listado son **seis moléculas** —cefixima, azitromicina,
+claritromicina, levofloxacina, moxifloxacina, norfloxacina— **más todo
+antibiótico inyectable**. El resto es venta libre. Con la vara correcta, la
+lista del ERP codifica la regla y le faltaba **un** producto.
+
 ## v2.970.13 — El criterio de desviación, el aviso al supervisor y el termómetro cargado
 
 Las tres decisiones que faltaban en los procedimientos, contestadas por el usuario

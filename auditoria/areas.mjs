@@ -765,7 +765,7 @@ export const AREAS = [
         tablas: ['bitacora_areas', 'bitacora_cierres', 'bitacora_correcciones', 'bitacora_dispensaciones',
                  'bitacora_folios', 'bitacora_lecturas', 'bitacora_limpiezas',
                  'bitacora_limpiezas_historial',
-                 'recetas', 'receta_items', 'medicos'],
+                 'recetas', 'receta_items', 'medicos', 'dispensacion_clases'],
         edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer'],
         crons: ['bitacora-dispensaciones-1min', 'bitacora-dispensaciones-repaso-diario',
                 'avisar-bitacora-por-vencer-30min'],
@@ -773,6 +773,7 @@ export const AREAS = [
                'docs/AUDITORIA-BITACORAS-SRS-2026-08-25.md',
                'docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md',
                'docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md',
+               'docs/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md',
                'docs/legal/procedimientos/'],
     },
     {

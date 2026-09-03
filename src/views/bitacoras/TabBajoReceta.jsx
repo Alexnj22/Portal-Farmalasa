@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
-import { AlertTriangle, BookOpen, Check, PenLine } from 'lucide-react';
+import { AlertTriangle, BookOpen, Check, Download, PenLine } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -11,7 +11,10 @@ import DetalleDeFolio from '../../components/bitacoras/DetalleDeFolio';
 /* El formulario se baja al apretar «Completar», no al abrir el libro: arrastra
  * el canónico de archivo, el recorte de la foto y el buscador de médico. */
 const CompletarRenglon = lazy(() => import('../../components/bitacoras/CompletarRenglon'));
-import { ESTADO_RENGLON, faltantesDelRenglon } from '../../data/bitacoras';
+import {
+    CLASE_ANTIBIOTICO, ESTADO_RENGLON, faltantesDelRenglon, rotularLibro,
+} from '../../data/bitacoras';
+import { exportCsv } from '../../utils/csvExport';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El libro foliado de dispensación bajo receta.
@@ -65,7 +68,10 @@ const CLAVE_DE_ORDEN = {
     cantidad: 'cantidad', lote: 'lote', paciente: 'paciente', estado: 'estado',
 };
 
-export default function TabBajoReceta({ renglones, cargando, error, branchId, sucursalNombre, onRecargar, puedeCompletar }) {
+export default function TabBajoReceta({
+    renglones, cargando, error, branchId, sucursalNombre, onRecargar, puedeCompletar,
+    clase = CLASE_ANTIBIOTICO, periodo = '',
+}) {
     // Completar desde la FILA, sin abrir el expediente primero: con 26
     // pendientes, el camino «abrir → leer → completar → cerrar» son tres clics
     // de más por renglón. El expediente sigue estando para mirar el detalle.
@@ -101,6 +107,34 @@ export default function TabBajoReceta({ renglones, cargando, error, branchId, su
         setSortKey(key);
     }, [sortKey]);
 
+    // El orden del archivo es por FOLIO ascendente, siempre — aunque la
+    // pantalla esté ordenada por otra columna. Un libro foliado se lee en el
+    // orden de sus folios, y un archivo que sale en el orden en que alguien
+    // dejó la tabla no se puede cotejar contra el papel.
+    const descargar = useCallback(() => {
+        const filas = [...renglones]
+            .sort((a, b) => a.folio - b.folio)
+            .map(r => [
+                r.folio_txt, r.fecha, r.hora ? String(r.hora).slice(0, 5) : '',
+                r.producto_nombre, r.laboratorio || '', r.lote || '', r.vence || '',
+                r.cantidad, r.prescrito ?? '', r.paciente || '', r.medico || '',
+                r.numero_junta || '', r.receta_correlativo || '',
+                r.tiene_foto ? 'SI' : 'NO', r.correlativo_doc || '',
+                r.vendedor || '', ESTADO_RENGLON[r.estado]?.label || r.estado,
+                r.motivo_anulacion || '',
+            ]);
+        exportCsv(
+            ['FOLIO', 'FECHA', 'HORA', 'MEDICAMENTO', 'LABORATORIO', 'LOTE', 'VENCE',
+             'CANTIDAD DISPENSADA', 'CANTIDAD PRESCRITA', 'PACIENTE', 'PRESCRIPTOR',
+             'N JUNTA', 'RECETA', 'COPIA DE RECETA', 'DOCUMENTO', 'DESPACHO',
+             'ESTADO', 'MOTIVO DE ANULACION'],
+            filas,
+            `libro-${clase === CLASE_ANTIBIOTICO ? 'antibioticos' : 'bajo-receta'}-${
+                (sucursalNombre || 'sala').toLowerCase().replace(/\s+/g, '-')}-${periodo || 'periodo'}.csv`,
+            'bitacoras',
+        );
+    }, [renglones, clase, sucursalNombre, periodo]);
+
     if (cargando) return <LoadingState label="Cargando el libro…" />;
 
     // Un rechazo de permiso no se puede ver como una lista vacía: quien lo sufre
@@ -119,6 +153,23 @@ export default function TabBajoReceta({ renglones, cargando, error, branchId, su
 
     return (
         <div className="space-y-4">
+            {/* El libro se saca solo, sin arrastrar las hojas de temperatura y
+                limpieza que van con el mes completo. Las columnas son las que
+                nombra el ítem 3.5, en su orden, para que se pueda cotejar sin
+                traducir. `exportCsv` con su módulo: sin él la descarga queda
+                anotada como «sin-declarar» en la bitácora de egresos. */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-caption text-content-3">
+                    Libro de {rotularLibro(clase).toLowerCase()}
+                    {periodo ? ` · ${periodo}` : ''} · {renglones.length} {renglones.length === 1 ? 'renglón' : 'renglones'}
+                </p>
+                {renglones.length > 0 && (
+                    <Button variant="secondary" size="sm" icon={Download} onClick={descargar}>
+                        Descargar
+                    </Button>
+                )}
+            </div>
+
             {pendientes > 0 && (
                 <Notice variant="warning" icon={AlertTriangle}>
                     <span className="font-bold">
@@ -141,7 +192,9 @@ export default function TabBajoReceta({ renglones, cargando, error, branchId, su
                 movil={MOVIL}
                 empty={{
                     icon: BookOpen,
-                    message: 'Sin renglones en este período — el libro se llena solo con cada venta bajo receta',
+                    message: clase === CLASE_ANTIBIOTICO
+                        ? 'Sin renglones en este período — el libro de antibióticos se llena solo con cada venta'
+                        : 'Sin renglones en este período — aquí entran los productos bajo receta que no son antibióticos',
                 }}
             >
                 {ordenadas.map((r, i) => {

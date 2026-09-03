@@ -15,7 +15,8 @@ import TabConfiguracion from './bitacoras/TabConfiguracion';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import {
-    correrDia, fetchBitacoraDia, fetchLibro, hoySV, pendientesDelDia,
+    CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA, LIBROS,
+    correrDia, fetchBitacoraDia, fetchLibro, hoySV, pendientesDelDia, periodoDe,
 } from '../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -88,6 +89,9 @@ export default function BitacorasView() {
 
     const [tab, setTab] = usePestanaEnUrl(tabs, 'hoy');
     const [busqueda, setBusqueda] = useState('');
+    // Cuál de los dos libros se está mirando. El de antibióticos es el que
+    // trae escrito un inspector, así que es el valor por defecto.
+    const [claseLibro, setClaseLibro] = useState(CLASE_ANTIBIOTICO);
 
     const enLibro = tab === 'libro';
 
@@ -147,6 +151,11 @@ export default function BitacorasView() {
     // Se pide por MES completo y no por el día elegido: el libro se lee y se
     // imprime por período, y buscar un folio de principio de mes no debería
     // obligar a mover la fecha primero.
+    //
+    // Se traen los DOS libros en una sola llamada y el corte se hace acá. Pedir
+    // sólo el elegido obligaría a una segunda consulta para poder decir cuántos
+    // hay en el otro — y ese número es justo lo que evita que un libro se
+    // olvide por no estar mirándolo.
     const cargarLibro = useCallback(async () => {
         if (!sala || !verLibro) { setLibro(VACIO); return; }
         setCargandoLibro(true);
@@ -169,14 +178,27 @@ export default function BitacorasView() {
     // La búsqueda del libro acepta el folio en cualquiera de sus formas y
     // también el nombre del medicamento, el paciente, el lote o el documento —
     // porque no siempre se llega con el folio en la mano.
+    const delLibro = useMemo(
+        () => libro.filter(r => (r.clase || CLASE_ANTIBIOTICO) === claseLibro),
+        [libro, claseLibro],
+    );
+
+    // Cuántos hay en cada libro, para que el que no se está mirando no
+    // desaparezca. Se cuenta sobre lo ya cargado, no con otra consulta.
+    const cuentaPorLibro = useMemo(() => {
+        const c = { [CLASE_ANTIBIOTICO]: 0, [CLASE_BAJO_RECETA]: 0 };
+        for (const r of libro) c[r.clase || CLASE_ANTIBIOTICO] += 1;
+        return c;
+    }, [libro]);
+
     const libroFiltrado = useMemo(() => {
         const q = busqueda.trim().toLowerCase();
-        if (!q) return libro;
-        return libro.filter(r => [
+        if (!q) return delLibro;
+        return delLibro.filter(r => [
             r.folio_txt, String(r.folio), r.producto_nombre, r.lote, r.paciente,
             r.medico, r.numero_junta, r.cliente, r.vendedor, r.correlativo_doc,
         ].some(v => String(v ?? '').toLowerCase().includes(q)));
-    }, [libro, busqueda]);
+    }, [delLibro, busqueda]);
 
     const filtersContent = (
         <ViewTabBar
@@ -231,6 +253,31 @@ export default function BitacorasView() {
                                 </FilterBar.Section>
                             )}
 
+                            {/* Cuál de los dos libros. Es un RECORTE y no una
+                                sección: mismas filas, mismo trabajo, mismo
+                                público — la diferencia es de qué registro son.
+                                Con dos opciones, `Opciones` se pinta como
+                                control segmentado y las dos se ven a la vez,
+                                que es lo que evita que el segundo libro se
+                                olvide por no estar mirándolo. */}
+                            {enLibro && (
+                                <FilterBar.Section
+                                    active={claseLibro !== CLASE_ANTIBIOTICO}
+                                    onClear={() => setClaseLibro(CLASE_ANTIBIOTICO)}
+                                    label="libro"
+                                >
+                                    <FilterBar.Opciones
+                                        value={claseLibro}
+                                        onChange={setClaseLibro}
+                                        options={LIBROS.map(l => ({
+                                            value: l.clave,
+                                            label: `${l.corto} (${cuentaPorLibro[l.clave] ?? 0})`,
+                                        }))}
+                                        label="Libro"
+                                    />
+                                </FilterBar.Section>
+                            )}
+
                             {/* La fecha es la ranura que hace las veces de
                                 historial. `nextDisabled` en hoy: la bitácora de
                                 mañana no existe — y ofrecerla invitaría a
@@ -265,7 +312,7 @@ export default function BitacorasView() {
                 ) : tab === 'libro' ? (
                     <TabBajoReceta renglones={libroFiltrado} cargando={cargandoLibro} error={errorLibro}
                         branchId={sala} sucursalNombre={nombreSala} onRecargar={cargarLibro}
-                        puedeCompletar={puedeAnotar} />
+                        puedeCompletar={puedeAnotar} clase={claseLibro} periodo={periodoDe(fecha)} />
                 ) : tab === 'cierre' ? (
                     <TabCierre branchId={sala} fechaVista={fecha} />
                 ) : (

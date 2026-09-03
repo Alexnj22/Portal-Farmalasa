@@ -38,6 +38,16 @@ const TABLES = [
   // registro: sin ella, el respaldo guardaría la limpieza que quedó y no la
   // que alguien quitó.
   "bitacora_limpiezas_historial",
+  // ── Y la RECETA, que es la otra mitad del renglón ───────────────────────
+  // Respaldar `bitacora_dispensaciones` sin esto guarda exactamente la mitad
+  // que se puede reconstruir del ERP —producto, lote, cantidad, vencimiento— y
+  // deja fuera la que no: el paciente, el prescriptor y la URL de la foto. Que
+  // es, palabra por palabra, lo que piden los ítems 3.5 y 3.12 de la Guía.
+  //
+  // `dispensacion_clases` va también: sin ella no se sabe POR QUÉ un producto
+  // estaba en un libro y no en el otro, y ese motivo es la respuesta escrita a
+  // la pregunta del inspector.
+  "recetas", "receta_items", "medicos", "dispensacion_clases",
 ];
 
 const RETENTION_DAYS = 60;

@@ -28,6 +28,34 @@ un informe de incumplimiento.
 
 ---
 
+## 0 · Lo que ya se aplicó (misma sesión, 3-sep)
+
+El usuario autorizó tocar todo: *«no hay problema con la bitácora, esa aún no es
+oficial, así que mejorémosla y aplica todos los cambios necesarios»*. Seis
+migraciones y el frente. Lo que queda abierto está marcado como tal más abajo.
+
+| | qué se hizo |
+|---|---|
+| **Dos libros** | `dispensacion_clases` decide de qué libro es cada producto, **con el motivo escrito**, y manda sobre `products.es_antibiotico` — que el ERP reescribe en cada sync. `bitacora_dispensaciones.clase` y **serie de folio propia** (`disp` / `disp_rx`): el segundo libro numera `2026-R-00001`. El único único pasó a `(branch_id, anio, clase, folio)` |
+| **La ranitidina** | fuera del libro de antibióticos, al suyo. Ya no rompe el cuadre del ítem 3.4 |
+| **La gentamicina** | `GENTAMICINA 160MG X 2 ML VIJOSA` entra al de antibióticos, y los tres inactivos controlados también — para que no entren invisibles el día que se reactiven |
+| **El cierre mira el libro** | `cerrar_mes_bitacora` cuenta los pendientes y **exige un motivo escrito** (≥15 caracteres) para cerrar con renglones sin completar; el número queda sellado dentro del resumen del cierre. `bitacora_libro_pendientes` es la única cuenta, y la pantalla del cierre le pregunta a ella |
+| **Los 421 folios de práctica** | borrados, contadores en 0. El 1 de octubre el primer renglón real es el `2026-00001` |
+| **Fecha de apertura** | `branches.libro_receta_desde = 2026-10-01` en las 6 salas. Sin esto el libro volvía a llenarse solo durante septiembre y estrenaba con un mes de pendientes — el mismo problema, de vuelta por no haber puesto la fecha. NULL = no abrió, que es la falla segura |
+| **El repaso** | de 45 a **120 días**: lo que llegaba más tarde no entraba nunca, y sin error |
+| **El papel** | **dos hojas**, una por libro. La de antibióticos sale siempre aunque venga vacía —una hoja ausente se lee como «no la llevan»—; la otra sólo si tiene renglones |
+| **El respaldo** | `recetas`, `receta_items`, `medicos` y `dispensacion_clases` entran a `backup-critical-tables` **y a la lista blanca de `backup_dump_table`**, que son la misma lista dicha dos veces |
+| **El pendiente que envejecía** | el widget del Inicio miraba 30 días y a los 31 el renglón desaparecía para siempre. Ya no se recorta por antigüedad |
+| **La descarga** | el libro se saca solo desde su pestaña, en el orden de sus folios, por `exportCsv` con su módulo — o sea que el egreso queda anotado |
+
+**Lo que NO se hizo, y por qué:** los 48 productos con `(R)` en el nombre **no**
+se sumaron al segundo libro. Duplicarían el trabajo de la sala (~380 ventas en
+dos meses) y **ningún ítem de la Guía los exige** — es una decisión de la
+empresa, no de la norma. El mecanismo está listo: es un `INSERT` en
+`dispensacion_clases` el día que se decida.
+
+---
+
 ## 1 · La regla real: seis moléculas, más todo lo inyectable
 
 **RTS 11.02.04:24 §6.4.3** — «La dispensación de antibióticos se debe realizar

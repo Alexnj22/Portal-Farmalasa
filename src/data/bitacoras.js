@@ -329,7 +329,32 @@ export const soloLimpieza = (area) => !(area?.franjas || []).length;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El libro de dispensación bajo receta
+//
+// ── Son DOS libros, y no es un capricho ────────────────────────────────────
+// El ítem 3.4 de la Guía de Verificación —CRÍTICO— pide que «las existencias
+// físicas DE ANTIBIÓTICOS concuerden con las detalladas en el registro». Con un
+// producto que no es antibiótico adentro, ese cuadre no puede cerrar: no falta
+// un dato, sobra algo que el inventario de antibióticos nunca va a tener. Por
+// eso la ranitidina inyectable —bajo receta, pero antiácido— vive en el segundo
+// libro y no en el primero.
+//
+// Cada libro lleva su propio correlativo. Compartido, cada uno tendría huecos
+// justo donde está el otro, y un folio que falta es lo primero que un inspector
+// persigue. El del segundo se escribe `2026-R-00001` para que el número siga
+// siendo una dirección sin ambigüedad.
 // ═══════════════════════════════════════════════════════════════════════════
+
+export const CLASE_ANTIBIOTICO = 'antibiotico';
+export const CLASE_BAJO_RECETA = 'bajo_receta';
+
+/** Los dos libros, con el nombre que ve la sala. */
+export const LIBROS = [
+    { clave: CLASE_ANTIBIOTICO, label: 'Antibióticos',   corto: 'Antibióticos' },
+    { clave: CLASE_BAJO_RECETA, label: 'Otros bajo receta', corto: 'Otros' },
+];
+
+export const rotularLibro = (clase) =>
+    LIBROS.find(l => l.clave === clase)?.label || 'Antibióticos';
 
 /**
  * El libro de una sala en un rango de fechas.
@@ -339,16 +364,34 @@ export const soloLimpieza = (area) => !(area?.franjas || []).length;
  * habría que reconstruir ese anidado acá, y además el tope de 1000 de PostgREST
  * cortaría el año sin avisar.
  */
-export async function fetchLibro(branchId, { desde, hasta, estado = null } = {}) {
+export async function fetchLibro(branchId, { desde, hasta, estado = null, clase = null } = {}) {
     if (!branchId) return { renglones: [], error: null };
     const { data, error } = await supabase.rpc('get_bitacora_dispensaciones', {
         p_branch_id: Number(branchId),
         p_desde: desde,
         p_hasta: hasta,
         p_estado: estado,
+        p_clase: clase,
     });
     if (error) return { renglones: [], error };
     return { renglones: data ?? [], error: null };
+}
+
+/**
+ * Cuántos renglones del mes esperan su receta.
+ *
+ * Se le pregunta a la MISMA función que consulta el cierre
+ * (`bitacora_libro_pendientes`) y no se cuenta acá: dos cuentas separadas de lo
+ * mismo terminan dando números distintos, y ésta es la que decide si el mes se
+ * puede cerrar sin escribir un motivo.
+ */
+export async function fetchLibroPendientes(branchId, periodo) {
+    if (!branchId) return { pendientes: 0, error: null };
+    const { data, error } = await supabase.rpc('bitacora_libro_pendientes', {
+        p_branch_id: Number(branchId), p_periodo: periodo,
+    });
+    if (error) return { pendientes: 0, error };
+    return { pendientes: Number(data ?? 0), error: null };
 }
 
 /**
@@ -359,11 +402,12 @@ export async function fetchLibro(branchId, { desde, hasta, estado = null } = {})
  * paciente, el médico con su número de junta, la receta con su foto, y cuánto
  * queda pendiente de entregar.
  */
-export async function fetchFolio(branchId, anio, folio) {
+export async function fetchFolio(branchId, anio, folio, clase = CLASE_ANTIBIOTICO) {
     const { data, error } = await supabase.rpc('get_dispensacion_por_folio', {
         p_branch_id: Number(branchId),
         p_anio: Number(anio),
         p_folio: Number(folio),
+        p_clase: clase || CLASE_ANTIBIOTICO,
     });
     if (error) return { renglon: null, error };
     return { renglon: data ?? null, error: null };
@@ -380,15 +424,30 @@ export async function fetchFolio(branchId, anio, folio) {
 export function partirFolio(texto, anioPorDefecto = new Date().getUTCFullYear()) {
     const t = String(texto || '').trim();
     if (!t) return null;
-    const conAnio = t.match(/^(\d{4})\s*[-/]\s*(\d{1,6})$/);
-    if (conAnio) return { anio: Number(conAnio[1]), folio: Number(conAnio[2]) };
-    const soloNumero = t.match(/^(\d{1,6})$/);
-    if (soloNumero) return { anio: anioPorDefecto, folio: Number(soloNumero[1]) };
+    // La `R` es la del segundo libro. Se acepta escrita o no —`2026-R-7`,
+    // `2026-r7`, `R7`— porque quien la teclea la está copiando de un papel.
+    const conAnio = t.match(/^(\d{4})\s*[-/]\s*(R)?\s*[-/]?\s*(\d{1,6})$/i);
+    if (conAnio) {
+        return {
+            anio: Number(conAnio[1]),
+            folio: Number(conAnio[3]),
+            clase: conAnio[2] ? CLASE_BAJO_RECETA : CLASE_ANTIBIOTICO,
+        };
+    }
+    const soloNumero = t.match(/^(R)?\s*[-/]?\s*(\d{1,6})$/i);
+    if (soloNumero) {
+        return {
+            anio: anioPorDefecto,
+            folio: Number(soloNumero[2]),
+            clase: soloNumero[1] ? CLASE_BAJO_RECETA : CLASE_ANTIBIOTICO,
+        };
+    }
     return null;
 }
 
-/** El rótulo de un folio: `2026-00007`. */
-export const rotularFolio = (anio, folio) => `${anio}-${String(folio).padStart(5, '0')}`;
+/** El rótulo de un folio: `2026-00007`, o `2026-R-00007` en el segundo libro. */
+export const rotularFolio = (anio, folio, clase = CLASE_ANTIBIOTICO) =>
+    `${anio}-${clase === CLASE_BAJO_RECETA ? 'R-' : ''}${String(folio).padStart(5, '0')}`;
 
 /**
  * ¿Qué le falta a este renglón para estar completo?

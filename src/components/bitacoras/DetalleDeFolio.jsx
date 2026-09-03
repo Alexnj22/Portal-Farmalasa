@@ -86,7 +86,9 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- pide el folio completo al abrir el panel
         setCargando(true);
         setError(null);
-        fetchFolio(branchId, renglon.anio, renglon.folio)
+        // La clase va SIEMPRE: con dos libros, «2026-00007» existe en los dos y
+        // sin decir cuál se traería el renglón del otro sin dar error.
+        fetchFolio(branchId, renglon.anio, renglon.folio, renglon.clase)
             .then(({ renglon: d, error: err }) => {
                 if (!vivo) return;
                 if (err) setError(err.message || 'No se pudo cargar el folio.');

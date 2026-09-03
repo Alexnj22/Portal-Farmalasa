@@ -8,7 +8,8 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import {
-    cerrarMes, correrPeriodo, fetchCierres, fetchMesImpreso, fetchResumenMes, hoySV, periodoDe, reabrirMes,
+    cerrarMes, correrPeriodo, fetchCierres, fetchLibroPendientes, fetchMesImpreso,
+    fetchResumenMes, hoySV, periodoDe, reabrirMes,
 } from '../../data/bitacoras';
 import { registrarEgreso } from '../../data/egreso';
 import { imprimirMesDeBitacoras } from '../../utils/bitacoraPrint';
@@ -70,6 +71,9 @@ export default function TabCierre({ branchId, fechaVista }) {
     const [periodo, setPeriodo] = useState(() => correrPeriodo(periodoDe(fechaVista), -1));
     const [resumen, setResumen] = useState(null);
     const [cierres, setCierres] = useState([]);
+    // Cuántos renglones del libro esperan su receta. Cerrar el mes les cierra la
+    // puerta: `completar_dispensacion` no escribe en un mes cerrado.
+    const [libroPend, setLibroPend] = useState(0);
     const [cargando, setCargando] = useState(true);
     const [obs, setObs] = useState('');
     const [motivo, setMotivo] = useState('');
@@ -81,12 +85,17 @@ export default function TabCierre({ branchId, fechaVista }) {
     const cargar = useCallback(async () => {
         if (!branchId) return;
         setCargando(true);
-        const [{ resumen: r, error: e1 }, { cierres: c }] = await Promise.all([
+        const [{ resumen: r, error: e1 }, { cierres: c }, { pendientes: p }] = await Promise.all([
             fetchResumenMes(branchId, periodo),
             fetchCierres(branchId),
+            // La MISMA función que consulta el cierre en la base. Contarlo acá
+            // por separado daría dos números de lo mismo, y el que decide es el
+            // de allá.
+            fetchLibroPendientes(branchId, periodo),
         ]);
         setResumen(r);
         setCierres(c);
+        setLibroPend(p);
         setError(e1?.message ?? null);
         setCargando(false);
     }, [branchId, periodo]);
@@ -322,12 +331,37 @@ export default function TabCierre({ branchId, fechaVista }) {
                                     </span>
                                 </Notice>
                             )}
+                            {/* El libro es distinto de las lecturas faltantes, y
+                                por eso tiene su propio aviso: una lectura que
+                                falta ya no se puede tomar, pero un renglón sin
+                                receta SÍ se puede completar — hasta que se
+                                cierra el mes. Cerrar es lo que lo vuelve
+                                imposible, así que acá el motivo no es opcional.
+                                La base exige lo mismo: sin él, levanta. */}
+                            {libroPend > 0 && (
+                                <Notice variant="danger" icon={AlertTriangle}>
+                                    <span className="font-bold">
+                                        En el libro quedan {libroPend} {libroPend === 1 ? 'renglón' : 'renglones'} esperando la receta.
+                                    </span>
+                                    <span className="block mt-0.5 font-normal text-content-2">
+                                        Al cerrar el mes ya no se pueden completar sin volver a abrirlo. Si todavía
+                                        se pueden completar, conviene hacerlo antes; si la receta no va a llegar,
+                                        hay que escribir abajo por qué se cierra así.
+                                    </span>
+                                </Notice>
+                            )}
                             <PortalTextarea
-                                label="Observaciones del regente (opcional)" name="observaciones"
+                                label={libroPend > 0
+                                    ? 'Por qué se cierra con renglones sin completar'
+                                    : 'Observaciones del regente (opcional)'}
+                                name="observaciones" required={libroPend > 0}
                                 value={obs} onChange={(e) => setObs(e.target.value)} rows={3}
-                                placeholder="Por ejemplo: las cuatro lecturas faltantes son del 12 y 13, cuando la sala cerró por el corte de energía."
+                                placeholder={libroPend > 0
+                                    ? 'Por ejemplo: los tres renglones del 12 son de pacientes que no volvieron con la receta.'
+                                    : 'Por ejemplo: las cuatro lecturas faltantes son del 12 y 13, cuando la sala cerró por el corte de energía.'}
                             />
-                            <Button variant="primary" icon={CalendarCheck} onClick={firmar} loading={guardando}>
+                            <Button variant="primary" icon={CalendarCheck} onClick={firmar} loading={guardando}
+                                disabled={libroPend > 0 && obs.trim().length < 15}>
                                 Firmar y cerrar el mes
                             </Button>
                         </section>

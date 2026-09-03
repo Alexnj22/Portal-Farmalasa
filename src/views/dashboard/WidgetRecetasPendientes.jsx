@@ -39,7 +39,14 @@ const CompletarRenglon = lazy(() => import('../../components/bitacoras/Completar
 // ═══════════════════════════════════════════════════════════════════════════
 
 const REFRESCO_MS = 5 * 60 * 1000;
-const DIAS_ATRAS  = 30;
+// ── La ventana NO se recorta por antigüedad ────────────────────────────────
+// Eran 30 días, y eso hacía justo lo contrario de lo que este widget existe
+// para hacer: un renglón que cumplía 31 días SALÍA de la pantalla y no volvía
+// nunca. El pendiente que más urge es el más viejo, así que envejecer no puede
+// ser la forma de desaparecer. El año en curso es el horizonte —el libro se
+// folia por año— y el tope de filas sigue siendo el que evita que la tarjeta
+// crezca sin límite.
+const DIAS_ATRAS  = 400;
 const MAX_FILAS   = 6;
 
 const fmtFecha = (f) => (f

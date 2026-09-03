@@ -1,385 +1,463 @@
-# El libro «Bajo receta» contra la SRS — qué mide, qué le falta y qué lo invalida
+# El libro «Bajo receta» — revisión de arranque para el 1 de octubre
 
-**2026-09-03** · `/bitacoras?tab=libro` · versión del portal v2.970.3
+**2026-09-03** · `/bitacoras?tab=libro` · portal v2.970.x
+**Estado:** el módulo está construido y **todavía no se usa**. La sala empieza a
+llenarlo el **1 de octubre de 2026**. Esto es una revisión de *alistamiento*, no
+un informe de incumplimiento.
 
-Auditoría de la pestaña **Bajo receta** (el libro foliado de dispensación) contra
-el **RTS 11.02.04:24 §6** y la **Guía de Verificación de BPAD** de la SRS. Todo
-número de acá sale de una consulta a producción hecha hoy; los ítems se citan
-del texto de la norma, no de memoria.
-
-**Las dos fuentes están vigentes y son las del repo.** Se volvió a bajar la Guía
-de srs.gob.sv (`/wp-content/uploads/2025/10/…`) y es **byte por byte idéntica**
-a `docs/legal/srs_guia_verificacion_bpad.pdf` (md5 `8e10db10…`). O sea que la
-copia local no está vieja.
-
-> ⚠️ No se pudo abrir la vista en el navegador: la extensión de Chrome no está
-> conectada en esta sesión. Todo lo de abajo se verificó contra el **código
-> desplegado** y contra la **base de producción**, que es donde viven los
-> defectos que siguen. Lo que falta comprobar mirando es la parte visual.
-
----
-
-## 0 · El veredicto en una línea
-
-El libro está **bien construido y mal alimentado**. La mitad que llena la
-máquina es de las mejores del portal —421 renglones foliados, 100% con lote,
-vencimiento, presentación y hora—. La mitad que llena la persona **está en cero
-desde que el módulo existe**, y la lista que decide qué entra al libro deja
-afuera **cuatro de cada cinco** antibióticos que la farmacia dispensa.
-
-Hoy, ante una inspección, el libro **falla los dos ítems CRÍTICOS** de la
-sección 3 de la Guía (3.3 y 3.4) y no puede sostener 3.12, 3.14 ni 3.17.
+> ### ⚠️ Corrección de la primera versión de este documento
+>
+> La versión anterior (commit `c48ebe56`) decía que el libro «ve el 19.6% de los
+> antibióticos» porque `products.es_antibiotico` deja fuera la amoxicilina, la
+> ciprofloxacina, el metronidazol y compañía. **Eso estaba mal, y el error era
+> mío al elegir la vara.**
+>
+> Medí contra **ATC J01 — antibacterianos para uso sistémico**, dando por hecho
+> que en El Salvador todo antibiótico se dispensa con receta. **No es así**: el
+> país exige receta para una lista **corta y nombrada**, y el resto de los
+> antibióticos orales son de **venta libre**. Lo corrigió el usuario y la norma
+> le da la razón — el detalle está abajo.
+>
+> Con la vara correcta, la lista del ERP **está bien**: cubre el 100% de las
+> moléculas controladas activas y le falta **un** producto. Lo que sigue en pie
+> no es la lista, es que **nada la vigila**.
+>
+> La lección es la del repo: *un criterio medido contra la vara equivocada
+> produce un número grande, convincente y falso.* Antes de reportar que el 80%
+> falta, hay que probar que ese 80% **debía** estar.
 
 ---
 
-## 1 · Lo que se midió
+## 1 · La regla real: seis moléculas, más todo lo inyectable
 
-| | |
+**RTS 11.02.04:24 §6.4.3** — «La dispensación de antibióticos se debe realizar
+solamente si se presenta una receta médica, **según el listado emitido
+oficialmente por SRS**». La norma no dice «todo antibiótico»: dice *el listado*.
+Y ese listado se armó en dos tandas:
+
+| | qué exige receta | fuente |
+|---|---|---|
+| **2015** | **todo antibiótico inyectable**, cualquiera sea la molécula. La DNM verificó en inspección que las farmacias **se quedan con una copia de la receta** | resolución DNM, jul-2015 |
+| **2018** | seis moléculas, **cualquiera sea la vía de administración**: **cefixima, azitromicina, claritromicina, levofloxacina, moxifloxacina, norfloxacina** | medida DNM 2018, recogida por OPS |
+
+Todo lo demás —amoxicilina, ampicilina, cefalexina, cefadroxilo, tetraciclina,
+doxiciclina, metronidazol, trimetoprim-sulfa, nitrofurantoína oral,
+ciprofloxacina oral— es **venta libre** en El Salvador. No entran al libro, y no
+tenían por qué entrar.
+
+### Y la lista del ERP encaja con esa regla casi exacta
+
+Los 79 productos con `es_antibiotico = true` son, uno por uno, **o** una de las
+seis moléculas (AZITRO DENK, AZTHOMAC, ZIBAC, ZITREX, KOPTIN, KLARICID, QUOTAL,
+ELEQUINE, FLOXALEV, LEVODEL, AVELOX, VIGAMOX, UROXANET, QUINOEFEX URO, DENVAR,
+FIXIM, CEFICID, DENFIX, MAXILOSPORIN, CEFIBAC, BACTIVANZ, BACLOSEF y sus
+genéricos MK/SAIMED/ECOMED) **o** un antibiótico inyectable (AXTAR, ROCEFORT,
+CEFTRIAXONA, PEN DI BEN, UNICIL, BIOGENTA, GARAXIL, ANDIGENT, BIOMIKIN, EUROCLIN,
+IMATION, TERABIOL) **o** un pack que contiene claritromicina (METIOM H. PYLORI,
+LANZOPRAL HELIPACK, ESOPRASEK PLUS, FLOXA PACK).
+
+**No era una lista escrita a ojo. Codifica la regla.** Eso hay que decirlo,
+porque el próximo que la audite va a sospechar de ella igual que yo.
+
+---
+
+## 2 · Lo que sí hay que corregir en el catálogo
+
+### 2.1 · Un inyectable sin marcar
+
+| producto | estado | ventas 1-jul → 3-sep | marcado |
+|---|---|---:|---|
+| **GENTAMICINA 160MG X 2 ML VIJOSA** | activo | **30** | ❌ |
+| BIOGENTA 160MG/2ML X 1 AMP. | activo | — | ✅ |
+| GARAXIL 160MG AMP X 2 ML | activo | — | ✅ |
+| ANDIGENT A 160 X 3 AMPOLLAS 2ML | activo | — | ✅ |
+
+Misma molécula, misma vía, misma regla — y la marca genérica quedó afuera. Son
+**30 dispensaciones** que el libro no va a ver. Es el modo de falla real de una
+lista a mano: no se equivoca en grande, se saltea uno.
+
+### 2.2 · Un producto bajo receta que NO es antibiótico, en el libro equivocado
+
+**RANITIDINA 50MG AMPOLLA X 2 ML VIJOSA** tiene `es_antibiotico = true` y hoy
+está adentro del libro de antibióticos: **21 renglones foliados** entre el 3-jul
+y el 30-ago, el **5%** del libro.
+
+No es un error de criterio de la sala — **es bajo receta**, y por eso está
+marcada. Lo que falla es que hay **un solo cajón para dos cosas distintas**.
+Decisión del usuario (3-sep):
+
+> «Ranitidina estaría en su propio registro; no es antibiótico pero es bajo
+> receta.»
+
+Y la norma empuja en la misma dirección: la **Guía 3.4 (CRÍTICO)** pide que «las
+existencias físicas **de antibióticos** concuerden con las detalladas en el
+registro». Con una ranitidina adentro, ese cuadre **no puede cerrar por
+construcción** — no porque falte un dato, sino porque el registro contiene algo
+que el inventario de antibióticos no tiene. Lo mismo al revés: si el libro de
+antibióticos lleva 21 renglones que no son antibióticos, el inspector encuentra
+una diferencia del 5% que no existe.
+
+**Son dos registros, y el §3 de este documento dice cómo se separan.**
+
+### 2.3 · Tres inactivos que van a morder si se reactivan
+
+`AVELOX 400MG X 20 COMP.`, `AZITROMICINA 200MG X 30 ML SM` y
+`CLARITROMICINA 125 MG X 60 ML MK` son moléculas controladas y están **sin
+marcar**. Hoy no se venden. El día que alguien reactive uno en el ERP, entra al
+mostrador **invisible para el libro** y nadie se entera.
+
+### 2.4 · Quiénes son los «otros bajo receta» — y dónde están escritos hoy
+
+**50 productos llevan `| (R)` dentro del NOMBRE** —EPIVAL, DEPAKENE, QUETIDIN,
+LUVOX, DULVANEX, NEUROIPRAN, MIMETIX, BELLAFACE, MIA, DIXI 35, BLOPRESS, ISOPTIN,
+PROGENDO, DUSPATALIN, BETASERC…— y de esos sólo **dos** tienen `es_antibiotico`:
+los dos KLARICID, que llevan `(R) (A)`.
+
+Ésa es, hoy, la lista de «bajo receta que no es antibiótico»: la ranitidina
+inyectable más esos 48. Uno de ellos es antibacteriano — **UVAMIN RETARD
+(nitrofurantoína), 140 ventas**: no es de las seis moléculas ni es inyectable,
+así que **no** va al libro de antibióticos, pero el propio ERP dice que se
+despacha con receta. Va al segundo registro.
+
+**El problema es dónde vive el marcador: dentro del nombre.** Es exactamente la
+trampa de «un rótulo no es una clave» del CLAUDE.md — el día que alguien corrija
+el nombre del producto, el `(R)` se va con él, sin error y sin dejar rastro. Un
+registro sanitario no se puede apoyar en eso.
+
+**Y la columna correcta ya existe y está vacía:** `products.requiere_receta` es
+booleana, está **en `false` en las 5,219 filas**, y ya tiene su insignia
+«Receta» pintada en el catálogo (`TabCatalogo.jsx:1972`). No la escribe nadie:
+`sync-products` no la trae del ERP y el portal no la deja editar. Es una columna
+cableada a la pantalla que nunca se llenó.
+
+---
+
+## 3 · Dos registros, no uno — la decisión y cómo se implementa
+
+**Decisión tomada (3-sep):** el libro de **antibióticos** y el de **otros
+productos bajo receta** son **dos registros separados**. La ranitidina
+inyectable, el UVAMIN y los 48 productos con `(R)` van al segundo, no al primero.
+
+**Por qué es lo correcto y no una preferencia:**
+
+- La **Guía 3.4 (CRÍTICO)** cuadra existencias **de antibióticos** contra el
+  registro. Un registro mezclado no puede cuadrar: hoy son 21 renglones de 421
+  —el **5%**— que el inventario de antibióticos nunca va a tener.
+- La **Guía 3.3 (CRÍTICO)** pide el registro trazable **de antibióticos**. Un
+  libro que trae otras cosas no es más completo, es menos preciso.
+- Y al revés: el segundo registro **no lo exige ningún ítem de la Guía**. Los
+  únicos productos bajo receta con registro obligatorio propio son los
+  **estupefacientes y psicotrópicos** (sección 4), y ésos van en el sistema que
+  **facilita la DNM** (RTS 6.5.2), no en uno nuestro. O sea que el segundo libro
+  es una **decisión de la empresa** — buena, pero conviene saber que es
+  voluntaria, porque eso define cuánto rigor pedirle.
+
+### 3.1 · Los tres criterios, escritos
+
+| registro | qué entra | de dónde sale hoy |
+|---|---|---|
+| **Antibióticos bajo receta** | las 6 moléculas (cefixima, azitromicina, claritromicina, levofloxacina, moxifloxacina, norfloxacina) **+ todo antibiótico inyectable** | `products.es_antibiotico` — **quitando la ranitidina**, sumando la GENTAMICINA VIJOSA |
+| **Otros bajo receta** | lo que la farmacia despacha con receta y no es antibiótico | el `(R)` del nombre + la ranitidina — **hay que mudarlo a `products.requiere_receta`** |
+| **Estupefacientes y psicotrópicos** | tramadol, pregabalina, quetiapina, carbamazepina… | **no existe** — y el sistema lo da la DNM, ver §8 |
+
+### 3.2 · El cambio de modelo, que es chico
+
+`bitacora_dispensaciones` no necesita una tabla gemela: necesita **saber de qué
+libro es cada renglón**.
+
+1. **Columna `clase`** en `bitacora_dispensaciones` (`'antibiotico'` /
+   `'bajo_receta'`), con su CHECK. Una tabla gemela duplicaría el RPC, el
+   formulario, el papel y las policies — y el día que una de las dos copias
+   cambie, la otra se queda vieja.
+2. **Serie de folio propia.** `bitacora_folios` ya tiene la columna `serie` (hoy
+   usa `'disp'` y `'receta'`): el segundo libro toma `'disp_rx'` y arranca en 1.
+   **Los folios no se comparten** — si se comparten, cada libro tiene huecos
+   donde está el otro, y un folio faltante en un libro foliado es exactamente lo
+   que un inspector persigue.
+3. **`products.requiere_receta` se llena.** Está en `false` en las 5,219 filas y
+   ya tiene su insignia en el catálogo. Se siembra de los 50 `(R)` más la
+   ranitidina, y **se hace editable** — hoy no lo escribe ni el ERP ni el portal,
+   así que un producto nuevo bajo receta nace invisible para el segundo libro.
+4. **El filtro del sync** pasa de `WHERE p.es_antibiotico` a
+   `WHERE p.es_antibiotico OR p.requiere_receta`, escribiendo `clase` según cuál
+   de las dos lo trajo. Un producto marcado con las dos va a **antibiótico**: es
+   el libro que se inspecciona.
+5. **El papel sale en dos hojas**, una por libro, cada una con su serie de folio.
+   La hoja de antibióticos es la que se le pone enfrente al inspector.
+
+### 3.3 · Y los 21 renglones de ranitidina que ya están adentro
+
+Como todo esto es anterior al arranque del 1-oct, **no hay que migrarlos**: se
+van con el resto de los renglones de práctica (§4). Si en cambio se decidiera
+conservar el histórico, esos 21 hay que **moverlos de libro y renumerarlos**, que
+es más trabajo y menos limpio que empezar los dos libros en `00001`.
+
+## 4 · Lo que hay que decidir sobre los 421 renglones de práctica
+
+Del **3-jul al 3-sep** el sync ya cargó **421 renglones foliados**, ninguno
+completo (414 pendientes, 7 anulados por DTE invalidado). Son de la etapa de
+construcción: no existen recetas ni fotos para completarlos, y ya no se pueden
+conseguir.
+
+**Si el 1 de octubre arrancan sobre esto, el libro nace con 414 renglones que
+dicen «se dispensó un antibiótico y no hay constancia de receta».** Eso es peor
+que empezar en cero: un inspector no lee «era la prueba», lee el folio.
+
+Los contadores están en `bitacora_folios` y hoy van así:
+
+| sala | último folio |
 |---|---:|
-| Renglones foliados (3-jul → 3-sep) | **421** |
-| … con lote / vencimiento / presentación / hora | **421 (100%)** |
-| … con vendedor · con ficha de cliente | 420 · 419 |
-| **… completos (paciente + médico + foto)** | **0** |
-| … pendientes de completar | **414** |
-| … anulados (DTE invalidado) | 7 |
-| Recetas registradas (`recetas`) | **0** |
-| Médicos registrados (`medicos`) | **0** |
-| Salas que alimentan el libro | 6 de 6 |
+| Salud 1 | 100 |
+| La Popular | 99 |
+| Salud 3 | 90 |
+| Salud 2 | 61 |
+| Salud 4 | 40 |
+| Salud 5 | 31 |
 
-Las seis salas cargan. Nadie completó nunca un renglón: no es una sala que se
-atrasó, es el proceso que no arrancó.
+**Recomendación:** borrar los renglones anteriores al 1-oct y **poner los
+contadores en 0**, para que el 1 de octubre el folio `2026-00001` de cada sala
+sea la primera dispensación real. Es borrado de datos de producción, así que
+**no lo hago sin que lo pidas**; queda como propuesta.
 
----
-
-## 2 · Hallazgo CRÍTICO 1 — el libro ve el 19.6% de lo que debería ver
-
-**Guía 3.3 (CRÍTICO)** · «¿Se lleva un registro trazable de los antibióticos que
-se manejan y dispensan?»
-**Guía 3.4 (CRÍTICO)** · «¿Las existencias físicas concuerdan con las detalladas
-en el registro?»
-**RTS 6.4.2** · «registro trazable (físico o digital) del movimiento de los
-medicamentos antibióticos **que se manejan en el establecimiento**».
-
-Lo que decide si una venta entra al libro es una sola condición, dentro de
-`sincronizar_bitacora_dispensaciones`:
-
-```sql
-WHERE p.es_antibiotico
-```
-
-`products.es_antibiotico` viene del ERP (`sync-products`) y es una **lista
-mantenida a mano: 79 productos de 5,219**. Medido contra el catálogo real,
-restringido a antibacterianos **sistémicos** (ATC J01, sin tópicos ni
-oftálmicos ni intestinales):
-
-| ventas 1-jul → 3-sep | renglones | |
-|---|---:|---:|
-| entran al libro | 444 | **19.6%** |
-| **NO entran** | **1,827** | **80.4%** |
-
-Los que faltan no son marginales — son los de más volumen:
-
-| producto | ventas | en el libro |
-|---|---:|---|
-| AMOXICILINA 500 MG X 30 CAP MK | 783 | ❌ |
-| AMOXICILINA 500MG X 100 CAPS. SAIMED | 259 | ❌ |
-| TETRACICLINA 500MG X 100 CAP MK | 152 | ❌ |
-| CIPROFLOXACINA 500MG X100 TAB GAMMA | 98 | ❌ |
-| TRIMETOPRIMA FORTE X 50 TAB MK | 67 | ❌ |
-| AMPICILINA 500 MG X 50 CAPS MK | 62 | ❌ |
-| CEFADROXILO 500 MG X 30 CAPS MK | 43 | ❌ |
-| METRONIDAZOL 500 MG X 40 TAB MK | 38 | ❌ |
-
-**El patrón se lee solo:** lo marcado son las marcas comerciales (AXTAR, DENVAR,
-KLARICID, ELEQUINE, FIXIM, ZIBAC…) y lo no marcado son los **genéricos de casa**
-(MK, SAIMED, ECOMED, GAMMA), que es justo lo que más se vende. La lista se
-escribió una vez mirando el estante caro y nunca se volvió a mirar.
-
-Y tiene basura en el otro sentido: **RANITIDINA 50MG AMPOLLA** está marcada como
-antibiótico y aparece en el libro. No lo es.
-
-Es exactamente `feedback_lista_a_mano_se_desincroniza_del_registro`, aplicado al
-catálogo que decide el contenido de un registro sanitario.
-
-### La lista NO se inventa: la emite la SRS
-
-**RTS 6.4.3** — «La dispensación de antibióticos se debe realizar solamente si
-se presenta una receta médica, **según el listado emitido oficialmente por
-SRS**.»
-**RTS 6.1.13** — «El establecimiento debe disponer del acceso al listado de
-antibióticos de acuerdo al reconocimiento de la clasificación de antibióticos
-por parte de la Autoridad Reguladora.»
-
-Ese listado existe y es descargable: **Listado Oficial de Medicamentos 2025**,
-SRS, firmado por el Superintendente
-(`srs.gob.sv/wp-content/uploads/2025/03/LISTADO-OFICIAL-DE-MEDICAMENTOS-2025.pdf`).
-Su capítulo **J01 · ANTIBACTERIANOS PARA USO SISTÉMICO** trae 40 entradas con su
-código ATC, y **la clasificación AWaRe viene marcada en el propio código**:
-
-- `*(1)` → **GRUPO ACCESO** (Access) — doxiciclina, amoxicilina, ampicilina,
-  penicilina, cefazolina, TMP-SMX, clindamicina, gentamicina, amikacina,
-  metronidazol, nitrofurantoína, fosfomicina, amoxicilina+clavulánico…
-- `*(2)` → **GRUPO PRECAUCIÓN** (Watch) — ceftriaxona, claritromicina,
-  ciprofloxacino, vancomicina, piperacilina+tazobactam.
-
-Eso cierra de una sola vez **dos** ítems:
-
-- **Guía 1.13 (MAYOR)** — «¿Se dispone del listado de antibióticos que maneja el
-  servicio farmacéutico e **incluye la clasificación AWaRe** recomendada por OMS
-  (Reserva, Vigilancia y Acceso) para cada antibiótico?» → hoy **no existe** en
-  ningún lado del portal.
-- **3.3 / 3.4** — el criterio de qué entra al libro deja de ser una opinión y
-  pasa a ser el listado del regulador.
-
-**La corrección propuesta:** una tabla `antibioticos_oficiales` (principio
-activo, código ATC, grupo AWaRe) sembrada del LOM 2025, y `es_antibiotico`
-derivado del **principio activo** del producto contra esa tabla — no una casilla
-en el ERP. Con revisión humana para lo que no matchea, que es donde el dato
-sucio se ve.
-
-### Y el principio activo tampoco está
-
-**Guía 3.5** pide que el registro incluya la **denominación genérica**. De los 79
-productos marcados hoy, **sólo 18 tienen `principio_activo` cargado**. Los otros
-61 son marcas (AXTAR, DENVAR, KOPTIN, ZIBAC…) y el libro no puede decir qué
-principio activo se dispensó — que además es la llave para derivar AWaRe.
+**Beneficio extra:** eso disuelve solo el defecto de folios que sigue. Hoy, en
+cada sala, el folio **retrocede una vez** —el 21 es del 16-ago y el 22 del
+3-jul—, artefacto de los dos backfills del 17-ago. Un libro foliado **no se
+renumera**; pero si estos folios nunca fueron reales, no hay nada que renumerar.
 
 ---
 
-## 3 · Hallazgo CRÍTICO 2 — cero renglones completos en 63 días
+## 5 · Lo que hay que construir antes del 1 de octubre
 
-**Guía 3.14 (CRÍTICO)** · «¿La dispensación de antibióticos se realiza solamente
-si se presenta una receta, orden o prescripción médica?»
-**Guía 3.12 (MAYOR)** · copia de la receta resguardada **al menos 1 año**.
-**Guía 3.9 / 3.10 / 3.11 / 3.13** · datos del paciente y del prescriptor.
-**RTS 6.4.4** · «Deberá quedar una copia física o digital de la receta como
-registro en el establecimiento.»
+Ordenado por lo que más duele si falta el día del arranque.
 
-414 de 421 renglones dicen «Sin completar». **0 recetas, 0 médicos, 0 fotos.**
+### 5.1 · El cierre de mes tiene que exigir el libro completo — y hoy hace lo contrario
 
-El portal no es el culpable: el formulario existe, la búsqueda en el registro
-del CSSP existe, la foto se sube a un bucket privado, el permiso está dado —
-`puedeCompletar` sale de `bitacoras.can_edit`, que lo tienen los 21 Dependientes
-de Farmacia, los 6 Jefes de Sala y los 7 Regentes de Enfermería. **Lo que no
-existe es la rutina.**
+`cerrar_mes_bitacora` **no menciona `bitacora_dispensaciones` ni una vez**. Pero
+`completar_dispensacion` **sí** rechaza escribir en un mes cerrado.
 
-Y hay dos cosas del diseño que la esconden:
+Las dos mitades juntas producen esto, y ya pasó — medido hoy:
 
-1. **El widget de Inicio sólo mira 30 días atrás** (`DIAS_ATRAS = 30` en
-   `WidgetRecetasPendientes.jsx`). Los 259 renglones de julio ya salieron de esa
-   ventana: son invisibles y no van a volver. Un pendiente que envejece
-   desaparece en vez de escalar — al revés de lo que debería.
-2. **Nada escala, y ya se cobró su primera víctima.** No hay aviso al jefe de
-   sala ni al regente por antigüedad, y el cierre de mes **no exige** que el
-   libro esté completo: `cerrar_mes_bitacora` no menciona
-   `bitacora_dispensaciones` ni una vez. Pero `completar_dispensacion` **sí**
-   rechaza escribir en un mes cerrado.
+> **La Popular cerró agosto el 3-sep a las 16:23 con 39 renglones pendientes.**
+> Esos 39 ya no se pueden completar sin reabrir el mes.
 
-   Las dos mitades juntas hacen esto — medido hoy, no hipotético:
+O sea que la única puerta capaz de exigir el libro completo es justamente la que
+lo sella incompleto. **Es el arreglo número uno**: `cerrar_mes_bitacora` tiene
+que negarse —o al menos exigir motivo escrito— si quedan renglones pendientes
+del período.
 
-   > **La Popular cerró agosto el 3-sep a las 16:23 con 39 renglones
-   > pendientes.** Esos 39 ya no se pueden completar: hay que reabrir el mes,
-   > lo que deja su propia fila de reapertura con motivo en la bitácora de
-   > cierres.
+### 5.2 · El pendiente que envejece desaparece en vez de escalar
 
-   O sea que la única puerta que podía exigir el libro completo es justamente
-   la que lo sella incompleto.
+`WidgetRecetasPendientes.jsx` mira **30 días** (`DIAS_ATRAS = 30`). Un renglón
+que cumple 31 días sale de la pantalla y no vuelve nunca. Al revés de lo que
+tiene que pasar: cuanto más viejo, más visible.
 
-**Sin esto, el libro no prueba lo que la norma le pide probar.** Con paciente,
-médico y foto vacíos, el renglón demuestra que *se vendió* un antibiótico —
-nunca que se vendió *contra receta*. Un inspector lee ese libro como la
-confesión escrita de 414 dispensaciones sin receta.
+Hace falta, además, **algo que escale** — aviso al jefe de sala a los 2 días y
+al regente a los 7. Hoy no hay nada; el único recordatorio es que alguien entre
+a la pestaña.
 
----
+### 5.3 · La gentamicina genérica y los tres inactivos
 
-## 4 · Lo que sí está bien, y conviene no romper
+Marcar `GENTAMICINA 160MG X 2 ML VIJOSA` y los tres inactivos en el ERP, y
+**re-sincronizar desde el 1-oct** cuando arranque.
 
-| ítem | cómo se cumple |
-|---|---|
-| **3.5** — lote, fecha de expiración, fecha y cantidad dispensada, laboratorio, presentación | 421/421 completos, tomados de la venta. No se teclean |
-| **3.5** — nombre de quien realizó | `vendedor_nombre` en 420/421; `completada_por` al completar |
-| **3.7 espejo / 3.6** — control de correcciones | anular deja el renglón con motivo y firma; **nunca se borra** |
-| **3.17 / 3.21** — cantidad dispensada y **pendiente**, con correlativo | `prescrito` / `entregado_total` por renglón, y el folio `2026-00007` |
-| **3.19** — pendientes por agotamiento | `motivo_pendiente` en la receta, y la receta queda `abierta` |
-| **3.6** — nivel de acceso | RLS en las 7 tablas, escritura sólo por RPC, `bitacora_exigir_acceso` en cada lectura |
-| **6.1.14** — contemporáneo | la hora sale de la base contra El Salvador, nunca del navegador |
-| **6.1.14** — preferencia por el papel | el mes sale impreso, acostado, con formulario `FLS-BIT-03` |
-| **3.12** — resguardo de la copia | bucket `recetas` **privado**, mime restringido, 10 MB |
-| — | ningún cron purga las bitácoras: el dato primario no se pierde |
+Y **quitarle `es_antibiotico` a la RANITIDINA 50MG AMPOLLA**: no sale del
+circuito, se muda al segundo libro por `requiere_receta` (§3). Hacer las dos
+cosas juntas y en ese orden — quitarle la marca sin haber llenado
+`requiere_receta` la deja fuera de los dos registros, que es peor que estar en el
+equivocado.
 
-Y una decisión que vale la pena repetir: **el médico sólo se puede tomar del
-registro del Consejo**, nunca escribirse a mano. Eso es lo que hace que el dato
-del prescriptor (3.13) sea verificable en vez de decorativo.
+### 5.4 · Un gate que vigile la lista, porque el ERP no avisa
 
----
+La regla es corta y se puede escribir: *seis moléculas por principio activo, más
+todo antibiótico inyectable*. Con eso, un chequeo en `npm run gate:data` que
+falle cuando aparezca en el catálogo un producto que cumple la regla y no está
+marcado. Es lo que hoy no existe: la lista está bien **y nada garantiza que siga
+estándolo**.
 
-## 5 · Lo demás que apareció midiendo
+Para poder cruzarla hace falta el principio activo, y ahí sí hay un hueco:
+**sólo 18 de los 79 productos marcados tienen `principio_activo` cargado**. Los
+otros 61 son marcas (AXTAR, DENVAR, KOPTIN, ZIBAC…). Sin eso, el cruce hay que
+hacerlo por nombre comercial, que es exactamente lo frágil.
 
-### 5.1 · El folio no es cronológico — 6 costuras, una por sala
+### 5.5 · El listado de antibióticos con clasificación AWaRe — ítem 1.13, hoy en cero
 
-Un libro foliado promete que el folio sube con el tiempo. Hoy, en cada sala, hay
-**un salto**: el folio 21 es del 16-ago y el 22 es del 3-jul.
+> **Guía 1.13 (MAYOR)** · «¿Se dispone del listado de antibióticos que maneja el
+> servicio farmacéutico e **incluye la clasificación AWaRe** recomendada por OMS
+> (Reserva, Vigilancia y Acceso) para cada antibiótico?»
+>
+> **RTS 6.1.13** · «El establecimiento debe disponer del **acceso al listado de
+> antibióticos** de acuerdo al reconocimiento de la clasificación de antibióticos
+> por parte de la Autoridad Reguladora.»
 
-| sala | folio | fecha | folio anterior | su fecha |
-|---|---|---|---|---|
-| La Popular | 2026-00022 | 3-jul | 2026-00021 | 16-ago |
-| Salud 1 | 2026-00035 | 3-jul | 2026-00034 | 16-ago |
-| Salud 2 | 2026-00013 | 3-jul | 2026-00012 | 16-ago |
-| Salud 3 | 2026-00019 | 3-jul | 2026-00018 | 16-ago |
-| Salud 4 | 2026-00012 | 6-jul | 2026-00011 | 15-ago |
-| Salud 5 | 2026-00008 | 3-jul | 2026-00007 | 13-ago |
+Esto es **independiente** de qué se dispensa con receta: pide el listado de
+**todos** los antibióticos que la farmacia maneja —venta libre incluida— con su
+grupo AWaRe. Hoy no existe en ninguna parte del portal.
 
-Es un artefacto de los DOS backfills del 17-ago (primero agosto, después julio),
-no un defecto vivo: el sync ordena por fecha. **No se arregla renumerando** —un
-libro foliado no se renumera—: se explica con una nota de apertura firmada por el
-regente, que es lo que se hace con un libro de papel al que se le corrió el
-orden.
+Y no hay que inventarlo: el **Listado Oficial de Medicamentos 2025** de la SRS
+(`srs.gob.sv/wp-content/uploads/2025/03/…`), capítulo **J01 · ANTIBACTERIANOS
+PARA USO SISTÉMICO**, trae 40 entradas con su ATC y **el grupo AWaRe metido
+dentro del código**: `*(1)` = **Acceso**, `*(2)` = **Precaución (Watch)**.
 
-**Lo que sí queda latente:** el folio se toma en el momento del *sync*, no de la
-venta. Una factura que llegue tarde recibe un folio posterior a ventas más
-nuevas. En tres semanas de operación viva no pasó ni una vez, pero va a pasar.
+- **Acceso `*(1)`** — doxiciclina, amoxicilina (± clavulánico), ampicilina
+  (± sulbactam), penicilina, cefazolina, TMP-SMX, clindamicina, gentamicina,
+  amikacina, metronidazol, nitrofurantoína, fosfomicina, cloranfenicol.
+- **Precaución `*(2)`** — ceftriaxona, claritromicina, ciprofloxacino,
+  vancomicina, piperacilina + tazobactam.
 
-### 5.2 · 50 renglones (12%) traen dos lotes en un solo campo
+Nótese que **casi todo lo de venta libre es grupo Acceso y casi todo lo
+controlado es Precaución**: la regla salvadoreña y la de la OMS apuntan al mismo
+lado. Es un buen argumento para el regente y una buena pantalla: «Antibióticos
+que manejamos», con su grupo, exportable.
 
-`lote = '2412183_2411613'` con **una sola** `fecha_vencimiento`. El ítem 3.5 pide
-lote y expiración *de lo dispensado*; con dos lotes fundidos, el libro no puede
-decir cuál se llevó el paciente, y 3.4 (cuadrar existencias por lote) no cierra.
+### 5.6 · El libro no se puede sacar solo
 
-Y de ahí sale el segundo síntoma: **2 renglones muestran un lote vencido al
-momento de vender** (ROCEFORT 1 GR IV, vence 1-mar-2026, despachado el 3-ago y el
-25-ago). O se dispensó producto vencido —**RTS 6.6.6**, grave— o el libro está
-mostrando el vencimiento del lote equivocado. Las dos posibilidades hay que
-cerrarlas; hoy la fila sólo se pinta en rojo y nadie la persigue.
+No hay botón de imprimir ni de exportar en la pestaña «Bajo receta»: el libro
+sale únicamente dentro del mes completo, desde Cierre, pegado a las hojas de
+temperatura y limpieza. Un inspector pide **el libro de antibióticos de octubre**
+y hay que darle otras tres hojas encima.
 
-### 5.3 · Faltan los dos primeros días de julio
+Cuando se agregue, va por `exportCsv` **con su módulo** para que quede el egreso
+anotado (`registrar_egreso`) — regla del proyecto.
 
-23 ventas bajo receta del **1 y 2 de julio** nunca entraron: el backfill empezó
-el 3. Se cierra con una corrida:
-`select sincronizar_bitacora_dispensaciones('2026-07-01','2026-07-02', null);`
+### 5.7 · No hay una persona con el rol Regente
 
-**Y hay un techo detrás:** el repaso diario mira **45 días**. Lo que llegue más
-tarde que eso no entra nunca, y no da error — es el hueco silencioso de siempre.
+El rol **`Regente`** existe, con todos los permisos, y tiene **0 empleados**.
+(`Regente de Enfermería`, 7 personas, es otra cosa.) El regente farmacéutico es
+quien firma los procedimientos (**RTS 6.1.12**, Guía 1.12 MAYOR), quien debería
+cerrar el mes y quien autoriza el manejo digital. Antes del 1-oct necesita
+cuenta.
 
-### 5.4 · El respaldo llega al renglón y no a la receta
+### 5.8 · Los dos documentos que hacen legal el libro digital
 
-Se corrigió hoy (v2.967.5) que las 7 tablas `bitacora_*` entren a
-`backup-critical-tables`. **Pero `recetas`, `receta_items` y `medicos` NO
-entraron**, y ahí viven el paciente, el prescriptor y la URL de la foto — la
-mitad exacta que le importa a 3.5 y 3.12. Respaldar el renglón sin la receta
-respalda la parte que se puede reconstruir del ERP y deja fuera la que no.
+Sin ellos, **llevar el libro en digital no está autorizado**, por bien construido
+que esté:
+
+- **Procedimiento de manejo de documentación digital** — RTS 6.1.14.
+- **Protocolo de supervisión del sistema electrónico** — RTS 6.1.15 / Guía 3.6
+  (MAYOR): nivel de acceso, resguardo, forma de registro, respaldo y evaluación
+  periódica.
+
+Los dos los firma y sella el regente. Están en borrador en
+`docs/legal/procedimientos/` y el detalle de qué debe decir cada uno está en
+`docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.
+
+Falta además el del **RTS 6.4.1 / Guía 3.1 (MAYOR)**: procedimiento de
+adquisición, suministro, dispensación, devolución y disposición final de
+antibióticos.
+
+### 5.9 · El respaldo llega al renglón y no a la receta
+
+Hoy (v2.967.5) entraron las 7 tablas `bitacora_*` a `backup-critical-tables`.
+**No entraron `recetas`, `receta_items` ni `medicos`** — donde viven el paciente,
+el prescriptor y la URL de la foto, que es la mitad exacta que le importa a la
+**Guía 3.5** y a la **3.12**. Respaldar el renglón sin la receta respalda lo que
+se puede reconstruir del ERP y deja fuera lo que no.
 
 Dos cosas más del mismo párrafo:
 
-- El bucket `recetas` **no se respalda** (Storage no entra en ese cron), y 3.12
-  pide la copia de la receta ≥1 año.
+- El **bucket `recetas` no se respalda** (Storage no entra en ese cron), y la
+  3.12 pide la copia de la receta **≥ 1 año**.
 - `RETENTION_DAYS = 60`. Como respaldo está bien; **como control declarado en el
-  protocolo del 6.1.15, 60 días no es un año**. Hay que decir en el documento
-  que la retención la da la base (nada la purga) y el respaldo es una ventana
+  protocolo del 6.1.15, 60 días no es un año**. El documento tiene que decir que
+  la retención la da la base (nada la purga) y que el respaldo es una ventana
   rodante de 60 días.
 - La corrección es de **hoy** y el cron corre los domingos: la última corrida fue
-  el **30-ago**. O sea que a esta hora las bitácoras **todavía no tienen ni un
-  respaldo hecho**. Declarado ≠ demostrado, hasta el 6-sep.
-
-### 5.5 · Un permiso que promete una distinción que el código no honra
-
-`bitacoras_tab_libro.can_edit` está otorgado a 3 roles y **nunca se lee**: el
-botón «Completar» y el RPC miran `bitacoras.can_edit`. La grilla de permisos
-muestra un candado que no cierra nada.
-
-### 5.6 · No hay rol Regente con una persona adentro
-
-El rol **`Regente`** existe y tiene todos los permisos… y **0 empleados**.
-`Regente de Enfermería` (7 personas) es otra cosa. El regente farmacéutico es
-quien firma los procedimientos (**6.1.12**, Guía 1.12 MAYOR), quien cierra el
-mes, y cuya presencia se verifica con la bitácora de visitas (**6.3.7**). Hoy no
-tiene cuenta en el portal.
-
-### 5.7 · El libro no se puede exportar desde su pestaña
-
-No hay botón de imprimir ni de descargar en «Bajo receta»: sale sólo dentro del
-mes completo, desde Cierre. Un inspector que pide «el libro de antibióticos de
-agosto» obliga a cambiar de pestaña y a llevarse las hojas de temperatura y
-limpieza pegadas. Y cuando se agregue la salida, va por `exportCsv` **con su
-módulo** para que quede el egreso anotado (`registrar_egreso`).
+  el **30-ago**. A esta hora las bitácoras **todavía no tienen ni un respaldo
+  hecho**. Declarado ≠ demostrado, hasta el 6-sep.
 
 ---
 
-## 6 · Sección 4 de la Guía — estupefacientes y psicotrópicos: no existe
+## 6 · Dos defectos de datos que conviene arreglar antes de arrancar
 
-Aparte del libro de antibióticos, la Guía tiene una sección propia con **tres
-ítems CRÍTICOS**:
+### 6.1 · 50 renglones (12%) traen dos lotes fundidos en un campo
 
-> **4.1** (CRÍTICO) recepción, registro, almacenamiento, manejo y control
-> verificados por el regente · **4.2** (CRÍTICO) sistema de control **trazable y
-> aprobado por la DNM** · **4.3** (CRÍTICO) área restringida bajo llave ·
-> **4.4** (MAYOR) facturas que amparen la adquisición.
+`lote = '2412183_2411613'`, con **una sola** `fecha_vencimiento`. La **Guía 3.5**
+pide lote y expiración *de lo dispensado*; con dos lotes fundidos el libro no
+puede decir cuál se llevó el paciente, y la **3.4** (cuadrar existencias por
+lote) no cierra.
+
+De ahí sale el segundo síntoma: **2 renglones muestran lote vencido al momento de
+vender** (ROCEFORT 1 GR IV, vence 1-mar-2026, despachado el 3-ago y el 25-ago).
+O se dispensó producto vencido —**RTS 6.6.6**, grave— o el libro está mostrando
+el vencimiento del lote equivocado. Hoy la fila sólo se pinta en rojo y nadie la
+persigue. Con datos reales desde octubre, esto **necesita un destino**: quién lo
+mira y qué hace.
+
+### 6.2 · El repaso diario sólo mira 45 días
+
+El cron `bitacora-dispensaciones-repaso-diario` re-sincroniza `hoy − 45 … hoy`.
+Una venta que llegue del ERP más tarde que eso **no entra nunca**, y no da error.
+Con el libro en marcha, ese hueco es un renglón que falta y nadie puede notar.
+
+---
+
+## 7 · Lo que ya está bien, y conviene no romper
+
+Vale decirlo porque es la mitad más difícil y está resuelta:
+
+| ítem | cómo se cumple |
+|---|---|
+| **Guía 3.5** — lote, expiración, fecha y cantidad dispensada, laboratorio, presentación | **421/421 completos**, tomados de la venta. Nadie los teclea |
+| **3.5** — nombre de quien realizó | `vendedor_nombre` en 420/421; `completada_por` al completar |
+| **3.13** — datos del prescriptor | el médico **sólo** se puede tomar del registro del CSSP; la base rechaza uno inventado |
+| **3.17 / 3.21** — cantidad dispensada y **pendiente**, con correlativo | `prescrito` / `entregado_total` por renglón, más el folio `2026-00007` |
+| **3.19** — pendientes por agotamiento | `motivo_pendiente`, y la receta queda `abierta` |
+| **3.7 espejo** — control de correcciones | anular deja el renglón con motivo y firma; **nunca se borra** |
+| **3.6** — nivel de acceso | RLS en las 7 tablas, escritura sólo por RPC, `bitacora_exigir_acceso` en cada lectura |
+| **3.12** — resguardo de la copia | bucket `recetas` **privado**, mime restringido, 10 MB |
+| **RTS 6.1.14** — contemporáneo | la hora sale de la base contra El Salvador, nunca del navegador |
+| **RTS 6.1.14** — preferencia por el papel | el mes sale impreso, acostado, formulario `FLS-BIT-03` |
+| — | ningún cron purga las bitácoras: el dato primario no se pierde |
+
+Un detalle de permisos que no es un defecto pero conviene saber:
+`bitacoras_tab_libro.can_edit` está otorgado a tres roles y **nunca se lee** — el
+botón «Completar» y el RPC miran `bitacoras.can_edit`, que lo tienen los 21
+Dependientes de Farmacia, los 6 Jefes de Sala y los 7 Regentes de Enfermería. La
+grilla de permisos muestra un candado que no cierra nada. Antes del 1-oct hay que
+decidir cuál de las dos es la buena.
+
+---
+
+## 8 · Aparte del libro: la sección 4 de la Guía no tiene módulo
+
+**Estupefacientes y psicotrópicos**, tres ítems CRÍTICOS:
+
+> **4.1** control verificado por el regente · **4.2** sistema de control
+> **trazable y aprobado por la DNM** · **4.3** área restringida bajo llave ·
+> **4.4** facturas que amparen la adquisición.
 >
-> **RTS 6.5.2** — «Debe implementarse el sistema de control para medicamentos
-> estupefacientes o psicotrópicos **facilitado por la Autoridad Reguladora**.»
+> **RTS 6.5.2** — «Debe implementarse el sistema de control … **facilitado por la
+> Autoridad Reguladora**.»
 
-El catálogo tiene producto de esa familia y **ninguno está marcado**:
-carbamazepina, pregabalina (7 presentaciones), quetiapina, risperidona,
-sertralina, amitriptilina y **tramadol en 8 presentaciones** — todos con
-`es_antibiotico = false`, o sea invisibles para el libro.
+El catálogo tiene producto de esa familia sin marcar: carbamazepina, pregabalina
+(7 presentaciones), quetiapina, risperidona, sertralina, amitriptilina y
+**tramadol en 8 presentaciones**.
 
-**Ojo con la conclusión:** eso **no** es un defecto del libro de antibióticos —
-no van ahí. Es que la sección 4 no tiene módulo, y su sistema de control lo
-**facilita la DNM**, no se construye. La acción es averiguar con la DNM cuál es
-ese sistema y cuáles de estos productos están en el listado de control, antes de
-escribir una línea de código.
+**No van al libro de antibióticos.** Y su sistema de control **lo facilita la
+DNM**, no se construye: la acción es preguntarle a la DNM cuál es y cuáles de
+estos productos están en su listado, antes de escribir una línea de código.
 
 ---
 
-## 7 · Cómo se vuelve válido ante la SRS — en orden de riesgo
-
-**A. Cerrar los dos CRÍTICOS.**
-
-1. **La lista.** Tabla `antibioticos_oficiales` sembrada del LOM 2025 (J01 + su
-   grupo AWaRe), `principio_activo` cargado en los 79 + los que entren, y
-   `es_antibiotico` derivado contra esa tabla en vez de escrito a mano. Después,
-   **re-sincronizar desde el 1-jul** para que el libro tenga los 1,827 renglones
-   que le faltan. Deja además resuelto el ítem 1.13.
-2. **La rutina.** Que completar el renglón sea parte de la venta, no una tarea de
-   después: el widget con ventana abierta (no 30 días), aviso al jefe de sala por
-   antigüedad, y **el cierre de mes bloqueado si quedan renglones pendientes** —
-   que es el único freno que no depende de que alguien se acuerde.
-
-**B. Los dos documentos que firma el regente** (ya descritos en
-`docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`): el procedimiento
-de documentación digital (6.1.14) y el protocolo de supervisión del sistema
-electrónico (6.1.15 / Guía 3.6). Sin ellos, **llevar el libro en digital no está
-autorizado**, por bien construido que esté. Y hay que darle cuenta al regente
-antes, porque los firma él.
-
-**C. El procedimiento del 6.4.1 / Guía 3.1** — adquisición, suministro,
-dispensación, devolución y disposición final de antibióticos. Es papel, y es
-MAYOR.
-
-**D. Lo medido acá**: los dos días de julio, la receta en el respaldo, el bucket
-de recetas, los 50 lotes fundidos, los 2 vencidos, el permiso muerto, la cuenta
-del regente, la salida del libro.
-
-**E. Sección 4** (estupefacientes y psicotrópicos): consultar a la DNM cuál es su
-sistema. Tres CRÍTICOS sin cubrir.
-
----
-
-## 8 · Lo que esta auditoría NO pudo ver
+## 9 · Lo que esta revisión no pudo ver
 
 - **La pantalla.** La extensión de Chrome no estaba conectada; no se abrió
   `/bitacoras?tab=libro` en el navegador. Falta el barrido visual y el de
-  teléfono (`gate:movil` + `barrido-total-movil` sobre esa ruta).
-- **Si la lista de 79 es completa hacia adentro**: se midió contra un patrón de
-  nombres de principio activo. Un antibiótico cuyo nombre comercial no nombre su
-  principio activo y no esté marcado **no lo detecta ni esta auditoría** — que es
-  exactamente el motivo por el que la lista tiene que salir del LOM y del
-  `principio_activo`, y no de leer nombres.
+  teléfono (`gate:movil` + `barrido-total-movil`) sobre esa ruta.
+- **El listado oficial firmado.** La regla de las seis moléculas + inyectables
+  está confirmada por la OPS y por el reporte de la propia DNM de 2015, pero
+  **no conseguí el PDF de la resolución**. Antes del 1-oct conviene pedírselo a
+  la DNM y guardarlo en `docs/legal/` — es el documento que justifica, ante un
+  inspector, por qué la amoxicilina no está en el libro.
 
 ---
 
 **Fuentes** · `docs/legal/rts_11020424_bpadyt.txt` (RTS 11.02.04:24 §6) ·
-`docs/legal/srs_guia_verificacion_bpad.txt` (Guía de Verificación BPAD, SRS,
-verificada vigente hoy) · Listado Oficial de Medicamentos 2025 (SRS) ·
+`docs/legal/srs_guia_verificacion_bpad.txt` (Guía de Verificación BPAD — se
+volvió a bajar de srs.gob.sv el 3-sep y es **byte por byte idéntica** a la copia
+del repo, md5 `8e10db10…`) · Listado Oficial de Medicamentos 2025 (SRS) ·
+OPS, «El Salvador's experience controlling the sale of antimicrobials» ·
+Boletín Fármacos, ago-2015 (resolución DNM sobre inyectables) ·
 Ley de Medicamentos Art. 19.
 **Ver también** · `docs/AUDITORIA-BITACORAS-SRS-2026-08-25.md` (ambiente y
 limpieza) · `docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.

@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.11 — El libro Bajo receta: dos registros, y la vara correcta
+
+Sólo documentación: reescritura de `docs/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md`.
+
+**Primero, una corrección.** La versión anterior (v2.970.5) decía que el libro
+«ve el 19.6% de los antibióticos» porque `es_antibiotico` deja fuera la
+amoxicilina, la ciprofloxacina y el metronidazol. **Estaba mal**: medí contra
+ATC J01 dando por hecho que todo antibiótico se dispensa con receta. En El
+Salvador **no**. El RTS 6.4.3 no dice «todo antibiótico», dice «según el
+**listado emitido oficialmente por SRS**», y ese listado son **seis moléculas**
+—cefixima, azitromicina, claritromicina, levofloxacina, moxifloxacina,
+norfloxacina, cualquiera sea la vía (DNM 2018)— **más todo antibiótico
+inyectable** (DNM 2015, que además verificó en inspección que la farmacia se
+queda con copia de la receta). El resto es **venta libre**.
+
+Con la vara correcta, la lista de 79 del ERP **codifica exactamente la regla** y
+cubre el 100% de las moléculas controladas activas. Lo que queda en pie no es la
+lista: es que **nada la vigila** — le falta un producto
+(`GENTAMICINA 160MG X 2 ML VIJOSA`, inyectable, 30 ventas) y hay tres inactivos
+controlados sin marcar que entrarían invisibles el día que se reactiven.
+
+**Segundo, la decisión del usuario: son DOS registros.** La `RANITIDINA 50MG
+AMPOLLA` es bajo receta pero no es antibiótico, y hoy está adentro del libro de
+antibióticos con **21 renglones, el 5%**. Con eso el cuadre de la **Guía 3.4
+(CRÍTICO)** —«las existencias físicas **de antibióticos** concuerdan con el
+registro»— no puede cerrar por construcción. El cambio de modelo es chico y está
+escrito en el §3: columna `clase`, **serie de folio propia** (`bitacora_folios`
+ya tiene la columna), y llenar **`products.requiere_receta`** —que existe, está
+en `false` en las 5,219 filas y ya tiene su insignia en el catálogo sin que nadie
+la escriba— desde los **50 productos que llevan `(R)` dentro del NOMBRE**, que es
+justo donde un marcador no puede vivir.
+
+**Tercero, el encuadre.** Las bitácoras arrancan el **1 de octubre**: los 421
+renglones del 3-jul al 3-sep son de construcción, así que «414 sin completar» no
+es un incumplimiento. Lo que sí hay que resolver antes de esa fecha está en el
+§5, y el primero es que **`cerrar_mes_bitacora` no mira el libro** mientras
+`completar_dispensacion` sí rechaza escribir en un mes cerrado — La Popular cerró
+agosto el 3-sep con 39 renglones que ya no se pueden completar sin reabrir.
+
 ## v2.970.10 — La foto que ya se cuadró en el teléfono no se vuelve a pedir
 
 Reportado por el usuario: *«si ya en el teléfono cuadré y confirmé la foto (por

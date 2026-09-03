@@ -10,11 +10,17 @@ import PortalTextarea from '../common/PortalTextarea';
  * «¿Quién recibe la caja?» — el paso que convierte confirmar un corte en una
  * ENTREGA.
  *
- * ── Por qué vive acá y no dentro de confirmar ──────────────────────────────
- * Confirmar un corte CIERRA EL TURNO (regla del usuario, 1-sep): «al hacer un
- * corte y confirmarlo deben abrir caja de nuevo la persona responsable». O sea
- * que ese clic es, en la práctica, el momento en que la caja cambia de manos —
- * y hasta el 3-sep lo podía firmar la misma persona que contó el efectivo.
+ * ── UN CORTE CONFIRMADO ES UNA BOLSA DE EFECTIVO ───────────────────────────
+ * Ésa es la razón de que la caja se entregue acá y en ningún otro momento:
+ * confirmar es el acto que convierte un conteo en dinero embolsado y firmado
+ * (`resolver` manda la etiqueta de la bolsa en el mismo paso). Descartar no
+ * genera bolsa, así que no hay nada que entregar.
+ *
+ * **Confirmar NO cierra el turno del sistema de la caja**, y no debe hacerlo
+ * (decisión del usuario, 3-sep: «confirmar no cierra turno, eso es incorrecto,
+ * por eso ahora decidimos eso de entregar caja»). Lo que hace que ese efectivo
+ * sea de alguien es esta firma, no terminar el turno. Hasta el 3-sep Mi caja
+ * —y sólo Mi caja— además cerraba el turno: ver el comentario de `MiCajaView`.
  *
  * Medido sobre los 10 días anteriores: confirmaron **35 personas distintas** y
  * son las mismas de sala, así que la firma propia no era una excepción rara.
@@ -22,7 +28,7 @@ import PortalTextarea from '../common/PortalTextarea';
  * ── No bloquea, y es a propósito ───────────────────────────────────────────
  * Decisión del usuario (3-sep): «avisar primero, medir, después bloquear». Se
  * puede confirmar sin que nadie reciba, diciendo por qué. Un candado que deja a
- * una sala sin poder cerrar el turno produce el atajo en vez del control — es
+ * una sala sin poder cerrar su corte produce el atajo en vez del control — es
  * [[feedback_una_verificacion_que_traba_la_accion_no_se_hace]] y ya costó las
  * seis bolsas trabadas de agosto.
  *
@@ -80,8 +86,9 @@ export default function EntregaDeCaja({
                 {/* Qué significa firmar acá, dicho antes de firmar. Sin esto la
                     pantalla pide un carné y no dice para qué queda registrado. */}
                 <Notice variant="info" icon={Info}>
-                    Al confirmar este corte termina el turno. Quien reciba la caja
-                    se hace cargo del efectivo desde este momento.
+                    Confirmar este corte deja el efectivo contado en una bolsa. Quien
+                    la reciba se hace cargo de ese dinero desde este momento. Descartarlo
+                    no genera bolsa y no se entrega nada.
                 </Notice>
 
                 {!saltando ? (

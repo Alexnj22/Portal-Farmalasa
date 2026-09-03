@@ -195,7 +195,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                         Sin fila del portal no se nombra a nadie.
 
                         Y a quién se la entregó, que es el otro nombre del mismo
-                        acto: confirmar el corte cierra el turno. La flecha lo
+                        acto: un corte confirmado es una bolsa de efectivo. La flecha lo
                         dice sin gastar una línea más — en una tarjeta que ya
                         compite por alto con la cifra. */}
                     <div className="text-caption text-content-3 truncate">

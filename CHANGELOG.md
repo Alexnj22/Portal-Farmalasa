@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.971.6 — Confirmar un corte ya no cierra el turno: lo que se entrega es la bolsa
+
+Decisión del usuario, dicha así: *«confirmar no cierra turno, eso es incorrecto,
+por eso ahora decidimos eso de entregar caja»*. Se quita la llamada a
+`cerrarTurno` del confirmar. Lo que hace que un conteo sea de alguien es la
+**entrega**, no terminar el turno del sistema de la caja.
+
+**Y era el ÚNICO camino que lo cerraba.** `cerrarTurno` vivía sólo en
+`MiCajaView`: confirmar desde Cortes, desde la campana o desde Inicio no lo
+tocaba. El mismo botón hacía dos cosas distintas según la pantalla desde donde
+se apretara, y no había forma de notarlo — las dos «funcionan».
+
+Por eso el arreglo del 2-sep (v2.954.0, *hacer* el corte ya no cierra el turno)
+se probó y quedó bien: ese día 7 de 8 confirmaciones fueron desde
+Cortes/campana/Inicio. Hoy fue el primer día con las **seis salas confirmando
+desde Mi caja — 8 de 8** — y las seis terminaron con el turno cerrado.
+
+| día | confirmaciones | desde Mi caja | turnos en el sistema |
+|---|---:|---:|---|
+| 02-sep | 8 | 1 | La Popular, Salud 1, Salud 2 y Salud 5 se quedaron en **turno 1 todo el día** |
+| 03-sep | 8 | **8** | las **seis** salas con el turno cerrado |
+
+### El daño no era la molestia: era un Z en $0.00
+
+Con el turno cerrado, el cierre del día sale en cero. Medido sobre los **36
+cierres Z de los 6 días previos**: los únicos dos en `$0.00` son Salud 3
+(turno 7) y Salud 4 (turno 5) el 2-sep — las únicas dos salas que esa noche
+confirmaron desde Mi caja, minuto y medio antes de su Z. Las otras cuatro
+también tenían un corte C confirmado justo antes, pero desde Cortes o la
+campana, con el turno corriendo, y su Z salió con el monto real ($933.75,
+$1,272.40, $359.14, $1,319.09).
+
+Misma noche, mismo flujo, la única diferencia era el turno. Los dos Z en cero de
+esa noche quedan como están —un Z no se deshace— y se anotan acá para que el
+número no se lea después como un día sin ventas.
+
+### Vender NO se detiene, y eso es lo que lo escondió
+
+Lo que factura es la **apertura**, que sigue vigente; el turno sólo agrupa los
+cortes. Medido hoy con el panel diciendo «Iniciar Turno» en los dos extremos de
+la ventana: Salud 4 facturó 5 veces después de las 17:00 (última 17:11:21),
+Salud 3 tres (17:11:42), La Popular tres, y Salud 2 lleva **42 ventas** desde su
+corte de las 12:05. Nada falla, nada falta — por eso el defecto llega hasta el
+cierre del día antes de verse.
+
+Lo que sí quedaba trabado es el circuito de caja del portal: no hay botón
+«Iniciar turno» y «Abrir caja» se niega con *«Esa caja ya está abierta»*, así
+que la sala tenía que ir al sistema de la caja a apretarlo.
+
+### Y se dice qué es un corte confirmado
+
+En el diálogo de entrega, que antes decía «Al confirmar este corte termina el
+turno»: ahora dice que confirmar **deja el efectivo contado en una bolsa**, que
+quien la reciba se hace cargo de ese dinero, y que **descartar no genera bolsa y
+no se entrega nada**. Es la regla completa —se entrega caja sólo si se confirma
+el corte— dicha antes de firmar y no después.
+
 ## v2.971.5 — Auditoría de personal, documentos y nómina
 
 Sólo documentación: `docs/AUDITORIA-PERSONAL-2026-09-03.md`. Barrido del área

@@ -1067,9 +1067,19 @@ export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta 
  *                     suyo, y desde ahí el dinero es suyo.
  *   cerrar el día     emite el Z y termina la jornada.
  *
- * Se cierra al CONFIRMAR un corte: «al hacer un corte y confirmarlo deben abrir
- * caja de nuevo la persona responsable». El corte cuenta lo que hay; cerrar el
- * turno es lo que hace que ese conteo sea el de alguien.
+ * ── HOY SÓLO LA LLAMA `cerrarElDia` ────────────────────────────────────────
+ * Confirmar un corte la llamaba (desde v2.935.0, y sólo desde Mi caja). Se
+ * quitó el 3-sep por decisión del usuario —«confirmar no cierra turno, eso es
+ * incorrecto, por eso ahora decidimos eso de entregar caja»—: lo que hace que
+ * ese conteo sea el de alguien es la ENTREGA de la bolsa, no terminar el turno.
+ *
+ * Y no era sólo una molestia. **Con el turno cerrado, el Z sale en $0.00.**
+ * Medido sobre los 36 cierres de los 6 días previos: los ÚNICOS dos en cero son
+ * Salud 3 y Salud 4 el 2-sep, las únicas dos salas que esa noche confirmaron
+ * desde Mi caja —o sea con el turno recién cerrado— minuto y medio antes de su
+ * Z. Las otras cuatro confirmaron desde Cortes o la campana, con el turno
+ * corriendo, y su Z salió con el monto real. Misma noche, mismo flujo, la única
+ * diferencia era el turno.
  */
 export async function cerrarTurno(sala) {
     return operar({ accion: 'cerrar', sala });

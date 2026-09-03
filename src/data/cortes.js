@@ -256,8 +256,9 @@ export async function fetchEntradasParaCruce({ desde, hasta }) {
  * autoría la pone el servidor, no el navegador.
  *
  * ── `recibidoPor` y `vale`: la entrega de la caja ──────────────────────────
- * Confirmar CIERRA EL TURNO, así que es el momento en que la caja cambia de
- * manos. Quien la recibe firma con su carné y el servidor consume el vale de
+ * Un corte confirmado es una BOLSA DE EFECTIVO, así que es el momento en que
+ * el dinero cambia de manos — no porque cierre el turno del sistema de la caja,
+ * que no lo cierra. Quien la recibe firma con su carné y el servidor consume el vale de
  * un solo uso que emitió al reconocerlo — el navegador NO elige a quién se le
  * atribuye, igual que en la entrega del efectivo.
  *

@@ -28,9 +28,11 @@ import { useToastStore } from '../store/toastStore';
  * después (recargar su lista, cerrar su diálogo, apagar su aviso).
  *
  * ── La ENTREGA DE LA CAJA se pide desde acá, no en las cuatro pantallas ────
- * Confirmar un corte cierra el turno, así que ese clic es el momento en que la
- * caja cambia de manos. Antes de escribir se pregunta quién la recibe, y quien
- * recibe firma con su carné.
+ * Un corte CONFIRMADO es una bolsa de efectivo, así que ese clic es el momento
+ * en que el dinero cambia de manos. Antes de escribir se pregunta quién la
+ * recibe, y quien recibe firma con su carné. Descartar no genera bolsa y no
+ * pregunta nada. (Confirmar NO cierra el turno del sistema de la caja: ver
+ * `EntregaDeCaja`.)
  *
  * Va en el hook por el mismo motivo que la escritura y que la precarga del
  * motor de impresión: las CUATRO pantallas confirman de verdad —medido sobre 7

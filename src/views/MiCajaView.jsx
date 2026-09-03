@@ -25,7 +25,7 @@ import { useToastStore } from '../store/toastStore';
 import useCerrarBolsa from '../hooks/useCerrarBolsa';
 import useResolverCorte from '../hooks/useResolverCorte';
 import {
-    abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, cerrarTurno, estadoDeCaja,
+    abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja,
     estadoDeCajaEnElOrigen, hayQuePreguntarleAlOrigen, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
@@ -1103,27 +1103,33 @@ export default function MiCajaView({ comoPestana = false }) {
                      * la confirmación se hace desde Cortes — ahí este papel no
                      * sale solo, y se manda a mano desde acá. */
                     if (estado === 'CONFIRMADO' && resultado?.ok) await imprimirCorte(resultado);
-                    /* Confirmar CIERRA EL TURNO (regla del usuario, 1-sep): «al
-                     * hacer un corte y confirmarlo deben abrir caja de nuevo la
-                     * persona responsable». El corte cuenta lo que hay; cerrar
-                     * el turno es lo que hace que ese conteo sea de alguien —
-                     * sin eso, el tramo siguiente se le sigue cargando a quien
-                     * ya entregó.
+                    /* ── CONFIRMAR NO CIERRA EL TURNO ──────────────────────
                      *
-                     * Descartar NO cierra: un conteo que no se firmó no termina
-                     * el turno de nadie.
+                     * Acá se llamaba a `cerrarTurno(sala)`. Se quita por
+                     * decisión del usuario (3-sep): «confirmar no cierra turno,
+                     * eso es incorrecto, por eso ahora decidimos eso de
+                     * entregar caja». Lo que hace que el conteo sea de alguien
+                     * es la ENTREGA —quien recibe firma con su carné, ver
+                     * `EntregaDeCaja`—, no terminar el turno del sistema.
                      *
-                     * Y esto NO es el cierre del día: el Z es otro acto. */
-                    if (estado === 'CONFIRMADO') {
-                        const c = await cerrarTurno(sala);
-                        if (c?.error) {
-                            showToast('El corte quedó confirmado',
-                                'Pero el turno sigue abierto: ' + mensajeAmigable(c.error), 'warning');
-                        } else {
-                            showToast('Turno cerrado',
-                                'Quien siga vendiendo tiene que abrir la caja con su carné.', 'success');
-                        }
-                    }
+                     * Y era el ÚNICO camino que lo cerraba: `cerrarTurno` vivía
+                     * sólo en esta pantalla, así que confirmar desde Cortes, la
+                     * campana o Inicio no lo tocaba. El mismo botón hacía dos
+                     * cosas distintas según dónde se apretara — y nadie podía
+                     * notarlo, porque las dos «funcionan».
+                     *
+                     * Lo que costó, medido el 3-sep: fue el primer día con las
+                     * SEIS salas confirmando desde Mi caja (8 de 8, contra 1 de
+                     * 8 el día anterior) y las seis terminaron con el turno
+                     * cerrado en el sistema de la caja, mostrando «Iniciar
+                     * Turno». El portal no tiene ese botón y «Abrir caja» se
+                     * niega con «Esa caja ya está abierta», así que la sala
+                     * quedaba obligada a ir al sistema. Vender siguió
+                     * funcionando —lo que factura es la APERTURA, que seguía
+                     * viva— pero el circuito de caja del portal no.
+                     *
+                     * El cierre del DÍA sí cierra el turno, y es otro acto:
+                     * `cerrarElDia` (Z + cerrar turno). */
                     setDialogo(null); setResultado(null); cargar();
                 }}
                 onClose={() => { setDialogo(null); setResultado(null); }}
@@ -1580,8 +1586,8 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                                     ? `Después del cierre del día · ${g.corte.hora}`
                                     : `Ya contados en el corte de las ${g.corte.hora}`}
                             {/* Y a quién se le entregó la caja al confirmarlo,
-                                que es el otro nombre del mismo acto: el corte
-                                cierra el turno. Acá cabe el nombre COMPLETO —la
+                                que es el otro nombre del mismo acto: un corte
+                                confirmado es una bolsa. Acá cabe el nombre COMPLETO —la
                                 tarjeta del carril lo tiene que acortar— y es
                                 donde queda pegado a lo que ese corte contó. */}
                             {g.corte?.recibe && (

@@ -3,7 +3,7 @@ import {
 } from "../_shared/security.ts";
 import {
   abonosDelCredito, creditosDeLaSala, FORMAS_DEL_PORTAL as FORMAS,
-  getCortesCreds, getSessionCookie, quitarAbonoDelOrigen, ABONO_URL,
+  getCortesCreds, getSessionCookie, quitarAbonoDelOrigen, abonarEnOrigen, abrirSala, ABONO_URL,
 } from "../_shared/creditos.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -353,35 +353,77 @@ Deno.serve(async (req) => {
         }
       }
 
+      /* ── Aprobar es APLICAR ─────────────────────────────────────────────
+       *
+       * Desde el cambio de modelo del 3-sep, un cobro que espera firma NO se
+       * aplicó: el crédito sigue con su saldo. Así que confirmar un renglón es
+       * abonarlo de verdad, y devolverlo no deshace nada — nunca bajó.
+       *
+       * `ya_aplicado` marca las solicitudes creadas con el modelo VIEJO, donde
+       * el abono sí había entrado. Ahí vale lo de antes: confirmar sólo cierra
+       * la solicitud y devolver deshace el abono en el origen. Son dos —las de
+       * MAPFRE del 3-sep— y se dejan andar por su camino en vez de reescribir
+       * su historia, que es lo único honesto: ese dinero sí se movió.
+       */
+      const yaAplicado = meta.ya_aplicado === true;
+      const formaDelPago = String(meta.forma ?? "Otro");
+      const docDelPago = String(meta.detalle ?? "");
+
       const resultado: Record<string, unknown>[] = [];
       const fallidos: string[] = [];
+      const entraron: { credito: string; monto: number; erp: Record<string, unknown>;
+                        cliente: string; factura_erp: string; saldo_antes: number }[] = [];
+
+      await abrirSala(cookie, entrada.erpId);
+
       for (const r of renglones) {
         const credito = String(r.credito ?? "");
+        const monto = Number(r.monto);
         const d = decisiones.find((x) => String(x.credito) === credito);
-        if (!d || d.decision !== "RECHAZADO") {
-          resultado.push({ ...r, decision: d?.decision ?? "APROBADO", motivo: null });
+        const devuelto = d?.decision === "RECHAZADO";
+
+        if (!yaAplicado) {
+          if (devuelto) {
+            // Nada que hacer: nunca se aplicó. Ése es el punto del modelo nuevo.
+            resultado.push({ ...r, decision: "RECHAZADO", motivo: d?.motivo ?? null });
+            continue;
+          }
+          const ok = await abonarEnOrigen(cookie, credito, monto, formaDelPago, docDelPago);
+          if (!ok.ok) {
+            /* No entró. La solicitud NO se cierra por este renglón —se informa
+             * y el renglón queda sin decidir— porque cerrarla diría que el
+             * cobro se resolvió cuando ese dinero sigue sin aplicarse. */
+            fallidos.push(`${credito}: la caja no aceptó el abono de ${monto.toFixed(2)}`);
+            resultado.push({ ...r, decision: null, motivo: null });
+            continue;
+          }
+          entraron.push({
+            credito, monto, erp: ok.datos,
+            cliente: String(r.cliente ?? ""),
+            factura_erp: String(r.factura_erp ?? ""),
+            saldo_antes: Number(r.saldo_antes ?? 0),
+          });
+          resultado.push({ ...r, decision: "APROBADO", motivo: null });
+          continue;
+        }
+
+        /* ── El camino viejo: el abono YA está aplicado ───────────────── */
+        if (!devuelto) {
+          resultado.push({ ...r, decision: "APROBADO", motivo: null });
           continue;
         }
         /* Para deshacerlo hay que saber QUÉ abono es, y el id se lo puso el
-         * origen. Se relee el crédito y se busca por monto: es lo único que los
-         * dos lados comparten, y un abono del mismo monto y el mismo día sobre
-         * el mismo crédito no existe en la práctica.
-         *
-         * La forma acota, pero NO se exige: hasta el 2026-09-03 esto pedía
-         * `a.forma === "Otro"` y desde v2.950.0 la forma real es la del pago
-         * —transferencia, tarjeta, cheque u otro—, así que la condición
-         * descartaba justo el abono que había que deshacer. Ahora sale de la
-         * solicitud (`meta.forma`), y si no la trae —las creadas antes de este
-         * arreglo— se busca sólo por monto, que es como se identificaba de
-         * hecho. Un filtro que no puede acertar es peor que no filtrar. */
+         * origen. Se relee el crédito y se busca por monto; la forma acota pero
+         * no se exige — hasta el 3-sep esto pedía `forma === "Otro"` y desde
+         * v2.950.0 la forma real es la del pago, así que la condición
+         * descartaba justo el abono que había que quitar. */
         const suyos = await abonosDelCredito(cookie, entrada.erpId, credito);
-        const formaEsperada = String(meta.forma ?? "");
-        const delMonto = suyos.filter((a) => Math.abs(a.monto - Number(r.monto)) < 0.005);
-        const abono = (formaEsperada && delMonto.find((a) => a.forma === formaEsperada))
+        const delMonto = suyos.filter((a) => Math.abs(a.monto - monto) < 0.005);
+        const abono = (formaDelPago && delMonto.find((a) => a.forma === formaDelPago))
           || delMonto[0];
         if (!abono?.erp_id) {
           fallidos.push(`${credito}: no se encontró el abono para deshacerlo`);
-          resultado.push({ ...r, decision: "RECHAZADO", motivo: d.motivo, deshecho: false });
+          resultado.push({ ...r, decision: "RECHAZADO", motivo: d?.motivo ?? null, deshecho: false });
           continue;
         }
         await quitarAbonoDelOrigen(cookie, entrada.erpId, abono.erp_id);
@@ -389,29 +431,93 @@ Deno.serve(async (req) => {
         const quedan = await abonosDelCredito(cookie, entrada.erpId, credito);
         const sigue = quedan.some((a) => a.erp_id === abono.erp_id);
         if (sigue) fallidos.push(`${credito}: el abono sigue ahí`);
-        resultado.push({ ...r, decision: "RECHAZADO", motivo: d.motivo, deshecho: !sigue });
+        resultado.push({ ...r, decision: "RECHAZADO", motivo: d?.motivo ?? null, deshecho: !sigue });
 
         if (!sigue) {
           const { error: eAnular } = await supabase.from("creditos_abonos_portal")
             .update({ anulado_at: new Date().toISOString(), anulado_por: quien.id })
             .eq("branch_id", sala).eq("credito_erp", credito)
-            .eq("monto", Number(r.monto)).is("anulado_at", null);
+            .eq("monto", monto).is("anulado_at", null);
           if (eAnular) console.error("[creditos-erp] anulando el abono:", eAnular.message);
         }
       }
 
-      /* La solicitud queda APROBADA aunque se haya rechazado algún renglón: lo
-       * que se resolvió fue la solicitud, y el detalle de qué se aceptó y qué no
+      /* Lo que entró se anota del lado del portal, con la MISMA forma que un
+       * cobro directo: el pago (el documento, una vez) y sus abonos. Se escribe
+       * acá y no al pedir la firma porque hasta ahora no había cobro que anotar
+       * — y `creditos_abonos_portal` es lo que el corte del día lee. */
+      let pagoId: number | null = null;
+      if (entraron.length) {
+        const aplicado = Number(entraron.reduce((t, e) => t + e.monto, 0).toFixed(2));
+        const { data: pago, error: ePago } = await supabase.from("creditos_pagos").insert({
+          branch_id: sala,
+          customer_id: (meta.customer_id as number | null) ?? null,
+          cliente: String(meta.cliente ?? entraron[0].cliente),
+          forma: formaDelPago,
+          monto: aplicado,
+          documento: docDelPago || null,
+          fecha_documento: (meta.fecha_documento as string | null) || null,
+          pos_proveedor: (meta.pos as string | null) || null,
+          comprobante_url: (meta.comprobante_url as string | null) || null,
+          lectura: meta.lectura ?? null,
+          /* Quien COBRÓ, no quien firmó: el pago es de quien lo recibió del
+           * cliente. Quién lo aprobó queda en la solicitud. */
+          registrado_por: sol.employee_id,
+        }).select("id").single();
+        if (ePago) console.error("[creditos-erp] creditos_pagos:", ePago.message);
+        pagoId = pago?.id ?? null;
+
+        const { error: eAbonos } = await supabase.from("creditos_abonos_portal").insert(
+          entraron.map((e) => ({
+            pago_id: pagoId,
+            branch_id: sala,
+            credito_erp: e.credito,
+            factura_erp: e.factura_erp || null,
+            cliente: e.cliente,
+            monto: Number(e.monto.toFixed(2)),
+            forma: formaDelPago,
+            documento: docDelPago || null,
+            saldo_antes: e.saldo_antes,
+            saldo_despues: Number((e.saldo_antes - e.monto).toFixed(2)),
+            abonado_por: sol.employee_id,
+            comprobante_url: (meta.comprobante_url as string | null) || null,
+            lectura: meta.lectura ?? null,
+            fecha_documento: (meta.fecha_documento as string | null) || null,
+            pos_proveedor: (meta.pos as string | null) || null,
+            erp_abono_id: e.erp?.id_abono_credito ? String(e.erp.id_abono_credito) : null,
+          })),
+        );
+        if (eAbonos) console.error("[creditos-erp] abonos:", eAbonos.message);
+      }
+
+      /* La solicitud queda APROBADA aunque se haya devuelto algún renglón: lo
+       * que se resolvió fue la solicitud, y el detalle de qué entró y qué no
        * vive en `creditos`. Marcarla RECHAZADA por un renglón diría que no se
-       * aprobó nada, que es falso. */
-      const { error: eCerrar } = await supabase.from("approval_requests")
-        .update({
-          status: "APPROVED", approver_id: quien.id,
-          resolved_at: new Date().toISOString(),
-          metadata: { ...meta, creditos: resultado, resuelto_por: quien.id },
-        })
-        .eq("id", solId);
-      if (eCerrar) throw new Error(`cerrando la solicitud: ${eCerrar.message}`);
+       * aprobó nada, que es falso.
+       *
+       * Salvo que NADA se haya podido aplicar por un fallo del origen: ahí
+       * sigue PENDING, porque el cobro no se resolvió — hay que reintentarlo. */
+      const nadaEntro = !yaAplicado && !entraron.length
+        && resultado.some((r) => r.decision === null);
+      if (!nadaEntro) {
+        const { error: eCerrar } = await supabase.from("approval_requests")
+          .update({
+            status: "APPROVED", approver_id: quien.id,
+            resolved_at: new Date().toISOString(),
+            metadata: { ...meta, creditos: resultado, resuelto_por: quien.id,
+                        pago_id: pagoId ? String(pagoId) : (meta.pago_id ?? null) },
+          })
+          .eq("id", solId);
+        if (eCerrar) throw new Error(`cerrando la solicitud: ${eCerrar.message}`);
+
+        /* Y se libera la reserva: ya nadie está esperando por esos créditos.
+         * Se sella entre o no entre el abono — lo que la reserva impide es que
+         * dos cobros esperen a la vez, no que el crédito se cobre otra vez. */
+        const { error: eLib } = await supabase.from("creditos_cobros_por_aprobar")
+          .update({ resuelto_at: new Date().toISOString() })
+          .eq("solicitud_id", solId).is("resuelto_at", null);
+        if (eLib) console.error("[creditos-erp] liberando la reserva:", eLib.message);
+      }
 
       // Refrescar el espejo de los créditos que cambiaron.
       try {
@@ -421,9 +527,9 @@ Deno.serve(async (req) => {
           const { error: eSync } = await supabase.rpc("sync_creditos_batch",
             { p_filas: filas.map((c) => ({ ...c, branch_id: sala })) });
           /* El resultado NO se descarta: si el espejo no se refresca, la
-           * pantalla sigue mostrando el saldo viejo y quien acaba de rechazar
-           * un abono cree que no pasó nada. No corta la respuesta —lo del
-           * origen ya está hecho— pero queda en el log. */
+           * pantalla sigue mostrando el saldo viejo y quien acaba de resolver
+           * cree que no pasó nada. No corta la respuesta —lo del origen ya está
+           * hecho— pero queda en el log. */
           if (eSync) console.error(`[creditos-erp] espejo ${f}: ${eSync.message}`);
         }
       } catch (e) {
@@ -433,8 +539,12 @@ Deno.serve(async (req) => {
       return responder({
         ok: fallidos.length === 0,
         creditos: resultado,
+        pago_id: pagoId,
+        pendiente: nadaEntro,
         aviso: fallidos.length
-          ? `No se pudo deshacer: ${fallidos.join(" · ")}. Hay que quitarlo a mano en la caja.`
+          ? (yaAplicado
+              ? `No se pudo deshacer: ${fallidos.join(" · ")}. Hay que quitarlo a mano en la caja.`
+              : `No entró: ${fallidos.join(" · ")}. Ese dinero sigue sin aplicarse; vuelve a intentarlo.`)
           : undefined,
       }, fallidos.length ? 207 : 200);
     }
@@ -564,6 +674,130 @@ Deno.serve(async (req) => {
         }
       }
 
+      /* ── El cobro que espera firma NO se aplica ────────────────────────
+       *
+       * Decisión del usuario (3-sep), mirando la pantalla: «ahorita sale como
+       * pagado, ¿no debería quedar como pendiente y con saldo? … si se aprueba
+       * pasa a pagado, si se descarta continúa con saldo».
+       *
+       * Invierte lo del 2-sep. El motivo es que un abono aplicado deja el
+       * crédito en $0.00, y un cero que todavía puede volver a subir se lee
+       * como cobrado — nadie mira la solicitud detrás. Ahora el cobro se
+       * GUARDA: al aprobar se abona de verdad, y al devolverlo no hay nada que
+       * deshacer porque el saldo nunca bajó.
+       *
+       * Va DESPUÉS de validar el saldo vivo contra el origen y ANTES de
+       * escribirle: lo que se guarda ya se comprobó que cabe, y no se toca
+       * nada. */
+      const pideAprobacion = forma === "Otro" || body.requiereAprobacion === true;
+
+      /* El EFECTIVO no espera, y esto no es una preferencia: ese dinero está
+       * en el cajón desde que el cliente lo puso. Sin registrarlo en la caja,
+       * el conteo del día daría un sobrante del tamaño del cobro — el mismo
+       * defecto que costó anunciar +$78.40 sobre un faltante de $9.85, al
+       * revés. Decisión del usuario (3-sep): el efectivo no pide aprobación.
+       *
+       * La guarda vive acá y no sólo en la pantalla: el navegador puede mandar
+       * la bandera con cualquier forma. */
+      if (pideAprobacion && forma === "Efectivo") {
+        return responder({
+          ok: false,
+          error: "Un cobro en efectivo no puede quedar esperando aprobación: "
+               + "ese dinero ya está en la caja y tiene que cuadrar con el conteo del día.",
+        }, 400);
+      }
+
+      if (pideAprobacion) {
+        const ficha = porCredito.get(limpias[0].credito);
+        const renglones = limpias.map((a) => {
+          const vivo = vivos.get(a.credito)!;
+          return {
+            credito: a.credito, monto: a.monto,
+            cliente: vivo.cliente, fecha: vivo.fecha,
+            factura_erp: vivo.factura_erp, saldo_antes: vivo.saldo,
+            decision: null, motivo: null,
+          };
+        });
+
+        const { data: sol, error: eSol } = await supabase.from("approval_requests").insert({
+          type: "ABONO_APROBACION",
+          employee_id: quien.id,
+          status: "PENDING",
+          /* La nota es el MOTIVO que escribió quien cobró —la pantalla se lo
+           * exige, mínimo 5 caracteres—, no el número del documento: ése ya
+           * viaja en `detalle`. */
+          note: String(body.motivo ?? "").trim() || documento || "Sin detalle",
+          metadata: {
+            branch_id: sala, cliente: ficha?.cliente ?? renglones[0].cliente,
+            customer_id: ficha?.customer_id ?? null,
+            monto: Number(montoDoc.toFixed(2)),
+            detalle: documento || null,
+            forma,
+            /* Todo lo que hace falta para APLICARLO después vive acá. Al
+             * aprobar no se le vuelve a preguntar al navegador: si el monto o
+             * la forma viajaran en la decisión, quien firma podría abonar algo
+             * distinto de lo que se pidió. */
+            fecha_documento: body.fechaDocumento || null,
+            pos: body.pos || null,
+            comprobante_url: body.comprobanteUrl || null,
+            lectura: body.lectura || null,
+            creditos: renglones,
+          },
+        }).select("id").single();
+        if (eSol) throw new Error(`creando la solicitud: ${eSol.message}`);
+
+        /* La reserva. Sin esto el crédito queda con saldo y sin nada que diga
+         * que ya lo están cobrando: dos personas lo cobran y el cliente paga
+         * dos veces. El índice único es la garantía; el 23505 se traduce acá.
+         *
+         * Si falla, la solicitud NO puede quedar viva: sería un cobro esperando
+         * firma sobre un crédito que sigue libre. Se borra —y la reserva se va
+         * con ella por el CASCADE— y se avisa. */
+        const { error: eRes } = await supabase.from("creditos_cobros_por_aprobar").insert(
+          renglones.map((r) => ({
+            solicitud_id: sol.id, branch_id: sala,
+            credito_erp: r.credito, cliente: r.cliente, monto: r.monto,
+          })),
+        );
+        if (eRes) {
+          /* El borrado NO se descarta. Si falla, la solicitud queda VIVA sin su
+           * reserva: un cobro esperando firma sobre un crédito que sigue libre,
+           * o sea el agujero que la reserva vino a tapar. Se anota con el id
+           * para poder ir a buscarla, y el mensaje al usuario lo dice: hay algo
+           * a medias que alguien tiene que mirar. */
+          const { error: eBorrar } = await supabase.from("approval_requests")
+            .delete().eq("id", sol.id);
+          if (eBorrar) {
+            console.error(`[creditos-erp] solicitud ${sol.id} sin reserva y no se pudo borrar: ${eBorrar.message}`);
+            return responder({
+              ok: false,
+              error: "El cobro no se registró y quedó una solicitud a medias. "
+                   + "Avísale a Sistemas antes de volver a intentarlo.",
+            }, 500);
+          }
+          if (String((eRes as { code?: string }).code) === "23505") {
+            return responder({
+              ok: false,
+              error: "Uno de esos créditos ya tiene un cobro esperando aprobación. "
+                   + "Hay que resolver ése primero.",
+            }, 409);
+          }
+          throw new Error(`reservando los créditos: ${eRes.message}`);
+        }
+
+        return responder({
+          ok: true,
+          solicitud: sol.id,
+          aprobacionPedida: true,
+          /* `aplicado: 0` y no el monto: no entró nada. Decir el monto acá
+           * haría que la pantalla anunciara un cobro que todavía no ocurrió. */
+          aplicado: 0,
+          aplicaciones: renglones.map((r) => ({
+            credito: r.credito, monto: r.monto, saldo_despues: r.saldo_antes,
+          })),
+        });
+      }
+
       /* ── Se escribe en el origen, de a uno ─────────────────────────────
        * No hay forma de hacerlo atómico: el sistema de la caja recibe un abono
        * por llamada. Si el tercero falla, los dos primeros YA entraron y ese
@@ -574,32 +808,12 @@ Deno.serve(async (req) => {
       const fallidos: string[] = [];
       for (const a of limpias) {
         const vivo = vivos.get(a.credito)!;
-        const resp = await (await fetch(ABONO_URL, {
-          method: "POST",
-          headers: {
-            Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
-            "X-Requested-With": "XMLHttpRequest",
-          },
-          body: new URLSearchParams({
-            process: "abonar",
-            // ⚠️ `id_factura` lleva el ID DEL CRÉDITO — es el nombre que usa el
-            // formulario del origen. Mandar el de la factura abonaría al
-            // crédito de otra persona sin dar error.
-            id_factura: a.credito,
-            monto: a.monto.toFixed(2),
-            tipo_doc: forma,
-            num_doc: documento,
-          }).toString(),
-          signal: AbortSignal.timeout(45_000),
-        })).text();
-        let datos: Record<string, unknown> = {};
-        try { datos = JSON.parse(resp); } catch { /* se trata como fallo abajo */ }
-        if (String(datos.typeinfo ?? "").toLowerCase() !== "success") {
-          console.error(`[creditos-erp] pagar credito=${a.credito}: ${resp.slice(0, 600)}`);
+        const r = await abonarEnOrigen(cookie, a.credito, a.monto, forma, documento);
+        if (!r.ok) {
           fallidos.push(`${a.credito} (${a.monto.toFixed(2)})`);
           continue;
         }
-        hechos.push({ credito: a.credito, monto: a.monto, vivo, erp: datos });
+        hechos.push({ credito: a.credito, monto: a.monto, vivo, erp: r.datos });
       }
 
       if (!hechos.length) {
@@ -672,78 +886,10 @@ Deno.serve(async (req) => {
       );
       if (eAbonos) console.error("[creditos-erp] abonos:", eAbonos.message);
 
-      /* ── «Otro» no se aplica en silencio ────────────────────────────────
-       *
-       * Pedido del usuario (2-sep): «cuando es del ISSS, MAPFRE… agrega otro
-       * como método de pago, y que llegue solicitud de confirmación a admin».
-       *
-       * El abono YA entró y no se hace esperar: el dinero de una aseguradora ya
-       * estaba acordado cuando la sala lo registra, y dejar el crédito abierto
-       * hasta que alguien firme lo dejaría figurando como deuda del cliente —
-       * falso, y encima entraría al aviso del plazo. La confirmación es una
-       * revisión, no un permiso previo.
-       *
-       * Una por PAGO y no por abono: lo que se confirma es el documento, y una
-       * liquidación que cubre tres créditos no necesita tres firmas.
-       *
-       * Su fallo NO tumba el cobro —el dinero ya se movió— pero sale como aviso:
-       * un pago con «Otro» que nadie tiene que mirar es exactamente el cajón de
-       * sastre que esta opción vino a evitar. */
-      /* La pantalla ofrece «Solicitar aprobación» como quinto camino, y adentro
-       * se elige la forma DE VERDAD —transferencia, tarjeta, cheque, otro—. Acá
-       * llega esa forma real y la bandera aparte, que es lo correcto: que un
-       * abono necesite firma no borra con qué se pagó, y sin ese dato no hay
-       * cómo cuadrarlo contra el banco.
-       *
-       * `Otro` la enciende igual y del lado del SERVIDOR: un pago sin forma
-       * reconocible no puede entrar sin que alguien lo mire, y eso no puede
-       * depender de que el navegador mande la bandera. */
-      const pideAprobacion = forma === "Otro" || body.requiereAprobacion === true;
-      let confirmacion: string | null = null;
-      if (pideAprobacion && pago?.id) {
-        const { error: eConf } = await supabase.from("approval_requests").insert({
-          type: "ABONO_APROBACION",
-          employee_id: quien.id,
-          status: "PENDING",
-          /* La nota es el MOTIVO que escribió quien cobró —la pantalla se lo
-           * exige, mínimo 5 caracteres— y no el número del documento, que ya
-           * viaja en `detalle`. Hasta el 2026-09-03 acá iba `documento`, pero
-           * ese campo nunca llegaba: la vista tiraba `motivo` al re-armar el
-           * pago, así que la nota quedaba en «Sin detalle» siempre y quien
-           * decidía no tenía la única frase que explica por qué este cobro
-           * necesita firma. */
-          note: String(body.motivo ?? "").trim() || documento || "Sin detalle",
-          metadata: {
-            branch_id: sala, pago_id: String(pago.id),
-            cliente: ficha?.cliente ?? hechos[0].vivo.cliente,
-            monto: aplicado, detalle: documento || null,
-            /* La forma DE VERDAD, y no por adorno: al rechazar hay que
-             * encontrar el abono en el origen para deshacerlo, y se lo busca
-             * por monto y forma. Sin esto la búsqueda se hacía contra el
-             * literal `"Otro"`, que dejó de ser la forma real el día que
-             * «Solicitar aprobación» se separó de la forma de pago
-             * (v2.950.0): un abono de MAPFRE por transferencia nunca se
-             * habría encontrado, y el rechazo respondía «no se encontró el
-             * abono para deshacerlo» sobre uno que estaba ahí. */
-            forma,
-            /* Cada crédito con su renglón: la solicitud se resuelve UNO POR UNO
-             * —«se debe poder confirmar individualmente si van más de 1 cuenta»—
-             * y para eso hace falta saber cuál abono es cuál. `abono_erp` se
-             * llena al resolver, releyendo el crédito: acá todavía no se sabe
-             * qué id le dio el origen a cada uno. */
-            creditos: hechos.map((h) => ({
-              credito: h.credito, monto: h.monto,
-              cliente: h.vivo.cliente, fecha: h.vivo.fecha,
-              decision: null, motivo: null,
-            })),
-            comprobante_url: body.comprobanteUrl || null,
-          },
-        });
-        if (eConf) {
-          console.error("[creditos-erp] confirmacion de Otro:", eConf.message);
-          confirmacion = "no se pudo crear la solicitud de confirmación";
-        }
-      }
+      /* Acá vivía la creación de la solicitud de confirmación, DESPUÉS de haber
+       * abonado. Se fue el 2026-09-03 con el cambio de modelo: hoy el cobro que
+       * necesita firma ni siquiera llega a este punto — sale más arriba, sin
+       * tocar el origen. Ver «El cobro que espera firma NO se aplica». */
 
       const avisos = [
         fallidos.length
@@ -751,14 +897,15 @@ Deno.serve(async (req) => {
             + "Ese dinero no se aplicó; vuelve a intentarlo sólo por lo que faltó."
           : null,
         eAbonos ? "El pago entró, pero no se pudo anotar quién lo recibió. Avísale a Sistemas." : null,
-        confirmacion ? `El pago entró, pero ${confirmacion}. Avísale a Sistemas.` : null,
       ].filter(Boolean);
 
       return responder({
         ok: fallidos.length === 0,
         pago_id: pago?.id ?? null,
         aplicado,
-        aprobacionPedida: pideAprobacion && !confirmacion,
+        // Llegar acá significa que el cobro NO necesitaba firma: el que la
+        // necesita salió mucho antes, sin tocar el origen.
+        aprobacionPedida: false,
         aplicaciones: hechos.map((h) => ({
           credito: h.credito,
           monto: h.monto,

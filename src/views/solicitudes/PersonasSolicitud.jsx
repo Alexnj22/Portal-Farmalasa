@@ -2,6 +2,7 @@ import React from 'react';
 import { Building2 } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { QUIEN_RESUELVE } from '../../constants/solicitudModulos';
 import { useNowTick } from '../../hooks/useNowTick';
 import { useStaffStore } from '../../store/staffStore';
 import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, salaQueEspera, salaDePersona } from './movimientoTexto';
@@ -199,6 +200,33 @@ export const BloquePersonas = ({ req, empleadosPorId }) => {
     // enrutado, o sea un nombre real y equivocado.
     const esperaSala = salaQueEspera(req);
 
+    /* Las que se deciden por permiso y no por un nombre.
+     *
+     * Se nombra el ÁREA sólo cuando hay MÁS DE UNO que pueda resolverla
+     * —decisión del usuario, 2026-09-03—: con cuatro aprobadores, «Pendiente de
+     * Carlos Renderos» se lee como que hay que esperarlo a él, y si está de
+     * vacaciones, como que no hay a quién recurrir. Con uno solo es al revés:
+     * nombrarlo es el dato útil, se sabe a quién ir a buscar.
+     *
+     * El número lo escribe el trigger que los busca (`aprobadores_n`), porque
+     * el navegador no puede contarlos: `puede_aprobar_modulo` mira permisos que
+     * esta pantalla no lee. **Sin el dato se asume que son varios**: nombrar a
+     * alguien que no es el único es el error caro; decir el área de más sólo
+     * pierde una cara.
+     *
+     * Sólo mientras están PENDIENTES — ya resueltas, `aprobador` es quien de
+     * verdad las firmó (lo escribe `firmar_quien_decide`) y ésa sí es una
+     * persona concreta. */
+    /* `metadata` a veces llega como texto —según por dónde entró la fila— y
+       `'{"a":1}'.aprobadores_n` es `undefined` sin quejarse: la ficha diría el
+       área siempre, que es el default seguro pero no lo que se pidió. */
+    const meta = typeof req?.metadata === 'string'
+        ? (() => { try { return JSON.parse(req.metadata); } catch { return {}; } })()
+        : (req?.metadata ?? {});
+    const cuantos = Number(meta.aprobadores_n);
+    const porArea = pendiente && !!QUIEN_RESUELVE[req.type]
+        && (!Number.isFinite(cuantos) || cuantos > 1);
+
     const rotulo = pendiente ? 'Pendiente de'
         : cancelada ? 'Cancelada'
         : rechazada ? 'Rechazó'
@@ -221,14 +249,20 @@ export const BloquePersonas = ({ req, empleadosPorId }) => {
             />
             <FichaPersona
                 rotulo={rotulo}
-                persona={cancelada ? null : aprobador}
+                persona={cancelada || porArea ? null : aprobador}
                 sala={cancelada ? null : esperaSala}
                 /* Un ajuste de Min/Max no tiene aprobador asignado —su tabla no
                    guarda uno— y lo resuelve quien tenga el permiso del módulo.
-                   «Sin asignar» ahí sonaría a destinatario perdido. */
+                   «Sin asignar» ahí sonaría a destinatario perdido.
+                   Las tres del dinero SÍ tienen uno guardado, pero es el primer
+                   destinatario del aviso y no el dueño de la decisión: pintarlo
+                   con su cara se lee como que hay que esperar a esa persona
+                   (visto el 3-sep: «¿por qué dice que espera a Carlos
+                   Renderos?», sobre algo que podían resolver cuatro). */
                 vacio={cancelada ? 'La retiró quien la envió'
                     : !pendiente ? 'Sin registro'
                     : req.type === 'MINMAX_CHANGE_REQUEST' ? 'Quien administre Min/Max'
+                    : porArea ? QUIEN_RESUELVE[req.type]
                     : 'Sin asignar'}
                 cuando={cancelada ? req.updated_at : cerro}
                 apunte={pendiente

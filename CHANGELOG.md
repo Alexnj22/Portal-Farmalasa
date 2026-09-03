@@ -21,44 +21,6 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.967.7 — Los dos procedimientos que habilitan las bitácoras digitales, en borrador
-
-Son lo único que faltaba para poder llevar las bitácoras sólo en digital, y no
-son software. Quedaron en `docs/legal/procedimientos/`, redactados con lo que el
-sistema hace **hoy** —medido, no supuesto— y con corchetes sólo donde la decisión
-es de la empresa:
-
-- **`BORRADOR-A-manejo-de-documentacion-digital.md`** (RTS 6.1.14). Qué
-  registros son digitales, cómo se anotan, qué pasa con una lectura fuera de
-  rango, cómo se corrige sin borrar, cómo se cierra el mes y cómo se imprime. Con
-  la tabla de cómo se cumple cada uno de los cinco adjetivos ALCOA.
-- **`BORRADOR-B-supervision-del-sistema-electronico.md`** (RTS 6.1.15 · Guía
-  3.6). Las cinco secciones que la norma nombra, con esos mismos nombres para que
-  el inspector las encuentre: nivel de acceso, resguardo de datos, forma de
-  registro, respaldo y evaluación periódica.
-
-**Y redactarlos destapó algo que hay que resolver antes de firmar.** El cierre
-mensual es el equivalente digital de la firma y sello del regente (6.1.12), y
-midiendo los permisos resultó que **lo pueden hacer cinco cargos**: Regente,
-Supervisor/a de Ventas, Gerente General, Administrador y Jefe/a de Talento
-Humano. El único cierre que existe en la base —La Popular, agosto— **no lo hizo
-el regente**.
-
-O sea que el documento **no se puede firmar diciendo que el regente autoriza el
-mes** mientras eso sea así. Las dos salidas están escritas en el punto 2.3 del
-borrador B: dejar el cierre sólo al regente (con suplente nombrado por escrito si
-hace falta), o mantener los cinco cargos y declarar que lo que vale es su firma
-en la hoja impresa. Es una decisión de la empresa, así que **no se tocó ningún
-permiso**.
-
-La otra sección con hueco real es la **evaluación periódica**: es la única de las
-cinco que no existía ni como práctica. El borrador propone semestral con ocho
-puntos concretos de revisión —incluido «quién puede cerrar el mes»— para que se
-ajuste, no para que se acepte tal cual.
-
-Contexto y citas completas en
-`docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.
-
 ## v2.968.0 — El cobro que espera firma no se aplica: el crédito sigue con saldo
 
 Decisión del usuario mirando la pantalla: *«ahorita sale como pagado, ¿no
@@ -112,6 +74,44 @@ recolocación de una corrección y la aprobación. Con tres copias del mismo `PO
 el día que el origen cambie un campo dos se quedan viejas.
 
 Migración `20260903173747`. `creditos-erp` desplegada.
+
+## v2.967.7 — Los dos procedimientos que habilitan las bitácoras digitales, en borrador
+
+Son lo único que faltaba para poder llevar las bitácoras sólo en digital, y no
+son software. Quedaron en `docs/legal/procedimientos/`, redactados con lo que el
+sistema hace **hoy** —medido, no supuesto— y con corchetes sólo donde la decisión
+es de la empresa:
+
+- **`BORRADOR-A-manejo-de-documentacion-digital.md`** (RTS 6.1.14). Qué
+  registros son digitales, cómo se anotan, qué pasa con una lectura fuera de
+  rango, cómo se corrige sin borrar, cómo se cierra el mes y cómo se imprime. Con
+  la tabla de cómo se cumple cada uno de los cinco adjetivos ALCOA.
+- **`BORRADOR-B-supervision-del-sistema-electronico.md`** (RTS 6.1.15 · Guía
+  3.6). Las cinco secciones que la norma nombra, con esos mismos nombres para que
+  el inspector las encuentre: nivel de acceso, resguardo de datos, forma de
+  registro, respaldo y evaluación periódica.
+
+**Y redactarlos destapó algo que hay que resolver antes de firmar.** El cierre
+mensual es el equivalente digital de la firma y sello del regente (6.1.12), y
+midiendo los permisos resultó que **lo pueden hacer cinco cargos**: Regente,
+Supervisor/a de Ventas, Gerente General, Administrador y Jefe/a de Talento
+Humano. El único cierre que existe en la base —La Popular, agosto— **no lo hizo
+el regente**.
+
+O sea que el documento **no se puede firmar diciendo que el regente autoriza el
+mes** mientras eso sea así. Las dos salidas están escritas en el punto 2.3 del
+borrador B: dejar el cierre sólo al regente (con suplente nombrado por escrito si
+hace falta), o mantener los cinco cargos y declarar que lo que vale es su firma
+en la hoja impresa. Es una decisión de la empresa, así que **no se tocó ningún
+permiso**.
+
+La otra sección con hueco real es la **evaluación periódica**: es la única de las
+cinco que no existía ni como práctica. El borrador propone semestral con ocho
+puntos concretos de revisión —incluido «quién puede cerrar el mes»— para que se
+ajuste, no para que se acepte tal cual.
+
+Contexto y citas completas en
+`docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.
 
 ## v2.967.6 — Las salidas de bolsa entran a Movimientos y el vale se abre en sus salidas
 

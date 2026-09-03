@@ -983,6 +983,14 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                                     </span>
                                 )}
                             </p>
+                            {/* Si ya entró o si está esperando cambia TODO lo que
+                                quien decide tiene que pensar, y no se deduce de
+                                ningún otro dato de la ficha. */}
+                            <p className="text-micro text-content-3 mt-0.5">
+                                {meta.ya_aplicado
+                                    ? 'Ya aplicado en la caja'
+                                    : 'Todavía sin aplicar'}
+                            </p>
                             {meta.detalle && (
                                 <p className="text-micro text-content-3 font-mono mt-0.5">{meta.detalle}</p>
                             )}
@@ -1025,7 +1033,10 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                                             iguales sin esto, y son lo contrario. */}
                                         {resuelto && !onToggle && (
                                             <Badge variant={devuelto ? 'danger' : 'success'}>
-                                                {devuelto ? (r?.deshecho === false ? 'Falta quitarlo' : 'Devuelto') : 'Confirmado'}
+                                                {devuelto
+                                                    ? (r?.deshecho === false ? 'Falta quitarlo'
+                                                        : meta.ya_aplicado ? 'Devuelto' : 'Sin cobrar')
+                                                    : 'Abonado'}
                                             </Badge>
                                         )}
                                     </div>
@@ -1035,11 +1046,20 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                     </Caja>
                 )}
 
+                {/* Qué pasa al confirmar, y son DOS cosas distintas según cuándo
+                    se creó la solicitud. Desde el 2026-09-03 el cobro espera SIN
+                    aplicarse, así que confirmar es abonar de verdad y dejar un
+                    crédito sin marcar no devuelve nada — nunca se le quitó. Las
+                    de antes (`ya_aplicado`) sí tenían el abono adentro. Decir la
+                    frase equivocada manda a buscar un movimiento que no existe,
+                    o peor: hace creer que el crédito ya está cobrado. */}
                 {onToggle && (
                     <p className="text-micro text-content-3 leading-snug px-1">
-                        El dinero ya entró. Lo que queda es revisarlo: el crédito que
-                        dejes sin marcar se le devuelve al cliente y su saldo vuelve a
-                        subir.
+                        {meta.ya_aplicado
+                            ? 'El dinero ya entró. Lo que queda es revisarlo: el crédito que dejes '
+                              + 'sin marcar se le devuelve al cliente y su saldo vuelve a subir.'
+                            : 'Todavía no se aplicó: los créditos siguen con su saldo. Lo que marques '
+                              + 'se abona ahora; lo que dejes sin marcar queda sin cobrar.'}
                     </p>
                 )}
 

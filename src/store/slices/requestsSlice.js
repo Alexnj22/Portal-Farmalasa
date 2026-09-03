@@ -1246,21 +1246,32 @@ export const createRequestsSlice = (set, get) => ({
                     : `El abono quedó en ${formatMoney(r?.nuevo?.monto ?? r?.nuevo ?? 0)}.`,
                 'success'];
         }
-        // ABONO_APROBACION: lo que importa es cuántos entraron y cuántos se
-        // devolvieron, porque rechazar DESHACE el abono en la caja.
+        /* ABONO_APROBACION. Desde el cambio de modelo del 2026-09-03 confirmar
+         * es APLICAR —el cobro esperaba sin tocar el crédito— y devolver no
+         * deshace nada, porque el saldo nunca bajó. Decirlo importa: «se
+         * deshizo el abono» sobre algo que nunca entró manda a buscar un
+         * movimiento que no existe.
+         *
+         * Salvo las creadas con el modelo viejo (`ya_aplicado`), donde el abono
+         * sí había entrado y devolverlo sí lo quita. */
         const filas = Array.isArray(r?.creditos) ? r.creditos : [];
         const fuera = filas.filter(f => f?.decision === 'RECHAZADO').length;
+        const eraViejo = filas.some(f => 'deshecho' in (f ?? {}));
         if (modo === 'reject' || fuera === filas.length) {
-            return ['Abono devuelto',
-                filas.length === 1
-                    ? 'El abono se deshizo en la caja y el saldo volvió al crédito.'
-                    : `Se deshicieron ${filas.length} abonos; los saldos volvieron a sus créditos.`,
+            return ['Cobro devuelto',
+                eraViejo
+                    ? (filas.length === 1
+                        ? 'El abono se deshizo en la caja y el saldo volvió al crédito.'
+                        : `Se deshicieron ${filas.length} abonos; los saldos volvieron a sus créditos.`)
+                    : (filas.length === 1
+                        ? 'No se aplicó: el crédito sigue con su saldo.'
+                        : `No se aplicó ninguno: los ${filas.length} créditos siguen con su saldo.`),
                 'info', 8000];
         }
-        return ['Abono confirmado',
+        return ['Abono aplicado',
             fuera === 0
-                ? (filas.length === 1 ? 'Queda confirmado.' : `Quedan confirmados los ${filas.length}.`)
-                : `${filas.length - fuera} confirmado${filas.length - fuera === 1 ? '' : 's'} y ${fuera} devuelto${fuera === 1 ? '' : 's'} a su crédito.`,
+                ? (filas.length === 1 ? 'El crédito quedó abonado.' : `Los ${filas.length} créditos quedaron abonados.`)
+                : `${filas.length - fuera} abonado${filas.length - fuera === 1 ? '' : 's'} y ${fuera} devuelto${fuera === 1 ? '' : 's'}.`,
             'success'];
     },
 

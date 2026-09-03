@@ -48,3 +48,29 @@ export const MODULO_QUE_DECIDE = {
      * cubre tres créditos no necesita tres firmas. */
     ABONO_APROBACION:          'requests_cuentas_por_cobrar',
 };
+
+/**
+ * Quién resuelve cada familia, dicho para una pantalla.
+ *
+ * Las tres del dinero se deciden por PERMISO —cualquiera de los que lo tengan—
+ * y no por un nombre elegido al crear la solicitud. Pero `approver_id` guarda a
+ * UNO (el primer destinatario, para que salga el aviso), y la ficha lo pintaba
+ * como si fuera el único: «Pendiente de CARLOS RENDEROS · Esperando hace 53
+ * min» sobre algo que podían resolver cuatro personas. Se lee como que hay que
+ * esperar a esa persona, y si está de vacaciones, como que no hay a quién
+ * recurrir.
+ *
+ * Decisión del usuario (2026-09-03): nombrar el ÁREA, sin cara. Es el mismo
+ * criterio que ya usaba el ajuste de Min/Max —«Quien administre Min/Max»— y por
+ * el mismo motivo.
+ *
+ * **Sólo cuando hay más de uno** (refinamiento del mismo día): con un solo
+ * aprobador, nombrarlo es el dato útil — se sabe a quién ir a buscar. Cuántos
+ * son lo escribe el trigger que los busca, en `metadata.aprobadores_n`; el
+ * navegador no puede contarlos.
+ */
+export const QUIEN_RESUELVE = {
+    CAJA_MOVIMIENTO_CHANGE:    'Quien apruebe correcciones de caja',
+    ABONO_CREDITO_CHANGE:      'Quien apruebe cuentas por cobrar',
+    ABONO_APROBACION:          'Quien apruebe cuentas por cobrar',
+};

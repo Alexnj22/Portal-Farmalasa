@@ -212,6 +212,49 @@ export async function abonosDelCredito(
  * palabra no prueba nada: quien llama tiene que RELEER el crédito y comprobar
  * que el abono ya no está. Eso lo hace `creditos-erp`.
  */
+/**
+ * Abonar a un crédito en el sistema de la caja.
+ *
+ * Escrito una vez: lo usan el cobro directo, la recolocación de una corrección
+ * y la aprobación de un cobro que esperaba firma. Con tres copias del mismo
+ * `POST`, el día que el origen le cambie el nombre a un campo dos se quedan
+ * viejas y el síntoma es un abono que no entra sin decir por qué.
+ *
+ * ⚠️ **`id_factura` lleva el ID DEL CRÉDITO**, no el de la factura — es el
+ * nombre que usa el formulario del origen. Mandar el de la factura abona al
+ * crédito de otra persona **sin dar error**, y el origen no tiene forma de
+ * deshacer un abono.
+ *
+ * NO abre la sala: quien llama ya la abrió (leer los créditos la abre). Se deja
+ * afuera a propósito — abrirla por abono sería una petición de más por cada
+ * crédito de una liquidación que cubre varios.
+ */
+export async function abonarEnOrigen(
+  cookie: string, credito: string, monto: number, forma: string, documento: string,
+): Promise<{ ok: boolean; datos: Record<string, unknown>; crudo: string }> {
+  const crudo = await (await fetch(ABONO_URL, {
+    method: "POST",
+    headers: {
+      Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: new URLSearchParams({
+      process: "abonar",
+      id_factura: credito,
+      monto: monto.toFixed(2),
+      tipo_doc: forma,
+      num_doc: documento,
+    }).toString(),
+    signal: AbortSignal.timeout(45_000),
+  })).text();
+
+  let datos: Record<string, unknown> = {};
+  try { datos = JSON.parse(crudo); } catch { /* sin JSON legible: es un fallo */ }
+  const ok = String(datos.typeinfo ?? "").toLowerCase() === "success";
+  if (!ok) console.error(`[creditos] abonar credito=${credito}: ${crudo.slice(0, 600)}`);
+  return { ok, datos, crudo };
+}
+
 export async function quitarAbonoDelOrigen(
   cookie: string, erpId: number, abonoErpId: string,
 ): Promise<boolean> {

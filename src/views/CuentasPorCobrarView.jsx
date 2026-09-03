@@ -22,7 +22,7 @@ import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
 import {
     DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchCreditosDelCliente,
     fetchHistorialDelOrigen, fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito,
-    pagarCreditos, pedirCorreccionDeAbono, severidadDeDias,
+    pagarCreditos, pedirCorreccionDeAbono, severidadDeDias, fetchCreditosReservados,
     subirComprobanteDeAbono,
 } from '../data/creditos';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -173,6 +173,12 @@ export default function CuentasPorCobrarView() {
     const [creditos, setCreditos] = useState(VACIO);
     const [cargando, setCargando] = useState(true);
     const [abonando, setAbonando] = useState(null);
+    /* `credito_erp` de los que tienen un cobro esperando firma, por sala, y si
+     * esa lista se pudo leer. Son dos estados y no uno: «no hay ninguno» y «no
+     * pude preguntarlo» se ven iguales en un Map vacío, y uno de los dos tiene
+     * que apagar el botón de cobrar. */
+    const [reservados, setReservados] = useState(() => new Map());
+    const [reservasLeidas, setReservasLeidas] = useState(false);
     const [viendo, setViendo] = useState(null);
     const [corrigiendo, setCorrigiendo] = useState(null);
     const [lectura, setLectura] = useState(null);
@@ -205,18 +211,33 @@ export default function CuentasPorCobrarView() {
      * decide allá. */
     const cargar = useCallback(async () => {
         setCargando(true);
-        const [r, l] = await Promise.all([
+        const [r, l, res] = await Promise.all([
             /* Sólo «Todos» baja el histórico entero (2,387 filas). Los otros dos
              * recortes viven dentro de los que deben, así que la base manda 124
              * y el navegador no filtra nada que ya podía no haber traído. */
             fetchCreditos({ sala: sala || null, soloConSaldo: ver !== 'TODOS' }),
             fetchUltimaLectura(),
+            /* Los créditos con un cobro esperando firma. Desde el 2026-09-03 ese
+             * cobro NO se aplica, así que el crédito sigue con saldo y se ve
+             * idéntico a uno libre — dos personas lo cobrarían y el cliente
+             * pagaría dos veces. */
+            fetchCreditosReservados(sala || null),
         ]);
         if (r?.error) {
             showToast('No se pudo leer la cartera', mensajeAmigable(r.error), 'error');
             setCreditos(VACIO);
         } else {
             setCreditos(r?.creditos || VACIO);
+        }
+        /* Un fallo NO se lee como «no hay reservas»: eso dejaría cobrar dos veces
+         * justo el día que la consulta falla, y sin nada visible. Se avisa y los
+         * botones de cobrar se apagan hasta que se pueda comprobar. */
+        setReservados(res.porCredito);
+        setReservasLeidas(res.ok);
+        if (!res.ok) {
+            showToast('No se pudo comprobar qué créditos están en aprobación',
+                'Por precaución no se puede cobrar hasta que se lea. Vuelve a entrar en un momento.',
+                'warning', 8000);
         }
         setLectura(l);
         setCargando(false);
@@ -521,15 +542,29 @@ export default function CuentasPorCobrarView() {
                                             </span>
                                         </span>
 
+                                        {/* Un crédito con un cobro esperando firma se ve
+                                            IDÉNTICO a uno libre —sigue con su saldo, que
+                                            es el punto del modelo nuevo—, así que la marca
+                                            es lo único que impide cobrarlo dos veces. El
+                                            botón no se esconde: se dice por qué, porque un
+                                            botón que desaparece se lee como un permiso que
+                                            falta. */}
                                         {puedeAbonar && c.saldo > 0.004 && (
-                                            /* `stopPropagation` porque la tarjeta
-                                               entera abre la ficha: sin esto,
-                                               cobrar abriría además el panel
-                                               detrás del diálogo. */
-                                            <Button variant="secondary" size="sm" icon={HandCoins}
-                                                onClick={(e) => { e.stopPropagation(); setAbonando(c); }}>
-                                                Abonar
-                                            </Button>
+                                            reservados.has(`${c.branch_id}:${c.credito}`) ? (
+                                                <Badge variant="warning">Esperando aprobación</Badge>
+                                            ) : (
+                                                /* `stopPropagation` porque la tarjeta
+                                                   entera abre la ficha: sin esto,
+                                                   cobrar abriría además el panel
+                                                   detrás del diálogo. */
+                                                <Button variant="secondary" size="sm" icon={HandCoins}
+                                                    disabled={!reservasLeidas}
+                                                    title={reservasLeidas ? undefined
+                                                        : 'No se pudo comprobar si este crédito ya tiene un cobro en aprobación'}
+                                                    onClick={(e) => { e.stopPropagation(); setAbonando(c); }}>
+                                                    Abonar
+                                                </Button>
+                                            )
                                         )}
                                     </div>
                                 </div>
@@ -547,11 +582,17 @@ export default function CuentasPorCobrarView() {
 
             {viendo && (
                 <FichaDelCredito credito={viendo} vendedor={vendedores.get(String(viendo.vendedor_id))}
-                    fichas={vendedores}
+                    /* La MISMA cuenta que la tarjeta, y por eso sale de las
+                       mismas dos cosas: la ficha es la segunda puerta al cobro,
+                       y una puerta que no comprueba lo que la otra sí es la que
+                       alguien va a usar. */
                     puedeAbonar={puedeAbonar}
+                    enAprobacion={reservados.has(`${viendo.branch_id}:${viendo.credito}`)}
                     onCorregir={(a) => setCorrigiendo({ credito: viendo, abono: a })}
                     onClose={() => setViendo(null)}
-                    onAbonar={puedeAbonar ? () => { setViendo(null); setAbonando(viendo); } : undefined} />
+                    onAbonar={puedeAbonar && reservasLeidas
+                        && !reservados.has(`${viendo.branch_id}:${viendo.credito}`)
+                        ? () => { setViendo(null); setAbonando(viendo); } : undefined} />
             )}
 
             {corrigiendo && (
@@ -574,7 +615,7 @@ export default function CuentasPorCobrarView() {
  * créditos con saldo tienen los suyos— así que abrir esto no sale a la red del
  * otro sistema.
  */
-function FichaDelCredito({ credito, vendedor, fichas, puedeAbonar, onClose, onAbonar, onCorregir }) {
+function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose, onAbonar, onCorregir }) {
     const [datos, setDatos] = useState(null);
     const [delOrigen, setDelOrigen] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -775,17 +816,16 @@ function FichaDelCredito({ credito, vendedor, fichas, puedeAbonar, onClose, onAb
                                                     justo lo que el sistema de la caja no
                                                     guarda, así que acá se ve.
 
-                                                    La ficha COMPLETA sale del store —igual que
-                                                    la del vendedor, y por la misma razón:
-                                                    `AvatarConEstado` saca la foto del objeto
-                                                    que recibe, así que `{ id, name }` pinta las
-                                                    iniciales y nunca la cara. El id se agregó
-                                                    al RPC para poder resolverla, y acá se
-                                                    resuelve. */}
+                                                    Alcanza con el id: la cara la resuelve
+                                                    `AvatarConEstado` contra el store, igual que
+                                                    el aro de estado. Esto salió con la INICIAL
+                                                    hasta el 3-sep, cuando la foto pasó a
+                                                    resolverse ahí adentro — antes la sacaba del
+                                                    objeto que recibía, así que medio objeto
+                                                    daba media cara. */}
                                                 {a.abonado_por && (
                                                     <AvatarConEstado
-                                                        emp={fichas?.get(String(a.abonado_por))
-                                                             || { id: a.abonado_por, name: a.cobrado_por }}
+                                                        emp={{ id: a.abonado_por, name: a.cobrado_por }}
                                                         px={26} mostrarChip={false} radio="rounded-full" />
                                                 )}
                                                 <span className="min-w-0">
@@ -832,6 +872,13 @@ function FichaDelCredito({ credito, vendedor, fichas, puedeAbonar, onClose, onAb
 
                 <div className="flex justify-end gap-2">
                     <Button variant="ghost" onClick={onClose}>Cerrar</Button>
+                    {/* Sin `onAbonar` y con saldo hay dos motivos posibles —el
+                        crédito está esperando firma, o no se pudo comprobar— y
+                        se dicen: un botón que no está se lee como un permiso
+                        que falta, y quien cobra iría a pedirlo. */}
+                    {!onAbonar && enAprobacion && credito.saldo > 0.004 && (
+                        <Badge variant="warning">Ya tiene un cobro esperando aprobación</Badge>
+                    )}
                     {onAbonar && credito.saldo > 0.004 && (
                         <Button variant="primary" icon={HandCoins} onClick={onAbonar}>Abonar</Button>
                     )}

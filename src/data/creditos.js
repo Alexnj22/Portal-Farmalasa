@@ -392,3 +392,41 @@ export function edadDelCredito(fecha, saldo = null, hoy = new Date()) {
     const debe = saldo === null || Number(saldo) > 0.004;
     return { dias, vencido: debe && dias > DIAS_DE_PLAZO };
 }
+
+/**
+ * Los créditos que tienen un cobro esperando firma.
+ *
+ * Desde el 2026-09-03 un cobro que necesita aprobación **no se aplica**: el
+ * crédito sigue con su saldo hasta que alguien lo confirme. Eso abre un agujero
+ * que el modelo viejo no tenía —allá el crédito quedaba en cero y nadie lo
+ * volvía a cobrar—: dos personas pueden cobrar el mismo crédito mientras el
+ * primero espera, y el cliente pagaría dos veces.
+ *
+ * La reserva vive en su propia tabla (`creditos_cobros_por_aprobar`) y no
+ * dentro de la solicitud por dos motivos: en un array `jsonb` no hay índice
+ * único que lo garantice, y leerla desde acá no puede exigir el permiso de
+ * Solicitudes — quien cobra mira la cartera, no la bandeja.
+ *
+ * Devuelve un Map `credito_erp → { monto, cliente }` de la sala pedida. Un
+ * error se propaga como Map vacío y se anota: sin la reserva el peor caso es
+ * dejar cobrar dos veces, así que **quien llama tiene que tratar el fallo como
+ * fallo**, no como «no hay ninguno».
+ */
+export async function fetchCreditosReservados(branchId = null) {
+    let q = supabase.from('creditos_cobros_por_aprobar')
+        .select('credito_erp, branch_id, cliente, monto, solicitud_id')
+        .is('resuelto_at', null);
+    if (branchId) q = q.eq('branch_id', branchId);
+    const { data, error } = await q;
+    if (error) {
+        console.error('creditos: fetchCreditosReservados failed:', error.message);
+        return { ok: false, porCredito: new Map() };
+    }
+    return {
+        ok: true,
+        porCredito: new Map((data ?? []).map(r => [
+            `${r.branch_id}:${r.credito_erp}`,
+            { monto: Number(r.monto), cliente: r.cliente, solicitud: r.solicitud_id },
+        ])),
+    };
+}

@@ -97,10 +97,17 @@ Deno.serve(async (req) => {
     // Un mismo texto para todo lo que no encontró: el par no existe, el DUI está
     // mal escrito, el teléfono no coincide. Quien pregunta no puede distinguir
     // cuál de las tres cosas pasó.
+    //
+    // CORTO a propósito (2026-09-03). Decía «No encontramos una ficha con ese
+    // documento y ese teléfono. Revisa los datos, o pregunta en cualquiera de
+    // nuestras salas.» — 122 caracteres dentro de un aviso que en el tema Liquid
+    // es una píldora de radio 9999px, o sea un óvalo con las esquinas comiéndose
+    // el texto. Y la segunda mitad sobraba: «pregunta en cualquiera de nuestras
+    // salas» ya está impreso al pie del formulario, sin condición, siempre.
     const noEncontrado = {
       ok: false,
       motivo: "no_encontrado",
-      mensaje: "No encontramos una ficha con ese documento y ese teléfono. Revisa los datos, o pregunta en cualquiera de nuestras salas.",
+      mensaje: "No encontramos ese registro. Revisa los datos.",
     };
 
     // Con código el teléfono no se pide; con cualquier otro documento, sí.
@@ -118,7 +125,7 @@ Deno.serve(async (req) => {
     if (Number(fallos ?? 0) >= (esCodigo ? TOPE_FALLOS_CODIGO : TOPE_FALLOS)) {
       return json({
         ok: false, motivo: "muchos_intentos",
-        mensaje: "Demasiados intentos. Espera unos minutos y vuelve a probar.",
+        mensaje: "Demasiados intentos. Espera unos minutos.",
       }, 429);
     }
 
@@ -166,6 +173,9 @@ Deno.serve(async (req) => {
       const nombrePorCodigo = new Map(
         (salasP ?? []).map((b: any) => [String(b.codigo_puntos), String(b.name)]),
       );
+      // Igual que del otro lado: un código que no resuelve no se muestra.
+      const salaLegible = (codigo: unknown) =>
+        nombrePorCodigo.get(String(codigo ?? "")) ?? null;
 
       return json({
         ok: true,
@@ -187,19 +197,34 @@ Deno.serve(async (req) => {
           tipo: m.tipo,
           fecha: m.fecha,
           puntos: Number(m.puntos),
-          sala: nombrePorCodigo.get(String(m.sucursal ?? "")) ?? m.sucursal,
+          sala: salaLegible(m.sucursal),
         })),
       });
     }
 
+    // ── La cuenta de puntos se busca por el DUI DE LA FICHA ────────────────
+    // No por lo que se tecleó. El sistema de puntos guarda la cuenta con el DUI
+    // como llave, y quien entró con su código escribió siete caracteres: no
+    // sabe —ni tiene por qué saber— con qué documento está inscrito. Por eso el
+    // DUI lo devuelve `puntos_cliente_por_documento`, que ya resolvió la ficha.
+    //
+    // Antes acá decía `[dui]`, una variable que dejó de existir el día que el
+    // documento pasó a ser más que un DUI. No es `undefined`: es un
+    // ReferenceError que cae en el `catch` de abajo y sale como «no
+    // disponible», o sea un aviso que habla de otra cosa.
+    const duiDeLaFicha = String((cli as any).dui ?? "").replace(/\D/g, "");
+
+    // Sin DUI en la ficha no hay cuenta que buscar del otro lado. Se contesta lo
+    // mismo que a quien todavía no acumuló: es exactamente su situación, y es
+    // uno de los casos para los que existe el código.
     const mysql = await import("npm:mysql2@3.11.0/promise");
     conn = await mysql.createConnection(cfg);
 
-    const [cuentas] = await conn.query(
+    const [cuentas] = duiDeLaFicha ? await conn.query(
       "SELECT idCliente, Puntos saldo FROM Clientes " +
       "WHERE REPLACE(REPLACE(DUI,'-',''),' ','') = ? LIMIT 2",
-      [dui],
-    ) as any;
+      [duiDeLaFicha],
+    ) as any : [[]];
 
     // Tiene ficha en el portal pero todavía no cuenta de puntos. Se dice, en vez
     // de mostrar un cero que se lee como «gasté y no me dieron nada».
@@ -255,6 +280,20 @@ Deno.serve(async (req) => {
       (salas ?? []).map((b: any) => [String(b.codigo_puntos), String(b.name)]),
     );
 
+    // ── Un código que no resuelve NO se muestra ────────────────────────────
+    // Acá antes se dejaba el código crudo, razonando que «un nombre que no se
+    // pudo resolver no puede costarle a nadie su saldo». Eso vale para la
+    // lectura que falla; no para un código que sencillamente no está en
+    // `branches.codigo_puntos`. Medido el 2026-09-03: un cliente veía sus dos
+    // compras rotuladas «FSE1» y «ADM1», que es jerga de otro sistema en la
+    // única pantalla del portal que ve alguien que no trabaja acá.
+    //
+    // La salida NO es adivinar a qué sala corresponde —poner el nombre
+    // equivocado en el historial de alguien es peor que no poner ninguno—: es
+    // no decir nada. La fecha y los puntos, que son el dato, siguen ahí.
+    const salaLegible = (codigo: unknown) =>
+      nombreDeSala.get(String(codigo ?? "")) ?? null;
+
     const saldo = Number(c.saldo ?? 0);
 
     // La reconstrucción tiene que dar EXACTAMENTE el saldo. Si no da, el
@@ -283,7 +322,7 @@ Deno.serve(async (req) => {
       // viajando por la red.
       movimientos: (movs ?? []).map((m: any) => ({
         tipo: m.tipo, fecha: m.fecha, puntos: Number(m.puntos),
-        sala: nombreDeSala.get(String(m.sala ?? "")) ?? m.sala,
+        sala: salaLegible(m.sala),
       })),
     });
   } catch (_e) {

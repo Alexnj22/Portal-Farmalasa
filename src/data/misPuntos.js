@@ -35,13 +35,15 @@ export async function consultarMisPuntos({ documento, dui, telefono }) {
         if (data?.ok) return data;
         return {
             ok: false,
-            mensaje: data?.mensaje ?? 'No se pudo consultar en este momento. Intenta de nuevo en un rato.',
+            // Cortos: el aviso que los muestra es una píldora, y un párrafo
+            // adentro de un óvalo de radio 9999px es lo que se reportó dos veces.
+            mensaje: data?.mensaje ?? 'No se pudo consultar. Intenta en un rato.',
         };
     } catch (e) {
         console.error('misPuntos.js:', e);
         return {
             ok: false,
-            mensaje: 'No se pudo consultar en este momento. Revisa tu conexión e intenta de nuevo.',
+            mensaje: 'Sin conexión. Revisa tu señal e intenta de nuevo.',
         };
     }
 }

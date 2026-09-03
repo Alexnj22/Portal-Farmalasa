@@ -21,6 +21,79 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.964.6 — Mis puntos: el código entra de verdad, y el aviso deja de ser un óvalo
+
+El código seguía sin entrar después de v2.964.5, y esta vez la base estaba bien.
+
+**La función `mis-puntos` nunca se había desplegado.** Todo el camino del código
+—leer `documento` en vez de `dui`, reconocerlo por su forma, no pedir teléfono—
+se escribió en v2.912.0 y vivió cinco días sólo en el repo: producción corría la
+versión 3, que lee `body.dui`, le quita todo lo que no sea dígito (`TCVMCR4` →
+cadena vacía) y contesta «no encontramos» antes de mirar nada. Ni la base ni la
+pantalla podían arreglar eso.
+
+Y el archivo del repo **tampoco andaba**: al renombrarse `dui` → `doc`, una
+línea se quedó con `[dui]`. No es `undefined` — es un `ReferenceError` que cae
+en el `catch` de más arriba y sale como «no disponible», o sea un aviso que
+habla de otra cosa. `npm run gate:undefinidos` no lo vio porque sólo lee `src/`.
+
+Tres correcciones para que el código funcione de punta a punta:
+
+- **La cuenta de puntos se busca por el DUI DE LA FICHA**, no por lo que se
+  tecleó. El sistema de puntos guarda la cuenta con el DUI como llave, y quien
+  entra con su código escribió siete caracteres: no sabe con qué documento está
+  inscrito. Ahora lo devuelve `puntos_cliente_por_documento`, que ya resolvió la
+  ficha (migración `20260903165848`). Va a la edge function, que corre con
+  service_role — al navegador no viaja.
+- **Esa función no es para el navegador y lo era.** Supabase le concede EXECUTE
+  a `authenticated` por defecto y el REVOKE original sólo alcanzaba a PUBLIC y
+  `anon`: cualquiera con sesión podía pedirle la ficha de un cliente desde un
+  código, salteándose el freno por IP. Lo levantó `npm run gate:migrations`.
+- **El freno contaba las consultas BUENAS.** `mis-puntos` anota cada pedido como
+  fallo antes de resolverlo —tiene que hacerlo— y al acertar anotaba un acierto
+  aparte, sin borrar el fallo. O sea que el contador medía cuántas veces alguien
+  **preguntó**, no cuántas se equivocó: con el tope en cinco, la sexta consulta
+  correcta del día recibía «Demasiados intentos» — y el freno agrupa por IP, así
+  que en una sala todos los clientes salen por la misma. Ahora el acierto corrige
+  su propia fila. Verificado contra producción: siete consultas correctas
+  seguidas pasan las siete, y a la sexta equivocada la puerta se cierra.
+
+### El aviso largo ya no puede salir en una píldora
+
+Reportado sobre el mensaje de esta pantalla, y como regla general. En el tema
+Liquid el radio del aviso vale 9999px: con un renglón se ve como los botones que
+tiene al lado, con dos dibuja un óvalo con las esquinas comiéndose el texto.
+
+Ya se había reportado el 2026-08-26 sobre el aviso de Bolsas («se ve fatal») y
+la salida fue la prop `bloque` — que se olvidó en el primer aviso escrito
+después de crearla. **Una prop opt-in es una prop olvidada.**
+
+`Notice` decía «no se puede deducir: desde adentro, `children` es una caja
+cerrada». Es cierto para JSX y falso para el caso que causa el defecto: los
+avisos que se ven mal son los de un texto largo, y un texto se mide en tiempo de
+render. Así que el radio se decide solo pasando los 56 caracteres —el ancho de
+dos renglones en un teléfono— y `bloque` queda para el relleno de un párrafo con
+lista adentro, que sí es una decisión de composición. Con JSX adentro no se
+adivina: manda lo que declaró quien lo escribió.
+
+Los mensajes de esta pantalla además se acortaron. «No encontramos una ficha con
+ese documento y ese teléfono. Revisa los datos, o pregunta en cualquiera de
+nuestras salas.» eran 122 caracteres, y la segunda mitad ya está impresa al pie
+del formulario, siempre y sin condición → **«No encontramos ese registro. Revisa
+los datos.»**
+
+### Y las salas dejan de salir en clave
+
+Un cliente veía sus compras rotuladas «FSE1» y «ADM1»: jerga de otro sistema en
+la única pantalla del portal que ve alguien que no trabaja acá. Ninguno de los
+dos códigos está en `branches.codigo_puntos`, así que el mapa no los resolvía y
+se mostraba el código crudo. La salida no es adivinar a qué sala corresponden
+—poner el nombre equivocado en el historial de alguien es peor que no poner
+ninguno—: es no decir nada. La fecha y los puntos, que son el dato, siguen ahí.
+
+`tests/unit/aviso.test.jsx` ancla la forma del aviso con el mensaje real que se
+reportó.
+
 ## v2.964.5 — Mis puntos: el código entra solo, en cualquier ficha
 
 Corrige de verdad lo que v2.964.3 corrigió por el lado equivocado, y **revierte

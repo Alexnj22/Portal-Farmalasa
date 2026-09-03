@@ -67,12 +67,53 @@ Object.assign(VARIANTES, {
  * gigante con las esquinas comiéndose el texto. Reportado el 2026-08-26 sobre el
  * aviso del invariante de Bolsas: «se ve fatal».
  *
- * No se puede deducir: desde adentro, `children` es una caja cerrada y el
- * componente no sabe cuántos renglones va a ocupar. Así que lo declara quien lo
- * escribe, igual que `usarAccionDeFila` en `DataTable` y por el mismo motivo.
  * Con `bloque`, el radio pasa a ser el de una tarjeta y el relleno crece — que
  * es lo que un párrafo con lista adentro necesita.
+ *
+ * ── Pero `bloque` NO puede ser la única defensa ─────────────────────────────
+ * Se reportó otra vez el 2026-09-03, sobre el aviso de «Mis puntos», con la
+ * regla dicha en general: **un mensaje largo dentro de una píldora redondeada
+ * está prohibido.** Y lo estaba desde agosto — lo que faltaba no era la
+ * decisión, era que no dependiera de acordarse. Una prop opt-in es una prop
+ * olvidada, y ésta se olvidó en el primer aviso escrito después de crearla.
+ *
+ * Acá decía «no se puede deducir: desde adentro, `children` es una caja
+ * cerrada». Es cierto para un `children` de JSX, y **falso para el caso que
+ * causa el defecto**: los avisos que se ven mal son los de un texto largo, y un
+ * texto es medible en tiempo de render. Misma corrección que `data-destino` en
+ * `DataTable` — decidir donde sí se sabe la respuesta.
+ *
+ * Así que el RADIO se decide solo cuando el contenido es texto: pasado el
+ * corte, ya no es una píldora. El relleno lo sigue declarando `bloque`, que es
+ * la decisión de composición —un párrafo con lista adentro respira distinto— y
+ * ésa sí no se puede medir desde acá.
  */
+
+/**
+ * A partir de cuántos caracteres un aviso deja de ser una píldora.
+ *
+ * En un teléfono el aviso mide ~280 px útiles y el texto va en `text-label`:
+ * entran unos 40 caracteres por renglón. Con 56 el segundo renglón ya empezó, y
+ * dos renglones dentro de un óvalo de radio 9999px es exactamente lo que se
+ * reportó dos veces.
+ */
+const LARGO_QUE_YA_NO_ES_PILDORA = 56;
+
+/**
+ * El texto plano de un `children`, o `null` si no se puede saber.
+ *
+ * `null` significa «no lo puedo medir» y NO «es corto»: ante un `children` de
+ * JSX se respeta lo que declaró quien lo escribió. Confundir las dos cosas
+ * volvería a dejar sin defensa justo a los avisos más compuestos.
+ */
+function textoDe(children) {
+    if (typeof children === 'string' || typeof children === 'number') return String(children);
+    if (Array.isArray(children)) {
+        const partes = children.map(textoDe);
+        return partes.some(p => p === null) ? null : partes.join('');
+    }
+    return children == null || children === false ? '' : null;
+}
 const Notice = memo(({
     variant = 'info',
     icon: IconoPropio,
@@ -86,19 +127,25 @@ const Notice = memo(({
     const v = VARIANTES[variant] || VARIANTES.info;
     const Icono = IconoPropio ?? v.icono;
 
+    // Sólo cuando el contenido es texto medible. Con JSX adentro manda `bloque`.
+    const texto = textoDe(children);
+    const largo = texto !== null && texto.trim().length > LARGO_QUE_YA_NO_ES_PILDORA;
+    const comoTarjeta = bloque || largo;
+
     return (
         // `role="status"` y no `alert`: un aviso inline informa, no interrumpe.
         // `alert` obliga al lector de pantalla a cortar lo que esté leyendo, y
         // eso es para errores de verdad, no para una nota al pie de un campo.
         <div role="status"
+            data-aviso={comoTarjeta ? 'bloque' : 'pildora'}
             className={`flex items-start gap-2 border font-bold
-                ${bloque ? 'rounded-card' : 'rounded-btn'}
+                ${comoTarjeta ? 'rounded-card' : 'rounded-btn'}
                 ${compact ? 'px-2.5 py-1.5 text-micro'
                           : bloque ? 'px-4 py-3 text-label' : 'px-3 py-2 text-label'}
                 ${v.caja} ${className}`}
             {...rest}>
             {Icono && <Icono size={compact ? 12 : 14} strokeWidth={2.5}
-                className={`shrink-0 ${bloque ? 'mt-0.5' : 'mt-px'}`} />}
+                className={`shrink-0 ${comoTarjeta ? 'mt-0.5' : 'mt-px'}`} />}
             <span className="min-w-0 flex-1 leading-snug">{children}</span>
             {action && <span className="shrink-0 -my-0.5">{action}</span>}
         </div>

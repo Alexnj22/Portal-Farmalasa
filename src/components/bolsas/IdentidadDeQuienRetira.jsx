@@ -52,6 +52,12 @@ export default function IdentidadDeQuienRetira({
     onOlvidar,
     ayuda,
     rotulo = 'Se lleva el efectivo',
+    // De quién se está comprobando la identidad, en las dos frases que lo
+    // nombran. Va como prop y no escrito adentro porque el componente ya sirve
+    // a tres actos distintos —el efectivo que sale, la salida de una bolsa y,
+    // desde el 3-sep, la entrega de la caja al cambiar de turno— y en la
+    // entrega de la caja nadie se lleva nada: la recibe.
+    sujeto = 'quien se lleva el efectivo',
     bloqueado = false,
 }) {
     // 'CARNE' es el camino normal; 'CLAVE' es la escotilla.
@@ -155,12 +161,12 @@ export default function IdentidadDeQuienRetira({
             {metodo === 'CARNE' ? (
                 <EsperaDeCarne
                     teclas={teclas} manual={manual} ocupado={leyendo}
-                    ayuda={ayuda || <>Pasa por el lector el carné<br />de quien se lleva el efectivo</>}
+                    ayuda={ayuda || <>Pasa por el lector el carné<br />de {sujeto}</>}
                 />
             ) : (
                 <>
                     <p className="text-body-sm text-content-2 text-center">
-                        El usuario y la contraseña de quien se lleva el efectivo
+                        El usuario y la contraseña de {sujeto}
                     </p>
                     <PortalInput
                         label="Usuario" name="usuario-recibe"

@@ -91,7 +91,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
     }, [branches]);
 
     // La misma escritura que el módulo y el detalle — ver `useResolverCorte`.
-    const { resolver, ocupadoId } = useResolverCorte({ nombreSala, origen: 'inicio' });
+    const { resolver, ocupadoId, dialogoDeEntrega } = useResolverCorte({ nombreSala, origen: 'inicio' });
 
     const [filas, setFilas] = useState([]);
     const [mes, setMes] = useState([]);
@@ -282,6 +282,9 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
                     />
                 </Suspense>
             )}
+
+            {/* La entrega de la caja al confirmar — ver `useResolverCorte`. */}
+            {dialogoDeEntrega}
         </div>
     );
 }

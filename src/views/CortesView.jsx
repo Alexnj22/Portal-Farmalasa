@@ -349,7 +349,7 @@ const CortesView = () => {
 
     // La escritura (bitácora y avisos incluidos) es la misma para las cuatro
     // pantallas que resuelven un corte. Ver `useResolverCorte`.
-    const { resolver, ocupadoId } = useResolverCorte({ nombreSala, origen: 'modulo' });
+    const { resolver, ocupadoId, dialogoDeEntrega } = useResolverCorte({ nombreSala, origen: 'modulo' });
 
     // El tramo se calcula POR SALA Y POR DÍA — el porqué está en
     // `conTramoPorSalaYDia`, que es el mismo cálculo que usa el Inicio.
@@ -879,6 +879,9 @@ const CortesView = () => {
                 onResuelto={cargar}
                 origen="modulo"
             />
+
+            {/* La entrega de la caja al confirmar — ver `useResolverCorte`. */}
+            {dialogoDeEntrega}
         </GlassViewLayout>
     );
 };

@@ -192,10 +192,25 @@ const TarjetaCorte = memo(function TarjetaCorte({
                         `empleado_texto` es el nombre de la CUENTA con la que la
                         sala corta: en tres salas no es una persona («MI CAJA LA
                         POPULAR») y en las otras tres es una que tampoco cortó.
-                        Sin fila del portal no se nombra a nadie. */}
+                        Sin fila del portal no se nombra a nadie.
+
+                        Y a quién se la entregó, que es el otro nombre del mismo
+                        acto: confirmar el corte cierra el turno. La flecha lo
+                        dice sin gastar una línea más — en una tarjeta que ya
+                        compite por alto con la cifra. */}
                     <div className="text-caption text-content-3 truncate">
                         {corte.hizo?.name || 'se hizo desde la caja'}
+                        {corte.recibe?.name ? ` → ${corte.recibe.name}` : ''}
                     </div>
+                    {/* «Nadie recibió» se DICE, no se calla: es la mitad
+                        «avisar» de la decisión del usuario (3-sep, «avisar
+                        primero, medir, después bloquear»). El cierre del día no
+                        lleva marca — ahí no hay a quién entregarle. */}
+                    {corte.entrega === 'SIN_ENTREGA' && (
+                        <div className="text-micro text-warning-text truncate">
+                            se confirmó sin entregar la caja
+                        </div>
+                    )}
                 </div>
 
                 {/* La cifra manda y el ojo la acompaña: la tarjeta ABRE el corte

@@ -289,7 +289,7 @@ export default function MiCajaView({ comoPestana = false }) {
      * ErrorBoundary desde la v2.930.0 y el aviso nombraba una letra minificada,
      * así que no decía dónde. Lo caza `no-use-before-define` sobre variables;
      * al mover un hook, comprobar que todo lo que lee ya esté declarado. */
-    const { resolver, ocupadoId } = useResolverCorte({
+    const { resolver, ocupadoId, dialogoDeEntrega } = useResolverCorte({
         nombreSala: { [sala]: nombreSala }, origen: 'micaja',
     });
 
@@ -1080,6 +1080,13 @@ export default function MiCajaView({ comoPestana = false }) {
                        como `aviso`, que `correr` ahora muestra. */
                     onCerrar={() => correr(() => cerrarElDia(sala), 'El día quedó cerrado.')} />
             )}
+
+            {/* «¿Quién recibe la caja?» al confirmar un corte. Va dentro de
+                `todo` para que aparezca también cuando Efectivo se pinta como
+                PESTAÑA de otra vista: colgado del `GlassViewLayout` de abajo,
+                ese camino se quedaría sin diálogo y la confirmación esperaría
+                para siempre. Ver `useResolverCorte`. */}
+            {dialogoDeEntrega}
         </>
     );
 

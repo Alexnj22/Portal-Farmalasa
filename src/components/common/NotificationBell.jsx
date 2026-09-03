@@ -546,8 +546,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         return m;
     }, [branches]);
     const { porId: cortesPorId, recargar: recargarCortes } = useCortesDeAvisos(notifications, isOpen);
-    const { resolver: resolverElCorte, ocupadoId: corteOcupado } =
-        useResolverCorte({ nombreSala, origen: 'campana' });
+    const { resolver: resolverElCorte, ocupadoId: corteOcupado,
+            dialogoDeEntrega } = useResolverCorte({ nombreSala, origen: 'campana' });
     const puedeResolverCortes = hasPermission('cortes_caja', 'can_edit');
     const [corteAbierto, setCorteAbierto] = useState(null);   // { corte, modo }
     const [montarDetalleCorte, setMontarDetalleCorte] = useState(false);
@@ -1368,6 +1368,9 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                     />
                 </Suspense>
             )}
+
+            {/* La entrega de la caja al confirmar — ver `useResolverCorte`. */}
+            {dialogoDeEntrega}
         </div>
     );
 };

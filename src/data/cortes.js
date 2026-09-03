@@ -45,6 +45,7 @@ import { signPhotosDeep } from '../utils/storageFiles';
 const CAMPOS = `
     id, branch_id, erp_corte_id, tipo, fecha, hora, turno, empleado_texto,
     employee_id, hizo:employees!cortes_caja_employee_id_fkey(name),
+    recibido_por, recibe:employees!cortes_caja_recibido_por_fkey(name), entrega,
     total_declarado, diferencia_erp, esperado,
     tk_cobros_credito, tk_subtotal, tk_vales, tk_total_caja, tk_devoluciones,
     tk_tarjeta, tk_credito, cobros_portal_efectivo,
@@ -253,14 +254,52 @@ export async function fetchEntradasParaCruce({ desde, hasta }) {
  * Confirmar o descartar. El RPC valida permiso, alcance de sucursal, que sea un
  * corte de caja (el cierre del día no se confirma) y que siga pendiente; la
  * autoría la pone el servidor, no el navegador.
+ *
+ * ── `recibidoPor` y `vale`: la entrega de la caja ──────────────────────────
+ * Confirmar CIERRA EL TURNO, así que es el momento en que la caja cambia de
+ * manos. Quien la recibe firma con su carné y el servidor consume el vale de
+ * un solo uso que emitió al reconocerlo — el navegador NO elige a quién se le
+ * atribuye, igual que en la entrega del efectivo.
+ *
+ * Van los dos o ninguno. Sin firma el corte se confirma igual y el servidor
+ * decide, mirando el horario de la sala, si fue el último del día o si nadie
+ * recibió; esa decisión no la toma esta pantalla.
  */
-export function resolverCorte(id, estado, { motivo = null, observaciones = null } = {}) {
+export function resolverCorte(id, estado, {
+    motivo = null, observaciones = null,
+    recibidoPor = null, vale = null, sinEntregaMotivo = null,
+} = {}) {
     return supabase.rpc('resolver_corte_caja', {
         p_id: id,
         p_estado: estado,
         p_motivo: motivo,
         p_observaciones: observaciones,
+        p_recibido_por: recibidoPor,
+        p_vale: vale,
+        p_sin_entrega_motivo: sinEntregaMotivo,
     });
+}
+
+/**
+ * ¿La sala ya pasó su hora de cierre? Decide si al confirmar hay que pedir la
+ * firma de quien recibe: en el último corte del día no hay a quién entregarle.
+ *
+ * Se le pregunta al SERVIDOR y no se calcula acá, aunque el horario esté a mano
+ * en el store: es exactamente la misma función que `resolver_corte_caja` usa
+ * para decidir cómo marcar el corte. Calculado en los dos lados, un día la
+ * pantalla no pide la firma y el servidor marca «nadie recibió» — dos jueces
+ * para la misma pregunta es cómo se llega a dos respuestas.
+ *
+ * `null` = no se pudo saber (la sala no tiene horario ese día, o no se pudo
+ * leer). Ahí SÍ se pide la firma: es lo que no acusa a nadie sin haber mirado.
+ */
+export async function salaYaCerro(branchId) {
+    const { data, error } = await supabase.rpc('sala_ya_cerro', { p_branch: branchId });
+    if (error) {
+        console.warn('cortes: no se pudo leer el horario de la sala:', error.message);
+        return null;
+    }
+    return data;
 }
 
 /**

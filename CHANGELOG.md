@@ -21,6 +21,75 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.964.0 — Entregar la caja: confirmar un corte pide quién la recibe
+
+Confirmar un corte **cierra el turno** (regla del usuario, 1-sep: «al hacer un
+corte y confirmarlo deben abrir caja de nuevo la persona responsable»). O sea
+que ese clic ya era, en la práctica, el momento en que la caja cambia de manos
+— sólo que no tenía quien la recibiera: lo podía firmar la misma persona que
+contó el efectivo, y nada lo distinguía.
+
+No era un caso raro. Medido sobre los 10 días anteriores, confirmaron **35
+personas distintas** y son las mismas de sala: en Salud 1, Alexander Melgar
+(19), Stefany Velásquez (11), Nathaly Estrada (10) y cuatro más. Y hasta ayer ni
+siquiera se podía contar cuántas se firmaron solas, porque quién hacía el corte
+no quedaba anotado en ninguna parte (v2.963.2).
+
+**Cómo queda**
+
+Al confirmar aparece «¿Quién recibe la caja?». Quien la recibe firma con su
+carné —o usuario y contraseña, la misma escotilla de la entrega de efectivo— sin
+que nadie tenga que cerrar sesión. Es el mismo componente y el mismo vale de un
+solo uso que ya usaba el efectivo que sale: el navegador no elige a quién se le
+atribuye nada.
+
+**El último corte del día no pregunta nada.** Lo decide el horario de la
+sucursal: «si cierra a las 7 y confirma un corte a las 7 ya es el último, no
+debe pedir ahí nada; pero si hace un corte a las 4 y lo confirmó, ahí sí se
+entrega a alguien». La pantalla y el servidor le preguntan a la MISMA función
+(`sala_ya_cerro`) — calculado en los dos lados, un día la pantalla no pide la
+firma y el servidor anota que nadie recibió.
+
+Tres trampas del horario, las tres medidas sobre las 8 sucursales:
+
+- **el texto no es una hora**: Salud 2 tiene `"19:00 PM"`. Comparar las cadenas
+  tal cual funciona de casualidad y se rompe el día que alguien escriba
+  `"7:00 PM"` — como texto, `7:00` es MAYOR que `19:00`;
+- **el día 0 es domingo**, igual que en JavaScript, y `extract(dow)` de Postgres
+  usa esa misma numeración;
+- **un horario que cruce la medianoche** no se puede comparar así: ahí la
+  función devuelve `NULL` en vez de contestar cualquier cosa.
+
+**No bloquea, y es a propósito.** Decisión del usuario: «avisar primero, medir,
+después bloquear». Se puede confirmar sin que nadie reciba, diciendo por qué, y
+la tarjeta del corte lo muestra: **«se confirmó sin entregar la caja»**. Un
+candado que deja a una sala sin poder cerrar el turno produce el atajo en vez
+del control — ya costó seis bolsas trabadas en agosto.
+
+Lo único que el servidor **sí** rechaza es una firma falsa: quien hizo el corte
+no puede recibir su propia caja. Eso no traba a nadie —siempre queda la salida
+de confirmar sin entrega— y evita que la segunda firma sea la misma persona,
+que es como un control de dos firmas deja de serlo.
+
+**Los cuatro desenlaces se guardan, y el cuarto existe para no mentir:**
+`RECIBIDO`, `CIERRE` (era el último del día), `SIN_ENTREGA` (la sala seguía
+abierta y nadie recibió — el caso a medir) y `SIN_HORARIO` (no se pudo saber si
+era el último; no acusa a nadie). Los decide el servidor, no la pantalla.
+
+**Dónde vive el pedido de la firma.** En `useResolverCorte`, el hook que ya era
+la única escritura, y no en las pantallas: las CUATRO confirman de verdad
+—medido sobre 7 días: módulo 12, campana 8, mi caja 3, Inicio 3—, así que
+ponerlo en una sola habría dejado fuera el 75% de las confirmaciones. Por eso
+`resolver` no devuelve hasta que la entrega se resolvió: quien confirma sigue
+haciendo su trabajo de después —imprimir el papel del corte, la etiqueta de la
+bolsa, cerrar el turno— sin saber que hubo un diálogo en el medio.
+
+**Un defecto encontrado antes de que llegara a producción:** la función empezó a
+escribir un evento `'RECIBIR'` en la bitácora del corte y el `CHECK` de la tabla
+seguía siendo el del modelo viejo. La PRIMERA entrega habría fallado con un
+23514 y se habría llevado puesta la confirmación entera, porque el evento va en
+la misma transacción. Corregido antes de que existiera quien lo llamara.
+
 ## v2.963.3 — El aro de la foto ya no tumba la vista de quien está presente
 
 Reportado como dos defectos que no parecían tener nada que ver: «el buscador en

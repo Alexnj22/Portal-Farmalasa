@@ -98,7 +98,7 @@ export default function CorteDetalleModal({
     const { hasPermission } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
     // La escritura es la misma que la del módulo, el Inicio y la campana.
-    const { resolver, ocupadoId } = useResolverCorte({ nombreSala, origen });
+    const { resolver, ocupadoId, dialogoDeEntrega } = useResolverCorte({ nombreSala, origen });
 
     // Lo que se PINTA sobrevive al cierre: el panel sigue montado ~240ms
     // haciendo su salida, y leer `corte` directo lo vaciaría en el primer frame.
@@ -306,6 +306,7 @@ export default function CorteDetalleModal({
     }, [corte, reabriendo, motivo, showToast, onResuelto, onClose]);
 
     return (
+        <>
         <LiquidModal
             open={abierto}
             onClose={ocupadoId ? undefined : onClose}
@@ -323,6 +324,9 @@ export default function CorteDetalleModal({
                             sistema de la caja es el de la cuenta de la sala, y en
                             tres salas lleva el nombre de una persona que no cortó. */}
                         {visible?.hizo?.name ? ` · ${visible.hizo.name}` : ''}
+                        {/* Y quién recibió la caja: confirmar el corte cierra el
+                            turno, así que son los dos nombres del mismo acto. */}
+                        {visible?.recibe?.name ? ` → ${visible.recibe.name}` : ''}
                     </p>
                 </div>
             </LiquidModal.Header>
@@ -849,5 +853,11 @@ export default function CorteDetalleModal({
                 )}
             </LiquidModal.Footer>
         </LiquidModal>
+        {/* «¿Quién recibe la caja?» — sale ENCIMA de este detalle cuando se
+            confirma, y quien confirmó sigue esperando en su `await` hasta que
+            se firme o se saltee. Sin pintarlo, la confirmación no termina
+            nunca. Ver `useResolverCorte`. */}
+        {dialogoDeEntrega}
+        </>
     );
 }

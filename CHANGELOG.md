@@ -21,6 +21,87 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.967.2 — Las tres del dinero nacían sin aprobador, o sea sin aviso
+
+Sexto defecto del mismo circuito, encontrado al revisar por qué una solicitud de
+abono no generaba ninguna notificación. La cadena, y ninguna de las tres piezas
+da error:
+
+1. `operar-caja` y `creditos-erp` crean la solicitud **sin `approver_id`** — no
+   eligen a nadie a propósito: quien decide sale del permiso del módulo.
+2. `asignar_aprobador_solicitud` sólo rellenaba ese hueco para **seis** tipos
+   —los dos widgets de inventario y los cuatro de facturación—, que era la lista
+   completa el día que se escribió.
+3. `notificar_solicitud_creada` sale por su primera línea con `approver_id IS
+   NULL`.
+
+Resultado: la solicitud existía, quedaba PENDING y **nadie recibía ni un aviso**.
+Sólo aparecía entrando a la bandeja a mirar.
+
+Ahora las tres se resuelven por **permiso** y no por el nombre de un cargo: se
+le pregunta a `modulo_de_aprobacion(type)`, la misma función que usa la policy.
+Medido: 4 personas con `requests_caja` y 4 con `requests_cuentas_por_cobrar`.
+
+**Y el aviso decía el código crudo.** `v_etiqueta` no tenía caso para los tres,
+así que habría dicho «Solicitud de ABONO_APROBACION de Fulano espera tu
+decisión». Cada una lleva ahora su cuerpo con el **monto**, que es el dato que
+decide si se mira ahora o después — y el del abono dice que el dinero **ya
+entró**, porque sin eso el aviso se lee como un permiso previo y frenar parecería
+gratis.
+
+**«Sin detalle» no es un motivo.** Es el relleno que escribe `creditos-erp`
+cuando no hay nota, y el aviso lo pegaba después de un guión como si fuera lo que
+la persona escribió. Se trata como ausencia (`motivo_de_solicitud`). Y la nota
+pasó a ser el **motivo** real —que la pantalla exige, mínimo 5 caracteres— en vez
+del número del documento: hasta v2.966.0 ese motivo ni siquiera llegaba al
+servidor.
+
+Migraciones `20260903172223`, `20260903172321` y `20260903172446`.
+
+## v2.967.1 — Bitácoras: la hora vuelve al papel, y la calibración no era lo que dije
+
+Dos correcciones, las dos por leer bien la norma. El usuario levantó la primera:
+*«pero se calibran para refrigeradoras, o para otro tipo de farmacias, es de 3
+categoría las que tenemos»*. Tenía razón.
+
+**El RTS tiene DOS capítulos, y el que cité no es el nuestro.**
+
+| | a quién aplica |
+|---|---|
+| **§5** Buenas Prácticas de Almacenamiento, Distribución y Transporte | **laboratorios, droguerías y centros de almacenamiento** |
+| **§6** Buenas Prácticas de Almacenamiento y Dispensación | **farmacias, botiquines** y otros que dispensan ← nosotros |
+
+`5.6.14` —«los instrumentos de medición de temperatura y humedad […] deben estar
+calibrados con su respectivo certificado»— vive en el capítulo de droguerías.
+Para farmacias manda `6.2.11`: *«se debe contar con un instrumento o equipo
+independiente para área de bodega y sala de ventas, ubicada en un área
+representativa»*, **sin exigir calibración**. La única calibración del capítulo 6
+es `6.2.19`, **y es del refrigerador**, y sólo *«si se manejan productos que
+requieran condiciones especiales de cadena de frío»*.
+
+En la hoja no había que cambiar nada —la calibración ya se imprimía sólo cuando
+el área la tiene cargada— pero la afirmación de v2.966.1 estaba mal y quedó
+corregida en memoria.
+
+**Y buscando eso apareció lo segundo, que sí obligaba a cambiar la hoja.**
+
+> **RTS 6.2.21** — «En los registros debe existir evidencia de la **fecha, hora
+> y persona** que realiza la lectura de la temperatura y humedad relativa.»
+
+v2.966.1 le había quitado la hora al papel. La **Guía de Verificación 2.34** sólo
+pregunta por *«la fecha y persona»*, así que mirando la guía sola la hora parece
+opcional — y el RTS la exige. Vuelve, chica y al lado del nombre para que no le
+gane la columna. Las seis hojas siguen entrando en una página cada una.
+
+De paso, la leyenda ahora dice lo que la hoja cumple: la hora y la persona por
+`6.2.21`, y que **la humedad relativa es informativa** por `6.2.16` — que también
+fija el mínimo en dos lecturas diarias, «una a mediados de la mañana y otra a
+mediados de la tarde». El portal hace tres.
+
+**La lección: la Guía de Verificación es un subconjunto del RTS, no su resumen.**
+Cumplir la guía no es cumplir la norma, y un ítem que la guía no pregunta puede
+seguir siendo obligatorio.
+
 ## v2.967.0 — El cobro de un crédito se ve en Efectivo, y los movimientos del día ya no esperan al primer corte
 
 Reportado por el usuario: *«al hacer un abono al crédito no sale en /caja, así

@@ -705,7 +705,14 @@ Deno.serve(async (req) => {
           type: "ABONO_APROBACION",
           employee_id: quien.id,
           status: "PENDING",
-          note: documento || "Sin detalle",
+          /* La nota es el MOTIVO que escribió quien cobró —la pantalla se lo
+           * exige, mínimo 5 caracteres— y no el número del documento, que ya
+           * viaja en `detalle`. Hasta el 2026-09-03 acá iba `documento`, pero
+           * ese campo nunca llegaba: la vista tiraba `motivo` al re-armar el
+           * pago, así que la nota quedaba en «Sin detalle» siempre y quien
+           * decidía no tenía la única frase que explica por qué este cobro
+           * necesita firma. */
+          note: String(body.motivo ?? "").trim() || documento || "Sin detalle",
           metadata: {
             branch_id: sala, pago_id: String(pago.id),
             cliente: ficha?.cliente ?? hechos[0].vivo.cliente,

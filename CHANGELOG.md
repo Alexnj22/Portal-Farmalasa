@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.964.1 — El hook viejo que Vite elegía por encima del nuevo
+
+v2.964.0 renombró `useResolverCorte.js` a `.jsx` —hace falta porque el hook ahora
+devuelve JSX y Vite no parsea JSX en un `.js`— pero el commit fue con rutas
+explícitas y la del archivo **viejo** se quedó fuera. HEAD terminó con las dos
+copias.
+
+Y no es cosmético. Los imports son sin extensión, y el orden por defecto de Vite
+es `.mjs, .js, .mts, .ts, .jsx, .tsx`: **`.js` gana**. O sea que el build de
+producción estaba compilando el hook viejo — `dialogoDeEntrega` llegaba
+`undefined` a las cinco pantallas, el diálogo de «¿quién recibe la caja?» no se
+pintaba nunca, y confirmar un corte seguía funcionando exactamente como antes de
+v2.964.0.
+
+El modo de falla es el peor de todos: no hay error, no falta ninguna pantalla, y
+la función nueva simplemente no existe. Localmente tampoco se veía, porque
+`git mv` ya había sacado el `.js` del disco: el build de esta máquina resolvía al
+`.jsx` y todo se veía bien. La diferencia sólo existía en el repo.
+
 ## v2.964.0 — Entregar la caja: confirmar un corte pide quién la recibe
 
 Confirmar un corte **cierra el turno** (regla del usuario, 1-sep: «al hacer un

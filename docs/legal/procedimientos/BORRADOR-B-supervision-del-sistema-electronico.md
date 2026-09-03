@@ -3,7 +3,7 @@
 > firme y selle.** Lo que va entre `[corchetes]` es una decisión o un dato que
 > sólo la empresa puede poner.
 >
-> ⚠️ **Antes de firmarlo hay que resolver el punto 2.3.** Hoy el cierre mensual
+> **Antes de firmarlo hay que resolver el punto 2.3.** Hoy el cierre mensual
 > —que es el equivalente de la firma del regente— lo pueden hacer **cinco
 > cargos**, no sólo el regente. Este documento no se puede firmar diciendo lo
 > contrario.
@@ -76,7 +76,7 @@ Además, cada persona **sólo ve los registros de la sala o salas a las que est�
 asignada**. Esa restricción no la aplica la pantalla: la aplica la base de datos,
 así que no se puede evitar por otro camino.
 
-### 2.3 · ⚠️ Lo que hay que decidir antes de firmar
+### 2.3 · Lo que hay que decidir antes de firmar
 
 **El cierre mensual es el equivalente digital de la firma y sello del regente**
 (numeral 6.1.12). Hoy lo pueden hacer **cinco cargos**, y de hecho el único
@@ -202,13 +202,3 @@ lo encontrado y las acciones tomadas.
 | versión | fecha | qué cambió |
 |---|---|---|
 | 1.0 | `[dd/mm/aaaa]` | Emisión inicial |
-
----
-
-**Revisado y autorizado por:**
-
-<br/><br/>
-
-`________________________________`
-`[Nombre del regente]` · JVPM `[n.º]`
-Firma y sello · `[dd/mm/aaaa]`

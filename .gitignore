@@ -55,3 +55,9 @@ scripts/migracion-clientes/ops_por_municipio.json
 barridos/
 public/agente-impresion/
 scripts/.eficiencia-gate-estado.json
+
+# Los procedimientos escritos se GENERAN del markdown que está al lado
+# (`npm run procedimientos:pdf`). Commitear el PDF deja una copia que envejece
+# sola, y sobre un documento que el regente firma eso es peor que no tenerla:
+# nadie sabría cuál de las dos versiones se firmó.
+docs/legal/procedimientos/*.pdf

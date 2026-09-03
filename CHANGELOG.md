@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.968.4 — Los procedimientos escritos salen en PDF, con el formato aprobado
+
+`npm run procedimientos:pdf` genera los `.pdf` de `docs/legal/procedimientos/`
+con la misma banda de control que las hojas de bitácoras: el logo, la cejilla,
+el título, y debajo la ficha de identificación con código, versión, quién lo
+elaboró y quién lo autoriza. Carta vertical, **página X de Y** en el pie —que la
+Guía de Verificación 3.7 pide para un documento controlado— y el espacio de
+firma y sello al final.
+
+**El original es el markdown, y el PDF se genera.** Escrito al revés —el PDF a
+mano y el markdown como copia— las dos versiones divergen y nadie sabe cuál
+firmó el regente. Por eso los `.pdf` van al `.gitignore`: una copia commiteada
+envejece sola, y sobre un documento firmado eso es peor que no tenerla.
+
+**El conversor de markdown es ESTRICTO a propósito, y es la decisión de diseño
+del archivo.** Un conversor normal, ante una línea que no entiende, la escupe
+tal cual o la descarta — y las dos cosas son inaceptables acá: **este documento
+lo firma y sella el regente**, y una cláusula que desaparece en silencio es una
+cláusula que la empresa cree tener y no tiene. Así que acepta sólo el
+subconjunto que estos documentos usan y **aborta nombrando archivo y línea**
+ante cualquier otra cosa. Verificado fabricándole las tres regresiones: HTML
+crudo, un enlace y una tabla sin su fila de guiones. Las tres las caza.
+
+Dos cosas se movieron del texto al FORMATO, que es donde van: **el bloque de
+firma** —lo dibuja el generador con el nombre que ya está en la ficha, así que
+no hay dos lugares donde escribirlo— y la numeración de página. De paso salieron
+los emojis: es un documento controlado en blanco y negro.
+
 ## v2.968.3 — La foto de una persona la resuelve el componente, no el llamador
 
 Cierre de lo que empezó en v2.967.4, que había arreglado **un** llamador. El

@@ -141,13 +141,3 @@ solicita, en archivo.
 | versión | fecha | qué cambió |
 |---|---|---|
 | 1.0 | `[dd/mm/aaaa]` | Emisión inicial |
-
----
-
-**Revisado y autorizado por:**
-
-<br/><br/>
-
-`________________________________`
-`[Nombre del regente]` · JVPM `[n.º]`
-Firma y sello · `[dd/mm/aaaa]`

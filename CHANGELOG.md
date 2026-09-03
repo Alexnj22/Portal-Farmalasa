@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.969.6 — La entrega vive en el panel del día, y son todas
+
+Tercera forma y la que quedó, elegida sobre cinco maquetas. La tarjeta propia
+—una caja de ancho completo para una línea de contenido, ~1400px vacíos en un
+monitor de 1900— se fue: la entrega es ahora el **encabezado del panel del
+día**, comparte su borde y su relleno, y no agrega ninguna fila a la pantalla.
+
+**Y son todas las del día, no la última.** Un día de sala tiene tantas entregas
+como cortes confirmados —Salud 3 llegó a siete turnos— así que se dibuja la
+cadena entera: cara, flecha, cara, con la última en verde, que es quien tiene la
+caja ahora. Con más de cuatro manos el medio se pliega en un «+N» y quedan la
+primera y las dos últimas.
+
+**La cadena puede tener un salto, y ahí no va flecha.** Que el corte de las 4 se
+lo entregue A a B no obliga a que el de las 7 lo haga B: puede cortarlo C,
+porque B salió o porque el corte se hizo desde la pantalla de la caja.
+Encadenarlo a la fuerza dibujaría `B → C` sobre un traspaso que nadie hizo — una
+afirmación falsa que no da error y que nadie puede notar. Cuando el que entrega
+no es el que recibió antes va una separación en lugar de la flecha. La regla
+vive en `cadenaDeEntregas`, con su prueba.
+
+**La caja cerrada ya no borra la entrega.** El panel del día sólo se pintaba con
+turno abierto —sin turno no hay ventas que desglosar—, así que colgarle la
+cadena con esa misma guarda la habría hecho desaparecer justo al final del día,
+que es cuando alguien pregunta con quién quedó.
+
 ## v2.969.5 — El entorno de pruebas deja de dispararle a producción
 
 Medido hoy en los registros de producción: **1,258 llamadas rechazadas con 401

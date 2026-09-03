@@ -334,6 +334,69 @@ export function repartirPorCorte(lineas, cortes) {
 }
 
 /**
+ * LA CADENA DE MANOS POR LAS QUE PASÓ LA CAJA EN EL DÍA.
+ *
+ * Un día de sala no tiene una entrega: tiene tantas como cortes confirmados.
+ * Salud 3 llegó a SIETE turnos en un día. Dibujar sólo la última contestaría
+ * «quién la tiene» y perdería por dónde pasó, que es lo que una diferencia
+ * obliga a reconstruir después.
+ *
+ * Devuelve los NODOS de la cadena —personas, y huecos donde nadie recibió—
+ * listos para pintar con una flecha entre uno y el siguiente. El último nodo es
+ * quien tiene la caja ahora.
+ *
+ * ── El salto: la cadena puede NO ser continua, y eso es un dato ───────────
+ * Que el corte de las 4 se lo entregue A a B no obliga a que el de las 7 lo
+ * haga B. Puede cortarlo C —porque B salió, porque entró otro turno, porque el
+ * corte se hizo desde la pantalla de la caja—. Encadenar a la fuerza dibujaría
+ * `B → C` sobre un traspaso que nadie hizo, que es exactamente la clase de
+ * afirmación falsa que no da error y nadie puede notar.
+ *
+ * Cuando el que entrega no es el que recibió antes, el nodo nuevo va marcado
+ * con `salto: true` y la pantalla dibuja una separación en vez de una flecha.
+ *
+ * @param {Array} cortes  filas del día, EN ORDEN, ya filtradas a las que
+ *   tienen desenlace de entrega (`RECIBIDO` o `SIN_ENTREGA`). `CIERRE` y
+ *   `SIN_HORARIO` no entran: el primero es el último corte del día —no hay a
+ *   quién entregarle— y el segundo es el instrumento diciendo que no pudo
+ *   medir. Ninguno es una entrega que faltó.
+ * @returns {Array} `[{ id, name, hora, hueco, motivo, salto }]`
+ */
+export function cadenaDeEntregas(cortes) {
+    const nodos = [];
+    for (const c of cortes || []) {
+        // Quien ENTREGA es quien tenía la caja: el que hizo el corte. Sin fila
+        // del portal —el corte se hizo desde la pantalla de la caja— el único
+        // nombre que hay es el de quien lo confirmó.
+        const dio = c.employee_id
+            ? { id: c.employee_id, name: c.hizo?.name || '' }
+            : (c.resuelto_por ? { id: c.resuelto_por, name: '' } : null);
+        const ultimo = nodos[nodos.length - 1];
+
+        if (dio && (!ultimo || String(ultimo.id) !== String(dio.id))) {
+            nodos.push({ ...dio, hora: null, salto: !!ultimo });
+        }
+
+        if (c.entrega === 'RECIBIDO' && c.recibido_por) {
+            nodos.push({
+                id: c.recibido_por,
+                name: c.recibe?.name || '',
+                hora: String(c.hora || '').slice(0, 5),
+                salto: false,
+            });
+        } else {
+            nodos.push({
+                id: null, name: '', hueco: true,
+                motivo: c.sin_entrega_motivo || '',
+                hora: String(c.hora || '').slice(0, 5),
+                salto: false,
+            });
+        }
+    }
+    return nodos;
+}
+
+/**
  * `conTramo` aplicado a una lista MEZCLADA de salas y de días.
  *
  * El tramo se mide POR SALA Y POR DÍA: los cortes son acumulativos dentro del

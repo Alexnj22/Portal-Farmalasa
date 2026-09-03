@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     AlertTriangle, ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Paperclip, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
@@ -25,7 +25,8 @@ import { useToastStore } from '../store/toastStore';
 import useCerrarBolsa from '../hooks/useCerrarBolsa';
 import useResolverCorte from '../hooks/useResolverCorte';
 import {
-    abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, cerrarTurno, estadoDeCaja, fetchBolsas,
+    abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, cerrarTurno, estadoDeCaja,
+    estadoDeCajaEnElOrigen, hayQuePreguntarleAlOrigen, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     leerBoleta, pedirCorreccion,
@@ -200,6 +201,10 @@ export default function MiCajaView({ comoPestana = false }) {
     const [noSePudo, setNoSePudo] = useState(null);
     const [pendientes, setPendientes] = useState([]);
     const [cargando, setCargando] = useState(true);
+    /* Qué carga es la vigente. Va acá arriba —y no junto a `cargar`— porque
+     * `cargar` lo lee: un `useRef` declarado después se leería antes de existir,
+     * que no da `undefined` sino que lanza en cada render (`gate:tdz`). */
+    const cargaRef = useRef(0);
     const [ocupado, setOcupado] = useState(false);
     const [dialogo, setDialogo] = useState(null);   // 'abrir' | 'ingreso' | 'corte' | 'cerrar'
     const [resultado, setResultado] = useState(null);
@@ -378,19 +383,29 @@ export default function MiCajaView({ comoPestana = false }) {
     }, [nombreSala, sala, showToast, user]);
 
     const cargar = useCallback(async () => {
+        /* El turno de ESTA carga. Desde que hay trabajo después del pintado
+         * —las caras, los saldos y la revalidación contra el origen— una tanda
+         * puede volver cuando quien mira ya cambió de sala, y escribiría el
+         * estado de una caja sobre la pantalla de otra. El token se compara
+         * antes de cada `set`: el que llega tarde se descarta. */
+        const token = ++cargaRef.current;
         if (!sala) { setCargando(false); return; }
         setCargando(true);
-        /* El estado va PRIMERO y solo, aunque cueste un viaje más de reloj: trae
-         * el DÍA que la caja tiene abierto, y ese día —no el del calendario— es
-         * el que recorta todo lo demás. A las once de la noche con la caja sin
-         * cerrar, el calendario ya cambió de día y la caja no: filtrando por el
-         * calendario, lo anotado en esa hora desaparece de la pantalla justo
-         * mientras todavía cuenta para el corte. */
+        /* El estado va PRIMERO y solo: trae el DÍA que la caja tiene abierto, y
+         * ese día —no el del calendario— es el que recorta todo lo demás. A las
+         * once de la noche con la caja sin cerrar, el calendario ya cambió de
+         * día y la caja no: filtrando por el calendario, lo anotado en esa hora
+         * desaparece de la pantalla justo mientras todavía cuenta para el corte.
+         *
+         * Lo que ya NO cuesta es el viaje al sistema de la caja: desde v2.969.0
+         * `estadoDeCaja` lo contesta la base (~18 ms) en vez de raspar el panel
+         * del origen (p50 815 ms, p99 6,903 ms) con la pantalla en blanco. */
         const e = await estadoDeCaja(sala);
+        if (token !== cargaRef.current) return;
         const vivo = e.error ? null : e;
         setNoSePudo(e.error ? mensajeAmigable(e.error) : null);
         const dia = vivo?.dia || new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
-        const [v, abiertas, movs, porPago, salidas, cobrados] = await Promise.all([
+        const [v, abiertas, movs, porPago, salidas, cobrados, delDia] = await Promise.all([
             fetchValesPendientes(),
             fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'CONTADA'] }),
             fetchMovimientosDelPortal(sala, dia),
@@ -404,55 +419,87 @@ export default function MiCajaView({ comoPestana = false }) {
              * once de la noche con la caja sin cerrar el reloj ya cambió de día
              * y la caja no. */
             fetchCobrosDelPortal({ desde: dia, hasta: dia, branchId: sala }),
+            /* Los cortes del día entran a ESTA tanda y ya no después. Sólo
+             * necesitan `dia`, que ya está: pedirlos en un paso aparte era un
+             * viaje entero de reloj puesto delante del pintado por nada.
+             *
+             * Sin `cortes_caja` la policy devuelve cero filas y NO un error,
+             * así que «no hubo ningún corte» y «no los puedo ver» se leerían
+             * igual. Preguntar antes es lo que los separa. */
+            puedeVerCortes
+                ? fetchCortes({ desde: dia, hasta: dia }).then((f) => (f || [])
+                    .filter((c) => String(c.branch_id) === String(sala)))
+                : Promise.resolve(VACIO),
         ]);
+        if (token !== cargaRef.current) return;
         setMovimientos(movs);
         setDeBolsas(salidas);
         setCobros(cobrados || VACIO);
-        /* Quién anotó cada movimiento. Un solo pedido para las dos listas: la
-         * misma persona suele aparecer en las dos, y `fetchPersonas` ya
-         * deduplica. Sin esto la lista del día decía qué pasó y no quién lo
-         * hizo, que es la mitad de un registro de dinero. */
-        const anotadores = await fetchPersonas([
-            ...(movs || []).map((m) => m.registrado_por),
-            ...(salidas || []).map((o) => o.registrado_por),
-            ...(cobrados || []).map((c) => c.abonado_por),
-        ]);
-        setAnotaron(new Map((anotadores || []).map((q) => [q.id, q])));
         setVentas((porPago || []).filter((p) => String(p.branch_id) === String(sala)));
         setEstado(vivo);
         setPendientes((v.filas || []).filter((p) => String(p.branch_id) === String(sala)));
-
-        /* Sin `cortes_caja` la policy devuelve cero filas y NO un error, así
-         * que «no hubo ningún corte» y «no los puedo ver» se leerían igual.
-         * Preguntar antes es lo que los separa. */
-        if (puedeVerCortes) {
-            const delDia = (await fetchCortes({ desde: dia, hasta: dia }) || [])
-                .filter((c) => String(c.branch_id) === String(sala));
-            setCortesDelDia(delDia);
-            /* Los TRES roles que un corte nombra, no sólo quien confirmó:
-             * `EntregaDelTurno` pinta la cara de quien entregó y la de quien
-             * recibió, y una persona que sólo recibe cajas no está en el padrón
-             * de resolutores — saldría con la inicial, que se lee igual que
-             * «no tiene foto». La función de la base se amplió el 3-sep por lo
-             * mismo (`get_cortes_resolutores`). */
-            const quienes = await fetchPersonas(delDia.flatMap(
-                (c) => [c.resuelto_por, c.recibido_por, c.employee_id],
-            ));
-            setFirmantes(new Map(quienes.map((q) => [q.id, q])));
-        } else {
-            setCortesDelDia(VACIO);
-        }
-        // Sólo las de esta sala y con su saldo: `SalidaDeBolsa` elige la más
-        // vieja que alcance sola, y sin el saldo no puede elegir.
+        setCortesDelDia(delDia || VACIO);
         const mias = (abiertas || []).filter((b) => String(b.branch_id) === String(sala));
-        const saldos = await fetchSaldos(mias.map((b) => b.id));
-        setBolsas(mias.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
+
+        /* ── ACÁ YA SE PUEDE PINTAR ──────────────────────────────────────────
+         *
+         * Todo lo que la pantalla dice está en la mano. Lo que sigue —las caras
+         * y el saldo de cada bolsa— no cambia una sola cifra: es la misma regla
+         * que la vista de Cortes ya seguía («la tarjeta se pinta con o sin la
+         * cara»), y tenerlo detrás del spinner ponía tres viajes de reloj entre
+         * el dato y el ojo. */
+        setCargando(false);
+
+        /* Las caras, en UN pedido para las cuatro listas. Antes eran tres
+         * llamadas encadenadas —los movimientos, los cortes y las bolsas— y
+         * cada una además firma las fotos: seis viajes en serie para lo mismo.
+         * `fetchPersonas` deduplica, y la misma persona suele estar en varias.
+         *
+         * De los cortes van los TRES roles que nombran y no sólo quien
+         * confirmó: `EntregaDelTurno` pinta la cara de quien entregó y la de
+         * quien recibió, y quien sólo recibe cajas no está en el padrón de
+         * resolutores — saldría con la inicial, que se lee igual que «no tiene
+         * foto».
+         *
+         * Y el saldo de cada bolsa va en paralelo, no después: `SalidaDeBolsa`
+         * elige la más vieja que alcance sola y sin el saldo no puede elegir,
+         * pero eso se pregunta al abrir un diálogo, no al entrar. */
+        const [saldos, quienes] = await Promise.all([
+            fetchSaldos(mias.map((b) => b.id)),
+            fetchPersonas([
+                ...(movs || []).map((m) => m.registrado_por),
+                ...(salidas || []).map((o) => o.registrado_por),
+                ...(cobrados || []).map((c) => c.abonado_por),
+                ...(delDia || []).flatMap((c) => [c.resuelto_por, c.recibido_por, c.employee_id]),
+                ...mias.map((b) => b.cerrada_por),
+            ]),
+        ]);
+        if (token !== cargaRef.current) return;
+        const porId = new Map((quienes || []).map((q) => [q.id, q]));
+        setAnotaron(porId);
+        setFirmantes(porId);
         /* Quién guardó cada bolsa. Va a la etiqueta que se reimprime después de
          * una salida, y sin él `useCerrarBolsa` cae al nombre de QUIEN ESTÁ
          * MIRANDO: la etiqueta diría que la guardó alguien que no la guardó. */
-        const guardaron = await fetchPersonas(mias.map((b) => b.cerrada_por));
-        setEmbolsaron(new Map((guardaron || []).map((q) => [q.id, q.name])));
-        setCargando(false);
+        setEmbolsaron(new Map((quienes || []).map((q) => [q.id, q.name])));
+        setBolsas(mias.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
+
+        /* ── Y RECIÉN ACÁ, SI HACE FALTA, SE LE PREGUNTA AL ORIGEN ───────────
+         *
+         * Sólo en los dos casos en que el portal puede estar diciendo algo que
+         * ya no es cierto (ver `hayQuePreguntarleAlOrigen`): que la caja figure
+         * cerrada —abrir el turno desde la caja misma no pasa por acá— o que el
+         * espejo haya dejado de mantenerse. Con la caja abierta y el espejo al
+         * día no se pregunta, que es el caso de casi todo el día.
+         *
+         * Va DESPUÉS de pintar y nunca antes: su respuesta corrige la tarjeta,
+         * no la estrena. Y si el origen no contesta, el `catch` no toca nada —
+         * lo que ya está en pantalla salió de la base y sigue siendo cierto. */
+        if (!hayQuePreguntarleAlOrigen(vivo)) return;
+        const delOrigen = await estadoDeCajaEnElOrigen(sala).catch(() => ({ error: true }));
+        if (token !== cargaRef.current || delOrigen?.error || delOrigen?.ok !== true) return;
+        setEstado(delOrigen);
+        setNoSePudo(null);
     }, [sala, puedeVerBolsas, puedeVerCortes]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
@@ -717,22 +764,21 @@ export default function MiCajaView({ comoPestana = false }) {
         [cortesDelDia],
     );
 
-    /* EL CORTE QUE DICE DÓNDE ESTÁ LA CAJA — el último del día que ya
-     * cambió de manos, o que se confirmó sin que nadie la recibiera.
+    /* TODAS las entregas del día, en orden — no sólo la última.
      *
-     * No es `ultimoCorte`: si el de las 4 se entregó y el de las 7 todavía no
-     * se confirma, quien tiene la caja sigue siendo la persona de las 4. Mirar
-     * sólo el último diría «nadie», que es la respuesta contraria.
+     * Un día de sala tiene tantas entregas como cortes confirmados, y Salud 3
+     * llegó a siete turnos en un día. Con una sola, la pantalla contestaría
+     * «quién la tiene» y perdería por dónde pasó, que es lo que hay que
+     * reconstruir cuando aparece una diferencia. La cadena la arma
+     * `cadenaDeEntregas`.
      *
      * `CIERRE` y `SIN_HORARIO` quedan fuera a propósito: el primero es el
      * último corte del día —no hay a quién entregarle— y el segundo es el
      * instrumento diciendo que no pudo medir. Ninguno de los dos es una entrega
      * que faltó, y pintarlos como tal enseñaría a ignorar el aviso.
      */
-    const corteDeLaEntrega = useMemo(
-        () => [...cortesDelDia]
-            .filter((c) => c.entrega === 'RECIBIDO' || c.entrega === 'SIN_ENTREGA')
-            .pop() || null,
+    const entregasDelDia = useMemo(
+        () => cortesDelDia.filter((c) => c.entrega === 'RECIBIDO' || c.entrega === 'SIN_ENTREGA'),
         [cortesDelDia],
     );
 
@@ -900,14 +946,8 @@ export default function MiCajaView({ comoPestana = false }) {
                             </Notice>
                         )}
 
-                        {/* En manos de quién quedó la caja. Va ARRIBA del
-                            panel del día porque contesta «¿está todo bien para
-                            el turno que empieza?», que es con lo que alguien
-                            entra a esta pantalla — el desglose de ventas es
-                            para después. */}
-                        <EntregaDelTurno corte={corteDeLaEntrega} personas={firmantes} />
-
-                        <PanelDelDia estado={estado} ventas={ventas} veLosMontos={veLosMontos} />
+                        <PanelDelDia estado={estado} ventas={ventas} veLosMontos={veLosMontos}
+                            entregas={entregasDelDia} personas={firmantes} />
 
                         {/* Lo que la caja todavía cuenta como suyo de esta sala.
                             Estaba en Bolsas, arriba de todo, y se quitó de ahí:
@@ -1207,8 +1247,13 @@ const conMayuscula = (t) => {
  * cosa: quien cuenta billetes no puede derivar el esperado de esto sin sumarle
  * la apertura y restarle los vales, y ése es justo el trabajo que hace el corte.
  */
-function PanelDelDia({ estado, ventas, veLosMontos = true }) {
-    if (!estado?.abierta) return null;
+function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas }) {
+    /* La caja CERRADA no borra la entrega. El panel existía sólo mientras
+     * hubiera turno abierto —sin turno no hay ventas que desglosar—, y colgarle
+     * la cadena de manos con esa misma guarda la habría hecho desaparecer justo
+     * al final del día, que es cuando alguien pregunta con quién quedó. */
+    const hayEntrega = (entregas || []).length > 0;
+    if (!estado?.abierta && !hayEntrega) return null;
 
     const filas = [...(ventas || [])]
         .map((v) => ({ tipo: String(v.tipo_pago), docs: Number(v.documentos || 0), total: Number(v.total || 0) }))
@@ -1223,6 +1268,18 @@ function PanelDelDia({ estado, ventas, veLosMontos = true }) {
      * cuenta del día, no del encabezado. */
     return (
         <div data-surface="card" className="rounded-2xl p-4 md:p-5 space-y-4">
+            {/* Por qué manos pasó la caja. Va de ENCABEZADO y no en una tarjeta
+                propia: una caja de ancho completo para una línea de contenido
+                deja ~1400px vacíos en un monitor de 1900 («espacios
+                desperdiciados», usuario 3-sep). Acá comparte borde y relleno
+                con el dinero del turno, que es de lo que habla. */}
+            {hayEntrega && (
+                <div className="pb-3 border-b border-border-card">
+                    <EntregaDelTurno entregas={entregas} personas={personas} />
+                </div>
+            )}
+
+            {estado?.abierta && (
             <div className="space-y-2">
                 <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
                     Vendido hoy, por forma de pago
@@ -1285,6 +1342,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true }) {
                     </>
                 )}
             </div>
+            )}
         </div>
     );
 }

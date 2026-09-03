@@ -1,153 +1,124 @@
 import React from 'react';
-import { ArrowDown, ArrowRight, UserX } from 'lucide-react';
+import { ChevronRight, UserX } from 'lucide-react';
 import AvatarConEstado from '../common/AvatarConEstado';
+import Badge from '../common/Badge';
+import { cadenaDeEntregas } from '../../utils/cortesDiagnostico';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
 /**
- * EN MANOS DE QUIÉN QUEDÓ LA CAJA — con la cara, no con un nombre suelto.
+ * POR QUÉ MANOS PASÓ LA CAJA HOY — con las caras, y en el panel del día.
  *
  * ── Por qué existe ────────────────────────────────────────────────────────
  * Desde v2.964.0 confirmar un corte pide quién recibe la caja: ese clic cierra
  * el turno, así que es el momento en que el dinero cambia de manos. El dato se
- * pedía, se firmaba con carné y se guardaba… y en «Hoy» —la pantalla donde
- * trabaja la sala— **no se veía en ninguna parte**. Lo reportó el usuario el
- * 3-sep («en ningún lado me sale quién recibe»).
+ * pedía, se firmaba con carné, se guardaba… y en «Hoy» —la pantalla donde
+ * trabaja la sala— no se veía en ninguna parte («en ningún lado me sale quién
+ * recibe», 3-sep).
  *
- * El primer intento lo metió en la cuarta tarjeta del carril y el usuario lo
- * rechazó: *«quiero algo más moderno, más visual, con la foto»*. Y la forma
- * estaba mal por dos razones medibles, no de gusto:
+ * ── Y por qué NO es una tarjeta propia ────────────────────────────────────
+ * Lo fue dos veces y las dos las devolvió el usuario. Primero en el carril
+ * (*«quiero algo más visual, con la foto»*: 148–200px no dan para una cara, y
+ * bajo el rótulo «Confirmado» el nombre de quien recibe se lee como el de quien
+ * confirmó, que es otra persona a propósito). Después como banda propia
+ * (*«espacios desperdiciados»*: una caja de ancho completo para una línea de
+ * contenido deja ~1400px vacíos en un monitor de 1900).
  *
- *   · una tarjeta del carril mide 148–200px y ahí no entra una cara ni un
- *     nombre completo — el texto trunca, que es justo «no me sale quién
- *     recibe» otra vez;
- *   · bajo el rótulo «Confirmado», el nombre de quien recibe se lee como el de
- *     quien confirmó, y son dos personas distintas a propósito (el servidor
- *     rechaza que quien hizo el corte reciba su propia caja).
+ * Así que no agrega ninguna caja: es el ENCABEZADO del panel del día, comparte
+ * su borde y su relleno, y queda pegado al dinero del turno — que es de lo que
+ * la entrega habla. Se eligió sobre otras cuatro maquetas.
  *
- * ── La entrega se DIBUJA como lo que es: un traspaso ──────────────────────
- * Dos caras y una flecha. El acto tiene dos lados y el portal ya lo dice así
- * en la tarjeta del corte (`hizo → recibe`); acá esa flecha se pinta. Quien
- * recibe va en verde y a la derecha —es quien se hace cargo del efectivo desde
- * ese momento, o sea la respuesta a «¿quién tiene la caja ahora?»—.
+ * ── La cadena, que es la respuesta a «¿y si son 3 cortes?» ────────────────
+ * Un día de sala no tiene una entrega: tiene tantas como cortes confirmados
+ * —Salud 3 llegó a SIETE turnos en un día—. Se dibujan todas, cara y flecha,
+ * en el orden en que ocurrieron, y la última va en verde: es quien tiene la
+ * caja ahora. Con más de cuatro manos el medio se pliega en un «+N» y quedan la
+ * primera y las dos últimas, que son las que alguien busca.
  *
- * ── Y cuando NO la recibió nadie, se dibuja igual ─────────────────────────
- * Con el hueco a la vista: un círculo punteado en ámbar y el motivo escrito.
- * Es la mitad «avisar» de la decisión del usuario (3-sep: «avisar primero,
- * medir, después bloquear»), y un aviso que se esconde cuando la respuesta es
- * la mala no es un aviso. El último corte del día NO llega acá — ahí no hay a
- * quién entregarle; lo filtra quien elige el corte.
+ * La cadena puede tener un SALTO —que A le entregue a B no obliga a que el
+ * corte siguiente lo haga B—, y ahí va una separación en vez de una flecha:
+ * dibujar `B → C` sobre un traspaso que nadie hizo es una afirmación falsa que
+ * no da error. La regla vive en `cadenaDeEntregas`.
  *
  * ── La foto la resuelve el avatar, no este componente ─────────────────────
  * `AvatarConEstado` busca la ficha por `id` en el padrón cuando el objeto no
- * trae retrato, así que alcanza con `{ id, name }`. Lo que NO se puede hacer
- * es pasarle sólo el nombre: sin id no hay a quién buscar y dibuja la inicial,
- * que es indistinguible de una persona sin foto. Ver
- * [[feedback_el_arreglo_de_un_canonico_no_llega_a_su_gemelo]] y el encabezado
- * de `AvatarConEstado`.
+ * trae retrato, así que alcanza con `{ id, name }`. Lo que NO se puede hacer es
+ * pasarle sólo el nombre: sin id dibuja la inicial, que es indistinguible de
+ * una persona sin foto. Ver el encabezado de `AvatarConEstado`.
  */
-export default function EntregaDelTurno({ corte, personas }) {
-    if (!corte) return null;
-
-    const recibida = corte.entrega === 'RECIBIDO';
+export default function EntregaDelTurno({ entregas, personas }) {
+    const nodos = cadenaDeEntregas(entregas);
+    if (nodos.length < 2) return null;
 
     /* La ficha completa si el padrón la trajo —ahí `photo` viene FIRMADA— y si
-     * no, lo que la propia fila del corte sabe. Sin `id` no se arma nada: un
-     * objeto con nombre y sin id pinta la inicial en silencio. */
-    const ficha = (id, nombre) => (id ? (personas?.get(id) || { id, name: nombre || '' }) : null);
+     * no, lo que la propia fila del corte sabe. */
+    const ficha = (n) => (n.id ? (personas?.get(n.id) || { id: n.id, name: n.name }) : null);
 
-    /* Quien ENTREGA es quien tenía la caja: el que hizo el corte. Cuando el
-     * corte se hizo desde la pantalla de la caja esa fila no existe, y ahí el
-     * lado izquierdo es quien lo confirmó — con su propio rótulo, porque
-     * llamar «entregó» a quien sólo firmó sería nombrar un acto que no hizo. */
-    const izquierda = ficha(corte.employee_id, corte.hizo?.name)
-        ? { emp: ficha(corte.employee_id, corte.hizo?.name), rotulo: 'Entregó' }
-        : ficha(corte.resuelto_por, null)
-            ? { emp: ficha(corte.resuelto_por, null), rotulo: 'Confirmó' }
-            : null;
+    const ultimo = nodos[nodos.length - 1];
+    const primero = nodos[0];
+    const cuantas = nodos.filter((n) => n.hora).length;
 
-    const derecha = recibida ? ficha(corte.recibido_por, corte.recibe?.name) : null;
-
-    // Sin ninguno de los dos lados no hay traspaso que contar.
-    if (!izquierda && !derecha) return null;
-
-    const hora = String(corte.hora || '').slice(0, 5);
+    /* Con más de cuatro manos se pliega el medio. El «+N» no es un adorno:
+     * cinco caras de 28px con sus flechas miden 250px y empujan la frase —que
+     * es la que contesta— fuera del renglón. */
+    const visibles = nodos.length > 4
+        ? [nodos[0], { plegado: nodos.length - 3 }, nodos[nodos.length - 2], ultimo]
+        : nodos;
 
     return (
-        <div data-surface="card" className="rounded-2xl px-4 py-3 space-y-2">
-            <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                <h3 className="text-micro font-black uppercase tracking-widest text-content-3">
-                    La caja de este turno
-                </h3>
-                {hora && (
-                    <span className="text-micro text-content-3 tabular-nums">
-                        se entregó en el corte de las {hora}
-                    </span>
-                )}
-            </div>
-
-            {/* Los dos lados se JUNTAN, no se reparten la fila. Con `flex-1`
-                cada uno se llevaba media pantalla y en un monitor ancho las dos
-                caras quedaban a 800px una de la otra: un traspaso dibujado así
-                deja de leerse como un traspaso. Pegados, la flecha hace el
-                trabajo que le toca.
-
-                En el teléfono se apila con la flecha hacia abajo: dos caras y
-                dos nombres miden ~356px y no entran en 340 sin cortar el
-                nombre, que es el dato. */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                {izquierda && <Persona emp={izquierda.emp} rotulo={izquierda.rotulo} />}
-
-                <div className={`shrink-0 self-start sm:self-center ml-5 sm:ml-0
-                    w-7 h-7 rounded-full flex items-center justify-center
-                    ${recibida ? 'bg-success/15 text-success-text' : 'bg-warning/15 text-warning-text'}`}>
-                    <ArrowDown size={15} strokeWidth={2.5} className="sm:hidden" />
-                    <ArrowRight size={15} strokeWidth={2.5} className="hidden sm:block" />
+        <div className="flex items-center justify-between gap-x-4 gap-y-2 flex-wrap">
+            <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center gap-0.5 shrink-0">
+                    {visibles.map((n, i) => (
+                        <React.Fragment key={n.plegado ? 'plegado' : `${n.id || 'hueco'}-${i}`}>
+                            {i > 0 && (n.salto
+                                /* Un salto NO es una flecha: nadie entregó ahí. El
+                                   punto separa sin afirmar un traspaso. */
+                                ? <span className="text-content-3 px-1 leading-none" aria-hidden="true">·</span>
+                                : <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />)}
+                            {n.plegado
+                                ? <Badge variant="neutral" size="sm">+{n.plegado}</Badge>
+                                : n.hueco
+                                    /* Un hueco es un DIBUJO, no un control: lleva su
+                                       nombre accesible y no un `title`, que en un
+                                       elemento que no se puede enfocar no existe
+                                       para el teclado (§15.10). */
+                                    ? <span role="img" aria-label="nadie recibió la caja"
+                                        className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center
+                                                   border-2 border-dashed border-warning/60">
+                                        <UserX size={13} strokeWidth={2} className="text-warning-text" />
+                                    </span>
+                                    : <AvatarConEstado emp={ficha(n)} px={28} radio="rounded-full"
+                                        marco="border-2 border-border-card"
+                                        className={`shrink-0 ${n === ultimo ? 'ring-2 ring-success/45' : ''}`} />}
+                        </React.Fragment>
+                    ))}
                 </div>
 
-                {recibida
-                    ? <Persona emp={derecha} rotulo="Recibió la caja" destacada />
-                    : <SinRecibir motivo={corte.sin_entrega_motivo} />}
+                <p className="text-body-sm text-content-2 min-w-0">
+                    {ultimo.hueco ? (
+                        <>
+                            <b className="font-bold text-content">{shortEmployeeName(ficha(nodos[nodos.length - 2]))}</b>
+                            {' '}confirmó <span className="font-bold text-warning-text">sin entregar la caja</span>
+                            {ultimo.motivo ? ` · ${ultimo.motivo}` : ''}
+                        </>
+                    ) : cuantas > 1 ? (
+                        <>
+                            La caja pasó por <span className="tabular-nums">{cuantas}</span> manos hoy · ahora la tiene{' '}
+                            <b className="font-bold text-success-text">{shortEmployeeName(ficha(ultimo))}</b>
+                        </>
+                    ) : (
+                        <>
+                            <b className="font-bold text-content">{shortEmployeeName(ficha(primero))}</b>
+                            {' '}le entregó la caja a{' '}
+                            <b className="font-bold text-success-text">{shortEmployeeName(ficha(ultimo))}</b>
+                        </>
+                    )}
+                </p>
             </div>
-        </div>
-    );
-}
 
-function Persona({ emp, rotulo, destacada = false }) {
-    return (
-        <div className="flex items-center gap-2.5 min-w-0">
-            <AvatarConEstado emp={emp} px={36} radio="rounded-full"
-                marco="border-2 border-border-card" className="shadow-sm shrink-0" />
-            <div className="min-w-0">
-                <p className={`text-micro font-bold ${destacada ? 'text-success-text' : 'text-content-3'}`}>
-                    {rotulo}
-                </p>
-                {/* El nombre CORTO, el mismo del resto del portal: la caja
-                    escribe «RODRIGO EDUARDO MARQUEZ» y truncado se pierde el
-                    apellido, que es lo que distingue a dos Rodrigos. */}
-                <p className={`text-body-sm font-bold truncate leading-tight ${destacada ? 'text-success-text' : 'text-content'}`}
-                    title={emp?.name || undefined}>
-                    {shortEmployeeName(emp)}
-                </p>
-            </div>
-        </div>
-    );
-}
-
-function SinRecibir({ motivo }) {
-    return (
-        <div className="flex items-center gap-2.5 min-w-0">
-            {/* Punteado y vacío: el hueco ES el dato. Un avatar gris se leería
-                como una persona que no tiene foto. */}
-            <div className="w-9 h-9 rounded-full shrink-0 border-2 border-dashed border-warning/60
-                flex items-center justify-center">
-                <UserX size={16} strokeWidth={2} className="text-warning-text" />
-            </div>
-            <div className="min-w-0">
-                <p className="text-micro font-bold text-warning-text">Nadie la recibió</p>
-                <p className="text-body-sm text-content-2 truncate leading-tight" title={motivo || undefined}>
-                    {motivo || 'se confirmó sin entregar la caja'}
-                </p>
-            </div>
+            <span className="text-caption text-content-3 tabular-nums shrink-0">
+                {cuantas > 1 ? 'última entrega' : 'corte'} de las {ultimo.hora}
+            </span>
         </div>
     );
 }

@@ -31,6 +31,7 @@ vi.mock('../../src/store/staffStore', () => ({
 }));
 
 const EntregaDelTurno = (await import('../../src/components/cortes/EntregaDelTurno.jsx')).default;
+const { cadenaDeEntregas } = await import('../../src/utils/cortesDiagnostico.js');
 
 const CRISTIAN = { id: 'c-1', name: 'Cristian Humberto' };
 const KAREN = { id: 'k-1', name: 'Karen Figueroa' };
@@ -46,40 +47,77 @@ const ENTREGADO = {
 
 const PERSONAS = new Map([[CRISTIAN.id, CRISTIAN], [KAREN.id, KAREN]]);
 
+const JONATHAN = { id: 'j-1', name: 'Jonathan Melgar' };
+const GLENDA = { id: 'g-1', name: 'Glenda Anaya' };
+
+/* Un corte con su entrega. Los turnos de sala encadenan: quien recibió a las
+ * 12 es quien corta a las 4. */
+const corte = (id, hora, dio, rec, extra = {}) => ({
+    id, tipo: 'C', hora, estado: 'CONFIRMADO',
+    employee_id: dio.id, hizo: { name: dio.name },
+    resuelto_por: dio.id,
+    recibido_por: rec?.id || null, recibe: rec ? { name: rec.name } : null,
+    entrega: rec ? 'RECIBIDO' : 'SIN_ENTREGA', sin_entrega_motivo: null,
+    ...extra,
+});
+
 describe('EntregaDelTurno', () => {
-    it('dice quién recibió la caja, con su nombre', () => {
-        render(<EntregaDelTurno corte={ENTREGADO} personas={PERSONAS} />);
-        expect(screen.getByText('Recibió la caja')).toBeTruthy();
-        expect(screen.getByText('Karen Figueroa')).toBeTruthy();
-    });
-
-    it('no confunde a quien entrega con quien recibe', () => {
-        const { container } = render(<EntregaDelTurno corte={ENTREGADO} personas={PERSONAS} />);
+    it('dice de quién a quién, y en ese orden', () => {
+        const { container } = render(<EntregaDelTurno entregas={[ENTREGADO]} personas={PERSONAS} />);
         const texto = container.textContent;
-        // El orden importa: primero entrega, después recibe. Cruzados, la
-        // pantalla nombraría a Cristian como quien se hizo cargo del dinero.
-        expect(texto.indexOf('Entregó')).toBeLessThan(texto.indexOf('Recibió la caja'));
+        expect(texto).toContain('Cristian Humberto le entregó la caja a');
+        expect(texto).toContain('Karen Figueroa');
+        // Cruzados, la pantalla nombraría a Cristian como quien se hizo cargo
+        // del dinero — y el servidor rechaza justamente eso.
         expect(texto.indexOf('Cristian Humberto')).toBeLessThan(texto.indexOf('Karen Figueroa'));
+        expect(texto).toContain('corte de las 12:05');
     });
 
-    it('el corte hecho desde la caja no llama «entregó» a quien sólo firmó', () => {
-        render(<EntregaDelTurno personas={PERSONAS}
-            corte={{ ...ENTREGADO, employee_id: null, hizo: null }} />);
-        expect(screen.getByText('Confirmó')).toBeTruthy();
-        expect(screen.queryByText('Entregó')).toBeNull();
+    it('con tres cortes dibuja la cadena y nombra a quien la tiene AHORA', () => {
+        const { container } = render(<EntregaDelTurno personas={PERSONAS} entregas={[
+            corte(1, '12:05:48', CRISTIAN, KAREN),
+            corte(2, '16:30:00', KAREN, JONATHAN),
+            corte(3, '21:00:12', JONATHAN, GLENDA),
+        ]} />);
+        const texto = container.textContent;
+        expect(texto).toContain('La caja pasó por 3 manos hoy');
+        expect(texto).toContain('Glenda Anaya');
+        expect(texto).toContain('última entrega de las 21:00');
     });
 
-    it('«nadie la recibió» se dibuja igual, con el motivo escrito', () => {
-        render(<EntregaDelTurno personas={PERSONAS} corte={{
-            ...ENTREGADO, recibido_por: null, recibe: null,
-            entrega: 'SIN_ENTREGA', sin_entrega_motivo: 'quedó sola en la sala',
-        }} />);
-        expect(screen.getByText('Nadie la recibió')).toBeTruthy();
-        expect(screen.getByText('quedó sola en la sala')).toBeTruthy();
+    it('la cadena mete a cada persona UNA vez, no dos', () => {
+        // Karen aparece como quien recibe a las 12 y como quien entrega a las
+        // 16: son el mismo eslabón. Duplicarla dibujaría `Karen → Karen`.
+        const nodos = cadenaDeEntregas([
+            corte(1, '12:05:48', CRISTIAN, KAREN),
+            corte(2, '16:30:00', KAREN, JONATHAN),
+            corte(3, '21:00:12', JONATHAN, GLENDA),
+        ]);
+        expect(nodos.map((n) => n.id)).toEqual([CRISTIAN.id, KAREN.id, JONATHAN.id, GLENDA.id]);
+        expect(nodos.some((n) => n.salto)).toBe(false);
     });
 
-    it('sin corte no pinta nada — el cierre del día no tiene a quién entregar', () => {
-        const { container } = render(<EntregaDelTurno corte={null} personas={PERSONAS} />);
+    it('no inventa un traspaso cuando el que corta no es el que recibió antes', () => {
+        // Karen recibió a las 12; el corte de las 16 lo hace Jonathan, que nunca
+        // la recibió. `Karen → Jonathan` sería un traspaso que nadie hizo.
+        const { container } = render(<EntregaDelTurno personas={PERSONAS} entregas={[
+            corte(1, '12:05:48', CRISTIAN, KAREN),
+            corte(2, '16:30:00', JONATHAN, GLENDA),
+        ]} />);
+        expect(container.textContent).toContain('·');
+    });
+
+    it('«sin entregar» se dice, y nombra a quien confirmó', () => {
+        const { container } = render(<EntregaDelTurno personas={PERSONAS} entregas={[
+            corte(1, '12:05:48', CRISTIAN, null, { sin_entrega_motivo: 'quedó sola en la sala' }),
+        ]} />);
+        expect(container.textContent).toContain('confirmó');
+        expect(container.textContent).toContain('sin entregar la caja');
+        expect(container.textContent).toContain('Cristian Humberto');
+    });
+
+    it('sin entregas no pinta nada — el cierre del día no tiene a quién entregar', () => {
+        const { container } = render(<EntregaDelTurno entregas={[]} personas={PERSONAS} />);
         expect(container.textContent).toBe('');
     });
 });

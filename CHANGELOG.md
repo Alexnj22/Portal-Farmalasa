@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.969.5 — El entorno de pruebas deja de dispararle a producción
+
+Medido hoy en los registros de producción: **1,258 llamadas rechazadas con 401
+en un solo día** a `sync-cortes-caja`, más 111 a `push-cliente-erp` y una decena
+repartida. Ninguna venía del portal.
+
+Venían del **entorno de pruebas**. Los delató el `user_agent`: producción corre
+`pg_net/0.20.0` y contesta 200; el que recibía 401 llegaba con `pg_net/0.20.4`,
+que es la versión del branch.
+
+El motivo vuelve solo: los crons se crean **por migración** y la dirección del
+proyecto real está escrita adentro. Cada vez que se rehace el entorno —ya van
+tres— el replay levanta **13 crons apuntando a producción** con la llave del
+branch. Producción los rechaza, así que nunca hicieron daño; el costo es que
+~1,400 peticiones basura por día entierran en el registro justo la señal que
+`gate:eficiencia` busca — un 401 legítimo, de esos que ya pasaron tres veces por
+un redeploy sin `--no-verify-jwt`, se lee igual que estos mil.
+
+**La guarda es la ausencia de la llave, no una bandera de entorno.** El vault del
+branch está vacío, así que el cron arma `'Bearer ' || NULL` y la petición sale
+sin credencial: esa es la razón del 401 y, a la vez, la respuesta exacta a «¿esta
+base puede llamar afuera?». Una bandera se olvida al armar un `.env` nuevo; esto
+no se puede olvidar porque es el mismo hecho que causa el síntoma. Un cron nuevo
+queda cubierto por la misma regla sin tocar nada.
+
+Pide además que la base tenga **≤2 fichas de empleado** (producción tiene 48):
+apagarle los crons a producción por error la deja sin sincronizar y nadie se
+entera hasta que falta un dato, así que hacen falta las dos condiciones. Y si no
+se puede leer el vault, no toca nada.
+
+Los 17 crons que trabajan contra su propia base —purgas, refrescos, VACUUM— no se
+tocan: ésos sí sirven en el branch. Verificado tras aplicarlo: producción sigue
+con sus 47 crons activos, y el goteo de 401 se cortó en seco (último a las
+18:35:49; los 4 minutos siguientes, 67 llamadas y todas 200).
+
+Migración `el_entorno_de_pruebas_nace_sin_los_crons_que_llaman_afuera`.
+
 ## v2.969.4 — La tarjeta de la entrega, más chica
 
 Salió al doble de tamaño del que necesita. Dos cosas la inflaban, y la segunda

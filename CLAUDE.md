@@ -1408,10 +1408,30 @@ producción** (verificado ejecutándolas contra prod y comparando conteos):
 | `20260729223031` | `roles`, `branches`, `role_permissions` | 25 migraciones insertan permisos con `role_id` fijos; sin las filas, la FK corta el replay |
 | `20260729223032` | los 9 buckets de Storage y sus policies | se crearon desde el panel, no por migración: un `ALTER POLICY` no encontraba qué alterar |
 | `20260812160000` | 300 productos con existencias, precios, MIN·MAX + la cuenta de pruebas | va al final: nada depende de productos, y ahí las tablas ya tienen su forma definitiva |
+| `20260903185033` | apaga los crons que llaman por HTTP | va **después de todos**: apaga lo que las migraciones anteriores crearon |
 
 **La cuenta de pruebas sólo nace si la base no tiene ni un empleado.** Es lo
 único que separa «sembrar un branch» de «abrir un Gerente General en la base
 real». No quitar esa guarda.
+
+**Los crons del branch le disparaban a PRODUCCIÓN, y volvían solos cada vez que
+se rehacía.** La URL del proyecto real está escrita dentro de la migración que
+crea cada cron, así que el replay levanta 13 apuntando allá con la llave del
+branch. Producción los rechaza —el vault del branch está vacío, o sea que el
+`'Bearer ' || secreto` viaja en NULL— pero medido el 2026-09-03 eran **1,258
+llamadas con 401 en un día** sólo de `cortes-caja-30s`, más 111 de
+`drain-cliente-erp-queue`: ~1,400 peticiones basura diarias que entierran en el
+registro justo la señal que `gate:eficiencia` busca, porque un 401 legítimo —un
+redeploy sin `--no-verify-jwt`— se lee igual que estos mil. Los delató el
+`user_agent`: prod corre `pg_net/0.20.0` y el que fallaba llegaba con
+`pg_net/0.20.4`, la versión del branch.
+
+La semilla los apaga sola, y **la guarda es la ausencia de la llave misma** —no
+una bandera de entorno, que se olvida—: sin `admin_invoke_secret` en el vault
+esos crons no pueden servir para nada ahí. Pide además que la base tenga ≤2
+fichas de empleado (prod tiene 48), porque apagarle los crons a producción por
+error la deja sin sincronizar y nadie se entera hasta que falta un dato. Los 17
+crons que trabajan contra su propia base no se tocan.
 
 **Al sembrar temprano, la tabla tiene la forma de ESE punto de la historia, no
 la de hoy.** Sembrar `role_permissions` con `scope='MINE'` abortó el replay

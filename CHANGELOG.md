@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.1 — El retiro por token del POS se puede registrar aunque salga de una bolsa
+
+Reporte de Salud 3: *«siempre fui a retirar dinero por token en el pos, al
+ingresarlo al portal y subir la foto, daba error porque faltaba remesadora, y
+además decía que salía del corte de ayer, teniendo en caja y en bolsa del mismo
+día»*.
+
+**Las dos mitades son el mismo evento**, y lo que las une es que el corte vacía
+el cajón.
+
+`bolsas_tipos_salida.entidad_la_dice_el_papel` existe desde el 2-sep
+(v2.957.0) y dice que la entidad no se pregunta: sale de la boleta. El
+formulario lo respeta desde ese día. **`registrar_salida_de_bolsa` no se
+enteró** y siguió con la regla vieja —`etiqueta_entidad IS NOT NULL` ⇒ exigir—,
+y «POS Promerica» tiene `etiqueta_entidad = 'Remesadora'`. Un retiro por token
+no tiene remesadora ninguna: el papel no nombra ninguna red y no dice «remesa»
+en ninguna parte.
+
+**Y sobrevivió tres días porque una salida tiene dos caminos que no comparten
+código.** Con efectivo en el cajón la escribe `operar-caja`, que nunca llama a
+esa función: ese camino funcionaba. La función sólo entra cuando el dinero sale
+de una BOLSA, o sea justo cuando el cajón no alcanza — y el cajón no alcanza
+justo después de un corte, que se lleva todo el efectivo a la bolsa del día.
+
+Medido en Salud 3 el 3-sep: el corte de las 13:01 se llevó $331.27 y dejó el
+cajón en **$30.93**. A las 13:09 y 13:10, dos intentos contra «Falta el dato:
+Remesadora.»; la misma operación de las 11:52 —$120.79, con el cajón lleno— se
+había registrado sin problema. Con el cajón corto el origen cae a las bolsas y
+la regla es «la más vieja que alcance sola»: S3-1230, del corte del 2-sep. De
+ahí el «sale del corte de ayer».
+
+La comprobación contra el catálogo miraba de más por lo mismo: con la entidad
+en NULL no emparejaba con ninguna fila y lanzaba «Ese/a remesadora no está en la
+lista» — el mismo bloqueo con otro texto. Ahora valida lo que LLEGÓ.
+
+Es [[feedback_el_arreglo_de_un_canonico_no_llega_a_su_gemelo]] sobre una regla
+de negocio: se corrigió en el formulario, la base siguió diciendo lo contrario,
+y nada los enfrentaba. Hoy la condición está escrita igual en los dos y el
+comentario de cada uno nombra al otro.
+
+### Y los cobros de crédito dejan de mostrar $0.00 sobre cuatro cobros
+
+En el detalle de un corte, la cifra de la sección «Cobros de crédito» era la que
+contó el **comprobante** — que no cuenta los hechos desde el portal, porque el
+origen los registra como movimiento del día y los deja fuera de su suma. En
+Salud 3 el 3-sep eso pintaba **$0.00** encima de cuatro cobros por $65.54.
+
+Un número pegado a un rótulo, arriba de cuatro renglones, se lee como la suma de
+esos cuatro renglones. Ahora manda el dato del portal, que es el real y el único
+que puede cuadrar con la lista: $65.54, y las dos notas al pie lo reparten
+($19.90 entraron en efectivo, $45.64 no). Lo que contó el comprobante ya se dice
+donde sirve —en la nota del esperado corregido— y no compite con el total.
+
+El respaldo se conserva para cuando el portal no tiene nada que listar (cobros
+hechos en la pantalla de la caja, o sin permiso para verlos): ahí la cifra del
+comprobante es la única que existe, y ponerla en cero borraría dinero que sí
+entró. El `??` viejo no servía para eso: `0` no es `null`.
+
+Sin cambio en la diferencia del corte, que ya era la real — Salud 3 el 3-sep:
++$0.45 de sobrante sobre los $330.82 que debía haber, contra los +$20.35 que
+anuncia el origen por no contar los $19.90.
+
 ## v2.970.0 — El estado de la caja se contesta sin salir del portal
 
 Reporte: *«por qué es tan lento entrar aquí, tarda mucho en ver los datos»*

@@ -690,12 +690,34 @@ export default function CorteDetalleModal({
                         {!noEsConteo && cobros
                             && (cobros.cobros > 0 || cobros.antes.length > 0 || cobros.despues.length > 0) && (
                             <div data-surface="card" className="p-3">
+                                {/* ── La cifra de arriba es la SUMA DE LO QUE HAY DEBAJO ──
+                                    Estaba `cobros.cobros ?? cobros.hasta`, o sea lo que
+                                    contó el COMPROBANTE. Y el comprobante no cuenta los
+                                    cobros hechos desde el portal: el origen los registra
+                                    como movimiento del día y los deja fuera de su suma
+                                    (ver `contraste`). Así que en Salud 3 el 3-sep esa
+                                    línea decía **$0.00** encima de cuatro cobros por
+                                    $65.54, y un número pegado a un rótulo, arriba de
+                                    cuatro renglones, se lee como la suma de esos cuatro
+                                    renglones. El `??` no salvaba nada: `0` no es `null`.
+
+                                    Ahora manda el dato del portal, que es el real y el
+                                    único que puede cuadrar con la lista. Lo que contó el
+                                    comprobante ya se dice donde sirve —en la nota de «no
+                                    contó los cobros de crédito», con el esperado
+                                    corregido— y no compite con este total.
+
+                                    El respaldo se conserva para el caso en que el portal
+                                    no tiene nada que listar (cobros hechos en la pantalla
+                                    de la caja, o sin permiso para verlos): ahí la cifra
+                                    del comprobante es la única que existe, y ponerla en
+                                    cero borraría un dinero que sí entró. */}
                                 <div className="flex items-baseline justify-between gap-3 mb-2">
                                     <span className="text-caption font-black uppercase tracking-widest text-content-3">
                                         Cobros de crédito
                                     </span>
                                     <span className="text-label font-bold tabular-nums text-content">
-                                        {formatMoney(cobros.cobros ?? cobros.hasta)}
+                                        {formatMoney(cobros.antes.length ? cobros.hasta : (cobros.cobros ?? 0))}
                                     </span>
                                 </div>
 

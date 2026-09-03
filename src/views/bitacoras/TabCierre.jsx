@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
     cerrarMes, correrPeriodo, fetchCierres, fetchMesImpreso, fetchResumenMes, hoySV, periodoDe, reabrirMes,
 } from '../../data/bitacoras';
+import { registrarEgreso } from '../../data/egreso';
 import { imprimirMesDeBitacoras } from '../../utils/bitacoraPrint';
 import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../utils/ventanaDeImpresion';
 import { logoComoDataUrl, LOGO_DE_LA_EMPRESA } from '../../utils/marcaDeLaSala';
@@ -138,7 +139,21 @@ export default function TabCierre({ branchId, fechaVista }) {
             return;
         }
         const r = imprimirMesDeBitacoras(win, mes, logo);
-        if (!r.ok) setError(r.motivo);
+        if (!r.ok) { setError(r.motivo); return; }
+
+        // El mes impreso ES una salida de datos del portal, y hasta el
+        // 2026-09-03 era la única que no se anotaba — justo la del módulo del
+        // que trata el protocolo de supervisión del sistema electrónico, que
+        // declara que «toda salida de datos queda anotada».
+        //
+        // Va DESPUÉS de imprimir y no antes: anotar un egreso que no ocurrió
+        // ensucia la línea base con salidas que nadie hizo. `registrarEgreso`
+        // nunca lanza, así que no puede impedir que el papel salga.
+        registrarEgreso('bitacoras', {
+            formato: 'pdf',
+            filas: mes?.areas?.length ?? null,
+            detalle: { periodo, branch_id: branchId, sucursal: mes?.sucursal ?? null },
+        });
     }, [branchId, periodo]);
 
     const reabrir = useCallback(async () => {

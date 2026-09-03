@@ -6,10 +6,10 @@
 > ⚠️ **Revisado contra la norma y contra producción el 2026-09-03** — el informe
 > está en `docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md`.
 >
-> **Antes de firmarlo hay que resolver el punto 2.3** (quién puede cerrar el mes)
-> y **correr el respaldo una vez** para poder llenar la constancia del punto 5:
-> las 7 tablas de bitácoras entraron al respaldo el 2026-09-03 y **todavía no ha
-> corrido ni una vez con ellas adentro**.
+> **El punto 2.3 quedó resuelto el 2026-09-03**: el cierre del mes es ahora del
+> **Regente**. Falta **correr el respaldo una vez** para poder llenar la
+> constancia del punto 5 — las 8 tablas de bitácoras entraron ese mismo día y
+> **todavía no ha corrido ni una vez con ellas adentro**.
 
 ---
 
@@ -101,19 +101,27 @@ bitácoras, hoy es así:
 | **Consultar el libro** de dispensación bajo receta | los mismos |
 | **Configurar** áreas, franjas, rangos e instrumentos | Jefe/a y Subjefe/a de Sala, Regente, Supervisor/a de Ventas, Gerente General, Administrador, Jefe/a de Talento Humano |
 | **Descargar e imprimir** el mes | Jefe/a y Subjefe/a de Sala, Regente, Supervisor/a de Ventas, Gerente General, Administrador, Jefe/a de Talento Humano |
-| **Cerrar el mes** | Regente, Supervisor/a de Ventas, Gerente General, Administrador, Jefe/a de Talento Humano |
+| **Cerrar el mes** y reabrirlo | **Regente** |
 
 Además, cada persona **sólo ve los registros de la sala o salas a las que está
 asignada**. Esa restricción no la aplica la pantalla: la aplica la base de datos,
 así que no se puede evitar por otro camino.
 
-**La cuenta de pruebas.** Existe además el cargo **QA / Testing (CI)**, que tiene
-los cinco permisos de la tabla de arriba y **no corresponde a ninguna persona**:
-es la cuenta con la que se comprueba que el sistema funciona antes de publicar un
-cambio. Está marcada como tal en el sistema (`es_cuenta_de_pruebas`) y por defecto
-no tiene sala asignada. `[Decidir: dejarla declarada así, o quitarle el permiso de
-cerrar el mes.]` No se omite de este documento: un cargo capaz de cerrar un mes
-tiene que estar escrito acá.
+**Las dos excepciones, declaradas.** Un documento que enumera quién puede firmar
+no puede omitir a nadie que pueda:
+
+- **Superusuario del sistema.** Un cargo marcado como tal salta toda la tabla de
+  permisos por diseño; hoy lo tiene **uno solo**, el de quien administra el
+  portal. Es el acceso con el que se corrige una configuración cuando algo queda
+  trabado, y **es la vía por la que hoy hay una segunda persona capaz de cerrar
+  el mes**, de forma temporal y mientras se verifica el circuito
+  (decisión del 2026-09-03). Toda acción suya queda en la bitácora de auditoría
+  con su nombre, igual que la de cualquiera.
+- **QA / Testing (CI).** No es una persona: es la cuenta con la que se comprueba
+  que el sistema funciona antes de publicar un cambio. Está marcada como cuenta
+  de pruebas en el sistema y por defecto no tiene sala asignada. Conserva los
+  permisos a propósito — a una cuenta que mide, un permiso que falta no le da
+  error, le da un resultado vacío que se lee igual que uno bueno.
 
 ### 2.3 · Qué vale como firma del regente, y lo que hay que decidir
 
@@ -182,11 +190,11 @@ ningún proceso lo borra. A eso se suma la **copia impresa** de cada mes cerrado
 que se archiva en el establecimiento por el mismo plazo y no depende de ningún
 sistema para poder leerse.
 
-- **La salida de datos queda anotada** —quién exportó, qué módulo, en qué formato
-  y cuántas filas— en los módulos que usan la exportación estándar del portal.
-  ⛔ **La descarga y la impresión del mes de bitácoras todavía no lo hacen**: hay
-  que conectarlas antes de firmar este documento, o esta línea no es cierta para
-  el módulo del que trata el protocolo.
+- **Toda salida de datos queda anotada**: quién exportó, qué módulo, en qué
+  formato y cuántas filas. Incluye la **impresión del mes de bitácoras**, que
+  hasta el 2026-09-03 era la única salida que no se anotaba — justo la del
+  módulo del que trata este protocolo. La firma la pone la base leyendo la
+  sesión: quien exporta no elige a nombre de quién queda anotado.
 
 ---
 
@@ -204,12 +212,14 @@ Descrito en detalle en el `[FLS-PRO-01]`, punto 4. En resumen:
   el valor anterior, el valor nuevo, el motivo y quién corrigió.
 - **Cada registro lleva a su autor en su propia fila**: quién anotó, quién
   corrigió, quién cerró el mes y quién lo reabrió, siempre con fecha y hora.
-- Los cambios de **configuración y de permisos** quedan además en una **bitácora
-  de auditoría** aparte.
-  ⛔ **Las acciones sobre las bitácoras todavía no llegan a esa bitácora
-  aparte** (anotar, corregir, cerrar, reabrir). La atribución existe en cada
-  fila, pero falta la pista independiente. Hay que agregarla —junto con la
-  corrección del borrado descrita en el `[FLS-PRO-01]` punto 4.3— antes de firmar.
+- **Y toda alta, cambio o baja queda además en una bitácora de auditoría
+  aparte**, que la base escribe sola: guarda la acción, la fecha y hora, la
+  persona, la sala y **lo que la fila decía antes y después**. Es independiente
+  del registro que audita —no la escribe quien anota— y alcanza a las lecturas,
+  las limpiezas, las correcciones, los cierres y las anulaciones. Cubre lo que
+  el **21 CFR Part 11 §11.10(e)** pide para lo que se crea, se modifica **y se
+  borra**.
+- Los cambios de **configuración y de permisos** quedan en la misma bitácora.
 
 ---
 
@@ -217,16 +227,16 @@ Descrito en detalle en el `[FLS-PRO-01]`, punto 4. En resumen:
 
 | | |
 |---|---|
-| **Qué se respalda** | Las **30 tablas** de trabajo manual y configuración, incluidas las **7 de bitácoras**: áreas, lecturas, limpiezas, correcciones, cierres, dispensaciones y folios |
+| **Qué se respalda** | Las **31 tablas** de trabajo manual y configuración, incluidas las **8 de bitácoras**: áreas, lecturas, limpiezas, correcciones, cierres, dispensaciones, folios y el historial de limpiezas |
 | **Cada cuánto** | **Semanal**, los domingos a las 02:00 hora de El Salvador |
 | **Dónde queda** | Almacenamiento privado del mismo proveedor, comprimido, en carpetas por fecha |
 | **Cuánto se retiene** | **60 días** de copias semanales |
 | **Constancia** | Cada corrida deja registro con la fecha, si tuvo éxito, cuántas tablas se copiaron y cuántas fallaron |
-| **Última corrida verificada** | `[dd/mm/aaaa]` — 30 tablas, 0 fallos |
+| **Última corrida verificada** | `[dd/mm/aaaa]` — 31 tablas, 0 fallos |
 
-⚠️ **Las 7 tablas de bitácoras entraron al respaldo el 2026-09-03 y el respaldo
+⚠️ **Las 8 tablas de bitácoras entraron al respaldo el 2026-09-03 y el respaldo
 todavía no ha corrido con ellas adentro** (corre los domingos). Antes de firmar
-hay que dispararlo una vez, comprobar que las 30 tablas salen sin fallos, y
+hay que dispararlo una vez, comprobar que las 31 tablas salen sin fallos, y
 escribir esa fecha arriba. Un control declarado que nunca corrió no es un
 control.
 
@@ -307,7 +317,10 @@ del sistema.
 12. **Capacitación** — que el personal que anota está capacitado en el
     `[FLS-PRO-01]` y que la constancia existe (RTS 6.3.2 y 6.3.4).
 13. **Áreas y su instrumento** — que toda área activa tiene declarado su
-    instrumento y, en el refrigerador, su calibración vigente.
+    instrumento. La **calibración** se revisa **sólo en el refrigerador**, y
+    sólo si se manejan productos de cadena de frío (RTS 6.2.19): los
+    instrumentos de sala de ventas y bodega son digitales y el RTS 6.2.11 no
+    exige calibrarlos — ver el `[FLS-PRO-01]` punto 2.
 
 **Dónde queda la constancia:** `[definir]`. Debe incluir la fecha, quién la hizo,
 lo encontrado y las acciones tomadas.

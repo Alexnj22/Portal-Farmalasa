@@ -33,6 +33,11 @@ const TABLES = [
   "bitacora_areas", "bitacora_lecturas", "bitacora_limpiezas",
   "bitacora_correcciones", "bitacora_cierres", "bitacora_dispensaciones",
   "bitacora_folios",
+  // Anular una limpieza hacía DELETE sin dejar rastro. Desde el 2026-09-03 la
+  // foto de lo anulado (y de lo corregido) vive acá, así que esta tabla ES el
+  // registro: sin ella, el respaldo guardaría la limpieza que quedó y no la
+  // que alguien quitó.
+  "bitacora_limpiezas_historial",
 ];
 
 const RETENTION_DAYS = 60;

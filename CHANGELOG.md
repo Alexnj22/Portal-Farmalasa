@@ -21,6 +21,72 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.970.12 — Las bitácoras digitales quedan como el procedimiento dice
+
+Las cinco afirmaciones que el `BORRADOR-A`/`BORRADOR-B` hacían sobre el sistema y
+que el sistema no sostenía (ver v2.970.7). Ahora las sostiene.
+
+**Una limpieza ya no se borra.** `anular_limpieza_bitacora` hacía `DELETE`: pedía
+motivo, lo validaba y lo **descartaba**, y la fila desaparecía sin rastro.
+`corregir_limpieza_bitacora` **pisaba** `puntos` y `observaciones`. Ahora las dos
+escriben en `bitacora_limpiezas_historial`, append-only, con la **foto completa**
+de lo que había — no sólo el id, para que el registro sea reconstruible aunque la
+fila ya no exista.
+
+Tabla aparte y no una marca en la fila, a propósito: `bitacora_limpiezas` tiene
+`UNIQUE (area_id, fecha, turno)`, así que marcarla dejaría ese turno **ocupado
+para siempre** y no se podría volver a registrar la limpieza — que es justo lo que
+uno quiere después de anular una mal cargada. La otra salida (índice único
+parcial) obliga a meter `anulada_at IS NULL` en las **cinco** funciones que leen
+la tabla, y la que se olvide muestra como hecha una limpieza anulada, en
+silencio. Probado en transacción: el historial guarda la foto y el turno vuelve a
+quedar libre.
+
+**Las acciones llegan a la bitácora de auditoría.** Sobre 619 lecturas, 701
+limpiezas, 3 correcciones y 1 cierre, `audit_logs` tenía **cero** filas de
+bitácoras. Un trigger `SECURITY DEFINER` sobre las cinco tablas anota alta,
+cambio y baja con **lo que la fila decía antes y después**. Trigger y no ocho
+cuerpos de RPC: la función que se olvide no da error, da una acción sin anotar —
+el defecto que se está corrigiendo. `bitacora_dispensaciones` queda fuera, la
+escribe un cron cada minuto.
+
+⚠️ **`audit_logs.source` tiene CHECK** (`ADMIN_PANEL`, `KIOSK`, `SYSTEM`). El
+valor `'BITACORAS'` que iba a usar lo habría rechazado la tabla y el trigger no
+habría escrito **ni una fila**, sin error visible. Se detectó antes de aplicar,
+leyendo las constraints. Es
+`feedback_una_funcion_nueva_no_prueba_que_la_tabla_la_acepte` otra vez.
+
+**El cierre del mes es del Regente.** Lo podían hacer seis cargos mientras
+`cerrar_mes_bitacora` lanzaba «Solo el regente puede dar por finalizado el mes» —
+y el único cierre registrado lo hizo un Supervisor/a de Ventas. Se corrigieron
+las dos mitades. No hizo falta dejarle la fila al cargo del usuario: ese rol tiene
+`is_su` y `auth_has_module_permission` cortocircuita en `auth_is_su()`, así que el
+acceso temporal existe por la vía del superusuario, que es explícita y auditable,
+en vez de por una fila que después nadie recuerda quitar.
+
+**La impresión del mes se anota como egreso.** Era la única salida de datos del
+portal que no lo hacía — justo la del módulo del que trata el protocolo.
+
+**Y el respaldo alcanza la tabla nueva**: 30 → **31 tablas**, en la lista de la
+edge function y en el whitelist de `backup_dump_table`, que son la misma lista
+dicha dos veces.
+
+**Los procedimientos, al día.** Los dos borradores ya no llevan pendientes de
+sistema. Se agregó el **`BORRADOR-C` — Hoja de contingencia de lecturas**
+(`[FLS-BIT-99]`), que es lo que faltaba para que el §4.7 sea accionable: se
+imprime en blanco y queda en cada sala junto al instrumento, porque existe para
+el rato en que la computadora no está.
+
+**Corrección del usuario, escrita en el procedimiento:** los termómetros de sala
+de ventas y bodega son **digitales y NO se calibran**. El RTS 6.2.11 no lo exige;
+el único numeral que pide certificado de calibración para un termómetro de
+ambiente es el **5.6.14**, del **capítulo 5** (droguerías), que no nos aplica. La
+calibración sólo alcanza al **refrigerador**, y sólo con cadena de frío (6.2.19 ·
+Guía 2.32, CRÍTICO).
+
+Advisor de seguridad: **0 errores**. `gate:migrations --remote`, `gate:design`,
+`gate:auditoria`, `gate:tdz`, `gate:undefinidos` y `gate:movil` en verde.
+
 ## v2.970.11 — El libro Bajo receta: dos registros, y la vara correcta
 
 Sólo documentación: reescritura de `docs/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md`.

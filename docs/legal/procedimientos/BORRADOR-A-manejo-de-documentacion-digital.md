@@ -4,11 +4,10 @@
 > sólo la empresa puede poner.
 >
 > ⚠️ **Revisado contra la norma y contra producción el 2026-09-03** — el informe
-> está en `docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md`. Quedan
-> **dos correcciones de sistema pendientes**, marcadas abajo con `⛔`: anular una
-> limpieza hoy la BORRA sin dejar rastro, y corregirla pisa el valor anterior.
-> **Este documento no se puede firmar hasta que las dos estén hechas**, porque el
-> punto 4.3 diría lo contrario de lo que el sistema hace.
+> está en `docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md`. Las dos
+> correcciones de sistema que faltaban **ya están hechas y probadas**: anular una
+> limpieza deja la foto de lo anulado, y corregirla conserva el valor anterior.
+> Lo que queda es lo que sólo puede decidir la empresa — los `[corchetes]`.
 
 ---
 
@@ -58,8 +57,21 @@ mínimo está bien, pero un día con dos lecturas de sala no incumple el RTS y s
 incumpliría este procedimiento si acá dijera «3» a secas.
 
 **El refrigerador se registra en las salas que lo tienen** y donde se conservan
-medicamentos que lo requieren (RTS 6.2.18). Su termómetro debe estar **calibrado**
-si se manejan productos de cadena de frío (RTS 6.2.19 · Guía 2.32, CRÍTICO).
+medicamentos que lo requieren (RTS 6.2.18).
+
+**Qué instrumento pide la norma, y cuál se calibra:**
+
+| dónde | qué exige | ¿calibración? |
+|---|---|---|
+| Sala de ventas y bodega | un instrumento o equipo **independiente** para cada una, en un punto representativo (RTS 6.2.11) | **No.** El numeral no la pide |
+| Refrigerador | termómetro (RTS 6.2.19) | **Sí**, si se manejan productos de **cadena de frío** (Guía 2.32, CRÍTICO) |
+
+Los instrumentos de sala de ventas y bodega de este establecimiento son
+**digitales**. El único numeral del RTS que exige certificado de calibración para
+un termómetro de ambiente es el **5.6.14**, y está en el **capítulo 5**, que
+aplica a laboratorios, droguerías y centros de almacenamiento — **no a
+farmacias**. Se deja escrito porque la confusión entre los dos capítulos es fácil
+y cambia la respuesta.
 
 **No aplica** a la bitácora de visitas del regente, que este establecimiento
 lleva en **libro físico** por decisión propia (Guía 2.23 · RTS 6.3.7), ni a la
@@ -122,27 +134,31 @@ tomada y anotada, **el producto afectado no se dispensa**.
 
 ### 4.3 · Correcciones
 
-**Corregir una lectura no la pisa: agrega.** La corrección de una lectura de
-temperatura o humedad **agrega** un registro que conserva el valor anterior, el
-valor nuevo, el motivo y la persona que corrigió, con su fecha y hora. El valor
-original sigue siendo consultable, y la corrección se imprime en la hoja del mes.
+**Ninguna corrección pisa lo que había.** En los cuatro registros del punto 2:
 
-**Un mes ya cerrado no admite correcciones**: hay que reabrirlo (punto 4.4).
-
-⛔ **Pendiente de corrección en el sistema — sin esto, este punto no es cierto:**
-
-| lo que falta | hoy | cómo debe quedar |
+| registro | qué pasa al corregir | qué pasa al quitar |
 |---|---|---|
-| Corregir una **limpieza** | pisa lo anterior; sólo quedan quién, cuándo y por qué | conservar también el valor anterior, como en las lecturas |
-| Anular una **limpieza** | **la borra**: pide motivo, no lo guarda, y la fila desaparece sin rastro | marcarla como anulada con motivo, autor y fecha, sin borrar la fila (como ya se hace con la dispensación) |
+| **Lectura** de temperatura y humedad | se **agrega** un registro con el valor anterior, el nuevo, el motivo y quién corrigió | no se quita: se corrige |
+| **Limpieza** | se guarda la **foto de lo que decía antes** y después se actualiza | se **anula**: la foto completa queda en el historial, con el motivo y quién la quitó |
+| **Dispensación** bajo receta | — | se **anula** dejando el motivo, el detalle, quién la anuló y cuándo |
+| **Cierre** mensual | — | reabrir **agrega** un movimiento, no borra el cierre |
 
-Un borrado sin rastro contradice el numeral 6.1.14 («originales y precisos») y
-hace perder al archivo el valor legal que le da el **Art. 14 de la Ley de Firma
-Electrónica**, cuyo último inciso dice que la alteración que afecte la integridad
-del documento almacenado le quita ese valor.
+Toda corrección lleva **motivo obligatorio**: el sistema no la acepta sin él. El
+valor original sigue siendo consultable, y las correcciones se imprimen en la
+hoja del mes.
 
-La **dispensación bajo receta** no se borra: se **anula** dejando el motivo, el
-detalle, quién la anuló y cuándo.
+**Un mes ya cerrado no admite correcciones ni anulaciones**: hay que reabrirlo
+(punto 4.4), y reabrirlo también queda registrado.
+
+**Además, cada alta, cambio y baja queda en una segunda bitácora**, la de
+auditoría del sistema, escrita automáticamente y aparte del registro mismo. Es
+lo que permite comprobar qué pasó aunque alguien tuviera acceso a la primera.
+
+Esto es lo que el numeral 6.1.14 llama «originales y precisos», y lo que el
+**Art. 13-A de la Ley de Firma Electrónica** exige del archivo: que se mantenga
+«íntegro, legible, completo y sin alteraciones». Su **Art. 14**, último inciso,
+dice que una alteración que afecte la integridad **hace perder el valor legal**
+del documento almacenado.
 
 ### 4.4 · Cierre mensual
 
@@ -173,9 +189,9 @@ imprime en formulario controlado, en tamaño carta, **una hoja por área**, con:
 
 - el código y la versión del formulario,
 - el establecimiento, el área, el mes y el rango permitido,
-- el instrumento con el que se mide y, cuando corresponde, su calibración
-  (`[hay que cargarlo en la configuración de cada área: hoy está en blanco en las
-  14 áreas que miden temperatura]`),
+- el instrumento con el que se mide, y **sólo en la hoja del refrigerador** su
+  calibración (`[hay que cargar el instrumento en la configuración de cada área:
+  hoy está en blanco en las 14 que miden temperatura]`),
 - cada día con su valor, la persona y la hora,
 - las desviaciones con su acción correctiva,
 - la firma del jefe de sala y la firma y sello del regente.
@@ -199,8 +215,9 @@ Las lecturas del punto 2 **no se suspenden** porque el sistema no esté
 disponible. Si al momento de una franja el sistema no responde:
 
 1. La lectura se toma igual y se anota en la **hoja de contingencia**
-   `[FLS-BIT-99]`, en papel, con fecha, hora, valor, área y nombre de quien la
-   toma. La hoja es un formulario controlado, igual que las demás.
+   `[FLS-BIT-99]` —el formulario está al final de este procedimiento—, con
+   fecha, hora, área, franja, valor y el nombre de quien la toma. Cada sala
+   tiene una impresa y en blanco, junto al instrumento.
 2. **Apenas el sistema vuelve**, la misma persona la carga y **anota en el motivo
    que proviene de contingencia**, con la hora real de la lectura. Queda marcada
    como anotación tardía, que es lo correcto: se anotó después.
@@ -222,14 +239,15 @@ original.
 | **Legible** | El mes se imprime en formulario controlado, y el sistema lo muestra en pantalla |
 | **Contemporáneo** | Se anota en el momento; la hora la fija el servidor y una anotación tardía queda marcada |
 | **Original** | El registro del sistema es el primario; el papel es su copia impresa, no al revés |
-| **Preciso** | La corrección de una lectura se **agrega** con el valor anterior, el motivo y el autor; la dispensación se anula, no se borra. ⛔ Falta cerrar lo mismo para las limpiezas (punto 4.3) |
+| **Preciso** | Nada se pisa ni se borra: toda corrección o anulación conserva lo que decía antes, con motivo y autor, y queda además en la bitácora de auditoría (punto 4.3) |
 
 ## 6 · Documentos relacionados
 
 - `[FLS-PRO-02]` — Protocolo de supervisión del sistema electrónico (RTS 6.1.15)
 - Formularios `FLS-BIT-00` a `FLS-BIT-03` — hojas impresas del mes `[adjuntar
   como anexos de este procedimiento]`
-- Formulario `[FLS-BIT-99]` — hoja de contingencia (punto 4.7)
+- Formulario `[FLS-BIT-99]` — **Hoja de contingencia de lecturas** (punto 4.7).
+  Se imprime en blanco y queda una copia en cada sala, junto al instrumento
 - `[Programa anual de capacitaciones]` (RTS 6.3.2) — este procedimiento es uno de
   sus temas, y su capacitación debe quedar registrada (RTS 6.3.4)
 

@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.968.2 — El aviso de bolsas juzga con la vara del corte
+
+Salud 2, 2-sep: «**Un día cerró con menos efectivo guardado del que declaró el
+corte — faltan $460.00 de $1,571.07**». El dinero estaba bien y la bolsa
+también; el aviso salía de una cuenta que daba por hecho algo que no había
+pasado.
+
+La cadena, medida:
+
+| | |
+|---|---|
+| S2-1229 | nació con $1,073.52 (corte de la 1:01 pm) |
+| dos salidas POS Promerica | −$220.00 y −$240.00 → quedan $613.52 |
+| ninguna se anotó como vale en la caja | `caja_vale_id` en NULL las dos |
+| el corte de las 7:00 pm | declaró **$1,571.07**, con los $460 adentro |
+| `bolsa_sugerida` restó el saldo | 1,571.07 − 613.52 = **$957.55** |
+| y en el cajón había | **$497.55**, que es lo que el Gerente General mandó poner |
+
+Desde el 2-sep (v2.937.x) `bolsa_sugerida` restaba el saldo REAL de las bolsas
+del día, y esa cuenta es correcta **sólo si el corte ya descontó esa salida**.
+Se cumple cuando el vale se anotó en la caja —Salud 3 el 1-sep: sus $119.38
+aparecen en los movimientos del día como «VALE DE CAJA 1 (1 salida)», así que
+el declarado venía neto— y no se cumple cuando nadie lo anotó, que es lo que
+pasa cada vez que el corte se toma desde la caja y no desde el portal:
+`hacer-corte-caja` anota los pendientes antes de pedir el corte, la caja no.
+
+**La regla ahora se dice UNA vez.** `bolsa_saldo_para_el_corte(bolsa, hasta)` es
+el saldo de la bolsa medido con la vara del corte —descuenta sólo las salidas
+cuyo vale ya estaba anotado antes de su `capturado_at`— y la usan las tres
+piezas que decían lo mismo con tres cuentas distintas: `bolsa_sugerida`,
+`get_bolsas_invariante` y `reajustar_bolsas_del_dia` (ésta se había quedado
+sumando `monto_inicial` a secas desde el 24-ago). `bolsa_saldo` no se toca:
+sigue siendo el dinero que la bolsa tiene de verdad, el que se cuenta, el que
+limita un reintegro y el que valida la próxima salida.
+
+**No apaga el control, lo apunta al defecto real.** Con la vara nueva el día de
+Salud 2 cuadra en $0.00 — pero si la etiqueta hubiera quedado en los $957.55 que
+puso la fórmula, el mismo control diría «guardaron **$460.00 de MÁS**», que es
+exactamente lo que pasaba: la etiqueta prometía efectivo que ya no estaba en
+ninguna bolsa. Y con la vara nueva la fórmula habría escrito $497.55 sola
+(verificado contra el corte 682), o sea el número que hubo que poner a mano.
+
+Verificado contra producción sobre todos los días que el invariante juzga: con
+la vara vieja uno marcaba −$460.00; con la nueva, los seis en $0.00. El
+invariante bajó de 10 a 5 ms (521 bloques) y queda declarado en
+`scripts/planes-genericos.json` junto con la función nueva.
+
+Migración `la_salida_de_bolsa_compensa_solo_si_la_caja_la_anoto`.
+
 ## v2.968.1 — El aviso de movimientos tardíos exige que haya un corte
 
 La Popular, 3-sep, sin ningún corte hecho todavía: la pantalla de Movimientos

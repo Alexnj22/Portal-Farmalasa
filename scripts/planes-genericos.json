@@ -1,7 +1,7 @@
 {
   "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
-  "actualizado": "2026-09-02",
-  "medidas": 43,
+  "actualizado": "2026-09-03",
+  "medidas": 44,
   "sin_medir": 24,
   "funciones": {
     "auth_module_scope": {
@@ -15,6 +15,12 @@
       "casos": null,
       "divergencia": null,
       "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+    },
+    "bolsa_saldo_para_el_corte": {
+      "ms": "0.23",
+      "casos": "una bolsa con dos salidas · 7 bloques",
+      "divergencia": null,
+      "nota": "medida el 2026-09-03 con literales: 0.233 ms, todo Index Scan (bolsas_pkey, bolsas_mov_bolsa, caja_vales_portal_pkey). El plan NO puede depender de los argumentos: los dos parámetros entran como Index Cond de una PK y como Filter sobre una fila, así que el genérico es el mismo plan y forzar el personalizado sólo agregaría el costo de replanificar"
     },
     "buscar_inventario_global_v2": {
       "ms": "74",
@@ -71,10 +77,10 @@
       "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
     },
     "get_bolsas_invariante": {
-      "ms": "10",
-      "casos": "todo el historial · 54 filas",
+      "ms": "5",
+      "casos": "el año entero · 6 días-sala juzgados",
       "divergencia": null,
-      "nota": "remedida el 2026-09-02 al pasar a sumar el saldo y no la etiqueta: 6 → 10 ms, 898 bloques. El plan bueno no depende de los argumentos (las fechas sólo recortan un Seq Scan de 601 filas de cortes_caja), así que el genérico sirve y forzar el personalizado sería la regresión"
+      "nota": "remedida el 2026-09-03 al pasar a bolsa_saldo_para_el_corte: 10 → 5 ms, 521 bloques (6 días-sala, el año entero). El plan bueno no depende de los argumentos (las fechas sólo recortan un Seq Scan de 601 filas de cortes_caja), así que el genérico sirve y forzar el personalizado sería la regresión"
     },
     "get_ccf_con_problema": {
       "ms": "70–865",

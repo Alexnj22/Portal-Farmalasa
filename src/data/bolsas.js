@@ -76,7 +76,7 @@ export async function fetchCortesPorEmbolsar({ desde, hasta }) {
 
 /**
  * El invariante del circuito, sala por sala y día por día:
- * **Σ etiquetas del día + vales que salieron ANTES == declarado del último corte
+ * **Σ saldos-para-el-corte de las bolsas del día == declarado del último corte
  * confirmado**.
  *
  * 🔴 **Lo que este control NO puede ver, y hay que decirlo porque su nombre
@@ -107,16 +107,27 @@ export async function fetchCortesPorEmbolsar({ desde, hasta }) {
  * — días sin ninguna bolsa, y bolsas anuladas.
  *
  * Los vales son lo que rompe la identidad: a una bolsa se le puede SACAR dinero,
- * y entonces lo que tiene adentro ya no es lo que dice su etiqueta. «Antes» es
- * antes de que se creara la última bolsa del día — el estado exacto que vio
- * `bolsa_sugerida` al calcularla, para que las dos mitades midan con la misma
- * vara. Y así queda fijo en el tiempo: los vales que salen DESPUÉS bajan el saldo
- * de hoy pero no mueven el invariante, que es lo que impide que un día viejo se
- * ponga rojo solo a medida que su dinero va saliendo.
+ * y entonces lo que tiene adentro ya no es lo que dice su etiqueta.
+ *
+ * ⚠️ **Pero no todos los vales cuentan, y creer que sí costó un aviso falso**
+ * (Salud 2, 2-sep: «faltan $460.00 de $1,571.07» sobre un día que estaba bien).
+ * Una salida de bolsa baja lo declarado por el corte **sólo si se anotó como
+ * vale en la caja**; si nadie la anotó —que es lo que pasa cuando el corte se
+ * toma desde la caja y no desde el portal— el declarado la sigue contando y la
+ * bolsa nueva no puede absorberla. Por eso las dos mitades miden con
+ * `bolsa_saldo_para_el_corte`: el saldo de la bolsa **como lo vio ese corte**,
+ * o sea descontando sólo las salidas con vale anotado antes de su
+ * `capturado_at`. Es la MISMA función con la que `bolsa_sugerida` calculó cada
+ * bolsa. Ver la migración `la_salida_de_bolsa_compensa_solo_si_la_caja_la_anoto`.
+ *
+ * El corte al que se mide queda fijo en el tiempo, así que un vale anotado
+ * DESPUÉS baja el saldo de hoy pero no mueve el invariante — lo que impide que
+ * un día viejo se ponga rojo solo a medida que su dinero va saliendo.
  *
  * El `descuadre` viene CON SIGNO y hay que respetarlo: negativo es que se guardó
- * de menos, positivo que se guardó de más —un mismo efectivo contado dos veces—,
- * y son dos problemas distintos. La pantalla lo dijo al revés hasta ese día.
+ * de menos, positivo que se guardó de más —un mismo efectivo contado dos veces,
+ * o una etiqueta que promete efectivo que ya salió sin anotarse—, y son dos
+ * problemas distintos. La pantalla lo dijo al revés hasta ese día.
  *
  * El servidor devuelve TAMBIÉN los días que cuadran, a propósito: una lista que
  * sólo trae problemas no se distingue de una que no se cargó — ver

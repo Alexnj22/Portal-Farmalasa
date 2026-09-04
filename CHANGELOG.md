@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.977.4 — La sonda del formulario del corte deja de ocupar el nivel de error
+
+`hacer-corte-caja` vuelca al registro los campos que el formulario del corte le
+manda al sistema de la caja. Es una sonda deliberada y vale conservarla: es la
+que descubrió que ese formulario trae `tipo_corte=X` marcado por defecto, o sea
+que reenviarlo tal cual pedía una lectura y no un corte.
+
+Estaba escrita con `console.error`, así que ocupaba el nivel entero. Medidas
+las 24 h del 3 al 4-sep: **38 líneas en «error» y las 38 eran ésta**, cero
+errores de verdad, en renglones de hasta 1,800 caracteres. Un nivel que sólo
+trae rutina no avisa de nada, y el día que la función falle su línea va a estar
+enterrada entre los volcados del mismo día.
+
+Bajarla a `log` a secas la habría callado y perdido. Ahora el volcado va
+completo a `log` y lo que sube a «error» es sólo la **noticia**: que el ERP
+cambie el formulario. Se declaran los **50 nombres** que manda hoy
+(`CAMPOS_DEL_CORTE`, verificados sobre las 38 lecturas: un solo conjunto,
+idéntico en las seis salas y en los cortes C y Z) y la alarma salta cuando
+aparece uno nuevo o falta uno, nombrándolo.
+
+Se mira el conjunto de **nombres** y no `fuera`, que es la otra mitad y no
+sirve de disparador: `fuera` junta los campos que el formulario NO manda
+—casilla sin marcar, select deshabilitado— y viene en «nada» siempre. El riesgo
+que la sonda vigila es el contrario, un campo que sí se manda.
+
+Antes de creerle el silencio se le fabricó la regresión que debe cazar: con los
+50 de hoy sale por `log`; agregándole un `cierra_turno` y quitándole
+`total_cobros`, las dos veces sube a «error» nombrando el campo.
+
+De paso, la otra sonda del mismo tipo —`[operar-caja] sonda turno`, 83 líneas
+de «error» en esas mismas 24 h— ya no existe: no está en el repo y el
+despliegue del 3-sep a las 22:07 se la llevó. Cero desde entonces.
+
 ## v2.977.3 — Los filtros de Cortes se llaman por su dimensión
 
 La ranura de sucursales ya decía «Sucursales» cuando no recorta nada, y las

@@ -153,6 +153,31 @@ async function aperturaViva(cookie: string) {
 }
 
 /**
+ * Los CINCUENTA nombres que el formulario del corte manda hoy.
+ *
+ * Es la referencia contra la que se compara cada lectura, y existe para que el
+ * volcado de abajo pueda distinguir la rutina de la noticia. Verificado el
+ * 2026-09-04 sobre las 38 lecturas de 24 h: **un solo conjunto**, idéntico en
+ * las seis salas y en los cortes C y Z.
+ *
+ * No lleva los valores a propósito: los valores cambian en cada corte y los
+ * nombres no, así que un cambio acá es el ERP cambiando el formulario — que es
+ * lo único que la sonda vino a cazar.
+ */
+const CAMPOS_DEL_CORTE = new Set([
+  "fecha", "total_entrada", "total_salida", "monto_ch", "total_contado",
+  "total_tarjeta", "total_efectivo1", "total_corte", "diferencia",
+  "total_efectivo", "observaciones", "process", "lista_tike", "lista_factura",
+  "lista_credito_fiscal", "lista_dev", "lista_nc", "retencion", "t_tike",
+  "t_factuta", "t_credito", "t_dev", "t_nc", "t_res", "total_tike",
+  "total_factura", "total_credito", "total_dev", "total_nc", "fecha_actual",
+  "hora_actual", "id_sucursal", "id_empleado", "turno", "id_apertura",
+  "caja_apertura", "tike_min", "tike_max", "factura_min", "factura_max",
+  "credito_fiscal_min", "credito_fiscal_max", "dev_min", "dev_max", "res_min",
+  "res_max", "total_cobros", "monto_apertura", "aper_id", "tipo_corte",
+]);
+
+/**
  * Los campos del formulario del corte, tal como los serializaría el navegador.
  *
  * Se leen TODOS —50 medidos el 29-ago— y se reenvían: las listas de documentos
@@ -213,10 +238,38 @@ function camposDelFormulario(html: string): Map<string, string> {
   /* Al registro del servidor, nunca a la respuesta: sirve para ver si quedó
    * algún campo que decida el cierre del turno y que todavía se esté mandando.
    * Los valores van acá y no a la pantalla —el esperado no viaja antes del
-   * conteo—, y son los que permiten reconocer un `process` o una bandera. */
-  console.error(`[hacer-corte-caja] formulario · manda: ${
+   * conteo—, y son los que permiten reconocer un `process` o una bandera.
+   *
+   * ── Por qué el nivel se decide y no es siempre `error` ───────────────────
+   *
+   * Escrito con `console.error`, este volcado ocupaba el nivel entero: medidas
+   * las 24 h del 3 al 4-sep, `hacer-corte-caja` tenía **38 líneas en «error» y
+   * las 38 eran ésta** — cero errores de verdad, en renglones de hasta 1,800
+   * caracteres. Un nivel que sólo trae rutina no avisa de nada, y el día que
+   * la función falle su línea va a estar enterrada entre los volcados del
+   * mismo día.
+   *
+   * Bajarla a `log` a secas la habría callado y perdido: la sonda existe para
+   * cazar un cambio del formulario del ERP —fue la que descubrió el
+   * `tipo_corte=X` por defecto—. Así que se conserva entera y lo que sube a
+   * «error» es sólo la NOTICIA: que el conjunto de nombres deje de ser el
+   * declarado en `CAMPOS_DEL_CORTE`.
+   *
+   * Se mira el conjunto de NOMBRES y no `fuera`, que es la otra mitad y no
+   * sirve de disparador: `fuera` junta los campos que el formulario NO manda
+   * —casilla sin marcar, select deshabilitado— y viene en «nada» siempre. El
+   * riesgo que esto vigila es el contrario, un campo que sí se manda. */
+  const linea = `[hacer-corte-caja] formulario · manda: ${
     [...campos].map(([k, v]) => `${k}=${v}`).join("&").slice(0, 1800)
-  } · fuera: ${fuera.join(", ") || "nada"}`);
+  } · fuera: ${fuera.join(", ") || "nada"}`;
+  const nuevos = [...campos.keys()].filter((k) => !CAMPOS_DEL_CORTE.has(k));
+  const faltan = [...CAMPOS_DEL_CORTE].filter((k) => !campos.has(k));
+  if (nuevos.length || faltan.length) {
+    console.error(`${linea} · CAMBIÓ EL FORMULARIO — nuevos: ${
+      nuevos.join(", ") || "ninguno"} · faltan: ${faltan.join(", ") || "ninguno"}`);
+  } else {
+    console.log(linea);
+  }
   return campos;
 }
 

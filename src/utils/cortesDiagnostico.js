@@ -1239,3 +1239,139 @@ export function conLaCuentaBuena(r) {
         segun_el_sistema: { esperado: r.esperado, diferencia: r.diferencia },
     };
 }
+
+/**
+ * El camino de vuelta: una FILA de `cortes_caja` con la forma que espera el
+ * papel del corte (`construirComprobanteDeCorte`).
+ *
+ * ── Por qué hace falta ─────────────────────────────────────────────────────
+ * El papel del corte se armaba con la respuesta de `hacer-corte-caja`, que vive
+ * en la memoria de la pestaña que apretó «Hacer corte». O sea que sólo Mi caja
+ * podía imprimirlo, y sólo en esa sesión — pero un corte se CONFIRMA desde
+ * cuatro pantallas, y la etiqueta de la bolsa ya salía en las cuatro.
+ *
+ * Medido en La Popular el 4-sep (corte 14467): se confirmó desde el módulo, la
+ * etiqueta salió y el comprobante no. Lo apretaron TRES veces —12:59, 13:00 y
+ * 13:09— y lo único que se gastó fueron tres etiquetas: `bolsas.etiqueta_version`
+ * quedó en 3. Regla del usuario (4-sep): «corte confirmado significa papel de
+ * corte también, así que debe imprimir ambos en ambos casos».
+ *
+ * ── Por qué las líneas salen de las COLUMNAS y las formas del TEXTO ────────
+ * No es una preferencia: es lo que cada dato permite.
+ *
+ * Las ocho líneas de la cuenta ya están parseadas en la fila, una por columna,
+ * y `sync-cortes-caja` las saca del MISMO texto con las mismas expresiones que
+ * `hacer-corte-caja`. Reproducir acá esa lectura sería un tercer parser de lo
+ * mismo. Comprobado sobre los **557 cortes tipo C con tiquete guardado**: la
+ * columna está en `null` exactamente cuando el tiquete no trae la línea — 0
+ * discrepancias en las ocho, y también en `caja_erp`.
+ *
+ * Las formas que no pasan por la caja NO se pueden reconstruir así, y el motivo
+ * es justo el defecto que el portal ya pagó: la fila tiene `tk_tarjeta` y
+ * `tk_credito`, dos columnas fijas, y armar el papel con ellas volvería a
+ * escribir a mano la lista de formas — una que el origen empiece a imprimir
+ * mañana no saldría como cero, desaparecería. Así que se leen del texto COMO
+ * VENGAN, con el mismo recorrido de bloques de `leerTiquete`.
+ *
+ * El corte del texto —lo que viene DESPUÉS de la línea DIFERENCIA, o de EXACTO
+ * cuando cuadró— se verificó antes de confiar en él: de los 557 tipo C, **557
+ * traen una de las dos anclas**. Los 127 que no la traen son Z y X, que no
+ * cuentan efectivo y no se confirman nunca (0 confirmados).
+ *
+ * ── Lo que este camino NO puede saber ──────────────────────────────────────
+ * El bloque del vale. `hacer-corte-caja` devuelve el vale que acaba de escribir
+ * y la fila no guarda a qué corte terminó perteneciendo, así que el papel armado
+ * desde la fila no lleva esa nota. No cambia ninguna cifra —el dinero ya está en
+ * la línea «(-) Vales» de la cuenta—: es la explicación de cómo llegó ahí.
+ *
+ * Y `cobros_portal_efectivo` viaja como venga, sin `?? 0`: en la fila la columna
+ * es NOT NULL con default 0 —la sella un trigger— así que un cero de ahí es un
+ * cero medido y no un dato que no se pudo leer. Taparlo con un operador de dos
+ * caracteres es lo que convierte un «no sé» en un «no hubo».
+ */
+export function resultadoDeLaFila(corte) {
+    if (!corte) return null;
+    const d = diferenciaDelCorte(corte);
+
+    /* Las líneas, en el orden del tiquete y con los rótulos del papel. Una
+     * línea en `null` no viene en el tiquete y una en cero no dice nada — salvo
+     * la venta, que en cero SÍ informa: es la caja que no vendió. Es la misma
+     * regla de `agregar()` en `hacer-corte-caja`, dicha sobre las columnas. */
+    const lineas = [];
+    const agregar = (rotulo, valor, siCero = false) => {
+        const v = num(valor);
+        if (v === null || (v === 0 && !siCero)) return;
+        lineas.push({ rotulo, monto: v });
+    };
+    agregar('Saldo inicial', corte.tk_saldo_inicial);
+    agregar('Saldo caja chica', corte.tk_saldo_caja_chica);
+    agregar('(+) Ingresos', corte.tk_ingresos);
+    agregar('(+) Venta', corte.tk_venta, true);
+    agregar('(-) Vales', corte.tk_vales);
+    agregar('(+) Cobros credito', corte.tk_cobros_credito);
+    agregar('(-) Retencion', corte.tk_retencion);
+    agregar('(-) Devoluciones', corte.tk_devoluciones);
+
+    return {
+        ok: true,
+        id_corte: corte.erp_corte_id,
+        contado: num(corte.total_declarado),
+        esperado: d.esperado,
+        diferencia: d.valor,
+        fuente: d.fuente,
+        cobros_portal_efectivo: num(corte.cobros_portal_efectivo),
+        tiquete: {
+            empleado: corte.empleado_texto || null,
+            caja: corte.caja_erp ?? null,
+            turno: corte.turno ?? null,
+            total_caja: num(corte.tk_total_caja),
+            subtotal: num(corte.tk_subtotal),
+            vales: num(corte.tk_vales),
+            cobros_credito: num(corte.tk_cobros_credito),
+            lineas,
+            formas: formasDelTiquete(corte.ticket),
+        },
+    };
+}
+
+/**
+ * Las formas de pago que el tiquete lista al final, COMO VENGAN.
+ *
+ * Traducción literal del recorrido de `leerTiquete` (`hacer-corte-caja`), que es
+ * el que viene armando este bloque para todos los cortes hechos desde el portal.
+ * La forma del papel es: después de la línea DIFERENCIA vienen bloques, y cada
+ * uno es un encabezado sin número, sus renglones de detalle, y un `TOTAL <monto>`
+ * que lo cierra. Del detalle no se toma nada: el origen lista transacción por
+ * transacción y cada renglón dice «COF» y un monto — el mismo rótulo repetido.
+ *
+ * Cambiar una de las dos exige cambiar la otra: son la misma lectura del mismo
+ * papel, y el día que diverjan el comprobante del corte recién hecho y el del
+ * mismo corte confirmado desde el módulo dejarían de ser el mismo documento.
+ */
+export function formasDelTiquete(texto) {
+    const t = String(texto || '');
+    const cola = t.split(/DIFERENCIA\s*\$:[^\n]*\n/i)[1]
+        ?? t.split(/EXACTO[^\n]*\n/i)[1] ?? '';
+    const formas = [];
+    let titulo = null;
+    for (const cruda of cola.split('\n')) {
+        const l = cruda.trim();
+        if (!l) continue;
+        const total = l.match(/^TOTAL\s+([\d.,-]+)$/i);
+        if (total && titulo) {
+            const n = Number(total[1].replace(/,/g, ''));
+            if (Number.isFinite(n) && n !== 0) {
+                // Como viene, sólo con la primera en mayúscula: el rótulo es del
+                // origen y traducirlo acá sería una segunda lista que mantener.
+                formas.push({
+                    rotulo: titulo.charAt(0) + titulo.slice(1).toLowerCase(),
+                    monto: n,
+                });
+            }
+            titulo = null;
+        } else if (!/\d/.test(l)) {
+            titulo = l;               // encabezado de bloque: no trae número
+        }
+    }
+    return formas;
+}

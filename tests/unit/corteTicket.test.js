@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { construirComprobanteDeCorte } from '../../src/utils/corteTicket';
+import { resultadoDeLaFila } from '../../src/utils/cortesDiagnostico';
 import { textoParaElRollo } from '../../src/utils/ticketPrint';
 
 /*
@@ -177,5 +178,126 @@ describe('comprobante del corte', () => {
         // las tildes y eñes, que salen como basura en el papel («NUÑEZ» →
         // `NUÆEZ`, medido la primera vez que se imprimió de verdad).
         expect(papel).not.toMatch(/[áéíóúÁÉÍÓÚñÑ¿¡]/);
+    });
+});
+
+
+/*
+ * ── EL MISMO PAPEL, ARMADO DESDE LA FILA ───────────────────────────────────
+ *
+ * Un corte se confirma desde cuatro pantallas y sólo una tenía en memoria la
+ * respuesta de `hacer-corte-caja`: las otras tres confirmaban sin papel. Desde
+ * el 4-sep el comprobante lo arma `resultadoDeLaFila` con la fila de
+ * `cortes_caja`, así que hay DOS caminos al mismo documento.
+ *
+ * Estos casos los enfrentan sobre el MISMO corte real —el 14323, tal como está
+ * guardado en producción— y exigen que el rollo salga idéntico. Si divergen, el
+ * papel del corte recién hecho y el del mismo corte confirmado desde el módulo
+ * dejarían de ser el mismo documento, y nadie podría notarlo: los dos salen
+ * bien impresos.
+ */
+const FILA_14323 = {
+    id: 597, branch_id: 27, erp_corte_id: 14323, tipo: 'C',
+    fecha: '2026-08-31', hora: '13:08:24', turno: 1, caja_erp: 4,
+    empleado_texto: 'RODRIGO EDUARDO MARQUEZ',
+    // Como los devuelve PostgREST: `numeric` viaja como cadena.
+    total_declarado: '490.85', diferencia_erp: '-431.36', esperado: '922.21',
+    tk_saldo_inicial: '0.00', tk_saldo_caja_chica: '0.00',
+    tk_ingresos: '11.31', tk_venta: '570.30', tk_subtotal: '581.61',
+    tk_vales: '161.65', tk_cobros_credito: '100.45', tk_total_caja: '520.41',
+    tk_retencion: '0.00', tk_devoluciones: '0.00',
+    cobros_portal_efectivo: '0.00',
+    ticket: ' FARMACIA LA SALUD 3\n \n CORTE TIPO: CORTE DE CAJA\n'
+        + ' CORTE DE CAJA  : 14323\n_________________________________\n'
+        + ' FECHA: 31-08-2026  HORA:1:08 PM\n EMPLEADO: RODRIGO EDUARDO MARQUEZ\n'
+        + ' CAJA : 4  TURNO: 1\n_________________________________\n'
+        + ' TIQUETES:     0000000   0000000\n FACTURAS:           0         0\n'
+        + ' FISCALES:           0         0\n\n SALDO INICIAL $:           0.00\n'
+        + ' SALDO CAJA CHICA $:        0.00\n (+)INGRESOS $:            11.31\n'
+        + ' (+) VENTA $:             570.30\n_________________________________\n'
+        + ' SUBTOTAL $:              581.61\n (-)VALES $:             161.65\n'
+        + '_________________________________\n'
+        + ' (+) COBROS CREDITO $:            100.45\n'
+        + '_________________________________\n TOTAL CAJA $:            520.41\n\n'
+        + ' (-) RETENCION $:           0.00\n (-)DEVOLUCIONES$:          0.00\n'
+        + '_________________________________\n EFECTIVO $:              490.85\n'
+        + ' DIFERENCIA $:           -431.36\n\nPAGOS CON TARJETA\n'
+        + 'COF                               8.70\nCOF                              30.25\n'
+        + 'COF                               7.65\nCOF                              12.60\n'
+        + 'TOTAL                            59.20\nVENTAS AL CREDITO\n'
+        + 'COF                              16.30\nCOF                               0.75\n'
+        + 'COF                              95.05\nTOTAL                           112.10\n\n',
+};
+
+describe('el comprobante armado desde la fila', () => {
+    it('sale igual que el del corte recien hecho', () => {
+        // Los dos caminos, el mismo corte, el mismo papel. Es la comparación que
+        // importa: cualquier diferencia acá es un papel que dice otra cosa según
+        // desde dónde se confirme.
+        expect(enRollo(armar(resultadoDeLaFila(FILA_14323))))
+            .toBe(enRollo(armar(CORTE_14323)));
+    });
+
+    it('la diferencia sale del tiquete, tambien por este camino', () => {
+        const r = resultadoDeLaFila(FILA_14323);
+        // -29.56 es la del tiquete; -431.36 la que guardó el formulario del
+        // origen, que cuenta los cobros de crédito 4 veces de más.
+        expect(r.diferencia).toBeCloseTo(-29.56, 2);
+        expect(r.esperado).toBeCloseTo(520.41, 2);
+        expect(r.fuente).toBe('ticket');
+    });
+
+    it('no inventa lineas que el tiquete no trae', () => {
+        /* La columna en cero NO es una línea del papel: el tiquete no la
+         * imprime y un cero inventado se lee como un dato medido. Verificado
+         * sobre los 557 cortes tipo C con tiquete guardado: la columna está en
+         * `null` exactamente cuando falta la línea, 0 discrepancias. */
+        const { lineas } = resultadoDeLaFila(FILA_14323).tiquete;
+        expect(lineas.map((l) => l.rotulo)).toEqual([
+            '(+) Ingresos', '(+) Venta', '(-) Vales', '(+) Cobros credito',
+        ]);
+    });
+
+    it('la venta en CERO si sale: es la caja que no vendio', () => {
+        const sinVender = { ...FILA_14323, tk_venta: '0.00' };
+        const rotulos = resultadoDeLaFila(sinVender).tiquete.lineas.map((l) => l.rotulo);
+        expect(rotulos).toContain('(+) Venta');
+    });
+
+    it('lee las formas del tiquete COMO VENGAN, no de dos columnas fijas', () => {
+        /* La fila tiene `tk_tarjeta` y `tk_credito`, y armar el papel con ellas
+         * sería volver a escribir a mano la lista de formas: una que el origen
+         * empiece a imprimir mañana no saldría como cero, DESAPARECERÍA. Por eso
+         * se leen del texto. */
+        const conCheque = {
+            ...FILA_14323,
+            ticket: FILA_14323.ticket
+                + 'PAGOS CON CHEQUE\nCOF                               2.20\n'
+                + 'TOTAL                             2.20\n\n',
+        };
+        const papel = enRollo(armar(resultadoDeLaFila(conCheque)));
+        expect(papel).toContain('Pagos con cheque');
+        expect(papel).toContain('2.20');
+    });
+
+    it('encuentra las formas tambien cuando el corte cuadro', () => {
+        /* Un corte exacto NO imprime la línea DIFERENCIA: el papel dice «EXACTO
+         * FELICIDADES». Sin esa segunda ancla las formas se perderían enteras y
+         * el papel parecería haber perdido plata. Medido: de los 557 cortes tipo
+         * C guardados, 179 traen sólo esta. */
+        const exacto = {
+            ...FILA_14323,
+            ticket: FILA_14323.ticket.replace(
+                ' DIFERENCIA $:           -431.36', ' EXACTO FELICIDADES   $:     0.00',
+            ),
+        };
+        const { formas } = resultadoDeLaFila(exacto).tiquete;
+        expect(formas.map((f) => f.rotulo)).toEqual(['Pagos con tarjeta', 'Ventas al credito']);
+    });
+
+    it('sin tiquete guardado no inventa formas ni revienta', () => {
+        const r = resultadoDeLaFila({ ...FILA_14323, ticket: null });
+        expect(r.tiquete.formas).toEqual([]);
+        expect(enRollo(armar(r))).not.toContain('No pasa por la caja');
     });
 });

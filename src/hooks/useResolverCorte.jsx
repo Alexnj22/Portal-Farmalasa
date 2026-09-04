@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { resolverCorte, salaYaCerro } from '../data/cortes';
+import { fetchCorteParaElPapel, resolverCorte, salaYaCerro } from '../data/cortes';
 import EntregaDeCaja from '../components/cortes/EntregaDeCaja';
 import { fetchBolsaDeCorte } from '../data/bolsas';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -77,6 +77,7 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
     useEffect(() => {
         import('../utils/ticketPrint').catch(() => {});
         import('../utils/bolsaComprobante').catch(() => {});
+        import('../utils/corteTicket').catch(() => {});
     }, []);
 
     const escribir = useCallback(async (corte, estado, {
@@ -108,21 +109,92 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
             `${sala} · ${String(corte.hora || '').slice(0, 5)}`.trim(), 'success',
         );
 
-        // ── La etiqueta de la bolsa sale acá, no en otra pantalla ───────────
+        // ── LOS DOS PAPELES DEL ACTO SALEN ACÁ, no en la pantalla ──────────
+        //
+        // Confirmar un corte produce dos documentos —el comprobante del corte y
+        // la etiqueta de la bolsa— y los dos tienen que salir desde las cuatro
+        // pantallas que confirman. Que uno viviera acá y el otro en Mi caja es
+        // exactamente cómo La Popular terminó con la etiqueta en la mano y sin
+        // comprobante (4-sep, corte 14467).
         //
         // Al confirmar, un disparador crea la bolsa con el efectivo del tramo.
-        // Hasta ahora nadie mandaba su etiqueta al rollo: había que ir a la
-        // pestaña de bolsas y apretar imprimir, y la bolsa que se quedaba sin
-        // etiqueta llegaba a administración sin nada que la identificara.
+        // Antes nadie mandaba su etiqueta al rollo: había que ir a la pestaña de
+        // bolsas y apretar imprimir, y la bolsa que se quedaba sin etiqueta
+        // llegaba a administración sin nada que la identificara.
         //
-        // Los dos parámetros dicen lo mismo desde dos lados: este papel sale
-        // SOLO y tiene que salir DONDE ESTÁ LA BOLSA. Con `sala`, lo que no se
-        // pueda imprimir en esta computadora se deja en la cola de esa
-        // sucursal y lo saca el agente de su caja — que es lo único que
-        // funciona cuando quien confirma lo hace desde el teléfono. Y
-        // `soloDirecta` evita el último recurso: un diálogo de impresión que
-        // nadie pidió, en una máquina que no es la caja.
+        // Los dos parámetros de `imprimirDocumento` dicen lo mismo desde dos
+        // lados, y valen para los dos papeles: salen SOLOS y tienen que salir
+        // DONDE ESTÁ LA SALA. Con `sala`, lo que no se pueda imprimir en esta
+        // computadora se deja en la cola de esa sucursal y lo saca el agente de
+        // su caja — que es lo único que funciona cuando quien confirma lo hace
+        // desde el teléfono. Y `soloDirecta` evita el último recurso: un diálogo
+        // de impresión que nadie pidió, en una máquina que no es la caja.
         if (estado === 'CONFIRMADO') {
+            /* ── El comprobante del corte, en las CUATRO pantallas ──────────
+             *
+             * Regla del usuario (4-sep): «corte confirmado significa papel de
+             * corte también, así que debe imprimir ambos en ambos casos».
+             *
+             * Vivía en `MiCajaView`, armado con la respuesta de
+             * `hacer-corte-caja` que quedaba en memoria de esa pestaña. O sea
+             * que sólo salía si el corte se hacía y se confirmaba en la misma
+             * sesión de esa pantalla — y la etiqueta de la bolsa, que se manda
+             * desde acá, salía siempre. Los dos papeles del mismo acto, con dos
+             * alcances distintos.
+             *
+             * Medido en La Popular el 4-sep (corte 14467): se confirmó desde el
+             * módulo, la etiqueta salió, el comprobante no, y lo apretaron TRES
+             * veces buscándolo — `bolsas.etiqueta_version` quedó en 3. Sobre 7
+             * días, el módulo confirma 12 veces contra 3 de Mi caja: el camino
+             * que tenía papel era el minoritario.
+             *
+             * El papel se arma desde la FILA (`resultadoDeLaFila`) y no desde la
+             * respuesta del corte, porque acá la respuesta no existe: quien
+             * confirma desde el módulo no cortó. La fila la trae
+             * `fetchCorteParaElPapel`, que pide las columnas que la lista no
+             * lleva —el texto del tiquete y las líneas de la cuenta—: una vez,
+             * al confirmar, y no en cada refresco del Inicio.
+             *
+             * `sala` y `soloDirecta` por lo mismo que la etiqueta: el papel se
+             * anexa al corte, que está EN la sala. Quien confirma desde el
+             * teléfono o desde la oficina no tiene por qué ver un diálogo de
+             * impresión de una computadora que no es la caja. */
+            try {
+                const [{ corte: fila }, { imprimirDocumento },
+                       { construirComprobanteDeCorte }, { resultadoDeLaFila }] =
+                    await Promise.all([
+                        fetchCorteParaElPapel(corte.id),
+                        import('../utils/ticketPrint'),
+                        import('../utils/corteTicket'),
+                        import('../utils/cortesDiagnostico'),
+                    ]);
+                if (!fila) {
+                    showToast?.('El comprobante no salió',
+                        'No se pudo leer el corte para armar el papel. '
+                        + 'Imprímelo desde Mi caja.', 'error', 9000);
+                } else {
+                    const r = await imprimirDocumento(construirComprobanteDeCorte({
+                        resultado: resultadoDeLaFila(fila),
+                        sala,
+                        // Quien FIRMA el corte, que es lo que este papel prueba.
+                        // No es necesariamente quien lo hizo — eso lo dice la
+                        // fila, y la pantalla ya lo muestra.
+                        hechoPor: user?.name || '',
+                        hechoAt: new Date().toISOString(),
+                    }), { soloDirecta: true, sala: corte.branch_id });
+                    if (!r.ok) {
+                        console.error('cortes: el comprobante no se pudo mandar:', r.detalle);
+                        showToast?.('El comprobante no salió',
+                            `La caja no lo recibió. ${r.detalle || ''}`.trim(), 'error', 9000);
+                    }
+                }
+            } catch (err) {
+                // Que no salga el papel NO deshace una confirmación guardada.
+                console.error('cortes: no se pudo imprimir el comprobante:', err?.message);
+                showToast?.('El comprobante no salió',
+                    'No se pudo preparar el papel.', 'error', 9000);
+            }
+
             // Que no salga el papel no puede deshacer una confirmación ya
             // guardada —el dinero es lo que importa— pero SÍ tiene que decirlo.
             // Hasta hoy los tres caminos de fallo eran mudos: la bolsa que no se

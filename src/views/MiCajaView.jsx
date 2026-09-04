@@ -1154,36 +1154,32 @@ export default function MiCajaView({ comoPestana = false }) {
                             + 'Confírmalo desde Cortes.', 'warning');
                         return;
                     }
-                    if (!await resolver(mio, estado, { motivo })) return;
-                    /* ── El papel sale al CONFIRMAR, no al cortar ──────────
+                    /* ── LOS DOS PAPELES LOS MANDA `resolver`, no esta vista ─
                      *
                      * Pedido del usuario (2-sep): «si se confirma debería
                      * imprimirse el corte de caja y el de bolsa de efectivo. Si
-                     * se descarta ninguno de los dos, para ahorrar papel».
+                     * se descarta ninguno de los dos, para ahorrar papel». Y el
+                     * 4-sep, la otra mitad: «corte confirmado significa papel de
+                     * corte también, así que debe imprimir ambos en ambos casos».
                      *
-                     * Hasta acá el comprobante salía apenas se hacía el corte,
-                     * o sea ANTES de que existiera la decisión — así que cada
-                     * conteo descartado ya había gastado su papel. Medido sobre
-                     * los 7 días anteriores: 170 cortes, **91 descartados**. Más
-                     * de la mitad del papel se tiraba, y la tasa es estable
-                     * (43%–60% todos los días), no es de la semana de arranque.
+                     * El comprobante salía DESDE ACÁ, con el `resultado` que
+                     * quedó en memoria de esta pestaña, así que sólo salía
+                     * cortando y confirmando en la misma sesión de esta
+                     * pantalla. La etiqueta de la bolsa, en cambio, la mandaba
+                     * `useResolverCorte` para las cuatro. Confirmar desde el
+                     * módulo —que es lo que la sala hace 12 veces contra 3—
+                     * dejaba la bolsa etiquetada y el corte sin papel: pasó en
+                     * La Popular el 4-sep y lo apretaron tres veces.
                      *
-                     * La etiqueta de la bolsa ya salía acá: la manda `resolver`
-                     * —o sea `useResolverCorte`— justo arriba, para las cuatro
-                     * pantallas que confirman. Este es el otro papel del acto.
+                     * Los dos se mudaron al hook, que los arma desde la FILA.
+                     * Acá no queda nada que imprimir: un segundo envío desde
+                     * esta vista sería el mismo papel dos veces.
                      *
-                     * Se imprime DESPUÉS de que la confirmación quedó guardada,
-                     * no antes: un papel de un corte que no se pudo firmar es
-                     * exactamente el desperdicio que esto viene a cortar. Y un
-                     * fallo de impresión NO deshace nada —el corte ya está
-                     * firmado—: `imprimirCorte` avisa y el botón «Imprimir» del
-                     * diálogo lo repite.
-                     *
-                     * El caso que el botón sigue cubriendo: cuando el corte
-                     * todavía no llegó al portal, arriba se sale por `return` y
-                     * la confirmación se hace desde Cortes — ahí este papel no
-                     * sale solo, y se manda a mano desde acá. */
-                    if (estado === 'CONFIRMADO' && resultado?.ok) await imprimirCorte(resultado);
+                     * El botón «Imprimir» del diálogo SIGUE, y cubre el caso de
+                     * arriba: cuando el corte todavía no llegó al portal se sale
+                     * por `return` y la confirmación se hace desde Cortes — ahí
+                     * el papel de esta sesión es lo único que hay. */
+                    if (!await resolver(mio, estado, { motivo })) return;
                     /* ── CONFIRMAR NO CIERRA EL TURNO ──────────────────────
                      *
                      * Acá se llamaba a `cerrarTurno(sala)`. Se quita por

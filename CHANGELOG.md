@@ -21,6 +21,87 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.996.0 — El comprobante del corte sale desde las cuatro pantallas que confirman
+
+**La sala confirmó un corte, salió la etiqueta de la bolsa y el comprobante no.**
+Reporte de La Popular el 4-sep: «no les imprimió el corte, el de bolsa de
+efectivo sí».
+
+No era la impresora. Confirmar un corte produce **dos** papeles, y cada uno
+vivía en un sitio distinto:
+
+| | dónde vivía | alcance |
+|---|---|---|
+| etiqueta de la bolsa | `useResolverCorte` | las **cuatro** pantallas que confirman |
+| comprobante del corte | `MiCajaView` | sólo Mi caja, y sólo en la sesión que cortó |
+
+El comprobante se armaba con la respuesta de `hacer-corte-caja`, que queda en
+la memoria de la pestaña que apretó «Hacer corte». Quien confirma desde el
+módulo no cortó: ese objeto no existe, y el papel no salía. Tampoco había botón
+de reimpresión en ninguna otra pantalla.
+
+**Medido en el corte 14467** (La Popular, 4-sep 12:56): confirmado desde el
+módulo a las 12:59, 13:00 y **13:09** — tres veces, buscando el papel. Lo único
+que se gastó fueron tres etiquetas: la bolsa LP-1255 quedó con
+`etiqueta_version = 3`. Y el camino que tenía papel era el minoritario: sobre 7
+días, el módulo confirma 12 veces contra 3 de Mi caja.
+
+Regla del usuario: «corte confirmado significa papel de corte también, así que
+debe imprimir ambos en ambos casos».
+
+**Los dos papeles se mudaron al hook**, que es el único sitio por donde pasan
+las cuatro pantallas. El comprobante se arma desde la FILA de `cortes_caja`
+—`resultadoDeLaFila`, nueva en `cortesDiagnostico.js`— y no desde la respuesta
+del corte, que ahí no existe.
+
+**Las líneas de la cuenta salen de las COLUMNAS y las formas de pago del
+TEXTO**, y no es una preferencia: es lo que cada dato permite.
+
+Las ocho líneas ya están parseadas en la fila, una por columna, y
+`sync-cortes-caja` las saca del mismo tiquete con las mismas expresiones que
+`hacer-corte-caja` — leerlo otra vez acá sería un tercer parser de lo mismo.
+Verificado sobre los **557 cortes tipo C con tiquete guardado**: la columna está
+en `null` exactamente cuando el tiquete no trae la línea. **0 discrepancias** en
+las ocho, y también en `caja_erp`.
+
+Las formas que no pasan por la caja NO se pueden reconstruir así. La fila tiene
+`tk_tarjeta` y `tk_credito`, dos columnas fijas, y armar el papel con ellas
+sería volver a escribir a mano la lista de formas: una que el origen empiece a
+imprimir mañana no saldría como cero, **desaparecería** — que es exactamente lo
+que ya costó los $2.20 de Salud 2 del 13-ago. Así que se leen del texto como
+vengan, con el mismo recorrido de bloques de `leerTiquete`.
+
+Ese recorrido corta el texto después de la línea DIFERENCIA, o de EXACTO cuando
+el corte cuadró. Se verificó antes de confiar en él: de los 557 tipo C, **557
+traen una de las dos anclas** (378 la primera, 179 sólo la segunda). Los 127 que
+no traen ninguna son Z y X, que no cuentan efectivo y **nunca se confirman** —
+0 confirmados de 127.
+
+**Los dos caminos se enfrentaron sobre el mismo corte real.** El 14323 de
+Salud 3 ya estaba anclado en `tests/unit/corteTicket.test.js` con la respuesta
+de `hacer-corte-caja`; ahora también está su fila tal como la guarda producción,
+y el caso exige que **el rollo salga idéntico**. Si divergieran, el papel del
+corte recién hecho y el del mismo corte confirmado desde el módulo dejarían de
+ser el mismo documento y nadie podría notarlo: los dos salen bien impresos.
+
+Lo que este camino no puede saber es el bloque del vale — la fila no guarda a
+qué corte terminó perteneciendo. No cambia ninguna cifra: el dinero ya está en
+la línea «(-) Vales» de la cuenta, y el bloque era la explicación de cómo llegó
+ahí. El botón «Imprimir» de Mi caja sigue armándolo con la respuesta del corte,
+y sigue cubriendo el caso en que el corte todavía no llegó al portal.
+
+`MiCajaView` deja de imprimir por su cuenta: un segundo envío desde ahí sería el
+mismo papel dos veces.
+
+- `src/utils/cortesDiagnostico.js` — `resultadoDeLaFila` y `formasDelTiquete`
+- `src/data/cortes.js` — `fetchCorteParaElPapel`, la fila con las columnas que
+  la lista no lleva (el texto del tiquete pesa, y `WidgetCortesSala` repite esa
+  consulta cada 60 s)
+- `src/hooks/useResolverCorte.jsx` — los dos papeles del acto
+- `src/views/MiCajaView.jsx` — deja de imprimir el suyo
+- `tests/unit/corteTicket.test.js` — 6 casos nuevos, uno de ellos la igualdad
+  entre los dos caminos
+
 ## v2.995.1 — El gate de eficiencia deja de leer 10 GB por corrida
 
 **La herramienta que vigila el costo de los crons era la consulta más cara de

@@ -121,6 +121,35 @@ export async function fetchPersonas(ids) {
 }
 
 /**
+ * La fila completa de UN corte, con lo que hace falta para armar su papel.
+ *
+ * Aparte de `CAMPOS` a propósito. Esa lista está recortada porque
+ * `WidgetCortesSala` la repite cada 60 segundos sobre 7 días de cortes, así que
+ * no lleva el texto del tiquete ni las líneas de la cuenta — y sin ellas el
+ * comprobante no se puede armar. Acá es una sola fila y una sola vez: se pide
+ * en el momento de confirmar, que es cuando el papel tiene que salir.
+ *
+ * Van TODAS las columnas que leen `diferenciaDelCorte` y `resultadoDeLaFila`,
+ * no las que parecen bastar: al mismo juez con menos piezas ya le salió otro
+ * número, y quedó impreso (corte 14399 de Salud 4, +$88.40 contra +$0.15).
+ * Al agregar una columna a cualquiera de las dos, agregarla acá.
+ */
+export async function fetchCorteParaElPapel(id) {
+    const { data, error } = await supabase.from('cortes_caja')
+        .select(`
+            id, branch_id, erp_corte_id, tipo, fecha, hora, turno, caja_erp,
+            empleado_texto, total_declarado, diferencia_erp, esperado,
+            tk_saldo_inicial, tk_saldo_caja_chica, tk_ingresos, tk_venta,
+            tk_subtotal, tk_vales, tk_cobros_credito, tk_total_caja,
+            tk_retencion, tk_devoluciones, cobros_portal_efectivo, ticket
+        `)
+        .eq('id', id)
+        .maybeSingle();
+    if (error) console.error('cortes: fetchCorteParaElPapel failed:', error.message);
+    return { corte: data || null, error };
+}
+
+/**
  * Movimientos de caja de UNA sala en UN día — los vales y los ingresos.
  *
  * Se piden al abrir el detalle de un corte y no junto con la lista: son unas

@@ -252,8 +252,15 @@ export const createPayrollSlice = (set, get) => ({
             // y no desde el permiso: la función devuelve la fila aunque el sueldo
             // esté vacío, así que la marca distingue «no me dejaron mirar» de
             // «miré y no hay». Sin ella, las dos se ven igual.
+            //
+            // El mensaje NO afirma cuál de las dos causas fue. La marca dice
+            // «no llegaron los sueldos» y eso pasa por falta de permiso o
+            // porque la consulta falló —`fetchBoot` la envuelve en un `catch`
+            // para que un hipo de red no deje al portal sin empleados—. Nombrar
+            // la primera cuando fue la segunda manda a pedir un permiso que ya
+            // se tiene, que es el modo de falla que este trabajo viene cerrando.
             if (employees.length && !employees.some(e => e.salario_conocido)) {
-                const e = new Error('Para generar la planilla hace falta el permiso de «Salarios e ingresos». Sin él los sueldos no llegan y la quincena saldría en cero.');
+                const e = new Error('No llegaron los sueldos, así que la quincena saldría en cero y no se generó. Suele ser el permiso de «Salarios e ingresos»; si lo tenés, volvé a entrar al portal y probá de nuevo.');
                 e.userFacing = true;
                 throw e;
             }

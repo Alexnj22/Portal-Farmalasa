@@ -1387,7 +1387,15 @@ export const createEmployeeSlice = (set, get) => ({
                     return {
                         ...emp,
                         ...updated,
-                        // `DEVUELVE` enumera columnas y no trae `username` (ver
+                        // Lo que escribió la RPC NO viene en `updated`: `DEVUELVE`
+                        // enumera columnas y las diez protegidas no están ahí —
+                        // no puede traerlas, porque la sesión no las lee con la
+                        // fila. Sin esto, guardar un sueldo lo escribe en la base
+                        // y deja el VIEJO en pantalla hasta la próxima carga
+                        // completa, que se ve exactamente igual que «no se
+                        // guardó» — y la reacción natural es volver a escribirlo.
+                        ...(protegido ?? {}),
+                        // `DEVUELVE` tampoco trae `username` (ver
                         // src/data/employees.js), así que el renombre se refleja
                         // acá con el valor que la función ya confirmó.
                         username: renombreDeUsuario ? renombreDeUsuario.nuevo : emp.username,

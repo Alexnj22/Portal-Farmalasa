@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.974.4 — Un campo vacío no rompe el guardado, y el sueldo recién guardado se ve
+
+Dos cosas que aparecieron al revisar el camino que se está usando **ahora
+mismo** para cargar los sueldos de las 46 fichas que no los tenían.
+
+### El sueldo se guardaba y la pantalla seguía mostrando el anterior
+
+El parche local del store se arma con lo que devuelve el `UPDATE`, y ese
+`RETURNING` enumera columnas: las diez protegidas **no están ahí, ni pueden
+estar** — la sesión no las lee con la fila. Así que guardar un sueldo lo
+escribía en la base y dejaba el viejo en pantalla hasta la próxima carga
+completa.
+
+Se ve exactamente igual que «no se guardó», y la reacción natural es volver a
+escribirlo. Es un defecto **preexistente** —el `RETURNING` nunca trajo esas
+columnas—, pero recién ahora hay alguien cargando sueldos, que es cuando se
+nota. Ahora el parche incluye lo que la RPC acaba de escribir.
+
+*(En el ALTA no se toca: ahí hay una decisión escrita a propósito de no copiar
+campos sensibles a la fila del store, y el impacto es menor porque la ficha se
+acaba de crear.)*
+
+### Una cadena vacía reventaba el guardado entero
+
+`guardar_datos_protegidos_de_empleado` casteaba directo `::numeric` y `::date`.
+Una cadena vacía ahí **lanza**, y como la RPC es lo primero que corre al guardar
+una ficha, el guardado se cae con un error que no nombra ni el campo ni la
+pantalla.
+
+Hoy los cinco llamadores normalizan a `null` antes de mandar, así que no
+llegaba. Pero esa protección está repartida en cinco archivos y basta un camino
+nuevo para perderla: **la guarda va donde está el borde**. Los diez campos entran
+ahora por la misma regla —vacío es `NULL`— y eso arregla además un caso que no
+lanzaba y era peor: `bank_name` y `account_number` son `text`, así que un `''`
+**se guardaba**, y después cualquier `IS NOT NULL` lo lee como «sí tiene cuenta».
+
+### Y el freno de la quincena ya no afirma una causa que no comprobó
+
+Decía «hace falta el permiso de Salarios e ingresos». La marca que lo dispara
+sólo sabe que los sueldos no llegaron, y eso pasa por falta de permiso **o**
+porque la consulta falló —`fetchBoot` la envuelve en un `catch` para que un hipo
+de red no deje al portal sin empleados—. Mandar a pedir un permiso que ya se
+tiene es el modo de falla que este trabajo viene cerrando.
+
+### Lo que se revisó y no hacía falta tocar
+
+- **Ningún otro escritor** de las diez columnas quedó sin repartir: el único que
+  falta en el frontend es el cron de eventos programados, que corre con
+  `service_role` y salta el GRANT por diseño.
+- **«Mis documentos»** —recién encendida para 43 personas— lee las solicitudes
+  propias por `employees.id`, no por el id de la cuenta, así que no cae en la
+  trampa de los dos ids.
+
+
 ## v2.974.3 — El comprobante del banco: PDF, nombre cortado y monto topeado a la deuda
 
 Reporte del usuario: *«quisieron pagar un crédito con este comprobante pero no

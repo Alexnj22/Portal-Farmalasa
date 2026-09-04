@@ -172,23 +172,26 @@ const DIFERENCIAS = [
     { value: 'falta', label: 'Con faltante' },
 ];
 
-// Los dos recortes propios de «Movimientos». Van acá y no dentro del componente
+// El único recorte propio de «Movimientos». Va acá y no dentro del componente
 // porque el lugar único donde se mira qué se filtra es la píldora del cuerpo
 // (§17), y ésa la arma esta vista.
+//
+// Va como SELECT y no como segmentado —`umbral={2}` en la ranura— aunque sean
+// tres opciones: el segmentado dibujaba los tres rótulos a la vez y con
+// «Entradas y salidas» adentro se comía la píldora entera. Con el select el
+// estado en reposo es una palabra, «Todos», que es además lo que hay que poder
+// leer de un vistazo: que no hay recorte puesto.
 const TIPOS_MOV = [
-    { value: 'TODOS',   label: 'Entradas y salidas' },
-    { value: 'ENTRADA', label: 'Sólo entradas' },
-    { value: 'SALIDA',  label: 'Sólo salidas' },
+    { value: 'TODOS',   label: 'Todos' },
+    { value: 'ENTRADA', label: 'Entradas' },
+    { value: 'SALIDA',  label: 'Salidas' },
 ];
 
-// «Ya no está» es un estado y no una fila borrada: cuando un movimiento
-// desaparece del sistema de la caja, esta lista es lo único que queda de él.
-const ESTADOS_MOV = [
-    { value: 'TODOS',         label: 'Todos' },
-    { value: 'VIGENTES',      label: 'Vigentes' },
-    { value: 'EDITADOS',      label: 'Se modificaron' },
-    { value: 'DESAPARECIDOS', label: 'Ya no están' },
-];
+// El recorte por estado del movimiento —vigentes, se modificaron, ya no están—
+// NO tiene ranura en la píldora: lo aplican las dos tarjetas del carril, que ya
+// muestran su propio `active`. Es la excepción declarada a «la píldora es el
+// lugar único donde mirar qué se filtra» (§17), y se sostiene porque la tarjeta
+// que lo aplica queda encendida a la vista, en la misma fila.
 
 // El carril de la vista: cuatro números fijos, no un desglose de largo variable
 // (§17.0 — «cuántas tarjetas hay lo fija la vista, nunca el dato»). Son las
@@ -715,7 +718,11 @@ const CortesView = () => {
                         <FilterBar onClear={limpiar}
                             activeCount={[sala, !periodoIntacto,
                                 enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
-                                enMovimientos ? estadoMov !== 'TODOS' : diferencia !== 'TODAS',
+                                // En movimientos no hay cuarta ranura: el recorte
+                                // por estado lo aplican las tarjetas. Contarlo acá
+                                // anunciaría un filtro que la píldora no puede
+                                // mostrar ni quitar.
+                                !enMovimientos && diferencia !== 'TODAS',
                             ].filter(Boolean).length}>
                             {/* La ranura de sucursal SÓLO con alcance ALL. Con
                                 BRANCH la policy de `cortes_caja` ya devuelve
@@ -747,28 +754,20 @@ const CortesView = () => {
                                 </PeriodStepper>
                             </FilterBar.Section>
 
-                            {/* Las dos ranuras de la derecha son las de la
-                                PESTAÑA. Sucursal y período se quedan porque
-                                significan lo mismo en las dos; el estado de un
-                                corte no significa nada sobre un vale. */}
+                            {/* Las ranuras de la derecha son las de la PESTAÑA.
+                                Sucursal y período se quedan porque significan lo
+                                mismo en las dos; el estado de un corte no
+                                significa nada sobre un vale. Movimientos tiene
+                                UNA sola —el tipo—: su recorte por estado vive en
+                                las tarjetas del carril. */}
                             {enMovimientos ? (
-                                <>
-                                    <FilterBar.Section active={tipoMov !== 'TODOS'} onClear={() => setTipoMov('TODOS')} label="tipo">
-                                        <FilterBar.Opciones
-                                            label="Tipo" icon={ArrowDownLeft}
-                                            value={tipoMov} onChange={(v) => setTipoMov(v || 'TODOS')}
-                                            options={TIPOS_MOV} ancho="185px"
-                                        />
-                                    </FilterBar.Section>
-
-                                    <FilterBar.Section active={estadoMov !== 'TODOS'} onClear={() => setEstadoMov('TODOS')} label="estado">
-                                        <FilterBar.Opciones
-                                            label="Estado" icon={CheckCircle2}
-                                            value={estadoMov} onChange={(v) => setEstadoMov(v || 'TODOS')}
-                                            options={ESTADOS_MOV} ancho="175px"
-                                        />
-                                    </FilterBar.Section>
-                                </>
+                                <FilterBar.Section active={tipoMov !== 'TODOS'} onClear={() => setTipoMov('TODOS')} label="tipo">
+                                    <FilterBar.Opciones
+                                        label="Tipo" icon={ArrowDownLeft}
+                                        value={tipoMov} onChange={(v) => setTipoMov(v || 'TODOS')}
+                                        options={TIPOS_MOV} umbral={2} ancho="150px"
+                                    />
+                                </FilterBar.Section>
                             ) : (
                                 <>
                                     <FilterBar.Section active={estado !== 'TODOS'} onClear={() => setEstado('TODOS')} label="estado">

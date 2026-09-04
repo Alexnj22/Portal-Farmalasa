@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.984.1 — Movimientos: el tipo va en un select y el estado se queda en las tarjetas
+
+La píldora de **Efectivo → Movimientos** tenía dos ranuras propias y las dos
+ocupaban más de lo que decían:
+
+- **Tipo** era un segmentado de tres botones que dibujaba los tres rótulos a la
+  vez —«Entradas y salidas | Sólo entradas | Sólo salidas»—, o sea que el estado
+  *sin recorte* costaba el ancho de los tres. Ahora es un **select** con
+  **Todos** por defecto (Todos · Entradas · Salidas): en reposo se lee una
+  palabra, que además es justo lo que hay que poder ver de un vistazo — que no
+  hay nada filtrado.
+- **Estado** (Todos · Vigentes · Se modificaron · Ya no están) **se quitó**. Ese
+  recorte ya lo aplican las dos tarjetas del carril —«Se modificaron» y «Ya no
+  están»—, que se encienden al tocarlas y se apagan al volver a tocarlas, así
+  que el filtro sigue estando y sigue viéndose; lo que sobraba era decirlo dos
+  veces en la misma fila.
+
+Es una excepción declarada a «la píldora es el lugar único donde mirar qué se
+filtra» (§17), y se sostiene sólo porque la tarjeta que lo aplica queda visible
+y encendida a un palmo. Por eso el contador de filtros de la píldora **no** lo
+cuenta: anunciar «1 filtro» sobre una ranura que no existe sería peor que no
+anunciarlo.
+
 ## v2.984.0 — El aviso del faltante sigue a la tarjeta, no al cierre del día
 
 El aviso de las 8 miraba **cómo cerró la caja** —la diferencia acumulada del

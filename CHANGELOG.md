@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.990.2 — El visor de documentos deja de tener dos barras de scroll
+
+Reportado con captura: *«¿por qué hay 2 scrolls?»*. Eran la del panel y la del
+propio PDF, una al lado de la otra.
+
+**Es aritmética.** Con `max-h-[90dvh]` el panel mide lo que mida su contenido, y
+el lienzo pedía `78dvh` **fijos**. Al lienzo le quedaban `90dvh − 122px` —el
+encabezado y el pie—, o sea **778px de los 804 que pedía** en una ventana de
+1000. Ese sobrante de 26px lo absorbía el `overflow-auto` del panel: una barra
+entera para recorrer 26 píxeles.
+
+El defecto de fondo es que **el alto estaba dicho dos veces**, una como `90dvh` y
+otra como `78dvh`, calculadas aparte y sin nada que las obligara a cerrar.
+
+La corrección es un alto **definido** en el panel en vez de un tope, y el lienzo
+como `flex-1`: mide exactamente lo que sobra, no queda resto, y la única barra
+que sobrevive es la del documento — que es la que sirve, porque es la que pasa
+las páginas. `fallo` es la excepción y sigue con `max-h`: un aviso de dos
+renglones dentro de una caja de 90dvh es una pantalla vacía.
+
+Medido contra el build, con un PDF de dos páginas y una imagen:
+
+| | panel | lienzo | contenedores que scrollean |
+|---|---:|---:|---:|
+| PDF | 1152 × 902 | 1126 × **750** | **0** |
+| imagen | 1152 × 902 | 900 × 560 | **0** |
+
+**Y ese cero costó un rodeo que vale escribir.** La primera versión del detector
+daba `[]` y estaba por darse por buena. Al fabricarle la regresión que debía
+cazar —un contenedor que sí desborda, inyectado dentro del diálogo— **tampoco la
+vio**: el nodo inyectado no llegaba a maquetarse al alto pedido, así que
+`scrollHeight === clientHeight` y no había nada que detectar. Forzado el nodo, el
+detector lo denuncia; y recién con el detector comprobado el cero del diálogo
+real significa algo. Es
+[[feedback_un_detector_que_da_verde_puede_estar_tapando_lo_que_busca]] otra vez.
+
+Nota de la medición: en la captura del PDF el marco sale en blanco porque
+Chromium headless no trae visor de PDF. Es límite del instrumento, no del portal
+— lo que queda medido ahí es que el marco mide 750px de alto y que el panel no
+desborda.
+
 ## v2.990.1 — El aviso de la mañana dice «apertura», que es como se busca
 
 Reportado por el usuario con una captura: buscó **«apertu»** en

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.978.0 — La ficha de caja muestra cómo va la meta del día, y el aviso del corte dice cuánto faltó
+
+Dos cosas para la sala, que hasta hoy tenía que salir de Cortes para saber
+cualquiera de las dos.
+
+**La ficha de caja lleva el avance del día.** La RLS de las aperturas acota por
+sala, así que una sala mirando su propio día ve exactamente una ficha — y esa
+ficha ocupaba un tercio de la fila con dos huecos al lado. Ahora se ensancha a
+la fila entera y abajo lleva la meta de hoy: la barra, el porcentaje y, con el
+permiso completo, cuánto se lleva vendido de cuánto. La meta del día es la del
+mes repartida entre sus días, que es la MISMA definición que usa el aviso de
+cierre del día — no una nueva. Sale sólo con el período en «Hoy», porque es lo
+único que ese dato sabe contestar.
+
+**El aviso del corte dice la cifra.** Decía «hay que revisarlo y confirmarlo» y
+nada más, así que un faltante sólo se veía entrando a la pantalla. Ahora, cuando
+el conteo queda abajo de lo esperado, el título lo anuncia —«Faltan $74.00 en el
+corte de las 14:46»— y el cuerpo lo explica; un exceso lleva su cifra en el
+cuerpo. No es un aviso nuevo: entra en el que ya salía por cada corte, así que
+la campana no suena ni una vez más. El número es el mismo que muestra la
+tarjeta, y el umbral también.
+
+Los filtros de la vista, además, se nombran por su dimensión: «Todos» y
+«Diferencias» en lugar de «Cualquier estado» y «Cualquier cifra».
+
 ## v2.977.4 — La sonda del formulario del corte deja de ocupar el nivel de error
 
 `hacer-corte-caja` vuelca al registro los campos que el formulario del corte le

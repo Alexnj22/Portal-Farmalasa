@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Clock, DoorOpen, UserX } from 'lucide-react';
 import Badge from '../common/Badge';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
 import { formatMoney } from '../../utils/formatNumber';
+import { fetchMetaSala } from '../../data/metas';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * Quién abrió cada caja, desde cuándo y con cuánto — arriba de los cortes.
@@ -62,7 +64,7 @@ function minutosAntes(abiertaA, marcaIso) {
     return (h * 60 + m) - minutosMarca;
 }
 
-function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
+function Ficha({ apertura, sala, marca, hayConQueCruzar, avance = null, ancha = false }) {
     const abierta = !apertura.cerrada_at;
     /* QUIÉN abrió, y sólo desde el portal.
      *
@@ -82,7 +84,8 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
     const banda = !quien ? 'bg-warning' : abierta ? 'bg-success' : 'bg-content-3/40';
 
     return (
-        <div data-surface="card" className="rounded-2xl overflow-hidden flex flex-col">
+        <div data-surface="card"
+            className={`rounded-2xl overflow-hidden flex flex-col${ancha ? ' col-span-full' : ''}`}>
             <div className={`h-[3px] ${banda}`} aria-hidden="true" />
             <div className="p-3 flex flex-col gap-2.5 min-w-0">
                 <div className="flex items-center justify-between gap-2">
@@ -152,6 +155,43 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
                         </span>
                     </span>
                 </div>
+
+                {/* Cómo va el día contra la meta. Sólo cuando la ficha está sola
+                    —o sea, la sala mirándose a sí misma en el día de hoy—: la
+                    meta del día no dice nada al lado de las fichas de otro día,
+                    y con seis salas en pantalla serían seis lecturas.
+
+                    La barra NO se pinta de rojo cuando va baja. A las 9 de la
+                    mañana el 20% es lo normal, así que un tono de alarma sería
+                    una mentira que se repite todos los días hasta que nadie la
+                    mira. Verde cuando ya llegó, azul mientras avanza. */}
+                {avance && (
+                    <div className="pt-2 border-t border-border/60">
+                        <div className="flex items-baseline justify-between gap-2">
+                            <span className="text-micro font-black uppercase tracking-widest text-content-3">
+                                Meta de hoy
+                            </span>
+                            <span className={`text-body-sm font-black tabular-nums ${avance.pct >= 100 ? 'text-success-text' : 'text-content'}`}>
+                                {avance.pct}%
+                            </span>
+                        </div>
+                        <div className="mt-1.5 h-1.5 rounded-full bg-content-3/20 overflow-hidden"
+                            role="progressbar" aria-valuenow={avance.pct} aria-valuemin={0} aria-valuemax={100}
+                            aria-label="Avance de la meta de hoy">
+                            <div className={`h-full rounded-full ${avance.pct >= 100 ? 'bg-success' : 'bg-brand'}`}
+                                style={{ width: `${Math.min(100, avance.pct)}%` }} />
+                        </div>
+                        {/* Los montos sólo con el permiso completo. Sin él queda
+                            el porcentaje, que es la misma regla que ya aplica el
+                            widget del Inicio: el widget no desaparece, cambia de
+                            idioma. */}
+                        {avance.montos && (
+                            <span className="mt-1 block text-micro text-content-3">
+                                {formatMoney(avance.vendido)} de {formatMoney(avance.meta)}
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -163,7 +203,9 @@ export default function FichasDeCaja({
     pudeLeerAsistencia = true,
     salas,
     cargando = false,
+    esHoy = false,
 }) {
+    const { hasPermission } = useAuth();
     // La PRIMERA marcación de entrada de cada persona en cada día. La primera y
     // no la última: quien marca, sale a almorzar y vuelve tiene varias, y la que
     // se compara contra la apertura es con la que llegó.
@@ -192,6 +234,63 @@ export default function FichasDeCaja({
             || String(b.abierta_el).localeCompare(String(a.abierta_el))
             || String(salas?.get(a.branch_id) || '').localeCompare(String(salas?.get(b.branch_id) || ''), 'es'))
         .slice(0, 12), [aperturas, salas]);
+
+    /* ── El avance del día, y por qué sólo con UNA ficha ────────────────────
+     *
+     * La RLS de `cortes_caja_aperturas` acota por sala salvo con scope ALL, así
+     * que una sala mirando su propio período ve exactamente una ficha. Ése es
+     * el caso en que la meta del día tiene sentido y en que además hay ancho
+     * para dibujarla: la ficha pasa a ocupar la fila entera.
+     *
+     * Y se pide con el período en HOY. `get_meta_sala` sólo sabe contestar por
+     * el día de hoy —lo calcula adentro, en hora de El Salvador—, así que al
+     * lado de las fichas del martes pasado estaría diciendo lo de hoy sin que
+     * nada avise. Es la misma trampa de un total que no dice de qué período es.
+     *
+     * El permiso no se chequea acá para decidir si se muestra: lo decide el
+     * RPC, que devuelve CERO filas sin `dash_meta_sala`. Se chequea antes para
+     * no gastar la llamada. */
+    const salaUnica = ordenadas.length === 1 ? ordenadas[0].branch_id : null;
+    const puedeVerMeta = hasPermission('dash_meta_sala');
+    const conMontos = hasPermission('dash_meta_sala_vista_completa');
+    const [meta, setMeta] = useState(null);
+
+    useEffect(() => {
+        if (!esHoy || salaUnica == null || !puedeVerMeta) return undefined;
+        let vivo = true;
+        // Una meta que no se pudo leer NO es una meta en cero: se queda en null
+        // y el bloque no se dibuja. Un 0% inventado sobre una sala que vendió
+        // toda la mañana es peor que no decir nada.
+        //
+        // Se guarda CON la sala a la que pertenece. Al cambiar de sala en el
+        // filtro, la respuesta vieja sigue en el estado hasta que llega la
+        // nueva: sin el amarre, esa ficha mostraría el avance de la otra sala
+        // durante un instante, y ahí no hay nada que delate el cambiazo.
+        fetchMetaSala(salaUnica)
+            .then((row) => { if (vivo) setMeta({ branchId: salaUnica, row }); })
+            .catch(() => { if (vivo) setMeta({ branchId: salaUnica, row: null }); });
+        return () => { vivo = false; };
+    }, [esHoy, salaUnica, puedeVerMeta]);
+
+    /* La meta del DÍA es la del mes repartida entre sus días — la misma
+     * definición que usa el aviso de cierre del día, no una nueva: dos sitios
+     * que reparten la meta con reglas distintas terminan diciendo dos
+     * porcentajes del mismo día. */
+    const avance = useMemo(() => {
+        if (!esHoy || salaUnica == null || meta?.branchId !== salaUnica) return null;
+        const metaMes = Number(meta?.row?.monto_meta);
+        const dias    = Number(meta?.row?.dias_mes);
+        const vendido = Number(meta?.row?.venta_hoy);
+        if (!Number.isFinite(metaMes) || !Number.isFinite(dias) || dias <= 0 || metaMes <= 0) return null;
+        if (!Number.isFinite(vendido)) return null;
+        const metaDia = metaMes / dias;
+        return {
+            meta: metaDia,
+            vendido,
+            pct: Math.round(vendido / metaDia * 100),
+            montos: conMontos,
+        };
+    }, [meta, conMontos, esHoy, salaUnica]);
 
     // Sin aperturas no se dibuja NADA, ni un vacío: esta fila es el encabezado
     // de los cortes, no una sección con su propia promesa. Un «sin aperturas»
@@ -223,6 +322,8 @@ export default function FichasDeCaja({
                         sala={salas?.get(a.branch_id) || `Sucursal ${a.branch_id}`}
                         marca={porPersona.get(`${a.employee_id}:${a.abierta_el}`) || null}
                         hayConQueCruzar={hayConQueCruzar}
+                        avance={avance}
+                        ancha={ordenadas.length === 1}
                     />
                 ))}
             </div>

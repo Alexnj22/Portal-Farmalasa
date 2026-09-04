@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.976.1 — el cierre ya hecho también marca el espejo de la apertura
+
+Cola de v2.975.6, encontrada mirando el primer cierre que usó ese arreglo
+(Salud 1, 3-sep 22:06). Cuando el Z ya cerró la caja, `cerrar` contesta `ok` por
+la salida rápida nueva — y esa salida no pasaba por la marca del espejo, que
+vive en el camino de siempre. La fila de `cortes_caja_aperturas` quedaba abierta
+hasta el barrido de media hora, así que la tarjeta de la sala decía «Abierta»
+sobre una caja que acababa de cerrar el día. Se corrige sola, pero es la misma
+clase de mentira que v2.975.6 vino a quitar de la otra punta.
+
+Se busca por sala y no por `erp_apertura_id`: con la caja ya cerrada el panel no
+da la apertura, así que ese dato es null. Una sala tiene una sola apertura viva,
+y si tuviera dos —como La Popular después del reingreso del 3-sep— cerrar las
+dos es lo que hay que hacer.
+
 ## v2.976.0 — El DUI sustituye lo que había: lo legal es el documento
 
 Cambio de regla, pedido por el usuario:

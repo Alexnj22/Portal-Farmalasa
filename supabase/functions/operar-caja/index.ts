@@ -1042,6 +1042,25 @@ Deno.serve(async (req) => {
     if (accion === "cerrar" && !estado.abierta) {
       const hoySV = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
       if (await hayZdelDia(cookie, hoySV) === true) {
+        /* El espejo se marca ACÁ TAMBIÉN, y no sólo en el camino de siempre.
+         * Sin esto la fila queda abierta hasta que pase el barrido de media
+         * hora, y la tarjeta de la sala dice «Abierta» sobre una caja que
+         * acaba de cerrar el día — que es la misma clase de mentira que este
+         * arreglo vino a quitar de la otra punta.
+         *
+         * Se busca por sala y no por `erp_apertura_id`: con la caja ya cerrada
+         * el panel no da la apertura, así que `estado.aper` es null. Una sala
+         * tiene una sola apertura viva, y si tuviera dos —como La Popular
+         * después del reingreso del 3-sep— cerrar las dos es lo que hay que
+         * hacer.
+         *
+         * El error se registra y NO corta: el día ya cerró de verdad, y
+         * devolver un fallo acá invitaría a cerrar otra vez. */
+        const ahora = new Date().toISOString();
+        const { error: errEspejo } = await supabase.from("cortes_caja_aperturas")
+          .update({ cerrada_at: ahora, turno_corriendo: false, updated_at: ahora })
+          .eq("branch_id", sala).is("cerrada_at", null);
+        if (errEspejo) console.error(`[operar-caja] espejo del cierre ya hecho sala=${sala}: ${errEspejo.message}`);
         return json({ ok: true, cerrada: true, ya_estaba: true, z: true });
       }
     }

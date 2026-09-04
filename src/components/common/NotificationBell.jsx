@@ -1,67 +1,25 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Button from './Button';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Bell, BellRing, Check,
-    Megaphone, ChevronRight, ChevronDown, Trash2, X, ArrowRight, Undo2,
-    ArrowLeftRight, Ban, Eye,
+    Bell, BellRing, Check, Megaphone, ChevronRight, Trash2, X, Undo2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
-import { iconoDeTipo } from '../../constants/tipoIconos';
-/* La severidad, el tono, el verbo y la antigüedad viven en un solo sitio desde
-   que la vista `/notificaciones` los necesita también (2026-09-04): copiados,
-   la copia sería la que se queda vieja, y lo que se desincronizaría es qué tan
-   grave se VE un aviso. */
-import {
-    severidadDelTitulo, tituloSinEmoji, tintForType, etiquetaDeAccion,
-    RESUELTA_LABEL, PIDE_DECISION, timeAgo,
-} from '../../utils/notificacionTexto';
-import { MODULO_QUE_DECIDE } from '../../constants/solicitudModulos';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useDecidirSolicitud } from '../../hooks/useDecidirSolicitud';
-import useCortesDeAvisos, { AVISOS_DE_CORTE } from '../../hooks/useCortesDeAvisos';
-import useResolverCorte from '../../hooks/useResolverCorte';
-import { seConfirmaDeUnClic } from '../../utils/cortesDiagnostico';
-import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/solicitudDeAviso';
+import { PIDE_DECISION } from '../../utils/notificacionTexto';
 import Contador from './Contador';
-import AvatarConEstado from './AvatarConEstado';
-import NotificacionDetalle from './NotificacionDetalle';
-import { AnilloDeMeta, CuerpoDeCierreDeMeta, CuerpoDeCierreDeEmpresa, CuerpoDeCierreDelDia } from './CierreDeMeta';
-import { AnilloDeFaltante, CuerpoDeFaltanteDeCaja } from './TarjetaDeFaltante';
-import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
-import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
-
-/* El diálogo canónico de la solicitud, para el rechazo.
- *
- * Rechazar EXIGE motivo, y el campo con su validación —y el detalle de lo que
- * se está rechazando arriba— ya viven en `ModalSolicitud`. Escribir acá una
- * ventanita con un textarea habría sido una segunda copia de esa regla, y la
- * primera que se quedaría vieja: la de la campana, que nadie mira.
- *
- * Va por `lazy` porque la campana viaja en el chunk que se baja SIEMPRE y este
- * diálogo sólo hace falta al apretar «Rechazar». */
-const ModalSolicitud = lazy(() =>
-    import('../../views/solicitudes/TarjetaSolicitud').then(m => ({ default: m.ModalSolicitud })));
-
-/* El detalle del corte, por el mismo motivo y con el mismo trato: un corte con
- * diferencia NO se confirma a ciegas, y descartar exige motivo. Las dos cosas
- * ya viven en `CorteDetalleModal`, que es el único sitio donde se firma con la
- * cifra, de dónde sale y qué revisar a la vista. */
-const CorteDetalleModal = lazy(() => import('../cortes/CorteDetalleModal'));
-
-// ── Apariencia por tipo de notificación ──────────────────────────────────────
-// El ícono sale del catálogo compartido (`constants/tipoIconos`). Antes se
-// resolvía acá por prefijo y seis tipos que sí se envían —anulación, cambio de
-// cliente, de forma de pago, de vendedor, de turno, y los mensajes del sistema—
-// caían todos al ícono genérico de campana, aunque cinco de ellos ya tenían
-// ícono propio en RequestsView.
-const iconForType = iconoDeTipo;
+/* La tarjeta de un aviso, su paleta y la máquina de decidir viven fuera desde
+   el 2026-09-04: la vista `/notificaciones` dibuja la MISMA tarjeta y tiene que
+   poder lo mismo. La primera versión de esa vista la escribió de nuevo en
+   forma simplificada y el usuario lo vio de una — «en la vista no se ven las
+   notificaciones modernas, como en la notificación»—: lo que faltaba no era
+   estilo, era la mitad de lo que la tarjeta HACE. */
+import TarjetaDeAviso from './TarjetaDeAviso';
+import { paletaDeAviso } from './paletaDeAviso';
+import useAccionesDeAviso from '../../hooks/useAccionesDeAviso';
 
 
 
@@ -147,7 +105,6 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const employees = useStaff(s => s.employees || []);
     const branches = useStaff(s => s.branches || []);
     const markNotificationRead = useStaff(s => s.markNotificationRead);
-    const marcarAvisoResuelto = useStaff(s => s.marcarAvisoDeSolicitudResuelto);
     const markAllNotificationsRead = useStaff(s => s.markAllNotificationsRead);
     const deleteNotificationsByIds = useStaff(s => s.deleteNotificationsByIds);
     const deleteAllNotifications = useStaff(s => s.deleteAllNotifications);
@@ -351,13 +308,11 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
        Pedido del usuario (2026-08-14): «al clickear me debe llevar a
        solicitudes; para ver el detalle sólo al clickear en ver detalle». */
-    const puedeExpandir = (n) => Boolean(n.metadata?.request_id);
-
-    const alternarExpansion = (id) => setExpandidas(prev => {
+    const alternarExpansion = useCallback((id) => setExpandidas(prev => {
         const s = new Set(prev);
         s.has(id) ? s.delete(id) : s.add(id);
         return s;
-    });
+    }), []);
 
     // Estable a propósito: viaja como prop a cada párrafo y ahí vive dentro de
     // un efecto. Si cambiara en cada pintada, el efecto se volvería a montar
@@ -372,242 +327,34 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         });
     }, []);
 
+    // El enlace de salida. `n.link` ya trae la forma correcta para cada familia
+    // —incluida `minmax:<id>`, que es otra tabla—; el respaldo sólo cubre avisos
+    // viejos, escritos antes de que el enlace se guardara.
     const handleNotifClick = (n) => {
         if (!n.read_at) markNotificationRead(n.id);
-        if (n.link || n.metadata?.request_id) irASolicitudes(n);
-    };
-
-    // El enlace de salida del detalle. `n.link` ya trae la forma correcta para
-    // cada familia —incluida `minmax:<id>`, que es otra tabla—; el respaldo sólo
-    // cubre avisos viejos, escritos antes de que el enlace se guardara.
-    const irASolicitudes = (n) => {
-        if (!n.read_at) markNotificationRead(n.id);
+        if (!n.link && !n.metadata?.request_id) return;
         setIsOpen(false);
         navigate(n.link || `/requests?solicitud=${n.metadata?.request_id ?? ''}`);
     };
 
-    /* Una notificación de solicitud pendiente puede decidirse desde acá, pero
-       solo si quien mira puede aprobar: sin el permiso, los botones llevarían a
-       un diálogo que el servidor va a rechazar. `request_id` lo escribe el
-       trigger `notificar_solicitud_creada`; las notificaciones viejas no lo
-       tienen y siguen comportándose como antes. */
-    // `resuelta` la escribe el trigger `marcar_notificacion_solicitud_resuelta`
-    // en el momento en que la solicitud deja de estar PENDING. Sin eso, el aviso
-    // seguía ofreciendo Aprobar/Rechazar sobre algo ya decidido —la notificación
-    // es una fila aparte de la solicitud y aprobar no la tocaba—, y el botón
-    // llevaba a un diálogo que el servidor rechaza con 409.
-    /* Cada solicitud con SU permiso, y desde v2.576.0 eso ya no es «uno por
-     * pantalla» sino uno por FAMILIA: quien puede anular una factura no
-     * necesariamente puede aprobar un descarte de inventario. El aviso trae el
-     * tipo en `metadata.request_type`, así que se resuelve por solicitud y no
-     * por una bandera calculada una vez para todas.
+    /* ── Decidir DESDE la campana ────────────────────────────────────────────
      *
-     * `MODULO_QUE_DECIDE` es el mismo mapa que usa la bandeja y el espejo de
-     * `modulo_de_aprobacion()` en Postgres. Lo que no figura ahí cae en el
-     * módulo del ámbito, igual que en la policy: `MINMAX_PENDING` siempre es de
-     * Min/Max, y un `REQUEST_PENDING` sin tipo reconocido es de la sala. */
-    const moduloDelAviso = (n) => {
-        if (n.type === 'MINMAX_PENDING') return 'requests_minmax';
-        if (n.type !== 'REQUEST_PENDING') return null;
-        return MODULO_QUE_DECIDE[n.metadata?.request_type] ?? 'requests';
-    };
-
-    /* Un traslado NO se decide desde acá, y desde que la campana aplica de
-       verdad eso dejó de ser un detalle de gusto: confirmarlo relee la
-       existencia de la sala de origen justo antes de despachar. Aprobarlo por
-       fuera lo marcaría APROBADO **sin mover nada** y lo haría desaparecer de
-       las tres pestañas de Traslados. Es la misma exclusión que ya hacía
-       `ModalSolicitud` (`decidible = … && !esTraslado`); acá faltaba, y no daba
-       daño sólo porque el botón llevaba a ese diálogo, que se negaba. */
-    const esTraslado = (n) => n.metadata?.request_type === 'INVENTORY_TRANSFER_REQUEST';
-
-    const puedeDecidir = (n) => {
-        if (esTraslado(n)) return false;
-        const modulo = moduloDelAviso(n);
-        return !!modulo && hasPermission(modulo, 'can_approve')
-            && !!n.metadata?.request_id && !n.metadata?.resuelta;
-    };
-
-    const trasladoPorResolver = (n) =>
-        n.type === 'REQUEST_PENDING' && esTraslado(n) && !n.metadata?.resuelta
-        && hasPermission('traslados', 'can_approve');
-
-    /* `ADVANCED` es la solicitud que uno aprobó y pasó al siguiente nivel: sigue
-     * pendiente para otra persona, pero para quien mira este aviso ya está
-     * hecha. Dice «Aprobada» porque describe SU decisión, y es transitorio — al
-     * cerrarse la solicitud el trigger lo pisa con el estado final, así que este
-     * mismo aviso termina diciendo en qué terminó todo. */
-    /* ── Decidir DESDE la campana, no en otra pantalla ──────────────────────
+     * Aprobar aplica de una: un toque y listo, sin pasar por otra pantalla ni
+     * por un segundo «confirmar». Pedido del usuario (2026-08-14): «al dar
+     * aprobar o rechazar debe aplicarse».
      *
-     * Hasta v2.601.x estos dos botones no decidían: navegaban a
-     * `/requests?solicitud=…&accion=aprobar`, que abría el diálogo con la
-     * decisión desplegada y ahí había que apretar otra vez. Tres toques y un
-     * cambio de pantalla para decir que sí. Pedido del usuario (2026-08-14):
-     * «al dar aprobar o rechazar debe aplicarse» y «si confirmo la solicitud
-     * debe confirmarse de un solo».
+     * Toda la máquina —quién puede decidir qué, el corte que se relee antes de
+     * confirmarlo, el traslado que NO se aprueba por fuera— vive en
+     * `useAccionesDeAviso` desde el 2026-09-04, porque el historial de
+     * `/notificaciones` dibuja la misma tarjeta y tiene que poder lo mismo.
+     * Copiarla habría sido copiar las reglas de permiso.
      *
-     * La REGLA no se copia: `useDecidirSolicitud` es la misma que usa la
-     * bandeja —con la RPC propia de Min/Max, la bitácora, el aviso a quien
-     * pidió y el apagado del propio aviso—. Acá sólo se resuelve qué se decide
-     * y con qué gesto.
-     *
-     * Rechazar SÍ abre ventana: exige motivo, y el campo con su validación —y
-     * el detalle de lo que se rechaza arriba— ya existen en `ModalSolicitud`.
-     */
-    const [decidiendoId, setDecidiendoId] = useState(null);
-    const [rechazo, setRechazo] = useState(null);   // { req } — el diálogo de motivo
-
-    const cerrarRechazo = useCallback(() => setRechazo(null), []);
-    const { decidir, ocupado: decidiendo } = useDecidirSolicitud({ onAplicado: cerrarRechazo });
-
-    /* ── El corte de caja, resuelto desde el aviso ──────────────────────────
-     *
-     * Mismo trato que una solicitud, con una diferencia que NO se puede perder:
-     * un corte que cuadra al centavo se confirma de un clic, pero uno CON
-     * diferencia abre el detalle —hay que ver cuánto es, de dónde sale la cifra
-     * y qué revisar antes de firmar—. Esa regla no se reescribe acá: es
-     * `seConfirmaDeUnClic`, la misma que aplica la tarjeta.
-     *
-     * Y el corte NO sale del aviso: el aviso trae su id y el corte se relee.
-     * Una fila de `notifications` es la foto del momento en que se capturó, así
-     * que ofrecer «Confirmar» sobre ella dejaría el botón vivo después de que
-     * otra persona lo resolvió. */
-    const nombreSala = useMemo(() => {
-        const m = {};
-        for (const b of branches || []) m[b.id] = b.name;
-        return m;
-    }, [branches]);
-    const { porId: cortesPorId, recargar: recargarCortes } = useCortesDeAvisos(notifications, isOpen);
-    const { resolver: resolverElCorte, ocupadoId: corteOcupado,
-            dialogoDeEntrega } = useResolverCorte({ nombreSala, origen: 'campana' });
-    const puedeResolverCortes = hasPermission('cortes_caja', 'can_edit');
-    const [corteAbierto, setCorteAbierto] = useState(null);   // { corte, modo }
-    const [montarDetalleCorte, setMontarDetalleCorte] = useState(false);
-
-    /* El corte del aviso, sólo si de verdad hay algo que resolver: el cierre
-     * del día (Z) no se confirma, y uno ya resuelto tampoco.
-     *
-     * Sirve para los dos avisos que nombran un corte. El recordatorio de las
-     * 7:30 trae `corte_id` únicamente cuando quedó uno solo, así que con varios
-     * esto devuelve nulo solo —sin condición aparte— y la fila queda con su
-     * link a la pantalla. */
-    const corteResoluble = (n) => {
-        if (!AVISOS_DE_CORTE.has(n.type) || !puedeResolverCortes) return null;
-        const c = cortesPorId.get(String(n.metadata?.corte_id));
-        return c && c.tipo === 'C' && c.estado === 'PENDIENTE' ? c : null;
-    };
-
-    const abrirCorte = (n, corte, modo) => {
-        if (!n.read_at) markNotificationRead(n.id);
-        // El panel se cierra por lo mismo que con el rechazo: el detalle se
-        // dibuja por fuera de la campana y encimados quedan dos superficies
-        // peleando por el mismo toque.
-        setIsOpen(false);
-        setMontarDetalleCorte(true);
-        setCorteAbierto({ corte, modo });
-    };
-
-    const confirmarCorteDesdeElAviso = async (n, corte) => {
-        if (corteOcupado) return;
-        if (!seConfirmaDeUnClic(corte)) { abrirCorte(n, corte, 'confirmar'); return; }
-        if (!n.read_at) markNotificationRead(n.id);
-        if (await resolverElCorte(corte, 'CONFIRMADO')) recargarCortes();
-    };
-
-    /* La solicitud no viaja en el aviso: el aviso trae su id. Se pide al
-     * apretar y no al pintar la lista — prefetchear doce solicitudes para que
-     * quizá se decida una es pagar doce viajes por adelantado. */
-    const traerSolicitud = async (n) => {
-        try {
-            const fila = await cargarFilaDeAviso(n);
-            if (!fila) {
-                useToastStore.getState().showToast('Ya no está',
-                    'Esta solicitud ya no está disponible.', 'error');
-                return null;
-            }
-            return paraDecidir(fila, esAvisoDeMinMax(n));
-        } catch (err) {
-            useToastStore.getState().showToast('No se pudo',
-                mensajeAmigable(err, 'No se pudo abrir la solicitud.'), 'error');
-            return null;
-        }
-    };
-
-    /* Y antes de aplicar, se mira el estado REAL.
-     *
-     * El aviso es una fila aparte de la solicitud: otra pestaña —u otra
-     * persona— pudo resolverla y esta campana seguiría ofreciendo los dos
-     * botones. La base lo frena igual (el UPDATE va condicionado a PENDING),
-     * pero rebotar sin decir por qué se lee como que el botón no hace nada. */
-    const yaResuelta = (n, req) => {
-        if (req.status === 'PENDING') return false;
-        useToastStore.getState().showToast('Ya estaba resuelta',
-            'Alguien más la decidió mientras tanto.', 'info');
-        marcarAvisoResuelto(n.metadata.request_id, req.status);
-        return true;
-    };
-
-    /* Sin `try { … } finally { setDecidiendoId(null) }`, y no es cuestión de
-     * gusto: medido con eslint el 2026-08-14, un `try/finally` acá hacía que el
-     * compilador de React ABANDONARA el componente entero —`react-hooks/purity`
-     * dejaba de reportar en todo el archivo, que es cómo se nota—. La campana
-     * vive en `AppLayout` y se redibuja con cada notificación de cada pantalla:
-     * no es el lugar donde regalar la memoización.
-     *
-     * Y tampoco hace falta: ni `traerSolicitud` ni `decidir` lanzan —la primera
-     * atrapa lo suyo, la segunda devuelve `false`—, que es el mismo contrato del
-     * que depende la bandeja desde hace meses. Un `finally` acá sería una red
-     * para una caída que no existe, a cambio de apagar la optimización. */
-    const aprobarDesdeElAviso = async (n) => {
-        if (decidiendoId) return;
-        if (!n.read_at) markNotificationRead(n.id);
-        setDecidiendoId(n.id);
-        const req = await traerSolicitud(n);
-        // Sin `aceptadas`: desde la campana se aprueba COMPLETO. Dejar líneas
-        // afuera es una edición y vive en el diálogo, que es donde se ven los
-        // renglones y se puede recortar la cantidad.
-        if (req && !yaResuelta(n, req)) {
-            await decidir({ req, modo: 'approve', nota: '', aceptadas: null });
-        }
-        setDecidiendoId(null);
-    };
-
-    const rechazarDesdeElAviso = async (n) => {
-        if (decidiendoId) return;
-        if (!n.read_at) markNotificationRead(n.id);
-        setDecidiendoId(n.id);
-        const req = await traerSolicitud(n);
-        if (req && !yaResuelta(n, req)) {
-            // El panel se cierra: el diálogo se dibuja por fuera de la campana
-            // —tiene que sobrevivir a que ésta se cierre— y dejarlos encimados
-            // deja dos superficies compitiendo por el mismo toque.
-            setIsOpen(false);
-            setRechazo({ req, accion: 'reject' });
-        }
-        setDecidiendoId(null);
-    };
-
-    /* El traslado abre el MISMO diálogo, sin decisión desplegada.
-     *
-     * Hasta el 2026-08-15 este botón decía «Resolver en Traslados» y navegaba a
-     * esa pantalla: la campana avisaba de algo que después había que ir a
-     * buscar. Ahora el diálogo canónico trae adentro el bloque que confirma o
-     * rechaza —el mismo de la tarjeta del tablero, que relee la existencia de la
-     * sala de origen—, así que no hay a dónde ir.
-     *
-     * Sigue sin pasar por `decidir`, y ésa es la parte que no cambió: aprobarlo
-     * con `approveRequest` lo marcaría APROBADO sin mover un solo producto. */
-    const resolverTrasladoDesdeElAviso = async (n) => {
-        if (decidiendoId) return;
-        if (!n.read_at) markNotificationRead(n.id);
-        setDecidiendoId(n.id);
-        const req = await traerSolicitud(n);
-        if (req && !yaResuelta(n, req)) {
-            setIsOpen(false);
-            setRechazo({ req, accion: null });
-        }
-        setDecidiendoId(null);
-    };
+     * `alAbrirDialogo` cierra el panel: el diálogo se dibuja por fuera de la
+     * campana y encimados quedan dos superficies peleando por el mismo toque. */
+    const cerrarPanel = useCallback(() => setIsOpen(false), []);
+    const { acciones, dialogos } = useAccionesDeAviso({
+        avisos: notifications, activo: isOpen, alAbrirDialogo: cerrarPanel, origen: 'campana',
+    });
 
     const handleClearAll = () => {
         clearTimeout(confirmTimerRef.current);
@@ -631,45 +378,9 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     // data-surface="dropdown" en el contenedor real (gana por cascade layers).
     // El resto de `cx` sigue binario por isDark: cubre correctamente los 4
     // temas porque isDark ya es true en dark Y solid-dark (ThemeContext).
-    const cx = isDark ? {
-        headerBorder: 'border-white/[0.07]',
-        title: 'text-white/90',
-        // El realce va en un VELO absoluto sobre la tarjeta, no en la tarjeta:
-        // `[data-surface="card"]` fija su fondo desde `index.css`, que va sin
-        // `@layer` y le gana a cualquier utilidad de Tailwind — un
-        // `hover:bg-*` ahí no pinta nada (mismo motivo por el que existe
-        // `data-tono`). Y por eso es `group-hover`: el velo no recibe el
-        // puntero, lo recibe la tarjeta.
-        rowHover: 'group-hover:opacity-100',
-        veloHover: 'bg-white/[0.06]',
-        rowUnread: 'bg-chart-1/[0.07]',
-        rowTitle: 'text-white/90', rowTitleRead: 'text-white/60',
-        rowBody: 'text-white/50',
-        rowTime: 'text-white/40',
-        iconBtn: 'text-white/45 hover:text-white/90 hover:bg-surface-card',
-        emptyIconBox: 'bg-white/[0.06] border-border-card text-white/40',
-        emptyTitle: 'text-white/80', emptySub: 'text-white/45',
-        chipMuted: 'text-white/40',
-        undoStrip: 'bg-white/[0.05]',
-        undoText: 'text-white/60',
-        undoBtn: 'text-chart-1-text hover:bg-chart-1/10 border-chart-1/40',
-    } : {
-        headerBorder: 'border-border-card/60',
-        title: 'text-content',
-        rowHover: 'group-hover:opacity-100',
-        veloHover: 'bg-brand/[0.06]',
-        rowUnread: 'bg-chart-1/10',
-        rowTitle: 'text-content', rowTitleRead: 'text-content-2',
-        rowBody: 'text-content-3',
-        rowTime: 'text-content-3',
-        iconBtn: 'text-content-3 hover:text-content-2 hover:bg-surface-card',
-        emptyIconBox: 'bg-surface-card border-border-card text-brand-text/50',
-        emptyTitle: 'text-content-2', emptySub: 'text-content-3',
-        chipMuted: 'text-content-3',
-        undoStrip: 'bg-surface-card-hover/80',
-        undoText: 'text-content-2',
-        undoBtn: 'text-brand-text hover:bg-chart-1/10 border-chart-1/30',
-    };
+    // La paleta sale del canónico: la dibuja también `/notificaciones`, y
+    // copiada lo que divergiría es cómo se ve un aviso sin leer.
+    const cx = paletaDeAviso(isDark);
 
     const undoButton = (key, label = 'Deshacer') => (
         <Button variant="ghost" icon={Undo2} className={cx.undoBtn} onClick={() => undoDelete(key)}>{label}</Button>
@@ -863,60 +574,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                     <div className="p-2 flex flex-col gap-2">
                                         <AnimatePresence initial={false}>
                                             {notifications.map(n => {
-                                                const sev  = severidadDelTitulo(n.title);
-                                                const Icon = sev ? sev.Icono : iconForType(n.type);
-                                                const unread = !n.read_at;
-                                                const isFlash = flashIds.has(n.id);
                                                 const pendingOne = pendingEntryByNotifId.get(n.id);
-                                                const inPendingAll = pendingAll?.ids.includes(n.id);
-                                                // Una solicitud ya decidida no se "revisa": el verbo tiene
-                                                // que decir en qué terminó, no invitar a algo que ya pasó.
-                                                const resuelta    = n.metadata?.resuelta;
-                                                const actionLabel = resuelta
-                                                    ? (RESUELTA_LABEL[resuelta] || 'Resuelta')
-                                                    : (n.link ? (etiquetaDeAccion(n) || 'Ver') : null);
 
-                                                // Dos motivos para desplegar una tarjeta, y sólo el
-                                                // primero existía: el detalle de una solicitud, y un
-                                                // cuerpo que no entra en tres renglones. El segundo
-                                                // dejaba sin leer justo a los avisos del sistema, que
-                                                // son los que más texto tienen.
-                                                const tieneDetalle = puedeExpandir(n);
-                                                const abierta      = expandidas.has(n.id);
-                                                const cuerpoCortado = cuerposCortados.has(n.id);
-                                                const expandible    = tieneDetalle || cuerpoCortado;
-                                                // Interactiva es la que hace ALGO al tocarla, y desde que
-                                                // el toque es uno solo eso significa «lleva a su
-                                                // pantalla». De eso depende el realce, que es la promesa
-                                                // de que se puede tocar.
-                                                const interactiva = Boolean(n.link || n.metadata?.request_id);
-                                                const quien    = n.created_by ? empleadosPorId.get(String(n.created_by)) : null;
-                                                const sucursal = n.branch_id ? sucursalesPorId.get(String(n.branch_id)) : null;
-                                                const corte    = corteResoluble(n);
-                                                /* El cierre de mes de una sala se dibuja en vez de leerse.
-                                                   Devuelve `null` para un aviso viejo o para un mes que
-                                                   cerró sin meta, y ahí la fila queda como siempre. */
-                                                const cierre   = datosDeCierreDeMeta(n);
-                                                /* Y su gemelo de administración, que mira las seis salas
-                                                   a la vez. Comparten el anillo y nada más. */
-                                                const empresa  = datosDeCierreDeEmpresa(n);
-                                                /* Y el de cada noche. Comparte el anillo y la escala de
-                                                   colores con los dos de arriba —que un 96% se pinte igual
-                                                   el 1 del mes que cada noche es la mitad de para qué
-                                                   sirve la escala— y agrega lo que sólo existe a diario:
-                                                   cómo quedó la caja y contra qué se compara. */
-                                                const delDia   = datosDeCierreDelDia(n);
-                                                const conAnillo = cierre || empresa || delDia;
-                                                /* El faltante de caja de ayer. NO entra en `conAnillo`:
-                                                   aquéllos dibujan un porcentaje de cumplimiento con su
-                                                   escala de colores, y acá el arco es otra cosa —cuánto
-                                                   se contó de lo que debía haber— y su color es uno
-                                                   solo, porque un faltante nunca es verde. Compartir el
-                                                   anillo habría obligado a que un 99.7% se pintara como
-                                                   una meta cumplida. */
-                                                const faltante = datosDeFaltanteDeCaja(n);
-
-                                                // Fila en ventana de deshacer (borrado individual)
+                                                // Fila en ventana de deshacer (borrado individual).
+                                                // Se queda ACÁ y no en `TarjetaDeAviso`: la ventana de
+                                                // 3s es el gesto de la campana, no de la tarjeta — el
+                                                // historial manda a la papelera, que se deshace desde
+                                                // su propia pestaña.
                                                 if (pendingOne) {
                                                     return (
                                                         <motion.div
@@ -944,320 +608,32 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                     <motion.div
                                                         key={n.id}
                                                         layout="position"
-                                                        initial={isFlash ? { opacity: 0, y: -10 } : false}
-                                                        animate={{ opacity: inPendingAll ? 0.35 : 1, y: 0 }}
+                                                        initial={flashIds.has(n.id) ? { opacity: 0, y: -10 } : false}
+                                                        animate={{ opacity: 1, y: 0 }}
                                                         exit={{ opacity: 0, x: 24, transition: { duration: 0.15 } }}
                                                         transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                                                        data-surface="card"
-                                                        className={`relative group overflow-hidden
-                                                            ${inPendingAll ? 'pointer-events-none' : ''}`}
                                                     >
-                                                        {/* El estado de la tarjeta —sin leer, recién
-                                                            llegada— y el realce al apuntarla. Van en velos
-                                                            porque el fondo de la tarjeta lo fija
-                                                            `index.css` (ver `cx.rowHover`). Dos capas y no
-                                                            una: así apuntar una tarjeta sin leer SUMA
-                                                            realce en vez de reemplazar su tinte. */}
-                                                        <div aria-hidden="true"
-                                                            className={`absolute inset-0 pointer-events-none transition-colors duration-[var(--dur-lento)]
-                                                                ${isFlash ? (isDark ? 'bg-chart-1/[0.14]' : 'bg-chart-1/10') : unread ? cx.rowUnread : ''}`} />
-                                                        <div aria-hidden="true"
-                                                            className={`absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-[var(--dur-base)]
-                                                                ${cx.veloHover} ${interactiva ? cx.rowHover : ''}`} />
-
-                                                        <button
-                                                            onClick={() => handleNotifClick(n)}
-                                                            // Este botón no es una pieza de la tarjeta: es su
-                                                            // cara. Sin ceder el filo, la animación al apuntar
-                                                            // corre SU rectángulo y corta la tarjeta justo
-                                                            // arriba de Aprobar/Rechazar. Ver `index.css`.
-                                                            data-filo="ceder"
-                                                            className={`relative w-full flex items-start gap-3 pl-3.5 pr-9 py-3 text-left
-                                                                ${interactiva ? 'cursor-pointer' : 'cursor-default'}`}
-                                                        >
-                                                            {faltante ? (
-                                                                <AnilloDeFaltante datos={faltante} isDark={isDark} />
-                                                            ) : conAnillo ? (
-                                                                <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
-                                                            ) : (
-                                                                <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
-                                                                    <Icon size={16} strokeWidth={2} />
-                                                                </div>
-                                                            )}
-                                                            <div className="flex-1 min-w-0">
-                                                                {/* El punto va PEGADO al título, no en la esquina.
-                                                                    Arriba a la derecha competía por el mismo sitio
-                                                                    que la ✕ y no se leía como «este es nuevo», sino
-                                                                    como un adorno suelto. */}
-                                                                <p className={`text-body leading-snug ${unread ? `font-bold ${cx.rowTitle}` : `font-semibold ${cx.rowTitleRead}`}`}>
-                                                                    {unread && (
-                                                                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand align-middle mr-1.5 -mt-0.5 shadow-[var(--shadow-glow-brand-sm)]" />
-                                                                    )}
-                                                                    {tituloSinEmoji(n.title)}
-                                                                </p>
-                                                                {/* Con montos, las cifras se dibujan y el párrafo
-                                                                    sobra: diría en palabras lo mismo que está
-                                                                    arriba en números. Sin montos el `body` ya
-                                                                    viene escrito en porcentaje y se deja tal
-                                                                    cual —redactarlo otra vez acá sería copiar
-                                                                    la regla que decide quién ve dólares—, y
-                                                                    debajo se le suma igual el puesto entre las
-                                                                    salas, que no habla de dinero. */}
-                                                                {((!conAnillo && !faltante) || (cierre && cierre.venta == null)) && n.body && (
-                                                                    <CuerpoDeNotificacion
-                                                                        id={n.id}
-                                                                        texto={n.body}
-                                                                        recortar={!abierta}
-                                                                        clase={cx.rowBody}
-                                                                        onRecorte={marcarCuerpoCortado}
-                                                                    />
-                                                                )}
-                                                                {cierre && (
-                                                                    <CuerpoDeCierreDeMeta
-                                                                        datos={cierre}
-                                                                        claseTenue={cx.rowBody}
-                                                                        isDark={isDark}
-                                                                        buscarEmpleado={buscarEmpleadoPorId}
-                                                                    />
-                                                                )}
-                                                                {delDia && (
-                                                                    <CuerpoDeCierreDelDia
-                                                                        datos={delDia}
-                                                                        claseTenue={cx.rowBody}
-                                                                        isDark={isDark}
-                                                                    />
-                                                                )}
-                                                                {faltante && (
-                                                                    <CuerpoDeFaltanteDeCaja
-                                                                        datos={faltante}
-                                                                        claseTenue={cx.rowBody}
-                                                                        isDark={isDark}
-                                                                    />
-                                                                )}
-                                                                {empresa && (
-                                                                    <CuerpoDeCierreDeEmpresa
-                                                                        datos={empresa}
-                                                                        claseTenue={cx.rowBody}
-                                                                        isDark={isDark}
-                                                                        buscarEmpleado={buscarEmpleadoPorId}
-                                                                    />
-                                                                )}
-
-                                                                {/* ── De quién y de qué sala ──────────────────────
-                                                                    El nombre viaja adentro del cuerpo («QA Testing
-                                                                    solicita…»), pero ahí es una palabra más en un
-                                                                    párrafo de tres renglones: no se distingue de
-                                                                    un vistazo y la sala no aparecía en ninguna
-                                                                    parte. Acá van como dato, con la cara adelante
-                                                                    —que es lo que de verdad se reconoce— y sin
-                                                                    costar una consulta: las dos salen de la fila. */}
-                                                                {(quien || sucursal) && (
-                                                                    <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
-                                                                        {quien && (
-                                                                            <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />
-                                                                        )}
-                                                                        <span className={`text-caption font-bold truncate ${cx.rowTitleRead}`}>
-                                                                            {quien ? shortEmployeeName(quien) : sucursal}
-                                                                        </span>
-                                                                        {quien && sucursal && (
-                                                                            <span className={`text-caption font-medium truncate ${cx.rowTime}`}>· {sucursal}</span>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-
-                                                                <div className="flex items-center gap-2 mt-1.5">
-                                                                    {/* La hora es contexto, no acción: en mayúsculas y con
-                                                                        tracking ancho competía de igual a igual con «VER»,
-                                                                        y son cosas de peso distinto. */}
-                                                                    <span className={`text-caption font-medium ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
-                                                                    {/* El verbo del TOQUE, y ahora el toque es uno solo:
-                                                                        salir a Solicitudes. «Ver detalle» dejó de vivir
-                                                                        acá —era una palabra dentro del botón grande, o
-                                                                        sea que no se podía tocar por su cuenta— y bajó a
-                                                                        la fila de controles como botón de verdad. */}
-                                                                    {actionLabel && (
-                                                                        <span className={`inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest transition-transform
-                                                                            ${resuelta ? cx.chipMuted : `group-hover:translate-x-0.5 ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}`}>
-                                                                            {actionLabel}
-                                                                            {/* La flecha promete "esto lleva a algún lado".
-                                                                                En una solicitud ya decidida no lleva a nada
-                                                                                que haya que hacer. */}
-                                                                            {!resuelta && <ArrowRight size={10} strokeWidth={3} />}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </button>
-
-                                                        {/* ── «Ver detalle», ahora un control de verdad ──────
-                                                            Era una palabra DENTRO del botón grande de la
-                                                            tarjeta, así que no se podía tocar por su cuenta:
-                                                            el mismo toque servía para leer el detalle y para
-                                                            nada más. Acá es un botón, al ancho de la tarjeta
-                                                            y con la altura mínima de toque que garantiza
-                                                            `--tap-min` — que es lo que lo hace usable con el
-                                                            pulgar. */}
-                                                        {expandible && (
-                                                            <div className={`relative px-3.5 pb-2.5 ${resuelta ? '' : '-mt-1'} flex items-center gap-2`}>
-                                                                {/* `secondary` y no `ghost`: en `ghost` era texto con
-                                                                    un ícono al lado —medido en iPhone 13, se leía como
-                                                                    un rótulo centrado y no como algo que se toca— y el
-                                                                    pedido era justamente que el detalle tenga SU
-                                                                    control. Con relleno propio se distingue de la
-                                                                    tarjeta sin competirle a Aprobar/Rechazar, que son
-                                                                    los únicos con color. */}
-                                                                <Button
-                                                                    size="xs"
-                                                                    variant="secondary"
-                                                                    icon={abierta ? ChevronDown : Eye}
-                                                                    className="flex-1 min-w-0"
-                                                                    aria-expanded={abierta}
-                                                                    onClick={(e) => { e.stopPropagation(); alternarExpansion(n.id); }}
-                                                                >
-                                                                    {/* El rótulo nombra lo que se despliega. En un
-                                                                        aviso del sistema no hay ningún «detalle» que
-                                                                        abrir: lo que falta es el resto del mensaje. */}
-                                                                    {tieneDetalle
-                                                                        ? (abierta ? 'Ocultar detalle'  : 'Ver detalle')
-                                                                        : (abierta ? 'Ocultar mensaje'  : 'Ver mensaje completo')}
-                                                                </Button>
-                                                                {/* El estado de una solicitud ya decidida: sin
-                                                                    esto, una aprobada y una pendiente se leen
-                                                                    igual una vez que el verbo dejó de decirlo. */}
-                                                                {resuelta && (
-                                                                    <span className={`shrink-0 text-caption font-black uppercase tracking-widest ${cx.chipMuted}`}>
-                                                                        {RESUELTA_LABEL[resuelta] || 'Resuelta'}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                        {/* ── El detalle, desplegado ─────────────────────────
-                                                            Lo que hay que ver para decidir: las líneas de
-                                                            producto de un ajuste, la factura de una
-                                                            modificación, el MIN/MAX de antes y el propuesto,
-                                                            las fotos de evidencia y el motivo escrito.
-                                                            Se monta SOLO al abrirla — el contenido pesa y no
-                                                            tiene por qué viajar por cada fila de la lista. */}
-                                                        {abierta && tieneDetalle && (
-                                                            <div className={`relative px-3.5 pb-3 pt-2 border-t ${cx.headerBorder}`}>
-                                                                <NotificacionDetalle notif={n} />
-                                                            </div>
-                                                        )}
-
-                                                        {/* ── Decidir acá mismo ──────────────────────────────
-                                                            Aprobar aplica de una: un toque y listo, sin pasar
-                                                            por otra pantalla ni por un segundo «confirmar».
-                                                            Rechazar abre el diálogo canónico, porque exige
-                                                            motivo — y ahí arriba se ve lo que se rechaza.
-
-                                                            La regla no está duplicada: las dos llaman a
-                                                            `useDecidirSolicitud`, la misma que usa la bandeja.
-                                                            Lo que cambia es el gesto, no lo que pasa. */}
-                                                        {puedeDecidir(n) && (
-                                                            <div className={`relative flex items-stretch gap-2 px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
-                                                                {/* `soft` y no relleno sólido: es el caso que
-                                                                    nombra DESIGN.md §15.2 — dos acciones de
-                                                                    categoría juntas donde ninguna manda.
-
-                                                                    Van al ANCHO de la tarjeta, mitad y mitad.
-                                                                    Antes se sangraban 68px para alinearse con
-                                                                    el texto y el par no entraba: en el panel
-                                                                    angosto «Rechazar» se salía del cuadro. Dos
-                                                                    acciones del mismo peso repartidas por igual
-                                                                    no dependen del largo de su etiqueta. */}
-                                                                <Button
-                                                                    size="xs"
-                                                                    tone="success"
-                                                                    soft
-                                                                    icon={Check}
-                                                                    className="flex-1 min-w-0"
-                                                                    loading={decidiendoId === n.id && decidiendo}
-                                                                    disabled={!!decidiendoId && decidiendoId !== n.id}
-                                                                    onClick={(e) => { e.stopPropagation(); aprobarDesdeElAviso(n); }}
-                                                                >
-                                                                    Aprobar
-                                                                </Button>
-                                                                <Button
-                                                                    size="xs"
-                                                                    tone="danger"
-                                                                    soft
-                                                                    icon={X}
-                                                                    className="flex-1 min-w-0"
-                                                                    disabled={!!decidiendoId}
-                                                                    onClick={(e) => { e.stopPropagation(); rechazarDesdeElAviso(n); }}
-                                                                >
-                                                                    Rechazar
-                                                                </Button>
-                                                            </div>
-                                                        )}
-
-                                                        {/* ── El corte, resuelto acá mismo ───────────────────
-                                            «Confirmar» cierra el corte que cuadra al centavo de
-                                            un toque; el que tiene diferencia abre el detalle con
-                                            la cifra delante, porque firmar un faltante sin verlo
-                                            no es un atajo, es otra cosa. «Descartar» siempre
-                                            abre: exige decir por qué. */}
-                                        {corte && (
-                                            <div className={`relative flex items-stretch gap-2 px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
-                                                <Button
-                                                    size="xs"
-                                                    tone="success"
-                                                    soft
-                                                    icon={Check}
-                                                    className="flex-1 min-w-0"
-                                                    loading={corteOcupado === corte.id}
-                                                    disabled={!!corteOcupado && corteOcupado !== corte.id}
-                                                    onClick={(e) => { e.stopPropagation(); confirmarCorteDesdeElAviso(n, corte); }}
-                                                >
-                                                    Confirmar
-                                                </Button>
-                                                <Button
-                                                    size="xs"
-                                                    tone="danger"
-                                                    soft
-                                                    icon={Ban}
-                                                    className="flex-1 min-w-0"
-                                                    disabled={!!corteOcupado}
-                                                    onClick={(e) => { e.stopPropagation(); abrirCorte(n, corte, 'descartar'); }}
-                                                >
-                                                    Descartar
-                                                </Button>
-                                            </div>
-                                        )}
-
-                                        {/* El traslado abre su solicitud con el bloque que
-                                                            confirma o rechaza adentro. Un solo botón y no dos:
-                                                            confirmarlo relee la existencia de la sala de origen y
-                                                            puede resultar que ya no alcance, así que prometer
-                                                            «Aprobar» desde acá sería prometer lo que no se sabe. */}
-                                                        {trasladoPorResolver(n) && (
-                                                            <div className={`relative px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
-                                                                <Button
-                                                                    size="xs"
-                                                                    soft
-                                                                    icon={ArrowLeftRight}
-                                                                    className="w-full"
-                                                                    loading={decidiendoId === n.id}
-                                                                    disabled={!!decidiendoId}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        resolverTrasladoDesdeElAviso(n);
-                                                                    }}
-                                                                >
-                                                                    Revisar el traslado
-                                                                </Button>
-                                                            </div>
-                                                        )}
-                                                        {/* Borrar individual — visible al hover en desktop, siempre tenue en touch.
-                                                            Va ANCLADO arriba a la derecha: el texto ya le
-                                                            reservaba el hueco con su `pr-10`, pero al botón le
-                                                            faltaba el posicionamiento, así que caía al flujo y
-                                                            aparecía suelto abajo a la izquierda de la tarjeta,
-                                                            debajo de Aprobar/Rechazar. */}
-                                                        <Button variant="ghost" icon={X} title="Borrar" iconOnly
-                                                            className={`absolute top-1.5 right-1.5 z-base ${cx.iconBtn}`}
-                                                            onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }} />
+                                                        <TarjetaDeAviso
+                                                            n={n}
+                                                            cx={cx}
+                                                            isDark={isDark}
+                                                            quien={n.created_by ? empleadosPorId.get(String(n.created_by)) : null}
+                                                            sucursal={n.branch_id ? sucursalesPorId.get(String(n.branch_id)) : null}
+                                                            buscarEmpleado={buscarEmpleadoPorId}
+                                                            expandida={expandidas.has(n.id)}
+                                                            cuerpoCortado={cuerposCortados.has(n.id)}
+                                                            onAlternarExpansion={alternarExpansion}
+                                                            onRecorte={marcarCuerpoCortado}
+                                                            onAbrir={handleNotifClick}
+                                                            acciones={acciones}
+                                                            destello={flashIds.has(n.id)}
+                                                            atenuada={Boolean(pendingAll?.ids.includes(n.id))}
+                                                            controlDeBorrado={
+                                                                <Button variant="ghost" icon={X} title="Borrar" iconOnly
+                                                                    className={cx.iconBtn}
+                                                                    onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }} />
+                                                            }
+                                                        />
                                                     </motion.div>
                                                 );
                                             })}
@@ -1289,56 +665,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 )}
             </AnimatePresence>
 
-            {/* ── El motivo del rechazo ──────────────────────────────────────
-                Va acá afuera, hermano del panel y no adentro: el diálogo cierra
-                la campana al abrirse, y montado dentro del `isOpen` se
-                desmontaría con ella —el modal que lee el estado que lo abre se
-                vacía al cerrarlo—.
-
-                Es el diálogo canónico de la solicitud, no una ventanita propia:
-                trae el detalle arriba, el campo de motivo con su obligatoriedad
-                y el mismo `onDecidir`. `canApprove` va en `true` porque para
-                llegar hasta acá ya se evaluó `puedeDecidir`. */}
-            {rechazo && (
-                <Suspense fallback={null}>
-                    <ModalSolicitud
-                        key={rechazo.req.id}
-                        req={rechazo.req}
-                        canApprove
-                        employeesById={empleadosPorId}
-                        accionInicial={rechazo.accion}
-                        ocupado={decidiendo}
-                        onCerrar={() => !decidiendo && setRechazo(null)}
-                        onDecidir={decidir}
-                        /* El traslado lo aplica una Edge Function y su aviso
-                           tiene fila propia: el disparador de la base lo marca
-                           resuelto, pero eso llega por realtime y el panel
-                           todavía ofrecería el botón. Se apaga acá, igual que
-                           hace `useDecidirSolicitud` con el resto. */
-                        onResuelto={(estado) => marcarAvisoResuelto(rechazo.req.id, estado)}
-                    />
-                </Suspense>
-            )}
-
-            {/* El detalle del corte, hermano del panel por el mismo motivo. Se
-                queda montado con `corte` en nulo —igual que en el módulo y en
-                el Inicio—: es lo que le deja hacer su salida en vez de
-                desaparecer de golpe. */}
-            {montarDetalleCorte && (
-                <Suspense fallback={null}>
-                    <CorteDetalleModal
-                        corte={corteAbierto?.corte ?? null}
-                        nombreSala={nombreSala}
-                        modoInicial={corteAbierto?.modo ?? null}
-                        origen="campana"
-                        onClose={() => setCorteAbierto(null)}
-                        onResuelto={recargarCortes}
-                    />
-                </Suspense>
-            )}
-
-            {/* La entrega de la caja al confirmar — ver `useResolverCorte`. */}
-            {dialogoDeEntrega}
+            {/* El diálogo de rechazo, el detalle del corte y la entrega de la
+                caja. Los devuelve `useAccionesDeAviso` ya armados, y van acá
+                afuera —hermanos del panel y no adentro— porque el diálogo cierra
+                la campana al abrirse: montado dentro del `isOpen` se desmontaría
+                con ella, y un modal que lee el estado que lo abre se vacía al
+                cerrarlo. */}
+            {dialogos}
         </div>
     );
 };

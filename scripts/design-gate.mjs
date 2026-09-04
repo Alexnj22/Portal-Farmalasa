@@ -462,6 +462,16 @@ const EXCEPTIONS = {
   // en el canónico en vez de copiada en cada pantalla (2026-07-28).
   "src/components/common/PortalInput.jsx": ['white'],
   'src/components/common/NotificationBell.jsx': ['white'],
+  // Misma razón que `ListRow` y `PortalInput`: la paleta de la tarjeta de un
+  // aviso vivía escrita a mano DENTRO de `NotificationBell` y desde el
+  // 2026-09-04 la comparte con la vista `/notificaciones`, que dibuja la misma
+  // tarjeta. Que viva en el canónico es mejor que copiada en dos sitios; el
+  // blanco sigue siendo literal a propósito —es un VELO sobre la tarjeta, no su
+  // fondo, y el fondo lo fija `[data-surface="card"]` desde `index.css`— y por
+  // eso la excepción se mueve con el código en vez de tocar el baseline.
+  // La de `NotificationBell` NO queda muerta: la campana conserva blanco crudo
+  // propio (el botón, el aviso fijado, el enlace del pie).
+  'src/components/common/paletaDeAviso.js': ['white'],
   // `carril-pildora`: excepción MEDIDA, ver la nota junto a ClientesView.
   'src/views/productos/TabCatalogo.jsx': ['hex', 'carril-pildora'],
   'src/views/productos/tabminmax/constants.js': ['hex'],

@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.985.0 — La vista usa la misma tarjeta que la campana
+
+Reportado con captura: «en la vista no se ven las notificaciones modernas, como
+en la notificación. mejoralo, que se vean igual en cuanto a diseño y utilidad».
+
+La vista `/notificaciones` había escrito su propia fila, más simple. Lo que se
+perdía no era el estilo — era **la mitad de lo que la tarjeta hace**:
+
+- el **anillo** del cierre de metas y el del faltante de caja, que DIBUJAN la
+  cifra en vez de contarla en un párrafo (un «81%» que en la vista era texto
+  suelto);
+- el **detalle desplegable** de una solicitud, con sus renglones de producto,
+  sus fotos de evidencia y el motivo escrito;
+- **Aprobar / Rechazar**, **Confirmar / Descartar** el corte y **revisar el
+  traslado** — o sea que desde el historial no se podía resolver nada.
+
+Y la lista se abría a todo el ancho de la pantalla: la misma tarjeta que en la
+campana se lee de un vistazo medía más de 1,800px, con el texto en un renglón
+larguísimo y los controles a medio metro del título.
+
+**La corrección no fue emparejar el estilo: fue borrar la copia.** Ahora hay un
+solo componente, `TarjetaDeAviso`, y una sola máquina de decidir,
+`useAccionesDeAviso` — las dos compartidas con la campana, que pasó a usarlas en
+lugar de sus ~380 líneas escritas a mano dentro del `map`. La paleta salió al
+mismo sitio (`paletaDeAviso`).
+
+La lección, que vale más que el arreglo: **una copia no se «desincroniza con el
+tiempo» — nace incompleta.** Ésta tenía un día de vida y ya le faltaba la mitad.
+Es la misma que el repo ya había anotado para la tarjeta y el detalle de una
+solicitud (`movimientoTexto.js`), y para el catálogo de íconos por tipo.
+
+Dos cosas se quedan fuera del componente a propósito: la ventana de «deshacer»
+de 3 s, que es el gesto de la campana y no de la tarjeta, y el control de
+borrado, que llega como nodo porque los dos sitios lo resuelven distinto — la
+campana borra con su ventana, el historial manda a la papelera o devuelve de
+ella. Y en la pestaña «Borradas» no se pasan acciones: un aviso borrado se lee,
+no se decide desde ahí.
+
+### Cómo se verificó
+
+Contra el entorno de pruebas, con avisos sembrados que ejercitan las piezas
+ricas —un cierre de metas con su anillo, un aviso del sistema de 340 caracteres
+para el cuerpo cortado, y una solicitud con `request_id`—:
+
+- el anillo del 81% se dibuja con `$6,316.95 de $7,781.63` (contados 9 `<circle>`
+  dentro de las tarjetas);
+- «Ver detalle» existe y al tocarlo cambia a «Ocultar detalle»;
+- la prueba de siempre (`notificaciones-historial.spec.js`) sigue pasando entera;
+- WebKit iPhone 13: sin desborde horizontal y **ninguna tarjeta fuera del ancho**;
+- la campana, remirada después del refactor, conserva su anillo y su
+  «Ver detalle».
+
+El blanco crudo de la paleta **no se tapó regenerando el baseline**: la excepción
+se movió con el código, con su motivo, igual que ya se había hecho con `ListRow`
+y `PortalInput`. Y se comprobó que la de `NotificationBell` no quedara muerta —
+la campana conserva blanco propio en el botón, el aviso fijado y el enlace del
+pie.
+
 ## v2.984.2 — El filtro de sucursales deja de vaciarse
 
 El desplegable de sucursales de Cortes armaba sus opciones con las salas que

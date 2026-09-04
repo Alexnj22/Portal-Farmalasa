@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Bell, BellOff, Check, CalendarClock, RotateCcw, Search, Tag, Trash2, ArrowRight, Inbox,
+    Bell, BellOff, Check, CalendarClock, RotateCcw, Search, Tag, Trash2, Inbox,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -9,29 +9,25 @@ import FilterBar from '../components/common/FilterBar';
 import Button from '../components/common/Button';
 import Notice from '../components/common/Notice';
 import TablePagination from '../components/common/TablePagination';
-import AvatarConEstado from '../components/common/AvatarConEstado';
+import TarjetaDeAviso from '../components/common/TarjetaDeAviso';
+import { paletaDeAviso } from '../components/common/paletaDeAviso';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useTheme } from '../context/ThemeContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
 import usePestanaEnUrl from '../hooks/usePestanaEnUrl';
-import { iconoDeTipo } from '../constants/tipoIconos';
-import { shortEmployeeName } from '../utils/nameUtils';
+import useAccionesDeAviso from '../hooks/useAccionesDeAviso';
 import { mensajeAmigable } from '../utils/errorMessages';
-import {
-    severidadDelTitulo, tituloSinEmoji, tintForType, etiquetaDeAccion,
-    RESUELTA_LABEL, timeAgo, nombreDeTipo,
-} from '../utils/notificacionTexto';
+import { nombreDeTipo } from '../utils/notificacionTexto';
 import { fetchNotificationsPage, fetchNotificationTypes } from '../data/notifications';
 
 /* El historial de avisos — y la papelera (2026-09-04).
  *
  * Nació de una pregunta de una línea: «una vez eliminada, ¿no hay forma de
  * verla?». No la había. El botón de la campana hacía un DELETE real y la fila
- * se iba de la base sin dejar rastro: sin `deleted_at`, sin trigger y sin fila
- * en `audit_logs`. Hoy borrar es OCULTAR (migración `20260904141450`) y acá se
- * ven y se devuelven.
+ * se iba de la base sin dejar rastro. Hoy borrar es OCULTAR (migración
+ * `20260904141450`) y acá se ven y se devuelven.
  *
  * Pero el borrado no era el único agujero, y el otro era más grande: la campana
  * carga 100 avisos y nada más. Medido en producción el mismo día, **28 de 46
@@ -42,8 +38,16 @@ import { fetchNotificationsPage, fetchNotificationTypes } from '../data/notifica
  * ya venía recortada: un tope se aplica ANTES del filtro, y lo que el servidor
  * cortó no existe para el filtro (CLAUDE.md, la regla de las 1000 filas).
  *
- * La retención no cambió: `purge-notifications-daily` sigue limpiando a los 90
- * días. Lo que faltaba no era guardar más tiempo, era poder verlo.
+ * ── La tarjeta es LA MISMA que la de la campana ──────────────────────────────
+ * La primera versión la escribió de nuevo en forma simplificada y el usuario lo
+ * vio de una: «en la vista no se ven las notificaciones modernas, como en la
+ * notificación». Lo que faltaba no era estilo, era la mitad de lo que la tarjeta
+ * hace — los anillos que DIBUJAN el cierre de metas y el faltante de caja, el
+ * detalle desplegable de una solicitud, y Aprobar/Rechazar/Confirmar el corte.
+ *
+ * Hoy sale de `TarjetaDeAviso` y las acciones de `useAccionesDeAviso`, los dos
+ * compartidos con la campana. Una copia no se «desincroniza con el tiempo»:
+ * nace incompleta, que es exactamente lo que pasó acá.
  */
 
 /* Los tres estados. `sin_leer` primero porque es a lo que se entra a hacer algo;
@@ -60,9 +64,9 @@ const PESTANAS = [
    es el sitio — y `dias: null` («todo lo que quede») lo hace resistente: no
    promete un plazo, muestra lo que hay. */
 const PERIODOS = [
-    { value: '30',    label: 'Últimos 30 días', dias: 30 },
-    { value: '90',    label: 'Últimos 90 días', dias: 90 },
-    { value: 'todo',  label: 'Todo lo que quede', dias: null },
+    { value: '30',   label: 'Últimos 30 días', dias: 30 },
+    { value: '90',   label: 'Últimos 90 días', dias: 90 },
+    { value: 'todo', label: 'Todo lo que quede', dias: null },
 ];
 
 const POR_PAGINA_DEFECTO = 25;
@@ -70,29 +74,59 @@ const POR_PAGINA_DEFECTO = 25;
 export default function NotificacionesView() {
     const navigate  = useNavigate();
     const { isDark } = useTheme();
+    const cx = useMemo(() => paletaDeAviso(isDark), [isDark]);
     const showToast = useToastStore(s => s.showToast);
 
-    const employees = useStaff(s => s.employees);
     const branches  = useStaff(s => s.branches);
     const markNotificationRead      = useStaff(s => s.markNotificationRead);
     const deleteNotificationsByIds  = useStaff(s => s.deleteNotificationsByIds);
     const restoreNotificationsByIds = useStaff(s => s.restoreNotificationsByIds);
 
-    const [tab, setTab]         = usePestanaEnUrl(PESTANAS, 'sin_leer');
+    const [tab, setTab]           = usePestanaEnUrl(PESTANAS, 'sin_leer');
     const [busqueda, setBusqueda] = useState('');
-    const [tipo, setTipo]       = useState('');
-    const [periodo, setPeriodo] = useState('30');
+    const [tipo, setTipo]         = useState('');
+    const [periodo, setPeriodo]   = useState('30');
 
-    const [filas, setFilas]     = useState([]);
-    const [total, setTotal]     = useState(0);
+    const [filas, setFilas]       = useState([]);
+    const [total, setTotal]       = useState(0);
     const [cargando, setCargando] = useState(true);
-    const [error, setError]     = useState(null);
-    const [tipos, setTipos]     = useState([]);
-    const [recarga, setRecarga] = useState(0);
+    const [error, setError]       = useState(null);
+    const [tipos, setTipos]       = useState([]);
+    const [recarga, setRecarga]   = useState(0);
     const recargar = useCallback(() => setRecarga(n => n + 1), []);
+
+    /* Qué tarjetas están abiertas y cuáles tienen el cuerpo cortado — el mismo
+       contrato que usa la campana. `marcarCuerpoCortado` es estable a propósito:
+       viaja como prop a cada párrafo y ahí vive dentro de un efecto; si cambiara
+       en cada pintada, el efecto se volvería a montar solo. */
+    const [expandidas, setExpandidas] = useState(() => new Set());
+    const [cuerposCortados, setCuerposCortados] = useState(() => new Set());
+
+    const alternarExpansion = useCallback((id) => setExpandidas(prev => {
+        const s = new Set(prev);
+        s.has(id) ? s.delete(id) : s.add(id);
+        return s;
+    }), []);
+
+    const marcarCuerpoCortado = useCallback((id, cortado) => {
+        setCuerposCortados(prev => {
+            if (prev.has(id) === cortado) return prev;
+            const s = new Set(prev);
+            cortado ? s.add(id) : s.delete(id);
+            return s;
+        });
+    }, []);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({
         total, tamPorDefecto: POR_PAGINA_DEFECTO,
+    });
+
+    /* Aprobar, rechazar, confirmar el corte, revisar el traslado — la misma
+       máquina que la campana. En la papelera NO se pasan: un aviso borrado se
+       lee, no se decide desde ahí, y ofrecer «Aprobar» sobre algo que se sacó
+       de la bandeja invita a resolverlo por el camino que no es. */
+    const { acciones, dialogos, empleadosPorId } = useAccionesDeAviso({
+        avisos: filas, activo: tab !== 'borradas', origen: 'historial',
     });
 
     /* La búsqueda espera 350 ms. Sin eso cada tecla es una consulta al servidor
@@ -160,23 +194,25 @@ export default function NotificacionesView() {
             .catch(() => { /* sin la lista el filtro queda en «Todos», que es el default */ });
     }, []);
 
-    const empleadosPorId = useMemo(() => {
-        const m = new Map();
-        (employees || []).forEach(e => m.set(String(e.id), e));
-        return m;
-    }, [employees]);
-
     const sucursalesPorId = useMemo(() => {
         const m = new Map();
         (branches || []).forEach(b => m.set(String(b.id), b.name));
         return m;
     }, [branches]);
 
+    const buscarEmpleadoPorId = useCallback(
+        (id) => empleadosPorId.get(String(id)) ?? null, [empleadosPorId]);
+
+    /* El mismo toque que en la campana: marca leída y sale a la pantalla del
+       aviso. `n.link` ya trae la forma correcta para cada familia —incluida
+       `minmax:<id>`, que es otra tabla—; el respaldo sólo cubre avisos viejos,
+       escritos antes de que el enlace se guardara. */
     const abrir = useCallback((n) => {
-        if (!n.link) return;
-        if (!n.read_at && tab !== 'borradas') markNotificationRead(n.id);
-        navigate(n.link);
-    }, [navigate, markNotificationRead, tab]);
+        if (!n.read_at && !n.deleted_at) markNotificationRead(n.id);
+        if (n.link || n.metadata?.request_id) {
+            navigate(n.link || `/requests?solicitud=${n.metadata?.request_id ?? ''}`);
+        }
+    }, [navigate, markNotificationRead]);
 
     const borrar = useCallback(async (n) => {
         await deleteNotificationsByIds([n.id]);
@@ -193,11 +229,6 @@ export default function NotificacionesView() {
             showToast('No se pudo devolver', mensajeAmigable(e), 'error');
         }
     }, [restoreNotificationsByIds, showToast, recargar]);
-
-    const marcarLeida = useCallback(async (n) => {
-        await markNotificationRead(n.id);
-        recargar();
-    }, [markNotificationRead, recargar]);
 
     const filtrosActivos = (tipo ? 1 : 0) + (periodo !== '30' ? 1 : 0);
 
@@ -277,32 +308,41 @@ export default function NotificacionesView() {
                         onLimpiar={() => { setBusqueda(''); setTipo(''); setPeriodo('30'); }} />
                 ) : (
                     <>
-                        {/* Lista de fichas y no `<table>`: un aviso no tiene
-                            columnas —es un título, un texto libre y quién lo
-                            originó— así que la ficha es su forma en TODOS los
-                            anchos, no una caída del teléfono. Es la misma forma
-                            con la que se ven en la campana, que es donde la
-                            gente los conoce. */}
-                        <div className="space-y-2">
+                        {/* La lista se acota a un ancho de lectura. A pantalla
+                            completa la tarjeta medía más de 1,800px y su texto
+                            quedaba en un renglón larguísimo con los controles a
+                            medio metro del título — la misma tarjeta que en la
+                            campana se lee de un vistazo. Un aviso es un mensaje,
+                            no una tabla: lo que gana con el ancho es nada. */}
+                        <div className="space-y-2 max-w-3xl">
                             {filas.map(n => (
-                                <FichaDeAviso
+                                <TarjetaDeAviso
                                     key={n.id}
                                     n={n}
-                                    /* El ícono se resuelve acá y baja como prop.
-                                       Resolverlo dentro de la ficha es «crear un
-                                       componente durante el render»: React lo
-                                       trataría como un tipo nuevo en cada pasada
-                                       y le reiniciaría el estado. */
-                                    sev={severidadDelTitulo(n.title)}
-                                    Icono={severidadDelTitulo(n.title)?.Icono ?? iconoDeTipo(n.type)}
+                                    cx={cx}
                                     isDark={isDark}
-                                    enPapelera={tab === 'borradas'}
                                     quien={n.created_by ? empleadosPorId.get(String(n.created_by)) : null}
                                     sucursal={n.branch_id ? sucursalesPorId.get(String(n.branch_id)) : null}
+                                    buscarEmpleado={buscarEmpleadoPorId}
+                                    expandida={expandidas.has(n.id)}
+                                    cuerpoCortado={cuerposCortados.has(n.id)}
+                                    onAlternarExpansion={alternarExpansion}
+                                    onRecorte={marcarCuerpoCortado}
                                     onAbrir={abrir}
-                                    onBorrar={borrar}
-                                    onRestaurar={restaurar}
-                                    onMarcarLeida={marcarLeida}
+                                    acciones={tab === 'borradas' ? null : acciones}
+                                    controlDeBorrado={tab === 'borradas' ? (
+                                        <Button variant="ghost" size="xs" icon={RotateCcw}
+                                            title="Devolver a la campana"
+                                            className={cx.iconBtn}
+                                            onClick={(e) => { e.stopPropagation(); restaurar(n); }}>
+                                            Devolver
+                                        </Button>
+                                    ) : (
+                                        <Button variant="ghost" icon={Trash2} iconOnly
+                                            title="Mover a Borradas"
+                                            className={cx.iconBtn}
+                                            onClick={(e) => { e.stopPropagation(); borrar(n); }} />
+                                    )}
                                 />
                             ))}
                         </div>
@@ -315,6 +355,11 @@ export default function NotificacionesView() {
                     </>
                 )}
             </div>
+
+            {/* Fuera de la lista: el diálogo de rechazo y el detalle del corte se
+                dibujan por encima de todo y tienen que sobrevivir a que la fila
+                que los abrió se vaya de la página. */}
+            {dialogos}
         </GlassViewLayout>
     );
 }
@@ -342,98 +387,4 @@ const VacioDe = ({ tab, busqueda, filtros, onLimpiar }) => {
     }
     return <EmptyState compact icon={Inbox} title="Sin avisos"
         subtitle="Aquí va a quedar todo lo que te llegue por la campana." />;
-};
-
-const FichaDeAviso = ({ n, sev, Icono, isDark, enPapelera, quien, sucursal, onAbrir, onBorrar, onRestaurar, onMarcarLeida }) => {
-    const sinLeer = !n.read_at && !enPapelera;
-    const resuelta = n.metadata?.resuelta;
-    /* Una solicitud ya decidida no se «revisa»: el verbo dice en qué terminó en
-       vez de invitar a algo que ya pasó. */
-    const verbo = resuelta
-        ? (RESUELTA_LABEL[resuelta] || 'Resuelta')
-        : (n.link ? (etiquetaDeAccion(n) || 'Ver') : null);
-    const seAbre = Boolean(n.link) && !resuelta;
-
-    return (
-        <div data-surface="card"
-            className={`relative rounded-card border overflow-hidden transition-colors duration-[var(--dur-base)]
-                ${sinLeer ? 'border-brand/30' : 'border-border-card'}`}>
-            {sinLeer && (
-                <div aria-hidden="true"
-                    className={`absolute inset-0 pointer-events-none ${isDark ? 'bg-brand/[0.06]' : 'bg-brand/[0.04]'}`} />
-            )}
-
-            <div className="relative flex items-start gap-3 p-3">
-                <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 mt-0.5
-                    ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
-                    <Icono size={16} strokeWidth={2} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                    <p className={`text-body leading-snug ${sinLeer ? 'font-bold text-content' : 'font-semibold text-content-2'}`}>
-                        {sinLeer && (
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand align-middle mr-1.5 -mt-0.5
-                                shadow-[var(--shadow-glow-brand-sm)]" />
-                        )}
-                        {tituloSinEmoji(n.title)}
-                    </p>
-
-                    {/* Sin recortar: esta pantalla existe para LEER el aviso, y
-                        el recorte de la campana es lo que obliga a abrirla. */}
-                    {n.body && (
-                        <p className="text-body-sm font-medium leading-snug mt-0.5 text-content-2 whitespace-pre-line">
-                            {n.body}
-                        </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-caption text-content-3">
-                        {quien && (
-                            <span className="flex items-center gap-1.5 min-w-0">
-                                <AvatarConEstado emp={quien} px={20} radio="rounded-full" />
-                                <span className="font-bold text-content-2 truncate">{shortEmployeeName(quien)}</span>
-                            </span>
-                        )}
-                        {sucursal && <span className="font-semibold">{sucursal}</span>}
-                        <span>{timeAgo(n.created_at)}</span>
-                        {enPapelera && n.deleted_at && (
-                            <span className="text-warning-text font-semibold">
-                                Borrada {timeAgo(n.deleted_at).toLowerCase()}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Los controles, en su propio renglón y con blanco de dedo.
-                `--tap-min` vale 0 en escritorio, así que no cambia nada ahí. */}
-            <div className="relative flex flex-wrap items-center justify-end gap-1 px-3 pb-2">
-                {seAbre && (
-                    <Button variant="ghost" size="sm" onClick={() => onAbrir(n)}
-                        className="min-h-[var(--tap-min)] active:scale-[0.97]">
-                        {verbo} <ArrowRight size={14} className="ml-1" />
-                    </Button>
-                )}
-                {resuelta && (
-                    <span className="text-caption font-bold uppercase tracking-wide text-content-3 px-2">
-                        {verbo}
-                    </span>
-                )}
-                {sinLeer && (
-                    <Button variant="ghost" size="sm" iconOnly icon={Check} title="Marcar como leída"
-                        onClick={() => onMarcarLeida(n)}
-                        className="min-h-[var(--tap-min)] min-w-[var(--tap-min)] active:scale-[0.97]" />
-                )}
-                {enPapelera ? (
-                    <Button variant="secondary" size="sm" onClick={() => onRestaurar(n)}
-                        className="min-h-[var(--tap-min)] active:scale-[0.97]">
-                        <RotateCcw size={14} className="mr-1" /> Devolver
-                    </Button>
-                ) : (
-                    <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Mover a Borradas"
-                        onClick={() => onBorrar(n)}
-                        className="min-h-[var(--tap-min)] min-w-[var(--tap-min)] active:scale-[0.97]" />
-                )}
-            </div>
-        </div>
-    );
 };

@@ -515,6 +515,15 @@ export default function MiCajaView({ comoPestana = false }) {
      * está en el servidor; esto es para decirlo ANTES de que alguien escriba la
      * palabra. */
     const cortesC = (estado?.cortes || []).filter((c) => c.tipo === 'C');
+    /* El día ya CERRÓ: hay un Z. Regla del usuario (3-sep): «si ya está el corte
+     * Z del día, el abrir caja debe estar deshabilitado hasta mañana». Un Z es
+     * el cierre fiscal de la jornada, y lo que se venda después queda en un día
+     * que ya declaró su total.
+     *
+     * El candado de verdad está en el servidor —le pregunta al ORIGEN, porque
+     * recién cerrado el Z todavía no llegó al portal—; esto es para no ofrecer
+     * un botón que va a ser rechazado. */
+    const diaCerrado = (estado?.cortes || []).some((c) => c.tipo === 'Z');
     const sinCorteHoy = !cortesC.some((c) => c.estado === 'CONFIRMADO');
     // «No hay corte» y «hay uno sin confirmar» son dos avisos distintos: el
     // primero manda a cortar, el segundo a revisar lo que ya se contó.
@@ -689,6 +698,7 @@ export default function MiCajaView({ comoPestana = false }) {
          * parece de otra cosa. */
         if (noSePudo) return [];
         if (!estado?.abierta) {
+            if (diaCerrado) return [];
             return [{ key: 'abrir', icon: DoorOpen, label: 'Abrir la caja', rotulo: 'Abrir',
                 variant: 'primary', rotuloFijo: true, onClick: () => setDialogo('abrir') }];
         }
@@ -752,7 +762,7 @@ export default function MiCajaView({ comoPestana = false }) {
             { key: 'cerrar', icon: Lock, label: 'Cerrar el día', rotulo: 'Cerrar',
                 rotuloFijo: true, onClick: () => setDialogo('cerrar') },
         ];
-    }, [puedeOperar, sala, estado, noSePudo, correr]);
+    }, [puedeOperar, sala, estado, noSePudo, correr, diaCerrado]);
 
     /* «Abierta» y «vendiendo» no son lo mismo: la apertura del día puede estar
      * viva con el turno parado, y en ese estado no se puede cortar ni cerrar.
@@ -857,15 +867,21 @@ export default function MiCajaView({ comoPestana = false }) {
                             lo leía nadie. */}
                         <StatCard icon={noSePudo ? AlertTriangle : turnoParado ? PlayCircle : estado?.abierta ? DoorOpen : Lock}
                             label={!sala ? 'La caja' : noSePudo ? 'Sin respuesta'
-                                : turnoParado ? 'Turno cerrado' : estado?.abierta ? 'Abierta' : 'Cerrada'}
+                                : turnoParado ? 'Turno cerrado'
+                                    : estado?.abierta ? 'Abierta'
+                                        /* «Cerrada · Nadie puede vender» sobre un día que
+                                           terminó bien se lee como una falla. Cuando hay Z,
+                                           la caja no está caída: el día TERMINÓ. */
+                                        : diaCerrado ? 'Día cerrado' : 'Cerrada'}
                             value={!sala ? '—' : noSePudo ? 'No se pudo leer'
                                 : turnoParado ? 'Hay que iniciarlo'
-                                    : estado?.abierta ? (estado.desde || 'Abierta') : 'Sin turno'}
+                                    : estado?.abierta ? (estado.desde || 'Abierta')
+                                        : diaCerrado ? 'Ya salió el corte Z' : 'Sin turno'}
                             sub={!sala || noSePudo ? undefined
                                 : turnoParado ? 'La caja sigue abierta'
                                     : estado?.abierta
                                         ? (corto(estado.quien) || 'se abrió fuera del portal')
-                                        : 'Nadie puede vender'}
+                                        : diaCerrado ? 'Vuelve a abrir mañana' : 'Nadie puede vender'}
                             iconBg={estado?.abierta && !turnoParado && !noSePudo ? 'bg-success/10' : 'bg-warning/10'}
                             iconCls={estado?.abierta && !turnoParado && !noSePudo ? 'text-success-text' : 'text-warning-text'}
                             valueCls={estado?.abierta && !turnoParado && !noSePudo ? 'text-success-text' : 'text-warning-text'}

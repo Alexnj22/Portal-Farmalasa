@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.973.3 — Con el Z del día hecho, la caja no se vuelve a abrir
+
+Regla del usuario, mirando la pantalla de Salud 5 ya cerrada: *«si ya está el
+corte Z del día, el abrir caja debe estar deshabilitado hasta mañana»*.
+
+**No era hipotético.** Esa misma noche La Popular emitió su Z a las 19:03:40 y
+la caja se volvió a abrir a las **19:04:13** — treinta y tres segundos después,
+apertura 2903, turno 6. Nada lo impedía: la pantalla ofrecía el botón y el
+servidor lo aceptaba. Un Z es el cierre FISCAL de la jornada, así que lo que se
+venda después queda en un día que ya declaró su total.
+
+**El freno le pregunta al ORIGEN, no a `cortes_caja`.** Recién cerrado, el Z
+todavía no llegó al portal —lo trae la captura, que corre después—, así que
+preguntarle a la base habría dejado pasar exactamente ese caso de 33 segundos.
+Se reusa la misma lectura con la que el cierre comprueba que su Z salió: ahora
+es una función (`hayZdelDia`) y no dos copias.
+
+**Y si no se pudo comprobar, tampoco abre.** «No sé» no es «no hay»: abrir a
+ciegas después de un cierre es el error que no se deshace, y quien espera un
+momento y reintenta no pierde nada.
+
+Verificado contra producción: Salud 5, con su día cerrado, contesta *«Esta sala
+ya cerró el día. La caja se vuelve a abrir mañana»*; Salud 1, sin Z, sigue
+contestando lo de antes.
+
+### Y la pantalla deja de parecer una falla
+
+Una sala que cerró bien su día mostraba **«Cerrada · Sin turno · Nadie puede
+vender»** —el mismo cartel que una caja caída— y ofrecía «Abrir la caja». Ahora
+dice **«Día cerrado · Ya salió el corte Z · Vuelve a abrir mañana»** y no ofrece
+nada. El botón desaparece antes de que alguien lo apriete, y el candado de
+verdad sigue estando en el servidor.
+
 ## v2.973.2 — El cierre del día no puede salir en cero: el turno se inicia antes, y el servidor lo frena
 
 Reportado por el usuario la noche del 3-sep, con dos salas al teléfono: *«la

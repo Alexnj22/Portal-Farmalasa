@@ -196,6 +196,41 @@ async function estadoDeLaCaja(cookie: string) {
   return { abierta: false, turnoCorriendo: false, idCaja: cajas[0] ?? null, aper: null, emp: null, turno: null, idEmple, idDetalle: null };
 }
 
+/**
+ * ¿Ya salió el corte Z de ese día en esta sala?
+ *
+ * Se le pregunta al ORIGEN y no a `cortes_caja`: la tabla del portal se llena
+ * con la captura, que corre después, así que recién cerrado diría «no hay Z»
+ * siempre. Medido: La Popular cerró su día a las 19:03:40 del 3-sep y la caja se
+ * volvió a abrir a las **19:04:13** — treinta y tres segundos, con el Z ya
+ * emitido y todavía sin llegar al portal.
+ *
+ * `null` = no se pudo comprobar, que NO es «no hay». Quien llama decide: el
+ * cierre lo dice como aviso; la apertura, que es lo que hay que frenar, no
+ * abre a ciegas.
+ */
+async function hayZdelDia(cookie: string, dia: string): Promise<boolean | null> {
+  try {
+    const listado = await (await fetch(CORTE_URL, {
+      method: "POST",
+      headers: {
+        Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: new URLSearchParams({ process: "ok", fecha1: dia, fecha2: dia }).toString(),
+      signal: AbortSignal.timeout(45_000),
+    })).text();
+    return [...listado.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].some(([, tr]) => {
+      const tds = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)]
+        .map((m) => m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+      return tds.length >= 8 && tds[5].toUpperCase() === "Z";
+    });
+  } catch (e) {
+    console.error("operar-caja: no se pudo comprobar el Z:", e);
+    return null;
+  }
+}
+
 const dosDecimales = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 const exito = (t: string) => /"typeinfo"\s*:\s*"Success"/i.test(t);
 
@@ -657,6 +692,34 @@ Deno.serve(async (req) => {
       if (estado.abierta) return json({ ok: false, error: "Esa caja ya está abierta." }, 409);
       if (!estado.idCaja) return json({ ok: false, error: "Esa sala no tiene ninguna caja configurada." }, 409);
 
+      /* ── CON EL Z DEL DÍA HECHO, LA CAJA NO SE VUELVE A ABRIR ───────────
+       *
+       * Regla del usuario (3-sep): «si ya está el corte Z del día, el abrir
+       * caja debe estar deshabilitado hasta mañana». El Z es el cierre FISCAL
+       * de la jornada: lo que se venda después queda de un día que ya declaró
+       * su total, y eso no se arregla desde el portal.
+       *
+       * No es hipotético. Esa misma noche La Popular emitió su Z a las 19:03:40
+       * y la caja se volvió a abrir a las **19:04:13** — treinta y tres
+       * segundos—, con la pantalla ofreciendo el botón porque nada lo impedía.
+       *
+       * Se le pregunta al ORIGEN: recién cerrado, `cortes_caja` todavía no
+       * tiene el Z, así que preguntarle a la base habría dejado pasar
+       * exactamente ese caso. Y si NO se pudo comprobar, tampoco se abre:
+       * abrir a ciegas después de un cierre es el error que no se deshace, y
+       * el que espera cinco minutos y reintenta no pierde nada. */
+      const hoySV = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+      const yaCerroElDia = await hayZdelDia(cookie, hoySV);
+      if (yaCerroElDia !== false) {
+        return json({
+          ok: false, dia_cerrado: yaCerroElDia === true,
+          error: yaCerroElDia === true
+            ? "Esta sala ya cerró el día. La caja se vuelve a abrir mañana."
+            : "No se pudo comprobar si el día ya cerró, y no se abre la caja sin saberlo. "
+              + "Volvé a intentarlo en un momento.",
+        }, 409);
+      }
+
       // El empleado con el que la CAJA identifica a quien abre. Se reusa el que
       // esa sala ya venía usando; si nunca se vio, el de la sesión — y en los
       // dos casos la persona de verdad queda en `abierta_por`.
@@ -829,7 +892,13 @@ Deno.serve(async (req) => {
       if (!estado.abierta) {
         return json({ ok: false, error: "Esa sala no tiene una caja abierta. Primero hay que abrir la caja." }, 409);
       }
-      if ((estado as { turnoCorriendo?: boolean }).turnoCorriendo) {
+      /* `simular` NO se frena con el turno corriendo: lo que contesta es a
+       * nombre de quién quedaría, y esa respuesta es la misma esté el turno
+       * parado o no. Frenarla acá dejaba la comprobación disponible sólo en el
+       * único momento en que ya no hay tiempo de hacerla — medido la noche del
+       * 3-sep: las seis salas con el turno corriendo y nada que se pudiera
+       * medir hasta el día siguiente. */
+      if (!body.simular && (estado as { turnoCorriendo?: boolean }).turnoCorriendo) {
         return json({ ok: false, ya_estaba: true, error: "El turno ya está corriendo." }, 409);
       }
 
@@ -850,7 +919,7 @@ Deno.serve(async (req) => {
           + `(compartida ${estado.aper}, sala ${suyo.aper})`);
         return json({ ok: false, error: "La caja cambió mientras se preparaba el turno. Recarga y volvé a intentarlo." }, 409);
       }
-      if (suyo.turnoCorriendo) {
+      if (!body.simular && suyo.turnoCorriendo) {
         return json({ ok: false, ya_estaba: true, error: "El turno ya está corriendo." }, 409);
       }
 
@@ -871,6 +940,7 @@ Deno.serve(async (req) => {
       if (body.simular === true) {
         return json({
           ok: true, simulado: true, coinciden,
+          turno_corriendo: suyo.turnoCorriendo,
           apertura: estado.aper, caja: suyo.idCaja, turno: suyo.turno,
           empleado_de_la_sesion: Number.isFinite(deLaSesion) ? deLaSesion : null,
           empleado_de_la_caja: Number.isFinite(deLaCaja) ? deLaCaja : null,
@@ -1274,25 +1344,7 @@ Deno.serve(async (req) => {
       if (errEspejo) console.error(`[operar-caja] cerrando el espejo sala=${sala}: ${errEspejo.message}`);
     }
 
-    let zEmitido: boolean | null = null;
-    try {
-      const listado = await (await fetch(CORTE_URL, {
-        method: "POST",
-        headers: {
-          Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        body: new URLSearchParams({ process: "ok", fecha1: diaAbierto, fecha2: diaAbierto }).toString(),
-        signal: AbortSignal.timeout(45_000),
-      })).text();
-      zEmitido = [...listado.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].some(([, tr]) => {
-        const tds = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)]
-          .map((m) => m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
-        return tds.length >= 8 && tds[5].toUpperCase() === "Z";
-      });
-    } catch (e) {
-      console.error("operar-caja: no se pudo comprobar el Z:", e);
-    }
+    const zEmitido = await hayZdelDia(cookie, diaAbierto);
 
     return json({
       ok: true, cerrada: true, z: zEmitido,

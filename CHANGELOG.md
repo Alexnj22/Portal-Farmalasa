@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.974.0 — Un documento de personal se guarda con su dueño en la ruta, o no se guarda
+
+Cierra G9 del informe, que el plan daba por bloqueado, y con eso quedan **once de
+los doce** hallazgos resueltos.
+
+### Por qué el DUI de alguien estaba «sin asignar»
+
+La pregunta del usuario tenía respuesta en los datos: `PERSONAL_ENLAZADO`. La
+ficha existía desde marzo, pero sus dos DUIs se subieron el 28 de agosto desde el
+formulario de **alta** —el que enlaza con una ficha existente— y ahí
+`formData.id` todavía no existe.
+
+El formulario sube el archivo **en cuanto se elige**, no al guardar: de esa
+subida sale la lectura del DUI y el visor. Así que la ruta se arma como
+`employee-documents/unassigned/<archivo>` — una ruta que **no dice de quién es el
+documento**. Y nada lo movía después.
+
+Eso tenía dos consecuencias, y la segunda es la que importaba: desde que las
+policies del bucket miran la ruta (v2.971.7), **un documento sin id no tiene
+dueño posible**. Lo veía quien tuviera «Expediente completo» y no lo veía nunca
+la persona de la que era.
+
+### La regla, que ya estaba escrita para el otro buzón
+
+> *«Si no se guarda, se debe descartar / borrar. Sólo se debe guardar si queda
+> guardado y anexado al empleado»* — el usuario, el 31 de agosto, sobre
+> `capturas/`. Y otra vez ahora: *«los huérfanos eliminalos»*.
+
+`ordenar-documentos-de-personal` la aplica al buzón del expediente. **Mueve** lo
+que alguna ficha nombra a `employees/<id>/documents/` —reescribiendo la URL
+dentro del jsonb— y **borra** lo que ninguna nombra y ya pasó la gracia.
+
+Primera corrida: **2 movidos, 18 borrados, 0 en espera**. `unassigned` quedó en
+cero y el bucket pasó de 55 archivos a 37. Los 18 eran pruebas que nadie guardó.
+
+**Comprobado después:** la persona dueña de esos dos documentos, que **no** tiene
+«Expediente completo», ahora los ve — y de los siete archivos que hay bajo
+`employees/`, ve **sólo los dos suyos**.
+
+### Tres decisiones que vale la pena tener escritas
+
+- **Se corre en seco primero.** Un barrido que borra documentos de identidad
+  tiene que poder mirarse antes de correrse; el `enSeco` listó exactamente los
+  mismos 2 y 18 que después movió y borró.
+- **Mover antes que borrar, y copiar antes que mover.** Si el barrido corriera
+  primero, un archivo recién subido que todavía no se guardó en su ficha se
+  leería como huérfano. Y `copy → reescribir la URL → borrar` deja, en el peor
+  corte, una copia de más — al revés dejaría la ficha apuntando a nada.
+- **Doce horas de gracia, no una.** Acá el «reclamo» no es un aviso automático
+  como en `capturas/` sino una persona terminando de llenar un expediente, que
+  puede dejarlo a medias e irse a almorzar.
+
+Y esto cierra también el cabo suelto del alta **sin rediseñar el formulario**:
+puede seguir subiendo antes de saber a quién pertenece el archivo, porque ahora
+hay quien lo ordena después. Un buzón no es un defecto; un buzón que nadie vacía,
+sí.
+
+
 ## v2.973.3 — Con el Z del día hecho, la caja no se vuelve a abrir
 
 Regla del usuario, mirando la pantalla de Salud 5 ya cerrada: *«si ya está el

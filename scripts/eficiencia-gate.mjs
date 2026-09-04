@@ -101,6 +101,19 @@ const CRONS = [
           + 'Storage del propio proyecto. Cada hora y no cada día porque la variable que este '
           + 'cron controla es cuánto tiempo pasa un papel ajeno en un buzón que ya nadie mira.',
   },
+  {
+    job: 'ordenar-documentos-de-personal-diario', slug: 'ordenar-documentos-de-personal',
+    cadencia: '0 6 * * *', corridasDia: 1, sistema: 0,
+    motivo: 'El otro buzón, el del expediente. El formulario de personal sube el archivo en '
+          + 'cuanto se elige —de esa subida sale la lectura del DUI— pero en el ALTA todavía no '
+          + 'hay id, así que cae en `employee-documents/unassigned/`, una ruta que no dice de '
+          + 'quién es. Este barrido MUEVE lo que alguna ficha nombra a `employees/<id>/` y BORRA '
+          + 'lo que nadie nombra. Medido en la primera corrida: 2 movidos y 18 huérfanos '
+          + 'borrados, de 20. `sistema: 0` porque sólo lista, copia y borra en el Storage del '
+          + 'propio proyecto. Una vez al día y a medianoche de El Salvador porque la gracia son '
+          + '12 horas: lo que se está por guardar no se toca, y a esa hora nadie llena un '
+          + 'expediente.',
+  },
   // ── Los que hablan con el sistema en cada corrida ──────────────────────────
   {
     job: 'creditos-cada-10min', slug: 'sync-creditos', cadencia: '*/10 13-23,0-4 * * *',

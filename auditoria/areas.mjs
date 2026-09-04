@@ -240,11 +240,14 @@ export const AREAS = [
         // Si esa sesión la ubica en otro lado, gana su decisión.
         edge: ['apply-scheduled-employee-events', 'check-employee-doc-expiry', 'leer-dui',
                'subir-foto-de-captura',
+               // El buzón del expediente: mueve a `employees/<id>/` lo que una
+               // ficha nombra y borra lo que nadie nombra.
+               'ordenar-documentos-de-personal',
                // `soltar-captura` vacía el buzón del traspaso: el efecto es
                // sobre documentos de PERSONAL, así que vive con su gemela.
                'soltar-captura'],
         crons: ['apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily',
-                'soltar-capturas-abandonadas'],
+                'soltar-capturas-abandonadas', 'ordenar-documentos-de-personal-diario'],
         docs: ['docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md',
                'docs/AUDITORIA-PERSONAL-2026-09-03.md'],
     },

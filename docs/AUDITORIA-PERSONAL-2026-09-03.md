@@ -5,11 +5,10 @@ Salió de configurar los permisos del rol `Administrador` y de arreglar el
 **nueve** hallazgos; el mapeo del código y de las policies de nómina sumó cuatro
 más, y uno de los nueve resultó falso. **Total: doce**, ninguno da error.
 
-> **Estado al 2026-09-04.** Cerrados G1, G1b, G2, G3, G4, G6, G8, G10, G11, G12
-> y G13 (v2.971.7 → v2.972.2). G7 era un falso positivo. Quedan abiertos **G5**
-> (46 fichas sin sueldo: es carga de datos, no código) y **la mitad de G9** —
-> mover 20 archivos de la ruta vieja, que necesita la llave de `service_role`.
-> El detalle de cada cierre está en `CHANGELOG.md`.
+> **Estado al 2026-09-04.** Cerrados **once de los doce**: G1, G1b, G2, G3, G4,
+> G6, G8, G9, G10, G11, G12 y G13 (v2.971.7 → v2.973.2). G7 era un falso
+> positivo. Queda abierto sólo **G5** — 46 fichas sin sueldo, que es carga de
+> datos y no código. El detalle de cada cierre está en `CHANGELOG.md`.
 
 El área son 25 archivos de `src/`, seis tablas y tres crons
 (`auditoria/areas.mjs`, ids `personal` y `nomina`). Todo lo de acá se midió
@@ -289,15 +288,23 @@ v2.972.0.
 
 ## Lo que queda abierto
 
-1. **G5** — 46 de 48 fichas sin sueldo y 1 sola con cuenta bancaria. Es carga de
-   datos, no código, y ahora se puede hacer con las llaves en su sitio.
-2. **La mitad de G9** — 20 archivos siguen en `employee-documents/unassigned/`,
-   una ruta que no dice de quién son, así que sólo los ve «Expediente completo»
-   y **nunca su propio dueño**. Dos tienen dueño (los DUIs de Carlos Renderos) y
-   **18 son huérfanos** de pruebas. Moverlos necesita la llave de `service_role`,
-   que no está en el `.env` local; la alternativa sin llave es volver a subirlos
-   desde el expediente, que ya escribe en la ruta buena.
-3. **Los adjuntos del alta** siguen cayendo en esa misma ruta vieja mientras la
-   ficha no tiene id. Cerrarlo exige mover el archivo después del INSERT (misma
-   llave) o diferir la subida, que es un rediseño del formulario — hoy sube al
-   elegir el archivo porque de ahí sale la lectura del DUI.
+**Sólo G5**: 46 de 48 fichas sin sueldo y una sola con cuenta bancaria. Es carga
+de datos, no código, y ahora se puede hacer con las llaves en su sitio.
+
+## Y cómo se cerró G9, que parecía necesitar una llave que no había
+
+El plan lo daba por bloqueado: mover 20 archivos exige `service_role`, que no
+está en el `.env` local. Pero **el portal ya tenía el patrón escrito** —
+`soltar-captura` barre el buzón `capturas/` desde el 2026-08-31, por la misma
+regla dicha por el usuario: *«si no se guarda, se debe descartar/borrar»*.
+
+Faltaba aplicarlo al otro buzón. `ordenar-documentos-de-personal` corre con
+`service_role` en el servidor, así que no hace falta ninguna llave local: MUEVE
+lo que alguna ficha nombra a `employees/<id>/documents/` y BORRA lo que ninguna
+nombra. Primera corrida: **2 movidos, 18 borrados, 0 en espera**; `unassigned`
+quedó en cero y el bucket pasó de 55 archivos a 37.
+
+Y eso cierra también el tercer punto —los adjuntos del alta— sin rediseñar el
+formulario: puede seguir subiendo antes de saber a quién pertenece el archivo,
+porque ahora hay quien lo ordena después. **Un buzón no es un defecto; un buzón
+que nadie vacía, sí.**

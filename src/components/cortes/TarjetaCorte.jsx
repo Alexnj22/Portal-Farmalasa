@@ -108,6 +108,19 @@ const TarjetaCorte = memo(function TarjetaCorte({
     const revisar = !!ct?.enDisputa && !ct.porCobrosCredito;
     const cuadra = seConfirmaDeUnClic(corte);
 
+    /* Lo que el día ya cargaba ANTES de este corte. `null` cuando no hay nada
+     * que decir: sin arrastre, o sobre una tarjeta que no mide dinero —el
+     * cierre del día, una lectura, un corte sin conteo, un descartado—, donde
+     * un renglón de arrastre hablaría de un cálculo que esa tarjeta no hace.
+     *
+     * El umbral es el mismo de `severidad` (un centavo), y por el mismo motivo
+     * de siempre: si la tarjeta pinta «Sobrante» desde $0.01, el renglón que lo
+     * explica no puede empezar en otro número. */
+    const arrastre = (esZ || esX || sinConteo || desc
+        || !Number.isFinite(Number(corte.arrastre))
+        || Math.abs(Number(corte.arrastre)) < 0.01)
+        ? null : Number(corte.arrastre);
+
     const abrir = () => onAbrir?.(corte, null);
 
     // El botón principal: de un clic cuando cuadra, con el detalle delante
@@ -246,6 +259,29 @@ const TarjetaCorte = memo(function TarjetaCorte({
                     <OjoDeTarjeta size={13} className="mt-0.5" />
                 </div>
             </div>
+
+            {/* ── Lo que el día YA cargaba antes de este corte ──────────────
+                Reportado el 2026-09-04: el corte de las 19:02 de La Popular
+                mostraba **$0.00** y el día seguía con **+$0.80**. El $0.00 es
+                correcto —ese tramo no movió nada, el sobrante ya estaba contado
+                en el corte de las 13:03— pero leído solo dice «acá cuadró
+                todo», y el sobrante del día desaparece de la vista en cuanto
+                pasa un corte que cuadra. El detalle sí lo decía
+                («Acumulado hasta esta hora»); la tarjeta, que es lo que se mira
+                primero, no.
+
+                Nombra el corte de origen cuando fue UNO solo. Con varios dice
+                cuántos: nombrar uno de tres es una precisión que el dato no
+                tiene, y en una cifra de dinero eso manda a revisar el corte
+                equivocado. */}
+            {arrastre != null && (
+                <div className={`text-micro text-right -mt-1 ${arrastre > 0 ? 'text-warning-text' : 'text-danger-text'}`}>
+                    {conSigno(arrastre)} de {arrastre > 0 ? 'sobrante' : 'faltante'} viene{' '}
+                    {corte.aportes?.length === 1
+                        ? `del corte de las ${hhmm(corte.aportes[0].hora)}`
+                        : `de ${corte.aportes?.length || 0} cortes anteriores`}
+                </div>
+            )}
 
             {/* Compacta: etiquetas y acciones en UN renglón. Ver la nota de
                 arriba. `mt-auto` SÓLO cuando hay acciones: es lo que alinea los

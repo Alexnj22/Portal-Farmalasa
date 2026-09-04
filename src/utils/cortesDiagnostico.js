@@ -90,23 +90,47 @@ export const noContoEfectivo = (corte) => corte?.tipo === 'C'
  */
 export function conTramo(cortesDeLaSala) {
     let previa = 0;
+    /* Los cortes confirmados que YA movieron el acumulado del día, con su hora.
+     *
+     * Existe por un reporte del usuario (2026-09-04): el corte de las 19:02 de
+     * La Popular mostraba **$0.00** y el día seguía cargando **+$0.80**. El
+     * $0.00 es correcto —ese tramo no movió nada— pero leído solo dice «acá
+     * cuadró todo», y lo que pasa es que el sobrante ya estaba contado antes.
+     * Sin esta lista, la tarjeta no tiene cómo nombrar de dónde viene.
+     *
+     * Se guardan los APORTES y no sólo el total porque «viene de un corte» y
+     * «viene de tres» son dos frases distintas, y nombrar uno cuando fueron
+     * tres es peor que no nombrar ninguno. */
+    const aportes = [];
     return cortesDeLaSala.map((c) => {
         // Un corte sin conteo no es un tramo NI corre la base: no midió nada, así
         // que no puede desplazar la referencia de los que vienen después. Mismo
         // criterio que un descartado.
         if (c.tipo !== 'C' || c.estado === 'DESCARTADO' || noContoEfectivo(c)) {
-            return { ...c, tramo: null, acumulado: null, fuente: null };
+            return { ...c, tramo: null, acumulado: null, fuente: null, arrastre: 0, aportes: [] };
         }
         // La acumulada sale de `diferenciaDelCorte`, no de `diferencia_erp`: el
         // corte manda. Las dos son acumulativas del día, así que restarlas sigue
         // dando el tramo.
         const { valor: dif, fuente, esperado } = diferenciaDelCorte(c);
         const tramo = redondear(dif - previa);
+        // El arrastre es lo que este corte ENCONTRÓ, no lo que dejó: se toma
+        // antes de correr la base, y la lista se copia antes de que este corte
+        // se agregue a ella. Con la copia después, una tarjeta se nombraría a
+        // sí misma como origen de su propio arrastre.
+        const arrastre = redondear(previa);
+        const heredados = aportes.slice();
         // Sólo una decisión firmada mueve la referencia. Ver el bloque de
         // arriba: con el pendiente corriéndola, un corte rehecho le restaba al
         // bueno la diferencia del que vino a reemplazar.
-        if (c.estado === 'CONFIRMADO') previa = dif;
-        return { ...c, tramo, acumulado: dif, fuente, esperadoUsado: esperado };
+        if (c.estado === 'CONFIRMADO') {
+            if (Math.abs(tramo) >= 0.01) aportes.push({ hora: c.hora, tramo });
+            previa = dif;
+        }
+        return {
+            ...c, tramo, acumulado: dif, fuente, esperadoUsado: esperado,
+            arrastre, aportes: heredados,
+        };
     });
 }
 

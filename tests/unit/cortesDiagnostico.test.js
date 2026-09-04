@@ -99,6 +99,58 @@ describe('el tramo: sólo un corte CONFIRMADO corre la base', () => {
     });
 });
 
+describe('el arrastre: lo que el día YA cargaba antes de este corte', () => {
+    /* La Popular, 3-sep — el caso reportado. El sobrante entra en el corte de
+     * las 13:03 y los dos siguientes cuadran: sus tarjetas decían $0.00 y el
+     * día seguía con +$0.80 sin que ninguna lo dijera. */
+    const LA_POPULAR = [
+        corte({ hora: '13:03:00', estado: 'CONFIRMADO', total_declarado: 500.80, diferencia_erp: 0.80, tk_total_caja: 500.00, tk_cobros_credito: null }),
+        corte({ hora: '14:50:00', estado: 'CONFIRMADO', total_declarado: 800.80, diferencia_erp: 0.80, tk_total_caja: 800.00, tk_cobros_credito: null }),
+        corte({ hora: '19:02:00', estado: 'CONFIRMADO', total_declarado: 1374.87, diferencia_erp: 0.80, tk_total_caja: 1374.07, tk_cobros_credito: null }),
+    ];
+
+    it('el primero no arrastra nada: el sobrante nace en él', () => {
+        const [a] = conTramo(LA_POPULAR);
+        expect(a.tramo).toBe(0.80);
+        expect(a.arrastre).toBe(0);
+        expect(a.aportes).toEqual([]);
+    });
+
+    it('los que cuadran después dicen $0.00 y arrastran los $0.80', () => {
+        const [, b, c] = conTramo(LA_POPULAR);
+        expect(b.tramo).toBe(0);
+        expect(b.arrastre).toBe(0.80);
+        expect(c.tramo).toBe(0);
+        expect(c.arrastre).toBe(0.80);
+    });
+
+    it('nombra el corte de origen, y no se nombra a sí mismo', () => {
+        const [a, b] = conTramo(LA_POPULAR);
+        expect(a.aportes).toEqual([]);
+        expect(b.aportes).toEqual([{ hora: '13:03:00', tramo: 0.80 }]);
+    });
+
+    it('con dos orígenes lleva los dos: nombrar uno de dos sería inventar', () => {
+        const serie = conTramo([
+            corte({ hora: '10:00:00', estado: 'CONFIRMADO', total_declarado: 100.50, diferencia_erp: 0.50, tk_total_caja: 100.00, tk_cobros_credito: null }),
+            corte({ hora: '11:00:00', estado: 'CONFIRMADO', total_declarado: 200.80, diferencia_erp: 0.80, tk_total_caja: 200.00, tk_cobros_credito: null }),
+            corte({ hora: '12:00:00', estado: 'CONFIRMADO', total_declarado: 300.80, diferencia_erp: 0.80, tk_total_caja: 300.00, tk_cobros_credito: null }),
+        ]);
+        expect(serie[2].arrastre).toBe(0.80);
+        expect(serie[2].aportes.map((x) => x.hora)).toEqual(['10:00:00', '11:00:00']);
+    });
+
+    it('un descartado no aporta al arrastre ni lo hereda', () => {
+        const serie = conTramo([
+            corte({ hora: '10:00:00', estado: 'DESCARTADO', total_declarado: 90.00, diferencia_erp: -10.00, tk_total_caja: 100.00, tk_cobros_credito: null }),
+            corte({ hora: '11:00:00', estado: 'CONFIRMADO', total_declarado: 200.00, diferencia_erp: 0, tk_total_caja: 200.00, tk_cobros_credito: null }),
+        ]);
+        expect(serie[0].arrastre).toBe(0);
+        expect(serie[0].aportes).toEqual([]);
+        expect(serie[1].arrastre).toBe(0);
+    });
+});
+
 describe('repartir una reposición entre quienes aportan', () => {
     it('no pierde ni inventa centavos al dividir', () => {
         // $1.25 entre dos: 0.63 + 0.62. Redondear cada parte daría 1.26 o 1.24, y

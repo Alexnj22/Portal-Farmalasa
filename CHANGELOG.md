@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.983.1 — La tarjeta del corte dice el sobrante que el día ya cargaba
+
+El corte de las 19:02 de La Popular mostraba **$0.00** y el día seguía
+cargando **+$0.80**. El $0.00 es correcto —ese tramo no movió nada, el
+sobrante ya estaba contado en el corte de las 13:03— pero leído solo dice
+«acá cuadró todo», y el sobrante del día desaparece de la vista en cuanto
+pasa un corte que cuadra. El detalle sí lo decía («Acumulado hasta esta
+hora»); la tarjeta, que es lo que se mira primero, no.
+
+Ahora lleva una línea: **«+$0.80 de sobrante viene del corte de las 13:03»**.
+Nombra el corte de origen cuando fue uno solo; con varios dice cuántos, porque
+nombrar uno de tres es una precisión que el dato no tiene y en una cifra de
+dinero eso manda a revisar el corte equivocado.
+
+El cálculo vive en `conTramo` —el mismo canónico del tramo, con cinco casos
+anclados en pruebas— y no en la tarjeta: la lista de aportes se copia **antes**
+de que el corte se agregue a ella, si no cada tarjeta se nombraría a sí misma
+como origen de su propio arrastre.
+
 ## v2.983.0 — El panel del día muestra la cuenta entera del efectivo
 
 Reportado desde la sala mirando su propia pantalla: *«en caja no debería haber

@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.992.1 — El badge de ajuste deja de gritar en casi todas las filas
+
+Reportado con una captura: **«¿por qué todos dicen en conflicto?»** — en Salud 2
+lo decían 59 de 65 filas. Eran dos defectos encima del otro, y los dos hacen que
+`manual_at` signifique menos de lo que parece.
+
+**`manual_at` sólo crecía.** Publicar reemplaza el número por el calculado, pero
+dejaba intacta la firma de quien lo había tocado antes. Medido: de 1,141 filas
+que decían «a mano», **926 se habían publicado encima** — el valor era el del
+cálculo y la fila seguía firmada por una persona. En Salud 2, 180 de 216.
+
+Ahora publicar (y el auto-aplicar) limpian `manual_at`/`manual_por`/`manual_nota`
+y el sello de la solicitud. `manual_motivo` sobrevive a propósito: es una
+declaración sobre el PRODUCTO, no sobre el número, y «ya no rota» usa `manual_at`
+como fecha de corte del historial de ventas — borrarla dejándole el motivo haría
+desaparecer el corte sin que nadie lo note. Las 926 viejas se limpiaron.
+
+**Y el badge no distinguía decisión de edición.** Bastaba `manual_at` + un
+borrador distinto para gritar EN CONFLICTO, o sea cualquier fila que alguien tocó
+alguna vez y que el cálculo vuelve a proponer — que es lo NORMAL cada mes.
+
+`estadoAjuste` ahora usa el mismo corte que el freno: **A MANO** (neutro, sin
+nada que decidir: el cálculo del mes que viene lo va a reemplazar) para lo
+tecleado, y EN CONFLICTO / RESPETADO / VOLVIÓ A MOVERSE sólo para lo sellado por
+una solicitud aprobada o un motivo declarado.
+
+Salud 2 pasa de **59 filas en conflicto** a 6 selladas y 16 a mano.
+
+
 ## v2.992.0 — Leer una notificación la quita de la campana
 
 Pedido del usuario: «al leer las notificaciones en la campana, que se quiten de

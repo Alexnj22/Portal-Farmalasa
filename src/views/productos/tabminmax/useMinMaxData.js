@@ -44,15 +44,31 @@ const warnIfOutrageous = (field, numVal, row) => {
 };
 
 /**
- * En cuál de los tres estados está un ajuste puesto por una persona.
+ * En cuál de los cuatro estados está un ajuste puesto por una persona.
  *
- * Devuelve null si nadie tocó la fila — que es el caso de casi todas. El orden
- * importa: «volvió a moverse» gana sobre «en conflicto» porque dice algo más
- * fuerte (el motivo que se declaró dejó de ser cierto), y quien lo mire va a
- * querer resolver eso antes que el desacuerdo de números.
+ * `a_mano` es el más flojo y los otros tres son SELLADOS: vienen de una
+ * solicitud aprobada o de un motivo declarado. Esa separación es la misma que
+ * hace el freno de publicar, y hasta el 2026-09-04 no existía acá: bastaba
+ * `manual_at` + un borrador distinto para gritar EN CONFLICTO, o sea que
+ * cualquier fila que alguien tocó alguna vez y que el cálculo vuelve a proponer
+ * salía marcada. En Salud 2 eran **59 de 65 filas**, y un indicador que marca
+ * casi todo no indica nada.
+ *
+ * (La otra mitad de ese arreglo está en la base: publicar ahora limpia
+ * `manual_at`, así que la firma describe el número de HOY y no cualquier cosa
+ * que se hizo hace tres meses. Eran 926 filas arrastrando una firma vieja.)
+ *
+ * El orden importa: «volvió a moverse» gana sobre «en conflicto» porque dice
+ * algo más fuerte —el motivo que se declaró dejó de ser cierto— y quien lo mire
+ * va a querer resolver eso antes que el desacuerdo de números.
  */
 export const estadoAjuste = (r) => {
     if (!r?._manual_at) return null;
+
+    // Sin sello, la fila sólo dice «este número lo puso una persona y todavía no
+    // se publicó encima». Es información, no una decisión pendiente: el cálculo
+    // del mes que viene la va a reemplazar como a cualquier otra.
+    if (!r._ajuste_solicitud_id && !r._manual_motivo) return 'a_mano';
 
     // El motivo era «ya no rota» y el producto volvió a venderse después de que
     // alguien lo dijera. `last_sale_date` es una fecha sin hora: se compara

@@ -72,10 +72,22 @@ export const MOTIVO_AJUSTE = {
 // Los tres estados de un ajuste. El orden es el de urgencia: lo primero que hay
 // que mirar es lo que el cálculo contradice.
 export const AJUSTE_CFGS = [
+    // «A mano» va primero porque es el más común y el más flojo: sólo dice que
+    // el número de hoy lo escribió una persona. Los otros tres son SELLADOS —
+    // solicitud aprobada o motivo declarado— y son los únicos que el cálculo
+    // del mes que viene respeta.
+    {
+        key: 'a_mano',
+        label: 'A mano',
+        ayuda: 'Este número lo escribió una persona en la revisión del mes. El cálculo del mes que viene lo va a reemplazar.',
+        dot: 'bg-content-3',
+        active: 'bg-surface-card-hover backdrop-blur-sm border-border-card text-content-2',
+        chipActive: 'bg-surface-card-hover text-content-2',
+    },
     {
         key: 'en_conflicto',
         label: 'En conflicto',
-        ayuda: 'Alguien puso este número y el cálculo propone otro. Hay que decidir cuál queda.',
+        ayuda: 'Se aprobó una solicitud con este número y el cálculo propone otro. Hay que decidir cuál queda.',
         dot: 'bg-stock-approaching',
         active: 'bg-stock-approaching/20 backdrop-blur-sm border-stock-approaching/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]',
         chipActive: 'bg-stock-approaching/10 text-warning-text',

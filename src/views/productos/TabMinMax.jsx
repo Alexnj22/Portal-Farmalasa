@@ -877,9 +877,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             row._manual_nota || null,
                                                             'Toca para ver quién y por qué',
                                                         ].filter(Boolean).join(' · ');
+                                                        // «A mano» va NEUTRO: no hay nada que decidir, sólo
+                                                        // dice quién escribió el número de hoy. Los colores
+                                                        // de aviso quedan para lo sellado, que sí pide algo.
                                                         const variant = est === 'en_conflicto' ? 'warning'
                                                             : est === 'volvio_a_moverse' ? 'chart-1'
-                                                            : est ? 'success' : 'chart-3';
+                                                            : est === 'respetado' ? 'success'
+                                                            : 'neutral';
                                                         return (
                                                             <Badge
                                                                 title={detalle}

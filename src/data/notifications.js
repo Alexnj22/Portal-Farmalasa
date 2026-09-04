@@ -73,9 +73,13 @@ export const DIAS_VISIBLES = 60;
  * borren de ahí».
  *
  * Así que `deleted_at` dejó de significar «está en la papelera» y significa
- * «salió de la campana». El listado las muestra igual — el estado `todas` NO
- * filtra por esa columna— y `fuera` es sólo la vista de cuáles se sacaron, para
- * poder devolverlas. Un aviso ya no se puede perder de vista por un toque.
+ * «salió de la campana». El listado las muestra igual: NINGÚN estado filtra por
+ * esa columna. Hubo una pestaña «Fuera de la campana» y duró una hora — el
+ * usuario la mandó quitar el mismo día: «esto no debe estar, debe salir en el
+ * listado completo siempre». Tenía razón y es la misma idea llevada hasta el
+ * final: una pestaña aparte vuelve a partir el listado justo por el criterio que
+ * se acababa de decidir que no debe partirlo. Lo único que distingue a un aviso
+ * quitado es su botón de «Devolver», en su propia fila.
  *
  * Pagina con `range` y pide `count: 'exact'` en la misma ida: el pie necesita
  * el total para saber cuántas páginas hay, y pedirlo aparte serían dos viajes
@@ -94,25 +98,20 @@ export const DIAS_VISIBLES = 60;
  * ventana. Acusaba a una consulta paginada de no estarlo — y la salida correcta
  * no es una excepción, es que la paginación se lea de un vistazo.
  *
- * @param estado  'todas' | 'sin_leer' | 'fuera'
+ * @param estado  'todas' | 'sin_leer'
  * @param busca   texto libre sobre título y cuerpo, o null
  */
 export function fetchNotificationsPage({ estado = 'todas', busca = null, pagina = 0, porPagina = 25 } = {}) {
-    /* Las que salieron de la campana se ordenan por CUÁNDO se sacaron: en esa
-       pestaña lo que uno busca es «lo que acabo de quitar», y un aviso viejo
-       sacado hoy quedaría al fondo con el otro orden. */
-    const orden = estado === 'fuera' ? 'deleted_at' : 'created_at';
     const piso = new Date(Date.now() - DIAS_VISIBLES * 86400000).toISOString();
 
     let q = supabase.from('notifications')
         .select(CAMPOS, { count: 'exact' })
-        .order(orden, { ascending: false })
+        .order('created_at', { ascending: false })
         .range(pagina * porPagina, pagina * porPagina + porPagina - 1)
         .gte('created_at', piso);
 
-    // `todas` NO mira `deleted_at`: ése es el punto de esta pantalla.
-    if (estado === 'fuera')         q = q.not('deleted_at', 'is', null);
-    else if (estado === 'sin_leer') q = q.is('read_at', null);
+    // Ningún estado mira `deleted_at`: ése es el punto de esta pantalla.
+    if (estado === 'sin_leer') q = q.is('read_at', null);
 
     if (busca) {
         const t = escaparBusqueda(busca);

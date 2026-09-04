@@ -120,7 +120,7 @@ export const createNotificationsSlice = (set, get) => ({
 
     /* Borrar es OCULTAR: se escribe `deleted_at` y la fila queda en la base
        hasta que la purgue el cron de los 90 días. Lo que sale de la campana se
-       puede ver y devolver desde `/notificaciones` → pestaña «Borradas». La
+       puede ver y devolver desde `/notificaciones`, que lo muestra igual. La
        policy de DELETE se quitó en la migración `20260904141450`, así que esto
        ya no es una convención de este archivo: no hay forma de destruirla desde
        el navegador.

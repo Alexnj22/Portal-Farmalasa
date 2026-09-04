@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.988.1 — Lo quitado de la campana se mezcla en el listado
+
+Se va la pestaña «Fuera de la campana», que duró una hora. Reportado con
+captura: «esto no debe estar, debe salir en el listado completo siempre».
+
+Tenía razón, y es la idea de ayer llevada hasta el final: una pestaña aparte
+vuelve a **partir el listado justo por el criterio que se acababa de decidir que
+no debe partirlo**, y deja al aviso quitado en un rincón al que hay que ir a
+propósito. Ahora hay dos pestañas —**Todas** y **Sin leer**— y lo que salió de la
+campana aparece mezclado con el resto, en su lugar por fecha.
+
+Lo único que lo distingue es su propia fila: la marca **«Fuera de la campana
+desde las …»** y el botón **Devolver**. La marca ya no dice «Borrada» — no se
+borró nada, la fila está a la vista.
+
+### La prueba sólo pasaba una vez, y lo descubrí midiendo
+
+Verificando esto encontré un defecto en el test que había escrito el día antes.
+Comprobaba la regla sobre los avisos ya quitados que traía la siembra, y había
+**exactamente uno** en la página 1: el paso final lo devolvía, así que la segunda
+corrida encontraba cero y fallaba. Verde el día que se escribe, rojo el día que
+alguien lo hereda.
+
+Hoy hace el recorrido completo y **fabrica su propia condición**: abre la
+campana, quita un aviso, espera a que pase la ventana de deshacer, y lo busca en
+el listado. Corrido dos veces seguidas, verde las dos.
+
+Y una segunda aserción estaba mal por el mismo tipo de descuido: esperaba que la
+marca llegara a **cero** después de devolver, pero la búsqueda es por título y
+los avisos sembrados repiten el suyo. Acusaba al portal de no haber devuelto nada
+cuando sí lo había hecho. Se mide la resta.
+
+### Verificado también: a la vista se entra SÓLO por la campana
+
+Confirmado en el navegador, no de memoria: **ningún `<a>` del portal apunta a
+`/notificaciones`** (medido sobre el DOM pintado), no está en `MODULE_MAP` así
+que no sale en el menú lateral, y el buscador del menú tampoco la ofrece —lo que
+parecía un resultado era el texto del diálogo de permisos, que dice «busca
+Notificaciones»—. La única entrada es «Ver todas» al pie del panel de la campana,
+y se comprobó que lleva ahí.
+
 ## v2.990.0 — El aviso de la mañana: quién abrió caja en cada sala y a qué hora
 
 Pedido del usuario: *«al todas las sucursales por la mañana aperturar, enviame

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Bell, BellOff, BellOff as Fuera, Check, RotateCcw, Search, Inbox,
+    Bell, BellOff, Check, RotateCcw, Search, Inbox,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -48,16 +48,20 @@ import { fetchNotificationsPage, DIAS_VISIBLES } from '../data/notifications';
  * nace incompleta, que es exactamente lo que pasó acá.
  */
 
-/* Los tres cortes del listado.
+/* Los dos cortes del listado.
  *
- * «Todas» primero y por defecto: desde el 2026-09-04 esta pantalla es el
- * REGISTRO —lo que se borra en la campana sigue acá— y lo primero que uno
- * quiere ver es todo. «Fuera de la campana» no es una papelera: es la vista de
- * cuáles se quitaron de la bandeja, para poder devolverlas. */
+ * «Todas» primero y por defecto: esta pantalla es el REGISTRO —lo que se quita
+ * de la campana sigue acá— y lo primero que uno quiere ver es todo.
+ *
+ * Hubo una tercera, «Fuera de la campana», y duró una hora: el usuario la mandó
+ * quitar el mismo día —«esto no debe estar, debe salir en el listado completo
+ * siempre»—. Es la misma idea llevada hasta el final: una pestaña aparte vuelve
+ * a partir el listado justo por el criterio que se acababa de decidir que no
+ * debe partirlo, y deja al aviso quitado en un rincón al que hay que ir. Lo
+ * único que lo distingue ahora es su propio botón de «Devolver». */
 const PESTANAS = [
-    { key: 'todas',    label: 'Todas',             icon: Inbox },
-    { key: 'sin_leer', label: 'Sin leer',          icon: Bell },
-    { key: 'fuera',    label: 'Fuera de la campana', icon: Fuera },
+    { key: 'todas',    label: 'Todas',    icon: Inbox },
+    { key: 'sin_leer', label: 'Sin leer', icon: Bell },
 ];
 
 const POR_PAGINA_DEFECTO = 25;
@@ -240,7 +244,7 @@ export default function NotificacionesView() {
                     y no un recorte que había que recordar quitar. */}
                 <div className="max-w-3xl mx-auto">
                     <span className="block text-micro font-black uppercase tracking-widest text-content-3">
-                        {tab === 'fuera' ? 'Fuera de la campana' : tab === 'sin_leer' ? 'Sin leer' : 'En total'}
+                        {tab === 'sin_leer' ? 'Sin leer' : 'En total'}
                     </span>
                     <span className="block text-h3 font-black tabular-nums text-content">
                         {cargando ? '—' : total.toLocaleString('es-SV')}
@@ -252,9 +256,7 @@ export default function NotificacionesView() {
                     igual si no hubo más avisos que si el corte ya se los comió. */}
                 <div className="max-w-3xl mx-auto">
                     <Notice variant="info" icon={Bell}>
-                        {tab === 'fuera'
-                            ? `Éstas se quitaron de la campana y siguen aquí. Se pueden devolver, y el listado guarda los últimos ${DIAS_VISIBLES} días.`
-                            : `El listado guarda los últimos ${DIAS_VISIBLES} días. Lo que se quita de la campana sigue apareciendo aquí.`}
+                        {`El listado guarda los últimos ${DIAS_VISIBLES} días. Lo que se quita de la campana sigue apareciendo aquí y se puede devolver.`}
                     </Notice>
                 </div>
 
@@ -336,10 +338,6 @@ const VacioDe = ({ tab, busqueda, onLimpiar }) => {
                 subtitle={`Ningún aviso coincide con «${busqueda}» en lo que estás mirando.`}
                 action={<Button variant="secondary" onClick={onLimpiar}>Limpiar la búsqueda</Button>} />
         );
-    }
-    if (tab === 'fuera') {
-        return <EmptyState compact icon={Fuera} title="Sin avisos fuera de la campana"
-            subtitle="Lo que quites de la campana aparece aquí y se puede devolver." />;
     }
     if (tab === 'sin_leer') {
         return <EmptyState compact icon={Check} title="Estás al día"

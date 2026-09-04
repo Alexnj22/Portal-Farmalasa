@@ -259,12 +259,15 @@ const TarjetaDeAviso = ({
                             es contexto, no acción, y en mayúsculas competía de
                             igual a igual con «VER». */}
                         <span className={`text-caption font-medium tabular-nums ${cx.rowTime}`}>{cuandoLlego(n.created_at)}</span>
-                        {/* Cuándo se sacó de la campana. Sólo lo pinta la
-                            papelera —donde `n.deleted_at` existe—: en la campana
-                            la columna viene siempre nula y no dibuja nada. */}
+                        {/* Que este aviso salió de la bandeja. Dice «fuera de la
+                            campana» y no «borrada» porque no se borró nada: la
+                            fila está acá, a la vista, y su botón «Devolver» la
+                            regresa. Sólo lo pinta el listado — en la campana la
+                            columna viene siempre nula, porque lo que tiene fecha
+                            ahí justamente no se muestra. */}
                         {n.deleted_at && (
                             <span className="text-caption font-semibold text-warning-text">
-                                Borrada el {cuandoLlego(n.deleted_at)}
+                                Fuera de la campana desde las {cuandoLlego(n.deleted_at)}
                             </span>
                         )}
                         {/* El verbo del TOQUE. «Ver detalle» dejó de vivir acá

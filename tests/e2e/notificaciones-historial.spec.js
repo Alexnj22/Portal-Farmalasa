@@ -85,28 +85,57 @@ test.describe('Listado de notificaciones', () => {
             .toBeLessThan(160);
 
         // ── 3. La pestaña vive en la DIRECCIÓN ───────────────────────────────
-        await page.getByRole('tab', { name: /Fuera de la campana/ }).click();
-        await expect(page).toHaveURL(/[?&]tab=fuera/);
+        await page.getByRole('tab', { name: /^Sin leer$/ }).click();
+        await expect(page).toHaveURL(/[?&]tab=sin_leer/);
         await page.waitForLoadState('networkidle');
-        const fuera = await leerTotal('Fuera de la campana');
-        expect(fuera, 'tiene que haber avisos quitados de la campana').toBeGreaterThan(0);
+        expect(await leerTotal('Sin leer'), 'tiene que haber avisos sin leer').toBeGreaterThan(0);
 
-        // ── 4. LA REGLA: lo quitado de la campana SIGUE en «Todas» ───────────
-        // Se comprueba por el TÍTULO de uno concreto y no por el conteo: un
-        // conteo mayor podría cuadrar por casualidad, y lo que se pidió es que
-        // ese aviso no desaparezca.
-        const titulo = (await fichas.first().locator('p').first().innerText()).trim();
-        expect(titulo.length, 'hace falta un aviso quitado para poder buscarlo').toBeGreaterThan(3);
+        // ── 4. LA REGLA: lo que se quita de la CAMPANA sigue en el listado ──
+        //
+        // Se hace el recorrido entero —quitar en la campana, buscarlo en el
+        // listado— en vez de mirar los avisos ya quitados que trae la siembra.
+        // La primera versión hacía eso último y **sólo pasaba una vez**: había
+        // exactamente uno en la página 1, el paso final lo devolvía, y la
+        // segunda corrida encontraba cero. Un test que se gasta a sí mismo da
+        // verde el día que se escribe y rojo el día que alguien lo hereda.
+        await abrir('/inicio');
+        await page.locator('button[aria-label="Notificaciones"]:visible').first().click();
+        await page.waitForTimeout(1200);
+        const enLaCampana = page.locator('[data-surface="card"]');
+        await expect(enLaCampana.first()).toBeVisible({ timeout: 15_000 });
+        const elegido = (await enLaCampana.first().locator('p').first().innerText()).trim();
+        expect(elegido.length, 'hace falta un aviso en la campana').toBeGreaterThan(3);
 
+        await enLaCampana.first().locator('button[title="Borrar"]').click();
+        await page.waitForTimeout(4000);   // pasada la ventana de deshacer (3 s)
+
+        // Y ahí está, en el listado completo, con su marca y su «Devolver».
         await abrir('/notificaciones?tab=todas');
         await page.getByRole('button', { name: 'Buscar', exact: true }).first().click();
-        await page.locator('input[placeholder*="Buscar en el texto"]').first().fill(titulo.slice(0, 24));
+        await page.locator('input[placeholder*="Buscar en el texto"]').first().fill(elegido.slice(0, 24));
         await page.waitForTimeout(1200);            // el freno de 350 ms + la ida
         await page.waitForLoadState('networkidle');
-        const conFiltro = await leerTotal('En total');
-        expect(conFiltro, 'un aviso quitado de la campana tiene que seguir apareciendo en «Todas»')
-            .toBeGreaterThan(0);
-        expect(conFiltro, 'y la búsqueda tiene que acotar de verdad').toBeLessThan(todas);
+        expect(await leerTotal('En total'),
+            'lo que se quita de la campana tiene que seguir en el listado').toBeGreaterThan(0);
+
+        const devolver = page.getByRole('button', { name: /Devolver/ });
+        expect(await devolver.count(), 'y ofrecer devolverlo').toBeGreaterThan(0);
+        // Su marca dice «fuera de la campana», no «borrada»: no se borró nada.
+        const marca = page.getByText(/Fuera de la campana desde las/);
+        const marcasAntes = await marca.count();
+        expect(marcasAntes, 'la marca de «fuera de la campana» tiene que estar').toBeGreaterThan(0);
+
+        /* Devolverlo lo saca de esa condición SIN sacarlo del listado.
+           Se mide la RESTA y no un cero: la búsqueda es por título y los avisos
+           sembrados repiten el suyo, así que después de devolver uno quedan los
+           demás marcados. Esperar cero acusaba al portal de no haber devuelto
+           nada cuando sí lo había hecho. */
+        const totalAntes = await leerTotal('En total');
+        await devolver.first().click();
+        await page.waitForTimeout(1500);
+        await expect(marca).toHaveCount(marcasAntes - 1, { timeout: 10_000 });
+        expect(await leerTotal('En total'),
+            'devolver NO lo saca del listado: el total no se mueve').toBe(totalAntes);
 
         // ── 5. La hora si es de hoy, la fecha y la hora si es de antes ──────
         // Y de paso: entrar con `?pag=N` tiene que RESPETAR esa página. Las dos
@@ -139,15 +168,5 @@ test.describe('Listado de notificaciones', () => {
         expect(await page.locator('button[title="Mover a Borradas"]').count(),
             'el listado no puede ofrecer borrar').toBe(0);
 
-        // ── 7. Devolver a la campana funciona y RESTA de su pestaña ──────────
-        await abrir('/notificaciones?tab=fuera');
-        const antes = await leerTotal('Fuera de la campana');
-        await page.getByRole('button', { name: /Devolver/ }).first().click();
-        await page.waitForTimeout(1500);
-        await page.reload();
-        await page.waitForLoadState('networkidle');
-        await taparElAviso();
-        const despues = await leerTotal('Fuera de la campana');
-        expect(despues, 'devolver tiene que restarla de «Fuera de la campana»').toBe(antes - 1);
     });
 });

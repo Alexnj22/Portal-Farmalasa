@@ -316,7 +316,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         hiddenIds, setHiddenIds,
         skipBlurSave,
         publishConfirm, setPublishConfirm,
-        discardConfirm, setDiscardConfirm,
+        discardConfirm, setDiscardConfirm, aDescartar,
         zeroAllConfirm, setZeroAllConfirm,
         calcularConfirm, setCalcularConfirm,
         discardRowConfirm, setDiscardRowConfirm,
@@ -1563,12 +1563,62 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 onClose={() => setMotivoRow(null)}
             />
 
+            {/* El ALCANCE se elige acá cuando hay filas ajustadas a mano, con el
+                mismo criterio que el diálogo de recalcular: dos caminos que se
+                distinguen por una condición no van en dos botones afuera.
+
+                Antes no había elección — la pantalla mandaba siempre el barrido,
+                que deja quieta toda fila con ajuste manual, y el número se
+                enteraba después en un toast de 3.5 s. */}
             <ConfirmModal
                 isOpen={publishConfirm.open}
-                onClose={() => setPublishConfirm({ open: false, ids: null, count: 0 })}
-                onConfirm={() => startDeferredPublish(publishConfirm.ids, publishConfirm.count)}
+                onClose={() => setPublishConfirm({ ...publishConfirm, open: false })}
+                onConfirm={() => {
+                    const soloSin = publishConfirm.modo === 'sin_ajuste';
+                    const ids   = soloSin ? publishConfirm.idsSinAjuste : publishConfirm.idsTodos;
+                    const fuera = soloSin ? publishConfirm.ajustadas : 0;
+                    startDeferredPublish(ids, ids.length, fuera);
+                }}
                 title={`¿Publicar ${publishConfirm.count} borrador${publishConfirm.count !== 1 ? 'es' : ''}?`}
-                message={`Se aplicarán los valores MIN/MAX en ${ERP_NAMES[selectedErp]}. Tendrás 5 segundos para cancelar.`}
+                message={
+                    <div className="flex flex-col gap-3 text-left">
+                        <p className="text-body font-medium leading-relaxed text-content-3">
+                            Se aplicarán los valores MIN/MAX en {ERP_NAMES[selectedErp]}. Tendrás 5 segundos para cancelar.
+                        </p>
+                        {publishConfirm.ajustadas > 0 && (
+                            <>
+                                <p className="text-body font-medium leading-relaxed text-content-3">
+                                    <strong className="text-content-1">
+                                        {publishConfirm.ajustadas} de estos borradores
+                                    </strong>{' '}
+                                    caen sobre productos cuyo número actual lo puso una persona
+                                    {/* Crudo, igual que el badge AJUSTADO de la fila: `manual_por`
+                                        guarda lo que devolvió `auth.email()`, que a veces es un
+                                        nombre y a veces una cuenta — no es `employees.name`. */}
+                                    {publishConfirm.ajustePor ? `; el último, ${publishConfirm.ajustePor}` : ''}
+                                    {publishConfirm.ajusteAt
+                                        ? ` el ${new Date(publishConfirm.ajusteAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                                        : ''}.
+                                </p>
+                                <SegmentedControl
+                                    size="sm"
+                                    label="Qué hacer con esos"
+                                    value={publishConfirm.modo}
+                                    onChange={m => setPublishConfirm(c => ({ ...c, modo: m }))}
+                                    options={[
+                                        { value: 'todos',      label: `Publicar los ${publishConfirm.count}` },
+                                        { value: 'sin_ajuste', label: `Dejar esos ${publishConfirm.ajustadas} como están` },
+                                    ]}
+                                />
+                                <p className="text-caption leading-relaxed text-content-3">
+                                    {publishConfirm.modo === 'todos'
+                                        ? 'El borrador reemplaza el número que puso la persona.'
+                                        : `Se publican ${publishConfirm.idsSinAjuste.length}; los ajustados quedan igual y su borrador sigue esperando.`}
+                                </p>
+                            </>
+                        )}
+                    </div>
+                }
                 confirmText="Publicar"
                 cancelText="Cancelar"
                 isDestructive={false}
@@ -1660,7 +1710,26 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 onClose={() => setDiscardConfirm(false)}
                 onConfirm={handleDiscardAll}
                 title={`¿Descartar ${draftCount} borrador${draftCount !== 1 ? 'es' : ''}?`}
-                message={`Los valores calculados de ${ERP_NAMES[selectedErp]} se descartarán y volverán al MIN/MAX publicado actual. Esta acción no se puede deshacer.`}
+                /* El segundo párrafo existe porque este botón limpia DOS cosas y
+                   sólo una está en pantalla: el diálogo prometía 38 y el aviso
+                   volvía con 735. Se nombra antes, no después. */
+                message={
+                    <div className="flex flex-col gap-3 text-left">
+                        <p className="text-body font-medium leading-relaxed text-content-3">
+                            Los valores calculados de {ERP_NAMES[selectedErp]} se descartarán y volverán
+                            al MIN/MAX publicado actual. Esta acción no se puede deshacer.
+                        </p>
+                        {aDescartar.sinDatos > 0 && (
+                            <p className="text-body font-medium leading-relaxed text-content-3">
+                                También se limpiarán{' '}
+                                <strong className="text-content-1">
+                                    {aDescartar.sinDatos.toLocaleString()} productos con pocas ventas
+                                </strong>{' '}
+                                para calcular — no salen en esta lista y vuelven solos en el próximo cálculo.
+                            </p>
+                        )}
+                    </div>
+                }
                 confirmText="Descartar"
                 cancelText="Cancelar"
                 isDestructive={true}

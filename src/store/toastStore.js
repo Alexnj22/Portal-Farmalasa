@@ -38,8 +38,15 @@ const sanear = (message, type, humano) => {
  * sitio nuevo escrito mañana no se va a acordar de pasar el número. Quien
  * necesite otro, lo pasa — un `duration` explícito sigue mandando.
  *
- * Y el aviso tiene su ✕: alargarlo no deja a nadie esperando. */
-const PLAZO = { error: 10000, otros: 3500 };
+ * Y el aviso tiene su ✕: alargarlo no deja a nadie esperando.
+ *
+ * `info` se separó el 2026-09-04 por el mismo motivo, medido otra vez: un
+ * `info` no confirma lo que se pidió —para eso está `success`—, dice que pasó
+ * algo DISTINTO y casi siempre trae un número que hay que cruzar contra lo que
+ * uno tenía en la cabeza. «Publicó 0 borradores exitosamente · 38 sin tocar,
+ * las ajustó alguien a mano» son 74 caracteres y una pregunta; en 3.5 s no se
+ * lee, y el reporte fue literal: «no alcancé a leer». Son 21 de 428. */
+const PLAZO = { error: 10000, info: 8000, otros: 3500 };
 
 export const useToastStore = create((set, get) => ({
     isOpen: false,
@@ -50,7 +57,7 @@ export const useToastStore = create((set, get) => ({
     showToast: (title, message, type = 'success', duration, { humano = false } = {}) => {
         const prev = get()._timer;
         if (prev) clearTimeout(prev);
-        const vive = duration ?? (type === 'error' ? PLAZO.error : PLAZO.otros);
+        const vive = duration ?? PLAZO[type] ?? PLAZO.otros;
         const timer = setTimeout(() => set({ isOpen: false, _timer: null }), vive);
         set({ isOpen: true, title, message: sanear(message, type, humano), type, _timer: timer });
     },

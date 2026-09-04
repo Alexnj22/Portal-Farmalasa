@@ -107,7 +107,10 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
     const publishTimer     = useRef(null);
     const skipBlurSave     = useRef(false);
-    const [publishConfirm,  setPublishConfirm]  = useState({ open: false, ids: null, count: 0 });
+    const [publishConfirm,  setPublishConfirm]  = useState({
+        open: false, ids: null, count: 0, modo: 'todos',
+        idsTodos: [], idsSinAjuste: [], ajustadas: 0, ajustePor: null, ajusteAt: null,
+    });
     const [discardConfirm,  setDiscardConfirm]  = useState(false);
     const [zeroAllConfirm,  setZeroAllConfirm]  = useState({ open: false, row: null });
     const [calcularConfirm, setCalcularConfirm] = useState({ open: false, mode: null });
@@ -786,6 +789,29 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         });
     }, []);
 
+    /**
+     * Qué se lleva «Descartar», contado ACÁ y no después.
+     *
+     * `discard_stock_drafts` limpia `draft_status IN ('pending','sparse_data')`,
+     * o sea DOS cosas: los borradores que la pantalla lista, y las filas de
+     * «datos escasos» —productos con una o dos ventas en seis meses, que no
+     * aparecen en esa lista y tienen su propio filtro—. El diálogo prometía 38
+     * y el aviso volvía con 735, que es como se lee un botón que hizo algo que
+     * nadie pidió (reportado el 2026-09-04: «ese aviso me asustó»).
+     *
+     * Los ocultos entran igual: el RPC no los filtra, así que contarlos afuera
+     * dejaría un resto sin explicar.
+     */
+    const aDescartar = useMemo(() => {
+        let borradores = 0, sinDatos = 0;
+        for (const r of data) {
+            if (r._erp_sucursal_id !== selectedErp) continue;
+            if (r.draft_status === 'pending')     borradores++;
+            if (r.draft_status === 'sparse_data') sinDatos++;
+        }
+        return { borradores, sinDatos, total: borradores + sinDatos };
+    }, [data, selectedErp]);
+
     // Descarta todos los borradores de la sucursal actual usando el RPC discard_stock_drafts.
     const handleDiscardAll = useCallback(async () => {
         setDiscardingAll(true);
@@ -793,10 +819,25 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         setDiscardingAll(false);
         setDiscardConfirm(false);
         if (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Error al descartar: ${mensajeAmigable(e)}`, 'error'); return; }
-        useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${count ?? 0} borradores descartados`, 'success');
-        useStaff.getState().appendAuditLog('MINMAX_DISCARD_ALL', String(selectedErp), { sucursal: ERP_NAMES[selectedErp], count });
+        const total = count ?? 0;
+        // El desglose sólo se afirma si CUADRA con lo que el servidor dice haber
+        // tocado. Si no cuadra —otra sesión publicó en el medio, un recálculo
+        // entró recién— se informa el total a secas: un desglose que no suma
+        // sería la misma sorpresa con más palabras.
+        const cuadra = aDescartar.total === total && aDescartar.sinDatos > 0;
+        useToastStore.getState().showToast(
+            ERP_NAMES[selectedErp],
+            cuadra
+                ? `${aDescartar.borradores.toLocaleString()} borradores descartados · también se limpiaron ${aDescartar.sinDatos.toLocaleString()} productos con pocas ventas para calcular, que vuelven en el próximo cálculo`
+                : `${total.toLocaleString()} borradores descartados`,
+            cuadra ? 'info' : 'success',
+        );
+        useStaff.getState().appendAuditLog('MINMAX_DISCARD_ALL', String(selectedErp), {
+            sucursal: ERP_NAMES[selectedErp], count,
+            borradores: aDescartar.borradores, sin_datos: aDescartar.sinDatos,
+        });
         await loadData(selectedErp);
-    }, [selectedErp, loadData]);
+    }, [selectedErp, loadData, aDescartar]);
 
 
     const openHistory = useCallback(async (row) => {
@@ -869,12 +910,59 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         }
     }, [motivoRow]);
 
+    /**
+     * Arma la confirmación de publicar CON lo que hay que saber antes de
+     * decidir, no después.
+     *
+     * `publish_stock_params` tiene dos modos y la diferencia importa: el
+     * barrido (sin ids) deja quieta toda fila con `manual_at`, y la publicación
+     * dirigida a productos concretos sí la pisa —«porque alguien los eligió uno
+     * por uno», dice su comentario—. Hasta hoy la pantalla mandaba siempre el
+     * barrido y el resultado se enteraba en un toast: «Publicó 0 borradores ·
+     * 38 sin tocar, las ajustó alguien a mano».
+     *
+     * Ese aviso además leía al revés lo que había pasado. `manual_at` marca
+     * quién tocó el número VIGENTE, meses atrás; el borrador que se está
+     * publicando lo puede haber tecleado una persona hace veinte minutos, y no
+     * deja marca de ninguna clase. Medido en Salud 1 el 2026-09-02: alguien
+     * editó 38 borradores a mano durante 45 minutos, apretó Publicar, y el
+     * portal frenó los 38 nombrando «alguien» a quien estaba esperando.
+     *
+     * Así que el alcance se elige acá, viendo el número y el nombre.
+     */
     const requestPublish = useCallback((ids = null) => {
-        const count = ids ? ids.length : draftCount;
-        setPublishConfirm({ open: true, ids: ids ?? null, count });
-    }, [draftCount]);
+        const soloEstos = ids ? new Set(ids) : null;
+        // Mismo criterio que `draftCount` — ocultos fuera, Bodega aparte — para
+        // que el título del diálogo no discuta con el badge del botón.
+        const alcance = data.filter(r =>
+            !r.is_hidden
+            && r.draft_status === 'pending'
+            && r._erp_sucursal_id !== 6
+            && (!soloEstos || soloEstos.has(r.erp_product_id)));
+        const ajustadas = alcance.filter(r => r._manual_at);
+        const ultimo = ajustadas.reduce(
+            (a, r) => (!a || String(r._manual_at) > String(a._manual_at) ? r : a), null);
+        setPublishConfirm({
+            open: true,
+            ids: ids ?? null,
+            count: alcance.length,
+            modo: 'todos',
+            idsTodos:     alcance.map(r => r.erp_product_id),
+            idsSinAjuste: alcance.filter(r => !r._manual_at).map(r => r.erp_product_id),
+            ajustadas:    ajustadas.length,
+            ajustePor:    ultimo?._manual_por ?? null,
+            ajusteAt:     ultimo?._manual_at  ?? null,
+        });
+    }, [data]);
 
-    const handlePublish = useCallback(async (productIds = null) => {
+    /**
+     * `dejadasAparte` son las que NO se mandaron porque quien publicó eligió
+     * dejarlas. Viaja aparte de `omitidas_por_ajuste_manual` a propósito: la
+     * base cuenta lo que ELLA frenó, y con ids explícitos no frena nada. Sin
+     * este número, elegir «sólo las 9 sin ajuste» y ver «Publicó 9 productos»
+     * no se distingue de que hubiera 9 nomás.
+     */
+    const handlePublish = useCallback(async (productIds = null, dejadasAparte = 0) => {
         setPublishing(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -888,6 +976,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 published_by: user?.email ?? null,
                 published_count: res?.published,
                 omitidas_por_ajuste_manual: res?.omitidas_por_ajuste_manual ?? 0,
+                dejadas_aparte: dejadasAparte,
                 scope: productIds ? 'selective' : 'all',
                 product_ids: productIds ?? null,
             });
@@ -895,23 +984,30 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const n = res?.published ?? 0;
             const omitidas = res?.omitidas_por_ajuste_manual ?? 0;
             const label = productIds ? `${n} producto${n !== 1 ? 's' : ''}` : `${n.toLocaleString()} borradores`;
-            // Lo que quedó quieto por tener ajuste de una persona se DICE. Callarlo
-            // haría leer «publicó todo» donde no publicó todo, que es exactamente el
-            // silencio con el que desaparecieron 567 ajustes sin que nadie lo notara.
-            const cola = omitidas > 0
-                ? ` · ${omitidas.toLocaleString()} sin tocar, las ajustó alguien a mano`
-                : '';
+            // Lo que quedó quieto se DICE, y se dice de quién fue la decisión.
+            // Callarlo haría leer «publicó todo» donde no publicó todo, que es
+            // el silencio con el que desaparecieron 567 ajustes sin que nadie lo
+            // notara; nombrarlo mal —«las ajustó alguien a mano» sobre borradores
+            // que acababa de teclear quien publicaba— es el error contrario.
+            const cola = dejadasAparte > 0
+                ? ` · ${dejadasAparte.toLocaleString()} se dejaron como estaban, según elegiste`
+                : omitidas > 0
+                    ? ` · ${omitidas.toLocaleString()} sin publicar: su número vigente lo puso una persona`
+                    : '';
             useToastStore.getState().showToast(
                 ERP_NAMES[selectedErp],
                 `Publicó ${label} exitosamente${cola}`,
-                omitidas > 0 ? 'info' : 'success',
+                (omitidas > 0 || dejadasAparte > 0) ? 'info' : 'success',
             );
         } catch (e) { useToastStore.getState().showToast('Error al publicar', mensajeAmigable(e), 'error'); }
         finally { setPublishing(false); }
     }, [selectedErp, loadData]);
 
-    const startDeferredPublish = useCallback((ids, count) => {
-        setPublishConfirm({ open: false, ids: null, count: 0 });
+    const startDeferredPublish = useCallback((ids, count, dejadasAparte = 0) => {
+        setPublishConfirm({
+            open: false, ids: null, count: 0, modo: 'todos',
+            idsTodos: [], idsSinAjuste: [], ajustadas: 0, ajustePor: null, ajusteAt: null,
+        });
         const label = count === 1 ? 'borrador' : 'borradores';
         setToast({
             message: `Publicando ${count} ${label} en 5 s…`,
@@ -923,7 +1019,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         });
         publishTimer.current = setTimeout(async () => {
             setToast(null);
-            await handlePublish(ids ?? undefined);
+            await handlePublish(ids ?? undefined, dejadasAparte);
         }, 5000);
     }, [handlePublish]);
 
@@ -1174,7 +1270,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         hiddenIds, setHiddenIds,
         skipBlurSave,
         publishConfirm, setPublishConfirm,
-        discardConfirm, setDiscardConfirm,
+        discardConfirm, setDiscardConfirm, aDescartar,
         zeroAllConfirm, setZeroAllConfirm,
         calcularConfirm, setCalcularConfirm,
         discardRowConfirm, setDiscardRowConfirm,

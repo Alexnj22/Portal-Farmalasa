@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.987.0 — Publicar y descartar Min·Max dicen qué van a hacer antes de hacerlo
+
+Tres avisos de Min·Máx que contaban mal lo que había pasado. Ninguno daba
+error: el trabajo se hacía —o no— y el número que quedaba en pantalla no era el
+de la acción.
+
+**«Publicó 0 borradores · 38 sin tocar, las ajustó alguien a mano».** Ese
+«alguien» era quien estaba apretando el botón. `publish_stock_params` tiene dos
+modos y la diferencia importa: el barrido deja quieta toda fila con `manual_at`,
+y la publicación dirigida a productos concretos sí la pisa —«porque alguien los
+eligió uno por uno», dice su propio comentario—. La pantalla mandaba SIEMPRE el
+barrido, así que la elección no existía y el resultado se enteraba después.
+
+Y el aviso leía al revés lo que había pasado. `manual_at` marca quién tocó el
+número VIGENTE, meses atrás; el borrador que se está publicando lo puede haber
+tecleado una persona hace veinte minutos, y **no deja marca de ninguna clase**.
+Medido en Salud 1: el 2 de septiembre alguien editó 38 borradores a mano durante
+45 minutos, apretó Publicar y el portal frenó los 38 nombrando «alguien» a quien
+estaba esperando. De esos 38, **29 tenían el borrador escrito a mano** (distinto
+de `calc_min`/`calc_max`).
+
+Hoy el diálogo lo dice antes: cuántos caen sobre un número puesto por una
+persona, quién fue el último y cuándo, y un control para elegir entre publicar
+los 38 o dejar esos quietos. La opción «publicar todos» manda los ids
+explícitos, que es la puerta que el RPC ya tenía — **no hizo falta tocar la
+base**.
+
+**El segundo modo de falla, que todavía no se veía.** `calculate_stock_params`
+salta la sala entera si tiene cualquier borrador pendiente
+(`branch_has_pending_drafts`, devuelve `skipped`, no error). Salud 1 y Salud 2
+tenían el 100% de sus pendientes frenados por `manual_at`, o sea que el barrido
+no los iba a limpiar nunca y **el recálculo mensual iba a saltarlas en
+silencio**.
+
+**«735 borradores descartados» sobre un diálogo que prometía 38.**
+`discard_stock_drafts` limpia `draft_status IN ('pending','sparse_data')`: los
+borradores que la pantalla lista, y las filas de «datos escasos» —productos con
+una o dos ventas en seis meses, que no salen en esa lista y tienen su propio
+filtro—. Eran 38 + 697. El reporte fue literal: «ese aviso me asustó». Ahora las
+dos se nombran ANTES, en el diálogo, y el aviso desglosa; el desglose sólo se
+afirma si cuadra con lo que el servidor dice haber tocado, porque uno que no
+suma sería la misma sorpresa con más palabras.
+
+**Un `info` dura 8 s, no 3.5.** Es el mismo motivo por el que un error dura 10:
+un `info` no confirma lo que se pidió —para eso está `success`—, dice que pasó
+algo DISTINTO, y casi siempre trae un número que hay que cruzar contra lo que
+uno tenía en la cabeza. «no alcancé a leer», textual. Son 21 de 428 avisos.
+
+
 ## v2.986.1 — Mis documentos: la ficha vuelve al material canónico y los conteos a la pestaña
 
 Trabajo visual sobre `/mis-documentos`, sin tocar qué documentos se ven ni de

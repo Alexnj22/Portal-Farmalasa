@@ -478,6 +478,31 @@ export async function fetchVentasPorPago({ desde, hasta }) {
     return data || [];
 }
 
+/**
+ * Las piezas del CAJÓN de cada sala y día del rango.
+ *
+ * Otra pregunta que `fetchVentasPorPago`, y por eso son dos llamadas: aquélla
+ * dice qué se vendió y por qué forma; ésta, cuántos billetes deberían estar en
+ * la gaveta. No son el mismo número — un ingreso por aplicar una inyección
+ * entra al cajón sin ser venta, y un vale sale sin serlo tampoco.
+ *
+ * La cuenta la hace `caja_efectivo_piezas` en la base, que es el MISMO canónico
+ * que usa `operar-caja` para decidir de dónde sale una salida de efectivo y el
+ * panel de Mi caja para mostrarla renglón por renglón. Acá no se rearma nada:
+ * se pide y se pinta.
+ *
+ * Devuelve `[]` a quien no tiene alcance `ALL` sobre `cortes_caja` — y eso no
+ * es un permiso que falte: quien opera una sala CUENTA ese cajón, así que la
+ * respuesta no puede viajarle al navegador antes del conteo.
+ */
+export async function fetchPiezasDelCajon({ desde, hasta, branchId = null }) {
+    const { data, error } = await supabase.rpc('get_caja_piezas_del_rango', {
+        p_desde: desde, p_hasta: hasta, p_branch: branchId ? Number(branchId) : null,
+    });
+    if (error) { console.error('cortes: fetchPiezasDelCajon failed:', error.message); return []; }
+    return data || [];
+}
+
 /** La bitácora de un corte: cada firma, reapertura y resolución. */
 export async function fetchEventosDelCorte(corteId) {
     const { data, error } = await supabase.rpc('get_corte_eventos', { p_corte_id: corteId });

@@ -63,7 +63,28 @@ function minutosAntes(abiertaA, marcaIso) {
     return (h * 60 + m) - minutosMarca;
 }
 
-function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, veLosMontos }) {
+/**
+ * De dónde sale el efectivo del cajón, en una línea y sólo lo que NO es cero.
+ *
+ * El total es `apertura + vendido en efectivo + ingresos − vales − bolsas`, y
+ * la resta la hace la base (`caja_efectivo_piezas`), no esta línea: acá se
+ * NOMBRAN las piezas para que el número se pueda auditar de un vistazo sin
+ * abrir el corte. Un día sin ingresos ni vales no gana nada con dos renglones
+ * en cero —ahí el cajón vale exactamente lo vendido en efectivo—, así que
+ * devuelve cadena vacía y la ficha no pinta la línea.
+ */
+function detalleDelCajon(pz) {
+    if (!pz) return '';
+    const partes = [];
+    const cero = (v) => Math.abs(Number(v) || 0) < 0.005;
+    if (!cero(pz.apertura)) partes.push(`abrió con ${formatMoney(pz.apertura)}`);
+    if (!cero(pz.entradas)) partes.push(`+${formatMoney(pz.entradas)} de ingresos`);
+    if (!cero(pz.vales)) partes.push(`−${formatMoney(pz.vales)} de vales`);
+    if (!cero(pz.en_bolsas)) partes.push(`−${formatMoney(pz.en_bolsas)} en bolsas`);
+    return partes.join(' · ');
+}
+
+function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMontos }) {
     const abierta = !apertura.cerrada_at;
     /* QUIÉN abrió, y sólo desde el portal.
      *
@@ -157,17 +178,54 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, veLosMontos }) 
                 UNA. En Salud 3 la ficha decía $33.90 sobre $16.35 de
                 efectivo. Ahora sale de las formas de pago, que es la fuente
                 que sí sabe separarlas, y el efectivo —lo único que llega al
-                cajón— es el que manda. */}
+                cajón— es el que manda.
+
+                ── Y son DOS números, no uno (4-sep) ──────────────────────
+                Pedido del usuario: «necesito ver el total del día también,
+                para ver de cuánto es la venta, total neto de ventas, y total
+                de efectivo (con los vales e ingresos y sólo efectivo)». Eran
+                dos huecos distintos:
+
+                · La venta del día no estaba en NINGUNA parte de la ficha. El
+                  efectivo salía solo y las otras formas iban de nota al pie,
+                  así que «¿de cuánto fue el día?» se contestaba sumando dos
+                  cifras de memoria.
+                · Y «efectivo del día» era lo VENDIDO en efectivo, que no es
+                  lo que hay en la gaveta: un ingreso por aplicar una
+                  inyección entra sin ser venta y un vale sale sin serlo.
+                  Medido el 4-sep en Salud 4 — vendido $280.15, ingresos
+                  $96.76, vales $90.00, en el cajón $286.91. La ficha decía
+                  $280.15, que no es ninguno de los dos.
+
+                El de la derecha ahora sale de `caja_efectivo_piezas`, el
+                MISMO canónico que usa Mi caja para su panel y `operar-caja`
+                para decidir de dónde sale una salida de efectivo. Sin las
+                piezas —una lectura que no llegó— la ficha NO rearma la suma:
+                vuelve a decir «de eso, en efectivo», que es lo que sí sabe.
+                Un total inventado sobre piezas que faltan es peor que no
+                darlo. */}
             <div className="flex items-end justify-between gap-3 pt-2 border-t border-border/60">
                 <span className="min-w-0">
                     <span className="block text-micro font-black uppercase tracking-widest text-content-3">
-                        {veLosMontos ? 'Apertura' : 'Ventas del día'}
+                        {veLosMontos ? 'Venta del día' : 'Ventas del día'}
                     </span>
                     <span className="block text-body-sm font-black tabular-nums text-content">
                         {veLosMontos
-                            ? formatMoney(apertura.monto_apertura)
+                            ? (ventas ? formatMoney(ventas.efectivo + ventas.otras) : '—')
                             : ventas ? `${ventas.documentos}` : '—'}
                     </span>
+                    {/* Las otras formas van SIEMPRE que existan, aunque sean
+                        una sola tarjeta: sin esta línea, «en el cajón $145.05»
+                        al lado de una venta de $169.05 se lee como que faltan
+                        $24 — y son las que no pasaron por el cajón. Se dicen
+                        juntas y no una por una (tarjeta, crédito,
+                        transferencia, cheque) porque lo que las une es
+                        justamente eso. */}
+                    {veLosMontos && ventas && ventas.otras > 0 && (
+                        <span className="block text-micro text-content-3 tabular-nums">
+                            {formatMoney(ventas.otras)} en otras formas
+                        </span>
+                    )}
                     {!veLosMontos && (
                         <span className="block text-micro text-content-3">se cuenta al cortar</span>
                     )}
@@ -175,21 +233,28 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, veLosMontos }) 
                 {veLosMontos && (
                     <span className="min-w-0 text-right">
                         <span className="block text-micro font-black uppercase tracking-widest text-content-3">
-                            Efectivo del día
+                            {piezas ? 'Efectivo en caja' : 'De eso, en efectivo'}
                         </span>
                         <span className="block text-body-sm font-black tabular-nums text-content">
-                            {ventas ? formatMoney(ventas.efectivo) : '—'}
+                            {piezas
+                                ? formatMoney(piezas.efectivo)
+                                : ventas ? formatMoney(ventas.efectivo) : '—'}
                         </span>
-                        {/* Las otras formas van SIEMPRE que existan, aunque
-                            sean una sola tarjeta: sin esta línea, «efectivo
-                            $145.05» al lado de un turno de $169.05 se lee
-                            como que faltan $24 — y son las que no pasaron
-                            por el cajón. Se dicen juntas y no una por una
-                            (tarjeta, crédito, transferencia, cheque) porque
-                            lo que las une es justamente eso. */}
-                        {ventas && ventas.otras > 0 && (
+                        {/* De dónde sale ese total, y sólo lo que no es cero:
+                            un día sin vales ni ingresos no gana nada con dos
+                            renglones en cero, y el cajón entonces vale
+                            exactamente lo vendido en efectivo. */}
+                        {piezas ? detalleDelCajon(piezas) && (
                             <span className="block text-micro text-content-3 tabular-nums">
-                                {formatMoney(ventas.otras)} en otras formas
+                                {detalleDelCajon(piezas)}
+                            </span>
+                        ) : Number(apertura.monto_apertura) > 0.005 && (
+                            /* Sin piezas la apertura se dice igual: es lo único
+                               de la cuenta del cajón que la ficha tiene por su
+                               cuenta, y callarla la haría desaparecer de la
+                               pantalla justo el día que la lectura falla. */
+                            <span className="block text-micro text-content-3 tabular-nums">
+                                abrió con {formatMoney(apertura.monto_apertura)}
                             </span>
                         )}
                     </span>
@@ -206,6 +271,7 @@ export default function FichasDeCaja({
     salas,
     cargando = false,
     ventas = [],
+    piezas = [],
 }) {
     /* El MISMO canónico que `MiCajaView`: quien mira todas las salas no es
      * quien cuenta ese cajón, así que para él la cifra es información; quien
@@ -267,6 +333,20 @@ export default function FichasDeCaja({
         return m;
     }, [ventas]);
 
+    /* Las piezas del cajón, por sala y día — la MISMA clave que las ventas.
+     *
+     * Llegan ya sumadas por la base y acá no se toca ninguna: el total y sus
+     * partes salen del mismo cálculo, así que la línea que las nombra no puede
+     * dejar de cuadrar con el número que explica. Es la regla del mismo juez
+     * con las mismas piezas.
+     *
+     * Vacío no es cero: quien no tiene alcance `ALL` sobre `cortes_caja` no
+     * recibe ninguna fila —cuenta ese cajón, así que la respuesta no puede
+     * viajarle antes del conteo— y la ficha ya le esconde los montos. */
+    const piezasPorSalaYDia = useMemo(() => new Map(
+        (piezas || []).map((p) => [`${p.branch_id}:${p.fecha}`, p.piezas]),
+    ), [piezas]);
+
     // Sin aperturas no se dibuja NADA, ni un vacío: esta fila es el encabezado
     // de los cortes, no una sección con su propia promesa. Un «sin aperturas»
     // acá le robaría el sitio al vacío de los cortes, que es el que importa.
@@ -298,6 +378,7 @@ export default function FichasDeCaja({
                         marca={porPersona.get(`${a.employee_id}:${a.abierta_el}`) || null}
                         hayConQueCruzar={hayConQueCruzar}
                         ventas={ventasPorSalaYDia.get(`${a.branch_id}:${a.abierta_el}`) || null}
+                        piezas={piezasPorSalaYDia.get(`${a.branch_id}:${a.abierta_el}`) || null}
                         veLosMontos={veLosMontos}
                     />
                 ))}

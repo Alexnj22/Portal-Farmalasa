@@ -49,7 +49,7 @@ import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import {
     fetchAperturas, fetchCortes, fetchDiferencias, fetchEntradasParaCruce,
     fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas,
-    fetchSalasQueTienenCaja, fetchVentasPorPago,
+    fetchPiezasDelCajon, fetchSalasQueTienenCaja, fetchVentasPorPago,
 } from '../data/cortes';
 /* Los cobros de crédito viven en `creditos` —el cobro se decide allá— y se
  * miran acá porque el dinero entra por esta caja. Es la misma lectura que hace
@@ -340,6 +340,12 @@ const CortesView = () => {
      * decían está en la banda de color y en el avatar de cada ficha. */
     const [aperturas, setAperturas] = useState(VACIO);
     const [ventasPorPago, setVentasPorPago] = useState(VACIO);
+    /* Las piezas del cajón de cada sala y día: lo vendido en efectivo, los
+     * ingresos, los vales y lo que ya se guardó en bolsas. Va aparte de
+     * `ventasPorPago` porque contesta otra pregunta —cuántos billetes hay, no
+     * cuánto se vendió— y porque su fuente es otra: la cuenta la hace la base
+     * con el mismo canónico que usa Mi caja. */
+    const [piezasDelCajon, setPiezasDelCajon] = useState(VACIO);
     const [entradas, setEntradas] = useState(VACIO);
     const [pudeAsistencia, setPudeAsistencia] = useState(true);
     const [cargandoAper, setCargandoAper] = useState(false);
@@ -406,7 +412,7 @@ const CortesView = () => {
     const cargarAper = useCallback(async () => {
         if (!enCortes) return;
         setCargandoAper(true);
-        const [filas, asistencia, porPago] = await Promise.all([
+        const [filas, asistencia, porPago, piezas] = await Promise.all([
             fetchAperturas({ desde, hasta, branchId: sala || null }),
             fetchEntradasParaCruce({ desde, hasta }),
             // Lo vendido por forma de pago, para que la ficha diga cuánto de eso
@@ -414,11 +420,15 @@ const CortesView = () => {
             // así que una sala recibe la suya y nada más. Va sin `branchId`
             // porque el RPC no lo acepta: se cruza por clave abajo.
             fetchVentasPorPago({ desde, hasta }),
+            // Y los billetes que deberían estar en la gaveta, que NO son lo
+            // vendido en efectivo: le faltan los ingresos y le sobran los vales.
+            fetchPiezasDelCajon({ desde, hasta, branchId: sala || null }),
         ]);
         setAperturas(filas || VACIO);
         setEntradas(asistencia.filas || VACIO);
         setPudeAsistencia(asistencia.pude);
         setVentasPorPago(porPago || VACIO);
+        setPiezasDelCajon(piezas || VACIO);
         setCargandoAper(false);
     }, [enCortes, desde, hasta, sala]);
 
@@ -843,6 +853,7 @@ const CortesView = () => {
                         salas={salasMap}
                         cargando={cargandoAper}
                         ventas={ventasPorPago}
+                        piezas={piezasDelCajon}
                     />
                 )}
 

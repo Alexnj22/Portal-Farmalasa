@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.993.0 — Las fichas de caja dicen la venta del día y el efectivo que hay en la gaveta
+
+Pedido del usuario mirando «Las cajas» de Cortes: *«necesito ver el total del
+día también, para ver de cuánto es la venta, total neto de ventas, y total de
+efectivo (con los vales e ingresos y sólo efectivo)»*. Eran **dos** huecos, y el
+segundo era un número mal nombrado.
+
+**La venta del día no estaba en ninguna parte de la ficha.** Se pintaba el
+efectivo y, de nota al pie, «$192.55 en otras formas»: para contestar «¿de
+cuánto fue el día?» había que sumar dos cifras de cabeza. Ahora el número de la
+izquierda es la venta entera y las otras formas siguen debajo, que es donde
+explican la diferencia con el cajón.
+
+**Y «Efectivo del día» era lo VENDIDO en efectivo, que no es lo que hay en la
+gaveta.** Un ingreso por aplicar una inyección entra al cajón sin ser una venta;
+un vale sale sin serlo tampoco. Medido hoy en Salud 4 — vendido en efectivo
+$280.15, ingresos $96.76, vales $90.00: en el cajón hay **$286.91**. La ficha
+decía $280.15, que no es ninguno de los dos. Hoy dice el total del cajón y, en
+una línea debajo, de qué está hecho (`+$96.76 de ingresos · −$90.00 de vales`) —
+sólo las piezas que no son cero, porque un día sin ingresos ni vales no gana
+nada con dos renglones en cero.
+
+**El número lo calcula `caja_efectivo_piezas`, que ya existía.** Es el mismo
+canónico que usa el panel de Mi caja para mostrar la cuenta renglón por renglón
+y `operar-caja` para decidir de dónde sale una salida de efectivo. La pantalla
+no rearma la aritmética: la pide. Si la lectura no llega, la ficha **no inventa
+un total** — vuelve a decir «de eso, en efectivo», que es lo que sí sabe.
+
+El RPC nuevo (`get_caja_piezas_del_rango`) devuelve **cero filas** a quien no
+tiene alcance `ALL` sobre cortes: quien opera una sala CUENTA ese cajón, así que
+la respuesta no puede viajarle al navegador antes del conteo — esconderla en la
+pantalla no habría alcanzado.
+
 ## v2.992.2 — Los archivos del portal se guardan en el navegador y dejan de pedirse en cada carga
 
 El tablero de Vercel iba en **787,757 de 1,000,000** de peticiones del mes, con

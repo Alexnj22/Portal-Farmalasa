@@ -89,7 +89,11 @@ const ACCION = {
     // código crudo —«CORTE_DESCARTADO»—, que es jerga de la tubería en la
     // única pantalla donde alguien va a leer qué le pasó a este dinero.
     CORTE_DESCARTADO: 'El corte se descartó',
-    REAJUSTAR: 'Se le sumó el efectivo de una bolsa anulada',
+    // Ya no dice «se le sumó el efectivo de una bolsa anulada»: anular una
+    // bolsa NO le pasa su efectivo a otra —la otra es una bolsa física ya
+    // sellada— y el rótulo afirmaba en la bitácora un movimiento de dinero que
+    // nunca ocurrió. El motivo del evento dice qué pasó de verdad.
+    REAJUSTAR: 'Se corrigió el monto',
 };
 
 export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCambio }) {

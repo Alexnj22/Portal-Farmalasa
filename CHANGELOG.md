@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.975.2 — Anular una bolsa deja de sumarle su efectivo a otra
+
+Reporte del usuario: *«al anularlo le sumó a la bolsa anterior, eso es
+incorrecto, el dinero no salió, al anularlo jamás ese dinero pasa a la bolsa
+anterior»*, sobre S4-1240 del 3-sep.
+
+Medido: el corte 713 de Salud 4 se descartó, su bolsa S4-1246 ($467.41) se
+anuló, y `reajustar_bolsas_del_dia` le sumó esos $467.41 a S4-1240 —de $661.25
+a $1,128.66— e invalidó su etiqueta.
+
+**S4-1240 es una bolsa física, sellada y etiquetada con $661.25.** Anular otra
+bolsa no mete un billete adentro: el reparto cuadraba el invariante rompiendo
+justo lo que el invariante existe para vigilar, que la etiqueta diga lo que hay
+adentro.
+
+**Y el hueco se cierra solo.** Una bolsa se anula porque su corte se descartó;
+el corte que lo reemplaza crea otra con `bolsa_sugerida` = declarado − lo que ya
+está en las bolsas del día, y como la anulada ya no cuenta, la nueva nace con
+ese efectivo. No hacía falta mover nada. Si nadie rehace el corte, el hueco
+queda visible en el invariante de la pantalla y la función avisa — señalado, no
+tapado escribiendo dinero donde no está.
+
+- `reajustar_bolsas_del_dia` mide y avisa; ya no escribe en ninguna bolsa
+  (migración `anular_una_bolsa_no_le_suma_efectivo_a_otra`).
+- S4-1240 devuelta a $661.25 con su etiqueta original, y la corrección anotada
+  en la bitácora de la bolsa.
+- El rótulo del historial decía «Se le sumó el efectivo de una bolsa anulada»
+  —afirmaba un movimiento de dinero que no ocurría—; ahora dice «Se corrigió el
+  monto» y el motivo del evento cuenta qué pasó.
+
 ## v2.975.1 — El detalle de un corte descartado deja de decir $0.00
 
 Reporte del usuario: *«¿por qué al abrirlo en diferencias dice 0? Que el

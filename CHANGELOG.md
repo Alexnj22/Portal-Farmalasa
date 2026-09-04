@@ -21,6 +21,98 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.990.0 — El aviso de la mañana: quién abrió caja en cada sala y a qué hora
+
+Pedido del usuario: *«al todas las sucursales por la mañana aperturar, enviame
+una notificación con la hora y quien aperturó. todas abren a las 7 am, si son
+las 7:20 y alguna no ha aperturado igual mandalo y dime cual no ha aperturado»*.
+
+Un solo aviso por día, con dos disparadores: sale cuando **abre la última
+sala**, y si a las **7:20** alguna no abrió sale igual nombrándola. Va a Gerente
+General y Supervisor/a de Ventas, por rol y no por una lista de ids. **Push sólo
+cuando falta una sala** — eso es una tarea; el resumen de un día normal va a la
+campana y no al teléfono, porque un push que todas las mañanas dice «todo bien»
+es el que enseña a ignorar los push.
+
+**Lo que hacía falta arreglar para que el aviso pudiera ser cierto son dos
+cosas, y ninguna estaba a la vista.**
+
+**1 · La foto de las 7:00 no sirve para decidir a las 7:20.** La captura de
+aperturas corre cada 30 minutos, y eso alcanza para el historial —la hora que
+guarda es exacta, la da el propio panel—. Para el aviso no: medido el 4-sep,
+**Salud 2 abrió 7:05 y Salud 3 a las 7:10, y sus filas nacieron a las 7:30**. Un
+aviso construido sobre la tabla a las 7:20 habría acusado a **dos salas que ya
+estaban abiertas**. Por eso quien dispara el aviso es la propia función de
+captura, en modo `manana`: refresca y avisa en la misma corrida, sin dejar el
+resultado a merced del orden.
+
+Y no cuesta seis veces más: en ese modo **sólo se le pregunta al origen por las
+salas que todavía no abrieron**, y con el aviso ya mandado no se gasta ni el
+ingreso. Sobre las aperturas reales de los ocho días capturados, una mañana
+entera va de **21 a 50 peticiones** (media 40) contra las ~150 de barrer las
+seis salas en cada uno de los ocho disparos.
+
+**2 · «Quién abrió» tenía dos fuentes y sólo una es evidencia.**
+`cortes_caja_aperturas.employee_id` se llena de la fila del portal —la
+observación directa de quién apretó el botón— **o** de un cruce por texto contra
+el nombre de la cuenta, que es una coincidencia. Medido el **2-sep**, el día
+antes de que el portal abriera cajas: la tabla decía «Nathaly Estrada» en Salud
+1 y «Elizabeth Callejas» en Salud 4 **sin que nadie hubiera visto a esas
+personas abrir nada** — son los nombres de las cuentas con las que esas salas
+operan siempre. Un aviso cuyo tema ES quién abrió no puede mezclarlas: acá se
+nombra sólo cuando hay fila del portal amarrada por `erp_apertura_id`, y sin
+ella dice **«desde la caja»**, que es verdad, en vez de un nombre plausible que
+nadie va a revisar.
+
+**Y una sala que no contestó no «no abrió».** El aviso separa las dos:
+`p_sin_respuesta` lleva las salas que el origen no pudo confirmar y el texto las
+llama *«no se pudo comprobar»*. Sin esa distinción, un rato de origen caído a
+las 7:20 saldría como **seis salas cerradas**, que es la falsa alarma más grande
+que este aviso puede dar y la que lo haría dejar de leerse.
+
+**Piezas.** `aperturas_de_la_manana()` (el estado: hora, persona y qué falta),
+`avisar_aperturas_de_la_manana()` (el aviso), modo `{"manana": true}` en
+`sync-aperturas-caja`, y dos crons de 6:50 a 7:20 con un repaso a las 7:35 —
+repaso y no segundo aviso: la marca de `avisos_emitidos` hace que sólo actúe si
+el de las 7:20 no llegó a mandar nada.
+
+**De paso nació `nombre_corto_de_empleado()`**, el gemelo en SQL de
+`shortEmployeeName`: hasta hoy un aviso escrito en la base ponía el nombre legal
+completo. Enfrentados sobre 15 casos —espacios dobles, ficha sin nombres, nombre
+concatenado de 1, 2, 3 y 4 palabras—: **iguales, 0 distintas**.
+
+## v2.988.0 — Un sobrante con causa ya no exige un vale
+
+Reportado sobre el sobrante de $50 de Salud 5 del 31-ago: *«¿por qué vale si es
+sobrante? ahí debe permitir poner causa, y corregir la diferencia, o dejarla
+como pendiente»*. La fila estaba resuelta como **retiro del sobrante** y su
+causa decía, textualmente, «ya se encontró la causa» — o sea que el portal
+pedía un vale por dinero que nadie iba a sacar del cajón.
+
+**La tercera vía existía y el formulario la escondía detrás de un default.**
+`ResolverDiferencia` llegaba con la vía preseleccionada según el signo
+(`useState(falta ? 'REPONE' : 'RETIRA')`), así que escribir la causa y guardar
+sin tocar el segmentado mandaba «se retira el sobrante». **«No lo toco» y «lo
+mando como viene» son lo mismo**, y las dos opciones significan cosas muy
+distintas para el dinero: una manda hacer un documento en la caja y la otra no
+mueve nada. Ahora **no hay ninguna marcada** y Guardar no se habilita hasta
+elegir.
+
+**Y la corrección vive donde se descubre el error.** «Registrar en el sistema»
+tenía un solo botón —«Marcar registrado»—, o sea que daba por hecho que toda
+diferencia resuelta mueve dinero. Cada fila lleva ahora **No lleva
+movimiento**: pide por qué se corrige, deja reescribir la causa, y la pasa a
+«ya se encontró la causa». La salida ya existía —anular y resolver de nuevo—
+pero vivía en la tarjeta del corte, tres pantallas atrás, y nadie llega ahí
+desde el aviso que le pide el vale.
+
+`justificar_diferencia_corte` lo hace **en una sola transacción**: en dos
+llamadas, si la segunda fallara el corte quedaría con su diferencia sin
+resolver sin que nadie lo pidiera. Anula y crea en vez de pisar la `via` porque
+una RETIRA/REPONE puede tener su comprobante impreso y firmado: la fila anulada
+conserva que hubo un papel que decía otra cosa. Y se niega si ya está asentada
+—ahí el dinero se movió en el sistema—, igual que `anular_diferencia_corte`.
+
 ## v2.987.0 — Publicar y descartar Min·Max dicen qué van a hacer antes de hacerlo
 
 Tres avisos de Min·Máx que contaban mal lo que había pasado. Ninguno daba

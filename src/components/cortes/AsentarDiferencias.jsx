@@ -1,12 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Landmark, Printer } from 'lucide-react';
+import { Landmark, Printer, Undo2 } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
+import PortalTextarea from '../common/PortalTextarea';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
-import { asentarDiferencias } from '../../data/cortes';
+import { asentarDiferencias, justificarDiferencia } from '../../data/cortes';
 import { construirComprobanteDeAsiento } from '../../utils/corteComprobante';
 import { imprimirDocumento } from '../../utils/ticketPrint';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -31,6 +32,21 @@ import { useAuth } from '../../context/AuthContext';
  * dos documentos distintos con dos números distintos. Mezclarlos en una misma
  * referencia haría imposible cuadrarlos después, y el servidor lo rechaza. La
  * sala separa porque cada caja lleva su propio movimiento.
+ *
+ * ── La salida que faltaba: «esta no lleva movimiento» ──────────────────────
+ * Hasta el 2026-09-04 el único botón de esta pantalla decía «Marcar registrado»,
+ * o sea que daba por hecho que toda diferencia resuelta mueve dinero. No es
+ * cierto: la tercera vía —«ya se encontró la causa»— no mueve nada. Y como el
+ * formulario de resolución llegaba con la vía PRESELECCIONADA por el signo,
+ * escribir la causa y guardar sin tocar el segmentado la guardaba como retiro.
+ * Pasó con el sobrante de $50 de Salud 5 del 31-ago, cuya causa decía
+ * literalmente «ya se encontro la causa»: el portal le pedía después un vale por
+ * dinero que nadie iba a sacar del cajón.
+ *
+ * Quien descubre ese error lo descubre ACÁ, que es donde el portal se lo pide.
+ * La corrección existía —anular y resolver de nuevo— pero vivía en la tarjeta
+ * del corte, tres pantallas atrás. Ahora está en la fila, y la hace el servidor
+ * en una sola transacción (`justificar_diferencia_corte`).
  */
 
 const clave = (d) => `${d.branch_id}|${Number(d.monto) < 0 ? 'ENTRA' : 'SALE'}`;
@@ -53,6 +69,10 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
     // Se guarda acá y no se relee: al registrar, esas filas salen de la lista de
     // pendientes, así que el dato del que salió el papel ya no está en pantalla.
     const [ultimo, setUltimo] = useState(null);
+    // La corrección de una fila: cuál se está corrigiendo y con qué texto.
+    const [corrigiendo, setCorrigiendo] = useState(null);
+    const [motivoCorregir, setMotivoCorregir] = useState('');
+    const [causaCorregir, setCausaCorregir] = useState('');
 
     const grupos = useMemo(() => {
         const m = new Map();
@@ -131,6 +151,38 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         onHecho?.();
     }, [excluidas, refs, showToast, appendAuditLog, user, nombreSala, onHecho, imprimirAsiento]);
 
+    const abrirCorreccion = useCallback((d) => {
+        setCorrigiendo(d.id);
+        setMotivoCorregir('');
+        // La causa arranca con la que ya tenía: casi siempre es la buena y lo que
+        // estuvo mal fue la vía. Se deja editable porque el usuario pidió las dos
+        // mitades — «debe permitir poner causa, y corregir la diferencia».
+        setCausaCorregir(d.causa || '');
+    }, []);
+
+    const corregir = useCallback(async (d) => {
+        const motivo = motivoCorregir.trim();
+        if (!motivo) return;
+
+        setOcupada(`dif:${d.id}`);
+        const { error } = await justificarDiferencia(d.id, motivo, causaCorregir);
+        setOcupada(null);
+        if (error) {
+            showToast?.('No se pudo corregir', mensajeAmigable(error, 'Vuelve a cargar la lista.'), 'error');
+            return;
+        }
+        appendAuditLog?.('CORTE_CAJA_DIFERENCIA_CORREGIDA', user?.id, {
+            diferencia_id: d.id, corte_id: d.corte_id, sucursal: nombreSala[d.branch_id] || '',
+            fecha: d.fecha, monto: d.monto, via_anterior: d.via, motivo, causa: causaCorregir,
+        });
+        showToast?.('Diferencia corregida',
+            'Queda como causa encontrada: no mueve dinero, así que sale de esta lista.', 'success');
+        setCorrigiendo(null);
+        setMotivoCorregir('');
+        setCausaCorregir('');
+        onHecho?.();
+    }, [motivoCorregir, causaCorregir, showToast, appendAuditLog, user, nombreSala, onHecho]);
+
     return (
         <LiquidModal
             open={!!abierto}
@@ -155,6 +207,15 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                         Haz un movimiento por el total de cada grupo y escribe con qué número
                         quedó. Se anota en cada una de las diferencias que cubre.
                     </span>
+                    {/* La lista da por hecho que cada fila mueve dinero, y hay
+                        una que no: la que ya tiene explicación. Decirlo acá es
+                        lo que evita que alguien haga un vale para cerrar el
+                        aviso. */}
+                    <span className="block mt-1.5 font-normal text-content-2">
+                        Si alguna ya tiene su explicación y no hay dinero que mover, corrígela
+                        con <span className="font-bold">No lleva movimiento</span>. También
+                        puedes cerrar y dejarlas pendientes.
+                    </span>
                 </Notice>
 
                 {grupos.map((g) => {
@@ -173,16 +234,73 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                             </div>
 
                             {g.filas.map((d) => (
-                                <div key={d.id} className="flex items-center gap-2">
-                                    <div className="min-w-0 flex-1">
-                                        <Checkbox
-                                            name={`asentar-${d.id}`}
-                                            checked={!excluidas.has(d.id)}
-                                            onChange={() => alternar(d.id)}
-                                            label={`${d.fecha} · ${formatMoney(Math.abs(Number(d.monto)))}`}
-                                            description={d.causa}
-                                        />
+                                <div key={d.id} className="space-y-2">
+                                    <div className="flex items-start gap-2">
+                                        <div className="min-w-0 flex-1">
+                                            <Checkbox
+                                                name={`asentar-${d.id}`}
+                                                checked={!excluidas.has(d.id)}
+                                                onChange={() => alternar(d.id)}
+                                                label={`${d.fecha} · ${formatMoney(Math.abs(Number(d.monto)))}`}
+                                                description={d.causa}
+                                            />
+                                        </div>
+                                        {/* Con rótulo y no sólo ícono: es una acción
+                                            que cambia lo que significa la fila, y
+                                            nadie la va a descubrir tanteando. */}
+                                        {corrigiendo !== d.id && (
+                                            <Button
+                                                variant="ghost" size="sm" icon={Undo2}
+                                                className="shrink-0"
+                                                disabled={!!ocupada}
+                                                onClick={() => abrirCorreccion(d)}
+                                            >
+                                                No lleva movimiento
+                                            </Button>
+                                        )}
                                     </div>
+
+                                    {corrigiendo === d.id && (
+                                        <div data-surface="card" className="p-3 space-y-2">
+                                            <Notice variant="info">
+                                                <span className="font-bold">Queda como «ya se encontró la causa»</span>
+                                                <span className="block mt-0.5 font-normal text-content-2">
+                                                    No entra ni sale dinero: sale de esta lista y no va
+                                                    en el {g.entra ? 'ingreso' : 'vale'}. La resolución
+                                                    anterior se anula y queda en la bitácora del corte.
+                                                </span>
+                                            </Notice>
+                                            <PortalTextarea
+                                                label="Por qué se corrige"
+                                                name={`motivo-corregir-${d.id}`}
+                                                value={motivoCorregir}
+                                                onChange={(e) => setMotivoCorregir(e.target.value)}
+                                                rows={2}
+                                                placeholder="Qué estaba mal en la resolución anterior"
+                                            />
+                                            <PortalTextarea
+                                                label="Causa"
+                                                name={`causa-corregir-${d.id}`}
+                                                value={causaCorregir}
+                                                onChange={(e) => setCausaCorregir(e.target.value)}
+                                                rows={2}
+                                                placeholder="De dónde salió la diferencia"
+                                            />
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <Button variant="ghost" size="sm"
+                                                    disabled={!!ocupada}
+                                                    onClick={() => setCorrigiendo(null)}>
+                                                    Volver
+                                                </Button>
+                                                <Button variant="primary" size="sm"
+                                                    loading={ocupada === `dif:${d.id}`}
+                                                    disabled={!motivoCorregir.trim() || !causaCorregir.trim()}
+                                                    onClick={() => corregir(d)}>
+                                                    Corregir
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
 
@@ -209,7 +327,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                     variant="primary"
                                     onClick={() => registrar(g)}
                                     loading={ocupada === g.k}
-                                    disabled={!ref.trim() || !incluidas.length}
+                                    disabled={!ref.trim() || !incluidas.length || !!ocupada}
                                 >
                                     Marcar registrado
                                 </Button>

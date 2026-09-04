@@ -372,6 +372,22 @@ export function anularDiferencia(id, motivo) {
 }
 
 /**
+ * Corregir una resolución que quedó como movimiento de dinero cuando en realidad
+ * apareció la causa. Es la salida que faltaba en «Registrar en el sistema»:
+ * hasta el 2026-09-04 el único botón de esa pantalla decía «Marcar registrado»,
+ * así que una diferencia guardada con la vía preseleccionada —el sobrante de $50
+ * de Salud 5 del 31-ago— pedía un vale por dinero que nadie iba a sacar.
+ *
+ * Anula la vieja y crea la justificada en UNA transacción: hacerlo en dos
+ * llamadas dejaría el corte con su diferencia sin resolver si la segunda falla.
+ */
+export function justificarDiferencia(id, motivo, causa) {
+    return supabase.rpc('justificar_diferencia_corte', {
+        p_id: id, p_motivo: motivo, p_causa: causa || null,
+    });
+}
+
+/**
  * Deja constancia de que el comprobante se mandó a imprimir. No promete que
  * salió papel — la respuesta de la ticketera es opaca — así que se puede volver
  * a marcar tantas veces como se reimprima.

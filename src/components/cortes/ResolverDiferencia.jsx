@@ -69,7 +69,14 @@ export default function ResolverDiferencia({
     const sev = severidad(tramo);
     const falta = tramo < 0;
 
-    const [via, setVia] = useState(falta ? 'REPONE' : 'RETIRA');
+    // Sin preseleccionar. La vía llegaba marcada según el signo, y eso hizo que
+    // el sobrante de $50 de Salud 5 del 31-ago se guardara como RETIRA con una
+    // causa que decía, literalmente, «ya se encontró la causa»: el portal le
+    // pidió después un VALE por dinero que nadie iba a sacar del cajón. Escribir
+    // la causa y guardar sin tocar el segmentado mandaba el default — «no lo
+    // toco» y «lo mando como viene» son lo mismo, y las dos opciones significan
+    // cosas muy distintas para el dinero. Ahora hay que elegir.
+    const [via, setVia] = useState(null);
     const [causa, setCausa] = useState('');
     const [candidatos, setCandidatos] = useState([]);
     const [marcadas, setMarcadas] = useState(() => new Set());
@@ -338,7 +345,7 @@ export default function ResolverDiferencia({
                 </div>
             )}
 
-            {via !== 'JUSTIFICA' && (
+            {via && via !== 'JUSTIFICA' && (
                 <Notice variant="info">
                     <span className="font-bold">Al guardar sale el comprobante para firmar</span>
                     <span className="block mt-0.5 font-normal text-content-2">
@@ -356,10 +363,10 @@ export default function ResolverDiferencia({
                     variant="primary"
                     size="sm"
                     loading={ocupado}
-                    disabled={!causa.trim() || (via === 'REPONE' && (restan !== 0 || !marcadas.size))}
+                    disabled={!via || !causa.trim() || (via === 'REPONE' && (restan !== 0 || !marcadas.size))}
                     onClick={guardar}
                 >
-                    {via === 'JUSTIFICA' ? 'Guardar' : 'Guardar e imprimir'}
+                    {via && via !== 'JUSTIFICA' ? 'Guardar e imprimir' : 'Guardar'}
                 </Button>
             </div>
         </div>

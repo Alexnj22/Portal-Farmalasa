@@ -1288,7 +1288,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                 return (
                   <div key={req.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-body-sm font-black text-content">{meta.employeeName || emp?.name || `Empleado #${req.employee_id}`}</p>
+                      <p className="text-body-sm font-black text-content">{meta.employeeName || (emp?.name ? shortEmployeeName(emp) : null) || `Empleado #${req.employee_id}`}</p>
                       <p className="text-caption text-content-3 mt-0.5 capitalize">{fmtDate}</p>
                       {meta.declaredStart && meta.declaredEnd ? (
                         <p className="text-label font-bold text-chart-3-text mt-1">

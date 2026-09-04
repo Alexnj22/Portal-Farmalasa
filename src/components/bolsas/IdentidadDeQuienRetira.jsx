@@ -8,6 +8,7 @@ import PortalInput from '../common/PortalInput';
 import { identificarPorCarne, identificarPorUsuario } from '../../data/bolsas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 /**
  * «Quién se lleva el efectivo»: el lector de carné, la escotilla de usuario y
@@ -140,7 +141,7 @@ export default function IdentidadDeQuienRetira({
                 <AvatarConEstado emp={persona} px={48} radio="rounded-full"
                     marco="border-2 border-border-card" className="shadow" />
                 <div className="min-w-0 flex-1">
-                    <p className="font-bold text-success-text text-body-lg truncate">{persona.name}</p>
+                    <p className="font-bold text-success-text text-body-lg truncate">{shortEmployeeName(persona)}</p>
                     <p className="text-label text-success-text mt-0.5">{rotulo}</p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={onOlvidar} disabled={bloqueado}>

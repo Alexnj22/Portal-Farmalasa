@@ -24,6 +24,7 @@ import {
 } from '../data/encuestas';
 import { clickable } from '../utils/clickable';
 import LiquidTooltip from '../components/common/LiquidTooltip';
+import { shortEmployeeName } from '../utils/nameUtils';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
 const SUPERVISOR_DE_JEFE = {
@@ -954,7 +955,7 @@ export default function EncuestaView() {
                                                                 if (!sColabs) return null;
                                                                 const sl2 = scoreLabel(sColabs);
                                                                 const jefeDisplay = jefe
-                                                                    ? jefe.nombre.split(' ').slice(0, 2).join(' ')
+                                                                    ? shortEmployeeName(jefe.nombre)
                                                                     : '–';
                                                                 return (
                                                                     <div key={suc} className="group relative flex items-center gap-3">
@@ -1039,7 +1040,7 @@ export default function EncuestaView() {
                                                                                             <PersonAvatar nombre={jefe.nombre} photo={jefe.photo} isJefe size={22} />
                                                                                             <div>
                                                                                                 <div className="text-caption font-black text-content-2 leading-tight">
-                                                                                                    {jefe.nombre.split(' ').slice(0, 2).join(' ')}
+                                                                                                    {shortEmployeeName(jefe.nombre)}
                                                                                                 </div>
                                                                                                 <div className="text-micro text-content-3">{jefe.sucursal}</div>
                                                                                             </div>

@@ -33,6 +33,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { rangoDeDias } from './etapas';
 import { useToastStore } from '../../store/toastStore';
 import { saldoDeBolsa } from '../../utils/bolsasReparto';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 /* El detalle se baja al ABRIR una bolsa, no al entrar a la pestaña: arrastra el
  * motor de impresion y el visor de archivos firmados, y la lista se ve entera
@@ -398,7 +399,7 @@ function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionad
                     <span className="flex items-center gap-1.5 min-w-0">
                         <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />
                         <span className="text-caption text-content-3 truncate">
-                            {firma.verbo} {quien.name}
+                            {firma.verbo} {shortEmployeeName(quien)}
                         </span>
                     </span>
                 )}

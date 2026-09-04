@@ -301,7 +301,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees, cajaAbierta }) {
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <VendorAvatar employee={vendor} size={5} />
                   <p className="text-label font-bold text-content-2 truncate">
-                    {vendor ? vendor.name.split(' ').slice(0, 2).join(' ') : (inv.cod_vendedor ? `#${inv.cod_vendedor}` : '—')}
+                    {vendor ? shortEmployeeName(vendor) : (inv.cod_vendedor ? `#${inv.cod_vendedor}` : '—')}
                   </p>
                 </div>
               </div>

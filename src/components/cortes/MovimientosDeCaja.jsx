@@ -12,6 +12,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { usePaginaEnUrl } from '../../hooks/usePaginaEnUrl';
 import { emparejarCobrosConMovimientos } from '../../utils/cortesDiagnostico';
 import { cobroEnEfectivo } from '../../data/creditos';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 /**
  * Los movimientos de caja de un período: verlos y buscarlos TODOS.
@@ -681,7 +682,7 @@ function Renglon({ mov, cobro, quien, desglose, etiquetaDeSalida, minuto, editad
                         <span className="flex items-center gap-1.5 mt-1 min-w-0">
                             <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />
                             <span className="text-micro text-content-3 truncate">
-                                Lo cobró {quien.name}
+                                Lo cobró {shortEmployeeName(quien)}
                             </span>
                         </span>
                     )}
@@ -790,7 +791,7 @@ function RenglonDeCobro({ cobro, quien }) {
                     {quien && (
                         <span className="flex items-center gap-1.5 mt-1 min-w-0">
                             <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />
-                            <span className="text-micro text-content-3 truncate">Lo cobró {quien.name}</span>
+                            <span className="text-micro text-content-3 truncate">Lo cobró {shortEmployeeName(quien)}</span>
                         </span>
                     )}
                 </span>
@@ -858,7 +859,7 @@ function RenglonDeBolsa({ op, etiqueta, quien }) {
                     {quien && (
                         <span className="flex items-center gap-1.5 mt-1 min-w-0">
                             <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />
-                            <span className="text-micro text-content-3 truncate">La hizo {quien.name}</span>
+                            <span className="text-micro text-content-3 truncate">La hizo {shortEmployeeName(quien)}</span>
                         </span>
                     )}
                 </span>

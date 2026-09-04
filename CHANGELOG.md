@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.976.6 — El nombre corto se aplica en las ocho pantallas que lo salteaban
+
+Barrido de las 632 fuentes por AST —sólo lo que llega al DOM, no bitácoras ni
+búsqueda ni ordenamientos— después de que el nombre completo apareciera en la
+tarjeta de un corte. `shortEmployeeName` sí es el canónico; lo que faltaba era
+que lo llamaran.
+
+**Ocho sitios pintaban el nombre completo**, y siete de ellos junto a un avatar
+que sí lo acortaba para las iniciales: las tres firmas de Movimientos de caja
+(«Lo cobró…», «La hizo…»), la firma de una bolsa en el Circuito, el vendedor de
+un crédito en Cuentas por cobrar, la confirmación de quien retira efectivo, y la
+lista de solicitudes de Asistencia. Todos con `truncate`, o sea que el nombre
+largo no desbordaba: se cortaba a la mitad.
+
+**Y había tres copias a mano de la regla, dos de ellas mal hechas.**
+`.split(' ').slice(0, 2)` toma las dos PRIMERAS palabras, que sobre «EDWIN
+ALEXANDER NUNEZ JOYA» da «EDWIN ALEXANDER» — dos nombres y ningún apellido, que
+es exactamente lo que el canónico existe para evitar. Estaba en el widget de
+anulaciones y dos veces en Encuesta.
+
+Los 15 sitios restantes se abrieron uno por uno y ninguno es defecto: el
+receptor de un DTE es el cliente de una factura fiscal y no personal; la ficha
+del empleado, «Mi perfil», el listado de personal y la sanción del RIT son la
+excepción escrita —ahí el nombre completo ES el dato—; dos chips micro muestran
+sólo el primer nombre a propósito; y cuatro eran falsos positivos del detector
+(una sucursal que se llamaba `empBranch`, y condiciones `{x.name && …}` que no
+pintan nada).
+
 ## v2.976.5 — El saldo de una bolsa deja de rellenarse con lo guardado, y los nombres se acortan
 
 Salidos de auditar el circuito de bolsas y cortes. Los dos primeros van juntos y

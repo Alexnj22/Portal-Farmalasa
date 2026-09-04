@@ -35,6 +35,7 @@ import { formatMoney } from '../utils/formatNumber';
  * cómo dos pantallas terminan mostrando días distintos. */
 import { fechaCorta } from '../utils/ticketCampos';
 import { tokenMatch } from '../utils/searchUtils';
+import { shortEmployeeName } from '../utils/nameUtils';
 
 /**
  * CUENTAS POR COBRAR — quién debe, desde cuándo, y cobrarle.
@@ -539,7 +540,7 @@ export default function CuentasPorCobrarView() {
                                                     px={22} mostrarChip={false} radio="rounded-full" />
                                             )}
                                             <span className="truncate">
-                                                {c.vendedor?.name || 'Sin vendedor'} · {fechaCorta(c.fecha)}
+                                                {c.vendedor?.name ? shortEmployeeName(c.vendedor) : 'Sin vendedor'} · {fechaCorta(c.fecha)}
                                                 {c.ultimo_abono_el && ` · abonó ${fechaCorta(c.ultimo_abono_el)}`}
                                             </span>
                                         </span>

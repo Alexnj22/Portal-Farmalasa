@@ -191,7 +191,7 @@ export async function fetchStockParamsForRevision(productIds, sucursalIds) {
  */
 export async function fetchAjustesManuales(erpSucursalId) {
     const data = await fetchAllRows(() => supabase.from('product_stock_params')
-        .select('erp_product_id, manual_at, manual_por, manual_motivo, manual_nota, manual_cliente_unidades, manual_cliente_dias')
+        .select('erp_product_id, manual_at, manual_por, manual_motivo, manual_nota, manual_cliente_unidades, manual_cliente_dias, ajuste_solicitud_id')
         .eq('erp_sucursal_id', erpSucursalId)
         .not('manual_at', 'is', null)
         .order('id', { ascending: true }));

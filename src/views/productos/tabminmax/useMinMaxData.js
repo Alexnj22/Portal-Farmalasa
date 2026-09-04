@@ -227,6 +227,11 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                     _manual_nota:   a?.manual_nota   ?? null,
                     _manual_cliente_unidades: a?.manual_cliente_unidades ?? null,
                     _manual_cliente_dias:     a?.manual_cliente_dias     ?? null,
+                    // Lo que FRENA a la publicación y al recálculo: una solicitud
+                    // aprobada. `manual_at` sólo dice que alguien tocó la fila —
+                    // corregir un borrador durante la revisión del mes es trabajo
+                    // de ese ciclo, no una excepción permanente.
+                    _ajuste_solicitud_id: a?.ajuste_solicitud_id ?? null,
                 };
             });
             setData(mapped);
@@ -947,7 +952,12 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             && r.draft_status === 'pending'
             && r._erp_sucursal_id !== 6
             && (!soloEstos || soloEstos.has(r.erp_product_id)));
-        const ajustadas = alcance.filter(r => r._manual_at);
+        // Frenadas = las que el barrido NO va a tocar, que desde el 2026-09-04
+        // son las SELLADAS: vinieron de una solicitud aprobada, o alguien
+        // declaró un motivo. Contar `_manual_at` acá sobraba por mucho —de 416
+        // filas frenadas, 365 eran la revisión del mes anterior— y hacía que el
+        // diálogo pidiera decidir sobre algo que ya no está en juego.
+        const ajustadas = alcance.filter(r => r._ajuste_solicitud_id || r._manual_motivo);
         const ultimo = ajustadas.reduce(
             (a, r) => (!a || String(r._manual_at) > String(a._manual_at) ? r : a), null);
         setPublishConfirm({
@@ -956,7 +966,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             count: alcance.length,
             modo: 'todos',
             idsTodos:     alcance.map(r => r.erp_product_id),
-            idsSinAjuste: alcance.filter(r => !r._manual_at).map(r => r.erp_product_id),
+            idsSinAjuste: alcance.filter(r => !r._ajuste_solicitud_id && !r._manual_motivo).map(r => r.erp_product_id),
             ajustadas:    ajustadas.length,
             ajustePor:    ultimo?._manual_por ?? null,
             ajusteAt:     ultimo?._manual_at  ?? null,
@@ -1006,7 +1016,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const cola = dejadasAparte > 0
                 ? ` · ${dejadasAparte.toLocaleString()} quedaron igual, como elegiste`
                 : frenadas > 0
-                    ? ` · ${frenadas.toLocaleString()} no, tienen un número puesto a mano`
+                    ? ` · ${frenadas.toLocaleString()} no, vienen de una solicitud`
                     : '';
             useToastStore.getState().showToast(
                 ERP_NAMES[selectedErp],

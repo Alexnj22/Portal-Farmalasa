@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.991.0 — Lo que frena al Min·Máx es la solicitud, no la edición del mes
+
+`manual_at` metía en la misma bolsa dos cosas que no se parecen, y por eso
+frenaba de más.
+
+**La revisión del mes** es alguien mirando los borradores del recálculo,
+corrigiendo números y publicando. Es trabajo de ESE ciclo. **La decisión** es
+alguien que pidió un cambio, escribió por qué, y otra persona lo aprobó — eso
+nadie lo volvió a mirar, y el cálculo no sabe lo que sabía quien lo pidió.
+
+Medido el 2026-09-04 sobre las 416 filas con borrador frenado:
+
+| | filas |
+|---|---:|
+| revisión de agosto (3 al 11, con el recálculo del día 1) | **365** |
+| junio / julio | 51 |
+| **con motivo declarado** | **0** |
+| de una solicitud aprobada | 11 |
+
+Tres sesiones de revisión —7-ago 235 filas en Salud 5, 5-ago 40 en Salud 2,
+4-ago 33 entre Salud 4 y La Popular— habían quedado convertidas en excepciones
+permanentes. Y como el recálculo salta la sala entera si tiene pendientes, dos
+salas iban a quedarse sin recalcular el 1 de octubre **en silencio**.
+
+**Lo que frena ahora** es `ajuste_solicitud_id` —columna nueva, la sella
+`approve_minmax_request` con el id de la solicitud— o `manual_motivo`, que es
+una excepción declarada y que el cálculo YA usa («lo buscan» como piso,
+«cliente fijo» como demanda, «ya no rota» como fecha de corte). Las 34
+aprobaciones existentes quedaron selladas de arrastre.
+
+**Y la edición a mano rompe el sello.** Si alguien vuelve a mover el número, el
+par vigente ya no es el que se aprobó, así que el trigger limpia
+`ajuste_solicitud_id`. Sin eso, una edición cualquiera heredaría la protección
+de una decisión que ya no describe ese número.
+
+`manual_at`/`manual_por` no cambian de sentido: siguen siendo la bitácora de
+quién tocó la fila, que es lo que muestra el badge y el bloque «Ajuste vigente».
+Lo que se separó es el freno.
+
+**Efecto inmediato**: 409 borradores se destraban y 11 siguen frenados. El
+diálogo de publicar cuenta ahora los sellados —no los tocados—, así que dejó de
+pedir una decisión sobre 400 filas que ya no están en juego.
+
+Alcanza a los DOS frenos, que eran el mismo: el barrido de
+`publish_stock_params` y el auto-aplicar de `calculate_stock_params`. El segundo
+se cambió por reemplazo de texto sobre la definición viva —una cláusula, sin
+transcribir 400 líneas de cálculo que no cambian— y la migración **falla fuerte**
+si no encuentra su patrón: un `replace` que no matchea devuelve la cadena intacta
+y diría «éxito» sin cambiar nada.
+
+
 ## v2.990.3 — Las fichas de caja dicen su estado con el badge y nada más
 
 Reportado sobre `/caja?tab=cortes`: *«las cards están en contra del design,

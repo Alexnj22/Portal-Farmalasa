@@ -1500,13 +1500,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                    firmas que dice un nombre y esconde dos actos.
 
                                    Se cruza por el instante: `approve_minmax_request` escribe
-                                   `decided_at` y el UPDATE que dispara el trigger ocurren en la
-                                   misma transacción, así que `manual_at` sale idéntico —
-                                   verificado sobre las 34 aprobadas—. El margen de 2 s es por
-                                   si alguna vez dejan de compartir el `now()`. */
-                                const t = new Date(historyRow._manual_at).getTime();
-                                const origen = historySolicitudes.find(s =>
-                                    s.decided_at && Math.abs(new Date(s.decided_at).getTime() - t) < 2000);
+                                   `decided_at` — antes se cruzaba por el instante, que servía
+                                   para leer pero no para decidir; hoy la aprobación SELLA la
+                                   fila con `ajuste_solicitud_id`, que además es lo que frena
+                                   al recálculo del mes siguiente. */
+                                const origen = historyRow._ajuste_solicitud_id
+                                    ? historySolicitudes.find(s => s.id === historyRow._ajuste_solicitud_id)
+                                    : null;
                                 const fecha = new Date(historyRow._manual_at)
                                     .toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
                                 const motivoAjuste = historyRow._manual_motivo
@@ -1702,7 +1702,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     <strong className="text-content-1">
                                         {publishConfirm.ajustadas} de ellos
                                     </strong>{' '}
-                                    tienen hoy un MIN/MAX puesto a mano
+                                    tienen hoy un MIN/MAX que salió de una solicitud aprobada
                                     {/* Crudo, igual que el badge AJUSTADO de la fila: `manual_por`
                                         guarda lo que devolvió `auth.email()`, que a veces es un
                                         nombre y a veces una cuenta — no es `employees.name`. */}
@@ -1723,7 +1723,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 />
                                 <p className="text-caption leading-relaxed text-content-3">
                                     {publishConfirm.modo === 'todos'
-                                        ? `Los ${publishConfirm.count} borradores reemplazan lo que hay hoy, incluido lo puesto a mano.`
+                                        ? `Los ${publishConfirm.count} borradores reemplazan lo que hay hoy, incluido lo que se aprobó por solicitud.`
                                         : `Se publican ${publishConfirm.idsSinAjuste.length}. Los otros ${publishConfirm.ajustadas} no cambian y su borrador sigue esperando.`}
                                 </p>
                             </>

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { esElTitular, elTitularEstaEnElPapel } from '../../supabase/functions/_shared/titular.ts';
+import {
+    esElTitular, elTitularEstaEnElPapel, esNuestraFarmacia, elPapelNosNombra,
+} from '../../supabase/functions/_shared/titular.ts';
 
 /* Esta prueba existe porque lo que decide este código es si un cliente puede
  * abonar su crédito con el papel que trajo, con el cliente enfrente. Un
@@ -63,5 +65,58 @@ describe('elTitularEstaEnElPapel — cuando no se sabe en qué casilla está', (
         expect(elTitularEstaEnElPapel(['MARIA LOPEZ', 'BANCO AGRICOLA', null])).toBe(false);
         expect(elTitularEstaEnElPapel([])).toBe(false);
         expect(elTitularEstaEnElPapel(undefined)).toBe(false);
+    });
+});
+
+/* El segundo caso, dos días después (2026-09-04): un PAGO QR. Su único nombre
+ * es «FARMACIA LA SALUD QPL» —el COMERCIO con el que el QR está registrado— y
+ * el titular de la cuenta no aparece por ningún lado, porque en un pago QR no
+ * tiene por qué aparecer. El portal lo rechazó como «de otro beneficiario»
+ * con el cliente ya habiendo pagado.
+ *
+ * O sea que el defecto no era el nombre: era que el portal sabía UNO. */
+describe('esNuestraFarmacia — el nombre del COMERCIO, que no es el de la persona', () => {
+    it('reconoce el nombre del pago QR que trajo la regla', () => {
+        expect(esNuestraFarmacia('FARMACIA LA SALUD QPL')).toBe(true);
+    });
+
+    it('reconoce las dos marcas y sus formas de escribirse', () => {
+        expect(esNuestraFarmacia('FARMACIA LA SALUD')).toBe(true);
+        expect(esNuestraFarmacia('FARMACIA LA POPULAR')).toBe(true);
+        expect(esNuestraFarmacia('Farmacias La Popular y La Salud')).toBe(true);
+        expect(esNuestraFarmacia('FARM LA SALUD 3')).toBe(true);
+    });
+
+    it('acepta el nombre CORTADO, igual que con el de la persona', () => {
+        // El banco corta a un largo fijo; ya pasó con «ALEMA».
+        expect(esNuestraFarmacia('FARMACIA LA SALU')).toBe(true);
+        expect(esNuestraFarmacia('FARMACIA LA POPULA')).toBe(true);
+    });
+
+    it('pide las DOS cosas: que diga farmacia y que diga nuestra marca', () => {
+        expect(esNuestraFarmacia('FARMACIA SAN JOSE')).toBe(false);   // farmacia ajena
+        expect(esNuestraFarmacia('LA POPULAR')).toBe(false);          // sin «farmacia»
+        expect(esNuestraFarmacia('TIENDA LA SALUD')).toBe(false);     // no es farmacia
+        expect(esNuestraFarmacia('BANCO AGRICOLA')).toBe(false);
+        expect(esNuestraFarmacia('')).toBe(false);
+        expect(esNuestraFarmacia(null)).toBe(false);
+    });
+});
+
+describe('elPapelNosNombra — las tres formas de que el papel diga que es nuestro', () => {
+    it('el pago QR: sólo el comercio, sin la persona por ningún lado', () => {
+        expect(elPapelNosNombra(['FARMACIA LA SALUD QPL'])).toBe(true);
+    });
+
+    it('la nota de cargo: la persona, con el apellido cortado', () => {
+        expect(elPapelNosNombra([
+            'JOSE MANUEL ANTONIO MENJIVAR MENJIVAR', 'Transfer365 JOSE RUTILIO ALEMA',
+        ])).toBe(true);
+    });
+
+    it('un papel donde no estamos sigue sin nombrarnos', () => {
+        expect(elPapelNosNombra(['MARIA LOPEZ', 'FARMACIA SAN JOSE', null])).toBe(false);
+        expect(elPapelNosNombra([])).toBe(false);
+        expect(elPapelNosNombra(undefined)).toBe(false);
     });
 });

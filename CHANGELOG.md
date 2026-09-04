@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.997.0 — El pago QR ya no traba el cobro
+
+**Un cliente pagó $24.05 con código QR y el cobro no se podía registrar.** El
+comprobante decía «Pagar a FARMACIA LA SALUD QPL» y el portal lo leyó como un
+pago hecho a otra persona: apagó el botón y no dejó salida. Los dos intentos
+quedaron en el registro con respuesta correcta, así que no había ni un error que
+mirar.
+
+**El comprobante estaba bien; el portal sabía UN solo nombre nuestro.** El
+lector comparaba contra el nombre legal, y un pago QR no imprime al titular de
+la cuenta: imprime al comercio con el que el código está registrado. Es el mismo
+caso del 2-sep con la nota de cargo —donde el banco cortaba el apellido— dicho
+de otra forma: **cada manera nueva en que un banco nos nombra costaba una
+corrección, con el cliente enfrente.**
+
+Tres cosas cambian:
+
+- **El portal reconoce sus nombres comerciales**, no sólo el legal. «Farmacia La
+  Salud», «Farmacia La Popular» y sus formas cortadas por el banco cuentan como
+  nuestras.
+- **Un nombre que no se reconoce ya no traba: avisa.** Sale un aviso en rojo con
+  lo que el papel dice y la instrucción de comprobar que el pago entró, y el
+  cobro queda marcado como aceptado así — se puede revisar después. Un freno sin
+  salida no se cumple: se esquiva anotando el cobro como otra cosa, y ahí se
+  pierde hasta el rastro.
+- **El lector aprendió a leer un pago QR**, que antes ni siquiera daba por
+  comprobante, y ahora frena si el propio papel dice que la operación quedó
+  rechazada, anulada o pendiente.
+
+Y queda anotado en el registro por qué se frenó un comprobante: hasta hoy un
+cobro rechazado en el mostrador se veía igual que uno aceptado, y la única forma
+de averiguar qué pasó era pedirle el teléfono al cliente.
+
 ## v2.996.0 — El comprobante del corte sale desde las cuatro pantallas que confirman
 
 **La sala confirmó un corte, salió la etiqueta de la bolsa y el comprobante no.**

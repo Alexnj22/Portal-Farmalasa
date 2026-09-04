@@ -108,15 +108,35 @@ const VER = [
 
 const VACIO = [];
 
-/** Lo que cada freno significa, en palabras del mostrador. */
+/** Lo que cada freno significa, en palabras del mostrador.
+ *
+ *  `OTRO_BENEFICIARIO` estuvo acá hasta el 2026-09-04 y ya no frena: un pago QR
+ *  a «FARMACIA LA SALUD QPL» —o sea a nosotros, con el nombre del comercio en
+ *  vez del de la persona— dejaba el botón apagado con el cliente ya habiendo
+ *  pagado. Hoy ese caso avisa fuerte y deja marca; ver `nombreSinReconocer`. */
 const MOTIVO_DEL_FRENO = {
     NO_ES_COMPROBANTE: 'La foto no muestra un comprobante de pago.',
     ILEGIBLE: 'El comprobante no se lee: la foto está borrosa o cortada.',
     NO_APROBADO: 'Ese voucher salió declinado, así que no acredita ningún pago.',
+    OPERACION_NO_APLICADA: 'El comprobante dice que la operación no se aplicó.',
     SIN_MONTO: 'No se pudo leer el monto del comprobante.',
-    OTRO_BENEFICIARIO: 'El comprobante NO está a nombre de la empresa.',
     MONTO_MAYOR_AL_SALDO: 'El comprobante es por más de lo que este cliente debe.',
 };
+
+/** El aviso del nombre que no se reconoce. No frena —el cliente ya pagó— pero
+ *  se dice con el peso de un freno: es lo único que separa «nos pagaron» de
+ *  «le pagaron a otro», y quien cobra es el único que puede comprobarlo. */
+function AvisoDeNombre({ lectura }) {
+    if (!lectura?.nombreSinReconocer) return null;
+    const dice = lectura.leido?.beneficiario;
+    return (
+        <Notice variant="danger" icon={AlertTriangle}>
+            El comprobante no está a nombre de la empresa
+            {dice ? <>: dice <strong>«{dice}»</strong></> : null}. Comprueba que el
+            pago haya entrado antes de aceptarlo — queda registrado que se aceptó así.
+        </Notice>
+    );
+}
 
 
 /** Lo que la insignia significa, en palabras. El color solo no se puede leer —
@@ -1342,10 +1362,10 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                             <Notice variant="danger" icon={AlertTriangle}>
                                 {MOTIVO_DEL_FRENO[lectura.veredicto]
                                     || 'El comprobante no se pudo dar por bueno.'}
-                                {lectura.veredicto === 'OTRO_BENEFICIARIO' && lectura.leido?.beneficiario
-                                    && ` Dice «${lectura.leido.beneficiario}».`}
                             </Notice>
                         )}
+
+                        {!bloqueado && <AvisoDeNombre lectura={lectura} />}
 
                         {lectura && !bloqueado && (lectura.avisos || []).length > 0 && (
                             <Notice variant="warning">{lectura.avisos.join(' ')}</Notice>
@@ -1768,6 +1788,7 @@ function PedirCorreccion({ credito, abono, onClose, onListo }) {
                                             || 'El comprobante no se pudo dar por bueno.'}
                                     </Notice>
                                 )}
+                                {!bloqueado && <AvisoDeNombre lectura={lectura} />}
                                 <PortalInput label="Número del comprobante" value={documento} maxLength={40}
                                     onChange={(e) => setDocumento(e.target.value)} />
                             </>

@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts"
 import { callGemini, parseGeminiJson } from "../_shared/gemini.ts"
-import { TITULAR, esElTitular, elTitularEstaEnElPapel, norm } from "../_shared/titular.ts"
+import { TITULAR, esElTitular, esNuestraFarmacia, elPapelNosNombra, norm } from "../_shared/titular.ts"
 
 // ════════════════════════════════════════════════════════════════════════════
 // Lee el comprobante con el que un cliente abona un crédito, y LLENA el
@@ -24,9 +24,11 @@ import { TITULAR, esElTitular, elTitularEstaEnElPapel, norm } from "../_shared/t
 //
 // ── Tres documentos, tres cosas que probar ────────────────────────────────
 //
-//   transferencia  el dinero tiene que haber llegado a NUESTRA cuenta. Lo que
-//                  se comprueba es el BENEFICIARIO: si el comprobante va a
-//                  nombre de otro, el cliente pagó a otra persona.
+//   transferencia  el dinero tiene que haber llegado a NUESTRA cuenta. Se mira
+//                  el BENEFICIARIO — pero desde el 2026-09-04 un nombre que no
+//                  se reconoce AVISA y no frena: ver «Por qué el nombre ajeno
+//                  ya no frena», más abajo. Vale también para el pago QR, donde
+//                  el que recibe es el comercio y no la persona.
 //   cheque         igual, y además que sea un cheque y no otra hoja.
 //   tarjeta        el voucher tiene que ser de uno de NUESTROS POS. Un voucher
 //                  de otro comercio no acredita nada.
@@ -47,13 +49,14 @@ const mismoMonto = (a: unknown, b: unknown) => {
 }
 
 const PROMPTS: Record<string, string> = {
-  transferencia: `Estás mirando el comprobante de una TRANSFERENCIA BANCARIA: puede ser la
+  transferencia: `Estás mirando el comprobante de un pago que un cliente le hizo a una
+farmacia: una TRANSFERENCIA BANCARIA, un DEPÓSITO o un PAGO CON CÓDIGO QR. Puede ser la
 captura de pantalla de una app de banco, un correo de confirmación o un papel impreso.
 
 Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
 {
   "es_comprobante": true | false,
-  "tipo_documento": "TRANSFERENCIA | DEPOSITO | OTRO",
+  "tipo_documento": "TRANSFERENCIA | DEPOSITO | PAGO_QR | OTRO",
   "beneficiario": "el nombre de quien RECIBE el dinero, tal cual está impreso, o null",
   "ordenante": "el nombre de quien ENVÍA el dinero, o null",
   "nombres_del_papel": ["TODOS los nombres de persona o empresa impresos, estén donde estén"],
@@ -61,15 +64,23 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
   "monto": 0.00,
   "moneda": "USD" | null,
   "fecha": "YYYY-MM-DD o null",
-  "referencia": "el número de referencia, confirmación o transacción, o null",
+  "referencia": "el número de referencia, confirmación, operación o transacción, o null",
+  "estado": "el estado que el papel declare, copiado tal cual, o null",
   "numeros_del_papel": ["TODOS los números de 4 dígitos o más que aparezcan"],
   "legible": true | false,
   "motivo": "si es_comprobante es false, en una frase corta y en español, qué se ve"
 }
 
 Reglas:
-- "es_comprobante" es false si no se ve un comprobante de transferencia o depósito
-  (una foto de otra cosa, una pantalla en blanco, un producto, una persona).
+- "es_comprobante" es false si no se ve un comprobante de pago (una foto de otra cosa,
+  una pantalla en blanco, un producto, una persona).
+- ⚠️ UN PAGO QR ES UN COMPROBANTE. La pantalla que dice "Pagos QR", "Pago con QR",
+  "Transfer365" u "Operación ejecutada con éxito" y trae un monto y a quién se le pagó
+  vale exactamente igual que una transferencia: "es_comprobante" true y tipo_documento
+  "PAGO_QR". No la descartes por no tener forma de transferencia.
+- En un PAGO QR el que recibe es un COMERCIO y no una persona, y su nombre va después de
+  "Pagar a", "Comercio", "Negocio" o "Beneficiario" —por ejemplo "FARMACIA LA SALUD QPL"—.
+  Ese nombre va en "beneficiario", y también en "nombres_del_papel".
 - OJO con BENEFICIARIO vs ORDENANTE. Son dos nombres distintos y confundirlos
   invierte el sentido de la operación. El beneficiario es a quien SE LE ABONA:
   suele ir rotulado "Beneficiario", "Destino", "Para", "Acreditar a", "Cuenta
@@ -89,7 +100,10 @@ Reglas:
   corrijas: si dice "JOSE RUTILIO ALEMA", escribí "JOSE RUTILIO ALEMA".
 - "monto" es el importe transferido, como número, sin símbolo ni separadores de
   miles. Si hay comisión aparte, el monto es el que RECIBE el beneficiario.
-- "fecha" es la de la operación, no la de impresión ni la de hoy.
+- "fecha" es la de la operación, no la de impresión ni la de hoy. Si el papel trae dos
+  ("fecha de ordenanza" y "fecha aplicada"), usá la de la operación.
+- "estado" se copia TAL CUAL del papel, sin interpretarlo: FINALIZADO, APLICADA, EXITOSA,
+  PENDIENTE, RECHAZADA, ANULADA… Si el papel no declara ningún estado, null.
 - Si un dato no está, null. No lo inventes ni lo deduzcas.`,
 
   cheque: `Estás mirando la foto de un CHEQUE.
@@ -238,32 +252,70 @@ Deno.serve(async (req) => {
       leido.beneficiario, leido.ordenante,
       ...(Array.isArray(leido.nombres_del_papel) ? leido.nombres_del_papel : []),
     ]
-    const nombradoEnElPapel = clave === "tarjeta" ? null : elTitularEstaEnElPapel(nombresDelPapel)
+    const nombradoEnElPapel = clave === "tarjeta" ? null : elPapelNosNombra(nombresDelPapel)
 
+    /* La casilla del que recibe puede traer al titular O una farmacia nuestra.
+     * Lo segundo es lo normal en un pago QR: el QR está registrado a nombre del
+     * comercio, así que el papel nunca va a decir el nombre de la persona. */
     const coincide = {
-      titular: clave === "tarjeta" ? null : esElTitular(leido.beneficiario),
+      titular: clave === "tarjeta" ? null
+        : (esElTitular(leido.beneficiario) || esNuestraFarmacia(leido.beneficiario)),
       nombradoEnElPapel,
       cabeEnElSaldo: tieneMonto && Number.isFinite(tope) ? monto <= tope + 0.004 : null,
       pos: clave === "tarjeta" ? !posSinReconocer : null,
     }
 
     /* El VEREDICTO es lo que frena, y son pocas cosas a propósito: que sea el
-     * documento que dice ser, que se lea, que el dinero haya llegado a nuestro
-     * nombre, y que no diga más de lo que el cliente debe. Todo lo demás es
-     * aviso — un freno de más se paga con el cliente esperando en el mostrador. */
+     * documento que dice ser, que se lea, que el propio papel no diga que la
+     * operación no se aplicó, que tenga monto, y que no diga más de lo que el
+     * cliente debe. Todo lo demás es aviso — un freno de más se paga con el
+     * cliente esperando en el mostrador.
+     *
+     * Un papel que se declara RECHAZADO o PENDIENTE no acredita ningún pago, lo
+     * mismo que un voucher declinado. Es lo único que se sumó como freno, y
+     * sale SÓLO con una palabra explícita del papel: la ausencia del dato no
+     * frena a nadie. */
+    const NO_SE_APLICO = /RECHAZ|ANULAD|REVERS|DENEGAD|FALLID|PENDIENTE|EN PROCESO|NO APLICAD/
+
     let veredicto = "OK"
     if (!leido.es_comprobante) veredicto = "NO_ES_COMPROBANTE"
     else if (leido.legible === false) veredicto = "ILEGIBLE"
     else if (clave === "tarjeta" && leido.aprobado === false) veredicto = "NO_APROBADO"
+    else if (clave !== "tarjeta" && NO_SE_APLICO.test(norm(leido.estado))) {
+      veredicto = "OPERACION_NO_APLICADA"
+    }
     else if (!tieneMonto) veredicto = "SIN_MONTO"
-    // El freno es «nuestro nombre NO está en el papel» —o sea, el cliente le
-    // pagó a otro—. Que esté y no se haya podido decir que es quien recibe es
-    // otra cosa, y se avisa: un freno de más se paga con el cliente esperando.
-    else if (coincide.titular === false && !nombradoEnElPapel) veredicto = "OTRO_BENEFICIARIO"
     else if (coincide.cabeEnElSaldo === false) veredicto = "MONTO_MAYOR_AL_SALDO"
 
+    /* ── Por qué el nombre ajeno ya NO frena (2026-09-04) ──────────────────
+     *
+     * Hasta hoy, «nuestro nombre no está en el papel» apagaba el botón. Y el
+     * papel que lo destapó era nuestro: un pago QR a «FARMACIA LA SALUD QPL»,
+     * o sea el COMERCIO, que es un nombre que el portal no tenía por qué
+     * conocer. El cliente ya había pagado y el cobro no se podía registrar.
+     *
+     * El problema de fondo no era ese nombre sino la forma del freno: **cada
+     * manera nueva en que un banco nos nombra costaba un despliegue**, y entre
+     * el papel nuevo y el despliegue no había ninguna salida en el mostrador.
+     * Un freno sin salida no se cumple: se esquiva escribiendo el cobro como
+     * otra cosa, y ahí se pierde hasta el rastro.
+     *
+     * Decisión del usuario, 2026-09-04: **pasa, con aviso y marca.** El aviso
+     * habla en pantalla —«comprueba que el pago haya entrado»— y la marca queda
+     * dentro de `lectura`, que se guarda en `creditos_abonos_portal.lectura`,
+     * así que los comprobantes con nombre sin reconocer se pueden listar
+     * después sin que nadie tenga que acordarse de anotarlos.
+     *
+     * Lo que SÍ sigue frenando no depende de ningún nombre: que no sea un
+     * comprobante, que no se lea, que el propio papel diga que la operación no
+     * se aplicó, que no tenga monto, o que diga más de lo que el cliente debe. */
+    const nombreSinReconocer = clave !== "tarjeta" && nombradoEnElPapel === false
+
+    /* El aviso del nombre NO va acá y es a propósito: `nombreSinReconocer` viaja
+     * como bandera y la frase la escribe la pantalla, que es la que sabe con
+     * cuánto peso decirla. Puesta también en `avisos` saldría dos veces. */
     const avisos: string[] = []
-    if (coincide.titular === false && nombradoEnElPapel) {
+    if (!nombreSinReconocer && coincide.titular === false) {
       avisos.push(
         "El comprobante nombra a la empresa, pero no en la casilla de quien recibe el dinero. "
         + "Comprueba que el pago haya entrado antes de aceptarlo.",
@@ -275,10 +327,23 @@ Deno.serve(async (req) => {
     if (!leido.fecha) avisos.push("El comprobante no dice la fecha; escríbela a mano.")
     if (!leido.referencia) avisos.push("No se leyó el número del comprobante; escríbelo a mano.")
 
+    /* Un cobro rechazado en el mostrador sale con 200 igual que uno aceptado, así
+     * que sin esta línea la única forma de saber qué pasó es pedirle el teléfono
+     * al cliente. Costó el pago QR del 2026-09-04: dos intentos en el registro,
+     * los dos 200, y ninguno decía cuál de los cinco frenos había sido. */
+    console.log("[leer-pago]", JSON.stringify({
+      forma: clave, veredicto, nombreSinReconocer,
+      tipo: leido.tipo_documento ?? null, estado: leido.estado ?? null,
+      beneficiario: leido.beneficiario ?? null, monto: tieneMonto ? monto : null,
+    }))
+
     return json({
       leido,
       coincide,
       veredicto,
+      // La MARCA. Viaja adentro de `lectura` hasta
+      // `creditos_abonos_portal.lectura`, que es donde se puede listar después.
+      nombreSinReconocer,
       avisos,
       // Lo que la pantalla va a poner en el formulario. Se devuelve aparte de
       // `leido` para que se vea qué se autollenó y qué se dejó a mano.

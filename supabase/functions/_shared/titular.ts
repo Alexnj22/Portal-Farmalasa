@@ -75,3 +75,64 @@ export function esElTitular(nombre: unknown, minimo = 2): boolean {
 export function elTitularEstaEnElPapel(nombres: unknown[]): boolean {
   return (nombres ?? []).some((n) => esElTitular(n, 3))
 }
+
+/* ── El titular no es el único nombre nuestro ──────────────────────────────
+ *
+ * Lo trajo un PAGO QR del 2026-09-04: el comprobante dice «Pagar a FARMACIA LA
+ * SALUD QPL» y nada más. Ahí el banco no imprime al titular de la cuenta —
+ * imprime al COMERCIO, que es con el que el QR está registrado—, así que
+ * `esElTitular` daba false, el veredicto salía «de otro beneficiario» y el
+ * cobro quedaba trabado con el cliente ya habiendo pagado.
+ *
+ * Es el mismo defecto que la nota de cargo de dos días antes dicho de otra
+ * forma: **el portal sabía UN nombre nuestro y nosotros tenemos varios.** Cada
+ * manera nueva en que un banco nos nombra costaba un despliegue.
+ *
+ * Se compara por PREFIJO por lo mismo que el nombre de la persona: el banco
+ * corta a un largo fijo, y «FARMACIA LA SALU» tiene que seguir siendo nuestra.
+ *
+ * ⚠️ Lo que se acepta acá es «una farmacia con nuestro nombre comercial», no
+ * «esta farmacia». Otra empresa llamada igual en otro departamento pasaría, y
+ * es una decisión: el freno por nombre ya no bloquea nada —avisa y deja marca—,
+ * así que el costo de reconocer de más es un aviso que no salió, y el de
+ * reconocer de menos era un cliente que no podía pagar. */
+
+/** Las dos marcas con las que la empresa opera. `EMPRESA.nombreComercial` es
+ *  «Farmacias La Popular y La Salud»: son éstas dos. */
+const MARCAS = ["LA SALUD", "LA POPULAR"]
+
+/** Cómo se abrevia «farmacia» en un comprobante. Por prefijo: FARMACIA,
+ *  FARMACIAS, FARMACI, FARM. */
+const NEGOCIO = "FARMACIA"
+
+/**
+ * ¿Este nombre es una farmacia nuestra?
+ *
+ * Pide las DOS cosas —que diga farmacia y que diga nuestra marca— porque
+ * ninguna sola alcanza: «FARMACIA SAN JOSÉ» no es nuestra y «LA POPULAR» a
+ * secas es media El Salvador.
+ */
+export function esNuestraFarmacia(nombre: unknown): boolean {
+  const t = norm(nombre)
+  if (!t) return false
+  const diceFarmacia = t.split(" ").some(
+    (p) => p.length >= 4 && (NEGOCIO.startsWith(p) || p.startsWith(NEGOCIO)),
+  )
+  if (!diceFarmacia) return false
+  /* La marca, tolerando el corte del banco. Alcanza con mirar el prefijo MÁS
+   * CORTO: un texto que contiene «LA SALUD» contiene «LA SAL». */
+  return MARCAS.some((m) => t.includes(m.slice(0, m.length - 2)))
+}
+
+/**
+ * ¿El papel nos nombra, de la manera que sea?
+ *
+ * Es la pregunta que de verdad importa —«¿este dinero vino a nosotros?»— y
+ * tiene tres respuestas buenas: la casilla del que recibe dice el titular, el
+ * titular aparece en algún lado del papel, o el papel nombra una farmacia
+ * nuestra. Antes sólo se sabían las dos primeras.
+ */
+export function elPapelNosNombra(nombres: unknown[]): boolean {
+  return elTitularEstaEnElPapel(nombres)
+    || (nombres ?? []).some((n) => esNuestraFarmacia(n))
+}

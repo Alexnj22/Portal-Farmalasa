@@ -3,7 +3,7 @@ import Button from './Button';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Bell, BellRing, Check, AlertTriangle, AlertCircle, CheckCircle2,
+    Bell, BellRing, Check,
     Megaphone, ChevronRight, ChevronDown, Trash2, X, ArrowRight, Undo2,
     ArrowLeftRight, Ban, Eye,
 } from 'lucide-react';
@@ -13,6 +13,14 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { iconoDeTipo } from '../../constants/tipoIconos';
+/* La severidad, el tono, el verbo y la antigüedad viven en un solo sitio desde
+   que la vista `/notificaciones` los necesita también (2026-09-04): copiados,
+   la copia sería la que se queda vieja, y lo que se desincronizaría es qué tan
+   grave se VE un aviso. */
+import {
+    severidadDelTitulo, tituloSinEmoji, tintForType, etiquetaDeAccion,
+    RESUELTA_LABEL, PIDE_DECISION, timeAgo,
+} from '../../utils/notificacionTexto';
 import { MODULO_QUE_DECIDE } from '../../constants/solicitudModulos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -25,7 +33,9 @@ import Contador from './Contador';
 import AvatarConEstado from './AvatarConEstado';
 import NotificacionDetalle from './NotificacionDetalle';
 import { AnilloDeMeta, CuerpoDeCierreDeMeta, CuerpoDeCierreDeEmpresa, CuerpoDeCierreDelDia } from './CierreDeMeta';
+import { AnilloDeFaltante, CuerpoDeFaltanteDeCaja } from './TarjetaDeFaltante';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
+import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
 
 /* El diálogo canónico de la solicitud, para el rechazo.
  *
@@ -53,88 +63,15 @@ const CorteDetalleModal = lazy(() => import('../cortes/CorteDetalleModal'));
 // ícono propio en RequestsView.
 const iconForType = iconoDeTipo;
 
-// ── La severidad la dice el ÍCONO, no un emoji dentro del título ────────────
-// Los avisos que escribe la base traen su severidad como emoji al principio
-// («⚠️ El barrido de Hacienda terminó con fallas»), y el panel la ignoraba: el
-// ícono salía del TIPO, así que una alerta de fallas se dibujaba con la campana
-// genérica y el aviso quedaba diciendo dos veces lo mismo — una en emoji y
-// otra, mal, en ícono. Reportado como «mejorá cómo se ven».
-//
-// Se lee el emoji, se usa para elegir ícono y tono, y se quita del texto. El
-// título arranca en su primera palabra y la severidad se ve donde se mira
-// primero. No hace falta un mapa por tipo: quien escribe el aviso ya la declaró.
-const SEVERIDAD = [
-    { re: /^(🚨|❌|⛔)/u,  Icono: AlertCircle,   claro: 'bg-danger/10 text-danger border-danger/30',   oscuro: 'bg-danger/10 text-danger-text border-danger/40' },
-    { re: /^(⚠️|⚠)/u,     Icono: AlertTriangle, claro: 'bg-warning/10 text-warning border-warning/30', oscuro: 'bg-warning/10 text-warning-text border-warning/40' },
-    { re: /^(✅|✔️)/u,     Icono: CheckCircle2,  claro: 'bg-success/10 text-success border-success/25', oscuro: 'bg-success/10 text-success-text border-success/20' },
-];
-const severidadDelTitulo = (titulo = '') =>
-    SEVERIDAD.find(s => s.re.test(titulo.trim())) || null;
-const tituloSinEmoji = (titulo = '') =>
-    titulo.replace(/^\s*(?:🚨|❌|⛔|⚠️|⚠|✅|✔️)\s*/u, '');
 
-const tintForType = (type = '', metadata = {}, isDark = false) => {
-    if (isDark) {
-        if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-warning-text border-warning/40';
-        if (type === 'REQUEST_DECIDED' || type === 'MINMAX_DECIDED') {
-            return metadata?.status === 'REJECTED'
-                ? 'bg-danger/10 text-danger-text border-danger/40'
-                : 'bg-success/10 text-success-text border-success/20';
-        }
-        if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-chart-1-text border-chart-1/40';
-        return 'bg-surface-card text-white/60 border-border-card';
-    }
-    if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-warning border-warning/30';
-    if (type === 'REQUEST_DECIDED' || type === 'MINMAX_DECIDED') {
-        return metadata?.status === 'REJECTED'
-            ? 'bg-danger/10 text-danger border-danger/30'
-            : 'bg-success/10 text-success border-success/30';
-    }
-    if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-brand-text border-chart-1/30';
-    return 'bg-surface-card-hover text-content-3 border-border-card/70';
-};
-
-// Tipos que esperan una acción del usuario → chip con verbo específico;
-// el resto de filas con link muestran "Ver" (indicador de que son clickeables)
-const ACTION_LABEL = {
-    REQUEST_PENDING: 'Revisar solicitud',
-    MINMAX_PENDING:  'Revisar solicitud',
-    PEDIDO_LLEGADA:  'Confirmar recepción',
-    PEDIDO_REENVIO:  'Confirmar llegada',
-    PEDIDO_PROBLEMA: 'Ver detalle',
-    CORTE_NUEVO:     'Revisar el corte',
-    DEPOSITO_BANCO:  'Ver el depósito',
-};
-
-/* El recordatorio de las 7:30 nombra UNO o VARIOS cortes según lo que haya
- * quedado colgado, así que su etiqueta no puede ser fija: es el verbo que
- * promete lo que pasa al tocar la fila, y prometer «los cortes» sobre uno solo
- * es la misma clase de mentira chica que un botón que no hace lo que dice. */
-const etiquetaDeAccion = (n) =>
-    n.type === 'CORTE_PENDIENTE'
-        ? (n.metadata?.cuantas === 1 ? 'Resolver el corte' : 'Resolver los cortes')
-        : ACTION_LABEL[n.type];
 
 /* Los dos avisos que existen para PEDIR una decisión — y que por eso se van de
  * la campana en cuanto la decisión se toma. Son los únicos: el resto de los
  * avisos de solicitud CUENTAN lo que pasó (`REQUEST_RESOLVED`,
  * `REQUEST_DECIDED`, `MINMAX_DECIDED`) y ésos se quedan, porque son la
  * respuesta que alguien estaba esperando. */
-const PIDE_DECISION = new Set(['REQUEST_PENDING', 'MINMAX_PENDING']);
-
 const UNDO_MS = 3000;
 
-const timeAgo = (iso) => {
-    const diff = Date.now() - new Date(iso).getTime();
-    const min = Math.floor(diff / 60000);
-    if (min < 1)  return 'Ahora';
-    if (min < 60) return `Hace ${min} min`;
-    const hrs = Math.floor(min / 60);
-    if (hrs < 24) return `Hace ${hrs} h`;
-    const days = Math.floor(hrs / 24);
-    if (days < 7) return `Hace ${days} día${days > 1 ? 's' : ''}`;
-    return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
-};
 
 // Barra de cuenta regresiva de la ventana Deshacer (3s, lineal)
 const UndoProgress = ({ isDark }) => (
@@ -500,11 +437,6 @@ const NotificationBell = ({ variant = 'desktop' }) => {
      * hecha. Dice «Aprobada» porque describe SU decisión, y es transitorio — al
      * cerrarse la solicitud el trigger lo pisa con el estado final, así que este
      * mismo aviso termina diciendo en qué terminó todo. */
-    const RESUELTA_LABEL = {
-        APPROVED: 'Aprobada', REJECTED: 'Rechazada', CANCELLED: 'Cancelada',
-        ADVANCED: 'Aprobada',
-    };
-
     /* ── Decidir DESDE la campana, no en otra pantalla ──────────────────────
      *
      * Hasta v2.601.x estos dos botones no decidían: navegaban a
@@ -975,6 +907,14 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                    cómo quedó la caja y contra qué se compara. */
                                                 const delDia   = datosDeCierreDelDia(n);
                                                 const conAnillo = cierre || empresa || delDia;
+                                                /* El faltante de caja de ayer. NO entra en `conAnillo`:
+                                                   aquéllos dibujan un porcentaje de cumplimiento con su
+                                                   escala de colores, y acá el arco es otra cosa —cuánto
+                                                   se contó de lo que debía haber— y su color es uno
+                                                   solo, porque un faltante nunca es verde. Compartir el
+                                                   anillo habría obligado a que un 99.7% se pintara como
+                                                   una meta cumplida. */
+                                                const faltante = datosDeFaltanteDeCaja(n);
 
                                                 // Fila en ventana de deshacer (borrado individual)
                                                 if (pendingOne) {
@@ -1035,7 +975,9 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             className={`relative w-full flex items-start gap-3 pl-3.5 pr-9 py-3 text-left
                                                                 ${interactiva ? 'cursor-pointer' : 'cursor-default'}`}
                                                         >
-                                                            {conAnillo ? (
+                                                            {faltante ? (
+                                                                <AnilloDeFaltante datos={faltante} isDark={isDark} />
+                                                            ) : conAnillo ? (
                                                                 <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                                                             ) : (
                                                                 <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
@@ -1061,7 +1003,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     la regla que decide quién ve dólares—, y
                                                                     debajo se le suma igual el puesto entre las
                                                                     salas, que no habla de dinero. */}
-                                                                {(!conAnillo || (cierre && cierre.venta == null)) && n.body && (
+                                                                {((!conAnillo && !faltante) || (cierre && cierre.venta == null)) && n.body && (
                                                                     <CuerpoDeNotificacion
                                                                         id={n.id}
                                                                         texto={n.body}
@@ -1081,6 +1023,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                 {delDia && (
                                                                     <CuerpoDeCierreDelDia
                                                                         datos={delDia}
+                                                                        claseTenue={cx.rowBody}
+                                                                        isDark={isDark}
+                                                                    />
+                                                                )}
+                                                                {faltante && (
+                                                                    <CuerpoDeFaltanteDeCaja
+                                                                        datos={faltante}
                                                                         claseTenue={cx.rowBody}
                                                                         isDark={isDark}
                                                                     />
@@ -1316,6 +1265,25 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                     </div>
                                 )}
                             </div>
+
+                            {/* ── La salida al historial ──────────────────────────────
+                                La campana carga 100 avisos y nada más, y ese tope no es
+                                teórico: medido el 2026-09-04, 28 de 46 personas ya lo
+                                pasaron y la que más tiene 608. Sin este enlace, el resto
+                                de su historial —y la papelera— existen y no hay forma de
+                                llegar. Va FUERA del contenedor que hace scroll, para que
+                                no haya que recorrer cien avisos para encontrarlo. */}
+                            <button
+                                onClick={() => { setIsOpen(false); navigate('/notificaciones'); }}
+                                className={`shrink-0 w-full flex items-center justify-center gap-1.5 px-5 py-3
+                                    border-t text-label font-black uppercase tracking-widest
+                                    min-h-[var(--tap-min)] active:scale-[0.99] transition-colors
+                                    ${isDark ? 'border-white/10 text-white/60 hover:text-white hover:bg-white/[0.04]'
+                                             : 'border-border-card text-content-3 hover:text-content hover:bg-surface-card-hover'}`}
+                            >
+                                Ver todas
+                                <ChevronRight size={14} strokeWidth={2.5} />
+                            </button>
                         </div>
                     </motion.div>
                 )}

@@ -77,6 +77,7 @@ export const IMPORTADORES = {
     ProveedoresView: () => import("../views/purchases/ProveedoresView"),
     ClientesView: () => import("../views/ClientesView"),
     MisPuntosView: () => import("../views/MisPuntosView"),
+    NotificacionesView: () => import("../views/NotificacionesView"),
     ConteoInventarioView: () => import("../views/ConteoInventarioView"),
     ConteoDetailView: () => import("../views/inventario/ConteoDetailView"),
     FacturacionView: () => import("../views/FacturacionView"),
@@ -138,6 +139,7 @@ export const IMPORTADOR_POR_RUTA = {
     'traslados': IMPORTADORES.TrasladosView,
     'monitor': IMPORTADORES.AttendanceMonitorView,
     'mis-avisos': IMPORTADORES.EmployeeAnnouncementsView,
+    'notificaciones': IMPORTADORES.NotificacionesView,
     'mis-documentos': IMPORTADORES.EmployeeDocumentsView,
     // `/my-requests` se fusionó en `/solicitudes-personales` el 2026-08-11 y hoy
     // sólo redirige. Se deja porque el prefetch corre ANTES de la redirección:

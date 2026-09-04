@@ -38,6 +38,7 @@ import { LoadingState } from './components/common/StateViews';
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
 // empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.
 const EmployeeAnnouncementsView = lazy(IMPORTADORES.EmployeeAnnouncementsView);
+const NotificacionesView = lazy(IMPORTADORES.NotificacionesView);
 const EmployeeProfileView = lazy(IMPORTADORES.EmployeeProfileView);
 const EmployeeDocumentsView = lazy(IMPORTADORES.EmployeeDocumentsView);
 const AttendanceMonitorView = lazy(IMPORTADORES.AttendanceMonitorView);
@@ -761,6 +762,13 @@ function MainApp() {
                                         una solicitud aprobada llevaría al 404. */}
                                     <Route path="my-requests" element={<IrAPersonales />} />
                                     <Route path="mis-avisos" element={<PermissionGuard moduleKey="emp_announcements"><EmployeeAnnouncementsView /></PermissionGuard>} />
+                                    {/* Los avisos propios: el historial de la campana y su
+                                        papelera. SIN `PermissionGuard` a propósito — un aviso
+                                        es de quien lo recibió y el RLS ya lo acota a sus
+                                        propias filas (`notifications_select`). Ponerle un
+                                        módulo dejaría a alguien recibiendo avisos que no puede
+                                        abrir, que es la peor de las dos fallas. */}
+                                    <Route path="notificaciones" element={<NotificacionesView />} />
                                     <Route path="mis-documentos" element={<PermissionGuard moduleKey="emp_documents"><EmployeeDocumentsView /></PermissionGuard>} />
                                     <Route path="mi-perfil" element={<PermissionGuard moduleKey="emp_profile"><EmployeeProfileView openModal={openModal} /></PermissionGuard>} />
 
@@ -1073,6 +1081,7 @@ const ROUTE_TITLES = {
     '/carnes-del-dia':    'Carnés del día',
     '/impresion':         'Prueba de impresión',
     '/mis-avisos':  'Mis avisos',
+    '/notificaciones':      'Notificaciones',
     '/mis-documentos':      'Mis documentos',
     '/mi-perfil':           'Mi perfil',
     // La pestaña del CLIENTE. Sin esta línea decía «Portal FarmaSalud» —el

@@ -1,7 +1,7 @@
 import {
     fetchNotifications as fetchNotificationsData, markNotificationRead as markNotificationReadData,
     markNotificationsReadBulk, deleteNotificationsByIds as deleteNotificationsByIdsData,
-    deleteNotificationsBefore,
+    deleteNotificationsBefore, restoreNotificationsByIds as restoreNotificationsByIdsData,
 } from '../../data/notifications';
 
 // ============================================================================
@@ -56,6 +56,15 @@ export const createNotificationsSlice = (set, get) => ({
     _replaceNotification: (notif) => {
         set(state => {
             if (!state.notifications.some(n => n.id === notif.id)) return state;
+            /* Desde que borrar es un UPDATE de `deleted_at` (2026-09-04), el
+               borrado llega por este mismo camino — y fusionarlo dejaría la
+               fila a la vista con una fecha de borrado adentro. Quien la borró
+               no lo nota porque su propia pestaña ya la sacó de la lista; lo
+               nota la SEGUNDA pestaña de la misma persona, que la sigue
+               mostrando hasta recargar. Acá se saca. */
+            if (notif.deleted_at) {
+                return { notifications: state.notifications.filter(n => n.id !== notif.id) };
+            }
             return { notifications: state.notifications.map(n => n.id === notif.id ? { ...n, ...notif } : n) };
         });
     },
@@ -109,9 +118,16 @@ export const createNotificationsSlice = (set, get) => ({
         }
     },
 
-    // RLS solo permite borrar las propias (policy notifications_delete).
-    // El commit llega DESPUÉS de la ventana de "Deshacer" (3s) de la campana,
-    // por eso recibe IDs explícitos: lo que llegue durante la ventana no se toca.
+    /* Borrar es OCULTAR: se escribe `deleted_at` y la fila queda en la base
+       hasta que la purgue el cron de los 90 días. Lo que sale de la campana se
+       puede ver y devolver desde `/notificaciones` → pestaña «Borradas». La
+       policy de DELETE se quitó en la migración `20260904141450`, así que esto
+       ya no es una convención de este archivo: no hay forma de destruirla desde
+       el navegador.
+
+       El RLS sigue acotando a las propias (`notifications_update`). El commit
+       llega DESPUÉS de la ventana de "Deshacer" (3s) de la campana, por eso
+       recibe IDs explícitos: lo que llegue durante la ventana no se toca. */
     deleteNotificationsByIds: async (ids) => {
         const idSet = new Set(ids || []);
         if (!idSet.size) return;
@@ -123,9 +139,27 @@ export const createNotificationsSlice = (set, get) => ({
         }
     },
 
+    /* Devolverla a la campana desde la papelera.
+       Recarga después de escribir en vez de insertarla en memoria: la fila
+       restaurada puede ser vieja y no entrar en las 100 de la campana, y
+       meterla a mano ahí la mostraría en un orden que el próximo fetch
+       desharía. */
+    restoreNotificationsByIds: async (ids) => {
+        const idSet = new Set(ids || []);
+        if (!idSet.size) return;
+        try {
+            const { error } = await restoreNotificationsByIdsData([...idSet]);
+            if (error) throw error;
+            await get().fetchNotifications();
+        } catch (err) {
+            console.error('Error restaurando notificaciones:', err);
+            throw err;
+        }
+    },
+
     // "Borrar todas" real: fetchNotifications solo carga las 100 más recientes,
     // así que borrar por IDs cargados dejaba reaparecer las más viejas en el
-    // siguiente fetch. Este borra TODO lo del destinatario server-side (RLS ya
+    // siguiente fetch. Este OCULTA todo lo del destinatario server-side (RLS ya
     // limita a sus propias filas) hasta `cutoff` — el mismo corte de tiempo
     // capturado al click, ANTES de la ventana de deshacer de 3s, para no
     // borrar algo que llegó por realtime durante esa ventana (mismo contrato

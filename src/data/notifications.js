@@ -5,6 +5,26 @@
 // lectura/marcado-como-leído/borrado del lado del destinatario.
 import { supabase } from '../supabaseClient';
 
+/* Borrar es OCULTAR, no destruir (2026-09-04).
+ *
+ * Hasta hoy el botón de la campana hacía un `.delete()` real y la fila se iba
+ * de la base: no había `deleted_at`, no había trigger, no se escribía en
+ * `audit_logs`. Preguntado por el usuario: «una vez eliminada, ¿no hay forma de
+ * verla?». No la había.
+ *
+ * Hoy se escribe `deleted_at` y la fila sigue ahí hasta que la limpie
+ * `purge-notifications-daily` a los 90 días. La policy de DELETE se quitó en la
+ * misma migración: si sólo lo respetara este archivo, «se puede recuperar»
+ * dependería de que nadie llame al endpoint viejo.
+ *
+ * Efecto lateral que arregla otra cosa: cuatro edge functions usan
+ * `notifications` como su propia marca de «ya avisé» (buscan por
+ * `metadata->>check_key`). Con el borrado duro, vaciar la campana borraba esa
+ * marca y el aviso VOLVÍA a mandarse. La fila que sobrevive lo cierra.
+ */
+
+const CAMPOS = 'id, type, title, body, link, metadata, branch_id, created_by, created_at, read_at, deleted_at';
+
 // `created_by` es QUIÉN la originó — lo escribe `notificar_solicitud_creada` con
 // el `employee_id` de la solicitud. Estaba en la tabla y no se leía, así que la
 // campana no podía poner la cara de quien pide: había que abrir la solicitud
@@ -13,9 +33,84 @@ import { supabase } from '../supabaseClient';
 // sistema lo traen nulo y ahí la fila se dibuja como antes.
 export function fetchNotifications() {
     return supabase.from('notifications')
-        .select('id, type, title, body, link, metadata, branch_id, created_by, created_at, read_at')
+        .select(CAMPOS)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(100);
+}
+
+/* Los comodines de LIKE y el separador de `or()`, neutralizados.
+   `\` primero: si no, escapa las barras que agrega este mismo paso. */
+const escaparBusqueda = (t) => String(t).trim()
+    .replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+    .replace(/,/g, ' ');
+
+/**
+ * Una PÁGINA del historial, para la vista `/notificaciones`.
+ *
+ * Existe porque la campana trae 100 y nada más, y ese tope no es teórico:
+ * medido en producción el 2026-09-04, **28 de 46 personas ya pasaron las 100**
+ * y la que más tiene 608. O sea que para más de la mitad del personal parte de
+ * su historial ya era invisible **sin haber borrado nada**, y como no falla
+ * nada nadie lo reporta.
+ *
+ * Pagina con `range` y pide `count: 'exact'` en la misma ida: el pie necesita
+ * el total para saber cuántas páginas hay, y pedirlo aparte serían dos viajes
+ * que pueden contestar cosas distintas. El RLS ya acota a las propias
+ * (`notifications_select`), así que no hay filtro por persona acá — ponerlo
+ * sería confiar en que el navegador diga la verdad sobre quién es.
+ *
+ * `busca` pasa por `escaparBusqueda`: un `%` o un `_` que alguien escriba son
+ * comodines de LIKE, y una coma parte el `or()` de PostgREST en dos condiciones
+ * — o sea que buscar «salud, 5» pediría otra cosa sin avisar.
+ *
+ * Las borradas se ordenan por CUÁNDO SE BORRARON y no por cuándo llegaron: en
+ * una papelera lo que uno busca es «lo que acabo de tirar», y un aviso viejo
+ * borrado hoy quedaría al fondo con el otro orden.
+ *
+ * El `.range()` va PEGADO al `.from()`, con los filtros armados antes: el
+ * detector `sin-paginar` de `npm run gate:data` mira los 450 caracteres que
+ * siguen al `.from()` para decidir si la consulta está acotada, y con los
+ * filtros y sus comentarios en el medio el `.range()` le quedaba fuera de la
+ * ventana. Acusaba a una consulta paginada de no estarlo — y la salida correcta
+ * no es una excepción, es que la paginación se lea de un vistazo.
+ *
+ * @param estado  'activas' | 'sin_leer' | 'borradas'
+ * @param tipo    un `type` concreto, o null para todos
+ * @param desde   ISO: piso de `created_at`, o null para todo lo que quede
+ * @param busca   texto libre sobre título y cuerpo, o null
+ */
+export function fetchNotificationsPage({ estado = 'activas', tipo = null, desde = null, busca = null, pagina = 0, porPagina = 25 } = {}) {
+    const orden = estado === 'borradas' ? 'deleted_at' : 'created_at';
+
+    let q = supabase.from('notifications')
+        .select(CAMPOS, { count: 'exact' })
+        .order(orden, { ascending: false })
+        .range(pagina * porPagina, pagina * porPagina + porPagina - 1);
+
+    if (estado === 'borradas') q = q.not('deleted_at', 'is', null);
+    else {
+        q = q.is('deleted_at', null);
+        if (estado === 'sin_leer') q = q.is('read_at', null);
+    }
+
+    if (tipo)  q = q.eq('type', tipo);
+    if (desde) q = q.gte('created_at', desde);
+    if (busca) {
+        const t = escaparBusqueda(busca);
+        q = q.or(`title.ilike.%${t}%,body.ilike.%${t}%`);
+    }
+
+    return q;
+}
+
+/* Los tipos que esta persona tiene, para llenar el filtro sin escribir la lista
+   a mano — un catálogo escrito a mano se desincroniza del registro.
+   Por RPC y no `select('type')`: eso serían tantas filas como avisos tenga, y
+   PostgREST corta en 1000 SIN AVISAR. El día que alguien las cruce, el filtro
+   perdería tipos y no habría error que lo delate. La función devuelve ~20. */
+export function fetchNotificationTypes() {
+    return supabase.rpc('mis_tipos_de_notificacion');
 }
 
 export function markNotificationRead(id, readAt) {
@@ -26,10 +121,24 @@ export function markNotificationsReadBulk(ids, readAt) {
     return supabase.from('notifications').update({ read_at: readAt }).in('id', ids).is('read_at', null);
 }
 
-export function deleteNotificationsByIds(ids) {
-    return supabase.from('notifications').delete().in('id', ids);
+/* `.is('deleted_at', null)` en el UPDATE, no sólo por prolijidad: sin él,
+   borrar de nuevo algo que ya estaba en la papelera le pisaría la fecha y la
+   mandaría al tope de la lista como si se acabara de tirar. */
+export function deleteNotificationsByIds(ids, deletedAt) {
+    return supabase.from('notifications')
+        .update({ deleted_at: deletedAt || new Date().toISOString() })
+        .in('id', ids).is('deleted_at', null);
 }
 
 export function deleteNotificationsBefore(cutoffIso) {
-    return supabase.from('notifications').delete().lte('created_at', cutoffIso);
+    return supabase.from('notifications')
+        .update({ deleted_at: new Date().toISOString() })
+        .lte('created_at', cutoffIso).is('deleted_at', null);
+}
+
+/** Devolverla a la campana. */
+export function restoreNotificationsByIds(ids) {
+    return supabase.from('notifications')
+        .update({ deleted_at: null })
+        .in('id', ids).not('deleted_at', 'is', null);
 }

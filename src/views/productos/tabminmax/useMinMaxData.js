@@ -828,8 +828,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         useToastStore.getState().showToast(
             ERP_NAMES[selectedErp],
             cuadra
-                ? `${aDescartar.borradores.toLocaleString()} borradores descartados · también se limpiaron ${aDescartar.sinDatos.toLocaleString()} productos con pocas ventas para calcular, que vuelven en el próximo cálculo`
-                : `${total.toLocaleString()} borradores descartados`,
+                ? `Se descartaron ${aDescartar.borradores.toLocaleString()} borradores · y ${aDescartar.sinDatos.toLocaleString()} productos sin ventas para calcular, que vuelven solos`
+                : `Se descartaron ${total.toLocaleString()} borradores`,
             cuadra ? 'info' : 'success',
         );
         useStaff.getState().appendAuditLog('MINMAX_DISCARD_ALL', String(selectedErp), {
@@ -981,23 +981,29 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 product_ids: productIds ?? null,
             });
             await loadData(selectedErp);
-            const n = res?.published ?? 0;
-            const omitidas = res?.omitidas_por_ajuste_manual ?? 0;
-            const label = productIds ? `${n} producto${n !== 1 ? 's' : ''}` : `${n.toLocaleString()} borradores`;
+            const n        = res?.published ?? 0;
+            const frenadas = res?.omitidas_por_ajuste_manual ?? 0;
+            // «Borradores» siempre, aunque se hayan mandado ids: es la palabra
+            // que usa esta pantalla. Decir «3 productos» acá obliga a traducir.
+            const label = `${n.toLocaleString()} borrador${n !== 1 ? 'es' : ''}`;
             // Lo que quedó quieto se DICE, y se dice de quién fue la decisión.
             // Callarlo haría leer «publicó todo» donde no publicó todo, que es
             // el silencio con el que desaparecieron 567 ajustes sin que nadie lo
             // notara; nombrarlo mal —«las ajustó alguien a mano» sobre borradores
             // que acababa de teclear quien publicaba— es el error contrario.
+            //
+            // `frenadas` es la rama que ya casi no ocurre: el diálogo manda ids
+            // explícitos, y con ids la base no frena nada. Queda por si alguien
+            // publica sin pasar por ahí.
             const cola = dejadasAparte > 0
-                ? ` · ${dejadasAparte.toLocaleString()} se dejaron como estaban, según elegiste`
-                : omitidas > 0
-                    ? ` · ${omitidas.toLocaleString()} sin publicar: su número vigente lo puso una persona`
+                ? ` · ${dejadasAparte.toLocaleString()} quedaron igual, como elegiste`
+                : frenadas > 0
+                    ? ` · ${frenadas.toLocaleString()} no, tienen un número puesto a mano`
                     : '';
             useToastStore.getState().showToast(
                 ERP_NAMES[selectedErp],
-                `Publicó ${label} exitosamente${cola}`,
-                (omitidas > 0 || dejadasAparte > 0) ? 'info' : 'success',
+                `Se publicaron ${label}${cola}`,
+                (frenadas > 0 || dejadasAparte > 0) ? 'info' : 'success',
             );
         } catch (e) { useToastStore.getState().showToast('Error al publicar', mensajeAmigable(e), 'error'); }
         finally { setPublishing(false); }

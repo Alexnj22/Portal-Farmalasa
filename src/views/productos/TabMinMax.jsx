@@ -1589,13 +1589,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             <>
                                 <p className="text-body font-medium leading-relaxed text-content-3">
                                     <strong className="text-content-1">
-                                        {publishConfirm.ajustadas} de estos borradores
+                                        {publishConfirm.ajustadas} de ellos
                                     </strong>{' '}
-                                    caen sobre productos cuyo número actual lo puso una persona
+                                    tienen hoy un MIN/MAX puesto a mano
                                     {/* Crudo, igual que el badge AJUSTADO de la fila: `manual_por`
                                         guarda lo que devolvió `auth.email()`, que a veces es un
                                         nombre y a veces una cuenta — no es `employees.name`. */}
-                                    {publishConfirm.ajustePor ? `; el último, ${publishConfirm.ajustePor}` : ''}
+                                    {publishConfirm.ajustePor ? ` — el último, ${publishConfirm.ajustePor}` : ''}
                                     {publishConfirm.ajusteAt
                                         ? ` el ${new Date(publishConfirm.ajusteAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}`
                                         : ''}.
@@ -1612,8 +1612,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 />
                                 <p className="text-caption leading-relaxed text-content-3">
                                     {publishConfirm.modo === 'todos'
-                                        ? 'El borrador reemplaza el número que puso la persona.'
-                                        : `Se publican ${publishConfirm.idsSinAjuste.length}; los ajustados quedan igual y su borrador sigue esperando.`}
+                                        ? `Los ${publishConfirm.count} borradores reemplazan lo que hay hoy, incluido lo puesto a mano.`
+                                        : `Se publican ${publishConfirm.idsSinAjuste.length}. Los otros ${publishConfirm.ajustadas} no cambian y su borrador sigue esperando.`}
                                 </p>
                             </>
                         )}
@@ -1721,11 +1721,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         </p>
                         {aDescartar.sinDatos > 0 && (
                             <p className="text-body font-medium leading-relaxed text-content-3">
-                                También se limpiarán{' '}
+                                Además se limpiarán{' '}
                                 <strong className="text-content-1">
-                                    {aDescartar.sinDatos.toLocaleString()} productos con pocas ventas
+                                    {aDescartar.sinDatos.toLocaleString()} productos sin ventas suficientes
                                 </strong>{' '}
-                                para calcular — no salen en esta lista y vuelven solos en el próximo cálculo.
+                                para calcular. No salen en esta lista y vuelven solos en el próximo cálculo,
+                                así que el total será {aDescartar.total.toLocaleString()}.
                             </p>
                         )}
                     </div>

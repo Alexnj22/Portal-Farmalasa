@@ -45,8 +45,12 @@ const sanear = (message, type, humano) => {
  * algo DISTINTO y casi siempre trae un número que hay que cruzar contra lo que
  * uno tenía en la cabeza. «Publicó 0 borradores exitosamente · 38 sin tocar,
  * las ajustó alguien a mano» son 74 caracteres y una pregunta; en 3.5 s no se
- * lee, y el reporte fue literal: «no alcancé a leer». Son 21 de 428. */
-const PLAZO = { error: 10000, info: 8000, otros: 3500 };
+ * lee, y el reporte fue literal: «no alcancé a leer». Son 21 de 428.
+ *
+ * Cinco segundos y no ocho: el plazo alcanza para un aviso ESCRITO para caber
+ * —dos cifras y qué son— y no para uno que se justifica. Alargar el plazo en
+ * vez de acortar el texto deja el aviso largo y encima más tiempo en pantalla. */
+const PLAZO = { error: 10000, info: 5000, otros: 3500 };
 
 export const useToastStore = create((set, get) => ({
     isOpen: false,

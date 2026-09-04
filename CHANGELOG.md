@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.988.2 — Los avisos de Min·Máx caben en cinco segundos
+
+Ajuste de los avisos de v2.987.0. El plazo de un `info` baja de 8 s a **5**, y
+los textos se acortaron para caber ahí: alargar el plazo en vez de acortar el
+texto deja el aviso largo y encima más tiempo en pantalla.
+
+| antes | ahora |
+|---|---|
+| `Publicó 38 productos exitosamente · 29 se dejaron como estaban, según elegiste` | `Se publicaron 9 borradores · 29 quedaron igual, como elegiste` |
+| `38 borradores descartados · también se limpiaron 697 productos con pocas ventas para calcular, que vuelven en el próximo cálculo` | `Se descartaron 38 borradores · y 697 productos sin ventas para calcular, que vuelven solos` |
+
+**«Borradores» siempre, aunque se manden ids.** El aviso decía «3 productos»
+cuando la publicación era dirigida y «3 borradores» cuando era el barrido —o sea
+que la palabra dependía de un detalle interno—, y desde v2.987.0 el diálogo manda
+ids SIEMPRE, así que habría dicho «productos» en todos los casos. Es la palabra
+que usa esa pantalla; decir otra obliga a traducir.
+
+El diálogo de descartar además adelanta el total (`así que el total será 735`),
+que es exactamente el número que va a aparecer después.
+
+
 ## v2.988.1 — Lo quitado de la campana se mezcla en el listado
 
 Se va la pestaña «Fuera de la campana», que duró una hora. Reportado con

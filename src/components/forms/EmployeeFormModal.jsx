@@ -1619,8 +1619,20 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             resumen = r;
             return { ...prev, ...r.parche };
         });
+        /* Cuántos campos trajo el lector, de verdad.
+         *
+         * Sin este número, «no completó nada y no dice nada distinto» tiene DOS
+         * causas que se ven idénticas: el documento confirmó lo que ya estaba, o
+         * el lector volvió con todos los campos en null. El panel pintaba las
+         * dos en verde —«Lo que dice el documento ya estaba escrito en la
+         * ficha»—, así que una lectura que no leyó nada se anunciaba como
+         * confirmación. Es [[feedback_cero_filas_no_distingue_no_mire_de_no_habia]]:
+         * un cero no distingue «no miré» de «no había». */
+        const camposLeidos = Object.values(data.datos || {})
+            .filter(v => v !== null && v !== undefined && String(v).trim() !== '').length;
         setDuiLeido({
             aplicados: Object.keys(resumen?.parche || {}).length,
+            camposLeidos,
             descartados: resumen?.descartados || [],
             // Lo que el documento dice DISTINTO de lo que ya estaba escrito. No
             // se aplica solo —el humano manda— pero tampoco se tira en silencio.
@@ -2659,18 +2671,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 una lista de 14 era ceremonia — nadie iba a decir que no. */}
                             {duiLeido && !leyendoDui && (
                                 <div className={`mt-3 border p-3 rounded-2xl animate-in slide-in-from-top-2 ${
-                                    (duiLeido.numeroIlegible || duiLeido.descartados.length)
+                                    (duiLeido.numeroIlegible || duiLeido.descartados.length || !duiLeido.camposLeidos)
                                         ? 'bg-warning/10 border-warning/30' : 'bg-success/10 border-success/30'}`}>
                                     <div className="flex items-start gap-3">
                                         <CheckCircle2 size={16} className={`shrink-0 mt-0.5 ${
-                                            (duiLeido.numeroIlegible || duiLeido.descartados.length) ? 'text-warning' : 'text-success'}`} strokeWidth={2.5} />
+                                            (duiLeido.numeroIlegible || duiLeido.descartados.length || !duiLeido.camposLeidos) ? 'text-warning' : 'text-success'}`} strokeWidth={2.5} />
                                         <div className="min-w-0 flex-1">
                                             <p className="text-label text-content font-medium leading-snug">
                                                 {duiLeido.aplicados > 0
                                                     ? <>Se completaron <span className="font-black">{duiLeido.aplicados}</span> dato{duiLeido.aplicados === 1 ? '' : 's'} con el documento.</>
                                                     : duiLeido.diferencias?.length
                                                         ? <>El documento no completó ningún campo vacío, pero dice algo distinto en {duiLeido.diferencias.length === 1 ? 'un dato' : `${duiLeido.diferencias.length} datos`}.</>
-                                                        : <>Lo que dice el documento ya estaba escrito en la ficha.</>}
+                                                        /* Cero aplicados y cero diferencias tiene DOS causas y se veían
+                                                           iguales, las dos en verde. Si el lector no trajo NI UN campo,
+                                                           no confirmó nada: lo que hay que decir es que vuelva a
+                                                           intentarlo, no que estaba todo bien. */
+                                                        : duiLeido.camposLeidos === 0
+                                                            ? <>El documento no aportó ningún dato. Vuelve a subirlo —o escribe los campos a mano.</>
+                                                            : <>Lo que dice el documento ya estaba escrito en la ficha.</>}
                                             </p>
 
                                             {/* ── Lo que el documento dice DISTINTO ───────────────
@@ -3162,6 +3180,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="relative z-tabs">
                                     <label className={rotuloCampo('text-content-3')}>Nivel Académico</label>
                                     <LiquidSelect value={formData.education_level} onChange={(val) => handleSelectChange('education_level', val)} options={EDUCATION_OPTIONS} placeholder="Nivel..." icon={GraduationCap} clearable={false} {...portalSelectProps} />
+                                    {/* Un valor que el catálogo ya no tiene se pinta EXACTAMENTE
+                                        igual que uno vacío: el select cae en su placeholder y no
+                                        hay error ni celda de menos. Pasó con `UNIVERSITARIO_G`
+                                        —el catálogo viejo separaba Estudiante y Graduado, hoy eso
+                                        lo decide el toggle de abajo—: la ficha tenía el dato, la
+                                        pantalla mostraba «Nivel…», y quien la miraba concluía que
+                                        faltaba. Decirlo es lo que lo vuelve corregible. */}
+                                    {formData.education_level && !EDUCATION_OPTIONS.some(o => o.value === formData.education_level) && (
+                                        <p className="mt-1 text-caption text-warning-text font-medium leading-snug">
+                                            La ficha trae «{formData.education_level}», que ya no está en la lista. Elige el nivel que corresponde para guardarlo bien.
+                                        </p>
+                                    )}
                                 </div>
 
                                 {formData.education_level === 'BASICA' && (

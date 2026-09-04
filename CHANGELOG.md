@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.975.5 — El lector del DUI deja de anunciar como confirmación una lectura vacía
+
+Dos avisos que se veían bien y decían algo que no era.
+
+**«Lo que dice el documento ya estaba escrito en la ficha», en verde, sobre una
+lectura que no trajo nada.** Ese texto salía cuando el documento no completó
+ningún campo vacío y tampoco dijo nada distinto — y eso tiene DOS causas que se
+veían idénticas: que el documento confirmara lo que ya había, o que el lector
+volviera con todos los campos en `null`. La segunda se anunciaba como
+confirmación, así que una lectura fallida se leía como una lectura buena. Ahora
+se cuenta cuánto trajo el lector: con cero campos el panel es de ADVERTENCIA y
+dice «El documento no aportó ningún dato. Vuelve a subirlo —o escribe los campos
+a mano».
+
+**Nivel académico vacío con el dato puesto en la ficha.** El catálogo separaba
+`UNIVERSITARIO_E`/`UNIVERSITARIO_G` (estudiante y graduado) y hoy eso lo decide
+el interruptor «¿Actualmente estudiando?». Las fichas viejas nunca se migraron, y
+un valor que la lista ya no tiene se pinta **exactamente igual que uno vacío**:
+el select cae en su placeholder, sin error y sin campo faltante visible. Quien
+miraba la ficha concluía que el nivel no estaba cargado. Ahora el formulario lo
+dice —«La ficha trae "X", que ya no está en la lista»— y se puede corregir.
+
 ## v2.975.4 — El DUI en un PDF de dos páginas deja de decir que trae sólo el frente
 
 Subir el DUI como **un solo PDF con las dos caras** —la forma más común de

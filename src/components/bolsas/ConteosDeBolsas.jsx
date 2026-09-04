@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { AlertTriangle, Building2, CheckCircle2, ChevronDown, ChevronUp, Package, Scale } from 'lucide-react';
 import Badge from '../common/Badge';
 import AvatarConEstado from '../common/AvatarConEstado';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
 import { formatMoney } from '../../utils/formatNumber';
@@ -274,7 +275,10 @@ const COLUMNAS_BOLSA = [
  * que la columna mantiene su forma y la fila no cambia de alto según quién sea.
  */
 function Persona({ persona, className = '' }) {
-    const nombre = persona?.name ?? persona?.nombre;
+    // Primer nombre + primer apellido, como en todo el portal: la columna es
+    // angosta y un nombre de cuatro palabras la parte. Ver `utils/nameUtils`.
+    const crudo = persona?.name ?? persona?.nombre;
+    const nombre = crudo ? shortEmployeeName({ ...persona, name: crudo }) : null;
     if (!nombre) return <span className="text-content-3">—</span>;
     return (
         <span className={`inline-flex items-center gap-1.5 min-w-0 ${className}`}>

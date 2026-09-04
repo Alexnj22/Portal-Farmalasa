@@ -87,17 +87,45 @@ export function pasoDeMonto(montoEnCentavos) {
 }
 
 /**
+ * Cuánto hay en la bolsa AHORA. Cero cuando no se sabe.
+ *
+ * `monto_inicial` es lo que se guardó; el saldo es lo que queda después de los
+ * vales. Hasta el 2026-09-03 esta pregunta estaba respondida a mano en SEIS
+ * sitios —acá, el Circuito, Mi caja, el widget del Inicio y las dos sumas de la
+ * entrega— y las seis terminaban en `?? b.monto_inicial`: cuando el saldo no
+ * llegaba mostraban lo guardado. Un número creíble, más alto que el real y en
+ * la dirección peligrosa — la pantalla del conteo pide contar contra él y el
+ * diálogo de salida ofrece sacar plata que ya salió.
+ *
+ * **Medido ese día: en operación normal el saldo SIEMPRE llega.** Un
+ * dependiente ve 40 bolsas por RLS y `get_bolsas_saldos` le devuelve 40 filas,
+ * así que el fallback no se estrena nunca salvo que esa consulta falle sola
+ * —son dos llamadas distintas y la segunda puede caer con la primera bien—.
+ * Había 4 bolsas abiertas con vales por $1,753.01: ése era el tamaño exacto del
+ * faltante que la sala habría visto sin que nada fallara a la vista.
+ *
+ * Por eso lo desconocido vale CERO y no lo guardado. Cero es evidente —nadie
+ * confunde $0.00 con un saldo—, deja la bolsa fuera del reparto (`disponibles`
+ * filtra las que no tienen nada, o sea que no se le puede sacar dinero) y hace
+ * que el servidor rechace el conteo en vez de aceptarlo contra una cifra
+ * inventada. El error pasa de creíble y a favor a visible y en contra.
+ */
+export function saldoDeBolsa(b) {
+    const s = Number(b?.saldo);
+    return Number.isFinite(s) ? s : 0;
+}
+
+/**
  * Las que están en la sala y tienen algo, de la más vieja a la más nueva.
  *
- * El orden de preferencia del saldo importa: el mapa recién traído, después el
- * que la fila ya trae pegado, y sólo al final `monto_inicial`. Sin el del medio,
- * un llamador que ya resolvió los saldos —y no manda el mapa— caería en lo
- * guardado y ofrecería sacar plata que ya salió.
+ * El orden de preferencia del saldo importa: el mapa recién traído y después el
+ * que la fila ya trae pegado. Sin el segundo, un llamador que ya resolvió los
+ * saldos —y no manda el mapa— se quedaría sin ninguno.
  */
 export function disponibles(bolsas, saldos) {
     return (bolsas || [])
         .filter((b) => b.estado === 'ABIERTA')
-        .map((b) => ({ ...b, saldo: Number(saldos?.get(b.id)?.saldo ?? b.saldo ?? b.monto_inicial ?? 0) }))
+        .map((b) => ({ ...b, saldo: saldoDeBolsa({ saldo: saldos?.get(b.id)?.saldo ?? b.saldo }) }))
         .filter((b) => centavos(b.saldo) > 0)
         .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))
             || String(a.hora).localeCompare(String(b.hora)));

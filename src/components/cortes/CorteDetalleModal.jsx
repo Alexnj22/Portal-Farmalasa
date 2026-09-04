@@ -3,6 +3,7 @@ import { AlertTriangle, Ban, CheckCircle2, RotateCcw, ShieldCheck } from 'lucide
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import AvatarConEstado from '../common/AvatarConEstado';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
@@ -367,10 +368,10 @@ export default function CorteDetalleModal({
                         {/* El nombre sale de quién lo hizo en el portal. El del
                             sistema de la caja es el de la cuenta de la sala, y en
                             tres salas lleva el nombre de una persona que no cortó. */}
-                        {visible?.hizo?.name ? ` · ${visible.hizo.name}` : ''}
+                        {visible?.hizo?.name ? ` · ${shortEmployeeName(visible.hizo)}` : ''}
                         {/* Y quién recibió la caja: confirmar el corte cierra el
                             turno, así que son los dos nombres del mismo acto. */}
-                        {visible?.recibe?.name ? ` → ${visible.recibe.name}` : ''}
+                        {visible?.recibe?.name ? ` → ${shortEmployeeName(visible.recibe)}` : ''}
                     </p>
                 </div>
             </LiquidModal.Header>
@@ -658,7 +659,7 @@ export default function CorteDetalleModal({
                                         </span>
                                     </div>
                                     <div className="text-label font-bold text-content truncate">
-                                        {persona?.name || 'Sin registrar quién'}
+                                        {persona?.name ? shortEmployeeName(persona) : 'Sin registrar quién'}
                                     </div>
                                     {(visible.motivo_descarte || visible.observaciones) && (
                                         <div className="text-caption text-content-3">

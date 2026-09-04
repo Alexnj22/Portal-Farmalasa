@@ -11,6 +11,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { saldoDeBolsa } from '../../utils/bolsasReparto';
 
 /* El formulario se baja al apretar su botón, no al entrar al Inicio: arrastra el
  * canónico de archivo y el selector de personas, y la baldosa se ve entera sin
@@ -163,7 +164,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     // El SALDO, no lo guardado: sumar `monto_inicial` diría que hay efectivo que
     // ya salió en una remesa.
     const total = useMemo(
-        () => enSala.reduce((a, b) => a + Number(b.saldo ?? b.monto_inicial ?? 0), 0),
+        () => enSala.reduce((a, b) => a + saldoDeBolsa(b), 0),
         [enSala],
     );
     const masVieja = useMemo(
@@ -389,7 +390,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                     <EntregaDeBolsas
                         abierto={entregando}
                         bolsas={enSala}
-                        saldoDe={(b) => Number(b.saldo ?? b.monto_inicial ?? 0)}
+                        saldoDe={saldoDeBolsa}
                         verMontos={verMontos}
                         nombreSala={enSala.length ? nombreSala[enSala[0].branch_id] : ''}
                         onClose={() => setEntregando(false)}

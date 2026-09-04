@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { disponibles, elegirBolsas, elegirOrigen, totalDisponible } from '../../src/utils/bolsasReparto';
+import { disponibles, elegirBolsas, elegirOrigen, saldoDeBolsa, totalDisponible } from '../../src/utils/bolsasReparto';
 
 // De qué bolsa sale el dinero. La regla del usuario es «la más vieja que
 // alcance SOLA» — no vaciar la vieja primero, que es la respuesta intuitiva y
@@ -94,6 +94,45 @@ describe('qué bolsas están disponibles', () => {
         const [b] = disponibles(crudas, new Map([[1, { saldo: 100 }]]));
         expect(b.saldo).toBe(100);
         expect(totalDisponible([b])).toBe(100);
+    });
+
+    /* La regresión que este archivo no cazaba, y por la que existe
+     * `saldoDeBolsa`: cuando el saldo NO llegó, `disponibles` ofrecía
+     * `monto_inicial` — lo guardado, que es más de lo que hay. Una bolsa de
+     * $300 con $200 ya sacados se ofrecía entera y el diálogo dejaba armar una
+     * salida de $300 que el servidor después rechaza.
+     *
+     * Ahora no se sabe cuánto tiene, así que no se le saca nada. */
+    it('una bolsa cuyo saldo no llegó NO se ofrece con lo guardado', () => {
+        const sinSaldo = [{
+            id: 1, folio: 'A', fecha: '2026-08-13', hora: '19:01',
+            estado: 'ABIERTA', monto_inicial: 300,
+        }];
+        expect(disponibles(sinSaldo, null)).toEqual([]);
+        expect(disponibles(sinSaldo, new Map())).toEqual([]);
+        expect(elegirBolsas(disponibles(sinSaldo, null), 50).alcanza).toBe(false);
+    });
+});
+
+describe('cuánto hay en una bolsa', () => {
+    it('es el saldo, no lo guardado', () => {
+        expect(saldoDeBolsa({ saldo: 100, monto_inicial: 300 })).toBe(100);
+    });
+
+    it('un saldo de cero es un dato, no un dato que falta', () => {
+        expect(saldoDeBolsa({ saldo: 0, monto_inicial: 300 })).toBe(0);
+    });
+
+    it('sin saldo vale cero: lo desconocido no se rellena con lo guardado', () => {
+        expect(saldoDeBolsa({ monto_inicial: 300 })).toBe(0);
+        expect(saldoDeBolsa({ saldo: null, monto_inicial: 300 })).toBe(0);
+        expect(saldoDeBolsa({ saldo: undefined, monto_inicial: 300 })).toBe(0);
+        expect(saldoDeBolsa(undefined)).toBe(0);
+    });
+
+    it('el saldo llega como texto desde la base y sigue siendo un número', () => {
+        // `numeric` de Postgres viaja como string en JSON.
+        expect(saldoDeBolsa({ saldo: '661.25' })).toBe(661.25);
     });
 });
 

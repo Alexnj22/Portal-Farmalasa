@@ -15,6 +15,7 @@ import PortalInput from '../components/common/PortalInput';
 import IdentidadDeQuienRetira from '../components/bolsas/IdentidadDeQuienRetira';
 import ValesDeCaja from '../components/bolsas/ValesDeCaja';
 import AvatarConEstado from '../components/common/AvatarConEstado';
+import { shortEmployeeName } from '../utils/nameUtils';
 import PhotoLightbox from '../components/common/PhotoLightbox';
 import SearchInput from '../components/common/SearchInput';
 import StatCard from '../components/common/StatCard';
@@ -58,6 +59,7 @@ import { conSigno, formatMoney } from '../utils/formatNumber';
 import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { getSignedFileUrl } from '../utils/storageFiles';
+import { saldoDeBolsa } from '../utils/bolsasReparto';
 
 /**
  * Mi caja — el turno de esta sala, ahora.
@@ -580,7 +582,7 @@ export default function MiCajaView({ comoPestana = false }) {
         [bolsas, diaAbierto],
     );
     const yaEmbolsado = useMemo(
-        () => bolsasDeHoy.reduce((t, b) => t + (Number(b.saldo ?? b.monto_inicial) || 0), 0),
+        () => bolsasDeHoy.reduce((t, b) => t + saldoDeBolsa(b), 0),
         [bolsasDeHoy],
     );
 
@@ -785,11 +787,15 @@ export default function MiCajaView({ comoPestana = false }) {
      * tarjeta eso se corta a «RODRIGO EDUARDO M…», que es peor que dos
      * palabras: el apellido —lo que distingue a dos Rodrigos— es justo lo que
      * se pierde. Primer nombre y primer apellido, con mayúscula normal. */
+    /* El recorte lo hace el canónico del portal (`utils/nameUtils`) y no una
+     * copia local: la misma regla escrita dos veces se separa el día que una
+     * gane un caso y la otra no. Acá sólo queda lo propio de esta pantalla —la
+     * mayúscula normal, y devolver `null` en vez de «Personal» para que el
+     * llamador pueda decir «se hizo desde la caja». */
     const corto = useCallback((texto) => {
-        const partes = String(texto || '').trim().split(/\s+/).filter(Boolean);
-        if (!partes.length) return null;
-        const elegidas = partes.length > 2 ? [partes[0], partes[2]] : partes.slice(0, 2);
-        return elegidas.map(conMayuscula).join(' ');
+        const limpio = String(texto || '').trim();
+        if (!limpio) return null;
+        return shortEmployeeName({ name: limpio }).split(/\s+/).map(conMayuscula).join(' ');
     }, []);
 
     /* Las CUATRO preguntas con las que alguien entra a esta pantalla, y ninguna

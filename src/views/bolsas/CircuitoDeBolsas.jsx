@@ -32,6 +32,7 @@ import { useRefrescoEnVivo } from '../../hooks/useRefrescoEnVivo';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { rangoDeDias } from './etapas';
 import { useToastStore } from '../../store/toastStore';
+import { saldoDeBolsa } from '../../utils/bolsasReparto';
 
 /* El detalle se baja al ABRIR una bolsa, no al entrar a la pestaña: arrastra el
  * motor de impresion y el visor de archivos firmados, y la lista se ve entera
@@ -256,8 +257,10 @@ const VACIO = [];
 
 // `monto_inicial` es lo que se guardó; el SALDO es lo que debe haber en billetes
 // hoy. Desde que se puede sacar dinero de una bolsa, sumar lo guardado sería
-// decir que hay plata que ya no está.
-const saldoDe = (b) => Number(b.saldo ?? b.monto_inicial ?? 0);
+// decir que hay plata que ya no está — y eso es justo lo que hacía el
+// `?? b.monto_inicial` que esta línea tenía hasta el 2026-09-03. Ahora sale del
+// canónico: ver `saldoDeBolsa`, que explica por qué lo desconocido vale cero.
+const saldoDe = saldoDeBolsa;
 const suma = (lista) => lista.reduce((a, b) => a + saldoDe(b), 0);
 /* El conteo contra el que se mide, en las DOS ventanas donde existe: la tanda
  * ya firmada (`contado`) y la que se está contando (`conteo_marcado`). Al

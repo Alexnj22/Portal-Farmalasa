@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.976.5 — El saldo de una bolsa deja de rellenarse con lo guardado, y los nombres se acortan
+
+Salidos de auditar el circuito de bolsas y cortes. Los dos primeros van juntos y
+en ese orden a propósito: invertidos, el arreglo de seguridad rompía la pantalla.
+
+**«¿Cuánto hay en esta bolsa?» estaba respondida a mano en SEIS sitios** —el
+Circuito, Mi caja, el widget del Inicio, las dos sumas de la entrega y el
+reparto— y las seis terminaban en `?? b.monto_inicial`. Cuando el saldo no
+llegaba mostraban lo guardado: un número creíble, más alto que el real y en la
+dirección peligrosa — la pantalla del conteo pide contar contra él y el diálogo
+de salida ofrece sacar plata que ya salió.
+
+Medido: en operación normal el saldo **siempre** llega (un dependiente ve 40
+bolsas por RLS y `get_bolsas_saldos` le devuelve 40 filas), así que el fallback
+sólo se estrena si esa consulta falla sola. Ese día había 4 bolsas abiertas con
+vales por **$1,753.01**: ése era el tamaño del faltante que la sala habría visto
+sin que nada fallara a la vista.
+
+Ahora hay un canónico, `saldoDeBolsa`, y lo desconocido vale **cero**. Cero es
+evidente, deja la bolsa fuera del reparto y hace que el servidor rechace el
+conteo en vez de aceptarlo contra una cifra inventada: el error pasa de creíble
+y a favor a visible y en contra. Con su prueba de regresión.
+
+**`get_bolsas_saldos` no respetaba el alcance de sala.** Ejecutado con la
+identidad real de un dependiente de La Popular pidiendo una bolsa de Salud 4,
+devolvía su saldo — mientras el RLS de la tabla sí se la tapaba. Los ids son
+secuenciales. Corregido con la misma condición que la policy; verificado después
+de aplicar que no le quitó una sola fila a quien debe verlas (40/40 con alcance
+de sala, 238/238 con alcance total).
+
+**Y el nombre completo se coló en tres pantallas.** *«¿por qué sale el nombre
+completo? hay reglas ya definidas que lo prohíben»*, sobre la tarjeta de un corte
+descartado que decía «EDWIN ALEXANDER NUNEZ JOYA». `TarjetaCorte`,
+`CorteDetalleModal` y la columna de conteos pintaban `persona.name` crudo: el
+avatar de al lado sí usaba el canónico —para las iniciales— y el texto no. Mi
+caja no fallaba, pero tenía **su propia copia** de la regla, que ahora también
+sale de `shortEmployeeName`. Medido: el heurístico que parte desde `name` acierta
+en las 48 fichas, así que las consultas no se tocaron.
+
+- Migración `el_saldo_de_una_bolsa_respeta_el_alcance_de_sala`.
+- Y un corte en cero de La Popular (turno 6, 19:39) quedó descartado: borrarlo no
+  servía —el sync lo reinserta en menos de 30 segundos y de paso avisa de nuevo
+  a la sala—, y un corte que no contó efectivo no se puede confirmar.
+
 ## v2.976.4 — El corte Z cierra el espejo de la apertura
 
 Pregunta del usuario: *«¿el barrido no dijimos que sería más corto?»*. No — la

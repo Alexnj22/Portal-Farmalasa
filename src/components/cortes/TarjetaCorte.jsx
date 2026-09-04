@@ -3,6 +3,7 @@ import { AlertTriangle, Ban, CheckCircle2 } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import AvatarConEstado from '../common/AvatarConEstado';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '../../utils/clickable';
 import { contraste, diferenciaDelCorte, noContoEfectivo, seConfirmaDeUnClic, severidad } from '../../utils/cortesDiagnostico';
@@ -54,7 +55,15 @@ const selloDeTiempo = (iso) => (iso
     : '');
 
 // Las iniciales de respaldo las resuelve `AvatarConEstado` con
-// `shortEmployeeName`, el mismo respaldo del resto del portal.
+// `shortEmployeeName` — y el NOMBRE de al lado sale del mismo canónico.
+//
+// Hasta el 2026-09-03 sólo lo usaban las iniciales: el texto se pintaba con
+// `persona.name` crudo, así que el avatar decía «EN» y el renglón de al lado
+// «EDWIN ALEXANDER NUNEZ JOYA». Reportado sobre la tarjeta de un corte
+// descartado de La Popular. La regla del portal es primer nombre + primer
+// apellido en TODA la interfaz (`utils/nameUtils`), y las excepciones son
+// Personal —donde el nombre completo ES el dato— y lo que SALE del portal:
+// CSV, planilla y papel impreso, que llevan el nombre legal.
 
 const TarjetaCorte = memo(function TarjetaCorte({
     corte,
@@ -199,8 +208,8 @@ const TarjetaCorte = memo(function TarjetaCorte({
                         dice sin gastar una línea más — en una tarjeta que ya
                         compite por alto con la cifra. */}
                     <div className="text-caption text-content-3 truncate">
-                        {corte.hizo?.name || 'se hizo desde la caja'}
-                        {corte.recibe?.name ? ` → ${corte.recibe.name}` : ''}
+                        {corte.hizo?.name ? shortEmployeeName(corte.hizo) : 'se hizo desde la caja'}
+                        {corte.recibe?.name ? ` → ${shortEmployeeName(corte.recibe)}` : ''}
                     </div>
                     {/* «Nadie recibió» se DICE, no se calla: es la mitad
                         «avisar» de la decisión del usuario (3-sep, «avisar
@@ -266,7 +275,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                     <AvatarConEstado emp={persona} px={24} radio="rounded-full" marco="" />
                     <div className="min-w-0 flex-1">
                         <div className="text-caption font-semibold text-content-2 truncate">
-                            {persona?.name || 'Sin registrar quién'}
+                            {persona?.name ? shortEmployeeName(persona) : 'Sin registrar quién'}
                         </div>
                         {/* `text-caption`, no `text-micro`: 9px es para
                             contadores y superíndices (§7), y esto es un dato

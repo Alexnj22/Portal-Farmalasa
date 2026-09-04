@@ -9,6 +9,7 @@ import { entregarBolsas } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
+import { saldoDeBolsa } from '../../utils/bolsasReparto';
 
 /**
  * Entregar el efectivo de la sala a quien lo recolecta.
@@ -139,7 +140,7 @@ export default function EntregaDeBolsas({
             .map(([fecha, lista]) => ({
                 fecha,
                 lista: [...lista].sort((a, b) => String(a.hora).localeCompare(String(b.hora))),
-                total: lista.reduce((a, b) => a + Number(saldoDe?.(b) ?? b.monto_inicial ?? 0), 0),
+                total: lista.reduce((a, b) => a + (saldoDe ? saldoDe(b) : saldoDeBolsa(b)), 0),
             }))
             .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
     }, [bolsas, saldoDe]);
@@ -162,7 +163,7 @@ export default function EntregaDeBolsas({
         [porDia, dias],
     );
     const total = useMemo(
-        () => elegidas.reduce((a, b) => a + Number(saldoDe?.(b) ?? b.monto_inicial ?? 0), 0),
+        () => elegidas.reduce((a, b) => a + (saldoDe ? saldoDe(b) : saldoDeBolsa(b)), 0),
         [elegidas, saldoDe],
     );
 

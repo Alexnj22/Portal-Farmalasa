@@ -851,10 +851,19 @@ export default function MiCajaView({ comoPestana = false }) {
                         {/* Con el conteo a ciegas puesto, esta tarjeta cambia de
                             pregunta: en vez de «cuánto hay» dice «cuántas ventas
                             van», que es actividad y no la respuesta del corte. */}
+                        {/* El número es `efectivo` y NO `registrado` (4-sep).
+                            `registrado` es apertura más TODAS las ventas: una
+                            venta con tarjeta entra ahí y no deja un billete, y
+                            los ingresos y vales del cajón no entran. O sea que
+                            la tarjeta decía «En la caja» sobre un número que no
+                            es el del cajón, y desde hoy el panel de abajo
+                            muestra la cuenta buena renglón por renglón — dos
+                            cifras distintas para lo mismo en la misma pantalla
+                            es peor que la que faltaba. */}
                         <StatCard icon={Landmark} label={veLosMontos ? 'En la caja' : 'Ventas de hoy'}
                             value={!sala || noSePudo ? '—'
                                 : veLosMontos
-                                    ? (estado?.registrado != null ? formatMoney(estado.registrado) : '—')
+                                    ? (estado?.efectivo != null ? formatMoney(estado.efectivo) : '—')
                                     : ventasDelDia}
                             sub={veLosMontos ? undefined : 'se cuenta al cortar'}
                             iconBg="bg-brand/10" iconCls="text-brand-text"
@@ -1311,6 +1320,22 @@ const conMayuscula = (t) => {
     return s ? s[0].toUpperCase() + s.slice(1) : '—';
 };
 
+/** Un renglón de la cuenta del efectivo: rótulo a la izquierda, monto a la
+ *  derecha. Existe porque son seis y escritos a mano se desalinean solos. */
+function Renglon({ rotulo, monto, fuerte = false, apagado = false }) {
+    return (
+        <div className="flex items-baseline justify-between gap-3">
+            <span className={`text-body-sm ${fuerte ? 'font-bold text-content' : 'text-content-2'}`}>
+                {rotulo}
+            </span>
+            <span className={`tabular-nums ${fuerte ? 'font-black text-brand-text'
+                : apagado ? 'text-content-2' : 'font-semibold text-content'}`}>
+                {formatMoney(monto)}
+            </span>
+        </div>
+    );
+}
+
 /**
  * El día de esta caja, en una tarjeta: qué caja es, desde cuándo, quién la
  * abrió, con cuánto, y qué se ha vendido — **por todas las formas de pago**.
@@ -1320,10 +1345,31 @@ const conMayuscula = (t) => {
  * sumados dentro del «efectivo» y nadie los ve por separado. La cifra sale de
  * las facturas del portal, que es la fuente independiente del papel.
  *
- * NO dice cuánto DEBERÍA haber en el cajón — eso es el conteo a ciegas del
- * corte y se decide arriba, en el diálogo. Acá está lo vendido, que es otra
- * cosa: quien cuenta billetes no puede derivar el esperado de esto sin sumarle
- * la apertura y restarle los vales, y ése es justo el trabajo que hace el corte.
+ * ── DOS totales, y el segundo es el del CAJÓN (4-sep) ──────────────────────
+ *
+ * Hasta hoy el panel se detenía en «de lo vendido, en efectivo» y decía —acá
+ * mismo, por escrito— que no le tocaba responder cuánto hay en el cajón. Lo
+ * levantó la sala mirando su propia pantalla: «en caja no debería haber
+ * $118.75 sumando el dolar de ingreso?». Tenía razón, y el dólar no estaba
+ * sumado en NINGUNA parte del portal — ver la migración
+ * `el_cajon_cuenta_sus_ingresos_y_sus_vales`.
+ *
+ * Así que ahora la cuenta se muestra entera, renglón por renglón, y el total
+ * es su suma a la vista: «debe mostrar todo, ahí mismo debe decir + Ingresos y
+ * − Vales. y dejar ambos montos, el total vendido y abajo el total en
+ * efectivo» (usuario, 4-sep).
+ *
+ * **Los renglones del efectivo salen de `estado`, no de `ventas`**, aunque el
+ * desglose por forma de pago de arriba salga de `ventas`. No es un descuido:
+ * el total es el que calculó el servidor con `caja_efectivo_piezas`, y si la
+ * pantalla rearmara la suma con sus propias piezas tendría dos respuestas para
+ * el mismo cajón el día que una de las dos lecturas llegue un segundo después.
+ * Es la regla del mismo juez con las mismas piezas.
+ *
+ * Sigue detrás de `veLosMontos`, que es lo que importa: «total en efectivo» ES
+ * la respuesta del conteo a ciegas, y quien cuenta ese cajón no puede verla
+ * antes de contar. No abre nada nuevo — «de lo vendido, en efectivo» ya era
+ * casi el mismo número y vivía detrás de la misma puerta.
  */
 function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas }) {
     /* La caja CERRADA no borra la entrega. El panel existía sólo mientras
@@ -1337,7 +1383,20 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
         .map((v) => ({ tipo: String(v.tipo_pago), docs: Number(v.documentos || 0), total: Number(v.total || 0) }))
         .sort((a, b) => b.total - a.total);
     const total = filas.reduce((s, f) => s + f.total, 0);
-    const efectivo = filas.find((f) => f.tipo.toLowerCase() === 'efectivo')?.total ?? 0;
+
+    /* Las piezas del cajón, tal como las armó el servidor. `null` cuando la
+     * lectura del estado no las trajo —una caja recién abierta, o el origen sin
+     * contestar—: ahí la cuenta no se rearma acá, se muestran las dos líneas de
+     * siempre y no se afirma ningún total. Un total inventado sobre piezas que
+     * faltan es peor que no darlo. */
+    const pz = estado?.efectivo_piezas || null;
+    const enCaja = estado?.efectivo ?? null;
+    const puedeSumar = !!pz && enCaja != null;
+    // El respaldo cuando no hay piezas: lo vendido en efectivo sale del
+    // desglose de arriba, que es la única fuente que queda.
+    const efectivoVendido = pz ? Number(pz.ventas_efectivo || 0)
+        : (filas.find((f) => f.tipo.toLowerCase() === 'efectivo')?.total ?? 0);
+    const enBolsas = Number(pz?.en_bolsas || 0);
 
     /* La fila de «Caja · Abierta desde · La abrió · Monto de apertura» se fue de
      * acá: decía LO MISMO que las tarjetas de arriba, tres centímetros más
@@ -1396,15 +1455,32 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                                     <span className="text-body-sm font-bold text-content">Total vendido</span>
                                     <span className="tabular-nums font-black text-content">{formatMoney(total)}</span>
                                 </div>
-                                <div className="flex items-baseline justify-between gap-3">
-                                    <span className="text-body-sm text-content-2">De eso, en efectivo</span>
-                                    <span className="tabular-nums font-bold text-brand-text">{formatMoney(efectivo)}</span>
-                                </div>
-                                <div className="flex items-baseline justify-between gap-3">
-                                    <span className="text-body-sm text-content-2">Con lo que abrió la caja</span>
-                                    <span className="tabular-nums text-content-2">
-                                        {estado.apertura != null ? formatMoney(estado.apertura) : '—'}
-                                    </span>
+
+                                {/* La cuenta del CAJÓN, que es otra: lo vendido
+                                    con tarjeta no deja un billete, y lo que
+                                    entra y sale del cajón sin vender sí. Va
+                                    separada por una línea para que se lea como
+                                    una suma y no como más detalle de arriba. */}
+                                <div className="pt-2 mt-1 border-t border-border-card space-y-1">
+                                    <Renglon rotulo="Con lo que abrió la caja"
+                                        monto={estado.apertura ?? 0} apagado />
+                                    <Renglon rotulo="De lo vendido, en efectivo" monto={efectivoVendido} />
+                                    {puedeSumar && (
+                                        <>
+                                            <Renglon rotulo="+ Ingresos" monto={Number(pz.entradas || 0)} />
+                                            <Renglon rotulo="− Vales" monto={Number(pz.vales || 0)} />
+                                            {/* Sólo cuando hay: las bolsas
+                                                nacen en un corte, así que casi
+                                                todo el día este renglón sería
+                                                un cero que no dice nada. */}
+                                            {enBolsas > 0.005 && (
+                                                <Renglon rotulo="− Guardado en bolsas" monto={enBolsas} />
+                                            )}
+                                            <div className="pt-1.5 mt-1 border-t border-border-card">
+                                                <Renglon rotulo="Total en efectivo" monto={enCaja} fuerte />
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </>
                         ) : (

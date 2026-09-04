@@ -238,88 +238,67 @@ const exito = (t: string) => /"typeinfo"\s*:\s*"Success"/i.test(t);
  * **Cuántos BILLETES hay en el cajón ahora.** Otra pregunta que «Monto
  * Registrado», y la que decide de dónde sale una salida de efectivo.
  *
- * ── Por qué `registrado` no sirve tal cual, medido ─────────────────────────
- * El «Monto Registrado» del panel es el `total_corte` del origen:
+ * La cuenta NO vive acá: la hace `caja_efectivo_piezas` en la base, y esta
+ * función sólo la pide. Es a propósito — `caja_estado` contesta lo mismo por su
+ * cuenta cuando la pantalla entra sin raspar el origen, y dos copias de esta
+ * aritmética son dos respuestas distintas sobre el mismo cajón.
  *
- *     total_tike + total_factura + total_credito + monto_apertura
- *     + total_entrada − total_salida
+ * ── Qué le pasa a esa función, y por qué la apertura y no `registrado` ─────
+ * El «Monto Registrado» del panel es apertura más las ventas FINALIZADAS del
+ * día —medido el 3-sep contra las seis salas, exacto al centavo— y **no cuenta
+ * las entradas ni las salidas del cajón**: el residuo de esa medición dio
+ * exactamente `entradas − salidas`.
  *
- * o sea que le sobran dos cosas y le falta una:
+ * O sea que restarle las ventas que no fueron en efectivo dejaba fuera todo lo
+ * que el cajón recibe o entrega sin vender: una aplicación de inyección, una
+ * prueba de glucosa, el pago de un recibo, un abono a un crédito, una compra
+ * urgente. Reportado desde la sala el 4-sep sobre un ingreso de $1.00 que el
+ * portal no sumaba. Por eso ahora se manda la APERTURA y la función arma la
+ * cuenta con sus piezas:
  *
- * 1. **Le sobran las ventas que no fueron en efectivo.** Una venta con tarjeta
- *    entra ahí y no deja un billete en el cajón. Se restan de
- *    `sales_invoices.tipo_pago`, que es el mismo dato con el que la pantalla
- *    ya arma el panel del día.
- * 2. **Le sobra lo que ya se embolsó hoy.** Meter el dinero en una bolsa no le
- *    avisa nada al origen: la plata de las bolsas DE HOY le sigue figurando
- *    adentro hasta el Z de la noche (es exactamente el motivo por el que
- *    existe `caja_vales_portal`). Medido en Salud 3 el 30-ago: corte C de las
- *    12:14 con $438.69 contados → bolsa de $438.69, y el corte de las 18:04
- *    esperaba $969.30, o sea que el origen seguía contando los $438.69 que ya
- *    estaban dentro de una bolsa sellada.
- *
- *    ⚠️ Y de eso hay que devolver lo que YA se anotó como vale: cuando una
- *    salida tomó de una bolsa de hoy, el portal le anotó el vale a la caja
- *    —`registrado` ya lo restó— y esa misma plata está adentro de
- *    `embolsado`. Restar las dos la contaría dos veces.
- * 3. **Le falta el cobro de créditos**, que es el defecto conocido del origen
- *    (docs/AUDITORIA-CORTE-DESDE-EL-PORTAL-2026-09-02.md §2). Ese dinero SÍ
- *    entra en billetes, así que no sumarlo deja el número **por debajo** de lo
- *    que hay — y esa es la dirección segura: de menos manda la salida a las
- *    bolsas, que es lo que se hacía siempre. De más mandaría a alguien a
- *    buscar en un cajón billetes que no están.
+ *     apertura + ventas en efectivo + ingresos − vales − lo que quedó en bolsas
  *
  * Nada de esto escribe una diferencia en ningún lado: es para decidir de dónde
  * sale la plata, no para corregirle el corte al origen —eso se decidió dejarlo
  * como está—.
  *
- * Vive en el servidor y no en la pantalla por dos motivos: `sales_invoices` con
- * llave de servicio no depende del permiso de quien mira (el alcance de
- * `cortes_caja` lo tienen 9 de 24 cargos, y sin él la consulta devuelve cero
- * filas **sin error**, o sea un cajón que parece lleno), y así las tres
- * pantallas que ofrecen la salida contestan lo mismo.
+ * Vive en el servidor y no en la pantalla porque con llave de servicio no
+ * depende del permiso de quien mira: el alcance de `cortes_caja` lo tienen 9 de
+ * 24 cargos, y sin él las consultas devuelven cero filas **sin error**, o sea
+ * un cajón que parece lleno.
  *
  * Devuelve las piezas además del total: un número que decide dónde está el
- * dinero tiene que poder auditarse sin volver a correr la cuenta.
+ * dinero tiene que poder auditarse sin volver a correr la cuenta — y desde el
+ * 4-sep además se MUESTRAN, renglón por renglón, en el panel del día.
  */
 async function efectivoEnElCajon(
   // deno-lint-ignore no-explicit-any
-  supabase: any, sala: number, dia: string, registrado: number | null,
+  supabase: any, sala: number, dia: string, apertura: number | null,
 ) {
-  if (registrado == null) return { efectivo: null };
-
-  /* Las tres piezas se suman EN LA BASE (`caja_efectivo_piezas`) y no bajando
-   * las filas para sumarlas acá. Lo levantó `gate:data` como `sin-paginar` y
-   * tenía razón: PostgREST trunca en 1000 filas sin avisar, así que el día que
-   * una sala cruce las mil facturas el descuento saldría de menos y el cajón
-   * parecería tener MÁS de lo que tiene — la dirección peligrosa. Medido: el
-   * máximo por sala y día son 273, o sea que el defecto habría vivido callado
-   * hasta el día que sí. De paso, tres viajes se vuelven uno. */
+  /* Las piezas se suman EN LA BASE y no bajando las filas para sumarlas acá.
+   * Lo levantó `gate:data` como `sin-paginar` y tenía razón: PostgREST trunca
+   * en 1000 filas sin avisar, así que el día que una sala cruce las mil
+   * facturas el descuento saldría de menos y el cajón parecería tener MÁS de lo
+   * que tiene — la dirección peligrosa. Medido: el máximo por sala y día son
+   * 273, o sea que el defecto habría vivido callado hasta el día que sí. */
   const { data, error } = await supabase
-    .rpc("caja_efectivo_piezas", { p_branch_id: sala, p_dia: dia });
+    .rpc("caja_efectivo_piezas", {
+      p_branch_id: sala, p_dia: dia, p_apertura: apertura ?? 0,
+    });
 
-  /* Un error NO se lee como cero. Sin el descuento, el cajón parecería tener
-   * todo lo del día: es la regla de las edge functions —nunca ignorar el
-   * `error`— y acá el precio sería mandar a alguien a sacar billetes que no
-   * están. Sin poder medirlo, `efectivo: null`, y `null` no es cero: la salida
-   * cae a las bolsas, que es lo que se hacía siempre. */
+  /* Un error NO se lee como cero. Sin la cuenta, el cajón parecería tener todo
+   * lo del día: es la regla de las edge functions —nunca ignorar el `error`— y
+   * acá el precio sería mandar a alguien a sacar billetes que no están. Sin
+   * poder medirlo, `efectivo: null`, y `null` no es cero: la salida cae a las
+   * bolsas, que es lo que se hacía siempre. */
   if (error || !data) {
     console.error(`[operar-caja] efectivo sala=${sala} dia=${dia}: ${error?.message ?? "sin datos"}`);
     return { efectivo: null };
   }
 
-  const noEfectivo = Number(data.ventas_no_efectivo ?? 0);
-  const embolsado = Number(data.embolsado_hoy ?? 0);
-  const yaAnotado = Number(data.vales_ya_anotados ?? 0);
-  const efectivo = registrado - noEfectivo - embolsado + yaAnotado;
   return {
-    efectivo: Number(dosDecimales(Math.max(0, efectivo))),
-    efectivo_piezas: {
-      registrado,
-      ventas_no_efectivo: noEfectivo,
-      embolsado_hoy: embolsado,
-      vales_ya_anotados: yaAnotado,
-    },
+    efectivo: Number(dosDecimales(Number(data.efectivo ?? 0))),
+    efectivo_piezas: data,
   };
 }
 
@@ -484,6 +463,7 @@ Deno.serve(async (req) => {
 
     if (accion === "estado") {
       const registrado = (estado as { registrado?: number | null }).registrado ?? null;
+      const apertura = (estado as { apertura?: number | null }).apertura ?? null;
       /* ── QUIÉN ABRIÓ LA CAJA ────────────────────────────────────────────
        *
        * NO sale del panel del origen. El panel da el nombre de la CUENTA con
@@ -521,13 +501,16 @@ Deno.serve(async (req) => {
         // con la apertura viva y el turno sin iniciar no se puede vender ni cortar.
         turno_corriendo: (estado as { turnoCorriendo?: boolean }).turnoCorriendo ?? true,
         registrado,
-        apertura: (estado as { apertura?: number | null }).apertura ?? null,
+        apertura,
         quien: quienAbrio,
         desde: (estado as { desde?: string | null }).desde ?? null,
         dia: diaAbierto,
         cortes: cortesDelDia ?? [],
-        // Cuánto de eso son BILLETES, que es otra pregunta. Ver `efectivoEnElCajon`.
-        ...(await efectivoEnElCajon(supabase, sala, diaAbierto, registrado)),
+        // Cuántos BILLETES hay, que es otra pregunta. Ver `efectivoEnElCajon`.
+        // Va la APERTURA y no `registrado`: la cuenta del cajón se arma pieza
+        // por pieza —apertura, ventas en efectivo, ingresos, vales, bolsas— y
+        // `registrado` ya trae las dos primeras mezcladas con la tarjeta.
+        ...(await efectivoEnElCajon(supabase, sala, diaAbierto, apertura)),
       });
     }
 

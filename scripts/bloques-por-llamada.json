@@ -1,6 +1,6 @@
 {
   "_comment": "Lo que cada función lee POR LLAMADA, en bloques de 8 kB. Sección F de `npm run gate:perf`. Una función que cruza el umbral y no está acá FALLA el gate — no porque leer mucho esté mal, sino porque tiene que estar DECIDIDO y escrito que lee mucho. Los techos se miden, no se inventan, y sólo bajan.",
-  "_medido": "2026-09-01 (las seis primeras) y 2026-09-03 (las cuatro que el gate levantó ese día). Fuente: `npm run portal:lento` y la sección F de `npm run gate:perf`.",
+  "_medido": "2026-09-01 (las seis primeras) y 2026-09-03 (las cuatro que el gate levantó ese día). Fuente: `npm run portal:lento` y la sección F de `npm run gate:perf`. El 2026-09-04 se agregaron las cinco reconstrucciones diarias de rollup, que el gate levantó al correr después de su ventana nocturna.",
   "_umbral": 25000,
   "_umbral_comment": "25,000 bloques = 195 MB por llamada. Por debajo no se declara nada: un umbral que obliga a declarar medio catálogo produce un manifiesto que nadie lee. La que tumbó el portal leía 1,528,584.",
   "_como_se_lee": "`bloques` es el TECHO, ~1.3x lo medido — margen para el ruido, no para una regresión. `deuda: true` significa que el número está declarado pero NO auditado: nadie miró todavía si ese costo es el trabajo real o un plan malo. Un techo declarado protege contra que CREZCA; no promete que esté bien.",
@@ -42,6 +42,31 @@
       "bloques": 145000,
       "deuda": true,
       "motivo": "869 MB, el más caro por llamada del portal. Cruza la existencia de las 7 salas para un producto, al componer un traslado. 20 llamadas en 4 horas: caro por llamada, barato por día. NO auditado."
+    },
+    "inventory_daily_snapshot": {
+      "bloques": 70000,
+      "deuda": true,
+      "motivo": "419 MB por llamada (53,624 bloques). Reconstrucción DIARIA de un rollup, 1 llamada al día entre las 00:30 y la 01:45 de El Salvador. Lee mucho porque rehace el agregado sobre el historial entero — eso es el trabajo, no un plan malo — y es justo el perfil contrario al que este gate persigue: el defecto que tumbó el portal el 1-sep era una lectura de 11.7 GB que corría CADA MINUTO en horario de sala. NO auditado: nadie miró todavía el plan. Cron `inventory-daily-snapshot`."
+    },
+    "refresh_customer_activity": {
+      "bloques": 158000,
+      "deuda": true,
+      "motivo": "948 MB por llamada (121,299 bloques). Reconstrucción DIARIA de un rollup, 1 llamada al día entre las 00:30 y la 01:45 de El Salvador. Lee mucho porque rehace el agregado sobre el historial entero — eso es el trabajo, no un plan malo — y es justo el perfil contrario al que este gate persigue: el defecto que tumbó el portal el 1-sep era una lectura de 11.7 GB que corría CADA MINUTO en horario de sala. NO auditado: nadie miró todavía el plan. Cron `refresh-customer-activity-daily`."
+    },
+    "refresh_primera_venta_producto": {
+      "bloques": 46000,
+      "deuda": true,
+      "motivo": "279 MB por llamada (35,653 bloques). Reconstrucción DIARIA de un rollup, 1 llamada al día entre las 00:30 y la 01:45 de El Salvador. Lee mucho porque rehace el agregado sobre el historial entero — eso es el trabajo, no un plan malo — y es justo el perfil contrario al que este gate persigue: el defecto que tumbó el portal el 1-sep era una lectura de 11.7 GB que corría CADA MINUTO en horario de sala. NO auditado: nadie miró todavía el plan. Cron `refresh-primera-venta-daily`."
+    },
+    "refresh_product_last_sale": {
+      "bloques": 133000,
+      "deuda": true,
+      "motivo": "798 MB por llamada (102,199 bloques). Reconstrucción DIARIA de un rollup, 1 llamada al día entre las 00:30 y la 01:45 de El Salvador. Lee mucho porque rehace el agregado sobre el historial entero — eso es el trabajo, no un plan malo — y es justo el perfil contrario al que este gate persigue: el defecto que tumbó el portal el 1-sep era una lectura de 11.7 GB que corría CADA MINUTO en horario de sala. NO auditado: nadie miró todavía el plan. Cron `refresh-product-last-sale-daily`."
+    },
+    "refresh_product_sales_rollup": {
+      "bloques": 118000,
+      "deuda": true,
+      "motivo": "711 MB por llamada (90,997 bloques). Reconstrucción DIARIA de un rollup, 1 llamada al día entre las 00:30 y la 01:45 de El Salvador. Lee mucho porque rehace el agregado sobre el historial entero — eso es el trabajo, no un plan malo — y es justo el perfil contrario al que este gate persigue: el defecto que tumbó el portal el 1-sep era una lectura de 11.7 GB que corría CADA MINUTO en horario de sala. NO auditado: nadie miró todavía el plan. Cron `refresh-product-sales-rollup-daily`."
     },
     "upsert_product_precios_batch": {
       "bloques": 53000,

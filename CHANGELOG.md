@@ -21,6 +21,73 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.983.0 — El panel del día muestra la cuenta entera del efectivo
+
+Reportado desde la sala mirando su propia pantalla: *«en caja no debería haber
+$118.75 sumando el dolar de ingreso?»*. Salud 1, esa mañana: apertura $0.00,
+$117.75 vendidos en efectivo y una prueba de glucosa de $1.00 anotada a las
+07:56. Tenía razón — y ese dólar no estaba sumado **en ninguna parte del
+portal**.
+
+**Las dos piezas de las que salía el número lo dejaban fuera, las dos.** El
+«Monto Registrado» es apertura más las ventas FINALIZADAS del día (medido el
+3-sep contra el panel del origen: seis salas exactas al centavo, y el residuo
+dio justo `entradas − salidas`, o sea que el origen tampoco las cuenta ahí), y
+`caja_efectivo_piezas` sólo le quitaba las ventas que no fueron en efectivo y lo
+ya embolsado. Así que **todo lo que el cajón recibe o entrega sin vender** —una
+aplicación de inyección, una prueba de glucosa, el pago de un recibo, un abono a
+un crédito, una compra urgente, una remesa— quedaba afuera. El comprobante del
+corte sí los cuenta (`TOTAL CAJA = ingresos + venta − vales + cobros`), así que
+la diferencia recién aparecía al cortar y sin decir de dónde venía.
+
+**La fuente son los movimientos del origen, no los del portal.** `caja_movimientos_portal`
+guarda lo que anotó el portal, que es un subconjunto: el 3-sep el origen tenía
+98 movimientos y el portal 94; el 31-ago, 187 y **cero**. Sumar de ahí sería
+leer «no miré» como «no había». Se usa `cortes_caja_movimientos`, el espejo que
+se refresca cada 30 s, más lo que el portal escribió y el espejo todavía no vio
+—comparado por `erp_movimiento_id` para no contarlo dos veces—. Enfrentado
+contra el comprobante en los 90 últimos cortes de día (20-ago → 3-sep):
+
+| | |
+|---|---:|
+| ENTRADA sin «POR ABONO A CREDITO» = `tk_ingresos` | 90 de 90 |
+| SALIDA = `tk_vales` | 90 de 90 |
+| ENTRADA «POR ABONO A CREDITO» = `tk_cobros_credito` | 87 de 90 |
+
+O sea que es exactamente lo que el papel llama INGRESOS y VALES. Los abonos a
+crédito entran a la suma sin línea aparte: son billetes en el cajón igual que
+los demás, y sólo dejan movimiento los cobrados en efectivo (verificado en los
+12 abonos del portal: los 6 en efectivo tienen su movimiento, los 6 de
+transferencia no).
+
+**Y ahora la cuenta se muestra entera, que es lo que pidió el usuario**
+—*«debe mostrar todo, ahí mismo debe decir + Ingresos y − Vales. y dejar ambos
+montos, el total vendido y abajo el total en efectivo»*—: apertura, lo vendido
+en efectivo, + Ingresos, − Vales, − Guardado en bolsas (sólo cuando hay), y el
+total. Los seis renglones salen de `estado` y no de `ventas` aunque el desglose
+por forma de pago de arriba sí: el total es el que calculó el servidor, y
+rearmar la suma en la pantalla daría dos respuestas para el mismo cajón el día
+que una de las dos lecturas llegue un segundo después.
+
+**La tarjeta «En la caja» pasa a decir el efectivo y no `registrado`.** Decía
+«En la caja» sobre apertura + TODAS las ventas: una venta con tarjeta entra ahí
+y no deja un billete. Con el panel de abajo mostrando la cuenta buena, dos
+cifras distintas para lo mismo en la misma pantalla habría sido peor que la que
+faltaba.
+
+Verificado contra producción en las 6 salas: el total y la suma de sus renglones
+coinciden en las seis, y Salud 1 pasó de $194.95 a $195.95 — el dólar del
+ingreso.
+
+También se declaran en `scripts/bloques-por-llamada.json` las cinco
+reconstrucciones diarias de rollup que la sección F de `gate:perf` levantó al
+correr después de su ventana nocturna (`refresh_customer_activity`,
+`refresh_product_last_sale`, `refresh_product_sales_rollup`,
+`inventory_daily_snapshot`, `refresh_primera_venta_producto`): una llamada al
+día cada una, entre las 00:30 y la 01:45 de El Salvador, y leen mucho porque
+rehacen el agregado sobre el historial entero. Van como deuda declarada —el plan
+de ninguna se auditó—, lo cual protege contra que crezcan.
+
 ## v2.982.0 — El aviso del faltante se dibuja, no se lee
 
 El aviso de las 8 salió como tres renglones de prosa con la cifra adentro, al

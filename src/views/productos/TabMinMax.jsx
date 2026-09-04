@@ -23,6 +23,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { applyPresRule } from '../../utils/presentacion';
 import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant, hasDispatchRisk } from './tabminmax/helpers';
@@ -269,6 +270,37 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {},
 // ConfigPanel, LabsPanel: extraídos a ./tabminmax/ (Bloque 6.C) —
 // importados arriba.
 
+/**
+ * Una firma del historial: el ACTO, la cara y el nombre.
+ *
+ * El rótulo no es decoración. Pedir y aprobar son dos personas distintas —
+ * `manual_por` guarda la sesión que hizo el UPDATE, que al aprobar es la del
+ * aprobador— y un nombre suelto en una lista de caras se lee como si esa
+ * persona lo hubiera decidido sola.
+ *
+ * `manual_por` a veces es un nombre y a veces una cuenta (sale de
+ * `auth.email()`), así que NO pasa por `shortEmployeeName`: no es
+ * `employees.name`. Cuando es una cuenta se muestra sólo lo de antes de la
+ * arroba — el dominio es siempre el mismo y sólo gasta ancho.
+ */
+function FirmaDeAjuste({ rotulo, quien, persona, px = 20 }) {
+    const visible = String(quien ?? '').includes('@') ? String(quien).split('@')[0] : quien;
+    return (
+        <LiquidTooltip content={quien}>
+            <span className="inline-flex items-center gap-1.5 min-w-0">
+                {rotulo && <span className="text-micro font-semibold text-content-3 shrink-0">{rotulo}</span>}
+                {/* El canónico y no un `<img>`: trae el aro de estado. Se le pasa la
+                    FICHA entera cuando se la pudo resolver por nombre — sin `id` el
+                    aro no sale nunca, y una firma sin aro se ve igual que la de
+                    alguien presente. Cuando `manual_por` es una cuenta y no un
+                    nombre no hay ficha que buscar, y ahí sale la inicial. */}
+                <AvatarConEstado emp={persona ?? { name: visible }} px={px} radio="rounded-full" mostrarChip={false} />
+                <span className="text-micro font-bold text-content-2 truncate">{visible}</span>
+            </span>
+        </LiquidTooltip>
+    );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 // Bloque 6.C (continuación): el estado/fetch de este componente vive en el
 // hook useMinMaxData (./tabminmax/useMinMaxData.js) — mismos nombres, misma
@@ -279,6 +311,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     const { hasPermission, getScope } = useAuth();
     const canManage = hasPermission('minmax', 'can_edit');
     const canDownload = hasPermission('minmax_descargar');
+    // La regla de despacho vive en Pedidos → Reglas de despacho. El badge lleva
+    // ahí sólo si esa pestaña se puede abrir: un enlace a una vista que devuelve
+    // «sin permiso» es peor que ningún enlace.
+    const puedeVerReglas = hasPermission('pedidos_tab_reglas');
+    const navigate = useNavigate();
     // «Ya no rota» es el motivo que borra historial de demanda: la base lo
     // restringe a quien decide sobre todas las salas, y acá se oculta la opción
     // en vez de dejar que la elija y le rebote.
@@ -400,7 +437,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         ...(sparseCount > 0 && !loading
             ? [{ value: 'sparse', label: `${sparseCount} Poca venta` }] : []),
         ...(!isBodega && dispatchRiskCount > 0 && !loading
-            ? [{ value: 'riesgo', label: `${dispatchRiskCount} Riesgo regla` }] : []),
+            ? [{ value: 'riesgo', label: `${dispatchRiskCount} Regla` }] : []),
         ...(hiddenIds.size > 0
             ? [{ value: 'ocultos', label: `${hiddenIds.size} Ocultos` }] : []),
         // Lo que puso una persona. Va en el MISMO control que el resto porque
@@ -817,6 +854,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             row.draft_data_days != null &&
                             row.draft_data_days < (analysisConfig.analysis_days ?? 180);
                         const dispatchRisk = !isBodega && hasDispatchRisk(row.effective_max, row.dispatch_pres_factor, row.dispatch_multiplo);
+                        // El badge decía sólo que había un problema, no CUÁL era ni
+                        // dónde se arregla. La regla vive en Pedidos → Reglas de
+                        // despacho, y el número que la vuelve inalcanzable está acá:
+                        // se dicen los dos, que es lo que evita el viaje de ida y
+                        // vuelta a averiguar de cuánto despacha el producto.
+                        const reglaPack = dispatchRisk
+                            ? Number(row.dispatch_pres_factor) * Number(row.dispatch_multiplo ?? 1)
+                            : 0;
+                        const reglaAyuda = dispatchRisk
+                            ? `Se despacha de a ${reglaPack.toLocaleString()} und`
+                              + `${row.dispatch_tipo ? ` (${row.dispatch_tipo}${Number(row.dispatch_multiplo ?? 1) > 1 ? ` ×${row.dispatch_multiplo}` : ''})` : ''}`
+                              + `, y el MAX de ${Number(row.effective_max ?? 0).toLocaleString()} no llega ni a una. `
+                              + 'Así este producto nunca va a entrar en un pedido: hay que subir el MAX o cambiar la regla.'
+                              + (puedeVerReglas ? ' Toca para ver la regla.' : '')
+                            : '';
 
                         return (
                             <React.Fragment key={row.erp_product_id}>
@@ -899,7 +951,28 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     })()}
                                                     {hasDraft && !isBodega && <Badge size="sm" uppercase={false}>BORRADOR</Badge>}
                                                     {hasDraft && isBodega && <Badge variant="warning" size="sm" uppercase={false} className="shrink-0">SUC. PEND.</Badge>}
-                                                    {dispatchRisk && <Badge title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así" variant="danger" size="sm" uppercase={false}>RIESGO REGLA</Badge>}
+                                                    {dispatchRisk && (
+                                                        <Badge
+                                                            title={reglaAyuda}
+                                                            variant="danger"
+                                                            size="sm"
+                                                            uppercase={false}
+                                                            className={`shrink-0${puedeVerReglas ? ' relative blanco-tactil' : ''}`}
+                                                            {...(puedeVerReglas
+                                                                ? clickable(e => {
+                                                                    e.stopPropagation();
+                                                                    // Lleva a la pestaña, no al producto: el buscador de
+                                                                    // Reglas es estado local de esa vista y no se puede
+                                                                    // prellenar por la URL. Sin el permiso de esa pestaña
+                                                                    // el badge no navega — un enlace a una vista que no se
+                                                                    // puede abrir es peor que ninguno.
+                                                                    navigate('/pedidos?tab=reglas');
+                                                                })
+                                                                : {})}
+                                                        >
+                                                            REGLA
+                                                        </Badge>
+                                                    )}
                                                     {isBodega && (
                                                         (hasDraft && Number(row.draft_min ?? 0) === 0 && Number(row.draft_max ?? 0) === 0) ||
                                                         (!hasDraft && Number(row.pub_min ?? 0) === 0 && Number(row.pub_max ?? 0) === 0 && row.has_manual)
@@ -1516,42 +1589,77 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const motivoAjuste = historyRow._manual_motivo
                                     ? (MOTIVO_AJUSTE[historyRow._manual_motivo]?.label ?? historyRow._manual_motivo)
                                     : null;
+                                /* El motivo se dice UNA vez. Salían tres, y no por
+                                   descuido: `approve_minmax_request` copia el `reason` de
+                                   la solicitud dentro de `manual_nota`, así que
+                                   `motivo`, `nota` y el «Motivo:» de la entrada del
+                                   historial eran literalmente la misma cadena. Se
+                                   comparan normalizadas —espacios y mayúsculas— porque
+                                   son el mismo texto pasando por dos columnas. */
+                                const igual = (a, b) => a && b
+                                    && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+                                const razon = motivoAjuste || origen?.reason || historyRow._manual_nota || null;
+                                const nota  = igual(historyRow._manual_nota, razon) ? null : historyRow._manual_nota;
+                                const pedido = igual(origen?.reason, razon) ? null : origen?.reason;
                                 return (
-                                <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-1.5">
-                                    <span className="text-micro font-black uppercase tracking-wide text-content-3">
-                                        {origen ? 'Ajuste vigente · vino de una solicitud' : 'Ajuste vigente'}
-                                    </span>
-                                    <span className="text-label text-content-2">
-                                        <strong className="text-content">
-                                            {motivoAjuste || origen?.reason || 'Sin motivo declarado'}
-                                        </strong>
-                                        {historyRow._manual_motivo === 'cliente_fijo'
-                                            && historyRow._manual_cliente_unidades > 0
-                                            && historyRow._manual_cliente_dias > 0 && (
-                                            <span className="text-content-3"> · {historyRow._manual_cliente_unidades} cada {historyRow._manual_cliente_dias} días</span>
-                                        )}
-                                    </span>
-                                    {motivoAjuste && origen?.reason && (
-                                        <span className="text-label text-content-3">Pidió: {origen.reason}</span>
+                                <div data-surface="card" className="px-4 py-3.5 flex flex-col gap-3">
+                                    {/* El PAR de hoy, que es lo que se vino a mirar y no
+                                        estaba: el modal contaba quién y por qué sobre un
+                                        número que había que ir a buscar a la fila de atrás. */}
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="text-micro font-black uppercase tracking-wide text-content-3">Vigente</span>
+                                            <span className="text-h3 font-black tabular-nums text-content leading-none">
+                                                {Number(historyRow.effective_min ?? 0).toLocaleString()}
+                                                <span className="text-content-3 mx-1.5">·</span>
+                                                {Number(historyRow.effective_max ?? 0).toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <Badge variant={origen ? 'success' : 'neutral'} size="sm" uppercase={false} className="shrink-0 mt-0.5">
+                                            {origen ? 'Solicitud aprobada' : motivoAjuste ? 'Excepción declarada' : 'Puesto a mano'}
+                                        </Badge>
+                                    </div>
+
+                                    {razon && (
+                                        <p className="text-label text-content-2 leading-relaxed">
+                                            <strong className="text-content">{razon}</strong>
+                                            {historyRow._manual_motivo === 'cliente_fijo'
+                                                && historyRow._manual_cliente_unidades > 0
+                                                && historyRow._manual_cliente_dias > 0 && (
+                                                <span className="text-content-3"> · {historyRow._manual_cliente_unidades} cada {historyRow._manual_cliente_dias} días</span>
+                                            )}
+                                        </p>
                                     )}
-                                    {historyRow._manual_nota && (
-                                        <span className="text-label text-content-3">{historyRow._manual_nota}</span>
-                                    )}
+                                    {pedido && <p className="text-label text-content-3 leading-relaxed">Pidió: {pedido}</p>}
+                                    {nota   && <p className="text-label text-content-3 leading-relaxed">{nota}</p>}
                                     {origen?.decision_note && (
-                                        <span className="text-label text-content-3">Nota de quien decidió: {origen.decision_note}</span>
+                                        <p className="text-label text-content-3 leading-relaxed">Al aprobar: {origen.decision_note}</p>
                                     )}
-                                    <span className="text-micro text-content-3">
-                                        {origen?.requested_by_name
-                                            ? <>Lo pidió <strong className="text-content-2">{origen.requested_by_name}</strong>
-                                               {historyRow._manual_por ? <> · lo aprobó <strong className="text-content-2">{historyRow._manual_por}</strong></> : null}
-                                               {` el ${fecha}`}</>
-                                            : historyRow._manual_por
-                                                ? <>Lo puso <strong className="text-content-2">{historyRow._manual_por}</strong>{` el ${fecha}`}</>
-                                                : `Ajustado el ${fecha}`}
-                                    </span>
+
+                                    {/* Las firmas con su acto, en fila. Pedir y aprobar son
+                                        dos personas distintas y el nombre suelto se leía como
+                                        si el aprobador lo hubiera decidido solo. */}
+                                    <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap pt-0.5 border-t border-divider -mx-4 px-4 pt-3">
+                                        {origen?.requested_by_name && (
+                                            <FirmaDeAjuste rotulo="Pidió" quien={origen.requested_by_name} persona={empPhotoMap[origen.requested_by_name]} />
+                                        )}
+                                        {historyRow._manual_por && (
+                                            <FirmaDeAjuste
+                                                rotulo={origen ? 'Aprobó' : 'Puso'}
+                                                quien={historyRow._manual_por}
+                                                persona={empPhotoMap[historyRow._manual_por]}
+                                            />
+                                        )}
+                                        <span className="text-micro text-content-3 ml-auto tabular-nums">{fecha}</span>
+                                    </div>
                                 </div>
                                 );
                             })()}
+                            {!historyLoading && historyLogs.length > 0 && (
+                                <span className="text-micro font-black uppercase tracking-wide text-content-3 mt-1 px-0.5">
+                                    Todo lo que pasó
+                                </span>
+                            )}
                             {!historyLoading && historyLogs.length === 0 && (
                                 <EmptyState compact icon={History} title="Sin cambios" />
                             )}
@@ -1575,11 +1683,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const fmt = v => v == null ? '—' : v;
                                 return (
                                     <div key={log.id} data-surface="card" className="flex items-start gap-3 px-3.5 py-3">
-                                        {/* Employee avatar */}
-                                        <div className="w-8 h-8 rounded-full bg-surface-card-hover border border-divider overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
-                                            {empPhoto
-                                                ? <img src={empPhoto} alt="" className="w-full h-full object-cover" />
-                                                : <span className="text-caption font-black text-content-3">{log.user_name?.charAt(0)?.toUpperCase() || '?'}</span>}
+                                        {/* El canónico: el `<img>` a mano no traía aro de
+                                            estado, y desde que el mapa guarda la FICHA (y no
+                                            una URL suelta) hay `id` con qué resolverlo. */}
+                                        <div className="shrink-0 mt-0.5">
+                                            <AvatarConEstado emp={empPhoto ?? { name: log.user_name || '?' }} px={32} radio="rounded-full" mostrarChip={false} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             {/* El rótulo del acto, no sólo el nombre. En una
@@ -1632,28 +1740,26 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 un historial de caras se lee como texto, no como
                                                 persona. */}
                                             {d.requested_by_name && (
-                                                <div className="flex items-center gap-1.5 mt-1.5">
-                                                    <span className="text-micro text-content-3 font-semibold">Solicitó</span>
-                                                    <span className="w-5 h-5 rounded-full bg-surface-card-hover border border-divider overflow-hidden shrink-0 flex items-center justify-center">
-                                                        {empPhotoMap[d.requested_by_name]
-                                                            ? <img src={empPhotoMap[d.requested_by_name]} alt="" className="w-full h-full object-cover" />
-                                                            : <span className="text-micro font-black text-content-3">{d.requested_by_name.charAt(0).toUpperCase()}</span>}
-                                                    </span>
-                                                    <span className="text-micro font-bold text-content-2 truncate">{d.requested_by_name}</span>
+                                                <div className="flex items-center mt-1.5">
+                                                    <FirmaDeAjuste rotulo="Solicitó" quien={d.requested_by_name} persona={empPhotoMap[d.requested_by_name]} />
                                                 </div>
                                             )}
                                             {/* El POR QUÉ de la solicitud y el de la decisión.
-                                                Es lo único de esta pantalla que no estaba en
-                                                ningún lado: la bitácora guarda quién y cuánto,
-                                                el motivo se escribió en la solicitud. */}
-                                            {sol?.reason && (
+                                                La bitácora guarda quién y cuánto; el motivo se
+                                                escribió en la solicitud.
+
+                                                Salvo que ESTA sea la solicitud que rige hoy:
+                                                entonces su motivo ya está arriba, en la tarjeta
+                                                de «Vigente», y repetirlo dos renglones más abajo
+                                                hace leer dos hechos donde hay uno. */}
+                                            {sol?.reason && sol.id !== historyRow._ajuste_solicitud_id && (
                                                 <p className="text-micro text-content-3 mt-1 leading-relaxed">
                                                     <span className="font-semibold">Motivo:</span> {sol.reason}
                                                 </p>
                                             )}
-                                            {(sol?.decision_note || d.note) && (
+                                            {(sol?.decision_note || d.note) && sol?.id !== historyRow._ajuste_solicitud_id && (
                                                 <p className="text-micro text-content-3 mt-0.5 leading-relaxed">
-                                                    <span className="font-semibold">Nota de quien decidió:</span> {sol?.decision_note || d.note}
+                                                    <span className="font-semibold">Al aprobar:</span> {sol?.decision_note || d.note}
                                                 </p>
                                             )}
                                         </div>

@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.994.0 — El historial de Min·Máx dice el motivo una sola vez
+
+Dos reportes sobre la misma pantalla.
+
+**«¿Por qué dice 3 veces lo mismo?»** El motivo de la solicitud salía tres veces
+en el historial, y no por descuido: `approve_minmax_request` **copia el `reason`
+de la solicitud dentro de `manual_nota`**, así que el «motivo», la «nota» y el
+`Motivo:` de la entrada del historial eran literalmente la misma cadena leída de
+tres columnas. Ahora se comparan normalizadas —el mismo texto pasando por dos
+columnas no es dos hechos— y la entrada del historial no repite el motivo de la
+solicitud que ya rige, porque está dos centímetros más arriba.
+
+**La tarjeta se rehízo.** Le faltaba lo que se venía a mirar: **el par vigente**,
+que había que ir a buscar a la fila de atrás. Ahora abre con `6 · 12` en grande,
+una etiqueta que dice de dónde salió (Solicitud aprobada / Excepción declarada /
+Puesto a mano), el motivo una vez, y abajo las firmas con su ACTO —*Pidió*
+Dolores · *Aprobó* Edwin— separadas por una línea. La lista de eventos queda
+detrás de un rótulo «Todo lo que pasó».
+
+**Y los avatares pasan al canónico.** Eran tres `<img>` a mano sin aro de
+estado. `fetchEmployeesBasic` no traía el `id` —seleccionaba `name,photo_url`— y
+el mapa guardaba la URL suelta, así que el id se perdía con el dato en la mano;
+sin él `AvatarConEstado` no tiene a quién buscar y **el aro no sale nunca**. Una
+firma sin aro se ve exactamente igual que la de alguien presente.
+
+**El badge de despacho dice REGLA, no RIESGO REGLA**, y ahora explica y lleva:
+el `title` dice de a cuántas unidades se despacha el producto y por qué el MÁX
+no alcanza, y al tocarlo va a Pedidos → Reglas de despacho. Sólo si esa pestaña
+se puede abrir — un enlace a una vista que devuelve «sin permiso» es peor que
+ninguno.
+
+
 ## v2.993.1 — Vuelve el sello de en qué terminó la solicitud
 
 Reportado: «¿quitaste el estado de la solicitud? ese sí me gustaba, que saliera

@@ -886,9 +886,13 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             fetchEmployeesBasic(),
             fetchSolicitudesDeProducto(row.erp_product_id, row._erp_sucursal_id),
         ]);
+        // El mapa lleva la PERSONA, no sólo su foto: `AvatarConEstado` necesita el
+        // `id` para pintar el aro de estado, y sin él la firma de alguien de
+        // vacaciones se ve idéntica a la de alguien presente. Antes guardaba la
+        // URL suelta y el id se perdía acá, con el dato ya en la mano.
         const photoMap = {};
         await signPhotosDeep(emps || []);
-        (emps || []).forEach(e => { if (e.name) photoMap[e.name] = e.photo_url; });
+        (emps || []).forEach(e => { if (e.name) photoMap[e.name] = e; });
         setHistoryLogs(logs || []);
         setHistorySolicitudes(sols || []);
         setEmpPhotoMap(photoMap);

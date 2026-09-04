@@ -123,8 +123,12 @@ export function fetchEmployeeByEmail(email) {
     return supabase.from('employees').select('id,name,photo_url').eq('email', email).maybeSingle();
 }
 
+// El `id` va incluido desde el 2026-09-04: sin él `AvatarConEstado` no tiene a
+// quién buscar y **el aro de estado no sale nunca** — una firma sin aro se ve
+// exactamente igual que la de alguien presente, que es el silencio que esa
+// categoría del gate existe para cerrar.
 export function fetchEmployeesBasic() {
-    return supabase.from('employees').select('name,photo_url');
+    return supabase.from('employees').select('id,name,photo_url');
 }
 
 // Por RPC y no leyendo `audit_logs`: el mismo motivo que en `branches.js`. El

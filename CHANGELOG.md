@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.976.3 — Las fichas de caja muestran la cara de quien abrió
+
+Reportado por el usuario: *«no sale la foto de los empleados»*, mirando la fila
+de «Las cajas» arriba de los cortes.
+
+`FichasDeCaja` dibujaba su propio disco de iniciales — dos letras sacadas del
+nombre— y **nunca miró una foto**. O sea que seis salas de gente retratada
+salían como un tablero de siglas, y eso no se lee como un defecto: se lee como
+que nadie en la empresa tiene retrato. Es la misma clase de silencio que
+`AvatarConEstado` documenta desde el 3-sep para el caso de medio objeto —
+dibujar la inicial es exactamente lo que hay que hacer cuando de verdad no hay
+foto, así que el resultado de no mirarla es indistinguible del correcto.
+
+Hoy usa el canónico, que resuelve la foto por `id` contra el store —donde
+`photo` es la URL ya FIRMADA—, así que la consulta no necesita traer
+`photo_url`, que además vendría cruda. De paso llega el aro de estado: si quien
+abrió la caja está de vacaciones o incapacidad, ahora se ve ahí.
+
+Lo que NO cambia es la apertura sin persona: sigue siendo el disco ámbar con la
+silueta tachada. Una caja que se abrió desde su propia pantalla no tiene a quién
+nombrar, y esa ficha sin cara es el hallazgo, no un hueco que llenar.
+
 ## v2.976.2 — El aro dice que vuelve el día siguiente al último de la vacación, no ese mismo día
 
 `metadata.endDate` de un evento de ausencia es el ÚLTIMO día que la persona no

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Clock, DoorOpen, UserX } from 'lucide-react';
 import Badge from '../common/Badge';
+import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
 import { formatMoney } from '../../utils/formatNumber';
 
@@ -61,26 +62,6 @@ function minutosAntes(abiertaA, marcaIso) {
     return (h * 60 + m) - minutosMarca;
 }
 
-/**
- * Las iniciales de un nombre, para el avatar.
- *
- * Devuelve `null` —y no una inicial cualquiera— cuando no hay nombre de
- * persona. Sin iniciales, la ficha pinta el avatar de «nadie», que es
- * exactamente lo que hay que ver.
- *
- * Hasta el 3-sep esto recibía `empleado_texto`, el nombre de la CUENTA con la
- * que la sala abre: «MI CAJA LA SALUD 5» daba «ML», que se lee como si alguien
- * se llamara así. Hoy recibe el nombre de quien apretó el botón en el portal.
- */
-function iniciales(texto) {
-    if (!texto) return null;
-    const partes = String(texto).trim().split(/\s+/).filter(Boolean);
-    if (!partes.length) return null;
-    const primera = partes[0][0];
-    const segunda = partes.length > 1 ? partes[partes.length - 1][0] : '';
-    return (primera + segunda).toUpperCase();
-}
-
 function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
     const abierta = !apertura.cerrada_at;
     /* QUIÉN abrió, y sólo desde el portal.
@@ -92,7 +73,6 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
      * usando. Poner ese nombre acá es firmar el acto con quien no lo hizo —
      * exactamente el defecto que la tarjeta mostraba como «Mi La». */
     const quien = apertura.abrio?.name || null;
-    const ini = iniciales(quien);
     const dif = minutosAntes(apertura.abierta_a, marca);
 
     /* Tres colores y tres significados, no decoración:
@@ -114,11 +94,30 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
                 </div>
 
                 <div className="flex items-center gap-2 min-w-0">
-                    <span className={`shrink-0 w-8 h-8 rounded-full grid place-items-center text-caption font-black ${
-                        quien ? 'bg-brand/10 text-brand-text' : 'bg-warning/10 text-warning-text'
-                    }`} aria-hidden="true">
-                        {ini || <UserX className="w-4 h-4" />}
-                    </span>
+                    {/* La CARA de quien abrió, con el canónico y no con un círculo
+                        de iniciales a mano. El de acá pintaba siempre las letras:
+                        nunca miró una foto, así que una sala entera de gente
+                        retratada salía como un tablero de siglas — y eso no se lee
+                        como un defecto, se lee como que nadie tiene foto.
+
+                        `AvatarConEstado` resuelve la foto por `id` contra el store
+                        (ahí `photo` es la URL FIRMADA), así que no hace falta traer
+                        `photo_url` en la consulta — que además vendría cruda. Si la
+                        persona no está en la lista del store —acotada por permisos—
+                        cae a la inicial, que es el comportamiento de siempre.
+
+                        Sin persona NO se dibuja un avatar vacío: el disco ámbar con
+                        la silueta tachada es el dato. Una apertura sin cara es lo
+                        que hay que ver. */}
+                    {quien ? (
+                        <AvatarConEstado emp={{ id: apertura.employee_id, name: quien }}
+                            px={32} radio="rounded-full" marco="" />
+                    ) : (
+                        <span className="shrink-0 w-8 h-8 rounded-full grid place-items-center bg-warning/10 text-warning-text"
+                            aria-hidden="true">
+                            <UserX className="w-4 h-4" />
+                        </span>
+                    )}
                     <span className="min-w-0">
                         <span className="block text-body-sm font-semibold text-content truncate">
                             {quien || 'Sin identificar'}

@@ -116,7 +116,10 @@ export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo 
     }, [cortesPorId, puedeResolverCortes]);
 
     const abrirCorte = useCallback((n, corte, modo) => {
-        if (!n.read_at) markNotificationRead(n.id);
+        // `quitar: false`: marcar leído acá es el arranque de una ACCIÓN, no
+        // que alguien haya leído el aviso. Si sacara la tarjeta, se llevaría el
+        // sello «APROBADA / RECHAZADA» que aparece al terminar.
+        if (!n.read_at) markNotificationRead(n.id, { quitar: false });
         cerrarLoQueEsteAbierto();
         setMontarDetalleCorte(true);
         setCorteAbierto({ corte, modo });
@@ -125,7 +128,10 @@ export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo 
     const onConfirmarCorte = useCallback(async (n, corte) => {
         if (corteOcupado) return;
         if (!seConfirmaDeUnClic(corte)) { abrirCorte(n, corte, 'confirmar'); return; }
-        if (!n.read_at) markNotificationRead(n.id);
+        // `quitar: false`: marcar leído acá es el arranque de una ACCIÓN, no
+        // que alguien haya leído el aviso. Si sacara la tarjeta, se llevaría el
+        // sello «APROBADA / RECHAZADA» que aparece al terminar.
+        if (!n.read_at) markNotificationRead(n.id, { quitar: false });
         if (await resolverElCorte(corte, 'CONFIRMADO')) recargarCortes();
     }, [corteOcupado, abrirCorte, markNotificationRead, resolverElCorte, recargarCortes]);
 
@@ -169,7 +175,10 @@ export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo 
      * ni `traerSolicitud` ni `decidir` lanzan. */
     const onAprobar = useCallback(async (n) => {
         if (decidiendoId) return;
-        if (!n.read_at) markNotificationRead(n.id);
+        // `quitar: false`: marcar leído acá es el arranque de una ACCIÓN, no
+        // que alguien haya leído el aviso. Si sacara la tarjeta, se llevaría el
+        // sello «APROBADA / RECHAZADA» que aparece al terminar.
+        if (!n.read_at) markNotificationRead(n.id, { quitar: false });
         setDecidiendoId(n.id);
         const req = await traerSolicitud(n);
         // Sin `aceptadas`: desde el aviso se aprueba COMPLETO. Dejar líneas
@@ -184,7 +193,10 @@ export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo 
 
     const onRechazar = useCallback(async (n) => {
         if (decidiendoId) return;
-        if (!n.read_at) markNotificationRead(n.id);
+        // `quitar: false`: marcar leído acá es el arranque de una ACCIÓN, no
+        // que alguien haya leído el aviso. Si sacara la tarjeta, se llevaría el
+        // sello «APROBADA / RECHAZADA» que aparece al terminar.
+        if (!n.read_at) markNotificationRead(n.id, { quitar: false });
         setDecidiendoId(n.id);
         const req = await traerSolicitud(n);
         if (req && !yaResuelta(n, req)) {
@@ -200,7 +212,10 @@ export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo 
        mover un solo producto. */
     const onResolverTraslado = useCallback(async (n) => {
         if (decidiendoId) return;
-        if (!n.read_at) markNotificationRead(n.id);
+        // `quitar: false`: marcar leído acá es el arranque de una ACCIÓN, no
+        // que alguien haya leído el aviso. Si sacara la tarjeta, se llevaría el
+        // sello «APROBADA / RECHAZADA» que aparece al terminar.
+        if (!n.read_at) markNotificationRead(n.id, { quitar: false });
         setDecidiendoId(n.id);
         const req = await traerSolicitud(n);
         if (req && !yaResuelta(n, req)) {

@@ -56,12 +56,17 @@ export const createNotificationsSlice = (set, get) => ({
     _replaceNotification: (notif) => {
         set(state => {
             if (!state.notifications.some(n => n.id === notif.id)) return state;
-            /* Quitarla de la campana y leerla llegan los dos por este camino
-               —son UPDATE de `deleted_at` y de `read_at`— y fusionarlos dejaría
-               la fila a la vista con la marca adentro. Quien la tocó no lo nota
-               porque su propia pestaña ya la sacó; lo nota la SEGUNDA pestaña de
-               la misma persona, que la seguiría mostrando hasta recargar. */
-            if (notif.deleted_at || notif.read_at) {
+            /* Quitarla de la campana llega por este camino —es un UPDATE de
+               `deleted_at`— y fusionarlo dejaría la fila a la vista con la fecha
+               adentro. Quien la quitó no lo nota porque su propia pestaña ya la
+               sacó; lo nota la SEGUNDA pestaña de la misma persona.
+
+               `read_at` NO saca la fila acá, y es a propósito: por este mismo
+               camino llega el sello del trigger que dice en qué terminó una
+               solicitud, y ese UPDATE trae la fila ya leída. Sacarla borraría
+               justo el «APROBADA / RECHAZADA» que se quiere ver. Quien la leyó
+               ya la vio irse por `markNotificationRead`. */
+            if (notif.deleted_at) {
                 return { notifications: state.notifications.filter(n => n.id !== notif.id) };
             }
             return { notifications: state.notifications.map(n => n.id === notif.id ? { ...n, ...notif } : n) };
@@ -69,47 +74,46 @@ export const createNotificationsSlice = (set, get) => ({
     },
 
     /**
-     * Sacar de la campana el aviso de una solicitud recién decidida.
+     * El sello de en qué terminó una solicitud, en el acto.
      *
      * Es lo mismo que hace el trigger en la base, reflejado en memoria para
      * quien acaba de decidir: el realtime puede tardar o no llegar, y en esa
      * ventana la campana de la MISMA persona que aprobó le seguiría ofreciendo
-     * aprobar.
+     * aprobar. La marca lleva el ESTADO —no un booleano— porque la tarjeta
+     * escribe con él la etiqueta de en qué terminó.
      *
-     * Ya no recibe el ESTADO. Lo escribía en `metadata.resuelta` para pintar el
-     * sello «APROBADA» sobre una fila que se quedaba, y desde que leer una la
-     * quita de la campana (2026-09-04) esa fila no se queda. Los cuatro
-     * llamadores siguen pasándolo y no hace daño —un argumento de más en
-     * JavaScript se ignora—: se saca de la firma para que nadie lo lea como si
-     * hiciera algo. El estado final vive donde importa: en la fila que escribe
-     * el trigger, que es la que muestra `/notificaciones`.
+     * La fila se QUEDA, aunque leer una la saque de la campana (2026-09-04).
+     * Es la excepción y tiene motivo: el sello es la respuesta a algo que la
+     * persona acaba de hacer, y sacarla sería contestarle con una tarjeta que
+     * desaparece. No vuelve — la próxima carga ya no trae lo leído—, así que se
+     * ve mientras el panel está abierto y no después. Pedido del usuario:
+     * «ese sí me gustaba, que saliera ahí si fue aceptado o rechazado».
      */
-    marcarAvisoDeSolicitudResuelto: (requestId) => {
+    marcarAvisoDeSolicitudResuelto: (requestId, estado) => {
         if (!requestId) return;
         const clave = String(requestId);
-        /* Y la saca de la campana: decidirla es atenderla. Antes le escribía
-           `read_at` y la dejaba a la vista con el sello «APROBADA», pero desde
-           que leer una la quita (2026-09-04) eso sería la única fila leída que
-           se queda — o sea la excepción que hace que la regla no se entienda.
-           El aviso de que salió bien lo da el toast de `useDecidirSolicitud`, y
-           la solicitud con su estado final vive en `/notificaciones` y en la
-           bandeja de Solicitudes. */
         set(state => ({
-            notifications: state.notifications.filter(n =>
-                !((n.type === 'REQUEST_PENDING' || n.type === 'MINMAX_PENDING')
-                  && String(n.metadata?.request_id ?? '') === clave)),
+            notifications: state.notifications.map(n =>
+                (n.type === 'REQUEST_PENDING' || n.type === 'MINMAX_PENDING')
+                && String(n.metadata?.request_id ?? '') === clave
+                    ? { ...n,
+                        metadata: { ...(n.metadata ?? {}), resuelta: estado },
+                        read_at: n.read_at ?? new Date().toISOString() }
+                    : n),
         }));
     },
 
-    /* Leer una la SACA de la campana (2026-09-04: «al leer las notificaciones
-       en la campana, que se quiten de ahí»). No se pierde: sigue en
-       `/notificaciones`, que es el registro completo — y `fetchNotifications`
-       ya no las trae, así que la próxima apertura coincide con esto. */
-    markNotificationRead: async (id) => {
+    markNotificationRead: async (id, { quitar = true } = {}) => {
         const readAt = new Date().toISOString();
-        set(state => ({
-            notifications: state.notifications.filter(n => n.id !== id),
-        }));
+        set(state => (quitar
+            ? { notifications: state.notifications.filter(n => n.id !== id) }
+            /* `quitar: false` lo usan los caminos que DECIDEN desde la campana.
+               Marcan leído al empezar, y si eso sacara la tarjeta se llevaría el
+               sello «APROBADA / RECHAZADA» que aparece al terminar — que es
+               justamente lo que se quiere ver. La fila igual no vuelve: la
+               próxima carga de la campana ya no trae lo leído. */
+            : { notifications: state.notifications.map(n => n.id === id && !n.read_at ? { ...n, read_at: readAt } : n) }
+        ));
         try {
             await markNotificationReadData(id, readAt);
         } catch (err) {

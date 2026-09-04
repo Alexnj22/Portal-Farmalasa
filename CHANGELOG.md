@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.993.1 — Vuelve el sello de en qué terminó la solicitud
+
+Reportado: «¿quitaste el estado de la solicitud? ese sí me gustaba, que saliera
+ahí si fue aceptado o rechazado». Lo había quitado, y la corrección venía con un
+error de alcance de mi parte que conviene dejar escrito.
+
+**Lo que NUNCA se rompió:** el estado en el listado. `metadata.resuelta` lo
+escribe un trigger de la base y ahí sigue —medido en producción: 4,685
+`APPROVED`, 195 `REJECTED`, 37 `CANCELLED`— y `TarjetaDeAviso` lo pinta. En
+`/notificaciones` el sello nunca dejó de verse.
+
+**Lo que sí rompí** fue el momento en la CAMPANA: al decidir desde ahí, la
+tarjeta se quedaba mostrando «Aprobada / Rechazada» y con v2.992.0 pasó a
+desaparecer. Lo hice a propósito, razonando que era «la única fila leída que se
+queda, o sea la excepción que hace que la regla no se entienda». El razonamiento
+era coherente y la conclusión estaba mal: **el sello no es una fila leída que
+sobra, es la RESPUESTA a algo que la persona acaba de hacer.** Sacarla es
+contestar con una tarjeta que se esfuma.
+
+Hoy la campana vuelve a dejarla, con su sello, hasta que se cierre el panel — la
+próxima carga ya no la trae, porque sigue siendo leída. Tres piezas lo sostienen:
+
+- `markNotificationRead(id, { quitar })`. Los cinco caminos que **deciden**
+  (aprobar, rechazar, traslado, abrir y confirmar un corte) marcan leído al
+  ARRANCAR la acción; con el borrado por defecto la tarjeta se iba antes de que
+  el sello llegara.
+- `marcarAvisoDeSolicitudResuelto` vuelve a escribir `metadata.resuelta` en vez
+  de sacar la fila, y recupera el parámetro `estado`.
+- `_replaceNotification` deja de sacar la fila cuando el UPDATE trae `read_at`:
+  **por ese mismo camino llega el sello del trigger**, sobre una fila ya leída.
+  Sacarla borraría justo lo que se quiere ver.
+
+Leer una sigue quitándola de la campana. Eso no cambió.
+
+### La prueba, con su regresión fabricada
+
+`tests/unit/campanaLeidas.test.js` ancla las tres reglas juntas, que es lo único
+que las hace legibles: se contradicen leídas sueltas. Y no se le creyó el verde:
+se le metieron las dos regresiones a mano —leer que siempre saca, y `read_at`
+que vuelve a sacar por realtime— y **falló exactamente en las dos aserciones que
+tenía que fallar**, 5 pasadas y 2 caídas, volviendo a 7/7 al restaurar.
+
+Hacía falta porque el modo de falla es mudo: la tarjeta simplemente desaparece,
+que es indistinguible de «funcionó».
+
 ## v2.993.0 — Las fichas de caja dicen la venta del día y el efectivo que hay en la gaveta
 
 Pedido del usuario mirando «Las cajas» de Cortes: *«necesito ver el total del

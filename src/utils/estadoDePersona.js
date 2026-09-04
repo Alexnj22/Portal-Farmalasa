@@ -108,10 +108,27 @@ const diasHasta = (desde, hasta) => Math.max(0, Math.round(
 // sept»— y dentro de la píldora eso se lee «vuelve el mié, 2 sept», con una
 // coma que parte la frase justo donde no va. El mes largo entra igual y se lee
 // como una fecha dicha en voz alta.
+//
+// ── Y la vuelta es el día SIGUIENTE al `endDate`, no el `endDate` ─────────
+//
+// `endDate` es el ÚLTIMO día de la ausencia, no el día que la persona vuelve.
+// Lo dicen las tres piezas que lo escriben y lo leen, y todas coinciden entre
+// sí: `FormNovedad` calcula `date + 14` para los 15 días continuos de una
+// vacación y `date + días − 1` para una incapacidad —donde ya rotula «Regresa
+// el endDate + 1»—, y el filtro de acá arriba (`fin(h) >= t`, igual que
+// `get_estados_de_personas`) cuenta a la persona como ausente TODAVÍA el día
+// del `endDate`.
+//
+// O sea que la única que leía `endDate` como fecha de regreso era esta función,
+// y su rótulo —«vuelve el»— lo decía en voz alta un día antes: con la vacación
+// terminando el 21, el aro anunciaba «vuelve el 21 de septiembre» sobre alguien
+// que se reincorpora el 22. No falla nada y no hay fila de menos: sale una
+// fecha bien formada, sólo que la equivocada.
 export function fechaDeVuelta(iso) {
     if (!iso) return null;
     const d = new Date(`${String(iso).slice(0, 10)}T12:00:00`);
     if (Number.isNaN(d.getTime())) return null;
+    d.setDate(d.getDate() + 1);
     return d.toLocaleDateString('es-SV', { day: 'numeric', month: 'long' });
 }
 

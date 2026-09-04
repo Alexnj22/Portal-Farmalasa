@@ -75,7 +75,7 @@ describe('AvatarConEstado — el aro sobrevive al achique, el chip no', () => {
         expect(chip(c)).toBeTruthy();
         expect(chip(c).dataset.chipEstado).toBe('VACATION');
         // El nombre accesible lo pone el conjunto, no el pedazo.
-        expect(marco(c).getAttribute('aria-label')).toBe('En vacaciones · vuelve el 2 de septiembre');
+        expect(marco(c).getAttribute('aria-label')).toBe('En vacaciones · vuelve el 3 de septiembre');
     });
 
     it('a 40 px el chip se va, y el aro se queda', () => {
@@ -102,7 +102,7 @@ describe('AvatarConEstado — el aro sobrevive al achique, el chip no', () => {
         [160, 64, 40, 20].forEach(px => {
             cleanup();
             const c = montar(DE_VACACIONES, px);
-            expect(marco(c).getAttribute('title')).toBe('En vacaciones · vuelve el 2 de septiembre');
+            expect(marco(c).getAttribute('title')).toBe('En vacaciones · vuelve el 3 de septiembre');
         });
     });
 

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.976.2 — El aro dice que vuelve el día siguiente al último de la vacación, no ese mismo día
+
+`metadata.endDate` de un evento de ausencia es el ÚLTIMO día que la persona no
+está, no el día que vuelve. Lo tratan así las tres piezas que lo escriben y lo
+leen: `FormNovedad` calcula `date + 14` para los 15 días continuos de una
+vacación y `date + días − 1` para una incapacidad —donde ya rotula «Regresa el
+endDate + 1»—, y el filtro de `estadoDePersona` y su gemelo
+`get_estados_de_personas` cuentan a la persona ausente TODAVÍA ese día.
+
+La única que lo leía como fecha de regreso era `fechaDeVuelta`, y su rótulo lo
+decía en voz alta un día antes: con la vacación terminando el lunes 21, el aro
+de la foto y el chip de la tarjeta anunciaban «vuelve el 21 de septiembre» sobre
+alguien que se reincorpora el martes 22.
+
+Es la clase de defecto que no deja rastro: no falla nada, no falta ninguna fila
+y la fecha sale bien formada — sólo que corrida un día. Y hasta hoy era
+invisible porque `employee_events` tenía **una sola** fila de tipo `VACATION` en
+toda la tabla, la primera del portal, que empieza el 5 de septiembre.
+
+`tests/unit/fechaDeVuelta.test.js` ancla las dos mitades: que la vuelta es
+`endDate + 1` —incluso cruzando fin de mes y fin de año— y que el día del
+`endDate` la persona sigue contando como ausente. La segunda importa tanto como
+la primera: es lo que hace que quitar el `+1` no se pueda justificar como una
+simplificación.
+
 ## v2.976.1 — el cierre ya hecho también marca el espejo de la apertura
 
 Cola de v2.975.6, encontrada mirando el primer cierre que usó ese arreglo

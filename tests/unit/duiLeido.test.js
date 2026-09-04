@@ -3,12 +3,15 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Las pruebas que importan acá no son las de «llena el nombre» sino las tres
-// que impiden que ayudar se convierta en estorbar: no pisa lo tecleado, no
+// que impiden que ayudar se convierta en estorbar: lo que sustituye lo DICE, no
 // guarda un valor que no está en su catálogo, y no deja media dirección.
 //
 // La tercera es la menos obvia y la más cara: un municipio sin departamento no
 // se puede resolver —hay nombres repetidos en departamentos distintos— así que
 // media dirección es PEOR que ninguna, porque se ve completa.
+//
+// La primera cambió de signo el 2026-09-03, por decisión del usuario: «lo legal
+// es el documento, así que debe siempre sustituir». Antes NO pisaba lo tecleado.
 
 import { describe, it, expect } from 'vitest';
 import { aplicarDuiLeido, avisoDeCaras } from '../../src/utils/duiLeido';
@@ -46,14 +49,27 @@ describe('aplicarDuiLeido', () => {
         expect(parche.nationality).toBe('Salvadoreña');
     });
 
-    it('NO pisa lo que ya está escrito', () => {
-        // Quien tecleó puede estar corrigiendo una lectura anterior, o el
-        // documento puede estar desactualizado. Manda el humano.
+    it('SUSTITUYE lo que ya está escrito, y lo anota', () => {
+        // El DUI es el papel legal: lo que dice es el dato correcto. Lo que
+        // hace segura a esa regla es que el reemplazo quede a la vista.
         const actual = { first_names: 'MARIA DE JESUS', gender: 'M' };
-        const { parche } = aplicarDuiLeido(LEIDO, actual);
+        const { parche, reemplazos } = aplicarDuiLeido(LEIDO, actual);
+        expect(parche.first_names).toBe('MARIA JOSE');
+        expect(parche.gender).toBe('F');
+        expect(parche.last_names).toBe('RIVAS LOPEZ');   // ése estaba vacío: no es reemplazo
+        expect(reemplazos.map(r => r.campo).sort()).toEqual(['first_names', 'gender']);
+        expect(reemplazos.find(r => r.campo === 'first_names'))
+            .toMatchObject({ actual: 'MARIA DE JESUS', documento: 'MARIA JOSE' });
+    });
+
+    it('lo que el documento NO dice no borra lo que hay', () => {
+        // Un `null` del lector es «no lo pude leer», nunca «está vacío».
+        const { parche, reemplazos } = aplicarDuiLeido(
+            { nombres: null, apellidos: undefined, birth_date: '' },
+            { first_names: 'ANA', last_names: 'LOPEZ' });
         expect(parche.first_names).toBeUndefined();
-        expect(parche.gender).toBeUndefined();
-        expect(parche.last_names).toBe('RIVAS LOPEZ');   // ése sí estaba vacío
+        expect(parche.last_names).toBeUndefined();
+        expect(reemplazos).toEqual([]);
     });
 
     it('normaliza «ACOMPANADO» sin Ñ al valor del catálogo', () => {
@@ -129,12 +145,24 @@ describe('el nivel académico sale del DUI', () => {
         expect(parche.profession).toBe('Comerciante');
     });
 
-    it('no pisa el nivel que alguien ya eligió', () => {
-        const { parche } = aplicarDuiLeido(
+    it('el nivel del documento sustituye al que estaba elegido', () => {
+        const { parche, reemplazos } = aplicarDuiLeido(
             { profesion: 'ING. EN SISTEMAS' },
             { education_level: 'BACHILLERATO_GENERAL', profession: 'Bachiller' });
-        expect(parche.education_level).toBeUndefined();
-        expect(parche.profession).toBeUndefined();
+        expect(parche.education_level).toBe('UNIVERSITARIO');
+        expect(parche.profession).toBe('Ingeniería en Sistemas');
+        expect(reemplazos.map(r => r.campo).sort()).toEqual(['education_level', 'profession']);
+    });
+
+    /* EL CASO REAL del 2026-09-03: la ficha traía `UNIVERSITARIO_G`, del
+     * catálogo viejo que separaba estudiante y graduado. Ese valor ya no existe
+     * en la lista, así que el select se veía VACÍO con el dato puesto. Subir el
+     * DUI lo corrige solo. */
+    it('un nivel del catálogo viejo lo corrige el documento', () => {
+        const { parche } = aplicarDuiLeido(
+            { profesion: 'ING. EN SISTEMAS Y COMPUTACION' },
+            { education_level: 'UNIVERSITARIO_G' });
+        expect(parche.education_level).toBe('UNIVERSITARIO');
     });
 });
 
@@ -249,45 +277,64 @@ describe('avisoDeCaras', () => {
  * usuario lo vio con su propio DUI: decía `NUNEZ<JOYA<<EDWIN<ALEXANDER` y la
  * ficha tenía «EDWIN» y «NUÑEZ». El nombre completo estaba en la foto y se
  * perdía.
+ *
+ * Mostrarlo abajo con un botón tampoco alcanzó: el dato legal quedaba a un clic
+ * que nadie daba. Desde el 2026-09-03 el documento SUSTITUYE, y lo que la lista
+ * muestra es lo que reemplazó —con un botón para dejar lo que estaba, por si el
+ * lector se equivocó—.
  */
-describe('diferencias', () => {
-    it('EL CASO REAL: el nombre completo del documento no se pierde', () => {
-        const { parche, diferencias } = aplicarDuiLeido(
+describe('reemplazos', () => {
+    it('EL CASO REAL: el nombre completo del documento gana', () => {
+        const { parche, reemplazos } = aplicarDuiLeido(
             { nombres: 'EDWIN ALEXANDER', apellidos: 'NUÑEZ JOYA' },
             { first_names: 'EDWIN', last_names: 'NUÑEZ' });
-        // No se pisa nada solo.
-        expect(parche.first_names).toBeUndefined();
-        // Pero se ofrece.
-        expect(diferencias.map(d => d.campo).sort()).toEqual(['first_names', 'last_names']);
-        expect(diferencias.find(d => d.campo === 'first_names')).toMatchObject({
+        // El documento es el papel legal: se escribe.
+        expect(parche.first_names).toBe('EDWIN ALEXANDER');
+        expect(parche.last_names).toBe('NUÑEZ JOYA');
+        // Y queda dicho qué reemplazó, para poder volver atrás.
+        expect(reemplazos.map(d => d.campo).sort()).toEqual(['first_names', 'last_names']);
+        expect(reemplazos.find(d => d.campo === 'first_names')).toMatchObject({
             actual: 'EDWIN', documento: 'EDWIN ALEXANDER', rotulo: 'Nombres',
         });
     });
 
-    it('un acento o una mayúscula NO son una diferencia', () => {
-        // Ofrecer ruido entrena a ignorar la lista.
-        const { diferencias } = aplicarDuiLeido(
+    it('un acento o una mayúscula NO son un reemplazo', () => {
+        // Listar ruido entrena a ignorar la lista.
+        const { reemplazos } = aplicarDuiLeido(
             { nombres: 'JOSÉ', apellidos: 'peréz' },
             { first_names: 'jose', last_names: 'PEREZ' });
-        expect(diferencias).toEqual([]);
+        expect(reemplazos).toEqual([]);
     });
 
-    it('un campo VACÍO se llena y no cuenta como diferencia', () => {
-        const { parche, diferencias } = aplicarDuiLeido(
+    it('un campo VACÍO se llena y no cuenta como reemplazo', () => {
+        const { parche, reemplazos } = aplicarDuiLeido(
             { nombres: 'ANA' }, { first_names: '' });
         expect(parche.first_names).toBe('ANA');
-        expect(diferencias).toEqual([]);
+        expect(reemplazos).toEqual([]);
     });
 
-    it('lo que el documento no trae no inventa diferencias', () => {
-        const { diferencias } = aplicarDuiLeido({}, { first_names: 'ANA', last_names: 'LOPEZ' });
-        expect(diferencias).toEqual([]);
+    it('lo que el documento no trae no inventa reemplazos', () => {
+        const { parche, reemplazos } = aplicarDuiLeido({}, { first_names: 'ANA', last_names: 'LOPEZ' });
+        expect(parche.first_names).toBeUndefined();
+        expect(reemplazos).toEqual([]);
     });
 
-    it('cada diferencia trae su rótulo legible', () => {
-        const { diferencias } = aplicarDuiLeido(
+    it('cada reemplazo trae su rótulo legible', () => {
+        const { reemplazos } = aplicarDuiLeido(
             { numero: '01234567-8' }, { dui: '09876543-2' });
-        expect(diferencias[0]).toMatchObject({ campo: 'dui', rotulo: 'DUI' });
+        expect(reemplazos[0]).toMatchObject({ campo: 'dui', rotulo: 'DUI' });
+    });
+
+    /* La regla 3 NO la toca la 1: el documento manda sobre el CONTENIDO, no
+     * sobre lo que el portal puede representar. Un valor fuera del catálogo se
+     * sigue descartando — escribirlo es `role_id: null` otra vez. */
+    it('lo que no está en el catálogo no sustituye nada', () => {
+        const { parche, reemplazos, descartados } = aplicarDuiLeido(
+            { sexo: 'X', tipo_sangre: 'Z+' }, { gender: 'F', blood_type: 'O+' });
+        expect(parche.gender).toBeUndefined();
+        expect(parche.blood_type).toBeUndefined();
+        expect(reemplazos).toEqual([]);
+        expect(descartados).toHaveLength(2);
     });
 });
 

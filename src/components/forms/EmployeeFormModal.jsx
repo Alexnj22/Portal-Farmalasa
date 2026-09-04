@@ -1634,9 +1634,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             aplicados: Object.keys(resumen?.parche || {}).length,
             camposLeidos,
             descartados: resumen?.descartados || [],
-            // Lo que el documento dice DISTINTO de lo que ya estaba escrito. No
-            // se aplica solo —el humano manda— pero tampoco se tira en silencio.
-            diferencias: resumen?.diferencias || [],
+            // Lo que el documento SUSTITUYÓ. El DUI es el papel legal, así que
+            // gana — pero no en silencio: se lista con lo que había, y se puede
+            // volver atrás en el acto si el lector se equivocó.
+            reemplazos: resumen?.reemplazos || [],
             numeroIlegible: leido.numeroIlegible,
         });
     };
@@ -1711,10 +1712,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 // teclearlo mirando el documento que se acababa de subir.
                 //
                 // Sólo llena lo que está VACÍO, y sólo en el documento de ESA
-                // junta: es la misma regla del DUI. Escribir encima de un número
-                // que alguien tecleó sería contradecirlo sin avisar, y el número
-                // de una junta puesto en la casilla de otra es peor que ninguno
-                // —manda a verificarlo al organismo equivocado—.
+                // junta. Ojo: el DUI **sí** sustituye desde el 2026-09-03 («lo
+                // legal es el documento»), y acá no, a propósito — el DUI dice
+                // quién es la persona y esto dice un número de registro, que se
+                // teclea mirando el mismo papel y que nadie discute. Y el número
+                // de una junta puesto en la casilla de otra es peor que ninguno:
+                // manda a verificarlo al organismo equivocado.
                 const numeroLeido = aiResponse?.aiData?.numeroDeRegistro;
                 if (!aiError && numeroLeido) {
                     const laDeEsteDoc = ACREDITACIONES.find(a => a.doc === category);
@@ -2680,36 +2683,31 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <p className="text-label text-content font-medium leading-snug">
                                                 {duiLeido.aplicados > 0
                                                     ? <>Se completaron <span className="font-black">{duiLeido.aplicados}</span> dato{duiLeido.aplicados === 1 ? '' : 's'} con el documento.</>
-                                                    : duiLeido.diferencias?.length
-                                                        ? <>El documento no completó ningún campo vacío, pero dice algo distinto en {duiLeido.diferencias.length === 1 ? 'un dato' : `${duiLeido.diferencias.length} datos`}.</>
-                                                        /* Cero aplicados y cero diferencias tiene DOS causas y se veían
-                                                           iguales, las dos en verde. Si el lector no trajo NI UN campo,
-                                                           no confirmó nada: lo que hay que decir es que vuelva a
-                                                           intentarlo, no que estaba todo bien. */
-                                                        : duiLeido.camposLeidos === 0
-                                                            ? <>El documento no aportó ningún dato. Vuelve a subirlo —o escribe los campos a mano.</>
-                                                            : <>Lo que dice el documento ya estaba escrito en la ficha.</>}
+                                                    /* Cero aplicados tiene DOS causas y se veían iguales, las dos
+                                                       en verde. Si el lector no trajo NI UN campo, no confirmó
+                                                       nada: lo que hay que decir es que vuelva a intentarlo, no
+                                                       que estaba todo bien. */
+                                                    : duiLeido.camposLeidos === 0
+                                                        ? <>El documento no aportó ningún dato. Vuelve a subirlo —o escribe los campos a mano.</>
+                                                        : <>Lo que dice el documento ya estaba escrito en la ficha.</>}
                                             </p>
 
-                                            {/* ── Lo que el documento dice DISTINTO ───────────────
-                                                No se aplica solo: pisar lo que alguien escribió es
-                                                contradecirlo sin avisar, y quien carga puede estar
-                                                corrigiendo una lectura anterior.
+                                            {/* ── Lo que el documento SUSTITUYÓ ───────────────────
+                                                El DUI es el papel legal, así que gana: lo suyo se
+                                                escribe aunque el campo estuviera lleno.
 
-                                                Pero tampoco se tira en silencio, que es lo que
-                                                pasaba. No se notaba mientras el formulario arrancaba
-                                                vacío; al enlazar con una ficha que ya existe llega
-                                                LLENO, así que el documento chocaba con casi todo y
-                                                lo suyo se perdía entero. El usuario lo vio con su
-                                                propio DUI: decía `NUNEZ<JOYA<<EDWIN<ALEXANDER` y la
-                                                ficha tenía «EDWIN» y «NUÑEZ». */}
-                                            {duiLeido.diferencias?.length > 0 && (
+                                                Pero no en silencio. Una lectura equivocada pisaría
+                                                un dato bueno y nadie podría notarlo, así que acá se
+                                                ve qué cambió —con lo que había— y se puede volver
+                                                atrás en el acto. Ésa es la mitad que hace segura a
+                                                la regla, no un adorno. */}
+                                            {duiLeido.reemplazos?.length > 0 && (
                                                 <div className="mt-2">
                                                     <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-1">
-                                                        El documento dice otra cosa
+                                                        El documento sustituyó lo que había
                                                     </p>
                                                     <ul className="flex flex-col gap-1">
-                                                        {duiLeido.diferencias.map(d => (
+                                                        {duiLeido.reemplazos.map(d => (
                                                             <li key={d.campo} className="text-label text-content-2 font-medium leading-snug">
                                                                 <span className="font-black text-content">{d.rotulo}:</span>{' '}
                                                                 <span className="line-through opacity-70">{d.actual}</span>{' → '}
@@ -2721,12 +2719,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         onClick={() => {
                                                             setFormData(prev => {
                                                                 const next = { ...prev };
-                                                                for (const d of duiLeido.diferencias) next[d.campo] = d.documento;
+                                                                for (const d of duiLeido.reemplazos) next[d.campo] = d.actual;
                                                                 return next;
                                                             });
-                                                            setDuiLeido(l => ({ ...l, diferencias: [], aplicados: (l.aplicados || 0) + l.diferencias.length }));
+                                                            setDuiLeido(l => ({ ...l, reemplazos: [],
+                                                                aplicados: Math.max(0, (l.aplicados || 0) - l.reemplazos.length) }));
                                                         }}>
-                                                        Usar lo que dice el documento
+                                                        Dejar lo que estaba
                                                     </Button>
                                                 </div>
                                             )}

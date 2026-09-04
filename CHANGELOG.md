@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.976.0 — El DUI sustituye lo que había: lo legal es el documento
+
+Cambio de regla, pedido por el usuario:
+
+> «lo legal es el documento, así que debe siempre sustituir. todo lo que dice el
+> documento es lo correcto, lo legal.»
+
+Hasta acá el lector **sólo llenaba lo vacío** y nunca pisaba lo que alguien había
+escrito. Con un formulario en blanco no se notaba; enlazado a una ficha que ya
+existe llega LLENO, así que el documento chocaba con casi todo y lo suyo quedaba
+abajo, en una lista con un botón que había que apretar. El DUI decía
+`NUNEZ<JOYA<<EDWIN<ALEXANDER` y la ficha seguía diciendo «EDWIN» y «NUÑEZ».
+
+Ahora **el documento gana**: lo que dice se escribe aunque el campo esté lleno.
+El expediente sostiene la planilla y los papeles que se le entregan a un tercero
+— un nombre que no es el del DUI no es otra versión, es el dato equivocado.
+
+Tres frenos, y ninguno sobra:
+
+- **Sustituir no es sustituir en silencio.** El panel lista «El documento
+  sustituyó lo que había» —campo, lo que estaba y lo que dice el documento— con
+  un botón **Dejar lo que estaba**. Una lectura equivocada pisaría un dato bueno,
+  y sin la lista nadie podría notarlo.
+- **Lo que el documento no dice, no borra.** Un `null` del lector es «no lo pude
+  leer», nunca «está vacío».
+- **Lo que no está en el catálogo sigue sin entrar.** El documento manda sobre el
+  contenido, no sobre lo que el portal puede representar: un tipo de sangre o un
+  municipio que no existe en la lista se descarta y se dice, como siempre.
+
+Efecto lateral útil: un `education_level` del catálogo viejo (`UNIVERSITARIO_G`)
+lo corrige el propio DUI al subirlo.
+
 ## v2.975.6 — el cierre del día declara su monto, y deja de avisar en rojo sobre un día bien cerrado
 
 **El corte Z salía en $0.00 y el aviso del cierre salía en rojo.** Las dos cosas

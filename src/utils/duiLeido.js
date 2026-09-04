@@ -1,25 +1,42 @@
 /**
  * Lo que dice el DUI → los campos del expediente.
  *
- * ── Dos reglas, y las dos existen por el mismo motivo ───────────────────────
+ * ── Tres reglas ─────────────────────────────────────────────────────────────
  *
- * 1. **Sólo llena lo que está VACÍO.** Nunca pisa lo que alguien escribió. Si
- *    Talento Humano ya tecleó el nombre y el documento dice otro, el que manda
- *    es el humano: puede estar corrigiendo una lectura anterior, o el documento
- *    puede estar desactualizado. Pisar lo tecleado convierte «te ayudo» en «te
- *    contradigo sin avisar».
+ * 1. **El documento MANDA: lo que dice sustituye lo que había.** Decisión del
+ *    usuario, el 2026-09-03:
  *
- * 2. **Lo que no encaja en un catálogo, no entra.** El estado familiar, el
+ *    > «lo legal es el documento, así que debe siempre sustituir. todo lo que
+ *    > dice el documento es lo correcto, lo legal.»
+ *
+ *    Hasta acá la regla era la contraria —sólo llenar lo vacío, nunca pisar lo
+ *    tecleado— y por eso el nombre completo del DUI se quedaba abajo, en una
+ *    lista que había que aplicar a mano. Y no era una preferencia de estilo: el
+ *    expediente es el que sostiene la planilla y los papeles que se le entregan
+ *    a un tercero, así que un nombre que no es el del DUI no es «otra versión»,
+ *    es el dato equivocado.
+ *
+ * 2. **Sustituir no es sustituir en silencio.** Lo que se reemplazó se DEVUELVE
+ *    —campo, lo que había y lo que dice el documento— y la pantalla lo lista con
+ *    un botón para volver atrás. Es la mitad que hace segura a la regla 1: una
+ *    lectura equivocada pisaría un dato bueno, y sin la lista nadie podría
+ *    saberlo. Se ve lo que cambió y se puede deshacer en el acto.
+ *
+ * 3. **Lo que no encaja en un catálogo, no entra.** El estado familiar, el
  *    género y el tipo de sangre son listas cerradas del formulario; el
  *    departamento, el municipio y el distrito son los del catálogo territorial.
  *    Un valor leído que no está en la lista se descarta en vez de guardarse:
  *    `role_id: null` sobre un cargo mal escrito ya enseñó cómo se ve eso —una
  *    escritura que «funciona» y no hace lo que dice.
- *    Ver [[feedback_un_rotulo_no_es_una_clave]].
+ *    Ver [[feedback_un_rotulo_no_es_una_clave]]. Esta regla NO la toca la 1:
+ *    el documento manda sobre el CONTENIDO, no sobre lo que el portal puede
+ *    representar.
  *
- * Devuelve el parche y ADEMÁS la lista de lo que se descartó, para que la
- * pantalla pueda decirlo. Un dato que el documento traía y el portal tiró en
- * silencio es peor que uno que no leyó.
+ * Y lo que el documento NO dice tampoco borra: un `null` es «no lo pude leer»,
+ * nunca «está vacío». Sólo un valor leído sustituye.
+ *
+ * Devuelve el parche, lo que se reemplazó y lo que se descartó. Un dato que el
+ * documento traía y el portal tiró en silencio es peor que uno que no leyó.
  */
 import {
     canonDepartamento, canonMunicipio, canonDistrito,
@@ -91,44 +108,43 @@ export const ROTULO_DUI = {
 /**
  * @param {object} leido    lo que devolvió `leer-dui` (`datos`)
  * @param {object} actual   el `formData` de ahora
- * @returns {{ parche: object, descartados: string[], diferencias: object[] }}
+ * @returns {{ parche: object, descartados: string[], reemplazos: object[] }}
  */
 export function aplicarDuiLeido(leido, actual = {}) {
     const parche = {};
     const descartados = [];
-    const diferencias = [];
+    const reemplazos = [];
 
-    /* Sólo si está vacío. `poner` es la única puerta: ninguna asignación
-     * esquiva esta comprobación.
+    /* `poner` es la única puerta: ninguna asignación la esquiva.
      *
-     * ── Y lo que NO entra por estar ocupado, se OFRECE ─────────────────────
+     * ── El documento gana, y dice a quién le ganó ──────────────────────────
      *
-     * Callarse era el defecto. Este archivo ya decía en su encabezado que «un
-     * dato que el documento traía y el portal tiró en silencio es peor que uno
-     * que no leyó», pero eso sólo estaba implementado para lo que no encaja en
-     * un catálogo. Lo que se descartaba por estar el campo ocupado no se
-     * contaba en ninguna parte.
+     * Dos versiones anteriores de esta función, y las dos se equivocaban del
+     * mismo lado. La primera sólo llenaba lo vacío y TIRABA el resto —el DUI
+     * decía `NUNEZ<JOYA<<EDWIN<ALEXANDER`, la ficha tenía «EDWIN» y «NUÑEZ», y
+     * el nombre completo no llegaba a ninguna pantalla—. La segunda lo mostraba
+     * abajo con un botón, así que el dato legal quedaba a un clic de distancia
+     * que nadie daba.
      *
-     * No se notaba mientras el formulario arrancaba vacío. Al enlazar con una
-     * ficha que ya existe llega LLENO, así que el documento pasó a chocar con
-     * casi todo — y el usuario lo vio: «¿no actualizó el nombre, ni los demás
-     * datos?». El DUI decía `NUNEZ<JOYA<<EDWIN<ALEXANDER` y la ficha tenía
-     * «EDWIN» y «NUÑEZ»: el nombre completo estaba en la foto y se tiró.
+     * Hoy sustituye. El expediente sostiene la planilla y los papeles que se le
+     * entregan a un tercero: un nombre que no es el del DUI no es otra versión,
+     * es el dato equivocado.
      *
-     * Sigue sin pisarse nada solo —el humano manda— pero la diferencia se
-     * muestra y se puede aplicar. Las dos reglas se cumplen: no contradecir en
-     * silencio, y no descartar en silencio. */
+     * Lo que hace segura a esa regla es `reemplazos`: campo, lo que había y lo
+     * que dice el documento. Una lectura equivocada pisa un dato bueno, y sin
+     * esa lista nadie podría notarlo — es la diferencia entre corregir y
+     * corregir en silencio.
+     *
+     * Dos cosas que NO sustituyen, a propósito:
+     * - Un `null` del lector es «no lo pude leer», nunca «está vacío». No borra.
+     * - Un cambio que es sólo de acento, mayúscula o espacio no se anota como
+     *   reemplazo: listarlo entrena a ignorar la lista. */
     const poner = (campo, valor) => {
         if (valor === null || valor === undefined || valor === '') return;
         if (!vacio(actual[campo])) {
-            // Sólo cuenta como diferencia si de verdad dice OTRA cosa. Un
-            // acento, una mayúscula o un espacio de más no son un cambio, y
-            // ofrecerlos como si lo fueran entrena a ignorar la lista.
-            if (sinTildes(actual[campo]) !== sinTildes(valor)) {
-                diferencias.push({ campo, rotulo: ROTULO_DUI[campo] || campo,
-                                   actual: String(actual[campo]), documento: String(valor) });
-            }
-            return;
+            if (sinTildes(actual[campo]) === sinTildes(valor)) return;   // ya decía lo mismo
+            reemplazos.push({ campo, rotulo: ROTULO_DUI[campo] || campo,
+                              actual: String(actual[campo]), documento: String(valor) });
         }
         parche[campo] = valor;
     };
@@ -231,7 +247,7 @@ export function aplicarDuiLeido(leido, actual = {}) {
         }
     }
 
-    return { parche, descartados, diferencias };
+    return { parche, descartados, reemplazos };
 }
 
 

@@ -143,7 +143,11 @@ async function aperturaViva(cookie: string) {
     const emp = panel.match(/emp=(\d+)/)?.[1] ?? idEmple;
     const turno = panel.match(/turno=(\d+)/)?.[1]
       ?? campo("Turno")?.match(/\d+/)?.[0];
-    if (aper && emp && turno) return { aper, emp, turno };
+    // El enlace del corte sólo está mientras el TURNO corre. Con la apertura
+    // viva y el turno parado, el corte C sale bien y el Z sale en CERO — ver el
+    // freno del cierre, más abajo.
+    const turnoCorriendo = /id_apertura=\d+/.test(panel);
+    if (aper && emp && turno) return { aper, emp, turno, turnoCorriendo };
   }
   return null;
 }
@@ -501,6 +505,38 @@ Deno.serve(async (req) => {
      *
      * Si la comprobación no se puede hacer, NO se sigue: emitir un Z a ciegas es
      * justo lo que este freno viene a evitar. */
+    /* ── UN Z CON EL TURNO PARADO SALE EN $0.00 ────────────────────────────
+     *
+     * Medido sobre los Z reales, y son CUATRO de cuatro:
+     *
+     *   02-sep  Salud 3 · turno cerrado 1.5 min antes → **$0.00**
+     *   02-sep  Salud 4 · ídem                        → **$0.00**
+     *   03-sep  La Popular · turno cerrado 53 s antes → **$0.00**
+     *   03-sep  Salud 2  · ídem                       → **$0.00**
+     *
+     * Contra ~38 Z con el turno corriendo, ninguno en cero. El Z cierra el
+     * turno que ESTÁ; sin turno no cuenta nada, y el comprobante fiscal de la
+     * jornada sale declarando cero sobre un día de ventas reales.
+     *
+     * Y no da error: el origen contesta «Success», el Z existe, y el número
+     * equivocado sólo se ve mirando el monto. Por eso el freno va acá —en el
+     * servidor, antes de emitirlo— y no en la pantalla: un Z no se deshace, y
+     * cualquier pantalla que llame a esta función tiene que chocar con el mismo
+     * freno. Las dos que ya salieron mal el 3-sep las emitió el portal viejo,
+     * todavía cargado en la sala.
+     *
+     * No es un candado sin salida: iniciar el turno se hace desde el propio
+     * portal (`operar-caja accion: iniciar_turno`), y `cerrarElDia` lo hace
+     * solo antes de pedir el Z. Este freno es la red, no el camino. */
+    if (esZ && !simular && viva.turnoCorriendo === false) {
+      console.error(`[hacer-corte-caja] Z frenado sala=${sala}: turno parado (apertura ${viva.aper})`);
+      return json({
+        ok: false, turno_parado: true,
+        error: "El turno está cerrado, y el cierre del día hecho así sale en $0.00. "
+             + "Iniciá el turno y volvé a cerrar el día.",
+      }, 409);
+    }
+
     if (esZ) {
       const dia = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
       let yaHayZ: boolean | null = null;

@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.973.2 — El cierre del día no puede salir en cero: el turno se inicia antes, y el servidor lo frena
+
+Reportado por el usuario la noche del 3-sep, con dos salas al teléfono: *«la
+popular al darle cerrar dia, le dijo que ya estaba cerrado, y si hay corte z y
+turno abierto. salud 2, igual»*.
+
+**Un Z emitido con el turno parado sale en $0.00.** Cuatro casos reales, cuatro
+de cuatro:
+
+| día | sala | turno | Z |
+|---|---|---|---:|
+| 02-sep | Salud 3 | cerrado 1.5 min antes | **$0.00** |
+| 02-sep | Salud 4 | cerrado 1.5 min antes | **$0.00** |
+| 03-sep | La Popular | cerrado 53 s antes | **$0.00** |
+| 03-sep | Salud 2 | ídem | **$0.00** |
+
+Contra ~38 Z con el turno corriendo, **ninguno** en cero. El Z cierra el turno
+que ESTÁ; sin turno no cuenta nada, y el comprobante fiscal de la jornada
+declara cero sobre un día de ventas reales.
+
+Y no da error: el origen contesta «Success», el Z existe, y el número
+equivocado sólo se ve mirando el monto. Después, al reintentar, el portal
+contesta «ya estaba cerrado» —cierto, y por eso el aviso no ayuda a entender
+nada—.
+
+**Dos piezas, y las dos hacen falta.**
+
+**El freno vive en el servidor** (`hacer-corte-caja`), antes de emitir: con
+`tipo: 'Z'` y el turno parado, se rechaza. Va ahí y no en la pantalla porque un
+Z no se deshace y porque cualquier pantalla que llame a esa función tiene que
+chocar con el mismo freno — las dos que salieron mal esta noche las emitió el
+**portal viejo, todavía cargado en la sala**. Un freno de servidor no espera a
+que nadie recargue.
+
+**Y `cerrarElDia` inicia el turno antes de pedir el Z**, con la acción que
+v2.973.0 acaba de dar al portal. El orden es justo la parte que se equivoca
+sola: «cerrar el día» se lee como un solo acto, y el turno es un paso invisible
+que sólo se nota en el monto del comprobante. Su error se **ignora a propósito**
+—el caso normal, «el turno ya corría», vuelve como 409, y distinguirlo leyendo
+el texto del mensaje es la clase de freno que se rompe cuando alguien lo
+reescribe—: quien decide es el servidor, con un solo juez.
+
+Así el freno es la red y no el camino: la sala no queda sin poder cerrar, porque
+iniciar el turno ya se hace desde el portal.
+
 ## v2.973.1 — La bitácora mira la cuenta, la autogestión se enciende, y los adjuntos salen de la raíz
 
 Cierra el plan de `docs/AUDITORIA-PERSONAL-2026-09-03.md`. De los doce hallazgos

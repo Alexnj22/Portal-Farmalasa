@@ -1104,6 +1104,27 @@ export async function cerrarTurno(sala) {
 }
 
 export async function cerrarElDia(sala) {
+    /* ── EL TURNO SE INICIA ANTES DEL Z, y no es una comodidad ─────────────
+     *
+     * Un Z emitido con el turno parado sale en **$0.00** — cuatro de cuatro
+     * casos reales, ver `cerrarTurno` acá arriba y el freno de
+     * `hacer-corte-caja`. El Z cierra el turno que ESTÁ; sin turno no cuenta
+     * nada, y el comprobante fiscal del día declara cero sobre una jornada de
+     * ventas reales. No da error: el origen contesta «Success».
+     *
+     * Se hace acá y no se le pide a la sala porque el orden es la parte que se
+     * equivoca sola: «cerrar el día» se lee como un solo acto, y el turno es un
+     * paso invisible que sólo se nota en el monto del comprobante.
+     *
+     * **El error se ignora a propósito**, y es la parte que importa: el caso
+     * normal —el turno ya corría— vuelve como error 409, y distinguirlo acá
+     * exigiría leer el texto del mensaje, que es la clase de freno que se rompe
+     * el día que alguien lo reescribe. Quien decide es el SERVIDOR: si el turno
+     * quedó parado, `hacer-corte-caja` rechaza el Z y su motivo es el que ve la
+     * sala. Un solo juez, y encima el que no se puede saltear desde otra
+     * pantalla. */
+    await iniciarTurno(sala);
+
     const z = await hacerCorte({ sala, efectivo: 0, tipo: 'Z' });
     if (z?.error) return { error: z.error };
     /* `ya_estaba` NO es un fallo: es el reintento después de un «no se pudo

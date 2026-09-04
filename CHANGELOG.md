@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.992.2 — Los archivos del portal se guardan en el navegador y dejan de pedirse en cada carga
+
+El tablero de Vercel iba en **787,757 de 1,000,000** de peticiones del mes, con
+los últimos seis días completos promediando **~45 k por día** — o sea ~1.35 M en
+treinta, y el techo tocado alrededor del día 22 del ciclo siguiente. En el plan
+gratuito pasarse no cobra de más: **apaga el portal** hasta que el mes reinicie.
+
+La causa no era tráfico de gente. `vercel.json` no declaraba `Cache-Control`, así
+que todo salía con el valor por defecto de Vercel:
+
+```
+/assets/index-DGJ0COVD.js → cache-control: public, max-age=0, must-revalidate
+```
+
+Los **435 archivos** del compilado llevan la huella de su contenido en el nombre
+—o sea que **nunca** pueden quedar viejos—, y aun así el navegador estaba
+obligado a preguntar por cada uno en cada carga. Esa pregunta cuesta lo mismo que
+la descarga: la tarjeta cuenta «cached **and** uncached requests», y un «no
+cambió» de 304 es una petición igual. Las cuatro tipografías viajaban en toda
+navegación por el mismo motivo.
+
+Ahora `/assets/` va con `max-age=31536000, immutable` y `/fuentes/` con una
+semana. Acotado a esas dos rutas a propósito: `index.html` y `/sw.js` tienen que
+seguir en `max-age=0` o un despliegue nuevo no le llega a nadie — y la regla de
+reescritura manda a `index.html` todo lo que no empiece con `/assets/`, así que
+una regla ancha habría congelado el portal entero en la versión que cada quien
+tuviera abierta.
+
+Queda una pregunta que este cambio no contesta: el **17 de agosto** el consumo
+saltó de ~8 k a ~35 k diarios de un día para otro y no volvió a bajar. El header
+baja el costo de cada carga; qué empezó a cargar cuatro veces más, no.
+
 ## v2.992.1 — El badge de ajuste deja de gritar en casi todas las filas
 
 Reportado con una captura: **«¿por qué todos dicen en conflicto?»** — en Salud 2

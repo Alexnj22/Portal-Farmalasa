@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.975.4 — El DUI en un PDF de dos páginas deja de decir que trae sólo el frente
+
+Subir el DUI como **un solo PDF con las dos caras** —la forma más común de
+escanearlo— terminaba con el aviso «el archivo trae sólo el frente. Faltan los
+datos de la otra cara», sobre un archivo completo y una lectura que había traído
+todo.
+
+El lector clasifica cada archivo (`ANVERSO`, `REVERSO`, `AMBAS`, `OTRO`) para
+poder avisar del error más caro: subir dos veces la misma cara. Pero un PDF de
+**dos páginas** llega al modelo como dos imágenes, así que contestaba una entrada
+**por página** —`["ANVERSO","REVERSO"]`— y la pantalla miraba sólo la primera.
+Medido con un DUI real: 2 páginas, anverso en la 1 y reverso en la 2.
+
+Se corrigió en las dos mitades, y las dos hacen falta:
+
+- **`leer-dui`** pide una entrada por ARCHIVO —lo dice explícito para el PDF de
+  varias páginas— y, si igual vienen varias para un solo archivo, las colapsa por
+  unión: entre sus páginas están las dos caras ⇒ `AMBAS`.
+- **El aviso se comprueba contra el DATO.** Cada cara tiene campos que sólo ella
+  lleva (el número y las fechas en el anverso; el domicilio, el municipio y el
+  estado familiar en el reverso). Si los del reverso llegaron, el reverso se
+  leyó, diga lo que diga el rótulo — y no hay nada que avisar.
+
+Un aviso falso sobre trabajo bien hecho no es un aviso de menos: manda a
+re-escanear un documento que estaba bien y enseña a ignorar los demás.
+
 ## v2.975.3 — El reparto de efectivo al anular una bolsa se elimina
 
 *«si descarté un corte reabierto, significa que fue error, o pasó algo; si

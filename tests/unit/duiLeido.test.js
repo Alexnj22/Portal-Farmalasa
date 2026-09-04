@@ -200,6 +200,41 @@ describe('avisoDeCaras', () => {
         it('otro documento, en cambio, es grave', () => {
             expect(avisoDeCaras({ esDui: true, caras: ['OTRO'] }, true).grave).toBe(true);
         });
+
+        /* EL CASO REAL del 2026-09-03: un PDF de DOS PÁGINAS. El modelo
+         * clasifica una entrada por página y la pantalla decía «trae sólo el
+         * frente» sobre un archivo completo, ya leído entero. */
+        it('un PDF de dos páginas NO trae sólo el frente', () => {
+            expect(avisoDeCaras({ esDui: true, caras: ['ANVERSO', 'REVERSO'] }, true)).toBeNull();
+            expect(avisoDeCaras({ esDui: true, caras: ['REVERSO', 'ANVERSO'] }, true)).toBeNull();
+        });
+
+        it('y aunque el rótulo diga una sola cara, si los datos de la otra llegaron no se avisa', () => {
+            const completo = { numero: '05400875-9', domicilio: 'COL. X', departamento: 'CHALATENANGO' };
+            expect(avisoDeCaras({ esDui: true, caras: ['ANVERSO'], datos: completo }, true)).toBeNull();
+            expect(avisoDeCaras({ esDui: true, caras: ['REVERSO'], datos: completo }, true)).toBeNull();
+        });
+
+        it('pero si de verdad falta el reverso, sigue avisando', () => {
+            const soloFrente = { numero: '05400875-9', nombres: 'EDWIN', domicilio: null, departamento: null };
+            const a = avisoDeCaras({ esDui: true, caras: ['ANVERSO'], datos: soloFrente }, true);
+            expect(a.grave).toBe(false);
+            expect(a.texto).toMatch(/sólo el frente/i);
+        });
+    });
+
+    describe('el rótulo se comprueba contra el dato', () => {
+        it('dos anversos con los datos de las dos caras: el rótulo se equivocó, no se avisa', () => {
+            const completo = { numero: '05400875-9', domicilio: 'COL. X', municipio: 'CHALATENANGO' };
+            expect(avisoDeCaras({ esDui: true, caras: ['ANVERSO', 'ANVERSO'], datos: completo })).toBeNull();
+        });
+
+        it('dos anversos SIN los datos del reverso siguen siendo graves', () => {
+            const a = avisoDeCaras({ esDui: true, caras: ['ANVERSO', 'ANVERSO'],
+                                     datos: { numero: '05400875-9', domicilio: null } });
+            expect(a.grave).toBe(true);
+            expect(a.texto).toMatch(/dos veces el frente/i);
+        });
     });
 });
 

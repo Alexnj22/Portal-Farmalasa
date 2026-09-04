@@ -235,6 +235,15 @@ export function aplicarDuiLeido(leido, actual = {}) {
 }
 
 
+/* Campos que SÓLO trae esa cara. Sirven para saber si la cara se leyó de
+ * verdad. `tipo_sangre` y `distrito` no entran: son opcionales en el DUI, así
+ * que su ausencia no prueba nada. */
+const DEL_ANVERSO = ['numero', 'nombres', 'apellidos', 'sexo', 'fecha_nacimiento',
+                     'lugar_nacimiento', 'lugar_expedicion', 'fecha_expedicion', 'fecha_vencimiento'];
+const DEL_REVERSO = ['domicilio', 'departamento', 'municipio', 'profesion', 'estado_familiar'];
+
+const trajo = (datos, campos) => campos.some(c => !vacio(datos?.[c]));
+
 /**
  * Qué era cada archivo que se subió, dicho para quien lo subió.
  *
@@ -253,7 +262,25 @@ export function aplicarDuiLeido(leido, actual = {}) {
  * pero este archivo describe la respuesta del lector, no el orden en que la
  * función decide; el día que ese corte se mueva, acá no hay nada que arreglar.
  *
- * @param {{esDui?: boolean, caras?: string[]}} r  lo que devolvió `leer-dui`
+ * ── Y el rótulo se comprueba contra el DATO ────────────────────────────────
+ *
+ * El aviso existe para explicar por qué falta media ficha. Así que antes de
+ * decirlo se mira si de verdad falta: cada cara tiene campos que sólo ella
+ * lleva —el número y las fechas están en el anverso, el domicilio y el estado
+ * familiar en el reverso—, y si los del reverso llegaron, el reverso se leyó,
+ * diga lo que diga la clasificación.
+ *
+ * Medido el 2026-09-03 con un DUI real en un PDF de dos páginas: el modelo
+ * clasificó una entrada POR PÁGINA (`["ANVERSO","REVERSO"]`), esto miraba la
+ * primera y anunciaba «el archivo trae sólo el frente» sobre una lectura
+ * COMPLETA. `leer-dui` ya colapsa las páginas de un mismo archivo; esto es la
+ * mitad que no depende de un despliegue ni de que el modelo acierte el rótulo.
+ *
+ * Un aviso falso sobre trabajo bien hecho no es un aviso de menos: manda a
+ * re-escanear un documento que estaba bien y enseña a ignorar los demás. Es
+ * [[feedback_el_instrumento_miente_antes_que_el_efecto]].
+ *
+ * @param {{esDui?: boolean, caras?: string[], datos?: object}} r  lo que devolvió `leer-dui`
  * @param {boolean} unArchivo  true si se subió un solo archivo con las dos caras
  * @returns {{grave: boolean, texto: string}|null} `null` cuando no hay nada que decir
  */
@@ -267,18 +294,28 @@ export function avisoDeCaras(r, unArchivo = false) {
 
     if (!caras.length) return null;   // el lector no clasificó: no se inventa nada
 
+    const hayAnverso = trajo(r?.datos, DEL_ANVERSO);
+    const hayReverso = trajo(r?.datos, DEL_REVERSO);
+
     if (unArchivo) {
-        if (caras[0] === 'OTRO') {
+        // Varias entradas para un solo archivo son PÁGINAS: vale la unión.
+        const vistas = new Set(caras);
+        if (vistas.size === 1 && vistas.has('OTRO')) {
             return { grave: true, texto: 'El archivo no parece un DUI.' };
         }
-        if (caras[0] === 'ANVERSO' || caras[0] === 'REVERSO') {
-            const cual = caras[0] === 'ANVERSO' ? 'el frente' : 'el reverso';
-            return {
-                grave: false,
-                texto: `El archivo trae sólo ${cual}. Faltan los datos de la otra cara — súbelo completo o usa las dos imágenes.`,
-            };
-        }
-        return null;
+        if (vistas.has('AMBAS') || (vistas.has('ANVERSO') && vistas.has('REVERSO'))) return null;
+
+        const sola = vistas.has('ANVERSO') ? 'ANVERSO' : (vistas.has('REVERSO') ? 'REVERSO' : null);
+        if (!sola) return null;
+        // Si los datos de la otra cara llegaron, la otra cara estaba: el
+        // rótulo se equivocó y no hay nada que avisar.
+        if (sola === 'ANVERSO' && hayReverso) return null;
+        if (sola === 'REVERSO' && hayAnverso) return null;
+        const cual = sola === 'ANVERSO' ? 'el frente' : 'el reverso';
+        return {
+            grave: false,
+            texto: `El archivo trae sólo ${cual}. Faltan los datos de la otra cara — súbelo completo o usa las dos imágenes.`,
+        };
     }
 
     // Dos archivos: el primero es el que se subió como frente.
@@ -290,11 +327,15 @@ export function avisoDeCaras(r, unArchivo = false) {
     if (rev === 'OTRO') return { grave: true, texto: 'La imagen del reverso no parece un DUI.' };
 
     if (f === rev && (f === 'ANVERSO' || f === 'REVERSO')) {
+        const falta = f === 'ANVERSO' ? !hayReverso : !hayAnverso;
         const cual = f === 'ANVERSO' ? 'el frente' : 'el reverso';
-        return {
-            grave: true,
-            texto: `Subiste dos veces ${cual}. Falta la otra cara, y con ella la mitad de los datos.`,
-        };
+        if (falta) {
+            return {
+                grave: true,
+                texto: `Subiste dos veces ${cual}. Falta la otra cara, y con ella la mitad de los datos.`,
+            };
+        }
+        return null;   // los datos de las dos caras llegaron: el rótulo se equivocó
     }
 
     // Cambiadas de lugar. NO es grave: el lector ve las dos juntas y los datos

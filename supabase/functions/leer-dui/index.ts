@@ -100,6 +100,38 @@ function fechaValida(v: unknown, desde = 1900, hasta = 2100): string | null {
 
 const texto = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().toUpperCase() : null)
 
+/* Qué era cada ARCHIVO — y un PDF de dos páginas sigue siendo uno.
+ *
+ * Medido el 2026-09-03 con el DUI de una persona real: un PDF de dos páginas
+ * (anverso en la 1, reverso en la 2) subido como «documento completo». El
+ * modelo ve las páginas como imágenes sueltas y contesta `["ANVERSO",
+ * "REVERSO"]` — una por PÁGINA, no por archivo. La pantalla miraba la primera
+ * entrada y decía «el archivo trae sólo el frente» sobre un archivo que traía
+ * las dos caras y del que se habían leído todos los datos.
+ *
+ * El aviso existe para explicar por qué falta media ficha; dicho sobre una
+ * lectura completa manda a re-escanear un documento que estaba bien, y enseña a
+ * ignorar el resto de los avisos.
+ *
+ * El prompt ya lo pide por archivo. Esto es la red: cuando llegó UN archivo y
+ * vienen varias entradas, son páginas, y se colapsan a una. La unión es lo
+ * único que se puede afirmar — si entre las páginas están las dos caras, el
+ * archivo trae las dos caras.
+ */
+function normalizarCaras(crudas: unknown, cuantosArchivos: number): string[] {
+  const lista = Array.isArray(crudas)
+    ? crudas.map((c: unknown) =>
+        ['ANVERSO', 'REVERSO', 'AMBAS', 'OTRO'].includes(String(c)) ? String(c) : 'OTRO')
+    : []
+  if (cuantosArchivos !== 1 || lista.length <= 1) return lista
+
+  const vistas = new Set(lista)
+  if (vistas.has('AMBAS') || (vistas.has('ANVERSO') && vistas.has('REVERSO'))) return ['AMBAS']
+  if (vistas.has('ANVERSO')) return ['ANVERSO']
+  if (vistas.has('REVERSO')) return ['REVERSO']
+  return ['OTRO']
+}
+
 const PROMPT = `Eres un lector de documentos de identidad de El Salvador. Te doy el Documento Único de Identidad (DUI) de una persona.
 
 Puede llegarte de dos formas y las dos son válidas: como DOS imágenes (anverso y reverso), o como UN SOLO archivo —normalmente un PDF— que contiene las dos caras. Si es un solo archivo, busca las dos caras dentro de él antes de responder: el número y el sexo están en el anverso, y el domicilio, la profesión, el estado familiar y el tipo de sangre en el reverso.
@@ -123,7 +155,7 @@ Devuelve ÚNICAMENTE un JSON válido, sin markdown, con esta forma exacta:
   "distrito": "el distrito del domicilio, si aparece. null si no está.",
   "tipo_sangre": "el tipo de sangre (por ejemplo O+, A-). null si no aparece.",
   "es_dui": true si las imágenes son realmente un DUI de El Salvador, false si son otra cosa,
-  "caras": ["ANVERSO" | "REVERSO" | "AMBAS" | "OTRO", ...] una entrada POR CADA archivo que te di, EN EL MISMO ORDEN. Di ANVERSO si esa imagen es la cara con la foto y el número; REVERSO si es la cara con el domicilio y la firma; AMBAS si ese único archivo trae las dos caras; OTRO si esa imagen no es una cara de un DUI salvadoreño.
+  "caras": ["ANVERSO" | "REVERSO" | "AMBAS" | "OTRO", ...] una entrada POR CADA ARCHIVO que te di, EN EL MISMO ORDEN. Di ANVERSO si ese archivo es la cara con la foto y el número; REVERSO si es la cara con el domicilio y la firma; AMBAS si ese único archivo trae las dos caras; OTRO si no es una cara de un DUI salvadoreño. Un PDF de VARIAS PÁGINAS sigue siendo UN archivo: contesta UNA sola entrada por él —AMBAS si entre sus páginas están las dos caras—, nunca una por página.
 }
 
 REGLAS QUE NO PUEDES ROMPER:
@@ -131,7 +163,7 @@ REGLAS QUE NO PUEDES ROMPER:
 - El tipo de sangre es OPCIONAL en el DUI: sólo aparece si la persona presentó constancia de laboratorio. Que no esté es normal, devuelve null.
 - No completes el departamento ni el municipio a partir del distrito ni al revés. Devuelve sólo lo que está escrito.
 - Las fechas van en formato YYYY-MM-DD y sólo si las lees completas.
-- "caras" tiene EXACTAMENTE tantas entradas como archivos recibiste, en orden. No la omitas ni la acortes: sirve para avisarle a quien carga que subió dos veces la misma cara o un documento que no es.`
+- "caras" tiene EXACTAMENTE tantas entradas como ARCHIVOS recibiste, en orden — no como páginas. No la omitas ni la acortes: sirve para avisarle a quien carga que subió dos veces la misma cara o un documento que no es.`
 
 /* Se pregunta SÓLO por las cuatro esquinas, y el recuadro se calcula acá.
  *
@@ -399,10 +431,7 @@ Deno.serve(async (req: Request) => {
       // que el lector concluyó, y quien la consume no tiene por qué saber que
       // el corte pasó 40 renglones más arriba.
       esDui: leido?.es_dui !== false,
-      caras: Array.isArray(leido?.caras)
-        ? leido.caras.map((c: unknown) =>
-            ['ANVERSO', 'REVERSO', 'AMBAS', 'OTRO'].includes(String(c)) ? String(c) : 'OTRO')
-        : [],
+      caras: normalizarCaras(leido?.caras, caras.length),
     })
   } catch (e) {
     console.error('leer-dui:', e)

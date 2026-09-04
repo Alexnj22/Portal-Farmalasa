@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.974.5 — El último corte del día empieza 15 minutos antes del cierre
+
+Regla del usuario: *«si hacen corte 15 min antes del cierre y lo confirman, no
+pide a quién entrega»*.
+
+La condición era `hora >= cierre`, o sea el instante exacto. Y nadie corta a las
+21:00 en punto: se corta un rato antes, mientras se cuenta el efectivo y se
+cierra la sala. Con el corte de las 20:50 el portal pedía una firma de entrega
+que ya no tiene a quién nombrar —no queda nadie a quien entregarle la caja— y la
+única salida era declarar «no hay quien reciba», que ensucia el registro con un
+motivo escrito para un caso que no es una excepción sino lo normal.
+
+**El margen va DENTRO de `sala_ya_cerro`, y su firma no se toca.** Agregarlo como
+parámetro con default habría creado una SOBRECARGA: la de dos argumentos seguiría
+existiendo, y el navegador manda uno solo — quedaría resolviendo a la vieja sin
+que nada avise. Es lo que ya costó `update_proveedor_manual`, con sus dos firmas
+y una revocación de permisos que alcanzó a una sola.
+
+Y sigue siendo **un solo juez**: la pantalla y el servidor le preguntan a esta
+función y no cada uno a su cuenta, que es lo que evita que un día la pantalla no
+pida la firma y el servidor anote que nadie recibió.
+
+Medido al aplicarla, con Salud 4 (cierra 21:00): a las 20:44 todavía pregunta, a
+las 20:45 ya no. Salud 1, que cierra a las 22:00, a las 20:46 sigue preguntando.
+
 ## v2.974.4 — Un campo vacío no rompe el guardado, y el sueldo recién guardado se ve
 
 Dos cosas que aparecieron al revisar el camino que se está usando **ahora

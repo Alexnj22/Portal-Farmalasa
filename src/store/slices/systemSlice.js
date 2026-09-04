@@ -837,15 +837,30 @@ export const createSystemSlice = (set, get) => ({
             // 4. Si hay documento adjunto (Boleta ISSS, Finiquito, etc), lo subimos a Storage
             let docObject = null;
             if (file) {
-                const url = await get().uploadFileToStorage(file, 'documents');
+                // `employees/<id>/eventos/` y ya no la RAÍZ del bucket. Sin
+                // carpeta, la boleta del ISSS o el finiquito de alguien caían
+                // sueltos en `documents/`, donde la ruta no dice de quién son y
+                // por lo tanto nadie puede ser su dueño: son los únicos
+                // documentos de personal que su propia persona no podría ver
+                // nunca.
+                const url = await get().uploadFileToStorage(file, 'documents', `employees/${employeeId}/eventos`);
                 if (url) {
-                    const { data: newDoc } = await insertEmployeeDocument({
+                    // El `error` NO se descarta. Descartado, un insert que falla
+                    // deja el archivo en Storage, la fila sin crear y la pantalla
+                    // diciendo que se subió — el documento existe y el expediente
+                    // no lo conoce, que es peor que no haberlo subido.
+                    const { data: newDoc, error: docErr } = await insertEmployeeDocument({
                         employee_id: employeeId,
                         event_id: newEvent.id,
                         name: file.name,
                         type: 'DOCUMENT',
                         url: url,
                     });
+                    if (docErr) {
+                        const e = new Error(`El evento quedó registrado pero el documento no se pudo adjuntar: ${docErr.message}`);
+                        e.userFacing = true;
+                        throw e;
+                    }
                     docObject = newDoc;
                 }
             }
@@ -1686,7 +1701,9 @@ export const createSystemSlice = (set, get) => ({
     addDocumentToEvent: async (employeeId, eventId, file) => {
         if (!file) return;
         try {
-            const url = await get().uploadFileToStorage(file, 'documents');
+            // Misma carpeta que en `registerEmployeeEvent`, por lo mismo: la ruta
+            // tiene que decir de quién es el documento.
+            const url = await get().uploadFileToStorage(file, 'documents', `employees/${employeeId}/eventos`);
             if (!url) throw new Error("Fallo al subir el archivo al storage");
 
             const { data: newDoc, error } = await insertEmployeeDocument({ employee_id: employeeId, event_id: eventId || null, name: file.name, type: 'UPLOAD', url: url });

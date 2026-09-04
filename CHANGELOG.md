@@ -21,6 +21,82 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.973.1 — La bitácora mira la cuenta, la autogestión se enciende, y los adjuntos salen de la raíz
+
+Cierra el plan de `docs/AUDITORIA-PERSONAL-2026-09-03.md`. De los doce hallazgos
+quedan dos abiertos, y los dos están escritos con su motivo al final del informe.
+
+### Cambiar la cuenta bancaria no dejaba rastro
+
+`audit_employee_sensitive_changes` vigilaba tres columnas: sueldo, cargo y
+estado. **`account_number` es la cuenta a la que se le deposita el sueldo a una
+persona**, y cambiarla era invisible. Igual `bank_name`, el `dui` y el `code`,
+que es la credencial con la que alguien entra al portal y marca en el kiosco.
+
+Vigilar el monto y no el destino es una elección rara cuando se la mira de
+frente: mover el número se veía y mover a dónde cae, no.
+
+De los cuatro nuevos se anota **qué cambió, no a qué**. La bitácora la leen
+cuatro personas: guardar ahí el DUI o el código en claro sería mudar el secreto
+de una columna protegida a una que no lo está, justo después de proteger la
+primera.
+
+> **Y la primera versión de esa migración tenía un defecto que llegó a
+> producción.** `v_cambios || 'bank_name'` es ambiguo —Postgres lee el literal
+> sin tipo como si fuera otro arreglo— así que el trigger lanzaba, y por ser
+> AFTER UPDATE **se llevaba puesta la escritura que venía a auditar**: guardar
+> la cuenta de alguien fallaba entero. Se detectó al minuto, probando la
+> escritura de verdad después de aplicar, y se corrigió con `array_append`. No
+> habría llegado si esa migración se hubiera ensayado antes en el branch como
+> las tres anteriores.
+
+### La autogestión existe para toda la empresa
+
+«Mi perfil» y «Mis documentos» estaban apagados para **43 de 47 personas** — sólo
+los tenían los tres del área administrativa. Y los cinco auxiliares de bodega no
+tenían ni fila de «Mis avisos»: **no recibían los comunicados internos**.
+
+Los tres quedan encendidos para todos, **sólo ver**. El botón «Editar» de «Mi
+perfil» se esconde sin `staff_list.can_edit`: existía siempre y guardar reventaba
+con un error de PostgREST, porque no hay ninguna policy que deje a una persona
+escribir su propia ficha. Ofrecer una acción que la base va a rechazar no es un
+permiso de más, es una promesa que no se cumple.
+
+### Los adjuntos de RRHH salen de la raíz del bucket
+
+La boleta del ISSS y el finiquito de alguien caían **sueltos en `documents/`**,
+sin carpeta. Una ruta que no dice de quién es el documento no permite que nadie
+sea su dueño: eran los únicos documentos de personal que su propia persona no
+podría ver nunca. Ahora van a `employees/<id>/eventos/`.
+
+Y ese mismo insert **descartaba el `error`**: si fallaba, el archivo quedaba en
+Storage, la fila sin crear y la pantalla diciendo que se había subido. El
+documento existía y el expediente no lo conocía, que es peor que no haberlo
+subido.
+
+### Lo que queda abierto, y por qué
+
+- **46 de 48 fichas siguen sin sueldo** y una sola tiene cuenta bancaria. Es
+  carga de datos, no código, y ahora se puede hacer con las llaves en su sitio.
+- **20 archivos siguen en `employee-documents/unassigned/`**, una ruta que no
+  dice de quién son: los ve «Expediente completo» y nunca su dueño. Dos tienen
+  dueño y **18 son huérfanos de pruebas**. Moverlos necesita la llave de
+  `service_role`, que no está en el `.env` local.
+- **Los adjuntos del alta** siguen cayendo ahí mientras la ficha no tiene id.
+  Cerrarlo exige mover el archivo después del INSERT o diferir la subida, que es
+  un rediseño del formulario: hoy sube al elegir el archivo porque de ahí sale la
+  lectura del DUI.
+
+### Y un hallazgo del informe que resultó falso
+
+**G7 era un falso positivo mío.** La cadena de cuatro saltos que mandaba a
+«Acceso denegado» al entrar es correcta salto por salto, y aun así la conclusión
+era falsa porque le faltaba el salto que la desactiva: `isAuthenticated` es
+`!!user`, así que la ruta `/login` desmonta `LoginView` en el mismo render en que
+`user` se vuelve verdadero y su efecto nunca corre. Queda escrito en el informe
+con el porqué, para que no se vuelva a proponer.
+
+
 ## v2.973.0 — El portal inicia el turno, y lo firma la sala
 
 Pedido del usuario, después de la tarde del 3-sep: *«si el turno está cerrado

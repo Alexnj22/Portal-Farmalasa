@@ -2,7 +2,14 @@
 
 Salió de configurar los permisos del rol `Administrador` y de arreglar el
 «Faltan 2 datos» del listado (v2.971.3). Al barrer el resto del área aparecieron
-**nueve** hallazgos: dos graves, y ninguno da error.
+**nueve** hallazgos; el mapeo del código y de las policies de nómina sumó cuatro
+más, y uno de los nueve resultó falso. **Total: doce**, ninguno da error.
+
+> **Estado al 2026-09-04.** Cerrados G1, G1b, G2, G3, G4, G6, G8, G10, G11, G12
+> y G13 (v2.971.7 → v2.972.2). G7 era un falso positivo. Quedan abiertos **G5**
+> (46 fichas sin sueldo: es carga de datos, no código) y **la mitad de G9** —
+> mover 20 archivos de la ruta vieja, que necesita la llave de `service_role`.
+> El detalle de cada cierre está en `CHANGELOG.md`.
 
 El área son 25 archivos de `src/`, seis tablas y tres crons
 (`auditoria/areas.mjs`, ids `personal` y `nomina`). Todo lo de acá se midió
@@ -150,9 +157,21 @@ Los cinco auxiliares de bodega no reciben **ni los comunicados internos**.
 
 ---
 
-## G7 · Al entrar, quien no tiene Listado ni Inicio aterriza en «Acceso denegado»
+## G7 · ~~Al entrar se aterriza en «Acceso denegado»~~ — FALSO POSITIVO
 
-**Probable — leído en el código, NO observado en el navegador.**
+**Se cae leyendo el resto del código, y conviene dejarlo escrito con su porqué.**
+`isAuthenticated` es `!!user` (`AuthContext.jsx:1302`), así que en el mismo
+render en que `user` se vuelve verdadero la ruta `/login` (`App.jsx:678`) pasa a
+devolver `<Navigate to={defaultRedirect}>` y **desmonta `LoginView`**. El efecto
+de `LoginView.jsx:480` nunca corre: es **código muerto**, y quien decide es
+`defaultRedirect`, que sí calcula bien la primera pantalla con permiso (y espera
+a que los permisos carguen, `arranqueSesion.js`).
+
+La cadena de abajo es correcta salto por salto y aun así la conclusión era falsa,
+porque le faltaba el salto que la desactiva. Es la misma lección que la tanda de
+v2.971.3: *antes de creerle un número a una lectura, abrir el caso.*
+
+<details><summary>La cadena que se creyó, para que no se vuelva a proponer</summary>
 
 ```
 LoginView.jsx:480   sin staff_list y sin overview → setView('employee-detail')
@@ -161,10 +180,10 @@ App.jsx:937         <Route path="employee-detail" → <Navigate to="/personal">
 App.jsx:779         /personal → <PermissionGuard staff_list> → AccessDeniedView
 ```
 
-`defaultRedirect` (App.jsx:345) sí calcula bien la primera pantalla con permiso,
-pero la navegación explícita de `LoginView` le gana. Afectaría a las 43 personas
-de G6. **Hay que confirmarlo entrando con una cuenta de sala** antes de tocar
-nada: si el efecto no llega a correr porque la vista se desmonta antes, no pasa.
+Lo que faltaba mirar era justamente si «la vista se desmonta antes». Se
+desmonta.
+
+</details>
 
 ---
 
@@ -202,6 +221,52 @@ crea y la pantalla dice que se subió.
 
 ---
 
+## G10 · La nómina tenía policy de lectura y ninguna de escritura
+
+**Grave, y estaba pasando.** `payroll_entries` y `payroll_periods` tienen RLS
+encendido y el GRANT completo, pero **sólo una policy de SELECT**. Crear el
+período, generar la quincena, rehacerla y corregir un renglón fallaban siempre.
+Eso explica las 0 filas de G5 mucho mejor que la falta de sueldos: nadie lo
+reportó porque nadie llegó a intentarlo.
+
+Cerrado en v2.972.1.
+
+---
+
+## G11 · La lectura de la nómina filtraba sueldos por sala
+
+**Grave.** El segundo término del OR era
+`EXISTS (… e.branch_id = auth_employee_branch_id())` **sin pedir ningún
+permiso**. El día que existiera la primera quincena, cualquier dependiente vería
+el líquido a pagar de sus compañeros y de su jefatura.
+
+Medido en el branch con la policy vieja puesta: **veía el renglón**; con la
+nueva, cero. Es la misma forma que G1 — una condición que parece un filtro
+haciendo de permiso. Cerrado en v2.972.1.
+
+---
+
+## G12 · `branches.can_view` alcanzaba para escribir el expediente de una sala
+
+**Estaba pasando.** `TabExpediente.jsx` no recibía `canEdit` y no tenía un solo
+`disabled`: «Nuevo», «Subir Archivo» y los de reemplazar cada documento legal
+estaban siempre encendidos, y la ruta sólo exige `can_view`. La cabecera de la
+MISMA pantalla sí los escondía. Cerrado en v2.971.7.
+
+---
+
+## G13 · El PIN del kiosco se podía inventar
+
+`kiosk_pin` es SHA-256 del código y vivía en **tres copias del navegador**; el
+servidor lo guardaba tal cual sin recalcularlo, así que quien pudiera escribir
+una ficha podía elegirle el PIN a cualquiera. Hoy lo deriva un trigger.
+
+Comprobado **antes** de activarlo: la derivación en Postgres da el mismo valor
+que la del navegador en las 46 fichas con PIN, **0 distintas**. Cerrado en
+v2.972.0.
+
+---
+
 ## Lo que se revisó y está bien
 
 - **Los tres crons del área corrieron hoy**: `check-doc-expiry-daily` (13:00),
@@ -222,12 +287,17 @@ crea y la pantalla dice que se subió.
 
 ---
 
-## Orden sugerido
+## Lo que queda abierto
 
-1. **G1** — es el único que está pasando hoy y no necesita que nadie se
-   equivoque de permiso.
-2. **G2** + **G3** — juntos: son la misma decisión (qué llave escribe qué) y G3
-   es la bitácora de lo que G2 abre. Antes de cargar sueldos y cuentas (G5).
-3. **G6** y **G7** — decisión tuya sobre la autogestión; G7 hay que confirmarlo
-   entrando con una cuenta de sala.
-4. **G4**, **G8**, **G9** — latentes o menores.
+1. **G5** — 46 de 48 fichas sin sueldo y 1 sola con cuenta bancaria. Es carga de
+   datos, no código, y ahora se puede hacer con las llaves en su sitio.
+2. **La mitad de G9** — 20 archivos siguen en `employee-documents/unassigned/`,
+   una ruta que no dice de quién son, así que sólo los ve «Expediente completo»
+   y **nunca su propio dueño**. Dos tienen dueño (los DUIs de Carlos Renderos) y
+   **18 son huérfanos** de pruebas. Moverlos necesita la llave de `service_role`,
+   que no está en el `.env` local; la alternativa sin llave es volver a subirlos
+   desde el expediente, que ya escribe en la ruta buena.
+3. **Los adjuntos del alta** siguen cayendo en esa misma ruta vieja mientras la
+   ficha no tiene id. Cerrarlo exige mover el archivo después del INSERT (misma
+   llave) o diferir la subida, que es un rediseño del formulario — hoy sube al
+   elegir el archivo porque de ahí sale la lectura del DUI.

@@ -71,7 +71,14 @@ const Field = ({ label, value, icon: Icon }) => (
 );
 
 const EmployeeProfileView = ({ openModal }) => {
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
+    // «Mi perfil» es de LECTURA salvo para quien además administra personal.
+    // El botón existía siempre y guardar reventaba con un error de PostgREST:
+    // la policy de `employees` exige `staff_list.can_edit` y no hay ninguna que
+    // deje a una persona escribir su propia ficha. Ofrecer una acción que la
+    // base va a rechazar no es un permiso de más, es una promesa que no se
+    // cumple — mejor decirlo con la pantalla que con un error.
+    const puedeEditarSuFicha = hasPermission('staff_list', 'can_edit');
     const employees = useStaffStore(s => s.employees);
     const branches  = useStaffStore(s => s.branches);
     const shifts    = useStaffStore(s => s.shifts);
@@ -256,7 +263,9 @@ const EmployeeProfileView = ({ openModal }) => {
             )}
             {(emp.phone || emp.dui) && <div className="hidden md:block w-px h-6 bg-divider mx-0.5 shrink-0" />}
             {/* Edit button */}
-            <Button icon={Pencil} onClick={() => openModal('editContact', emp)}><span className="hidden sm:inline">Editar</span></Button>
+            {puedeEditarSuFicha && (
+                <Button icon={Pencil} onClick={() => openModal('editContact', emp)}><span className="hidden sm:inline">Editar</span></Button>
+            )}
             {/* Password button */}
             <Button tone="warning" icon={KeyRound} title="Cambiar contraseña" iconOnly onClick={() => openModal('changeOwnPassword', {})} />
         </div>

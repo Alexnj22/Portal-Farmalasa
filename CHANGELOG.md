@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.998.0 — «Espera a» dice el área cuando pueden resolverla varios
+
+**Una anulación de factura decía siempre «Espera a Edwin Nunez», y esa solicitud
+la pueden resolver cuatro personas.** Reportado así: *«si varios tienen
+activados el de confirmar este tipo de solicitud, ¿por qué siempre dice edwin y
+no administración?»*. Las 10 solicitudes más recientes de esa familia decían las
+10 el mismo nombre.
+
+El nombre que salía era el del **destinatario del aviso**, no el de quien
+decide: la resuelve cualquiera que tenga «Decidir: facturación». Con una cara al
+lado se lee como que hay que esperar a esa persona — y si está de vacaciones,
+como que no hay a quién recurrir. Ahora la tarjeta y el detalle dicen **«Quien
+apruebe facturación»** (o inventario) mientras puedan resolverla varios, y
+vuelven a nombrar a la persona cuando es una sola: ahí saber a quién ir a buscar
+es el dato útil.
+
+Es la otra mitad del arreglo del 3-sep —que cubrió las tres solicitudes del
+dinero— y faltaba por tres huecos distintos que se tapaban entre sí:
+
+- **La tarjeta nunca tuvo la regla.** Vivía dentro del detalle, así que la
+  bandeja y la ficha abierta contestaban distinto la misma pregunta. Hoy las dos
+  leen `areaQueDecide`, escrito una sola vez.
+- **El conteo de aprobadores no llegaba a correr.** El trigger salía antes por
+  `IF NEW.approver_id IS NOT NULL`, y estas seis solicitudes traen el
+  destinatario elegido desde el navegador: `aprobadores_n` venía vacío en todas.
+  Son dos preguntas distintas —a quién se le avisa y cuántos pueden decidir— y
+  la segunda no deja de tener respuesta porque la primera ya la tenga.
+- **El destinatario se elegía por NOMBRE DE CARGO, no por permiso**
+  (`Supervisor de Ventas`). Ese cargo lo tiene una sola persona. Ahora se lo
+  sigue prefiriendo, pero **sólo si además puede resolverla**: avisarle a quien
+  no tiene el permiso deja la solicitud esperando a alguien que no puede tocarla.
+
+Las solicitudes ya creadas no tienen el conteo y se leen como «son varios», que
+es el default seguro: nombrar a alguien que no es el único es el error caro;
+decir el área de más sólo pierde una cara.
+
+De paso, `familiasYModulosDeSolicitud` volvió a verde: su regex
+`/^requests_[a-z]+$/` rechazaba `requests_cuentas_por_cobrar` —un módulo real
+desde el 2-sep— y la prueba fallaba por su propia forma.
+
 ## v2.997.0 — El pago QR ya no traba el cobro
 
 **Un cliente pagó $24.05 con código QR y el cobro no se podía registrar.** El

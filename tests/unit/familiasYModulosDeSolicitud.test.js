@@ -11,7 +11,8 @@
 //     interruptores para una puerta es lo que se terminó con «Mis Solicitudes».
 
 import { describe, it, expect } from 'vitest';
-import { MODULO_QUE_DECIDE } from '../../src/constants/solicitudModulos';
+import { MODULO_QUE_DECIDE, QUIEN_RESUELVE } from '../../src/constants/solicitudModulos';
+import { areaQueDecide } from '../../src/views/solicitudes/movimientoTexto';
 import { FAMILIAS, familiasDisponibles } from '../../src/views/solicitudes/familiasOperativas';
 
 describe('qué módulo decide cada tipo de solicitud', () => {
@@ -44,7 +45,78 @@ describe('qué módulo decide cada tipo de solicitud', () => {
         // rechazaría: el botón aparecería y rebotaría.
         for (const [tipo, modulo] of Object.entries(MODULO_QUE_DECIDE)) {
             expect(tipo, `${tipo} no parece un tipo de solicitud`).toMatch(/^[A-Z_]+$/);
-            expect(modulo).toMatch(/^requests_[a-z]+$/);
+            // `[a-z_]` y no `[a-z]`: `requests_cuentas_por_cobrar` es un
+            // módulo real desde el 2-sep y el regex viejo lo rechazaba —
+            // la prueba llevaba fallando desde entonces por su propia
+            // forma, no por un módulo mal escrito.
+            expect(modulo).toMatch(/^requests_[a-z_]+$/);
+        }
+    });
+});
+
+describe('a quién espera una solicitud pendiente', () => {
+    /* `approver_id` es el primer destinatario del AVISO, no el dueño de la
+     * decisión: la resuelve cualquiera con el permiso del módulo. Pintar su
+     * cara se lee como que hay que esperar a esa persona — reportado dos veces,
+     * el 3-sep sobre las del dinero y el 4-sep sobre la anulación de factura
+     * («si varios tienen activados el de confirmar este tipo de solicitud, ¿por
+     * qué siempre dice edwin?»). En producción esa familia la pueden resolver
+     * cuatro personas y la tarjeta nombraba a una sola, siempre la misma. */
+    const req = (extra) => ({ type: 'ANNULMENT_REQUEST', status: 'PENDING', ...extra });
+
+    it('nombra el área cuando pueden resolverla varios', () => {
+        expect(areaQueDecide(req({ metadata: { aprobadores_n: 4 } })))
+            .toBe('Quien apruebe facturación');
+    });
+
+    it('con uno solo nombra a la persona: se sabe a quién ir a buscar', () => {
+        expect(areaQueDecide(req({ metadata: { aprobadores_n: 1 } }))).toBeNull();
+    });
+
+    it('sin el dato asume que son varios', () => {
+        // Las filas anteriores al trigger que lo escribe no lo tienen. Nombrar
+        // a alguien que no es el único es el error caro; decir el área de más
+        // sólo pierde una cara.
+        expect(areaQueDecide(req({ metadata: {} }))).toBe('Quien apruebe facturación');
+        expect(areaQueDecide(req({}))).toBe('Quien apruebe facturación');
+    });
+
+    it('`metadata` como TEXTO se parsea antes de leerla', () => {
+        // Llega así según por dónde entró la fila, y `'{"a":1}'.aprobadores_n`
+        // es `undefined` sin quejarse: sin el parseo diría el área siempre.
+        expect(areaQueDecide(req({ metadata: '{"aprobadores_n":1}' }))).toBeNull();
+        expect(areaQueDecide(req({ metadata: 'no es json' })))
+            .toBe('Quien apruebe facturación');
+    });
+
+    it('ya decidida vuelve a ser una persona, con su cara y su hora', () => {
+        // Ahí `approver_id` deja de ser un destinatario: lo firma
+        // `firmar_quien_decide` con `auth_employee_id()`.
+        for (const status of ['APPROVED', 'REJECTED', 'CANCELLED'])
+            expect(areaQueDecide(req({ status, metadata: { aprobadores_n: 4 } }))).toBeNull();
+    });
+
+    it('un traslado no cae acá: lo espera una SALA, no un módulo', () => {
+        expect(areaQueDecide({ type: 'INVENTORY_TRANSFER_REQUEST', status: 'PENDING' }))
+            .toBeNull();
+    });
+
+    it('las nueve que se deciden por permiso tienen su área escrita', () => {
+        // Es el mismo alcance que `modulo_de_aprobacion()` en Postgres, que
+        // devuelve NULL para todo lo demás. Una solicitud personal la resuelve
+        // una jefatura concreta y ahí el nombre ES el dato.
+        expect(Object.keys(QUIEN_RESUELVE).sort()).toEqual([
+            'ABONO_APROBACION', 'ABONO_CREDITO_CHANGE', 'ANNULMENT_REQUEST',
+            'CAJA_MOVIMIENTO_CHANGE', 'CLIENT_CHANGE_REQUEST',
+            'INVENTORY_DISCARD_REQUEST', 'INVENTORY_LOAD_REQUEST',
+            'PAYMENT_CHANGE_REQUEST', 'VENDOR_CHANGE_REQUEST',
+        ]);
+    });
+
+    it('ninguna área nombra a una persona ni a un sistema de origen', () => {
+        for (const area of Object.values(QUIEN_RESUELVE)) {
+            expect(area).toMatch(/^Quien /);
+            expect(area).not.toMatch(/ERP|erp/);
         }
     });
 });

@@ -14,7 +14,7 @@ import { CaraPersona, ChipPersona } from './PersonasSolicitud';
 import {
     resumenMovimiento, esMovimiento, lineasDe, esParcial,
     fmtDiaMes as fmtDate, fmtHora, fmtFechaHora, desdeHace,
-    personasDe, cuandoSeDecidio, salaQueEspera, motivoDeRechazoCorto,
+    personasDe, cuandoSeDecidio, salaQueEspera, areaQueDecide, motivoDeRechazoCorto,
 } from './movimientoTexto';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
@@ -174,6 +174,18 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
      * lista de destinatarios—, o sea uno de varios, y se leía como que sólo ése
      * podía. Fue exactamente lo que se reportó mirando esta tarjeta. */
     const esperaSala = salaQueEspera(req);
+    /* Y lo mismo cuando lo que espera no es una sala sino un PERMISO: la
+     * anulación de una factura la resuelve cualquiera que tenga «Decidir:
+     * facturación», que en producción son cuatro, y acá salía siempre el mismo
+     * nombre — `approver_id`, el destinatario del aviso, que para esta familia
+     * el trigger elegía por NOMBRE DE CARGO y no por permiso.
+     *
+     * El detalle ya lo decía bien desde el 3-sep y la tarjeta no: la regla
+     * vivía dentro de `BloquePersonas`, así que la bandeja y la ficha abierta
+     * contestaban distinto la misma pregunta. Hoy las dos leen `areaQueDecide`.
+     * Reportado el 2026-09-04: «si varios tienen activados el de confirmar este
+     * tipo de solicitud, ¿por qué siempre dice Edwin y no administración?». */
+    const areaEspera = areaQueDecide(req);
     const cuandoCerro = cuandoSeDecidio(req);
     const espera      = req.status === 'PENDING' ? desdeHace(req.created_at, ahora) : '';
     // Dos días esperando ya no es «recién llegada»: la espera se tiñe sola para
@@ -273,8 +285,17 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
                             ${isRejected ? 'text-danger' : decidida ? 'text-success' : 'text-content-3'}`}>
                             {isRejected ? 'Rechazó' : decidida ? 'Aprobó' : 'Espera a'}
                         </span>
-                        <ChipPersona persona={aprobador} sala={esperaSala}
-                            vacio={decidida ? 'Sin registro' : 'Sin asignar'} />
+                        {/* El área gana sobre la persona: con varios que pueden
+                            resolverla, una cara sola dice a quién NO hay que
+                            esperar. Va por `vacio` y no por `sala`: `sala`
+                            estampa el icono de sucursal, y «Quien apruebe
+                            facturación» con un edificio al lado se leería como
+                            el nombre de una sala. Sin cara y en gris itálico es
+                            exactamente el tratamiento que ya le da el detalle. */}
+                        <ChipPersona persona={areaEspera ? null : aprobador}
+                            sala={esperaSala}
+                            vacio={areaEspera ? areaEspera
+                                : decidida ? 'Sin registro' : 'Sin asignar'} />
                         {decidida && cuandoCerro && (
                             <span className="text-micro text-content-3 shrink-0">{fmtHora(cuandoCerro)}</span>
                         )}

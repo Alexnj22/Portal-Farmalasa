@@ -1,3 +1,5 @@
+import { QUIEN_RESUELVE } from '../../constants/solicitudModulos';
+
 // Cómo se lee una solicitud que MUEVE PRODUCTO: carga, descarte y traslado.
 //
 // Aparte del componente porque son funciones puras y ese archivo exporta
@@ -218,6 +220,43 @@ export const salaQueEspera = (req) => {
     if (req?.type !== 'INVENTORY_TRANSFER_REQUEST' || req?.status !== 'PENDING') return null;
     const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
     return meta.origen_branch_name?.trim() || null;
+};
+
+/**
+ * El ÁREA que decide una solicitud pendiente — o `null` si va un nombre.
+ *
+ * `approver_id` es el primer destinatario del AVISO, no el dueño de la
+ * decisión: la resuelve cualquiera que tenga el permiso del módulo. Pintarlo
+ * con su cara se lee como que hay que esperar a esa persona —y si está de
+ * vacaciones, como que no hay a quién recurrir—. Fue lo que se reportó dos
+ * veces: «¿por qué dice que espera a Carlos Renderos?» (3-sep, las del dinero)
+ * y «si varios tienen activado confirmar este tipo de solicitud, ¿por qué
+ * siempre dice Edwin?» (4-sep, anulación de factura).
+ *
+ * Se nombra el área **sólo cuando hay más de uno**: con un solo aprobador,
+ * nombrarlo es el dato útil, se sabe a quién ir a buscar. El número lo escribe
+ * el trigger que los busca (`metadata.aprobadores_n`) porque el navegador no
+ * puede contarlos — `puede_aprobar_modulo` mira permisos que esta pantalla no
+ * lee. **Sin el dato se asume que son varios**: nombrar a alguien que no es el
+ * único es el error caro; decir el área de más sólo pierde una cara.
+ *
+ * Sólo mientras está PENDIENTE. Ya resuelta, `aprobador` es quien de verdad la
+ * firmó —lo escribe `firmar_quien_decide` con `auth_employee_id()`— y ésa sí es
+ * una persona concreta, con su cara y su hora.
+ *
+ * `metadata` a veces llega como TEXTO —según por dónde entró la fila— y
+ * `'{"a":1}'.aprobadores_n` es `undefined` sin quejarse: sin el `JSON.parse` se
+ * diría el área siempre, que es el default seguro pero no lo que se pidió.
+ */
+export const areaQueDecide = (req) => {
+    if (req?.status !== 'PENDING') return null;
+    const area = QUIEN_RESUELVE[req.type];
+    if (!area) return null;
+    const meta = typeof req.metadata === 'string'
+        ? (() => { try { return JSON.parse(req.metadata); } catch { return {}; } })()
+        : (req.metadata ?? {});
+    const cuantos = Number(meta?.aprobadores_n);
+    return (!Number.isFinite(cuantos) || cuantos > 1) ? area : null;
 };
 
 /**

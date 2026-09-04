@@ -52,8 +52,8 @@ export const MODULO_QUE_DECIDE = {
 /**
  * Quién resuelve cada familia, dicho para una pantalla.
  *
- * Las tres del dinero se deciden por PERMISO —cualquiera de los que lo tengan—
- * y no por un nombre elegido al crear la solicitud. Pero `approver_id` guarda a
+ * Todas éstas se deciden por PERMISO —cualquiera de los que lo tengan— y no por
+ * un nombre elegido al crear la solicitud. Pero `approver_id` guarda a
  * UNO (el primer destinatario, para que salga el aviso), y la ficha lo pintaba
  * como si fuera el único: «Pendiente de CARLOS RENDEROS · Esperando hace 53
  * min» sobre algo que podían resolver cuatro personas. Se lee como que hay que
@@ -68,9 +68,37 @@ export const MODULO_QUE_DECIDE = {
  * aprobador, nombrarlo es el dato útil — se sabe a quién ir a buscar. Cuántos
  * son lo escribe el trigger que los busca, en `metadata.aprobadores_n`; el
  * navegador no puede contarlos.
+ *
+ * **Sin el dato se asume que son varios.** Las filas anteriores al trigger que
+ * lo escribe no lo tienen, y nombrar a alguien que no es el único es el error
+ * caro; decir el área de más sólo pierde una cara.
+ *
+ * Quien lo lee es `areaQueDecide` (`movimientoTexto.js`) — UNA vez, para la
+ * tarjeta y para el detalle. Vivió sólo en el detalle hasta el 2026-09-04, y
+ * por eso la bandeja seguía nombrando a una persona mientras la ficha abierta
+ * decía el área: dos pantallas contestando distinto la misma pregunta.
  */
 export const QUIEN_RESUELVE = {
     CAJA_MOVIMIENTO_CHANGE:    'Quien apruebe correcciones de caja',
     ABONO_CREDITO_CHANGE:      'Quien apruebe cuentas por cobrar',
     ABONO_APROBACION:          'Quien apruebe cuentas por cobrar',
+    /* Facturación e inventario, agregadas el 2026-09-04 — la otra mitad del
+     * mismo defecto, que el arreglo del 3-sep no había alcanzado.
+     *
+     * Acá el nombre no salía siquiera de contar aprobadores: el trigger elegía
+     * el destinatario por NOMBRE DE CARGO (`r.name ILIKE 'Supervisor%Ventas%'`),
+     * o sea sin mirar el permiso. Ese cargo lo tiene una sola persona, así que
+     * las 10 solicitudes más recientes de esta familia decían las 10 el mismo
+     * nombre — sobre algo que en producción pueden resolver CUATRO.
+     *
+     * El rótulo repite las palabras del interruptor («Decidir: facturación»,
+     * «Decidir: inventario» en `permissionModules.js`) para que quien lea
+     * «Quien apruebe facturación» pueda ir a buscarlo a la pantalla de
+     * permisos y encontrarlo escrito igual. */
+    ANNULMENT_REQUEST:         'Quien apruebe facturación',
+    PAYMENT_CHANGE_REQUEST:    'Quien apruebe facturación',
+    VENDOR_CHANGE_REQUEST:     'Quien apruebe facturación',
+    CLIENT_CHANGE_REQUEST:     'Quien apruebe facturación',
+    INVENTORY_LOAD_REQUEST:    'Quien apruebe inventario',
+    INVENTORY_DISCARD_REQUEST: 'Quien apruebe inventario',
 };

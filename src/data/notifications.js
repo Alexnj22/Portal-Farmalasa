@@ -45,14 +45,37 @@ const escaparBusqueda = (t) => String(t).trim()
     .replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
     .replace(/,/g, ' ');
 
+/* Cuánto atrás LLEGA el listado.
+ *
+ * Decisión del usuario (2026-09-04): «que todas se borren solas (de la vista no
+ * de la BD…) a los 60 días». O sea que a los 60 días el aviso desaparece de la
+ * pantalla y la FILA SIGUE EN LA BASE — la limpia `purge-notifications-daily` a
+ * los 90, así que entre el día 60 y el 90 el dato existe aunque nadie lo vea.
+ * Ésa es la trazabilidad de bajo costo que se pidió: no hace falta ninguna tabla
+ * de archivo, sólo no confundir «no se muestra» con «no está».
+ *
+ * ⚠️ Pasados los 90 días la fila SÍ se borra. Si algún día hace falta guardar
+ * más, el cambio es la ventana de ese cron — no esta constante. */
+export const DIAS_VISIBLES = 60;
+
 /**
- * Una PÁGINA del historial, para la vista `/notificaciones`.
+ * Una PÁGINA del listado, para la vista `/notificaciones`.
  *
  * Existe porque la campana trae 100 y nada más, y ese tope no es teórico:
  * medido en producción el 2026-09-04, **28 de 46 personas ya pasaron las 100**
  * y la que más tiene 608. O sea que para más de la mitad del personal parte de
  * su historial ya era invisible **sin haber borrado nada**, y como no falla
  * nada nadie lo reporta.
+ *
+ * ── Borrar en la campana NO borra del listado ────────────────────────────────
+ * Decisión del usuario (2026-09-04): «borradas del centro de notificaciones (la
+ * campana) que no se borren, que siempre se vean en el listado. que solo se
+ * borren de ahí».
+ *
+ * Así que `deleted_at` dejó de significar «está en la papelera» y significa
+ * «salió de la campana». El listado las muestra igual — el estado `todas` NO
+ * filtra por esa columna— y `fuera` es sólo la vista de cuáles se sacaron, para
+ * poder devolverlas. Un aviso ya no se puede perder de vista por un toque.
  *
  * Pagina con `range` y pide `count: 'exact'` en la misma ida: el pie necesita
  * el total para saber cuántas páginas hay, y pedirlo aparte serían dos viajes
@@ -64,10 +87,6 @@ const escaparBusqueda = (t) => String(t).trim()
  * comodines de LIKE, y una coma parte el `or()` de PostgREST en dos condiciones
  * — o sea que buscar «salud, 5» pediría otra cosa sin avisar.
  *
- * Las borradas se ordenan por CUÁNDO SE BORRARON y no por cuándo llegaron: en
- * una papelera lo que uno busca es «lo que acabo de tirar», y un aviso viejo
- * borrado hoy quedaría al fondo con el otro orden.
- *
  * El `.range()` va PEGADO al `.from()`, con los filtros armados antes: el
  * detector `sin-paginar` de `npm run gate:data` mira los 450 caracteres que
  * siguen al `.from()` para decidir si la consulta está acotada, y con los
@@ -75,42 +94,32 @@ const escaparBusqueda = (t) => String(t).trim()
  * ventana. Acusaba a una consulta paginada de no estarlo — y la salida correcta
  * no es una excepción, es que la paginación se lea de un vistazo.
  *
- * @param estado  'activas' | 'sin_leer' | 'borradas'
- * @param tipo    un `type` concreto, o null para todos
- * @param desde   ISO: piso de `created_at`, o null para todo lo que quede
+ * @param estado  'todas' | 'sin_leer' | 'fuera'
  * @param busca   texto libre sobre título y cuerpo, o null
  */
-export function fetchNotificationsPage({ estado = 'activas', tipo = null, desde = null, busca = null, pagina = 0, porPagina = 25 } = {}) {
-    const orden = estado === 'borradas' ? 'deleted_at' : 'created_at';
+export function fetchNotificationsPage({ estado = 'todas', busca = null, pagina = 0, porPagina = 25 } = {}) {
+    /* Las que salieron de la campana se ordenan por CUÁNDO se sacaron: en esa
+       pestaña lo que uno busca es «lo que acabo de quitar», y un aviso viejo
+       sacado hoy quedaría al fondo con el otro orden. */
+    const orden = estado === 'fuera' ? 'deleted_at' : 'created_at';
+    const piso = new Date(Date.now() - DIAS_VISIBLES * 86400000).toISOString();
 
     let q = supabase.from('notifications')
         .select(CAMPOS, { count: 'exact' })
         .order(orden, { ascending: false })
-        .range(pagina * porPagina, pagina * porPagina + porPagina - 1);
+        .range(pagina * porPagina, pagina * porPagina + porPagina - 1)
+        .gte('created_at', piso);
 
-    if (estado === 'borradas') q = q.not('deleted_at', 'is', null);
-    else {
-        q = q.is('deleted_at', null);
-        if (estado === 'sin_leer') q = q.is('read_at', null);
-    }
+    // `todas` NO mira `deleted_at`: ése es el punto de esta pantalla.
+    if (estado === 'fuera')         q = q.not('deleted_at', 'is', null);
+    else if (estado === 'sin_leer') q = q.is('read_at', null);
 
-    if (tipo)  q = q.eq('type', tipo);
-    if (desde) q = q.gte('created_at', desde);
     if (busca) {
         const t = escaparBusqueda(busca);
         q = q.or(`title.ilike.%${t}%,body.ilike.%${t}%`);
     }
 
     return q;
-}
-
-/* Los tipos que esta persona tiene, para llenar el filtro sin escribir la lista
-   a mano — un catálogo escrito a mano se desincroniza del registro.
-   Por RPC y no `select('type')`: eso serían tantas filas como avisos tenga, y
-   PostgREST corta en 1000 SIN AVISAR. El día que alguien las cruce, el filtro
-   perdería tipos y no habría error que lo delate. La función devuelve ~20. */
-export function fetchNotificationTypes() {
-    return supabase.rpc('mis_tipos_de_notificacion');
 }
 
 export function markNotificationRead(id, readAt) {

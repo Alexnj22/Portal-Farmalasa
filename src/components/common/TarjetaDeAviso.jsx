@@ -11,7 +11,7 @@ import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import {
     severidadDelTitulo, tituloSinEmoji, tintForType, etiquetaDeAccion,
-    RESUELTA_LABEL, timeAgo,
+    RESUELTA_LABEL, cuandoLlego,
 } from '../../utils/notificacionTexto';
 
 /* La tarjeta de UN aviso — la misma en la campana y en `/notificaciones`.
@@ -253,16 +253,18 @@ const TarjetaDeAviso = ({
                     )}
 
                     <div className="flex items-center gap-2 mt-1.5">
-                        {/* La hora es contexto, no acción: en mayúsculas y con
-                            tracking ancho competía de igual a igual con «VER», y
-                            son cosas de peso distinto. */}
-                        <span className={`text-caption font-medium ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
+                        {/* CUÁNDO llegó, no cuánto hace: la hora si es de hoy, y
+                            la fecha con la hora si es de ayer para atrás — ver
+                            `cuandoLlego`. Va en minúscula y sin tracking ancho:
+                            es contexto, no acción, y en mayúsculas competía de
+                            igual a igual con «VER». */}
+                        <span className={`text-caption font-medium tabular-nums ${cx.rowTime}`}>{cuandoLlego(n.created_at)}</span>
                         {/* Cuándo se sacó de la campana. Sólo lo pinta la
                             papelera —donde `n.deleted_at` existe—: en la campana
                             la columna viene siempre nula y no dibuja nada. */}
                         {n.deleted_at && (
                             <span className="text-caption font-semibold text-warning-text">
-                                Borrada {timeAgo(n.deleted_at).toLowerCase()}
+                                Borrada el {cuandoLlego(n.deleted_at)}
                             </span>
                         )}
                         {/* El verbo del TOQUE. «Ver detalle» dejó de vivir acá

@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Bell, BellOff, Check, CalendarClock, RotateCcw, Search, Tag, Trash2, Inbox,
+    Bell, BellOff, BellOff as Fuera, Check, RotateCcw, Search, Inbox,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
-import FilterBar from '../components/common/FilterBar';
 import Button from '../components/common/Button';
 import Notice from '../components/common/Notice';
 import TablePagination from '../components/common/TablePagination';
@@ -19,8 +18,7 @@ import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
 import usePestanaEnUrl from '../hooks/usePestanaEnUrl';
 import useAccionesDeAviso from '../hooks/useAccionesDeAviso';
 import { mensajeAmigable } from '../utils/errorMessages';
-import { nombreDeTipo } from '../utils/notificacionTexto';
-import { fetchNotificationsPage, fetchNotificationTypes } from '../data/notifications';
+import { fetchNotificationsPage, DIAS_VISIBLES } from '../data/notifications';
 
 /* El historial de avisos — y la papelera (2026-09-04).
  *
@@ -50,23 +48,16 @@ import { fetchNotificationsPage, fetchNotificationTypes } from '../data/notifica
  * nace incompleta, que es exactamente lo que pasó acá.
  */
 
-/* Los tres estados. `sin_leer` primero porque es a lo que se entra a hacer algo;
-   `borradas` al final porque es el que se visita a propósito. */
+/* Los tres cortes del listado.
+ *
+ * «Todas» primero y por defecto: desde el 2026-09-04 esta pantalla es el
+ * REGISTRO —lo que se borra en la campana sigue acá— y lo primero que uno
+ * quiere ver es todo. «Fuera de la campana» no es una papelera: es la vista de
+ * cuáles se quitaron de la bandeja, para poder devolverlas. */
 const PESTANAS = [
-    { key: 'sin_leer', label: 'Sin leer', icon: Bell },
-    { key: 'activas',  label: 'Todas',    icon: Inbox },
-    { key: 'borradas', label: 'Borradas', icon: Trash2 },
-];
-
-/* El período se ofrece hasta donde LLEGA el dato y ni un día más: prometer
-   «último año» sobre una tabla que se purga a los 90 días sería un filtro que
-   devuelve vacío sin que nada esté mal. Si algún día cambia la retención, este
-   es el sitio — y `dias: null` («todo lo que quede») lo hace resistente: no
-   promete un plazo, muestra lo que hay. */
-const PERIODOS = [
-    { value: '30',   label: 'Últimos 30 días', dias: 30 },
-    { value: '90',   label: 'Últimos 90 días', dias: 90 },
-    { value: 'todo', label: 'Todo lo que quede', dias: null },
+    { key: 'todas',    label: 'Todas',             icon: Inbox },
+    { key: 'sin_leer', label: 'Sin leer',          icon: Bell },
+    { key: 'fuera',    label: 'Fuera de la campana', icon: Fuera },
 ];
 
 const POR_PAGINA_DEFECTO = 25;
@@ -79,19 +70,15 @@ export default function NotificacionesView() {
 
     const branches  = useStaff(s => s.branches);
     const markNotificationRead      = useStaff(s => s.markNotificationRead);
-    const deleteNotificationsByIds  = useStaff(s => s.deleteNotificationsByIds);
     const restoreNotificationsByIds = useStaff(s => s.restoreNotificationsByIds);
 
-    const [tab, setTab]           = usePestanaEnUrl(PESTANAS, 'sin_leer');
+    const [tab, setTab]           = usePestanaEnUrl(PESTANAS, 'todas');
     const [busqueda, setBusqueda] = useState('');
-    const [tipo, setTipo]         = useState('');
-    const [periodo, setPeriodo]   = useState('30');
 
     const [filas, setFilas]       = useState([]);
     const [total, setTotal]       = useState(0);
     const [cargando, setCargando] = useState(true);
     const [error, setError]       = useState(null);
-    const [tipos, setTipos]       = useState([]);
     const [recarga, setRecarga]   = useState(0);
     const recargar = useCallback(() => setRecarga(n => n + 1), []);
 
@@ -126,7 +113,7 @@ export default function NotificacionesView() {
        lee, no se decide desde ahí, y ofrecer «Aprobar» sobre algo que se sacó
        de la bandeja invita a resolverlo por el camino que no es. */
     const { acciones, dialogos, empleadosPorId } = useAccionesDeAviso({
-        avisos: filas, activo: tab !== 'borradas', origen: 'historial',
+        avisos: filas, activo: true, origen: 'historial',
     });
 
     /* La búsqueda espera 350 ms. Sin eso cada tecla es una consulta al servidor
@@ -139,17 +126,30 @@ export default function NotificacionesView() {
         return () => clearTimeout(t);
     }, [busqueda]);
 
-    /* Cambiar de pestaña, de filtro o de búsqueda vuelve a la página 1: la 7 de
-       una lista de 300 no existe en una de 12, y la tabla saldría vacía sin
-       decir por qué. */
-    const primeraVez = useRef(true);
+    /* Cambiar de pestaña o de búsqueda vuelve a la página 1: la 7 de una lista
+       de 300 no existe en una de 12, y la tabla saldría vacía sin decir por qué.
+       Pero ENTRAR con `?pag=3` tiene que respetarla — es la mitad del motivo por
+       el que la página vive en la dirección.
+
+       Se compara el VALOR anterior en vez de contar corridas. La primera versión
+       usaba un `useRef` de «primera vez» y `StrictMode` la rompía: en desarrollo
+       React monta el efecto dos veces, la primera consumía el guard y la segunda
+       borraba el `pag` de la URL. El síntoma era exacto y silencioso —entrar a
+       `?pag=3` devolvía la página 1 con la dirección limpia— y sólo pasaba en
+       desarrollo, así que cualquiera lo habría leído como «no funciona» sin
+       poder reproducirlo en producción. Comparar valores es correcto en los dos
+       lados: la segunda corrida ve lo mismo y no hace nada. */
+    const ultimoCorte = useRef(null);
     useEffect(() => {
-        if (primeraVez.current) { primeraVez.current = false; return; }
+        const corte = `${tab}\u0000${buscaAplicada}`;
+        if (ultimoCorte.current === null) { ultimoCorte.current = corte; return; }
+        if (ultimoCorte.current === corte) return;
+        ultimoCorte.current = corte;
         setPage(1);
     // `setPage` viene memoizado del hook y no entra: si entrara, escribir la
     // página dispararía este efecto que la vuelve a 1.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tab, tipo, periodo, buscaAplicada]);
+    }, [tab, buscaAplicada]);
 
     /* La respuesta VIEJA no puede pisar a la nueva. Con la búsqueda escribiendo
        y la paginación cambiando, dos consultas viajan a la vez y no hay ninguna
@@ -160,13 +160,12 @@ export default function NotificacionesView() {
         const mia = ++peticion.current;
         setCargando(true);
         setError(null);
-        /* El piso de la fecha se calcula ACÁ y no en un `useMemo`: `Date.now()`
-           es impuro y leerlo durante el render le da al compilador de React un
-           valor distinto en cada pasada. */
-        const dias = PERIODOS.find(x => x.value === periodo)?.dias ?? null;
-        const desde = dias ? new Date(Date.now() - dias * 86400000).toISOString() : null;
+        /* Sin `desde` ni `tipo`: la lista muestra TODO lo que el portal guarda
+           —los 90 días del cron de purga— porque el filtro se quitó. Un recorte
+           por defecto que no se puede ver ni cambiar esconde avisos sin decirlo,
+           que es peor que mostrarlos todos. */
         fetchNotificationsPage({
-            estado: tab, tipo: tipo || null, desde, busca: buscaAplicada || null,
+            estado: tab, busca: buscaAplicada || null,
             pagina: page - 1, porPagina: pageSize,
         }).then(({ data, error: err, count }) => {
             if (mia !== peticion.current) return;
@@ -182,17 +181,7 @@ export default function NotificacionesView() {
         }).finally(() => {
             if (mia === peticion.current) setCargando(false);
         });
-    }, [tab, tipo, periodo, buscaAplicada, page, pageSize, recarga]);
-
-    /* Los tipos que ESTA persona tiene. Se leen una vez: cambian cuando llega un
-       aviso de una categoría nueva, y en ese caso el filtro se pone al día en la
-       próxima entrada — pedirlos en cada consulta serían dos viajes por página
-       para llenar un desplegable que casi nunca cambia. */
-    useEffect(() => {
-        fetchNotificationTypes()
-            .then(({ data, error: err }) => { if (!err) setTipos((data || []).map(r => r.type)); })
-            .catch(() => { /* sin la lista el filtro queda en «Todos», que es el default */ });
-    }, []);
+    }, [tab, buscaAplicada, page, pageSize, recarga]);
 
     const sucursalesPorId = useMemo(() => {
         const m = new Map();
@@ -214,12 +203,6 @@ export default function NotificacionesView() {
         }
     }, [navigate, markNotificationRead]);
 
-    const borrar = useCallback(async (n) => {
-        await deleteNotificationsByIds([n.id]);
-        showToast('Se movió a Borradas', 'Se puede devolver desde esa pestaña', 'success');
-        recargar();
-    }, [deleteNotificationsByIds, showToast, recargar]);
-
     const restaurar = useCallback(async (n) => {
         try {
             await restoreNotificationsByIds([n.id]);
@@ -229,8 +212,6 @@ export default function NotificacionesView() {
             showToast('No se pudo devolver', mensajeAmigable(e), 'error');
         }
     }, [restoreNotificationsByIds, showToast, recargar]);
-
-    const filtrosActivos = (tipo ? 1 : 0) + (periodo !== '30' ? 1 : 0);
 
     const filtersContent = (
         <ViewTabBar
@@ -247,55 +228,35 @@ export default function NotificacionesView() {
         <GlassViewLayout icon={Bell} title="Notificaciones" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 space-y-4">
 
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <span className="min-w-0">
-                            <span className="block text-micro font-black uppercase tracking-widest text-content-3">
-                                {tab === 'borradas' ? 'Borradas' : tab === 'sin_leer' ? 'Sin leer' : 'En total'}
-                            </span>
-                            <span className="block text-h3 font-black tabular-nums text-content">
-                                {cargando ? '—' : total.toLocaleString('es-SV')}
-                            </span>
-                        </span>
-                    </div>
+                {/* Sin barra de filtros — decisión del usuario, 2026-09-04: «que no
+                    haya filter». Las tres pestañas ya son el corte que se usa
+                    (sin leer / todas / borradas) y el buscador cubre el resto;
+                    un filtro por tipo y otro por período eran dos controles que
+                    partían el mismo listado por criterios que nadie pedía, y
+                    ocupaban el ancho donde ahora va el aviso.
 
-                    <FilterBar
-                        onClear={() => { setTipo(''); setPeriodo('30'); }}
-                        activeCount={filtrosActivos}
-                    >
-                        {/* Con un solo tipo no se dibuja: un control con una
-                            opción no es una elección y ocupa el lugar de una. */}
-                        {tipos.length > 1 && (
-                            <FilterBar.Section active={!!tipo} onClear={() => setTipo('')} label="tipo">
-                                <FilterBar.Opciones
-                                    label="Tipo" icon={Tag}
-                                    value={tipo} onChange={(v) => setTipo(v || '')}
-                                    options={[{ value: '', label: 'Todos' },
-                                        ...tipos.map(t => ({ value: t, label: nombreDeTipo(t) }))]}
-                                    ancho="215px"
-                                />
-                            </FilterBar.Section>
-                        )}
-                        <FilterBar.Section active={periodo !== '30'} onClear={() => setPeriodo('30')} label="período">
-                            <FilterBar.Opciones
-                                label="Período" icon={CalendarClock}
-                                value={periodo} onChange={(v) => setPeriodo(v || '30')}
-                                options={PERIODOS.map(p => ({ value: p.value, label: p.label }))}
-                                ancho="190px"
-                            />
-                        </FilterBar.Section>
-                    </FilterBar>
+                    Con el filtro de período afuera, la lista muestra TODO lo que
+                    el portal guarda —los 90 días de `purge-notifications-daily`—
+                    y no un recorte que había que recordar quitar. */}
+                <div className="max-w-3xl mx-auto">
+                    <span className="block text-micro font-black uppercase tracking-widest text-content-3">
+                        {tab === 'fuera' ? 'Fuera de la campana' : tab === 'sin_leer' ? 'Sin leer' : 'En total'}
+                    </span>
+                    <span className="block text-h3 font-black tabular-nums text-content">
+                        {cargando ? '—' : total.toLocaleString('es-SV')}
+                    </span>
                 </div>
 
-                {/* Qué guarda el portal y por cuánto. Va escrito porque el plazo
-                    NO se puede deducir de la pantalla: una papelera vacía se lee
-                    igual si nadie borró nada que si ya se limpió sola. */}
-                {tab === 'borradas' && (
-                    <Notice variant="info" icon={Trash2}>
-                        Un aviso borrado se guarda 90 días y después se limpia solo.
-                        Mientras tanto se puede devolver a la campana.
+                {/* Cuánto atrás llega el listado. Va escrito porque el plazo NO
+                    se puede deducir de la pantalla: una lista que se acaba se ve
+                    igual si no hubo más avisos que si el corte ya se los comió. */}
+                <div className="max-w-3xl mx-auto">
+                    <Notice variant="info" icon={Bell}>
+                        {tab === 'fuera'
+                            ? `Éstas se quitaron de la campana y siguen aquí. Se pueden devolver, y el listado guarda los últimos ${DIAS_VISIBLES} días.`
+                            : `El listado guarda los últimos ${DIAS_VISIBLES} días. Lo que se quita de la campana sigue apareciendo aquí.`}
                     </Notice>
-                )}
+                </div>
 
                 {error ? (
                     <EmptyState compact icon={BellOff} title="No se pudo leer el historial"
@@ -304,8 +265,8 @@ export default function NotificacionesView() {
                 ) : cargando ? (
                     <LoadingState label="Leyendo tus notificaciones" />
                 ) : !filas.length ? (
-                    <VacioDe tab={tab} busqueda={buscaAplicada} filtros={filtrosActivos}
-                        onLimpiar={() => { setBusqueda(''); setTipo(''); setPeriodo('30'); }} />
+                    <VacioDe tab={tab} busqueda={buscaAplicada}
+                        onLimpiar={() => setBusqueda('')} />
                 ) : (
                     <>
                         {/* La lista se acota a un ancho de lectura. A pantalla
@@ -314,7 +275,7 @@ export default function NotificacionesView() {
                             medio metro del título — la misma tarjeta que en la
                             campana se lee de un vistazo. Un aviso es un mensaje,
                             no una tabla: lo que gana con el ancho es nada. */}
-                        <div className="space-y-2 max-w-3xl">
+                        <div className="space-y-2 max-w-3xl mx-auto">
                             {filas.map(n => (
                                 <TarjetaDeAviso
                                     key={n.id}
@@ -329,29 +290,30 @@ export default function NotificacionesView() {
                                     onAlternarExpansion={alternarExpansion}
                                     onRecorte={marcarCuerpoCortado}
                                     onAbrir={abrir}
-                                    acciones={tab === 'borradas' ? null : acciones}
-                                    controlDeBorrado={tab === 'borradas' ? (
+                                    acciones={acciones}
+                                    /* En el listado NO se borra — decisión del
+                                       usuario: «que solo se borren de ahí [la
+                                       campana]». Lo único que se ofrece es
+                                       devolver a la bandeja lo que se quitó. */
+                                    controlDeBorrado={n.deleted_at ? (
                                         <Button variant="ghost" size="xs" icon={RotateCcw}
                                             title="Devolver a la campana"
                                             className={cx.iconBtn}
                                             onClick={(e) => { e.stopPropagation(); restaurar(n); }}>
                                             Devolver
                                         </Button>
-                                    ) : (
-                                        <Button variant="ghost" icon={Trash2} iconOnly
-                                            title="Mover a Borradas"
-                                            className={cx.iconBtn}
-                                            onClick={(e) => { e.stopPropagation(); borrar(n); }} />
-                                    )}
+                                    ) : null}
                                 />
                             ))}
                         </div>
 
+                        <div className="max-w-3xl mx-auto">
                         <TablePagination
                             page={page} totalPages={totalPages} onPageChange={setPage}
                             pageSize={pageSize} onPageSizeChange={setPageSize}
                             total={total} unit="avisos"
                         />
+                        </div>
                     </>
                 )}
             </div>
@@ -367,19 +329,17 @@ export default function NotificacionesView() {
 /* El vacío dice CUÁL de los vacíos es. «Sin resultados» sobre una bandeja al día
    se lee como que algo falló, y sobre una búsqueda sin coincidencias se lee como
    que el aviso no existe — son dos mensajes distintos y la diferencia importa. */
-const VacioDe = ({ tab, busqueda, filtros, onLimpiar }) => {
-    if (busqueda || filtros) {
+const VacioDe = ({ tab, busqueda, onLimpiar }) => {
+    if (busqueda) {
         return (
             <EmptyState compact icon={Search} title="Sin resultados"
-                subtitle={busqueda
-                    ? `Ningún aviso coincide con «${busqueda}» en lo que estás mirando.`
-                    : 'Ningún aviso entra en los filtros elegidos.'}
-                action={<Button variant="secondary" onClick={onLimpiar}>Limpiar los filtros</Button>} />
+                subtitle={`Ningún aviso coincide con «${busqueda}» en lo que estás mirando.`}
+                action={<Button variant="secondary" onClick={onLimpiar}>Limpiar la búsqueda</Button>} />
         );
     }
-    if (tab === 'borradas') {
-        return <EmptyState compact icon={Trash2} title="Sin borrados"
-            subtitle="Lo que saques de la campana aparece aquí y se puede devolver." />;
+    if (tab === 'fuera') {
+        return <EmptyState compact icon={Fuera} title="Sin avisos fuera de la campana"
+            subtitle="Lo que quites de la campana aparece aquí y se puede devolver." />;
     }
     if (tab === 'sin_leer') {
         return <EmptyState compact icon={Check} title="Estás al día"

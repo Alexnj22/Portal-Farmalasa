@@ -21,6 +21,76 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.986.0 — El listado guarda lo que se quita de la campana
+
+Cuatro pedidos del usuario sobre `/notificaciones`, y uno cambió el modelo
+entero de la pantalla.
+
+**La campana es la bandeja; el listado es el registro.** «Borradas del centro de
+notificaciones (la campana) que no se borren, que siempre se vean en el listado.
+Que solo se borren de ahí». Así que `deleted_at` dejó de significar «está en la
+papelera» y significa **«salió de la campana»**: la pestaña «Todas» ya no filtra
+por esa columna, y el listado no ofrece borrar — el único control de fila que
+queda es **Devolver a la campana**. Un aviso ya no se puede perder de vista por
+un toque.
+
+Las pestañas siguen esa idea: **Todas** (por defecto), **Sin leer** y **Fuera de
+la campana**, que no es una papelera sino la vista de cuáles se quitaron.
+
+**El listado llega 60 días atrás, y la fila NO se borra.** «Que todas se borren
+solas (de la vista no de la BD…) a los 60 días». La constante es `DIAS_VISIBLES`
+y el corte va en la consulta; la fila sobrevive hasta que la limpia
+`purge-notifications-daily` a los **90**. Ésa es la trazabilidad de bajo costo
+que se pidió: entre el día 60 y el 90 el dato existe aunque nadie lo vea, sin
+ninguna tabla de archivo. ⚠️ Pasados los 90 sí se borra — si hace falta guardar
+más, el cambio es la ventana de ese cron.
+
+**La hora, no la antigüedad.** «Que ponga la fecha de la notificación y hora. Si
+es de ayer para atrás. Si no solo la hora». `cuandoLlego` reemplaza a `timeAgo`
+en la tarjeta, así que **la campana también cambió**. El motivo se ve solo en un
+listado: «Hace 19 h» no dice cuándo pasó, hay que restar mentalmente, y la resta
+cambia según la hora a la que uno mire — el mismo aviso dice «Hace 19 h» a la
+mañana y «Hace 1 día» a la tarde sin que haya pasado nada.
+
+«Hoy» es el mismo **día del calendario**, no «hace menos de 24 horas»: un aviso
+de las 23:50 de anoche tiene 8 horas y es de ayer, y decir sólo «7:50» lo pondría
+en el día que no es.
+
+**Centrado y sin barra de filtros.** El filtro por tipo y por período se fue
+entero («que no haya filter»): las tres pestañas ya son el corte que se usa y el
+buscador cubre el resto. Con el período afuera, la lista muestra todo lo que
+guarda en vez de un recorte que había que acordarse de quitar. Se dio de baja el
+RPC `mis_tipos_de_notificacion`, creado esa misma mañana y sin un solo llamador
+después del cambio — una función viva que nadie llama no falla nunca, así que
+nada la delata.
+
+### Un bug que sólo pasaba en desarrollo
+
+Entrar a `?pag=3` devolvía la página 1 **con la dirección limpia**. La causa era
+un guard de «primera vez» con `useRef`: `StrictMode` monta los efectos dos veces
+en desarrollo, la primera corrida consumía el guard y la segunda borraba el `pag`
+de la URL. En producción no pasaba, así que cualquiera lo habría leído como «no
+funciona» sin poder reproducirlo. Hoy se compara el VALOR anterior en vez de
+contar corridas, que es correcto en los dos lados.
+
+### Cómo se verificó
+
+Contra el entorno de pruebas con 160 avisos repartidos a los dos lados del corte
+—120 dentro de los 60 días, 40 más viejos, 20 quitados de la campana—:
+
+| | esperado | medido |
+|---|---:|---:|
+| «Todas» | 120 | 120 |
+| el corte deja afuera | 40 | 40 |
+| «Fuera de la campana» | >0 | 16 |
+
+Y en la misma corrida: un aviso quitado de la campana **se sigue encontrando en
+«Todas»** buscándolo por su título (no por conteo — un conteo mayor podría cuadrar
+por casualidad), el listado no expone ningún control de borrar, devolver resta de
+su pestaña, y las fechas salen **«9:09 a. m.»** en la página 1 (hoy) contra
+**«3 sept, 9:09 p. m.»** en la página 3 (ayer). Todo anclado en
+`tests/e2e/notificaciones-historial.spec.js`.
+
 ## v2.985.0 — La vista usa la misma tarjeta que la campana
 
 Reportado con captura: «en la vista no se ven las notificaciones modernas, como

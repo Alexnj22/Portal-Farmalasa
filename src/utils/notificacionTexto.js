@@ -86,63 +86,31 @@ export const RESUELTA_LABEL = {
 
 export const PIDE_DECISION = new Set(['REQUEST_PENDING', 'MINMAX_PENDING']);
 
-/* Antigüedad en palabras. Pasada una semana cambia a la fecha: «hace 34 días»
-   no ubica a nadie, y en un historial que llega a 90 días eso es la mayoría. */
-export const timeAgo = (iso) => {
-    const diff = Date.now() - new Date(iso).getTime();
-    const min = Math.floor(diff / 60000);
-    if (min < 1)  return 'Ahora';
-    if (min < 60) return `Hace ${min} min`;
-    const hrs = Math.floor(min / 60);
-    if (hrs < 24) return `Hace ${hrs} h`;
-    const days = Math.floor(hrs / 24);
-    if (days < 7) return `Hace ${days} día${days > 1 ? 's' : ''}`;
-    return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
-};
-
-/* ── Cómo se NOMBRA un tipo de aviso en pantalla ─────────────────────────────
+/* CUÁNDO llegó — la hora si es de hoy, la fecha y la hora si es de antes.
  *
- * Para el filtro de `/notificaciones`. Los tipos son cadenas que escriben los
- * disparadores y las edge functions — no son una tabla, así que acá no aplica
- * «una lista que existe como tabla no se escribe a mano»: no hay tabla de la
- * cual sacarla. Lo que sí aplica es la otra mitad de esa regla: **la lista de
- * opciones sale de lo que la persona TIENE** (`mis_tipos_de_notificacion`), y
- * esto sólo traduce. Si aparece un tipo sin rótulo, `nombreDeTipo` lo muestra
- * prolijo en vez de dejarlo afuera — un tipo que desaparece del filtro esconde
- * avisos sin decirlo, y ése es el error caro.
+ * Antes decía la antigüedad en palabras («Hace 2 h», «Hace 19 h», «Hace 3
+ * días»). Pedido del usuario el 2026-09-04: «que ponga la fecha de la
+ * notificación y hora. si es de ayer para atrás. si no solo la hora».
  *
- * Y se habla del PORTAL, no de la tubería: nada de «sync», «ERP» ni el nombre
- * de la tabla de origen.
+ * Y la razón se ve sola en un historial: «Hace 19 h» no dice CUÁNDO pasó. Hay
+ * que restar mentalmente, y la resta cambia según la hora a la que uno mire —
+ * el mismo aviso dice «Hace 19 h» a la mañana y «Hace 1 día» a la tarde, sin
+ * que haya pasado nada. Una hora concreta no se mueve.
+ *
+ * «Hoy» es el mismo DÍA DEL CALENDARIO, no «hace menos de 24 horas»: un aviso
+ * de las 23:50 de anoche tiene 8 horas y es de ayer, y decir sólo «7:50» lo
+ * pondría en el día que no es. Se comparan las fechas locales, que es como las
+ * lee quien mira la pantalla.
  */
-export const NOMBRE_DE_TIPO = {
-    REQUEST_PENDING:   'Solicitud por revisar',
-    REQUEST_RESOLVED:  'Solicitud resuelta',
-    REQUEST_DECIDED:   'Solicitud decidida',
-    MINMAX_PENDING:    'Mín·Máx por revisar',
-    MINMAX_DECIDED:    'Mín·Máx decidido',
-    PEDIDO_TRACKING:   'Pedido en camino',
-    PEDIDO_LLEGADA:    'Pedido que llegó',
-    PEDIDO_REENVIO:    'Pedido reenviado',
-    PEDIDO_DIFERENCIA: 'Pedido con diferencia',
-    PEDIDO_PROBLEMA:   'Pedido con problema',
-    TRASLADO_RESPALDO: 'Traslado de respaldo',
-    CORTE_NUEVO:       'Corte de caja',
-    CORTE_PENDIENTE:   'Corte sin resolver',
-    CIERRE_DEL_DIA:    'Cierre del día',
-    DEPOSITO_BANCO:    'Depósito al banco',
-    FACTURA_SALA:      'Factura de la sala',
-    CREDITO_VENCIDO:   'Crédito pasado del plazo',
-    bolsa_no_cuadra:   'Bolsa que no cuadra',
-    BITACORA_POR_VENCER:   'Bitácora por vencer',
-    METAS_CIERRE_SALA:     'Cierre de metas · sala',
-    METAS_CIERRE_EMPRESA:  'Cierre de metas · empresa',
-    METAS_POR_APROBAR:     'Metas por aprobar',
-    SYSTEM:            'Aviso del sistema',
-};
+const MISMO_DIA = (a, b) =>
+    a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
 
-/* Un tipo sin rótulo NO se descarta: se muestra prolijo. Que una categoría
-   desaparezca del filtro escondería sus avisos sin ningún error visible, y el
-   día que alguien agregue un tipo nuevo nadie va a acordarse de este mapa. */
-export const nombreDeTipo = (tipo = '') =>
-    NOMBRE_DE_TIPO[tipo]
-    || String(tipo).replace(/_/g, ' ').toLowerCase().replace(/^./, c => c.toUpperCase());
+export const cuandoLlego = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const hora = d.toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit' });
+    if (MISMO_DIA(d, new Date())) return hora;
+    return `${d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' })}, ${hora}`;
+};

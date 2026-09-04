@@ -101,7 +101,12 @@ test.describe('Listado de notificaciones', () => {
         await abrir('/inicio');
         await page.locator('button[aria-label="Notificaciones"]:visible').first().click();
         await page.waitForTimeout(1200);
-        const enLaCampana = page.locator('[data-surface="card"]');
+        /* Dentro del PANEL, no en toda la página: el tablero que queda detrás
+           también usa `[data-surface="card"]` para sus widgets, así que un
+           selector suelto contaba 48 tarjetas donde la campana tenía 20 y
+           acusaba al portal de mostrar las leídas. El instrumento midiendo otra
+           cosa, otra vez. */
+        const enLaCampana = page.locator('[data-surface="dropdown"] [data-surface="card"]');
         await expect(enLaCampana.first()).toBeVisible({ timeout: 15_000 });
         const elegido = (await enLaCampana.first().locator('p').first().innerText()).trim();
         expect(elegido.length, 'hace falta un aviso en la campana').toBeGreaterThan(3);
@@ -168,5 +173,84 @@ test.describe('Listado de notificaciones', () => {
         expect(await page.locator('button[title="Mover a Borradas"]').count(),
             'el listado no puede ofrecer borrar').toBe(0);
 
+    });
+
+    test('leer en la campana la quita de ahí y la deja en el listado', async ({ page }) => {
+        const taparElAviso = () => page.addStyleTag({
+            content: '[role="dialog"][aria-label*="bloquead"]{display:none!important}',
+        });
+
+        await page.goto('/inicio');
+        await page.waitForLoadState('networkidle');
+        await taparElAviso();
+        await page.waitForTimeout(1500);
+        await page.locator('button[aria-label="Notificaciones"]:visible').first().click();
+        await page.waitForTimeout(1500);
+
+        /* Dentro del PANEL, no en toda la página: el tablero que queda detrás
+           también usa `[data-surface="card"]` para sus widgets, así que un
+           selector suelto contaba 48 tarjetas donde la campana tenía 20 y
+           acusaba al portal de mostrar las leídas. El instrumento midiendo otra
+           cosa, otra vez. */
+        const enLaCampana = page.locator('[data-surface="dropdown"] [data-surface="card"]');
+        await expect(enLaCampana.first()).toBeVisible({ timeout: 15_000 });
+
+        /* La campana trae SÓLO lo no leído. Se comprueba con el número, no de
+           vista: la siembra deja 40 leídas contra 20 sin leer, así que una
+           campana que trajera las leídas se notaría de inmediato. */
+        const antes = await enLaCampana.count();
+        expect(antes,
+            'la campana tiene que tener al menos un aviso sin leer — si da 0, resembrar el entorno de pruebas')
+            .toBeGreaterThan(0);
+        /* Y NO trae las leídas: la siembra deja 160 avisos de los cuales sólo 12
+           están sin leer, así que una campana que trajera las leídas mostraría
+           decenas. El número exacto no se fija —la prueba anterior puede haber
+           leído alguna— pero el orden de magnitud es la prueba. */
+        expect(antes, 'la campana trae SÓLO lo no leído, no las 160').toBeLessThanOrEqual(20);
+
+        /* Leerla la saca de la campana, en el acto.
+         *
+         * Se lee UNA tocándola —que es como se lee de verdad: la tarjeta no
+         * tiene botón de «marcar leída», el toque marca y navega— y no con
+         * «Leídas», que las marca todas. No es un detalle de estilo: marcar
+         * todas dejaba la campana vacía y la corrida siguiente fallaba en la
+         * primera aserción. Es el mismo defecto que ya tenía la otra prueba de
+         * este archivo — un test que se gasta a sí mismo da verde el día que se
+         * escribe y rojo el día que alguien lo hereda. Así consume un aviso por
+         * corrida en vez de todos.
+         *
+         * Lo que la prueba NO puede fabricar es un aviso sin leer: eso no existe
+         * como acción de pantalla. Por eso el mensaje dice qué hacer. */
+        const elegido = (await enLaCampana.first().locator('p').first().innerText()).trim();
+        // `data-filo="ceder"` es la CARA de la tarjeta: el botón grande cuyo
+        // `onClick` marca leída y navega. Uno solo — la primera versión daba dos
+        // clics y el segundo caía después de navegar, con la página ya cambiada.
+        await enLaCampana.first().locator('button[data-filo="ceder"]').first().click();
+        await page.waitForTimeout(2500);
+
+        // Al volver a abrirla, ese aviso ya no está.
+        await page.goto('/inicio');
+        await page.waitForLoadState('networkidle');
+        await taparElAviso();
+        await page.waitForTimeout(1500);
+        await page.locator('button[aria-label="Notificaciones"]:visible').first().click();
+        await page.waitForTimeout(1800);
+        /* Se mide el CONTEO, no «ese título ya no está»: la siembra repite los
+           títulos, así que buscar el suyo encuentra a sus hermanos y la
+           aserción acusaba al portal de no haber leído nada cuando el conteo ya
+           demostraba que sí. Es la tercera vez en este archivo que un selector
+           por título se cruza con la siembra — el conteo no tiene ese problema. */
+        expect(await enLaCampana.count(), 'leerla la saca de la campana').toBe(antes - 1);
+
+        // Y sigue en el listado, que es el registro completo.
+        await page.goto('/notificaciones?tab=todas');
+        await page.waitForLoadState('networkidle');
+        await taparElAviso();
+        await page.getByRole('button', { name: 'Buscar', exact: true }).first().click();
+        await page.locator('input[placeholder*="Buscar en el texto"]').first().fill(elegido.slice(0, 28));
+        await page.waitForTimeout(1200);
+        await page.waitForLoadState('networkidle');
+        await expect(page.getByText(elegido, { exact: false }).first())
+            .toBeVisible({ timeout: 15_000 });
     });
 });

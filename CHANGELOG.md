@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.992.0 — Leer una notificación la quita de la campana
+
+Pedido del usuario: «al leer las notificaciones en la campana, que se quiten de
+ahí». Con esto la campana termina de ser lo que ya venía siendo —la **bandeja**:
+lo que falta atender— y el listado, el registro completo. Nada se pierde: lo
+leído sigue en `/notificaciones`, mezclado y en su lugar por fecha.
+
+Son cuatro caminos y los cuatro la sacan: tocarla (que además navega), «Leídas»,
+decidir la solicitud desde ahí, y el aviso por realtime de que alguien la leyó en
+otra pestaña. `fetchNotifications` además ya no las trae, así que **la próxima
+apertura coincide con lo que se ve ahora** — antes el globo contaba las no leídas
+de una lista que traía leídas y no leídas, o sea que el número y el contenido
+podían no coincidir; ahora son la misma cosa.
+
+Se quitó el sello «APROBADA» que quedaba sobre la tarjeta al decidirla desde la
+campana: era la única fila leída que se quedaba, o sea la excepción que hace que
+la regla no se entienda. El aviso de que salió bien lo sigue dando el toast, y la
+solicitud con su estado final vive en el listado y en la bandeja de Solicitudes.
+Con eso `marcarAvisoDeSolicitudResuelto` dejó de necesitar el estado, y se le
+sacó de la firma para que nadie lo lea como si hiciera algo.
+
+### Tres veces midió otra cosa antes de acertar
+
+La prueba nueva es corta y me costó cuatro intentos, los cuatro por el
+instrumento y ninguno por el portal. Vale anotarlos porque son la misma familia:
+
+1. **`[data-surface="card"]` suelto contaba el TABLERO de atrás.** El panel de la
+   campana es un overlay sobre `/inicio`, y los widgets del tablero usan la misma
+   marca: contaba 48 tarjetas donde la campana tenía 20, y acusaba al portal de
+   seguir mostrando las leídas. Se acota a `[data-surface="dropdown"]`.
+2. **Marcar TODAS como leídas dejaba la campana vacía**, así que la corrida
+   siguiente fallaba en la primera línea. Es el mismo defecto que la otra prueba
+   de este archivo ya había tenido: un test que se gasta a sí mismo da verde el
+   día que se escribe y rojo el día que alguien lo hereda. Hoy lee UNA, tocándola,
+   que además es como se lee de verdad.
+3. **Buscar «ese título ya no está» chocó con la siembra**, que repite títulos: la
+   aserción encontraba a los hermanos del que se leyó y acusaba al portal de no
+   haber leído nada, cuando el conteo ya demostraba que sí. Se mide el conteo.
+
+Lo que la prueba no puede fabricar es un aviso **sin leer** —eso no existe como
+acción de pantalla—, así que cuando la campana está vacía el mensaje dice que hay
+que resembrar el entorno de pruebas en vez de fallar sin explicar.
+
+### Verificado además
+
+`gate:perf`: las cinco funciones que quedaban sin declarar **ya no lo están** —
+las declaró otra sesión en v2.983.0 con su motivo y `deuda: true`—, y se
+comprobaron contra producción una por una: las cinco dentro de su techo
+(`refresh_customer_activity` 122,267 de 158,000; `refresh_product_last_sale`
+102,539 de 133,000; `refresh_product_sales_rollup` 91,326 de 118,000;
+`inventory_daily_snapshot` 53,624 de 70,000; `refresh_primera_venta_producto`
+36,348 de 46,000).
+
+⚠️ Pero **`gate:perf` no puede correr entero ahora mismo**: el CLI de Supabase
+perdió la sesión (`password authentication failed for user "cli_login_postgres"`)
+y las secciones que miden contra producción no arrancan. No es un hallazgo del
+portal — se arregla con `supabase login`. El gate hace lo correcto al no darse
+por verde sin haber medido.
+
 ## v2.991.0 — Lo que frena al Min·Máx es la solicitud, no la edición del mes
 
 `manual_at` metía en la misma bolsa dos cosas que no se parecen, y por eso

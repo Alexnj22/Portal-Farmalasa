@@ -31,10 +31,22 @@ const CAMPOS = 'id, type, title, body, link, metadata, branch_id, created_by, cr
 // para saber de quién era. Verificado contra prod (2026-08-11): resuelve a un
 // empleado en las 16 REQUEST_PENDING y las 10 REQUEST_RESOLVED; los avisos del
 // sistema lo traen nulo y ahí la fila se dibuja como antes.
+/* La campana carga SÓLO lo que está sin leer.
+ *
+ * Decisión del usuario (2026-09-04): «al leer las notificaciones en la campana,
+ * que se quiten de ahí». Con eso la campana termina de ser lo que ya venía
+ * siendo —la BANDEJA: lo que falta atender— y el listado el registro completo.
+ * Nada se pierde: lo leído sigue en `/notificaciones`, mezclado y en su lugar
+ * por fecha.
+ *
+ * Y el globo deja de poder mentir por construcción: contaba las no leídas de una
+ * lista que traía leídas y no leídas, así que el número y lo que se veía al
+ * abrir podían no coincidir. Ahora son la misma cosa. */
 export function fetchNotifications() {
     return supabase.from('notifications')
         .select(CAMPOS)
         .is('deleted_at', null)
+        .is('read_at', null)
         .order('created_at', { ascending: false })
         .limit(100);
 }

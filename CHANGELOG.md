@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.998.1 — El detalle de producto se auditó y NO se toca
+
+**El hallazgo de v2.995.1 era incorrecto, y la medición lo desmintió.** Ahí
+quedó anotado que a `get_product_drill_summary` y `get_product_drill_lines`
+«les sobra un `MATERIALIZED`»: su CTE `inv` trae **todas** las facturas del
+rango sin filtrar por producto, teniendo `idx_sii_product_invoice` disponible,
+y el camino barato parecía el inverso — un producto en un mes son pocos
+renglones y un año son ~268,876 facturas.
+
+Se escribió la versión invertida (acotar `inv` con `si.id IN (SELECT
+invoice_id FROM lineas)`), se comprobó **idéntica en 5 de 5 casos** por md5
+—incluidos los dos vacíos— y se midió con `EXPLAIN (ANALYZE, TIMING OFF,
+BUFFERS)`, las dos en caliente:
+
+| caso | original | invertida |
+|---|---|---|
+| **un año**, producto más vendido (10,509 renglones), todas las salas | 642 MB · 1,754 ms · **20 MB de spill** | **336 MB · 124 ms · sin spill** |
+| **el mes actual**, que es el default de la vista | **70 MB** · 549 ms | 340 MB · 200 ms |
+
+O sea que la invertida gana 1.9× en bloques y 14× en reloj con un rango largo,
+y **pierde 4.9× en bloques con el rango corto** — que es el que usa casi todo
+el mundo, porque `monthRange` arranca en `currentMonthRange()`.
+
+El motivo es que ninguna de las dos formas es sensible a las dos cosas: **la
+original paga el rango entero cualquiera sea el producto, y la invertida paga
+el producto entero cualquiera sea el rango**, porque `lineas` no se puede
+filtrar por fecha — la fecha vive en `sales_invoices`. Aplicarla habría
+empeorado el caso mayoritario para mejorar el raro, así que **no se aplicó**.
+El comentario `MATERIALIZED a propósito` que ya estaba en el código tenía
+razón.
+
+Lo que sí cambia: los tres motivos de `scripts/bloques-por-llamada.json`
+—que hasta ahora afirmaban lo desmentido— y una nota nueva con las mediciones,
+para que la próxima sesión no vuelva a recorrer el camino. Ahí queda escrito
+también lo que sigue abierto: el defecto de fondo es que la función **no puede
+elegir** (es `LANGUAGE sql` + `SET search_path`, o sea que nace genérica y
+nunca ve los valores), y las dos salidas posibles, ninguna gratis. Y por qué
+**no** se intentó acotar `invoice_id` al mínimo y máximo del período: los `id`
+son seriales del portal asignados al sincronizar, o sea sólo *aproximadamente*
+monótonos con la fecha, y una factura sincronizada tarde desaparecería de la
+lista sin dar error.
+
+Vale anotar de paso lo que abrir un producto cuesta hoy: las dos funciones se
+disparan en el **mismo `Promise.all`**, así que son dos ranuras del pool a la
+vez.
+
 ## v2.998.0 — «Espera a» dice el área cuando pueden resolverla varios
 
 **Una anulación de factura decía siempre «Espera a Edwin Nunez», y esa solicitud

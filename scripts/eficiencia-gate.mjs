@@ -231,6 +231,39 @@ const CRONS = [
           + 'saltea para un repaso a mano.',
   },
   {
+    job: 'aperturas-manana-antes-de-las-7', slug: 'sync-aperturas-caja', cadencia: '50,55 12 * * *',
+    corridasDia: 2, sistema: 17.5,
+    motivo: 'El aviso de la mañana: a qué hora abrió cada sala, quién la abrió, y a las 7:20 cuál '
+          + 'no abrió. Refresca y avisa en la MISMA corrida porque la captura de cada 30 minutos '
+          + 'no alcanza para decidir — medido el 2026-09-04, Salud 2 abrió 7:05 y Salud 3 a las '
+          + '7:10 y sus filas nacieron a las 7:30: el aviso habría acusado a dos salas que ya '
+          + 'estaban abiertas. '
+          + 'El costo por corrida DEPENDE de cuántas salas falten: en modo `manana` sólo se le '
+          + 'pregunta a las que todavía no abrieron, y con el aviso ya mandado no se gasta ni el '
+          + 'ingreso. La unidad ya estaba medida en la fila de arriba —1 ingreso + 3 por sala— y '
+          + 'las salas que faltan a cada disparo salen de las aperturas REALES de los ocho días '
+          + 'capturados (28-ago a 4-sep): estos dos disparos costaron entre 17 y 35 peticiones, '
+          + 'media 29. Se declara el PEOR: 35 en los dos, o sea 17.5 cada uno. '
+          + 'La mañana entera (los ocho disparos de los dos jobs) va de 21 a 50 peticiones, media '
+          + '40, contra las ~150 que costaría barrer las seis salas en cada disparo.',
+  },
+  {
+    job: 'aperturas-manana-hasta-la-hora-tope', slug: 'sync-aperturas-caja',
+    cadencia: '0,5,10,15,20,35 13 * * *',
+    corridasDia: 6, sistema: 3,
+    motivo: 'La segunda mitad de la misma ventana (7:00 a 7:20 SV) más un repaso a las 7:35. Son '
+          + 'dos jobs porque la ventana cruza la hora en punto y `pg_cron` no admite dos horas en '
+          + 'una expresión sin barrerlas enteras. '
+          + 'El de las 7:35 no manda un segundo aviso: la marca de `avisos_emitidos` hace que '
+          + 'sólo haga algo si el de las 7:20 no llegó a mandar nada — una corrida que habla con '
+          + 'el origen puede fallar, y un aviso que depende de un disparo puntual es uno que un '
+          + 'día no sale y nadie se entera. '
+          + 'Sus seis disparos costaron entre 4 y 18 peticiones en los ocho días medidos, media '
+          + '11. Se declara el peor: 18 entre 6, o sea 3 por corrida. En la mayoría de las '
+          + 'mañanas los últimos cuatro disparos cuestan CERO — el aviso ya salió antes de las '
+          + '7:10 y la primera guarda de la función corta sin tocar el origen.',
+  },
+  {
     job: 'avisar-dui-por-vencer-diario', slug: null, cadencia: '0 13 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'CERO peticiones al sistema de origen: es SQL puro contra la propia base. Sin `slug` '

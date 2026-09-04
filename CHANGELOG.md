@@ -21,6 +21,166 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.989.0 — Mis documentos: cada documento dice qué es, y se abre acá
+
+Pedido del usuario sobre `/mis-documentos`, con captura: *«que sean más
+informativos, más modernos, que me dé información básica, que lo pueda abrir en
+un modal grande para ver bien el documento»*. La captura mostraba una ficha
+titulada **«Del expediente»** con la palabra **`DUI_COMPLETO`** debajo.
+
+### La clave cruda estaba GUARDADA, no era un error de la vista
+
+`EmployeeFormModal` escribe el título de cada documento así:
+
+```js
+title: documentCategories.find(c => c.key === category)?.label || category
+```
+
+Y las cuatro categorías del documento de identidad —`DUI_FRENTE`,
+`DUI_REVERSO`, `DUI_COMPLETO`, `DOCUMENTO_IDENTIDAD`— **no están en
+`documentCategories`**: se dibujan en su propio bloque agrupado, donde el rótulo
+lo pone la maqueta («Frente», «Reverso»). El `find` falla, el `|| category`
+convierte «no encontré» en un dato, y lo guarda. Medido en producción: de los
+**8 documentos que existen, 4 tienen la clave como título**.
+
+Es la regla del proyecto sobre un `? :` encima de un `find` que puede fallar, y
+la corrección es la misma que la del `role_id: null`: el rótulo sale de **un**
+catálogo, y quien no lo encuentra no inventa.
+
+`src/utils/documentosDelExpediente.js` es ese catálogo: las 24 categorías con su
+rótulo, su grupo, su ícono y su tinte. Los 20 rótulos que el formulario tenía
+escritos adentro de un `useMemo` se mudaron ahí **palabra por palabra**
+(verificado byte a byte contra HEAD: 20 comparados, 0 distintos) y el formulario
+los importa. Las 4 que faltaban ahora existen, así que los documentos nuevos ya
+no nacen con la clave por título — y `nombreDeDocumento` arregla las 4 filas ya
+escritas **sin migración**, que es lo que corresponde: una migración arreglaría
+el pasado y dejaría el defecto vivo para la próxima.
+
+### La ficha
+
+- **El título es el documento**: «DUI — las dos caras», «Carné de Enfermería —
+  JVPE». «Del expediente» dejó de ser un título porque no nombra nada: todos lo
+  son. Debajo va el **grupo** —Identidad, Cada año, ISSS y AFP, Para ejercer,
+  Sólo si aplica—, o sea por qué esta persona tiene ese papel.
+- **La información básica**, en pares rótulo/valor: guardado, emitido, vence,
+  versiones anteriores, período, días. Se arman como lista, así que lo que falta
+  no deja un hueco: deja una celda menos.
+- **El vencimiento gana sobre el estado.** Un carné vencido con la píldora «En
+  tu expediente» en azul dice que todo está en orden. Sale de `getExpiryBadge`,
+  el mismo cálculo del expediente y del aviso de vencimientos.
+- **Un ícono por categoría**, no por procedencia: los cuatro documentos de una
+  persona dibujaban la misma carpeta porque el ícono salía de `doc.type`, donde
+  todos son `EXPEDIENTE`. Ahora un DUI es una tarjeta, un carné de junta una
+  medalla, la licencia un auto, el ISSS un escudo. El mapa es el `docIcon` que
+  vivía dentro de `EmployeeDocumentsList` —ahí cubría cuatro casos— completado y
+  compartido: las dos pantallas eligen igual.
+- **El archivo se nombra**: 5 de los 8 documentos de producción no guardaron
+  `file_name` y la ficha decía «Documento adjunto». La extensión de la URL sí lo
+  dice — «Archivo PDF», «Imagen».
+- **La respuesta de quien aprobó**: `approver_note` se traía de la base y no se
+  dibujaba en ningún lado, así que un rechazo no decía por qué.
+
+### El visor
+
+La ficha entera abre `VisorDeDocumento` —el canónico, que firma la URL del
+bucket privado y decide por el **contenido** si es imagen o PDF— en vez de tirar
+al usuario a otra pestaña. No hay botón «Ver» adentro: dos afordancias para la
+misma acción se leen como dos acciones, así que la señal es el ojo de arriba a
+la derecha (`OjoDeTarjeta`). Una ficha **sin** archivo no es un botón.
+
+El visor pasó de `max-w-3xl` a `max-w-6xl` y su lienzo de `70dvh` a `78dvh`:
+768px dejaba un DUI escaneado del tamaño de una tarjeta de crédito en un monitor
+de 1512. No va a pantalla completa a propósito — pasado cierto ancho lo que
+crece es el margen gris, porque el papel es más alto que ancho.
+
+### Lo demás
+
+- El buscador miraba el nombre del archivo y el rótulo del tipo: escribir «dui»
+  no encontraba nada. Ahora mira el nombre que se ve y el grupo.
+- En el teléfono la segunda línea se truncaba en «Identidad · De…»: el sufijo
+  «· Del expediente» se comía el grupo para dejar la mitad de una redundancia
+  que la píldora de al lado ya dice.
+
+Verificado con capturas a 1512px y en iPhone 13 contra el build, con el
+expediente y las solicitudes interceptados en el navegador — no se escribió nada
+en producción. `gate:design`, `gate:movil`, `gate:nombre`, `gate:tdz`,
+`gate:borradores`, `gate:eficiencia` y `gate:auditoria` en verde.
+
+## v2.988.3 — El aviso de la mañana: quién abrió caja en cada sala y a qué hora
+
+Pedido del usuario: *«al todas las sucursales por la mañana aperturar, enviame
+una notificación con la hora y quien aperturó. todas abren a las 7 am, si son
+las 7:20 y alguna no ha aperturado igual mandalo y dime cual no ha aperturado»*.
+
+Un solo aviso por día, con dos disparadores: sale cuando **abre la última
+sala**, y si a las **7:20** alguna no abrió sale igual nombrándola. Va a Gerente
+General y Supervisor/a de Ventas, por rol y no por una lista de ids. **Push sólo
+cuando falta una sala** — eso es una tarea; el resumen de un día normal va a la
+campana y no al teléfono, porque un push que todas las mañanas dice «todo bien»
+es el que enseña a ignorar los push.
+
+**Lo que hacía falta arreglar para que el aviso pudiera ser cierto son dos
+cosas, y ninguna estaba a la vista.**
+
+**1 · La foto de las 7:00 no sirve para decidir a las 7:20.** La captura de
+aperturas corre cada 30 minutos, y eso alcanza para el historial —la hora que
+guarda es exacta, la da el propio panel—. Para el aviso no: medido el 4-sep,
+**Salud 2 abrió 7:05 y Salud 3 a las 7:10, y sus filas nacieron a las 7:30**. Un
+aviso construido sobre la tabla a las 7:20 habría acusado a **dos salas que ya
+estaban abiertas**. Por eso quien dispara el aviso es la propia función de
+captura, en modo `manana`: refresca y avisa en la misma corrida, sin dejar el
+resultado a merced del orden.
+
+Y no cuesta seis veces más: en ese modo **sólo se le pregunta al origen por las
+salas que todavía no abrieron**, y con el aviso ya mandado no se gasta ni el
+ingreso. Sobre las aperturas reales de los ocho días capturados, una mañana
+entera va de **21 a 50 peticiones** (media 40) contra las ~150 de barrer las
+seis salas en cada uno de los ocho disparos.
+
+**2 · «Quién abrió» tenía dos fuentes y sólo una es evidencia.**
+`cortes_caja_aperturas.employee_id` se llena de la fila del portal —la
+observación directa de quién apretó el botón— **o** de un cruce por texto contra
+el nombre de la cuenta, que es una coincidencia. Medido el **2-sep**, el día
+antes de que el portal abriera cajas: la tabla decía «Nathaly Estrada» en Salud
+1 y «Elizabeth Callejas» en Salud 4 **sin que nadie hubiera visto a esas
+personas abrir nada** — son los nombres de las cuentas con las que esas salas
+operan siempre. Un aviso cuyo tema ES quién abrió no puede mezclarlas: acá se
+nombra sólo cuando hay fila del portal amarrada por `erp_apertura_id`, y sin
+ella dice **«desde la caja»**, que es verdad, en vez de un nombre plausible que
+nadie va a revisar.
+
+**Y una sala que no contestó no «no abrió».** El aviso separa las dos:
+`p_sin_respuesta` lleva las salas que el origen no pudo confirmar y el texto las
+llama *«no se pudo comprobar»*. Sin esa distinción, un rato de origen caído a
+las 7:20 saldría como **seis salas cerradas**, que es la falsa alarma más grande
+que este aviso puede dar y la que lo haría dejar de leerse.
+
+**La tarjeta se dibuja, no se lee.** La primera versión mandaba las seis salas
+en un párrafo y el usuario la devolvió de una: *«no quiero notificaciones solo
+de texto, quiero que sean modernas siempre»*. En tres renglones no entraba la
+última sala, que es justo la que importa. Ahora el anillo lleva **cuántas de las
+seis abrieron** —«5 de 6» se lee de un vistazo, «83%» hay que traducirlo— y cada
+renglón se tiñe cuando su hora **cruzó las 7:00**, con la hora primera y en
+cifras tabulares para que las seis queden en columna y la que se pasó salte sin
+leer los nombres. Las que faltan van en dos listas y dos tonos, nunca sumadas.
+
+**Piezas.** `aperturas_de_la_manana()` (el estado: hora, persona y qué falta),
+`avisar_aperturas_de_la_manana()` (el aviso), modo `{"manana": true}` en
+`sync-aperturas-caja`, dos crons de 6:50 a 7:20 con un repaso a las 7:35
+—repaso y no segundo aviso: la marca de `avisos_emitidos` hace que sólo actúe si
+el de las 7:20 no llegó a mandar nada— y del lado de la campana
+`aperturasDeLaManana.js` + `TarjetaDeAperturas.jsx`, enganchados en la MISMA
+`TarjetaDeAviso` que ya usan el cierre del día y el faltante de caja.
+
+Va **sólo a Supervisor/a de Ventas**, por rol: nació copiando los destinatarios
+del cierre del día (que suma Gerencia) y el usuario lo acotó el mismo día —lo
+pidió en primera persona, y es una vigilancia de operación, no un informe.
+
+**De paso nació `nombre_corto_de_empleado()`**, el gemelo en SQL de
+`shortEmployeeName`: hasta hoy un aviso escrito en la base ponía el nombre legal
+completo. Enfrentados sobre 15 casos —espacios dobles, ficha sin nombres, nombre
+concatenado de 1, 2, 3 y 4 palabras—: **iguales, 0 distintas**.
+
 ## v2.988.2 — Los avisos de Min·Máx caben en cinco segundos
 
 Ajuste de los avisos de v2.987.0. El plazo de un `info` baja de 8 s a **5**, y
@@ -82,66 +242,6 @@ que no sale en el menú lateral, y el buscador del menú tampoco la ofrece —lo
 parecía un resultado era el texto del diálogo de permisos, que dice «busca
 Notificaciones»—. La única entrada es «Ver todas» al pie del panel de la campana,
 y se comprobó que lleva ahí.
-
-## v2.990.0 — El aviso de la mañana: quién abrió caja en cada sala y a qué hora
-
-Pedido del usuario: *«al todas las sucursales por la mañana aperturar, enviame
-una notificación con la hora y quien aperturó. todas abren a las 7 am, si son
-las 7:20 y alguna no ha aperturado igual mandalo y dime cual no ha aperturado»*.
-
-Un solo aviso por día, con dos disparadores: sale cuando **abre la última
-sala**, y si a las **7:20** alguna no abrió sale igual nombrándola. Va a Gerente
-General y Supervisor/a de Ventas, por rol y no por una lista de ids. **Push sólo
-cuando falta una sala** — eso es una tarea; el resumen de un día normal va a la
-campana y no al teléfono, porque un push que todas las mañanas dice «todo bien»
-es el que enseña a ignorar los push.
-
-**Lo que hacía falta arreglar para que el aviso pudiera ser cierto son dos
-cosas, y ninguna estaba a la vista.**
-
-**1 · La foto de las 7:00 no sirve para decidir a las 7:20.** La captura de
-aperturas corre cada 30 minutos, y eso alcanza para el historial —la hora que
-guarda es exacta, la da el propio panel—. Para el aviso no: medido el 4-sep,
-**Salud 2 abrió 7:05 y Salud 3 a las 7:10, y sus filas nacieron a las 7:30**. Un
-aviso construido sobre la tabla a las 7:20 habría acusado a **dos salas que ya
-estaban abiertas**. Por eso quien dispara el aviso es la propia función de
-captura, en modo `manana`: refresca y avisa en la misma corrida, sin dejar el
-resultado a merced del orden.
-
-Y no cuesta seis veces más: en ese modo **sólo se le pregunta al origen por las
-salas que todavía no abrieron**, y con el aviso ya mandado no se gasta ni el
-ingreso. Sobre las aperturas reales de los ocho días capturados, una mañana
-entera va de **21 a 50 peticiones** (media 40) contra las ~150 de barrer las
-seis salas en cada uno de los ocho disparos.
-
-**2 · «Quién abrió» tenía dos fuentes y sólo una es evidencia.**
-`cortes_caja_aperturas.employee_id` se llena de la fila del portal —la
-observación directa de quién apretó el botón— **o** de un cruce por texto contra
-el nombre de la cuenta, que es una coincidencia. Medido el **2-sep**, el día
-antes de que el portal abriera cajas: la tabla decía «Nathaly Estrada» en Salud
-1 y «Elizabeth Callejas» en Salud 4 **sin que nadie hubiera visto a esas
-personas abrir nada** — son los nombres de las cuentas con las que esas salas
-operan siempre. Un aviso cuyo tema ES quién abrió no puede mezclarlas: acá se
-nombra sólo cuando hay fila del portal amarrada por `erp_apertura_id`, y sin
-ella dice **«desde la caja»**, que es verdad, en vez de un nombre plausible que
-nadie va a revisar.
-
-**Y una sala que no contestó no «no abrió».** El aviso separa las dos:
-`p_sin_respuesta` lleva las salas que el origen no pudo confirmar y el texto las
-llama *«no se pudo comprobar»*. Sin esa distinción, un rato de origen caído a
-las 7:20 saldría como **seis salas cerradas**, que es la falsa alarma más grande
-que este aviso puede dar y la que lo haría dejar de leerse.
-
-**Piezas.** `aperturas_de_la_manana()` (el estado: hora, persona y qué falta),
-`avisar_aperturas_de_la_manana()` (el aviso), modo `{"manana": true}` en
-`sync-aperturas-caja`, y dos crons de 6:50 a 7:20 con un repaso a las 7:35 —
-repaso y no segundo aviso: la marca de `avisos_emitidos` hace que sólo actúe si
-el de las 7:20 no llegó a mandar nada.
-
-**De paso nació `nombre_corto_de_empleado()`**, el gemelo en SQL de
-`shortEmployeeName`: hasta hoy un aviso escrito en la base ponía el nombre legal
-completo. Enfrentados sobre 15 casos —espacios dobles, ficha sin nombres, nombre
-concatenado de 1, 2, 3 y 4 palabras—: **iguales, 0 distintas**.
 
 ## v2.988.0 — Un sobrante con causa ya no exige un vale
 

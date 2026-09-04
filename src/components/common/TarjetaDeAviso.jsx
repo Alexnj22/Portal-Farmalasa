@@ -5,8 +5,10 @@ import AvatarConEstado from './AvatarConEstado';
 import NotificacionDetalle from './NotificacionDetalle';
 import { AnilloDeMeta, CuerpoDeCierreDeMeta, CuerpoDeCierreDeEmpresa, CuerpoDeCierreDelDia } from './CierreDeMeta';
 import { AnilloDeFaltante, CuerpoDeFaltanteDeCaja } from './TarjetaDeFaltante';
+import { AnilloDeAperturas, CuerpoDeAperturas } from './TarjetaDeAperturas';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
+import { datosDeAperturasDeLaManana } from '../../utils/aperturasDeLaManana';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import {
@@ -155,6 +157,11 @@ const TarjetaDeAviso = ({
        cosa —cuánto se contó de lo que debía haber— y su color es uno solo,
        porque un faltante nunca es verde. */
     const faltante = datosDeFaltanteDeCaja(n);
+    /* Cómo abrió la mañana. Tampoco entra en `conAnillo`: su arco no mide un
+       porcentaje sino CUÁNTAS de las seis salas abrieron, y su color no sale de
+       la escala de cumplimiento — están todas o falta alguna, no hay franja
+       naranja entre las dos. */
+    const aperturas = datosDeAperturasDeLaManana(n);
 
     const corte = acciones?.corteDe?.(n) ?? null;
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
@@ -188,6 +195,8 @@ const TarjetaDeAviso = ({
             >
                 {faltante ? (
                     <AnilloDeFaltante datos={faltante} isDark={isDark} />
+                ) : aperturas ? (
+                    <AnilloDeAperturas datos={aperturas} isDark={isDark} />
                 ) : conAnillo ? (
                     <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                 ) : (
@@ -207,7 +216,7 @@ const TarjetaDeAviso = ({
                         diría en palabras lo mismo que está arriba en números.
                         Sin montos el `body` ya viene escrito en porcentaje y se
                         deja tal cual. */}
-                    {((!conAnillo && !faltante) || (cierre && cierre.venta == null)) && n.body && (
+                    {((!conAnillo && !faltante && !aperturas) || (cierre && cierre.venta == null)) && n.body && (
                         <CuerpoDeAviso
                             id={n.id}
                             texto={n.body}
@@ -225,6 +234,10 @@ const TarjetaDeAviso = ({
                     )}
                     {faltante && (
                         <CuerpoDeFaltanteDeCaja datos={faltante} claseTenue={cx.rowBody} isDark={isDark} />
+                    )}
+                    {aperturas && (
+                        <CuerpoDeAperturas datos={aperturas} claseTenue={cx.rowBody}
+                            isDark={isDark} buscarEmpleado={buscarEmpleado} />
                     )}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}

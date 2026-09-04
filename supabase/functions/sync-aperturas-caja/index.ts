@@ -36,6 +36,13 @@ import { getCorsHeaders, requireInvokeSecret, getErpBranchMap, getErpCredsByBran
 // en el CIERRE, y por eso esa columna se llama `cerrada_at` con el comentario
 // de que es cuándo se la VIO cerrada. La ventana la aplica esta función y no
 // el cron, por el mismo motivo que la aplica `sync-cortes-caja`.
+//
+// EXCEPCIÓN: entre las 6:50 y las 7:20 corre cada 5 minutos en modo
+// `{"manana": true}`, que además de refrescar MANDA el aviso de la mañana.
+// Ahí la media hora sí importaba —el aviso dice a qué hora abrió cada sala y
+// cuál no abrió, y con la foto vieja acusaba a salas ya abiertas— y el costo
+// no se dispara porque en ese modo sólo se le pregunta a las salas que
+// todavía no abrieron. Ver el bloque del modo, más abajo.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const BASE       = "https://clientesdte3.oss.com.sv/farma_salud/";
@@ -49,6 +56,14 @@ const ERP_BODEGA = 6;
 // La ventana de la sala en hora de El Salvador (UTC−6, sin horario de verano).
 const HORA_DESDE = 6;
 const HORA_HASTA = 23;
+
+/* La hora tope del aviso de la mañana, en minutos desde medianoche (7:20 SV).
+ * La puso el usuario: «todas abren a las 7 am, si son las 7:20 y alguna no ha
+ * aperturado igual mandalo y dime cual no ha aperturado». Medido sobre los 8
+ * días capturados, la última sala del día abrió entre las 7:00 y las 7:11 —o
+ * sea que en una mañana normal el aviso sale ANTES de esta hora, y ésta es el
+ * respaldo. */
+const HORA_TOPE = 7 * 60 + 20;
 
 function getCortesCreds(): { username: string; password: string } {
   const raw = Deno.env.get("ERP_CORTES_CREDS");
@@ -289,13 +304,62 @@ Deno.serve(async (req) => {
       (delPortal ?? []).map((f) => [`${f.branch_id}:${f.erp_apertura_id}`, f.abierta_por as string]),
     );
 
-    const { username, password } = getCortesCreds();
-    const cookie = await getSessionCookie(username, password);
+    /* ── Modo «aviso de la mañana» ────────────────────────────────────────
+     *
+     * `{"manana": true}`. Refresca y AVISA en la misma corrida, y ése es el
+     * punto: la cadencia normal es de 30 minutos, así que a las 7:20 la tabla
+     * todavía tiene la foto de las 7:00. Medido el 2026-09-04 — Salud 2 abrió
+     * 7:05 y Salud 3 a las 7:10, y sus filas nacieron a las 7:30: un aviso
+     * construido sobre la tabla habría acusado a dos salas que ya estaban
+     * abiertas. Preguntar y decidir en dos pasos separados deja el resultado a
+     * merced del orden, que es justo lo que no puede pasar acá.
+     *
+     * Y sólo se le pregunta a las salas que TODAVÍA no tienen apertura de hoy.
+     * No es una optimización cosmética: es lo que hace que el costo se apague
+     * solo. Con las seis abiertas la corrida no gasta ni el login. Sobre las
+     * aperturas reales de los ocho días capturados la mañana entera cuesta
+     * entre 21 y 50 peticiones (media 40), contra las 152 de barrer las seis
+     * salas en los ocho disparos.
+     */
+    const manana = Boolean(body.manana);
+    let estadoManana: Record<string, unknown> | null = null;
+    if (manana) {
+      const { data, error } = await supabase.rpc("aperturas_de_la_manana");
+      if (error) throw new Error(`leyendo el estado de la mañana: ${error.message}`);
+      estadoManana = (data ?? null) as Record<string, unknown> | null;
+      // Ya salió: no hay nada que refrescar ni nada que mandar. Es la guarda
+      // más barata que tiene esta función — cero peticiones al origen.
+      if (estadoManana?.ya_avisado) {
+        return new Response(JSON.stringify({ ok: true, manana: "ya_avisado" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    const soloEstas = manana
+      ? new Set(((estadoManana?.faltan_ids as number[]) ?? []).map(Number))
+      : null;
+    const objetivo = getErpBranchMap().filter(({ branchId, erpId }) =>
+      erpId !== ERP_BODEGA && (soloEstas === null || soloEstas.has(branchId)));
+
     const ahora = new Date().toISOString();
     const resultados: Record<string, unknown>[] = [];
+    /* Las salas que no contestaron. NO son «no abrió»: son «no se pudo
+     * comprobar», y el aviso las nombra distinto. Sin esta lista, un rato de
+     * origen caído a las 7:20 saldría como seis salas cerradas — la falsa
+     * alarma más grande que este aviso puede dar. */
+    const sinRespuesta: number[] = [];
 
-    for (const { branchId, erpId } of getErpBranchMap()) {
-      if (erpId === ERP_BODEGA) continue;
+    // Sin salas que mirar no se abre sesión: el login es una petición al
+    // origen y no tiene para qué salir si no se va a preguntar nada.
+    const cookie = objetivo.length
+      ? await (async () => {
+        const { username, password } = getCortesCreds();
+        return await getSessionCookie(username, password);
+      })()
+      : "";
+
+    for (const { branchId, erpId } of objetivo) {
       try {
         await abrirSala(cookie, erpId);
 
@@ -367,13 +431,41 @@ Deno.serve(async (req) => {
 
         resultados.push({ branchId, cajas: cajas.length, abiertas: vistas.length });
       } catch (e) {
+        sinRespuesta.push(branchId);
         resultados.push({ branchId, error: (e as Error)?.message ?? String(e) });
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, resultados }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    /* El aviso, con la tabla ya fresca.
+     *
+     * `forzar` se decide por el RELOJ y no por qué cron llamó: así el cron de
+     * la hora tope no es el único que puede cerrar la mañana. Si esa corrida
+     * falla —y una corrida que habla con el origen puede fallar—, la siguiente
+     * ya está pasada de la hora y lo manda igual. Un aviso que depende de que
+     * un disparo puntual salga bien es un aviso que un día no sale y nadie se
+     * entera. */
+    let aviso: number | null = null;
+    if (manana) {
+      const ahoraSV = new Date(Date.now() - 6 * 3600_000);
+      const minutosSV = ahoraSV.getUTCHours() * 60 + ahoraSV.getUTCMinutes();
+      const forzar = Boolean(body.hora_tope) || minutosSV >= HORA_TOPE;
+      const { data, error } = await supabase.rpc("avisar_aperturas_de_la_manana", {
+        p_fecha: null,
+        p_forzado: forzar,
+        p_sin_respuesta: sinRespuesta.length ? sinRespuesta : null,
+      });
+      if (error) throw new Error(`mandando el aviso de la mañana: ${error.message}`);
+      aviso = Number(data ?? 0);
+    }
+
+    return new Response(
+      JSON.stringify(
+        manana
+          ? { ok: true, resultados, aviso, mirados: objetivo.length, sin_respuesta: sinRespuesta }
+          : { ok: true, resultados },
+      ),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (e) {
     console.error("sync-aperturas-caja:", e);
     return new Response(JSON.stringify({ ok: false, error: (e as Error)?.message ?? String(e) }), {

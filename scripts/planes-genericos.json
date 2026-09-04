@@ -1,7 +1,7 @@
 {
   "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
-  "actualizado": "2026-09-03",
-  "medidas": 45,
+  "actualizado": "2026-09-04",
+  "medidas": 46,
   "sin_medir": 24,
   "funciones": {
     "auth_module_scope": {
@@ -333,6 +333,12 @@
       "casos": null,
       "divergencia": null,
       "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+    },
+    "nombre_corto_de_empleado": {
+      "ms": "0.03",
+      "casos": "el nombre de una ficha · sin tablas",
+      "divergencia": null,
+      "nota": "medida el 2026-09-04: 0.025 ms de ejecución, plan `Result` a secas. NO PUEDE tener el defecto: no toca ninguna tabla — es manipulación de texto sobre sus tres parámetros—, así que no hay estimación de filas que el planificador pueda errar y el genérico ES el plan. Entra al manifiesto sólo porque el detector la ve (LANGUAGE sql + SET + un CTE de legibilidad), no porque haya algo que vigilar. Es el gemelo en SQL de shortEmployeeName."
     },
     "puntos_cliente_por_dui_y_telefono": {
       "ms": "41-82",

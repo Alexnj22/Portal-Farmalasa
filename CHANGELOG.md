@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.975.3 — El reparto de efectivo al anular una bolsa se elimina
+
+*«si descarté un corte reabierto, significa que fue error, o pasó algo; si
+quisiera guardar dinero confirmaría un corte y lo guardaría.»*
+
+Un corte descartado no deja efectivo huérfano esperando quién lo respalde:
+deja de existir, y con él su bolsa. El único acto que guarda dinero es
+confirmar un corte, que crea su bolsa con `bolsa_sugerida`. No había hueco que
+repartir porque no hubo dinero que mover.
+
+**Y el arreglo de v2.975.2 fue a la sobrecarga equivocada.** Reescribió
+`reajustar_bolsas_del_dia(bigint, date, uuid)`; los dos llamadores reales
+—`anular_bolsa` y `bolsa_al_descartar_corte`— usan la de **cuatro**
+argumentos, con el monto de la bolsa anulada, y ésa siguió intacta: es la que
+sumó los $467.41 a S4-1240. Es `update_proveedor_manual` otra vez — dos
+sobrecargas, el arreglo alcanza a una sola, y nada avisa: la función corregida
+compila, se aplica y no la llama nadie.
+
+Así que no se corrigió la función: se **borraron las dos** y se les quitaron
+las llamadas a los dos llamadores. Una sobrecarga que no existe no puede volver
+a estrenarse sola.
+
+Verificado en Salud 4 del 3-sep con el día ya cerrado: $661.25 (S4-1240) +
+$885.52 (S4-1250) = $1,546.77, exactamente lo declarado por el corte 734, el
+último confirmado. Con el reparto puesto, S4-1240 seguiría en $1,128.66 y el
+día sumaría $467.41 de más.
+
+Lo que queda vigilando es `get_bolsas_invariante`: un corte descartado ya no es
+el último confirmado, así que el día cuadra solo sin que nadie escriba un monto.
+
+- Migración `descartar_un_corte_no_reparte_efectivo_se_deshace`.
+
 ## v2.975.2 — Anular una bolsa deja de sumarle su efectivo a otra
 
 Reporte del usuario: *«al anularlo le sumó a la bolsa anterior, eso es

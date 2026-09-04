@@ -47,6 +47,7 @@
     "gate:auditoria": "node scripts/auditoria-gate.mjs",
     "gate:undefinidos": "node scripts/undefinidos-gate.mjs",
     "gate:tdz": "node scripts/tdz-gate.mjs",
+    "gate:nombre": "node scripts/nombre-gate.mjs",
     "auditoria": "node scripts/auditoria-gate.mjs",
     "auditoria:desbloquear": "node scripts/auditoria-cli.mjs desbloquear",
     "auditoria:sellar": "node scripts/auditoria-cli.mjs sellar",

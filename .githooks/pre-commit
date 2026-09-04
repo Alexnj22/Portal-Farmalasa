@@ -137,6 +137,27 @@ if git diff --cached --name-only | grep -qE '^src/'; then
   node scripts/tdz-gate.mjs --hook || exit 1
 fi
 
+# nombre-gate: el nombre de una persona se pinta con el canónico. Sólo si el
+# commit toca una pantalla (`.jsx`), porque es lo único que puede pintar.
+#
+# La regla existía desde siempre —`shortEmployeeName`, primer nombre + primer
+# apellido en toda la interfaz— y lo que faltaba era algo que la obligara. Lo
+# trajo un reporte del 2026-09-03 sobre la tarjeta de un corte que decía
+# «EDWIN ALEXANDER NUNEZ JOYA» junto a un avatar que decía «EN»: el avatar sí
+# llamaba al canónico, para las iniciales, y el texto de al lado no.
+#
+# El modo de falla es invisible a propósito: todos los sitios tenían
+# `truncate`, así que el nombre largo no desbordaba nada — se cortaba a la
+# mitad. No hay error, no hay layout roto; se reporta como «se ve raro», meses
+# después. Por eso lo tiene que mirar una máquina.
+#
+# Bloqueante en CERO: no hay deuda que absorber. Lo legítimo —Personal, un
+# documento legal, algo que sale del portal, o alguien que no es empleado—
+# está en EXCEPCIONES con su motivo Y su cuenta.
+if git diff --cached --name-only | grep -qE '^src/.*\.jsx$'; then
+  node scripts/nombre-gate.mjs --hook || exit 1
+fi
+
 # permissions-gate: solo si el commit toca el registro de permisos o código que
 # los consulta. Cruza lo declarado en Permisos contra lo que el código realmente
 # gatea (por sus cinco caminos: literal, plantilla, variable, indirecta y guard

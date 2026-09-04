@@ -1349,6 +1349,41 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   vista se vea bien** — lee el fuente, y hay filas que desde el fuente son una
   caja cerrada. Eso lo cierra el barrido, y las dos capas juntas no cubren los
   diálogos: ésos los abre `dialogos-movil`.
+- **`npm run gate:nombre` — el nombre de una persona sale del canónico.** El
+  portal muestra SIEMPRE primer nombre + primer apellido: `shortEmployeeName`
+  de `src/utils/nameUtils.js`. Corre en el pre-commit cuando el commit toca un
+  `.jsx` y **bloquea en cero**.
+
+  Nació el 2026-09-03 de un reporte de una línea —«¿por qué sale el nombre
+  completo? hay reglas ya definidas que lo prohíben»— sobre una tarjeta que
+  decía «EDWIN ALEXANDER NUNEZ JOYA» **junto a un avatar que decía «EN»**. Ahí
+  está el patrón: los componentes le pasan la persona entera a
+  `AvatarConEstado`, que sí llama al canónico para las iniciales, y pintan
+  `persona.name` crudo dos píxeles al lado. Eran **ocho** sitios, más **tres
+  copias de la regla escritas a mano**, dos de ellas mal: `.split(' ')
+  .slice(0, 2)` toma las dos PRIMERAS palabras, o sea dos nombres y ningún
+  apellido.
+
+  **El modo de falla es el silencio.** Todos tenían `truncate`: el nombre largo
+  no desbordaba nada, se cortaba a la mitad. No hay error ni layout roto — se
+  reporta como «se ve raro», meses después.
+
+  Las excepciones son las que `nameUtils` ya declara —Personal, donde el nombre
+  completo ES el dato, y todo lo que SALE del portal: CSV, planilla, papel— más
+  quien no es un empleado (el receptor de un DTE es un cliente). Van en
+  `EXCEPCIONES` de `scripts/nombre-gate.mjs` **con su motivo y su cuenta**: por
+  archivo a secas no alcanza, y se comprobó — al fabricarle la regresión, la
+  excepción legítima de un archivo se tragó un defecto nuevo en ese mismo
+  archivo.
+
+  Tres cosas quedan FUERA a propósito, las tres medidas: `title`/`alt`/
+  `aria-label` (el nombre entero ahí COMPLETA al corto, no lo contradice —
+  contarlos daba 24 hallazgos de los cuales 5 eran texto), las props de
+  componente (el nombre viaja a otro que puede resolverlo, como hace
+  `AutorLinea`) y las condiciones `{x.name && …}`. Pero `{x.name || '—'}` SÍ
+  cuenta: ahí la izquierda es el valor, no un test. Esa distinción faltaba en
+  la primera versión y puso el gate en verde tapando tres sitios reales.
+
 - **`npm run gate:tdz` — leer una variable antes de su `const`.** Corre en el
   pre-commit cuando el commit toca `src/` y **bloquea en cero**. Es hermano de
   `gate:undefinidos`: aquél caza la variable que NO EXISTE, éste la que existe

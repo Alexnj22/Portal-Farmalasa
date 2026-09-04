@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.977.0 — `gate:nombre`: la regla del nombre corto pasa a estar vigilada
+
+La regla existía desde siempre y estaba bien escrita —`shortEmployeeName`,
+primer nombre + primer apellido en toda la interfaz—. Lo que faltaba era algo
+que la obligara: al barrer, ocho pantallas la salteaban y tres tenían su propia
+copia. Ahora lo mira una máquina, en el pre-commit y bloqueante en cero.
+
+**Cómo se construyó, que es la parte que vale.** El detector se equivocó tres
+veces antes de acertar, y las tres quedaron escritas en el archivo:
+
+1. **Regex a mano: 147 hallazgos, 25 reales.** Contaba `branch.name` (una
+   sucursal), bitácoras, `localeCompare` y textos de búsqueda. Por eso el gate
+   usa el AST del linter y no vive dentro de `gate:design`, que es regex — la
+   misma decisión que ya tomaron `gate:tdz` y `gate:undefinidos`.
+2. **Acusó a los nueve sitios recién corregidos.** En
+   `{x?.name ? shortEmployeeName(x) : '—'}` el `.name` que queda es la
+   condición. Se arregló mirando el contenedor JSX entero.
+3. **Se puso en verde tapando tres sitios reales.** Al excluir las condiciones,
+   dio por condición también a `{x.name || '—'}` — donde la izquierda es el
+   VALOR y sí se pinta. Lo delató el propio gate, quejándose de que tres de sus
+   excepciones ya no cubrían nada.
+
+**Y una excepción por archivo no alcanzaba.** Al fabricarle la regresión que
+debía cazar —reponer el `.split(' ').slice(0, 2)` del widget de anulaciones— no
+la cazó: ese archivo tiene una excepción legítima por sus dos chips de primer
+nombre, y se tragó el defecto nuevo. Ahora cada excepción declara **cuántos**
+sitios cubre; el siguiente falla.
+
+Quedan fuera a propósito, y medido: `title`/`alt`/`aria-label` —ahí el nombre
+entero COMPLETA al corto, y contarlos daba 24 hallazgos de los cuales 5 eran
+texto—, las props de componente (el nombre viaja a otro que puede resolverlo,
+como hace `AutorLinea`) y las condiciones de render.
+
+Las tres regresiones fabricadas se cazan: el defecto original del reporte, una
+firma cruda en Movimientos de caja y la copia a mano dentro de un archivo
+exceptuado.
+
 ## v2.976.6 — El nombre corto se aplica en las ocho pantallas que lo salteaban
 
 Barrido de las 632 fuentes por AST —sólo lo que llega al DOM, no bitácoras ni

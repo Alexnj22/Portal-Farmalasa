@@ -7,9 +7,9 @@ import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
 import FilterBar from '../../components/common/FilterBar';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
-    FolderOpen, Search, X, ExternalLink, FileCheck, Stethoscope,
-    FileText, Palmtree, RefreshCw, Calendar, ChevronDown, ChevronRight,
-    Download, Eye, AlertCircle, CheckCircle2, Clock, XCircle, Loader2,
+    FolderOpen, Search, X, FileCheck, Stethoscope,
+    FileText, Palmtree, RefreshCw, Calendar,
+    Eye, AlertCircle, CheckCircle2, Clock, XCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -19,49 +19,25 @@ import GlassViewLayout from '../../components/GlassViewLayout';
 import PeriodPicker from '../../components/common/PeriodPicker';
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
+//
+// El color de la categoría vive en el SQUIRCLE del ícono y en ningún otro
+// lado. Hasta el 2026-09-04 cada tipo además teñía el borde de la tarjeta
+// (`border-danger/30`) y le pisaba la sombra de hover con un `--shadow-glow-*`:
+// las dos cosas reemplazan lo que trae `data-surface="card"` —el borde del tema
+// y las seis capas del lente— así que la misma tarjeta se dibujaba con seis
+// materiales distintos según el tipo de documento. Es la regla de §17.0 dicha
+// para una tarjeta de contenido: el ícono lleva color, el fondo y el borde no.
 const DOC_CFG = {
-    DISABILITY: {
-        label: 'Incapacidad', Icon: Stethoscope,
-        bg: 'bg-danger/10', text: 'text-danger-text', border: 'border-danger/30',
-        iconBg: 'bg-danger/10', accent: 'bg-danger',
-        glow: 'hover:shadow-[var(--shadow-glow-danger)]',
-    },
-    CERTIFICATE: {
-        label: 'Constancia', Icon: FileCheck,
-        bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30',
-        iconBg: 'bg-chart-1/10', accent: 'bg-chart-1',
-        glow: 'hover:shadow-[var(--shadow-glow-chart-1)]',
-    },
-    VACATION: {
-        label: 'Vacaciones', Icon: Palmtree,
-        bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30',
-        iconBg: 'bg-success/10', accent: 'bg-success',
-        glow: 'hover:shadow-[var(--shadow-glow-success)]',
-    },
-    PERMIT: {
-        label: 'Permiso', Icon: FileText,
-        bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30',
-        iconBg: 'bg-warning/10', accent: 'bg-warning',
-        glow: 'hover:shadow-[var(--shadow-glow-warning)]',
-    },
-    EXPEDIENTE: {
-        label: 'Del expediente', Icon: FolderOpen,
-        bg: 'bg-brand/10', text: 'text-brand-text', border: 'border-brand/30',
-        iconBg: 'bg-brand/10', accent: 'bg-brand',
-        glow: 'hover:shadow-[var(--shadow-glow-brand)]',
-    },
-    SHIFT_CHANGE: {
-        label: 'Cambio Turno', Icon: RefreshCw,
-        bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30',
-        iconBg: 'bg-chart-9/10', accent: 'bg-chart-9',
-        glow: 'hover:shadow-[var(--shadow-glow-chart-9-lg)]',
-    },
+    DISABILITY:   { label: 'Incapacidad',     Icon: Stethoscope, iconBg: 'bg-danger/10',  iconCls: 'text-danger-text'  },
+    CERTIFICATE:  { label: 'Constancia',      Icon: FileCheck,   iconBg: 'bg-chart-1/10', iconCls: 'text-chart-1-text' },
+    VACATION:     { label: 'Vacaciones',      Icon: Palmtree,    iconBg: 'bg-success/10', iconCls: 'text-success-text' },
+    PERMIT:       { label: 'Permiso',         Icon: FileText,    iconBg: 'bg-warning/10', iconCls: 'text-warning-text' },
+    EXPEDIENTE:   { label: 'Del expediente',  Icon: FolderOpen,  iconBg: 'bg-brand/10',   iconCls: 'text-brand-text'   },
+    SHIFT_CHANGE: { label: 'Cambio de turno', Icon: RefreshCw,   iconBg: 'bg-chart-9/10', iconCls: 'text-chart-9-text' },
 };
 const DEFAULT_CFG = {
     label: 'Documento', Icon: FileText,
-    bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-divider',
-    iconBg: 'bg-surface-card-hover', accent: 'bg-content-3',
-    glow: 'hover:shadow-[var(--shadow-elevation-md)]',
+    iconBg: 'bg-surface-card-hover', iconCls: 'text-content-3',
 };
 
 const STATUS_CFG = {
@@ -114,26 +90,35 @@ const DocCard = ({ doc }) => {
             ? `${doc.meta.permissionDates.length} día${doc.meta.permissionDates.length !== 1 ? 's' : ''} seleccionado${doc.meta.permissionDates.length !== 1 ? 's' : ''}`
             : null;
 
+    // Los dos ramos del pie eran el MISMO bloque escrito dos veces: sólo
+    // cambiaba el rótulo por defecto del archivo. Y el del expediente abría
+    // `doc.meta.docUrl` sin preguntar si existía.
+    const archivo = doc.meta?.docUrl
+        ? (doc.meta.docName || (doc.type === 'EXPEDIENTE' ? 'Documento' : 'Documento adjunto'))
+        : null;
+
     return (
-        <div data-surface="card" className={`group relative p-5 transition-all duration-[var(--dur-slow)] ${cfg.glow} ${cfg.border} overflow-hidden`}>
-
-            {/* Accent bar izquierda */}
-            <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${cfg.accent} opacity-60`} />
-
-            <div className="flex items-start gap-4 pl-3">
-                {/* Ícono */}
-                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${cfg.iconBg} border ${cfg.border} shadow-sm`}>
-                    <DocIcon size={18} className={cfg.text} strokeWidth={2} />
+        <div data-surface="card" className="h-full p-4 md:p-5">
+            <div className="flex items-start gap-3 h-full">
+                {/* Squircle de ícono — la única pieza con el color del tipo */}
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${cfg.iconBg}`}>
+                    <DocIcon size={16} className={cfg.iconCls} strokeWidth={2} />
                 </div>
 
-                {/* Contenido */}
-                <div className="flex-1 min-w-0">
+                {/* Columna de texto en COLUMNA y el pie con `mt-auto`: la grilla
+                    iguala el alto de la fila, así que sin esto una ficha sin
+                    nota queda con su pie a media caja y un vacío de 150px
+                    debajo — al lado de otra cuyo pie está abajo del todo. La
+                    fecha y el archivo son la línea base de la ficha; que se
+                    alineen entre hermanas es lo que hace que la fila se lea
+                    como una fila. */}
+                <div className="flex-1 min-w-0 flex flex-col">
                     <div className="flex items-start justify-between gap-2 flex-wrap mb-1.5">
-                        <div>
-                            <p className={`text-body font-black ${cfg.text} leading-tight`}>{title}</p>
+                        <div className="min-w-0">
+                            <p className="text-body font-bold text-content leading-tight">{title}</p>
                             {period && (
                                 <p className="text-caption text-content-3 font-medium mt-0.5 flex items-center gap-1">
-                                    <Calendar size={9} />
+                                    <Calendar size={11} />
                                     {period}
                                 </p>
                             )}
@@ -146,43 +131,41 @@ const DocCard = ({ doc }) => {
                         <p className="text-label text-content-3 font-medium leading-relaxed mb-2 line-clamp-2">{doc.note}</p>
                     )}
 
-                    {/* Footer: fecha + archivo */}
-                    <div className="flex items-center justify-between gap-2 flex-wrap mt-2 pt-2 border-t border-divider">
-                        <p className="text-caption text-content-3 font-medium">
-                            {doc.type === 'EXPEDIENTE' ? 'Guardado el ' : 'Solicitado el '}
-                            {new Date(doc.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </p>
-
-                        {doc.type === 'EXPEDIENTE' ? (
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-caption text-content-3 font-medium truncate max-w-[120px]">
-                                    {doc.meta?.docName || 'Documento'}
-                                </span>
-                                <Button variant="ghost" icon={Eye} className={`${cfg.bg} ${cfg.border} ${cfg.text}`} onClick={() => openStoredFile(doc.meta.docUrl)}>Ver</Button>
-                            </div>
-                        ) : doc.meta?.docUrl ? (
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-caption text-content-3 font-medium truncate max-w-[120px]">
-                                    {doc.meta.docName || 'Documento adjunto'}
-                                </span>
-                                <Button variant="ghost" icon={Eye} className={`${cfg.bg} ${cfg.border} ${cfg.text}`} onClick={() => openStoredFile(doc.meta.docUrl)}>Ver</Button>
-                            </div>
-                        ) : (
-                            <span className="text-caption text-content-3 font-medium italic">Sin archivo adjunto</span>
-                        )}
-                    </div>
-
-                    {/* Días de permiso */}
+                    {/* Días de permiso — van ANTES del pie: son parte de lo que
+                        el documento dice, no de la línea de fecha y archivo.
+                        Colgados debajo del separador quedaban fuera de la ficha
+                        que la línea cierra. */}
                     {doc.meta?.permissionDates?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
+                        <div className="flex flex-wrap gap-1 mb-2">
                             {doc.meta.permissionDates.slice(0, 5).map((d, i) => (
-                                <Badge key={i} variant={cfg.variante} size="sm" uppercase={false}>{fmtDate(d)}</Badge>
+                                <Badge key={i} size="sm" uppercase={false}>{fmtDate(d)}</Badge>
                             ))}
                             {doc.meta.permissionDates.length > 5 && (
                                 <Badge size="sm" uppercase={false}>+{doc.meta.permissionDates.length - 5} más</Badge>
                             )}
                         </div>
                     )}
+
+                    {/* Footer: fecha + archivo */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap mt-auto pt-3 border-t border-divider">
+                        <p className="text-caption text-content-3 font-medium">
+                            {doc.type === 'EXPEDIENTE' ? 'Guardado el ' : 'Solicitado el '}
+                            {new Date(doc.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+
+                        {archivo ? (
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-caption text-content-3 font-medium truncate max-w-[140px]">
+                                    {archivo}
+                                </span>
+                                <Button variant="secondary" size="sm" icon={Eye}
+                                    onClick={() => openStoredFile(doc.meta.docUrl)}>Ver</Button>
+                            </div>
+                        ) : (
+                            <span className="text-caption text-content-3 font-medium italic">Sin archivo adjunto</span>
+                        )}
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -196,7 +179,6 @@ const EmployeeDocumentsView = () => {
 
     const [allDocs, setAllDocs]       = useState([]);
     const [loading, setLoading]       = useState(true);
-    const [tab, setTab]               = usePestanaEnUrl(TABS, 'ALL');
     const [search, setSearch]         = useState('');
     const [filterFrom, setFilterFrom] = useState('');
     const [filterTo, setFilterTo]     = useState('');
@@ -246,16 +228,48 @@ const EmployeeDocumentsView = () => {
             }));
     }, [employees, user?.id]);
 
-    // Conteos por tipo para tabs
     // Una sola lista: la persona no distingue «solicitud con adjunto» de
     // «documento del expediente», y no tiene por qué.
     const todos = useMemo(() => [...docsDelExpediente, ...allDocs], [docsDelExpediente, allDocs]);
 
+    // ── Los conteos van en la PESTAÑA, y en ningún otro lado ───────────────
+    //
+    // Acá vivía una fila de cuatro baldosas escritas a mano —«Total»,
+    // «Incapacidades», «Constancias», «Con archivo»— con fondo de color propio
+    // y sin `data-surface`. Se retiró entera, y no sólo por el material:
+    //
+    //  · **Tres de las cuatro repetían la pestaña de al lado.** §17.0 es
+    //    explícito: un desglose por categoría dibujado como métricas contesta
+    //    UNA pregunta —qué recorte quiero ver— disfrazada de N, y su lugar es
+    //    la fila de pestañas con el conteo en cada una. Que es donde ya estaba.
+    //  · **Contaban `allDocs` y no `todos`**, o sea que dejaban afuera los del
+    //    expediente. Y la fila entera se escondía con `allDocs.length === 0`:
+    //    para quien sólo tiene documentos del expediente —las 43 personas de
+    //    arriba— no se dibujaba ninguna.
+    //
+    // `Contador` devuelve `null` en cero, así que una pestaña vacía no dibuja
+    // un «0»: es la misma burbuja que usa el resto del portal (§16.2), en vez
+    // del `· N` pegado al rótulo que había acá.
     const counts = useMemo(() => {
         const c = { ALL: todos.length };
         TABS.slice(1).forEach(t => { c[t.key] = todos.filter(d => d.type === t.key).length; });
         return c;
     }, [todos]);
+
+    // Una pestaña vacía no se dibuja, así que la lista que se le pasa al hook
+    // tiene que ser ÉSA y no `TABS`: su contrato es «las visibles AHORA». Con la
+    // lista entera, un `?tab=PERMIT` sin permisos guardados dejaba la vista
+    // filtrando por una pestaña que no estaba en la fila —ninguna píldora
+    // encendida en escritorio, y en el teléfono un `LiquidSelect` con un valor
+    // que no está entre sus opciones—. Se corrige sola cuando llegan los datos:
+    // `activa` se deriva de la dirección en cada render, no se guarda.
+    const pestanas = useMemo(
+        () => TABS.filter(t => counts[t.key] > 0 || t.key === 'ALL')
+            .map(t => ({ ...t, cuenta: counts[t.key] })),
+        [counts],
+    );
+
+    const [tab, setTab] = usePestanaEnUrl(pestanas, 'ALL');
 
     const filtered = useMemo(() => {
         let list = todos;
@@ -288,10 +302,7 @@ const EmployeeDocumentsView = () => {
     // afuera y la accesibilidad viven en un solo lugar.
     const renderFilters = () => (
         <ViewTabBar
-            tabs={TABS.filter(t => counts[t.key] > 0 || t.key === 'ALL').map(t => ({
-                key: t.key,
-                label: `${t.label}${counts[t.key] > 0 && t.key !== 'ALL' ? ` · ${counts[t.key]}` : ''}`,
-            }))}
+            tabs={pestanas}
             activeTab={tab}
             onTabChange={setTab}
             searchValue={search}
@@ -350,43 +361,23 @@ const EmployeeDocumentsView = () => {
             icon={FolderOpen}
             title="Mis documentos"
             filtersContent={renderFilters()}
-            transparentBody={true}
-            fixedScrollMode={false}
+            transparentBody
         >
-            <div className="px-2 md:px-0 pb-10 space-y-4">
+            <div className="p-4 md:p-6 space-y-4">
 
                 {/* Barra de filtros: cuerpo, a la derecha (§17) */}
                 <div className="flex justify-end">{filtrosCuerpo}</div>
-
-                {/* Stats rápidos */}
-                {!loading && allDocs.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-lento)]">
-                        {[
-                            { label: 'Total',         value: allDocs.length,                                               color: 'text-content-2',    bg: 'bg-surface-card'       },
-                            { label: 'Incapacidades', value: allDocs.filter(d => d.type === 'DISABILITY').length,           color: 'text-danger',      bg: 'bg-danger/10'      },
-                            { label: 'Constancias',   value: allDocs.filter(d => d.type === 'CERTIFICATE').length,          color: 'text-chart-1-text',     bg: 'bg-chart-1/10'     },
-                            { label: 'Con archivo',   value: allDocs.filter(d => d.meta?.docUrl).length,                   color: 'text-success',  bg: 'bg-success/10'  },
-                        ].map(s => (
-                            <div key={s.label} className={`${s.bg} border border-border-card rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[var(--shadow-elevation-xs)]`}>
-                                <div className="flex-1 min-w-0">
-                                    <p className={`text-title-lg font-black leading-none ${s.color}`}>{s.value}</p>
-                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5">{s.label}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
 
                 {/* Contenido */}
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[1,2,3,4].map(i => (
-                            <div key={i} className="skeleton rounded-card h-36" style={{ '--stagger-delay': `${i * 80}ms` }} />
+                            <div key={i} className="skeleton rounded-card h-36" />
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
                     <EmptyState
-                        icon={FolderOpen}
+                        icon={search || hasFilters ? Search : FolderOpen}
                         title={search || hasFilters ? 'Sin resultados' : 'Sin documentos aún'}
                         subtitle={search || hasFilters
                             ? 'Intenta con otros filtros o términos de búsqueda.'
@@ -399,9 +390,9 @@ const EmployeeDocumentsView = () => {
                         )}
                     />
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-[var(--dur-slow)]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                         {filtered.map((doc, i) => (
-                            <div key={doc.id} className="animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-slow)]" style={{ animationDelay: `${i * 40}ms` }}>
+                            <div key={doc.id} className="animate-stagger-child" style={{ '--stagger-delay': `${Math.min(i, 8) * 40}ms` }}>
                                 <DocCard doc={doc} />
                             </div>
                         ))}

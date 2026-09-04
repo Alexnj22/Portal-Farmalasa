@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.986.1 — Mis documentos: la ficha vuelve al material canónico y los conteos a la pestaña
+
+Trabajo visual sobre `/mis-documentos`, sin tocar qué documentos se ven ni de
+dónde salen.
+
+**La tarjeta se dibujaba con seis materiales distintos.** Cada tipo de documento
+teñía el borde de la ficha (`border-danger/30`, `border-chart-1/30`…) y le pisaba
+la sombra de hover con un `--shadow-glow-*` propio. Las dos cosas REEMPLAZAN lo
+que trae `data-surface="card"` —el borde del tema y las seis capas del lente—,
+así que una incapacidad y una constancia, que son la misma pieza, no compartían
+material. Hoy el color de la categoría vive donde §17.0 dice que vive: en el
+squircle del ícono, y en ningún otro lado.
+
+Con eso se fue también la **barra de acento vertical**, que es el anti-patrón de
+§31 dibujado con un `<div>` absoluto en vez de con `border-l-4` — la misma marca
+de color a la izquierda de la fila, en la única forma que el gate no ve.
+
+**Los conteos estaban dos veces en la misma pantalla, y una de las dos mentía.**
+Arriba había una fila de cuatro baldosas escritas a mano —«Total»,
+«Incapacidades», «Constancias», «Con archivo»— con fondo de color propio y sin
+`data-surface`; abajo, la fila de pestañas con los mismos números. §17.0 es
+explícito: un desglose por categoría dibujado como métricas contesta UNA pregunta
+disfrazada de N, y su lugar es la pestaña. Se retiró la fila.
+
+Y no era sólo repetición: **contaba `allDocs` y no `todos`**, o sea que dejaba
+afuera los documentos del expediente, y se escondía entera con
+`allDocs.length === 0` — para quien sólo tiene expediente, que son las 43
+personas a las que se les acaba de encender la pantalla, no se dibujaba ninguna.
+
+El número de la pestaña pasó a ser el `Contador` canónico (§16.2) en vez del
+`· N` pegado al rótulo. Devuelve `null` en cero, así que una pestaña vacía no
+dibuja un «0».
+
+**Y la pestaña de la dirección se valida contra las VISIBLES.** `usePestanaEnUrl`
+recibía `TABS` entero, así que un `?tab=PERMIT` sin permisos guardados dejaba la
+vista filtrando por una pestaña que no estaba en la fila: ninguna píldora
+encendida en escritorio, y en el teléfono un `LiquidSelect` con un valor fuera de
+sus opciones. Ahora recibe la lista que de verdad se dibuja.
+
+Lo demás, más chico:
+
+- El botón **Ver** era un `ghost` con tres clases de color escritas encima
+  (`bg-danger/10 border-danger/30 text-danger-text`). Es `secondary size="sm"`,
+  sin pintura a mano.
+- Los dos ramos del pie eran **el mismo bloque escrito dos veces**, y el del
+  expediente abría `doc.meta.docUrl` sin preguntar si existía.
+- `<Badge variant={cfg.variante}>` sobre las fechas de permiso leía una clave que
+  `DOC_CFG` **no tiene**: era `undefined` desde siempre, o sea el default. Se
+  quitó la prop muerta, y los chips de fecha subieron ARRIBA del separador —
+  colgados debajo quedaban fuera de la ficha que esa línea cierra.
+- La grilla iguala alturas (`items-stretch`) y el pie va con `mt-auto`: sin eso
+  una ficha sin nota quedaba con su fecha a media caja y **150px de vacío**
+  debajo, al lado de otra cuyo pie estaba abajo del todo.
+- El cuerpo pasó al relleno canónico (`p-4 md:p-6`), el escalonado de entrada al
+  `animate-stagger-child` de `index.css` —el `--stagger-delay` que había estaba
+  sobre un `.skeleton`, cuyo `animation` es `!important`, así que no hacía nada—
+  y se quitó el `fade` del contenedor, que desvanecía la vista dos veces.
+
+Verificado con capturas a 1512px y en iPhone 13 contra el build, con las filas
+interceptadas en el navegador (no se escribió nada). `gate:design`, `gate:movil`,
+`gate:nombre`, `gate:tdz`, `gate:perf` y `gate:eficiencia` en verde.
+
 ## v2.986.0 — El listado guarda lo que se quita de la campana
 
 Cuatro pedidos del usuario sobre `/notificaciones`, y uno cambió el modelo

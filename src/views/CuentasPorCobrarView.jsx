@@ -1157,6 +1157,10 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
      * deuda. Contra el saldo de UN crédito, una transferencia que paga tres se
      * recortaría a la primera — y ese es justo el caso que hay que soportar. */
     const debeTodo = useMemo(() => sumaDeSaldos(hermanos, credito), [hermanos, credito]);
+    /* Lo que este crédito YA lleva pagado. Acotado a 0: un abono de más allá
+     * —o un total en cero— no puede pintar una barra que se sale de su caja ni
+     * un «pagados» negativo. */
+    const yaPago = Math.max(0, (Number(credito.total) || 0) - (Number(credito.saldo) || 0));
     const escribirMonto = useCallback((v) => {
         const r = hastaElTope(v, debeTodo);
         setMontoDoc(r.valor);
@@ -1199,14 +1203,79 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Cobrar un crédito">
             <div className="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-                <div>
-                    <h3 className="text-h3 font-bold text-content">Recibir un pago</h3>
-                    <p className="text-body-sm text-content-2 mt-1 truncate">{credito.cliente}</p>
-                    {/* CUÁL crédito. Sin esto, con dos del mismo día y el mismo
-                        cliente no había forma de saber en cuál se estaba. */}
-                    <p className="text-micro text-content-3 mt-0.5 truncate">
-                        {fechaCorta(credito.fecha)} · {credito.documento} · debe {formatMoney(credito.saldo)}
-                    </p>
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <h3 className="text-h3 font-bold text-content">Recibir un pago</h3>
+                        <p className="text-body-sm text-content-2 mt-0.5 truncate">{credito.cliente}</p>
+                    </div>
+                    {credito.saldo > 0.004 && (
+                        <Badge {...severidadDeDias(credito.dias, credito.saldo)} size="sm"
+                            icon={severidadDeDias(credito.dias, credito.saldo).grave ? AlertTriangle : undefined}
+                            title={tituloDeDias(credito.dias, credito.saldo)}>
+                            {credito.dias} día{credito.dias === 1 ? '' : 's'}
+                        </Badge>
+                    )}
+                </div>
+
+                {/* CUÁNTO SE DEBE, y CUÁL crédito. Era una línea `text-micro
+                    text-content-3` con las tres cosas seguidas —fecha, documento
+                    y «debe $19.40»— y el usuario reportó justamente eso: «no se
+                    lee cuánto se debe». El número que decide el cobro estaba en
+                    la tipografía MÁS chica del diálogo y en el color de menor
+                    contraste, entre dos datos que no son montos.
+
+                    Es el MISMO bloque que la ficha del crédito, y a propósito:
+                    quien abre este diálogo desde la ficha ve la misma cifra en
+                    el mismo lugar y con el mismo tamaño. */}
+                <div data-surface="card" className="rounded-2xl p-4 space-y-2">
+                    <div className="flex items-end justify-between gap-3 flex-wrap">
+                        <span className="min-w-0">
+                            <span className="block text-micro font-black uppercase tracking-widest text-content-3">
+                                Debe
+                            </span>
+                            <span className="block text-h1 font-black tabular-nums text-content leading-none">
+                                {formatMoney(credito.saldo)}
+                            </span>
+                        </span>
+                        <span className="min-w-0 text-right">
+                            <span className="block text-body-sm text-content-2 truncate">
+                                {credito.documento}
+                            </span>
+                            <span className="block text-micro text-content-3">
+                                {fechaCorta(credito.fecha)}
+                            </span>
+                        </span>
+                    </div>
+
+                    {/* Cuánto lleva pagado, sólo si lleva algo: «$0.00 pagados de
+                        $19.40» es un renglón que no dice nada y compite con el
+                        que sí. */}
+                    {yaPago > 0.004 && (
+                        <div className="space-y-1.5">
+                            <p className="text-micro text-content-2 tabular-nums">
+                                <span className="text-success-text font-bold">{formatMoney(yaPago)}</span>
+                                {' '}pagados de {formatMoney(credito.total)}
+                            </p>
+                            <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden"
+                                data-medida="dato" role="img"
+                                aria-label={`Lleva ${pagadoPct(credito)}% pagado`}>
+                                <span className="block h-full rounded-full bg-success transition-[width]"
+                                    style={{ width: `${pagadoPct(credito)}%` }} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Con otros créditos abiertos, el tope del comprobante NO es
+                        este saldo sino la suma —y es el número que el aviso de
+                        «se ajustó a esa cifra» nombra—. Dicho acá, ese aviso deja
+                        de ser la primera vez que aparece la cifra. */}
+                    {otros.length > 0 && (
+                        <p className="text-micro text-content-3">
+                            Tiene {hermanos.length} créditos en esta sala:
+                            {' '}<span className="text-content-2 font-bold tabular-nums">{formatMoney(debeTodo)}</span>
+                            {' '}en total.
+                        </p>
+                    )}
                 </div>
 
                 {/* Va ARRIBA de todo: si se va a recuperar, conviene decidirlo
@@ -1346,6 +1415,8 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                 const esEste = String(h.id) === String(credito.id);
                                 const puesto = Number(reparto[h.id]) || 0;
                                 const debe = Number(h.saldo) || 0;
+                                const queda = Math.max(0, debe - puesto);
+                                const varias = listaDeCreditos.length > 1;
                                 const seExcede = puesto > debe + 0.004;
                                 return (
                                     /* Cada crédito en su propia tarjeta y no como
@@ -1364,7 +1435,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                        pasarse del saldo importa más que cuál
                                        se abrió. */
                                     <div key={h.id} data-surface="card"
-                                        data-tono={seExcede ? 'danger' : (esEste && listaDeCreditos.length > 1 ? 'brand' : undefined)}
+                                        data-tono={seExcede ? 'danger' : (esEste && varias ? 'brand' : undefined)}
                                         className="rounded-xl p-2.5 flex flex-col items-stretch sm:flex-row sm:items-center gap-2 min-w-0">
                                         {/* En el teléfono los controles bajan a su propio
                                             renglón. Medido en iPhone 13: en una sola fila
@@ -1376,20 +1447,44 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                             que el ancho decida, y acá la decisión es
                                             del tamaño de pantalla. */}
                                         <span className="min-w-0 flex-1">
-                                            <span className="flex items-center gap-1.5 min-w-0">
-                                                <span className={`text-body-sm truncate ${
-                                                    esEste && listaDeCreditos.length > 1
-                                                        ? 'text-brand-text font-bold' : 'text-content'}`}>
-                                                    {fechaCorta(h.fecha)} · {h.documento}
+                                            {/* La identidad del crédito sólo cuando hay
+                                                VARIOS. Con uno solo la repetía del
+                                                encabezado —la misma fecha y el mismo
+                                                documento dos veces en diez renglónes— y
+                                                empujaba abajo lo único que cambia al
+                                                escribir, que es cuánto queda debiendo. */}
+                                            {varias && (
+                                                <span className="flex items-center gap-1.5 min-w-0">
+                                                    <span className={`text-body-sm truncate ${
+                                                        esEste ? 'text-brand-text font-bold' : 'text-content'}`}>
+                                                        {fechaCorta(h.fecha)} · {h.documento}
+                                                        <span className="font-normal text-content-3">
+                                                            {' '}· {h.dias ?? credito.dias} d
+                                                        </span>
+                                                    </span>
+                                                    {/* El aro es visual; el lector de
+                                                        pantalla necesita la palabra. */}
+                                                    {esEste && (
+                                                        <span className="sr-only">— el crédito que abriste</span>
+                                                    )}
                                                 </span>
-                                                {/* El aro es visual; el lector de
-                                                    pantalla necesita la palabra. */}
-                                                {esEste && listaDeCreditos.length > 1 && (
-                                                    <span className="sr-only">— el crédito que abriste</span>
+                                            )}
+                                            {/* Y acá la cuenta, en el tamaño del texto
+                                                normal y no en `micro`: mientras no se
+                                                escribe nada dice lo que debe, y en cuanto
+                                                se escribe dice lo que QUEDA. Es la
+                                                pregunta que se hace en el mostrador
+                                                —«¿con esto ya queda solvente?»— y antes
+                                                obligaba a restar de cabeza. */}
+                                            <span className="block text-body-sm text-content-2 tabular-nums">
+                                                {puesto <= 0.004 ? (
+                                                    <>debe <span className="text-content font-bold">{formatMoney(debe)}</span></>
+                                                ) : queda <= 0.004 ? (
+                                                    <span className="text-success-text font-bold">Queda solvente</span>
+                                                ) : (
+                                                    <>queda <span className="text-content font-bold">{formatMoney(queda)}</span>
+                                                        {' '}de {formatMoney(debe)}</>
                                                 )}
-                                            </span>
-                                            <span className="block text-micro text-content-3">
-                                                debe {formatMoney(debe)} · {h.dias ?? credito.dias} días
                                             </span>
                                         </span>
 

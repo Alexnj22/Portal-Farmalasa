@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.974.6 — El diálogo de abono dice cuánto se debe y cuánto queda
+
+Reporte del usuario: *«mejora la vista de abono, no se lee cuánto se debe, dame
+mejor estructurada la información»*.
+
+El saldo —el número que decide el cobro— estaba en la tipografía **más chica**
+del diálogo (`text-micro`) y en el color de **menor contraste**
+(`text-content-3`), pegado a la fecha y al documento en una sola línea corrida:
+`27/05/2025 · 0000005013_COF · debe $19.40`. Y después se repetía completo dentro
+de la tarjeta del renglón, así que la misma fecha y el mismo documento aparecían
+dos veces en diez renglones mientras la deuda no se leía ninguna.
+
+**Ahora el encabezado lleva el mismo bloque de deuda que la ficha del crédito**:
+`DEBE` y el monto en `text-h1`, la insignia de días arriba a la derecha, y el
+documento y la fecha como contexto. Es el mismo componente visual a propósito —
+quien abre el cobro desde la ficha ve la misma cifra, en el mismo lugar y con el
+mismo tamaño. Si el crédito lleva algo pagado, se suma la barra de avance; si no
+lleva nada, no se dibuja: «$0.00 pagados de $19.40» es un renglón que no dice
+nada y compite con el que sí.
+
+**El renglón de cada crédito dejó de repetir la identidad y pasó a decir lo que
+CAMBIA**: mientras no se escribe nada dice `debe $19.40`, y en cuanto se escribe
+dice `queda $9.40 de $19.40` — o `Queda solvente` cuando la resta da cero. Es la
+pregunta que se hace en el mostrador («¿con esto ya queda al día?») y antes
+obligaba a restar de cabeza. La fecha y el documento vuelven sólo cuando hay
+**varios** créditos en el reparto, que es el caso para el que se escribieron.
+
+**Y con otros créditos abiertos, el encabezado dice el total de la sala.** Ése
+es el tope contra el que se recorta el monto de un comprobante, y hasta hoy la
+primera vez que esa cifra aparecía era dentro del aviso que explicaba el
+recorte — o sea, después de que ya había pasado.
+
 ## v2.974.5 — El último corte del día empieza 15 minutos antes del cierre
 
 Regla del usuario: *«si hacen corte 15 min antes del cierre y lo confirman, no

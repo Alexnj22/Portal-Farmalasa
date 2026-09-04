@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1000.1 — El ítem activo del submenú tiene UN solo indicador
+
+Reportado con captura sobre el grupo Efectivo: el ítem activo llevaba **dos**
+barras verticales, una a ~20px de la otra.
+
+La píldora que marca el ítem activo del menú medía sólo el eje vertical —`top`
+y `height` del ítem— y su geometría horizontal era fija: `left-2 right-2`, o
+sea el ancho de un ítem de PRIMER NIVEL. Un ítem de submenú está 20px más
+adentro (`pl-3` del grupo + `ml-2` del ítem), así que la píldora le sobresalía
+por la izquierda y su barra bicolor —la única del portal con los dos colores
+del logo— caía 20px antes que la barra del propio ítem. Dos indicadores para un
+solo ítem activo, y la píldora 20px más ancha que lo que marcaba.
+
+Con los ítems de primer nivel nunca se vio porque ahí las dos medidas
+coinciden por casualidad: la píldora es exactamente su ancho, y esos ítems no
+llevan barra propia.
+
+Dos correcciones, y hacen falta las dos:
+
+1. **La píldora mide las CUATRO medidas.** `recomputePill` ahora toma también
+   `left` y `width` del ítem activo, así que cae encima de lo que marca sea
+   cual sea su nivel. (Sin `scrollLeft` que sumar: el nav no desplaza en
+   horizontal, a diferencia del eje vertical.)
+2. **El ítem indentado ya no pinta su barra ACTIVA.** Esa barra es el carril
+   del submenú y se queda en su versión tenue para los ítems inactivos; la del
+   activo la pone la píldora. Alinear sin esto tampoco alcanzaba: el ítem se
+   dibuja ENCIMA de la píldora —es un hermano posterior con `relative`—, así
+   que su barra propia habría tapado la bicolor con blanco al 20%.
+
+Medido en el navegador sobre `/caja`: la píldora queda en `x=37 w=226`, idéntica
+al enlace activo, y dentro del ítem activo no queda ninguna barra — las dos que
+sobreviven en el grupo son las de «Bolsas de efectivo» y «Cuentas por cobrar»,
+que es el carril.
+
 ## v2.1000.0 — Lo que entra al corte se dice una vez, en la salida
 
 Mi caja avisaba **tres veces** por el mismo dinero. Los $175.00 de la remesa RIA

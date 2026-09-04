@@ -272,8 +272,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const navRef = useRef(null);
     const groupHeaderRefs = useRef(new Map());
     const itemRefs = useRef(new Map());
-    const [pill, setPill] = useState({ top: 0, height: 44, show: false });
-    const lastGoodPillRef = useRef({ top: 0, height: 44, show: false });
+    // La píldora lleva las CUATRO medidas, no sólo las verticales. Con `left`
+    // y `width` fijos (`left-2 right-2`) caía siempre sobre el ancho de un ítem
+    // de primer nivel, y un ítem de submenú está 20px más adentro (`pl-3` del
+    // grupo + `ml-2` del ítem): sobresalía por la izquierda y su barra bicolor
+    // quedaba a 20px de la barra del propio ítem — DOS indicadores para un solo
+    // ítem activo. Reportado con captura el 2026-09-04 sobre el grupo Efectivo.
+    const [pill, setPill] = useState({ top: 0, left: 8, width: 0, height: 44, show: false });
+    const lastGoodPillRef = useRef({ top: 0, left: 8, width: 0, height: 44, show: false });
 
     const activePath = location.pathname;
     const activeId = activePath.split('/')[1] || '';
@@ -623,7 +629,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         const actRect = activeEl.getBoundingClientRect();
         const top = Math.max(0, actRect.top - navRect.top + navEl.scrollTop);
         const height = Math.max(40, actRect.height);
-        const next = { top, height, show: true };
+        // El nav no desplaza en horizontal, así que acá no hay `scrollLeft` que
+        // sumar — a diferencia del eje vertical.
+        const left = actRect.left - navRect.left;
+        const width = actRect.width;
+        const next = { top, left, width, height, show: true };
         lastGoodPillRef.current = next;
         setPill(next);
     }, [activeId, activePath, visibleGroups, isExpanded, openGroups]);
@@ -761,8 +771,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         const navItemInactive   = 'text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-realce)/0.08)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]';
         const iconActiveColor   = 'text-logo-magenta-soft';
         const iconInactiveColor = 'text-[rgb(var(--sidebar-ink)/0.42)] group-hover:text-[rgb(var(--sidebar-ink)/0.8)]';
+        // Sólo hay barra INACTIVA: es el carril del submenú. La del ítem activo
+        // la pone la píldora —que ahora cae exactamente sobre el ítem—, y
+        // pintar las dos daba el doble indicador. Además el ítem se dibuja
+        // ENCIMA de la píldora (es un hermano posterior con `relative`), así
+        // que dejarle una barra propia taparía la bicolor con blanco al 20%.
         const accentBarInactive = 'bg-[rgb(var(--sidebar-realce)/0.2)]';
-        const accentBarActive   = 'bg-gradient-to-b from-logo-green to-logo-magenta shadow-[var(--shadow-glow-logo-magenta-md)]';
 
         if (comingSoon) {
             return (
@@ -843,8 +857,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <span className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
                 </span>
 
-                {indent && (
-                    <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition ${isActive ? accentBarActive : accentBarInactive}`} />
+                {indent && !isActive && (
+                    <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition ${accentBarInactive}`} />
                 )}
 
                 <div className="relative z-base flex-shrink-0">
@@ -1207,13 +1221,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className="h-px bg-[rgb(var(--sidebar-realce)/0.07)] mx-1 my-2" />
 
                             <div
-                                className={`absolute left-2 right-2 rounded-xl pointer-events-none
-                                    transition-[opacity,top,height] duration-[var(--dur-base)] ease-[var(--ease-spring)]
+                                className={`absolute rounded-xl pointer-events-none
+                                    transition-[opacity,top,left,width,height] duration-[var(--dur-base)] ease-[var(--ease-spring)]
                                     bg-gradient-to-r from-logo-magenta/[0.22] via-logo-magenta/[0.10] to-logo-green/[0.06]
                                     border border-logo-magenta/[0.20]
                                     shadow-[var(--shadow-glass-2)]
                                     ${pill.show ? 'opacity-100' : 'opacity-0'}`}
-                                style={{ top: pill.top, height: pill.height }}
+                                style={{ top: pill.top, left: pill.left, width: pill.width, height: pill.height }}
                             >
                                 {/* Único glow BICOLOR del portal: el filo del ítem activo lleva los dos
                         colores reales del logo (verde y magenta) para que la marca se lea

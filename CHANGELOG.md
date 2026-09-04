@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.984.0 — El aviso del faltante sigue a la tarjeta, no al cierre del día
+
+El aviso de las 8 miraba **cómo cerró la caja** —la diferencia acumulada del
+último corte confirmado— y la pantalla rotula «Faltante» por el **tramo de cada
+corte**. Ayer los dos dieron respuestas opuestas sobre la misma sala: la
+tarjeta de las 21:20 de Salud 3 decía **FALTANTE −$0.45** y el aviso calló,
+porque el día había cerrado exacto (a las 13:01 habían confirmado +$0.45 de
+sobrante y a la noche ya no estaba).
+
+Ahora avisa por **cada corte confirmado que la pantalla marca Faltante**, con
+su mismo número. Y el caso no es una curiosidad contable: un sobrante del
+mediodía que a la noche ya no está es dinero que se movió sin explicación, y
+con el criterio viejo eso era invisible para siempre.
+
+Un aviso por CORTE y no por sala: los números de la tarjeta —lo contado, lo
+esperado, el arrastre— son de un corte, y agregarlos daría una tarjeta que no
+describe a ninguno. Medido sobre 21 días y 126 días-sala: **3 cortes**, o sea
+un aviso cada siete días para las seis salas juntas.
+
+La tarjeta del aviso ahora dibuja la barra **sólo cuando el día no arrastraba
+nada**. Con arrastre, ese corte contó exacto y lo que falta es el sobrante de
+más temprano: ahí sale la misma línea que muestra la tarjeta del corte —«+$0.45
+de sobrante venía del corte de las 13:01»— en vez de un «debía» que no aparece
+en ninguna otra pantalla.
+
 ## v2.983.1 — La tarjeta del corte dice el sobrante que el día ya cargaba
 
 El corte de las 19:02 de La Popular mostraba **$0.00** y el día seguía

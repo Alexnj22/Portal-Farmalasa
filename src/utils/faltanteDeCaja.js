@@ -29,6 +29,16 @@ export function datosDeFaltanteDeCaja(n) {
 
     const contado  = num(m.contado);
     const esperado = num(m.esperado);
+    /* Lo que el día ya cargaba antes de este corte, y de dónde salió — los
+     * mismos dos datos que la tarjeta del corte muestra desde v2.983.1.
+     *
+     * Importa para el aviso porque desde que el criterio sigue a la tarjeta
+     * (2026-09-04) el número del título es el TRAMO, y un tramo negativo con
+     * arrastre positivo describe un corte que contó exacto: lo que falta es el
+     * sobrante de más temprano, que ya no está. Sin esta línea, «faltan $0.45»
+     * sobre un conteo exacto no se puede entender. */
+    const arrastre = num(m.arrastre) ?? 0;
+    const aportes  = num(m.aportes);
 
     return {
         falta: Math.abs(diferencia),
@@ -37,6 +47,9 @@ export function datosDeFaltanteDeCaja(n) {
         corteId: m.corte_id ?? null,
         contado,
         esperado,
+        arrastre,
+        arrastreDesde: m.arrastre_desde ? String(m.arrastre_desde) : null,
+        aportes: aportes == null ? null : aportes,
         /* Qué tan grande es el faltante DENTRO de lo que había que contar. Es la
          * pieza que convierte «faltan $9.85» en algo que se puede juzgar de un
          * vistazo: sobre $319 es un descuadre y sobre $3,190 es redondeo.

@@ -43,8 +43,13 @@ const VUELTA = 2 * Math.PI * R;
  */
 export function AnilloDeFaltante({ datos, isDark }) {
     const tono = isDark ? 'text-danger-text' : 'text-danger';
-    const { contado, esperado } = datos;
-    const hayArco = contado != null && esperado != null && esperado > 0;
+    const { contado, esperado, arrastre } = datos;
+    /* Sin arrastre el arco es honesto: mide el faltante contra lo que debía
+     * haber. Con arrastre, `esperado` es un derivado —lo contado más lo que ya
+     * sobraba— y el arco diría «se contó el 99.97%» sobre un conteo que fue
+     * exacto. Ahí queda el ícono, y el cuerpo explica de dónde viene. */
+    const hayArco = Math.abs(Number(arrastre) || 0) < 0.01
+        && contado != null && esperado != null && esperado > 0;
     const avance = hayArco ? Math.max(0, Math.min(contado / esperado, 1)) : 0;
 
     if (!hayArco) {
@@ -78,10 +83,18 @@ export function AnilloDeFaltante({ datos, isDark }) {
 }
 
 export function CuerpoDeFaltanteDeCaja({ datos, claseTenue, isDark }) {
-    const { falta, sala, hora, contado, esperado, proporcion } = datos;
+    const { falta, sala, hora, contado, esperado, proporcion,
+            arrastre, arrastreDesde, aportes } = datos;
     const tonoTexto = isDark ? 'text-danger-text' : 'text-danger';
     const tonoFondo = isDark ? 'bg-danger-text'   : 'bg-danger';
-    const avance = contado != null && esperado != null && esperado > 0
+    /* La barra sale SÓLO cuando el día no arrastraba nada. Con arrastre, este
+     * corte contó exacto —lo que falta es el sobrante de más temprano, que ya
+     * no está— y `esperado` es un derivado que no aparece en ninguna otra
+     * pantalla: rotularlo «debía» al lado de un conteo exacto manda a buscar
+     * un número que el portal no muestra en ningún lado. Ahí lo que explica el
+     * faltante es el arrastre, y es lo que se dibuja en su lugar. */
+    const conArrastre = Math.abs(Number(arrastre) || 0) >= 0.01;
+    const avance = !conArrastre && contado != null && esperado != null && esperado > 0
         ? Math.max(0, Math.min(contado / esperado, 1)) : null;
 
     return (
@@ -125,6 +138,19 @@ export function CuerpoDeFaltanteDeCaja({ datos, claseTenue, isDark }) {
                         </span>
                     </span>
                 </div>
+            )}
+
+            {/* De dónde viene, cuando el corte propio contó exacto. Dice lo
+                mismo que la tarjeta del corte en la lista, palabra por palabra:
+                las dos hablan del mismo hecho y no pueden decirlo distinto. */}
+            {conArrastre && (
+                <p className={`text-caption font-semibold ${arrastre > 0 ? 'text-warning-text' : tonoTexto}`}>
+                    {arrastre > 0 ? '+' : '−'}{formatMoney(Math.abs(arrastre))} de{' '}
+                    {arrastre > 0 ? 'sobrante' : 'faltante'} venía{' '}
+                    {aportes === 1 && arrastreDesde
+                        ? `del corte de las ${arrastreDesde}`
+                        : `de ${aportes ?? 'varios'} cortes anteriores`}
+                </p>
             )}
 
             {(sala || hora) && (

@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.979.1 — La meta del día se muda a la pestaña «Hoy»
+
+Estaba dentro de la ficha de caja y no encajaba por dos motivos: sólo aparecía
+cuando había UNA ficha —o sea nunca para quien mira las seis salas, que es la
+mayoría de quien abre Cortes— y el tema de esa tarjeta es el turno de caja
+(quién abrió, a qué hora), no las ventas de la sala.
+
+Ahora vive en «Hoy», arriba, que es la pantalla con la que la sala abre la
+mañana. Mismo dato y mismas reglas: la meta del día es la del mes repartida
+entre sus días —la misma definición del aviso de cierre del día— y los montos
+siguen detrás de `dash_meta_sala_vista_completa`, así que sin ese permiso queda
+el porcentaje, igual que en el widget del Inicio.
+
 ## v2.979.0 — A las 8 de la mañana, si ayer la caja cerró con faltante
 
 Un cron nuevo a las 8:00 SV le avisa a la sala cuando su caja cerró el día

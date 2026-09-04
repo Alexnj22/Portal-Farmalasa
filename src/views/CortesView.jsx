@@ -799,11 +799,6 @@ const CortesView = () => {
                         pudeLeerAsistencia={pudeAsistencia}
                         salas={salasMap}
                         cargando={cargandoAper}
-                        // El avance del día sólo se dibuja con el período en HOY:
-                        // `get_meta_sala` contesta siempre por hoy, así que al
-                        // lado de las fichas de otro día estaría hablando de otro
-                        // período sin decirlo.
-                        esHoy={desde === hoySV() && hasta === hoySV()}
                     />
                 )}
 

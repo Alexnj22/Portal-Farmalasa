@@ -34,6 +34,7 @@ import {
     subirComprobante,
 } from '../data/bolsas';
 import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
+import MetaDelDia from '../components/cortes/MetaDelDia';
 import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '../data/cortes';
 /* Los cobros de crédito son la TERCERA fuente de efectivo del día, junto con
  * el cajón y las bolsas. Viven en `creditos` porque el cobro se decide allá;
@@ -984,6 +985,13 @@ export default function MiCajaView({ comoPestana = false }) {
                                 ? 'Solo puedes operar la caja de tu sala, y tu ficha no tiene ninguna asignada. Pídeselo a Talento Humano.'
                                 : 'Todavía no se ha visto ninguna caja abierta, así que no hay nada que mostrar.'} />
                 )}
+
+                {/* Cómo va la sala contra la meta de HOY. Va acá arriba y no
+                    al pie: es la pregunta con la que la sala abre esta pantalla
+                    por la mañana, y al pie de una lista de movimientos la
+                    tendría que ir a buscar. Se dibuja sola o no se dibuja — sin
+                    permiso, sin meta del mes o sin sala elegida no deja hueco. */}
+                {sala && <MetaDelDia branchId={sala} />}
 
                 {sala && cargando && <LoadingState label="Mirando la caja" />}
 

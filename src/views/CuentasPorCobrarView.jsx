@@ -1158,6 +1158,16 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
      * deuda. Contra el saldo de UN crédito, una transferencia que paga tres se
      * recortaría a la primera — y ese es justo el caso que hay que soportar. */
     const debeTodo = useMemo(() => sumaDeSaldos(hermanos, credito), [hermanos, credito]);
+    /* Y el rótulo TIENE que decir de quién es esa cifra. Decía sólo «Debe
+     * $176.06» debajo del campo, dos dedos abajo de un «DEBE $33.36» en el
+     * tamaño más grande del diálogo: dos números distintos con la misma
+     * palabra, y el que manda —el tope— era el que no se explicaba. El usuario
+     * lo reportó así: «$176.06 no me decía nada, no decía deuda total (3
+     * ventas) o algo así para entender». Con un solo crédito los dos números
+     * son el mismo y la aclaración sobra. */
+    const rotuloDelTope = otros.length > 0
+        ? `Deuda total: ${formatMoney(debeTodo)} en ${hermanos.length} créditos`
+        : `Debe ${formatMoney(debeTodo)}`;
     /* Lo que este crédito YA lleva pagado. Acotado a 0: un abono de más allá
      * —o un total en cero— no puede pintar una barra que se sale de su caja ni
      * un «pagados» negativo. */
@@ -1355,7 +1365,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                             clearable={false} />
                         <PortalInput label="Monto del pago" inputMode="decimal" value={montoDoc}
                             onChange={(e) => escribirMonto(e.target.value)}
-                            helperText={`Debe ${formatMoney(debeTodo)}`} />
+                            helperText={rotuloDelTope} />
                         {/* El motivo es lo que quien aprueba va a leer, así que es
                             obligatorio. Con las otras formas el comprobante habla
                             solo; acá no hay comprobante que hable. */}
@@ -1373,7 +1383,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <PortalInput label="Monto del comprobante" inputMode="decimal"
                                     value={montoDoc} onChange={(e) => escribirMonto(e.target.value)}
-                                    helperText={`Debe ${formatMoney(debeTodo)}`} />
+                                    helperText={rotuloDelTope} />
                                 <PortalInput label="Fecha del comprobante" type="date"
                                     value={fechaDoc} onChange={(e) => setFechaDoc(e.target.value)} />
                                 <PortalInput label="Número del comprobante" value={documento} maxLength={40}

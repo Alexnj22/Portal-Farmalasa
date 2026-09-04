@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.980.1 — El tope del monto dice de quién es la cifra
+
+El diálogo de cobrar un crédito mostraba dos números con la misma palabra: un
+**DEBE $33.36** en el tamaño más grande —el saldo del crédito que se abrió— y,
+dos dedos abajo, un **Debe $176.06** debajo del campo del monto. El segundo es
+el tope real, porque un comprobante solo puede pagar varios créditos del mismo
+cliente en la misma sala; pero nada lo decía, así que el número que manda era
+justo el que no se explicaba.
+
+Ahora ese rótulo nombra de quién es la cifra: **«Deuda total: $176.06 en 3
+créditos»**. Con un solo crédito los dos números son el mismo y el rótulo
+vuelve a decir «Debe $33.36» — la aclaración solo aparece cuando hay algo que
+aclarar.
+
 ## v2.980.0 — La ficha de caja separa el efectivo y respeta el conteo a ciegas
 
 Dos defectos en el mismo renglón de la ficha, y el segundo llevaba ahí desde

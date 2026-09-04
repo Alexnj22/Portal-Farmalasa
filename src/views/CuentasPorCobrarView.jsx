@@ -938,6 +938,10 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     const [fechaDoc, setFechaDoc] = useState('');
     const [pos, setPos] = useState('');
     const [montoDoc, setMontoDoc] = useState('');
+    /* Si el último tecleo se recortó contra la deuda. Arriba con los demás
+     * estados y no junto a `escribirMonto`, que es quien lo escribe: cambiar de
+     * forma de pago lo apaga, y eso pasa antes en el archivo. */
+    const [topeado, setTopeado] = useState(false);
     const [ocupado, setOcupado] = useState(false);
 
     // El papel
@@ -1050,6 +1054,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         if (nueva === 'Efectivo') setRepartir(false);
         setArchivo(null); setLectura(null); setErrorLectura(null);
         setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc(''); setMotivo('');
+        setTopeado(false);
 
     }, []);
 
@@ -1147,10 +1152,27 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     // cobra —no hay documento que leer— y con efectivo es lo que se reparte.
     const totalPago = (conPapel || pideAprobacion) ? Number(montoDoc) : sumaRepartida;
 
+    /* Contra QUÉ se topea: todo lo que el cliente debe en la sala, que es la
+     * misma vara con la que el lector rechaza un comprobante por más de la
+     * deuda. Contra el saldo de UN crédito, una transferencia que paga tres se
+     * recortaría a la primera — y ese es justo el caso que hay que soportar. */
+    const debeTodo = useMemo(() => sumaDeSaldos(hermanos, credito), [hermanos, credito]);
+    const escribirMonto = useCallback((v) => {
+        const r = hastaElTope(v, debeTodo);
+        setMontoDoc(r.valor);
+        setTopeado(r.topeado);
+    }, [debeTodo, setMontoDoc, setTopeado]);
+
     const bloqueado = lectura && lectura.veredicto !== 'OK';
     const cuadra = Number.isFinite(totalPago) && totalPago > 0
         && Math.abs(sumaRepartida - totalPago) < 0.005;
-    const listo = !bloqueado && cuadra
+    /* Ninguna cuenta puede recibir más de lo que debe. El campo ya lo topea al
+     * escribir, pero un borrador recuperado trae los montos de hace un rato y
+     * el saldo pudo bajar en el medio: abonar de más deja el crédito en
+     * negativo allá, y eso es el cliente pagando dos veces. */
+    const seExcedeAlguno = listaDeCreditos.some(
+        (h) => (Number(reparto[h.id]) || 0) > (Number(h.saldo) || 0) + 0.004);
+    const listo = !bloqueado && cuadra && !seExcedeAlguno
         && (!conPapel || (archivo && lectura))
         && (!pideAprobacion || motivo.trim().length >= 5);
 
@@ -1201,9 +1223,17 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                 {/* ── El papel, ANTES de los montos ───────────────────────── */}
                 {conPapel && (
                     <div className="space-y-3">
-                        <FileField label={`Foto del comprobante (${forma.toLowerCase()})`}
-                            accept="image/*" value={archivo}
-                            onChange={leer} onClear={() => leer(null)} />
+                        {/* `file` y no `value`: es como se llama la prop, y con
+                            el nombre equivocado la fila no mostraba nunca el
+                            archivo elegido ni el botón de quitarlo — se veía
+                            igual que antes de adjuntar. Quitar lo resuelve el
+                            propio campo llamando a `onChange(null)`, así que
+                            tampoco hacía falta un `onClear` que no existe.
+                            Y acepta PDF: es lo que la app del banco descarga. */}
+                        <FileField label={`Comprobante (${forma.toLowerCase()})`}
+                            accept="image/*,application/pdf" file={archivo}
+                            hint="Una foto o el PDF del banco"
+                            onChange={leer} />
 
                         {leyendo && <LoadingState label="Leyendo el comprobante" />}
 
@@ -1254,7 +1284,8 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                             options={FORMAS_REALES.map((f) => ({ value: f, label: f }))}
                             clearable={false} />
                         <PortalInput label="Monto del pago" inputMode="decimal" value={montoDoc}
-                            onChange={(e) => setMontoDoc(e.target.value)} />
+                            onChange={(e) => escribirMonto(e.target.value)}
+                            helperText={`Debe ${formatMoney(debeTodo)}`} />
                         {/* El motivo es lo que quien aprueba va a leer, así que es
                             obligatorio. Con las otras formas el comprobante habla
                             solo; acá no hay comprobante que hable. */}
@@ -1271,7 +1302,8 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                         {conPapel && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <PortalInput label="Monto del comprobante" inputMode="decimal"
-                                    value={montoDoc} onChange={(e) => setMontoDoc(e.target.value)} />
+                                    value={montoDoc} onChange={(e) => escribirMonto(e.target.value)}
+                                    helperText={`Debe ${formatMoney(debeTodo)}`} />
                                 <PortalInput label="Fecha del comprobante" type="date"
                                     value={fechaDoc} onChange={(e) => setFechaDoc(e.target.value)} />
                                 <PortalInput label="Número del comprobante" value={documento} maxLength={40}
@@ -1281,6 +1313,19 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                         options={posDisponibles.map((p) => ({ value: p.codigo, label: p.nombre }))} />
                                 )}
                             </div>
+                        )}
+
+                        {/* El aviso vive acá y no pegado al campo porque el
+                            campo es uno de dos —el del comprobante y el del
+                            pago que espera firma—, y los dos desembocan en
+                            esta misma sección. Dice el número: «no se puede»
+                            sin decir hasta cuánto obliga a probar a ciegas. */}
+                        {topeado && (
+                            <Notice variant="warning">
+                                {credito.cliente} debe {formatMoney(debeTodo)} en total, así que
+                                el monto se ajustó a esa cifra. Un pago por más de la deuda no se
+                                puede registrar.
+                            </Notice>
                         )}
 
                         {/* ── A qué créditos se aplica ────────────────────── */}
@@ -1369,7 +1414,8 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                             <span className="w-24">
                                                 <PortalInput label="Abona" labelDenso inputMode="decimal" placeholder="0.00"
                                                     value={reparto[h.id] ?? ''}
-                                                    onChange={(e) => setReparto((r) => ({ ...r, [h.id]: e.target.value }))} />
+                                                    onChange={(e) => setReparto((r) => (
+                                                        { ...r, [h.id]: hastaElTope(e.target.value, debe).valor }))} />
                                             </span>
                                             {/* «Todo» es el caso normal —se paga el
                                                 crédito completo— y escribir $35.57
@@ -1454,6 +1500,33 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 function sumaDeSaldos(hermanos, credito) {
     const lista = hermanos?.length ? hermanos : [credito];
     return lista.reduce((t, h) => t + (Number(h.saldo) || 0), 0);
+}
+
+/**
+ * El monto que se deja escribir, topeado a lo que se debe.
+ *
+ * Pedido del usuario (3-sep): «en el input de monto no permita ingresar una
+ * cantidad mayor a la de la deuda pendiente». No es comodidad: el freno ya
+ * existía DESPUÉS —un comprobante por más de lo que el cliente debe se rechaza
+ * al leerlo, y el reparto tiene que cuadrar exacto contra el documento—, así
+ * que escribir de más era escribir algo que iba a ser rechazado tres campos
+ * más abajo, sin que el campo dijera nada mientras tanto.
+ *
+ * Se TOPEA y no se borra la tecla: quien escribe 100 sobre una deuda de 47.50
+ * ve 47.50 y el aviso dice por qué. Un campo que se queda mudo al teclear se
+ * lee como un teclado que no anda.
+ *
+ * Devuelve también si topeó, porque el aviso no se puede deducir del valor:
+ * 47.50 escrito a mano y 47.50 recortado se ven idénticos.
+ */
+function hastaElTope(valor, tope) {
+    const v = String(valor ?? '');
+    const n = Number(v);
+    // Sin tope conocido —la cartera todavía no cargó— no se recorta nada: un
+    // tope de cero dejaría el campo en cero y sin explicación.
+    if (!Number.isFinite(n) || !Number.isFinite(tope) || tope <= 0) return { valor: v, topeado: false };
+    if (n <= tope + 0.004) return { valor: v, topeado: false };
+    return { valor: tope.toFixed(2), topeado: true };
 }
 
 
@@ -1557,8 +1630,9 @@ function PedirCorreccion({ credito, abono, onClose, onListo }) {
                             options={FORMAS.map((f) => ({ value: f, label: f }))} clearable={false} />
                         {conPapel && (
                             <>
-                                <FileField label="Foto del comprobante" accept="image/*" value={archivo}
-                                    onChange={leer} onClear={() => leer(null)} />
+                                <FileField label="Comprobante" accept="image/*,application/pdf"
+                                    file={archivo} hint="Una foto o el PDF del banco"
+                                    onChange={leer} />
                                 {leyendo && <LoadingState label="Leyendo el comprobante" />}
                                 {bloqueado && (
                                     <Notice variant="danger" icon={AlertTriangle}>

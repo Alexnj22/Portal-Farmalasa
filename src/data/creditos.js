@@ -232,7 +232,12 @@ export async function leerPagoDeCredito(archivo, { forma, saldo }) {
         const { data, error } = await supabase.functions.invoke('leer-pago-de-credito', {
             body: {
                 imagenBase64: base64,
-                mimeType: archivo.type || 'image/jpeg',
+                /* El tipo que se declara es el del DATO que va, no el del
+                 * archivo que se eligió: la reducción devuelve JPEG siempre,
+                 * y un PDF se manda tal cual porque no se reduce. Decir
+                 * `image/png` sobre bytes JPEG es pedirle al lector que
+                 * adivine. */
+                mimeType: archivo.type === 'application/pdf' ? 'application/pdf' : 'image/jpeg',
                 forma: String(forma || '').toLowerCase(),
                 saldo,
             },

@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts"
 import { callGemini, parseGeminiJson } from "../_shared/gemini.ts"
+import { TITULAR, esElTitular, elTitularEstaEnElPapel, norm } from "../_shared/titular.ts"
 
 // ════════════════════════════════════════════════════════════════════════════
 // Lee el comprobante con el que un cliente abona un crédito, y LLENA el
@@ -38,39 +39,6 @@ import { callGemini, parseGeminiJson } from "../_shared/gemini.ts"
 // sola. El modelo aporta datos; la regla se puede leer acá.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** A nombre de quién tiene que estar. Es `EMPRESA.patrono` de
- *  `src/constants/empresa.js` — el nombre LEGAL, que es el de las cuentas y el
- *  de un cheque, y no el comercial «José Alemán V.».
- *  ⚠️ Las dos copias son la misma y se mueven juntas. */
-const TITULAR = "JOSÉ RUTILIO ALEMÁN VÁSQUEZ"
-
-/** Sin acentos, sin puntos, en mayúsculas y con un solo espacio. Un nombre
- *  impreso viene de mil formas y comparar cadenas crudas rechaza las buenas. */
-const norm = (v: unknown) => String(v ?? "")
-  .normalize("NFD").replace(/[̀-ͯ]/g, "")
-  .toUpperCase().replace(/[^A-Z0-9 ]+/g, " ").replace(/\s+/g, " ").trim()
-
-/**
- * ¿El beneficiario es el titular, «más o menos»?
- *
- * El usuario lo pidió así —«que sea Jose Rutilio Aleman Vasquez (o más o menos
- * el nombre así)»— y tiene razón: un comprobante bancario recorta, abrevia e
- * invierte («ALEMAN VASQUEZ JOSE R», «J RUTILIO ALEMAN V»). Exigir la cadena
- * exacta rechazaría pagos buenos con el cliente enfrente.
- *
- * La regla: **al menos un apellido** —ALEMAN o VASQUEZ, que es lo que
- * identifica— y **dos de las cuatro** palabras del nombre. Con eso «JOSE
- * MARTINEZ» no pasa y «ALEMAN VASQUEZ J» sí.
- */
-function esElTitular(nombre: unknown): boolean {
-  const t = norm(nombre)
-  if (!t) return false
-  const partes = new Set(t.split(" "))
-  const apellido = partes.has("ALEMAN") || partes.has("VASQUEZ")
-  const cuantas = ["JOSE", "RUTILIO", "ALEMAN", "VASQUEZ"].filter((p) => partes.has(p)).length
-  return apellido && cuantas >= 2
-}
-
 /** Dos montos son el mismo si difieren menos de un centavo. */
 const mismoMonto = (a: unknown, b: unknown) => {
   const x = Number(a), y = Number(b)
@@ -88,6 +56,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
   "tipo_documento": "TRANSFERENCIA | DEPOSITO | OTRO",
   "beneficiario": "el nombre de quien RECIBE el dinero, tal cual está impreso, o null",
   "ordenante": "el nombre de quien ENVÍA el dinero, o null",
+  "nombres_del_papel": ["TODOS los nombres de persona o empresa impresos, estén donde estén"],
   "banco": "el banco que emite el comprobante, o null",
   "monto": 0.00,
   "moneda": "USD" | null,
@@ -107,6 +76,17 @@ Reglas:
   destino". El ordenante es quien paga: "De", "Origen", "Cuenta debitada".
   Si sólo hay un nombre y no se puede saber cuál es, ponelo en "beneficiario" y
   dejá "ordenante" en null.
+- ⚠️ DESDE QUÉ LADO ESTÁ EMITIDO EL PAPEL. Una NOTA DE CARGO —también
+  "comprobante de débito", "cargo a cuenta"— la emite el banco de quien PAGA: la
+  cuenta que encabeza el papel es la que se debitó, así que su titular (el que
+  aparece bajo "A nombre de", "Titular", "Cliente") es el ORDENANTE y NO el
+  beneficiario. En esos papeles el que RECIBE es el nombre que acompaña al tipo
+  de transacción o al concepto: "Transfer365 JUAN PEREZ" significa que JUAN
+  PEREZ recibe. Una NOTA DE ABONO o un comprobante de depósito es al revés: la
+  cuenta del encabezado es la que recibe.
+- "nombres_del_papel" lista TODO nombre propio impreso —encabezado, cuerpo, pie,
+  concepto—, tal cual, aunque venga cortado a la mitad. No lo completes ni lo
+  corrijas: si dice "JOSE RUTILIO ALEMA", escribí "JOSE RUTILIO ALEMA".
 - "monto" es el importe transferido, como número, sin símbolo ni separadores de
   miles. Si hay comisión aparte, el monto es el que RECIBE el beneficiario.
 - "fecha" es la de la operación, no la de impresión ni la de hoy.
@@ -120,6 +100,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
   "tipo_documento": "CHEQUE | OTRO",
   "beneficiario": "el nombre escrito en la línea PÁGUESE A LA ORDEN DE, o null",
   "ordenante": "el titular de la cuenta, impreso abajo o al pie, o null",
+  "nombres_del_papel": ["TODOS los nombres de persona o empresa impresos, estén donde estén"],
   "banco": "el banco impreso en el cheque, o null",
   "monto": 0.00,
   "moneda": "USD" | null,
@@ -139,6 +120,8 @@ Reglas:
   devuelve la fecha tal cual, sin corregirla.
 - "referencia" es el número de cheque, normalmente arriba a la derecha. NO uses el
   número de cuenta ni el de ruta impreso abajo en tinta magnética.
+- "nombres_del_papel" lista TODO nombre propio impreso, tal cual, aunque venga
+  cortado. No lo completes ni lo corrijas.
 - Si un dato no está, null. No lo inventes.`,
 
   tarjeta: `Estás mirando el VOUCHER de un pago con tarjeta en un punto de venta (POS),
@@ -191,6 +174,16 @@ Deno.serve(async (req) => {
     const { imagenBase64, mimeType, forma, saldo } = await req.json()
     if (!imagenBase64) return json({ error: "SIN_IMAGEN" }, 400)
 
+    /* El comprobante del banco llega en PDF tan seguido como en foto —es lo
+     * que la app descarga—, y hasta el 2026-09-03 el portal lo rechazaba antes
+     * de mandarlo: el reductor de imágenes lo cargaba en un `<img>`, que un PDF
+     * no puede llenar, y el aviso decía «No se pudo leer la foto». El lector
+     * abre las dos cosas; lo que había era una tubería hecha sólo para fotos. */
+    const tipo = String(mimeType || "image/jpeg").toLowerCase()
+    if (!tipo.startsWith("image/") && tipo !== "application/pdf") {
+      return json({ error: "FORMATO_NO_SOPORTADO" }, 400)
+    }
+
     const clave = String(forma || "").toLowerCase()
     const prompt = PROMPTS[clave]
     if (!prompt) return json({ error: "FORMA_SIN_LECTOR" }, 400)
@@ -199,7 +192,7 @@ Deno.serve(async (req) => {
     // esto, conviene decirlo y ofrecer reintentar antes que colgar la pantalla.
     const leido = parseGeminiJson<Record<string, unknown>>(await callGemini({
       prompt,
-      inlineData: [{ mimeType: mimeType || "image/jpeg", data: imagenBase64 }],
+      inlineData: [{ mimeType: tipo, data: imagenBase64 }],
       jsonOutput: true,
       temperature: 0,
       timeoutMs: 45_000,
@@ -234,8 +227,22 @@ Deno.serve(async (req) => {
       posSinReconocer = !pos
     }
 
+    /* El titular se busca DOS veces, y la segunda es la que evita el freno de
+     * más. Primero en la casilla del que recibe, que es la respuesta correcta
+     * cuando el papel la trae rotulada. Y después en TODO el papel, porque el
+     * rótulo del que recibe no es uno solo: en una nota de cargo el que recibe
+     * va pegado al tipo de transacción y «A nombre de» es quien paga. Ahí, leer
+     * la casilla equivocada invierte la operación y rechaza un pago que entró.
+     * Costó el abono del 2026-09-02 con el cliente en el mostrador. */
+    const nombresDelPapel = clave === "tarjeta" ? [] : [
+      leido.beneficiario, leido.ordenante,
+      ...(Array.isArray(leido.nombres_del_papel) ? leido.nombres_del_papel : []),
+    ]
+    const nombradoEnElPapel = clave === "tarjeta" ? null : elTitularEstaEnElPapel(nombresDelPapel)
+
     const coincide = {
       titular: clave === "tarjeta" ? null : esElTitular(leido.beneficiario),
+      nombradoEnElPapel,
       cabeEnElSaldo: tieneMonto && Number.isFinite(tope) ? monto <= tope + 0.004 : null,
       pos: clave === "tarjeta" ? !posSinReconocer : null,
     }
@@ -249,10 +256,19 @@ Deno.serve(async (req) => {
     else if (leido.legible === false) veredicto = "ILEGIBLE"
     else if (clave === "tarjeta" && leido.aprobado === false) veredicto = "NO_APROBADO"
     else if (!tieneMonto) veredicto = "SIN_MONTO"
-    else if (coincide.titular === false) veredicto = "OTRO_BENEFICIARIO"
+    // El freno es «nuestro nombre NO está en el papel» —o sea, el cliente le
+    // pagó a otro—. Que esté y no se haya podido decir que es quien recibe es
+    // otra cosa, y se avisa: un freno de más se paga con el cliente esperando.
+    else if (coincide.titular === false && !nombradoEnElPapel) veredicto = "OTRO_BENEFICIARIO"
     else if (coincide.cabeEnElSaldo === false) veredicto = "MONTO_MAYOR_AL_SALDO"
 
     const avisos: string[] = []
+    if (coincide.titular === false && nombradoEnElPapel) {
+      avisos.push(
+        "El comprobante nombra a la empresa, pero no en la casilla de quien recibe el dinero. "
+        + "Comprueba que el pago haya entrado antes de aceptarlo.",
+      )
+    }
     if (posSinReconocer) {
       avisos.push("No se reconoció el POS del voucher. Compruébalo antes de aceptar el pago.")
     }

@@ -35,7 +35,38 @@
  */
 const LADO_PARA_LEER = 1400;
 
+/* ── El PDF no pasa por el lienzo ───────────────────────────────────────────
+ *
+ * Un comprobante de banco llega en PDF tan seguido como en foto: es lo que la
+ * app del banco descarga y lo que el cliente reenvía. Y hasta el 2026-09-03
+ * adjuntarlo fallaba SIEMPRE, con un aviso que mandaba a mirar donde no era:
+ * la reducción de abajo lo carga en un `<img>`, que un PDF no puede llenar, así
+ * que saltaba el `onerror` y la pantalla decía «No se pudo leer la foto».
+ *
+ * Va tal cual, sin reducir: no hay nada que reducir —el banco ya lo emite en el
+ * tamaño en que se imprime— y el lector lo abre igual que una imagen.
+ *
+ * El tope es del CANAL y no del papel: la petición viaja en JSON y base64 crece
+ * un tercio, así que un PDF grande no llega y el fallo sería un 500 sin
+ * explicación. Un comprobante de banco pesa cientos de kB; el que cruce esto no
+ * es un comprobante. */
+const MB_MAX_PDF = 6;
+
+function pdfABase64(archivo) {
+    if (archivo.size > MB_MAX_PDF * 1024 * 1024) {
+        return Promise.reject(new Error(
+            `El PDF pesa ${(archivo.size / (1024 * 1024)).toFixed(1)} MB y el máximo son ${MB_MAX_PDF} MB.`));
+    }
+    return new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result || '').split(',')[1] || '');
+        fr.onerror = () => rej(new Error('No se pudo leer el archivo.'));
+        fr.readAsDataURL(archivo);
+    });
+}
+
 export function aBase64Reducido(archivo) {
+    if (archivo?.type === 'application/pdf') return pdfABase64(archivo);
     return new Promise((res, rej) => {
         const url = URL.createObjectURL(archivo);
         const img = new Image();

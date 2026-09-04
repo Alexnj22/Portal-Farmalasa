@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.974.3 — El comprobante del banco: PDF, nombre cortado y monto topeado a la deuda
+
+Reporte del usuario: *«quisieron pagar un crédito con este comprobante pero no
+les permitió»*, con una **nota de cargo de Bancoagrícola** adjunta, más dos
+pedidos sobre la misma pantalla: que el monto no deje escribir más de lo que se
+debe, y que se pueda adjuntar un PDF.
+
+**El rechazo tenía DOS causas, y cada una alcanzaba sola.**
+
+1. **El banco corta el nombre.** El destino de esa transferencia está impreso
+   como «Transfer365 JOSE RUTILIO ALEMA» — ALEMÁN sin la N. La comprobación
+   exigía la palabra entera (`ALEMAN` o `VASQUEZ`), así que el nombre BUENO no
+   pasaba. Ahora se compara por prefijo de cuatro letras o más: «ALEMA» es
+   ALEMÁN y «VASQUE» es VÁSQUEZ, y «JOSEFA» sigue sin ser JOSÉ.
+2. **En una nota de cargo, «A nombre de» es quien PAGA.** El papel lo emite el
+   banco de quien manda el dinero: la cuenta del encabezado es la que se
+   debitó. Leerla como el beneficiario invierte la operación — y ahí el
+   comprobante de un pago que sí entró se rechaza como «a nombre de otro». El
+   lector ahora sabe distinguir una nota de cargo de una de abono, y el freno
+   dejó de colgar de una sola casilla: si el titular no aparece en NINGÚN lugar
+   del papel, se frena igual que antes (el cliente le pagó a otro); si aparece
+   pero no en la casilla de quien recibe, **se avisa y se deja seguir**, porque
+   un freno de más se paga con el cliente esperando en el mostrador.
+
+La comparación de nombres se mudó a `_shared/titular.ts` y quedó anclada en
+`tests/unit/titularDelComprobante.test.js` con los dos nombres reales de ese
+comprobante: lo que decide es si alguien puede pagar su crédito, y eso no puede
+vivir sin prueba.
+
+**El PDF se rechazaba SIEMPRE, y el aviso mandaba a mirar donde no era.** La
+reducción de imágenes cargaba el archivo en un `<img>` —que un PDF no puede
+llenar—, saltaba el `onerror` y la pantalla decía «No se pudo leer la foto».
+Ahora un PDF va tal cual, sin reducir (ya viene del banco en su tamaño), con
+tope de 6 MB por el canal; el lector lo abre igual que una imagen. El campo
+acepta `image/*` y `application/pdf`, y de paso recibe la prop que existe
+(`file` y no `value`): con el nombre equivocado la fila nunca mostraba el
+archivo elegido ni el botón de quitarlo.
+
+**El monto no deja escribir más de lo que el cliente debe.** Se topea al
+teclear, contra la suma de sus créditos en la sala — la misma vara con la que el
+lector rechaza un comprobante por más de la deuda—, y cuando recorta lo dice con
+la cifra. No es comodidad: el freno ya existía tres campos más abajo, así que
+escribir de más era escribir algo que iba a ser rechazado sin que el campo
+avisara mientras tanto. El reparto por cuenta se topea igual contra el saldo de
+cada crédito, y el botón de cobrar ya no habilita un reparto que se pasa
+—un borrador recuperado trae montos de hace rato y el saldo pudo bajar—: abonar
+de más deja el crédito en negativo y al cliente pagando dos veces.
+
 ## v2.974.2 — La pantalla de caja relee el sistema cada vez que se abre
 
 Pregunta del usuario: *«con eso de 30 min, ¿no debe ser cada minuto o cada vez

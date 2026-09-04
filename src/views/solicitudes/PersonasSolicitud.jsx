@@ -116,13 +116,23 @@ export const FichaPersona = ({ rotulo, persona, sala = null, cuando, apunte, vac
                 cuando estaba— colgando del cargo, en gris y en la letra más
                 chica de la ficha: en una bandeja que mezcla siete salas, saber
                 de cuál es cada quien no es una nota al pie. */}
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-                <p className={`text-micro font-black uppercase tracking-widest ${tinta}`}>{rotulo}</p>
-                {/* Sin `title`: en un span que no se puede apuntar no llega ni
-                    al lector de pantalla ni al teléfono (§15.10). Los nombres
-                    de las siete salas son cortos y entran enteros. */}
+            {/* `flex-wrap` y no `truncate`: en media columna —que es como se ve
+                esta ficha dentro de la campana— el rótulo y la sala NO entran
+                en el mismo renglón, y las dos son el dato. Hasta el 2026-09-04
+                acá decía que «los nombres de las siete salas son cortos y
+                entran enteros»: son OCHO y una es `Administracion`, así que con
+                «PENDIENTE DE» al lado el renglón pedía ~343px sobre 296
+                disponibles. El `shrink-0` del chip además dejaba inerte a su
+                propio `truncate` —un hijo que no puede achicarse no recorta
+                nada—, o sea que el texto se salía de la tarjeta en vez de
+                acomodarse. Cuando no entra, la sala baja a su propio renglón y
+                `ml-auto` la deja igual arriba a la derecha; recortarla a
+                «ADMINISTRA…» era perder justo lo que se pidió hacer visible, y
+                sin `title` (§15.10) no habría forma de recuperarlo. */}
+            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 mb-1.5">
+                <p className={`text-micro font-black uppercase tracking-widest whitespace-nowrap ${tinta}`}>{rotulo}</p>
                 {sucursal && (
-                    <span className="flex items-center gap-1 min-w-0 shrink-0">
+                    <span className="flex items-center gap-1 min-w-0 ml-auto">
                         <Building2 size={11} strokeWidth={2.5} className="shrink-0 text-content-3" />
                         <span className="text-micro font-black uppercase tracking-widest text-content-2 truncate">
                             {sucursal}

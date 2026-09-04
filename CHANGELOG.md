@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.977.2 — La sucursal deja de salirse de la ficha de la solicitud
+
+Reportado desde la campana: en el detalle de una solicitud pendiente, la
+sucursal de la ficha «Pendiente de» se salía por el borde derecho de la tarjeta
+y el rótulo quedaba partido en dos renglones.
+
+Dentro de la campana esas dos fichas van en media columna, y ahí el rótulo y la
+sala no entran en el mismo renglón. El comentario del propio archivo decía que
+«los nombres de las siete salas son cortos y entran enteros»: son **ocho** y una
+es `Administracion`, así que con «PENDIENTE DE» al lado el renglón pedía ~343px
+sobre los ~296 disponibles. Y el chip llevaba `shrink-0`, que deja **inerte a su
+propio `truncate`** —un hijo que no puede achicarse no recorta nada—: en vez de
+acomodarse, el texto se salía de la caja.
+
+Ahora el renglón envuelve. Cuando no entra, la sala baja a su propio renglón y
+`ml-auto` la deja igual arriba a la derecha. Recortarla a «ADMINISTRA…» era
+perder justo lo que se pidió hacer visible (2026-08-26: «que salga en esa misma
+card de qué sucursal… para que sea más visible») y sin `title` —§15.10, un span
+que no se puede apuntar no llega ni al lector de pantalla ni al teléfono— no
+habría forma de recuperarlo.
+
+Medido en el navegador sobre los dos tamaños de `--text-micro` (9px de
+escritorio y 10px de puntero grueso) y siete anchos de tarjeta:
+
+| ancho | antes | después |
+|---|---|---|
+| 180px | desborda 48px, rótulo en 2 líneas | 0 desborde, 1 línea |
+| 200px | desborda 28px | 0 |
+| 215px | desborda 13px | 0 |
+| 230px | 0, pero rótulo partido en 2 | 0, 1 línea |
+| ≥250px | ok | ok, **mismo alto** (55px) |
+
+O sea que sólo crece cuando de verdad no entraba (+13px); de 250px para arriba
+no cuesta un píxel. La sala se lee entera en los seis anchos.
+
 ## v2.977.1 — Las fichas de caja topan en 3 columnas
 
 La fila de cajas de Cortes se abría a cuatro columnas en pantallas anchas. Son

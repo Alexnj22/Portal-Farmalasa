@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import MotivoAjusteModal from './tabminmax/MotivoAjusteModal';
+import ReglaDeDespachoModal from './tabminmax/ReglaDeDespachoModal';
 import FilterBar from '../../components/common/FilterBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
@@ -24,6 +25,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useNavigate } from 'react-router-dom';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import { useAuth } from '../../context/AuthContext';
 import { applyPresRule } from '../../utils/presentacion';
 import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant, hasDispatchRisk } from './tabminmax/helpers';
@@ -279,23 +281,37 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {},
  * persona lo hubiera decidido sola.
  *
  * `manual_por` a veces es un nombre y a veces una cuenta (sale de
- * `auth.email()`), así que NO pasa por `shortEmployeeName`: no es
- * `employees.name`. Cuando es una cuenta se muestra sólo lo de antes de la
- * arroba — el dominio es siempre el mismo y sólo gasta ancho.
+ * `auth.email()`), así que primero se RESUELVE contra el índice de personas y
+ * recién ahí el nombre sale del canónico. Sin ficha no hay nombre que acortar:
+ * se muestra lo de antes de la arroba, porque el dominio es siempre el mismo.
  */
-function FirmaDeAjuste({ rotulo, quien, persona, px = 20 }) {
-    const visible = String(quien ?? '').includes('@') ? String(quien).split('@')[0] : quien;
+/** Busca una ficha por cualquiera de sus claves. Ver el índice en `openHistory`. */
+const quienEs = (indice, ...claves) => {
+    for (const k of claves) {
+        if (!k) continue;
+        const hit = indice[String(k).trim().toLowerCase()];
+        if (hit) return hit;
+    }
+    return null;
+};
+
+function FirmaDeAjuste({ rotulo, quien, persona, px = 20, clase = 'text-micro font-bold text-content-2' }) {
+    // Con ficha, el nombre sale del CANÓNICO — así «edwin.nunez@farmalasa.app» y
+    // «EDWIN ALEXANDER NUNEZ JOYA» se ven los dos como la misma persona. Sin
+    // ficha no hay nombre que acortar: se muestra lo que haya, sin el dominio,
+    // que es siempre el mismo y sólo gasta ancho.
+    const visible = persona?.name
+        ? shortEmployeeName(persona.name)
+        : String(quien ?? '').split('@')[0];
     return (
-        <LiquidTooltip content={quien}>
+        <LiquidTooltip content={persona?.name || quien}>
             <span className="inline-flex items-center gap-1.5 min-w-0">
                 {rotulo && <span className="text-micro font-semibold text-content-3 shrink-0">{rotulo}</span>}
                 {/* El canónico y no un `<img>`: trae el aro de estado. Se le pasa la
-                    FICHA entera cuando se la pudo resolver por nombre — sin `id` el
-                    aro no sale nunca, y una firma sin aro se ve igual que la de
-                    alguien presente. Cuando `manual_por` es una cuenta y no un
-                    nombre no hay ficha que buscar, y ahí sale la inicial. */}
+                    FICHA entera cuando se la pudo resolver — sin `id` el aro no sale
+                    nunca, y una firma sin aro se ve igual que la de alguien presente. */}
                 <AvatarConEstado emp={persona ?? { name: visible }} px={px} radio="rounded-full" mostrarChip={false} />
-                <span className="text-micro font-bold text-content-2 truncate">{visible}</span>
+                <span className={`${clase} truncate`}>{visible}</span>
             </span>
         </LiquidTooltip>
     );
@@ -380,6 +396,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         handleZeroAllBranches,
         saveDraftCell,
         saveDraftPair,
+        reglaRow, setReglaRow, aplicandoRegla, setAplicandoRegla,
         unhideProduct,
         unhideAll,
         resetToCalc,
@@ -957,18 +974,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             variant="danger"
                                                             size="sm"
                                                             uppercase={false}
-                                                            className={`shrink-0${puedeVerReglas ? ' relative blanco-tactil' : ''}`}
-                                                            {...(puedeVerReglas
-                                                                ? clickable(e => {
-                                                                    e.stopPropagation();
-                                                                    // Lleva a la pestaña, no al producto: el buscador de
-                                                                    // Reglas es estado local de esa vista y no se puede
-                                                                    // prellenar por la URL. Sin el permiso de esa pestaña
-                                                                    // el badge no navega — un enlace a una vista que no se
-                                                                    // puede abrir es peor que ninguno.
-                                                                    navigate('/pedidos?tab=reglas');
-                                                                })
-                                                                : {})}
+                                                            className="shrink-0 relative blanco-tactil"
+                                                            {...clickable(e => {
+                                                                e.stopPropagation();
+                                                                // Abre el detalle, no la pantalla de Reglas: allá se ve
+                                                                // CÓMO se despacha el producto pero no por qué su MAX no
+                                                                // da ni cuánto habría que subirlo, y la resta queda para
+                                                                // la cabeza de quien mira. El enlace a Reglas está adentro
+                                                                // del modal, y sólo con el permiso de esa pestaña.
+                                                                setReglaRow(row);
+                                                            })}
                                                         >
                                                             REGLA
                                                         </Badge>
@@ -1641,13 +1656,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         si el aprobador lo hubiera decidido solo. */}
                                     <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap pt-0.5 border-t border-divider -mx-4 px-4 pt-3">
                                         {origen?.requested_by_name && (
-                                            <FirmaDeAjuste rotulo="Pidió" quien={origen.requested_by_name} persona={empPhotoMap[origen.requested_by_name]} />
+                                            <FirmaDeAjuste rotulo="Pidió" quien={origen.requested_by_name} persona={quienEs(empPhotoMap, origen.requested_by_name)} />
                                         )}
                                         {historyRow._manual_por && (
                                             <FirmaDeAjuste
                                                 rotulo={origen ? 'Aprobó' : 'Puso'}
                                                 quien={historyRow._manual_por}
-                                                persona={empPhotoMap[historyRow._manual_por]}
+                                                persona={quienEs(empPhotoMap, historyRow._manual_por, String(historyRow._manual_por ?? "").split("@")[0])}
                                             />
                                         )}
                                         <span className="text-micro text-content-3 ml-auto tabular-nums">{fecha}</span>
@@ -1665,7 +1680,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             )}
                             {!historyLoading && historyLogs.map(log => {
                                 const d = log.details || {};
-                                const empPhoto = empPhotoMap[log.user_name];
+                                // Por `user_id` primero: es el id del empleado y no cambia. El
+                                // `user_name` es lo que se escribió ESE día — la misma persona
+                                // figura como «EDWIN NUÑEZ» y como «EDWIN ALEXANDER NUNEZ JOYA».
+                                const empPhoto = quienEs(empPhotoMap, log.user_id, log.user_name);
                                 // La solicitud que originó esta entrada, si la hubo. El log
                                 // guarda `request_id` y los nombres, pero NO el motivo que se
                                 // escribió al pedir — ese vive en la solicitud y se cruza acá.
@@ -1741,7 +1759,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 persona. */}
                                             {d.requested_by_name && (
                                                 <div className="flex items-center mt-1.5">
-                                                    <FirmaDeAjuste rotulo="Solicitó" quien={d.requested_by_name} persona={empPhotoMap[d.requested_by_name]} />
+                                                    <FirmaDeAjuste rotulo="Solicitó" quien={d.requested_by_name} persona={quienEs(empPhotoMap, d.requested_by_id, d.requested_by_name)} />
                                                 </div>
                                             )}
                                             {/* El POR QUÉ de la solicitud y el de la decisión.
@@ -1774,6 +1792,30 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             <PhotoLightbox src={zoomPhoto} alt="Foto del producto" onClose={() => setZoomPhoto(null)} zClass="z-toast" />
 
             {/* ── Confirm publish modal ── */}
+            {/* El detalle de la regla y su sugerencia. `key` por producto·sala:
+                abrirlo sobre otra fila monta un componente nuevo en vez de
+                arrastrar el estado de la anterior — mismo criterio que
+                MotivoAjusteModal. */}
+            <ReglaDeDespachoModal
+                key={reglaRow ? `regla-${reglaRow.erp_product_id}-${reglaRow._erp_sucursal_id}` : 'sin-regla'}
+                open={!!reglaRow}
+                row={reglaRow}
+                guardando={aplicandoRegla}
+                onVerReglas={puedeVerReglas ? () => { setReglaRow(null); navigate('/pedidos?tab=reglas'); } : null}
+                onAceptar={async (min, max) => {
+                    setAplicandoRegla(true);
+                    // El MISMO camino que la celda de la tabla: escribe en el
+                    // borrador o en el valor vigente según corresponda, y deja su
+                    // línea en la bitácora. Un segundo escritor acá se desviaría
+                    // el día que esa regla cambie.
+                    await saveDraftPair(reglaRow.erp_product_id, reglaRow._erp_sucursal_id,
+                        String(min), String(max), reglaRow.product_name);
+                    setAplicandoRegla(false);
+                    setReglaRow(null);
+                }}
+                onClose={() => setReglaRow(null)}
+            />
+
             <MotivoAjusteModal
                 key={motivoRow ? `${motivoRow.erp_product_id}-${motivoRow._erp_sucursal_id}` : 'sin-fila'}
                 open={!!motivoRow}

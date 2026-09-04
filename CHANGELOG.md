@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.995.0 — La firma sale de la ficha, y el badge REGLA abre su detalle con la sugerencia
+
+**La misma persona se nombra de TRES formas, y el índice sólo conocía una.**
+Reportado sobre una aprobación que salía sin foto y con «edwin.nunez» de nombre:
+
+| de dónde sale la firma | qué guarda |
+|---|---|
+| `employees.name` | `EDWIN ALEXANDER NUNEZ JOYA` |
+| `audit_logs.user_name` | `EDWIN NUÑEZ` — lo que se escribió ESE día |
+| `product_stock_params.manual_por` | `edwin.nunez@farmalasa.app` — es `auth.email()` |
+
+El índice de personas estaba armado por `employees.name`, así que acertaba en
+**una de las tres**. Y el modo de falla es mudo: sale la inicial en un círculo y
+el nombre crudo, que se lee como «esa persona no tiene foto cargada».
+
+Ahora el índice lleva las cuatro claves —`id`, `name`, `username`, `email`— y la
+búsqueda entra por el **id** cuando lo hay: `audit_logs.user_id` es el id del
+empleado, y el `user_name` es sólo lo que se tecleó ese día. Con la ficha
+resuelta, el nombre sale del canónico (`shortEmployeeName`), así que
+«edwin.nunez@farmalasa.app» y «EDWIN ALEXANDER NUNEZ JOYA» se ven los dos como
+la misma persona.
+
+**Por qué no lo cazó un gate.** Uno sí: `foto-sin-identidad` denunció el objeto
+armado a mano sin `id`, y por eso `fetchEmployeesBasic` ahora lo trae. Lo que
+ningún gate que lee el fuente puede ver es que **la clave con la que se busca no
+coincide con la clave con la que se indexó** — eso sólo se ve con la pantalla
+delante. Es la misma lección del canon móvil: el gate lee el fuente y hay cosas
+que desde el fuente son una caja cerrada.
+
+**El badge REGLA abre su detalle en vez de mandar a otra pantalla.** Llevar a
+Reglas de despacho mostraba CÓMO se despacha el producto, pero no por qué su MAX
+no da ni cuánto habría que subirlo — dos datos en dos pantallas y la resta a
+cargo de quien mira. El modal nuevo dice el paquete de despacho, el MAX de hoy, y
+la sugerencia con un botón **Aceptar sugerencia**.
+
+El número sugerido no es una corazonada: es `ceil(0.4 × paquete)`, el mismo
+umbral del 40% con el que `get_pedido_preview` decide si repone una unidad
+completa. El MIN mantiene la proporción del par que ya existía. Y aplicar la
+sugerencia usa `saveDraftPair`, el mismo camino que la celda de la tabla —
+escribe en el borrador o en el vigente según corresponda y deja su línea en la
+bitácora—; un segundo escritor se desviaría el día que esa regla cambie.
+
+El enlace a Reglas de despacho queda adentro del modal, para el caso real de que
+lo que esté mal sea la regla y no el MAX, y sólo con el permiso de esa pestaña.
+
+
 ## v2.994.0 — El historial de Min·Máx dice el motivo una sola vez
 
 Dos reportes sobre la misma pantalla.

@@ -70,3 +70,28 @@ export function formatDominant(units, presentations) {
     // ceil: boxes are indivisible — always round up so the displayed quantity covers the unit threshold
     return `≥${Math.ceil(n / factor)} ${tipo.trim()}`;
 }
+
+/**
+ * El MÁX más chico que hace que la regla de despacho se pueda cumplir.
+ *
+ * `hasDispatchRisk` dice que el par NO alcanza; esto dice hasta dónde hay que
+ * subirlo. El umbral es el mismo 40% de `get_pedido_preview`: con el stock en
+ * cero, el pedido redondea a una unidad de despacho recién cuando el MÁX llega
+ * al 40% del paquete. Se usa `ceil` porque un MÁX es entero y quedarse un
+ * decimal abajo deja el producto exactamente igual de trabado.
+ *
+ * El MÍN acompaña: se conserva la proporción del par que ya existía —quien puso
+ * 3·6 quería la mitad— y nunca queda por encima del MÁX nuevo menos uno, que es
+ * lo que exige `chk_min_lt_max`.
+ */
+export function sugerenciaParaLaRegla(minActual, maxActual, dispatchPresFactor, dispatchMultiplo) {
+    const paquete = Number(dispatchPresFactor || 0) * Number(dispatchMultiplo || 1);
+    if (!paquete) return null;
+    const maxNuevo = Math.max(1, Math.ceil(0.4 * paquete));
+    const proporcion = maxActual > 0 ? Number(minActual || 0) / Number(maxActual) : 0.5;
+    const minNuevo = Math.min(
+        Math.max(0, Math.round(maxNuevo * proporcion)),
+        Math.max(0, maxNuevo - 1),
+    );
+    return { paquete, minNuevo, maxNuevo };
+}

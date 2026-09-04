@@ -127,8 +127,15 @@ export function fetchEmployeeByEmail(email) {
 // quién buscar y **el aro de estado no sale nunca** — una firma sin aro se ve
 // exactamente igual que la de alguien presente, que es el silencio que esa
 // categoría del gate existe para cerrar.
+//
+// `username` y `email` van por otra razón, medida el mismo día: la misma persona
+// se nombra de TRES formas según de dónde salga la firma. `employees.name` dice
+// «EDWIN ALEXANDER NUNEZ JOYA», `audit_logs.user_name` guardó «EDWIN NUÑEZ» —lo
+// que se escribió ese día— y `product_stock_params.manual_por` guarda
+// «edwin.nunez@farmalasa.app», que es `auth.email()`. Un índice por nombre falla
+// en dos de las tres.
 export function fetchEmployeesBasic() {
-    return supabase.from('employees').select('id,name,photo_url');
+    return supabase.from('employees').select('id,name,username,email,photo_url');
 }
 
 // Por RPC y no leyendo `audit_logs`: el mismo motivo que en `branches.js`. El

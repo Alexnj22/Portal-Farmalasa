@@ -151,6 +151,11 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const [historyRow,      setHistoryRow]      = useState(null);
     const [historyLogs,     setHistoryLogs]     = useState([]);
     const [historySolicitudes, setHistorySolicitudes] = useState([]);
+    // La fila cuyo MAX no alcanza la regla de despacho, mientras se mira su
+    // detalle. Vive acá y no en el JSX porque este hook es donde está TODO el
+    // estado de la vista — `TabMinMax.jsx` quedó sólo con el render.
+    const [reglaRow,       setReglaRow]       = useState(null);
+    const [aplicandoRegla, setAplicandoRegla] = useState(false);
     const [historyLoading,  setHistoryLoading]  = useState(false);
     const [empPhotoMap,     setEmpPhotoMap]     = useState({});
     const [bodegaTooltip,   setBodegaTooltip]   = useState(null); // { productId, pending:[{erp_sucursal_id,draft_min,draft_max}], rect }
@@ -886,13 +891,31 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             fetchEmployeesBasic(),
             fetchSolicitudesDeProducto(row.erp_product_id, row._erp_sucursal_id),
         ]);
-        // El mapa lleva la PERSONA, no sólo su foto: `AvatarConEstado` necesita el
-        // `id` para pintar el aro de estado, y sin él la firma de alguien de
-        // vacaciones se ve idéntica a la de alguien presente. Antes guardaba la
-        // URL suelta y el id se perdía acá, con el dato ya en la mano.
+        /* El índice de personas, por las CUATRO claves con las que aparece una
+         * firma. El mapa lleva la ficha entera y no sólo la foto: sin `id`,
+         * `AvatarConEstado` no puede pintar el aro de estado.
+         *
+         * Cuatro claves porque la misma persona se nombra distinto según de
+         * dónde salga la firma (medido el 2026-09-04):
+         *
+         *   employees.name                → «EDWIN ALEXANDER NUNEZ JOYA»
+         *   audit_logs.user_name          → «EDWIN NUÑEZ» (lo que se escribió ese día)
+         *   product_stock_params.manual_por → «edwin.nunez@farmalasa.app» (auth.email())
+         *
+         * Un índice por nombre acertaba en una de las tres, y el modo de falla es
+         * el de siempre: no hay error, sale la inicial en un círculo y el nombre
+         * crudo. Se ve como si esa persona no tuviera foto cargada.
+         *
+         * El `id` es la clave BUENA —`audit_logs.user_id` es el id del empleado,
+         * verificado— y las otras tres son la red para lo que sólo trae texto.
+         */
         const photoMap = {};
         await signPhotosDeep(emps || []);
-        (emps || []).forEach(e => { if (e.name) photoMap[e.name] = e; });
+        (emps || []).forEach(e => {
+            [e.id, e.name, e.username, e.email].forEach(k => {
+                if (k) photoMap[String(k).trim().toLowerCase()] = e;
+            });
+        });
         setHistoryLogs(logs || []);
         setHistorySolicitudes(sols || []);
         setEmpPhotoMap(photoMap);
@@ -1329,6 +1352,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         currentEmployee,
         historyRow, setHistoryRow,
         historyLogs, historySolicitudes,
+        reglaRow, setReglaRow, aplicandoRegla, setAplicandoRegla,
         historyLoading,
         empPhotoMap,
         bodegaTooltip,

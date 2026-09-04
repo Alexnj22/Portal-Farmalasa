@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.974.2 — La pantalla de caja relee el sistema cada vez que se abre
+
+Pregunta del usuario: *«con eso de 30 min, ¿no debe ser cada minuto o cada vez
+que se entra a la vista para esa sucursal?»*. Cada vez que se entra — y sale
+gratis, porque la lectura ya iba **después** de pintar.
+
+Desde v2.970.0 la pantalla se pinta con el espejo (instantáneo) y la respuesta
+del sistema de la caja **corrige** la tarjeta en vez de estrenarla. Con eso, la
+única razón para no preguntar siempre era ahorrar la lectura — y ahorrarla no
+valía la pena: el espejo se refresca cada 30 minutos, y todo lo que se hace del
+otro lado (cerrar el turno, cerrar la caja, abrir otra) no llega hasta el
+barrido siguiente. Esa noche una sala cerró su turno allá y siguió viendo
+«Abierta».
+
+**Cada minuto, en cambio, sería el error caro:** treinta veces el gasto contra
+el sistema de la caja para contestarle a nadie —el mismo de los ~25.000 disparos
+diarios que `gate:eficiencia` destapó en la vigilancia de cortes— y aun así
+llegaría tarde el minuto que importa. Lo que hay que refrescar es cuando alguien
+MIRA, no cuando pasa el reloj.
+
+Se quita `hayQuePreguntarleAlOrigen`, que decidía cuándo valía la pena: ya no
+hay nada que decidir.
+
 ## v2.974.1 — Con el día cerrado y la caja abierta, el portal relee el sistema
 
 Reclamo de la sala, la noche del 3-sep: *«ya cerré el turno, pero en el portal

@@ -928,7 +928,8 @@ export async function estadoDeCaja(sala) {
 /**
  * El mismo estado, pero preguntado al sistema de la caja.
  *
- * Queda para REVALIDAR, no para pintar: ver `hayQuePreguntarleAlOrigen`. Sigue
+ * Queda para REVALIDAR, no para pintar: la pantalla se pinta con `caja_estado`
+ * y esto CORRIGE la tarjeta después. Sigue
  * siendo la única respuesta que sabe algo que el portal no puede saber —que
  * alguien abrió o cerró el turno desde la caja misma, sin pasar por acá—.
  */
@@ -936,45 +937,14 @@ export async function estadoDeCajaEnElOrigen(sala) {
     return operar({ accion: 'estado', sala });
 }
 
-/** La cadencia del barrido de aperturas (30 min) más un margen. */
-const FRESCURA_MAXIMA_SEG = 40 * 60;
-
-/**
- * ¿La respuesta local alcanza, o además hay que preguntarle al origen?
+/* ── `hayQuePreguntarleAlOrigen` se quitó el 3-sep ─────────────────────────
  *
- * Dos casos y nada más, porque son los dos únicos en los que el portal puede
- * estar diciendo algo que ya no es cierto:
- *
- * 1. **Dice que está CERRADA.** Abrir el turno desde la caja misma no pasa por
- *    el portal, así que ese cambio el espejo no lo tiene hasta el próximo
- *    barrido. Es además el momento del día en que la sala mira la pantalla.
- * 2. **El espejo dejó de mantenerse.** Su cadencia son 30 minutos; más de 40
- *    quiere decir que el barrido no está corriendo, y entonces la respuesta es
- *    de otro rato aunque parezca de ahora.
- *
- * 3. **Dice ABIERTA y el día ya tiene su Z.** Es una contradicción visible: el
- *    Z es el cierre de la jornada, así que una caja que sigue abierta después
- *    es o un espejo viejo o algo que hay que ver ahora mismo. Y es justo el
- *    rato en que la sala está mirando la pantalla.
- *
- *    Se agrega porque el supuesto que estaba escrito acá —«cerrar es el acto
- *    que el portal hace»— dejó de ser cierto: mientras las salas usen las dos
- *    pantallas, cerrar el turno y cerrar la caja también pasan por el sistema.
- *    La noche del 3-sep costó una sala mirando «Abierta» media hora después de
- *    haber cerrado allá, con el reclamo exacto: «es muy lento».
- *
- * Fuera de esos tres, con la caja ABIERTA y el espejo al día no se pregunta:
- * la respuesta local es instantánea y la del origen tarda hasta 7 s. Si aun así
- * cambió por fuera, lo que la pantalla ofrece —cortar, sacar— pasa por
- * `operar-caja`, que lee el panel vivo y lo rechaza con su motivo.
+ * Decidía CUÁNDO valía la pena releer el sistema de la caja en vez de contestar
+ * con el espejo. Hoy se relee SIEMPRE, y por eso ya no hay nada que decidir: la
+ * lectura va después de pintar —corrige la tarjeta, no la estrena— así que no
+ * cuesta espera, y ahorrarla dejaba a la sala mirando un estado de hasta media
+ * hora atrás. Ver el comentario largo en `MiCajaView`.
  */
-export function hayQuePreguntarleAlOrigen(estado) {
-    if (!estado || estado.error) return true;
-    if (!estado.abierta) return true;
-    if ((estado.cortes || []).some((c) => c.tipo === 'Z')) return true;
-    return (estado.frescura_seg ?? Infinity) > FRESCURA_MAXIMA_SEG;
-}
-
 /**
  * Abrir la caja del turno.
  *

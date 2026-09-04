@@ -26,7 +26,7 @@ import useCerrarBolsa from '../hooks/useCerrarBolsa';
 import useResolverCorte from '../hooks/useResolverCorte';
 import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, iniciarTurno,
-    estadoDeCajaEnElOrigen, hayQuePreguntarleAlOrigen, fetchBolsas,
+    estadoDeCajaEnElOrigen, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     leerBoleta, pedirCorreccion,
@@ -484,18 +484,29 @@ export default function MiCajaView({ comoPestana = false }) {
         setEmbolsaron(new Map((quienes || []).map((q) => [q.id, q.name])));
         setBolsas(mias.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
 
-        /* ── Y RECIÉN ACÁ, SI HACE FALTA, SE LE PREGUNTA AL ORIGEN ───────────
+        /* ── Y RECIÉN ACÁ SE LE PREGUNTA AL ORIGEN, SIEMPRE ─────────────────
          *
-         * Sólo en los dos casos en que el portal puede estar diciendo algo que
-         * ya no es cierto (ver `hayQuePreguntarleAlOrigen`): que la caja figure
-         * cerrada —abrir el turno desde la caja misma no pasa por acá— o que el
-         * espejo haya dejado de mantenerse. Con la caja abierta y el espejo al
-         * día no se pregunta, que es el caso de casi todo el día.
+         * Va DESPUÉS de pintar y nunca antes: su respuesta CORRIGE la tarjeta,
+         * no la estrena. Por eso puede ir siempre y no cuesta un segundo de
+         * espera — que es lo que v2.970.0 vino a sacar, cuando entrar a la
+         * pantalla era un spinner de hasta 7 s contra el sistema de la caja.
          *
-         * Va DESPUÉS de pintar y nunca antes: su respuesta corrige la tarjeta,
-         * no la estrena. Y si el origen no contesta, el `catch` no toca nada —
-         * lo que ya está en pantalla salió de la base y sigue siendo cierto. */
-        if (!hayQuePreguntarleAlOrigen(vivo)) return;
+         * Antes se preguntaba sólo en tres casos, para ahorrar la lectura.
+         * Ahorrarla no valía la pena: el espejo se refresca cada 30 minutos, y
+         * todo lo que se hace en el sistema de la caja —cerrar el turno,
+         * cerrarla, abrir otra— no llega hasta el barrido siguiente. La noche
+         * del 3-sep una sala cerró su turno allá y siguió viendo «Abierta»:
+         * «¿cada cuánto verifica? es muy lento».
+         *
+         * Y el costo es el correcto: una lectura por VEZ QUE ALGUIEN ABRE la
+         * pantalla, no una por minuto. Mirar cada minuto sería 30 veces el
+         * gasto contra el sistema de la caja para contestarle a nadie —el error
+         * que ya costó los ~25.000 disparos diarios de la vigilancia de cortes—,
+         * y aun así llegaría tarde el minuto que importa. Lo que hay que
+         * refrescar es cuando alguien MIRA.
+         *
+         * Si el origen no contesta, el `catch` no toca nada: lo que está en
+         * pantalla salió de la base y sigue siendo cierto. */
         const delOrigen = await estadoDeCajaEnElOrigen(sala).catch(() => ({ error: true }));
         if (token !== cargaRef.current || delOrigen?.error || delOrigen?.ok !== true) return;
         setEstado(delOrigen);

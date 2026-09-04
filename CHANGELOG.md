@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.990.1 — El aviso de la mañana dice «apertura», que es como se busca
+
+Reportado por el usuario con una captura: buscó **«apertu»** en
+`/notificaciones` y el aviso de la mañana **no salió**.
+
+No era el buscador. La búsqueda del listado mira `title` y `body` —y sólo esas
+dos columnas—, y el aviso decía *«Las 6 salas abrieron caja»* sin la palabra
+**apertura** en ninguna parte. La pantalla de cajas ya llama a ese mismo acto
+«Apertura» (el rótulo de las fichas, «Monto de apertura» en Mi caja) y es la
+palabra que usó el usuario al pedir esto: el aviso era el único sitio del portal
+que nombraba el hecho con otro verbo, y por eso no se podía encontrar.
+
+**El modo de falla es el peor que hay:** la búsqueda no da error, da **cero** —
+que se lee igual que «ese aviso no existe» o «no llegó». Un aviso al que no se
+puede volver es un aviso que sólo sirve el minuto en que suena.
+
+Ahora el título es *«Las 6 salas hicieron su apertura de caja»* / *«⚠️ Salud 3
+no ha hecho su apertura de caja»*, y el cuerpo abre con una frase —«La apertura
+de caja fue entre las 06:53 y las 07:10»— en vez de arrancar con la lista: ése
+es el texto que se lee donde la tarjeta no se sabe pintar y el que viaja en el
+push, así que tiene que decir algo por sí solo. El aviso que ya había salido se
+reescribió en la misma migración para que también se encuentre.
+
 ## v2.990.0 — El ajuste de Min·Máx dice quién lo pidió, quién lo aprobó y por qué
 
 Un MIN/MAX puesto a mano ya tenía badge, pero era **mudo**: todo lo que

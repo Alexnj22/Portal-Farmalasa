@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.995.1 — El gate de eficiencia deja de leer 10 GB por corrida
+
+**La herramienta que vigila el costo de los crons era la consulta más cara de
+la base.** El 2026-09-04 el portal dejó de responder mientras otra sesión
+miraba el estado de los crons. La causa no estaba en el portal: era la sección
+B de `npm run gate:eficiencia`.
+
+Su consulta preguntaba, por cada cron, cuántas veces corrió en 24 h, cuántas
+fallaron y cuál fue el último fallo — **tres subconsultas correlacionadas**
+sobre `cron.job_run_details`. Esa tabla no tiene más índice que su clave
+primaria sobre `runid`, y es de `supabase_admin`: no podemos agregarle uno
+(`must be owner of table job_run_details`). Así que cada subconsulta es un
+barrido completo. Con **90 crons** en producción son ~200 barridos de 64 MB.
+
+Medido: **10,689 MB leídos y hasta 11,162 ms por llamada**, con 61 llamadas
+que sumaron **595 GB**. Y ese es el daño real: una lectura de 11 s ocupa una
+ranura del pool de PostgREST todo ese tiempo, así que correr la sección unas
+pocas veces seguidas llena el pool y **todo el portal empieza a devolver 504**
+— el mismo modo de falla que la sección «Cuando el portal no responde» de
+CLAUDE.md describe para `puntos_tickets_de_ficha_que_no_acumula`.
+
+La corrección es una sola pasada: filtrar las 24 horas una vez, agregar por
+`jobid`, y sacar el último fallo del mismo `array_agg` ordenado en lugar de
+volver a entrar a buscarlo. **61 MB por llamada contra 10,689 — 175× menos**,
+y el gate devuelve exactamente los mismos números (verificado corriéndolo
+contra producción: mismas corridas, mismas tasas de fallo, mismo desglose).
+
+**Y la sección F destapó tres funciones más.** Con la ventana de
+`pg_stat_statements` ya poblada, `get_product_drill_summary` (1,659 MB por
+llamada), `get_product_drill_lines` (1,390 MB) y `get_product_sales_agg_jsonb`
+(698 MB) aparecieron sin declarar. Quedan en `scripts/bloques-por-llamada.json`
+como **deuda medida** — declaradas con su techo, no auditadas.
+
+Las tres ya figuraban **sanas** en `scripts/planes-genericos.json` con 78, 192
+y 426–715 ms. No es una contradicción: la sección E mira el reloj y la F mira
+el trabajo, y una función puede ser rápida leyendo 1.6 GB con el caché
+caliente. Es exactamente por lo que la sección F existe.
+
+Lo que le queda a las dos del detalle de producto está escrito en su motivo: su
+CTE `inv` trae **todas** las facturas del rango sin filtrar por producto y está
+`MATERIALIZED`, así que la cerca le prohíbe entrar por `idx_sii_product_invoice`
+—que existe— cuando el camino barato es al revés: un producto en un mes son
+pocos renglones y el rango de un año son ~180,000 facturas. Invertirlo hay que
+medirlo **en el caso grande**, no sólo en el chico.
+
 ## v2.995.0 — La firma sale de la ficha, y el badge REGLA abre su detalle con la sugerencia
 
 **La misma persona se nombra de TRES formas, y el índice sólo conocía una.**

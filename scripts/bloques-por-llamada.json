@@ -1,6 +1,6 @@
 {
   "_comment": "Lo que cada función lee POR LLAMADA, en bloques de 8 kB. Sección F de `npm run gate:perf`. Una función que cruza el umbral y no está acá FALLA el gate — no porque leer mucho esté mal, sino porque tiene que estar DECIDIDO y escrito que lee mucho. Los techos se miden, no se inventan, y sólo bajan.",
-  "_medido": "2026-09-01 (las seis primeras) y 2026-09-03 (las cuatro que el gate levantó ese día). Fuente: `npm run portal:lento` y la sección F de `npm run gate:perf`. El 2026-09-04 se agregaron las cinco reconstrucciones diarias de rollup, que el gate levantó al correr después de su ventana nocturna.",
+  "_medido": "2026-09-01 (las seis primeras) y 2026-09-03 (las cuatro que el gate levantó ese día). Fuente: `npm run portal:lento` y la sección F de `npm run gate:perf`. El 2026-09-04 se agregaron las cinco reconstrucciones diarias de rollup, que el gate levantó al correr después de su ventana nocturna. El 2026-09-04, tras el corte de las 595 GB del gate de eficiencia, se agregaron las tres del detalle de producto que la seccion F levanto al correr con la ventana ya poblada.",
   "_umbral": 25000,
   "_umbral_comment": "25,000 bloques = 195 MB por llamada. Por debajo no se declara nada: un umbral que obliga a declarar medio catálogo produce un manifiesto que nadie lee. La que tumbó el portal leía 1,528,584.",
   "_como_se_lee": "`bloques` es el TECHO, ~1.3x lo medido — margen para el ruido, no para una regresión. `deuda: true` significa que el número está declarado pero NO auditado: nadie miró todavía si ese costo es el trabajo real o un plan malo. Un techo declarado protege contra que CREZCA; no promete que esté bien.",
@@ -75,6 +75,21 @@
     "ventas_para_puntos": {
       "bloques": 50000,
       "motivo": "AUDITADA el 2026-09-02: NO es un defecto. 39,821 bloques / 51 ms, y el plan es correcto de punta a punta — índices en todos los nodos, ningún barrido, ninguna estimación reventada. El costo son 8,222 sondeos por clave primaria: para cada una de las 4,111 facturas de la ventana de 7 días pregunta a `customers` si el cliente acumula y a `puntos_enviados` si ya se envió. De las 4,111 quedan 181 candidatas y hoy devuelve 0. O sea que el costo NO está en cómo está escrita sino en la CADENCIA: rehace la ventana de 7 días cada minuto. Bajarlo es una decisión sobre el comportamiento (acortar la ventana pierde la red que atrapa facturas que llegan tarde), no un arreglo. 236 MB de los 311 se van en esos sondeos."
+    },
+    "get_product_drill_summary": {
+      "bloques": 276000,
+      "deuda": true,
+      "motivo": "1,659 MB por llamada (212,310 bloques, 7 llamadas) el 2026-09-04. Es el detalle de UN producto al abrirlo. Su CTE `inv` trae TODAS las facturas del rango sin filtrar por producto y esta MATERIALIZED, asi que la cerca prohibe entrar por `idx_sii_product_invoice`, que es el camino barato: un producto en 30 dias son pocos renglones y el rango entero son ~180,000 facturas al ano. Medido a mano con un rango de 30 dias da 93 MB / 1,961 ms; el promedio de 1,659 MB sale de rangos largos. El techo lo fija el caso caro observado. NO auditada: invertir el join exige medir en el caso GRANDE, no solo en el chico. Su tiempo (78 ms) figura sano en planes-genericos.json — la seccion E no ve bloques, que es justo por lo que existe esta."
+    },
+    "get_product_drill_lines": {
+      "bloques": 232000,
+      "deuda": true,
+      "motivo": "1,390 MB por llamada (177,867 bloques, 7 llamadas) el 2026-09-04. Los renglones del mismo detalle de producto, con la misma forma y el mismo CTE materializado por delante. Se corrige junto con get_product_drill_summary o no se corrige. NO auditada."
+    },
+    "get_product_sales_agg_jsonb": {
+      "bloques": 117000,
+      "deuda": true,
+      "motivo": "698 MB por llamada (89,374 bloques, 5 llamadas) el 2026-09-04. Es el listado de productos vendidos del periodo — un agregado sobre el rango entero, asi que leer mucho es el trabajo real y no un plan malo. Sus 426-715 ms ya estaban medidos y declarados sanos en planes-genericos.json. NO auditada: falta comprobar si el filtro de busqueda entra por indice o barre."
     }
   }
 }

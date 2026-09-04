@@ -646,19 +646,43 @@ if (!SOLO_LOCAL) {
      * evita un `IN ()` vacío, que no es SQL válido. */
     const sinFuncion = [...CRONS.filter(c => !c.slug).map(c => c.job), 'x']
       .map(j => `'${String(j).replace(/'/g, "''")}'`).join(', ');
+    /* UNA sola pasada por el registro de corridas, agregada por cron.
+     *
+     * Esto era tres subconsultas correlacionadas —corridas, fallidas y el
+     * último fallo—, o sea tres recorridos de cron.job_run_details POR CADA
+     * cron. Esa tabla no tiene más índice que su PK sobre runid (es de
+     * supabase_admin: no podemos agregarle uno), así que cada recorrido es un
+     * barrido completo. Con 90 crons eran ~200 barridos de 64 MB: medido el
+     * 2026-09-04, **10 GB leídos y hasta 11 s por llamada**, con 61 llamadas
+     * que sumaron 595 GB.
+     *
+     * Y el daño no se queda en el gate: una lectura de 11 s ocupa una ranura
+     * del pool de PostgREST todo ese tiempo, así que correr esta sección unas
+     * pocas veces seguidas llena el pool y **el portal entero empieza a
+     * devolver 504** — que es exactamente lo que pasó ese día. Ver la sección
+     * «Cuando el portal no responde» de CLAUDE.md.
+     *
+     * Agregado por jobid es un barrido y nada más: 64 MB. El último fallo sale
+     * de la misma pasada, tomando el primero de un array ordenado en vez de
+     * volver a entrar a buscarlo. */
     const crons = canal.consultar(`
+      WITH corridas AS (
+        SELECT d.jobid,
+               count(*) AS corridas,
+               count(*) FILTER (WHERE d.status <> 'succeeded') AS fallidas,
+               (array_agg(left(d.return_message, 90) ORDER BY d.start_time DESC)
+                  FILTER (WHERE d.status <> 'succeeded'))[1] AS ultimo_fallo
+          FROM cron.job_run_details d
+         WHERE d.start_time > now() - interval '24 hours'
+         GROUP BY d.jobid
+      )
       SELECT j.jobname, j.schedule, j.active,
              substring(j.command from 'functions/v1/([a-z0-9-]+)') AS slug,
-             (SELECT count(*) FROM cron.job_run_details d
-               WHERE d.jobid = j.jobid AND d.start_time > now() - interval '24 hours') AS corridas,
-             (SELECT count(*) FROM cron.job_run_details d
-               WHERE d.jobid = j.jobid AND d.start_time > now() - interval '24 hours'
-                 AND d.status <> 'succeeded') AS fallidas,
-             (SELECT left(d.return_message, 90) FROM cron.job_run_details d
-               WHERE d.jobid = j.jobid AND d.start_time > now() - interval '24 hours'
-                 AND d.status <> 'succeeded'
-               ORDER BY d.start_time DESC LIMIT 1) AS ultimo_fallo
+             coalesce(c.corridas, 0) AS corridas,
+             coalesce(c.fallidas, 0) AS fallidas,
+             c.ultimo_fallo
         FROM cron.job j
+        LEFT JOIN corridas c ON c.jobid = j.jobid
        -- Los que llaman a una edge function, MÁS los declarados que no llaman a
        -- ninguna. Sin la segunda mitad, un cron de SQL puro —un aviso, una
        -- purga— se podía declarar en el manifiesto y el cruce contra producción

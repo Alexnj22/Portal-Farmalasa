@@ -13,7 +13,6 @@ import Notice from '../components/common/Notice';
 import FileField from '../components/common/FileField';
 import PortalInput from '../components/common/PortalInput';
 import IdentidadDeQuienRetira from '../components/bolsas/IdentidadDeQuienRetira';
-import ValesDeCaja from '../components/bolsas/ValesDeCaja';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import { shortEmployeeName } from '../utils/nameUtils';
 import PhotoLightbox from '../components/common/PhotoLightbox';
@@ -1019,27 +1018,38 @@ export default function MiCajaView({ comoPestana = false }) {
 
                 {sala && !cargando && !noSePudo && (
                     <>
-                        {pendientes.length > 0 && (
-                            <Notice variant="warning" icon={Landmark}>
-                                Al hacer el corte se anota <b>un solo vale de caja</b> con estas {pendientes.length} salidas.
-                                Salieron de una bolsa del día que la caja tiene abierto, así que sigue
-                                esperando ese dinero.
-                            </Notice>
-                        )}
+                        {/* ── LO QUE LA CAJA TODAVÍA CUENTA NO SE AVISA ACÁ ────
+                            Acá vivían DOS avisos sobre lo mismo: un recuadro
+                            naranja y, bajo el panel, el renglón de `ValesDeCaja`.
+                            Los dos leían la misma consulta y hablaban del mismo
+                            dinero — los $175.00 de Salud 4 del 4-sep salían
+                            nombrados tres veces en una pantalla.
+
+                            Se quitaron los dos, pedido del usuario después de
+                            preguntar cuatro veces qué eran: *«los recuadros para
+                            mí están de más, sólo lo que dice que entra en el
+                            corte es suficiente»*. Y tiene razón por una razón que
+                            no es de gusto: **el dato ya está donde se lo busca**.
+                            Cada salida de bolsa trae su reparto con «entra al
+                            corte» / «ya cerrada» por bolsa (ver `MovimientosDelDia`),
+                            y el detalle de la bolsa ya descuenta el vale — S4-1256
+                            muestra $356.01 − $175.00 = $181.01. Un aviso arriba
+                            que repite eso no informa: le pone forma de problema a
+                            algo que el corte resuelve solo.
+
+                            Lo que SÍ queda es el aviso del diálogo de corte, que
+                            llega en el único momento en que importa —justo antes
+                            de escribir el vale— y dice qué se va a escribir.
+
+                            ⚠️ Con esto se fue también el botón «Anotar en la
+                            caja», que era la salida a mano para cuando el corte se
+                            hace en la pantalla del sistema y nadie escribe el
+                            vale. `ValesDeCaja` sigue en el repo, sin llamador. Si
+                            vuelve a hacer falta, su lugar es el detalle de la
+                            bolsa —que ya muestra el vale— y no una barra arriba. */}
 
                         <PanelDelDia estado={estado} ventas={ventas} veLosMontos={veLosMontos}
                             entregas={entregasDelDia} personas={firmantes} />
-
-                        {/* Lo que la caja todavía cuenta como suyo de esta sala.
-                            Estaba en Bolsas, arriba de todo, y se quitó de ahí:
-                            no pide ninguna acción —el corte desde el portal
-                            escribe el vale solo— y con forma de aviso se leía
-                            como un faltante. Acá está pegado al corte, que es
-                            el único momento en que alguien lo necesita: cuando
-                            el corte se va a hacer en la pantalla de la caja y
-                            no por el portal. Ver el encabezado de
-                            `ValesDeCaja`, donde vive el porqué completo. */}
-                        <ValesDeCaja sala={sala} />
 
                         <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas}
                             cobros={cobros}

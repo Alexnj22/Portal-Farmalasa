@@ -10,6 +10,17 @@ import { useToastStore } from '../../store/toastStore';
 /**
  * Lo que la caja todavía cuenta como suyo, y el botón que se lo anota.
  *
+ * ⚠️ SIN LLAMADOR desde el 2026-09-04. Vivió en Bolsas, después en Mi caja, y
+ * las dos veces se quitó por lo mismo: informa algo que el corte resuelve solo,
+ * y puesto arriba de una vista se lee como un problema. Lo que decía ya está
+ * donde alguien lo busca —el reparto por bolsa de cada salida («entra al corte»
+ * / «ya cerrada») y el detalle de la bolsa, que ya descuenta el vale—.
+ *
+ * Se conserva por el botón «Anotar en la caja»: es la ÚNICA forma de escribir
+ * el vale a mano cuando el corte se hace en la pantalla del sistema y no por el
+ * portal. Si vuelve a hacer falta, su lugar es el detalle de la bolsa, no una
+ * barra al tope de la pantalla.
+ *
  * ── Por qué existe ─────────────────────────────────────────────────────────
  * La caja cuenta, por día, todo lo que entró desde su cierre anterior, y meter
  * el dinero en una bolsa no le avisa nada: la plata de las bolsas DE HOY sigue

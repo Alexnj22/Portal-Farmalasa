@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1000.0 — Lo que entra al corte se dice una vez, en la salida
+
+Mi caja avisaba **tres veces** por el mismo dinero. Los $175.00 de la remesa RIA
+de Salud 4 del 4-sep salían nombrados en un recuadro naranja al tope, otra vez
+en el renglón de `ValesDeCaja` bajo el panel, y otra en su propia línea de
+movimientos. Los dos primeros leían la misma consulta (`caja_vales_pendientes`)
+y decían lo mismo con distintas palabras.
+
+Se quitaron los dos. Pedido del usuario, después de preguntar cuatro veces qué
+eran:
+
+> «los recuadros para mí están de más, sólo lo que dice que entra en el corte es
+> suficiente».
+
+Y no es cuestión de gusto: **el dato ya estaba donde alguien lo busca.** Cada
+salida de bolsa trae su reparto con «entra al corte» / «ya cerrada» por bolsa, y
+el detalle de la bolsa ya descuenta el vale — S4-1256 muestra $356.01 − $175.00
+= $181.01. Un aviso arriba que repite eso no informa: le pone forma de problema
+a algo que el corte resuelve solo, que es exactamente lo que enseña a ignorar
+los avisos.
+
+Es la tercera vez que este renglón se mueve por el mismo motivo: nació en Bolsas
+(28-ago), se le corrigió el texto dos veces, se le corrigió la forma, se mudó a
+Mi caja (2-sep) y hoy se va. **Un dato que hay que explicar cuatro veces no está
+mal escrito, está de más.**
+
+Queda el aviso del diálogo de corte, que llega en el único momento en que
+importa —justo antes de escribir el vale— y dice qué se va a escribir.
+
+⚠️ Con esto se va también el botón «Anotar en la caja», que era la salida a mano
+para cuando el corte se hace en la pantalla del sistema y nadie escribe el vale.
+`ValesDeCaja` sigue en el repo, sin llamador y con el porqué escrito. Medido el
+4-sep contra `caja_cortes_del_portal`: **9 de 9 cortes del día salieron del
+portal, 0 de la pantalla del sistema.**
+
+- `src/views/MiCajaView.jsx` — fuera el `Notice` de pendientes y el
+  `<ValesDeCaja>`; el chip por bolsa y el aviso del diálogo se quedan.
+- `src/components/bolsas/ValesDeCaja.jsx` — marcado sin llamador.
+
 ## v2.999.0 — La duda del beneficiario manda el cobro a firma
 
 Corrige la salida elegida esta mañana en v2.997.0. Ahí, un comprobante que no

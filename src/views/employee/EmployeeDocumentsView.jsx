@@ -8,15 +8,21 @@ import FilterBar from '../../components/common/FilterBar';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
     FolderOpen, Search, X, FileCheck, Stethoscope,
-    FileText, Palmtree, RefreshCw, Calendar,
-    Eye, AlertCircle, CheckCircle2, Clock, XCircle,
+    FileText, Palmtree, RefreshCw,
+    AlertCircle, CheckCircle2, Clock, XCircle, Paperclip,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { fetchOwnApprovalRequests } from '../../data/employeeSelfService';
-import { openStoredFile } from '../../utils/storageFiles';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import PeriodPicker from '../../components/common/PeriodPicker';
+import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
+import VisorDeDocumento from '../../components/common/VisorDeDocumento';
+import { getExpiryBadge } from '../../utils/documentExpiry';
+import {
+    nombreDeDocumento, grupoDeCategoria, iconoDeCategoria,
+    tinteDeCategoria, descripcionDelArchivo,
+} from '../../utils/documentosDelExpediente';
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
 //
@@ -73,102 +79,179 @@ const TABS = [
     { key: 'PERMIT',      label: 'Permisos'    },
 ];
 
+// ─── Un hecho del documento ────────────────────────────────────────────────
+//
+// Rótulo arriba, valor abajo. Es el mismo par que ya usa el resto del portal
+// (`text-micro` en versalitas para el rótulo, cuerpo para el valor), y va como
+// componente porque acá se repiten hasta cinco por ficha: escritos a mano, el
+// tercero termina con otro gris.
+const Dato = ({ rotulo, children, tono = 'text-content' }) => (
+    <div className="min-w-0">
+        <p className="text-micro font-black uppercase tracking-widest text-content-3">{rotulo}</p>
+        <p className={`text-body-sm font-bold truncate ${tono}`}>{children}</p>
+    </div>
+);
+
 // ─── Componente DocCard ────────────────────────────────────────────────────
-const DocCard = ({ doc }) => {
+//
+// ── La ficha dice QUÉ es el documento, no de qué lista salió (2026-09-04) ──
+//
+// Reportado con una captura: una ficha titulada «Del expediente» con la palabra
+// `DUI_COMPLETO` en letra chica abajo a la derecha. Los dos lados mal a la vez —
+// el título era la categoría interna del portal y el nombre real estaba
+// degradado a pie de página, con la clave cruda de la base como texto.
+//
+// Hoy el título es el nombre del documento (`nombreDeDocumento`, que sale del
+// catálogo compartido y nunca devuelve una clave) y debajo va el grupo: por qué
+// esta persona tiene ese papel. «Del expediente» dejó de ser un título porque no
+// nombra nada: todos lo son.
+//
+// ── Y se abre acá, no en otra pestaña ─────────────────────────────────────
+//
+// Pedido del usuario: *«que lo pueda abrir en un modal grande para ver bien el
+// documento»*. La ficha entera es el control —no un botón «Ver» adentro— porque
+// dos afordancias para la misma acción se leen como dos acciones: es la regla
+// escrita en `OjoDeTarjeta`, y el ojo de arriba a la derecha es lo que lo
+// anuncia antes de tocar. Una ficha SIN archivo no es un botón: no hay nada que
+// abrir, y un control que no hace nada es peor que ninguno.
+const DocCard = ({ doc, alAbrir }) => {
     const cfg    = DOC_CFG[doc.type] || DEFAULT_CFG;
-    const DocIcon = cfg.Icon;
-    const status = STATUS_CFG[doc.status] || { label: doc.status, Icon: AlertCircle, variante: 'neutral' };
+    // Los cuatro documentos del expediente de una persona dibujaban la MISMA
+    // carpeta, porque el ícono salía de `doc.type` y ahí todos son
+    // `EXPEDIENTE`. Un DUI, un carné de junta y una copia del ISSS no son la
+    // misma clase de papel, y el ícono es lo primero que se mira.
+    const delExpediente = doc.type === 'EXPEDIENTE';
+    const DocIcon = delExpediente ? iconoDeCategoria(doc.meta?.categoria) : cfg.Icon;
+    const tinte   = delExpediente ? tinteDeCategoria(doc.meta?.categoria) : cfg;
+
+    // ── El estado que se muestra es el MÁS URGENTE ────────────────────────
+    // Un carné vencido con la píldora «En tu expediente» en azul dice que todo
+    // está en orden. El vencimiento gana: es lo único de esta ficha que pide
+    // hacer algo. `getExpiryBadge` es el mismo cálculo que usan el expediente y
+    // el aviso de vencimientos — sin él serían tres umbrales que se separan.
+    const vence  = getExpiryBadge(doc.meta?.expiryDate);
+    const base   = STATUS_CFG[doc.status] || { label: doc.status, Icon: AlertCircle, variante: 'neutral' };
+    const status = vence
+        ? { label: vence.label, Icon: vence.variant === 'danger' ? XCircle : Clock, variante: vence.variant }
+        : base;
     const StatusIcon = status.Icon;
 
-    const title = doc.type === 'CERTIFICATE' && doc.meta?.certificateType
-        ? (CERT_LABELS[doc.meta.certificateType] || cfg.label)
-        : cfg.label;
+    const title = delExpediente
+        ? doc.meta.nombre
+        : (doc.type === 'CERTIFICATE' && doc.meta?.certificateType
+            ? (CERT_LABELS[doc.meta.certificateType] || cfg.label)
+            : cfg.label);
 
-    const period = doc.meta?.startDate
+    // La segunda línea: de qué clase de documento se trata. En el expediente es
+    // el grupo del catálogo («Identidad», «Cada año»); en una solicitud es el
+    // tipo, que en esos casos NO es el título.
+    // Sin «· Del expediente» pegado detrás: la píldora de la derecha ya lo dice,
+    // y en el teléfono ese sufijo era lo único que se veía —«Identidad · De…»,
+    // «ISSS y AFP · Del…»—, o sea que el truncado se comía el grupo, que es el
+    // dato, para dejar la mitad de una redundancia.
+    const bajada = delExpediente
+        ? (grupoDeCategoria(doc.meta.categoria) || 'Del expediente')
+        : (title === cfg.label ? 'Solicitud' : cfg.label);
+
+    const periodo = doc.meta?.startDate
         ? `${fmtDate(doc.meta.startDate)}${doc.meta.endDate ? ` — ${fmtDate(doc.meta.endDate)}` : ''}`
-        : doc.meta?.permissionDates?.length
-            ? `${doc.meta.permissionDates.length} día${doc.meta.permissionDates.length !== 1 ? 's' : ''} seleccionado${doc.meta.permissionDates.length !== 1 ? 's' : ''}`
-            : null;
-
-    // Los dos ramos del pie eran el MISMO bloque escrito dos veces: sólo
-    // cambiaba el rótulo por defecto del archivo. Y el del expediente abría
-    // `doc.meta.docUrl` sin preguntar si existía.
-    const archivo = doc.meta?.docUrl
-        ? (doc.meta.docName || (doc.type === 'EXPEDIENTE' ? 'Documento' : 'Documento adjunto'))
         : null;
 
+    // ── Los hechos, en el orden en que se preguntan ───────────────────────
+    // Se arman como lista y no como JSX suelto para que la ficha de una
+    // incapacidad y la de un DUI tengan la misma forma aunque no tengan los
+    // mismos datos: lo que falta no deja un hueco, deja una celda menos.
+    const datos = [];
+    if (periodo) datos.push({ rotulo: delExpediente ? 'Vigencia' : 'Período', valor: periodo });
+    if (doc.meta?.permissionDates?.length) {
+        datos.push({ rotulo: 'Días', valor: `${doc.meta.permissionDates.length} día${doc.meta.permissionDates.length !== 1 ? 's' : ''}` });
+    }
+    datos.push({
+        rotulo: delExpediente ? 'Guardado' : 'Solicitado',
+        valor: new Date(doc.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }),
+    });
+    if (doc.meta?.issueDate) datos.push({ rotulo: 'Emitido', valor: fmtDate(doc.meta.issueDate) });
+    if (doc.meta?.expiryDate) {
+        datos.push({
+            rotulo: 'Vence', valor: fmtDate(doc.meta.expiryDate),
+            tono: vence ? (vence.variant === 'danger' ? 'text-danger-text' : 'text-warning-text') : 'text-content',
+        });
+    }
+    if (doc.meta?.versiones > 0) {
+        datos.push({
+            rotulo: 'Anteriores',
+            valor: `${doc.meta.versiones} versi${doc.meta.versiones === 1 ? 'ón' : 'ones'}`,
+        });
+    }
+
+    const abre = !!doc.meta?.docUrl;
+    const Tag  = abre ? 'button' : 'div';
+
     return (
-        <div data-surface="card" className="h-full p-4 md:p-5">
+        <Tag
+            type={abre ? 'button' : undefined}
+            onClick={abre ? () => alAbrir(doc) : undefined}
+            // `data-interactive` pone el gel al presionar y el destello al
+            // apuntar; el `<button>` nativo ya trae el contrato de teclado, así
+            // que no hace falta `clickable()`.
+            data-interactive={abre ? '' : undefined}
+            data-surface="card"
+            aria-label={abre ? `Ver ${title}` : undefined}
+            className={`group h-full w-full text-left p-4 md:p-5 ${abre ? '' : 'cursor-default'}`}
+        >
             <div className="flex items-start gap-3 h-full">
-                {/* Squircle de ícono — la única pieza con el color del tipo */}
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${cfg.iconBg}`}>
-                    <DocIcon size={16} className={cfg.iconCls} strokeWidth={2} />
+                {/* Squircle de ícono — la única pieza con color. §17.0: identifica
+                    la categoría de un vistazo; el fondo y el borde de la ficha, no. */}
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tinte.iconBg}`}>
+                    {/* eslint-disable-next-line react-hooks/static-components -- `DocIcon` elige entre los íconos ya importados de `documentosDelExpediente`, no crea un componente */}
+                    <DocIcon size={16} className={tinte.iconCls} strokeWidth={2} />
                 </div>
 
-                {/* Columna de texto en COLUMNA y el pie con `mt-auto`: la grilla
-                    iguala el alto de la fila, así que sin esto una ficha sin
-                    nota queda con su pie a media caja y un vacío de 150px
-                    debajo — al lado de otra cuyo pie está abajo del todo. La
-                    fecha y el archivo son la línea base de la ficha; que se
-                    alineen entre hermanas es lo que hace que la fila se lea
-                    como una fila. */}
                 <div className="flex-1 min-w-0 flex flex-col">
-                    <div className="flex items-start justify-between gap-2 flex-wrap mb-1.5">
+                    <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="min-w-0">
                             <p className="text-body font-bold text-content leading-tight">{title}</p>
-                            {period && (
-                                <p className="text-caption text-content-3 font-medium mt-0.5 flex items-center gap-1">
-                                    <Calendar size={11} />
-                                    {period}
-                                </p>
-                            )}
+                            <p className="text-caption text-content-3 font-medium mt-0.5 truncate">{bajada}</p>
                         </div>
-                        <Badge variant={status.variante} size="sm" icon={StatusIcon}>{status.label}</Badge>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <Badge variant={status.variante} size="sm" icon={StatusIcon}>{status.label}</Badge>
+                            {abre && <OjoDeTarjeta />}
+                        </div>
                     </div>
 
-                    {/* Nota */}
+                    {/* La nota de quien pidió, y la de quien resolvió. La segunda
+                        faltaba: `approver_note` se traía de la base y no se
+                        dibujaba en ningún lado, así que un rechazo no decía por
+                        qué — que es justo el único caso en que hay algo que leer. */}
                     {doc.note && (
                         <p className="text-label text-content-3 font-medium leading-relaxed mb-2 line-clamp-2">{doc.note}</p>
                     )}
-
-                    {/* Días de permiso — van ANTES del pie: son parte de lo que
-                        el documento dice, no de la línea de fecha y archivo.
-                        Colgados debajo del separador quedaban fuera de la ficha
-                        que la línea cierra. */}
-                    {doc.meta?.permissionDates?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                            {doc.meta.permissionDates.slice(0, 5).map((d, i) => (
-                                <Badge key={i} size="sm" uppercase={false}>{fmtDate(d)}</Badge>
-                            ))}
-                            {doc.meta.permissionDates.length > 5 && (
-                                <Badge size="sm" uppercase={false}>+{doc.meta.permissionDates.length - 5} más</Badge>
-                            )}
-                        </div>
+                    {doc.approver_note && (
+                        <p className="text-label text-content-2 font-medium leading-relaxed mb-2 line-clamp-2">
+                            <span className="font-black uppercase tracking-wide text-content-3">Respuesta · </span>
+                            {doc.approver_note}
+                        </p>
                     )}
 
-                    {/* Footer: fecha + archivo */}
-                    <div className="flex items-center justify-between gap-2 flex-wrap mt-auto pt-3 border-t border-divider">
-                        <p className="text-caption text-content-3 font-medium">
-                            {doc.type === 'EXPEDIENTE' ? 'Guardado el ' : 'Solicitado el '}
-                            {new Date(doc.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </p>
-
-                        {archivo ? (
-                            <div className="flex items-center gap-2 min-w-0">
-                                <span className="text-caption text-content-3 font-medium truncate max-w-[140px]">
-                                    {archivo}
-                                </span>
-                                <Button variant="secondary" size="sm" icon={Eye}
-                                    onClick={() => openStoredFile(doc.meta.docUrl)}>Ver</Button>
-                            </div>
-                        ) : (
-                            <span className="text-caption text-content-3 font-medium italic">Sin archivo adjunto</span>
-                        )}
+                    {/* Los hechos. Dos columnas: en 148px de ancho útil una sola
+                        deja la ficha larguísima y tres cortan los rótulos. */}
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                        {datos.map(d => (
+                            <Dato key={d.rotulo} rotulo={d.rotulo} tono={d.tono}>{d.valor}</Dato>
+                        ))}
                     </div>
 
+                    {/* El archivo: qué se va a abrir. Sin él la ficha no es un
+                        botón, y decirlo es la mitad del dato. */}
+                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-divider text-caption font-medium text-content-3">
+                        <Paperclip size={11} className="shrink-0" />
+                        <span className="truncate">
+                            {abre ? descripcionDelArchivo(doc.meta.docName, doc.meta.docUrl) : 'Sin archivo adjunto'}
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
+        </Tag>
     );
 };
 
@@ -183,6 +266,8 @@ const EmployeeDocumentsView = () => {
     const [filterFrom, setFilterFrom] = useState('');
     const [filterTo, setFilterTo]     = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    // El documento abierto en el visor. `null` = ninguno.
+    const [viendo, setViendo] = useState(null);
 
 
     useEffect(() => {
@@ -214,6 +299,12 @@ const EmployeeDocumentsView = () => {
     // Salen del store y no de una consulta nueva: `fetchBoot` ya trae la ficha
     // propia, y para el resto de la empresa `employees_safe` no publica nada que
     // esta persona no pudiera ver igual.
+    //
+    // Lo que se lleva de cada fila es lo que la ficha muestra, y nada más: el
+    // NOMBRE canónico (`nombreDeDocumento`, no `title` crudo — 4 de los 8
+    // documentos de producción lo tienen guardado como la clave), la categoría
+    // para resolver el grupo, y las tres fechas. `historial` no viaja entero:
+    // sólo cuántas versiones hay, que es lo que cabe en una ficha.
     const docsDelExpediente = useMemo(() => {
         const mia = (employees || []).find(e => String(e.id) === String(user?.id));
         return (mia?.employee_documents || [])
@@ -224,7 +315,19 @@ const EmployeeDocumentsView = () => {
                 status: 'EN_EXPEDIENTE',
                 note: null,
                 created_at: d.uploaded_at || d.issue_date || mia?.hire_date || new Date().toISOString(),
-                meta: { docUrl: d.url, docName: d.title || d.category || d.file_name || 'Documento' },
+                meta: {
+                    docUrl: d.url,
+                    nombre: nombreDeDocumento(d),
+                    categoria: d.category || null,
+                    // El nombre del archivo es un dato del archivo, no del
+                    // documento: si la fila no lo trae, se dice que hay un
+                    // adjunto y ya. Antes acá caía el `title`, que es lo que
+                    // ponía `DUI_COMPLETO` en el renglón del archivo.
+                    docName: d.file_name || null,
+                    issueDate: d.issue_date || null,
+                    expiryDate: d.expiry_date || null,
+                    versiones: Array.isArray(d.historial) ? d.historial.length : 0,
+                },
             }));
     }, [employees, user?.id]);
 
@@ -280,7 +383,13 @@ const EmployeeDocumentsView = () => {
         if (search.trim()) {
             list = list.filter(d => tokenMatch(search,
                 d.note,
+                d.approver_note,
                 DOC_CFG[d.type]?.label,
+                // El nombre que se VE. Buscar «dui» no encontraba nada porque
+                // la lista sólo miraba el nombre del archivo y el rótulo del
+                // tipo, y ninguno de los dos dice «DUI».
+                d.meta?.nombre,
+                grupoDeCategoria(d.meta?.categoria),
                 d.meta?.docName,
                 CERT_LABELS[d.meta?.certificateType]
             ));
@@ -393,12 +502,29 @@ const EmployeeDocumentsView = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                         {filtered.map((doc, i) => (
                             <div key={doc.id} className="animate-stagger-child" style={{ '--stagger-delay': `${Math.min(i, 8) * 40}ms` }}>
-                                <DocCard doc={doc} />
+                                <DocCard doc={doc} alAbrir={setViendo} />
                             </div>
                         ))}
                     </div>
                 )}
             </div>
+
+            {/* ── El documento, acá mismo ───────────────────────────────────
+                `VisorDeDocumento` es el canónico y ya resolvía todo lo que hace
+                falta: firma la URL del bucket privado, decide por el
+                CONTENIDO —no por la extensión— si es imagen o PDF, y ofrece
+                descargar o abrir aparte. Sin `onEditado` a propósito: acá la
+                persona MIRA su expediente, no lo corrige; recortar y volver a
+                subir es trabajo de Talento Humano y vive en la ficha. */}
+            {viendo && (
+                <VisorDeDocumento
+                    url={viendo.meta.docUrl}
+                    nombre={viendo.type === 'EXPEDIENTE'
+                        ? viendo.meta.nombre
+                        : (viendo.meta.docName || 'Documento adjunto')}
+                    alCerrar={() => setViendo(null)}
+                />
+            )}
         </GlassViewLayout>
     );
 };

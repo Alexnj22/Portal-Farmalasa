@@ -125,9 +125,24 @@ export default function VisorDeDocumento({ url, file, nombre, tipo = 'documento'
 
     return (
         <>
-            <ModalShell open onClose={alCerrar} maxWidthClass="max-w-3xl"
+            {/* ── Un visor se mide por lo que deja LEER ────────────────────
+                `max-w-3xl` son 768px: a un DUI escaneado eso lo deja del tamaño
+                de una tarjeta de crédito en un monitor de 1512, y el número que
+                uno vino a verificar no se lee. Pedido del usuario el
+                2026-09-04: *«que lo pueda abrir en un modal grande para ver
+                bien el documento»*.
+
+                `max-w-6xl` (1152px) y no la pantalla entera: un documento tiene
+                proporción de papel, así que pasado cierto ancho lo que crece es
+                el margen gris de los lados, no el documento. El alto es el que
+                manda —de ahí `90dvh` y `78dvh` para el lienzo— porque una hoja
+                carta es más alta que ancha.
+
+                En el teléfono no cambia nada: `ModalShell` lo dibuja como hoja
+                y el ancho máximo no llega a aplicar. */}
+            <ModalShell open onClose={alCerrar} maxWidthClass="max-w-6xl"
                 panelClassName="overflow-hidden" ariaLabel={titulo}>
-                <div className="flex flex-col max-h-[85dvh]">
+                <div className="flex flex-col max-h-[90dvh]">
                     <div className="flex items-center gap-2 p-4 pb-3 border-b border-divider shrink-0">
                         <FileText size={16} className="text-content-3 shrink-0" strokeWidth={2.5} />
                         <p className="min-w-0 flex-1 truncate text-body-sm font-bold text-content">
@@ -146,14 +161,14 @@ export default function VisorDeDocumento({ url, file, nombre, tipo = 'documento'
                             // para que llene la caja esconde justo el borde que
                             // hay que mirar para saber si entró completo.
                             <img src={verLo} alt={titulo}
-                                className="max-w-full max-h-[70dvh] object-contain rounded-card shadow-[var(--shadow-glass-2)]" />
+                                className="max-w-full max-h-[78dvh] object-contain rounded-card shadow-[var(--shadow-glass-2)]" />
                         ) : (
                             /* Sin fondo propio: el visor de PDF del navegador
                                pinta el suyo, y forzarle uno blanco a mano es un
                                color crudo que además no dice nada — el papel ya
                                viene dibujado adentro del documento. */
                             <iframe src={verLo} title={titulo}
-                                className="w-full h-[70dvh] rounded-card border-0 bg-surface-card" />
+                                className="w-full h-[78dvh] rounded-card border-0 bg-surface-card" />
                         )}
                     </div>
 

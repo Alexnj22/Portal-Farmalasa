@@ -43,6 +43,7 @@ import { revisarNup } from '../../utils/nupAfp';
 import { getStoragePathFromUrl, openStoredFile } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
+import { ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar } from '../../utils/documentosDelExpediente';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { usuarioDesdeNombre } from '../../utils/nameUtils';
@@ -511,8 +512,8 @@ const FIXED_DOCUMENT_CATEGORIES = [
     // Dice «con sus atestados» porque acá el currículum hace de SOBRE: los
     // certificados de estudio y las referencias van adentro, y por eso no se
     // piden como documentos aparte (27-ago-2026, decisión del usuario).
-    { key: 'CV', label: 'Currículum Vitae — con sus atestados' },
-    { key: 'CONTRATO', label: 'Contrato de Trabajo Firmado' },
+    { key: 'CV', label: ROTULOS.CV },
+    { key: 'CONTRATO', label: ROTULOS.CONTRATO },
 ];
 // Art. 23 nº10 CT: el numeral pide «cantidad, CALIDAD Y ESTADO». Es una lista
 // cerrada y no texto libre porque el valor de este campo está en poder
@@ -1320,17 +1321,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const EN_ACREDITACIONES = ['SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA', 'DEPENDIENTE_FARMACIA'];
     const documentCategories = useMemo(() => [
         ...FIXED_DOCUMENT_CATEGORIES,
-        ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: 'Licencia de Motocicleta' }] : []),
-        ...(formData.has_car_license ? [{ key: 'LICENCIA_CARRO', label: 'Licencia de Automóvil' }] : []),
-        ...(isPharmacistRegent ? [{ key: 'SRS', label: 'Carné JVPQF — Regente / Químico Farmacéutico' }] : []),
-        ...(isPharmacistRegent ? [{ key: 'ANUALIDAD_JVPQF', label: 'Anualidad JVPQF — solvencia del año en curso' }] : []),
-        ...(isPharmacistRegent ? [{ key: 'CONTRATO_REGENCIA', label: 'Contrato de Regencia' }] : []),
-        ...(isNursing ? [{ key: 'ENFERMERIA', label: 'Carné de Enfermería — JVPE' }] : []),
-        ...(acreditacionesQueAplican.some(a => a.id === 'MEDICO') ? [{ key: 'MEDICO', label: 'Carné médico — JVPM' }] : []),
-        ...(acreditacionesQueAplican.some(a => a.id === 'CONTADURIA') ? [{ key: 'CONTADURIA', label: 'Acreditación de Contaduría — CVPCPA' }] : []),
-        ...(formData.tiene_acreditacion_dependiente ? [{ key: 'DEPENDIENTE_FARMACIA', label: 'Acreditación de dependiente de farmacia — CSSP' }] : []),
-        ...(isNursing ? [{ key: 'ANUALIDAD_JVPE', label: 'Anualidad JVPE — solvencia del año en curso' }] : []),
-        ...(formData.disability_has_certification ? [{ key: 'CERTIFICACION_DISCAPACIDAD', label: 'Certificación de Discapacidad — ISRI / CONAIPD' }] : []),
+        ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: ROTULOS.LICENCIA_MOTO }] : []),
+        ...(formData.has_car_license ? [{ key: 'LICENCIA_CARRO', label: ROTULOS.LICENCIA_CARRO }] : []),
+        ...(isPharmacistRegent ? [{ key: 'SRS', label: ROTULOS.SRS }] : []),
+        ...(isPharmacistRegent ? [{ key: 'ANUALIDAD_JVPQF', label: ROTULOS.ANUALIDAD_JVPQF }] : []),
+        ...(isPharmacistRegent ? [{ key: 'CONTRATO_REGENCIA', label: ROTULOS.CONTRATO_REGENCIA }] : []),
+        ...(isNursing ? [{ key: 'ENFERMERIA', label: ROTULOS.ENFERMERIA }] : []),
+        ...(acreditacionesQueAplican.some(a => a.id === 'MEDICO') ? [{ key: 'MEDICO', label: ROTULOS.MEDICO }] : []),
+        ...(acreditacionesQueAplican.some(a => a.id === 'CONTADURIA') ? [{ key: 'CONTADURIA', label: ROTULOS.CONTADURIA }] : []),
+        ...(formData.tiene_acreditacion_dependiente ? [{ key: 'DEPENDIENTE_FARMACIA', label: ROTULOS.DEPENDIENTE_FARMACIA }] : []),
+        ...(isNursing ? [{ key: 'ANUALIDAD_JVPE', label: ROTULOS.ANUALIDAD_JVPE }] : []),
+        ...(formData.disability_has_certification ? [{ key: 'CERTIFICACION_DISCAPACIDAD', label: ROTULOS.CERTIFICACION_DISCAPACIDAD }] : []),
         // Art. 117 CT: el examen médico previo de un menor no es una buena
         // práctica, es requisito para admitirlo, y se repite cada año hasta los
         // 18. El aviso amarillo ya lo decía en la pestaña Personal; faltaba
@@ -1343,7 +1344,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // callback durante ESTE render — leerla desde acá es un ReferenceError
         // por zona muerta temporal, no un `undefined` benigno. `pendientes`
         // hace lo mismo por el mismo motivo.
-        ...(esMenorParaDocumentos ? [{ key: 'EXAMEN_MEDICO', label: 'Examen Médico Previo — Art. 117 (se repite cada año hasta los 18)' }] : []),
+        ...(esMenorParaDocumentos ? [{ key: 'EXAMEN_MEDICO', label: ROTULOS.EXAMEN_MEDICO }] : []),
 
         // ── Lo que el reglamento interno pide para ingresar (su Art. 8) ─────
         //
@@ -1375,8 +1376,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // de remisión se teclea, el papel no la trae—, que es la regla que
         // separa estos de los de Acreditaciones.
         ...(!esContratoCivil(formData.contract_type)
-            ? [{ key: 'ACUSE_MTPS', label: 'Acuse sellado del Ministerio de Trabajo' }] : []),
-        { key: 'SOLICITUD_EMPLEO', label: 'Solicitud de empleo' },
+            ? [{ key: 'ACUSE_MTPS', label: ROTULOS.ACUSE_MTPS }] : []),
+        { key: 'SOLICITUD_EMPLEO', label: ROTULOS.SOLICITUD_EMPLEO },
         // ── El certificado médico es ANUAL, no de ingreso ───────────────────
         //
         // El Art. 8 del reglamento lo pide al entrar y la empresa NO lo pide
@@ -1393,10 +1394,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // Lleva vencimiento a propósito: es lo que convierte «cada año» en algo
         // que alguien recuerda, porque entra al aviso de documentos por vencer.
         // Es el mismo razonamiento que ya está escrito para el examen del menor.
-        { key: 'CERTIFICADO_MEDICO_ANUAL', label: 'Certificado médico anual — heces y orina' },
-        { key: 'COPIA_NIT',        label: 'Copia del NIT' },
-        { key: 'TARJETA_ISSS',     label: 'Copia de la tarjeta del ISSS' },
-        { key: 'TARJETA_AFP',      label: 'Copia de la tarjeta de la AFP' },
+        { key: 'CERTIFICADO_MEDICO_ANUAL', label: ROTULOS.CERTIFICADO_MEDICO_ANUAL },
+        { key: 'COPIA_NIT',        label: ROTULOS.COPIA_NIT },
+        { key: 'TARJETA_ISSS',     label: ROTULOS.TARJETA_ISSS },
+        { key: 'TARJETA_AFP',      label: ROTULOS.TARJETA_AFP },
     ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
@@ -1491,7 +1492,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     }, [documentCategories]);
 
     const getDocEntry = (category) => (formData.employee_documents || []).find(d => d.category === category)
-        || { category, title: documentCategories.find(c => c.key === category)?.label || category, file_name: '', url: null, expiry_date: '' };
+        || { category, title: rotuloDelDocumento(category, documentCategories), file_name: '', url: null, expiry_date: '' };
 
     /* ── Reemplazar un documento ya no borra el anterior ────────────────────
      *
@@ -1560,7 +1561,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const updateDoc = (category, patch) => setFormData(prev => {
         const list = [...(prev.employee_documents || [])];
         const idx = list.findIndex(d => d.category === category);
-        const base = idx >= 0 ? list[idx] : { category, title: documentCategories.find(c => c.key === category)?.label || category, file_name: '', url: null, expiry_date: '' };
+        const base = idx >= 0 ? list[idx] : { category, title: rotuloDelDocumento(category, documentCategories), file_name: '', url: null, expiry_date: '' };
 
         /* Se archiva sólo cuando de verdad se REEMPLAZA: había un archivo, llega
          * otro, y no son el mismo. Quitar un documento (`url: null`) no archiva
@@ -1854,7 +1855,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const list = [...(prev.employee_documents || [])];
         const i = list.findIndex(d => d.category === category);
         const base = i >= 0 ? list[i]
-            : { category, title: documentCategories.find(c => c.key === category)?.label || category,
+            : { category, title: rotuloDelDocumento(category, documentCategories),
                 file_name: '', url: null, expiry_date: '' };
         const hojas = [...(base.hojas || [])];
         while (hojas.length <= idx) hojas.push({ url: null, file_name: '' });
@@ -1919,8 +1920,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // Bloque de subida reutilizado por los slots fijos, el documento de
     // identidad (DUI/alterno) y "Otros Documentos" — mismo estado
     // analizando/cargado/vacío y mismo campo de vencimiento opcional.
+    // El `|| category` que había acá es el bug que se corrigió el 2026-09-04, y
+    // no era cosmético: este valor se GUARDA como `title` del documento. Las
+    // cuatro categorías del documento de identidad se dibujan en su bloque
+    // aparte y nunca estuvieron en `documentCategories`, así que el `find`
+    // fallaba y la clave cruda (`DUI_COMPLETO`) quedaba escrita en la base —
+    // medido: 4 de los 8 documentos de producción. Ahora el catálogo compartido
+    // las tiene, y el último recurso humaniza en vez de copiar la clave.
     const rotuloDelDoc = (category) =>
-        documentCategories.find(c => c.key === category)?.label || category;
+        documentCategories.find(c => c.key === category)?.label
+        || rotuloDeCategoria(category)
+        || humanizar(category);
 
     /* `showExpiry` ya no se pasa por llamada: sale de `SIN_VENCIMIENTO`. La
        bandera existía sólo para apagarlo en los cuatro del DUI, y con ella la

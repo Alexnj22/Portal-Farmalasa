@@ -1,32 +1,25 @@
 import React, { useMemo } from 'react';
 import Button from './Button';
 import Badge from './Badge';
-import { FileText, Receipt, Award, CreditCard, Eye, FolderOpen } from 'lucide-react';
+import { Eye, FolderOpen } from 'lucide-react';
 import { openStoredFile } from '../../utils/storageFiles';
 import { getExpiryBadge, getExpiringDocuments } from '../../utils/documentExpiry';
+import { nombreDeDocumento, iconoDeCategoria, tinteDeCategoria } from '../../utils/documentosDelExpediente';
 
-// Ícono por categoría de documento del expediente (employees.employee_documents JSONB) —
-// mismo expediente que EmployeeFormModal, mostrado aquí en modo solo-lectura desde Mi
-// Perfil (el propio empleado) y EmployeeDetailView (RRHH viendo a un empleado).
-const docIcon = (category) => {
-    if (category?.startsWith('ANUALIDAD')) return Receipt;
-    if (category === 'SRS' || category === 'ENFERMERIA' || category === 'CONTRATO_REGENCIA') return Award;
-    if (category?.startsWith('DUI') || category === 'DOCUMENTO_IDENTIDAD') return CreditCard;
-    return FileText;
-};
 
 const DocumentRow = ({ doc }) => {
-    const Icon = docIcon(doc.category);
+    const Icon = iconoDeCategoria(doc.category);
+    const tinte = tinteDeCategoria(doc.category);
     const badge = getExpiryBadge(doc.expiry_date);
     const hasFile = !!doc.url;
     return (
         <div data-surface="card" className="flex items-center gap-3 p-3.5 transition-all duration-[var(--dur-base)]">
-            <div className="w-9 h-9 rounded-xl bg-surface-card-hover border border-border-card flex items-center justify-center shrink-0">
-                {/* eslint-disable-next-line react-hooks/static-components -- Icon selecciona entre 4 íconos ya importados (docIcon), no crea un componente nuevo */}
-                <Icon size={15} className="text-content-3" strokeWidth={2} />
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${tinte.iconBg}`}>
+                {/* eslint-disable-next-line react-hooks/static-components -- Icon sale de `iconoDeCategoria`, que elige entre íconos ya importados; no crea un componente nuevo */}
+                <Icon size={15} className={tinte.iconCls} strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-body-sm font-bold text-content truncate">{doc.title || doc.category}</p>
+                <p className="text-body-sm font-bold text-content truncate">{nombreDeDocumento(doc)}</p>
                 {doc.expiry_date && (
                     <p className="text-caption text-content-3 font-medium mt-0.5">
                         Vence {new Date(doc.expiry_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}

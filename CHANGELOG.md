@@ -100,6 +100,10 @@ crece es el margen gris, porque el papel es más alto que ancho.
 - En el teléfono la segunda línea se truncaba en «Identidad · De…»: el sufijo
   «· Del expediente» se comía el grupo para dejar la mitad de una redundancia
   que la píldora de al lado ya dice.
+- En una solicitud sin subtipo —una incapacidad, un permiso— el título y la
+  segunda línea salían del mismo `cfg.label`, así que la ficha decía
+  «Incapacidad» dos veces, una debajo de la otra. Sólo hay segunda línea cuando
+  dice algo distinto de la primera: ahí va «Solicitud».
 
 Verificado con capturas a 1512px y en iPhone 13 contra el build, con el
 expediente y las solicitudes interceptados en el navegador — no se escribió nada

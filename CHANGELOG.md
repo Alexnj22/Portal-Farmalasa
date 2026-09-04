@@ -21,6 +21,88 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.972.0 — La ficha se lee con tres llaves y ahora se escribe con tres
+
+Segundo paso del plan de `docs/AUDITORIA-PERSONAL-2026-09-03.md`. La base y el
+navegador van en el mismo commit a propósito: revocar sin partir el payload deja
+el portal sin poder guardar una ficha.
+
+### El control existía en una sola dirección
+
+La pantalla de Permisos ofrece tres módulos —Listado, Expediente, Salarios— y de
+verdad separan lo que se **ve**. La escritura nunca se partió: las tres policies
+de `employees` piden `staff_list.can_edit` y nada más, y el GRANT por columna
+quedó a medias — se revocó el SELECT de las doce sensibles y se dejó INSERT y
+UPDATE sobre las doce.
+
+O sea que **«Listado de personal → GESTIONAR», con Expediente y Salarios
+apagados, alcanzaba para cambiarle a cualquiera el sueldo y la cuenta donde se le
+deposita, sin poder verlos.**
+
+Hoy esas diez columnas se escriben por `guardar_datos_protegidos_de_empleado`,
+que pide la llave de cada tanda: `staff_salary.can_edit` para el sueldo, el banco
+y la cuenta; `staff_detail.can_edit` para la identidad previsional. **Sin la
+llave lanza**, al revés que las funciones de lectura — ahí el silencio muestra
+menos, acá sería un guardado falso.
+
+Es **una** función y no tres, aunque la simetría con las tres de lectura invitaba
+a lo contrario: con tres llamadas el sueldo puede entrar y la identidad fallar, y
+la ficha queda escrita por la mitad sin que el navegador sepa cuál mitad.
+
+### La trampa que sólo se vio ensayando
+
+La primera versión de la migración hacía `REVOKE UPDATE (columna)` y **no
+bloqueaba absolutamente nada**: un `REVOKE` por columna no recorta un `GRANT
+UPDATE` de tabla completa, porque el privilegio de tabla sigue cubriendo todas
+las columnas. Hay que revocar el de tabla y volver a conceder la lista — que es
+justo lo que ya se había hecho con el SELECT en agosto. El branch de pruebas lo
+mostró antes de que llegara a producción.
+
+Consecuencia conocida y aceptada: **una columna nueva nace sin permiso de
+escritura**. Es el mismo trato que ya tenía el SELECT, y falla cerrado.
+
+### El PIN del kiosco dejaba de ser derivado en cuanto alguien quería
+
+`kiosk_pin` es SHA-256 del código, y ese algoritmo vivía en **tres copias del
+navegador**. El servidor lo guardaba tal cual, sin recalcularlo: quien pudiera
+escribir una ficha podía elegirle el PIN a cualquiera y el kiosco lo aceptaba. La
+debilidad ya estaba anotada en `useTimeClockEngine.js`; esto la cierra por el
+lado de la columna.
+
+Ahora lo deriva un trigger, así que los **cinco** caminos que escriben el código
+—alta, edición, recontratación, novedad de cambio de código y el cron de eventos
+programados— quedan cubiertos sin tocar ninguno. La baja se respeta: un `NULL`
+explícito sobre un PIN que existía es la baja, no un descuido.
+
+**Comprobado contra producción ANTES de activarlo:** la derivación en Postgres da
+el mismo valor que la del navegador en las **46 fichas con PIN, 0 distintas**. Sin
+esa medición, el trigger le habría cambiado el PIN a toda la empresa.
+
+Las dos copias que quedan en pantalla son ahora una **previsualización** —la
+pantalla ofrece copiar el PIN antes de guardar— y así está escrito. De paso
+apareció una cuarta variante: `FormNovedad` normalizaba el código antes de
+hashear y los otros dos no. Daba lo mismo porque el código es sólo números, pero
+era una regla propia que nadie sabía que existía.
+
+### Y un símbolo que le hacía sombra a otro
+
+`rehireEmployee` llamaba a un `updateEmployee` **importado** de
+`data/employees.js`, no al método del store con el mismo nombre: salteaba toda su
+sanitización y validación sin que se notara. El import se renombró a
+`updateEmployeeRow` para que los dos dejen de llamarse igual.
+
+### Lo que encontró una prueba nueva
+
+`alt_identity_document` —el documento de identidad de un **menor** de edad, lo
+que el Art. 23 nº2 le pide en lugar del DUI— no estaba en `SENSITIVE_FIELDS`. O
+sea: **el DUI de un adulto se borraba del caché del disco y el del menor se
+quedaba**, en la computadora compartida de una sala. Es el mismo defecto que el
+comentario de esa lista ya denunciaba una línea más arriba, sobre otro campo.
+
+Ocho casos nuevos en `tests/unit/camposTrasLlave.test.js`, probados al revés:
+sin el reparto, cuatro fallan.
+
+
 ## v2.971.7 — El expediente también tiene puerta en el almacén
 
 Primer paso del plan que salió de `docs/AUDITORIA-PERSONAL-2026-09-03.md`. Es el

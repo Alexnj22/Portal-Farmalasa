@@ -1,11 +1,12 @@
 import { supabase } from '../../supabaseClient';
-import { safeJsonParse, CACHE_KEYS, persistEmployees } from '../utils';
+import { safeJsonParse, CACHE_KEYS, persistEmployees, partirPorLlave } from '../utils';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import { OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 import {
     codigoDeCarneLibre, duiDisponible,
-    upsertEducationCatalogEntries, insertEmployee, updateEmployee, updateEmployeeReturning,
+    upsertEducationCatalogEntries, insertEmployee, updateEmployee as updateEmployeeRow, updateEmployeeReturning,
+    guardarDatosProtegidos,
     insertEmployeeEventRaw, fetchAttendanceSince,
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
 } from '../../data/employees';
@@ -838,13 +839,25 @@ export const createEmployeeSlice = (set, get) => ({
             // enlazar justo a quien lo ocupa.
             assertHeadcountAvailable(get(), dbPayload.role_id, dbPayload.branch_id, absorbeA);
 
+            // Las diez columnas con llave propia salen del payload: desde el
+            // 2026-09-03 la sesión no las puede escribir y mandarlas acá haría
+            // fallar el alta entera con `permission denied for column …`. Se
+            // guardan enseguida, con la ficha ya creada, porque la RPC necesita
+            // el id para resolver el alcance.
+            const { dbPayload: filaPlana, protegido } = partirPorLlave(dbPayload);
+
             const { data: newEmp, error } = absorbeA
-                ? await updateEmployeeReturning(absorbeA, dbPayload)
-                : await insertEmployee(dbPayload);
+                ? await updateEmployeeReturning(absorbeA, filaPlana)
+                : await insertEmployee(filaPlana);
             if (error) {
                 console.error(absorbeA ? 'Supabase UPDATE error:' : 'Supabase INSERT error:', error.message, error.details, error.hint);
                 throw error;
             }
+            // Si esto lanza, la ficha ya existe y le falta el sueldo o el DUI.
+            // Se deja subir: es MUY preferible a tragárselo — una ficha a medias
+            // que nadie sabe que está a medias es el defecto que este trabajo
+            // vino a cerrar, no uno nuevo que valga la pena introducir.
+            await guardarDatosProtegidos(newEmp.id, protegido);
             registerCatalogEntry(dbPayload.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
             registerSkillCatalogEntries(dbPayload.additional_skills);
             registerMedicalCatalogEntries(dbPayload.chronic_conditions, dbPayload.disability_type);
@@ -855,14 +868,14 @@ export const createEmployeeSlice = (set, get) => ({
                 const compressedPhoto = await compressImage(uploadedFile);
                 const publicPhotoUrl = await get().uploadEmployeeFile(compressedPhoto, newEmp.id, 'foto_perfil');
                 if (publicPhotoUrl) {
-                    await updateEmployee(newEmp.id, { photo_url: publicPhotoUrl });
+                    await updateEmployeeRow(newEmp.id, { photo_url: publicPhotoUrl });
                     newEmp.photo_url = publicPhotoUrl;
                 }
             }
 
             if (Array.isArray(formData.employee_documents) && formData.employee_documents.length > 0) {
                 const uploadedDocs = await get().uploadEmployeeDocuments(newEmp.id, formData.employee_documents);
-                await updateEmployee(newEmp.id, { employee_documents: uploadedDocs });
+                await updateEmployeeRow(newEmp.id, { employee_documents: uploadedDocs });
                 newEmp.employee_documents = uploadedDocs;
             }
 
@@ -1284,7 +1297,16 @@ export const createEmployeeSlice = (set, get) => ({
                 }
             }
 
-            const { data: updated, error } = await updateEmployeeReturning(id, dbPayload);
+            // Mismo reparto que en el alta: las diez con llave propia salen del
+            // `update` y van por la RPC. Acá el orden es al revés —primero lo
+            // protegido— porque `updateEmployeeReturning` usa `.single()` y su
+            // resultado es lo que refresca la pantalla: si la parte protegida
+            // fuera a fallar, conviene que falle ANTES de que el store se
+            // actualice y muestre una ficha que la base no tiene.
+            const { dbPayload: filaPlana, protegido } = partirPorLlave(dbPayload);
+            if (protegido) await guardarDatosProtegidos(id, protegido);
+
+            const { data: updated, error } = await updateEmployeeReturning(id, filaPlana);
             if (error) throw error;
             if (dbPayload.education_specialty !== undefined || dbPayload.profession !== undefined || dbPayload.maestria_title !== undefined) {
                 registerCatalogEntry(dbPayload.education_level ?? updated.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
@@ -1395,11 +1417,11 @@ export const createEmployeeSlice = (set, get) => ({
 
         assertHeadcountAvailable(get(), parseInt(rehireData.role_id, 10), parseInt(rehireData.branch_id, 10), id);
 
-        // Regenerar PIN desde su código
-        const encoder = new TextEncoder();
-        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(emp.code));
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
-        const newPin = base64.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 8);
+        // El PIN ya no se calcula acá. Desde el 2026-09-03 lo deriva del código
+        // un trigger de Postgres (`derivar_kiosk_pin`), así que recontratar lo
+        // regenera solo — y el valor que el navegador mandara se pisaría igual.
+        // Era una de las TRES copias del mismo algoritmo en el cliente, y el
+        // servidor guardaba lo que le mandaran sin recalcularlo.
 
         // ── La fecha de fin NO se borra a ciegas ────────────────────────────
         //
@@ -1441,10 +1463,16 @@ export const createEmployeeSlice = (set, get) => ({
             // haría que el portal diga «ya se remitió» sobre algo que nunca se
             // remitió. Los ocho días del Art. 18 arrancan otra vez.
             mtps_remitido_fecha: null,
-            kiosk_pin: newPin,
         };
 
-        const { error } = await updateEmployee(id, dbPayload);
+        // La recontratación también toca el sueldo, así que pasa por el mismo
+        // reparto. (Hasta hoy llamaba a un `updateEmployee` importado que le
+        // hacía sombra al método del store y salteaba toda su sanitización sin
+        // que se notara; el import se renombró a `updateEmployeeRow` para que
+        // los dos símbolos dejen de llamarse igual.)
+        const { dbPayload: filaPlanaRehire, protegido: protegidoRehire } = partirPorLlave(dbPayload);
+        if (protegidoRehire) await guardarDatosProtegidos(id, protegidoRehire);
+        const { error } = await updateEmployeeRow(id, filaPlanaRehire);
         if (error) throw error;
 
         // Levantar el ban de la cuenta Auth aplicado en la baja (best-effort)
@@ -1526,7 +1554,7 @@ export const createEmployeeSlice = (set, get) => ({
         // 3. Incrementar hours_owed en employees
         const currentOwed = parseFloat(emp.hours_owed || 0);
         const newOwed = currentOwed + hoursWorked;
-        await updateEmployee(id, { hours_owed: newOwed });
+        await updateEmployeeRow(id, { hours_owed: newOwed });
 
         // 4. Registrar en employee_events
         await insertEmployeeEventRaw({

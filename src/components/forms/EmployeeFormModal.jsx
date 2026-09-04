@@ -640,6 +640,15 @@ const DEPARTAMENTOS_OPTS = Object.keys(EL_SALVADOR_GEO).map(d => ({ value: d, la
 // ============================================================================
 // 🚀 HELPERS & VALIDACIONES
 // ============================================================================
+// ── El PIN que se muestra es una PREVISUALIZACIÓN, no el dato ──────────────
+// Desde el 2026-09-03 `kiosk_pin` lo deriva del código un trigger de Postgres
+// (`derivar_kiosk_pin`): lo que este cálculo produzca se pisa al guardar. Se
+// conserva porque la pantalla ofrece copiar el PIN ANTES de guardar, y como el
+// algoritmo es el mismo —comprobado contra las 46 fichas con PIN de producción,
+// 0 distintas— lo que se copia es exactamente lo que va a quedar guardado.
+//
+// Antes esto sí era el dato: el servidor guardaba el valor que le mandaran sin
+// recalcularlo, así que quien pudiera escribir una ficha podía elegirle el PIN.
 const generateHashCorto = async (valor) => {
     if (!valor || valor.toString().trim() === '-') return '';
     const texto = valor.toString();

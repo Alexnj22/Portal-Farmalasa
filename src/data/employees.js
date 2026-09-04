@@ -130,6 +130,32 @@ export async function fetchIdentidades(ids) {
 }
 
 /**
+ * El gemelo de ESCRITURA de las dos anteriores.
+ *
+ * Hasta el 2026-09-03 la lectura de la ficha estaba partida en tres llaves y la
+ * escritura era una sola: `staff_list.can_edit` alcanzaba para cambiarle a
+ * cualquiera el sueldo y la cuenta donde se le deposita, **sin poder verlos**.
+ * Hoy `authenticated` no tiene INSERT ni UPDATE sobre esas diez columnas y esta
+ * función es el único camino.
+ *
+ * **Lanza y no devuelve vacío**, al revés que las de lectura. Ahí el silencio
+ * muestra menos; acá sería un guardado falso — la pantalla diría «guardado»
+ * sobre una ficha intacta, que es la familia de
+ * `feedback_sin_policy_de_update_el_write_devuelve_cero`. Por eso el error sube.
+ *
+ * Es UNA llamada y no tres —una por llave— porque así o entran las dos tandas o
+ * no entra ninguna: con tres, el sueldo puede guardarse y la identidad fallar, y
+ * la ficha queda escrita por la mitad sin que acá se sepa cuál mitad.
+ */
+export async function guardarDatosProtegidos(employeeId, patch) {
+    if (!employeeId || !patch || !Object.keys(patch).length) return;
+    const { error } = await supabase.rpc('guardar_datos_protegidos_de_empleado', {
+        p_id: employeeId, p_patch: patch,
+    });
+    if (error) throw error;
+}
+
+/**
  * ¿Este DUI está libre?
  *
  * Misma historia que el carné: la comprobación cruzaba contra el padrón que el

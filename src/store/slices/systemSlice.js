@@ -1,5 +1,5 @@
 import { supabase } from '../../supabaseClient';
-import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS, persistEmployees } from '../utils';
+import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS, persistEmployees, partirPorLlave } from '../utils';
 import { useToastStore } from '../toastStore';
 import { assertHeadcountAvailable } from './employeeSlice';
 import { signStorageUrls } from '../../utils/storageFiles';
@@ -8,7 +8,7 @@ import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { fireBrowserNotif } from '../../utils/browserNotif';
 import { buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
-import { fetchSalarios, fetchIdentidades, codigoDeCarneLibre } from '../../data/employees';
+import { fetchSalarios, fetchIdentidades, codigoDeCarneLibre, guardarDatosProtegidos } from '../../data/employees';
 import { kioscoMarcajesRecientes } from '../../data/kiosco';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import {
@@ -791,7 +791,13 @@ export const createSystemSlice = (set, get) => ({
             // Aplicar el cambio calculado en 2.6 al expediente — solo si la fecha
             // efectiva ya llegó; los SCHEDULED los aplica el cron en su fecha.
             if (hasChanges && !isScheduled) {
-                const { error: updErr } = await updateEmployeeFields(employeeId, empUpdates);
+                // Una novedad de salario escribe `base_salary`, que la sesión ya
+                // no puede tocar: va por la RPC con la llave «Salarios e
+                // ingresos». El resto del cambio —cargo, estado, sucursal, el
+                // código— sigue por la fila.
+                const { dbPayload: camposPlanos, protegido } = partirPorLlave(empUpdates);
+                if (protegido) await guardarDatosProtegidos(employeeId, protegido);
+                const { error: updErr } = await updateEmployeeFields(employeeId, camposPlanos);
                 if (updErr) {
                     const e = new Error(`El evento quedó registrado pero el cambio no se aplicó al expediente: ${updErr.message}`);
                     e.userFacing = true;
@@ -895,7 +901,13 @@ export const createSystemSlice = (set, get) => ({
                 });
 
                 if (Object.keys(revertPayload).length > 0) {
-                    const { error: revErr } = await updateEmployeeFields(existing.employee_id, revertPayload);
+                    // Cancelar una novedad de salario devuelve el sueldo al valor
+                    // anterior, así que la vuelta necesita la misma llave que la ida.
+                    const { dbPayload: revertPlano, protegido: revertProtegido } = partirPorLlave(revertPayload);
+                    if (revertProtegido) await guardarDatosProtegidos(existing.employee_id, revertProtegido);
+                    const { error: revErr } = Object.keys(revertPlano).length
+                        ? await updateEmployeeFields(existing.employee_id, revertPlano)
+                        : { error: null };
                     if (revErr) throw revErr;
                     reverted = true;
 

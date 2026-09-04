@@ -137,6 +137,16 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         }
     }, [formData?.date, isVacation, isDisability, formData?.disabilityType, formData?.manualEndDateOverride, formData?.disabilityDays, formData.endDate, setFormData]);
 
+    // ── El PIN de acá es una PREVISUALIZACIÓN, no el dato ──────────────────
+    // Desde el 2026-09-03 `kiosk_pin` lo deriva del código un trigger de
+    // Postgres: lo que este cálculo produzca se pisa al guardar. Se conserva
+    // porque la pantalla lo muestra para copiarlo antes de confirmar.
+    //
+    // Ojo con una diferencia que hasta hoy nadie podía notar: acá el código se
+    // normaliza antes de hashear (`trim`, sin espacios, mayúsculas) y en el
+    // formulario de la ficha —y en el trigger— se hashea tal cual. Da lo mismo
+    // porque el código es SÓLO números (`enforce_numeric_employee_code`), pero
+    // era una cuarta copia del algoritmo con una regla propia.
     useEffect(() => {
         if (!formData?.newCode) return;
         const generatePin = async () => {

@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.990.0 — El ajuste de Min·Máx dice quién lo pidió, quién lo aprobó y por qué
+
+Un MIN/MAX puesto a mano ya tenía badge, pero era **mudo**: todo lo que
+explicaba el número —quién, cuándo, por qué— vivía en un atributo `title`. En un
+teléfono eso no existe, y en escritorio no existe hasta que alguien adivina que
+hay que dejar el mouse encima. Ahora el badge **se aprieta** y abre el historial.
+
+**El indicador.** Eran dos badges (`MANUAL` y el de estado) que podían salir
+juntos y ninguno hacía nada. Hoy es uno solo, con el área de impacto subida a
+44 px por `blanco-tactil` —que no cambia el tamaño pintado, porque un badge en
+una fila densa no puede crecer—.
+
+**Quién lo pidió no es quien lo aprobó, y la ficha decía el segundo.**
+`manual_por` guarda la sesión que hizo el UPDATE, y al aprobar una solicitud esa
+sesión es la del aprobador. La fila decía «Lo puso celina.escobar@…» sobre un
+cambio que había pedido otra persona, con su motivo escrito, y que Celina sólo
+aprobó. Es una cadena de firmas que dice un nombre y esconde dos actos —el mismo
+defecto que ya costó 12 rechazos con el nombre equivocado en Solicitudes.
+
+El bloque «Ajuste vigente» del historial cruza `manual_at` contra el `decided_at`
+de las solicitudes de ese producto (idéntico en las 34 aprobadas: el UPDATE y la
+decisión ocurren en la misma transacción) y escribe los dos actos: *Lo pidió
+Nathaly Estrada · lo aprobó edwin.nunez@… el 03 sep 2026*. En el historial, cada
+entrada rotula **Modificó** o **Aprobó** según corresponda.
+
+**El motivo de la solicitud no estaba en ningún lado de esta pantalla.** El log
+de aprobación guarda `request_id`, los nombres y el «de → a», pero el texto que
+alguien escribió al pedir el cambio vive en `minmax_change_requests.reason` — 37
+de las 39 lo tienen.
+
+Se lee por **`get_minmax_solicitudes_de_producto`**, no con un `.from()` directo,
+y la razón es una llave: la policy `mmcr_select` deja ver una solicitud a quien
+la pidió, a quien puede aprobarlas y a quien ve el módulo de solicitudes, y
+**ninguna de las tres es «puede ver Min·Máx»**. Medido sobre los 6 cargos con
+`minmax.can_view`: *Gerente General no tiene ninguna*, así que el motivo le
+habría vuelto como cero filas — que en pantalla se lee igual que «no hubo
+solicitud». La función es DEFINER y pide el permiso del dato que se está
+mirando: si podés ver el MIN y el MAX, podés ver por qué son ese número.
+
+
 ## v2.989.0 — Mis documentos: cada documento dice qué es, y se abre acá
 
 Pedido del usuario sobre `/mis-documentos`, con captura: *«que sean más

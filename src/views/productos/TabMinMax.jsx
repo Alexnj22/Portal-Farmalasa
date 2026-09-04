@@ -330,7 +330,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         toast, setToast,
         currentEmployee,
         historyRow, setHistoryRow,
-        historyLogs,
+        historyLogs, historySolicitudes,
         historyLoading,
         empPhotoMap,
         bodegaTooltip,
@@ -848,14 +848,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span className="text-body font-medium text-content truncate leading-tight">{row.product_name || '—'}</span>
-                                                    {row.has_manual && <Badge variant="chart-3" size="sm" uppercase={false} className="shrink-0">MANUAL</Badge>}
                                                     {(() => {
-                                                        // Lo que puso una persona, y en qué estado quedó. El `title` lleva
-                                                        // quién y cuándo porque es lo primero que se pregunta quien mira
-                                                        // un número que no cuadra con el cálculo.
+                                                        /* El indicador de «este número no lo puso el cálculo», y la
+                                                           puerta para saber por qué.
+
+                                                           Antes eran DOS badges mudos —`MANUAL` y el de estado— y todo
+                                                           lo que explicaba el número vivía en un `title`: invisible en
+                                                           un teléfono, y en escritorio invisible hasta que alguien
+                                                           adivina que hay que pasar el mouse por encima. Ahora se
+                                                           APRIETA y abre el historial, que ya sabía contar quién
+                                                           modificó, quién solicitó y quién aprobó.
+
+                                                           `blanco-tactil` sube el área de impacto a 44 sin cambiar el
+                                                           tamaño pintado: un badge en una fila densa no puede crecer,
+                                                           pero sí puede ser tocable. Exige `relative`, que va acá
+                                                           porque el badge no lo trae. */
                                                         const est = estadoAjuste(row);
-                                                        if (!est) return null;
-                                                        const cfg = AJUSTE_CFGS.find(a => a.key === est);
+                                                        if (!est && !row.has_manual) return null;
+                                                        const cfg = est ? AJUSTE_CFGS.find(a => a.key === est) : null;
                                                         const motivo = row._manual_motivo ? MOTIVO_AJUSTE[row._manual_motivo]?.label : null;
                                                         const cuando = row._manual_at
                                                             ? new Date(row._manual_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -863,15 +873,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         const detalle = [
                                                             cfg?.ayuda,
                                                             row._manual_por ? `Lo puso ${row._manual_por}${cuando ? ` el ${cuando}` : ''}` : null,
-                                                            motivo ? `Motivo: ${motivo}` : 'Sin motivo declarado',
+                                                            est ? (motivo ? `Motivo: ${motivo}` : 'Sin motivo declarado') : null,
                                                             row._manual_nota || null,
+                                                            'Toca para ver quién y por qué',
                                                         ].filter(Boolean).join(' · ');
                                                         const variant = est === 'en_conflicto' ? 'warning'
                                                             : est === 'volvio_a_moverse' ? 'chart-1'
-                                                            : 'success';
+                                                            : est ? 'success' : 'chart-3';
                                                         return (
-                                                            <Badge title={detalle} variant={variant} size="sm" uppercase={false} className="shrink-0">
-                                                                {est === 'respetado' ? 'AJUSTADO' : cfg?.label?.toUpperCase()}
+                                                            <Badge
+                                                                title={detalle}
+                                                                variant={variant}
+                                                                size="sm"
+                                                                uppercase={false}
+                                                                className="shrink-0 relative blanco-tactil"
+                                                                {...clickable(e => { e.stopPropagation(); openHistory(row); })}
+                                                            >
+                                                                {est ? (est === 'respetado' ? 'AJUSTADO' : cfg?.label?.toUpperCase()) : 'MANUAL'}
                                                             </Badge>
                                                         );
                                                     })()}
@@ -1468,12 +1486,80 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             {historyLoading && (
                                 <div className="flex justify-center py-10"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                             )}
+                            {/* Lo VIGENTE arriba, antes de la lista. El historial cuenta
+                                lo que fue pasando; la pregunta que trae a alguien acá es
+                                «¿por qué es este número HOY?», y esa respuesta estaba
+                                sólo en el `title` del badge. */}
+                            {!historyLoading && historyRow._manual_at && (() => {
+                                /* De dónde salió el número que rige HOY.
+
+                                   `manual_por` guarda la sesión que hizo el UPDATE, y al
+                                   aprobar una solicitud esa sesión es la del APROBADOR: la
+                                   ficha decía «Lo puso celina.escobar@…» sobre un cambio que
+                                   pidió otra persona con su motivo escrito. Es una cadena de
+                                   firmas que dice un nombre y esconde dos actos.
+
+                                   Se cruza por el instante: `approve_minmax_request` escribe
+                                   `decided_at` y el UPDATE que dispara el trigger ocurren en la
+                                   misma transacción, así que `manual_at` sale idéntico —
+                                   verificado sobre las 34 aprobadas—. El margen de 2 s es por
+                                   si alguna vez dejan de compartir el `now()`. */
+                                const t = new Date(historyRow._manual_at).getTime();
+                                const origen = historySolicitudes.find(s =>
+                                    s.decided_at && Math.abs(new Date(s.decided_at).getTime() - t) < 2000);
+                                const fecha = new Date(historyRow._manual_at)
+                                    .toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
+                                const motivoAjuste = historyRow._manual_motivo
+                                    ? (MOTIVO_AJUSTE[historyRow._manual_motivo]?.label ?? historyRow._manual_motivo)
+                                    : null;
+                                return (
+                                <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-1.5">
+                                    <span className="text-micro font-black uppercase tracking-wide text-content-3">
+                                        {origen ? 'Ajuste vigente · vino de una solicitud' : 'Ajuste vigente'}
+                                    </span>
+                                    <span className="text-label text-content-2">
+                                        <strong className="text-content">
+                                            {motivoAjuste || origen?.reason || 'Sin motivo declarado'}
+                                        </strong>
+                                        {historyRow._manual_motivo === 'cliente_fijo'
+                                            && historyRow._manual_cliente_unidades > 0
+                                            && historyRow._manual_cliente_dias > 0 && (
+                                            <span className="text-content-3"> · {historyRow._manual_cliente_unidades} cada {historyRow._manual_cliente_dias} días</span>
+                                        )}
+                                    </span>
+                                    {motivoAjuste && origen?.reason && (
+                                        <span className="text-label text-content-3">Pidió: {origen.reason}</span>
+                                    )}
+                                    {historyRow._manual_nota && (
+                                        <span className="text-label text-content-3">{historyRow._manual_nota}</span>
+                                    )}
+                                    {origen?.decision_note && (
+                                        <span className="text-label text-content-3">Nota de quien decidió: {origen.decision_note}</span>
+                                    )}
+                                    <span className="text-micro text-content-3">
+                                        {origen?.requested_by_name
+                                            ? <>Lo pidió <strong className="text-content-2">{origen.requested_by_name}</strong>
+                                               {historyRow._manual_por ? <> · lo aprobó <strong className="text-content-2">{historyRow._manual_por}</strong></> : null}
+                                               {` el ${fecha}`}</>
+                                            : historyRow._manual_por
+                                                ? <>Lo puso <strong className="text-content-2">{historyRow._manual_por}</strong>{` el ${fecha}`}</>
+                                                : `Ajustado el ${fecha}`}
+                                    </span>
+                                </div>
+                                );
+                            })()}
                             {!historyLoading && historyLogs.length === 0 && (
                                 <EmptyState compact icon={History} title="Sin cambios" />
                             )}
                             {!historyLoading && historyLogs.map(log => {
                                 const d = log.details || {};
                                 const empPhoto = empPhotoMap[log.user_name];
+                                // La solicitud que originó esta entrada, si la hubo. El log
+                                // guarda `request_id` y los nombres, pero NO el motivo que se
+                                // escribió al pedir — ese vive en la solicitud y se cruza acá.
+                                const sol = d.request_id
+                                    ? historySolicitudes.find(s => s.id === d.request_id)
+                                    : null;
                                 const sucName = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Toda la red' : (ERP_NAMES[d.sucursal_id] || '');
                                 // El `badge:` del fallback viejo no lo leía nadie —`Badge` va
                                 // por `variante`— así que una acción sin entrada salía con el
@@ -1492,8 +1578,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 : <span className="text-caption font-black text-content-3">{log.user_name?.charAt(0)?.toUpperCase() || '?'}</span>}
                                         </div>
                                         <div className="flex-1 min-w-0">
+                                            {/* El rótulo del acto, no sólo el nombre. En una
+                                                aprobación el de arriba es quien APROBÓ y el de
+                                                abajo quien SOLICITÓ: sin decirlo, la cadena de
+                                                firmas dice un nombre y esconde dos actos, y se
+                                                lee como si el aprobador lo hubiera decidido
+                                                solo. En todo lo demás, quien lo modificó. */}
                                             <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                                                <span className="text-label font-bold text-content-2 truncate">{log.user_name || 'Sistema'}</span>
+                                                <span className="text-label font-bold text-content-2 truncate">
+                                                    <span className="text-micro font-semibold text-content-3 mr-1">
+                                                        {d.requested_by_name ? 'Aprobó' : 'Modificó'}
+                                                    </span>
+                                                    {log.user_name || 'Sistema'}
+                                                </span>
                                                 <span className="text-micro text-content-3 shrink-0 tabular-nums">{dateStr} · {timeStr}</span>
                                             </div>
                                             <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -1540,6 +1637,20 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     </span>
                                                     <span className="text-micro font-bold text-content-2 truncate">{d.requested_by_name}</span>
                                                 </div>
+                                            )}
+                                            {/* El POR QUÉ de la solicitud y el de la decisión.
+                                                Es lo único de esta pantalla que no estaba en
+                                                ningún lado: la bitácora guarda quién y cuánto,
+                                                el motivo se escribió en la solicitud. */}
+                                            {sol?.reason && (
+                                                <p className="text-micro text-content-3 mt-1 leading-relaxed">
+                                                    <span className="font-semibold">Motivo:</span> {sol.reason}
+                                                </p>
+                                            )}
+                                            {(sol?.decision_note || d.note) && (
+                                                <p className="text-micro text-content-3 mt-0.5 leading-relaxed">
+                                                    <span className="font-semibold">Nota de quien decidió:</span> {sol?.decision_note || d.note}
+                                                </p>
                                             )}
                                         </div>
                                     </div>

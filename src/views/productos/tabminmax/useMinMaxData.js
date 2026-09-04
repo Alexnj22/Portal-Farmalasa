@@ -17,6 +17,7 @@ import {
     fetchStockParams, fetchStockParamsUpdates, fetchStockConfig, fetchEmployeeByEmail,
     fetchEmployeesBasic, fetchAuditLogsForProduct, effectiveMinMaxPair,
 } from '../../../data/stockParams';
+import { fetchSolicitudesDeProducto } from '../../../data/minmaxRequests';
 
 // Warns (but does NOT block) when a saved value is 4× above or 4× below the calculated reference.
 import { mensajeAmigable } from '../../../utils/errorMessages';
@@ -133,6 +134,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const [currentEmployee, setCurrentEmployee] = useState(null);
     const [historyRow,      setHistoryRow]      = useState(null);
     const [historyLogs,     setHistoryLogs]     = useState([]);
+    const [historySolicitudes, setHistorySolicitudes] = useState([]);
     const [historyLoading,  setHistoryLoading]  = useState(false);
     const [empPhotoMap,     setEmpPhotoMap]     = useState({});
     const [bodegaTooltip,   setBodegaTooltip]   = useState(null); // { productId, pending:[{erp_sucursal_id,draft_min,draft_max}], rect }
@@ -847,7 +849,11 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         // Toda acción que cambia MIN/MAX de este producto — incluye Bodega manual,
         // ediciones desde Pedidos y los "0 en red" (que no llevan sucursal_id propio
         // porque tocan TODAS las sucursales a la vez, por eso van con .or() aparte).
-        const [{ data: logs }, { data: emps }] = await Promise.all([
+        // La bitácora de la aprobación trae quién pidió y quién decidió, pero NO
+        // el motivo que se escribió al pedir: ese vive en la solicitud, y se
+        // cruza por `request_id`. Sin él, la única respuesta a «¿por qué este
+        // número?» era el `title` del badge, que en un teléfono no existe.
+        const [{ data: logs }, { data: emps }, { data: sols }] = await Promise.all([
             fetchAuditLogsForProduct([
                 'MINMAX_LIVE_EDIT', 'MINMAX_DRAFT_EDIT',
                 'MINMAX_BODEGA_MANUAL_OVERRIDE', 'MINMAX_BODEGA_RESET_MANUAL',
@@ -857,11 +863,13 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 'MINMAX_REQUEST_APPROVED', 'MINMAX_MOTIVO_AJUSTE',
             ], row.erp_product_id, row._erp_sucursal_id),
             fetchEmployeesBasic(),
+            fetchSolicitudesDeProducto(row.erp_product_id, row._erp_sucursal_id),
         ]);
         const photoMap = {};
         await signPhotosDeep(emps || []);
         (emps || []).forEach(e => { if (e.name) photoMap[e.name] = e.photo_url; });
         setHistoryLogs(logs || []);
+        setHistorySolicitudes(sols || []);
         setEmpPhotoMap(photoMap);
         setHistoryLoading(false);
     }, []);
@@ -1290,7 +1298,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         toast, setToast,
         currentEmployee,
         historyRow, setHistoryRow,
-        historyLogs,
+        historyLogs, historySolicitudes,
         historyLoading,
         empPhotoMap,
         bodegaTooltip,

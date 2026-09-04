@@ -206,3 +206,27 @@ export async function fetchMinMaxEstados(erpSucursalId = null) {
         error,
     };
 }
+
+// ── Historial de una fila de Min·Máx ──────────────────────────────────────────
+
+/**
+ * Las solicitudes de UN producto en UNA sala, para el historial de su fila.
+ *
+ * Va por RPC y no por `.from('minmax_change_requests')` porque la policy
+ * `mmcr_select` deja ver una solicitud a quien la pidió, a quien puede
+ * aprobarlas y a quien ve el módulo de solicitudes — y ninguna de esas tres es
+ * «puede ver Min·Máx». Medido sobre los 6 cargos con `minmax.can_view`,
+ * **Gerente General no tiene ninguna**: el motivo le volvería como cero filas,
+ * que en pantalla se lee igual que «no hubo solicitud».
+ *
+ * `get_minmax_solicitudes_de_producto` es DEFINER y pide el permiso del dato
+ * que se está mirando: si podés ver el MIN y el MAX, podés ver por qué son ese
+ * número.
+ */
+export async function fetchSolicitudesDeProducto(erpProductId, erpSucursalId) {
+    const { data, error } = await supabase.rpc('get_minmax_solicitudes_de_producto', {
+        p_erp_product_id:  Number(erpProductId),
+        p_erp_sucursal_id: Number(erpSucursalId),
+    });
+    return { data: data ?? [], error };
+}

@@ -213,7 +213,9 @@ export default function FichasDeCaja({
                 </span>
             </div>
 
-            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {/* Tope de 3 columnas: son 6 salas. Con 4 la última fila queda con
+             * dos huecos y la fila se lee como si faltaran cajas. */}
+            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
                 {ordenadas.map((a) => (
                     <Ficha
                         key={`${a.branch_id}:${a.erp_apertura_id}`}

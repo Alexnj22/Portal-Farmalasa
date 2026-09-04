@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.977.1 — Las fichas de caja topan en 3 columnas
+
+La fila de cajas de Cortes se abría a cuatro columnas en pantallas anchas. Son
+seis salas: la segunda fila quedaba con dos huecos a la derecha y esa fila vacía
+se lee como si faltaran cajas por abrir. Con tope de tres, las seis llenan dos
+filas completas.
+
 ## v2.977.0 — `gate:nombre`: la regla del nombre corto pasa a estar vigilada
 
 La regla existía desde siempre y estaba bien escrita —`shortEmployeeName`,

@@ -49,7 +49,7 @@ import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import {
     fetchAperturas, fetchCortes, fetchDiferencias, fetchEntradasParaCruce,
     fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas,
-    fetchVentasPorPago,
+    fetchSalasQueTienenCaja, fetchVentasPorPago,
 } from '../data/cortes';
 /* Los cobros de crédito viven en `creditos` —el cobro se decide allá— y se
  * miran acá porque el dinero entra por esta caja. Es la misma lectura que hace
@@ -211,7 +211,7 @@ const METRICAS = [
 
 const CortesView = () => {
     const branches = useStaff((s) => s.branches) || VACIO;
-    const { hasPermission, getScope } = useAuth();
+    const { hasPermission, getScope, user } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
     /* Las salidas de bolsa son de OTRO módulo, con su propio permiso. Se
      * pregunta antes de pedirlas: la policy de `bolsas` devuelve cero filas y no
@@ -593,12 +593,48 @@ const CortesView = () => {
         if (await resolver(corte, 'CONFIRMADO')) cargar();
     }, [resolver, cargar]);
 
-    const salaOptions = useMemo(
-        () => branches
-            .filter((b) => cortes.some((c) => String(c.branch_id) === String(b.id)))
-            .map((b) => ({ value: String(b.id), label: b.name })),
-        [branches, cortes],
-    );
+    /* ── Las sucursales que ofrece el filtro ───────────────────────────────
+     *
+     * Salían de los CORTES del período, así que un día sin cortes dejaba el
+     * desplegable en «Sin resultados» con las seis fichas de caja pintadas
+     * justo debajo (reportado el 2026-09-04). Y el control que quedaba inútil
+     * era justamente el que sirve para ir a mirar a otro lado: es la misma
+     * familia que un selector que se esconde con una sola opción y deja sin
+     * salida.
+     *
+     * Las opciones de un filtro contestan «¿por qué puedo filtrar?», y ésa es
+     * una pregunta sobre el portal, no sobre las filas que hoy cargaron.
+     *
+     * Se acota por el ALCANCE, no por lo cargado: quien mira una sola sala no
+     * tiene por qué ver las otras cinco en una lista donde elegirlas no
+     * devuelve nada. Misma regla que ya aplica Cuentas por cobrar.
+     *
+     * Mientras la lista no llega —o si no se pudo leer, que `null` distingue de
+     * «ninguna»— se cae a lo que la vista ya sabe: las salas presentes en los
+     * cortes O en las aperturas. Con eso el caso reportado ya sale bien, porque
+     * las aperturas estaban ahí; la lista estable es lo que además cubre el día
+     * en que no haya ni una cosa ni la otra. */
+    const [salasConCaja, setSalasConCaja] = useState(null);
+    useEffect(() => {
+        let vivo = true;
+        fetchSalasQueTienenCaja().then((ids) => { if (vivo) setSalasConCaja(ids); });
+        return () => { vivo = false; };
+    }, []);
+
+    const salaOptions = useMemo(() => {
+        const miSala = user?.branchId ?? user?.branch_id ?? null;
+        const puedeVerTodas = getScope('cortes_caja') === 'ALL';
+        const conCaja = salasConCaja?.length
+            ? new Set(salasConCaja.map(String))
+            : new Set([
+                ...cortes.map((c) => String(c.branch_id)),
+                ...aperturas.map((a) => String(a.branch_id)),
+            ]);
+        return branches
+            .filter((b) => conCaja.has(String(b.id)))
+            .filter((b) => puedeVerTodas || String(b.id) === String(miSala))
+            .map((b) => ({ value: String(b.id), label: b.name }));
+    }, [branches, cortes, aperturas, salasConCaja, getScope, user]);
 
     const HOY = `${hoySV()}|${hoySV()}`;
     const verPeriodo = useCallback((v) => {

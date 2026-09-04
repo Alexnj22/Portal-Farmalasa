@@ -197,6 +197,38 @@ export function fetchHistorialDeMovimientos({ desde, hasta, branchId = null }) {
 }
 
 /**
+ * Las salas que TIENEN caja. No depende de lo que se esté mirando.
+ *
+ * ── Por qué existe ────────────────────────────────────────────────────────
+ * El desplegable de sucursales de Cortes armaba sus opciones con las salas que
+ * aparecían en los CORTES del período, así que un día sin cortes lo dejaba
+ * vacío: decía «Sin resultados» con las seis fichas de caja pintadas justo
+ * debajo. Y el control que quedaba inútil era precisamente el que sirve para
+ * ir a mirar a otro lado — la misma familia que un selector que se esconde con
+ * una sola opción y deja sin salida.
+ *
+ * Las opciones de un filtro contestan «¿por qué puedo filtrar?», y ésa es una
+ * pregunta sobre el portal, no sobre las filas que hoy cargaron.
+ *
+ * ── Por qué de `erp_sucursal_map` y no de una lista de nombres ─────────────
+ * Es la MISMA verdad que usa `avisar_cierre_del_dia` para saber a qué salas
+ * esperarles un corte. Filtrar por nombre («todas menos Bodega y
+ * Administracion») es la trampa de tomar un rótulo por clave: el día que le
+ * cambien el nombre a una, la lista se desincroniza sin dar error.
+ *
+ * Son 7 filas, así que no hay riesgo de truncado.
+ */
+export async function fetchSalasQueTienenCaja() {
+    const { data, error } = await supabase
+        .from('erp_sucursal_map').select('branch_id').eq('es_bodega', false);
+    if (error) {
+        console.error('cortes: fetchSalasQueTienenCaja failed:', error.message);
+        return null;   // `null` es «no pude saber», que NO es «ninguna»
+    }
+    return (data || []).map((r) => Number(r.branch_id));
+}
+
+/**
  * Las aperturas de caja de un rango: quién abrió, a qué hora y con cuánto.
  *
  * `employee_id` —y con él `abrio.name`— sale de `caja_aperturas_del_portal`:

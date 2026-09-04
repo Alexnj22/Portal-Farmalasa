@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.984.2 — El filtro de sucursales deja de vaciarse
+
+El desplegable de sucursales de Cortes armaba sus opciones con las salas que
+aparecían **en los cortes del período**, así que un día sin cortes lo dejaba en
+«Sin resultados» — con las seis fichas de caja pintadas justo debajo. Y el
+control que quedaba inútil era justamente el que sirve para ir a mirar a otro
+lado.
+
+Las opciones de un filtro contestan «¿por qué puedo filtrar?», y ésa es una
+pregunta sobre el portal, no sobre las filas que hoy cargaron. Ahora salen de
+`erp_sucursal_map` —la misma verdad que usa el aviso de cierre del día para
+saber a qué salas esperarles un corte— y se acotan por el alcance de
+`cortes_caja`, no por lo que se cargó. Nada de filtrar por nombre: el día que
+le cambien el nombre a una sala, una lista escrita a mano se desincroniza sin
+dar error.
+
+Mientras la lista no llega —o si no se pudo leer, que `null` distingue de
+«ninguna»— cae a las salas presentes en los cortes **o en las aperturas**, que
+ya cubría el caso reportado.
+
 ## v2.984.1 — Movimientos: el tipo va en un select y el estado se queda en las tarjetas
 
 La píldora de **Efectivo → Movimientos** tenía dos ranuras propias y las dos

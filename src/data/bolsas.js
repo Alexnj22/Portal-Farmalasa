@@ -952,14 +952,26 @@ const FRESCURA_MAXIMA_SEG = 40 * 60;
  *    quiere decir que el barrido no está corriendo, y entonces la respuesta es
  *    de otro rato aunque parezca de ahora.
  *
- * Con la caja ABIERTA y el espejo al día no se pregunta: lo único que podría
- * haber cambiado es que se cerrara, y cerrar es el acto que el portal hace. Si
- * aun así se cerró por fuera, lo que la pantalla ofrece —cortar, sacar— pasa
- * por `operar-caja`, que lee el panel vivo y lo rechaza con su motivo.
+ * 3. **Dice ABIERTA y el día ya tiene su Z.** Es una contradicción visible: el
+ *    Z es el cierre de la jornada, así que una caja que sigue abierta después
+ *    es o un espejo viejo o algo que hay que ver ahora mismo. Y es justo el
+ *    rato en que la sala está mirando la pantalla.
+ *
+ *    Se agrega porque el supuesto que estaba escrito acá —«cerrar es el acto
+ *    que el portal hace»— dejó de ser cierto: mientras las salas usen las dos
+ *    pantallas, cerrar el turno y cerrar la caja también pasan por el sistema.
+ *    La noche del 3-sep costó una sala mirando «Abierta» media hora después de
+ *    haber cerrado allá, con el reclamo exacto: «es muy lento».
+ *
+ * Fuera de esos tres, con la caja ABIERTA y el espejo al día no se pregunta:
+ * la respuesta local es instantánea y la del origen tarda hasta 7 s. Si aun así
+ * cambió por fuera, lo que la pantalla ofrece —cortar, sacar— pasa por
+ * `operar-caja`, que lee el panel vivo y lo rechaza con su motivo.
  */
 export function hayQuePreguntarleAlOrigen(estado) {
     if (!estado || estado.error) return true;
     if (!estado.abierta) return true;
+    if ((estado.cortes || []).some((c) => c.tipo === 'Z')) return true;
     return (estado.frescura_seg ?? Infinity) > FRESCURA_MAXIMA_SEG;
 }
 

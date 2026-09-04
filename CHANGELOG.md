@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.974.1 — Con el día cerrado y la caja abierta, el portal relee el sistema
+
+Reclamo de la sala, la noche del 3-sep: *«ya cerré el turno, pero en el portal
+sigue saliendo abierto, ¿cada cuánto verifica? es muy lento»*.
+
+El barrido del espejo corre **cada 30 minutos**, y el portal —desde v2.970.0—
+contesta con lo que tiene guardado en vez de raspar el sistema en cada carga.
+Sólo vuelve a preguntar en dos casos, y estaban escritos con este supuesto:
+
+> «Con la caja ABIERTA y el espejo al día no se pregunta: lo único que podría
+> haber cambiado es que se cerrara, **y cerrar es el acto que el portal hace**.»
+
+Dejó de ser cierto el mismo día que las salas empezaron a usar las dos
+pantallas: cerrar el turno y cerrar la caja también pasan por el sistema de la
+caja, y de eso el espejo no se entera hasta la próxima media hora.
+
+**Se agrega un tercer caso: dice ABIERTA y el día ya tiene su Z.** Es una
+contradicción visible —el Z es el cierre de la jornada— y además es el rato en
+que la sala está mirando la pantalla. Cuesta una lectura del sistema sólo
+después del cierre, no en cada carga del día: la respuesta local es instantánea
+y la del origen tarda hasta 7 s, que es justo lo que v2.970.0 vino a sacar.
+
 ## v2.974.0 — Un documento de personal se guarda con su dueño en la ruta, o no se guarda
 
 Cierra G9 del informe, que el plan daba por bloqueado, y con eso quedan **once de

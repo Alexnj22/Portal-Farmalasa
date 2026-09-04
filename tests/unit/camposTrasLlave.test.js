@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { partirPorLlave, CAMPOS_TRAS_LLAVE, SENSITIVE_FIELDS } from '../../src/store/utils';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -94,5 +94,43 @@ describe('partirPorLlave — qué va por la tabla y qué por la RPC', () => {
         for (const campo of CAMPOS_TRAS_LLAVE) {
             expect(SENSITIVE_FIELDS).toContain(campo);
         }
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Las dos marcas de «me contestaron» y por qué no pueden sobrevivir al caché.
+//
+// `identidad_conocida` y `salario_conocido` las pone el store desde la
+// RESPUESTA del servidor, no desde el permiso: `get_employee_identidad` y
+// `get_employee_salarios` devuelven la fila aunque el dato esté vacío, así que
+// la marca distingue «no me dejaron mirar» de «miré y no hay». Sin ellas las dos
+// cosas se ven igual, y el portal ya pagó eso dos veces: el listado acusando de
+// «Faltan 2 datos» a 48 fichas completas, y la quincena que se generaría en cero.
+//
+// Pero `persistEmployees` borra del disco los campos con los que esas marcas
+// viajan. Si la marca sobreviviera, la fila hidratada del caché afirmaría saber
+// algo sobre datos que se acaban de borrar ahí mismo.
+// ═══════════════════════════════════════════════════════════════════════════
+describe('persistEmployees — las marcas no sobreviven a los datos que marcan', () => {
+    it('borra las dos marcas junto con los campos sensibles', async () => {
+        const guardado = {};
+        vi.stubGlobal('localStorage', {
+            setItem: (k, v) => { guardado[k] = v; },
+            getItem: (k) => guardado[k] ?? null,
+        });
+        const { persistEmployees } = await import('../../src/store/utils');
+
+        persistEmployees([{
+            id: 'a', name: 'ANA', dui: '01234567-8', base_salary: 365,
+            identidad_conocida: true, salario_conocido: true,
+        }]);
+
+        const [fila] = JSON.parse(Object.values(guardado)[0]);
+        expect(fila.dui).toBeUndefined();
+        expect(fila.base_salary).toBeUndefined();
+        expect(fila.identidad_conocida).toBeUndefined();
+        expect(fila.salario_conocido).toBeUndefined();
+        // Y lo que no es secreto se queda: el caché sigue sirviendo para pintar.
+        expect(fila.name).toBe('ANA');
     });
 });

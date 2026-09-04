@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.972.1 — La nómina se puede escribir, y deja de filtrar sueldos por sala
+
+Tercer paso del plan de `docs/AUDITORIA-PERSONAL-2026-09-03.md`, y trae dos
+hallazgos que no estaban en el informe: aparecieron al mirar las policies de las
+tablas de planilla.
+
+### No se podía correr
+
+`payroll_entries` y `payroll_periods` tienen RLS encendido y el GRANT completo,
+pero **sólo una policy de SELECT**. Sin INSERT, UPDATE ni DELETE, las cuatro
+cosas que hace `src/data/payroll.js` fallan siempre: crear el período, generar la
+quincena, rehacerla y corregir un renglón.
+
+Eso explica las **0 filas** de `payroll_entries` mucho mejor que «todavía no
+cargaron los sueldos». Nadie lo reportó porque nadie llegó a intentarlo.
+
+### Y su lectura filtraba sueldos por sala
+
+La policy vieja aceptaba dos caminos, y el segundo era
+`EXISTS (… e.branch_id = auth_employee_branch_id())` **sin pedir ningún
+permiso**. El día que existiera la primera quincena, cualquier dependiente habría
+visto el sueldo ordinario, los descuentos y el líquido a pagar de sus compañeros
+de sala y de su jefatura.
+
+Medido en el branch con la policy vieja puesta: una sesión sin `payroll`, en la
+misma sucursal, **veía el renglón**; con la nueva ve **cero**.
+
+Es la misma forma que el hallazgo del bucket `documents` de v2.971.7: una
+condición que parece un filtro —«de mi sala»— haciendo de permiso. **Acotar POR
+DÓNDE se mira no es lo mismo que decidir QUIÉN puede mirar.**
+
+### Generar la quincena sin la llave del sueldo
+
+`base_salary` no viene con la fila del empleado: lo trae `get_employee_salarios`,
+cuya llave es `staff_salary`. La de la pantalla de Nómina es `payroll`. **Son dos
+llaves distintas**, así que la combinación «puede generar la planilla y no puede
+ver un sueldo» existe.
+
+Y el daño no habría sido un renglón mal calculado: generar **borra** los
+renglones `PENDING` del período y los reinserta, así que habría cambiado un
+borrador correcto por 46 renglones en `$0.00` — con la advertencia de «sin
+salario base» encendida, que se lee como un problema de datos y no de permisos.
+
+Ahora frena antes de borrar nada. La marca `salario_conocido` la pone el store
+desde la **respuesta** del servidor y no desde el permiso: la función devuelve la
+fila aunque el sueldo esté vacío, así que distingue «no me dejaron mirar» de
+«miré y no hay». Es la misma marca que `identidad_conocida` (v2.971.3), por el
+mismo motivo, y como aquélla **se borra del caché del disco junto con los datos
+que marca** — si sobreviviera, la fila hidratada afirmaría saber algo sobre un
+sueldo que se acaba de borrar ahí mismo. Un caso nuevo lo ancla, probado al
+revés.
+
+### Lo que a propósito no se abrió
+
+Un `OR employee_id = auth_employee_id()` dejaría que cada quien viera su propia
+boleta, y probablemente corresponda. No se agregó porque hoy no hay ninguna
+pantalla que se la muestre, y una policy que abre un dato para el que no existe
+consumidor es una decisión tomada sin que nadie la mire.
+
+
 ## v2.972.0 — La ficha se lee con tres llaves y ahora se escribe con tres
 
 Segundo paso del plan de `docs/AUDITORIA-PERSONAL-2026-09-03.md`. La base y el

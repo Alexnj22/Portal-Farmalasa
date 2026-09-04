@@ -88,14 +88,16 @@ export const persistEmployees = (employees) => {
         const light = employees.map(emp => {
             const safe = { ...emp };
             SENSITIVE_FIELDS.forEach(f => delete safe[f]);
-            // `identidad_conocida` NO es un secreto —es la marca de que el
-            // servidor contestó por esta persona— pero viaja con los campos que
-            // acaban de borrarse, y sin ellos MIENTE: la fila hidratada del
+            // `identidad_conocida` y `salario_conocido` NO son secretos —son la
+            // marca de que el servidor contestó por esta persona— pero viajan
+            // con los campos que
+            // acaban de borrarse, y sin ellos MIENTEN: la fila hidratada del
             // caché diría «sé que esta persona no tiene DUI» sobre un DUI que
             // se borró acá mismo. Es la misma trampa que el `historialCompleto`
             // resuelve para el aro de la foto. Fuera del disco, la pantalla
             // vuelve a «no sé», que es la verdad hasta que `fetchBoot` conteste.
             delete safe.identidad_conocida;
+            delete safe.salario_conocido;
             return { ...safe, history: [], documents: [], attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday) };
         });
         localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(light));

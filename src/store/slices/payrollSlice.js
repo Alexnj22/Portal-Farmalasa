@@ -234,6 +234,30 @@ export const createPayrollSlice = (set, get) => ({
                 return true;
             });
 
+            // ── Antes de borrar nada: ¿este navegador puede VER los sueldos? ──
+            //
+            // `base_salary` no viene con la fila: lo trae `get_employee_salarios`,
+            // cuya llave es `staff_salary`. La de esta pantalla es `payroll`. Son
+            // DOS llaves distintas, así que la combinación «puede generar la
+            // planilla y no puede ver un sueldo» existe y la pantalla de Permisos
+            // la arma con dos clics.
+            //
+            // Y el daño no sería un renglón mal calculado: unas líneas más abajo
+            // esto BORRA los `PENDING` del período y los reinserta, así que
+            // generar sin la llave cambia un borrador correcto por 46 renglones
+            // en $0.00 — con la advertencia de «sin salario base» encendida, que
+            // se lee como un problema de datos y no como uno de permisos.
+            //
+            // `salario_conocido` lo pone el store desde la RESPUESTA del servidor
+            // y no desde el permiso: la función devuelve la fila aunque el sueldo
+            // esté vacío, así que la marca distingue «no me dejaron mirar» de
+            // «miré y no hay». Sin ella, las dos se ven igual.
+            if (employees.length && !employees.some(e => e.salario_conocido)) {
+                const e = new Error('Para generar la planilla hace falta el permiso de «Salarios e ingresos». Sin él los sueldos no llegan y la quincena saldría en cero.');
+                e.userFacing = true;
+                throw e;
+            }
+
             // #5 — employees without base_salary generate $0 entries; collect for warning
             const noSalary = employees
                 .filter(e => !parseFloat(e.base_salary || 0))

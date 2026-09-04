@@ -409,9 +409,18 @@ export const createSystemSlice = (set, get) => ({
                             // `null`, que es lo que esos sitios ya saben mostrar.
                             try {
                                 const salarios = await fetchSalarios(mappedEmployees.map(e => e.id));
-                                if (salarios.size) {
+                                {
                                     mappedEmployees.forEach(e => {
                                         const s = salarios.get(e.id);
+                                        // Misma marca que `identidad_conocida`, y hace falta por
+                                        // lo mismo: sin la llave `staff_salary` la función
+                                        // devuelve CERO filas, y `base_salary` en `null` es
+                                        // indistinguible de «esta persona no tiene sueldo
+                                        // cargado». Generar la quincena sobre esa diferencia
+                                        // escribiría 46 renglones en cero. La fila SÍ vuelve
+                                        // cuando hay llave aunque el sueldo esté vacío, que es
+                                        // justamente lo que hace útil la marca.
+                                        e.salario_conocido = !!s;
                                         if (s) {
                                             e.base_salary   = s.base_salary;
                                             e.bank_name     = s.bank_name;

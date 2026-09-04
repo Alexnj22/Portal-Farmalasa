@@ -483,9 +483,6 @@ Deno.serve(async (req) => {
     const cookie = await getSessionCookie(username, password);
     await abrirSala(cookie, entrada.erpId);
 
-    const viva = await aperturaViva(cookie);
-    if (!viva) return json({ ok: false, error: "Esa sala no tiene una caja abierta ahora." }, 409);
-
     /* ── UN DÍA TIENE UN SOLO Z, y hay que frenarlo ANTES de emitirlo ───────
      *
      * Lo pide el arreglo mismo: desde que el cierre del día se PARA cuando el
@@ -504,39 +501,15 @@ Deno.serve(async (req) => {
      * cierre, con el mismo recorrido de la tabla.
      *
      * Si la comprobación no se puede hacer, NO se sigue: emitir un Z a ciegas es
-     * justo lo que este freno viene a evitar. */
-    /* ── UN Z CON EL TURNO PARADO SALE EN $0.00 ────────────────────────────
+     * justo lo que este freno viene a evitar.
      *
-     * Medido sobre los Z reales, y son CUATRO de cuatro:
-     *
-     *   02-sep  Salud 3 · turno cerrado 1.5 min antes → **$0.00**
-     *   02-sep  Salud 4 · ídem                        → **$0.00**
-     *   03-sep  La Popular · turno cerrado 53 s antes → **$0.00**
-     *   03-sep  Salud 2  · ídem                       → **$0.00**
-     *
-     * Contra ~38 Z con el turno corriendo, ninguno en cero. El Z cierra el
-     * turno que ESTÁ; sin turno no cuenta nada, y el comprobante fiscal de la
-     * jornada sale declarando cero sobre un día de ventas reales.
-     *
-     * Y no da error: el origen contesta «Success», el Z existe, y el número
-     * equivocado sólo se ve mirando el monto. Por eso el freno va acá —en el
-     * servidor, antes de emitirlo— y no en la pantalla: un Z no se deshace, y
-     * cualquier pantalla que llame a esta función tiene que chocar con el mismo
-     * freno. Las dos que ya salieron mal el 3-sep las emitió el portal viejo,
-     * todavía cargado en la sala.
-     *
-     * No es un candado sin salida: iniciar el turno se hace desde el propio
-     * portal (`operar-caja accion: iniciar_turno`), y `cerrarElDia` lo hace
-     * solo antes de pedir el Z. Este freno es la red, no el camino. */
-    if (esZ && !simular && viva.turnoCorriendo === false) {
-      console.error(`[hacer-corte-caja] Z frenado sala=${sala}: turno parado (apertura ${viva.aper})`);
-      return json({
-        ok: false, turno_parado: true,
-        error: "El turno está cerrado, y el cierre del día hecho así sale en $0.00. "
-             + "Iniciá el turno y volvé a cerrar el día.",
-      }, 409);
-    }
-
+     * ⚠️ **VA ANTES DE LEER LA APERTURA, y ese orden es el arreglo.** El Z
+     * cierra la apertura al salir, así que en el reintento —el caso para el que
+     * este freno existe— ya no hay apertura viva que leer: preguntando primero
+     * por ella, el que vuelve a apretar recibía «esa sala no tiene una caja
+     * abierta ahora» en vez de «este día ya tiene su corte Z», que es la
+     * verdad y además la que su llamador sabe tratar (`ya_estaba`). Las cinco
+     * salas que cerraron el 3-sep terminaron viendo el mensaje equivocado. */
     if (esZ) {
       const dia = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
       let yaHayZ: boolean | null = null;
@@ -571,6 +544,34 @@ Deno.serve(async (req) => {
           error: "Este día ya tiene su corte Z. No se emite otro.",
         }, 409);
       }
+    }
+
+    const viva = await aperturaViva(cookie);
+    if (!viva) return json({ ok: false, error: "Esa sala no tiene una caja abierta ahora." }, 409);
+
+    /* ── UN Z CON EL TURNO PARADO ──────────────────────────────────────────
+     *
+     * ⚠️ **Este freno nació de una lectura equivocada y se deja como red, no
+     * como explicación.** Decía que un Z sale en $0.00 porque el turno está
+     * parado, medido sobre cuatro casos. El 3-sep en Salud 4 salió en $0.00
+     * **con el turno corriendo** —el formulario leído a las 21:16:08 trae
+     * `id_apertura=2898` y el paso previo contestó «el turno ya está
+     * corriendo»—, así que la causa era otra: la casilla `total_efectivo` se
+     * mandaba VACÍA (ver el envío del Z, más abajo). Los cuatro casos eran una
+     * correlación: los Z en cero eran los del PORTAL, y los del portal eran los
+     * que además venían de un turno recién cerrado.
+     *
+     * Se conserva igual porque un Z sobre un turno parado sigue sin tener nada
+     * que contar, y porque no es un candado sin salida: iniciar el turno se
+     * hace desde el propio portal y `cerrarElDia` lo hace solo antes de pedir
+     * el Z. */
+    if (esZ && !simular && viva.turnoCorriendo === false) {
+      console.error(`[hacer-corte-caja] Z frenado sala=${sala}: turno parado (apertura ${viva.aper})`);
+      return json({
+        ok: false, turno_parado: true,
+        error: "El turno está cerrado, y el cierre del día hecho así no cuenta nada. "
+             + "Iniciá el turno y volvé a cerrar el día.",
+      }, 409);
     }
 
     /* ── 1. El vale de las salidas del día, ANTES del corte ────────────────
@@ -1019,7 +1020,53 @@ Deno.serve(async (req) => {
      * declarar un número que nadie contó. */
     const diferencia = esZ ? 0 : Number(efectivo) - esperado;
     if (esZ) {
-      /* ── EL Z SE MANDA COMO VINO. NO SE LE ESCRIBE NINGUNA CASILLA ────────
+      /* ── EL Z DECLARA `total_corte`, QUE ES LO QUE ESCRIBE SU PANTALLA ─────
+       *
+       * Acá decía «el Z se manda como vino, no se le escribe ninguna casilla»,
+       * y esa regla —reproducir en vez de mejorar— es la correcta. Lo que
+       * estaba mal era creer que «como vino» significa «como está en el HTML»:
+       * `total_efectivo` llega VACÍO y lo llena el JavaScript del origen
+       * después de cargar, igual que `total_cobros`, `total_salida`,
+       * `retencion` y `monto_apertura` — que ya estaba anotado en `simular`.
+       * O sea que reenviarlo tal cual NO reproduce a la pantalla: reproduce a
+       * un navegador que enviara el formulario antes de que su propio script
+       * terminara.
+       *
+       * Con la casilla vacía el origen guarda **Total 0.00**. Los SEIS Z que
+       * emitió el portal salieron así, y ninguno de los hechos desde la
+       * pantalla de la caja. El comprobante impreso está bien —el origen lo
+       * DERIVA de las ventas del turno; el tiquete del 14457 dice $1,037.20—,
+       * pero el listado de cortes muestra el día cerrado en cero.
+       *
+       * ── Qué número va, y cómo se sabe ─────────────────────────────────────
+       * Los **118** Z con total > 0 tienen diferencia exactamente $0.00. Los
+       * 118. O sea que el Z no declara un conteo: el origen pone
+       * `total_efectivo = total_corte` y la diferencia sale cero por
+       * construcción. Se confirma contra el reporte impreso del 14459 (Salud 3,
+       * 3-sep): documentos 1,179.60 + ingresos 274.92 − vales 185.79 =
+       * **1,268.73**, que es su TOTAL y es la fórmula de `total_corte`.
+       *
+       * Sigue sin inventarse un conteo: `total_corte` es el número que el
+       * propio origen calculó y puso en el formulario. Lo único que se hace es
+       * copiarlo a la casilla que su script habría llenado.
+       *
+       * Si no viniera —nunca pasó: el formulario lo trae con número incluso
+       * cuando `total_cobros` y compañía llegan vacíos— NO se emite. Un Z sin
+       * su monto no se deshace; un día sin cerrar todavía se puede cerrar. */
+      const totalCorte = Number(String(campos.get("total_corte") ?? "").replace(/[^0-9.-]/g, ""));
+      if (!Number.isFinite(totalCorte)) {
+        console.error(`[hacer-corte-caja] Z frenado sala=${sala}: total_corte ilegible `
+          + `(${JSON.stringify(campos.get("total_corte"))})`);
+        return json({
+          ok: false,
+          error: "El sistema de la caja no dio el total del cierre, y un corte Z sin su monto "
+               + "no se puede corregir después. Volvé a intentarlo en un momento.",
+        }, 503);
+      }
+      campos.set("total_efectivo", dosDecimales(totalCorte));
+      campos.set("total_efectivo1", dosDecimales(totalCorte));
+      campos.set("diferencia", "0.00");
+      /* ── LO DEMÁS SÍ SE MANDA COMO VINO ───────────────────────────────────
        *
        * Hasta acá el portal le ponía `total_tarjeta` y `monto_ch` en CERO
        * también al Z, y le forzaba `diferencia = 0`. Eso está bien para un
@@ -1040,12 +1087,8 @@ Deno.serve(async (req) => {
        *
        * Y un Z **no se deshace**, así que la regla acá es reproducir, no
        * mejorar: se cambia sólo el tipo de documento, que es lo único que
-       * «reenviar el formulario tal cual» no puede acertar —su default es X—.
-       *
-       * El efectivo tampoco se toca: el formulario del Z lo trae calculado y de
-       * sólo lectura («el corte Z no se ingresa nada, ya el ERP lo hace solo y
-       * finaliza», usuario). Escribirle uno sería declarar un conteo que nadie
-       * hizo. */
+       * «reenviar el formulario tal cual» no puede acertar —su default es X— y
+       * la casilla que su propio script llena, que es la de arriba. */
     } else {
       campos.set("total_efectivo", dosDecimales(efectivo));
       campos.set("total_efectivo1", dosDecimales(efectivo));

@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.975.6 — el cierre del día declara su monto, y deja de avisar en rojo sobre un día bien cerrado
+
+**El corte Z salía en $0.00 y el aviso del cierre salía en rojo.** Las dos cosas
+se veían la misma noche y no eran la misma: el papel del Z estaba bien y el día
+quedaba cerrado, pero el listado del sistema de la caja mostraba el cierre en
+cero y la pantalla anunciaba «no se pudo» sobre algo que ya había pasado.
+
+**El monto.** Para el Z el portal reenviaba el formulario tal como viene en el
+HTML, y ahí `total_efectivo` llega VACÍO: lo llena el JavaScript de la pantalla
+del origen después de cargar, igual que `total_cobros`, `total_salida`,
+`retencion` y `monto_apertura` — que ya estaba anotado. O sea que «como vino» no
+reproducía a la pantalla, reproducía a un navegador que enviara el formulario
+antes de que su propio script terminara. Con la casilla vacía el origen guarda
+**Total 0.00**: los SEIS Z que emitió el portal salieron así, y ninguno de los
+hechos desde la pantalla de la caja.
+
+Qué número va, medido: los **118** Z con total > 0 tienen diferencia
+exactamente $0.00, los 118 — el Z no declara un conteo, el origen pone
+`total_efectivo = total_corte` y la diferencia sale cero por construcción. Se
+confirma contra el reporte impreso del 14459 (Salud 3): 1,179.60 + 274.92 −
+185.79 = **1,268.73**, su TOTAL. Ahora se copia ese número, que es el que el
+propio origen calculó; si no viniera, no se emite: un Z sin su monto no se
+corrige, un día sin cerrar todavía se cierra.
+
+Y la explicación que estaba escrita —«sale en cero cuando el turno está
+parado»— era una correlación: los Z en cero eran los del PORTAL, y los del
+portal eran los que además venían de un turno recién cerrado. El 3-sep Salud 4
+salió en cero **con el turno corriendo**. El freno se conserva como red, con su
+motivo corregido.
+
+**El aviso.** `cerrarElDia` es Z primero y cierre después, y el Z ya cierra la
+apertura en el origen: el tercer paso llegaba y no encontraba nada que cerrar
+→ 409 en rojo sobre un día perfectamente cerrado. Quien lo ve vuelve a apretar,
+y el reintento chocaba con la guarda equivocada — `hacer-corte-caja` preguntaba
+«¿hay apertura viva?» ANTES de «¿ya hay Z hoy?», así que contestaba «esa sala no
+tiene una caja abierta ahora» en vez de «este día ya tiene su corte Z», que es
+la verdad y la que su llamador sabe tratar. Las CINCO salas que cerraron el
+3-sep terminaron así: 15 cortes y 18 operaciones rechazadas entre las 19:03 y
+las 21:22, y La Popular apretó ocho veces en cuatro minutos.
+
+Ahora `cerrar` sobre una caja que el Z ya cerró contesta `ok`, y la
+comprobación del Z va antes de leer la apertura.
+
+**Y con el día cerrado no se inicia un turno.** Es la gemela de la guarda de
+`abrir` y hacía falta por separado: aquélla cubre la caja cerrada y ésta la
+apertura que queda viva. Un turno sobre un día ya cerrado no vende ni cuenta
+nada — lo único que produce son cortes en cero, como el 14451 de La Popular a
+las 19:39 del 3-sep, turno 6 y todo en $0.00 — y corre el contador de turnos de
+un día que ya terminó.
+
+Los tres arreglos van del lado del servidor a propósito: le llegan a la sala sin
+que recargue el portal, y el cierre pasa una vez por día.
+
 ## v2.975.5 — El lector del DUI deja de anunciar como confirmación una lectura vacía
 
 Dos avisos que se veían bien y decían algo que no era.

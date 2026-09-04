@@ -892,6 +892,27 @@ Deno.serve(async (req) => {
       if (!estado.abierta) {
         return json({ ok: false, error: "Esa sala no tiene una caja abierta. Primero hay que abrir la caja." }, 409);
       }
+      /* ── CON EL Z DEL DÍA HECHO NO SE INICIA UN TURNO ──────────────────────
+       *
+       * La gemela de la guarda de `abrir`, y hace falta por separado: aquélla
+       * cubre la caja cerrada y ésta la apertura que quedó viva después del Z.
+       * Un turno iniciado sobre un día ya cerrado no vende ni cuenta nada —lo
+       * único que produce son cortes en cero, como el 14451 de La Popular a las
+       * 19:39 del 3-sep, turno 6 y todo en $0.00— y encima corre el contador de
+       * turnos de un día que ya terminó.
+       *
+       * `simular` NO se frena: contesta a nombre de quién quedaría, que es una
+       * lectura y sigue siendo cierta con el día cerrado. */
+      if (body.simular !== true) {
+        const hoySV = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+        const yaCerro = await hayZdelDia(cookie, hoySV);
+        if (yaCerro === true) {
+          return json({
+            ok: false, dia_cerrado: true,
+            error: "Esta sala ya cerró el día. El turno se inicia mañana, con la caja del día nuevo.",
+          }, 409);
+        }
+      }
       /* `simular` NO se frena con el turno corriendo: lo que contesta es a
        * nombre de quién quedaría, y esa respuesta es la misma esté el turno
        * parado o no. Frenarla acá dejaba la comprobación disponible sólo en el
@@ -998,6 +1019,31 @@ Deno.serve(async (req) => {
           aviso: "La caja aceptó el inicio del turno pero sigue apareciendo sin iniciar. "
                + "Comprobalo en el sistema de la caja antes de seguir vendiendo.",
         });
+    }
+
+    /* ── CERRAR UNA CAJA QUE EL Z YA CERRÓ ES EL FINAL FELIZ, NO UN FALLO ───
+     *
+     * `cerrarElDia` es Z primero y cierre después, y **el Z ya cierra la
+     * apertura en el origen**: cuando llega el tercer paso no queda nada que
+     * cerrar. Con el 409 de acá abajo, el día quedaba perfectamente cerrado y
+     * la pantalla lo anunciaba en rojo — y quien lo ve vuelve a apretar, que es
+     * de donde salieron los reintentos.
+     *
+     * Medido la noche del 3-sep: las CINCO salas que cerraron terminaron así,
+     * con 15 cortes y 18 operaciones rechazadas entre las 19:03 y las 21:22.
+     * La Popular apretó ocho veces en cuatro minutos y en el medio se le volvió
+     * a abrir la caja (apertura 2903, turno 7, 33 s después de su Z).
+     *
+     * Se le pregunta al ORIGEN y no a `cortes_caja`: recién emitido el Z, la
+     * tabla del portal todavía no lo tiene —la captura corre después—, así que
+     * preguntarle a la base contestaría «no hay Z» justo en el único momento en
+     * que esta pregunta se hace. Y si no se pudo comprobar, NO se da por
+     * cerrado: se cae al 409 de siempre, que es el que pide reintentar. */
+    if (accion === "cerrar" && !estado.abierta) {
+      const hoySV = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+      if (await hayZdelDia(cookie, hoySV) === true) {
+        return json({ ok: true, cerrada: true, ya_estaba: true, z: true });
+      }
     }
 
     // De acá para abajo hace falta una caja abierta.

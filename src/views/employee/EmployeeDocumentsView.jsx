@@ -12,6 +12,7 @@ import {
     Download, Eye, AlertCircle, CheckCircle2, Clock, XCircle, Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useStaffStore } from '../../store/staffStore';
 import { fetchOwnApprovalRequests } from '../../data/employeeSelfService';
 import { openStoredFile } from '../../utils/storageFiles';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -43,6 +44,12 @@ const DOC_CFG = {
         iconBg: 'bg-warning/10', accent: 'bg-warning',
         glow: 'hover:shadow-[var(--shadow-glow-warning)]',
     },
+    EXPEDIENTE: {
+        label: 'Del expediente', Icon: FolderOpen,
+        bg: 'bg-brand/10', text: 'text-brand-text', border: 'border-brand/30',
+        iconBg: 'bg-brand/10', accent: 'bg-brand',
+        glow: 'hover:shadow-[var(--shadow-glow-brand)]',
+    },
     SHIFT_CHANGE: {
         label: 'Cambio Turno', Icon: RefreshCw,
         bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30',
@@ -58,6 +65,10 @@ const DEFAULT_CFG = {
 };
 
 const STATUS_CFG = {
+    // Los del expediente no son una solicitud: no se aprueban ni se rechazan,
+    // simplemente están. Sin un estado propio caerían en el `|| { label:
+    // undefined }` de abajo y la tarjeta mostraría una píldora vacía.
+    EN_EXPEDIENTE: { label: 'En tu expediente', Icon: FolderOpen, variante: 'brand' },
     APPROVED:  { label: 'Aprobada',  Icon: CheckCircle2, variante: 'success' },
     PENDING:   { label: 'Pendiente', Icon: Clock,        variante: 'warning' },
     REJECTED:  { label: 'Rechazada', Icon: XCircle,      variante: 'danger'  },
@@ -80,6 +91,7 @@ const parseMeta = (m) =>
 // ─── TABS ──────────────────────────────────────────────────────────────────
 const TABS = [
     { key: 'ALL',         label: 'Todos'       },
+    { key: 'EXPEDIENTE',  label: 'Del expediente' },
     { key: 'DISABILITY',  label: 'Incapacidades' },
     { key: 'CERTIFICATE', label: 'Constancias' },
     { key: 'PERMIT',      label: 'Permisos'    },
@@ -137,10 +149,18 @@ const DocCard = ({ doc }) => {
                     {/* Footer: fecha + archivo */}
                     <div className="flex items-center justify-between gap-2 flex-wrap mt-2 pt-2 border-t border-divider">
                         <p className="text-caption text-content-3 font-medium">
-                            Solicitado el {new Date(doc.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {doc.type === 'EXPEDIENTE' ? 'Guardado el ' : 'Solicitado el '}
+                            {new Date(doc.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
 
-                        {doc.meta?.docUrl ? (
+                        {doc.type === 'EXPEDIENTE' ? (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-caption text-content-3 font-medium truncate max-w-[120px]">
+                                    {doc.meta?.docName || 'Documento'}
+                                </span>
+                                <Button variant="ghost" icon={Eye} className={`${cfg.bg} ${cfg.border} ${cfg.text}`} onClick={() => openStoredFile(doc.meta.docUrl)}>Ver</Button>
+                            </div>
+                        ) : doc.meta?.docUrl ? (
                             <div className="flex items-center gap-1.5">
                                 <span className="text-caption text-content-3 font-medium truncate max-w-[120px]">
                                     {doc.meta.docName || 'Documento adjunto'}
@@ -172,6 +192,7 @@ const DocCard = ({ doc }) => {
 // ─── Vista principal ───────────────────────────────────────────────────────
 const EmployeeDocumentsView = () => {
     const { user } = useAuth();
+    const employees = useStaffStore(s => s.employees);
 
     const [allDocs, setAllDocs]       = useState([]);
     const [loading, setLoading]       = useState(true);
@@ -196,15 +217,48 @@ const EmployeeDocumentsView = () => {
             .catch((e) => { console.error('EmployeeDocumentsView: documentos falló:', e?.message ?? e); setLoading(false); });
     }, [user?.id]);
 
+    // ── Y los que ya están en el expediente ────────────────────────────────
+    //
+    // La pantalla se llama «Mis documentos» y hasta el 2026-09-04 mostraba sólo
+    // SOLICITUDES con adjunto. Para las 43 personas a las que se les acaba de
+    // encender salía vacía, porque no pueden crear solicitudes personales —el
+    // módulo está apagado— así que la pantalla prometía algo que no tenía.
+    //
+    // El DUI, el contrato y las constancias que Talento Humano guardó SÍ los
+    // tiene todo el mundo. Y desde que las rutas llevan el id del dueño y la
+    // policy de Storage lo respeta (2026-09-03/04), la persona puede abrir los
+    // suyos: antes esto habría sido dibujar un botón que la base iba a rechazar.
+    //
+    // Salen del store y no de una consulta nueva: `fetchBoot` ya trae la ficha
+    // propia, y para el resto de la empresa `employees_safe` no publica nada que
+    // esta persona no pudiera ver igual.
+    const docsDelExpediente = useMemo(() => {
+        const mia = (employees || []).find(e => String(e.id) === String(user?.id));
+        return (mia?.employee_documents || [])
+            .filter(d => d?.url)
+            .map((d, i) => ({
+                id: `expediente-${i}`,
+                type: 'EXPEDIENTE',
+                status: 'EN_EXPEDIENTE',
+                note: null,
+                created_at: d.uploaded_at || d.issue_date || mia?.hire_date || new Date().toISOString(),
+                meta: { docUrl: d.url, docName: d.title || d.category || d.file_name || 'Documento' },
+            }));
+    }, [employees, user?.id]);
+
     // Conteos por tipo para tabs
+    // Una sola lista: la persona no distingue «solicitud con adjunto» de
+    // «documento del expediente», y no tiene por qué.
+    const todos = useMemo(() => [...docsDelExpediente, ...allDocs], [docsDelExpediente, allDocs]);
+
     const counts = useMemo(() => {
-        const c = { ALL: allDocs.length };
-        TABS.slice(1).forEach(t => { c[t.key] = allDocs.filter(d => d.type === t.key).length; });
+        const c = { ALL: todos.length };
+        TABS.slice(1).forEach(t => { c[t.key] = todos.filter(d => d.type === t.key).length; });
         return c;
-    }, [allDocs]);
+    }, [todos]);
 
     const filtered = useMemo(() => {
-        let list = allDocs;
+        let list = todos;
         if (tab !== 'ALL') list = list.filter(d => d.type === tab);
         if (filterStatus) list = list.filter(d => d.status === filterStatus);
         if (filterFrom)   list = list.filter(d => d.created_at.slice(0,10) >= filterFrom);
@@ -218,7 +272,7 @@ const EmployeeDocumentsView = () => {
             ));
         }
         return list;
-    }, [allDocs, tab, filterStatus, filterFrom, filterTo, search]);
+    }, [todos, tab, filterStatus, filterFrom, filterTo, search]);
 
     const hasFilters = filterStatus || filterFrom || filterTo;
 

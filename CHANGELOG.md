@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.975.0 — «Mis documentos» muestra el expediente propio, y el adjunto de una solicitud lo abre su dueño
+
+Los dos cabos que quedaron de encender la autogestión para los 47.
+
+### La pantalla prometía algo que no tenía
+
+«Mis documentos» listaba **sólo solicitudes con adjunto**. Para las 43 personas a
+las que se les acaba de encender salía vacía, porque no pueden crear solicitudes
+personales — ese módulo sigue apagado por decisión.
+
+Pero el DUI, el contrato y las constancias que Talento Humano guardó **sí los
+tiene todo el mundo**, y son exactamente lo que alguien espera encontrar en una
+pantalla que se llama así. Ahora salen ahí, en su propia pestaña «Del
+expediente», con su propio estado —no son una solicitud: no se aprueban ni se
+rechazan, simplemente están— y con «Guardado el» en lugar de «Solicitado el».
+
+Y esto **recién ahora se puede hacer**: hasta que las rutas llevaron el id del
+dueño y la policy de Storage lo respetó (v2.971.7 → v2.974.0), dibujar ese botón
+habría sido ofrecer algo que la base iba a rechazar.
+
+Salen del store, sin consulta nueva: `fetchBoot` ya trae la ficha propia.
+
+### El adjunto de una incapacidad no lo podía abrir la persona de quien era
+
+La constancia médica se subía a `disability/<archivo>`, una ruta que no lleva el
+id de nadie. Desde que las policies miran la ruta, eso significaba que ese papel
+sólo lo podía abrir quien administra solicitudes — **nunca su dueño**.
+
+Antes «funcionaba» porque el bucket estaba abierto para todos, que es el agujero
+que se cerró. El arreglo no es reabrirlo: es que la ruta diga de quién es el
+papel. El escritor pasa a `solicitudes/<employee_id>/` y la policy resuelve al
+dueño desde ahí, igual que con el expediente.
+
+**Con una asimetría a propósito:** el dueño puede ver y subir el adjunto de su
+solicitud, pero **no reemplazarlo ni borrarlo**. Una constancia médica ya
+entregada es la prueba de una incapacidad, y quien la presentó no debería poder
+cambiarla después.
+
+### El tercer buzón
+
+El barrido diario ahora también limpia `solicitudes/`: el adjunto de una
+solicitud que se canceló, se rechazó y se borró, o que nunca llegó a crearse
+porque alguien cerró el diálogo después de elegir el archivo. Sin eso, ese resto
+se acumula igual que se acumuló el de `unassigned` — que es de donde salió toda
+esta tanda.
+
+Ahí `gate:data` levantó dos cosas que valía corregir: la lectura de
+`approval_requests` **iba sin paginar**, y un mapa a medias en un barrido no deja
+un dato de menos — **borra el adjunto de una solicitud real**, porque lo que no
+se alcanzó a leer se ve idéntico a un huérfano. Y una carpeta que no se pudiera
+listar se salteaba en silencio.
+
+### Y el mensaje del freno de la quincena, en tuteo
+
+`gate:design` lo agarró: lo había escrito en voseo y el portal tutea (§26.7).
+
+
 ## v2.974.6 — El diálogo de abono dice cuánto se debe y cuánto queda
 
 Reporte del usuario: *«mejora la vista de abono, no se lee cuánto se debe, dame

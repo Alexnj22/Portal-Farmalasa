@@ -415,7 +415,12 @@ export default function ModalNuevaPersonal({
         if (tipo === 'DISABILITY') {
             final.endDate = finIncapacidad;
             if (archivo) {
-                const url = await uploadFileToStorage(archivo, 'documents', 'disability');
+                // `solicitudes/<id>/` y ya no `disability/` a secas. La ruta
+                // vieja no llevaba el id de nadie, así que desde que las
+                // policies del bucket miran la ruta (2026-09-03) ese adjunto
+                // sólo lo podía abrir quien administra solicitudes — nunca la
+                // persona que lo subió, que es de quien es la incapacidad.
+                const url = await uploadFileToStorage(archivo, 'documents', `solicitudes/${empleadoId}`);
                 if (url) final.docUrl = url;
                 final.docName = archivo.name;
             }

@@ -260,7 +260,7 @@ export const createPayrollSlice = (set, get) => ({
             // la primera cuando fue la segunda manda a pedir un permiso que ya
             // se tiene, que es el modo de falla que este trabajo viene cerrando.
             if (employees.length && !employees.some(e => e.salario_conocido)) {
-                const e = new Error('No llegaron los sueldos, así que la quincena saldría en cero y no se generó. Suele ser el permiso de «Salarios e ingresos»; si lo tenés, volvé a entrar al portal y probá de nuevo.');
+                const e = new Error('No llegaron los sueldos, así que la quincena saldría en cero y no se generó. Suele ser el permiso de «Salarios e ingresos»; si ya lo tienes, vuelve a entrar al portal e intenta de nuevo.');
                 e.userFacing = true;
                 throw e;
             }

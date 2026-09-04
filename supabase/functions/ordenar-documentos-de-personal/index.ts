@@ -31,6 +31,9 @@
  * 1. **Mueve** lo que sí tiene dueño, a `employees/<id>/documents/`, y reescribe
  *    la URL dentro de `employees.employee_documents`.
  * 2. **Borra** lo que ninguna ficha nombra y ya pasó la gracia.
+ * 3. Y lo mismo en `solicitudes/<id>/`, el tercer buzón: ahí la ruta ya lleva al
+ *    dueño, así que no hay nada que mover — lo que falta es borrar el adjunto de
+ *    una solicitud que se canceló o que nunca llegó a crearse.
  *
  * Mover primero no es cosmético: si el barrido corriera antes, un archivo recién
  * subido que todavía no se guardó en su ficha se leería como huérfano. La gracia
@@ -74,6 +77,14 @@ const BUCKET = 'documents';
 /* Las carpetas donde un archivo puede estar sin dueño. `unassigned` es la del
  * alta; la raíz la usaban los adjuntos de evento de RRHH hasta v2.973.1. */
 const SIN_DUENO = 'employee-documents/unassigned';
+
+/* El tercer buzón: los adjuntos de las solicitudes personales (la constancia de
+ * una incapacidad). Acá la ruta SÍ lleva el dueño —`solicitudes/<id>/…` desde
+ * v2.974.5— así que no hay nada que mover; lo que falta es borrar el archivo de
+ * una solicitud que se canceló, se rechazó y se borró, o que nunca llegó a
+ * crearse porque alguien cerró el diálogo después de elegir el archivo. Sin
+ * esto, ese resto se acumula igual que se acumuló el de `unassigned`. */
+const DE_SOLICITUDES = 'solicitudes';
 
 /* Cuánto sobrevive un archivo que ninguna ficha nombra. Doce horas y no una:
  * acá el «reclamo» no es un aviso automático como en `capturas/` sino una
@@ -164,12 +175,65 @@ Deno.serve(async (req: Request) => {
       borrados.push(ruta);
     }
 
+    // ── El tercer buzón: adjuntos de solicitudes que ya no existen ─────────
+    // PAGINADO, y no es precaución de manual: PostgREST corta en 1000 filas sin
+    // avisar, y acá un mapa a medias no deja un dato de menos — **borra el
+    // adjunto de una solicitud real**, porque lo que no se alcanzó a leer se ve
+    // idéntico a un huérfano. `approval_requests` crece sin techo.
+    const nombradosPorSolicitud = new Set<string>();
+    for (let desde = 0; ; desde += 1000) {
+      const { data: pagina, error: errSolic } = await admin
+        .from('approval_requests').select('metadata')
+        .order('id', { ascending: true })
+        .range(desde, desde + 999)
+        .returns<{ metadata: unknown }[]>();
+      // Si la lectura falla se sale sin tocar nada, por lo mismo.
+      if (errSolic) return json({ ok: false, error: 'NO_SE_PUDO_LEER_SOLICITUDES', detalle: errSolic.message }, 500);
+      for (const r of pagina ?? []) {
+        const meta = typeof r.metadata === 'string' ? seguroJson(r.metadata) : (r.metadata as Record<string, unknown> | null);
+        const ruta = rutaDeLaUrl((meta?.docUrl as string) ?? null);
+        if (ruta) nombradosPorSolicitud.add(ruta);
+      }
+      if (!pagina || pagina.length < 1000) break;
+    }
+
+    // `list` sobre `solicitudes` devuelve las CARPETAS (una por persona), no los
+    // archivos: hay que entrar en cada una.
+    const { data: carpetas, error: errCarpetas } = await admin.storage.from(BUCKET)
+      .list(DE_SOLICITUDES, { limit: 1000 });
+    if (errCarpetas) return json({ ok: false, error: 'NO_SE_PUDO_LISTAR_SOLICITUDES', detalle: errCarpetas.message }, 500);
+
+    for (const carpeta of carpetas ?? []) {
+      if (!carpeta?.name) continue;
+      // El error NO se descarta: una carpeta que no se pudo listar se saltearía
+      // en silencio, y el informe de la corrida diría que no había nada que
+      // hacer ahí.
+      const { data: dentro, error: errDentro } = await admin.storage.from(BUCKET)
+        .list(`${DE_SOLICITUDES}/${carpeta.name}`, { limit: 1000 });
+      if (errDentro) { esperando.push(`${DE_SOLICITUDES}/${carpeta.name} (no se pudo listar: ${errDentro.message})`); continue; }
+      for (const o of dentro ?? []) {
+        if (!o?.name) continue;
+        const ruta = `${DE_SOLICITUDES}/${carpeta.name}/${o.name}`;
+        if (nombradosPorSolicitud.has(ruta)) continue;
+        if (new Date(o.created_at ?? 0).getTime() >= corte) { esperando.push(ruta); continue; }
+        if (enSeco) { borrados.push(ruta); continue; }
+        const { error: errBorrar } = await admin.storage.from(BUCKET).remove([ruta]);
+        if (errBorrar) { esperando.push(`${ruta} (no se pudo borrar: ${errBorrar.message})`); continue; }
+        borrados.push(ruta);
+      }
+    }
+
     return json({ ok: true, enSeco, movidos, borrados, esperando,
                   resumen: { movidos: movidos.length, borrados: borrados.length, esperando: esperando.length } });
   } catch (e) {
     return json({ ok: false, error: 'EXCEPCION', detalle: String((e as Error)?.message ?? e) }, 500);
   }
 });
+
+/** El `metadata` de una solicitud llega como objeto o como texto, según quién la escribió. */
+function seguroJson(s: string): Record<string, unknown> | null {
+  try { return JSON.parse(s) as Record<string, unknown>; } catch { return null; }
+}
 
 /** `.../object/public|sign/documents/<ruta>` → `<ruta>` */
 function rutaDeLaUrl(url: string | null): string | null {

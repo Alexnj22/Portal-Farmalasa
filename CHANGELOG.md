@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.976.4 — El corte Z cierra el espejo de la apertura
+
+Pregunta del usuario: *«¿el barrido no dijimos que sería más corto?»*. No — la
+cadencia nunca se movió, y no era ahí donde estaba el arreglo.
+
+`cortes_caja_aperturas` es lo que contesta «¿está abierta?» en la tarjeta de la
+sala y en Mi caja, y hasta hoy lo cerraban dos cosas: `operar-caja` en el acto
+cuando el cierre se aprieta EN EL PORTAL (v2.976.1), y un barrido cada 30
+minutos para todo lo demás. O sea que **cerrar desde el sistema de la caja
+dejaba la tarjeta diciendo «Abierta» hasta media hora después** — y si eso pasa
+pasadas las 22:30 SV, que es la última corrida del día, hasta las 6 de la
+mañana. Medido el 3-sep en Salud 1: cerró a las 22:06 y la tarjeta lo dijo a
+las 22:30.
+
+**No hacía falta preguntarle al origen: el dato ya estaba adentro.** El corte Z
+lo captura `cortes-caja-30s`, así que el portal se entera del cierre en medio
+minuto por un camino que ya paga. Apretar el barrido a 10 minutos habría
+costado ~1.300 peticiones más por día al sistema de la caja para saber lo
+mismo, más tarde.
+
+Va DENTRO del trigger que ya existía sobre el Z (`cortes_caja_avisar_cierre_
+del_dia`) y no en uno nuevo: `cortes_caja` la escribe la captura cada 30
+segundos, y un `CREATE TRIGGER` sobre ella pide ACCESS EXCLUSIVE — el lock que
+causó el outage del 8-jul. `CREATE OR REPLACE FUNCTION` no toca la tabla.
+
+Dos cosas medidas antes de escribirlo: el Z es **uno por sala y por día** (126
+de 126 pares sala-día en los últimos 30 días), y la guarda de frescura que la
+función ya tenía vale igual para el espejo — el repaso diario puede traer un Z
+viejo, y cerrar con él la caja que está abierta AHORA sería peor que el atraso
+que esto viene a quitar.
+
 ## v2.976.3 — Las fichas de caja muestran la cara de quien abrió
 
 Reportado por el usuario: *«no sale la foto de los empleados»*, mirando la fila

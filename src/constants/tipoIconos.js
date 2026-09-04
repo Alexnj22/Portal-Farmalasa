@@ -88,6 +88,12 @@ const POR_PREFIJO = [
     // crece sin pasar por acá, y una lista a mano se desincroniza el día que
     // alguien agrega el séptimo. El `Target` es el mismo ícono del módulo.
     ['METAS',   Target],
+    // Los avisos de cortes ya son TRES —el corte nuevo, el pendiente de las
+    // 7:30 y el faltante de ayer de las 8:00— y los emite SQL, igual que los de
+    // Metas: la lista de allá crece sin pasar por acá. Con el prefijo, el
+    // cuarto nace con el `Wallet` del módulo en vez de con la campana genérica,
+    // que es lo que le pasó a `CORTE_DIFERENCIA_AYER` hasta esta línea.
+    ['CORTE',   Wallet],
 ];
 
 /** Ícono de un tipo. Nunca devuelve undefined. */

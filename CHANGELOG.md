@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.979.0 — A las 8 de la mañana, si ayer la caja cerró con faltante
+
+Un cron nuevo a las 8:00 SV le avisa a la sala cuando su caja cerró el día
+anterior con menos efectivo del esperado. Mira el último corte confirmado del
+día —«con cuánto cerró la caja»— con el mismo canónico que usa el aviso de
+cierre del día, y suena por cualquier cifra negativa, el mismo umbral con el
+que la tarjeta pinta «Faltante».
+
+Dos frenos: no vuelve a pedir una diferencia que alguien ya registró, y la
+marca de «ya se avisó» vive en `avisos_emitidos` y no en la campana — vaciar la
+campana no hace que el aviso vuelva.
+
+**Va a sonar muy poco, y está medido:** en 84 días-sala, uno solo cerró en
+negativo, y por un centavo. No es que no haya faltantes — es que el corte que
+no cuadra se descarta y se vuelve a hacer (188 descartados contra 172
+confirmados en dos semanas, con 45 faltantes de $1 o más entre los descartados).
+Queda escrito en la migración para que el silencio no se lea como que el aviso
+dejó de correr.
+
 ## v2.978.0 — La ficha de caja muestra cómo va la meta del día, y el aviso del corte dice cuánto faltó
 
 Dos cosas para la sala, que hasta hoy tenía que salir de Cortes para saber

@@ -325,6 +325,18 @@ const CRONS = [
           + '`functions/v1/`, así que si no está escrito no lo vigila nadie.',
   },
   {
+    job: 'cortes-diferencia-de-ayer-0800-sv', slug: null, cadencia: '0 14 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'SQL puro: no llama a ninguna función ni toca el sistema de origen. Una vez al día a '
+          + 'las 8:00 SV le dice a la sala si su caja cerró AYER con faltante —el último corte '
+          + 'confirmado del día, con `corte_diferencia`—. Media hora después del aviso de '
+          + 'pendientes de las 7:30 y a propósito: primero se nombra lo que quedó sin confirmar, '
+          + 'que es la mitad de los casos en que no hay cifra que dar. Va a sonar MUY poco y está '
+          + 'medido: en 84 días-sala, uno solo cerró en negativo, porque el corte que no cuadra '
+          + 'se descarta y se rehace. Se declara acá aunque no cueste peticiones porque un cron '
+          + 'de SQL puro es invisible al barrido de `functions/v1/`.',
+  },
+  {
     job: 'avisar-diferencias-vencidas', slug: null, cadencia: '0 15 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'No llama a ninguna función: es una consulta y un aviso. Cuando una sala y bodega '

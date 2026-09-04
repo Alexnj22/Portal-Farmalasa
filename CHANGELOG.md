@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.990.3 — Las fichas de caja dicen su estado con el badge y nada más
+
+Reportado sobre `/caja?tab=cortes`: *«las cards están en contra del design,
+tienen una franja de color. Quítala, solo el badge de color es suficiente y
+canónico»*.
+
+Las fichas de apertura de caja (`FichasDeCaja`) llevaban una franja de 3px sobre
+el borde superior —verde si la caja está abierta, ámbar si el portal no puede
+nombrar a quien abrió, apagada si ya cerró—: un elemento de color inventado para
+esa pantalla que ninguna otra tarjeta del portal tiene y que sólo comunicaba por
+tono. La etiqueta de estado canónica es el `Badge` (§16.1), y es la misma
+corrección que ya se le había hecho a `TarjetaCorte`, que tenía su propia franja
+vertical dibujada a mano.
+
+Lo que la franja decía no se pierde: «abierta · hh:mm» / «cerró · hh:mm» es el
+badge que la ficha ya tenía, y una apertura que el portal no puede nombrar se ve
+en el disco ámbar con la silueta tachada y en el «Sin identificar» de al lado —
+que son palabras, no un tono. Al quitar la franja sobra también el envoltorio
+que existía para recortarla (`rounded-2xl overflow-hidden` sobre un
+`data-surface="card"` que ya trae su radio), así que la ficha queda en un solo
+`div`.
+
 ## v2.990.2 — El visor de documentos deja de tener dos barras de scroll
 
 Reportado con captura: *«¿por qué hay 2 scrolls?»*. Eran la del panel y la del

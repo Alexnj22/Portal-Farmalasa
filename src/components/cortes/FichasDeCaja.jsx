@@ -16,8 +16,8 @@ import { useAuth } from '../../context/AuthContext';
  * — con los mismos datos que ahora están tres centímetros más arriba.
  *
  * Y como ficha dice de un vistazo lo que la tabla obligaba a leer columna por
- * columna: la banda de color es el estado, el avatar es la persona, y una
- * apertura sin persona se ve porque **no tiene cara**.
+ * columna: el `Badge` es el estado, el avatar es la persona, y una apertura sin
+ * persona se ve porque **no tiene cara**.
  *
  * ── Lo que la tabla contestaba y esto conserva ─────────────────────────────
  * Medido el 28-ago-2026: TRES de las seis salas abren y cortan bajo una cuenta
@@ -76,126 +76,124 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, veLosMontos }) 
     const quien = apertura.abrio?.name || null;
     const dif = minutosAntes(apertura.abierta_a, marca);
 
-    /* Tres colores y tres significados, no decoración:
-     *  · verde   — la caja está abierta ahora.
-     *  · ámbar   — abrió alguien que el portal no puede nombrar.
-     *  · apagado — ya cerró; es historia. */
-    const banda = !quien ? 'bg-warning' : abierta ? 'bg-success' : 'bg-content-3/40';
+    /* El estado lo dice el `Badge` y nada más (§16.1). Antes iba además una
+     * franja de color de 3px sobre el borde superior —verde abierta, ámbar sin
+     * nombrar, apagada cerrada—, o sea un elemento inventado para esta pantalla
+     * que ninguna otra tarjeta del portal tiene y que sólo comunicaba por tono.
+     * Lo que decía no se pierde: «abierta»/«cerró» es el badge, y una apertura
+     * que el portal no puede nombrar se ve en el disco ámbar con la silueta
+     * tachada y en el «Sin identificar» de al lado, que son palabras. */
 
     return (
-        <div data-surface="card" className="rounded-2xl overflow-hidden flex flex-col">
-            <div className={`h-[3px] ${banda}`} aria-hidden="true" />
-            <div className="p-3 flex flex-col gap-2.5 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                    <span className="text-body-sm font-bold text-content truncate">{sala}</span>
-                    <Badge variant={abierta ? 'success' : 'neutral'} size="sm"
-                        icon={abierta ? Clock : DoorOpen}>
-                        {abierta ? `abierta · ${hhmm(apertura.abierta_a)}` : `cerró · ${horaDe(apertura.cerrada_at)}`}
-                    </Badge>
-                </div>
+        <div data-surface="card" className="p-3 flex flex-col gap-2.5 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-body-sm font-bold text-content truncate">{sala}</span>
+                <Badge variant={abierta ? 'success' : 'neutral'} size="sm"
+                    icon={abierta ? Clock : DoorOpen}>
+                    {abierta ? `abierta · ${hhmm(apertura.abierta_a)}` : `cerró · ${horaDe(apertura.cerrada_at)}`}
+                </Badge>
+            </div>
 
-                <div className="flex items-center gap-2 min-w-0">
-                    {/* La CARA de quien abrió, con el canónico y no con un círculo
-                        de iniciales a mano. El de acá pintaba siempre las letras:
-                        nunca miró una foto, así que una sala entera de gente
-                        retratada salía como un tablero de siglas — y eso no se lee
-                        como un defecto, se lee como que nadie tiene foto.
+            <div className="flex items-center gap-2 min-w-0">
+                {/* La CARA de quien abrió, con el canónico y no con un círculo
+                    de iniciales a mano. El de acá pintaba siempre las letras:
+                    nunca miró una foto, así que una sala entera de gente
+                    retratada salía como un tablero de siglas — y eso no se lee
+                    como un defecto, se lee como que nadie tiene foto.
 
-                        `AvatarConEstado` resuelve la foto por `id` contra el store
-                        (ahí `photo` es la URL FIRMADA), así que no hace falta traer
-                        `photo_url` en la consulta — que además vendría cruda. Si la
-                        persona no está en la lista del store —acotada por permisos—
-                        cae a la inicial, que es el comportamiento de siempre.
+                    `AvatarConEstado` resuelve la foto por `id` contra el store
+                    (ahí `photo` es la URL FIRMADA), así que no hace falta traer
+                    `photo_url` en la consulta — que además vendría cruda. Si la
+                    persona no está en la lista del store —acotada por permisos—
+                    cae a la inicial, que es el comportamiento de siempre.
 
-                        Sin persona NO se dibuja un avatar vacío: el disco ámbar con
-                        la silueta tachada es el dato. Una apertura sin cara es lo
-                        que hay que ver. */}
-                    {quien ? (
-                        <AvatarConEstado emp={{ id: apertura.employee_id, name: quien }}
-                            px={32} radio="rounded-full" marco="" />
-                    ) : (
-                        <span className="shrink-0 w-8 h-8 rounded-full grid place-items-center bg-warning/10 text-warning-text"
-                            aria-hidden="true">
-                            <UserX className="w-4 h-4" />
-                        </span>
-                    )}
-                    <span className="min-w-0">
-                        <span className="block text-body-sm font-semibold text-content truncate">
-                            {quien || 'Sin identificar'}
-                        </span>
-                        <span className="block text-micro text-content-3">
-                            {!quien
-                                ? 'se abrió desde la caja · no se sabe quién'
-                                : !hayConQueCruzar
-                                    ? `turno ${apertura.turno ?? '—'} · caja ${apertura.caja_erp ?? '—'}`
-                                    : dif == null
-                                        ? 'no marcó entrada'
-                                        : dif >= 0
-                                            ? `marcó entrada ${dif} min antes`
-                                            : `marcó entrada ${Math.abs(dif)} min después`}
-                        </span>
+                    Sin persona NO se dibuja un avatar vacío: el disco ámbar con
+                    la silueta tachada es el dato. Una apertura sin cara es lo
+                    que hay que ver. */}
+                {quien ? (
+                    <AvatarConEstado emp={{ id: apertura.employee_id, name: quien }}
+                        px={32} radio="rounded-full" marco="" />
+                ) : (
+                    <span className="shrink-0 w-8 h-8 rounded-full grid place-items-center bg-warning/10 text-warning-text"
+                        aria-hidden="true">
+                        <UserX className="w-4 h-4" />
                     </span>
-                </div>
+                )}
+                <span className="min-w-0">
+                    <span className="block text-body-sm font-semibold text-content truncate">
+                        {quien || 'Sin identificar'}
+                    </span>
+                    <span className="block text-micro text-content-3">
+                        {!quien
+                            ? 'se abrió desde la caja · no se sabe quién'
+                            : !hayConQueCruzar
+                                ? `turno ${apertura.turno ?? '—'} · caja ${apertura.caja_erp ?? '—'}`
+                                : dif == null
+                                    ? 'no marcó entrada'
+                                    : dif >= 0
+                                        ? `marcó entrada ${dif} min antes`
+                                        : `marcó entrada ${Math.abs(dif)} min después`}
+                    </span>
+                </span>
+            </div>
 
-                {/* ── El dinero, y quién puede verlo ────────────────────────
-                    Es la MISMA regla que `MiCajaView` aplica desde el 1-sep —el
-                    alcance de `cortes_caja`, no un permiso aparte— y esta ficha
-                    la estaba saltando: pintaba «Esperado ahora $97.35» a los
-                    cuatro cargos de sala, que es exactamente el número que la
-                    otra pantalla les esconde para que el conteo sea a ciegas.
-                    Con la cifra a la vista, teclear el conteo no es contar: es
-                    copiar, y un faltante no aparece nunca.
+            {/* ── El dinero, y quién puede verlo ────────────────────────
+                Es la MISMA regla que `MiCajaView` aplica desde el 1-sep —el
+                alcance de `cortes_caja`, no un permiso aparte— y esta ficha
+                la estaba saltando: pintaba «Esperado ahora $97.35» a los
+                cuatro cargos de sala, que es exactamente el número que la
+                otra pantalla les esconde para que el conteo sea a ciegas.
+                Con la cifra a la vista, teclear el conteo no es contar: es
+                copiar, y un faltante no aparece nunca.
 
-                    Lo que se esconde es el DINERO, no la actividad: cuántas
-                    ventas lleva el día se queda, porque no dice cuánto hay.
+                Lo que se esconde es el DINERO, no la actividad: cuántas
+                ventas lleva el día se queda, porque no dice cuánto hay.
 
-                    Y el número de la derecha CAMBIÓ de significado, no sólo de
-                    rótulo. `monto_registrado` decía «Esperado ahora» y no es el
-                    efectivo del cajón: es lo vendido en el turno, tarjeta
-                    incluida. Medido sobre 43 aperturas cerradas — coincide al
-                    centavo con la venta TOTAL del día en 26 y con el efectivo en
-                    UNA. En Salud 3 la ficha decía $33.90 sobre $16.35 de
-                    efectivo. Ahora sale de las formas de pago, que es la fuente
-                    que sí sabe separarlas, y el efectivo —lo único que llega al
-                    cajón— es el que manda. */}
-                <div className="flex items-end justify-between gap-3 pt-2 border-t border-border/60">
-                    <span className="min-w-0">
+                Y el número de la derecha CAMBIÓ de significado, no sólo de
+                rótulo. `monto_registrado` decía «Esperado ahora» y no es el
+                efectivo del cajón: es lo vendido en el turno, tarjeta
+                incluida. Medido sobre 43 aperturas cerradas — coincide al
+                centavo con la venta TOTAL del día en 26 y con el efectivo en
+                UNA. En Salud 3 la ficha decía $33.90 sobre $16.35 de
+                efectivo. Ahora sale de las formas de pago, que es la fuente
+                que sí sabe separarlas, y el efectivo —lo único que llega al
+                cajón— es el que manda. */}
+            <div className="flex items-end justify-between gap-3 pt-2 border-t border-border/60">
+                <span className="min-w-0">
+                    <span className="block text-micro font-black uppercase tracking-widest text-content-3">
+                        {veLosMontos ? 'Apertura' : 'Ventas del día'}
+                    </span>
+                    <span className="block text-body-sm font-black tabular-nums text-content">
+                        {veLosMontos
+                            ? formatMoney(apertura.monto_apertura)
+                            : ventas ? `${ventas.documentos}` : '—'}
+                    </span>
+                    {!veLosMontos && (
+                        <span className="block text-micro text-content-3">se cuenta al cortar</span>
+                    )}
+                </span>
+                {veLosMontos && (
+                    <span className="min-w-0 text-right">
                         <span className="block text-micro font-black uppercase tracking-widest text-content-3">
-                            {veLosMontos ? 'Apertura' : 'Ventas del día'}
+                            Efectivo del día
                         </span>
                         <span className="block text-body-sm font-black tabular-nums text-content">
-                            {veLosMontos
-                                ? formatMoney(apertura.monto_apertura)
-                                : ventas ? `${ventas.documentos}` : '—'}
+                            {ventas ? formatMoney(ventas.efectivo) : '—'}
                         </span>
-                        {!veLosMontos && (
-                            <span className="block text-micro text-content-3">se cuenta al cortar</span>
+                        {/* Las otras formas van SIEMPRE que existan, aunque
+                            sean una sola tarjeta: sin esta línea, «efectivo
+                            $145.05» al lado de un turno de $169.05 se lee
+                            como que faltan $24 — y son las que no pasaron
+                            por el cajón. Se dicen juntas y no una por una
+                            (tarjeta, crédito, transferencia, cheque) porque
+                            lo que las une es justamente eso. */}
+                        {ventas && ventas.otras > 0 && (
+                            <span className="block text-micro text-content-3 tabular-nums">
+                                {formatMoney(ventas.otras)} en otras formas
+                            </span>
                         )}
                     </span>
-                    {veLosMontos && (
-                        <span className="min-w-0 text-right">
-                            <span className="block text-micro font-black uppercase tracking-widest text-content-3">
-                                Efectivo del día
-                            </span>
-                            <span className="block text-body-sm font-black tabular-nums text-content">
-                                {ventas ? formatMoney(ventas.efectivo) : '—'}
-                            </span>
-                            {/* Las otras formas van SIEMPRE que existan, aunque
-                                sean una sola tarjeta: sin esta línea, «efectivo
-                                $145.05» al lado de un turno de $169.05 se lee
-                                como que faltan $24 — y son las que no pasaron
-                                por el cajón. Se dicen juntas y no una por una
-                                (tarjeta, crédito, transferencia, cheque) porque
-                                lo que las une es justamente eso. */}
-                            {ventas && ventas.otras > 0 && (
-                                <span className="block text-micro text-content-3 tabular-nums">
-                                    {formatMoney(ventas.otras)} en otras formas
-                                </span>
-                            )}
-                        </span>
-                    )}
-                </div>
-
+                )}
             </div>
         </div>
     );

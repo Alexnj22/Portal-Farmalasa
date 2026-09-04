@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.999.0 — La duda del beneficiario manda el cobro a firma
+
+Corrige la salida elegida esta mañana en v2.997.0. Ahí, un comprobante que no
+nombra a la empresa pasaba con un aviso y el cobro se aplicaba igual — y eso da
+por cobrado un dinero que nadie comprobó que entró. Pedido del usuario:
+
+> «debería de quedar como solicitud, a admin, así validan si se hizo efectivo el
+> pago y confirman, sólo cuando hay duda o pasa eso del beneficiario».
+
+**Ahora ese cobro se registra como solicitud.** El comprobante, su número, su
+monto y su foto quedan guardados; el crédito **conserva el saldo** y el cliente
+no queda sin poder pagar. Quien aprueba cuentas por cobrar recibe el aviso, ve
+la foto del comprobante y confirma o lo devuelve. El botón lo dice: pasa de
+«Cobrar» a **«Enviar a aprobación»**, y la solicitud llega con el motivo escrito
+—«el comprobante no está a nombre de la empresa: dice X»— para que quien firma
+sepa qué se le está preguntando.
+
+Es la única de las tres salidas posibles que no obliga a elegir entre dejar sin
+pagar a un cliente que ya pagó y dar por bueno un pago que nadie miró.
+
+**La regla vive en el servidor, no en la pantalla.** El navegador podría mandar
+la marca en cualquier valor, así que quien decide si un cobro espera firma es la
+misma pieza que lo registra — igual que con el efectivo, que nunca puede
+esperar porque ese dinero ya está en el cajón.
+
+Sin cambios para el resto: un comprobante que sí nombra a la empresa se cobra
+como siempre, en el acto.
+
 ## v2.998.1 — El detalle de producto se auditó y NO se toca
 
 **El hallazgo de v2.995.1 era incorrecto, y la medición lo desmintió.** Ahí

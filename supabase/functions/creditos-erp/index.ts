@@ -689,7 +689,29 @@ Deno.serve(async (req) => {
        * Va DESPUÉS de validar el saldo vivo contra el origen y ANTES de
        * escribirle: lo que se guarda ya se comprobó que cabe, y no se toca
        * nada. */
-      const pideAprobacion = forma === "Otro" || body.requiereAprobacion === true;
+      /* ── La duda sobre el beneficiario manda el cobro a firma ──────────
+       *
+       * Pedido del usuario (2026-09-04), sobre el pago QR que trabó un cobro:
+       * «debería de quedar como solicitud, a admin, así validan si se hizo
+       * efectivo el pago y confirman, sólo cuando hay duda o pasa eso del
+       * beneficiario».
+       *
+       * Es la respuesta correcta a un comprobante cuyo destino no se pudo
+       * leer o no se reconoce. Aplicarlo de una da por cobrado un dinero que
+       * nadie comprobó que entró; frenarlo deja al cliente sin poder pagar.
+       * Guardarlo como solicitud hace las dos: queda registrado con su foto y
+       * su número, el crédito conserva el saldo, y quien puede mirar el estado
+       * de cuenta confirma o lo devuelve.
+       *
+       * ⚠️ La guarda vive ACÁ y no sólo en la pantalla, igual que la del
+       * efectivo: el navegador puede mandar `requiereAprobacion: false` con
+       * cualquier lectura. Si dependiera del cliente, sería una convención de
+       * la interfaz y no un control. */
+      const dudaDeBeneficiario = forma !== "Efectivo"
+        && (body.lectura as { nombreSinReconocer?: boolean } | null)?.nombreSinReconocer === true;
+
+      const pideAprobacion = forma === "Otro" || body.requiereAprobacion === true
+        || dudaDeBeneficiario;
 
       /* El EFECTIVO no espera, y esto no es una preferencia: ese dinero está
        * en el cajón desde que el cliente lo puso. Sin registrarlo en la caja,
@@ -709,6 +731,9 @@ Deno.serve(async (req) => {
 
       if (pideAprobacion) {
         const ficha = porCredito.get(limpias[0].credito);
+        const beneficiarioLeido = String(
+          (body.lectura as { leido?: { beneficiario?: unknown } } | null)?.leido?.beneficiario ?? "",
+        ).trim();
         const renglones = limpias.map((a) => {
           const vivo = vivos.get(a.credito)!;
           return {
@@ -726,7 +751,16 @@ Deno.serve(async (req) => {
           /* La nota es el MOTIVO que escribió quien cobró —la pantalla se lo
            * exige, mínimo 5 caracteres—, no el número del documento: ése ya
            * viaja en `detalle`. */
-          note: String(body.motivo ?? "").trim() || documento || "Sin detalle",
+          /* Cuando el cobro llegó acá por la duda del beneficiario, la nota lo
+           * DICE: quien firma tiene que saber qué se le está preguntando. Sin
+           * esto le llega un abono normal y no hay nada que le indique que lo
+           * que se le pide es comprobar que el dinero entró. */
+          note: dudaDeBeneficiario
+            ? ("El comprobante no está a nombre de la empresa"
+               + (beneficiarioLeido ? `: dice «${beneficiarioLeido}»` : " y no se leyó a quién se le pagó")
+               + ". Comprobar que el pago entró antes de confirmarlo."
+               + (String(body.motivo ?? "").trim() ? ` — ${String(body.motivo).trim()}` : ""))
+            : (String(body.motivo ?? "").trim() || documento || "Sin detalle"),
           metadata: {
             branch_id: sala, cliente: ficha?.cliente ?? renglones[0].cliente,
             customer_id: ficha?.customer_id ?? null,
@@ -741,6 +775,9 @@ Deno.serve(async (req) => {
             pos: body.pos || null,
             comprobante_url: body.comprobanteUrl || null,
             lectura: body.lectura || null,
+            /* Por qué esta solicitud existe. `dudaDeBeneficiario` distingue el
+             * cobro que alguien mandó a firmar del que el portal mandó solo. */
+            por_beneficiario: dudaDeBeneficiario,
             creditos: renglones,
           },
         }).select("id").single();

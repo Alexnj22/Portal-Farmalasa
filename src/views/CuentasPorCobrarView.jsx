@@ -123,17 +123,24 @@ const MOTIVO_DEL_FRENO = {
     MONTO_MAYOR_AL_SALDO: 'El comprobante es por más de lo que este cliente debe.',
 };
 
-/** El aviso del nombre que no se reconoce. No frena —el cliente ya pagó— pero
- *  se dice con el peso de un freno: es lo único que separa «nos pagaron» de
- *  «le pagaron a otro», y quien cobra es el único que puede comprobarlo. */
+/** El aviso del nombre que no se reconoce.
+ *
+ *  No frena —el cliente ya pagó— pero tampoco pasa derecho: el cobro se
+ *  registra como SOLICITUD y el crédito conserva su saldo hasta que alguien
+ *  con la cartera a la vista confirme que el dinero entró. Es lo que pidió el
+ *  usuario el 2026-09-04, y es la única de las tres salidas que no obliga a
+ *  elegir entre dejar sin pagar al cliente y dar por cobrado lo que nadie
+ *  comprobó. */
 function AvisoDeNombre({ lectura }) {
     if (!lectura?.nombreSinReconocer) return null;
     const dice = lectura.leido?.beneficiario;
     return (
-        <Notice variant="danger" icon={AlertTriangle}>
-            El comprobante no está a nombre de la empresa
-            {dice ? <>: dice <strong>«{dice}»</strong></> : null}. Comprueba que el
-            pago haya entrado antes de aceptarlo — queda registrado que se aceptó así.
+        <Notice variant="warning" icon={AlertTriangle}>
+            {dice
+                ? <>El comprobante está a nombre de <strong>«{dice}»</strong>, que no es la empresa.</>
+                : <>El comprobante no dice a quién se le pagó.</>}
+            {' '}El cobro se va a registrar <strong>esperando aprobación</strong>: el
+            crédito sigue con saldo hasta que confirmen que el pago entró.
         </Notice>
     );
 }
@@ -1210,6 +1217,15 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     }, [debeTodo, setMontoDoc, setTopeado]);
 
     const bloqueado = lectura && lectura.veredicto !== 'OK';
+
+    /* El comprobante que no nos nombra NO se aplica solo: va a firma. Es una
+     * variable aparte de `pideAprobacion` a propósito — ésa mira la FORMA que
+     * la persona eligió, y de ella cuelga `conPapel`. Mezclarlas escondería el
+     * campo del comprobante justo en el caso donde el comprobante es lo único
+     * que quien firma va a poder mirar. */
+    const dudaDeBeneficiario = !!lectura?.nombreSinReconocer;
+    const iraAprobacion = pideAprobacion || dudaDeBeneficiario;
+
     const cuadra = Number.isFinite(totalPago) && totalPago > 0
         && Math.abs(sumaRepartida - totalPago) < 0.005;
     /* Ninguna cuenta puede recibir más de lo que debe. El campo ya lo topea al
@@ -1233,14 +1249,14 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
             forma: pideAprobacion ? formaReal : forma,
             documento: documento.trim(), montoDocumento: Number(totalPago.toFixed(2)),
             aplicaciones, archivo, lectura, fechaDocumento: fechaDoc || null, pos: pos || null,
-            motivo: motivo.trim() || null, requiereAprobacion: pideAprobacion,
+            motivo: motivo.trim() || null, requiereAprobacion: iraAprobacion,
         });
         // El borrador se tira sólo cuando el cobro ENTRÓ. `onCobrar` devuelve
         // `false` cuando el origen lo rechazó y ahí el diálogo queda abierto:
         // borrarlo entonces perdería justo lo que hay que volver a intentar.
         if (entro !== false) descartar();
         setOcupado(false);
-    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, formaReal, onCobrar, descartar]);
+    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, iraAprobacion, formaReal, onCobrar, descartar]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Cobrar un crédito">
@@ -1633,8 +1649,11 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
                 <div className="flex justify-end gap-2">
                     <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                    {/* El rótulo dice lo que el botón HACE. «Cobrar» sobre un
+                        cobro que queda esperando firma le haría decir a quien
+                        cobra que el cliente ya está solvente. */}
                     <Button variant="primary" disabled={ocupado || !listo} onClick={cobrar}>
-                        Cobrar
+                        {iraAprobacion ? 'Enviar a aprobación' : 'Cobrar'}
                     </Button>
                 </div>
             </div>

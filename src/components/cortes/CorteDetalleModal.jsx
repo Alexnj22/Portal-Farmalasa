@@ -16,8 +16,8 @@ import {
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
 import {
-    cobrosDeCredito, desgloseDelCierre, entroEnEfectivo, formasFueraDelComprobante, noContoEfectivo,
-    notaDeCifra, severidad, sugerenciasDeCorte,
+    cobrosDeCredito, desgloseDelCierre, diferenciaDelCorte, entroEnEfectivo,
+    formasFueraDelComprobante, noContoEfectivo, notaDeCifra, severidad, sugerenciasDeCorte,
 } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
@@ -233,7 +233,40 @@ export default function CorteDetalleModal({
     // el suyo —en tono `danger`— exactamente en el mismo caso (las dos cuentas
     // en disputa y no por los cobros de crédito). Eran dos avisos con el mismo
     // texto en la misma pantalla, uno arriba y otro al fondo.
-    const sev = severidad(visible?.tramo);
+    /* ── La cifra que PINTA el detalle, y por qué no es `tramo` a secas ────
+     *
+     * `conTramo` le quita el `tramo` a un DESCARTADO a propósito —un conteo que
+     * se tiró no puede correr la base ni contar como tramo de nadie—, y este
+     * detalle lo leía como `visible.tramo ?? 0`. O sea que pintaba **$0.00 en
+     * verde**: exactamente «cuadró al centavo», que es lo contrario de lo que
+     * pasó. Reportado sobre el corte de las 20:59 de Salud 3 del 3-sep, que
+     * tenía **+$8.90**.
+     *
+     * La TARJETA del mismo corte ya hacía lo correcto —`diferenciaDelCorte`,
+     * tachada— así que las dos pantallas del mismo corte decían dos números
+     * distintos, y el que se lee al abrir era el falso. Es
+     * `feedback_el_mismo_juez_con_menos_piezas_da_otro_numero` otra vez, con el
+     * agravante de que acá el juez era directamente OTRO.
+     *
+     * Y arrastraba al desglose: sin `esperadoUsado`, «Debía haber en caja»
+     * caía al `esperado` CRUDO de la fila —el del comprobante, sin la
+     * corrección de los cobros de crédito—, o sea el mismo número que el
+     * renglón «El comprobante dice» que tiene justo debajo, con un «+$19.90»
+     * que no sumaba a nada. Tres renglones que no cerraban entre sí, y el
+     * párrafo de abajo nombrando un cuarto ($1,288.63) que no estaba en
+     * ninguno.
+     *
+     * `diferenciaDelCorte` mide contra el esperado del comprobante del DÍA y no
+     * contra el corte anterior: para un descartado es lo que corresponde —no
+     * está encadenado a ninguno— y por eso el rótulo también cambia. */
+    const propia = useMemo(() => (visible ? diferenciaDelCorte(visible) : null), [visible]);
+    const descartado = visible?.estado === 'DESCARTADO';
+    const cifra = descartado ? (propia?.valor ?? null) : (visible?.tramo ?? null);
+    const esperadoDeLaCifra = descartado
+        ? propia?.esperado
+        : (visible?.esperadoUsado ?? visible?.esperado);
+
+    const sev = severidad(cifra);
     const esZ = visible?.tipo === 'Z';
     /* Una LECTURA (tipo X) no contó efectivo: no tiene esperado ni diferencia,
      * así que no hay nada que firmar ni que reabrir. Aparece desde el 31-ago —
@@ -315,8 +348,19 @@ export default function CorteDetalleModal({
             ariaLabel={`Corte de las ${hhmm(visible?.hora)}`}
         >
             <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Corte de las {hhmm(visible?.hora)}</h3>
+                {/* La insignia va en el ENCABEZADO y no sólo al pie: es lo
+                    primero que hay que saber de un corte ya resuelto, y sigue
+                    a la vista mientras se lee el resto. `pr-8` deja libre la
+                    esquina donde el diálogo pinta su botón de cerrar. */}
+                <div className="min-w-0 pr-8">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-body font-bold text-content">Corte de las {hhmm(visible?.hora)}</h3>
+                        {!pendiente && visible && (
+                            visible.estado === 'CONFIRMADO'
+                                ? <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>
+                                : <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>
+                        )}
+                    </div>
                     <p className="text-caption text-content-3 truncate">
                         {nombreSala[visible?.branch_id] || (visible ? `Sucursal ${visible.branch_id}` : '')}
                         {visible?.fecha ? ` · ${fechaLarga(visible.fecha)}` : ''}
@@ -424,20 +468,45 @@ export default function CorteDetalleModal({
                             </div>
                         ) : (
                         <div data-surface="card" className="p-4">
+                            {/* ── El descarte, ARRIBA DE TODO ─────────────────
+                                Estaba dicho una sola vez, en una insignia gris
+                                a media pantalla, debajo del diagnóstico. Quien
+                                abre esto lee la cifra primero y la insignia
+                                después —si baja—, así que el corte se leía como
+                                vigente durante todo ese rato. Acá encabeza el
+                                bloque que explica, que es donde cambia lo que
+                                significan los números de abajo. */}
+                            {descartado && (
+                                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-divider">
+                                    <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>
+                                    <span className="text-caption text-content-3">
+                                        Este conteo se tiró: no cuenta para el día ni para los cortes que siguen.
+                                    </span>
+                                </div>
+                            )}
                             <div className="flex items-baseline justify-between gap-3 flex-wrap">
                                 <span className="text-caption text-content-2">
-                                    {visible.tramo === visible.acumulado
-                                        ? 'Diferencia de este corte'
-                                        : 'Diferencia desde el corte anterior'}
+                                    {descartado
+                                        ? 'Diferencia que tenía este conteo'
+                                        : visible.tramo === visible.acumulado
+                                            ? 'Diferencia de este corte'
+                                            : 'Diferencia desde el corte anterior'}
                                 </span>
-                                <span className={`text-2xl font-bold tabular-nums ${TONO_TEXTO[sev]}`}>
-                                    {conSigno(visible.tramo ?? 0)}
+                                {/* Tachada y en gris, igual que en la tarjeta:
+                                    la cifra de un conteo descartado es un dato
+                                    histórico, no una diferencia que alguien
+                                    tenga que buscar. Y el tachado dice eso sin
+                                    esconder el número, que es lo que hace falta
+                                    para entender por qué se descartó. */}
+                                <span className={`text-2xl font-bold tabular-nums ${
+                                    descartado ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
+                                    {conSigno(cifra ?? 0)}
                                 </span>
                             </div>
                             <div className="mt-2 space-y-1 text-caption text-content-3">
                                 <div className="flex justify-between gap-3">
                                     <span>Debía haber en caja</span>
-                                    <span className="tabular-nums">{formatMoney(visible.esperadoUsado ?? visible.esperado)}</span>
+                                    <span className="tabular-nums">{formatMoney(esperadoDeLaCifra)}</span>
                                 </div>
                                 {/* El puente hasta el papel. Quien mira esta
                                     pantalla suele tener el comprobante en la
@@ -489,8 +558,8 @@ export default function CorteDetalleModal({
                             <Notice variant={modo === 'confirmar' ? 'warning' : 'danger'} icon={AlertTriangle}>
                                 <span className="font-bold">
                                     {modo === 'confirmar'
-                                        ? `Vas a dar por bueno un corte con ${sev === 'falta' ? 'faltante' : 'sobrante'} de ${formatMoney(Math.abs(visible.tramo ?? 0))}`
-                                        : `Vas a descartar un corte con ${sev === 'falta' ? 'faltante' : 'sobrante'} de ${formatMoney(Math.abs(visible.tramo ?? 0))}`}
+                                        ? `Vas a dar por bueno un corte con ${sev === 'falta' ? 'faltante' : 'sobrante'} de ${formatMoney(Math.abs(cifra ?? 0))}`
+                                        : `Vas a descartar un corte con ${sev === 'falta' ? 'faltante' : 'sobrante'} de ${formatMoney(Math.abs(cifra ?? 0))}`}
                                 </span>
                                 <span className="block mt-0.5 font-normal text-content-2">
                                     {modo === 'confirmar'

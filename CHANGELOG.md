@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.975.1 — El detalle de un corte descartado deja de decir $0.00
+
+Reporte del usuario: *«¿por qué al abrirlo en diferencias dice 0? Que el
+descartado se note más»*, sobre el corte de las 20:59 de Salud 3 del 3-sep.
+
+**El número era falso, y no por poco.** `conTramo` le quita el `tramo` a un
+corte descartado **a propósito** —un conteo que se tiró no puede correr la base
+ni contar como tramo de nadie—, y el detalle lo leía como `visible.tramo ?? 0`.
+O sea que pintaba **$0.00 en verde**: exactamente «cuadró al centavo», que es lo
+contrario de lo que pasó. La diferencia real de ese conteo era **+$8.90**.
+
+**Y la tarjeta del mismo corte ya lo hacía bien.** Mostraba `+$8.90` tachado,
+porque usa `diferenciaDelCorte`. Dos pantallas del mismo corte con dos números
+distintos, y el que se lee al abrir era el falso — es
+`feedback_el_mismo_juez_con_menos_piezas_da_otro_numero` otra vez, con el
+agravante de que acá el juez era directamente **otro**.
+
+**Arrastraba al desglose entero.** Sin `esperadoUsado`, «Debía haber en caja»
+caía al `esperado` **crudo** de la fila —el del comprobante, sin la corrección
+de los cobros de crédito—, o sea el mismo número que el renglón «El comprobante
+dice» que tiene justo debajo, con un «+$19.90» que no sumaba a nada. Cuatro
+renglones que no cerraban entre sí, y el párrafo de abajo nombrando un quinto
+($1,288.63) que no estaba en ninguno. Ahora:
+
+| | |
+|---|---:|
+| Debía haber en caja | $1,288.63 |
+| El comprobante dice | $1,268.73 |
+| Cobros de crédito en efectivo | +$19.90 |
+| Se contó | $1,297.53 |
+| **Diferencia que tenía este conteo** | **+$8.90** |
+
+**Y el descarte se nota.** Estaba dicho una sola vez, en una insignia gris a
+media pantalla, debajo del diagnóstico: quien abre el detalle lee la cifra
+primero y la insignia después —si baja—, así que el corte se leía como vigente
+durante todo ese rato. Ahora la insignia va en el **encabezado**, encabeza el
+bloque que explica los números («este conteo se tiró: no cuenta para el día ni
+para los cortes que siguen»), y la cifra va **tachada y en gris**, igual que en
+la tarjeta. Tachada y no escondida: el número es lo que permite entender por qué
+se descartó.
+
+El rótulo también cambia, porque la cifra no es la misma pregunta:
+`diferenciaDelCorte` mide contra el esperado del comprobante del **día** y no
+contra el corte anterior. Para un descartado es lo que corresponde —no está
+encadenado a ninguno— y se dice así: «Diferencia que **tenía** este conteo».
+
 ## v2.975.0 — «Mis documentos» muestra el expediente propio, y el adjunto de una solicitud lo abre su dueño
 
 Los dos cabos que quedaron de encender la autogestión para los 47.

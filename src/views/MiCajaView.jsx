@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    AlertTriangle, ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Paperclip, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
+    AlertTriangle, ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Paperclip, PlayCircle, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
@@ -25,7 +25,7 @@ import { useToastStore } from '../store/toastStore';
 import useCerrarBolsa from '../hooks/useCerrarBolsa';
 import useResolverCorte from '../hooks/useResolverCorte';
 import {
-    abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja,
+    abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, iniciarTurno,
     estadoDeCajaEnElOrigen, hayQuePreguntarleAlOrigen, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
@@ -692,6 +692,21 @@ export default function MiCajaView({ comoPestana = false }) {
             return [{ key: 'abrir', icon: DoorOpen, label: 'Abrir la caja', rotulo: 'Abrir',
                 variant: 'primary', rotuloFijo: true, onClick: () => setDialogo('abrir') }];
         }
+        /* ── LA CAJA ABIERTA CON EL TURNO PARADO ES SU PROPIO ESTADO ────────
+         *
+         * Abrir la caja crea la apertura del día CON su primer turno; el que
+         * sigue se arranca aparte. Sin esta rama, la pantalla ofrecía «Hacer
+         * corte» como si nada y «Abrir la caja» ni aparecía —la caja SÍ está
+         * abierta—, así que la sala terminaba en el sistema de la caja. Es el
+         * estado en que quedaron las seis salas el 3-sep.
+         *
+         * `=== false` a propósito: el estado contesta `true` cuando todavía no
+         * se observó, y ahí no hay que ofrecer nada. Ver `caja_estado`. */
+        if (estado.turno_corriendo === false) {
+            return [{ key: 'iniciar-turno', icon: PlayCircle, label: 'Iniciar el turno',
+                rotulo: 'Iniciar turno', variant: 'primary', rotuloFijo: true,
+                onClick: () => correr(() => iniciarTurno(sala), 'El turno quedó iniciado.') }];
+        }
         /* DOS movimientos y no cuatro: Entrada y Salida.
          *
          * «Sacar de una bolsa» era una acción aparte y le pedía a la sala una
@@ -737,7 +752,13 @@ export default function MiCajaView({ comoPestana = false }) {
             { key: 'cerrar', icon: Lock, label: 'Cerrar el día', rotulo: 'Cerrar',
                 rotuloFijo: true, onClick: () => setDialogo('cerrar') },
         ];
-    }, [puedeOperar, sala, estado, noSePudo]);
+    }, [puedeOperar, sala, estado, noSePudo, correr]);
+
+    /* «Abierta» y «vendiendo» no son lo mismo: la apertura del día puede estar
+     * viva con el turno parado, y en ese estado no se puede cortar ni cerrar.
+     * `=== false` a propósito — sin observar todavía, el estado contesta `true`
+     * (ver `caja_estado`) y ahí no hay nada que anunciar. */
+    const turnoParado = estado?.abierta === true && estado?.turno_corriendo === false;
 
     /* Un nombre CORTO. La caja escribe «RODRIGO EDUARDO MARQUEZ» y en una
      * tarjeta eso se corta a «RODRIGO EDUARDO M…», que es peor que dos
@@ -826,18 +847,28 @@ export default function MiCajaView({ comoPestana = false }) {
                             mostraban a ESA persona aunque hubiera abierto otra.
                             Sin fila del portal no se inventa un nombre: se dice
                             que se abrió por fuera, que es la verdad y además es
-                            accionable. */}
-                        <StatCard icon={noSePudo ? AlertTriangle : estado?.abierta ? DoorOpen : Lock}
-                            label={!sala ? 'La caja' : noSePudo ? 'Sin respuesta' : estado?.abierta ? 'Abierta' : 'Cerrada'}
+                            accionable.
+
+                            Y CUATRO estados, no tres: la caja abierta con el
+                            turno parado decía «Abierta · desde las 6:58» igual
+                            que una que está vendiendo. El 3-sep las seis salas
+                            quedaron así toda la tarde y la pantalla no lo dijo
+                            ni una vez — el dato ya viajaba en la respuesta y no
+                            lo leía nadie. */}
+                        <StatCard icon={noSePudo ? AlertTriangle : turnoParado ? PlayCircle : estado?.abierta ? DoorOpen : Lock}
+                            label={!sala ? 'La caja' : noSePudo ? 'Sin respuesta'
+                                : turnoParado ? 'Turno cerrado' : estado?.abierta ? 'Abierta' : 'Cerrada'}
                             value={!sala ? '—' : noSePudo ? 'No se pudo leer'
-                                : estado?.abierta ? (estado.desde || 'Abierta') : 'Sin turno'}
+                                : turnoParado ? 'Hay que iniciarlo'
+                                    : estado?.abierta ? (estado.desde || 'Abierta') : 'Sin turno'}
                             sub={!sala || noSePudo ? undefined
-                                : estado?.abierta
-                                    ? (corto(estado.quien) || 'se abrió fuera del portal')
-                                    : 'Nadie puede vender'}
-                            iconBg={estado?.abierta && !noSePudo ? 'bg-success/10' : 'bg-warning/10'}
-                            iconCls={estado?.abierta && !noSePudo ? 'text-success-text' : 'text-warning-text'}
-                            valueCls={estado?.abierta && !noSePudo ? 'text-success-text' : 'text-warning-text'}
+                                : turnoParado ? 'La caja sigue abierta'
+                                    : estado?.abierta
+                                        ? (corto(estado.quien) || 'se abrió fuera del portal')
+                                        : 'Nadie puede vender'}
+                            iconBg={estado?.abierta && !turnoParado && !noSePudo ? 'bg-success/10' : 'bg-warning/10'}
+                            iconCls={estado?.abierta && !turnoParado && !noSePudo ? 'text-success-text' : 'text-warning-text'}
+                            valueCls={estado?.abierta && !turnoParado && !noSePudo ? 'text-success-text' : 'text-warning-text'}
                             loading={cargando} />
 
                         {/* 3 · ¿Se cortó, y quién? Sin `cortes_caja` la lista

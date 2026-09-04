@@ -21,6 +21,71 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.973.0 — El portal inicia el turno, y lo firma la sala
+
+Pedido del usuario, después de la tarde del 3-sep: *«si el turno está cerrado
+por alguna razón desde el portal se debe poder abrir»*. Hasta hoy no se podía, y
+la sala terminaba en el sistema de la caja.
+
+**Abrir la caja y iniciar el turno son dos botones distintos**, y el portal sólo
+tenía el primero:
+
+| | qué hace | ¿lo tenía? |
+|---|---|---|
+| Abrir caja (`apertura_caja process=insert`) | crea la apertura del día **y su primer turno** | sí |
+| Iniciar turno (`apertura_caja process=apertura_turno`) | arranca el turno 2, 3, 4… dentro de una apertura viva | **no** |
+
+Por eso la mañana del 3-sep funcionó y la tarde no: abrieron desde el portal
+—con eso quedó corriendo el turno 1— y en cuanto se cerró ese turno, «Abrir
+caja» se negaba con *«Esa caja ya está abierta»*, que es cierto y no ayuda.
+
+### La sesión ES la firma, y por eso ésta no usa la cuenta compartida
+
+`apertura_turno` **no lleva empleado**: el sistema le atribuye el turno a quien
+tenga la sesión, y `cambio_sesion.php` cambia la SUCURSAL, no la persona. Es lo
+contrario del corte y de la apertura, que mandan `id_empleado` / `empleado` en
+el formulario — de ahí sale la generalización equivocada.
+
+Costó los seis turnos de esa tarde: se reabrieron desde una sesión ajena y los
+seis quedaron firmados por quien no era (*«inicio turno pero con edwin no con el
+usuario de caja»*). Hubo que cerrarlos a mano.
+
+Así que ésta es la **única** acción de `operar-caja` que entra con las
+credenciales de ESA sala (`ERP_BRANCH_MAP` ya las trae por sucursal) en vez de
+la cuenta compartida. Y antes de escribir **comprueba** que el empleado de esa
+sesión sea el mismo con el que la caja está abierta; si no lo es, no escribe y
+lo dice. Un turno bien hecho a nombre de quien no era no da error y no se
+deshace.
+
+`simular: true` hace todo menos escribir y contesta a nombre de quién quedaría
+— es como se mide sin tocar la caja.
+
+Y el «success» no cuenta como prueba: se relee el panel y se contesta si el
+turno quedó corriendo de verdad. Misma lección que el corte que salió X con la
+respuesta diciendo «Success».
+
+### La pantalla tiene CUATRO estados, no tres
+
+«Abierta con el turno parado» decía *«Abierta · desde las 6:58»*, igual que una
+que está vendiendo. Las seis salas estuvieron así toda la tarde y la pantalla no
+lo dijo ni una vez — **el dato ya viajaba en la respuesta desde esta misma
+mañana y no lo leía nadie**: cero usos de `turno_corriendo` en todo `src/`.
+
+Ahora dice **«Turno cerrado · Hay que iniciarlo · La caja sigue abierta»** y la
+acción principal pasa a ser **«Iniciar el turno»**.
+
+### `abono` nunca llegó a su rama
+
+Hallazgo del camino. La lista blanca de acciones de `operar-caja` es una PUERTA,
+y su comentario advierte de dejar pasar una acción sin implementar. Le faltaba
+el otro sentido: `abono` se escribió completo el 1-sep (v2.924.0) —pantalla,
+comprobante y rama en el servidor— y **nunca se agregó a la lista**, así que el
+botón contestaba «Acción desconocida». Dos días en producción con la rama
+escrita y jamás alcanzada.
+
+⚠️ Con esto el abono de cliente se ejecuta **por primera vez**: conviene
+probarlo con un monto chico antes de usarlo de verdad.
+
 ## v2.972.1 — La nómina se puede escribir, y deja de filtrar sueldos por sala
 
 Tercer paso del plan de `docs/AUDITORIA-PERSONAL-2026-09-03.md`, y trae dos

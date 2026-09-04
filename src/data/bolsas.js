@@ -976,6 +976,24 @@ export async function abrirCaja({ sala, montoApertura = 0 }) {
     return operar({ accion: 'abrir', sala, monto_apertura: montoApertura });
 }
 
+/**
+ * Iniciar el turno cuando la caja ya está abierta.
+ *
+ * **No es abrir la caja.** Abrir crea la apertura del día CON su primer turno;
+ * el segundo, el tercero y el cuarto se arrancan con otro botón del sistema de
+ * la caja, y hasta el 3-sep el portal no lo tenía: en cuanto un turno se cerraba
+ * la sala quedaba obligada a ir al sistema, y el portal decía «Abierta» igual.
+ *
+ * `simular: true` no escribe: contesta a nombre de qué usuario quedaría el
+ * turno. Existe porque esa petición NO lleva empleado —el sistema se lo
+ * atribuye a la sesión— y el 3-sep los seis turnos se reabrieron desde una
+ * sesión ajena y quedaron firmados por quien no era. El servidor comprueba eso
+ * solo antes de escribir; esto es para poder MIRARLO sin tocar la caja.
+ */
+export async function iniciarTurno(sala, { simular = false } = {}) {
+    return operar({ accion: 'iniciar_turno', sala, ...(simular ? { simular: true } : {}) });
+}
+
 export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, vendedor = '', conceptoCompleto = null }) {
     // `detalle` es el concepto SIN el recorte a 50 del sistema de la caja. Va

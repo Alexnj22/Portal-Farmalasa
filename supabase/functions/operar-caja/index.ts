@@ -169,17 +169,20 @@ async function estadoDeLaCaja(cookie: string) {
        * pantalla dice «Abierta» y no ofrece nada, así que la sala termina yendo
        * al sistema a apretar el botón. Es el mismo defecto de antes al revés.
        *
-       * `turno_corriendo` lo separa. La sonda de abajo es para escribir el
-       * «Iniciar turno» del portal con el dato en la mano y no adivinando —que
-       * es lo que ya costó un corte X el 31-ago— y se quita en cuanto esté. */
+       * `turno_corriendo` lo separa, y desde el 3-sep el portal SÍ ofrece
+       * «Iniciar turno» (ver la acción `iniciar_turno`), así que ese estado ya
+       * no es un callejón. La sonda que se usó para descubrir el botón del
+       * origen se quitó: lo que averiguaba es el `idDetalle` de acá abajo. */
       const turnoCorriendo = /id_apertura=\d+/.test(panel);
-      if (!turnoCorriendo) {
-        const trozos = [...panel.matchAll(/<(?:button|form|a|input)\b[^>]*>(?:[^<]{0,60})/gi)]
-          .map((m) => m[0].replace(/\s+/g, " ")).join(" | ").slice(0, 2000);
-        console.error(`[operar-caja] sonda turno caja=${idCaja}: ${trozos}`);
-      }
       return {
         abierta: true, turnoCorriendo, idCaja,
+        /* El «detalle de apertura», que es lo que `apertura_turno` pide junto
+         * con la apertura. Sale del mismo campo escondido que lee el JS del
+         * origen (`$("#id_d_ap1").val()`), y sólo está cuando el turno NO
+         * corre — que es justo cuando hace falta. La sonda que lo descubrió se
+         * quita: ya no hay nada que averiguar. */
+        idDetalle: panel.match(/id=['"]id_d_ap1['"][^>]*value=['"](\d+)['"]/)?.[1]
+          ?? panel.match(/class=['"]id_d_ap1['"][^>]*value=['"](\d+)['"]/)?.[1] ?? null,
         aper, emp: panel.match(/emp=(\d+)/)?.[1] ?? idEmple,
         turno: panel.match(/turno=(\d+)/)?.[1]
           ?? campo("Turno")?.match(/\d+/)?.[0] ?? "1",
@@ -190,7 +193,7 @@ async function estadoDeLaCaja(cookie: string) {
       };
     }
   }
-  return { abierta: false, turnoCorriendo: false, idCaja: cajas[0] ?? null, aper: null, emp: null, turno: null, idEmple };
+  return { abierta: false, turnoCorriendo: false, idCaja: cajas[0] ?? null, aper: null, emp: null, turno: null, idEmple, idDetalle: null };
 }
 
 const dosDecimales = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
@@ -302,7 +305,11 @@ Deno.serve(async (req) => {
     // **cerraba el día**, el único acto irreversible del módulo. Hoy la cola ya
     // no es cola (ver el `if (accion === "cerrar")` de abajo), pero la regla
     // queda: no se agrega un nombre acá hasta que su rama esté escrita.
-    if (!["abrir", "ingreso", "salida", "cerrar", "estado", "corregir",
+    // `abono` faltaba desde que se escribió su rama (v2.924.0, 1-sep): el botón
+    // salió a producción y esta puerta le contestaba «Acción desconocida» — la
+    // rama existía y nunca se alcanzó. Es lo que esta lista tiene de traicionero
+    // en el otro sentido: no sólo deja pasar de más, también deja afuera.
+    if (!["abrir", "iniciar_turno", "ingreso", "salida", "abono", "cerrar", "estado", "corregir",
           "aplicar_correccion"].includes(accion)) {
       return json({ ok: false, error: "Acción desconocida." }, 400);
     }
@@ -783,6 +790,144 @@ Deno.serve(async (req) => {
           aviso: "La caja abrió, pero no se pudo anotar quién la abrió. Avísale a Sistemas." });
       }
       return json({ ok: true, abierta: true, caja: estado.idCaja });
+    }
+
+    // ── INICIAR EL TURNO ────────────────────────────────────────────────────
+    //
+    // «Apertura vigente» y «turno corriendo» son dos estados: abrir la caja crea
+    // la apertura del día CON su primer turno, pero el segundo, el tercero y el
+    // cuarto se arrancan con otro botón —el verde «Iniciar Turno» del panel— que
+    // el portal no tenía. Sin él, en cuanto un turno se cerraba la sala quedaba
+    // obligada a ir al sistema de la caja, y el portal decía «Abierta» igual.
+    //
+    // Reproduce `agregar_turno()` de `js/funciones/funciones_corte_caja.js`:
+    //
+    //     POST apertura_caja.php
+    //     process=apertura_turno&id_detalle=<#id_d_ap1>&id_apertura=<#id_apertura>
+    //
+    // ── LA SESIÓN ES LA FIRMA, y por eso ésta es la ÚNICA acción que no usa la
+    //    cuenta compartida ───────────────────────────────────────────────────
+    //
+    // Esa petición **no lleva empleado**: el ERP le atribuye el turno a quien
+    // tenga la sesión. Y `cambio_sesion.php` cambia la SUCURSAL, no la persona.
+    // Es lo contrario del corte y de la apertura, que mandan `id_empleado` /
+    // `empleado` en el formulario — de ahí sale la generalización equivocada.
+    //
+    // Costó los seis turnos del 3-sep: se reabrieron a mano desde una sesión
+    // ajena y los seis quedaron firmados por esa persona («inicio turno pero con
+    // edwin no con el usuario de caja»). Hubo que cerrarlos.
+    //
+    // Por eso acá se entra con las credenciales de ESA sala (`ERP_BRANCH_MAP` ya
+    // las trae por sucursal) y, antes de escribir, se COMPRUEBA que el empleado
+    // de esa sesión sea el mismo con el que la caja está abierta. Si no lo es,
+    // no se escribe: un turno bien hecho a nombre de quien no era no da error y
+    // no se deshace.
+    //
+    // `simular: true` hace todo menos escribir, y contesta a nombre de quién
+    // quedaría. Es como se mide antes de soltarlo, sin tocar la caja.
+    if (accion === "iniciar_turno") {
+      if (!estado.abierta) {
+        return json({ ok: false, error: "Esa sala no tiene una caja abierta. Primero hay que abrir la caja." }, 409);
+      }
+      if ((estado as { turnoCorriendo?: boolean }).turnoCorriendo) {
+        return json({ ok: false, ya_estaba: true, error: "El turno ya está corriendo." }, 409);
+      }
+
+      // La sesión de la SALA, no la compartida. Si esa sala no tiene cuenta
+      // propia no se cae a la compartida: sería firmar con el nombre de otro,
+      // que es exactamente lo que esta acción viene a evitar.
+      if (!entrada.username || !entrada.password) {
+        return json({ ok: false, error: "Esta sala no tiene cuenta propia en el sistema de la caja. Avísale a Sistemas." }, 503);
+      }
+      const cookieSala = await getSessionCookie(entrada.username, entrada.password);
+      await abrirSala(cookieSala, entrada.erpId);
+      const suyo = await estadoDeLaCaja(cookieSala);
+
+      // Las dos sesiones tienen que estar mirando la MISMA apertura. Si no,
+      // algo se movió en el medio y el `id_detalle` sería de otra.
+      if (String(suyo.aper ?? "") !== String(estado.aper ?? "")) {
+        console.error(`[operar-caja] iniciar_turno sala=${sala}: aperturas distintas `
+          + `(compartida ${estado.aper}, sala ${suyo.aper})`);
+        return json({ ok: false, error: "La caja cambió mientras se preparaba el turno. Recarga y volvé a intentarlo." }, 409);
+      }
+      if (suyo.turnoCorriendo) {
+        return json({ ok: false, ya_estaba: true, error: "El turno ya está corriendo." }, 409);
+      }
+
+      // Con QUÉ empleado está abierta la caja: es el que el portal usó al abrir
+      // y el que sale en el panel. La comparación es contra el empleado de la
+      // sesión de la sala, que es quien va a firmar el turno.
+      const { data: filaAp, error: errAp } = await supabase.from("cortes_caja_aperturas")
+        .select("erp_empleado_id, empleado_texto")
+        .eq("branch_id", sala).eq("erp_apertura_id", Number(estado.aper)).maybeSingle();
+      // Un error acá NO se lee como «no hay con qué comparar»: sería escribir
+      // justo cuando no se pudo comprobar quién firma.
+      if (errAp) return json({ ok: false, error: "No se pudo comprobar con qué usuario quedaría el turno." }, 503);
+
+      const deLaSesion = Number(suyo.idEmple);
+      const deLaCaja = Number(filaAp?.erp_empleado_id);
+      const coinciden = Number.isFinite(deLaSesion) && Number.isFinite(deLaCaja) && deLaSesion === deLaCaja;
+
+      if (body.simular === true) {
+        return json({
+          ok: true, simulado: true, coinciden,
+          apertura: estado.aper, caja: suyo.idCaja, turno: suyo.turno,
+          empleado_de_la_sesion: Number.isFinite(deLaSesion) ? deLaSesion : null,
+          empleado_de_la_caja: Number.isFinite(deLaCaja) ? deLaCaja : null,
+          empleado_texto: filaAp?.empleado_texto ?? null,
+          id_detalle: suyo.idDetalle ?? null,
+        });
+      }
+
+      if (!coinciden) {
+        console.error(`[operar-caja] iniciar_turno sala=${sala}: la sesión de la sala es el empleado `
+          + `${deLaSesion} y la caja está abierta con ${deLaCaja} (${filaAp?.empleado_texto ?? "?"})`);
+        return json({
+          ok: false,
+          error: "El turno quedaría a nombre de otro usuario del sistema, no del de esta caja. "
+               + "Inícialo desde el sistema de la caja y avísale a Sistemas.",
+        }, 409);
+      }
+      if (!suyo.idDetalle) {
+        console.error(`[operar-caja] iniciar_turno sala=${sala}: el panel no trajo id_d_ap1`);
+        return json({ ok: false, error: "No se pudo saber qué turno sigue. Volvé a intentarlo en un momento." }, 503);
+      }
+
+      const resp = await (await fetch(APERTURA, {
+        method: "POST",
+        headers: {
+          Cookie: cookieSala, "Content-Type": "application/x-www-form-urlencoded",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: new URLSearchParams({
+          process: "apertura_turno", id_detalle: suyo.idDetalle, id_apertura: String(estado.aper),
+        }).toString(),
+        signal: AbortSignal.timeout(45_000),
+      })).text();
+      if (!exito(resp)) {
+        console.error(`[operar-caja] iniciar_turno sala=${sala}: ${resp.slice(0, 1000)}`);
+        return json({ ok: false, error: "La caja no aceptó el inicio del turno. Volvé a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+      }
+
+      /* El «success» NO es la prueba: se relee el panel. Es la misma lección del
+       * corte que salió X con la respuesta diciendo «Success». */
+      const despues = await estadoDeLaCaja(cookieSala).catch(() => null);
+      const corriendo = Boolean((despues as { turnoCorriendo?: boolean } | null)?.turnoCorriendo);
+
+      // El espejo, para que la pantalla no diga «turno cerrado» hasta el próximo
+      // barrido —media hora— justo después de haberlo abierto.
+      const { error: errEspejo } = await supabase.from("cortes_caja_aperturas")
+        .update({ turno_corriendo: corriendo, updated_at: new Date().toISOString() })
+        .eq("branch_id", sala).eq("erp_apertura_id", Number(estado.aper));
+      if (errEspejo) console.error(`[operar-caja] iniciar_turno espejo sala=${sala}: ${errEspejo.message}`);
+
+      return corriendo
+        ? json({ ok: true, turno: (despues as { turno?: string | null } | null)?.turno ?? null })
+        : json({
+          ok: true, turno_corriendo: false,
+          aviso: "La caja aceptó el inicio del turno pero sigue apareciendo sin iniciar. "
+               + "Comprobalo en el sistema de la caja antes de seguir vendiendo.",
+        });
     }
 
     // De acá para abajo hace falta una caja abierta.

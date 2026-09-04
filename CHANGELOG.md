@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.977.3 — Los filtros de Cortes se llaman por su dimensión
+
+La ranura de sucursales ya decía «Sucursales» cuando no recorta nada, y las
+otras dos decían «Cualquier estado» y «Cualquier cifra». Ahora dicen «Todos» y
+«Diferencias», que es cómo se nombra el filtro cuando está abierto. Mismo
+cambio en la ranura de estado de Movimientos, que usaba el mismo rótulo.
+
 ## v2.977.2 — La sucursal deja de salirse de la ficha de la solicitud
 
 Reportado desde la campana: en el detalle de una solicitud pendiente, la

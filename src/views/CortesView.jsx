@@ -158,14 +158,14 @@ const rotularDia = (fecha) => {
 // cruzar —los confirmados con faltante, que antes no se podían pedir— y cada
 // una queda en su sitio del orden canónico (ámbito → entidad → tiempo → estado).
 const ESTADOS = [
-    { value: 'TODOS',      label: 'Cualquier estado' },
+    { value: 'TODOS',      label: 'Todos' },
     { value: 'PENDIENTE',  label: 'Sin confirmar' },
     { value: 'CONFIRMADO', label: 'Confirmados' },
     { value: 'DESCARTADO', label: 'Descartados' },
 ];
 
 const DIFERENCIAS = [
-    { value: 'TODAS', label: 'Cualquier cifra' },
+    { value: 'TODAS', label: 'Diferencias' },
     { value: 'ok',    label: 'Cuadraron' },
     { value: 'sobra', label: 'Con exceso' },
     { value: 'falta', label: 'Con faltante' },
@@ -183,7 +183,7 @@ const TIPOS_MOV = [
 // «Ya no está» es un estado y no una fila borrada: cuando un movimiento
 // desaparece del sistema de la caja, esta lista es lo único que queda de él.
 const ESTADOS_MOV = [
-    { value: 'TODOS',         label: 'Cualquier estado' },
+    { value: 'TODOS',         label: 'Todos' },
     { value: 'VIGENTES',      label: 'Vigentes' },
     { value: 'EDITADOS',      label: 'Se modificaron' },
     { value: 'DESAPARECIDOS', label: 'Ya no están' },

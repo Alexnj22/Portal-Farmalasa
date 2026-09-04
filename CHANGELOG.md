@@ -21,6 +21,116 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.982.0 — El aviso del faltante se dibuja, no se lee
+
+El aviso de las 8 salió como tres renglones de prosa con la cifra adentro, al
+lado de la tarjeta del cierre del día que dibuja anillo, montos y barras.
+Reportado en una línea: «esa nueva no me gustó, la de abajo es más informativa,
+no sólo texto».
+
+Ahora tiene tarjeta. El anillo de la izquierda —donde antes había un ícono que
+vale igual para un pedido y para una solicitud— dibuja **cuánto se contó de lo
+que debía haber**, y el hueco del arco ES el faltante: casi cerrado se lee
+«casi cuadró», con una muesca visible se lee «acá falta algo». Debajo, el monto
+en grande, la proporción del cajón y una barra con los dos extremos rotulados.
+
+La pregunta que contesta sin leer no es «cuánto faltó» —eso ya está en el
+título— sino **si es mucho**: $9.85 sobre $319 es un descuadre que hay que
+buscar y el mismo $9.85 sobre $3,190 es redondeo. Para eso el aviso ahora
+manda también lo contado y lo esperado, y el esperado se DERIVA de los otros
+dos para que los tres números cierren en la tarjeta.
+
+Los avisos escritos antes de este cambio se siguen dibujando con lo que
+tienen, sin el arco ni la barra: una campana con 90 días de historial guarda
+avisos de versiones anteriores, y eso es el caso normal, no el raro.
+
+## v2.981.0 — Historial de notificaciones y papelera: borrar deja de destruir
+
+Preguntado por el usuario: «una vez eliminada, ¿no hay forma de verla?». No la
+había. El botón de la campana hacía un `DELETE` real: la fila se iba de la base
+y no quedaba rastro en ningún lado — sin `deleted_at`, sin trigger, y sin fila
+en `audit_logs`.
+
+**Borrar ahora es OCULTAR.** Se escribe `deleted_at` y la fila sigue ahí hasta
+que la limpie `purge-notifications-daily`, que ya existía y sigue en 90 días. La
+retención no se tocó: lo que faltaba no era guardar más tiempo, era poder verlo.
+La policy `notifications_delete` se quitó en la misma migración — si sólo lo
+respetara el navegador, «se puede recuperar» dependería de que nadie llame al
+endpoint viejo, y una garantía que depende de eso no es una garantía.
+
+**El borrado no era el único agujero, y el otro era más grande.** La campana
+carga 100 avisos y nada más. Medido en producción: **28 de 46 personas ya
+pasaron las 100** y la que más tiene **608**. O sea que para más de la mitad del
+personal parte de su historial ya era invisible **sin haber borrado nada**, y
+como no falla nada nadie lo reporta.
+
+Por eso la vista nueva `/notificaciones` pagina de verdad contra el servidor en
+vez de filtrar en el navegador una lista que ya venía recortada — un tope se
+aplica ANTES del filtro, y lo que el servidor cortó no existe para el filtro.
+Tres pestañas (Sin leer · Todas · Borradas), búsqueda sobre el texto del aviso,
+filtro por tipo y por período, y la pestaña y la página en la DIRECCIÓN, no en
+memoria. Desde la campana se llega con «Ver todas», al pie del panel y fuera del
+área que hace scroll.
+
+**Efecto lateral que arregla otra cosa.** Cuatro edge functions usan
+`notifications` como su propia marca de «ya avisé» (buscan por
+`metadata->>check_key`). Con el borrado duro, vaciar la campana borraba esa marca
+y el aviso **volvía a mandarse**. La fila que sobrevive lo cierra.
+
+**Un tipo de aviso sin rótulo no desaparece del filtro**: se muestra prolijo. Que
+una categoría se caiga de la lista escondería sus avisos sin ningún error
+visible, y el día que alguien agregue un tipo nuevo no se va a acordar del mapa.
+
+La severidad, el tono, el verbo y la antigüedad se mudaron de `NotificationBell`
+a `src/utils/notificacionTexto.js`: con dos lectores, copiarlas habría dejado que
+se desincronizara **qué tan grave se VE un aviso**.
+
+### Cómo se verificó
+
+Contra el entorno de pruebas con 140 avisos sembrados (42 sin leer, 7 borrados)
+— más de las 100 de la campana a propósito, para que la paginación se ejercitara.
+`tests/e2e/notificaciones-historial.spec.js` deja anclado: que «Todas» ve más de
+100, que la pestaña y la página sobreviven una recarga, que la búsqueda acota
+contra el servidor, y que **borrar suma una a la papelera y devolver la resta** —
+o sea que la fila no se destruyó. Barrido en WebKit iPhone 13: sin desborde
+horizontal.
+
+El instrumento midió otra cosa dos veces antes de dar verde, y quedó anotado en
+la prueba: un `.tabular-nums` a secas leía el globo de la campana («9+» → 9), y
+anclarlo al `text-h3` seguía devolviendo el número de la pestaña anterior porque
+`networkidle` volvía antes que la consulta.
+
+### Migraciones
+
+- `20260904141450_notificaciones_borrado_suave` — `deleted_at`, índice parcial
+  sobre la condición rara (la papelera) y baja de la policy de DELETE.
+- `20260904141621_mis_tipos_de_notificacion` — los tipos del filtro salen de una
+  función INVOKER, no de bajarse la columna: eso serían tantas filas como avisos
+  tenga la persona, y PostgREST corta en 1000 sin avisar.
+
+## v2.980.2 — El monto del pago se escribe una sola vez
+
+Cobrar un crédito con **Solicitar aprobación** pedía el monto en dos lugares: un
+campo «Monto del pago» arriba y el «Abona» de cada crédito abajo. El usuario
+preguntó por qué, y midiéndolo resultó que el campo de arriba **no podía tener
+otro valor**: el botón `Cobrar` exige que lo repartido cuadre exacto contra él,
+así que escribir un número distinto no era una opción sino un error garantizado.
+Un campo cuyo único valor válido lo dicta otro campo es un campo de más.
+
+Ahora, cuando no hay comprobante que leer —**Efectivo** y **Solicitar
+aprobación**—, el monto se escribe una sola vez, en la línea del crédito, y el
+total sale abajo como «Total a cobrar». Es como Efectivo ya funcionaba.
+
+**Con comprobante no cambia nada, a propósito.** Ahí los dos números son hechos
+distintos: cuánto dice la transferencia y a qué créditos se aplica. «Va aplicado
+$X de $Y» es el control que impide que el banco mueva $50 y el portal explique
+$45.
+
+De paso: el total dejó de pintarse en rojo cuando no hay contra qué no cuadrar
+—un $0.00 recién abierto no es un error—, y «Repartir del más viejo» quedó sólo
+para el caso con comprobante, que es el único donde hay un total de afuera que
+volcar en las líneas.
+
 ## v2.980.1 — El tope del monto dice de quién es la cifra
 
 El diálogo de cobrar un crédito mostraba dos números con la misma palabra: un

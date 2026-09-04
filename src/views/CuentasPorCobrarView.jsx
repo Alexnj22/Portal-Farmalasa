@@ -1149,9 +1149,20 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     const puedeRepartir = forma !== 'Efectivo' && otros.length > 0;
     const sumaRepartida = Object.values(reparto)
         .reduce((t, v) => t + (Number(v) || 0), 0);
-    // Con papel el total lo dice el comprobante; con «Otro» lo escribe quien
-    // cobra —no hay documento que leer— y con efectivo es lo que se reparte.
-    const totalPago = (conPapel || pideAprobacion) ? Number(montoDoc) : sumaRepartida;
+    /* El total lo dice el PAPEL, y sin papel lo dice el reparto.
+     *
+     * Hasta el 2026-09-04 «Solicitar aprobación» pedía el monto DOS veces: un
+     * campo «Monto del pago» arriba y el «Abona» de cada crédito abajo. El
+     * usuario preguntó lo obvio —«no entiendo por qué en 2 lados hay que
+     * agregar el monto»— y midiéndolo resultó que el campo de arriba no podía
+     * tener otro valor: `cuadra` exige que la suma repartida dé EXACTO contra
+     * él, así que su único valor válido lo dictaba el otro campo. Escribirlo
+     * distinto no era una opción, era un error garantizado.
+     *
+     * Con comprobante los dos SÍ son hechos distintos —cuánto dice la
+     * transferencia y a qué créditos se aplica—, y ahí «Va aplicado $X de $Y»
+     * es el control que impide explicar $45 de los $50 que movió el banco. */
+    const totalPago = conPapel ? Number(montoDoc) : sumaRepartida;
 
     /* Contra QUÉ se topea: todo lo que el cliente debe en la sala, que es la
      * misma vara con la que el lector rechaza un comprobante por más de la
@@ -1363,9 +1374,9 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                             onChange={(v) => setFormaReal(v || 'Transferencia')}
                             options={FORMAS_REALES.map((f) => ({ value: f, label: f }))}
                             clearable={false} />
-                        <PortalInput label="Monto del pago" inputMode="decimal" value={montoDoc}
-                            onChange={(e) => escribirMonto(e.target.value)}
-                            helperText={rotuloDelTope} />
+                        {/* Acá NO va un campo de monto: sin comprobante que
+                            leer, el total es lo que se aplica —ver `totalPago`—
+                            y se escribe una sola vez, en la línea del crédito. */}
                         {/* El motivo es lo que quien aprueba va a leer, así que es
                             obligatorio. Con las otras formas el comprobante habla
                             solo; acá no hay comprobante que hable. */}
@@ -1414,7 +1425,13 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                 <span className="text-body-sm font-bold text-content">
                                     {repartir ? 'A qué créditos se aplica' : 'Cuánto se le abona'}
                                 </span>
-                                {repartir && totalPago > 0 && (
+                                {/* Sólo con comprobante: repartir es tomar un
+                                    total que viene de AFUERA y volcarlo en las
+                                    líneas. Sin papel el total ya es la suma de
+                                    las líneas, así que el botón repartiría lo
+                                    repartido — se vería como un control y no
+                                    haría nada que la persona no acabe de hacer. */}
+                                {conPapel && repartir && totalPago > 0 && (
                                     <Button variant="ghost" size="sm"
                                         onClick={() => repartirSolo(totalPago)}>
                                         Repartir del más viejo
@@ -1560,16 +1577,21 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
                             <div className="flex items-baseline justify-between gap-3 pt-2 border-t border-border/60">
                                 <span className="text-body-sm text-content-2">
-                                    {(conPapel || pideAprobacion) ? 'Va aplicado' : 'Total a cobrar'}
+                                    {conPapel ? 'Va aplicado' : 'Total a cobrar'}
                                 </span>
                                 <span className={`text-body font-black tabular-nums ${
-                                    cuadra || (!conPapel && !pideAprobacion) ? 'text-content' : 'text-danger-text'}`}>
+                                    /* Rojo sólo cuando hay CONTRA QUÉ no cuadrar.
+                                       Sin comprobante el total ES la suma, así
+                                       que un $0.00 recién abierto pintado en
+                                       rojo sería un error sobre algo que nadie
+                                       escribió todavía. */
+                                    cuadra || !conPapel ? 'text-content' : 'text-danger-text'}`}>
                                     {formatMoney(sumaRepartida)}
-                                    {(conPapel || pideAprobacion) && totalPago > 0 && ` de ${formatMoney(totalPago)}`}
+                                    {conPapel && totalPago > 0 && ` de ${formatMoney(totalPago)}`}
                                 </span>
                             </div>
 
-                            {(conPapel || pideAprobacion) && totalPago > 0 && !cuadra && (
+                            {conPapel && totalPago > 0 && !cuadra && (
                                 /* La suma tiene que dar EXACTO. Aceptar menos
                                    dejaría una diferencia sin dueño: el banco
                                    movió $50 y el portal explicaría $45. */

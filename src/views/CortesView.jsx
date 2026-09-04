@@ -49,6 +49,7 @@ import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import {
     fetchAperturas, fetchCortes, fetchDiferencias, fetchEntradasParaCruce,
     fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas,
+    fetchVentasPorPago,
 } from '../data/cortes';
 /* Los cobros de crédito viven en `creditos` —el cobro se decide allá— y se
  * miran acá porque el dinero entra por esta caja. Es la misma lectura que hace
@@ -335,6 +336,7 @@ const CortesView = () => {
      * desplegables que tenía (estado y quién) se fueron con la pestaña; lo que
      * decían está en la banda de color y en el avatar de cada ficha. */
     const [aperturas, setAperturas] = useState(VACIO);
+    const [ventasPorPago, setVentasPorPago] = useState(VACIO);
     const [entradas, setEntradas] = useState(VACIO);
     const [pudeAsistencia, setPudeAsistencia] = useState(true);
     const [cargandoAper, setCargandoAper] = useState(false);
@@ -401,13 +403,19 @@ const CortesView = () => {
     const cargarAper = useCallback(async () => {
         if (!enCortes) return;
         setCargandoAper(true);
-        const [filas, asistencia] = await Promise.all([
+        const [filas, asistencia, porPago] = await Promise.all([
             fetchAperturas({ desde, hasta, branchId: sala || null }),
             fetchEntradasParaCruce({ desde, hasta }),
+            // Lo vendido por forma de pago, para que la ficha diga cuánto de eso
+            // entró al CAJÓN. Su RPC ya se acota por el alcance de `cortes_caja`,
+            // así que una sala recibe la suya y nada más. Va sin `branchId`
+            // porque el RPC no lo acepta: se cruza por clave abajo.
+            fetchVentasPorPago({ desde, hasta }),
         ]);
         setAperturas(filas || VACIO);
         setEntradas(asistencia.filas || VACIO);
         setPudeAsistencia(asistencia.pude);
+        setVentasPorPago(porPago || VACIO);
         setCargandoAper(false);
     }, [enCortes, desde, hasta, sala]);
 
@@ -799,6 +807,7 @@ const CortesView = () => {
                         pudeLeerAsistencia={pudeAsistencia}
                         salas={salasMap}
                         cargando={cargandoAper}
+                        ventas={ventasPorPago}
                     />
                 )}
 

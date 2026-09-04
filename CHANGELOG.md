@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.980.0 — La ficha de caja separa el efectivo y respeta el conteo a ciegas
+
+Dos defectos en el mismo renglón de la ficha, y el segundo llevaba ahí desde
+que la ficha existe.
+
+**«Esperado ahora» no era el efectivo.** El número salía del panel de la caja y
+trae la venta del turno con tarjeta adentro. Medido sobre 43 aperturas
+cerradas: coincide al centavo con la venta TOTAL del día en 26 y con el
+efectivo en UNA. Hoy en Salud 3 decía $41.30 sobre $23.15 de efectivo. Ahora
+sale de las formas de pago —la fuente que sí las separa— y dice «Efectivo del
+día», con las otras formas en su propia línea para que la suma siga cerrando.
+
+**Y no respetaba el conteo a ciegas.** La regla del 1-sep —quien opera una sala
+no ve cuánto debería haber, porque con la cifra a la vista teclear el conteo es
+copiar— la aplica «Hoy» desde entonces, pero esta ficha la saltaba: los cuatro
+cargos de sala leían el monto ahí mismo, en Cortes. Ahora usa el mismo canónico
+(el alcance de `cortes_caja`), y a la sala le muestra la actividad —cuántas
+ventas lleva el día— en vez del dinero.
+
 ## v2.979.1 — La meta del día se muda a la pestaña «Hoy»
 
 Estaba dentro de la ficha de caja y no encajaba por dos motivos: sólo aparecía

@@ -4,6 +4,7 @@ import Badge from '../common/Badge';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
 import { formatMoney } from '../../utils/formatNumber';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * Quién abrió cada caja, desde cuándo y con cuánto — arriba de los cortes.
@@ -62,7 +63,7 @@ function minutosAntes(abiertaA, marcaIso) {
     return (h * 60 + m) - minutosMarca;
 }
 
-function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
+function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, veLosMontos }) {
     const abierta = !apertura.cerrada_at;
     /* QUIÉN abrió, y sólo desde el portal.
      *
@@ -136,21 +137,63 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar }) {
                     </span>
                 </div>
 
+                {/* ── El dinero, y quién puede verlo ────────────────────────
+                    Es la MISMA regla que `MiCajaView` aplica desde el 1-sep —el
+                    alcance de `cortes_caja`, no un permiso aparte— y esta ficha
+                    la estaba saltando: pintaba «Esperado ahora $97.35» a los
+                    cuatro cargos de sala, que es exactamente el número que la
+                    otra pantalla les esconde para que el conteo sea a ciegas.
+                    Con la cifra a la vista, teclear el conteo no es contar: es
+                    copiar, y un faltante no aparece nunca.
+
+                    Lo que se esconde es el DINERO, no la actividad: cuántas
+                    ventas lleva el día se queda, porque no dice cuánto hay.
+
+                    Y el número de la derecha CAMBIÓ de significado, no sólo de
+                    rótulo. `monto_registrado` decía «Esperado ahora» y no es el
+                    efectivo del cajón: es lo vendido en el turno, tarjeta
+                    incluida. Medido sobre 43 aperturas cerradas — coincide al
+                    centavo con la venta TOTAL del día en 26 y con el efectivo en
+                    UNA. En Salud 3 la ficha decía $33.90 sobre $16.35 de
+                    efectivo. Ahora sale de las formas de pago, que es la fuente
+                    que sí sabe separarlas, y el efectivo —lo único que llega al
+                    cajón— es el que manda. */}
                 <div className="flex items-end justify-between gap-3 pt-2 border-t border-border/60">
                     <span className="min-w-0">
-                        <span className="block text-micro font-black uppercase tracking-widest text-content-3">Apertura</span>
-                        <span className="block text-body-sm font-black tabular-nums text-content">
-                            {formatMoney(apertura.monto_apertura)}
-                        </span>
-                    </span>
-                    <span className="min-w-0 text-right">
                         <span className="block text-micro font-black uppercase tracking-widest text-content-3">
-                            {abierta ? 'Esperado ahora' : 'Cerró con'}
+                            {veLosMontos ? 'Apertura' : 'Ventas del día'}
                         </span>
                         <span className="block text-body-sm font-black tabular-nums text-content">
-                            {formatMoney(apertura.monto_registrado)}
+                            {veLosMontos
+                                ? formatMoney(apertura.monto_apertura)
+                                : ventas ? `${ventas.documentos}` : '—'}
                         </span>
+                        {!veLosMontos && (
+                            <span className="block text-micro text-content-3">se cuenta al cortar</span>
+                        )}
                     </span>
+                    {veLosMontos && (
+                        <span className="min-w-0 text-right">
+                            <span className="block text-micro font-black uppercase tracking-widest text-content-3">
+                                Efectivo del día
+                            </span>
+                            <span className="block text-body-sm font-black tabular-nums text-content">
+                                {ventas ? formatMoney(ventas.efectivo) : '—'}
+                            </span>
+                            {/* Las otras formas van SIEMPRE que existan, aunque
+                                sean una sola tarjeta: sin esta línea, «efectivo
+                                $145.05» al lado de un turno de $169.05 se lee
+                                como que faltan $24 — y son las que no pasaron
+                                por el cajón. Se dicen juntas y no una por una
+                                (tarjeta, crédito, transferencia, cheque) porque
+                                lo que las une es justamente eso. */}
+                            {ventas && ventas.otras > 0 && (
+                                <span className="block text-micro text-content-3 tabular-nums">
+                                    {formatMoney(ventas.otras)} en otras formas
+                                </span>
+                            )}
+                        </span>
+                    )}
                 </div>
 
             </div>
@@ -164,7 +207,15 @@ export default function FichasDeCaja({
     pudeLeerAsistencia = true,
     salas,
     cargando = false,
+    ventas = [],
 }) {
+    /* El MISMO canónico que `MiCajaView`: quien mira todas las salas no es
+     * quien cuenta ese cajón, así que para él la cifra es información; quien
+     * opera una sala la cuenta, y para él sería la respuesta anticipada. Es
+     * alcance y no un permiso nuevo — el día que se parta en dos, las dos
+     * pantallas dirían cosas distintas sobre la misma persona. */
+    const { getScope } = useAuth();
+    const veLosMontos = getScope('cortes_caja') === 'ALL';
     // La PRIMERA marcación de entrada de cada persona en cada día. La primera y
     // no la última: quien marca, sale a almorzar y vuelve tiene varias, y la que
     // se compara contra la apertura es con la que llegó.
@@ -194,6 +245,29 @@ export default function FichasDeCaja({
             || String(salas?.get(a.branch_id) || '').localeCompare(String(salas?.get(b.branch_id) || ''), 'es'))
         .slice(0, 12), [aperturas, salas]);
 
+
+    /* Lo vendido por sala y por DÍA, no por período: una ficha es la apertura
+     * de un día concreto, y con un rango de una semana la suma del período al
+     * lado de la ficha del martes sería un número de otro asunto. La clave es
+     * `sala:fecha` y se cruza contra `abierta_el`.
+     *
+     * `otras` junta tarjeta, crédito, transferencia y cheque — todo lo que NO
+     * entró al cajón. Se suma por descarte y no listando las cuatro: el día que
+     * el origen agregue una quinta forma, una lista a mano la perdería en
+     * silencio y el total dejaría de cuadrar sin que nada avise. */
+    const ventasPorSalaYDia = useMemo(() => {
+        const m = new Map();
+        for (const v of ventas || []) {
+            const clave = `${v.branch_id}:${v.fecha}`;
+            const acc = m.get(clave) || { efectivo: 0, otras: 0, documentos: 0 };
+            const monto = Number(v.total) || 0;
+            if (String(v.tipo_pago).toLowerCase() === 'efectivo') acc.efectivo += monto;
+            else acc.otras += monto;
+            acc.documentos += Number(v.documentos) || 0;
+            m.set(clave, acc);
+        }
+        return m;
+    }, [ventas]);
 
     // Sin aperturas no se dibuja NADA, ni un vacío: esta fila es el encabezado
     // de los cortes, no una sección con su propia promesa. Un «sin aperturas»
@@ -225,6 +299,8 @@ export default function FichasDeCaja({
                         sala={salas?.get(a.branch_id) || `Sucursal ${a.branch_id}`}
                         marca={porPersona.get(`${a.employee_id}:${a.abierta_el}`) || null}
                         hayConQueCruzar={hayConQueCruzar}
+                        ventas={ventasPorSalaYDia.get(`${a.branch_id}:${a.abierta_el}`) || null}
+                        veLosMontos={veLosMontos}
                     />
                 ))}
             </div>

@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1016.3 — El afiche dice de quién son los datos
+
+«Tienen que saber que son sus datos», y «los días está de más». Dos
+observaciones sobre el mismo bloque, y las dos apuntan a lo mismo: el titular
+gastaba su espacio en una acción y no en el mensaje.
+
+Decía **«Puedes ver lo que tenemos de ti»**, que informa de un trámite. Lo que
+hay que entender antes de eso es **de quién son**. Elegido por el usuario entre
+cuatro alternativas:
+
+> **Lo que guardamos de ti te pertenece**
+
+Nombra las dos partes en cinco palabras —quién guarda y de quién es— y no repite
+«tuyo», que era el defecto de las otras dos candidatas.
+
+**Y los veinte días bajaron al pie.** No es que sobren: es que en el bloque
+grande competían con el mensaje. El pie es donde ya vive lo procedimental —el
+documento, el aviso completo, la Agencia— así que el plazo encontró a sus
+iguales. La bajada quedó en una sola idea: qué puedes pedir, y que es gratis.
+
 ## v2.1016.2 — El afiche tutea, como el de puntos
 
 «El texto es el que no me convence, que sea empresarial, como el afiche de

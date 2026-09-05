@@ -630,8 +630,35 @@ export async function fetchEntidadesDeSalida() {
  * significa «no se pudo preguntar» y se arregla reintentando.
  */
 export async function leerBoleta(archivo, esperado) {
+    const primera = await unaLectura(archivo, esperado, 0);
+
+    /* ── El segundo intento, GIRADO ─────────────────────────────────────────
+     *
+     * Sólo cuando el papel se desmiente a sí mismo: `CONTRADICHO` significa que
+     * la boleta imprime el total dos veces y las dos lecturas no dieron lo
+     * mismo, o sea que un dígito se leyó mal y ya lo sabemos. Ahí una llamada
+     * más es barata; en el caso normal no se paga ninguna.
+     *
+     * Girar arregla el caso medido (boleta 018540: 248.5 apaisada → 240.50
+     * girada, con los MISMOS píxeles) porque un rollo térmico fotografiado
+     * atravesado deja los renglones contra el lado corto de la imagen, que es
+     * donde menos resolución efectiva les queda. Ampliar también lo arregla y
+     * cuesta 27 s contra 12 con alguien esperando; girar cuesta lo mismo que no
+     * girar. El detalle de la medición, en `utils/fotoParaLeer`.
+     *
+     * Y sólo se acepta si la vuelta girada QUEDA CONFIRMADA: si vuelve a
+     * contradecirse, o si el papel no tiene con qué confirmar, se devuelve la
+     * primera y el formulario pide el monto a mano. Cambiar un número no
+     * confirmado por otro no confirmado no es leer mejor, es elegir al azar. */
+    if (primera?.montoConfianza !== 'CONTRADICHO') return primera;
+    const girada = await unaLectura(archivo, esperado, 90);
+    return girada?.montoConfianza === 'CONFIRMADO' ? { ...girada, seGiro: true } : primera;
+}
+
+/** Una pasada del lector sobre la foto, opcionalmente girada un cuarto de vuelta. */
+async function unaLectura(archivo, esperado, girar) {
     try {
-        const base64 = await aBase64Reducido(archivo);
+        const base64 = await aBase64Reducido(archivo, { girar });
         const { data, error } = await supabase.functions.invoke('leer-boleta', {
             body: { imagenBase64: base64, mimeType: archivo.type || 'image/jpeg', esperado },
         });

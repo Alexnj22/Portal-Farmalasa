@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1020.1 — Un monto que el papel desmiente se vuelve a leer con la foto derecha
+
+Probado el prompt de v2.1020.0 contra **15 comprobantes reales** ya subidos,
+mandados al lector exactamente como los manda el portal (1400 px de lado largo,
+JPEG 0.8). Resultado: **13 CONFIRMADO, 1 UNICO y 1 CONTRADICHO**, los 15 con el
+monto que dice el papel salvo el que ya se sabía malo. Cero falsos positivos: no
+hay ninguna boleta buena marcada como dudosa, que era el riesgo real de la red
+nueva.
+
+Y sobre la boleta 018540 —la que costó la corrección— el prompt **siguió leyendo
+248.5**. Lo que sí funcionó es el cotejo: devolvió los dos renglones,
+`MONTO: 240.5` y `MONTO: 248.5`, y el veredicto quedó `CONTRADICHO`, así que el
+campo no se cierra y el aviso lo dice. La red atrapó el caso que la motivó.
+
+**Pero la medición encontró algo mejor.** La misma foto, con los MISMOS píxeles,
+se lee distinto según cómo esté parada:
+
+| lo que se le manda al lector | monto | |
+|---|---|---|
+| 1400×600 (apaisada, lo que el portal manda) | 248.5 | ✗ |
+| 600×1400 (la misma, girada 90°) | 240.50 | ✓ |
+| 3200×1372 (apaisada, el doble de lado) | 240.50 | ✓ |
+| 1372×3200 (girada y al doble) | 240.50 | ✓ |
+
+Girar 90° o 270° da igual: lo que cambia el resultado es que el texto quede a lo
+largo del lado LARGO de la imagen. Un rollo térmico fotografiado atravesado deja
+los renglones apretados contra el lado corto, que es donde menos resolución
+efectiva les queda.
+
+Así que ahora, **cuando y sólo cuando el papel se desmiente**, el portal vuelve a
+leer la foto girada un cuarto de vuelta y se queda con esa lectura si queda
+`CONFIRMADO`. En el caso normal no se paga ninguna llamada de más.
+
+Tres decisiones que la medición cerró:
+
+- **Girar y no ampliar.** Ampliar también acierta y cuesta **27 s contra 12** con
+  alguien esperando delante del formulario, porque el lector cobra por píxeles.
+  Girar cuesta exactamente lo mismo que no girar.
+- **Sólo se acepta la vuelta girada si queda CONFIRMADA.** Si vuelve a
+  contradecirse —o si el papel no tiene con qué confirmar— se devuelve la primera
+  y el formulario pide el monto a mano. Cambiar un número no confirmado por otro
+  no confirmado no es leer mejor, es elegir al azar.
+- **Un giro mal hecho no puede empeorar nada.** Como la vuelta girada sólo se
+  acepta si el papel la confirma, lo peor que puede pasar es gastar una llamada.
+
 ## v2.1020.0 — La foto no puede cerrar un monto que el papel no confirma
 
 La otra mitad de v2.1019.0: **por qué hubo que corregir esa remesa.**

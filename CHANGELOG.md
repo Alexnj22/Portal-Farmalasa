@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1019.0 — El movimiento corregido dice quién lo pidió, quién lo aprobó y cuánto decía
+
+Reportado sobre la remesa de $240.50 de Salud 4: «no identifico bien la
+solicitud, aquí ya está corregido, igual no dice que se corrigió, quién solicitó
+y quién aprobó, cuánto decía y la razón».
+
+Aplicar una corrección de monto le escribía el número nuevo a la fila del
+movimiento **y nada más**, así que la tarjeta quedaba idéntica a la de un
+movimiento que siempre valió eso. El modo de falla es el silencio: no falta
+ninguna línea, no hay error, y la cifra que se lee es la buena — lo único que se
+perdía es que hubo una decisión detrás, con dos personas firmándola. La anulación
+sí dejaba rastro en la fila (`anulado_at`/`anulado_por`), pero tampoco se pintaba
+ni decía por qué.
+
+Ahora cada movimiento del día lleva su corrección debajo del monto, con los cinco
+datos: qué se hizo, **cuánto decía antes**, el motivo escrito por quien la pidió,
+quién la pidió y quién la firmó, cada uno con su hora. Se pintan también las
+**pendientes** —explican por qué el número todavía no cambió, y evitan que
+alguien vuelva a pedir lo mismo, que el servidor rechaza con un 409 sin decir
+quién fue— y las **rechazadas**, que explican por qué NO cambió: sin ellas se lee
+como que nadie miró.
+
+**Sale de la solicitud, no de una copia en la fila.** Una copia congelada se
+desincroniza y hay que mantenerla; acá lo que se muestra es historia que ya no
+cambia.
+
+**Y por qué la lee una función `SECURITY DEFINER` y no la policy.**
+`approval_requests` se la muestra a quien tiene `requests` can_view, y **Gerente
+General no lo tiene** (medido: `ve_solicitudes: false`) — o sea que el rol de más
+arriba habría seguido viendo el movimiento corregido sin la marca, que es
+exactamente el defecto que esto viene a cerrar. La pregunta correcta no es «¿puede
+ver solicitudes?» sino «¿puede ver ESTE movimiento?», así que
+`get_correcciones_de_caja` usa la MISMA guarda de `caja_movimientos_portal`:
+`cortes_caja` can_view, y la sala si el alcance no es ALL. Comprobado con las dos
+sesiones: Glenda (Salud 4, alcance BRANCH) ve la de su sala y no las de la otra;
+el Gerente General ve las tres sin tener el permiso de solicitudes.
+
+Devuelve `null` —no `[]`— sin el permiso: «no las puedo ver» y «no hubo ninguna»
+se leen igual en pantalla y sólo una de las dos significa que el movimiento nunca
+se tocó.
+
 ## v2.1018.1 — Se puede revocar el permiso desde Mis puntos
 
 Pregunta del usuario: «luego de confirmado, ¿cómo se quita el confirmado si ya no

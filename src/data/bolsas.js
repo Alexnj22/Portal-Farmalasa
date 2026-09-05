@@ -1374,6 +1374,35 @@ export async function pedirCorreccion({ sala, movimiento, que, motivo, montoNuev
 }
 
 /**
+ * Lo que se pidió corregirle a estos movimientos, y en qué quedó.
+ *
+ * Aplicar una corrección de monto le escribe el número nuevo a la fila y nada
+ * más: el movimiento queda igual que si siempre hubiera valido eso. Reportado
+ * sobre la remesa de $240.50 de Salud 4 —«aquí ya está corregido, igual no dice
+ * que se corrigió, quién solicitó y quién aprobó, cuánto decía y la razón»—: los
+ * cinco datos estaban guardados en la solicitud y ninguna pantalla los leía
+ * desde el movimiento.
+ *
+ * Sale de `approval_requests` y no de una copia en la fila: una copia congelada
+ * se desincroniza, y acá lo que se muestra es historia que ya no cambia.
+ *
+ * **`null` NO es «no hubo ninguna»**: es «no las puedo ver». Sin el permiso de
+ * cortes la función devuelve `null` en vez de una lista vacía, porque las dos
+ * cosas se leen igual en pantalla y sólo una de ellas significa que el
+ * movimiento nunca se tocó.
+ */
+export async function fetchCorreccionesDeCaja(ids) {
+    const unicos = [...new Set((ids || []).map(Number).filter(Number.isFinite))];
+    if (!unicos.length) return [];
+    const { data, error } = await supabase.rpc('get_correcciones_de_caja', { p_movimientos: unicos });
+    if (error) { console.error('caja: correcciones:', error.message); return null; }
+    if (data === null) return null;
+    // Las caras vienen en formato-público y el bucket `empleados` es PRIVADO.
+    await signPhotosDeep(data);
+    return data;
+}
+
+/**
  * Las salas que tienen caja, según lo que se ha visto abrirse.
  *
  * NO es la lista de sucursales: Administración y Bodega no tienen caja, y la

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    AlertTriangle, ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Paperclip, PlayCircle, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
+    AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
@@ -29,7 +29,7 @@ import {
     estadoDeCajaEnElOrigen, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
-    leerBoleta, pedirCorreccion,
+    fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion,
     subirComprobante,
 } from '../data/bolsas';
 import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
@@ -239,6 +239,12 @@ export default function MiCajaView({ comoPestana = false }) {
      * lo de las bolsas— resueltas de una vez: son la misma pantalla, y pedir
      * las personas dos veces traería la misma gente dos veces. */
     const [anotaron, setAnotaron] = useState(() => new Map());
+    /** Qué se le pidió corregir a cada movimiento (id → solicitudes).
+     *
+     * `null` mientras no se sepa —y también si esta persona no las puede ver—,
+     * que NO es lo mismo que un arreglo vacío: vacío significa «a este
+     * movimiento nadie lo tocó», y eso sólo se puede afirmar habiendo mirado. */
+    const [correcciones, setCorrecciones] = useState(null);
 
     // Cómo se llama cada motivo de salida. Sale de la TABLA y no de una lista
     // escrita acá: un motivo nuevo aparecería en la base y no en la pantalla,
@@ -466,7 +472,7 @@ export default function MiCajaView({ comoPestana = false }) {
          * Y el saldo de cada bolsa va en paralelo, no después: `SalidaDeBolsa`
          * elige la más vieja que alcance sola y sin el saldo no puede elegir,
          * pero eso se pregunta al abrir un diálogo, no al entrar. */
-        const [saldos, quienes] = await Promise.all([
+        const [saldos, quienes, corregidos] = await Promise.all([
             fetchSaldos(mias.map((b) => b.id)),
             fetchPersonas([
                 ...(movs || []).map((m) => m.registrado_por),
@@ -475,11 +481,22 @@ export default function MiCajaView({ comoPestana = false }) {
                 ...(delDia || []).flatMap((c) => [c.resuelto_por, c.recibido_por, c.employee_id]),
                 ...mias.map((b) => b.cerrada_por),
             ]),
+            /* Y lo que se le pidió corregir a cada uno. Va en esta tanda y no en
+             * la de arriba porque necesita los ids que aquélla trae; en serie
+             * después de pintar no cuesta un viaje de reloj, y trae sus propias
+             * caras firmadas —quien aprueba una corrección puede no haber
+             * tocado un corte nunca, así que no está en `fetchPersonas`. */
+            fetchCorreccionesDeCaja((movs || []).map((m) => m.id)),
         ]);
         if (token !== cargaRef.current) return;
         const porId = new Map((quienes || []).map((q) => [q.id, q]));
         setAnotaron(porId);
         setFirmantes(porId);
+        setCorrecciones(corregidos === null ? null : (corregidos || []).reduce((mapa, c) => {
+            const ya = mapa.get(c.movimiento);
+            if (ya) ya.push(c); else mapa.set(c.movimiento, [c]);
+            return mapa;
+        }, new Map()));
         /* Quién guardó cada bolsa. Va a la etiqueta que se reimprime después de
          * una salida, y sin él `useCerrarBolsa` cae al nombre de QUIEN ESTÁ
          * MIRANDO: la etiqueta diría que la guardó alguien que no la guardó. */
@@ -1055,7 +1072,8 @@ export default function MiCajaView({ comoPestana = false }) {
                             cobros={cobros}
                             dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
                             puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo}
-                            anotaron={anotaron} cortes={cortesDelDia} />
+                            anotaron={anotaron} cortes={cortesDelDia}
+                            correcciones={correcciones} />
 
                         {!puedeOperar && (
                             <Notice variant="info" icon={Lock}>
@@ -1522,8 +1540,93 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
  * no toca la caja, porque su propio cierre ya lo descontó. Es la regla que
  * decide si el corte de esta tarde cuadra o falta.
  */
+/**
+ * La corrección que se le pidió a un movimiento, contada entera.
+ *
+ * Reportado sobre la remesa de $240.50 de Salud 4: «aquí ya está corregido,
+ * igual no dice que se corrigió, quién solicitó y quién aprobó, cuánto decía y
+ * la razón». Aplicar una corrección de monto le escribe el número nuevo a la
+ * fila y nada más, así que el movimiento quedaba idéntico a uno que siempre
+ * valió eso — y el modo de falla es el silencio: no falta ninguna línea, no hay
+ * error, y la cifra que se lee es la buena. Lo único que se pierde es que hubo
+ * una decisión detrás.
+ *
+ * Los cinco datos salen de la solicitud —ella es la única que los tiene— y se
+ * dicen los cinco: qué se hizo, cuánto decía antes, por qué, quién lo pidió y
+ * quién lo firmó.
+ *
+ * PENDIENTE y RECHAZADA también se pintan, y no por completismo: una pendiente
+ * explica por qué el número todavía no cambió —y evita que alguien vuelva a
+ * pedir lo mismo, que el servidor rechaza con un 409 sin decir quién fue—; una
+ * rechazada explica por qué NO cambió, que sin ella se lee como que nadie miró.
+ */
+function LaCorreccion({ dato }) {
+    const pendiente = dato.estado === 'PENDING';
+    const rechazada = dato.estado === 'REJECTED';
+    const anula = dato.que === 'ANULAR';
+    const Icono = pendiente ? Clock : rechazada ? Ban : anula ? Ban : PencilLine;
+
+    /* «Anular» no es un cambio de valor: escrito como par —«$18.28 → —»— se lee
+     * como que quedó en cero, y lo que queda es NADA. Es la misma regla que ya
+     * sigue la ficha de la solicitud. */
+    const titulo = pendiente
+        ? (anula ? 'Se pidió anularlo'
+                 : `Se pidió cambiarlo a ${formatMoney(dato.monto_despues)}`)
+        : rechazada
+            ? (anula ? 'No se anuló: la corrección se rechazó'
+                     : `No se cambió a ${formatMoney(dato.monto_despues)}: se rechazó`)
+            : (anula ? `Se anuló · eran ${formatMoney(dato.monto_antes)}`
+                     : `Se corrigió el monto · antes decía ${formatMoney(dato.monto_antes)}`);
+
+    return (
+        <div className="rounded-lg bg-surface-input/40 px-3 py-2 space-y-1.5">
+            <p className={`text-caption font-semibold flex items-start gap-1.5 ${
+                pendiente ? 'text-warning-text' : 'text-content-2'}`}>
+                <Icono size={13} strokeWidth={2.5} className="shrink-0 mt-0.5" />
+                <span className="min-w-0">{titulo}</span>
+            </p>
+
+            {dato.motivo && (
+                <p className="text-caption text-content-3 leading-snug">«{dato.motivo}»</p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <Firmita persona={dato.pidio} rotulo="Lo pidió" cuando={dato.pedida_at} />
+                {/* Quien decidió sólo aparece cuando YA decidió. Mientras está
+                    pendiente, el nombre que la solicitud lleva encima es el del
+                    primer avisado y no el de quien firma: ponerlo ahí atribuiría
+                    una decisión que todavía no existe. */}
+                {dato.decidio && (
+                    <Firmita persona={dato.decidio} cuando={dato.decidida_at}
+                        rotulo={rechazada ? 'Lo rechazó' : 'Lo aprobó'} />
+                )}
+            </div>
+
+            {dato.nota_de_quien_decidio && (
+                <p className="text-caption text-content-3 leading-snug">
+                    «{dato.nota_de_quien_decidio}»
+                </p>
+            )}
+        </div>
+    );
+}
+
+/** Una cara, un rótulo y una hora. El nombre sale del canónico. */
+function Firmita({ persona, rotulo, cuando }) {
+    if (!persona?.id) return null;
+    return (
+        <span className="flex items-center gap-1.5 min-w-0">
+            <AvatarConEstado emp={persona} px={18} radio="rounded-full" marco="" />
+            <span className="text-caption text-content-3 truncate">
+                {rotulo} {shortEmployeeName(persona)}
+                {cuando ? <span className="tabular-nums"> · {horaLegible(cuando)}</span> : null}
+            </span>
+        </span>
+    );
+}
+
 function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOperar, puedeVerBolsas,
-    onCorregir, anotaron, cortes }) {
+    onCorregir, anotaron, cortes, correcciones }) {
     const etiquetaDe = (codigo) =>
         tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo);
 
@@ -1571,6 +1674,10 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
             quien: m.registrado_por,
             foto: m.foto_url || null,
             movimiento: m,
+            /* Lo que se le pidió corregir. Sólo el cajón lo tiene: una salida de
+             * bolsa se corrige por otro camino, y un cobro de crédito por el
+             * suyo. */
+            correcciones: correcciones?.get(m.id) || VACIO,
         }));
         const deLasBolsas = (deBolsas || []).map((o) => {
             const total = Math.abs(Number(o.monto || 0));
@@ -1644,7 +1751,7 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
 
         return [...delCajon, ...deLasBolsas, ...deCreditos]
             .sort((a, b) => String(b.cuando || '').localeCompare(String(a.cuando || '')));
-    }, [movimientos, deBolsas, cobros, tipos]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
+    }, [movimientos, deBolsas, cobros, tipos, correcciones]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
 
     /* ── El buscador ───────────────────────────────────────────────────────
      *
@@ -1799,6 +1906,13 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                             )}
                         </div>
                     </div>
+
+                    {/* Y la corrección va ARRIBA de la firma: lo primero que
+                        hay que saber de un movimiento corregido es que el
+                        número que se está leyendo no es el que se anotó. */}
+                    {(l.correcciones || []).map((c) => (
+                        <LaCorreccion key={c.solicitud} dato={c} />
+                    ))}
 
                     {/* ── Quién lo anotó, y su comprobante ──────────────────
                         Un movimiento de dinero sin autor no se puede reclamar,

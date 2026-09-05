@@ -21,6 +21,94 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1015.1 — El aviso cierra los dos huecos del contraste con la ley
+
+Contraste artículo por artículo, pedido por el usuario: que no falte nada y que
+tampoco sobre. De 23 puntos exigibles, **21 estaban completos, 2 a medias y 2
+siguen pendientes** por una decisión que no es de código.
+
+**Art. 24 letra h) estaba a medias.** Pide «los datos de contacto de la entidad
+subcontratada encargada del tratamiento». El aviso nombraba a Supabase Inc. y
+Vercel Inc. y no daba forma de contactarlas. No se inventó un correo: dice dónde
+están publicados los suyos, que es verificable, y aclara que el titular no
+necesita dirigirse a ellas porque la Empresa responde.
+
+**Art. 33 se había perdido al comprimir.** Exige que el encargado quede sujeto a
+la ley y a los lineamientos del responsable. El aviso decía sólo que esas
+empresas «siguen sus instrucciones»; una versión anterior decía además que
+quedan sujetas a las obligaciones de este aviso, y esa mitad se cayó en la
+compresión de v2.1012.0. Restituida.
+
+**Lo que se revisó y NO se agregó**, porque el Art. 24 no lo pide y agregarlo
+sería avisar de más: los ocho supuestos de negativa del Art. 22, el detalle de
+cómo se entrega un acceso del Art. 8, y los plazos internos del delegado. Todo
+eso vive en el procedimiento `FLS-PRO-03`, que es donde corresponde.
+
+**Y una comprobación que evita un error frecuente:** guardar los datos en
+Supabase y Vercel **no es una «transferencia»** en el sentido del Art. 44, así
+que no necesita consentimiento aparte. El Art. 4 letra u) define transferencia
+como la comunicación «a persona distinta del responsable **o encargado**», y
+esas dos empresas son precisamente el encargado. Informarlo sí es obligatorio
+—Art. 7 letra b)— y el aviso lo hace.
+
+El documento pasó a 5 páginas: la quinta lleva sólo el pie de firma, porque la
+cuarta quedó llena hasta 11 pt del borde. Una hoja de firma es lo normal en un
+documento que se firma, y el reglamento tiene la suya.
+
+## v2.1015.0 — Se pueden agregar productos, el bono no se pregunta si no paga, y la lista se agrupa
+
+Tres cosas reportadas sobre los modales de promoción.
+
+**1 · «No se puede agregar nuevos productos», y era literal.** `crear_promocion`
+los mete todos de una vez y **no existía ninguna función para sumar uno después**.
+Una campaña a la que el laboratorio le agrega un producto a mitad de mes había que
+rehacerla entera —perdiendo su avance, su lote repartido y su descuento— o dejarla
+incompleta.
+
+Ahora Editar tiene su bloque de agregar, con la misma búsqueda por nombre o por
+laboratorio que al crear. El renglón nuevo **hereda** de la promoción lo que no
+puede inventar: las fechas (la más temprana y la más tardía de sus renglones), las
+salas donde aplica y el bono del primer renglón. Es la misma campaña — nacer en
+$0 con «tiene bono» puesto diría que paga algo cuando no paga nada.
+
+La escritura es una función (`agregar_renglones_a_promocion`) y no un INSERT desde
+el navegador, porque las tres reglas que se cobran al crear valen igual acá y
+ninguna se puede cobrar desde el cliente: el producto tiene que existir, el renglón
+nace **con su tarifa** —sin ella ninguna venta se puede pagar, porque el cálculo
+entra por `promocion_renglon_tarifa`— y si se reparte por sala la suma tiene que
+dar exactamente el lote. Un producto que ya estaba se saltea en vez de fallar:
+agregar 20 de un laboratorio donde 3 ya estaban es el caso normal.
+
+Y lo que NO hace, a propósito: no toca el descuento del sistema de ventas. Ese
+descuento se guardó allá con su propia lista de productos, así que la pantalla
+avisa que hay que agregárselos desde Descuentos en vez de escribir en el sistema
+ajeno en silencio.
+
+**2 · Sin bono no se preguntan los montos.** Con «sólo medir cuánto se vende», los
+tres campos de monto seguían ahí pidiendo un número que la base ignora — y quien lo
+escribía quedaba creyendo que configuró un bono.
+
+**3 · El modal de crear: la lista se agrupa por laboratorio.** Con 86 productos —el
+caso real que lo trajo, «todas las leches»— era un muro de tarjetas y el resto del
+formulario quedaba a varias pantallas de desplazamiento. Ahora la promoción se lee
+como se negoció: tres laboratorios, no ochenta y seis renglones.
+
+El detalle que hacía falta para no romper nada: los grupos **arrastran el índice
+original** de cada renglón. Todo lo que edita esa pantalla direcciona por posición
+en la lista, así que agrupar sin llevarse el índice haría que quitar el tercero de
+un grupo quitara el tercero de la lista entera — un defecto que no da error, sólo
+quita el producto equivocado.
+
+**Y el bloque de agregar ya no se desmonta al abrir un producto.** Iba detrás de
+`!hayEditando` para no invitar a dejar uno a medias, y el costo era que tocar
+«Ajustar» borraba la búsqueda escrita, el laboratorio elegido y las casillas
+marcadas: se reportó como «me ocultaba todo y salía vacío». Hoy los productos nacen
+confirmados, así que el motivo de esconderlo ya no aplica; queda el aviso.
+
+Además, «Quitar todos» con confirmación: con 86 productos agregados, un clic
+accidental deshacía un trabajo que no tiene cómo recuperarse —el borrador guarda el
+estado nuevo, así que ni cerrar y volver a abrir lo trae de vuelta—.
+
 ## v2.1014.6 — El aviso no dice que el propietario guarde los datos
 
 **«¿Es válido? ¿Él la guarda?»** El usuario leyó la cláusula 1.1 y encontró un

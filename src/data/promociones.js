@@ -256,6 +256,26 @@ export async function editarReparto(renglonId, reparto) {
 }
 
 /** Quita un producto. No se puede si ya se decidió algún excedente suyo. */
+/**
+ * Agrega productos a una promoción que YA existe.
+ *
+ * Recibe los renglones con la misma forma que `crearPromocion` —el cuerpo lo
+ * arma la misma función del modal— porque un producto agregado después no es un
+ * producto distinto: necesita su fecha, su lote, su tarifa y su reparto igual
+ * que los del primer día.
+ *
+ * Devuelve `{ agregados, repetidos }`. Los repetidos no son un error: agregar
+ * los 20 de un laboratorio donde 3 ya estaban es el caso normal.
+ */
+export async function agregarRenglonesAPromocion(promocionId, renglones) {
+    const { data, error } = await supabase.rpc('agregar_renglones_a_promocion', {
+        p_id: Number(promocionId),
+        p_renglones: renglones,
+    });
+    if (error) throw error;
+    return data ?? { agregados: 0, repetidos: 0 };
+}
+
 export async function quitarRenglon(renglonId) {
     const { data, error } = await supabase.rpc('quitar_renglon', {
         p_renglon_id: Number(renglonId),

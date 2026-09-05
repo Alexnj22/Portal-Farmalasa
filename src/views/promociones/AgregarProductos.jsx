@@ -38,6 +38,8 @@ import { fetchProductosParaPromocion } from '../../data/promociones';
  *
  * @param yaElegidos  ids que la promoción ya tiene — se marcan y no se repiten.
  * @param onAgregar   recibe `[{ id, nombre, laboratorio_nombre }]`.
+ * @param ocupado     mientras el llamador escribe: el botón espera en vez de
+ *                    dejar mandar la misma lista dos veces.
  */
 /* Sin tope de productos: `crear_promocion` tenía uno de 50 SIN motivo escrito
    y se quitó el 2026-09-05 después de medirlo. El resultado desarmó al propio
@@ -45,7 +47,7 @@ import { fetchProductosParaPromocion } from '../../data/promociones';
    (369 MB) en 3,889 ms**, y con 150 lee **27,771 (217 MB) en 977 ms**: el caso
    que el tope permitía era MÁS caro que el que prohibía. */
 
-export default function AgregarProductos({ yaElegidos = [], onAgregar, laboratorios = [] }) {
+export default function AgregarProductos({ yaElegidos = [], onAgregar, laboratorios = [], ocupado = false }) {
     const [modo, setModo] = useState('texto');      // 'texto' | 'laboratorio'
     const [texto, setTexto] = useState('');
     const [lab, setLab] = useState('');
@@ -219,8 +221,8 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                     </ul>
                     </div>
 
-                    <Button icon={Plus} onClick={agregar}
-                        disabled={cuantos === 0} className="w-full">
+                    <Button icon={Plus} onClick={agregar} loading={ocupado}
+                        disabled={cuantos === 0 || ocupado} className="w-full">
                         {cuantos === 0
                             ? 'Marca los que entran'
                             : `Agregar ${cuantos} ${cuantos === 1 ? 'producto' : 'productos'}`}

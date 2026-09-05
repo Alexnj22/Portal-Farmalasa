@@ -11,6 +11,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { LoadingState } from '../../components/common/StateViews';
 import {
     fetchPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
+    fetchLaboratoriosConProductos, agregarRenglonesAPromocion,
     editarRenglon, editarTarifaRenglon, extenderRenglon,
     quitarRenglon, borrarPromocion,
 } from '../../data/promociones';
@@ -20,6 +21,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
 import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion } from './promocionesUtils';
 import DescuentoEnVentas from './DescuentoEnVentas';
+import AgregarProductos from './AgregarProductos';
 import Campo from './Campo';
 
 /**
@@ -51,6 +53,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     const [error, setError] = useState(null);
     const [fallo, setFallo] = useState(null);
     const [proveedores, setProveedores] = useState([]);
+    const [laboratorios, setLaboratorios] = useState([]);
+    const [agregando, setAgregando] = useState(false);
     const [recarga, setRecarga] = useState(0);
     const [borrando, setBorrando] = useState(false);
 
@@ -71,6 +75,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     useEffect(() => {
         if (!open) return;
         fetchProveedoresDelSistema().then(setProveedores).catch(() => setProveedores([]));
+        fetchLaboratoriosConProductos().then(setLaboratorios).catch(() => setLaboratorios([]));
     }, [open]);
 
     useEffect(() => {
@@ -129,6 +134,62 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
             setFallo(mensajeAmigable(e, 'No se pudo crear el descuento.'));
         } finally {
             setMandando(false);
+        }
+    };
+
+    /**
+     * Agrega productos a la promoción que ya existe.
+     *
+     * ── De dónde salen los valores del renglón nuevo ──────────────────────
+     * De la promoción, no de un formulario aparte. Las fechas son las que la
+     * promoción ya tiene (la más temprana y la más tardía de sus renglones), y
+     * el reparto son sus mismas salas sin unidades asignadas —«aplica acá, sin
+     * lote todavía»—. Pedirlos de nuevo abriría la puerta a que un producto
+     * agregado el martes cuente un período distinto que sus hermanos, y eso no
+     * se vería en ninguna pantalla.
+     *
+     * El bono y el lote quedan en los valores neutros y se ajustan renglón por
+     * renglón, que es exactamente lo que esta pantalla ya sabe hacer.
+     */
+    const agregarProductos = async (prods) => {
+        setFallo(null);
+        setAgregando(true);
+        try {
+            const inicio = (promo.renglones ?? []).map((x) => x.inicio).filter(Boolean).sort()[0]
+                || promo.inicio;
+            const fines = (promo.renglones ?? []).map((x) => x.fin).filter(Boolean).sort();
+            const fin = fines[fines.length - 1] || promo.fin || null;
+            const reparto = (promo.salas ?? []).map((b) => ({ branch_id: Number(b), unidades: 0 }));
+
+            /* El bono se HEREDA del primer renglón, no se pone en cero. Es la
+               misma campaña: un producto que entra a mitad de mes se negoció con
+               las mismas condiciones que sus hermanos, y nacer en $0 con
+               «tiene bono» puesto dice que paga algo cuando no paga nada.
+               El proveedor no se hereda porque la ficha devuelve su NOMBRE y no
+               su id — se elige renglón por renglón, que es donde ya se hace. */
+            const modelo = (promo.renglones ?? [])[0] ?? {};
+            const r2 = await agregarRenglonesAPromocion(promocionId, prods.map((p) => ({
+                erp_product_id: p.id,
+                inicio,
+                fin,
+                lote_total: '',
+                tiene_bono: modelo.tiene_bono ?? false,
+                paga: modelo.tiene_bono ? (modelo.paga || 'proveedor') : null,
+                bono_vendedor: modelo.tiene_bono ? (Number(modelo.bono_vendedor) || 0) : 0,
+                bono_adm: modelo.tiene_bono ? (Number(modelo.bono_adm) || 0) : 0,
+                bono_bodega: modelo.tiene_bono ? (Number(modelo.bono_bodega) || 0) : 0,
+                unidades_por_bono: Number(modelo.unidades_por_bono) || 1,
+                reparto,
+            })));
+            if (!r2.agregados) {
+                setFallo('Esos productos ya estaban en la promoción.');
+                return;
+            }
+            recargar();
+        } catch (e) {
+            setFallo(mensajeAmigable(e, 'No se pudieron agregar los productos.'));
+        } finally {
+            setAgregando(false);
         }
     };
 
@@ -193,6 +254,41 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                 onFallo={setFallo}
                             />
                         ))}
+
+                        {/* ── Agregar productos ────────────────────────────
+                            No existía: `crear_promocion` los mete todos de una
+                            vez y después no había forma de sumar uno, así que
+                            una campaña a la que el laboratorio le agrega un
+                            producto a mitad de mes había que rehacerla entera
+                            —perdiendo su avance, su lote repartido y su
+                            descuento— o dejarla incompleta. Reportado el
+                            2026-09-05.
+
+                            Con la promoción TERMINADA no se ofrece: sumarle un
+                            producto cambiaría lo que ya se pagó, y la base lo
+                            rechaza igual. Ofrecerlo para que falle es peor que
+                            no ofrecerlo. */}
+                        {promo.estado !== 'finalizada' && (
+                            <div className="space-y-2">
+                                <p className="text-label uppercase tracking-wide font-semibold text-content-2">
+                                    Agregar productos
+                                </p>
+                                <AgregarProductos
+                                    yaElegidos={(promo.renglones ?? []).map((x) => x.erp_product_id)}
+                                    laboratorios={laboratorios}
+                                    onAgregar={agregarProductos}
+                                    ocupado={agregando}
+                                />
+                                {promo.descuentos > 0 && (
+                                    <Notice variant="warning" icon={AlertTriangle} compact>
+                                        Esta promoción <span className="font-semibold">baja el precio en la
+                                        venta</span>, y el descuento NO se entera de los productos nuevos:
+                                        hay que agregárselos desde la pestaña{' '}
+                                        <span className="font-semibold">Descuentos</span>.
+                                    </Notice>
+                                )}
+                            </div>
+                        )}
 
                         {/* ── El descuento en la venta ─────────────────────
                             Vive acá porque si no, no vive en ningún lado: al
@@ -444,7 +540,14 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo }) {
                 Guardar lote, presentación y reparto
             </Button>
 
-            {/* ── Lo que NO reescribe el pasado ────────────────────────────── */}
+            {/* ── Lo que NO reescribe el pasado ─────────────────────────────
+                Sólo si el producto PAGA bono. Con «sólo medir cuánto se vende»
+                los tres montos son cero y guardarlos no hace nada: preguntar
+                cuánto se paga por algo que no se paga invita a escribir un
+                número que la base va a ignorar, y quien lo escribe queda
+                creyendo que configuró un bono. Reportado con captura el
+                2026-09-05. */}
+            {tieneBono && (
             <div className="pt-2 border-t border-border-muted space-y-3">
                 <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
                     <PortalInput label="Vendedor" name={`e-bv-${r.id}`} value={bv}
@@ -465,6 +568,7 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo }) {
                     Guardar montos desde hoy
                 </Button>
             </div>
+            )}
 
             {/* ── La fecha ─────────────────────────────────────────────────── */}
             <div className="pt-2 border-t border-border-muted">

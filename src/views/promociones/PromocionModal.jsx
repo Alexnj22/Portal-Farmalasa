@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Trash2, AlertTriangle, Check, Tag, Pencil, Plus } from 'lucide-react';
+import { Trash2, AlertTriangle, Check, Tag, Pencil, Plus, ChevronRight } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -9,6 +9,7 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import useBorrador from '../../hooks/useBorrador';
@@ -237,6 +238,26 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
 
     const hayEditando = renglones.some((r) => !r.confirmado);
 
+    /* Los renglones agrupados por laboratorio, arrastrando su ÍNDICE original:
+       todo lo que edita esta pantalla —`cambiar`, `quitar`, `cambiarReparto`—
+       direcciona por posición en `renglones`, así que agrupar sin llevarse el
+       índice haría que quitar el tercero de un grupo quitara el tercero de la
+       lista entera. Es el defecto que no da error: quita el producto
+       equivocado. */
+    const porLaboratorioDelRenglon = useMemo(() => {
+        const g = new Map();
+        renglones.forEach((r, i) => {
+            const lab = r.laboratorio || 'Sin laboratorio';
+            if (!g.has(lab)) g.set(lab, []);
+            g.get(lab).push({ r, i });
+        });
+        return [...g.entries()]
+            .map(([laboratorio, items]) => ({ laboratorio, items }))
+            .sort((a, b) => a.laboratorio.localeCompare(b.laboratorio, 'es'));
+    }, [renglones]);
+
+    const [vaciando, setVaciando] = useState(false);
+
     /* Sólo el descuento, para el caso en que la promoción ya se creó y esta
        mitad falló. Devuelve `true` si quedó. */
     /**
@@ -421,42 +442,88 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
 
                     {/* ── 3 · Los productos ──────────────────────────────── */}
                     <div className="space-y-2">
-                        <p className="text-label uppercase tracking-wide font-semibold text-content-2">
-                            {renglones.length
-                                ? `${renglones.length} ${renglones.length === 1 ? 'producto' : 'productos'}`
-                                : 'Productos'}
-                        </p>
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                            <p className="text-label uppercase tracking-wide font-semibold text-content-2">
+                                {renglones.length
+                                    ? `${renglones.length} ${renglones.length === 1 ? 'producto' : 'productos'}`
+                                    : 'Productos'}
+                            </p>
+                            {porLaboratorioDelRenglon.length > 1 && (
+                                <span className="text-caption text-content-3">
+                                    en {porLaboratorioDelRenglon.length} laboratorios
+                                </span>
+                            )}
+                            {renglones.length > 0 && (
+                                <>
+                                    <span className="flex-1" />
+                                    <Button variant="ghost" size="sm" icon={Trash2}
+                                        onClick={() => setVaciando(true)}>
+                                        Quitar todos
+                                    </Button>
+                                </>
+                            )}
+                        </div>
 
-                        {renglones.map((r, i) => (r.confirmado ? (
-                            <RenglonListo
-                                key={r.erp_product_id}
-                                r={r}
-                                proveedores={proveedores}
-                                onEditar={() => cambiar(i, 'confirmado', false)}
-                                onQuitar={() => quitar(i)}
-                            />
-                        ) : (
-                            <RenglonEditor
-                                key={r.erp_product_id}
-                                r={r}
-                                salas={salas}
-                                proveedores={proveedores}
-                                onCambiar={(c, v) => cambiar(i, c, v)}
-                                onReparto={(s, v) => cambiarReparto(i, s, v)}
-                                onQuitar={() => quitar(i)}
-                                onListo={() => cambiar(i, 'confirmado', true)}
-                            />
-                        )))}
+                        {/* ── Agrupados por laboratorio y plegables ─────────
+                            Con 86 productos —el caso real que los trajo, «todas
+                            las leches»— la lista era un muro de tarjetas y el
+                            resto del formulario quedaba a varias pantallas de
+                            desplazamiento. Agrupados, la promoción se lee como
+                            se negoció: tres laboratorios, no ochenta y seis
+                            renglones.
 
-                        {/* El bloque de agregar sólo aparece cuando no hay nada a
-                            medio ajustar: ofrecer «¿otro?» con un producto abierto
-                            invita a dejarlo incompleto. */}
-                        {!hayEditando && (
-                            <AgregarProductos
-                                yaElegidos={renglones.map((r) => r.erp_product_id)}
-                                laboratorios={laboratorios}
-                                onAgregar={agregar}
-                            />
+                            Se abre el PRIMERO y sólo si hay uno solo: abrir
+                            todos devuelve el muro, y abrir ninguno esconde lo
+                            que se acaba de agregar y se lee como que no
+                            entró. */}
+                        {porLaboratorioDelRenglon.map(({ laboratorio, items }) => (
+                            <GrupoDeLaboratorio
+                                key={laboratorio}
+                                laboratorio={laboratorio}
+                                cuantos={items.length}
+                                abiertoPorDefecto={porLaboratorioDelRenglon.length === 1
+                                    || items.some((x) => !x.r.confirmado)}
+                            >
+                                {items.map(({ r, i }) => (r.confirmado ? (
+                                    <RenglonListo
+                                        key={r.erp_product_id}
+                                        r={r}
+                                        proveedores={proveedores}
+                                        onEditar={() => cambiar(i, 'confirmado', false)}
+                                        onQuitar={() => quitar(i)}
+                                    />
+                                ) : (
+                                    <RenglonEditor
+                                        key={r.erp_product_id}
+                                        r={r}
+                                        salas={salas}
+                                        proveedores={proveedores}
+                                        onCambiar={(c, v) => cambiar(i, c, v)}
+                                        onReparto={(s, v) => cambiarReparto(i, s, v)}
+                                        onQuitar={() => quitar(i)}
+                                        onListo={() => cambiar(i, 'confirmado', true)}
+                                    />
+                                )))}
+                            </GrupoDeLaboratorio>
+                        ))}
+
+                        {/* El bloque de agregar NO se desmonta al abrir un
+                            producto. Antes iba detrás de `!hayEditando` —para no
+                            invitar a dejar uno a medias—, y el costo era que
+                            tocar «Ajustar» borraba la búsqueda escrita, el
+                            laboratorio elegido y las casillas marcadas: se
+                            reportó como «me ocultaba todo y salía vacío». Hoy
+                            los productos nacen confirmados, así que el motivo de
+                            esconderlo ya no aplica; lo que queda es el aviso. */}
+                        <AgregarProductos
+                            yaElegidos={renglones.map((r) => r.erp_product_id)}
+                            laboratorios={laboratorios}
+                            onAgregar={agregar}
+                        />
+                        {hayEditando && (
+                            <p className="text-caption text-warning-text">
+                                Hay un producto abierto: termínalo antes de guardar la promoción.
+                            </p>
                         )}
                     </div>
 
@@ -522,6 +589,20 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     </Button>
                 )}
             </LiquidModal.Footer>
+
+            {/* Vaciar la lista pregunta: con 86 productos agregados por
+                laboratorio, un clic accidental deshace un trabajo que no tiene
+                cómo recuperarse —el borrador guarda el estado NUEVO, así que ni
+                cerrar y volver a abrir lo trae de vuelta—. */}
+            <ConfirmModal
+                isOpen={vaciando}
+                onClose={() => setVaciando(false)}
+                onConfirm={() => { setRenglones([]); setVaciando(false); }}
+                title="¿Quitar todos los productos?"
+                message={`Se van los ${renglones.length} productos de la lista. La promoción todavía no se ha guardado, así que no toca nada de la base — pero volver a agregarlos es rehacer la búsqueda.`}
+                confirmText="Quitar todos"
+                isDestructive
+            />
         </LiquidModal>
     );
 }
@@ -694,6 +775,39 @@ function GeneralDeLaPromocion({ valor, onCambiar, onReparto, onSala, salas, prov
 }
 
 /** Un producto ya confirmado: una línea, no un formulario abierto. */
+/**
+ * Un laboratorio, con sus productos adentro y plegable.
+ *
+ * El estado de abierto/cerrado vive ACÁ y no en el padre a propósito: es una
+ * preferencia de lectura, no un dato de la promoción. En el padre habría que
+ * limpiarla al quitar un producto —y olvidarlo dejaría un grupo abierto que ya
+ * no existe—; acá desaparece con el grupo.
+ */
+function GrupoDeLaboratorio({ laboratorio, cuantos, abiertoPorDefecto, children }) {
+    const [abierto, setAbierto] = useState(abiertoPorDefecto);
+    return (
+        <div className="rounded-lg border border-border-card overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setAbierto((v) => !v)}
+                aria-expanded={abierto}
+                className="w-full min-h-[max(40px,var(--tap-min))] px-3 flex items-center gap-2
+                           bg-surface-card-hover active:scale-[0.99] transition-transform
+                           duration-[var(--dur-fast)]"
+            >
+                <ChevronRight size={14} aria-hidden
+                    className={`shrink-0 text-content-3 transition-transform duration-[var(--dur-fast)]
+                                ${abierto ? 'rotate-90' : ''}`} />
+                <span className="text-body-sm font-semibold text-content truncate min-w-0 flex-1 text-left">
+                    {laboratorio}
+                </span>
+                <span className="text-caption text-content-3 tabular-nums shrink-0">{cuantos}</span>
+            </button>
+            {abierto && <div className="p-2 space-y-2">{children}</div>}
+        </div>
+    );
+}
+
 function RenglonListo({ r, proveedores, onEditar, onQuitar }) {
     const prov = proveedores.find((p) => p.value === String(r.supplier_id))?.label;
     return (

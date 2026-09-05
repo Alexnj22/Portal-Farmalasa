@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1015.5 — El aviso no explica el reloj interno
+
+Dos observaciones del usuario, y la primera con el criterio correcto: **si la ley
+no lo pide, no va**.
+
+**«Y ahí la fecha del mensaje es la de recepción» se fue del aviso.** El Art. 24
+no lo pide entre sus nueve contenidos, y el Art. 20 fija el plazo sin obligar a
+explicar desde cuándo se cuenta. Al cliente le sirve saber que le responden en
+veinte días hábiles, que la cláusula 8.4 ya dice; **cuándo empieza a correr ese
+plazo es una obligación de quien atiende**, no información que el solicitante
+necesite. Sigue escrito en el procedimiento `FLS-PRO-03`, que es donde manda.
+
+De paso, la viñeta del correo queda paralela a la del teléfono, que tampoco
+explicaba nada.
+
+**Y la cláusula 8.2 era una sola frase con tres ideas.** Decía «Llegue por donde
+llegue, antes de entregarle nada hay que ver su documento…», que además cerraba
+repitiendo lo que la 8.3 explica mejor. Ahora son tres frases: qué hay que
+presentar, qué se agrega si pide por otra persona, y por qué.
+
+También se fue **«el instrumento que lo autorice»**. Es la palabra del Código
+Civil, y ya habíamos sacado «atañe» por lo mismo: quedó «el documento que lo
+autoriza a representarla».
+
 ## v2.1015.4 — Se puede pedir a distancia, pero la entrega es en persona
 
 Pregunta del usuario: «si es por correo, ¿cómo enviaría la solicitud? ¿De igual

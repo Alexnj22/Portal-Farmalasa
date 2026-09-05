@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1002.0 — El descuento en ventas se decide al crear la promoción
+
+Corregido por el usuario sobre lo que salió en v2.1001.0:
+
+> «lo que quisiera es, al crear promociones, pregunte si se aplicará descuento
+> en el sistema de ventas.»
+
+**El defecto era tener dos puertas.** El descuento vivía en su propia pestaña,
+con su propio botón de crear, y eso obligaba a cargar **los mismos productos y
+las mismas fechas dos veces** — que es exactamente cómo dos listas que deberían
+decir lo mismo terminan diciendo cosas distintas, sin que nada falle y sin que
+ninguna de las dos pantallas muestre a la otra.
+
+**Ahora el descuento es una pregunta de la promoción.** Al crear una promoción
+por producto aparece «Además baja el precio en la venta»; marcándola se pide
+sólo lo que es PROPIO del descuento —cómo descuenta, cuánto y en qué salas— y
+los productos y la vigencia **se heredan** de los renglones que ya se cargaron.
+Nace apagada: la mayoría de las promociones paga una bonificación y no le baja
+el precio a nadie.
+
+**El orden de las dos escrituras no es arbitrario.** Primero la promoción,
+después el descuento. Al revés, si la promoción fallara quedaría un descuento
+vivo en el sistema de ventas que nadie pidió, bajándole el precio a productos
+reales sin que ninguna pantalla del portal lo nombre. Así, lo peor que puede
+pasar es una promoción sin su descuento: visible, corregible, y sin haber
+tocado ningún precio. Y si esa segunda mitad falla, el modal lo dice con las
+dos cosas —«la promoción quedó creada, pero el descuento no»— y ofrece
+reintentar sólo el descuento, en vez de un «no se pudo guardar» que haría
+crearla de nuevo.
+
+**El vínculo lo escribe el servidor, no el navegador.** `promociones
+.descuento_erp_id` lo pone la propia edge function después de que el sistema de
+ventas confirme: si el navegador se cerrara entre las dos llamadas, el
+descuento quedaría vivo sin que nadie sepa de qué promoción es.
+
+**La pestaña Descuentos queda, sin botón de crear.** Sigue haciendo falta: hay
+13 descuentos hechos directamente en el sistema de ventas que no tienen
+promoción en el portal, y alguien tiene que poder verlos, corregirles la fecha
+o quitarlos. Cada tarjeta dice de qué promoción vino, o que se hizo allá. Y un
+aviso arriba explica dónde se crean — sin él, una pantalla que lista cosas y no
+tiene botón de agregar se lee como un permiso que falta.
+
+**El borrador de la corrección lleva el id ADENTRO de la clave**
+(`descuento_<id>`). Con una clave común, lo tecleado para el descuento 14 se
+repondría encima del 15 y no se notaría hasta después de guardar.
+
+Piezas: `DescuentoEnVentas.jsx` (nuevo), `promocionesUtils.js`
+(`descuentoDesdeLaPromocion`, `problemasDelDescuento`), y la columna
+`promociones.descuento_erp_id`.
+
 ## v2.1001.0 — Descuentos en la venta: configurarlos desde el portal
 
 El sistema de la caja tiene una pantalla que descuenta en la venta y el portal

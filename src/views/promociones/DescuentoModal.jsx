@@ -8,8 +8,8 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import Checkbox from '../../components/common/Checkbox';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
-import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import { LoadingState } from '../../components/common/StateViews';
+import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import useBorrador from '../../hooks/useBorrador';
 import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
@@ -19,8 +19,6 @@ import {
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
 import { hoySV, precioConDescuento } from './promocionesUtils';
-
-const CLAVE_BORRADOR = 'descuento_nuevo';
 
 /**
  * Los dos tipos, dichos como los aplica la venta.
@@ -47,20 +45,29 @@ const vacio = () => ({
 });
 
 /**
- * Alta y corrección de un descuento por producto.
+ * CORREGIR un descuento que ya existe. Acá no se crea.
  *
- * ── Lo que esta pantalla agrega sobre la del sistema de la caja ───────────
+ * ── Por qué no se crea acá (2026-09-04) ──────────────────────────────────
+ * Un descuento nace al crear su promoción, marcando «Además baja el precio en
+ * la venta». Tener las dos puertas era el defecto: obligaba a cargar los
+ * mismos productos y las mismas fechas dos veces, que es exactamente cómo dos
+ * listas que deberían decir lo mismo terminan diciendo cosas distintas.
+ *
+ * Corregir sí vive acá, y hace falta: hay descuentos hechos directamente en el
+ * sistema de ventas —13 al 2026-09-04— que no tienen promoción en el portal, y
+ * alguien tiene que poder verles la fecha, cambiarla o quitarlos.
+ *
+ * ── Lo que esta pantalla agrega sobre la del sistema de ventas ───────────
  * Allá se escribe un número y se guarda. Acá se ve **en cuánto queda el
  * precio** de cada producto mientras se escribe, y en rojo el que caería bajo
  * el costo. Un 60 % se teclea igual de rápido que un 25 %: lo único que
- * distingue una campaña de una venta a pérdida es ese número, y hasta hoy no lo
- * mostraba nadie.
+ * distingue una campaña de una venta a pérdida es ese número.
  *
  * Las otras dos verificaciones —el solape con otro descuento vigente y el
  * alcance de sala— las hace el servidor, porque un formulario se puede saltear
  * cambiando el cuerpo de la petición.
  */
-export default function DescuentoModal({ open, descuentoId = null, alcanceTodo, onClose, onGuardado }) {
+export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose, onGuardado }) {
     const editando = Number(descuentoId) > 0;
 
     const branches = useStaffStore((s) => s.branches);
@@ -80,13 +87,18 @@ export default function DescuentoModal({ open, descuentoId = null, alcanceTodo, 
 
     const set = useCallback((campo, v) => setF((x) => ({ ...x, [campo]: v })), []);
 
-    /* El borrador vale sólo al CREAR. Restaurar el de una sesión anterior encima
-       de una corrección pisaría los valores reales del descuento con los de otro
-       — y no se notaría hasta después de guardar. */
+    /* El borrador va con el ID ADENTRO de la clave.
+     *
+     * La sesión de sala se cierra sola a los 5 minutos y acá se corrige algo que
+     * mueve precios, así que perder lo escrito no es una molestia. Pero una
+     * clave común —`descuento_editar`— repondría lo tecleado para el descuento
+     * 14 encima del 15, y eso no se notaría hasta después de guardar. Con el id
+     * en la clave, un borrador sólo puede volver a su propio descuento.
+     */
     const { recuperado, cuando, descartar, hayBorrador } = useBorrador(
-        CLAVE_BORRADOR, f, { activo: open && !editando },
+        `descuento_${descuentoId}`, f, { activo: open && editando && !cargando },
     );
-    const reponer = () => { if (recuperado) setF({ ...vacio(), ...recuperado }); descartar(); };
+    const reponer = () => { if (recuperado) setF((x) => ({ ...x, ...recuperado })); descartar(); };
 
     // ── Cargar el que se corrige ───────────────────────────────────────────
     useEffect(() => {
@@ -169,7 +181,7 @@ export default function DescuentoModal({ open, descuentoId = null, alcanceTodo, 
             });
             if (r.avisos) { setAvisos(r.avisos); return; }
             setAvisos([]);
-            if (!editando) descartar();
+            descartar();
             onGuardado?.();
         } catch (e) {
             setFallo(mensajeAmigable(e, 'No se pudo guardar el descuento.'));
@@ -178,7 +190,7 @@ export default function DescuentoModal({ open, descuentoId = null, alcanceTodo, 
         }
     };
 
-    const titulo = editando ? 'Corregir descuento' : 'Nuevo descuento';
+    const titulo = 'Corregir descuento';
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel={titulo}>
@@ -189,7 +201,7 @@ export default function DescuentoModal({ open, descuentoId = null, alcanceTodo, 
             <LiquidModal.Body>
                 {cargando ? <LoadingState label="Cargando el descuento…" /> : (
                     <div className="space-y-4">
-                        {hayBorrador && !editando && (
+                        {hayBorrador && (
                             <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />
                         )}
 
@@ -343,7 +355,7 @@ export default function DescuentoModal({ open, descuentoId = null, alcanceTodo, 
                         disabled={problemas.length > 0 || cargando}
                         onClick={() => enviar(false)}
                     >
-                        {editando ? 'Guardar cambios' : 'Crear descuento'}
+                        Guardar cambios
                     </Button>
                 )}
             </LiquidModal.Footer>

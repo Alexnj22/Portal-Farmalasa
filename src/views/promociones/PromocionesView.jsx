@@ -85,7 +85,8 @@ export default function PromocionesView() {
     const [alcanceTodo, setAlcanceTodo] = useState(false);
     const [cargandoDesc, setCargandoDesc] = useState(false);
     const [errorDesc, setErrorDesc] = useState(null);
-    // `null` = cerrado · `0` = uno nuevo · `>0` = el que se corrige
+    /* `null` = cerrado · `>0` = el descuento que se CORRIGE. No hay «nuevo»:
+       los descuentos nacen con su promoción. */
     const [modalDesc, setModalDesc] = useState(null);
 
     const branches = useStaffStore((s) => s.branches);
@@ -168,16 +169,12 @@ export default function PromocionesView() {
 
        `rotuloFijo` porque son LAS acciones de la pantalla: un botón relleno con
        un «+» mudo no dice qué agrega. */
-    const acciones = !puedeEditar ? [] : tab === 'descuentos'
-        /* En Descuentos la acción es OTRA: crear un descuento no tiene nada que
-           ver con negociar una bonificación, y ofrecer los tres botones juntos
-           invita a apretar el que no es. */
-        ? [{
-            key: 'nuevo-descuento', icon: Plus, label: 'Nuevo descuento',
-            rotulo: 'Nuevo descuento', variant: 'primary', rotuloFijo: true,
-            onClick: () => setModalDesc(0),
-        }]
-        : [
+    /* En Descuentos NO hay acción de crear: un descuento nace al crear su
+       promoción, marcando «Además baja el precio en la venta». Tener las dos
+       puertas era el defecto —obligaba a cargar los mismos productos y las
+       mismas fechas dos veces, que es cómo dos listas que deberían decir lo
+       mismo terminan diciendo cosas distintas. */
+    const acciones = !puedeEditar || tab === 'descuentos' ? [] : [
             {
                 key: 'nueva-producto', icon: Plus, label: 'Nueva promoción por producto',
                 rotulo: 'Por producto', variant: 'primary', rotuloFijo: true,
@@ -218,7 +215,6 @@ export default function PromocionesView() {
                     puedeEditar={puedeEditar}
                     alcanceTodo={alcanceTodo}
                     salas={salasDeVenta}
-                    onNuevo={() => setModalDesc(0)}
                     onEditar={(id) => setModalDesc(id)}
                     onCambio={recargarDesc}
                 />
@@ -322,7 +318,7 @@ export default function PromocionesView() {
             {modalDesc !== null && (
                 <DescuentoModal
                     open
-                    descuentoId={modalDesc || null}
+                    descuentoId={modalDesc}
                     alcanceTodo={alcanceTodo}
                     onClose={() => setModalDesc(null)}
                     onGuardado={() => { setModalDesc(null); recargarDesc(); }}

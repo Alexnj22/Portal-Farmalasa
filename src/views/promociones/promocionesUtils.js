@@ -171,3 +171,42 @@ export function precioConDescuento(precio, tipo, monto) {
     const m = Number(monto) || 0;
     return tipo === '%' ? p * (1 - m / 100) : p - m;
 }
+
+/**
+ * Lo que hay que mandarle a `guardarDescuento`, derivado de la promoción.
+ *
+ * Vive acá y no en el modal para que el cálculo de la ventana —el `min` de los
+ * inicios y el `max` de los fines— esté escrito UNA vez: dicho dos veces, el
+ * día que se cambie una de las dos el descuento cubriría un tramo distinto que
+ * la promoción y nadie lo vería, porque ninguna de las dos pantallas muestra la
+ * otra.
+ */
+export function descuentoDesdeLaPromocion(renglones, valor, salas) {
+    const productos = [...new Set(renglones.map((r) => r.erp_product_id))];
+    const inicios = renglones.map((r) => r.inicio).filter(Boolean).sort();
+    const fines = renglones.map((r) => r.fin).filter(Boolean).sort();
+    return {
+        id: 0,
+        tipo: valor.tipo || '%',
+        monto: Number(valor.monto),
+        inicio: inicios[0] || '',
+        fin: fines[fines.length - 1] || valor.finPropio || '',
+        todas_las_salas: !!valor.todas,
+        branch_id: valor.todas ? (salas[0]?.id ?? null) : Number(valor.branchId),
+        productos,
+    };
+}
+
+/** Lo que impide guardar el descuento, dicho antes de intentarlo. */
+export function problemasDelDescuento(renglones, valor, alcanceTodo) {
+    if (!valor.activo) return [];
+    const l = [];
+    const monto = Number(valor.monto);
+    const hayFin = renglones.some((r) => r.fin);
+    if (!renglones.length) l.push('Agrega los productos antes de ponerle descuento.');
+    if (!Number.isFinite(monto) || monto <= 0) l.push('El descuento tiene que ser mayor que cero.');
+    if (valor.tipo === '%' && monto > 100) l.push('Un porcentaje no puede pasar de 100.');
+    if (!hayFin && !valor.finPropio) l.push('Dile hasta cuándo descuenta.');
+    if (alcanceTodo && !valor.todas && !valor.branchId) l.push('Elige la sala del descuento.');
+    return l;
+}

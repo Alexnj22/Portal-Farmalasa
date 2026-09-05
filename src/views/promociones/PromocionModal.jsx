@@ -16,8 +16,14 @@ import { SALAS_VENTA } from '../metas/metasUtils';
 import {
     crearPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
 } from '../../data/promociones';
+import { guardarDescuento } from '../../data/descuentos';
+import { useAuth } from '../../context/AuthContext';
+import DescuentoEnVentas from './DescuentoEnVentas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { hoySV, fmtUnidades, rotuloPresentacion } from './promocionesUtils';
+import {
+    hoySV, fmtUnidades, rotuloPresentacion,
+    descuentoDesdeLaPromocion, problemasDelDescuento,
+} from './promocionesUtils';
 
 const CLAVE_BORRADOR = 'promocion_nueva';
 
@@ -79,12 +85,33 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     const [fallo, setFallo] = useState(null);
     const [proveedores, setProveedores] = useState([]);
 
+    /* El descuento en la venta. Nace apagado: la mayoría de las promociones
+       paga una bonificación y NO le baja el precio a nadie, así que encenderlo
+       por defecto pondría a descontar campañas que nadie decidió descontar. */
+    const [desc, setDesc] = useState({
+        activo: false, tipo: '%', monto: '', todas: true, branchId: '', finPropio: '',
+    });
+    const cambiarDesc = useCallback(
+        (campo, v) => setDesc((d) => ({ ...d, [campo]: v })), [],
+    );
+
+    /* La promoción ya se creó y el descuento no: sólo falta reintentar ESA
+       mitad. Sin esto, el único camino sería crear la promoción de nuevo. */
+    const [promoCreada, setPromoCreada] = useState(null);
+    const [avisosDesc, setAvisosDesc] = useState([]);
+
+    /* El ALCANCE, no el permiso: con una sola sala el descuento va a la propia
+       y el servidor lo fija ahí igual, así que preguntarlo ofrecería una opción
+       que va a rechazar. Sale del mismo terminal que usa la base. */
+    const { getScope } = useAuth();
+    const alcanceTodo = getScope('promociones') === 'ALL';
+
     useEffect(() => {
         if (!open) return;
         fetchProveedoresDelSistema().then(setProveedores).catch(() => setProveedores([]));
     }, [open]);
 
-    const valor = useMemo(() => ({ nombre, nota, renglones }), [nombre, nota, renglones]);
+    const valor = useMemo(() => ({ nombre, nota, renglones, desc }), [nombre, nota, renglones, desc]);
 
     const { recuperado, cuando, descartar, hayBorrador } = useBorrador(
         CLAVE_BORRADOR, valor, { activo: open },
@@ -95,6 +122,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         setNombre(recuperado.nombre || '');
         setNota(recuperado.nota || '');
         setRenglones(Array.isArray(recuperado.renglones) ? recuperado.renglones : []);
+        if (recuperado.desc) setDesc((d) => ({ ...d, ...recuperado.desc }));
         descartar();
     }, [recuperado, descartar]);
 
@@ -114,11 +142,48 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
 
     const hayEditando = renglones.some((r) => !r.confirmado);
 
-    const guardar = async () => {
+    /* Sólo el descuento, para el caso en que la promoción ya se creó y esta
+       mitad falló. Devuelve `true` si quedó. */
+    const mandarDescuento = async (promoId, forzar = false) => {
+        const r = await guardarDescuento({
+            ...descuentoDesdeLaPromocion(renglones, desc, salas),
+            descripcion: nombre.trim(),
+            promocion_id: promoId,
+            forzar,
+        });
+        if (r.avisos) {
+            setAvisosDesc(r.avisos);
+            return false;
+        }
+        setAvisosDesc([]);
+        return true;
+    };
+
+    /**
+     * Guarda.
+     *
+     * **La promoción PRIMERO y el descuento después, y el orden no es
+     * arbitrario.** Al revés, si la promoción fallara quedaría un descuento
+     * vivo en el sistema de ventas que nadie pidió, bajándole el precio a
+     * productos reales sin que ninguna pantalla del portal lo nombre. Así, lo
+     * peor que puede pasar es una promoción sin su descuento — visible,
+     * corregible, y sin tocar ningún precio.
+     */
+    const guardar = async (forzarDescuento = false) => {
         setFallo(null);
         setGuardando(true);
         try {
-            await crearPromocion({
+            /* Si ya se creó en un intento anterior, no se vuelve a crear:
+               reintentar entero dejaría dos promociones iguales. */
+            if (promoCreada) {
+                const ok = await mandarDescuento(promoCreada, forzarDescuento);
+                if (!ok) return;
+                descartar();
+                onGuardada?.();
+                return;
+            }
+
+            const creada = await crearPromocion({
                 nombre,
                 nota,
                 renglones: renglones.map((r) => ({
@@ -143,6 +208,37 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         .map(([branch_id, u]) => ({ branch_id: Number(branch_id), unidades: Number(u) })),
                 })),
             });
+
+            if (!desc.activo) {
+                descartar();
+                onGuardada?.();
+                return;
+            }
+
+            /* Desde acá la promoción YA EXISTE. Se recuerda para que un fallo
+               del descuento no obligue a crearla de nuevo. */
+            const promoId = Number(creada?.id) || null;
+            setPromoCreada(promoId);
+            if (!promoId) {
+                setFallo('La promoción se creó pero el portal no supo con qué número, '
+                    + 'así que el descuento no se pudo ligar. Créalo desde Descuentos.');
+                return;
+            }
+
+            let ok = false;
+            try {
+                ok = await mandarDescuento(promoId, forzarDescuento);
+            } catch (e) {
+                /* El mensaje dice las DOS cosas: que la promoción sí quedó y que
+                   el descuento no. Un «no se pudo guardar» a secas haría creer
+                   que no quedó nada y llevaría a crearla otra vez. */
+                setFallo(`La promoción «${nombre.trim()}» quedó creada, pero el descuento no: `
+                    + `${mensajeAmigable(e, 'el sistema de ventas no lo aceptó')}. `
+                    + 'Puedes reintentar sólo el descuento.');
+                return;
+            }
+            if (!ok) return;
+
             descartar();
             onGuardada?.();
         } catch (e) {
@@ -152,7 +248,9 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         }
     };
 
-    const listo = nombre.trim() && renglones.length > 0 && !hayEditando;
+    const problemasDesc = problemasDelDescuento(renglones, desc, alcanceTodo);
+    const listo = nombre.trim() && renglones.length > 0 && !hayEditando
+        && problemasDesc.length === 0;
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Nueva promoción">
@@ -217,6 +315,17 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         </div>
                     )}
 
+                    {/* El descuento en la venta. Va acá y no en otra pantalla
+                        porque es la misma decisión: separarlo obliga a cargar
+                        los mismos productos y las mismas fechas dos veces. */}
+                    <DescuentoEnVentas
+                        renglones={renglones.filter((r) => r.confirmado)}
+                        salas={salas}
+                        valor={desc}
+                        onCambiar={cambiarDesc}
+                        alcanceTodo={alcanceTodo}
+                    />
+
                     <PortalTextarea
                         label="Nota"
                         name="nota"
@@ -226,6 +335,19 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         rows={2}
                     />
 
+                    {avisosDesc.length > 0 && (
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            <p className="font-semibold mb-1">Antes de guardar el descuento, mira esto:</p>
+                            <ul className="list-disc pl-4 space-y-0.5">
+                                {avisosDesc.map((a) => <li key={a.texto}>{a.texto}</li>)}
+                            </ul>
+                            <p className="mt-1.5 text-caption">
+                                Cuando dos descuentos toman el mismo producto en las mismas fechas,
+                                la venta aplica uno solo y no dice cuál.
+                            </p>
+                        </Notice>
+                    )}
+
                     {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
                 </div>
             </LiquidModal.Body>
@@ -234,12 +356,24 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                 <span className="text-caption text-content-3 mr-auto">
                     {hayEditando
                         ? 'Termina el producto para poder guardar.'
-                        : 'Nace en borrador — no cuenta hasta activarla.'}
+                        : (problemasDesc[0]
+                            || (promoCreada ? 'La promoción ya quedó: falta el descuento.'
+                                : 'Nace en borrador — no cuenta hasta activarla.'))}
                 </span>
-                <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-                <Button icon={Check} loading={guardando} disabled={!listo} onClick={guardar}>
-                    Guardar promoción
+                <Button variant="secondary" onClick={onClose}>
+                    {promoCreada ? 'Dejarlo así' : 'Cancelar'}
                 </Button>
+                {avisosDesc.length > 0 ? (
+                    <Button variant="danger" icon={Check} loading={guardando}
+                        onClick={() => guardar(true)}>
+                        Guardar de todos modos
+                    </Button>
+                ) : (
+                    <Button icon={Check} loading={guardando} disabled={!listo}
+                        onClick={() => guardar(false)}>
+                        {promoCreada ? 'Reintentar el descuento' : 'Guardar promoción'}
+                    </Button>
+                )}
             </LiquidModal.Footer>
         </LiquidModal>
     );

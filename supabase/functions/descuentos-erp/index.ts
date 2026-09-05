@@ -132,10 +132,22 @@ Deno.serve(async (req) => {
         for (const p of data ?? []) nombres.set(Number(p.id), String(p.nombre));
       }
 
+      /* De qué promoción es cada uno. Los que no tienen se muestran igual: son
+         los que se crearon directamente en el sistema de ventas —13 al
+         2026-09-04— y esconderlos dejaría descuentos vivos que el portal no
+         nombra. */
+      const dePromocion = new Map<number, string>();
+      const { data: promos, error: promosErr } = await admin
+        .from("promociones").select("nombre, descuento_erp_id")
+        .in("descuento_erp_id", filas.length ? filas.map((d) => d.id) : [-1]);
+      if (promosErr) console.error("[descuentos-erp] promociones:", promosErr.message);
+      for (const p of promos ?? []) dePromocion.set(Number(p.descuento_erp_id), String(p.nombre));
+
       const hoy = new Date().toISOString().slice(0, 10);
       const descuentos = filas.map((d, i) => ({
         ...conSala(d),
         vigente: d.inicio <= hoy && hoy <= d.fin,
+        promocion: dePromocion.get(d.id) ?? null,
         productos: productos[i].map((id) => ({
           id,
           nombre: nombres.get(id) ?? `Producto ${id}`,
@@ -183,6 +195,11 @@ Deno.serve(async (req) => {
       const inicio = String(body.inicio ?? "");
       const fin = String(body.fin ?? "");
       const forzar = body.forzar === true;
+      /* La promoción que lo pidió, cuando el descuento nace desde ella. Se
+         guarda del lado del portal para que la pantalla de descuentos pueda
+         decir de quién es cada uno, y para que un informe futuro pueda cruzar
+         lo descontado con lo bonificado. */
+      const promocionId = Number(body.promocion_id) || 0;
 
       const productos = [...new Set(
         (Array.isArray(body.productos) ? body.productos : [])
@@ -336,6 +353,17 @@ Deno.serve(async (req) => {
         idNuevo = Math.max(...nacidos.map((d) => d.id));
       }
 
+      /* El vínculo se escribe ACÁ y no desde el navegador: si el navegador se
+         cierra entre las dos llamadas, el descuento quedaría vivo en el sistema
+         de ventas sin que nadie sepa de qué promoción es. */
+      if (promocionId > 0) {
+        const { error: ligarErr } = await admin
+          .from("promociones")
+          .update({ descuento_erp_id: idNuevo })
+          .eq("id", promocionId);
+        if (ligarErr) console.error("[descuentos-erp] ligar promoción:", ligarErr.message);
+      }
+
       /* Quién lo hizo NO queda en el sistema de la caja —allá todo va a nombre
          de la cuenta con la que el portal entra—, así que la firma vive acá. */
       const { error: auditErr } = await admin.from("audit_logs").insert({
@@ -352,6 +380,7 @@ Deno.serve(async (req) => {
           erp_sucursal_id: erpSucursal,
           productos,
           confirmo_avisos: forzar,
+          promocion_id: promocionId || null,
         },
       });
       if (auditErr) console.error("[descuentos-erp] audit_logs:", auditErr.message);

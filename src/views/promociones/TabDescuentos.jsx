@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    AlertTriangle, Calendar, Percent, Pencil, Plus, Search, Store, Tag, Trash2,
+    AlertTriangle, Calendar, Info, Percent, Pencil, Search, Store, Tag, Trash2,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -21,7 +21,7 @@ import { fmtVigencia, hoySV } from './promocionesUtils';
  * una celda.
  */
 export default function TabDescuentos({
-    descuentos, busqueda, puedeEditar, alcanceTodo, salas, onNuevo, onEditar, onCambio,
+    descuentos, busqueda, puedeEditar, alcanceTodo, salas, onEditar, onCambio,
 }) {
     const [borrando, setBorrando] = useState(null);   // el descuento que se va a borrar
     const [ocupado, setOcupado] = useState(false);
@@ -56,16 +56,21 @@ export default function TabDescuentos({
                 <EmptyState
                     icon={Percent}
                     title="Sin descuentos configurados"
-                    subtitle="Un descuento le rebaja al renglón de la venta un porcentaje, o un monto por cada unidad, en los productos y las fechas que se elijan."
-                    action={puedeEditar
-                        ? <Button icon={Plus} onClick={onNuevo}>Crear el primero</Button>
-                        : undefined}
+                    subtitle="Un descuento le rebaja al renglón de la venta un porcentaje, o un monto por cada unidad. Se crean al crear la promoción, marcando «Además baja el precio en la venta»."
                 />
             );
     }
 
     return (
         <>
+            {/* Acá NO se crea, y hay que decirlo: sin esta línea, una pantalla
+                que lista cosas y no tiene botón de agregar se lee como un
+                permiso que falta. */}
+            <Notice variant="info" icon={Info}>
+                Los descuentos nacen al crear la promoción. Aquí se ven todos —incluidos los
+                que se hicieron directamente en el sistema de ventas— y se corrigen o se quitan.
+            </Notice>
+
             {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -154,6 +159,18 @@ function Tarjeta({ d, salas, alcanceTodo, puedeEditar, onEditar, onBorrar }) {
                     <span className="truncate">{sala}</span>
                 </p>
             )}
+
+            {/* De qué promoción vino. Los que no tienen se muestran igual y se
+                dicen: son los que se hicieron directamente en el sistema de
+                ventas, y esconderlos dejaría descuentos vivos sin nombre. */}
+            <p className="text-caption text-content-2 truncate flex items-center gap-1.5">
+                <Tag size={13} className="shrink-0 text-content-3" aria-hidden />
+                <span className="truncate">
+                    {d.promocion
+                        ? <>De la promoción <span className="font-semibold">{d.promocion}</span></>
+                        : 'Hecho en el sistema de ventas, sin promoción en el portal'}
+                </span>
+            </p>
 
             <div className="min-w-0">
                 <p className="text-label uppercase tracking-wide font-semibold text-content-3 mb-1 flex items-center gap-1.5">

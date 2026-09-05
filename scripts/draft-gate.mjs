@@ -96,6 +96,13 @@ const RE_BORRADOR = /\bfrom\s+['"][^'"]*(draftUtils|useBorrador)['"]|\b(saveDraf
  * una excepción: es deuda, y va al baseline.
  */
 const EXCEPCIONES = {
+    // Sus controles son del DESCUENTO de una promoción, y su estado vive
+    // entero en `PromocionModal` —que sí guarda borrador, con `desc` adentro
+    // del valor—. Un borrador propio acá guardaría lo mismo dos veces y podría
+    // reponer un descuento sobre una promoción distinta. Comprobado: el valor
+    // del hook de `PromocionModal` es `{ nombre, nota, renglones, desc }`.
+    'src/views/promociones/DescuentoEnVentas.jsx': 'su estado vive en PromocionModal, que ya guarda borrador',
+
   'src/views/promociones/EditarPromocionModal.jsx':
     'Los campos NO están vacíos esperando que alguien los llene: vienen ' +
     'PRECARGADOS del servidor con lo que la promoción tiene hoy, y cada bloque ' +

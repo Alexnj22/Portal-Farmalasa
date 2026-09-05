@@ -93,12 +93,6 @@
   ul.viñetas li { margin-bottom: .22rem; color: var(--ink-2); }
   strong { font-weight: 600; }
 
-  /* Lo que puede sorprender al lector va marcado: que no se pueda decir que
-     estaba escondido entre lo demás. */
-  .aviso { background: var(--suave); border-left: 3px solid var(--ink);
-           padding: .8rem 1rem; margin: .7rem 0 0; border-radius: 0 5px 5px 0; }
-  .aviso p { margin-bottom: .45rem; }
-  .aviso p:last-child { margin-bottom: 0; }
 
   .tabla-caja { overflow-x: auto; margin-top: .6rem; }
   table { border-collapse: collapse; width: 100%; min-width: 21rem; font-size: .87rem; }
@@ -107,9 +101,6 @@
   th { font-weight: 600; font-size: .72rem; text-transform: uppercase;
        letter-spacing: .07em; color: var(--ink-3); }
   td.si { font-weight: 600; }
-  /* La fila de los datos de salud va distinguida: la ley los llama sensibles y
-     obliga a identificarlos como tales dentro del propio aviso (Art. 24-b). */
-  tr.sensible td { background: var(--suave); }
 
   @media print {
     body { background: #fff; color: #000; font-size: 10pt; }
@@ -121,8 +112,6 @@
     h2 { break-after: avoid; }
     ol.clausulas > li { break-inside: avoid; }
     p { orphans: 2; widows: 2; }
-    .aviso { background: transparent; border-left: 2px solid #000; }
-    tr.sensible td { background: transparent; font-style: italic; }
   }
 </style>
 
@@ -162,70 +151,106 @@
       <li>Su domicilio es Carretera a Chalatenango, Caserío Totolco,
       Chalatenango Sur, departamento de Chalatenango, y su teléfono el
       <strong>2301-0013</strong>.</li>
-      <li>Este aviso cubre lo que se recoge en las salas de venta de la Empresa
-      y en su portal, <strong>portal.farmasalud.lat</strong>.</li>
+      <li>Este aviso cubre los datos que se recogen en las salas de venta de la
+      Empresa y en su portal, <strong>portal.farmasalud.lat</strong>.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">2</span> Qué datos tratamos</h2>
     <ol class="clausulas">
-      <li>De quien <strong>compra</strong>: su nombre, su documento de identidad,
-      su teléfono, y su dirección y correo cuando los proporciona. También lo que
-      compró, cuándo, en qué sala y cómo lo pagó; y, si compró al crédito, su
-      saldo y sus abonos.</li>
-      <li>De quien <strong>participa en el programa de puntos</strong>: además de
-      lo anterior, sus puntos acumulados, sus canjes y su saldo.</li>
-      <li>De quien <strong>trabaja en la Empresa</strong>: su expediente laboral
-      —nombre, documento de identidad, dirección, teléfono, fecha y lugar de
-      nacimiento, números de ISSS y AFP, contacto de emergencia y fotografía— y
-      el registro de sus marcaciones, horarios, permisos y planilla.</li>
-      <li>De quien nos <strong>provee</strong>: el nombre, los números de
-      identificación tributaria, la dirección, el teléfono y el correo.</li>
-      <li><strong>Datos sensibles.</strong> Cuando se despacha un medicamento que
-      exige receta, la ley sanitaria obliga a dejar constancia de la
-      dispensación y de los datos de la receta —nombre y edad del paciente, su
-      documento y el médico que la extendió—. Esa información es un
-      <strong>dato de salud</strong>, y la ley la considera sensible.
-        <div class="aviso">
-          <p>Nadie está obligado a proporcionar datos sensibles. Los que se
-          registran aquí son únicamente los que la norma sanitaria manda anotar
-          para poder despachar el medicamento, y quedan bajo secreto
-          profesional.</p>
-          <p><strong>Nunca se usan para promociones</strong> ni para decidir
-          precios, y no se comparten con nadie fuera de las autoridades de salud
-          que pueden exigirlos.</p>
-        </div>
-      </li>
+      <li><strong>De quien compra.</strong> Su nombre, su documento de
+      identidad, su teléfono, y su dirección y correo cuando los proporciona.
+      También lo que compró, cuándo, en qué sala y cómo lo pagó. Si compró al
+      crédito o dejó un abono para apartar producto, el saldo y los pagos
+      aplicados. Con esa información la Empresa mantiene un resumen de compras
+      por cliente (cuántos documentos, por qué monto y entre qué fechas) que
+      utiliza para atenderlo y para sus propios controles internos.</li>
+
+      <li><strong>De quien participa en el programa de puntos.</strong> Además
+      de lo anterior, sus puntos acumulados, sus canjes y su saldo. Al consultar
+      el saldo en línea se registran la fecha del intento, la dirección de red
+      desde la que se hizo y una huella del documento consultado que no permite
+      reconstruirlo. Sirven únicamente para impedir que alguien pruebe
+      documentos ajenos.</li>
+
+      <li><strong>De quien trabaja en la Empresa.</strong> Su expediente
+      laboral, que comprende nombre, documento de identidad, dirección,
+      teléfono, correo, fecha y lugar de nacimiento, números de ISSS y AFP,
+      contacto de emergencia, fotografía y los documentos de la relación de
+      trabajo. También el registro de marcaciones, horarios, permisos,
+      vacaciones, planilla, solicitudes y aprobaciones, y las anotaciones sobre
+      hechos de la relación laboral.
+      <br><br>
+      Del uso del portal se conserva un registro de qué hizo cada persona y de
+      toda descarga de información. Si la persona autoriza los avisos, se guarda
+      la referencia técnica de su dispositivo para poder enviárselos. Y cuando
+      sale a una ruta de reparto, se registra la ubicación del vehículo, que se
+      actualiza sobre la misma anotación mientras el recorrido avanza, con el
+      solo objeto de coordinar las entregas.</li>
+
+      <li><strong>De quien realiza horas sociales o una pasantía
+      académica.</strong> Nombre, documento de identidad, fecha de nacimiento,
+      teléfono, institución educativa, el convenio y las fechas y horas del
+      período. Se registran también el nombre y el teléfono de su tutor, que la
+      institución exige como responsable del período.</li>
+
+      <li><strong>Del médico que extiende una receta.</strong> Su nombre, su
+      número de junta de vigilancia y su profesión, tomados de la receta que la
+      norma sanitaria obliga a conservar.</li>
+
+      <li><strong>De quien provee a la Empresa.</strong> El nombre, los números
+      de identificación tributaria, la dirección, el teléfono y el correo, y los
+      documentos de compra que remite, incluida la dirección de correo desde la
+      que los envía.</li>
+
+      <li><strong>Datos sensibles.</strong> Cuando se despacha un medicamento
+      que exige receta, la norma sanitaria obliga a dejar constancia de la
+      dispensación y de los datos de la receta, entre ellos el nombre y la edad
+      del paciente y su documento de identidad. Esa información constituye un
+      dato de salud y la ley la considera sensible.
+      <br><br>
+      Nadie está obligado a proporcionar datos sensibles. Los que aquí se
+      registran son únicamente los que la norma sanitaria manda anotar para
+      poder despachar el medicamento, quedan bajo secreto profesional, no se
+      utilizan para promociones ni para decidir precios, y no se comparten con
+      nadie fuera de las autoridades de salud facultadas para exigirlos.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">3</span> Para qué los usamos</h2>
     <ol class="clausulas">
-      <li>Cada uso tiene su razón. Los tres primeros no dependen de su permiso
-      porque los exige la ley o el trato que usted mismo hizo con la Empresa; los
-      dos últimos <strong>sí</strong>, y usted puede retirarlo cuando quiera.
+      <li>Cada uso tiene su fundamento. Los primeros no dependen de su permiso,
+      porque los exige la ley o el trato que usted mismo hizo con la Empresa.
+      Los dos últimos sí lo requieren, y usted puede retirarlo cuando quiera.
         <div class="tabla-caja">
           <table>
             <thead>
               <tr><th>Para qué</th><th>Por qué podemos</th><th>¿Pide su permiso?</th></tr>
             </thead>
             <tbody>
-              <tr><td>Emitir y transmitir el documento de venta</td><td>Lo exige la ley tributaria</td><td>No</td></tr>
-              <tr class="sensible"><td>Llevar el libro de medicamentos que exigen receta</td><td>Lo exige la norma sanitaria</td><td>No</td></tr>
-              <tr><td>Cobrar y llevar el crédito que se le otorgó</td><td>Es el trato hecho con usted</td><td>No</td></tr>
+              <tr><td>Emitir el documento de venta, transmitirlo al Ministerio de Hacienda y conservarlo</td><td>Lo exige la ley tributaria</td><td>No</td></tr>
+              <tr><td>Corregir un dato de su ficha cuando el Ministerio de Hacienda rechaza un documento por causa de ese dato</td><td>Lo exige la ley tributaria</td><td>No</td></tr>
+              <tr><td>Anular o reemplazar un documento de venta a su solicitud</td><td>Lo exige la ley tributaria</td><td>No</td></tr>
+              <tr><td>Llevar el libro de medicamentos que exigen receta</td><td>Lo exige la norma sanitaria</td><td>No</td></tr>
+              <tr><td>Cobrar y llevar el crédito o el abono que se le otorgó</td><td>Es el trato hecho con usted</td><td>No</td></tr>
               <tr><td>Atender sus consultas y reclamos</td><td>Es el trato hecho con usted</td><td>No</td></tr>
               <tr><td>El expediente del personal, la planilla, el ISSS y la AFP</td><td>Es el contrato de trabajo y lo exige la ley</td><td>No</td></tr>
+              <tr><td>Acreditar el período de quien realiza horas sociales o una pasantía</td><td>Es el convenio con la institución educativa</td><td>No</td></tr>
               <tr><td><strong>El programa de puntos</strong></td><td>Su permiso</td><td class="si">Sí</td></tr>
               <tr><td><strong>Avisarle de promociones y novedades</strong></td><td>Su permiso</td><td class="si">Sí</td></tr>
             </tbody>
           </table>
         </div>
       </li>
-      <li>Sus datos <strong>no se usan para nada distinto</strong> de lo que dice
-      esta tabla. Si en el futuro la Empresa quisiera darles otro uso, se lo
-      informará y le pedirá una autorización nueva antes de hacerlo.</li>
+      <li>Sus datos no se usan para ninguna finalidad distinta de las anteriores.
+      Si en el futuro la Empresa quisiera darles otro uso, se lo informará y le
+      pedirá una autorización nueva antes de hacerlo.</li>
+      <li>Cuando la Empresa corrija un dato de su ficha conforme al segundo
+      supuesto del cuadro, conserva constancia de cuál era el dato antes y cuál
+      quedó después, de modo que usted pueda conocer el cambio y pedir su
+      rectificación si no fuera correcto.</li>
     </ol>
   </section>
 
@@ -233,46 +258,50 @@
     <h2><span class="num">4</span> Con quién se comparten</h2>
     <ol class="clausulas">
       <li>Con el <strong>Ministerio de Hacienda</strong>, porque los documentos
-      de venta se transmiten a esa institución por mandato de ley.</li>
+      de venta se le transmiten por mandato de ley.</li>
       <li>Con las <strong>autoridades de salud</strong>, cuando requieran el
       libro de medicamentos que exigen receta.</li>
-      <li>Con el <strong>ISSS, la AFP y el Ministerio de Trabajo</strong>, en lo
-      que corresponde al personal.</li>
-      <li>Con las empresas que <strong>guardan la información por cuenta de la
-      Empresa</strong>, descritas en la cláusula 5. Trabajan siguiendo nuestras
-      instrucciones y están obligadas a las mismas reglas de este aviso.</li>
+      <li>Con el <strong>ISSS, la AFP y el Ministerio de Trabajo</strong>, y con
+      la institución educativa correspondiente, en lo que atañe al personal y a
+      quienes realizan horas sociales o una pasantía.</li>
+      <li>Con las empresas que guardan la información por cuenta de la Empresa,
+      señaladas en la cláusula 5, que trabajan siguiendo sus instrucciones y
+      están sujetas a las mismas obligaciones de este aviso.</li>
       <li>Cuando lo ordene un juez o una autoridad competente.</li>
-      <li><strong>Sus datos no se venden, no se alquilan ni se ceden a terceros
-      con fines comerciales o publicitarios.</strong> Nunca.</li>
+      <li>Fuera de esos casos, los datos <strong>no se venden, no se alquilan ni
+      se ceden a terceros</strong> con fines comerciales o publicitarios.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">5</span> Dónde se guardan</h2>
     <ol class="clausulas">
-      <li>La información del portal se guarda en servidores de
+      <li>La información del portal se guarda en servidores situados en
       <strong>Estados Unidos</strong>, operados por Supabase Inc. (la base de
-      datos y los archivos) y Vercel Inc. (el sitio), ambas contratadas por la
-      Empresa para ese fin y sujetas a las obligaciones de este aviso. Se
-      conservan respaldos en esa misma infraestructura.</li>
+      datos y los archivos) y Vercel Inc. (el sitio), contratadas por la Empresa
+      para ese fin. Los respaldos residen en esa misma infraestructura.</li>
       <li>Cualquier consulta o reclamo relativo a esas empresas se presenta ante
-      la Empresa por los medios de la cláusula 8; no hace falta que usted se
-      dirija a ellas.</li>
+      la Empresa por los medios de la cláusula 9, sin que usted tenga que
+      dirigirse a ellas.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">6</span> Cómo se protegen</h2>
     <ol class="clausulas">
-      <li>Cada persona que usa el portal entra con su propio usuario y sólo
-      alcanza la información que su cargo necesita; el sistema lo verifica en
-      cada consulta, no sólo en la pantalla.</li>
-      <li>Queda <strong>registro de quién hizo cada cosa</strong> y de toda
-      descarga de información, con la fecha y el nombre de quien la hizo.</li>
-      <li>Las fotografías y los documentos se guardan en almacenamiento privado:
-      no son alcanzables por su dirección, sólo mediante un enlace temporal que
+      <li>Cada persona que usa el portal entra con su propio usuario y alcanza
+      únicamente la información que su cargo necesita, lo que el sistema
+      verifica en cada consulta y no solamente en la pantalla.</li>
+      <li>Queda registro de quién hizo cada operación y de toda descarga de
+      información, con su fecha y el nombre de quien la realizó.</li>
+      <li>Las fotografías y los documentos se guardan en almacenamiento privado.
+      No son alcanzables por su dirección, sino mediante un enlace temporal que
       el sistema entrega a quien tiene permiso.</li>
-      <li>El acceso viaja siempre cifrado.</li>
+      <li>El acceso al portal viaja cifrado en todos los casos.</li>
+      <li>Si ocurriera una pérdida o un acceso indebido a los datos, la Empresa
+      lo comunicará dentro de las setenta y dos horas siguientes a conocerlo, a
+      la Agencia de Ciberseguridad del Estado, a la Fiscalía General de la
+      República y a las personas afectadas.</li>
     </ol>
   </section>
 
@@ -280,36 +309,38 @@
     <h2><span class="num">7</span> Cuánto tiempo se conservan</h2>
     <ol class="clausulas">
       <li>Los documentos de venta, el libro de medicamentos que exigen receta y
-      los registros del personal se conservan durante <strong>el plazo que la
-      ley tributaria, sanitaria y laboral obliga a conservarlos</strong>.</li>
-      <li>El resto de la información se conserva mientras dure su relación con la
-      Empresa y mientras siga siendo necesaria para lo que dice la cláusula 3.
-      Cumplido eso, se elimina o se anonimiza.</li>
-      <li>Si usted se retira del programa de puntos, su cuenta se cancela y los
-      puntos no canjeados se pierden, conforme al reglamento del programa.</li>
+      los registros del personal se conservan durante el plazo que la ley
+      tributaria, sanitaria y laboral obliga a conservarlos.</li>
+      <li>El resto de la información se conserva mientras dure su relación con
+      la Empresa y mientras siga siendo necesaria para las finalidades de la
+      cláusula 3. Cumplido ese período se elimina o se anonimiza.</li>
+      <li>De una ruta de reparto se conserva la última ubicación registrada,
+      junto con el registro de esa ruta y por el mismo tiempo que él. Durante el
+      recorrido la posición se actualiza sobre la misma anotación, de modo que
+      no se guarda un historial del trayecto.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">8</span> Qué puede pedirnos</h2>
     <ol class="clausulas">
-      <li>Sobre sus propios datos usted puede pedir:
+      <li>Sobre sus propios datos usted puede ejercer los derechos siguientes:
         <ul class="viñetas">
-          <li><strong>Acceso</strong> — saber qué tenemos suyo y para qué lo usamos.</li>
-          <li><strong>Rectificación</strong> — que se corrija lo que está mal, incompleto o desactualizado.</li>
-          <li><strong>Cancelación</strong> — que se borre lo que ya no hace falta.</li>
-          <li><strong>Oposición</strong> — que dejemos de usarlos, incluida la publicidad.</li>
-          <li><strong>Portabilidad</strong> — recibirlos en un archivo y llevárselos a otro lado.</li>
-          <li><strong>Olvido</strong> — que se quiten de internet, si llegaran a estar publicados.</li>
-          <li><strong>Limitación</strong> — que se congele su uso mientras se resuelve un reclamo suyo.</li>
+          <li><strong>Acceso</strong>, para saber qué información suya tenemos y para qué la usamos.</li>
+          <li><strong>Rectificación</strong>, para que se corrija lo que esté equivocado, incompleto o desactualizado.</li>
+          <li><strong>Cancelación</strong>, para que se elimine lo que ya no es necesario.</li>
+          <li><strong>Oposición</strong>, para que dejemos de usarla, comprendida la publicidad y la elaboración de perfiles.</li>
+          <li><strong>Portabilidad</strong>, para recibirla en un archivo y trasladarla a donde usted decida.</li>
+          <li><strong>Olvido</strong>, para que se retire de internet si llegara a estar publicada.</li>
+          <li><strong>Limitación</strong>, para que se suspenda su uso mientras se resuelve un reclamo suyo.</li>
         </ul>
       </li>
-      <li>También puede <strong>retirar en cualquier momento el permiso</strong>
-      que haya dado para el programa de puntos o para recibir promociones, sin
-      tener que explicar por qué.</li>
-      <li>Todo esto es <strong>gratuito</strong>. Sólo se cobran, al costo, las
-      copias o el envío si usted pide la información en papel; por medios
-      electrónicos no tiene ningún costo.</li>
+      <li>Puede además retirar en cualquier momento el permiso que haya dado
+      para el programa de puntos o para recibir promociones, sin necesidad de
+      expresar motivo.</li>
+      <li>El ejercicio de estos derechos es gratuito. Solamente se cobran, al
+      costo, las copias o el envío cuando usted pida la información en papel;
+      por medios electrónicos no tiene costo alguno.</li>
     </ol>
   </section>
 
@@ -317,67 +348,59 @@
     <h2><span class="num">9</span> Cómo se pide</h2>
     <ol class="clausulas">
       <!-- ⚠️ PENDIENTE: el Art. 24 letra f) exige que este aviso lleve el NOMBRE
-           del delegado. El nombramiento está en curso; al resolverlo, se escribe
-           acá y se regenera la página y el PDF (`npm run privacidad`). -->
+           del delegado, y el Art. 7 letra c) un correo electrónico de contacto.
+           El nombramiento está en curso; al resolverlo se escriben acá y se
+           regenera la página y el PDF con `npm run privacidad`. -->
       <li>La solicitud se presenta ante el <strong>delegado de protección de
       datos</strong> de la Empresa, en <strong>cualquier sala de venta</strong> o
-      al teléfono <strong>2301-0013</strong>. En la sala se le entrega el
-      formulario y queda constancia con la fecha.</li>
-      <li>Para atenderla hace falta que usted <strong>acredite su identidad</strong>
-      con su documento; si actúa por otra persona, además lo que lo autorice a
-      representarla. Es la única forma de asegurar que los datos de alguien se le
-      entreguen sólo a esa persona.</li>
-      <li>Se le responde dentro de <strong>veinte días hábiles</strong>. Si el
-      caso lo exige, ese plazo puede prorrogarse una vez por otros veinte días
-      hábiles, y se le avisará.</li>
+      al teléfono <strong>2301-0013</strong>. En la sala se entrega el formulario
+      correspondiente y queda constancia con la fecha de recepción.</li>
+      <li>Para atenderla es necesario que usted acredite su identidad con su
+      documento, y si actúa por otra persona, el instrumento que lo autorice a
+      representarla. Es la única forma de asegurar que los datos de alguien se
+      entreguen solamente a esa persona.</li>
+      <li>Se le responde dentro de <strong>veinte días hábiles</strong>. Cuando
+      el caso lo justifique, ese plazo puede prorrogarse una vez por otros veinte
+      días hábiles, y se le avisará.</li>
       <li>Si la solicitud llegara incompleta, se le pedirá una sola vez que la
-      complete, y usted tendrá diez días hábiles para hacerlo.</li>
+      complete y usted dispondrá de diez días hábiles para hacerlo.</li>
       <li>Si no estuviera conforme con la respuesta, puede acudir a la
-      <strong>Agencia de Ciberseguridad del Estado</strong>, que es la autoridad
-      que vigila el cumplimiento de esta materia.</li>
+      <strong>Agencia de Ciberseguridad del Estado</strong>, autoridad encargada
+      de vigilar el cumplimiento de esta materia.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">10</span> Menores de edad</h2>
     <ol class="clausulas">
-      <li>El programa de puntos es sólo para mayores de dieciocho años.</li>
-      <li>Cuando en una receta consten los datos de un menor, se tratan
-      únicamente para lo que manda la norma sanitaria, y los derechos de la
-      cláusula 8 los ejercen su padre, su madre o quien lo represente
-      legalmente.</li>
+      <li>El programa de puntos es únicamente para mayores de dieciocho
+      años.</li>
+      <li>Cuando consten datos de un menor, sea en una receta o en un período de
+      horas sociales, se tratan solamente para lo que exigen la norma sanitaria o
+      el convenio educativo, y los derechos de la cláusula 8 los ejerce su padre,
+      su madre o quien lo represente legalmente. Si el menor desea conocerlos por
+      sí mismo, se le explican en lenguaje adecuado a su edad.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">11</span> Cookies</h2>
     <ol class="clausulas">
-      <li>El portal <strong>no usa cookies</strong>, ni propias ni de terceros, y
-      no lleva ninguna herramienta de publicidad o de seguimiento.</li>
-      <li>Para mantener su sesión abierta mientras trabaja, guarda un dato en el
+      <li>El portal no usa cookies, ni propias ni de terceros, y no incorpora
+      ninguna herramienta de publicidad o de seguimiento.</li>
+      <li>Para mantener abierta su sesión mientras trabaja, guarda un dato en el
       almacenamiento local de su navegador. Ese dato no sale de su equipo y se
       borra al cerrar sesión.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">12</span> Si algo falla</h2>
-    <ol class="clausulas">
-      <li>Si ocurriera una pérdida o un acceso indebido a los datos, la Empresa
-      lo comunicará <strong>dentro de las setenta y dos horas</strong> siguientes
-      a conocerlo a la Agencia de Ciberseguridad del Estado, a la Fiscalía
-      General de la República y a las personas afectadas, diciendo qué pasó, qué
-      datos se vieron comprometidos, qué se hizo y qué puede hacer usted.</li>
-    </ol>
-  </section>
-
-  <section>
-    <h2><span class="num">13</span> Cambios a este aviso</h2>
+    <h2><span class="num">12</span> Cambios a este aviso</h2>
     <ol class="clausulas">
       <li>Este aviso se mantiene publicado en
       <strong>portal.farmasalud.lat/privacidad</strong> y en lugar visible de
       cada sala de venta. Cualquier cambio se comunica por esos mismos medios, y
-      la fecha de vigencia del encabezado dice desde cuándo rige.</li>
+      la fecha de vigencia del encabezado indica desde cuándo rige.</li>
       <li>Si un cambio introdujera una finalidad distinta de las de la cláusula
       3, no se aplicará a sus datos sin pedirle antes una autorización nueva.</li>
     </ol>

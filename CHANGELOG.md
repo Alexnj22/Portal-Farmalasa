@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1005.1 — El aviso de privacidad se corrige contra lo que el portal realmente guarda
+
+La primera versión del aviso (v2.1004.0) se escribió mirando las tablas que
+saltan a la vista. Una auditoría contra el esquema completo encontró **cinco
+categorías de dato que no estaban**, y dos de ellas ni siquiera eran de clientes
+ni de personal:
+
+| lo que faltaba | dónde vive |
+|---|---|
+| la ubicación del conductor durante una ruta de reparto | `ruta_locations` + `rutas.conductor_id` |
+| el resumen de compras por cliente, que es un perfil | `customer_activity`, 25,105 filas |
+| quien hace horas sociales o pasantía, **y el nombre y teléfono de su tutor**, que es un tercero | `practicantes` |
+| el médico que extiende la receta: nombre, número de junta y profesión | `medicos` |
+| la corrección de la ficha del cliente cuando Hacienda rechaza un documento, con el antes y el después | `dte_correcciones_ficha`, `customers_changelog` |
+
+Se agregaron además el registro de actividad y de descargas del personal, la
+referencia del dispositivo para los avisos, la dirección de red y la huella del
+documento al consultar puntos en línea, el abono para apartar producto, y el
+correo desde el que un proveedor remite sus documentos. Y la facturación entra
+completa: emitir el documento, transmitirlo, corregir la ficha por un rechazo y
+anular o reemplazar a solicitud del cliente.
+
+**Dos afirmaciones eran falsas y se corrigieron, no se dejaron pasar.** El
+documento decía que la ubicación de una ruta se conserva sólo mientras la ruta
+está en curso: el portal **no la borra al cerrarla**, la fila queda con la última
+posición y sólo desaparece si se borra la ruta. Y decía que al consultar puntos
+se guardan la fecha y la dirección de red, omitiendo la huella del documento
+consultado. Las dos dicen ahora lo que el código hace.
+
+Verificado a máquina que los **23 puntos exigibles** están presentes: los nueve
+del Art. 24, los cinco del Art. 7, y los de los Arts. 5, 12, 20, 23, 25, 37, 42
+y 44.
+
+**Lo que se quitó, porque la ley no lo pide:** la sección propia de brecha de
+seguridad, que pasó a ser una cláusula de las medidas de seguridad (el Art. 25
+obliga a notificar cuando ocurre, no a anunciar el procedimiento), y la remisión
+al reglamento de puntos que ya estaba dicha en otra cláusula.
+
+**Y se quitó el recuadro destacado.** Un bloque sombreado con la frase de efecto
+en negrita no es como se escribe un documento que obliga: el contenido pasó a
+prosa corrida dentro de su propia cláusula. Se eliminaron también todas las rayas
+largas del texto, comprobado a máquina: cero.
+
 ## v2.1005.0 — Crear una promoción: lo general una vez, y los productos en bloque
 
 Reportado con captura: «¿y si quiero agregar todas las leches? … configurar la

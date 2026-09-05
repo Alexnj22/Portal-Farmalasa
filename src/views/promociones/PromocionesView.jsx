@@ -12,8 +12,6 @@ import { fetchDescuentos } from '../../data/descuentos';
 import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import LiquidSelect from '../../components/common/LiquidSelect';
-import SegmentedControl from '../../components/common/SegmentedControl';
 import { estadoVisible, esLaboratorio, textoBuscable } from './promocionesUtils';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
@@ -59,6 +57,7 @@ import MatrizLaboratorioModal from './MatrizLaboratorioModal';
    `estadoVisible`, que es quien los decide: escribirlos aparte los dejaría
    desincronizados de las tarjetas el día que se agregue uno. */
 const ESTADOS = [
+    { value: '',           label: 'Cualquiera' },
     { value: 'activa',     label: 'Activa' },
     { value: 'por_vencer', label: 'Por vencer' },
     { value: 'vencida',    label: 'Vencida' },
@@ -143,7 +142,7 @@ export default function PromocionesView() {
         let vivo = true;
         // Los descuentos viven en un sistema ajeno: no hay forma de tenerlos
         // antes de pedirlos, así que el cargador se enciende acá.
-        setCargandoDesc(true);
+        setCargandoDesc(true); // eslint-disable-line react-hooks/set-state-in-effect
         setErrorDesc(null);
         fetchDescuentos()
             .then(({ descuentos: filas, alcanceTodo: todo }) => {
@@ -211,25 +210,29 @@ export default function PromocionesView() {
 
     /* Dos acciones y no una con un paso de «¿de qué tipo?»: quien crea una
        promoción YA sabe cuál de las dos está negociando, y una pregunta que
-       siempre tiene respuesta es un clic de más.
-
-       `rotuloFijo` porque son LAS acciones de la pantalla: un botón relleno con
-       un «+» mudo no dice qué agrega. */
+       siempre tiene respuesta es un clic de más. */
     /* En Descuentos NO hay acción de crear: un descuento nace al crear su
        promoción, marcando «Además baja el precio en la venta». Tener las dos
        puertas era el defecto —obligaba a cargar los mismos productos y las
        mismas fechas dos veces, que es cómo dos listas que deberían decir lo
        mismo terminan diciendo cosas distintas. */
     const acciones = !puedeEditar || tab === 'descuentos' ? [] : [
+            /* SIN `rotuloFijo`: es «opt-in y rara» según el propio canónico
+               —hace que el texto no ceda nunca y la píldora se mida siempre
+               con él—, y puesta en las DOS dejaba la barra con dos botones
+               larguísimos que no se compactaban ni cediendo ancho. Sin ella,
+               la medida de la fila decide, y el rótulo sigue en el tooltip.
+               Y el rótulo dice «Nueva por…», no «Nueva promoción por…»: en
+               una vista llamada Promociones, la palabra ya la dijo el título. */
             {
-                key: 'nueva-producto', icon: Plus, label: 'Nueva promoción por producto',
-                rotulo: 'Por producto', variant: 'primary', rotuloFijo: true,
+                key: 'nueva-producto', icon: Plus, label: 'Nueva por producto',
+                rotulo: 'Por producto', variant: 'primary',
                 onClick: () => setModal(true),
             },
             {
                 key: 'nueva-laboratorio', icon: FlaskConical,
-                label: 'Nueva promoción por laboratorio',
-                rotulo: 'Por laboratorio', variant: 'secondary', rotuloFijo: true,
+                label: 'Nueva por laboratorio',
+                rotulo: 'Por laboratorio', variant: 'secondary',
                 onClick: () => setModalLab(true),
             },
         ];
@@ -339,58 +342,65 @@ export default function PromocionesView() {
                     tiene su propia fuente; Excedentes y Liquidación no listan
                     promociones): una píldora que ofrece recortes que no
                     afectan a lo que se está mirando es peor que ninguna. */}
+                {/* La píldora va a la DERECHA de su fila, como en Bitácoras y
+                    en el resto del portal: el `flex-1` de la izquierda es lo
+                    que la empuja. Sin él quedaba pegada al borde izquierdo,
+                    que es la forma que ninguna otra vista tiene. */}
                 {muestraFiltros && (
-                    <FilterBar
-                        acciones={acciones}
-                        activeCount={filtrosPuestos}
-                        onClear={filtrosPuestos > 0 ? limpiarFiltros : undefined}
-                    >
-                        <FilterBar.Section label="tipo" active={!!fTipo}
-                            onClear={() => setFTipo('')}>
-                            <SegmentedControl
-                                value={fTipo}
-                                onChange={setFTipo}
-                                /* Rótulos cortos: con «Por producto» / «Por
-                                   laboratorio» el segmentado se partía en dos
-                                   renglones y engordaba la píldora entera. El
-                                   «por» ya lo dice la etiqueta de la sección. */
-                                options={[
-                                    { value: '', label: 'Todas' },
-                                    { value: 'producto', label: 'Producto' },
-                                    { value: 'laboratorio', label: 'Laboratorio' },
-                                ]}
-                                size="sm"
-                            />
-                        </FilterBar.Section>
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                        <div className="flex-1" />
+                        <div className="flex justify-end min-w-0">
+                            <FilterBar
+                                acciones={acciones}
+                                activeCount={filtrosPuestos}
+                                onClear={filtrosPuestos > 0 ? limpiarFiltros : undefined}
+                            >
+                                {/* `FilterBar.Opciones` y no un `SegmentedControl`
+                                    a mano: el canónico decide el control por el
+                                    NÚMERO de opciones —hasta 3 segmentado, de 4
+                                    en adelante desplegable— y esa decisión no se
+                                    toma vista por vista, o se toma distinto en
+                                    cada una. */}
+                                <FilterBar.Section label="tipo" active={!!fTipo}
+                                    onClear={() => setFTipo('')}>
+                                    <FilterBar.Opciones
+                                        value={fTipo}
+                                        onChange={setFTipo}
+                                        label="Tipo"
+                                        options={[
+                                            { value: '', label: 'Todas' },
+                                            { value: 'producto', label: 'Producto' },
+                                            { value: 'laboratorio', label: 'Laboratorio' },
+                                        ]}
+                                    />
+                                </FilterBar.Section>
 
-                        <FilterBar.Section label="estado" active={!!fEstado}
-                            onClear={() => setFEstado('')}>
-                            <LiquidSelect
-                                value={fEstado}
-                                onChange={(v) => setFEstado(v || '')}
-                                options={ESTADOS}
-                                placeholder="Cualquiera"
-                                clearLabel="Cualquiera"
-                                compact
-                                ariaLabel="Estado de la promoción"
-                            />
-                        </FilterBar.Section>
+                                <FilterBar.Section label="estado" active={!!fEstado}
+                                    onClear={() => setFEstado('')}>
+                                    <FilterBar.Opciones
+                                        value={fEstado}
+                                        onChange={(v) => setFEstado(v || '')}
+                                        label="Estado"
+                                        options={ESTADOS}
+                                        placeholder="Cualquiera"
+                                    />
+                                </FilterBar.Section>
 
-                        {labsDisponibles.length > 1 && (
-                            <FilterBar.Section label="laboratorio" active={!!fLab}
-                                onClear={() => setFLab('')}>
-                                <LiquidSelect
-                                    value={fLab}
-                                    onChange={(v) => setFLab(v || '')}
-                                    options={labsDisponibles.map((l) => ({ value: l, label: l }))}
-                                    placeholder="Todos"
-                                    clearLabel="Todos"
-                                    compact
-                                    ariaLabel="Laboratorio"
-                                />
-                            </FilterBar.Section>
-                        )}
-                    </FilterBar>
+                                {labsDisponibles.length > 1 && (
+                                    <FilterBar.Section label="laboratorio" active={!!fLab}
+                                        onClear={() => setFLab('')}>
+                                        <FilterBar.Opciones
+                                            value={fLab}
+                                            onChange={(v) => setFLab(v || '')}
+                                            label="Laboratorio"
+                                            options={labsDisponibles.map((l) => ({ value: l, label: l }))}
+                                            placeholder="Todos"
+                                        />
+                                    </FilterBar.Section>
+                                )}
+                            </FilterBar>
+                        </div>
+                    </div>
                 )}
 
                 {/* El aviso va una sola vez y arriba de todo: la pantalla no

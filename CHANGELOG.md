@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1003.1 — La píldora de Promociones va a la derecha y sus botones ceden
+
+Corregido por el usuario con captura, señalando Bitácoras como referencia: «la
+filterbar va a la derecha, los botones son más compactos».
+
+Tres cosas, y las tres eran mías:
+
+- **A la derecha.** El canónico envuelve la píldora en una fila con un
+  `flex-1` a la izquierda que la empuja (`BitacorasView`, §17.0). Yo la había
+  puesto suelta, pegada al borde izquierdo — la única forma en el portal.
+- **`rotuloFijo` fuera.** Se lo había puesto a las DOS acciones. El propio
+  componente lo describe como «opt-in y rara»: hace que el texto no ceda nunca
+  y que la caja se mida siempre con él, así que la barra no podía compactarse
+  aunque faltara ancho. Sin ella la decide la medida de la fila, y el rótulo
+  sigue vivo en el tooltip.
+- **`FilterBar.Opciones` en vez de `SegmentedControl` a mano.** El canónico
+  elige el control por el número de opciones —hasta 3 segmentado, de 4 en
+  adelante desplegable— y esa decisión no se toma vista por vista, «o se toma
+  distinto en cada vista».
+
+Y los rótulos pasan de «Nueva promoción por producto» a «Nueva por producto»:
+en una vista llamada Promociones, esa palabra ya la dijo el título.
+
 ## v2.1003.0 — Promociones: la píldora tiene sus filtros y el corte del lote es 2× más liviano
 
 Dos cosas de la auditoría del módulo, y la lección de la segunda vale más que

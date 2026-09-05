@@ -3778,19 +3778,41 @@ a `ViewTabBar`.
 ## 17. Filter Pills — canónico `FilterBar` (2026-07-27)
 
 ```jsx
-<FilterBar
-    onClear={limpiar}
-    activeCount={n}
-    acciones={[
-        { key: 'nuevo',  icon: Plus,     label: 'Nuevo Empleado', variant: 'primary', onClick: crear },
-        { key: 'export', icon: Download, label: 'Exportar', tone: 'success', onClick: exportar },
-    ]}
->
-    <FilterBar.Section label="sucursal"><LiquidSelect value={suc} onChange={setSuc} options={sucs} /></FilterBar.Section>
-    <FilterBar.Section label="período"><PeriodPicker value={rango} onChange={setRango} /></FilterBar.Section>
-    <FilterBar.Section label="estado"><SegmentedControl value={estado} onChange={setEstado} options={estados} /></FilterBar.Section>
-</FilterBar>
+{/* La píldora va a la DERECHA de su fila. El `flex-1` de la izquierda es lo
+    que la empuja — con carril, es el `CarrilCards` (§17.0); sin carril, un
+    div vacío. Las dos mitades son obligatorias en los dos casos. */}
+<div className="flex flex-col lg:flex-row lg:items-center gap-3">
+    <div className="flex-1" />
+    <div className="flex justify-end min-w-0">
+        <FilterBar
+            onClear={limpiar}
+            activeCount={n}
+            acciones={[
+                { key: 'nuevo',  icon: Plus,     label: 'Nuevo Empleado', variant: 'primary', onClick: crear },
+                { key: 'export', icon: Download, label: 'Exportar', tone: 'success', onClick: exportar },
+            ]}
+        >
+            <FilterBar.Section label="sucursal"><FilterBar.Sucursal value={suc} onChange={setSuc} options={sucs} /></FilterBar.Section>
+            <FilterBar.Section label="período"><PeriodPicker value={rango} onChange={setRango} /></FilterBar.Section>
+            <FilterBar.Section label="estado"><FilterBar.Opciones value={estado} onChange={setEstado} label="Estado" options={estados} /></FilterBar.Section>
+        </FilterBar>
+    </div>
+</div>
 ```
+
+> **⚠️ Este ejemplo cambió el 2026-09-05, y el motivo importa.** Hasta esa fecha
+> mostraba la `<FilterBar>` **suelta**, sin el envoltorio, y sus ranuras con
+> `LiquidSelect` y `SegmentedControl` **crudos**. O sea: enseñaba las dos cosas
+> que las subsecciones de más abajo prohíben —la píldora va a la derecha
+> (tabla de «Dónde va») y el control lo elige `FilterBar.Opciones` por el número
+> de opciones, no la vista—. Quien crea una vista copia lo primero que ve, no
+> lee 380 líneas más abajo, así que **el ejemplo ganaba siempre**. Lo pagó
+> Promociones: salió con la píldora pegada al borde izquierdo y un segmentado a
+> mano, y hubo que corregirla dos veces.
+>
+> La regla de la derecha **ya estaba escrita** en la tabla de §«Dónde va — resuelto»;
+> lo que faltaba era que el ejemplo la cumpliera. Un canon cuyo ejemplo
+> contradice a su propio texto se lee por el ejemplo.
 
 **La píldora donde vive TODO el filtro de la vista actual** — fecha, categoría,
 sucursal, estado — **y todas sus acciones**. No es una decoración: es el lugar
@@ -3829,6 +3851,24 @@ controles de 44px fuera del viewport a 390px.
 | `principal` | fuerza (o niega) el botón grande del clúster táctil. Por defecto lo es el `variant: 'primary'` |
 | `as` `href` `target` `rel` | para la acción que NAVEGA — un enlace tiene que seguir siendo un enlace |
 | `soloEscritorio` | no aparece en el teléfono |
+| `rotuloFijo` | **opt-in y RARA — leer abajo antes de usarla** |
+
+**`rotuloFijo` invierte quién cede el ancho, y por eso es rara.** Lo normal es
+que el TEXTO de la acción sea lo primero que se suelta cuando falta ancho: el
+ícono ya identifica y el rótulo sigue en el tooltip. Con `rotuloFijo` el texto
+no cede nunca, así que la caja de acciones **se mide siempre con él** y lo que
+se estrecha es el cupo de ranuras de filtro.
+
+Sólo se justifica cuando un ícono mudo dejaría a alguien sin saber qué aprieta y
+la consecuencia es cara. El caso legítimo del portal es **`MiCajaView`**: sus
+cuatro acciones mueven dinero —«Iniciar turno», «Abrir caja»— y un `+` sin texto
+no dice cuál es cuál.
+
+**No es un adorno de énfasis.** El 2026-09-05 se lo puse a las DOS acciones de
+Promociones «porque son LAS acciones de la pantalla», y el resultado fue una
+píldora con dos botones larguísimos que no se compactaban ni faltando ancho.
+Copié la forma de `MiCajaView` sin su motivo. Si dudás, no la pongas: la medida
+de la fila decide mejor que el llamador.
 
 `accionesExtra` es la escotilla ReactNode para lo que no es un botón: un `Badge`
 de estado, un `LiquidSelect` de "copiar desde". Va al final de la píldora y a la

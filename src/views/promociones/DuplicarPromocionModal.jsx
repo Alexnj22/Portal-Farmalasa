@@ -27,7 +27,15 @@ import { mensajeAmigable } from '../../utils/errorMessages';
  * · **Nace en borrador**, aunque el original esté activa. Duplicar no es lanzar.
  * · **No lleva el descuento del sistema de ventas.** Crearlo allá es escribir en
  *   un sistema ajeno, y hacerlo en silencio dejaría descuentos vivos que nadie
- *   pidió. Se agrega desde la copia, a la vista.
+ *   pidió. Se agrega desde la copia, a la vista: **Editar → Baja el precio en la
+ *   venta**. Hasta el 2026-09-05 esa frase era falsa —la ficha no tenía dónde—,
+ *   así que una copia no podía tener descuento nunca.
+ *
+ * Y hay un límite que conviene saber ANTES de copiar: el sistema de ventas
+ * admite **un descuento por producto y ventana de fechas en toda la cadena**
+ * (medido cuatro veces; la sala es indiferente). O sea que una copia con los
+ * mismos productos y las mismas fechas no va a poder tener el suyo — cambiarle
+ * las fechas es lo que la vuelve una campaña aparte de verdad.
  */
 export default function DuplicarPromocionModal({ promo, open, onClose, onDuplicada }) {
     const branches = useStaffStore((s) => s.branches);
@@ -94,8 +102,25 @@ export default function DuplicarPromocionModal({ promo, open, onClose, onDuplica
                     <Notice variant="info" icon={Copy}>
                         La copia nace en <span className="font-semibold">borrador</span> y{' '}
                         <span className="font-semibold">sin descuento en la venta</span>: se le
-                        agrega desde su propia ficha, para que no quede uno vivo que nadie pidió.
+                        agrega desde su propia ficha —<span className="font-semibold">Editar</span>—,
+                        para que no quede uno vivo que nadie pidió.
                     </Notice>
+
+                    {/* El límite del sistema de ventas, dicho ANTES de copiar y
+                        no al fallar el guardado: admite UN descuento por
+                        producto y ventana de fechas en toda la cadena —medido
+                        cuatro veces el 2026-09-05, la sala es indiferente—, así
+                        que una copia con los mismos productos y las mismas
+                        fechas NO va a poder tener el suyo. Cambiarle las fechas
+                        es lo que la vuelve una campaña aparte de verdad. */}
+                    {promo?.descuentos > 0 && (
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            El original ya <span className="font-semibold">baja el precio</span>. La
+                            copia sólo va a poder tener el suyo si le cambias las fechas: el sistema
+                            de ventas admite un solo descuento por producto en unas mismas fechas,
+                            da igual la sala.
+                        </Notice>
+                    )}
 
                     {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
                 </div>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Trash2, CalendarPlus, DollarSign } from 'lucide-react';
+import { AlertTriangle, Check, Trash2, CalendarPlus, DollarSign, Percent } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -14,10 +14,12 @@ import {
     editarRenglon, editarTarifaRenglon, extenderRenglon,
     quitarRenglon, borrarPromocion,
 } from '../../data/promociones';
+import { guardarDescuento } from '../../data/descuentos';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
-import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE } from './promocionesUtils';
+import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion } from './promocionesUtils';
+import DescuentoEnVentas from './DescuentoEnVentas';
 
 /**
  * Corregir una promoción ya creada.
@@ -51,6 +53,15 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     const [recarga, setRecarga] = useState(0);
     const [borrando, setBorrando] = useState(false);
 
+    /* El descuento en la venta, para las promociones que todavía no lo tienen —
+       una duplicada, por ejemplo. Nace apagado: entrar a corregir el lote no
+       puede terminar bajando un precio sin que nadie lo haya pedido. */
+    const [desc, setDesc] = useState({
+        activo: false, tipo: '%', monto: '', todas: true, branchId: '', finPropio: '',
+    });
+    const [avisosDesc, setAvisosDesc] = useState([]);
+    const [mandando, setMandando] = useState(false);
+
     const recargar = useCallback(() => {
         setRecarga((n) => n + 1);
         onCambio?.();
@@ -72,6 +83,53 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
             .finally(() => { if (vivo) setCargando(false); });
         return () => { vivo = false; };
     }, [open, promocionId, recarga]);
+
+    /* Las salas donde aplica, con la forma que espera `DescuentoEnVentas`:
+       `{ [branchId]: true }`. Salen del reparto que devuelve la ficha — no se
+       vuelven a preguntar, porque dos respuestas para la misma cosa terminan
+       diciendo cosas distintas. Vacío = todas. */
+    const salasDeLaPromocion = useMemo(
+        () => Object.fromEntries((promo?.salas ?? []).map((id) => [Number(id), true])),
+        [promo],
+    );
+
+    /**
+     * Crea el descuento en el sistema de ventas para una promoción que ya
+     * existe.
+     *
+     * Es la MISMA cuenta que al crearla —una sola llamada, porque allá un
+     * descuento vale para una sala o para todas y nunca para un conjunto— y por
+     * eso el cuerpo sale de `descuentoDesdeLaPromocion`, que vive una vez.
+     */
+    const crearDescuento = async (forzar = false) => {
+        setFallo(null);
+        setMandando(true);
+        try {
+            const marcadas = salas.filter((x) => salasDeLaPromocion[x.id]);
+            const unaSola = marcadas.length === 1 ? marcadas[0] : null;
+            const todas = unaSola ? false : (marcadas.length === 0 ? true : !!desc.todas);
+            const branchId = unaSola
+                ? unaSola.id
+                : (todas ? (salas[0]?.id ?? null) : Number(desc.branchId) || null);
+
+            const r2 = await guardarDescuento({
+                ...descuentoDesdeLaPromocion(promo.renglones ?? [], desc),
+                descripcion: (promo.nombre || '').trim(),
+                todas_las_salas: todas,
+                branch_id: branchId,
+                promocion_id: promocionId,
+                forzar,
+            });
+            if (r2.avisos) { setAvisosDesc(r2.avisos); return; }
+            setAvisosDesc([]);
+            setDesc((x) => ({ ...x, activo: false }));
+            recargar();
+        } catch (e) {
+            setFallo(mensajeAmigable(e, 'No se pudo crear el descuento.'));
+        } finally {
+            setMandando(false);
+        }
+    };
 
     const borrar = async () => {
         setFallo(null);
@@ -134,6 +192,72 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                 onFallo={setFallo}
                             />
                         ))}
+
+                        {/* ── El descuento en la venta ─────────────────────
+                            Vive acá porque si no, no vive en ningún lado: al
+                            crear la promoción se ofrece, y una promoción
+                            DUPLICADA nace sin él a propósito. Sin esta sección,
+                            una copia no podía tener descuento nunca — el aviso
+                            del duplicado decía «se le agrega desde su propia
+                            ficha» y la ficha no tenía dónde.
+
+                            Y si ya tiene, no se ofrece otro: el sistema de
+                            ventas admite UNO por producto y ventana de fechas en
+                            toda la cadena, así que el segundo se rechazaría. */}
+                        {(promo.renglones ?? []).length > 0 && (
+                            promo.descuentos > 0 ? (
+                                <Notice variant="success" icon={Percent} compact>
+                                    Esta promoción <span className="font-semibold">baja el precio
+                                    en la venta</span>. Se corrige desde la pestaña{' '}
+                                    <span className="font-semibold">Descuentos</span>.
+                                </Notice>
+                            ) : (
+                                <div className="space-y-3">
+                                    <DescuentoEnVentas
+                                        renglones={promo.renglones}
+                                        salas={salas}
+                                        valor={desc}
+                                        onCambiar={(campo, v) => setDesc((x) => ({ ...x, [campo]: v }))}
+                                        salasDeLaPromocion={salasDeLaPromocion}
+                                    />
+
+                                    {/* Confirmación, no informe: la lista de
+                                        arriba ya dice en cuánto queda cada uno. */}
+                                    {avisosDesc.length > 0 && (
+                                        <Notice variant="warning" icon={AlertTriangle}>
+                                            {avisosDesc.length === 1 ? (
+                                                <p>{avisosDesc[0].texto}</p>
+                                            ) : (
+                                                <ul className="list-disc pl-4 space-y-0.5">
+                                                    {avisosDesc.map((a) => <li key={a.texto}>{a.texto}</li>)}
+                                                </ul>
+                                            )}
+                                            {avisosDesc.some((a) => a.tipo === 'solape') && (
+                                                <p className="mt-1.5 text-caption">
+                                                    Cuando dos descuentos toman el mismo producto en las
+                                                    mismas fechas, la venta aplica uno solo y no dice cuál.
+                                                </p>
+                                            )}
+                                        </Notice>
+                                    )}
+
+                                    {desc.activo && (
+                                        <Button
+                                            variant={avisosDesc.length > 0 ? 'danger' : 'primary'}
+                                            icon={Check}
+                                            loading={mandando}
+                                            disabled={!(Number(desc.monto) > 0)}
+                                            onClick={() => crearDescuento(avisosDesc.length > 0)}
+                                            className="w-full"
+                                        >
+                                            {avisosDesc.length > 0
+                                                ? 'Crear el descuento de todos modos'
+                                                : 'Crear el descuento'}
+                                        </Button>
+                                    )}
+                                </div>
+                            )
+                        )}
                     </div>
                 )}
             </LiquidModal.Body>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy } from 'lucide-react';
+import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy, Percent } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
@@ -101,7 +101,17 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                         )}
                     </p>
                 </div>
-                <Badge variant={est.variant}>{est.rotulo}</Badge>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Que baje el precio en la venta NO se veía en ninguna
+                        parte: dos promociones iguales, una con descuento y otra
+                        sin él, se pintaban idénticas y la única forma de saberlo
+                        era abrirlas. Va como distintivo y no como un `Dato` del
+                        recuadro porque no es una cantidad — es un sí o un no. */}
+                    {promo.descuentos > 0 && (
+                        <Badge variant="info" icon={Percent}>Baja el precio</Badge>
+                    )}
+                    <Badge variant={est.variant}>{est.rotulo}</Badge>
+                </div>
             </div>
 
             {labs.length > 0 && (

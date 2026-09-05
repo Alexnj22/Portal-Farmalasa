@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1010.0 — La lista dice cuáles bajan el precio, y la ficha deja crearlo
+
+Dos preguntas del usuario sobre la misma captura —dos tarjetas idénticas, una
+duplicada de la otra—: «¿el duplicar también permite descuento?» y «¿cómo se
+distingue una que tiene descuento de otra que no?».
+
+**Las dos respuestas eran malas noticias.**
+
+**1 · No se distinguían.** La columna `descuentos_erp` existía desde el 5-sep y
+`get_promociones` no la devolvía, así que la única forma de saber si una
+promoción baja el precio era abrirla o irse a Descuentos y cruzar las fechas a
+ojo. Ahora la tarjeta lleva un distintivo **«Baja el precio»** junto al estado.
+Va como distintivo y no como un dato del recuadro porque no es una cantidad: es
+un sí o un no.
+
+**2 · La copia no podía tener descuento nunca.** Nace sin él a propósito —crearlo
+es escribir en el sistema de ventas, y hacerlo en silencio dejaría precios bajos
+que nadie pidió— y el aviso decía «se le agrega desde su propia ficha». Eso era
+falso: la pantalla de corregir no tenía dónde y la de Descuentos sólo corrige los
+que ya existen.
+
+Ahora **Editar** lleva el mismo bloque «Baja el precio en la venta» que al
+crearla: hereda los productos, las fechas y las salas de la promoción, muestra en
+cuánto queda cada precio ordenado por el que más pierde, y crea el descuento con
+la misma cuenta —`descuentoDesdeLaPromocion`, que vive una vez—. Si ya tiene uno,
+no ofrece otro: el sistema de ventas admite **un descuento por producto y ventana
+de fechas en toda la cadena**, así que el segundo se rechazaría.
+
+Y ese límite ahora se dice **antes** de copiar, no al fallar el guardado: cuando
+el original ya baja el precio, el diálogo de duplicar avisa que la copia sólo va a
+poder tener el suyo si se le cambian las fechas.
+
 ## v2.1009.5 — La entrada del formulario dice quién hace qué
 
 Preguntado por el usuario: «esta parte, ¿cómo la podemos mejorar?». Tres

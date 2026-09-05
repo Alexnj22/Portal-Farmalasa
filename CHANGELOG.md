@@ -45,6 +45,13 @@ la del reglamento de puntos y la del aviso de privacidad, o sea la de la familia
 Un ajuste que no estaba en las opciones: al quitar «una acción», el verbo quedaba
 colgado en «pedir sobre la información». Va «pedir **algo** sobre».
 
+**El contenido de esta versión ya viajó dentro de la v2.1009.4.** El índice de
+git es estado compartido, y otra sesión commiteó mientras estos archivos estaban
+preparados: se los llevó puestos. Nada se perdió, pero el número quedó atrás del
+texto que describe, así que este bump sólo lo alcanza. Es exactamente el riesgo
+que documenta la regla de las sesiones simultáneas en CLAUDE.md, visto desde el
+lado de quien pone los archivos y no de quien commitea.
+
 ## v2.1009.4 — El aviso pide confirmación y la lista va por lo que más se pierde
 
 Dos correcciones sobre la pantalla del descuento, las dos pedidas por el

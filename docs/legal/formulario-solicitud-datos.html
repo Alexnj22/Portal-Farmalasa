@@ -94,17 +94,51 @@
 
   .nota { font-size: .82rem; color: var(--ink-2); margin-top: .5rem; }
 
+  /* El número de folio, en el encabezado y repetido en el acuse. Es lo que
+     ata las dos mitades cuando la hoja ya se cortó. */
+  .folio { display: inline-block; width: 6rem; border-bottom: 1px solid var(--ink-3); }
+
+  /* ── Las instrucciones de arriba ────────────────────────────────────────
+     Sin recuadro ni sombreado a propósito. Un bloque destacado con la frase
+     en negrita se lee como publicidad dentro de un formulario; lo que separa
+     estas líneas del resto es que están numeradas y que van antes del
+     apartado 1. */
+  .antes { margin-top: 1.2rem; }
+  .antes-titulo { font-family: "IBM Plex Sans", system-ui, sans-serif;
+                  font-size: .74rem; font-weight: 700; color: var(--ink-2);
+                  text-transform: uppercase; letter-spacing: .07em;
+                  margin: 0 0 .5rem; }
+  ol.pasos { margin: 0; padding-left: 1.15rem; font-size: .88rem; color: var(--ink-2); }
+  ol.pasos li { margin-bottom: .3rem; }
+  ol.pasos li:last-child { margin-bottom: 0; }
+
   /* ── El bloque que llena la sala ────────────────────────────────────────
      Va enmarcado y no suelto: en una hoja que llena el solicitante, lo que
      llena otra persona tiene que verse distinto o se llena en el lugar
      equivocado. */
   .bloque-sala { border: 1px solid var(--ink); padding: 1rem 1.1rem; margin-top: .6rem; }
+  /* Los dos momentos que la sala llena, dentro del mismo marco: cotejar el
+     documento y recibir la hoja. Separados en dos secciones, el acuse no
+     cabía en la hoja y se iba a una cuarta página. */
+  .grupo { font-family: "IBM Plex Sans", system-ui, sans-serif;
+           font-size: .78rem; font-weight: 700; color: var(--ink);
+           margin: 0 0 .7rem; padding-bottom: .25rem;
+           border-bottom: 1px solid var(--rule); }
+  .nota + .grupo { margin-top: 1.1rem; }
 
   /* ── El acuse ───────────────────────────────────────────────────────────
      Se corta y se lo lleva quien solicita. Es su prueba de la fecha, y la
      fecha es lo que hace correr los veinte días hábiles. Sin acuse, el plazo
      lo prueba sólo la Empresa, que es la parte interesada. */
   .corte { border-top: 1px dashed var(--ink-3); margin-top: 2.2rem; padding-top: .5rem; }
+  /* El sello del acuse: una raya corta a la derecha, no el bloque de firmas
+     de página entera. El acuse es un talón, no una hoja. */
+  .sello { margin-top: 1.6rem; display: flex; justify-content: flex-end; }
+  .sello > * { width: min(100%, 15rem); }
+  .linea-sello { border-top: 1px solid var(--ink); margin-bottom: .35rem; height: 2.2rem; }
+  .nombre-sello { font-family: "IBM Plex Sans", system-ui, sans-serif;
+                  font-size: .74rem; font-weight: 700; text-align: center; margin: 0; }
+  .sello { flex-direction: column; align-items: flex-end; }
   .corte-rotulo { font-family: "IBM Plex Sans", system-ui, sans-serif;
                   font-size: .68rem; font-weight: 600; color: var(--ink-3);
                   text-transform: uppercase; letter-spacing: .1em; margin: 0 0 1rem; }
@@ -156,7 +190,7 @@
     <div class="fila">
       <div class="mem-doc">
         <h1>Solicitud sobre datos personales</h1>
-        <p class="vigencia">Formulario <span class="raya" style="display:inline-block;width:5.5rem;height:auto;border-bottom:1px solid var(--ink-3)"></span></p>
+        <p class="vigencia">Formulario n.º <span class="folio"></span></p>
       </div>
       <div class="mem-emisor">
         <p class="patrono">JOSÉ ALEMÁN V.</p>
@@ -172,8 +206,21 @@
 
   <p class="entrada">Con este formulario usted pide algo sobre sus propios datos.
   Presentarlo no tiene ningún costo y se le responde dentro de veinte días
-  hábiles. Al entregarlo se le devuelve el acuse sellado, que es su constancia de
-  la fecha.</p>
+  hábiles.</p>
+
+  <div class="antes">
+    <p class="antes-titulo">Antes de entregarlo</p>
+    <ol class="pasos">
+      <li>Traiga su documento de identidad. Sin verlo no se puede atender la
+      solicitud, porque es la única forma de asegurar que la información de una
+      persona se le entregue a esa persona.</li>
+      <li>Si solicita por otra persona, traiga además el documento que lo
+      autoriza a representarla.</li>
+      <li>Llene los apartados 1 a 5. Los apartados 6 y 7 los llena la sala.</li>
+      <li>Al entregarlo se le devuelve el acuse sellado. Consérvelo: es su
+      constancia de la fecha, y de esa fecha dependen los veinte días.</li>
+    </ol>
+  </div>
 
   <section>
     <h2><span class="num">1</span> Quién solicita</h2>
@@ -191,7 +238,7 @@
         <div class="raya"></div>
       </div>
     </div>
-    <div class="campo">
+    <div class="campo" style="margin-bottom:0">
       <span class="rotulo">Solicita en calidad de</span>
       <div class="opciones">
         <span class="opcion"><span class="cuadro"></span>Titular de los datos</span>
@@ -199,13 +246,41 @@
         <span class="opcion"><span class="cuadro"></span>Padre, madre o tutor de un menor</span>
         <span class="opcion"><span class="cuadro"></span>Heredero o sucesor</span>
       </div>
-      <p class="nota">Si no solicita como titular, debe presentar además el
-      documento que acredite esa calidad.</p>
     </div>
   </section>
 
   <section>
-    <h2><span class="num">2</span> Dónde recibe la respuesta</h2>
+    <h2><span class="num">2</span> Qué solicita</h2>
+    <p class="nota" style="margin-top:0">Marque una o varias.</p>
+    <ul class="derechos">
+      <li><span class="cuadro"></span><span><strong>Acceso.</strong> <span class="que">Saber qué información mía tienen y para qué la usan.</span></span></li>
+      <li><span class="cuadro"></span><span><strong>Rectificación.</strong> <span class="que">Que corrijan un dato equivocado, incompleto o desactualizado.</span></span></li>
+      <li><span class="cuadro"></span><span><strong>Cancelación.</strong> <span class="que">Que borren información mía que ya no haga falta conservar.</span></span></li>
+      <li><span class="cuadro"></span><span><strong>Oposición.</strong> <span class="que">Que dejen de usarla para algo en concreto, aunque la guarden.</span></span></li>
+      <li><span class="cuadro"></span><span><strong>Portabilidad.</strong> <span class="que">Recibirla en un archivo para llevarla a otro lado.</span></span></li>
+      <li><span class="cuadro"></span><span><strong>Olvido.</strong> <span class="que">Que la retiren de internet.</span></span></li>
+      <li><span class="cuadro"></span><span><strong>Limitación.</strong> <span class="que">Que suspendan su uso mientras se resuelve un reclamo mío.</span></span></li>
+      <li><span class="cuadro"></span><span><strong>Retirar un permiso.</strong> <span class="que">Salir del programa de puntos o dejar de recibir promociones.</span></span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="num">3</span> Sobre qué datos</h2>
+    <p class="nota" style="margin-top:0">Describa con la mayor claridad posible a
+    qué información se refiere. Si marcó acceso, puede dejarlo en blanco.</p>
+    <div class="raya"></div>
+    <div class="raya"></div>
+    <div class="raya"></div>
+    <div class="campo" style="margin-top:1.15rem;margin-bottom:0">
+      <span class="rotulo">Lo que ayude a encontrarla (opcional)</span>
+      <p class="nota" style="margin-top:-.3rem">El número de una factura, una
+      fecha, la sala donde ocurrió, o el área que trata sus datos.</p>
+      <div class="raya"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">4</span> Dónde recibe la respuesta</h2>
     <div class="campo">
       <span class="rotulo">Dirección</span>
       <div class="raya"></div>
@@ -220,7 +295,7 @@
         <div class="raya"></div>
       </div>
     </div>
-    <div class="campo">
+    <div class="campo" style="margin-bottom:0">
       <span class="rotulo">Prefiere recibirla</span>
       <div class="opciones">
         <span class="opcion"><span class="cuadro"></span>En la sala, en persona</span>
@@ -233,41 +308,18 @@
   </section>
 
   <section>
-    <h2><span class="num">3</span> Qué solicita</h2>
-    <ul class="derechos">
-      <li><span class="cuadro"></span><span><strong>Acceso.</strong> <span class="que">Saber qué información mía tienen y para qué la usan.</span></span></li>
-      <li><span class="cuadro"></span><span><strong>Rectificación.</strong> <span class="que">Que corrijan un dato equivocado, incompleto o desactualizado.</span></span></li>
-      <li><span class="cuadro"></span><span><strong>Cancelación.</strong> <span class="que">Que borren información mía que ya no haga falta conservar.</span></span></li>
-      <li><span class="cuadro"></span><span><strong>Oposición.</strong> <span class="que">Que dejen de usarla para algo en concreto, aunque la guarden. Por ejemplo, no recibir publicidad.</span></span></li>
-      <li><span class="cuadro"></span><span><strong>Portabilidad.</strong> <span class="que">Recibirla en un archivo para llevarla a otro lado.</span></span></li>
-      <li><span class="cuadro"></span><span><strong>Olvido.</strong> <span class="que">Que la retiren de internet.</span></span></li>
-      <li><span class="cuadro"></span><span><strong>Limitación.</strong> <span class="que">Que suspendan su uso mientras se resuelve un reclamo mío.</span></span></li>
-      <li><span class="cuadro"></span><span><strong>Retirar un permiso.</strong> <span class="que">Salir del programa de puntos o dejar de recibir promociones.</span></span></li>
-    </ul>
-  </section>
-
-  <section>
-    <h2><span class="num">4</span> Sobre qué datos</h2>
-    <p class="nota" style="margin-top:0">Describa con la mayor claridad posible a
-    qué información se refiere. Si pidió acceso, puede dejarlo en blanco.</p>
-    <div class="raya"></div>
-    <div class="raya"></div>
-    <div class="raya"></div>
-    <div class="campo" style="margin-top:1.15rem">
-      <span class="rotulo">Lo que ayude a encontrarla (opcional)</span>
-      <p class="nota" style="margin-top:-.3rem">Por ejemplo, el número de una
-      factura, una fecha, la sala donde ocurrió, o el área que trata sus datos.</p>
-      <div class="raya"></div>
-    </div>
-  </section>
-
-  <section>
-    <h2><span class="num">5</span> Firma</h2>
+    <h2><span class="num">5</span> Declaración y firma</h2>
+    <p>Declaro que los datos de este formulario son verdaderos, que soy la
+    persona que en él se identifica y que estoy facultado para presentar esta
+    solicitud.</p>
     <div class="firmas">
       <div class="firmante">
         <div class="linea"></div>
         <p class="nombre">Firma de quien solicita</p>
-        <p class="cargo">Chalatenango, ______ de ______________ de 20____</p>
+      </div>
+      <div class="firmante">
+        <div class="linea"></div>
+        <p class="nombre">Lugar y fecha</p>
       </div>
     </div>
   </section>
@@ -275,6 +327,7 @@
   <section>
     <h2><span class="num">6</span> Para llenar en la sala</h2>
     <div class="bloque-sala">
+      <p class="grupo">Comprobación de identidad, con el documento a la vista</p>
       <div class="campo">
         <span class="rotulo">Documento cotejado con la persona</span>
         <div class="opciones">
@@ -293,6 +346,11 @@
           <div class="raya"></div>
         </div>
       </div>
+      <p class="nota">No se conserva fotocopia. Se anota la clase y el número, y
+      se coteja la fotografía con la persona. Saber el número de documento no
+      comprueba la identidad: hay que ver el documento.</p>
+
+      <p class="grupo">Recepción</p>
       <div class="fila-campos">
         <div class="campo">
           <span class="rotulo">Sala</span>
@@ -304,34 +362,26 @@
         </div>
       </div>
       <div class="campo" style="margin-bottom:0">
-        <span class="rotulo">Nombre y firma de quien recibe y cotejó</span>
+        <span class="rotulo">Nombre y firma de quien cotejó y recibió</span>
         <div class="raya"></div>
       </div>
-      <p class="nota">No se conserva fotocopia del documento. Se anota la clase y
-      el número, y se coteja la fotografía con la persona. Saber el número de
-      documento no comprueba la identidad: hay que ver el documento.</p>
       <p class="nota"><strong>Esta hoja se remite al delegado de protección de
-      datos el mismo día en que se recibe.</strong></p>
+      datos el mismo día.</strong> El plazo de veinte días hábiles corre desde la
+      fecha anotada arriba, no desde que el delegado la recibe.</p>
     </div>
   </section>
 
   <div class="corte">
     <p class="corte-rotulo">Acuse · se corta, se sella y se entrega a quien solicita</p>
 
-    <p>Farmacias La Popular y La Salud recibió su solicitud sobre datos
-    personales.</p>
+    <p style="margin-bottom:.9rem">Farmacias La Popular y La Salud recibió su
+    solicitud sobre datos personales, formulario n.º <span class="folio"></span>.</p>
 
     <div class="fila-campos">
       <div class="campo">
         <span class="rotulo">Nombre de quien solicita</span>
         <div class="raya"></div>
       </div>
-      <div class="campo">
-        <span class="rotulo">Formulario n.º</span>
-        <div class="raya"></div>
-      </div>
-    </div>
-    <div class="fila-campos">
       <div class="campo">
         <span class="rotulo">Fecha de recepción</span>
         <div class="raya"></div>
@@ -342,22 +392,18 @@
       </div>
     </div>
 
-    <p class="nota"><strong>Se le responderá dentro de veinte días hábiles
-    contados desde esta fecha.</strong> Si el caso lo justifica, ese plazo puede
-    prorrogarse una vez por otros veinte días hábiles, y se le avisará. El
-    trámite no tiene costo.</p>
-    <p class="nota">Si su solicitud estuviera incompleta, se le pedirá una sola
-    vez que la complete y usted tendrá diez días hábiles para hacerlo.</p>
-    <p class="nota">Si no estuviera conforme con la respuesta, puede acudir a la
-    Agencia de Ciberseguridad del Estado. El aviso de privacidad completo está en
-    esta sala y en portal.farmasalud.lat/privacidad.</p>
+    <p class="nota" style="margin-top:.2rem"><strong>Se le responderá dentro de
+    veinte días hábiles contados desde esta fecha</strong>, prorrogables una vez
+    por otros veinte si el caso lo justifica. El trámite no tiene costo. Si la
+    solicitud estuviera incompleta, se le pedirá una sola vez que la complete y
+    tendrá diez días hábiles para hacerlo. Si no queda conforme con la respuesta,
+    puede acudir a la Agencia de Ciberseguridad del Estado. El aviso de
+    privacidad completo está en esta sala y en
+    portal.farmasalud.lat/privacidad.</p>
 
-    <div class="firmas">
-      <div class="firmante">
-        <div class="linea"></div>
-        <p class="nombre">Sello y firma de la sala</p>
-      </div>
+    <div class="sello">
+      <div class="linea-sello"></div>
+      <p class="nombre-sello">Sello y firma de la sala</p>
     </div>
   </div>
-
 </div>

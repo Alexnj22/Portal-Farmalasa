@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1005.6 — El formulario y el procedimiento se reordenan, y el nombramiento pierde el recuadro
+
+Cuatro observaciones del usuario sobre los documentos entregados.
+
+**El recuadro destacado sobrevivía en el nombramiento.** Se había quitado del
+aviso, no de éste, y una regla que se aplica a un documento y no a su hermano no
+es una regla. El texto del artículo 53 del Código de Trabajo pasó a ser la
+cláusula 7.2 en prosa corrida, y se borró también la regla CSS para que no
+vuelva a colarse.
+
+**El espacio en blanco del nombramiento 4.1 no decía para qué era.** Era el
+canal adicional que quedaba por decidir, pero impreso se leía como un renglón
+sin explicación. Ahora la cláusula nombra los dos canales que ya existen (sala y
+teléfono) y el espacio pasó a una cláusula propia que dice qué se escribe ahí:
+el correo electrónico, si la Empresa habilita uno.
+
+**Fuera el ejemplo de la oposición** en el aviso, a pedido del usuario.
+
+### El formulario, reordenado
+
+El orden anterior preguntaba dónde recibir la respuesta **antes** de que la
+persona dijera qué estaba pidiendo. Ahora sigue el orden natural: quién solicita,
+qué solicita, sobre qué datos, dónde recibe la respuesta, declaración y firma.
+
+- **Se agregó «Antes de entregarlo»**, cuatro pasos al inicio. El primero es
+  traer el documento de identidad, que es lo que evita el viaje perdido: sin
+  verlo no se puede atender la solicitud.
+- La firma dejó de ser una sección suelta y ahora cierra una **declaración**: que
+  los datos son verdaderos y que quien firma está facultado para pedir.
+- Las dos secciones que llenaba la sala eran una sola cosa hecha por una sola
+  persona en un solo momento. Unidas en un marco con dos grupos.
+- **El acuse se compactó a un talón.** Tres campos en una fila y un sello a la
+  derecha, en vez de media hoja con el bloque de firmas de página entera.
+
+Esos dos últimos cambios son los que bajan el formulario de **4 páginas a 3**, y
+eso importa porque son las salas las que lo imprimen.
+
+### El procedimiento, reestructurado
+
+Se agregó el numeral **4 · El trámite en resumen**: siete pasos en una tabla con
+quién hace qué y cuándo. Un jefe de sala no necesita leer seis páginas para
+atender bien una solicitud, necesita esa tabla y los numerales 5 y 6, y ahora el
+alcance lo dice explícitamente.
+
+Se agregó también **qué hacer cuando alguien lo pide sólo de palabra**, que era
+el hueco más probable del día a día: una solicitud verbal es válida, pero
+mientras no quede por escrito no hay cómo probar cuándo se hizo ni qué se pidió.
+
+Y el numeral de los derechos ganó la fila que le faltaba, **el retiro de un
+permiso**, que el formulario sí ofrecía. Un formulario que ofrece una casilla que
+el procedimiento no sabe resolver es una casilla que se marca y no pasa nada.
+
+Los cuatro documentos verificados a máquina: cero rayas largas, cero guiones
+sueltos, ningún recuadro destacado.
+
 ## v2.1005.5 — El aviso responde cuatro dudas de lectura y suma los datos del contribuyente
 
 Cuatro observaciones del usuario leyendo el documento. Dos eran defectos reales.

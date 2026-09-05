@@ -1710,6 +1710,10 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                 detalle: [o.folio, o.numero_boleta ? `boleta ${o.numero_boleta}` : null].filter(Boolean),
                 quien: o.registrado_por,
                 foto: o.foto_url || null,
+                /* La misma marca que el cajón. Las dos fuentes se leen en ESTA
+                 * lista, así que marcar una y la otra no haría que la ausencia
+                 * de marca se leyera como «monto comprobado». */
+                montoOrigen: o.monto_origen || null,
                 /* El DESGLOSE, no una frase.
                  *
                  * Una salida grande se reparte entre las bolsas que alcancen, y

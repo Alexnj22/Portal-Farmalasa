@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1021.2 — La marca del monto llega también a las salidas
+
+Pregunta del usuario: «eso aplica para entradas y salidas verdad?». Al mirarlo,
+**no del todo** — y el lado que faltaba era justo el que importa.
+
+**Las salidas no mandaban la lectura.** El campo que no se cierra y el aviso que
+avisa sí valían para las dos, porque viven en la lectura misma. Pero la MARCA la
+deriva el servidor comparando la lectura contra el monto guardado, y
+`SalidaDeBolsa` —que desde v2.1000 es el único diálogo de salida del cajón— no
+incluía `lectura` en lo que le manda a `operar-caja`. Así que `foto_lectura` y
+`monto_origen` quedaban en `null` para toda salida, y `null` se lee igual que
+«monto confirmado». La ironía es que las salidas son el caso que originó todo
+esto: la boleta 018540 es una remesa, o sea una salida.
+
+**Y el dinero que sale de una BOLSA tampoco tenía la marca.**
+`bolsas_operaciones` ya guardaba `foto_lectura`, así que ahora
+`guardar_lectura_de_boleta` deriva ahí el mismo `monto_origen`, con el mismo
+criterio y por el mismo motivo: sale de comparar lo que el lector contestó contra
+lo que se guardó, porque las dos cosas ya están en esa función.
+
+Eso último no es completismo. Las dos fuentes —el cajón y las bolsas— se leen en
+**la misma lista** de «lo que se movió hoy». Marcando una y la otra no, la
+ausencia de marca dejaría de significar «comprobado» y pasaría a significar «esta
+línea es de las otras», que es peor que no marcar nada.
+
+Comprobada la derivación contra las lecturas ya guardadas de `bolsas_operaciones`
+sin escribir una fila: las anteriores a hoy no traen `montoConfianza` —es de
+hoy— y caen en `FOTO_SIN_CONFIRMAR`, que es lo correcto: de esas no se puede
+afirmar que el papel las respaldara.
+
+Queda así, para los dos sentidos y las dos fuentes:
+
+| | campo | marca en la fila |
+|---|---|---|
+| el papel repite el total y coincide | cerrado | `FOTO_CONFIRMADA` (no se pinta) |
+| el papel lo dice una sola vez | **abierto** | «monto sin comprobar» |
+| el papel se desmiente | **abierto** | «monto escrito a mano» |
+
 ## v2.1021.1 — El lector de boletas se puede volver a medir cuando haga falta
 
 `npm run probar:boletas [cuántas]`. Baja los últimos comprobantes subidos, los

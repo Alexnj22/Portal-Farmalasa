@@ -919,6 +919,16 @@ export default function SalidaDeBolsa({
                     // es texto. Se manda la entidad cuando la hay.
                     recibe: t.pide_receptor ? '' : entidad.trim(),
                     persona: t.pide_receptor ? persona : null,
+                    /* Lo que el lector contestó, para que del otro lado quede el
+                     * rastro y la marca de si el papel respalda ese monto.
+                     *
+                     * Faltaba, y el hueco no era menor: las SALIDAS son el caso
+                     * que costó la corrección de la boleta 018540 —una remesa—,
+                     * así que `monto_origen` se estaba escribiendo sólo para las
+                     * entradas y era justo el lado que no importaba. Sin esto,
+                     * `operar-caja` no tiene con qué derivarla y guarda `null`,
+                     * que se lee igual que «monto confirmado». */
+                    lectura,
                 });
                 if (!r?.ok) {
                     if (t.pide_receptor) olvidarLaIdentidad();

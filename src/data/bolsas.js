@@ -1277,7 +1277,7 @@ export async function fetchSalidasDeSalaDelDia({ sala, dia }) {
         // del cajón. Una salida de bolsa y una del cajón se leen en la MISMA
         // lista, así que si una trae autor y comprobante, la otra también.
         .select(`id, folio, tipo, monto, entidad, numero_boleta, registrado_at, anulada_at,
-                 registrado_por, foto_url,
+                 registrado_por, foto_url, monto_origen,
                  bolsas_movimientos ( monto, caja_vale_id, bolsas ( fecha, folio ) )`)
         .eq('branch_id', sala)
         .gte('registrado_at', `${dia}T00:00:00-06:00`)

@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1006.1 — El formulario habla como el portal y pide solo lo que el Art. 18 exige
+
+Pedido del usuario: más sencillo, con la voz del portal, con lo mínimo que la
+ley exige, y práctico. Lo llena un cliente en el mostrador, no un abogado.
+
+De **661 a 501 palabras**, y de siete apartados a cinco.
+
+**Lo que se quitó, artículo en mano.** El Art. 18 marca dos de sus siete
+requisitos como opcionales: la letra c) dice «de ser posible» sobre el área que
+trata los datos, y la letra f) dice «en su caso» sobre lo que ayude a
+localizarlos. Los dos eran campos del formulario y los dos se fueron. También se
+fue «Antes de entregarlo», que eran cuatro pasos numerados donde bastaba una
+frase en la entrada.
+
+**Lo que se unió.** «Dónde recibe la respuesta» era un apartado propio para lo
+que el Art. 18 letra a) trata como parte de la identificación: domicilio y
+medios para recibir notificaciones. Ahora vive dentro de «Sus datos», en dos
+columnas de casillas junto a en qué calidad solicita.
+
+**La voz.** Pasó de tercera persona impersonal a segunda: «Con esta hoja usted
+nos pide algo sobre la información que guardamos de usted». Y las ocho casillas
+dejaron de encabezarse con el nombre legal del derecho. Dicen lo que la persona
+quiere y ponen el término legal detrás, en tono menor: «Ver qué información mía
+tienen y para qué la usan (acceso)». El delegado necesita el término; el cliente
+necesita la frase, y en ese orden.
+
+**Dos decisiones de maquetado que se midieron, no se supusieron.** Las ocho
+casillas se probaron en dos columnas para ahorrar renglones: el corte de página
+partía la lista por la mitad de una columna y dejaba la casilla lejos de su
+frase, así que volvieron a una sola. Y el apartado 2 viaja junto a su título,
+porque sin eso la página 1 terminaba en un encabezado suelto y las ocho opciones
+empezaban al dar vuelta la hoja: quien la llena marca lo que ve.
+
+El resultado reparte las tres páginas por quién escribe en cada una: **1 y 2 las
+llena el cliente, la 3 la llena la sala** y su mitad de abajo es el acuse que se
+corta.
+
 ## v2.1006.0 — Sin tope de productos, y el reparto por sala se dice una vez
 
 Dos preguntas del usuario, y la primera desarmó una regla que nadie podía

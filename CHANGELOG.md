@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1015.4 — Se puede pedir a distancia, pero la entrega es en persona
+
+Pregunta del usuario: «si es por correo, ¿cómo enviaría la solicitud? ¿De igual
+forma debe ir a una sucursal?». La respuesta no estaba escrita, y el aviso
+quedaba contradiciéndose desde que se agregó el correo como canal, en v2.1015.2:
+ofrecía tres vías y no decía qué pasaba después si no se llegó a la sala de
+ventas.
+
+**Presentar y entregar son dos actos distintos, y la ley los trata distinto.**
+
+Se puede **presentar** a distancia. El **Art. 18 letra g)** admite la firma «o
+cualquier otro medio equivalente que permita establecer la anuencia», así que un
+correo de la propia persona vale, y su fecha es la de recepción para el plazo del
+Art. 20.
+
+No se puede **entregar** a distancia sin ver el documento. Eso lo manda el
+**Art. 16 letra c)**, y es la regla que el numeral 6 del procedimiento ya fijaba
+para el mostrador.
+
+**Lo que faltaba era el puente entre las dos**, y la ley lo tiene: una solicitud
+sin identidad acreditada es una solicitud a la que le falta el requisito de la
+**letra b)** del Art. 18, o sea el caso exacto de la **prevención**. Se le pide
+pasar por una sala de ventas con su documento, **una sola vez**, con **diez días
+hábiles** para hacerlo; si no se presenta, se archiva sin más trámite y queda a
+salvo su derecho a presentar una nueva.
+
+Y un detalle que decide si el mecanismo funciona: **el plazo de veinte días no se
+suspende mientras tanto.** Corre desde que la solicitud llegó, así que la
+prevención se hace el mismo día. Cada día que se tarda en pedirla es un día menos
+para resolver. Queda escrito en el procedimiento, que es quien lo tiene que
+cumplir.
+
+El procedimiento decía además que una solicitud verbal «no cuenta mientras no
+quede por escrito». Era falso desde que el correo pasó a ser canal: la solicitud
+ya existe y su plazo ya corre. Corregido.
+
 ## v2.1015.3 — Siempre «sala de ventas», también cuando va sola
 
 Regla del usuario: «en la sala, siempre sala de ventas. Eso es fijo». La pasada

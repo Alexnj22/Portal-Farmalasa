@@ -73,11 +73,22 @@ esa fecha depende todo el plazo.
    **2301-0013** o escribiendo a **Farmasalud.sv@gmail.com**. Ese buzón se revisa todos los días
    hábiles, y **la fecha del mensaje es la fecha de recepción**: el plazo corre
    desde ahí, no desde que alguien lo abre.
-2. **Si sólo llama o lo pide de palabra**, se le explica que para entregarle
-   información tiene que presentarse con su documento, y se le dice qué traer.
-   Se anota el llamado con su fecha. Una solicitud verbal es válida, pero
-   mientras no quede por escrito no hay cómo probar cuándo se hizo ni qué se
-   pidió.
+2. **Si llega por teléfono o por correo, la solicitud YA EXISTE y su plazo ya
+   corre.** El Art. 18 letra g) admite la firma «o cualquier otro medio
+   equivalente que permita establecer la anuencia», así que un correo de la
+   propia persona vale. Se anota en el registro ese mismo día, con la fecha del
+   llamado o del mensaje.
+
+   Lo que falta en ese caso es el requisito de la **letra b)**, los documentos
+   que acreditan la identidad. Eso se resuelve con la **prevención** que el mismo
+   artículo prevé: se le pide pasar por una sala de ventas con su documento, se
+   le concede el plazo de **diez días hábiles**, y se hace **una sola vez**. Si
+   no se presenta, se archiva sin más trámite y queda a salvo su derecho a
+   presentar una solicitud nueva.
+
+   **El plazo de los veinte días no se suspende mientras tanto.** Corre desde
+   que la solicitud llegó, así que la prevención se hace el mismo día: cada día
+   que se tarda en pedirla es un día menos para resolver.
 3. Se le entrega el **formulario** y se le ayuda a llenarlo si lo necesita.
    Recoge lo que el **Art. 18** exige: quién pide, qué derecho ejerce, sobre qué
    datos, dónde recibe la respuesta, qué documento acredita su identidad, y su
@@ -102,8 +113,13 @@ persona a otra.
 ### La regla que no se rompe
 
 **Ningún dato sale por teléfono, por correo ni por mensaje si antes no se
-comprobó la identidad en persona.** El teléfono sirve para recibir la solicitud
-y para orientar, no para entregar información.
+comprobó la identidad en persona.** El teléfono y el correo sirven para
+**recibir** la solicitud y para orientar; no para **entregar** información.
+
+Las dos cosas son distintas y conviene no mezclarlas: una solicitud se puede
+presentar a distancia, y su plazo corre desde ahí. Lo que no se puede hacer a
+distancia es la entrega. Una vez comprobada la identidad en la sala de ventas,
+la respuesta sí puede ir por el medio que la persona haya señalado.
 
 ### Qué NO comprueba nada
 

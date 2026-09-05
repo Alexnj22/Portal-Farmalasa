@@ -18,7 +18,7 @@ import {
 } from '../../data/descuentos';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
-import { hoySV, precioConDescuento } from './promocionesUtils';
+import { hoySV, ordenarPorPerdida, precioConDescuento } from './promocionesUtils';
 
 /**
  * Los dos tipos, dichos como los aplica la venta.
@@ -149,8 +149,17 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
 
     const quitar = (id) => setF((x) => ({ ...x, productos: x.productos.filter((p) => p.id !== id) }));
 
-    // ── Lo que impide guardar, dicho antes de intentarlo ───────────────────
     const monto = Number(f.monto);
+
+    /* Primero el que más se pierde: es el que decide si el descuento va. Va
+       después de `monto` porque el array de dependencias se evalúa al llamar a
+       `useMemo`, o sea en el render — leerlo antes de su `const` lanza. */
+    const enOrden = useMemo(
+        () => ordenarPorPerdida(f.productos, porProducto, f.tipo, monto),
+        [f.productos, porProducto, f.tipo, monto],
+    );
+
+    // ── Lo que impide guardar, dicho antes de intentarlo ───────────────────
     const problemas = useMemo(() => {
         const l = [];
         if (!f.descripcion.trim()) l.push('Ponle un nombre al descuento.');
@@ -287,7 +296,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                         {/* ── Los productos, con el precio resultante ──────────── */}
                         {f.productos.length > 0 && (
                             <div className="rounded-lg border border-border-card divide-y divide-border-card">
-                                {f.productos.map((p) => (
+                                {enOrden.map((p) => (
                                     <FilaProducto
                                         key={p.id}
                                         producto={p}
@@ -316,16 +325,24 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                             />
                         </div>
 
+                        {/* Confirmación, no informe: la lista de productos de
+                            arriba ya dice en cuánto queda cada uno y cuánto se
+                            pierde, ordenada por el que más pierde. */}
                         {avisos.length > 0 && (
                             <Notice variant="warning" icon={AlertTriangle}>
-                                <p className="font-semibold mb-1">Antes de guardar, mira esto:</p>
-                                <ul className="list-disc pl-4 space-y-0.5">
-                                    {avisos.map((a) => <li key={a.texto}>{a.texto}</li>)}
-                                </ul>
-                                <p className="mt-1.5 text-caption">
-                                    Cuando dos descuentos toman el mismo producto en las mismas fechas,
-                                    la venta aplica uno solo y no dice cuál.
-                                </p>
+                                {avisos.length === 1 ? (
+                                    <p>{avisos[0].texto}</p>
+                                ) : (
+                                    <ul className="list-disc pl-4 space-y-0.5">
+                                        {avisos.map((a) => <li key={a.texto}>{a.texto}</li>)}
+                                    </ul>
+                                )}
+                                {avisos.some((a) => a.tipo === 'solape') && (
+                                    <p className="mt-1.5 text-caption">
+                                        Cuando dos descuentos toman el mismo producto en las mismas fechas,
+                                        la venta aplica uno solo y no dice cuál.
+                                    </p>
+                                )}
                             </Notice>
                         )}
 

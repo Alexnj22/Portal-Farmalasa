@@ -7,7 +7,7 @@ import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
 import { fetchPreciosDeProductos } from '../../data/descuentos';
 import { formatMoney } from '../../utils/formatNumber';
-import { fmtVigencia, precioConDescuento } from './promocionesUtils';
+import { fmtVigencia, ordenarPorPerdida, precioConDescuento } from './promocionesUtils';
 
 /**
  * «¿Esta promoción además le baja el precio al cliente?»
@@ -97,6 +97,13 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
     const porProducto = useMemo(
         () => new Map((precios || []).map((p) => [Number(p.id), p])),
         [precios],
+    );
+
+    /* Primero el que más se pierde. Con 36 productos, el que duele puede estar
+       en el renglón doce y el orden por nombre obliga a recorrerlos todos. */
+    const enOrden = useMemo(
+        () => ordenarPorPerdida(productos, porProducto, valor.tipo || '%', monto),
+        [productos, porProducto, valor.tipo, monto],
     );
 
     return (
@@ -249,7 +256,7 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                                 campaña de una venta a pérdida. */}
                             {monto > 0 && (
                                 <ul className="divide-y divide-border-card rounded-lg border border-border-card">
-                                    {productos.map((p) => (
+                                    {enOrden.map((p) => (
                                         <FilaPrecio
                                             key={p.id}
                                             producto={p}

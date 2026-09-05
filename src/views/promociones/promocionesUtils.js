@@ -173,6 +173,42 @@ export function precioConDescuento(precio, tipo, monto) {
 }
 
 /**
+ * Cuánto se pierde POR UNIDAD con este descuento, o 0 si no se pierde nada.
+ *
+ * El costo llega ya CON IVA (`costo_con_iva`): `vineta` es el precio al público
+ * y la columna `costo` es el precio neto de la factura de compra, así que
+ * crudos no se pueden comparar.
+ */
+export function perdidaPorUnidad(datos, tipo, monto) {
+    const precio = Number(datos?.precio) || 0;
+    const costo = Number(datos?.costo_con_iva) || 0;
+    if (!precio || !costo) return 0;
+    const queda = precioConDescuento(precio, tipo, monto);
+    return queda < costo ? costo - queda : 0;
+}
+
+/**
+ * Los productos ordenados por lo que se PIERDE en cada uno, de mayor a menor.
+ *
+ * Pedido por el usuario el 2026-09-05. El orden por nombre obliga a recorrer la
+ * lista entera para encontrar el que duele: con 36 productos, el que pierde
+ * $6.11 puede estar en el renglón doce. Ordenado por pérdida, lo primero que se
+ * ve es lo que hay que decidir.
+ *
+ * Los que no pierden nada conservan su orden original detrás — reordenarlos
+ * también haría que la lista se sacudiera entera con cada tecla del monto.
+ *
+ * @param productos    `[{ id, nombre }]`
+ * @param porProducto  Map de id → `{ precio, costo_con_iva }`
+ */
+export function ordenarPorPerdida(productos, porProducto, tipo, monto) {
+    return [...productos]
+        .map((p, i) => ({ p, i, pierde: perdidaPorUnidad(porProducto.get(p.id), tipo, monto) }))
+        .sort((a, b) => (b.pierde - a.pierde) || (a.i - b.i))
+        .map((x) => x.p);
+}
+
+/**
  * Lo que hay que mandarle a `guardarDescuento`, derivado de la promoción.
  *
  * Vive acá y no en el modal para que el cálculo de la ventana —el `min` de los

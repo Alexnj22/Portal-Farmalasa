@@ -295,15 +295,34 @@ Deno.serve(async (req) => {
           });
         }
 
+        /* UNA línea, no una por producto. La pantalla ya muestra producto por
+           producto en cuánto queda, cuánto cuesta y cuánto se pierde, ordenado
+           por el que más pierde: repetirlo acá convertía la confirmación en un
+           listado de 36 renglones que hay que desplazar para llegar al botón.
+           Lo que este paso tiene que hacer es PEDIR CONFIRMACIÓN, no volver a
+           informar — así que se dice cuántos son y cuál es el peor, que es lo
+           único que la pantalla no resume. */
+        const perdidas: { nombre: string; pierde: number }[] = [];
         for (const [pid, { precio, costo }] of porProducto) {
           if (!precio || !costo) continue;
           const queda = precioConDescuento(precio, tipo, monto);
           if (queda < costo) {
-            avisos.push({
-              tipo: "bajo_costo",
-              texto: `${nombres.get(pid) ?? `Producto ${pid}`} quedaría en $${queda.toFixed(2)} y cuesta $${costo.toFixed(2)} con IVA: se pierden $${(costo - queda).toFixed(2)} por unidad.`,
+            perdidas.push({
+              nombre: nombres.get(pid) ?? `Producto ${pid}`,
+              pierde: costo - queda,
             });
           }
+        }
+        if (perdidas.length) {
+          perdidas.sort((a, b) => b.pierde - a.pierde);
+          const peor = perdidas[0];
+          avisos.push({
+            tipo: "bajo_costo",
+            texto: perdidas.length === 1
+              ? `${peor.nombre} queda bajo el costo: se pierden $${peor.pierde.toFixed(2)} por unidad.`
+              : `${perdidas.length} productos quedan bajo el costo. El que más pierde es `
+                + `${peor.nombre}, con $${peor.pierde.toFixed(2)} por unidad.`,
+          });
         }
 
         // 2 · otro descuento ya toma ese producto en esas fechas

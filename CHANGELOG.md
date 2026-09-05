@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1009.5 — La entrada del formulario dice quién hace qué
+
+Preguntado por el usuario: «esta parte, ¿cómo la podemos mejorar?». Tres
+defectos, y el tercero era el que más costaba.
+
+**«Pedir a la Empresa una acción»**. Nadie pide una acción. Es la forma
+abstracta de decir lo que la hoja hace, y obliga al lector a traducirla.
+
+**«Cualquiera de las del apartado 2»**. El «las» no tenía a qué referirse:
+apuntaba a algo que el lector todavía no vio. Ahora dice «las opciones».
+
+**«El acuse sellado, que es la constancia de la fecha»**. Decía QUÉ es y no PARA
+QUÉ sirve, que es lo único que le importa a quien lo guarda. Ahora dice que su
+fecha es la que hace correr los veinte días.
+
+El usuario eligió mantener el registro formal, con «la Empresa» y el impersonal
+(«se responde», «se entrega»), sobre dos alternativas que lo pasaban a
+«nosotros/usted». Queda anotado que esos impersonales siguen ahí a propósito: en
+este documento el emisor ya lo dice el membrete, y la voz de tercera persona es
+la del reglamento de puntos y la del aviso de privacidad, o sea la de la familia.
+
+Un ajuste que no estaba en las opciones: al quitar «una acción», el verbo quedaba
+colgado en «pedir sobre la información». Va «pedir **algo** sobre».
+
+## v2.1009.4 — El aviso pide confirmación y la lista va por lo que más se pierde
+
+Dos correcciones sobre la pantalla del descuento, las dos pedidas por el
+usuario.
+
+**1 · La lista se ordena por lo que se pierde.** Antes salía por nombre, así que
+con 36 productos el que pierde $6.11 podía estar en el renglón doce y había que
+recorrerlos todos para encontrarlo. Ahora encabeza el que más pierde por unidad;
+los que no pierden nada conservan su orden detrás —reordenarlos también haría
+que la lista se sacudiera entera con cada tecla del monto—. El criterio vive una
+sola vez, en `ordenarPorPerdida` de `promocionesUtils`, y lo usan las dos
+pantallas.
+
+**2 · La confirmación dejó de ser un informe.** Al guardar salía **una viñeta
+por producto**: 36 renglones repitiendo lo que la lista de arriba ya decía, con
+el botón de guardar a tres pantallas de desplazamiento. El servidor ahora manda
+**una línea por motivo**: «36 productos quedan bajo el costo. El que más pierde
+es ENFAGROW PREMIUM 3 X 2200 GR, con $6.11 por unidad.» — el conteo y el peor
+caso, que es lo único que la pantalla no resume.
+
+Y la nota sobre descuentos que se cruzan ya sólo aparece cuando hay uno que se
+cruza. Una explicación que sale siempre deja de leerse.
+
 ## v2.1009.3 — El papel de la solicitud no se pinta en oscuro
 
 Lo mostró el usuario con una captura de la ventana de impresión: el formulario

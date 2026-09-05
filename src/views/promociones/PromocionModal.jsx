@@ -468,16 +468,29 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         rows={2}
                     />
 
+                    {/* Esto PIDE CONFIRMACIÓN, no vuelve a informar: la lista de
+                        arriba ya dice producto por producto en cuánto queda y
+                        cuánto se pierde, ordenada por el que más pierde. El
+                        servidor manda una línea por motivo —no una por
+                        producto—, porque repetir los 36 renglones acá dejaba el
+                        botón de guardar a tres pantallas de desplazamiento.
+                        Y la nota del solape sólo sale si hay un solape: una
+                        explicación que aparece siempre deja de leerse. */}
                     {avisosDesc.length > 0 && (
                         <Notice variant="warning" icon={AlertTriangle}>
-                            <p className="font-semibold mb-1">Antes de guardar el descuento, mira esto:</p>
-                            <ul className="list-disc pl-4 space-y-0.5">
-                                {avisosDesc.map((a) => <li key={a.texto}>{a.texto}</li>)}
-                            </ul>
-                            <p className="mt-1.5 text-caption">
-                                Cuando dos descuentos toman el mismo producto en las mismas fechas,
-                                la venta aplica uno solo y no dice cuál.
-                            </p>
+                            {avisosDesc.length === 1 ? (
+                                <p>{avisosDesc[0].texto}</p>
+                            ) : (
+                                <ul className="list-disc pl-4 space-y-0.5">
+                                    {avisosDesc.map((a) => <li key={a.texto}>{a.texto}</li>)}
+                                </ul>
+                            )}
+                            {avisosDesc.some((a) => a.tipo === 'solape') && (
+                                <p className="mt-1.5 text-caption">
+                                    Cuando dos descuentos toman el mismo producto en las mismas fechas,
+                                    la venta aplica uno solo y no dice cuál.
+                                </p>
+                            )}
                         </Notice>
                     )}
 

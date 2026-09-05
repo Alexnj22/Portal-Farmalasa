@@ -456,8 +456,8 @@ export default function CorteDetalleModal({
                             <div data-surface="card" className="p-4 space-y-1">
                                 <div className="text-caption font-bold text-content">Este corte no contó el efectivo</div>
                                 <p className="text-caption text-content-2">
-                                    El comprobante dice <span className="tabular-nums">$0.00</span> de
-                                    efectivo contado y aun así lo da por exacto, así que no hay diferencia
+                                    Este corte quedó con <span className="tabular-nums">$0.00</span> de
+                                    efectivo contado y aun así se dio por exacto, así que no hay diferencia
                                     que firmar. Suele pasar cuando el corte se manda sin escribir cuánto
                                     se contó. Lo que corresponde es descartarlo y volver a hacerlo.
                                 </p>
@@ -510,14 +510,22 @@ export default function CorteDetalleModal({
                                     <span className="tabular-nums">{formatMoney(esperadoDeLaCifra)}</span>
                                 </div>
                                 {/* El puente hasta el papel. Quien mira esta
-                                    pantalla suele tener el comprobante en la
+                                    pantalla suele tener el papel del corte en la
                                     mano, y ahí dice otro número: sin estas dos
                                     líneas el de arriba parece inventado. Sólo
-                                    aparecen cuando hay algo que explicar. */}
+                                    aparecen cuando hay algo que explicar.
+
+                                    El rótulo decía «El comprobante dice» y el
+                                    usuario lo levantó (5-sep): nombrar el papel
+                                    es contar de DÓNDE sale el número en vez de
+                                    decir qué es, y en el mismo bloque llevaba a
+                                    leer la corrección como el defecto. Nombra
+                                    lo que ese número mide y no su procedencia,
+                                    que es la regla de siempre. */}
                                 {cobros?.sinContar > 0.005 && (
                                     <>
                                         <div className="flex justify-between gap-3 pl-3 text-content-3">
-                                            <span>El comprobante dice</span>
+                                            <span>Ventas y movimientos del día</span>
                                             <span className="tabular-nums">{formatMoney(visible.tk_total_caja)}</span>
                                         </div>
                                         <div className="flex justify-between gap-3 pl-3 text-content-3">
@@ -740,7 +748,7 @@ export default function CorteDetalleModal({
                                     Este día se cobraron{' '}
                                     {invisibles.map((f) => `${formatMoney(Math.abs(f.total))} por ${f.tipo}`).join(' y ')}.
                                 </span>{' '}
-                                Ese dinero no pasa por la caja y el comprobante no lo nombra.
+                                Ese dinero no pasa por la caja, así que no entra en la cuenta del día.
                             </p>
                         )}
 
@@ -773,15 +781,15 @@ export default function CorteDetalleModal({
 
                                     Ahora manda el dato del portal, que es el real y el
                                     único que puede cuadrar con la lista. Lo que contó el
-                                    comprobante ya se dice donde sirve —en la nota de «no
-                                    contó los cobros de crédito», con el esperado
-                                    corregido— y no compite con este total.
+                                    papel del corte ya se dice donde sirve —en la nota de
+                                    «los cobros de crédito ya están sumados», con el
+                                    esperado corregido— y no compite con este total.
 
                                     El respaldo se conserva para el caso en que el portal
                                     no tiene nada que listar (cobros hechos en la pantalla
                                     de la caja, o sin permiso para verlos): ahí la cifra
-                                    del comprobante es la única que existe, y ponerla en
-                                    cero borraría un dinero que sí entró. */}
+                                    del papel es la única que existe, y ponerla en cero
+                                    borraría un dinero que sí entró. */}
                                 <div className="flex items-baseline justify-between gap-3 mb-2">
                                     <span className="text-caption font-black uppercase tracking-widest text-content-3">
                                         Cobros de crédito
@@ -796,7 +804,7 @@ export default function CorteDetalleModal({
                                     revisa un descuadre se quedaría sin buscar. */}
                                 {abonos && !abonos.pude ? (
                                     <p className="text-caption text-content-2">
-                                        No puedes ver el detalle de estos cobros. El comprobante los suma,
+                                        No puedes ver el detalle de estos cobros. El total ya está sumado,
                                         pero para verlos uno por uno hace falta el permiso de la caja.
                                     </p>
                                 ) : cobros.antes.length === 0 && cobros.despues.length === 0 ? (
@@ -845,9 +853,9 @@ export default function CorteDetalleModal({
                                         {cobros.sinContar > 0.005 && (
                                             <p>
                                                 <span className="font-bold text-content">
-                                                    {formatMoney(cobros.sinContar)} entraron en efectivo y el comprobante no los cuenta.
+                                                    {formatMoney(cobros.sinContar)} entraron en efectivo por cobros de crédito.
                                                 </span>{' '}
-                                                Ese dinero sí está en el cajón, así que se le suma a lo que
+                                                Ese dinero está en el cajón, así que se le sumó a lo que
                                                 debía haber en caja.{' '}
                                                 {/* ── La última frase depende de si QUEDÓ diferencia ──
                                                     «Sin sumarlo, el conteo aparece como un sobrante que
@@ -865,7 +873,7 @@ export default function CorteDetalleModal({
                                                     otro número sería el defecto que se viene a corregir. */}
                                                 {sev === 'ok'
                                                     ? 'Sin sumarlo, el conteo aparecería como un sobrante que nadie hizo.'
-                                                    : `El ${sev === 'falta' ? 'faltante' : 'sobrante'} de ${formatMoney(Math.abs(cifra ?? 0))} que dice arriba ya tiene este cobro descontado: es dinero aparte y hay que buscarlo.`}
+                                                    : `El ${sev === 'falta' ? 'faltante' : 'sobrante'} de ${formatMoney(Math.abs(cifra ?? 0))} que dice arriba es aparte: no es de este cobro, y hay que buscarlo.`}
                                             </p>
                                         )}
                                         {cobros.noEfectivo > 0.005 && (
@@ -873,7 +881,7 @@ export default function CorteDetalleModal({
                                                 <span className="font-bold text-content">
                                                     {formatMoney(cobros.noEfectivo)} no entraron en efectivo.
                                                 </span>{' '}
-                                                Ese dinero no pasó por la caja y el comprobante tampoco lo cuenta,
+                                                Ese dinero no pasó por la caja ni entra en la cuenta del día,
                                                 así que no hay que buscarlo en el cajón.
                                             </p>
                                         )}
@@ -890,7 +898,7 @@ export default function CorteDetalleModal({
                                         )}
                                         {cobros.antes.length > 0 && cobros.brecha < -0.005 && (
                                             <p>
-                                                De los {formatMoney(cobros.cobros)} que cuenta el comprobante,{' '}
+                                                De los {formatMoney(cobros.cobros)} que trae la cuenta del día,{' '}
                                                 {formatMoney(cobros.hasta)} se cobraron desde el portal. El resto se
                                                 cargó en la pantalla de la caja y no tiene hora.
                                             </p>

@@ -822,7 +822,7 @@ export function notaDeCifra(corte) {
     if (!c.enDisputa && c.sinContar >= 0.01) {
         return {
             alerta: false,
-            titulo: 'El comprobante no contó los cobros de crédito',
+            titulo: 'Los cobros de crédito ya están sumados',
             /* La última frase es la que faltaba, y su ausencia costó una
              * consulta del usuario sobre el corte de las 14:18 de Salud 1 del
              * 5-sep: el cobro fue de $4.60 y el sobrante que quedó DESPUÉS de
@@ -832,7 +832,7 @@ export function notaDeCifra(corte) {
              * mismo número (ver la nota de `porCobrosCredito` más abajo). Lo
              * único que hay que entender es que lo que se ve YA viene
              * corregido. */
-            detalle: `Entraron ${formatMoney(c.sinContar)} en efectivo por cobros de crédito que el comprobante deja fuera de su cuenta. Con ellos, en la caja debía haber ${formatMoney(c.esperado)}. La diferencia que se muestra ya tiene ese cobro descontado.`,
+            detalle: `Entraron ${formatMoney(c.sinContar)} en efectivo y están en el cajón, así que se sumaron a lo que debía haber en caja: ${formatMoney(c.esperado)}. La diferencia que se muestra ya los tiene en cuenta.`,
         };
     }
 
@@ -844,7 +844,7 @@ export function notaDeCifra(corte) {
         return {
             alerta: false,
             titulo: 'Se cortó antes de los cobros de crédito',
-            detalle: `El comprobante suma ${cobros} de cobros que a esta hora todavía no entraban. Por eso vale ${conSigno(c.difErp)} y no ${conSigno(c.difTicket)}.`,
+            detalle: `La cuenta del día trae ${cobros} de cobros que a esta hora todavía no entraban. Por eso vale ${conSigno(c.difErp)} y no ${conSigno(c.difTicket)}.`,
         };
     }
 
@@ -857,7 +857,7 @@ export function notaDeCifra(corte) {
         return {
             alerta: false,
             titulo: 'Los cobros de crédito se contaron de más',
-            detalle: `La otra cifra dice ${conSigno(c.difErp)} porque suma ${cobros} ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Es una falla al sumarlos, no algo que pasó en la caja. Vale ${conSigno(valor)}, que es lo que dice el comprobante.`,
+            detalle: `La otra cifra dice ${conSigno(c.difErp)} porque suma ${cobros} ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Es una falla al sumarlos, no algo que pasó en la caja. Vale ${conSigno(valor)}, que es lo que dan las ventas y los movimientos del día.`,
         };
     }
     return {
@@ -1057,7 +1057,7 @@ export function sugerenciasDeCorte(corte, movimientos = [], invisibles = [], cob
             if (Math.abs(Math.abs(f.total) - objetivo) > CENTAVO) continue;
             out.push({
                 titulo: `El sobrante es igual a ${formatMoney(Math.abs(f.total))} de ${f.tipo}`,
-                detalle: `Ese cobro no pasa por la caja y el comprobante no lo nombra. Si se contó como efectivo al hacer el corte, ahí está el sobrante.`,
+                detalle: `Ese cobro no pasa por la caja, así que no entra en la cuenta del día. Si se contó como efectivo al hacer el corte, ahí está el sobrante.`,
             });
         }
     }

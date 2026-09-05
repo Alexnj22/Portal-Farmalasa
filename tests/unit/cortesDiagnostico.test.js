@@ -445,7 +445,7 @@ describe('el efectivo del portal que el comprobante deja fuera', () => {
     it('lo explica en pantalla en vez de marcarlo como plata sin explicar', () => {
         const n = notaDeCifra(S4);
         expect(n.alerta).toBe(false);
-        expect(n.titulo).toBe('El comprobante no contó los cobros de crédito');
+        expect(n.titulo).toBe('Los cobros de crédito ya están sumados');
         expect(n.detalle).toContain('$88.25');
         expect(n.detalle).toContain('$319.10');
     });
@@ -468,9 +468,9 @@ describe('el efectivo del portal que el comprobante deja fuera', () => {
         // Lo que queda es del mismo tamaño que el cobro, y no es el cobro.
         expect(diferenciaDelCorte(S1_14504).valor).toBe(4.60);
         const n = notaDeCifra(S1_14504);
-        expect(n.titulo).toBe('El comprobante no contó los cobros de crédito');
+        expect(n.titulo).toBe('Los cobros de crédito ya están sumados');
         expect(n.detalle).toContain('$722.93');
-        expect(n.detalle).toContain('ya tiene ese cobro descontado');
+        expect(n.detalle).toContain('ya los tiene en cuenta');
     });
 
     it('el tramo del día sale del esperado corregido', () => {

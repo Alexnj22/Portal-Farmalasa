@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1019.2 — La pantalla del corte deja de nombrar el papel
+
+Levantado por el usuario sobre la nota de v2.1019.1: «¿por qué dice que el
+comprobante no los cuenta? eso confunde».
+
+Tenía razón por partida doble. **Nombrar el papel es contar de dónde sale el
+número en vez de decir qué es** — la misma regla que ya vale para todo lo demás
+en pantalla. Y «no los cuenta» suena a hallazgo, así que la corrección se leía
+como el defecto reportado: exactamente lo que había pasado con el corte de las
+14:18 de Salud 1.
+
+Ocho textos de la pantalla del corte y cinco del diagnóstico dejan de decir
+«el comprobante»:
+
+| decía | dice |
+|---|---|
+| `El comprobante dice` (renglón del desglose) | `Ventas y movimientos del día` |
+| `El comprobante no contó los cobros de crédito` | `Los cobros de crédito ya están sumados` |
+| `$4.60 entraron en efectivo y el comprobante no los cuenta` | `$4.60 entraron en efectivo por cobros de crédito` |
+| `Ese dinero no pasa por la caja y el comprobante no lo nombra` | `…así que no entra en la cuenta del día` |
+| `De los $X que cuenta el comprobante` | `De los $X que trae la cuenta del día` |
+| `El comprobante dice $0.00 de efectivo contado` | `Este corte quedó con $0.00 de efectivo contado` |
+
+Y la frase que quedaba cuando el cobro NO explica toda la diferencia se acorta
+a lo que hay que entender: «El sobrante de $4.60 que dice arriba es aparte: no
+es de este cobro, y hay que buscarlo».
+
+**El renglón del desglose se cambió a sabiendas de lo que cuesta.** Existía como
+puente con el papel que la sala tiene en la mano —sin él el esperado corregido
+parece inventado— y ese puente se pierde. La decisión es del usuario: el rótulo
+ahora nombra lo que el número mide, no de dónde viene.
+
+Los comentarios del código conservan la trazabilidad, que es donde sirve y no
+la ve nadie que use el portal.
+
 ## v2.1019.1 — La nota del cobro de crédito dice si quedó diferencia aparte
 
 Preguntado sobre el corte de las 14:18 de Salud 1 del 5-sep: «¿el sobrante es

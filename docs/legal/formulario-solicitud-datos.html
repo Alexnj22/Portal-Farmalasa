@@ -80,8 +80,11 @@
             margin-bottom: .55rem; }
   .raya { border-bottom: 1px solid var(--ink-3); height: 1.15rem; }
   .raya + .raya { margin-top: 1.15rem; }
-  .fila-campos { display: flex; gap: 1.4rem; }
-  .fila-campos > .campo { flex: 1 1 0; min-width: 0; }
+  .fila-campos { display: flex; gap: 1.4rem; align-items: stretch; }
+  .fila-campos > .campo { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+  /* La raya al fondo de su columna: así dos rótulos de alturas distintas no
+     dejan las líneas a distinta altura. */
+  .fila-campos > .campo > .raya:last-child { margin-top: auto; }
 
   /* Casillas para marcar. El cuadro va alineado a la primera línea del texto,
      no centrado: con dos renglones, centrado queda flotando en el medio. */
@@ -123,7 +126,7 @@
      Se corta y se lo lleva quien solicita. Es su prueba de la fecha, y la
      fecha es lo que hace correr los veinte días hábiles. Sin acuse, el plazo
      lo prueba sólo la Empresa, que es la parte interesada. */
-  .corte { border-top: 1px dashed var(--ink-3); margin-top: 2.2rem; padding-top: .5rem; }
+  .corte { border-top: 1px dashed var(--ink-3); margin-top: 0; padding-top: 1rem; }
 
   /* ── El acuse ───────────────────────────────────────────────────────────
      Es lo único de esta hoja que el cliente se lleva a su casa, así que lleva
@@ -142,6 +145,10 @@
                font-size: .74rem; color: var(--ink-2); margin: 0; }
   .acuse-pie { display: flex; align-items: flex-end; justify-content: space-between;
                gap: 1.6rem; margin-top: 1.2rem; }
+  /* Base fija: sin ella el `min(100%, 17rem)` del recuadro resuelve ese 100%
+     contra una columna ya encogida por el flex, y el sello sale del ancho de
+     un timbre postal. */
+  .acuse-pie .sello { flex: 0 0 17rem; }
   .acuse-nota { font-size: .74rem; color: var(--ink-3); margin: 0 0 .2rem; max-width: 17rem; }
   @media (max-width: 32rem) {
     .acuse-cabeza { flex-direction: column-reverse; align-items: flex-start; }
@@ -150,14 +157,18 @@
   /* El sello del acuse: una raya corta a la derecha, no el bloque de firmas
      de página entera. El acuse es un talón, no una hoja. */
   .sello { display: flex; justify-content: flex-end; }
-  .sello > * { width: min(100%, 15rem); }
-  .linea-sello { border-top: 1px solid var(--ink); margin-bottom: .35rem; height: 2.2rem; }
+  .sello > * { width: min(100%, 17rem); }
+  /* Un sello de hule mide unos 4 cm de alto. La caja tiene que caberlo, o el
+     sello pisa el texto de arriba. */
+  .linea-sello { border: 1px solid var(--rule); border-radius: 3px;
+                 margin-bottom: .3rem; height: 5.2rem; }
   .nombre-sello { font-family: "IBM Plex Sans", system-ui, sans-serif;
                   font-size: .74rem; font-weight: 700; text-align: center; margin: 0; }
   .sello { flex-direction: column; align-items: flex-end; }
   .corte-rotulo { font-family: "IBM Plex Sans", system-ui, sans-serif;
                   font-size: .68rem; font-weight: 600; color: var(--ink-3);
-                  text-transform: uppercase; letter-spacing: .1em; margin: 0 0 1rem; }
+                  text-transform: uppercase; letter-spacing: .1em;
+                  margin: 2.2rem 0 .4rem; }
 
   .firmas { margin-top: 2.4rem; display: flex; gap: 2.5rem; justify-content: space-between; }
   .firmante { flex: 1 1 0; min-width: 0; text-align: center; }
@@ -241,11 +252,11 @@
     </div>
     <div class="fila-campos">
       <div class="campo">
-        <span class="rotulo">Documento de identidad</span>
+        <span class="rotulo">Tipo de documento</span>
         <div class="raya"></div>
       </div>
       <div class="campo">
-        <span class="rotulo">Número del documento</span>
+        <span class="rotulo">Número</span>
         <div class="raya"></div>
       </div>
     </div>
@@ -342,7 +353,7 @@
           <div class="raya"></div>
         </div>
         <div class="campo">
-          <span class="rotulo">Documento que autoriza a representar</span>
+          <span class="rotulo">Si actúa por otra persona, qué documento presentó</span>
           <div class="raya"></div>
         </div>
       </div>
@@ -364,8 +375,8 @@
     </div>
   </section>
 
+  <p class="corte-rotulo">Se corta por la línea y se entrega a quien solicita</p>
   <div class="corte">
-    <p class="corte-rotulo">Se corta por aquí y se entrega a quien solicita</p>
 
     <div class="acuse">
       <div class="acuse-cabeza">

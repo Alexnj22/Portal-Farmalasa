@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1006.3 — El formulario corrige rótulos, alineación y el espacio del sello
+
+Cinco reparos del usuario sobre la hoja impresa, y los cinco eran defectos.
+
+**«Documento de identidad» y «Número del documento» decían lo mismo dos veces.**
+El primer campo pide la clase y el segundo el número, pero los dos rótulos
+hablaban del documento entero. Quedaron **Tipo de documento** y **Número**.
+
+**«Documento que autoriza a representar» no se entendía.** Nombraba una figura
+jurídica en lugar de decirle a la sala qué escribir. Quedó **«Si actúa por otra
+persona, qué documento presentó»**.
+
+**Las dos rayas de una misma fila no quedaban a la misma altura.** No era una
+casualidad del render: un rótulo que ocupa dos renglones empuja su propia raya
+hacia abajo, y la de al lado se queda arriba. Ahora cada columna es un flex
+vertical con la raya anclada al fondo, así que las líneas coinciden aunque los
+rótulos midan distinto. Es exactamente el defecto que sólo se ve con la hoja
+delante y nunca en el código.
+
+**El rótulo del corte estaba debajo de la línea de puntos**, o sea después de
+donde hay que cortar: se iba con el talón. Ahora va encima.
+
+**El sello no cabía.** Era una raya de firma de 2.2 rem, y un sello de hule mide
+unos 4 cm. Ahora es un recuadro de 5.2 rem de alto por 17 rem de ancho. El ancho
+necesitó además una base fija en el flex: sin ella el `min(100%, 17rem)` resolvía
+ese 100% contra una columna ya encogida, y el sello salía del tamaño de un timbre
+postal.
+
 ## v2.1006.2 — El formulario se dirige al cliente y todo el portal dice sala de ventas
 
 Siete observaciones del usuario leyendo el formulario impreso. Casi todas eran

@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1005.5 — El aviso responde cuatro dudas de lectura y suma los datos del contribuyente
+
+Cuatro observaciones del usuario leyendo el documento. Dos eran defectos reales.
+
+**Faltaban los datos del contribuyente.** La fila «Quien compra» listaba nombre,
+documento, teléfono, dirección y correo, y omitía el **NIT, el NRC y el giro**,
+que es justo lo que se pide cuando alguien compra con crédito fiscal. La duda
+razonable era si eso cuenta como dato personal, porque la ley protege sólo a las
+**personas naturales** (Arts. 4-f y 4-s). La respuesta es que sí: buena parte de
+los contribuyentes de este país son personas naturales con NRC, y para ellos el
+NIT y el NRC identifican a una persona. Además el propio aviso ya los listaba
+para los proveedores, así que omitirlos del cliente era una inconsistencia.
+
+**«Atañe» no es lenguaje sencillo.** El Art. 5 letra e) prohíbe las
+«terminologías técnicas o legales», y una palabra que el propio dueño tiene que
+preguntar no pasa esa prueba. Reemplazada por «en lo que corresponde a». En la
+misma cláusula se quitaron los artículos sueltos delante de las siglas: era «con
+el ISSS, la AFP, el Ministerio de Trabajo» y quedó «con ISSS, AFP, Ministerio de
+Trabajo».
+
+**La oposición no se entendía, y ese es el hallazgo que más pesa.** Si el dueño
+no distingue oposición de cancelación, un cliente en el mostrador tampoco. Decía
+«para que dejemos de usarla, comprendidas la publicidad y la elaboración de
+perfiles», que es la ley repetida, no explicada. Ahora dice que es para dejar de
+usar la información **con un fin determinado aunque se siga guardando** para los
+demás, con dos ejemplos: no recibir publicidad, o que no se analicen sus
+compras. De paso se aclaró cancelación, que decía «lo que ya no es necesario»
+sin decir necesario para quién.
+
+**El domicilio sí va, y se queda.** El Art. 24 letra a) lo exige como primer
+contenido del aviso. Está en el encabezado y en la cláusula 1.1, y esa
+repetición es deliberada: el encabezado es membrete y puede recortarse al
+fotocopiar o al citar el documento, mientras que la cláusula es contenido. Lo
+que sí se quitó de 1.1 fue el teléfono, que sí es pura repetición del encabezado
+tres renglones más arriba.
+
+Las dos redacciones de derechos se cambiaron **en el aviso y en el formulario a
+la vez**. Escritas dos veces, la del mostrador se queda vieja el día que alguien
+toque sólo una.
+
 ## v2.1005.4 — El scroll de la lista de productos deja de propagarse al modal
 
 Reportado con captura: «después de agregar productos por laboratorio, se me

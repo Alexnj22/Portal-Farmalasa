@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1014.3 — El papel dice sus propios márgenes
+
+Reportado por el usuario: el formulario impreso desde el portal no tiene los
+mismos márgenes que los otros documentos y sale «todo muy grande».
+
+**Ninguno de los cuatro documentos declaraba `@page`.** Los PDF salían bien
+porque el generador le pasaba los márgenes a Chromium **por fuera del CSS**
+(`margin: 18mm 20mm` escrito en el script). El navegador nunca vio esos números,
+así que al imprimir desde el portal usaba los suyos.
+
+Es la misma clase de defecto que el título y el pie de página: **un dato del
+documento escrito en el generador**. Mientras hubo un solo consumidor no se
+notó; al aparecer el segundo, los dos empezaron a decir cosas distintas.
+
+Ahora el `@page` vive en los cuatro documentos y el generador lo **lee** de ahí
+(`preferCSSPageSize: true`, sin `margin`). Una sola fuente para el PDF, la página
+pública y lo que imprime el portal.
+
+**Y faltaba un segundo margen, invisible hasta medirlo.** Con el `@page` puesto,
+el impreso todavía salía 6.3 pt corrido: el `body` nunca reseteaba su margen, y
+el navegador le sumaba sus 8px por defecto a los del papel. En el PDF no pasaba
+porque el generador de la página web sí traía ese reset en su esqueleto, o sea
+que el documento dependía de quién lo envolviera. El `margin: 0` va ahora en el
+`body` del propio documento, donde vale para los tres.
+
+Medido antes y después, sobre el mismo formulario:
+
+| | páginas | margen izquierdo |
+|---|---:|---:|
+| PDF del repo | 3 | 56.7 pt |
+| impreso desde el portal, antes | 3 | 63.0 pt |
+| impreso desde el portal, ahora | 3 | **57.0 pt** |
+
+Los 0.3 pt de diferencia son redondeo. Las cuatro salidas conservan su número de
+páginas: 3, 5, 3 y 5.
+
 ## v2.1014.2 — El personal se busca por función, no por select
 
 Reportado por el usuario con captura: buscando «joya» aparecían diez fichas de

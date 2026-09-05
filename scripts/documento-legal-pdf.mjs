@@ -108,9 +108,12 @@ await page.evaluate(() => document.fonts.ready);
 await page.emulateMedia({ media: 'print' });
 await page.pdf({
   path: resolve(salida),
-  format: 'Letter',
+  // El tamaño y los márgenes salen del `@page` del DOCUMENTO, no de acá.
+  // Escritos en este script, el PDF salía con unos márgenes y el mismo archivo
+  // impreso desde el navegador con otros, porque el navegador nunca vio estos
+  // números. `preferCSSPageSize` hace que mande el papel.
+  preferCSSPageSize: true,
   printBackground: true,
-  margin: { top: '18mm', bottom: '18mm', left: '20mm', right: '20mm' },
   displayHeaderFooter: true,
   headerTemplate: '<div></div>',
   footerTemplate:

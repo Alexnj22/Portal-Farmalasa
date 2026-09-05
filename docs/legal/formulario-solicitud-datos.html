@@ -24,6 +24,10 @@
 
   * { box-sizing: border-box; }
   body {
+    /* El margen del papel lo pone `@page` y NADIE más. Sin este cero, el
+       navegador le suma sus 8px por defecto y el mismo documento sale con un
+       margen en el PDF y con otro impreso desde el portal. */
+    margin: 0;
     background: var(--paper); color: var(--ink);
     font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
     font-size: 16px; line-height: 1.55;
@@ -183,6 +187,14 @@
     .firmas { display: block; }
     .firmante { margin-bottom: 1.6rem; }
   }
+
+  /* ── El papel, y sus márgenes ────────────────────────────────────────
+     Sin esta regla el PDF salía bien y el mismo documento impreso desde el
+     navegador salía distinto: los márgenes del PDF se los pasaba el generador
+     a Chromium por fuera del CSS, así que el navegador no los conocía y usaba
+     los suyos. El documento tiene que decir cómo se imprime; el generador lo
+     lee de acá. */
+  @page { size: Letter; margin: 18mm 20mm; }
 
   @media print {
     body { background: #fff; color: #000; font-size: 10pt; }

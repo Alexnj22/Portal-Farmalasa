@@ -236,7 +236,7 @@ const GRUPOS_CRUDOS = [
                 { key: 'clientes_ver_montos', label: 'Ver la facturación por cliente', tipo: 'cap' },
             ]},
             { key: 'metas',          label: 'Metas',         desc: 'Metas mensuales de venta por sala: cumplimiento en vivo, proyección de cierre e histórico con el tramo del bono', icon: Target, hasApprove: true, hasScope: true },
-            { key: 'promociones',    label: 'Promociones',   desc: 'Campañas de laboratorio que pagan por unidad vendida: el lote repartido por sala, su avance y lo que habría ganado cada persona', icon: DollarSign, hasApprove: true, hasScope: true },
+            { key: 'promociones',    label: 'Promociones',   desc: 'Campañas de laboratorio que pagan por unidad vendida —el lote repartido por sala, su avance y lo que habría ganado cada persona— y los descuentos que la venta le rebaja al renglón', icon: DollarSign, hasApprove: true, hasScope: true },
         ],
     },
     {

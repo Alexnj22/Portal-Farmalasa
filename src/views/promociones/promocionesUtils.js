@@ -152,3 +152,22 @@ export function mesAnterior() {
 
 /** El resumen de una promoción de laboratorio para la tarjeta. */
 export const esLaboratorio = (p) => p?.tipo === 'laboratorio';
+
+/**
+ * En cuánto queda UNA unidad con un descuento aplicado.
+ *
+ * ⚠️ Esta fórmula está dicha DOS veces —acá y en la edge function
+ * `descuentos-erp`, que la vuelve a aplicar al guardar— y se mueven juntas. La
+ * de acá es para VER mientras se arma el descuento; la del servidor es la que
+ * decide, porque un formulario se saltea cambiando el cuerpo de la petición.
+ *
+ * Y es la del sistema de la caja, medida, no una interpretación: el porcentaje
+ * se aplica al renglón y el monto se descuenta **por cada unidad**
+ * (`subtotal -= monto × cantidad`). Por eso acá se razona sobre UNA unidad —
+ * multiplicar por la cantidad es exactamente lo que hace la venta.
+ */
+export function precioConDescuento(precio, tipo, monto) {
+    const p = Number(precio) || 0;
+    const m = Number(monto) || 0;
+    return tipo === '%' ? p * (1 - m / 100) : p - m;
+}

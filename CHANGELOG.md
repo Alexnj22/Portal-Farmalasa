@@ -21,6 +21,74 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1001.0 — Descuentos en la venta: configurarlos desde el portal
+
+El sistema de la caja tiene una pantalla que descuenta en la venta y el portal
+no la veía. Ahora se configura desde **Promociones → Descuentos**, sin entrar
+allá sala por sala.
+
+**Qué hace un descuento, medido y no leído.** No descuenta sobre el total de la
+venta: descuenta **por renglón**. Un porcentaje del renglón, o un monto **por
+cada unidad** (`subtotal -= monto × cantidad`) — sobre tres unidades, un
+descuento de $10.04 son $30.12. Por eso la opción se rotula «Monto por cada
+unidad» y no «Monto», y el formulario pinta el ejemplo debajo. Comprobado punta
+a punta con Omega 3 (29.67 %): 2 × $13.50 = $27.00 → −$8.01 → **$18.99**, que
+es exactamente el `total_linea` que el portal ya tenía sincronizado.
+
+**Lo que el portal agrega, y el sistema de la caja no puede.** Mientras se arma
+el descuento se ve **en cuánto queda el precio** de cada producto, y en rojo el
+que caería bajo el costo — allá se escribe un número y se guarda, y un 60 % se
+teclea igual de rápido que un 25 %. Además avisa si **otro descuento ya toma
+esos productos en esas fechas**, que allá nadie mira y cuando pasa se aplica uno
+solo sin decir cuál. Los avisos **no bloquean**: se confirman, y lo confirmado
+queda escrito en la bitácora junto con quién lo hizo (allá todo queda a nombre
+de una sola cuenta).
+
+**Nueve cosas del origen que se descubrieron midiendo**, en
+`docs/DESCUENTOS-EN-LA-VENTA-2026-09-04.md`. Las cuatro que cambiaron el
+código:
+
+- **La sala sale del POST, no de la sesión** — medido: con la sesión abierta en
+  Salud 1 y `id_sucursal=3` en el cuerpo, quedó en Salud 3. Por eso los
+  descuentos de una sola sala salieron gratis: una petición, sea de una sala o
+  de todas.
+- **Su formulario deja un producto fantasma** — manda la lista con un `#` al
+  final y el servidor guarda la cadena vacía como producto 0: **11 de los 13**
+  descuentos existentes lo arrastran. El portal manda sin el separador final y
+  además descarta el 0 al leer.
+- **Borrar no es el enlace que su propio menú muestra** —
+  `?process=delete&id_promocion=N` por GET devuelve el formulario de alta y no
+  borra nada. El borrado real es un POST con `process=delete` y **`id=N`**.
+- **Contesta «Promocion guardada correctamente» también al borrar**, así que
+  cada escritura **relee la lista** para confirmar en vez de creerle al mensaje.
+
+**El defecto propio que se encontró probando, y su prueba.** El origen escribe
+la opción elegida como `<option value="$"selected>` — **sin espacio** antes de
+`selected`— y las no elegidas con uno. La primera versión pedía `\s+selected`,
+así que el `$` no matcheaba nunca y el tipo caía al `%` del default: un
+descuento de **$0.75 por unidad** se leía como **0.75 % del renglón**, sin error
+y sin nada raro en pantalla. Se descubrió comparando contra la lista, que dice
+el tipo por otro camino. Hoy `tipoDelFormulario` **lanza si no hay ninguna
+opción elegida** en vez de asumir, y `tests/unit/descuentosErp.test.js` ancla el
+markup literal de producción — se le fabricó la regresión y la caza.
+
+**La cuenta del origen importa y el modo de falla no la nombra.** Con
+`ERP_PRODUCTS_CREDS` la lista funcionaba y el formulario no: esa cuenta lee
+`admin_promocion_dt.php` pero el origen no le dibuja el formulario — 16,056
+caracteres contra ~33,000. O sea, el módulo habría salido **medio funcionando**,
+y `promocion.php?id=N` devuelve un 200 con el título correcto. Por eso el código
+distingue «no existe» de «no pude leer la pantalla» y el segundo dice cuántos
+caracteres vinieron. Va por el secreto **`ERP_PROMOS_CREDS`**.
+
+**Lo que queda abierto:** `sales_invoice_items` no tiene columna de descuento
+—llega el precio unitario crudo y el total del renglón ya descontado—, así que
+un descuento de campaña sigue siendo **indistinguible de un precio cambiado a
+mano**. No se puede reportar cuánto descontó ni cuánto vendió cada campaña.
+
+Piezas: `_shared/descuentos.ts`, edge `descuentos-erp`, `src/data/descuentos.js`,
+`TabDescuentos.jsx`, `DescuentoModal.jsx` y el RPC
+`get_precios_para_descuento(int[])`.
+
 ## v2.1000.1 — El ítem activo del submenú tiene UN solo indicador
 
 Reportado con captura sobre el grupo Efectivo: el ítem activo llevaba **dos**

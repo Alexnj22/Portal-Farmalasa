@@ -311,6 +311,16 @@ export default function MisPuntosView() {
     const [datos, setDatos] = useState(null);
     const [todos, setTodos] = useState(false);
     const [guardando, setGuardando] = useState(false);
+    // Vino a cambiar un permiso que ya había contestado. Es distinto de
+    // `faltaResponder`: aquello es la pregunta obligatoria de la primera vuelta,
+    // esto es el Art. 29 —revocar en cualquier momento— y por eso tiene salida.
+    const [cambiandoPermisos, setCambiandoPermisos] = useState(false);
+    // Ya contestó EN ESTA VISITA. Sin esto, quien declina y vuelve a declinar
+    // queda encerrado: `faltaResponder` sigue siendo cierto para él —a propósito,
+    // para poder ofrecerle volver— así que la pregunta se repintaría para
+    // siempre y nunca llegaría a ver su saldo congelado. Se pregunta una vez por
+    // visita, no una vez por render.
+    const [yaContesto, setYaContesto] = useState(false);
     const [errorPermisos, setErrorPermisos] = useState('');
     // La identificación con la que se entró, para reusarla al contestar los
     // permisos. En un `ref` y no en estado: no se pinta, así que cambiarla no
@@ -365,7 +375,7 @@ export default function MisPuntosView() {
         setGuardando(true); setErrorPermisos('');
         const r = await consultarMisPuntos({ ...llaveUsada.current, consentimiento });
         setGuardando(false);
-        if (r.ok) { setDatos(r); return; }
+        if (r.ok) { setDatos(r); setCambiandoPermisos(false); setYaContesto(true); return; }
         setErrorPermisos(r.mensaje ?? 'No se pudo guardar tu respuesta.');
     };
 
@@ -393,7 +403,7 @@ export default function MisPuntosView() {
 
     const volver = () => {
         setDatos(null); setError(''); setDui(''); setTel('');
-        setErrorPermisos(''); llaveUsada.current = null;
+        setErrorPermisos(''); setCambiandoPermisos(false); setYaContesto(false); llaveUsada.current = null;
     };
 
     return (
@@ -482,11 +492,15 @@ export default function MisPuntosView() {
 
                         <ComoFunciona />
                     </>
-                ) : faltaResponder(datos.consentimiento) ? (
+                ) : ((faltaResponder(datos.consentimiento) && !yaContesto) || cambiandoPermisos) ? (
                     <Permisos datos={datos} onResponder={responderPermisos}
-                        guardando={guardando} error={errorPermisos} />
+                        guardando={guardando} error={errorPermisos}
+                        onCancelar={cambiandoPermisos
+                            ? () => { setCambiandoPermisos(false); setErrorPermisos(''); }
+                            : undefined} />
                 ) : (
-                    <Resultado datos={datos} todos={todos} setTodos={setTodos} volver={volver} />
+                    <Resultado datos={datos} todos={todos} setTodos={setTodos} volver={volver}
+                        onCambiarPermisos={() => setCambiandoPermisos(true)} />
                 )}
 
                 {/* El pie va en las DOS pantallas —el formulario y el
@@ -542,6 +556,21 @@ function Pregunta({ texto, valor, onElegir }) {
 }
 
 /**
+ * Un permiso y cómo está hoy. Se dice con palabras y no sólo con un color:
+ * «Sí» y «No» se leen igual con cualquier vista, y el color es el refuerzo.
+ */
+function EstadoDePermiso({ rotulo, valor }) {
+    return (
+        <div className="flex items-center justify-between gap-3">
+            <span className="text-body text-content-2 min-w-0 truncate">{rotulo}</span>
+            <Badge size="sm" variant={valor === true ? 'success' : 'neutral'}>
+                {valor === true ? 'Aceptado' : 'No aceptado'}
+            </Badge>
+        </div>
+    );
+}
+
+/**
  * Los dos permisos, antes del saldo.
  *
  * Son DOS y no uno porque son dos finalidades distintas, y el Art. 27 letra b)
@@ -553,7 +582,7 @@ function Pregunta({ texto, valor, onElegir }) {
  * guardado no pueden separarse — y el día que se reescriba, las respuestas
  * viejas conservan la redacción con la que se dieron.
  */
-function Permisos({ datos, onResponder, guardando, error }) {
+function Permisos({ datos, onResponder, guardando, error, onCancelar }) {
     const c = datos.consentimiento ?? {};
     // Arranca en lo que ya haya contestado. Para el programa eso es `false`
     // sólo si declinó antes: se le muestra su propia respuesta, no un formulario
@@ -567,11 +596,12 @@ function Permisos({ datos, onResponder, guardando, error }) {
         <div data-surface="card" className="p-4 space-y-4">
             <div className="space-y-1">
                 <h2 className="text-title font-bold text-content-1">
-                    Hola, {datos.nombre}
+                    {onCancelar ? 'Tus permisos' : `Hola, ${datos.nombre}`}
                 </h2>
                 <p className="text-body-sm text-content-3 leading-relaxed">
-                    Antes de mostrarte tus puntos necesitamos tu permiso para dos cosas.
-                    Puedes cambiarlo cuando quieras.
+                    {onCancelar
+                        ? 'Cambia lo que quieras y guarda. Lo que decidas aquí manda sobre lo que hayas dicho antes.'
+                        : 'Antes de mostrarte tus puntos necesitamos tu permiso para dos cosas. Puedes cambiarlo cuando quieras.'}
                 </p>
             </div>
 
@@ -591,11 +621,22 @@ function Permisos({ datos, onResponder, guardando, error }) {
 
             {error && <Notice variant="danger">{error}</Notice>}
 
-            <Button type="button" variant="primary" className="w-full"
-                disabled={!completo || guardando}
-                onClick={() => onResponder({ programa, promociones: promos })}>
-                {guardando ? 'Guardando…' : 'Continuar'}
-            </Button>
+            <div className="flex gap-2">
+                {/* La salida SÓLO existe cuando la persona vino a cambiar algo
+                    que ya había contestado. En la primera vuelta no hay «cerrar»
+                    a propósito: contestar es lo que abre la pantalla. */}
+                {onCancelar && (
+                    <Button type="button" variant="secondary" className="flex-1"
+                        disabled={guardando} onClick={onCancelar}>
+                        Cancelar
+                    </Button>
+                )}
+                <Button type="button" variant="primary" className="flex-1"
+                    disabled={!completo || guardando}
+                    onClick={() => onResponder({ programa, promociones: promos })}>
+                    {guardando ? 'Guardando…' : onCancelar ? 'Guardar' : 'Continuar'}
+                </Button>
+            </div>
 
             <p className="text-caption text-content-3 leading-relaxed">
                 Decir que no a las promociones no afecta tus puntos. El detalle de qué
@@ -612,9 +653,14 @@ function Permisos({ datos, onResponder, guardando, error }) {
  * Sale aparte del formulario porque son dos pantallas, no dos ramas de la misma:
  * comparten el encabezado y el pie, y nada más.
  */
-function Resultado({ datos, todos, setTodos, volver }) {
+function Resultado({ datos, todos, setTodos, volver, onCambiarPermisos }) {
     const cifra = useCifraQueSube(datos.equivale);
-    const puedeCanjear = datos.saldo >= MINIMO_DE_CANJE;
+    // Fuera del programa el saldo sigue siendo cierto, pero no se puede hacer
+    // nada con él. Sin esta condición la pantalla diría «Ya puedes canjearlos» y
+    // la sala de ventas tendría que negarlo en el mostrador: la pantalla no
+    // puede prometer lo que la base no concede.
+    const fueraDelPrograma = datos.consentimiento?.programa === false;
+    const puedeCanjear = !fueraDelPrograma && datos.saldo >= MINIMO_DE_CANJE;
     const faltan = Math.max(0, MINIMO_DE_CANJE - datos.saldo);
     const avance = Math.min(100, Math.round((datos.saldo / MINIMO_DE_CANJE) * 100));
 
@@ -669,7 +715,19 @@ function Resultado({ datos, todos, setTodos, volver }) {
                 en seis meses, así que el caso normal es el de abajo: se dice
                 cuánto falta, sin traducirlo a cuánto hay que gastar. */}
             {datos.saldo > 0 && (
-                puedeCanjear ? (
+                fueraDelPrograma ? (
+                    <div data-surface="card" className="px-4 py-3.5">
+                        <p className="text-body-lg text-content-2 leading-snug">
+                            <strong className="text-content-1">Estos puntos están en pausa.</strong>{' '}
+                            Saliste del programa, así que no acumulas ni puedes canjearlos.
+                            No vencen mientras estés fuera.
+                        </p>
+                        <Button variant="secondary" size="sm" className="w-full mt-3"
+                            onClick={onCambiarPermisos}>
+                            Volver al programa
+                        </Button>
+                    </div>
+                ) : puedeCanjear ? (
                     <div data-surface="card" className="flex items-center gap-3 px-4 py-3.5">
                         <div className="w-9 h-9 rounded-btn bg-success/[0.14] flex items-center justify-center shrink-0">
                             <ShieldCheck size={16} className="text-success-text" strokeWidth={2.5} />
@@ -790,6 +848,43 @@ function Resultado({ datos, todos, setTodos, volver }) {
                                 : <><ChevronDown size={14} /> Ver los {movimientos.length - MOVIMIENTOS_A_LA_VISTA} anteriores</>}
                         </Button>
                     )}
+                </section>
+            )}
+
+            {/* ── Tus permisos ─────────────────────────────────────────
+                El Art. 29 de la Ley para la Protección de Datos Personales dice
+                que el titular puede revocar su consentimiento «en cualquier
+                momento». Sin esta sección, una vez aceptado no había forma de
+                deshacerlo desde acá: la pantalla dejaba de preguntar y no
+                ofrecía nada en su lugar.
+
+                Va con el estado A LA VISTA y no detrás de un botón que diga
+                «configuración»: un permiso que hay que ir a buscar para saber si
+                está dado se parece bastante a uno que no se dio. */}
+            {datos.consentimiento && (
+                <section>
+                    <Rotulo>Tus permisos</Rotulo>
+                    <div data-surface="card" className="p-3.5 space-y-2.5">
+                        <EstadoDePermiso rotulo="Programa de Puntos"
+                            valor={datos.consentimiento.programa} />
+                        {/* Sin esto, quien está fuera ve su saldo pintado igual
+                            que quien está dentro y creería que puede canjearlo.
+                            El número es cierto; lo que cambió es qué se puede
+                            hacer con él. */}
+                        {datos.consentimiento.programa === false && (
+                            <p className="text-caption text-content-3 leading-relaxed">
+                                Estás fuera del programa: no acumulas y los puntos que
+                                tienes no se pueden canjear. No vencen mientras estés
+                                fuera, y vuelven a servir si aceptas de nuevo.
+                            </p>
+                        )}
+                        <EstadoDePermiso rotulo="Promociones y descuentos"
+                            valor={datos.consentimiento.promociones} />
+                        <Button variant="secondary" size="sm" className="w-full mt-1"
+                            onClick={onCambiarPermisos}>
+                            Cambiar mis permisos
+                        </Button>
+                    </div>
                 </section>
             )}
 

@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1018.1 — Se puede revocar el permiso desde Mis puntos
+
+Pregunta del usuario: «luego de confirmado, ¿cómo se quita el confirmado si ya no
+quiero ser parte?». No se podía, y era un hueco legal: el Art. 29 de la Ley para
+la Protección de Datos Personales dice que el titular puede revocar su
+consentimiento **«en cualquier momento»**. La versión anterior preguntaba una vez
+y, aceptada, dejaba de preguntar sin ofrecer nada en su lugar.
+
+Ahora el resultado lleva una sección **Tus permisos** con el estado de los dos a
+la vista y un botón para cambiarlos. Con el estado visible y no detrás de algo
+que diga «configuración»: un permiso que hay que ir a buscar para saber si está
+dado se parece bastante a uno que no se dio.
+
+### Tres cosas que la primera versión rompía y no se veían
+
+**Quien declinaba quedaba encerrado.** `faltaResponder` sigue siendo cierto para
+él —a propósito, para poder ofrecerle volver—, así que contestar «No» repintaba
+la misma pregunta para siempre y nunca llegaba a ver su saldo congelado. Se
+pregunta una vez por **visita**, no una vez por render.
+
+**La pantalla prometía un canje que la sala de ventas habría negado.** Estando
+fuera del programa el saldo sigue siendo cierto, pero no se puede hacer nada con
+él, y la tarjeta decía «Ya puedes canjearlos» igual que a cualquiera. Es el mismo
+defecto que el QR que prometía lo que la base no concedía: ahora esa tarjeta dice
+que los puntos están en pausa, que no vencen mientras esté fuera, y ofrece
+volver.
+
+**Y el saldo se pintaba idéntico para los dos casos.** El número no cambia al
+salir; lo que cambia es qué se puede hacer con él, y eso no lo decía nada.
+
+La tarjeta de permisos tiene «Cancelar» sólo cuando la persona vino a cambiar
+algo que ya había contestado. En la primera vuelta no hay salida a propósito:
+contestar es lo que abre la pantalla.
+
 ## v2.1018.0 — El cliente da o retira su permiso desde Mis puntos
 
 El Art. 27 de la Ley para la Protección de Datos Personales pide que el

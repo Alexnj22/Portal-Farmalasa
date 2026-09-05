@@ -55,6 +55,7 @@ const DESTINOS = [
     'docs/legal/afiche-programa-de-puntos.html',
     'docs/legal/aviso-de-privacidad.html',
     'docs/legal/acuerdo-de-nombramiento-delegado.html',
+    'docs/legal/formulario-solicitud-datos.html',
 ];
 
 /* El `alt` es el ancla, y no la posición ni el tamaño de la cadena: es lo único
@@ -111,7 +112,7 @@ if (sinAncla) {
 if (!ESCRIBIR && cambiados) console.log('(nada se escribió — agregá --escribir)');
 if (ESCRIBIR && cambiados) {
     console.log('Falta regenerar lo derivado:');
-    console.log('  npm run reglamento:puntos:web');
-    console.log('  npm run reglamento:puntos:pdf');
-    console.log('  npm run afiche:puntos:pdf');
+    console.log('  npm run legal:web');
+    console.log('  npm run legal:pdf');
+    console.log('  npm run afiche:puntos');
 }

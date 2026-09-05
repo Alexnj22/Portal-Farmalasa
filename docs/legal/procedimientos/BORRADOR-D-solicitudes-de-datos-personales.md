@@ -90,9 +90,18 @@ esa fecha depende todo el plazo.
    que la solicitud llegó, así que la prevención se hace el mismo día: cada día
    que se tarda en pedirla es un día menos para resolver.
 3. Se le entrega el **formulario** y se le ayuda a llenarlo si lo necesita.
-   Recoge lo que el **Art. 18** exige: quién pide, qué derecho ejerce, sobre qué
-   datos, dónde recibe la respuesta, qué documento acredita su identidad, y su
-   firma.
+
+   **El formulario NO es obligatorio, y conviene saberlo.** El Art. 18 exige que
+   la *solicitud contenga* siete cosas —quién pide, dónde recibe la respuesta,
+   qué documento acredita su identidad, sobre qué datos, qué derecho ejerce, lo
+   que ayude a localizarlos y su firma—, no que se use un formulario. Los
+   modelos de formulario se los encarga el Art. 50 letra q) a la **Agencia**, no
+   a la Empresa.
+
+   O sea que **un correo que traiga esas siete cosas es una solicitud válida** y
+   se tramita igual. El formulario existe porque es la forma práctica de que no
+   falte ninguna, no porque la ley lo pida: si llega por otro medio, se
+   transcribe al registro y se sigue el mismo camino.
 4. Se comprueba la identidad conforme al numeral 6.
 5. **Se sella el acuse y se le entrega.** Lleva la fecha de recepción, que es la
    que hace correr el plazo de veinte días hábiles.

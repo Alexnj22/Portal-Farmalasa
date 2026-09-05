@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1016.4 — Las tres vías del afiche cuentan una secuencia
+
+«¿Cómo sería sin venir?». La pregunta destapó que las tres columnas del afiche
+se leían como **tres opciones equivalentes**, y no lo son: «O sin venir»
+prometía algo que «Trae tu documento» le quitaba dos centímetros más allá.
+
+Son un **camino**, no un menú. Corregido con dos palabras:
+
+| decía | dice |
+|---|---|
+| O sin venir | **O empieza** sin venir |
+| Trae tu documento | **Y** trae tu documento |
+
+«Empieza» acota la promesa a lo que de verdad se puede hacer a distancia, y la
+«y» convierte la tercera columna en una condición de las dos anteriores en vez
+de una tercera alternativa.
+
+### Y no, la ley no exige un formulario
+
+La otra mitad de la pregunta, y la respuesta cambia cómo hay que atender una
+solicitud que llega por correo.
+
+El **Art. 18** exige que la *solicitud contenga* siete cosas; no dice en ningún
+lado que se use un formulario. Y el **Art. 50 letra q)** le encarga los modelos
+de formulario a la **Agencia**, no a la Empresa.
+
+O sea que **un correo que traiga esas siete cosas es una solicitud válida** y se
+tramita igual. El formulario existe porque es la forma práctica de que no falte
+ninguna, no porque la ley lo pida.
+
+Eso quedó escrito en el procedimiento, que es donde importa: quien reciba un
+correo sin formulario no puede devolverlo pidiendo que se llene uno. Se
+transcribe al registro y sigue el mismo camino.
+
 ## v2.1016.3 — El afiche dice de quién son los datos
 
 «Tienen que saber que son sus datos», y «los días está de más». Dos

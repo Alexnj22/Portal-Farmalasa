@@ -14,7 +14,7 @@
  * imprimirse hoy y volver llena la semana que viene.
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FileText, Loader2, ShieldCheck, Clock, Search, Printer, Download, UserCheck } from 'lucide-react';
+import { FileText, Loader2, ShieldCheck, Clock, Search, Printer, Download, UserCheck, AlertTriangle } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -31,6 +31,7 @@ import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '.
 import { exportCsv } from '../../utils/csvExport';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { duiValido, telefonoValido, correoValido } from '../../utils/clienteValidacion';
 
 const paraInput = (iso) => {
     if (!iso) return '';
@@ -44,6 +45,11 @@ const VIAS = [
     { value: 'CORREO',  label: 'Por correo electrónico' },
     { value: 'IMPRESA', label: 'Impresa' },
 ];
+
+const ORIGEN = {
+    cliente: 'cliente', empleado: 'personal', practicante: 'horas sociales',
+    proveedor: 'proveedor', receta: 'receta',
+};
 
 const DOCUMENTOS = [
     { value: 'DUI',       label: 'Documento Único de Identidad' },
@@ -102,26 +108,52 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
     // distintos, y pintar «no se encontró» antes de haber buscado sería mentir.
     const [hallazgo, setHallazgo] = useState(null);
     const [buscando, setBuscando] = useState(false);
+    const [termino, setTermino] = useState(() =>
+        solicitud.solicitante_numero || solicitud.solicitante_nombre || '');
+    const [candidatos, setCandidatos] = useState([]);
 
     useEffect(() => { saveDraft(claveBorrador, f); }, [claveBorrador, f]);
 
+    /**
+     * Busca por lo que se escriba: si tiene nueve dígitos es un DUI, si tiene
+     * ocho es un teléfono, y si no, es un nombre. Adivinar acá y no pedir tres
+     * campos es lo que hace que se use.
+     */
     const buscar = async () => {
+        const t = termino.trim();
+        const digitos = t.replace(/\D/g, '');
         setBuscando(true);
         try {
             const r = await buscarPersona({
-                numero: f.identidad_numero || f.solicitante_numero,
-                nombre: f.solicitante_nombre,
+                numero: digitos.length === 9 ? t : '',
+                telefono: digitos.length === 8 ? t : '',
+                nombre: digitos.length === 9 || digitos.length === 8 ? '' : t,
             });
-            // El resumen se pide sólo cuando hay UNA ficha: con varias, elegir
-            // por nosotros es adivinar de quién son los datos que se entregan.
-            const cliente = r.clientes.length === 1 ? r.clientes[0] : null;
-            const resumen = cliente ? await resumenDeCliente(cliente.id) : null;
-            setHallazgo({ ...r, cliente, empleado: r.empleados.length === 1 ? r.empleados[0] : null, resumen });
+            setCandidatos((r.donde ?? []).flatMap((d) => d.filas.map((x) => comoPersona(d.clave, x))));
+            // El resumen se pide sólo cuando hay UNA ficha de cliente: con
+            // varias, elegir por nosotros es adivinar de quién son los datos.
+            const resumen = r.cliente ? await resumenDeCliente(r.cliente.id) : null;
+            setHallazgo({ ...r, resumen });
         } catch (e) {
             showToast('No se pudo buscar', mensajeAmigable(e), 'error');
         } finally {
             setBuscando(false);
         }
+    };
+
+    /** Elegir a alguien LLENA los campos: es el punto de todo el selector. */
+    const elegir = (c) => {
+        setF((p) => ({
+            ...p,
+            solicitante_nombre:    c.nombre    || p.solicitante_nombre,
+            solicitante_documento: c.documento || p.solicitante_documento,
+            solicitante_numero:    c.numero    || p.solicitante_numero,
+            solicitante_telefono:  c.telefono  || p.solicitante_telefono,
+            solicitante_correo:    c.correo    || p.solicitante_correo,
+            solicitante_direccion: c.direccion || p.solicitante_direccion,
+            identidad_numero:      p.identidad_numero || (c.documento === 'DUI' ? c.numero : ''),
+        }));
+        setCandidatos([]);
     };
 
     const imprimirRespuesta = () => {
@@ -132,6 +164,7 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
             cliente: hallazgo?.cliente ?? null,
             empleado: hallazgo?.empleado ?? null,
             resumen: hallazgo?.resumen ?? null,
+            donde: hallazgo?.donde ?? [],
         }));
         useStaff.getState().appendAuditLog?.('ENTREGAR_DATOS_SOLICITUD', String(solicitud.id),
             { folio: solicitud.folio_txt, formato: 'papel' });
@@ -158,6 +191,16 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
 
     const plazo = useMemo(() => plazoDe(solicitud), [solicitud]);
 
+    // Los tres campos que tienen FORMA. Se validan con el canónico de clientes,
+    // que ya sabe el dígito verificador del DUI: escribir la comprobación acá
+    // daría un segundo criterio y el día que difieran nadie va a saber cuál manda.
+    const malDui = !!f.solicitante_numero?.trim() && f.solicitante_documento === 'DUI'
+        && !duiValido(f.solicitante_numero);
+    const malTel = !!f.solicitante_telefono?.trim() && !telefonoValido(f.solicitante_telefono);
+    const malCorreo = !!f.solicitante_correo?.trim() && !correoValido(f.solicitante_correo);
+    const malIdent = !!f.identidad_numero?.trim() && f.identidad_documento === 'DUI'
+        && !duiValido(f.identidad_numero);
+
     // Lo que hace falta para que la fila deje de ser una hoja impresa y pase a
     // ser una solicitud en trámite: quién pide, qué pide, cuándo se recibió y
     // con qué documento se comprobó que es quien dice.
@@ -167,8 +210,12 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
         if (!f.solicitante_nombre?.trim())  faltan.push('el nombre');
         if (!(f.derechos?.length))          faltan.push('qué solicita');
         if (!f.identidad_numero?.trim())    faltan.push('el número del documento cotejado');
+        if (malDui)    faltan.push('un DUI válido');
+        if (malIdent)  faltan.push('un DUI cotejado válido');
+        if (malTel)    faltan.push('un teléfono de ocho dígitos');
+        if (malCorreo) faltan.push('un correo con forma de correo');
         return faltan;
-    }, [f]);
+    }, [f, malDui, malIdent, malTel, malCorreo]);
 
     const guardar = useCallback(async (estado) => {
         if (!solicitud) return;
@@ -250,25 +297,66 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                         </Notice>
                     )}
 
-                    <Seccion titulo="Quién solicita">
+                    <Seccion titulo="Quién solicita"
+                        nota="Búscala primero: elegirla llena los campos y evita que un dígito de más los deje sin cruzar con la base.">
+                        {/* El buscador va ARRIBA de los campos, no al lado. Con
+                            los campos primero, quien transcribe los llena a mano
+                            y el buscador queda como un extra que nadie aprieta;
+                            arriba, la forma natural es encontrar y confirmar. */}
+                        <div className="flex flex-wrap items-end gap-2">
+                            <PortalInput label="Nombre, DUI o teléfono" name="buscar" colSpan={2}
+                                value={termino} readOnly={resuelta}
+                                placeholder="Escribe y presiona buscar"
+                                onChange={(e) => setTermino(e.target.value)} />
+                            <Button variant="secondary" icon={buscando ? Loader2 : Search}
+                                disabled={buscando || resuelta || !termino.trim()}
+                                onClick={buscar}>Buscar</Button>
+                        </div>
+
+                        {candidatos.length > 0 && (
+                            <div data-surface="card" className="p-2 flex flex-col gap-1">
+                                {candidatos.map((c, k) => (
+                                    <button key={`${c.origen}-${k}`} type="button"
+                                        onClick={() => elegir(c)}
+                                        className="text-left px-3 py-2.5 min-h-[var(--tap-min)] rounded-card
+                                                   hover:bg-surface-card-hover transition-colors
+                                                   duration-[var(--dur-fast)] flex items-baseline gap-2">
+                                        <span className="text-body-sm font-bold text-content min-w-0 truncate">
+                                            {c.origen === 'empleado' ? shortEmployeeName({ name: c.nombre }) : c.nombre}
+                                        </span>
+                                        <span className="text-caption text-content-3 shrink-0">
+                                            {ORIGEN[c.origen]}{c.numero ? ` · ${c.numero}` : ''}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <PortalInput label="Nombre completo" name="solicitante_nombre" colSpan={2}
                                 value={f.solicitante_nombre ?? ''} readOnly={resuelta}
                                 onChange={(e) => set('solicitante_nombre', e.target.value)} />
-                            <PortalInput label="Tipo de documento" name="solicitante_documento"
-                                value={f.solicitante_documento ?? ''} readOnly={resuelta}
-                                onChange={(e) => set('solicitante_documento', e.target.value)} />
+                            <div>
+                                <span className="text-caption font-bold text-content-2 block mb-1.5">Tipo de documento</span>
+                                <LiquidSelect value={f.solicitante_documento || 'DUI'} options={DOCUMENTOS}
+                                    disabled={resuelta} clearable={false}
+                                    onChange={(v) => set('solicitante_documento', v)} />
+                            </div>
                             <PortalInput label="Número" name="solicitante_numero"
                                 value={f.solicitante_numero ?? ''} readOnly={resuelta}
+                                maskType={f.solicitante_documento === 'DUI' ? 'DUI' : undefined}
+                                hasError={malDui} errorMessage="Ese DUI no pasa su dígito verificador."
                                 onChange={(e) => set('solicitante_numero', e.target.value)} />
                             <PortalInput label="Dirección" name="solicitante_direccion" colSpan={2}
                                 value={f.solicitante_direccion ?? ''} readOnly={resuelta}
                                 onChange={(e) => set('solicitante_direccion', e.target.value)} />
-                            <PortalInput label="Teléfono" name="solicitante_telefono"
+                            <PortalInput label="Teléfono" name="solicitante_telefono" maskType="PHONE"
                                 value={f.solicitante_telefono ?? ''} readOnly={resuelta}
+                                hasError={malTel} errorMessage="Un teléfono son ocho dígitos."
                                 onChange={(e) => set('solicitante_telefono', e.target.value)} />
-                            <PortalInput label="Correo electrónico" name="solicitante_correo"
+                            <PortalInput label="Correo electrónico" name="solicitante_correo" type="email"
                                 value={f.solicitante_correo ?? ''} readOnly={resuelta}
+                                hasError={malCorreo} errorMessage="Ese correo no tiene forma de correo."
                                 onChange={(e) => set('solicitante_correo', e.target.value)} />
                         </div>
                         <label className="flex items-center gap-2.5 mt-3 min-h-[var(--tap-min)] cursor-pointer">
@@ -290,70 +378,69 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                         copiando. Tres pantallas y una transcripción es donde se
                         pierde un dato. */}
                     <Seccion titulo="Qué consta en el portal"
-                        nota="Busca por el número del documento cotejado; si no hay número, por el nombre.">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Button variant="secondary" icon={buscando ? Loader2 : Search}
-                                disabled={buscando || !(f.identidad_numero?.trim() || f.solicitante_numero?.trim() || f.solicitante_nombre?.trim())}
-                                onClick={buscar}>Buscar a esta persona</Button>
-                            {hallazgo && (
-                                <>
+                        nota="Sale de la búsqueda de arriba. Es lo que se le entrega si pidió acceso.">
+                        {!hallazgo ? (
+                            <p className="text-body-sm text-content-3">
+                                Todavía no se ha buscado. Usa el buscador de arriba.
+                            </p>
+                        ) : (
+                            <>
+                                <div className="flex flex-wrap items-center gap-2">
                                     <Button variant="secondary" icon={Printer}
                                         onClick={imprimirRespuesta}>Imprimir la respuesta</Button>
                                     {(f.derechos ?? []).includes('portabilidad') && (
                                         <Button variant="secondary" icon={Download}
                                             onClick={descargarArchivo}>Descargar en archivo</Button>
                                     )}
-                                </>
-                            )}
-                        </div>
+                                </div>
 
-                        {hallazgo && (
-                            <div data-surface="card" className="p-3.5 flex flex-col gap-2">
-                                {hallazgo.porNombre && (
-                                    <Notice variant="warning" compact>
-                                        Se buscó por nombre porque no hay número de documento. Un nombre
-                                        trae homónimos: comprueba que la ficha sea la de esta persona
-                                        antes de entregarle nada.
-                                    </Notice>
-                                )}
-                                {hallazgo.clientes.length > 1 && (
-                                    <Notice variant="warning" compact>
-                                        {hallazgo.clientes.length} fichas de cliente coinciden. Afiná el
-                                        documento: no se puede elegir por usted de quién son los datos.
-                                    </Notice>
-                                )}
-                                {hallazgo.cliente && (
-                                    <p className="text-body-sm text-content-2 flex items-start gap-2">
-                                        <UserCheck size={15} className="text-success-text mt-0.5 shrink-0" />
-                                        <span>
-                                            <strong className="text-content">{hallazgo.cliente.name}</strong>
-                                            {' · ficha de cliente'}
-                                            {hallazgo.resumen?.compras
-                                                ? ` · ${hallazgo.resumen.compras.facturas ?? 0} documentos de venta`
-                                                : ''}
-                                            {hallazgo.resumen?.puntos
-                                                ? ` · ${hallazgo.resumen.puntos.saldo ?? 0} puntos`
-                                                : ''}
-                                        </span>
-                                    </p>
-                                )}
-                                {hallazgo.empleado && (
-                                    <p className="text-body-sm text-content-2 flex items-start gap-2">
-                                        <UserCheck size={15} className="text-success-text mt-0.5 shrink-0" />
-                                        <span>
-                                            <strong className="text-content">{shortEmployeeName(hallazgo.empleado)}</strong>
-                                            {' · expediente de personal'}
-                                        </span>
-                                    </p>
-                                )}
-                                {!hallazgo.cliente && !hallazgo.empleado && hallazgo.clientes.length <= 1 && (
-                                    <p className="text-body-sm text-content-3">
-                                        No consta ninguna ficha con esos datos. La respuesta se imprime
-                                        igual y dice que no hay información suya, que también es una
-                                        respuesta al acceso.
-                                    </p>
-                                )}
-                            </div>
+                                <div data-surface="card" className="p-3.5 flex flex-col gap-2">
+                                    {hallazgo.fallaron?.length > 0 && (
+                                        <Notice variant="danger" bloque>
+                                            No se pudo consultar {hallazgo.fallaron.join(', ')}. Esta búsqueda
+                                            está incompleta: no la uses para responder que no hay información.
+                                        </Notice>
+                                    )}
+                                    {hallazgo.porNombre && (
+                                        <Notice variant="warning" compact>
+                                            Se buscó por nombre. Un nombre trae homónimos: comprueba que la
+                                            ficha sea la de esta persona antes de entregarle nada.
+                                        </Notice>
+                                    )}
+
+                                    {/* Se listan los CINCO sitios, hayan encontrado
+                                        o no. Enseñar sólo los que dieron resultado
+                                        dejaría invisible lo que se miró, y «no
+                                        consta» sólo vale si se sabe dónde se buscó. */}
+                                    <ul className="flex flex-col gap-1.5">
+                                        {(hallazgo.donde ?? []).map((d) => (
+                                            <li key={d.clave} className="text-body-sm flex items-start gap-2">
+                                                {d.falló
+                                                    ? <AlertTriangle size={15} className="text-danger-text mt-0.5 shrink-0" />
+                                                    : d.filas.length
+                                                        ? <UserCheck size={15} className="text-success-text mt-0.5 shrink-0" />
+                                                        : <span className="w-[15px] shrink-0" />}
+                                                <span className="min-w-0 text-content-2">
+                                                    <span className="text-content-3">{d.rotulo}: </span>
+                                                    {d.falló ? 'no se pudo consultar'
+                                                        : d.filas.length === 0 ? 'sin coincidencias'
+                                                        : d.filas.length === 1 ? <strong className="text-content">{nombreDe(d)}</strong>
+                                                        : `${d.filas.length} coincidencias`}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {hallazgo.total === 0 && !hallazgo.fallaron?.length && (
+                                        <Notice variant="info" bloque>
+                                            Con esos datos no aparece nada. Antes de responder que no consta
+                                            información, prueba con el otro documento, con el teléfono o con
+                                            el nombre: un dato guardado de otra forma no aparece, y eso no es
+                                            lo mismo que no existir.
+                                        </Notice>
+                                    )}
+                                </div>
+                            </>
                         )}
                     </Seccion>
 
@@ -392,6 +479,8 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                             </div>
                             <PortalInput label="Número del documento cotejado" name="identidad_numero"
                                 value={f.identidad_numero ?? ''} readOnly={resuelta}
+                                maskType={f.identidad_documento === 'DUI' ? 'DUI' : undefined}
+                                hasError={malIdent} errorMessage="Ese DUI no pasa su dígito verificador."
                                 onChange={(e) => set('identidad_numero', e.target.value)} />
                             <div>
                                 <span className="text-caption font-bold text-content-2 block mb-1.5">Cómo desea la respuesta</span>
@@ -439,6 +528,42 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
             </LiquidModal.Footer>
         </>
     );
+}
+
+/**
+ * Aplana una fila de cualquiera de los cinco sitios a lo que pide el formulario.
+ *
+ * Cada tabla guarda lo mismo con otro nombre: el proveedor tiene `nombre` y
+ * `correo`, el cliente `name` y `email`, el practicante el nombre partido en
+ * dos. Traducir acá y no en cada sitio es lo que permite que elegir a una
+ * persona llene los campos sin importar de dónde salió.
+ */
+function comoPersona(clave, x) {
+    const base = { origen: clave };
+    if (clave === 'practicante') return { ...base,
+        nombre: `${x.first_names ?? ''} ${x.last_names ?? ''}`.trim(),
+        documento: 'DUI', numero: x.dui, telefono: x.phone, correo: '', direccion: '' };
+    if (clave === 'proveedor') return { ...base,
+        nombre: x.nombre, documento: x.dui ? 'DUI' : 'NIT', numero: x.dui || x.nit,
+        telefono: x.telefono, correo: x.correo, direccion: x.direccion };
+    if (clave === 'receta') return { ...base,
+        nombre: x.paciente_nombre, documento: 'DUI', numero: x.paciente_documento,
+        telefono: '', correo: '', direccion: '' };
+    if (clave === 'empleado') return { ...base,
+        nombre: x.name, documento: 'DUI', numero: x.dui,
+        telefono: x.phone, correo: x.email, direccion: x.address };
+    return { ...base, nombre: x.name, documento: x.dui ? 'DUI' : 'NIT',
+        numero: x.dui || x.nit, telefono: x.phone, correo: x.email, direccion: x.direccion };
+}
+
+/** El nombre que muestra cada sitio: no todos lo guardan en `name`. */
+function nombreDe(d) {
+    const fila = d.filas[0] ?? {};
+    if (d.clave === 'practicante') return `${fila.first_names ?? ''} ${fila.last_names ?? ''}`.trim();
+    if (d.clave === 'proveedor') return fila.nombre ?? '';
+    if (d.clave === 'receta') return fila.paciente_nombre ?? '';
+    if (d.clave === 'empleado') return shortEmployeeName(fila);
+    return fila.name ?? '';
 }
 
 function Seccion({ titulo, nota, children }) {

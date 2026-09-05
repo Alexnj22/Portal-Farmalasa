@@ -160,42 +160,87 @@ const soloDigitos = (s) => String(s ?? '').replace(/\D/g, '');
  * @param {{documento?: string, numero?: string, nombre?: string}} quien
  * @returns {Promise<{clientes: object[], empleados: object[], porNombre: boolean}>}
  */
-export async function buscarPersona({ numero, nombre } = {}) {
+export async function buscarPersona({ numero, nombre, telefono } = {}) {
     const doc = soloDigitos(numero);
-    const porNombre = !doc && !!nombre?.trim();
+    const tel = soloDigitos(telefono);
+    const porNombre = !doc && !tel && !!nombre?.trim();
 
-    if (!doc && !porNombre) return { clientes: [], empleados: [], porNombre: false };
+    if (!doc && !tel && !porNombre) return { vacio: true, donde: [], porNombre: false };
 
     // El DUI vive con guion en unas fichas y sin él en otras. Se prueban las dos
     // formas antes que normalizar en la base: un `replace` por fila en 28,161
     // fichas es un barrido, y acá se busca UNA persona.
     const conGuion = doc.length === 9 ? `${doc.slice(0, 8)}-${doc.slice(8)}` : null;
+    const formas = [doc, conGuion].filter(Boolean);
+    const nom = nombre?.trim() ?? '';
 
-    const [cli, emp] = await Promise.all([
-        doc
-            ? supabase.from('customers')
-                .select('id, erp_id, name, dui, nit, phone, email, direccion, fecha_nacimiento, acumula_puntos')
-                .or([`dui.eq.${doc}`, conGuion && `dui.eq.${conGuion}`, `nit.eq.${doc}`]
-                    .filter(Boolean).join(','))
-                .limit(20)
-            : supabase.from('customers')
-                .select('id, erp_id, name, dui, nit, phone, email, direccion, fecha_nacimiento, acumula_puntos')
-                .ilike('name', `%${nombre.trim()}%`)
-                .limit(20),
-        doc
-            ? supabase.from('employees')
-                .select('id, name, code, dui, phone, email, address, birth_date, status')
-                .or([`dui.eq.${doc}`, conGuion && `dui.eq.${conGuion}`].filter(Boolean).join(','))
-                .limit(20)
-            : supabase.from('employees')
-                .select('id, name, code, dui, phone, email, address, birth_date, status')
-                .ilike('name', `%${nombre.trim()}%`)
-                .limit(20),
-    ]);
+    // ── Los SEIS sitios donde puede estar una persona ──────────────────────
+    // La primera versión miraba sólo clientes y personal, y con eso una hoja
+    // firmada podía decir «no consta información suya» sobre alguien que tiene
+    // una receta registrada. Un dato de SALUD. Buscar en menos sitios de los que
+    // hay no devuelve un error: devuelve una respuesta falsa y con membrete.
+    const donde = [
+        { clave: 'cliente', rotulo: 'ficha de cliente', tabla: 'customers',
+          cols: 'id, erp_id, name, dui, nit, phone, email, direccion, fecha_nacimiento, acumula_puntos',
+          docCols: ['dui', 'nit'], telCols: ['phone'], nombreCol: 'name' },
+        { clave: 'empleado', rotulo: 'expediente de personal', tabla: 'employees',
+          cols: 'id, name, code, dui, phone, email, address, birth_date, status',
+          docCols: ['dui'], telCols: ['phone'], nombreCol: 'name' },
+        { clave: 'practicante', rotulo: 'horas sociales o pasantía', tabla: 'practicantes',
+          cols: 'id, first_names, last_names, dui, phone, birth_date, institucion_educativa, estado',
+          docCols: ['dui'], telCols: ['phone'], nombreCol: 'last_names' },
+        { clave: 'proveedor', rotulo: 'ficha de proveedor', tabla: 'proveedores_maestro',
+          cols: 'nit, nombre, dui, nrc, telefono, correo, direccion',
+          docCols: ['dui', 'nit'], telCols: ['telefono'], nombreCol: 'nombre' },
+        // Dato de SALUD. Va en la lista porque es el que más pesa si falta, no
+        // porque sea el más probable.
+        { clave: 'receta', rotulo: 'receta registrada', tabla: 'recetas',
+          cols: 'id, anio, correlativo, paciente_nombre, paciente_edad, paciente_documento, fecha_prescripcion, estado',
+          docCols: ['paciente_documento'], telCols: [], nombreCol: 'paciente_nombre' },
+    ];
 
-    if (cli.error) throw cli.error;
-    if (emp.error) throw emp.error;
-    return { clientes: cli.data ?? [], empleados: emp.data ?? [], porNombre };
+    const consultas = donde.map((d) => {
+        let q = supabase.from(d.tabla).select(d.cols).limit(20);
+        if (doc) {
+            q = q.or(d.docCols.flatMap((c) => formas.map((v) => `${c}.eq.${v}`)).join(','));
+        } else if (tel) {
+            // El teléfono vive con guion, sin él y a veces con el código de
+            // país. Se buscan las tres formas y, si la tabla no guarda
+            // teléfono, la consulta no devuelve nada en vez de fallar.
+            if (!d.telCols.length) return supabase.from(d.tabla).select(d.cols).limit(0);
+            const conGuionTel = tel.length === 8 ? `${tel.slice(0, 4)}-${tel.slice(4)}` : null;
+            const formasTel = [tel, conGuionTel, `+503${tel}`].filter(Boolean);
+            q = q.or(d.telCols.flatMap((c) => formasTel.map((v) => `${c}.eq.${v}`)).join(','));
+        } else {
+            q = q.ilike(d.nombreCol, `%${nom}%`);
+        }
+        return q;
+    });
+
+    const rs = await Promise.all(consultas);
+
+    // Un error acá NO se traga. Si una de las seis consultas falla y se ignora,
+    // la respuesta dice «no consta» sobre un sitio que nunca se miró, y eso es
+    // exactamente lo que este cambio vino a impedir.
+    const fallaron = [];
+    const resultados = donde.map((d, k) => {
+        if (rs[k].error) {
+            fallaron.push(d.rotulo);
+            console.error(`[solicitudes] falló la búsqueda en ${d.tabla}: ${rs[k].error.message}`);
+            return { ...d, filas: [], falló: true };
+        }
+        return { ...d, filas: rs[k].data ?? [], falló: false };
+    });
+
+    return {
+        donde: resultados,
+        fallaron,
+        porNombre,
+        // «Una» por sitio: con varias no se elige por nadie.
+        cliente:     resultados[0].filas.length === 1 ? resultados[0].filas[0] : null,
+        empleado:    resultados[1].filas.length === 1 ? resultados[1].filas[0] : null,
+        total: resultados.reduce((a, r) => a + r.filas.length, 0),
+    };
 }
 
 /**

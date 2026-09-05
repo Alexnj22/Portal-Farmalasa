@@ -41,9 +41,10 @@ const fila = (rotulo, valor) => (valor === null || valor === undefined || valor 
  * @param {object|null} args.cliente   la ficha de cliente encontrada
  * @param {object|null} args.empleado  la ficha de personal encontrada
  * @param {object|null} args.resumen   lo que devuelve `resumenDeCliente`
+ * @param {object[]} [args.donde]      los sitios consultados, con sus resultados
  * @returns {string} documento HTML completo
  */
-export function papelDeRespuesta({ solicitud, cliente, empleado, resumen }) {
+export function papelDeRespuesta({ solicitud, cliente, empleado, resumen, donde }) {
     const hoy = new Date().toLocaleDateString('es-SV',
         { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -127,12 +128,70 @@ export function papelDeRespuesta({ solicitud, cliente, empleado, resumen }) {
         </section>`);
     }
 
+    // ── Lo demás, y lo que no se encontró ─────────────────────────────────
+    // El Art. 8 pide decir qué hay. Cuando NO hay, la hoja tiene que decir
+    // dónde se buscó: «no consta» sin decir dónde es una afirmación que el
+    // lector no puede comprobar, y que quien la firma tampoco.
+    for (const d of (donde ?? [])) {
+        if (['cliente', 'empleado'].includes(d.clave)) continue;   // ya salieron arriba
+        if (!d.filas?.length) continue;
+        if (d.clave === 'receta') {
+            bloques.push(`
+        <section>
+          <h2>Recetas registradas</h2>
+          <p class="nota">La norma sanitaria obliga a dejar constancia de la
+          dispensación de medicamentos que exigen receta. Es información de salud
+          y por su naturaleza se entrega en mano, con su documento a la vista.</p>
+          <table class="datos">
+            ${fila('Registros a su nombre', d.filas.length)}
+            ${fila('Del período', [dia(d.filas[d.filas.length - 1]?.fecha_prescripcion),
+                                   dia(d.filas[0]?.fecha_prescripcion)].filter(Boolean).join(' al ') || null)}
+          </table>
+        </section>`);
+        } else if (d.clave === 'practicante') {
+            const x = d.filas[0] ?? {};
+            bloques.push(`
+        <section>
+          <h2>Su período de horas sociales o pasantía</h2>
+          <table class="datos">
+            ${fila('Nombre', `${x.first_names ?? ''} ${x.last_names ?? ''}`.trim())}
+            ${fila('Documento de identidad', x.dui)}
+            ${fila('Teléfono', x.phone)}
+            ${fila('Institución educativa', x.institucion_educativa)}
+            ${fila('Estado', x.estado)}
+          </table>
+        </section>`);
+        } else if (d.clave === 'proveedor') {
+            const x = d.filas[0] ?? {};
+            bloques.push(`
+        <section>
+          <h2>Su ficha de proveedor</h2>
+          <table class="datos">
+            ${fila('Nombre', x.nombre)}
+            ${fila('Documento de identidad', x.dui)}
+            ${fila('Número de identificación tributaria', x.nit)}
+            ${fila('Registro de contribuyente', x.nrc)}
+            ${fila('Teléfono', x.telefono)}
+            ${fila('Correo electrónico', x.correo)}
+            ${fila('Dirección', x.direccion)}
+          </table>
+        </section>`);
+        }
+    }
+
     if (!bloques.length) {
+        const sitios = (donde ?? []).map((d) => d.rotulo).join(', ');
         bloques.push(`
         <section>
           <h2>No consta información suya</h2>
-          <p>Con los datos de su solicitud no se encontró ninguna ficha a su
-          nombre en los registros de la Empresa.</p>
+          <p>Con los datos de su solicitud no se encontró ninguna información a
+          su nombre.</p>
+          ${sitios ? `<p class="nota">Se buscó en: ${esc(sitios)}.</p>` : ''}
+          <p class="nota">Si usted considera que la Empresa sí conserva
+          información suya, puede presentar una solicitud nueva con otro
+          documento, con su número de teléfono o con el nombre tal como aparece
+          en un documento de venta. Un dato guardado de otra forma no aparece en
+          esta búsqueda, y eso no es lo mismo que no existir.</p>
         </section>`);
     }
 

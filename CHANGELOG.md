@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1014.0 — Se elige a la persona y los campos se llenan solos
+
+Dos preguntas del usuario, y la primera destapó un defecto de los que producen
+un documento firmado que dice algo falso.
+
+### «¿Qué pasa si no se encuentra?» — la búsqueda miraba dos de cinco sitios
+
+Miraba `customers` y `employees`. No miraba **recetas**, ni practicantes, ni
+proveedores. O sea que una hoja firmada podía decir «no consta información suya»
+sobre alguien que tiene una **receta registrada a su nombre**, que es un dato de
+salud, el más sensible que la Empresa conserva.
+
+Buscar en menos sitios de los que hay no devuelve un error: devuelve una
+respuesta falsa y con membrete. Ahora son **cinco** y la pantalla los lista
+todos, hayan encontrado o no: «no consta» sólo vale si se sabe dónde se buscó, y
+la hoja impresa también lo dice.
+
+Tres decisiones alrededor de eso:
+
+- **Un error de consulta no se traga.** Si una de las cinco falla, la pantalla
+  avisa que la búsqueda está incompleta y que no se use para responder que no hay
+  información. Antes, ese fallo habría pasado como «sin coincidencias».
+- **«No aparece» no es «no existe».** Cuando no hay nada, el aviso propone
+  probar con el otro documento, con el teléfono o con el nombre. Un dato guardado
+  de otra forma no aparece, y confundir las dos cosas es la vulneración.
+- **La hoja de respuesta dice dónde se buscó.** Un «no consta» sin decir dónde
+  es una afirmación que el lector no puede comprobar, y quien la firma tampoco.
+
+### «No hay validaciones» — y el flujo estaba al revés
+
+El usuario llenó el formulario con un DUI de catorce dígitos, un teléfono con
+comillas y un correo sin arroba, y el portal lo aceptó todo. Peor: con esos datos
+la búsqueda nunca iba a encontrar a nadie, y el resultado se habría leído como
+«esta persona no está en el portal».
+
+Ahora los tres campos con forma se validan con el canónico de clientes, que ya
+conoce el **dígito verificador del DUI**. Escribir la comprobación aparte habría
+dado un segundo criterio, y el día que difieran nadie sabría cuál manda.
+
+**Y el flujo se dio vuelta**, que es lo que de verdad lo arregla. Antes era
+escribir a mano y después buscar; ahora se busca primero, se elige a la persona
+de una lista y **los campos se llenan solos** con lo que la base ya tiene. El
+buscador adivina qué se escribió: nueve dígitos es un DUI, ocho es un teléfono,
+lo demás es un nombre.
+
+El selector cruza los cinco sitios, así que una persona que es **cliente y
+empleado a la vez** aparece dos veces y se ve que es la misma. Eso responde de
+paso el «enlazar la ficha del cliente con la del empleado»: no hace falta un
+enlace guardado, alcanza con que la búsqueda mire en los dos y lo muestre.
+
 ## v2.1013.0 — Tarjetas en todas las pestañas, y la promoción y el mes entran a la píldora
 
 Reportado con captura: «liquidación sigue sin ser canónico, no hay filterbar ni

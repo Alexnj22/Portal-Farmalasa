@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1015.6 — El representante tiene su propio renglón en el aviso
+
+«8.2 está mejor, pero la parte del documento que lo autoriza siento que se puede
+mejorar, me pierdo en la lectura». El diagnóstico era exacto y la frase tenía dos
+defectos medibles.
+
+**No tenía verbo.** Decía «Si usted pide por otra persona, **además el documento**
+que lo autoriza». El verbo se heredaba de la oración anterior, tres líneas antes
+y con una subordinada en el medio («cualquiera que haya sido la vía por la que
+solicitó»). A esa distancia el hilo se corta.
+
+**Y encadenaba tres pronombres para dos personas distintas**: «*usted* pide por
+**otra persona**» → «el documento que **lo** autoriza» → «a representar**la**».
+El lector tiene que sostener quién es quién a través de dos clíticos.
+
+Elegido por el usuario entre tres alternativas: el caso del representante sale de
+la 8.2 y pasa a ser **su propia cláusula**. Así cada una tiene un solo caso y no
+hay que sostener dos a la vez.
+
+Cuesta una cláusula más, y vale la pena: la sección «Cómo se pide» es la que
+alguien lee **cuando ya tiene un problema**, no la que hojea de paso.
+
 ## v2.1015.5 — El aviso no explica el reloj interno
 
 Dos observaciones del usuario, y la primera con el criterio correcto: **si la ley

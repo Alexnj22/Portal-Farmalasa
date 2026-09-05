@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1009.3 — El papel de la solicitud no se pinta en oscuro
+
+Lo mostró el usuario con una captura de la ventana de impresión: el formulario
+salía **blanco sobre negro**.
+
+El documento trae su bloque `prefers-color-scheme: dark` porque el mismo archivo
+se publica en línea, y ahí el modo oscuro sí corresponde. En una ventana de
+impresión, con el sistema en oscuro, ese bloque ganaba.
+
+**El papel impreso nunca estuvo mal**: el `@media print` del documento ya fuerza
+negro sobre blanco. Lo que estaba mal era lo que se ve **antes** de apretar
+imprimir, que es lo único que mira quien está por mandarlo a la impresora, y un
+formulario que se ve invertido no invita a imprimirlo.
+
+Se apaga con `data-theme="light"` en el `<html>` que arma el generador, y no
+borrando el bloque oscuro: el bloque lo necesita la página pública. El
+formulario, no. Es la regla del papel escrita en CLAUDE.md, que hasta ahora sólo
+se aplicaba a la ticketera: **el papel no tiene tema**.
+
+Verificado con el navegador en los dos modos: fondo `rgb(250,250,248)` en ambos.
+
 ## v2.1009.2 — Solicitudes de datos aparece en el menú
 
 Reportado por el usuario: «no la encuentro como edwin». Eran dos cosas, y la

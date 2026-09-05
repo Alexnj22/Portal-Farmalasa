@@ -77,7 +77,17 @@ const CUERPO = ${JSON.stringify(cuerpo)};
  * @returns {string} documento HTML completo
  */
 export function papelDeSolicitudDeDatos(folio) {
-    return '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+    // ── \`data-theme="light"\`: el papel NO tiene tema ───────────────────────
+    // El documento trae su bloque \`prefers-color-scheme: dark\` porque también
+    // se publica en línea, y en una ventana de impresión con el sistema en
+    // oscuro salía blanco sobre negro. Al imprimir manda \`@media print\`, que ya
+    // fuerza negro sobre blanco, así que el PAPEL nunca estuvo mal: lo que
+    // estaba mal era lo que se ve ANTES de apretar imprimir, que es lo único
+    // que mira quien está por mandarlo a la impresora.
+    //
+    // Se apaga con el atributo y no borrando el bloque: el mismo archivo lo usa
+    // la página pública, donde el modo oscuro sí corresponde.
+    return '<!doctype html><html lang="es" data-theme="light"><head><meta charset="utf-8">'
         + '<title>Solicitud ' + folio + '</title>'
         + '<meta name="viewport" content="width=device-width,initial-scale=1">'
         + '</head><body>'

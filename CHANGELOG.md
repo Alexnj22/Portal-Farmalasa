@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1014.6 — El aviso no dice que el propietario guarde los datos
+
+**«¿Es válido? ¿Él la guarda?»** El usuario leyó la cláusula 1.1 y encontró un
+error que yo había metido al simplificar.
+
+Decía que José Alemán V. **«es quien guarda su información y quien responde por
+ella»**. No la guarda: la cláusula 5 del mismo documento dice que la información
+está en servidores de Estados Unidos operados por Supabase y Vercel. El aviso se
+contradecía a sí mismo cuatro páginas más adelante.
+
+Y el error no era sólo de hecho. Lo que la ley llama **responsable del
+tratamiento** es quien **decide la finalidad y los medios** (Art. 4 letra p), no
+quien almacena. Al buscar una palabra más común elegí una que dice otra cosa, y
+justamente la que el Art. 4 letra j) reserva para el **encargado**, que es lo que
+Supabase y Vercel son.
+
+Queda **«es quien decide qué se hace con su información y quien responde por
+ella»**: dice lo mismo que la ley, en palabras que no hay que traducir, y no
+choca con la cláusula 5.
+
+**Y el resumen, de nuevo.** El anterior enumeraba cinco cosas y cambiaba de
+sujeto tres veces entre la Empresa y usted. Elegido por el usuario entre tres
+alternativas: los tres casos en una sola frase, tres cosas en vez de cinco, y
+fuera el «nos provee» que mezclaba el «nosotros» con «la Empresa». De 84
+palabras a 48.
+
 ## v2.1014.5 — El aviso se lee mejor y no se cobra nada
 
 Cinco observaciones del usuario leyendo el aviso impreso.

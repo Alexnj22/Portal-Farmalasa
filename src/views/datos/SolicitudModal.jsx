@@ -14,13 +14,14 @@
  * imprimirse hoy y volver llena la semana que viene.
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FileText, Loader2, ShieldCheck, Clock, Search, Printer, Download, UserCheck, AlertTriangle } from 'lucide-react';
+import { FileText, Loader2, ShieldCheck, Clock, Printer, Download, UserCheck, AlertTriangle } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
+import SearchInput from '../../components/common/SearchInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import { useToastStore } from '../../store/toastStore';
@@ -112,34 +113,65 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
         solicitud.solicitante_numero || solicitud.solicitante_nombre || '');
     const [candidatos, setCandidatos] = useState([]);
 
+    /* Una solicitud resuelta no se toca: apaga el buscador y deja los campos
+       en sólo lectura. Va ACÁ ARRIBA porque el efecto de la búsqueda lo lee —
+       declarado abajo, `gate:tdz` lo cuenta como deuda diferida. */
+    const resuelta = solicitud.estado === 'RESUELTA';
+
     useEffect(() => { saveDraft(claveBorrador, f); }, [claveBorrador, f]);
 
     /**
-     * Busca por lo que se escriba: si tiene nueve dígitos es un DUI, si tiene
-     * ocho es un teléfono, y si no, es un nombre. Adivinar acá y no pedir tres
-     * campos es lo que hace que se use.
+     * Busca MIENTRAS se escribe, sin botón.
+     *
+     * ── Por qué no hay «Buscar» (2026-09-05) ──────────────────────────────
+     * Pedido del usuario. Un botón al lado del campo convierte una búsqueda en
+     * dos actos, y el segundo se olvida: el formulario de abajo se puede llenar
+     * a mano sin apretarlo nunca, que es justo lo que este selector existe para
+     * evitar —un dígito de más y la persona queda sin cruzar con la base—.
+     *
+     * ── Qué se busca lo decide lo escrito ─────────────────────────────────
+     * Nueve dígitos es un DUI, ocho es un teléfono, y cualquier otra cosa es un
+     * nombre. Adivinar acá y no pedir tres campos es lo que hace que se use.
+     *
+     * ── Los 300 ms y el mínimo de tres letras ─────────────────────────────
+     * La consulta cruza seis orígenes (clientes, empleados, proveedores,
+     * practicantes, recetas…), así que dispararla en cada tecla es trabajo
+     * tirado: se espera a que se deje de escribir. Y con menos de tres letras
+     * la respuesta serían cientos de filas que no acercan a nadie — es el mismo
+     * criterio que el buscador de productos.
+     *
+     * `vivo` no es ceremonia: escribiendo rápido salen varias consultas y
+     * vuelven desordenadas. Sin él, la respuesta de «edw» puede llegar DESPUÉS
+     * de la de «edwin» y pisar la lista buena con una más vieja.
      */
-    const buscar = async () => {
+    useEffect(() => {
         const t = termino.trim();
-        const digitos = t.replace(/\D/g, '');
-        setBuscando(true);
-        try {
-            const r = await buscarPersona({
-                numero: digitos.length === 9 ? t : '',
-                telefono: digitos.length === 8 ? t : '',
-                nombre: digitos.length === 9 || digitos.length === 8 ? '' : t,
-            });
-            setCandidatos((r.donde ?? []).flatMap((d) => d.filas.map((x) => comoPersona(d.clave, x))));
-            // El resumen se pide sólo cuando hay UNA ficha de cliente: con
-            // varias, elegir por nosotros es adivinar de quién son los datos.
-            const resumen = r.cliente ? await resumenDeCliente(r.cliente.id) : null;
-            setHallazgo({ ...r, resumen });
-        } catch (e) {
-            showToast('No se pudo buscar', mensajeAmigable(e), 'error');
-        } finally {
-            setBuscando(false);
-        }
-    };
+        if (resuelta) return undefined;
+        if (t.length < 3) { setCandidatos([]); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- sin término no hay lista que mostrar; dejarla puesta ofrecería resultados de otra búsqueda
+        let vivo = true;
+        const id = setTimeout(async () => {
+            const digitos = t.replace(/\D/g, '');
+            setBuscando(true);
+            try {
+                const r = await buscarPersona({
+                    numero: digitos.length === 9 ? t : '',
+                    telefono: digitos.length === 8 ? t : '',
+                    nombre: digitos.length === 9 || digitos.length === 8 ? '' : t,
+                });
+                if (!vivo) return;
+                setCandidatos((r.donde ?? []).flatMap((d) => d.filas.map((x) => comoPersona(d.clave, x))));
+                // El resumen se pide sólo cuando hay UNA ficha de cliente: con
+                // varias, elegir por nosotros es adivinar de quién son los datos.
+                const resumen = r.cliente ? await resumenDeCliente(r.cliente.id) : null;
+                if (vivo) setHallazgo({ ...r, resumen });
+            } catch (e) {
+                if (vivo) showToast('No se pudo buscar', mensajeAmigable(e), 'error');
+            } finally {
+                if (vivo) setBuscando(false);
+            }
+        }, 300);
+        return () => { vivo = false; clearTimeout(id); };
+    }, [termino, resuelta, showToast]);
 
     /** Elegir a alguien LLENA los campos: es el punto de todo el selector. */
     const elegir = (c) => {
@@ -259,7 +291,6 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
         }
     }, [solicitud, f, claveBorrador, showToast, onGuardada, onClose]);
 
-    const resuelta = solicitud.estado === 'RESUELTA';
 
     return (
         <>
@@ -303,14 +334,26 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                             los campos primero, quien transcribe los llena a mano
                             y el buscador queda como un extra que nadie aprieta;
                             arriba, la forma natural es encontrar y confirmar. */}
-                        <div className="flex flex-wrap items-end gap-2">
-                            <PortalInput label="Nombre, DUI o teléfono" name="buscar" colSpan={2}
-                                value={termino} readOnly={resuelta}
-                                placeholder="Escribe y presiona buscar"
-                                onChange={(e) => setTermino(e.target.value)} />
-                            <Button variant="secondary" icon={buscando ? Loader2 : Search}
-                                disabled={buscando || resuelta || !termino.trim()}
-                                onClick={buscar}>Buscar</Button>
+                        {/* `SearchInput` y no un `PortalInput` con un botón al
+                            lado: es el canónico del buscador dentro de un modal
+                            y trae lo que hace falta acá —el spinner en el sitio
+                            de la lupa, la ✕ para limpiar y el contrato de
+                            Escape—. El rótulo va aparte porque el canónico no
+                            dibuja uno: el placeholder desaparece al escribir, y
+                            «Nombre, DUI o teléfono» es justo lo que hay que
+                            seguir viendo mientras se escribe. */}
+                        <div className="space-y-1 min-w-0">
+                            <span className="text-label uppercase tracking-wide font-semibold text-content-2">
+                                Nombre, DUI o teléfono
+                            </span>
+                            <SearchInput
+                                value={termino}
+                                onChange={setTermino}
+                                disabled={resuelta}
+                                loading={buscando}
+                                placeholder="Escribe un nombre, un DUI o un teléfono…"
+                                ariaLabel="Buscar a la persona por nombre, DUI o teléfono"
+                            />
                         </div>
 
                         {candidatos.length > 0 && (

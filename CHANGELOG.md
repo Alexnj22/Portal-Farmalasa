@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1014.1 — La persona se busca mientras se escribe
+
+Pedido del usuario sobre el buscador de la solicitud: «que sea un input /
+buscador completo, sin el botón de buscar, mientras se escribe que salga».
+
+El botón se fue. Convertía una búsqueda en dos actos, y el segundo se olvida: el
+formulario de abajo se puede llenar a mano sin apretarlo nunca, que es
+exactamente lo que este selector existe para evitar —un dígito de más y la
+persona queda sin cruzar con la base—.
+
+Ahora la lista sale sola a los **300 ms** de dejar de escribir, con un mínimo de
+tres letras: la consulta cruza seis orígenes (clientes, empleados, proveedores,
+practicantes, recetas), así que dispararla en cada tecla es trabajo tirado, y con
+menos de tres letras la respuesta serían cientos de filas que no acercan a nadie.
+
+Y el control pasó a ser `SearchInput`, que es el canónico del buscador dentro de
+un modal: trae el spinner en el sitio de la lupa, la ✕ para limpiar y el contrato
+de Escape. El rótulo va aparte a propósito —el canónico no dibuja uno, y el
+placeholder desaparece al escribir, que es justo cuando hay que seguir viendo
+«Nombre, DUI o teléfono»—.
+
+Detalle que no se ve pero decide: cada consulta lleva su bandera `vivo`.
+Escribiendo rápido salen varias y vuelven desordenadas; sin ella, la respuesta de
+«edw» puede llegar DESPUÉS de la de «edwin» y pisar la lista buena con una más
+vieja.
+
 ## v2.1014.0 — Se elige a la persona y los campos se llenan solos
 
 Dos preguntas del usuario, y la primera destapó un defecto de los que producen

@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1021.1 — El lector de boletas se puede volver a medir cuando haga falta
+
+`npm run probar:boletas [cuántas]`. Baja los últimos comprobantes subidos, los
+pasa por el MISMO camino que el navegador y le pregunta al lector si saca el
+monto que quedó guardado.
+
+Existe porque la comprobación de v2.1020.1 y v2.1021.0 se hizo a mano y se iba a
+perder. El arreglo tiene tres piezas —el cotejo del papel contra sí mismo, el
+reintento girado y el campo que no se cierra sin confirmación— y ninguna se puede
+dar por buena leyendo el código: hay que preguntarle al lector, y hay que poder
+volver a preguntárselo el día que alguien toque el prompt.
+
+Tres decisiones de medición que cambian el resultado, y por eso están escritas
+adentro:
+
+- **La foto se reduce como en producción** (1400 px de lado largo). Probar con el
+  archivo del bucket tal cual es probar otra cosa: con más píxeles el lector
+  acierta justo donde en producción falla — medido, la misma boleta da 248.5 a
+  1400 px y 240.50 al doble.
+- **El giro lo hace un Chromium de verdad**, evaluando `src/utils/fotoParaLeer.js`
+  tal como está en el repo. Girar con una librería de imágenes probaría la
+  librería; lo que hay que probar es el `canvas` que corre en el teléfono de la
+  sala.
+- **La verdad es el monto guardado del movimiento**, que es lo que alguien con el
+  papel en la mano dio por bueno. No es perfecta —si el lector se equivocó y
+  nadie lo notó, quedó guardado el error— pero es la única disponible, y para lo
+  que sirve alcanza: detecta que algo cambió.
+
+**No falla nunca a propósito.** Que una lectura no coincida con lo guardado
+puede ser culpa del lector o de quien lo anotó a mano; el script informa cuáles y
+quien mire abre la foto y decide. Un gate que acusa sin poder distinguir esas dos
+cosas se termina desactivando.
+
+Y las fotos —que traen nombres, DUI y montos de clientes reales— se descargan a
+un temporal y se borran al terminar, pase lo que pase.
+
 ## v2.1021.0 — Un monto que el papel no comprueba se escribe a mano y queda marcado
 
 Regla del usuario, dicha entera: **«si no está seguro el resultado, debe decirlo
@@ -58,10 +94,13 @@ Dos decisiones sobre esa marca:
   y rotularlo pondría una etiqueta en casi todas las líneas. Una marca que
   aparece siempre deja de leerse, y entonces tampoco se lee la que importa.
 
-Medido sobre las mismas 15 boletas reales de v2.1020.1: **13 cerradas y
-confirmadas**, todas con el monto que dice el papel; **2 abiertas y marcadas** —
-la de un solo importe y la que se desmiente. Con el reintento girado de
-v2.1020.1, esa última termina en $240.50 confirmado.
+Medido de punta a punta sobre las mismas 15 boletas reales —la foto pasa por el
+canvas de un navegador de verdad y de ahí al lector, con el reintento girado
+incluido—: **15 de 15 con el monto que dice el papel**, 14 con el campo cerrado y
+1 abierta y marcada (la que trae un solo importe). La 018540 sale $240.50
+confirmado en dos llamadas.
+
+Queda repetible: `npm run probar:boletas [cuántas]`.
 
 ## v2.1020.1 — Un monto que el papel desmiente se vuelve a leer con la foto derecha
 

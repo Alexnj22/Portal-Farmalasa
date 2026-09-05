@@ -46,6 +46,7 @@
     "version:bump": "node scripts/version-bump.mjs",
     "worktree": "bash scripts/worktree.sh",
     "limpiar:dist": "node scripts/limpiar-dist.mjs",
+    "probar:boletas": "node scripts/probar-lectura-de-boletas.mjs",
     "verificar:libros": "node scripts/verificar-libros.mjs",
     "gate:permisos": "node scripts/permissions-gate.mjs",
     "fichas:diaria": "echo \"La corrida diaria ahora vive en Supabase (cron sincronizar-fichas-clientes-2130-sv). Para dispararla a mano, invocar la edge function.\"",

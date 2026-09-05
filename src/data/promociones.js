@@ -21,6 +21,28 @@ export async function fetchPromociones(estado = null, tipo = null) {
     return data ?? [];
 }
 
+/**
+ * Los productos que se pueden meter en una promoción, para elegir VARIOS.
+ *
+ * Dos caminos y no tres: por nombre y por laboratorio. **Por categoría no se
+ * puede** — medido el 2026-09-05, `products` no tiene columna de categoría,
+ * ninguna clave foránea apunta a `product_categories` (30 filas huérfanas) y
+ * `tipo_medicamento` está vacío en 4,371 de 4,376 activos.
+ *
+ * Devuelve `{ total, productos }`: el total va SIN el tope, así la pantalla
+ * puede decir «400 de 512» en vez de mostrar una lista corta que parece
+ * completa.
+ */
+export async function fetchProductosParaPromocion({ texto = null, laboratorioId = null } = {}) {
+    const { data, error } = await supabase.rpc('get_productos_para_promocion', {
+        p_search: texto || null,
+        p_laboratorio_id: laboratorioId || null,
+        p_limit: 400,
+    });
+    if (error) throw error;
+    return data ?? { total: 0, productos: [] };
+}
+
 /** El detalle de una: renglones, reparto por sala y quién vendió. */
 export async function fetchPromocion(id) {
     const { data, error } = await supabase.rpc('get_promocion', {

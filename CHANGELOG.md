@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1005.0 — Crear una promoción: lo general una vez, y los productos en bloque
+
+Reportado con captura: «¿y si quiero agregar todas las leches? … configurar la
+promoción general, fecha inicio, fin y si tiene bono, y luego un listado de
+producto».
+
+**El formulario estaba armado al revés de como se negocia.** Preguntaba producto
+por producto —sus fechas, su lote, su bono— así que una campaña de doce leches
+eran doce búsquedas y doce veces los mismos datos, que en la negociación se
+acordaron UNA vez.
+
+Ahora el orden es: **la promoción** (vigencia, lote, bono, y si además baja el
+precio en la venta) → **los productos**.
+
+**Agregar en bloque, por nombre o por laboratorio.** Se marcan varios de la
+lista y entran juntos, ya con los valores generales puestos. Medido: «ensure»
+trae 11, MEDIKEM trae 150.
+
+**Cambiar un valor general alcanza sólo a los productos que nadie ajustó a
+mano.** Los ajustados se respetan: pisarlos sería deshacer trabajo sin decirlo,
+y el formulario no tiene cómo avisar de un cambio que ya ocurrió.
+
+**La base NO cambia.** `promocion_renglon` sigue guardando fecha, lote y bono
+por renglón —a propósito, porque dos productos de la misma campaña pueden
+llegar en fechas distintas—. Lo que cambia es de dónde salen.
+
+**Por categoría NO se puede, y no es un olvido.** Medido: `products` no tiene
+columna de categoría, ninguna clave foránea apunta a `product_categories` (30
+filas huérfanas) y `tipo_medicamento` está vacío en **4,371 de 4,376** productos
+activos. Ofrecer ese filtro sería ofrecer un recorte que sólo puede dar vacío —
+y un vacío se lee como «no hay productos de esa categoría» en vez de «nadie
+clasificó nada». Queda anotado como pendiente de datos, no de pantalla.
+
+Y la búsqueda por texto es **literal**: «leche» trae 22 e incluye «COPA SUNDAE
+DULCE DE LECHE SARITA». La lista se muestra entera con sus casillas para que
+quien elige vea lo que entra y desmarque — un buscador que filtra de más «por
+ayudar» esconde justo lo que habría que revisar.
+
+Piezas: `AgregarProductos.jsx` (nuevo), `GeneralDeLaPromocion` en
+`PromocionModal.jsx`, y el RPC `get_productos_para_promocion(text, int, int)`.
+
 ## v2.1004.0 — El portal publica su aviso de privacidad
 
 La **Ley para la Protección de Datos Personales** (DL 144, nov-2024) aplica a la

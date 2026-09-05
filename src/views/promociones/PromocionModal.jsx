@@ -16,6 +16,8 @@ import { SALAS_VENTA } from '../metas/metasUtils';
 import {
     crearPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
 } from '../../data/promociones';
+import { fetchLaboratoriosBasic } from '../../data/laboratorios';
+import AgregarProductos from './AgregarProductos';
 import { guardarDescuento } from '../../data/descuentos';
 import { useAuth } from '../../context/AuthContext';
 import DescuentoEnVentas from './DescuentoEnVentas';
@@ -45,15 +47,23 @@ const useSalasDeVenta = () => {
     );
 };
 
-const renglonNuevo = (prod, salas) => ({
-    erp_product_id: prod.id,
-    producto: prod.nombre,
-    laboratorio: prod.laboratorio_nombre || 'Sin laboratorio',
-    factor_unidades: null,
+/**
+ * Lo que se pregunta UNA vez y vale para todos los productos.
+ *
+ * Existe porque el formulario preguntaba producto por producto —sus fechas, su
+ * lote, su bono— y una promoción de doce leches eran doce veces lo mismo, que
+ * en la negociación se dijo una sola vez. Reportado el 2026-09-05.
+ *
+ * **La base NO cambia**: `promocion_renglon` sigue guardando fecha, lote y bono
+ * POR RENGLÓN, y eso es a propósito —dos productos de la misma campaña pueden
+ * llegar en fechas distintas—. Lo que cambia es de dónde salen: se rellenan
+ * desde acá, y el que necesite otra cosa se ajusta uno por uno.
+ */
+const generalNuevo = () => ({
     inicio: hoySV(),
-    fin: '',
     // Vacío a propósito: «todavía no se sabe» es un estado válido y se puede
     // guardar así. La promoción cuenta las ventas de sus fechas igual.
+    fin: '',
     lote_total: '',
     tiene_bono: true,
     paga: 'proveedor',
@@ -62,8 +72,33 @@ const renglonNuevo = (prod, salas) => ({
     bono_adm: '0.25',
     bono_bodega: '0.25',
     unidades_por_bono: '1',
+});
+
+/* Un producto nace con los valores generales YA puestos y **confirmado**: antes
+   cada uno abría su propio formulario y había que cerrarlo, que es justo lo que
+   volvía inviable agregar doce. El que necesite algo distinto se abre con
+   «Ajustar». */
+const renglonNuevo = (prod, salas, general) => ({
+    erp_product_id: prod.id,
+    producto: prod.nombre,
+    laboratorio: prod.laboratorio_nombre || 'Sin laboratorio',
+    factor_unidades: null,
+    inicio: general.inicio,
+    fin: general.fin,
+    lote_total: general.lote_total,
+    tiene_bono: general.tiene_bono,
+    paga: general.paga,
+    supplier_id: general.supplier_id,
+    bono_vendedor: general.bono_vendedor,
+    bono_adm: general.bono_adm,
+    bono_bodega: general.bono_bodega,
+    unidades_por_bono: general.unidades_por_bono,
     reparto: Object.fromEntries(salas.map((s) => [s.id, ''])),
-    confirmado: false,
+    confirmado: true,
+    /* Marca si alguien lo tocó a mano. Sin esto, cambiar la fecha general
+       después de agregar productos pisaría en silencio el ajuste que alguien ya
+       hizo — y no habría cómo notarlo. */
+    ajustado: false,
 });
 
 /**
@@ -81,6 +116,8 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     const [nombre, setNombre] = useState('');
     const [nota, setNota] = useState('');
     const [renglones, setRenglones] = useState([]);
+    const [general, setGeneral] = useState(generalNuevo);
+    const [laboratorios, setLaboratorios] = useState([]);
     const [guardando, setGuardando] = useState(false);
     const [fallo, setFallo] = useState(null);
     const [proveedores, setProveedores] = useState([]);
@@ -109,9 +146,21 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     useEffect(() => {
         if (!open) return;
         fetchProveedoresDelSistema().then(setProveedores).catch(() => setProveedores([]));
+        fetchLaboratoriosBasic()
+            .then(({ data }) => setLaboratorios(data || []))
+            .catch(() => setLaboratorios([]));
     }, [open]);
 
-    const valor = useMemo(() => ({ nombre, nota, renglones, desc }), [nombre, nota, renglones, desc]);
+    /* Cambiar un valor general lo aplica a los productos que NADIE ajustó a
+       mano. Los ajustados se respetan: pisarlos sería deshacer trabajo sin
+       decirlo, y el formulario no tiene cómo avisar de un cambio que ya ocurrió. */
+    const cambiarGeneral = useCallback((campo, v) => {
+        setGeneral((g) => ({ ...g, [campo]: v }));
+        setRenglones((rs) => rs.map((r) => (r.ajustado ? r : { ...r, [campo]: v })));
+    }, []);
+
+    const valor = useMemo(() => ({ nombre, nota, renglones, desc, general }),
+        [nombre, nota, renglones, desc, general]);
 
     const { recuperado, cuando, descartar, hayBorrador } = useBorrador(
         CLAVE_BORRADOR, valor, { activo: open },
@@ -123,15 +172,29 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         setNota(recuperado.nota || '');
         setRenglones(Array.isArray(recuperado.renglones) ? recuperado.renglones : []);
         if (recuperado.desc) setDesc((d) => ({ ...d, ...recuperado.desc }));
+        if (recuperado.general) setGeneral((g) => ({ ...g, ...recuperado.general }));
         descartar();
     }, [recuperado, descartar]);
 
-    const agregar = (prod) => setRenglones((rs) => (
-        rs.some((r) => r.erp_product_id === prod.id) ? rs : [...rs, renglonNuevo(prod, salas)]
-    ));
+    /* Recibe una LISTA: el bloque de agregar manda todos los marcados de una
+       vez. Los repetidos se descartan acá y no en el llamador — el mismo
+       producto puede venir de una búsqueda y del laboratorio. */
+    const agregar = (prods) => setRenglones((rs) => {
+        const vistos = new Set(rs.map((r) => Number(r.erp_product_id)));
+        const nuevos = (Array.isArray(prods) ? prods : [prods])
+            .filter((p) => !vistos.has(Number(p.id)))
+            .map((p) => renglonNuevo(p, salas, general));
+        return nuevos.length ? [...rs, ...nuevos] : rs;
+    });
 
     const cambiar = (idx, campo, v) =>
-        setRenglones((rs) => rs.map((r, i) => (i === idx ? { ...r, [campo]: v } : r)));
+        setRenglones((rs) => rs.map((r, i) => (
+            /* Tocar un renglón lo marca como ajustado, salvo abrir/cerrar su
+               editor: eso no es cambiar un dato. */
+            i === idx
+                ? { ...r, [campo]: v, ...(campo === 'confirmado' ? {} : { ajustado: true }) }
+                : r
+        )));
 
     const cambiarReparto = (idx, salaId, v) =>
         setRenglones((rs) => rs.map((r, i) => (
@@ -273,58 +336,65 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         required
                     />
 
-                    {renglones.map((r, i) => (r.confirmado ? (
-                        <RenglonListo
-                            key={r.erp_product_id}
-                            r={r}
-                            proveedores={proveedores}
-                            onEditar={() => cambiar(i, 'confirmado', false)}
-                            onQuitar={() => quitar(i)}
-                        />
-                    ) : (
-                        <RenglonEditor
-                            key={r.erp_product_id}
-                            r={r}
-                            salas={salas}
-                            proveedores={proveedores}
-                            onCambiar={(c, v) => cambiar(i, c, v)}
-                            onReparto={(s, v) => cambiarReparto(i, s, v)}
-                            onQuitar={() => quitar(i)}
-                            onListo={() => cambiar(i, 'confirmado', true)}
-                        />
-                    )))}
+                    {/* ── 1 · Lo que vale para TODA la promoción ──────────
+                        Va arriba y se pregunta una vez. Antes esto vivía dentro
+                        de cada producto, así que una promoción de doce leches
+                        eran doce veces las mismas fechas y el mismo bono. */}
+                    <GeneralDeLaPromocion
+                        valor={general}
+                        onCambiar={cambiarGeneral}
+                        proveedores={proveedores}
+                    />
 
-                    {/* El buscador sólo aparece cuando no hay nada a medio
-                        llenar: preguntar «¿hay otro?» con un producto sin
-                        terminar invita a dejarlo incompleto. */}
-                    {!hayEditando && (
-                        <div className="max-h-56 flex flex-col">
-                            <BuscadorDeProducto
-                                key={renglones.length}
-                                onElegir={agregar}
-                                placeholder={renglones.length
-                                    ? 'Agregar otro producto…'
-                                    : 'Buscar el producto de la promoción…'}
-                                invitacion={{
-                                    icono: renglones.length ? Plus : Tag,
-                                    texto: renglones.length
-                                        ? '¿Hay otro producto? Búscalo, o guarda la promoción'
-                                        : 'Busca el producto que entra en la promoción',
-                                }}
-                            />
-                        </div>
-                    )}
-
-                    {/* El descuento en la venta. Va acá y no en otra pantalla
-                        porque es la misma decisión: separarlo obliga a cargar
-                        los mismos productos y las mismas fechas dos veces. */}
+                    {/* ── 2 · Además, ¿baja el precio? ────────────────────── */}
                     <DescuentoEnVentas
-                        renglones={renglones.filter((r) => r.confirmado)}
+                        renglones={renglones}
                         salas={salas}
                         valor={desc}
                         onCambiar={cambiarDesc}
                         alcanceTodo={alcanceTodo}
                     />
+
+                    {/* ── 3 · Los productos ──────────────────────────────── */}
+                    <div className="space-y-2">
+                        <p className="text-label uppercase tracking-wide font-semibold text-content-2">
+                            {renglones.length
+                                ? `${renglones.length} ${renglones.length === 1 ? 'producto' : 'productos'}`
+                                : 'Productos'}
+                        </p>
+
+                        {renglones.map((r, i) => (r.confirmado ? (
+                            <RenglonListo
+                                key={r.erp_product_id}
+                                r={r}
+                                proveedores={proveedores}
+                                onEditar={() => cambiar(i, 'confirmado', false)}
+                                onQuitar={() => quitar(i)}
+                            />
+                        ) : (
+                            <RenglonEditor
+                                key={r.erp_product_id}
+                                r={r}
+                                salas={salas}
+                                proveedores={proveedores}
+                                onCambiar={(c, v) => cambiar(i, c, v)}
+                                onReparto={(s, v) => cambiarReparto(i, s, v)}
+                                onQuitar={() => quitar(i)}
+                                onListo={() => cambiar(i, 'confirmado', true)}
+                            />
+                        )))}
+
+                        {/* El bloque de agregar sólo aparece cuando no hay nada a
+                            medio ajustar: ofrecer «¿otro?» con un producto abierto
+                            invita a dejarlo incompleto. */}
+                        {!hayEditando && (
+                            <AgregarProductos
+                                yaElegidos={renglones.map((r) => r.erp_product_id)}
+                                laboratorios={laboratorios}
+                                onAgregar={agregar}
+                            />
+                        )}
+                    </div>
 
                     <PortalTextarea
                         label="Nota"
@@ -376,6 +446,109 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                 )}
             </LiquidModal.Footer>
         </LiquidModal>
+    );
+}
+
+/**
+ * Lo que vale para TODA la promoción: vigencia, lote y bono.
+ *
+ * ── Por qué está acá arriba y no dentro de cada producto (2026-09-05) ─────
+ * Reportado por el usuario: «configurar la promoción general, fecha inicio,
+ * fin y si tiene bono, y luego un listado de producto». El formulario
+ * preguntaba producto por producto, así que una campaña de doce leches eran
+ * doce veces las mismas fechas y el mismo bono — datos que en la negociación
+ * se acordaron UNA vez.
+ *
+ * **Lo que se escribe acá se copia a cada producto al agregarlo**, y cambiarlo
+ * después alcanza a los que nadie tocó. El que necesite otra cosa se abre con
+ * «Ajustar» y a partir de ahí queda a salvo: pisar un ajuste hecho a mano sería
+ * deshacer trabajo sin decirlo.
+ */
+function GeneralDeLaPromocion({ valor, onCambiar, proveedores }) {
+    const unidadPago = Number(valor.unidades_por_bono) > 1
+        ? `por cada ${valor.unidades_por_bono} u.`
+        : 'por unidad';
+
+    return (
+        <div className="rounded-lg border border-border-card bg-surface-card-hover p-3 space-y-3">
+            <div className="grid gap-3 sm:grid-cols-3">
+                <Campo rotulo="Empieza" falta={!valor.inicio}>
+                    <LiquidDatePicker value={valor.inicio} onChange={(v) => onCambiar('inicio', v)} />
+                </Campo>
+                <Campo rotulo="Termina">
+                    <LiquidDatePicker value={valor.fin} onChange={(v) => onCambiar('fin', v)}
+                        min={valor.inicio || undefined} />
+                </Campo>
+                <PortalInput
+                    label="Lote en unidades"
+                    name="lote-general"
+                    /* Puede quedar vacío: «todavía no se sabe» es un estado válido
+                       —el lote se conoce cuando llega la mercadería— y la promoción
+                       cuenta las ventas de sus fechas igual. */
+                    value={valor.lote_total}
+                    onChange={(e) => onCambiar('lote_total', e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="Se sabrá al llegar"
+                />
+            </div>
+
+            <Campo rotulo="¿Paga bono?">
+                <LiquidSelect
+                    value={valor.tiene_bono ? 'si' : 'no'}
+                    onChange={(v) => onCambiar('tiene_bono', v === 'si')}
+                    options={[
+                        { value: 'si', label: 'Sí, paga por unidad vendida' },
+                        { value: 'no', label: 'No — sólo mide las ventas' },
+                    ]}
+                    clearable={false}
+                    ariaLabel="¿Paga bono?"
+                />
+            </Campo>
+
+            {valor.tiene_bono && (
+                <>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <Campo rotulo="¿Quién lo cancela?">
+                            <LiquidSelect
+                                value={valor.paga}
+                                onChange={(v) => onCambiar('paga', v)}
+                                options={[
+                                    { value: 'proveedor', label: 'Un proveedor' },
+                                    { value: 'empresa', label: 'La empresa' },
+                                ]}
+                                clearable={false}
+                                ariaLabel="Quién paga el bono"
+                            />
+                        </Campo>
+                        {valor.paga === 'proveedor' && (
+                            <Campo rotulo="Proveedor" falta={!valor.supplier_id}>
+                                <LiquidSelect
+                                    value={String(valor.supplier_id || '')}
+                                    onChange={(v) => onCambiar('supplier_id', v || '')}
+                                    options={proveedores}
+                                    placeholder="¿Quién emite la nota de crédito?"
+                                    ariaLabel="Proveedor que paga"
+                                />
+                            </Campo>
+                        )}
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-4">
+                        <PortalInput label={`Vendedor ${unidadPago}`} name="bv-general"
+                            value={valor.bono_vendedor} prefix="$"
+                            onChange={(e) => onCambiar('bono_vendedor', e.target.value.replace(/[^0-9.]/g, ''))} />
+                        <PortalInput label="Fondo admón." name="ba-general"
+                            value={valor.bono_adm} prefix="$"
+                            onChange={(e) => onCambiar('bono_adm', e.target.value.replace(/[^0-9.]/g, ''))} />
+                        <PortalInput label="Fondo bodega" name="bb-general"
+                            value={valor.bono_bodega} prefix="$"
+                            onChange={(e) => onCambiar('bono_bodega', e.target.value.replace(/[^0-9.]/g, ''))} />
+                        <PortalInput label="Cada cuántas u." name="upb-general"
+                            value={valor.unidades_por_bono}
+                            onChange={(e) => onCambiar('unidades_por_bono', e.target.value.replace(/[^0-9]/g, ''))} />
+                    </div>
+                </>
+            )}
+        </div>
     );
 }
 

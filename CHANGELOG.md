@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1005.2 — El aviso de privacidad se acorta sin soltar ningún punto exigible
+
+Pregunta del usuario: «¿seguro que el aviso no es demasiado?». Lo era, y el
+largo tiene un problema legal propio que no habíamos mirado.
+
+**El Art. 5 letra e) prohíbe los textos extensos.** Textual: la información debe
+facilitarse «en forma concisa, de fácil acceso y con un lenguaje claro y
+sencillo», y «se prohíbe recurrir a textos extensos, terminologías técnicas o
+legales y/o letra pequeña». La ley se contradice sola, porque el Art. 24 pide
+nueve contenidos, pero la prohibición está escrita y un aviso de 2,007 palabras
+la desafía.
+
+De 2,007 palabras y 6 páginas a **1,652 y 5**, con los **23 puntos exigibles
+intactos**, comprobado a máquina. Lo que se hizo:
+
+- La lista de datos pasó de siete cláusulas en prosa a **una tabla de seis
+  filas**. No es solo más corto: una tabla es literalmente «de fácil acceso», que
+  es lo que el artículo pide.
+- Las tres filas tributarias del cuadro de finalidades (emitir, corregir por
+  rechazo, anular) se unieron en una: son el mismo fundamento legal dicho tres
+  veces.
+- «Dónde se guardan» y «Cómo se protegen» eran dos secciones para una sola
+  pregunta. Ahora es una, de tres cláusulas.
+- Menores, cookies y cambios eran tres secciones de dos cláusulas cada una. Es
+  una sección de tres cláusulas.
+
+Doce secciones quedaron en nueve. Verificadas también las cuatro referencias
+cruzadas internas después de renumerar, que es donde una compresión rompe cosas
+sin avisar.
+
+**Lo que NO se tocó, y es la respuesta a la otra pregunta del usuario:** el
+documento sigue llevando una sola firma, la del responsable, sin «elaborado
+por» ni «aprobado por». Esa cabecera pertenece a los procedimientos internos
+controlados (`FLS-PRO-01` y sus hermanos, que sí la llevan porque el RTS la
+exige). Un aviso de privacidad es una declaración pública hacia afuera: el
+Art. 24 lista nueve contenidos y ninguno es una firma, y agregar quién lo
+redactó diluye a quién se le reclama. La misma decisión ya estaba escrita en el
+generador del PDF desde el reglamento de puntos.
+
 ## v2.1005.1 — El aviso de privacidad se corrige contra lo que el portal realmente guarda
 
 La primera versión del aviso (v2.1004.0) se escribió mirando las tablas que

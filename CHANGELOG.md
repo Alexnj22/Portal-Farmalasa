@@ -23,7 +23,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1009.0 — El registro de solicitudes de datos, con su correlativo y sus plazos
 
-_(pendiente de redactar)_
+Pedido del usuario, y cierra el hueco que el propio formulario dejaba a la
+vista: tenía un espacio **«Formulario n.º»** y nada lo generaba ni lo llevaba.
+Sin ese número no hay forma de saber cuántas solicitudes entraron, cuáles vencen
+esta semana ni cuáles quedaron sin responder, y el **Art. 54** pone sobre la
+Empresa la carga de PROBAR que respondió a tiempo. Un cuaderno de hojas sueltas
+no lo prueba.
+
+Módulo nuevo en `/solicitudes-datos`, con permiso propio (`datos_personales`)
+que arranca sólo para Gerente General y Administrador. El día que se nombre al
+delegado se le da a su cargo desde Permisos.
+
+### La fila nace al IMPRIMIR
+
+«Nueva solicitud» toma el correlativo, lo estampa en la hoja **y en el acuse**, y
+manda el papel a la impresora ya numerado. Nadie escribe el número a mano ni
+puede repetirlo.
+
+Tomar el folio y crear la fila van en **una sola función**
+(`crear_solicitud_datos`) y no en dos llamadas: si el folio se pidiera aparte y
+el INSERT fallara, el número quedaría quemado y la serie tendría un hueco que
+nadie puede explicar después. El contador vive en su propia tabla con **RLS sin
+policies**, igual que `kiosk_credentials`: se toca sólo por la función
+`SECURITY DEFINER`, porque un contador editable a mano deja de probar nada.
+
+La ventana de impresión se abre **sincrónica dentro del clic** y antes de ir a la
+base. Después de un `await` el bloqueador de emergentes la mata, que es el
+defecto que `ventanaDeImpresion.js` documenta con cinco papeles que no salían.
+
+### El papel sale del MISMO original que el de la sala
+
+`scripts/formulario-datos-js.mjs` convierte
+`docs/legal/formulario-solicitud-datos.html` en el papel que imprime el portal.
+Dos originales del mismo formulario es cómo se llega a que el de la sala y el
+del portal pidan cosas distintas, y quien reclama siempre tiene el otro.
+
+Dos diferencias, las dos a propósito: el **logo va enlazado** y no pegado (la
+ventana es del mismo origen, y embebido costaría 90 kB de base64 dentro del
+paquete de una vista; así son 22), y el **folio va escrito** en vez de ser una
+raya. El script se cae si no encuentra el logo o si los espacios de folio dejan
+de ser dos, en vez de emitir un papel mudo.
+
+### Los plazos se cuentan en días HÁBILES
+
+Que es lo que dice el Art. 20, y no días corridos: veinte hábiles son casi cuatro
+semanas, y contar corridos haría sonar la alarma con más de una semana de sobra.
+
+Los asuetos de ley **no** se descuentan, y es deliberado: sin una tabla de
+asuetos mantenida, adivinarlos daría un plazo más largo que el real, y
+equivocarse hacia el lado largo es el error que hace perder el plazo. Contar de
+menos sólo adelanta el aviso.
+
+`recibida_at` es la fecha del acuse y de ella cuelga todo. `impresa_at` no cuenta
+plazos: una hoja puede imprimirse hoy y volver llena la semana que viene.
+
+### Lo que NO hace, y es a propósito
+
+No recibe solicitudes en línea de clientes. La comprobación de identidad exige
+ver el documento (**Art. 16 letra c**), y quien escribe desde una página pública
+puede ser cualquiera. El papel no desaparece: deja de ser el registro.
+
+### Cuatro cosas que encontraron los gates
+
+- **`ModalShell` crudo** entra bien en el teléfono pero adentro no tiene anatomía
+  móvil. Pasó a `LiquidModal` con Header, Body y Footer.
+- **Voseo** en un aviso («Resolvé y dejá anotado»). El portal usa tuteo (§26.7).
+- **«Nada pendiente»** como estado vacío. Se escribe `Sin <sustantivo>` (§26.1).
+- **Los hex del papel** los acusó `gate:design`. Van declarados como excepción con
+  su motivo escrito: el papel no tiene tema, sus colores son los del documento, y
+  el archivo es generado.
+
+Advisor de seguridad tras la migración: **0 errores**.
 
 ## v2.1008.0 — El costo del descuento se compara con IVA
 

@@ -833,6 +833,37 @@ export const AREAS = [
         docs: ['docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md',
                'docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md'],
     },
+    {
+        id: 'datos-personales',
+        nombre: 'Protección de datos personales',
+        resumen: 'El aviso de privacidad publicado, el registro de las solicitudes que una persona presenta sobre sus propios datos, y el formulario numerado que se imprime para la sala de ventas. Lo exige la Ley para la Proteccion de Datos Personales (DL 144).',
+        modulos: ['datos_personales'],
+        // `/privacidad` NO va acá aunque sea una dirección del sitio: no es una
+        // ruta de React sino una reescritura de `vercel.json` a un HTML plano, y
+        // `gate:rutas` compara esta lista contra las `<Route>` de App.jsx.
+        rutas: ['/solicitudes-datos'],
+        archivos: [
+            'src/views/SolicitudesDatosView.jsx',
+            'src/views/datos/',
+            'src/data/solicitudesDatos.js',
+            'src/generated/formularioDatos.js',
+            'scripts/formulario-datos-js.mjs',
+            'scripts/documento-legal-web.mjs',
+            'scripts/documento-legal-pdf.mjs',
+            'docs/legal/aviso-de-privacidad.html',
+            'docs/legal/formulario-solicitud-datos.html',
+            'docs/legal/acuerdo-de-nombramiento-delegado.html',
+            'public/privacidad.html',
+        ],
+        tablas: ['solicitudes_datos', 'solicitudes_datos_folios'],
+        // La pagina publica no tiene edge function ni cron: es HTML plano
+        // servido por una reescritura de `vercel.json`. Que no dependa de nada
+        // es justo lo que la hace confiable — un documento que promete estar
+        // disponible no puede caerse con el portal.
+        edge: [],
+        crons: [],
+        docs: ['docs/legal/procedimientos/BORRADOR-D-solicitudes-de-datos-personales.md'],
+    },
 ];
 
 // ── Índice invertido: prefijo de archivo → id de área ────────────────────────

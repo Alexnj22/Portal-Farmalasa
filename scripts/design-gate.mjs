@@ -91,6 +91,16 @@ const EXCLUDE_FILES = new Set(['src/version.js']);
 // suelto. Un `hex` nuevo en LoginView hoy sigue pasando, pero uno nuevo en
 // cualquier vista normal falla — que es lo que antes no ocurría.
 const EXCEPTIONS = {
+    // ── El papel de un documento legal no tiene tema ────────────────────────
+    // `src/generated/formularioDatos.js` es el formulario de solicitud de datos
+    // convertido a una cadena para la ventana de impresión. Sus hex son los del
+    // DOCUMENTO —el mismo membrete que el aviso de privacidad y el reglamento de
+    // puntos— y no tokens del portal: el papel se imprime en negro sobre blanco
+    // y no cambia con el tema de nadie. Además el archivo es GENERADO desde
+    // `docs/legal/formulario-solicitud-datos.html`, así que un token acá se
+    // perdería en la próxima corrida de `npm run legal:js`.
+    'src/generated/formularioDatos.js': ['hex'],
+
   // El lector de código de barras: `white` y `shadow-literal` sobre la vista de
   // la CÁMARA, que es el único rectángulo del portal que no tiene tema.
   //

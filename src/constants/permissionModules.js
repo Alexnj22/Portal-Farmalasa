@@ -359,6 +359,15 @@ const GRUPOS_CRUDOS = [
                 // Por eso es su propia capacidad y no viene con «ver».
                 { key: 'bitacoras_descargar',     label: 'Imprimir el mes completo',            tipo: 'cap' },
             ]},
+            // Vecino de las bitácoras: los dos son registros que una autoridad
+            // puede venir a pedir, y en los dos lo que se enseña no es el dato
+            // sino la constancia de que se llevó al día. Acá la autoridad es la
+            // Agencia de Ciberseguridad del Estado.
+            //
+            // Sin `hasScope`: el delegado de protección de datos es UNO para
+            // toda la empresa (Art. 15), así que un alcance por sala partiría
+            // en siete un registro que la ley trata como uno solo.
+            { key: 'datos_personales', label: 'Solicitudes de datos', desc: 'El registro de las solicitudes que una persona presenta sobre sus propios datos: acceso, corrección, borrado, oposición, portabilidad, olvido, limitación y retiro de un permiso. Imprime el formulario ya numerado, lleva el correlativo y cuenta los veinte días hábiles del Art. 20. Editar = imprimir una hoja nueva, transcribir la que volvió llena y resolverla', icon: ShieldCheck, hasApprove: false },
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, sub: [
                 { key: 'pedidos_tab_generar',   label: 'Generar',             tipo: 'tab' },

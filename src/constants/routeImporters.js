@@ -89,6 +89,7 @@ export const IMPORTADORES = {
     DashboardView: () => import("../views/DashboardView"),
     NotFoundView: () => import("../views/NotFoundView"),
     BitacorasView: () => import("../views/BitacorasView"),
+    SolicitudesDatosView: () => import("../views/SolicitudesDatosView"),
 };
 
 // Primer segmento de la ruta → vista que la atiende.
@@ -109,6 +110,7 @@ export const IMPORTADOR_POR_RUTA = {
     'auditoria-de-tiempos': IMPORTADORES.AttendanceAuditView,
     'auditoria-del-sistema': IMPORTADORES.AuditView,
     'bitacoras': IMPORTADORES.BitacorasView,
+    'solicitudes-datos': IMPORTADORES.SolicitudesDatosView,
     'clientes': IMPORTADORES.ClientesView,
     'mis-puntos': IMPORTADORES.MisPuntosView,
     'compras': IMPORTADORES.ComprasView,

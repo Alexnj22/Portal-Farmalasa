@@ -15,7 +15,7 @@ import {
     editarRenglon, editarTarifaRenglon, extenderRenglon,
     quitarRenglon, borrarPromocion,
 } from '../../data/promociones';
-import { guardarDescuento } from '../../data/descuentos';
+import { guardarDescuento, sincronizarProductosDelDescuento } from '../../data/descuentos';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
@@ -55,6 +55,13 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     const [proveedores, setProveedores] = useState([]);
     const [laboratorios, setLaboratorios] = useState([]);
     const [agregando, setAgregando] = useState(false);
+    /* Lo que está esperando la respuesta de «¿también en el descuento?».
+       `{ tipo: 'agregar'|'quitar', prods, renglon }` — se guarda entero porque
+       la acción se ejecuta DESPUÉS de contestar, y para entonces el clic ya
+       pasó. */
+    const [pendiente, setPendiente] = useState(null);
+    const [sincronizando, setSincronizando] = useState(false);
+    const [avisoSync, setAvisoSync] = useState(null);
     const [recarga, setRecarga] = useState(0);
     const [borrando, setBorrando] = useState(false);
 
@@ -151,7 +158,39 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
      * El bono y el lote quedan en los valores neutros y se ajustan renglón por
      * renglón, que es exactamente lo que esta pantalla ya sabe hacer.
      */
-    const agregarProductos = async (prods) => {
+    /* Con descuento en la venta, agregar o quitar un producto PREGUNTA antes de
+       tocar el sistema de ventas. Sin la pregunta hay dos salidas y las dos son
+       peores: escribir en silencio —el módulo no lo hace en ningún lado— o no
+       escribir nunca, que es como estaba y deja el precio bajo en un producto
+       que ya no es de ninguna campaña. */
+    const conDescuento = (promo?.descuentos ?? 0) > 0;
+
+    /* El ORDEN de estos cinco no es estético: los que preguntan leen a los que
+       escriben, y `gate:tdz` cuenta como deuda toda lectura que viva antes de su
+       `const` —hoy no lanza porque el cuerpo de una función corre después, pero
+       mover ese uso fuera de la función lo convierte en un fallo de cada render—.
+       Así que primero los que escriben, después los que preguntan. */
+    /**
+     * Le pasa el cambio a los descuentos del sistema de ventas.
+     *
+     * No lanza: la promoción YA se escribió cuando esto corre, así que un fallo
+     * acá no puede deshacer nada — lo único útil es decir qué quedó a medias, y
+     * con el nombre del descuento, que es lo que permite ir a corregirlo.
+     */
+    const sincronizar = async (delta) => {
+        setSincronizando(true);
+        try {
+            const r = await sincronizarProductosDelDescuento(promocionId, delta);
+            setAvisoSync(r);
+        } catch (e) {
+            setFallo(mensajeAmigable(e,
+                'El producto quedó en la promoción, pero el descuento del sistema de ventas no se pudo actualizar. Corrígelo desde Descuentos.'));
+        } finally {
+            setSincronizando(false);
+        }
+    };
+
+    const agregarYa = async (prods, tambienElDescuento) => {
         setFallo(null);
         setAgregando(true);
         try {
@@ -185,6 +224,12 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                 setFallo('Esos productos ya estaban en la promoción.');
                 return;
             }
+            /* El descuento DESPUÉS de la promoción, igual que al crearla: si la
+               promoción fallara, un descuento nuevo quedaría vivo bajándole el
+               precio a productos que no son de ninguna campaña. Al revés, lo
+               peor que pasa es un producto en la promoción sin su descuento —
+               visible, y con el aviso que lo nombra. */
+            if (tambienElDescuento) await sincronizar({ agregar: prods.map((p) => p.id) });
             recargar();
         } catch (e) {
             setFallo(mensajeAmigable(e, 'No se pudieron agregar los productos.'));
@@ -192,6 +237,29 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
             setAgregando(false);
         }
     };
+
+    const quitarYa = async (renglon, tambienElDescuento) => {
+        setFallo(null);
+        try {
+            await quitarRenglon(renglon.id);
+            if (tambienElDescuento) await sincronizar({ quitar: [renglon.erp_product_id] });
+            recargar();
+        } catch (e) {
+            setFallo(mensajeAmigable(e, 'No se pudo quitar el producto.'));
+        }
+    };
+
+    const agregarProductos = async (prods) => {
+        if (conDescuento) { setPendiente({ tipo: 'agregar', prods }); return; }
+        await agregarYa(prods, false);
+    };
+
+    /** Quitar un producto: con descuento, pregunta antes. */
+    const quitarProducto = (renglon) => {
+        if (conDescuento) { setPendiente({ tipo: 'quitar', renglon }); return; }
+        quitarYa(renglon, false);
+    };
+
 
     const borrar = async () => {
         setFallo(null);
@@ -236,6 +304,41 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                     <div className="space-y-4">
                         {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
 
+                        {/* Qué se escribió en el sistema de ventas, dicho. Un
+                            «listo» a secas sobre una escritura en otro sistema
+                            no se puede verificar desde acá, y `sin_productos`
+                            es justo el caso que hay que ir a resolver a mano. */}
+                        {avisoSync && (
+                            <Notice
+                                variant={avisoSync.sin_productos?.length ? 'warning' : 'success'}
+                                icon={avisoSync.sin_productos?.length ? AlertTriangle : Check}
+                                action={<Button variant="ghost" size="sm"
+                                    onClick={() => setAvisoSync(null)}>Entendido</Button>}
+                            >
+                                {avisoSync.sin_productos?.length ? (
+                                    <>
+                                        El descuento{' '}
+                                        <span className="font-semibold">
+                                            «{avisoSync.sin_productos[0].descripcion}»
+                                        </span>{' '}
+                                        quedaría sin ningún producto, así que no se tocó. Quítalo desde
+                                        la pestaña <span className="font-semibold">Descuentos</span>:
+                                        borrarlo desde aquí sería deshacer un descuento entero por haber
+                                        quitado un producto.
+                                    </>
+                                ) : avisoSync.cambiados?.length ? (
+                                    <>
+                                        Listo en el sistema de ventas:{' '}
+                                        {avisoSync.cambiados.map((c) => (
+                                            `«${c.descripcion}» queda con ${c.productos} producto${c.productos === 1 ? '' : 's'}`
+                                        )).join(' · ')}.
+                                    </>
+                                ) : (
+                                    'El descuento ya tenía ese cambio: no hizo falta tocarlo.'
+                                )}
+                            </Notice>
+                        )}
+
                         <Notice variant="info" compact>
                             Corregir el <span className="font-semibold">lote</span>, la{' '}
                             <span className="font-semibold">presentación</span> o el{' '}
@@ -252,6 +355,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                 proveedores={proveedores}
                                 onCambio={recargar}
                                 onFallo={setFallo}
+                                onQuitar={quitarProducto}
                             />
                         ))}
 
@@ -280,11 +384,10 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                     ocupado={agregando}
                                 />
                                 {promo.descuentos > 0 && (
-                                    <Notice variant="warning" icon={AlertTriangle} compact>
+                                    <Notice variant="info" icon={Percent} compact>
                                         Esta promoción <span className="font-semibold">baja el precio en la
-                                        venta</span>, y el descuento NO se entera de los productos nuevos:
-                                        hay que agregárselos desde la pestaña{' '}
-                                        <span className="font-semibold">Descuentos</span>.
+                                        venta</span>: al agregar se pregunta si los productos nuevos entran
+                                        también al descuento.
                                     </Notice>
                                 )}
                             </div>
@@ -378,11 +481,90 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                 confirmText="Borrar"
                 isDestructive
             />
+
+            {/* ── ¿También en el descuento? ─────────────────────────────────
+                Un diálogo PROPIO y no `ConfirmModal`, porque la decisión tiene
+                TRES salidas y el canónico tiene dos. Meterla ahí obligaría a
+                que «sólo en la promoción» viajara en el botón de cancelar —o
+                sea que Escape y el clic afuera ejecutarían una escritura—, que
+                es exactamente lo que `hideCancel` existe para evitar.
+
+                Las tres son legítimas y por eso se pregunta en vez de decidir:
+                · las dos — el producto entra o sale de la campaña entera.
+                · sólo la promoción — el descuento se negoció aparte, o ese
+                  producto ya tiene el suyo y el sistema de ventas rechazaría
+                  otro por cruzarse de fechas.
+                · nada.
+
+                El destacado es «las dos»: quitar un producto y DEJAR su precio
+                bajo es lo que cuesta dinero. */}
+            <LiquidModal
+                open={!!pendiente}
+                onClose={() => !(agregando || sincronizando) && setPendiente(null)}
+                maxWidth="max-w-md"
+                ariaLabel="¿También en el descuento?"
+            >
+                <LiquidModal.Header>
+                    <h2 className="text-body-lg font-black text-content">
+                        {pendiente?.tipo === 'quitar'
+                            ? '¿También le quito el descuento?'
+                            : '¿También le bajo el precio?'}
+                    </h2>
+                </LiquidModal.Header>
+
+                <LiquidModal.Body>
+                    <Notice variant={pendiente?.tipo === 'quitar' ? 'warning' : 'info'}
+                        icon={pendiente?.tipo === 'quitar' ? AlertTriangle : Percent}>
+                        {pendiente?.tipo === 'quitar' ? (
+                            <>
+                                <span className="font-semibold">{pendiente?.renglon?.producto ?? ''}</span>{' '}
+                                sale de la promoción. Si no se quita también del descuento, el sistema
+                                de ventas <span className="font-semibold">le sigue bajando el precio</span>{' '}
+                                a un producto que ya no es de ninguna campaña.
+                            </>
+                        ) : (
+                            <>
+                                Esta promoción baja el precio en la venta.{' '}
+                                {pendiente?.prods?.length === 1
+                                    ? 'El producto nuevo puede entrar'
+                                    : `Los ${pendiente?.prods?.length ?? 0} productos nuevos pueden entrar`}{' '}
+                                también al descuento, con el mismo porcentaje o monto y las mismas fechas.
+                            </>
+                        )}
+                    </Notice>
+                </LiquidModal.Body>
+
+                <LiquidModal.Footer>
+                    <Button variant="secondary" disabled={agregando || sincronizando}
+                        onClick={() => setPendiente(null)}>
+                        Cancelar
+                    </Button>
+                    <Button variant="secondary" disabled={agregando || sincronizando}
+                        onClick={() => {
+                            const p = pendiente;
+                            setPendiente(null);
+                            if (p?.tipo === 'quitar') quitarYa(p.renglon, false);
+                            else agregarYa(p.prods, false);
+                        }}>
+                        Sólo en la promoción
+                    </Button>
+                    <Button icon={Check} loading={agregando || sincronizando}
+                        onClick={() => {
+                            const p = pendiente;
+                            setPendiente(null);
+                            if (p?.tipo === 'quitar') quitarYa(p.renglon, true);
+                            else agregarYa(p.prods, true);
+                        }}>
+                        {pendiente?.tipo === 'quitar' ? 'Quitar de los dos' : 'Agregar a los dos'}
+                    </Button>
+                </LiquidModal.Footer>
+            </LiquidModal>
+
         </LiquidModal>
     );
 }
 
-function RenglonEditable({ r, salas, proveedores, onCambio, onFallo }) {
+function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar }) {
     const [presentaciones, setPresentaciones] = useState([]);
     const [ocupado, setOcupado] = useState(null);
 
@@ -438,8 +620,7 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo }) {
                     </Badge>
                 )}
                 <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar de la promoción"
-                    loading={ocupado === 'quitar'}
-                    onClick={() => correr('quitar', () => quitarRenglon(r.id))} />
+                    onClick={() => onQuitar?.(r)} />
             </div>
 
             <p className="text-caption text-content-3 tabular-nums">

@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1017.0 — Agregar o quitar un producto pregunta si también va al descuento
+
+Pregunta del usuario: «al agregar un producto nuevo y tiene descuento del ERP,
+¿se agrega ese producto también? ¿mismo caso si elimino uno?». La respuesta era
+**no en los dos**, y fallaban distinto:
+
+| | qué pasaba | cómo se veía |
+|---|---|---|
+| agregar | entraba a la promoción, no al descuento | el producto no bajaba de precio y nada lo decía |
+| **quitar** | salía de la promoción, **el descuento seguía vivo** | el precio seguía bajo en un producto que ya no era de ninguna campaña |
+
+El segundo es el que cuesta dinero, y nadie tenía motivo para ir a mirarlo: el
+acto fue «quitar un producto» y se siente terminado.
+
+**Ahora se pregunta, y se escribe en los dos.** El diálogo tiene TRES salidas
+porque las tres son legítimas: las dos cosas, sólo la promoción —cuando el
+descuento se negoció aparte, o cuando ese producto ya tiene el suyo y el sistema
+de ventas rechazaría otro por cruzarse de fechas— o nada. Por eso no usa
+`ConfirmModal`: con dos botones, «sólo en la promoción» tendría que viajar en el
+de cancelar, o sea que Escape y el clic afuera ejecutarían una escritura.
+
+Tres decisiones de la sincronización que importan:
+
+- **Se manda la DELTA, no la lista final.** Entre que la pantalla se cargó y
+  alguien apretó, otra persona pudo agregarle un producto al descuento desde el
+  sistema de ventas; mandar la lista entera se lo llevaría por delante sin dar
+  error. La lista buena la arma el servidor releyendo el descuento en el momento
+  de escribirlo.
+- **El descuento va DESPUÉS de la promoción**, igual que al crearla. Si la
+  promoción fallara, un descuento ya escrito quedaría bajándole el precio a algo
+  que no es de ninguna campaña. Al revés, lo peor que pasa es un producto sin su
+  descuento — visible y corregible.
+- **Un descuento que quedaría sin productos NO se borra.** Se avisa con su
+  nombre. Borrar es irreversible y sería un efecto secundario de haber quitado un
+  producto de la promoción, que es justo la escritura a ciegas que este módulo
+  evita en todos lados.
+
+Y lo que se escribió allá se dice, con el nombre del descuento y cuántos
+productos le quedan: un «listo» a secas sobre una escritura en otro sistema no se
+puede verificar desde el portal.
+
 ## v2.1016.7 — Los derechos vuelven con su explicación, en dos palabras
 
 Quitarles la explicación fue un recorte demasiado grande, y era el costo que la

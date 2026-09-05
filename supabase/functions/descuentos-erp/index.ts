@@ -72,7 +72,8 @@ Deno.serve(async (req) => {
     const quien = await requireActiveEmployeeUser(req, admin);
     if (!quien) return responder({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
 
-    const escribe = accion === "guardar" || accion === "borrar";
+    const escribe = accion === "guardar" || accion === "borrar"
+      || accion === "sincronizar_productos";
     const permiso = await permisoDeModulo(
       admin, quien.id, MODULO, escribe ? "can_edit" : "can_view",
     );
@@ -424,6 +425,126 @@ Deno.serve(async (req) => {
       if (auditErr) console.error("[descuentos-erp] audit_logs:", auditErr.message);
 
       return responder({ ok: true, id: idNuevo });
+    }
+
+    // ── SINCRONIZAR PRODUCTOS ──────────────────────────────────────────────
+    //
+    // Agrega o quita productos de los descuentos de UNA promoción, para que la
+    // lista de allá siga a la de acá.
+    //
+    // ── Por qué existe (2026-09-05) ───────────────────────────────────────
+    // Pregunta del usuario: «al agregar un producto nuevo y tiene descuento del
+    // ERP, ¿se agrega ese producto también? ¿mismo caso si elimino uno?». La
+    // respuesta era NO en los dos, y fallaban distinto:
+    //
+    //   · agregar — el producto entra a la promoción y no baja de precio. Se
+    //     nota poco: nadie espera un precio que nunca vio.
+    //   · quitar  — el producto sale de la promoción y **el descuento sigue
+    //     vivo**, bajándole el precio a algo que ya no es de ninguna campaña.
+    //     Ése cuesta dinero, y nadie tiene motivo para ir a mirarlo: el acto
+    //     fue «quitar un producto» y se siente terminado.
+    //
+    // ── Por qué la delta y no la lista entera ─────────────────────────────
+    // El llamador manda QUÉ CAMBIÓ, no cómo tiene que quedar. La lista buena
+    // sale de leer el descuento en el momento de escribirlo: entre que la
+    // pantalla se cargó y alguien apretó, otra persona pudo agregarle un
+    // producto desde el sistema de ventas, y mandar la lista entera se lo
+    // llevaría por delante sin dar error.
+    //
+    // ── Y NO borra un descuento que se quede sin productos ────────────────
+    // Se avisa y se deja. Borrar es irreversible y sería un efecto secundario
+    // de haber quitado un producto de la promoción — justo el tipo de escritura
+    // a ciegas que este módulo evita en todos lados. La pantalla lo nombra para
+    // que quien decida vaya a quitarlo.
+    if (accion === "sincronizar_productos") {
+      const promocionId = Number(body.promocion_id);
+      const numeros = (v: unknown): number[] =>
+        (Array.isArray(v) ? v : []).map(Number).filter((n) => Number.isInteger(n) && n > 0);
+      const agregar: number[] = [...new Set(numeros(body.agregar))];
+      const quitar = new Set<number>(numeros(body.quitar));
+
+      if (!Number.isInteger(promocionId) || promocionId <= 0) {
+        return responder({ ok: false, error: "Falta la promoción." }, 400);
+      }
+      if (!agregar.length && !quitar.size) {
+        return responder({ ok: false, error: "No viene ningún producto que agregar ni que quitar." }, 400);
+      }
+
+      const { data: pr, error: prErr } = await admin
+        .from("promociones").select("descuentos_erp").eq("id", promocionId).maybeSingle();
+      if (prErr) {
+        console.error("[descuentos-erp] leer promoción (sync):", prErr.message);
+        return responder({
+          ok: false,
+          error: "No se pudo leer la promoción para saber qué descuentos tiene.",
+        }, 503);
+      }
+      const ids: number[] = [...new Set(numeros(pr?.descuentos_erp))];
+      if (!ids.length) return responder({ ok: true, cambiados: [], sin_cambio: 0, sin_productos: [] });
+
+      const ctx = await contextoDelFormulario(cookie);
+      const cambiados: { id: number; descripcion: string; productos: number }[] = [];
+      const sinProductos: { id: number; descripcion: string }[] = [];
+      let sinCambio = 0;
+
+      /* EN SERIE y no en paralelo: cada guardado relee el formulario del origen
+         y dos escrituras a la vez leerían un estado a medio escribir. Son uno o
+         dos descuentos por promoción, así que no cuesta nada. */
+      for (const id of ids) {
+        const d = await detalleDelDescuento(cookie, id, salas).catch(() => null);
+        if (!d) continue;                 // ya no existe allá: no hay qué sincronizar
+        if (!visible(d)) continue;        // no es de su sala: no se toca
+
+        const lista: number[] = [...new Set([...d.productos, ...agregar])]
+          .filter((p) => !quitar.has(p));
+        const igual = lista.length === d.productos.length
+          && lista.every((p) => d.productos.includes(p));
+        if (igual) { sinCambio++; continue; }
+
+        if (!lista.length) {
+          sinProductos.push({ id, descripcion: d.descripcion });
+          continue;
+        }
+
+        const r = await guardarDescuento(cookie, ctx, {
+          id,
+          descripcion: d.descripcion,
+          tipo: d.tipo,
+          monto: d.monto,
+          inicio: d.inicio,
+          fin: d.fin,
+          todas_las_salas: d.todas_las_salas,
+          erp_sucursal_id: d.erp_sucursal_id ?? 0,
+          productos: lista,
+        });
+        if (!r.success) {
+          return responder({
+            ok: false,
+            error: r.msg || `El sistema de la caja no aceptó el cambio en «${d.descripcion}».`,
+          }, 502);
+        }
+        cambiados.push({ id, descripcion: d.descripcion, productos: lista.length });
+
+        const { error: auditErr } = await admin.from("audit_logs").insert({
+          action: "DESCUENTO_PRODUCTOS_SINCRONIZADOS",
+          target_id: String(id),
+          user_id: quien.id,
+          user_name: quien.name,
+          source: "ADMIN_PANEL",
+          severity: "INFO",
+          branch_id: permiso.emp?.branch_id ?? null,
+          details: {
+            promocion_id: promocionId,
+            descripcion: d.descripcion,
+            agregados: agregar.filter((p) => !d.productos.includes(p)),
+            quitados: d.productos.filter((p) => quitar.has(p)),
+            productos: lista,
+          },
+        });
+        if (auditErr) console.error("[descuentos-erp] audit_logs (sync):", auditErr.message);
+      }
+
+      return responder({ ok: true, cambiados, sin_cambio: sinCambio, sin_productos: sinProductos });
     }
 
     // ── BORRAR ─────────────────────────────────────────────────────────────

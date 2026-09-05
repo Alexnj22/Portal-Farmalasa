@@ -74,6 +74,31 @@ export async function borrarDescuento(id) {
 }
 
 /**
+ * Agrega o quita productos de los descuentos de una promoción.
+ *
+ * Se manda la DELTA —qué cambió—, no la lista final: la buena la arma el
+ * servidor releyendo el descuento en el momento de escribirlo. Entre que la
+ * pantalla se cargó y alguien apretó, otra persona pudo agregarle un producto
+ * desde el sistema de ventas, y mandar la lista entera se lo llevaría por
+ * delante sin dar error.
+ *
+ * Devuelve `{ cambiados, sin_cambio, sin_productos }`. `sin_productos` son los
+ * descuentos que quedarían vacíos: NO se borran solos —borrar es irreversible y
+ * sería un efecto secundario de haber quitado un producto—, se nombran para que
+ * quien decide vaya a quitarlos.
+ */
+export async function sincronizarProductosDelDescuento(promocionId, { agregar = [], quitar = [] }) {
+    const data = await llamar({
+        accion: 'sincronizar_productos',
+        promocion_id: Number(promocionId),
+        agregar: agregar.map(Number),
+        quitar: quitar.map(Number),
+    });
+    if (data.ok !== true) throw new Error(data.error || 'No se pudo actualizar el descuento.');
+    return data;
+}
+
+/**
  * Precio y costo de unos productos, para mostrar en qué queda el precio MIENTRAS
  * se arma el descuento.
  *

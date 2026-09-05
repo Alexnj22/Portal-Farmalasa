@@ -21,6 +21,7 @@ import TabLiquidacion from './TabLiquidacion';
 import TabDescuentos from './TabDescuentos';
 import DescuentoModal from './DescuentoModal';
 import PromocionModal from './PromocionModal';
+import DuplicarPromocionModal from './DuplicarPromocionModal';
 import EditarPromocionModal from './EditarPromocionModal';
 import PromocionLaboratorioModal from './PromocionLaboratorioModal';
 import MatrizLaboratorioModal from './MatrizLaboratorioModal';
@@ -99,6 +100,7 @@ export default function PromocionesView() {
     const [modalLab, setModalLab] = useState(false);
     const [editando, setEditando] = useState(null);   // {id, tipo} de la que se corrige
     const [matriz, setMatriz] = useState(null);       // id de la de laboratorio que se mira
+    const [duplicando, setDuplicando] = useState(null);  // la promoción que se copia
     const [recarga, setRecarga] = useState(0);
 
     // ── Los descuentos, aparte: viven en el sistema de la caja ─────────────
@@ -320,6 +322,7 @@ export default function PromocionesView() {
                 onNueva={() => setModal(true)}
                 onEditar={setEditando}
                 onVerMatriz={setMatriz}
+                onDuplicar={setDuplicando}
             />
         );
     };
@@ -447,6 +450,15 @@ export default function PromocionesView() {
                     promocionId={matriz}
                     open
                     onClose={() => setMatriz(null)}
+                />
+            )}
+
+            {duplicando && (
+                <DuplicarPromocionModal
+                    promo={duplicando}
+                    open
+                    onClose={() => setDuplicando(null)}
+                    onDuplicada={() => { setDuplicando(null); recargar(); }}
                 />
             )}
 

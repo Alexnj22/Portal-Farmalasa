@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3 } from 'lucide-react';
+import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
@@ -19,7 +19,7 @@ import {
  * leer de un vistazo — cuánto queda del lote.
  */
 export default function TabActivas({
-    promos, busqueda, puedeEditar, onCambio, onNueva, onEditar, onVerMatriz,
+    promos, busqueda, puedeEditar, onCambio, onNueva, onEditar, onVerMatriz, onDuplicar,
 }) {
     if (!promos.length) {
         // Buscar sin resultados NO es un vacío: uno se arregla borrando el
@@ -54,13 +54,14 @@ export default function TabActivas({
                     onCambio={onCambio}
                     onEditar={() => onEditar?.({ id: p.id, tipo: p.tipo || 'producto' })}
                     onVerMatriz={() => onVerMatriz?.(p.id)}
+                    onDuplicar={() => onDuplicar?.(p)}
                 />
             ))}
         </div>
     );
 }
 
-function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz }) {
+function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz, onDuplicar }) {
     const [ocupado, setOcupado] = useState(false);
     const [fallo, setFallo] = useState(null);
 
@@ -160,6 +161,13 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz 
                         onClick={onEditar} className="flex-1">
                         Editar
                     </Button>
+                    {/* Duplicar: para cuando las condiciones son distintas por
+                        sala —otro porcentaje, otras fechas— y entonces son
+                        campañas distintas. El sistema de ventas acepta un
+                        descuento para UNA sala o para todas, nunca para un
+                        conjunto, así que ésta es la salida con flexibilidad. */}
+                    <Button variant="ghost" size="sm" iconOnly icon={Copy}
+                        onClick={onDuplicar} title="Duplicar esta promoción" />
                 </div>
             )}
         </div>

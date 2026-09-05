@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1007.0 — Las salas se marcan una vez, y una promoción se puede duplicar
+
+Pedido por el usuario: «que se marquen las sucursales a las que aplica, y por lo
+tanto si se aplica el bajar el precio de venta, que se baje en las sucursales
+marcadas».
+
+### «Salas donde aplica», con casillas, arriba
+
+Se marcan una vez y gobiernan las dos mitades: qué ventas cuentan para el bono y
+dónde baja el precio. La casilla dice DÓNDE; la caja de al lado, cuántas
+unidades del lote le tocan, y es opcional. **Ninguna marcada = todas**, que es el
+caso más común.
+
+Antes esto vivía como «reparto» dentro de cada producto, y con 50 productos eran
+50 formularios.
+
+### Duplicar promoción
+
+Botón en la tarjeta. Copia la promoción con sus productos y su tarifa vigente,
+opcionalmente **acotada a una sala**. Medido: el original daba 30 filas y 129
+unidades; la copia acotada a Salud 2 dio 4 filas y **30 unidades**, que es lo que
+esa sala vendió.
+
+La copia nace en **borrador** —duplicar no es lanzar— y **sin descuento en el
+sistema de ventas**: crear uno allá es escribir en un sistema ajeno, y hacerlo
+en silencio dejaría descuentos vivos que nadie pidió.
+
+Esto NO es el atajo que se descartó el mismo día. Aquél era partir una campaña
+en dos para saltarse un tope inventado; éste es para cuando las condiciones son
+**genuinamente distintas por sala**, y entonces son campañas distintas.
+
+### El límite del sistema de ventas que desmontó el plan de «un descuento por sala»
+
+El plan era crear un descuento por cada sala marcada. **No se puede**, y se supo
+midiendo:
+
+| intento | resultado |
+|---|---|
+| mismo producto · **mismas fechas** · otra sala | **RECHAZA** — «ya tiene una promocion activa en esa fecha» |
+| mismo producto · fechas que no se cruzan | ACEPTA |
+
+O sea: **admite un descuento por producto y ventana de fechas EN TODA LA
+CADENA** — la sala no importa. Con una sala marcada el descuento va ahí; con
+ninguna, a todas; **con varias, la pantalla pide elegir dónde** y explica por
+qué, en vez de fallar al guardar después de todo el trabajo.
+
+Piezas: `DuplicarPromocionModal.jsx` (nuevo), `promociones.descuentos_erp` como
+lista —una promoción puede juntar descuentos de ventanas distintas, y guardar UN
+id volvía a perder los anteriores en silencio— y el RPC `duplicar_promocion`.
+
 ## v2.1006.3 — El formulario corrige rótulos, alineación y el espacio del sello
 
 Cinco reparos del usuario sobre la hoja impresa, y los cinco eran defectos.

@@ -7,6 +7,7 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
@@ -72,10 +73,14 @@ const generalNuevo = (salas = []) => ({
     bono_adm: '0.25',
     bono_bodega: '0.25',
     unidades_por_bono: '1',
-    /* A qué salas va el lote. Vacío = a todas: sin reparto la promoción cuenta
-       las ventas de TODAS, que es lo que hace falta la mayoría de las veces.
-       Repartir sirve para acotar cuántas unidades le tocan a cada una, y la
-       base exige que la suma dé exactamente el lote. */
+    /* Las salas donde APLICA. Ninguna marcada = todas, y es el caso más común.
+       Marcarlas acota las dos mitades: qué ventas cuentan para el bono (la base
+       filtra por `promocion_reparto` desde el 2026-09-05) y dónde baja el
+       precio en la venta. */
+    salas: Object.fromEntries(salas.map((s) => [s.id, false])),
+    /* Cuántas unidades del lote le tocan a cada sala marcada. Opcional: 0 vale
+       como «aplica acá, sin lote asignado». Si se reparte, la base exige que la
+       suma dé exactamente el lote. */
     reparto: Object.fromEntries(salas.map((s) => [s.id, ''])),
 });
 
@@ -98,6 +103,7 @@ const renglonNuevo = (prod, salas, general) => ({
     bono_adm: general.bono_adm,
     bono_bodega: general.bono_bodega,
     unidades_por_bono: general.unidades_por_bono,
+    salas: { ...(general.salas || {}) },
     reparto: { ...(general.reparto || {}) },
     confirmado: true,
     /* Marca si alguien lo tocó a mano. Sin esto, cambiar la fecha general
@@ -164,6 +170,19 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         setRenglones((rs) => rs.map((r) => (r.ajustado ? r : { ...r, [campo]: v })));
     }, []);
 
+    /* Marcar o desmarcar una sala. Al desmarcarla se le borran las unidades: si
+       no aplica ahí, un número suelto sería un dato que ya no significa nada y
+       volvería a contar si alguien la vuelve a marcar. */
+    const cambiarSalaGeneral = useCallback((salaId, marcada) => {
+        const aplicar = (o) => ({
+            ...o,
+            salas: { ...o.salas, [salaId]: marcada },
+            reparto: { ...o.reparto, [salaId]: marcada ? (o.reparto?.[salaId] ?? '') : '' },
+        });
+        setGeneral(aplicar);
+        setRenglones((rs) => rs.map((r) => (r.ajustado ? r : aplicar(r))));
+    }, []);
+
     const cambiarRepartoGeneral = useCallback((salaId, v) => {
         setGeneral((g) => ({ ...g, reparto: { ...g.reparto, [salaId]: v } }));
         setRenglones((rs) => rs.map((r) => (
@@ -219,17 +238,39 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
 
     /* Sólo el descuento, para el caso en que la promoción ya se creó y esta
        mitad falló. Devuelve `true` si quedó. */
+    /**
+     * Manda el descuento al sistema de ventas.
+     *
+     * **Una llamada POR SALA MARCADA**, porque allá un descuento vale para UNA
+     * sala o para TODAS, nunca para un conjunto (medido el 2026-09-05). Sin
+     * salas marcadas va una sola, «en todas».
+     *
+     * Se mandan EN SERIE y no en paralelo: cada una relee la lista del sistema
+     * de ventas para confirmar y para detectar solapes, y dos escrituras a la
+     * vez leerían un estado a medio escribir.
+     */
     const mandarDescuento = async (promoId, forzar = false) => {
+        /* UNA sola llamada, y no una por sala: el sistema de ventas admite un
+           descuento por producto y ventana de fechas EN TODA LA CADENA —medido
+           el 2026-09-05: el mismo producto con las mismas fechas en otra sala
+           lo rechaza—. Con una sala marcada va ahí; con ninguna, a todas; con
+           varias, manda lo que se eligió en el bloque del descuento. */
+        const marcadas = salas.filter((x) => general.salas?.[x.id]);
+        const unaSola = marcadas.length === 1 ? marcadas[0] : null;
+        const todas = unaSola ? false : (marcadas.length === 0 ? true : !!desc.todas);
+        const branchId = unaSola
+            ? unaSola.id
+            : (todas ? (salas[0]?.id ?? null) : Number(desc.branchId) || null);
+
         const r = await guardarDescuento({
-            ...descuentoDesdeLaPromocion(renglones, desc, salas),
+            ...descuentoDesdeLaPromocion(renglones, desc),
             descripcion: nombre.trim(),
+            todas_las_salas: todas,
+            branch_id: branchId,
             promocion_id: promoId,
             forzar,
         });
-        if (r.avisos) {
-            setAvisosDesc(r.avisos);
-            return false;
-        }
+        if (r.avisos) { setAvisosDesc(r.avisos); return false; }
         setAvisosDesc([]);
         return true;
     };
@@ -278,9 +319,16 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     bono_adm: r.tiene_bono ? Number(r.bono_adm) || 0 : 0,
                     bono_bodega: r.tiene_bono ? Number(r.bono_bodega) || 0 : 0,
                     unidades_por_bono: Number(r.unidades_por_bono) || 1,
-                    reparto: Object.entries(r.reparto || {})
-                        .filter(([, u]) => Number(u) > 0)
-                        .map(([branch_id, u]) => ({ branch_id: Number(branch_id), unidades: Number(u) })),
+                    /* Una fila POR SALA MARCADA, con sus unidades o 0. El 0 no
+                       es relleno: la base lo lee como «aplica acá, sin lote
+                       asignado» y por eso acota el bono. Sin ninguna marcada no
+                       va ninguna fila, que es «todas las salas». */
+                    reparto: Object.entries(r.salas || {})
+                        .filter(([, marcada]) => marcada)
+                        .map(([branch_id]) => ({
+                            branch_id: Number(branch_id),
+                            unidades: Number(r.reparto?.[branch_id]) || 0,
+                        })),
                 })),
             });
 
@@ -356,6 +404,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         valor={general}
                         onCambiar={cambiarGeneral}
                         onReparto={cambiarRepartoGeneral}
+                        onSala={cambiarSalaGeneral}
                         salas={salas}
                         proveedores={proveedores}
                     />
@@ -366,7 +415,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         salas={salas}
                         valor={desc}
                         onCambiar={cambiarDesc}
-                        alcanceTodo={alcanceTodo}
+                        salasDeLaPromocion={general.salas}
                     />
 
                     {/* ── 3 · Los productos ──────────────────────────────── */}
@@ -478,13 +527,15 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
  * «Ajustar» y a partir de ahí queda a salvo: pisar un ajuste hecho a mano sería
  * deshacer trabajo sin decirlo.
  */
-function GeneralDeLaPromocion({ valor, onCambiar, onReparto, salas, proveedores }) {
+function GeneralDeLaPromocion({ valor, onCambiar, onReparto, onSala, salas, proveedores }) {
     const unidadPago = Number(valor.unidades_por_bono) > 1
         ? `por cada ${valor.unidades_por_bono} u.`
         : 'por unidad';
     const loteNum = Number(valor.lote_total) || 0;
     const repartoPuesto = Object.values(valor.reparto || {})
         .reduce((a, v) => a + (Number(v) || 0), 0);
+    const cuantasMarcadas = Object.values(valor.salas || {}).filter(Boolean).length;
+    const hayMarcadas = cuantasMarcadas > 0;
 
     return (
         <div className="rounded-lg border border-border-card bg-surface-card-hover p-3 space-y-3">
@@ -511,38 +562,59 @@ function GeneralDeLaPromocion({ valor, onCambiar, onReparto, salas, proveedores 
                 />
             </div>
 
-            {/* A qué salas va el lote. Sube acá desde el editor de cada producto
-                (2026-09-05): con 50 productos, decir el reparto uno por uno son
-                50 formularios — justo lo que este rediseño vino a quitar.
+            {/* ── A qué SALAS aplica ──────────────────────────────────────
+                Se marcan acá, una vez, y gobiernan las dos mitades: qué ventas
+                cuentan para el bono y dónde baja el precio.
 
-                Vacío = a TODAS. No es un descuido: sin reparto la promoción
-                cuenta las ventas de todas las salas, que es lo que hace falta la
-                mayoría de las veces. Repartir sirve para acotar cuántas unidades
-                le tocan a cada una, y la base exige que la suma dé exactamente
-                el lote. */}
+                Antes esto no existía como pregunta: el reparto era sólo por
+                producto y las funciones de cálculo contaban las ventas de TODAS
+                las salas —o sea que una campaña de dos salas pagaba bono por una
+                venta hecha en una tercera—. Corregido en la base el 2026-09-05.
+
+                Ninguna marcada = TODAS, y es el caso más común. La casilla dice
+                DÓNDE; la caja de al lado, cuántas unidades del lote le tocan, y
+                es opcional. */}
             <div className="space-y-1">
                 <span className="text-label uppercase tracking-wide font-semibold text-content-2">
-                    Reparto por sala
+                    Salas donde aplica
                 </span>
                 <p className="text-caption text-content-3">
-                    {repartoPuesto === 0
-                        ? 'Sin repartir cuenta las ventas de todas las salas.'
-                        : (repartoPuesto === loteNum && loteNum > 0
-                            ? `Reparte las ${loteNum} unidades del lote.`
-                            : `Repartes ${repartoPuesto}${loteNum ? ` de ${loteNum}` : ''} — tiene que sumar exactamente el lote.`)}
+                    {!hayMarcadas
+                        ? 'Sin marcar ninguna, aplica en todas las salas.'
+                        : (repartoPuesto === 0
+                            ? `Aplica sólo en ${cuantasMarcadas} ${cuantasMarcadas === 1 ? 'sala' : 'salas'}. Las unidades son opcionales.`
+                            : (loteNum && repartoPuesto === loteNum
+                                ? `Reparte las ${loteNum} unidades del lote.`
+                                : `Repartes ${repartoPuesto}${loteNum ? ` de ${loteNum}` : ''} — si repartes, tiene que sumar exactamente el lote.`))}
                 </p>
-                <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
-                    {salas.map((s) => (
-                        <PortalInput
-                            key={s.id}
-                            label={s.name}
-                            name={`rep-gen-${s.id}`}
-                            value={valor.reparto?.[s.id] ?? ''}
-                            onChange={(e) => onReparto(s.id, e.target.value.replace(/[^0-9]/g, ''))}
-                            inputMode="numeric"
-                            placeholder="—"
-                        />
-                    ))}
+                <div className="grid gap-2 sm:grid-cols-2">
+                    {salas.map((s) => {
+                        const marcada = !!valor.salas?.[s.id];
+                        return (
+                            <div key={s.id}
+                                className="flex items-center gap-2 rounded-lg border border-border-card px-2 py-1">
+                                <div className="flex-1 min-w-0">
+                                    <Checkbox
+                                        checked={marcada}
+                                        onChange={(v) => onSala(s.id, v)}
+                                        label={s.name}
+                                    />
+                                </div>
+                                {marcada && (
+                                    <div className="w-24 shrink-0">
+                                        <PortalInput
+                                            label="unidades"
+                                            name={`rep-gen-${s.id}`}
+                                            value={valor.reparto?.[s.id] ?? ''}
+                                            onChange={(e) => onReparto(s.id, e.target.value.replace(/[^0-9]/g, ''))}
+                                            inputMode="numeric"
+                                            placeholder="—"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

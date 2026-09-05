@@ -38,8 +38,14 @@ import { fmtVigencia, precioConDescuento } from './promocionesUtils';
  * @param valor      `{ activo, tipo, monto, todas, branchId, finPropio }`
  * @param onCambiar  `(campo, v) => void`
  */
-export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, alcanceTodo = true }) {
+export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, salasDeLaPromocion = {} }) {
     const [precios, setPrecios] = useState([]);
+
+    /* Las salas que se marcaron arriba, con su nombre. Vacío = todas. */
+    const salasMarcadas = useMemo(
+        () => salas.filter((s) => salasDeLaPromocion?.[s.id]),
+        [salas, salasDeLaPromocion],
+    );
 
     // ── Lo que se hereda ───────────────────────────────────────────────────
     const productos = useMemo(() => {
@@ -138,29 +144,54 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                                 </Notice>
                             )}
 
-                            {/* Con alcance de una sola sala no se pregunta: el
-                                servidor lo fija en la propia igual, y ofrecerlo
-                                sería ofrecer una opción que va a rechazar. */}
-                            {alcanceTodo && (
-                                <Checkbox
-                                    checked={!!valor.todas}
-                                    onChange={(v) => onCambiar('todas', v)}
-                                    label="En todas las salas"
-                                    description="Sin esto, el descuento vale sólo en la sala que elijas."
-                                />
-                            )}
+                            {/* ── Dónde baja el precio ────────────────────
+                                Hereda las salas marcadas arriba, PERO con un
+                                límite del sistema de ventas que se midió el
+                                2026-09-05 y no se puede sortear:
 
-                            {alcanceTodo && !valor.todas && (
-                                <Campo rotulo="Sala">
-                                    <LiquidSelect
-                                        value={valor.branchId || ''}
-                                        onChange={(v) => onCambiar('branchId', v)}
-                                        options={salas.map((s) => ({ value: String(s.id), label: s.name }))}
-                                        placeholder="Elige la sala"
-                                        clearable={false}
-                                        ariaLabel="Sala del descuento"
-                                    />
-                                </Campo>
+                                **admite UN descuento por producto y ventana de
+                                fechas, en toda la cadena.** La sala no importa —
+                                el mismo producto con las mismas fechas en otra
+                                sala lo rechaza («ya tiene una promocion activa
+                                en esa fecha»); con fechas que no se cruzan, lo
+                                acepta.
+
+                                O sea que «un descuento por cada sala marcada» es
+                                IMPOSIBLE. Con una sala marcada va ahí; con
+                                ninguna, a todas; con varias hay que elegir, y la
+                                pantalla lo dice en vez de fallar al guardar. */}
+                            {salasMarcadas.length <= 1 ? (
+                                <Notice variant="info" icon={Info}>
+                                    {salasMarcadas.length === 0
+                                        ? 'Baja el precio en todas las salas, igual que la promoción.'
+                                        : `Baja el precio sólo en ${salasMarcadas[0].name}, igual que la promoción.`}
+                                </Notice>
+                            ) : (
+                                <>
+                                    <Notice variant="warning" icon={AlertTriangle}>
+                                        La promoción aplica en {salasMarcadas.length} salas, pero el
+                                        sistema de ventas admite <span className="font-semibold">un
+                                        solo descuento por producto</span> en unas mismas fechas —da
+                                        igual la sala. Elige dónde baja el precio.
+                                    </Notice>
+                                    <Campo rotulo="Dónde baja el precio">
+                                        <LiquidSelect
+                                            value={valor.todas ? 'todas' : String(valor.branchId || '')}
+                                            onChange={(v) => {
+                                                onCambiar('todas', v === 'todas');
+                                                onCambiar('branchId', v === 'todas' ? '' : v);
+                                            }}
+                                            options={[
+                                                { value: 'todas', label: 'En todas las salas' },
+                                                ...salasMarcadas.map((x) => ({
+                                                    value: String(x.id), label: `Sólo en ${x.name}` })),
+                                            ]}
+                                            placeholder="Elige dónde"
+                                            clearable={false}
+                                            ariaLabel="Dónde baja el precio"
+                                        />
+                                    </Campo>
+                                </>
                             )}
 
                             {/* La vigencia NO se vuelve a pedir: es la de la promoción.

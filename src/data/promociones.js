@@ -81,6 +81,28 @@ export async function crearPromocion({ nombre, renglones, nota }) {
     return data ?? null;
 }
 
+/**
+ * Copia una promoción, opcionalmente acotada a UNA sala.
+ *
+ * Existe porque el sistema de ventas acepta un descuento para una sala o para
+ * todas, nunca para un conjunto: si las condiciones son distintas por sala
+ * —otro porcentaje, otras fechas— son campañas distintas, y duplicar es lo
+ * correcto. **No es partir una campaña en dos para saltarse un límite**: eso
+ * duplicaría lotes y hojas de liquidación de algo que se negoció junto.
+ *
+ * La copia nace en BORRADOR y SIN descuento en el sistema de ventas: crear uno
+ * allá en silencio dejaría descuentos vivos que nadie pidió.
+ */
+export async function duplicarPromocion({ id, nombre, branchId = null }) {
+    const { data, error } = await supabase.rpc('duplicar_promocion', {
+        p_id: Number(id),
+        p_nombre: nombre,
+        p_branch_id: branchId ? Number(branchId) : null,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
 /** Enciende o devuelve a borrador. Una finalizada no se reabre. */
 export async function activarPromocion(id, activar = true) {
     const { data, error } = await supabase.rpc('activar_promocion', {

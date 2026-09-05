@@ -181,7 +181,7 @@ export function precioConDescuento(precio, tipo, monto) {
  * la promoción y nadie lo vería, porque ninguna de las dos pantallas muestra la
  * otra.
  */
-export function descuentoDesdeLaPromocion(renglones, valor, salas) {
+export function descuentoDesdeLaPromocion(renglones, valor) {
     const productos = [...new Set(renglones.map((r) => r.erp_product_id))];
     const inicios = renglones.map((r) => r.inicio).filter(Boolean).sort();
     const fines = renglones.map((r) => r.fin).filter(Boolean).sort();
@@ -191,8 +191,8 @@ export function descuentoDesdeLaPromocion(renglones, valor, salas) {
         monto: Number(valor.monto),
         inicio: inicios[0] || '',
         fin: fines[fines.length - 1] || valor.finPropio || '',
-        todas_las_salas: !!valor.todas,
-        branch_id: valor.todas ? (salas[0]?.id ?? null) : Number(valor.branchId),
+        /* La SALA la decide quien llama, no esto: una promoción marcada en tres
+           salas manda tres veces con distinta sala. Ver `mandarDescuento`. */
         productos,
     };
 }

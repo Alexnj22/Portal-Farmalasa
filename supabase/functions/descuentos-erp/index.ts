@@ -138,10 +138,12 @@ Deno.serve(async (req) => {
          nombra. */
       const dePromocion = new Map<number, string>();
       const { data: promos, error: promosErr } = await admin
-        .from("promociones").select("nombre, descuento_erp_id")
-        .in("descuento_erp_id", filas.length ? filas.map((d) => d.id) : [-1]);
+        .from("promociones").select("nombre, descuentos_erp")
+        .not("descuentos_erp", "eq", "{}");
       if (promosErr) console.error("[descuentos-erp] promociones:", promosErr.message);
-      for (const p of promos ?? []) dePromocion.set(Number(p.descuento_erp_id), String(p.nombre));
+      for (const p of promos ?? []) {
+        for (const id of (p.descuentos_erp ?? [])) dePromocion.set(Number(id), String(p.nombre));
+      }
 
       const hoy = new Date().toISOString().slice(0, 10);
       const descuentos = filas.map((d, i) => ({
@@ -357,10 +359,17 @@ Deno.serve(async (req) => {
          cierra entre las dos llamadas, el descuento quedaría vivo en el sistema
          de ventas sin que nadie sepa de qué promoción es. */
       if (promocionId > 0) {
+        /* Se AGREGA a la lista, no se reemplaza: una promoción marcada en tres
+           salas manda tres veces —el sistema de ventas acepta una sala o todas,
+           nunca un conjunto— y cada llamada trae su propio id. Con un solo
+           campo, la tercera borraba a las dos anteriores y quedaban descuentos
+           vivos que el portal ya no sabía de quién eran. */
+        const { data: pr, error: leerErr } = await admin
+          .from("promociones").select("descuentos_erp").eq("id", promocionId).maybeSingle();
+        if (leerErr) console.error("[descuentos-erp] leer promoción:", leerErr.message);
+        const lista = [...new Set([...(pr?.descuentos_erp ?? []), idNuevo])];
         const { error: ligarErr } = await admin
-          .from("promociones")
-          .update({ descuento_erp_id: idNuevo })
-          .eq("id", promocionId);
+          .from("promociones").update({ descuentos_erp: lista }).eq("id", promocionId);
         if (ligarErr) console.error("[descuentos-erp] ligar promoción:", ligarErr.message);
       }
 

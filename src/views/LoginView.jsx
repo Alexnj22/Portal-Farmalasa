@@ -1293,6 +1293,26 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             <style>{keyframeStyles}</style>
             <div className="relative z-base w-full min-h-full flex flex-col">
                 {esAngosto ? renderMobileLayout() : renderDesktopLayout()}
+
+                {/* El aviso de privacidad, en la pantalla que TODOS ven antes de
+                    escribir una credencial. El Art. 7 de la Ley para la
+                    Protección de Datos Personales manda informar ANTES de
+                    recoger el dato, y el Art. 16 letra g) publicarlo en el sitio
+                    del responsable.
+
+                    Va afuera de las dos maquetas y no adentro de cada una: una
+                    sola copia no puede quedarse en la de escritorio y faltar en
+                    la del teléfono, que es justo el modo de falla que nadie
+                    reporta. Las dos raíces llevan `flex-1`, así que este pie se
+                    apoya abajo en ambas sin empujar nada. */}
+                <footer className="relative z-base w-full px-6 pb-[max(var(--sa-bottom),1rem)] flex justify-center">
+                    <a href="/privacidad"
+                        className="inline-flex items-center min-h-[var(--tap-min)] px-3 text-micro font-bold
+                                   uppercase tracking-widest text-content-3 hover:text-content-2
+                                   transition-colors duration-[var(--dur-fast)]">
+                        Aviso de privacidad
+                    </a>
+                </footer>
             </div>
         </div>
     );

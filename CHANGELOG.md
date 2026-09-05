@@ -21,6 +21,67 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1004.0 — El portal publica su aviso de privacidad
+
+La **Ley para la Protección de Datos Personales** (DL 144, nov-2024) aplica a la
+empresa sin excepción posible: el Art. 2 alcanza a toda persona natural o
+jurídica que trate datos personales, y ninguna de las cuatro exclusiones del
+Art. 3 sirve —la del historial crediticio es para los burós, no para el crédito
+propio de una farmacia—. Los plazos de adecuación de los Arts. 60 y 61 vencieron
+hace más de un año.
+
+Un barrido del repo daba **cero** menciones de aviso de privacidad, política de
+privacidad o derechos ARCO-POL. Y lo que se trata no es poco, medido en
+producción: 28,161 fichas de cliente (16,706 con DUI), 362,923 facturas ligadas
+a una ficha, 48 expedientes de personal con DUI, ISSS, AFP y fotografía, y el
+libro de dispensaciones bajo receta —que es un **dato de salud**, o sea sensible
+por el Art. 4 letra g)—.
+
+**El aviso se publica en `/privacidad`**, con los nueve contenidos que exige el
+Art. 24 y en el mismo membrete que el reglamento de puntos. Es HTML plano
+servido por una reescritura de `vercel.json`, no una vista del portal: un
+documento que promete estar disponible no puede depender de que la aplicación
+esté sana ni de que alguien tenga sesión.
+
+Va enganchado en los tres sitios donde se recogen datos o se decide entrar:
+
+- **el login**, fuera de las dos maquetas para que no se quede en la de
+  escritorio y falte en la del teléfono;
+- **`/mis-puntos`**, que pide DUI y teléfono en una página pública y hasta hoy
+  no informaba nada;
+- **el reglamento de puntos §10.4**, que ya prometía atender correcciones y
+  ahora dice dónde está el documento completo.
+
+**Lo que el aviso NO inventa.** El canal publicado es el que ya existe y
+funciona —cualquier sala de venta y el 2301-0013—, no un buzón que todavía no se
+ha creado: un correo publicado que rebota es peor que no ofrecerlo. Y la
+cláusula de cookies dice la verdad medida: el portal no usa ninguna, ni
+analítica ni de seguimiento; la sesión vive en `localStorage`.
+
+**Falta una cosa y está marcada en la fuente:** el Art. 24 letra f) exige el
+NOMBRE del delegado de protección de datos, y el nombramiento quedó pendiente
+por decisión del usuario. Se agrega en una línea de
+`docs/legal/aviso-de-privacidad.html` y se regenera con `npm run privacidad`.
+
+**El nombramiento va con su propio documento**
+(`docs/legal/acuerdo-de-nombramiento-delegado.html` → PDF), en blanco y con
+**dos firmas**. Las dos y no una a propósito: el Art. 53 ordinal 1 del Código de
+Trabajo —que el propio código titula *ius variandi abusivo*— le da al trabajador
+derecho a darse por despedido con indemnización cuando se le destina a *«un
+trabajo de naturaleza distinta a la del convenido»*. La aceptación escrita es lo
+que convierte el encargo en acuerdo, y por eso se firma antes de que la función
+empiece. El documento lleva además los seis plazos que el delegado asume (20, 10,
+5, 5, 5 y 3 días hábiles) y las 72 horas del Art. 25.
+
+**Los dos generadores dejaron de ser del reglamento.**
+`reglamento-puntos-web.mjs` → `documento-legal-web.mjs` y
+`reglamento-puntos-pdf.mjs` → `documento-legal-pdf.mjs`. El título, la
+descripción y el pie de página salen ahora de `<meta>` del PROPIO documento y no
+del generador — escritos ahí, el segundo documento se lleva puesto el pie del
+primero. El PDF acepta `--sin-firma` para el que trae sus propias firmas.
+Verificado: `public/reglamento-puntos.html` sale **byte por byte idéntico** tras
+el refactor, y el pie del PDF del reglamento conserva su texto exacto.
+
 ## v2.1003.1 — La píldora de Promociones va a la derecha y sus botones ceden
 
 Corregido por el usuario con captura, señalando Bitácoras como referencia: «la

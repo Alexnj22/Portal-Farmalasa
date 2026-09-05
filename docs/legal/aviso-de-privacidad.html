@@ -1,11 +1,14 @@
-<title>Reglamento Puntos Salud</title>
-<meta name="pie-de-pagina" content="Reglamento del programa Puntos Salud">
-<meta name="description" content="Reglamento del Programa de Puntos de Farmacias La Popular y La Salud. Cómo se acumulan, cómo se canjean y cuándo vencen.">
+<title>Aviso de Privacidad</title>
+<meta name="pie-de-pagina" content="Aviso de privacidad">
+<meta name="description" content="Aviso de privacidad de Farmacias La Popular y La Salud. Qué datos suyos guardamos, para qué los usamos, con quién los compartimos y qué puede pedirnos sobre ellos.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
 
 <style>
+  /* Las mismas reglas que el reglamento del programa de puntos, y a propósito:
+     los dos son documentos que la empresa publica y pega en la sala. Que se
+     vean iguales es lo que hace que quien recibe uno reconozca al otro. */
   :root {
     --paper: #FAFAF8; --ink: #161A18; --ink-2: #4E554F; --ink-3: #7E857F;
     --rule: #DCDFDA; --suave: #F0F1EE;
@@ -35,22 +38,8 @@
          padding: clamp(1.5rem,5vw,3rem) clamp(1.15rem,5vw,2rem) 4rem; }
 
   /* ── Membrete ───────────────────────────────────────────────────────────
-     El MISMO que la empresa ya usa en sus documentos impresos (ver
-     `constanciaDeSancion.js`): la marca arriba y debajo el contribuyente, el
-     giro, la dirección y los números fiscales. Que se vea igual que los demás
-     no es estética — es lo que hace que quien lo recibe lo reconozca como de la
-     empresa sin tener que leerlo.
-
-     El color vive SÓLO en el logo. En el texto de un documento que obliga, un
-     acento de marca lo hace parecer un folleto. */
-  /* ── Membrete ────────────────────────────────────────────────────────────
      El logo corona la hoja y debajo se reparten el documento (izquierda) y el
-     emisor (derecha), separados por un eje y alineados POR EL PIE.
-
-     Lo del pie es lo que resuelve el encabezado: apoyados arriba, el título y
-     la identificación terminan a alturas distintas y el bloque se ve pegado.
-     Y como el eje ya separa las dos mitades, la regla de abajo puede ser fina —
-     no tiene que hacer sola el trabajo de cortar contra el texto. */
+     emisor (derecha), separados por un eje y alineados POR EL PIE. */
   .membrete { border-bottom: 1px solid var(--ink); padding-bottom: .75rem; margin-bottom: 1.3rem; }
   .marca { display: flex; justify-content: flex-end; margin-bottom: .6rem; }
   .marca img { width: 150px; height: auto; display: block; }
@@ -61,10 +50,6 @@
   h1 { font-family: "IBM Plex Sans", system-ui, sans-serif;
        font-size: clamp(1.3rem,4.5vw,1.62rem); font-weight: 700; line-height: 1.12;
        letter-spacing: -0.025em; margin: 0 0 .25rem; }
-  /* El nombre del programa dentro del título. Va en el verde de la marca y en
-     un cuerpo menor: el documento se llama «Reglamento del Programa de Puntos»
-     y «Puntos Salud» es CÓMO SE LLAMA el programa, no parte del título. */
-  .marca-programa { color: var(--verde-marca); white-space: nowrap; }
   .vigencia { font-family: "IBM Plex Sans", system-ui, sans-serif;
               font-size: .8rem; font-weight: 600; color: var(--ink-2); margin: 0; }
   .patrono { font-family: "IBM Plex Sans", system-ui, sans-serif;
@@ -72,13 +57,17 @@
   .fiscal  { font-family: "IBM Plex Sans", system-ui, sans-serif;
              font-size: .71rem; color: var(--ink-2); margin: 0; line-height: 1.5; }
 
-  /* En pantalla angosta el eje no cabe: se apila y todo vuelve a la izquierda.
-     Un bloque alineado a la derecha y solo se lee como un pie de página. */
   @media (max-width: 32rem) {
     .membrete .fila { display: block; }
     .mem-emisor { text-align: left; border-left: 0; padding-left: 0; margin-top: .9rem; }
     .marca { justify-content: flex-start; }
   }
+
+  /* ── Entrada ────────────────────────────────────────────────────────────
+     El Art. 5 letra e) de la ley prohíbe «textos extensos, terminologías
+     técnicas o legales y/o letra pequeña». Por eso el documento abre diciendo
+     de qué se trata en dos renglones, y no con una definición. */
+  .entrada { font-size: 1.02rem; color: var(--ink-2); margin: 0 0 .3rem; }
 
   /* ── Cláusulas ─────────────────────────────────────────────────────────── */
   section { margin-top: 1.5rem; }
@@ -104,8 +93,8 @@
   ul.viñetas li { margin-bottom: .22rem; color: var(--ink-2); }
   strong { font-weight: 600; }
 
-  /* La cláusula que puede perjudicar va marcada: que no se pueda decir que
-     estaba escondida entre las demás. */
+  /* Lo que puede sorprender al lector va marcado: que no se pueda decir que
+     estaba escondido entre lo demás. */
   .aviso { background: var(--suave); border-left: 3px solid var(--ink);
            padding: .8rem 1rem; margin: .7rem 0 0; border-radius: 0 5px 5px 0; }
   .aviso p { margin-bottom: .45rem; }
@@ -114,11 +103,13 @@
   .tabla-caja { overflow-x: auto; margin-top: .6rem; }
   table { border-collapse: collapse; width: 100%; min-width: 21rem; font-size: .87rem; }
   th, td { border-bottom: 1px solid var(--rule); padding: .38rem .5rem; text-align: left;
-           font-family: "IBM Plex Sans", system-ui, sans-serif; }
+           font-family: "IBM Plex Sans", system-ui, sans-serif; vertical-align: top; }
   th { font-weight: 600; font-size: .72rem; text-transform: uppercase;
        letter-spacing: .07em; color: var(--ink-3); }
-  td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  tr.baja td { color: var(--ink-2); font-style: italic; }
+  td.si { font-weight: 600; }
+  /* La fila de los datos de salud va distinguida: la ley los llama sensibles y
+     obliga a identificarlos como tales dentro del propio aviso (Art. 24-b). */
+  tr.sensible td { background: var(--suave); }
 
   @media print {
     body { background: #fff; color: #000; font-size: 10pt; }
@@ -131,6 +122,7 @@
     ol.clausulas > li { break-inside: avoid; }
     p { orphans: 2; widows: 2; }
     .aviso { background: transparent; border-left: 2px solid #000; }
+    tr.sensible td { background: transparent; font-style: italic; }
   }
 </style>
 
@@ -142,8 +134,8 @@
     </div>
     <div class="fila">
       <div class="mem-doc">
-        <h1>Reglamento del programa<br><span class="marca-programa">Puntos Salud</span></h1>
-        <p class="vigencia">Vigente a partir del 1 de octubre de 2026</p>
+        <h1>Aviso de privacidad</h1>
+        <p class="vigencia">Vigente a partir del 4 de septiembre de 2026</p>
       </div>
       <div class="mem-emisor">
         <p class="patrono">JOSÉ ALEMÁN V.</p>
@@ -157,218 +149,237 @@
     </div>
   </div>
 
+  <p class="entrada">Este documento explica qué datos suyos guardamos, para qué
+  los usamos, con quién los compartimos y qué puede pedirnos sobre ellos.</p>
+
   <section>
-    <h2><span class="num">1</span> Objeto</h2>
+    <h2><span class="num">1</span> Quién trata sus datos</h2>
     <ol class="clausulas">
       <li>José Alemán V., quien opera bajo el nombre comercial
       <strong>Farmacias La Popular y La Salud</strong> (en adelante,
-      <strong>la Empresa</strong>), ofrece a sus clientes un programa de puntos
-      de lealtad llamado <strong>Puntos Salud</strong> (en adelante,
-      <strong>el Programa</strong>): las compras hechas en sus salas de venta
-      acumulan puntos que pueden canjearse por un descuento en compras
-      posteriores.</li>
-      <li>Este reglamento contiene las condiciones completas del Programa y
-      sustituye cualquier condición anterior. La participación es gratuita y
-      voluntaria.</li>
+      <strong>la Empresa</strong>), es el responsable del tratamiento de los
+      datos personales a que se refiere este aviso.</li>
+      <li>Su domicilio es Carretera a Chalatenango, Caserío Totolco,
+      Chalatenango Sur, departamento de Chalatenango, y su teléfono el
+      <strong>2301-0013</strong>.</li>
+      <li>Este aviso cubre lo que se recoge en las salas de venta de la Empresa
+      y en su portal, <strong>portal.farmasalud.lat</strong>.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">2</span> Quién participa</h2>
+    <h2><span class="num">2</span> Qué datos tratamos</h2>
     <ol class="clausulas">
-      <li>Cualquier persona natural mayor de dieciocho años que proporcione su
-      nombre, un <strong>documento de identidad</strong> y su número de teléfono
-      en cualquier sala de venta de la Empresa.</li>
-      <li>El documento de identidad es el <strong>Documento Único de
-      Identidad</strong> para quien lo tenga, y el <strong>pasaporte</strong> o
-      el <strong>carné de residente</strong> para la persona extranjera. La
-      inscripción se hace en cualquier sala de venta y de la misma forma en ambos
-      casos.</li>
-      <li>El Cliente extranjero consulta su saldo en línea con el número de ese
-      mismo documento y su teléfono, igual que quien se inscribió con su
-      Documento Único de Identidad.</li>
-      <li>La cuenta es <strong>personal e intransferible</strong>: los puntos no
-      pueden cederse, venderse ni acumularse en la cuenta de otra persona.</li>
-      <li>El Cliente debe identificarse en caja <strong>antes de que la venta
-      finalice</strong>, para que la compra quede registrada a su nombre. Emitido el
-      documento de venta, no es posible asignar esa compra a una cuenta.</li>
-      <li>Hecho eso, <strong>los puntos se acumulan solos</strong>: el Cliente no
-      tiene que realizar ningún trámite posterior para que se le acrediten.</li>
-    </ol>
-  </section>
-
-  <section>
-    <h2><span class="num">3</span> Cómo se acumulan</h2>
-    <ol class="clausulas">
-      <li>Por cada <strong>US$1.00</strong> de compra elegible se otorga
-      <strong>1 punto</strong>. Las fracciones no acumulan.</li>
-      <li>Es elegible la compra que cumple las tres condiciones siguientes:
-        <ul class="viñetas">
-          <li>vale <strong>US$1.00 o más</strong>;</li>
-          <li>se hace al precio ordinario de venta al público de la sala;</li>
-          <li>incluye al menos un producto farmacéutico o de cuidado personal.</li>
-        </ul>
-      </li>
-      <li><strong>No acumulan puntos</strong> las compras menores a US$1.00; lo
-      relacionado a telefonía; bebidas, helados y paletas; las compras a precios
-      especiales, de mayoreo, promociones, de convenio o con cualquier otro
-      descuento; el monto correspondiente a un canje de puntos; y las compras
-      amparadas en un convenio con una empresa, aseguradora o institución, cuando
-      la factura se emite a nombre de ésta.
-      <br><br>
-      Si en una misma compra se llevan productos de los dos grupos señalados
-      —lo relacionado a telefonía; bebidas, helados y paletas— junto con al menos
-      un producto farmacéutico o de cuidado personal,
-      <strong>la compra sí acumula puntos</strong>.
-      <br><br>
-      Esta salvedad <strong>no alcanza</strong> a las compras a precios
-      especiales, de mayoreo, de convenio o con cualquier otro descuento: basta
-      que una de ellas figure en el documento de venta para que esa compra
-      <strong>no acumule puntos</strong>.</li>
-      <li>Los puntos se reflejan en la cuenta una vez registrada la venta. Una
-      demora operativa en ese registro no afecta el derecho del Cliente a los
-      puntos de una compra elegible.</li>
-    </ol>
-  </section>
-
-  <section>
-    <h2><span class="num">4</span> Cómo se canjean</h2>
-    <ol class="clausulas">
-      <li>Cada <strong>100 puntos</strong> equivalen a <strong>US$1.00</strong>
-      de descuento; es decir, cada punto equivale a US$0.01. El canje se hace en
-      cualquier sala de venta y requiere un <strong>mínimo de 100 puntos</strong>
-      (US$1.00). Alcanzado ese mínimo, el Cliente puede canjear cualquier
-      cantidad de puntos que tenga disponible.</li>
-      <li>El descuento se aplica sobre el precio de la compra y consta en el
-      documento de venta. Al canjear se utilizan
-      <strong>primero los puntos más antiguos</strong>.</li>
-      <li>Los puntos <strong>no son canjeables por dinero en efectivo</strong>,
-      no son reembolsables y no generan intereses ni rendimiento alguno.</li>
-      <li>El canje aplica a <strong>cualquier tipo de compra</strong>. Las
-      exclusiones de la cláusula 3.3 dicen qué compras no <em>acumulan</em>
-      puntos; no limitan en qué compra pueden <em>usarse</em> los que ya se
-      tienen.</li>
-    </ol>
-  </section>
-
-  <section>
-    <h2><span class="num">5</span> Cuándo vencen</h2>
-    <ol class="clausulas">
-      <li>Los puntos de cada compra vencen a los <strong>doce (12) meses</strong>
-      de esa compra, y pueden utilizarse <strong>hasta esa fecha inclusive</strong>.</li>
-      <li>El vencimiento opera <strong>por compra y no sobre el saldo total</strong>:
-      al cumplirse los doce meses vencen únicamente los puntos de esa compra que
-      no se hayan canjeado. Los de compras posteriores conservan su propia
-      vigencia.</li>
-      <li><strong>Régimen de transición.</strong>
+      <li>De quien <strong>compra</strong>: su nombre, su documento de identidad,
+      su teléfono, y su dirección y correo cuando los proporciona. También lo que
+      compró, cuándo, en qué sala y cómo lo pagó; y, si compró al crédito, su
+      saldo y sus abonos.</li>
+      <li>De quien <strong>participa en el programa de puntos</strong>: además de
+      lo anterior, sus puntos acumulados, sus canjes y su saldo.</li>
+      <li>De quien <strong>trabaja en la Empresa</strong>: su expediente laboral
+      —nombre, documento de identidad, dirección, teléfono, fecha y lugar de
+      nacimiento, números de ISSS y AFP, contacto de emergencia y fotografía— y
+      el registro de sus marcaciones, horarios, permisos y planilla.</li>
+      <li>De quien nos <strong>provee</strong>: el nombre, los números de
+      identificación tributaria, la dirección, el teléfono y el correo.</li>
+      <li><strong>Datos sensibles.</strong> Cuando se despacha un medicamento que
+      exige receta, la ley sanitaria obliga a dejar constancia de la
+      dispensación y de los datos de la receta —nombre y edad del paciente, su
+      documento y el médico que la extendió—. Esa información es un
+      <strong>dato de salud</strong>, y la ley la considera sensible.
         <div class="aviso">
-          <p>Los puntos acumulados hasta el <strong>30 de septiembre de 2026</strong>
-          —cualquiera que sea la fecha en que se ganaron— cuentan sus doce meses
-          a partir del 1 de octubre de 2026 y podrán utilizarse hasta el
-          <strong>1 de octubre de 2027 inclusive</strong>.</p>
-          <p>Esta regla existe para que ningún punto ya acumulado venza sin que
-          el Cliente haya tenido un año completo para utilizarlo.</p>
+          <p>Nadie está obligado a proporcionar datos sensibles. Los que se
+          registran aquí son únicamente los que la norma sanitaria manda anotar
+          para poder despachar el medicamento, y quedan bajo secreto
+          profesional.</p>
+          <p><strong>Nunca se usan para promociones</strong> ni para decidir
+          precios, y no se comparten con nadie fuera de las autoridades de salud
+          que pueden exigirlos.</p>
         </div>
       </li>
-      <li>Los puntos vencidos <strong>no se reponen ni son recuperables</strong>.
-      El Cliente puede consultar la fecha de vencimiento de cada grupo conforme a
-      la cláusula 7.</li>
-      <li>Ejemplo. Un Cliente gana 200 puntos en enero, canjea 100 y en febrero
-      gana 200 más:
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">3</span> Para qué los usamos</h2>
+    <ol class="clausulas">
+      <li>Cada uso tiene su razón. Los tres primeros no dependen de su permiso
+      porque los exige la ley o el trato que usted mismo hizo con la Empresa; los
+      dos últimos <strong>sí</strong>, y usted puede retirarlo cuando quiera.
         <div class="tabla-caja">
           <table>
-            <thead><tr><th>Momento</th><th>Movimiento</th><th class="n">Saldo</th></tr></thead>
+            <thead>
+              <tr><th>Para qué</th><th>Por qué podemos</th><th>¿Pide su permiso?</th></tr>
+            </thead>
             <tbody>
-              <tr><td>Enero</td><td>Acumula 200 puntos</td><td class="n">200</td></tr>
-              <tr><td>Enero</td><td>Canjea 100 puntos</td><td class="n">100</td></tr>
-              <tr><td>Febrero</td><td>Acumula 200 puntos</td><td class="n">300</td></tr>
-              <tr class="baja"><td>Enero siguiente</td><td>Vencen los 100 restantes de enero</td><td class="n">200</td></tr>
-              <tr class="baja"><td>Febrero siguiente</td><td>Vencen los 200 de febrero</td><td class="n">0</td></tr>
+              <tr><td>Emitir y transmitir el documento de venta</td><td>Lo exige la ley tributaria</td><td>No</td></tr>
+              <tr class="sensible"><td>Llevar el libro de medicamentos que exigen receta</td><td>Lo exige la norma sanitaria</td><td>No</td></tr>
+              <tr><td>Cobrar y llevar el crédito que se le otorgó</td><td>Es el trato hecho con usted</td><td>No</td></tr>
+              <tr><td>Atender sus consultas y reclamos</td><td>Es el trato hecho con usted</td><td>No</td></tr>
+              <tr><td>El expediente del personal, la planilla, el ISSS y la AFP</td><td>Es el contrato de trabajo y lo exige la ley</td><td>No</td></tr>
+              <tr><td><strong>El programa de puntos</strong></td><td>Su permiso</td><td class="si">Sí</td></tr>
+              <tr><td><strong>Avisarle de promociones y novedades</strong></td><td>Su permiso</td><td class="si">Sí</td></tr>
             </tbody>
           </table>
         </div>
       </li>
+      <li>Sus datos <strong>no se usan para nada distinto</strong> de lo que dice
+      esta tabla. Si en el futuro la Empresa quisiera darles otro uso, se lo
+      informará y le pedirá una autorización nueva antes de hacerlo.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">6</span> Anulaciones</h2>
+    <h2><span class="num">4</span> Con quién se comparten</h2>
     <ol class="clausulas">
-      <li>Si una compra se anula, los puntos que otorgó se descuentan de la
-      cuenta. Si ya se habían canjeado, el descuento llega hasta el saldo
-      disponible: <strong>la cuenta nunca queda con saldo negativo</strong> ni
-      genera obligación de pago alguna para el Cliente.</li>
-      <li>Todo movimiento de esta naturaleza queda registrado en el estado de
-      cuenta del Cliente con su motivo.</li>
+      <li>Con el <strong>Ministerio de Hacienda</strong>, porque los documentos
+      de venta se transmiten a esa institución por mandato de ley.</li>
+      <li>Con las <strong>autoridades de salud</strong>, cuando requieran el
+      libro de medicamentos que exigen receta.</li>
+      <li>Con el <strong>ISSS, la AFP y el Ministerio de Trabajo</strong>, en lo
+      que corresponde al personal.</li>
+      <li>Con las empresas que <strong>guardan la información por cuenta de la
+      Empresa</strong>, descritas en la cláusula 5. Trabajan siguiendo nuestras
+      instrucciones y están obligadas a las mismas reglas de este aviso.</li>
+      <li>Cuando lo ordene un juez o una autoridad competente.</li>
+      <li><strong>Sus datos no se venden, no se alquilan ni se ceden a terceros
+      con fines comerciales o publicitarios.</strong> Nunca.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">7</span> Consulta del saldo</h2>
+    <h2><span class="num">5</span> Dónde se guardan</h2>
     <ol class="clausulas">
-      <li>El Cliente puede consultar su saldo, sus movimientos y las fechas de
-      vencimiento en <strong>portal.farmasalud.lat/mis-puntos</strong>,
-      ingresando el número del documento con el que se inscribió y su número de
-      teléfono. También puede pedir esa información en la caja de cualquier sala
-      de ventas.</li>
-      <li>Si advierte una diferencia, puede presentar su reclamo conforme a la
-      cláusula 10, acompañando el documento de venta respectivo.</li>
+      <li>La información del portal se guarda en servidores de
+      <strong>Estados Unidos</strong>, operados por Supabase Inc. (la base de
+      datos y los archivos) y Vercel Inc. (el sitio), ambas contratadas por la
+      Empresa para ese fin y sujetas a las obligaciones de este aviso. Se
+      conservan respaldos en esa misma infraestructura.</li>
+      <li>Cualquier consulta o reclamo relativo a esas empresas se presenta ante
+      la Empresa por los medios de la cláusula 8; no hace falta que usted se
+      dirija a ellas.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">8</span> Uso indebido</h2>
+    <h2><span class="num">6</span> Cómo se protegen</h2>
     <ol class="clausulas">
-      <li>La Empresa puede suspender o cancelar una cuenta cuando compruebe el
-      uso de datos de identidad ajenos, compras simuladas o cualquier maniobra
-      dirigida a obtener puntos sin una compra real. La decisión se comunicará al
-      Cliente con expresión de su motivo, y podrá presentar sus argumentos
-      conforme a la cláusula 10.</li>
+      <li>Cada persona que usa el portal entra con su propio usuario y sólo
+      alcanza la información que su cargo necesita; el sistema lo verifica en
+      cada consulta, no sólo en la pantalla.</li>
+      <li>Queda <strong>registro de quién hizo cada cosa</strong> y de toda
+      descarga de información, con la fecha y el nombre de quien la hizo.</li>
+      <li>Las fotografías y los documentos se guardan en almacenamiento privado:
+      no son alcanzables por su dirección, sólo mediante un enlace temporal que
+      el sistema entrega a quien tiene permiso.</li>
+      <li>El acceso viaja siempre cifrado.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">9</span> Modificación y terminación</h2>
+    <h2><span class="num">7</span> Cuánto tiempo se conservan</h2>
     <ol class="clausulas">
-      <li>La Empresa puede modificar este reglamento o dar por terminado el
-      Programa avisando con <strong>treinta (30) días</strong> de anticipación,
-      mediante publicación visible en sus salas de venta. Las modificaciones
-      <strong>no tienen efecto retroactivo</strong> sobre los puntos ya
-      acumulados.</li>
-      <li>Si el Programa termina, el Cliente conservará el derecho a canjear sus
-      puntos vigentes durante los <strong>noventa (90) días</strong> siguientes
-      al anuncio.</li>
+      <li>Los documentos de venta, el libro de medicamentos que exigen receta y
+      los registros del personal se conservan durante <strong>el plazo que la
+      ley tributaria, sanitaria y laboral obliga a conservarlos</strong>.</li>
+      <li>El resto de la información se conserva mientras dure su relación con la
+      Empresa y mientras siga siendo necesaria para lo que dice la cláusula 3.
+      Cumplido eso, se elimina o se anonimiza.</li>
+      <li>Si usted se retira del programa de puntos, su cuenta se cancela y los
+      puntos no canjeados se pierden, conforme al reglamento del programa.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">10</span> Datos personales y reclamos</h2>
+    <h2><span class="num">8</span> Qué puede pedirnos</h2>
     <ol class="clausulas">
-      <li>Para administrar el Programa, la Empresa trata el nombre, el Documento
-      Único de Identidad, el teléfono y el historial de compras y canjes del
-      Cliente. Esos datos se usan únicamente para operar el Programa, atender
-      consultas y reclamos e informar al Cliente sobre sus puntos:
-      <strong>no se venden ni se ceden a terceros</strong> con fines comerciales.</li>
-      <li>El Cliente puede pedir la corrección de sus datos o su retiro del
-      Programa en cualquier sala de venta. El retiro cancela la cuenta y los
-      puntos no canjeados.</li>
-      <li>Todo reclamo puede presentarse en cualquier sala de venta, donde
-      quedará registrado y se dará respuesta.</li>
-      <li>El detalle completo de qué datos trata la Empresa, para qué los usa,
-      con quién los comparte y qué puede pedir el Cliente sobre ellos —incluido
-      el derecho a acceder a ellos, corregirlos, borrarlos, oponerse a su uso o
-      llevárselos— consta en el <strong>aviso de privacidad</strong>, disponible
-      en todas las salas de venta y en
-      <strong>portal.farmasalud.lat/privacidad</strong>.</li>
+      <li>Sobre sus propios datos usted puede pedir:
+        <ul class="viñetas">
+          <li><strong>Acceso</strong> — saber qué tenemos suyo y para qué lo usamos.</li>
+          <li><strong>Rectificación</strong> — que se corrija lo que está mal, incompleto o desactualizado.</li>
+          <li><strong>Cancelación</strong> — que se borre lo que ya no hace falta.</li>
+          <li><strong>Oposición</strong> — que dejemos de usarlos, incluida la publicidad.</li>
+          <li><strong>Portabilidad</strong> — recibirlos en un archivo y llevárselos a otro lado.</li>
+          <li><strong>Olvido</strong> — que se quiten de internet, si llegaran a estar publicados.</li>
+          <li><strong>Limitación</strong> — que se congele su uso mientras se resuelve un reclamo suyo.</li>
+        </ul>
+      </li>
+      <li>También puede <strong>retirar en cualquier momento el permiso</strong>
+      que haya dado para el programa de puntos o para recibir promociones, sin
+      tener que explicar por qué.</li>
+      <li>Todo esto es <strong>gratuito</strong>. Sólo se cobran, al costo, las
+      copias o el envío si usted pide la información en papel; por medios
+      electrónicos no tiene ningún costo.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">11</span> Aceptación</h2>
+    <h2><span class="num">9</span> Cómo se pide</h2>
     <ol class="clausulas">
-      <li>Acumular o canjear puntos implica el conocimiento y la aceptación de
-      este reglamento, del cual se mantiene un ejemplar disponible en todas las
-      salas de venta y en <strong>portal.farmasalud.lat/reglamento-puntos</strong>.</li>
+      <!-- ⚠️ PENDIENTE: el Art. 24 letra f) exige que este aviso lleve el NOMBRE
+           del delegado. El nombramiento está en curso; al resolverlo, se escribe
+           acá y se regenera la página y el PDF (`npm run privacidad`). -->
+      <li>La solicitud se presenta ante el <strong>delegado de protección de
+      datos</strong> de la Empresa, en <strong>cualquier sala de venta</strong> o
+      al teléfono <strong>2301-0013</strong>. En la sala se le entrega el
+      formulario y queda constancia con la fecha.</li>
+      <li>Para atenderla hace falta que usted <strong>acredite su identidad</strong>
+      con su documento; si actúa por otra persona, además lo que lo autorice a
+      representarla. Es la única forma de asegurar que los datos de alguien se le
+      entreguen sólo a esa persona.</li>
+      <li>Se le responde dentro de <strong>veinte días hábiles</strong>. Si el
+      caso lo exige, ese plazo puede prorrogarse una vez por otros veinte días
+      hábiles, y se le avisará.</li>
+      <li>Si la solicitud llegara incompleta, se le pedirá una sola vez que la
+      complete, y usted tendrá diez días hábiles para hacerlo.</li>
+      <li>Si no estuviera conforme con la respuesta, puede acudir a la
+      <strong>Agencia de Ciberseguridad del Estado</strong>, que es la autoridad
+      que vigila el cumplimiento de esta materia.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">10</span> Menores de edad</h2>
+    <ol class="clausulas">
+      <li>El programa de puntos es sólo para mayores de dieciocho años.</li>
+      <li>Cuando en una receta consten los datos de un menor, se tratan
+      únicamente para lo que manda la norma sanitaria, y los derechos de la
+      cláusula 8 los ejercen su padre, su madre o quien lo represente
+      legalmente.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">11</span> Cookies</h2>
+    <ol class="clausulas">
+      <li>El portal <strong>no usa cookies</strong>, ni propias ni de terceros, y
+      no lleva ninguna herramienta de publicidad o de seguimiento.</li>
+      <li>Para mantener su sesión abierta mientras trabaja, guarda un dato en el
+      almacenamiento local de su navegador. Ese dato no sale de su equipo y se
+      borra al cerrar sesión.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">12</span> Si algo falla</h2>
+    <ol class="clausulas">
+      <li>Si ocurriera una pérdida o un acceso indebido a los datos, la Empresa
+      lo comunicará <strong>dentro de las setenta y dos horas</strong> siguientes
+      a conocerlo a la Agencia de Ciberseguridad del Estado, a la Fiscalía
+      General de la República y a las personas afectadas, diciendo qué pasó, qué
+      datos se vieron comprometidos, qué se hizo y qué puede hacer usted.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">13</span> Cambios a este aviso</h2>
+    <ol class="clausulas">
+      <li>Este aviso se mantiene publicado en
+      <strong>portal.farmasalud.lat/privacidad</strong> y en lugar visible de
+      cada sala de venta. Cualquier cambio se comunica por esos mismos medios, y
+      la fecha de vigencia del encabezado dice desde cuándo rige.</li>
+      <li>Si un cambio introdujera una finalidad distinta de las de la cláusula
+      3, no se aplicará a sus datos sin pedirle antes una autorización nueva.</li>
     </ol>
   </section>
 

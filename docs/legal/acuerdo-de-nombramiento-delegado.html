@@ -1,15 +1,15 @@
-<title>Reglamento Puntos Salud</title>
-<meta name="pie-de-pagina" content="Reglamento del programa Puntos Salud">
-<meta name="description" content="Reglamento del Programa de Puntos de Farmacias La Popular y La Salud. Cómo se acumulan, cómo se canjean y cuándo vencen.">
+<title>Nombramiento del Delegado</title>
+<meta name="pie-de-pagina" content="Nombramiento del delegado de protección de datos personales">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
 
 <style>
+  /* El mismo membrete y la misma tipografía que el reglamento de puntos y el
+     aviso de privacidad. Los tres los emite la misma empresa. */
   :root {
     --paper: #FAFAF8; --ink: #161A18; --ink-2: #4E554F; --ink-3: #7E857F;
     --rule: #DCDFDA; --suave: #F0F1EE;
-    /* El verde del logo aprobado, medido sobre el archivo. */
     --verde-marca: #6C9309;
   }
   @media (prefers-color-scheme: dark) {
@@ -34,23 +34,6 @@
   .doc { max-width: 42rem; margin: 0 auto;
          padding: clamp(1.5rem,5vw,3rem) clamp(1.15rem,5vw,2rem) 4rem; }
 
-  /* ── Membrete ───────────────────────────────────────────────────────────
-     El MISMO que la empresa ya usa en sus documentos impresos (ver
-     `constanciaDeSancion.js`): la marca arriba y debajo el contribuyente, el
-     giro, la dirección y los números fiscales. Que se vea igual que los demás
-     no es estética — es lo que hace que quien lo recibe lo reconozca como de la
-     empresa sin tener que leerlo.
-
-     El color vive SÓLO en el logo. En el texto de un documento que obliga, un
-     acento de marca lo hace parecer un folleto. */
-  /* ── Membrete ────────────────────────────────────────────────────────────
-     El logo corona la hoja y debajo se reparten el documento (izquierda) y el
-     emisor (derecha), separados por un eje y alineados POR EL PIE.
-
-     Lo del pie es lo que resuelve el encabezado: apoyados arriba, el título y
-     la identificación terminan a alturas distintas y el bloque se ve pegado.
-     Y como el eje ya separa las dos mitades, la regla de abajo puede ser fina —
-     no tiene que hacer sola el trabajo de cortar contra el texto. */
   .membrete { border-bottom: 1px solid var(--ink); padding-bottom: .75rem; margin-bottom: 1.3rem; }
   .marca { display: flex; justify-content: flex-end; margin-bottom: .6rem; }
   .marca img { width: 150px; height: auto; display: block; }
@@ -61,10 +44,6 @@
   h1 { font-family: "IBM Plex Sans", system-ui, sans-serif;
        font-size: clamp(1.3rem,4.5vw,1.62rem); font-weight: 700; line-height: 1.12;
        letter-spacing: -0.025em; margin: 0 0 .25rem; }
-  /* El nombre del programa dentro del título. Va en el verde de la marca y en
-     un cuerpo menor: el documento se llama «Reglamento del Programa de Puntos»
-     y «Puntos Salud» es CÓMO SE LLAMA el programa, no parte del título. */
-  .marca-programa { color: var(--verde-marca); white-space: nowrap; }
   .vigencia { font-family: "IBM Plex Sans", system-ui, sans-serif;
               font-size: .8rem; font-weight: 600; color: var(--ink-2); margin: 0; }
   .patrono { font-family: "IBM Plex Sans", system-ui, sans-serif;
@@ -72,15 +51,12 @@
   .fiscal  { font-family: "IBM Plex Sans", system-ui, sans-serif;
              font-size: .71rem; color: var(--ink-2); margin: 0; line-height: 1.5; }
 
-  /* En pantalla angosta el eje no cabe: se apila y todo vuelve a la izquierda.
-     Un bloque alineado a la derecha y solo se lee como un pie de página. */
   @media (max-width: 32rem) {
     .membrete .fila { display: block; }
     .mem-emisor { text-align: left; border-left: 0; padding-left: 0; margin-top: .9rem; }
     .marca { justify-content: flex-start; }
   }
 
-  /* ── Cláusulas ─────────────────────────────────────────────────────────── */
   section { margin-top: 1.5rem; }
   h2 { font-family: "IBM Plex Sans", system-ui, sans-serif;
        font-size: .95rem; font-weight: 700; margin: 0 0 .5rem; padding-bottom: .3rem;
@@ -101,24 +77,43 @@
   }
   ol.clausulas > li:last-child { margin-bottom: 0; }
   ul.viñetas { margin: .35rem 0 0; padding-left: 1.05rem; }
-  ul.viñetas li { margin-bottom: .22rem; color: var(--ink-2); }
+  ul.viñetas li { margin-bottom: .3rem; }
   strong { font-weight: 600; }
 
-  /* La cláusula que puede perjudicar va marcada: que no se pueda decir que
-     estaba escondida entre las demás. */
   .aviso { background: var(--suave); border-left: 3px solid var(--ink);
            padding: .8rem 1rem; margin: .7rem 0 0; border-radius: 0 5px 5px 0; }
   .aviso p { margin-bottom: .45rem; }
   .aviso p:last-child { margin-bottom: 0; }
 
-  .tabla-caja { overflow-x: auto; margin-top: .6rem; }
-  table { border-collapse: collapse; width: 100%; min-width: 21rem; font-size: .87rem; }
-  th, td { border-bottom: 1px solid var(--rule); padding: .38rem .5rem; text-align: left;
-           font-family: "IBM Plex Sans", system-ui, sans-serif; }
-  th { font-weight: 600; font-size: .72rem; text-transform: uppercase;
-       letter-spacing: .07em; color: var(--ink-3); }
-  td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  tr.baja td { color: var(--ink-2); font-style: italic; }
+  /* ── Los espacios que se llenan a mano ──────────────────────────────────
+     Una raya y no un `[NOMBRE]`: el documento se imprime para firmarse, y un
+     corchete impreso se lee como un documento sin terminar. La raya se lee
+     como lo que es — un espacio para escribir. */
+  .llenar { display: inline-block; min-width: 14rem; border-bottom: 1px solid var(--ink-3);
+            margin: 0 .15rem; vertical-align: baseline; }
+  .llenar.corto { min-width: 7rem; }
+  .llenar.largo { min-width: 22rem; }
+
+  /* ── Pie de firmas ──────────────────────────────────────────────────────
+     Dos firmas y no una, y ése es el punto del documento: el Art. 53 ordinal 1
+     del Código de Trabajo le da al trabajador derecho a darse por despedido si
+     se le destina a un trabajo de naturaleza distinta a la del contrato. La
+     aceptación escrita del delegado es lo que convierte el encargo en acuerdo. */
+  .firmas { margin-top: 3rem; display: flex; gap: 2.5rem; justify-content: space-between;
+            break-inside: avoid; }
+  .firmante { flex: 1 1 0; min-width: 0; text-align: center; }
+  .firmante .linea { border-top: 1px solid var(--ink); margin: 3.2rem 0 .4rem; }
+  .firmante .nombre { font-family: "IBM Plex Sans", system-ui, sans-serif;
+                      font-size: .82rem; font-weight: 700; margin: 0 0 .1rem; }
+  .firmante .cargo { font-family: "IBM Plex Sans", system-ui, sans-serif;
+                     font-size: .72rem; color: var(--ink-2); margin: 0; }
+  .lugar { font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: .82rem;
+           color: var(--ink-2); margin-top: 2rem; }
+
+  @media (max-width: 32rem) {
+    .firmas { display: block; }
+    .firmante { margin-bottom: 2rem; }
+  }
 
   @media print {
     body { background: #fff; color: #000; font-size: 10pt; }
@@ -127,6 +122,7 @@
     .marca { justify-content: flex-end; }
     .fiscal { white-space: nowrap; font-size: .66rem; }
     .doc { max-width: none; padding: 0; }
+    .firmas { display: flex; }
     h2 { break-after: avoid; }
     ol.clausulas > li { break-inside: avoid; }
     p { orphans: 2; widows: 2; }
@@ -142,8 +138,8 @@
     </div>
     <div class="fila">
       <div class="mem-doc">
-        <h1>Reglamento del programa<br><span class="marca-programa">Puntos Salud</span></h1>
-        <p class="vigencia">Vigente a partir del 1 de octubre de 2026</p>
+        <h1>Nombramiento del delegado<br>de protección de datos personales</h1>
+        <p class="vigencia">Art. 15 de la Ley para la Protección de Datos Personales</p>
       </div>
       <div class="mem-emisor">
         <p class="patrono">JOSÉ ALEMÁN V.</p>
@@ -158,218 +154,165 @@
   </div>
 
   <section>
-    <h2><span class="num">1</span> Objeto</h2>
+    <h2><span class="num">1</span> Quién nombra y a quién</h2>
     <ol class="clausulas">
-      <li>José Alemán V., quien opera bajo el nombre comercial
+      <li>José Rutilio Alemán Vásquez, quien opera bajo el nombre comercial
       <strong>Farmacias La Popular y La Salud</strong> (en adelante,
-      <strong>la Empresa</strong>), ofrece a sus clientes un programa de puntos
-      de lealtad llamado <strong>Puntos Salud</strong> (en adelante,
-      <strong>el Programa</strong>): las compras hechas en sus salas de venta
-      acumulan puntos que pueden canjearse por un descuento en compras
-      posteriores.</li>
-      <li>Este reglamento contiene las condiciones completas del Programa y
-      sustituye cualquier condición anterior. La participación es gratuita y
-      voluntaria.</li>
+      <strong>la Empresa</strong>) y es el responsable del tratamiento de los
+      datos personales que ésta administra, en cumplimiento del artículo 15 de la
+      Ley para la Protección de Datos Personales,
+      <strong>NOMBRA DELEGADO DE PROTECCIÓN DE DATOS PERSONALES</strong> a:</li>
+      <li>Nombre: <span class="llenar largo"></span><br><br>
+      Documento de identidad: <span class="llenar"></span><br><br>
+      Cargo que desempeña en la Empresa: <span class="llenar largo"></span></li>
+      <li>El nombramiento rige a partir del <span class="llenar corto"></span> de
+      <span class="llenar corto"></span> de <span class="llenar corto"></span> y
+      es por tiempo indefinido, hasta que la Empresa lo revoque por escrito o el
+      delegado renuncie a la función de la misma forma.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">2</span> Quién participa</h2>
+    <h2><span class="num">2</span> Qué le corresponde hacer</h2>
     <ol class="clausulas">
-      <li>Cualquier persona natural mayor de dieciocho años que proporcione su
-      nombre, un <strong>documento de identidad</strong> y su número de teléfono
-      en cualquier sala de venta de la Empresa.</li>
-      <li>El documento de identidad es el <strong>Documento Único de
-      Identidad</strong> para quien lo tenga, y el <strong>pasaporte</strong> o
-      el <strong>carné de residente</strong> para la persona extranjera. La
-      inscripción se hace en cualquier sala de venta y de la misma forma en ambos
-      casos.</li>
-      <li>El Cliente extranjero consulta su saldo en línea con el número de ese
-      mismo documento y su teléfono, igual que quien se inscribió con su
-      Documento Único de Identidad.</li>
-      <li>La cuenta es <strong>personal e intransferible</strong>: los puntos no
-      pueden cederse, venderse ni acumularse en la cuenta de otra persona.</li>
-      <li>El Cliente debe identificarse en caja <strong>antes de que la venta
-      finalice</strong>, para que la compra quede registrada a su nombre. Emitido el
-      documento de venta, no es posible asignar esa compra a una cuenta.</li>
-      <li>Hecho eso, <strong>los puntos se acumulan solos</strong>: el Cliente no
-      tiene que realizar ningún trámite posterior para que se le acrediten.</li>
-    </ol>
-  </section>
-
-  <section>
-    <h2><span class="num">3</span> Cómo se acumulan</h2>
-    <ol class="clausulas">
-      <li>Por cada <strong>US$1.00</strong> de compra elegible se otorga
-      <strong>1 punto</strong>. Las fracciones no acumulan.</li>
-      <li>Es elegible la compra que cumple las tres condiciones siguientes:
+      <li>Son atribuciones del delegado las que le señala el artículo 16 de la
+      Ley, y que aquí se detallan:
         <ul class="viñetas">
-          <li>vale <strong>US$1.00 o más</strong>;</li>
-          <li>se hace al precio ordinario de venta al público de la sala;</li>
-          <li>incluye al menos un producto farmacéutico o de cuidado personal.</li>
+          <li><strong>Recibir, tramitar y resolver</strong> las solicitudes de
+          acceso, rectificación, cancelación, oposición, portabilidad, olvido y
+          limitación que presenten los titulares de los datos.</li>
+          <li><strong>Verificar la identidad</strong> de quien solicita, de modo
+          que los datos de una persona se entreguen únicamente a ella o a quien
+          acredite representarla.</li>
+          <li><strong>Auxiliar y orientar a la Empresa</strong> en cuanto se
+          relacione con el ejercicio de esos derechos.</li>
+          <li><strong>Proponer y documentar los procedimientos internos</strong>
+          que hagan más eficiente la atención de las solicitudes.</li>
+          <li><strong>Asesorar a las áreas</strong> de la Empresa en materia de
+          protección de datos personales.</li>
+          <li><strong>Formar al personal</strong> en los derechos y obligaciones
+          que establece la Ley.</li>
+          <li><strong>Publicar el aviso de privacidad</strong> en el sitio de la
+          Empresa y en lugar visible de cada sala de venta, y mantenerlo al
+          día.</li>
         </ul>
       </li>
-      <li><strong>No acumulan puntos</strong> las compras menores a US$1.00; lo
-      relacionado a telefonía; bebidas, helados y paletas; las compras a precios
-      especiales, de mayoreo, promociones, de convenio o con cualquier otro
-      descuento; el monto correspondiente a un canje de puntos; y las compras
-      amparadas en un convenio con una empresa, aseguradora o institución, cuando
-      la factura se emite a nombre de ésta.
-      <br><br>
-      Si en una misma compra se llevan productos de los dos grupos señalados
-      —lo relacionado a telefonía; bebidas, helados y paletas— junto con al menos
-      un producto farmacéutico o de cuidado personal,
-      <strong>la compra sí acumula puntos</strong>.
-      <br><br>
-      Esta salvedad <strong>no alcanza</strong> a las compras a precios
-      especiales, de mayoreo, de convenio o con cualquier otro descuento: basta
-      que una de ellas figure en el documento de venta para que esa compra
-      <strong>no acumule puntos</strong>.</li>
-      <li>Los puntos se reflejan en la cuenta una vez registrada la venta. Una
-      demora operativa en ese registro no afecta el derecho del Cliente a los
-      puntos de una compra elegible.</li>
+      <li>Le corresponde además <strong>conducir la comunicación de cualquier
+      vulneración de seguridad</strong> a la Agencia de Ciberseguridad del
+      Estado, a la Fiscalía General de la República y a las personas afectadas,
+      dentro de las setenta y dos horas de conocida, y documentar el incidente
+      conforme al artículo 25 de la Ley.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">4</span> Cómo se canjean</h2>
+    <h2><span class="num">3</span> Los plazos que asume</h2>
     <ol class="clausulas">
-      <li>Cada <strong>100 puntos</strong> equivalen a <strong>US$1.00</strong>
-      de descuento; es decir, cada punto equivale a US$0.01. El canje se hace en
-      cualquier sala de venta y requiere un <strong>mínimo de 100 puntos</strong>
-      (US$1.00). Alcanzado ese mínimo, el Cliente puede canjear cualquier
-      cantidad de puntos que tenga disponible.</li>
-      <li>El descuento se aplica sobre el precio de la compra y consta en el
-      documento de venta. Al canjear se utilizan
-      <strong>primero los puntos más antiguos</strong>.</li>
-      <li>Los puntos <strong>no son canjeables por dinero en efectivo</strong>,
-      no son reembolsables y no generan intereses ni rendimiento alguno.</li>
-      <li>El canje aplica a <strong>cualquier tipo de compra</strong>. Las
-      exclusiones de la cláusula 3.3 dicen qué compras no <em>acumulan</em>
-      puntos; no limitan en qué compra pueden <em>usarse</em> los que ya se
-      tienen.</li>
+      <li>Todos los plazos siguientes son de <strong>días hábiles</strong> y
+      corren desde que la solicitud se recibe:
+        <ul class="viñetas">
+          <li><strong>20 días</strong> para responder una solicitud, prorrogables
+          por una sola vez y por otros 20 con causa justificada.</li>
+          <li><strong>10 días</strong> es el plazo que se le concede al
+          solicitante para completar una solicitud incompleta, previa prevención
+          hecha una sola vez.</li>
+          <li><strong>5 días</strong> para devolver la solicitud cuando la
+          Empresa no sea la competente para atenderla.</li>
+          <li><strong>5 días</strong> para ejecutar la revocación de un
+          consentimiento, y otros 5 para comunicarla a quien también trate esos
+          datos por cuenta de la Empresa.</li>
+          <li><strong>5 días</strong> para notificar una rectificación o una
+          eliminación a quienes hubieran recibido esos datos.</li>
+          <li><strong>3 días</strong> para notificar, mediante resolución
+          motivada, la negativa a una solicitud.</li>
+        </ul>
+      </li>
+      <li>El trámite es <strong>gratuito</strong>. Sólo pueden cobrarse, al
+      costo, la reproducción, la certificación o el envío en papel, y esos costos
+      deben estar publicados.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">5</span> Cuándo vencen</h2>
+    <h2><span class="num">4</span> Cómo se le presentan las solicitudes</h2>
     <ol class="clausulas">
-      <li>Los puntos de cada compra vencen a los <strong>doce (12) meses</strong>
-      de esa compra, y pueden utilizarse <strong>hasta esa fecha inclusive</strong>.</li>
-      <li>El vencimiento opera <strong>por compra y no sobre el saldo total</strong>:
-      al cumplirse los doce meses vencen únicamente los puntos de esa compra que
-      no se hayan canjeado. Los de compras posteriores conservan su propia
-      vigencia.</li>
-      <li><strong>Régimen de transición.</strong>
+      <li>Las solicitudes se reciben en <strong>cualquier sala de venta</strong>,
+      donde se entrega el formulario y queda constancia con la fecha, y en
+      <span class="llenar largo"></span>.</li>
+      <li>La sala remite la solicitud al delegado <strong>el mismo día</strong> en
+      que la recibe. El plazo de respuesta corre desde la recepción, no desde que
+      el delegado se entera.</li>
+      <li>El nombre del delegado y estos medios se publican en el aviso de
+      privacidad, conforme al artículo 24 letra f) de la Ley.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">5</span> Qué le proporciona la Empresa</h2>
+    <ol class="clausulas">
+      <li><strong>Los accesos necesarios</strong> en el portal para consultar,
+      corregir, exportar y eliminar los datos de clientes, personal y
+      dispensaciones. Sin ellos no es posible resolver una solicitud dentro del
+      plazo.</li>
+      <li><strong>El respaldo del artículo 17 de la Ley</strong>, que obliga a
+      toda dependencia, empleado o proveedor de la Empresa a asistir y atender
+      las peticiones que el delegado canalice. La Empresa comunicará este
+      nombramiento a todas sus salas.</li>
+      <li><strong>El tiempo necesario</strong> dentro de su jornada para atender
+      la función.</li>
+      <li><strong>Un sustituto designado</strong>, que asume la función durante
+      sus ausencias, vacaciones o incapacidades. Se designa como sustituto a:
+      <span class="llenar largo"></span></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">6</span> Confidencialidad</h2>
+    <ol class="clausulas">
+      <li>El delegado guarda <strong>confidencialidad sobre todo dato personal al
+      que acceda con ocasión de esta función</strong>, obligación que subsiste
+      después de que cese en ella.</li>
+      <li>El artículo 59 letra c) de la Ley prohíbe revelar, difundir o
+      comercializar por cualquier medio los datos personales a los que se accede
+      con ocasión del cargo, y el artículo 58 advierte que las sanciones de esa
+      Ley no eximen de la responsabilidad civil o penal que corresponda.</li>
+      <li>El delegado <strong>no responde con su patrimonio</strong> por las
+      multas que pudieran imponerse a la Empresa: la Ley las dirige al
+      responsable del tratamiento.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">7</span> Aceptación</h2>
+    <ol class="clausulas">
+      <li>El delegado declara que <strong>conoce y acepta</strong> el presente
+      nombramiento y las funciones que se le encomiendan, y que le fueron
+      explicadas antes de firmar.</li>
+      <li>Se firman dos ejemplares de un mismo tenor: uno para la Empresa y otro
+      para el delegado.</li>
         <div class="aviso">
-          <p>Los puntos acumulados hasta el <strong>30 de septiembre de 2026</strong>
-          —cualquiera que sea la fecha en que se ganaron— cuentan sus doce meses
-          a partir del 1 de octubre de 2026 y podrán utilizarse hasta el
-          <strong>1 de octubre de 2027 inclusive</strong>.</p>
-          <p>Esta regla existe para que ningún punto ya acumulado venza sin que
-          el Cliente haya tenido un año completo para utilizarlo.</p>
+          <p>Esta firma es lo que convierte el nombramiento en acuerdo. La
+          asignación de funciones nuevas sin la aceptación de quien las recibe
+          queda comprendida en el artículo 53 ordinal 1 del Código de Trabajo, y
+          por eso el documento se firma antes de que la función empiece.</p>
         </div>
-      </li>
-      <li>Los puntos vencidos <strong>no se reponen ni son recuperables</strong>.
-      El Cliente puede consultar la fecha de vencimiento de cada grupo conforme a
-      la cláusula 7.</li>
-      <li>Ejemplo. Un Cliente gana 200 puntos en enero, canjea 100 y en febrero
-      gana 200 más:
-        <div class="tabla-caja">
-          <table>
-            <thead><tr><th>Momento</th><th>Movimiento</th><th class="n">Saldo</th></tr></thead>
-            <tbody>
-              <tr><td>Enero</td><td>Acumula 200 puntos</td><td class="n">200</td></tr>
-              <tr><td>Enero</td><td>Canjea 100 puntos</td><td class="n">100</td></tr>
-              <tr><td>Febrero</td><td>Acumula 200 puntos</td><td class="n">300</td></tr>
-              <tr class="baja"><td>Enero siguiente</td><td>Vencen los 100 restantes de enero</td><td class="n">200</td></tr>
-              <tr class="baja"><td>Febrero siguiente</td><td>Vencen los 200 de febrero</td><td class="n">0</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </li>
     </ol>
   </section>
 
-  <section>
-    <h2><span class="num">6</span> Anulaciones</h2>
-    <ol class="clausulas">
-      <li>Si una compra se anula, los puntos que otorgó se descuentan de la
-      cuenta. Si ya se habían canjeado, el descuento llega hasta el saldo
-      disponible: <strong>la cuenta nunca queda con saldo negativo</strong> ni
-      genera obligación de pago alguna para el Cliente.</li>
-      <li>Todo movimiento de esta naturaleza queda registrado en el estado de
-      cuenta del Cliente con su motivo.</li>
-    </ol>
-  </section>
+  <p class="lugar">En Chalatenango, a los <span class="llenar corto"></span> días
+  del mes de <span class="llenar corto"></span> de <span class="llenar corto"></span>.</p>
 
-  <section>
-    <h2><span class="num">7</span> Consulta del saldo</h2>
-    <ol class="clausulas">
-      <li>El Cliente puede consultar su saldo, sus movimientos y las fechas de
-      vencimiento en <strong>portal.farmasalud.lat/mis-puntos</strong>,
-      ingresando el número del documento con el que se inscribió y su número de
-      teléfono. También puede pedir esa información en la caja de cualquier sala
-      de ventas.</li>
-      <li>Si advierte una diferencia, puede presentar su reclamo conforme a la
-      cláusula 10, acompañando el documento de venta respectivo.</li>
-    </ol>
-  </section>
-
-  <section>
-    <h2><span class="num">8</span> Uso indebido</h2>
-    <ol class="clausulas">
-      <li>La Empresa puede suspender o cancelar una cuenta cuando compruebe el
-      uso de datos de identidad ajenos, compras simuladas o cualquier maniobra
-      dirigida a obtener puntos sin una compra real. La decisión se comunicará al
-      Cliente con expresión de su motivo, y podrá presentar sus argumentos
-      conforme a la cláusula 10.</li>
-    </ol>
-  </section>
-
-  <section>
-    <h2><span class="num">9</span> Modificación y terminación</h2>
-    <ol class="clausulas">
-      <li>La Empresa puede modificar este reglamento o dar por terminado el
-      Programa avisando con <strong>treinta (30) días</strong> de anticipación,
-      mediante publicación visible en sus salas de venta. Las modificaciones
-      <strong>no tienen efecto retroactivo</strong> sobre los puntos ya
-      acumulados.</li>
-      <li>Si el Programa termina, el Cliente conservará el derecho a canjear sus
-      puntos vigentes durante los <strong>noventa (90) días</strong> siguientes
-      al anuncio.</li>
-    </ol>
-  </section>
-
-  <section>
-    <h2><span class="num">10</span> Datos personales y reclamos</h2>
-    <ol class="clausulas">
-      <li>Para administrar el Programa, la Empresa trata el nombre, el Documento
-      Único de Identidad, el teléfono y el historial de compras y canjes del
-      Cliente. Esos datos se usan únicamente para operar el Programa, atender
-      consultas y reclamos e informar al Cliente sobre sus puntos:
-      <strong>no se venden ni se ceden a terceros</strong> con fines comerciales.</li>
-      <li>El Cliente puede pedir la corrección de sus datos o su retiro del
-      Programa en cualquier sala de venta. El retiro cancela la cuenta y los
-      puntos no canjeados.</li>
-      <li>Todo reclamo puede presentarse en cualquier sala de venta, donde
-      quedará registrado y se dará respuesta.</li>
-      <li>El detalle completo de qué datos trata la Empresa, para qué los usa,
-      con quién los comparte y qué puede pedir el Cliente sobre ellos —incluido
-      el derecho a acceder a ellos, corregirlos, borrarlos, oponerse a su uso o
-      llevárselos— consta en el <strong>aviso de privacidad</strong>, disponible
-      en todas las salas de venta y en
-      <strong>portal.farmasalud.lat/privacidad</strong>.</li>
-    </ol>
-  </section>
-
-  <section>
-    <h2><span class="num">11</span> Aceptación</h2>
-    <ol class="clausulas">
-      <li>Acumular o canjear puntos implica el conocimiento y la aceptación de
-      este reglamento, del cual se mantiene un ejemplar disponible en todas las
-      salas de venta y en <strong>portal.farmasalud.lat/reglamento-puntos</strong>.</li>
-    </ol>
-  </section>
+  <div class="firmas">
+    <div class="firmante">
+      <div class="linea"></div>
+      <p class="nombre">José Alemán V.</p>
+      <p class="cargo">Por la Empresa · Responsable del tratamiento</p>
+    </div>
+    <div class="firmante">
+      <div class="linea"></div>
+      <p class="nombre">&nbsp;</p>
+      <p class="cargo">Delegado de protección de datos personales</p>
+    </div>
+  </div>
 
 </div>

@@ -7,7 +7,7 @@
  * La salida se PEGA en el HTML de destino, no se inyecta al compilar. Un QR que
  * se arma en el build vive sólo en el PDF, y entonces la página publicada y el
  * papel dejan de ser el mismo documento — que es justo lo que
- * `reglamento-puntos-pdf.mjs` existe para evitar. Pegado, el archivo es uno solo
+ * `documento-legal-pdf.mjs` existe para evitar. Pegado, el archivo es uno solo
  * y se puede publicar tal cual.
  *
  * Para que un QR viejo se pueda notar, la dirección va escrita EN LETRA al lado

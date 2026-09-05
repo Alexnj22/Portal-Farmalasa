@@ -29,14 +29,15 @@
  *
  * ── Después de correrlo, regenerar lo derivado ─────────────────────────────
  *
- *     npm run reglamento:puntos:web    → public/reglamento-puntos.html
- *     npm run reglamento:puntos:pdf    → docs/legal/REGLAMENTO-...pdf
- *     npm run afiche:puntos:pdf        → docs/legal/AFICHE-...pdf
+ *     npm run legal:web        → public/reglamento-puntos.html · public/privacidad.html
+ *     npm run legal:pdf        → los tres PDF de docs/legal/
+ *     npm run afiche:puntos    → docs/legal/AFICHE-...pdf
  *
- * `public/reglamento-puntos.html` NO está en la lista de destinos aunque tenga
- * el logo pegado: lo genera `reglamento-puntos-web.mjs` desde el de `docs/`, y
- * escribirlo acá también lo dejaría al día por un rato y desincronizado en
- * cuanto alguien edite la fuente. Lo derivado se regenera, no se parcha.
+ * `public/reglamento-puntos.html` y `public/privacidad.html` NO están en la
+ * lista de destinos aunque tengan el logo pegado: los genera
+ * `documento-legal-web.mjs` desde los de `docs/`, y escribirlos acá también los
+ * dejaría al día por un rato y desincronizados en cuanto alguien edite la
+ * fuente. Lo derivado se regenera, no se parcha.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -52,6 +53,8 @@ const LOGO = 'public/logo-farmacias.png';
 const DESTINOS = [
     'docs/legal/reglamento-programa-de-puntos.html',
     'docs/legal/afiche-programa-de-puntos.html',
+    'docs/legal/aviso-de-privacidad.html',
+    'docs/legal/acuerdo-de-nombramiento-delegado.html',
 ];
 
 /* El `alt` es el ancla, y no la posición ni el tamaño de la cadena: es lo único

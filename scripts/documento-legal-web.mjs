@@ -1,10 +1,11 @@
 /**
- * El reglamento de puntos, como página pública — sin iniciar sesión.
+ * Un documento legal de la empresa, como página pública — sin iniciar sesión.
  *
- * Sale del MISMO archivo que el PDF de la sala
- * (`docs/legal/reglamento-programa-de-puntos.html`). Dos originales del mismo
- * reglamento es cómo se llega a que el de la pared y el del sitio digan cosas
- * distintas, y el que reclama siempre tiene el otro.
+ * Hoy publica el reglamento del programa de puntos (`/reglamento-puntos`) y el
+ * aviso de privacidad (`/privacidad`). Cada uno sale del MISMO archivo que su
+ * PDF de la sala. Dos originales del mismo documento es cómo se llega a que el
+ * de la pared y el del sitio digan cosas distintas, y el que reclama siempre
+ * tiene el otro.
  *
  * Es HTML PLANO, no una vista del portal, y eso es la decisión:
  *
@@ -23,14 +24,21 @@
  * desde `self` las deja entrar sin tocar la CSP, que es lo que había que evitar:
  * abrirle un permiso a TODO el portal para arreglar UNA página.
  *
- *   node scripts/reglamento-puntos-web.mjs <fuente.html> [salida.html]
+ * El `<title>` y la `<meta name="description">` salen del PROPIO documento, no
+ * de este archivo: son texto del documento, y escritos acá se quedarían viejos
+ * el día que alguien reescriba la fuente sin mirar el generador.
+ *
+ *   node scripts/documento-legal-web.mjs <fuente.html> [salida.html]
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const fuente = process.argv[2];
-const salida = process.argv[3] ?? 'public/reglamento-puntos.html';
-if (!fuente) { console.error('falta el HTML de origen'); process.exit(1); }
+const salida = process.argv[3];
+if (!fuente || !salida) {
+  console.error('uso: node scripts/documento-legal-web.mjs <fuente.html> <salida.html>');
+  process.exit(1);
+}
 
 let cuerpo = readFileSync(resolve(fuente), 'utf8');
 
@@ -43,11 +51,26 @@ if (!enlacesGoogle.test(cuerpo)) {
 }
 cuerpo = cuerpo.replace(enlacesGoogle, '\n');
 
-// El `<title>` viaja adentro del cuerpo (el publicador de artefactos lo lee de
-// ahí). En un documento HTML de verdad va en el `<head>`, así que se muda.
+// El `<title>` y la descripción viajan adentro del cuerpo (el publicador de
+// artefactos lee el título de ahí). En un documento HTML de verdad van en el
+// `<head>`, así que se mudan.
+//
+// Los dos son OBLIGATORIOS y el script se cae sin ellos: son lo que ve quien
+// encuentra la página por un buscador o la recibe por un enlace, y un documento
+// que obliga no puede llegar sin decir qué es.
 const tituloEnCuerpo = cuerpo.match(/<title>([^<]*)<\/title>\s*/);
-const titulo = tituloEnCuerpo ? tituloEnCuerpo[1] : 'Reglamento del Programa de Puntos';
-if (tituloEnCuerpo) cuerpo = cuerpo.replace(tituloEnCuerpo[0], '');
+if (!tituloEnCuerpo) { console.error(`${fuente} no declara <title>`); process.exit(1); }
+const titulo = tituloEnCuerpo[1];
+cuerpo = cuerpo.replace(tituloEnCuerpo[0], '');
+
+const descEnCuerpo = cuerpo.match(/<meta name="description" content="([^"]*)">\s*/);
+if (!descEnCuerpo) { console.error(`${fuente} no declara <meta name="description">`); process.exit(1); }
+const descripcion = descEnCuerpo[1];
+cuerpo = cuerpo.replace(descEnCuerpo[0], '');
+
+// El pie de página es cosa del PDF (`documento-legal-pdf.mjs`), no de la web.
+// Se retira para que no viaje como una `<meta>` suelta dentro del `<body>`.
+cuerpo = cuerpo.replace(/<meta name="pie-de-pagina" content="[^"]*">\s*/, '');
 
 // Los mismos `unicode-range` que sirve Google: sin ellos el navegador se baja
 // las dos variantes siempre, y `latin-ext` no la usa ni una letra del documento.
@@ -79,7 +102,7 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${titulo}</title>
-<meta name="description" content="Reglamento del Programa de Puntos de Farmacias La Popular y La Salud. Cómo se acumulan, cómo se canjean y cuándo vencen.">
+<meta name="description" content="${descripcion}">
 <meta name="robots" content="index,follow">
 <meta name="color-scheme" content="light dark">
 <style>

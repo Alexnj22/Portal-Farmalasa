@@ -1,5 +1,5 @@
 /**
- * El reglamento de puntos, en PDF para imprimir y pegar en la sala.
+ * Un documento legal de la empresa, en PDF para imprimir y pegar en la sala.
  *
  * Nace de un pedido concreto —«necesito el reglamento en un documento oficial
  * para compartir / pegar en la sucursal»— y de una cláusula del propio
@@ -11,15 +11,27 @@
  * Dos originales del mismo reglamento es cómo se llega a que el de la pared y
  * el del sitio digan cosas distintas, y el que reclama siempre tiene el otro.
  *
- *   node scripts/reglamento-puntos-pdf.mjs <fuente.html> [salida.pdf]
+ * El pie de página sale de la `<meta name="pie-de-pagina">` del PROPIO
+ * documento, por el mismo motivo que el título y la descripción en
+ * `documento-legal-web.mjs`: es texto del documento. Escrito acá, el día que
+ * este script publique un segundo documento el primero se lo lleva puesto.
+ *
+ * `--sin-firma` para el documento que trae SU PROPIO pie de firmas —el
+ * nombramiento del delegado lleva dos, y la inyectada le agregaría una tercera.
+ *
+ *   node scripts/documento-legal-pdf.mjs <fuente.html> <salida.pdf> [--sin-firma]
  */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const fuente = process.argv[2];
-const salida = process.argv[3] ?? 'docs/legal/REGLAMENTO-PROGRAMA-DE-PUNTOS.pdf';
-if (!fuente) { console.error('falta el HTML de origen'); process.exit(1); }
+const salida = process.argv[3];
+const sinFirma = process.argv.includes('--sin-firma');
+if (!fuente || !salida) {
+  console.error('uso: node scripts/documento-legal-pdf.mjs <fuente.html> <salida.pdf> [--sin-firma]');
+  process.exit(1);
+}
 
 // El archivo que se publica no trae <html>/<head>/<body>: eso lo pone el
 // publicador. Acá hay que armarlo para que un navegador de verdad lo entienda.
@@ -72,9 +84,15 @@ const firma = `
 // el final. Un `replace` sobre un fragmento exacto de maquetado se rompe en
 // silencio el día que alguien cambia un salto de línea: el PDF sale sin firma y
 // nadie se entera hasta que está pegado en la pared.
-const cierre = cuerpo.lastIndexOf('</div>');
-if (cierre === -1) { console.error('el HTML no tiene dónde cerrar'); process.exit(1); }
-const conFirma = cuerpo.slice(0, cierre) + firma + '\n' + cuerpo.slice(cierre);
+const pie = cuerpo.match(/<meta name="pie-de-pagina" content="([^"]*)">/);
+if (!pie) { console.error(`${fuente} no declara <meta name="pie-de-pagina">`); process.exit(1); }
+
+let conFirma = cuerpo;
+if (!sinFirma) {
+  const cierre = cuerpo.lastIndexOf('</div>');
+  if (cierre === -1) { console.error('el HTML no tiene dónde cerrar'); process.exit(1); }
+  conFirma = cuerpo.slice(0, cierre) + firma + '\n' + cuerpo.slice(cierre);
+}
 
 const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -98,7 +116,7 @@ await page.pdf({
   footerTemplate:
     '<div style="width:100%;font-size:7.5pt;color:#666;padding:0 20mm;white-space:nowrap;'
     + 'font-family:system-ui,sans-serif;display:flex;justify-content:space-between">'
-    + '<span>Reglamento del programa Puntos Salud · NIT 0401-210685-101-0</span>'
+    + `<span>${pie[1]} · NIT 0401-210685-101-0</span>`
     // Las tres piezas del número van en UN solo span: como el pie es un flex con
     // `space-between`, separarlas las manda a las esquinas y el «3 / 7» sale
     // repartido a lo ancho de la página.

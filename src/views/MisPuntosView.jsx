@@ -437,10 +437,22 @@ export default function MisPuntosView() {
                     <Resultado datos={datos} todos={todos} setTodos={setTodos} volver={volver} />
                 )}
 
+                {/* El pie va en las DOS pantallas —el formulario y el
+                    resultado— y por eso vive acá afuera: esta página pide un
+                    documento de identidad y un teléfono, así que el aviso de
+                    privacidad tiene que estar donde se escriben, no una
+                    pantalla después (Art. 7 de la Ley para la Protección de
+                    Datos Personales). */}
                 <footer className="pt-2 pb-1 text-center">
                     <p className="text-caption text-content-3">
                         {EMPRESA.razonSocial} · Tel. {EMPRESA.telefono}
                     </p>
+                    <a href="/privacidad"
+                        className="inline-flex items-center min-h-[var(--tap-min)] px-3 mt-1
+                                   text-caption text-content-3 hover:text-content-2 hover:underline
+                                   transition-colors duration-[var(--dur-fast)]">
+                        Aviso de privacidad
+                    </a>
                 </footer>
             </div>
         </div>

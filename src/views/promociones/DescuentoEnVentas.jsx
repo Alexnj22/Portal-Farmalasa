@@ -8,6 +8,7 @@ import Notice from '../../components/common/Notice';
 import { fetchPreciosDeProductos } from '../../data/descuentos';
 import { formatMoney } from '../../utils/formatNumber';
 import { fmtVigencia, ordenarPorPerdida, precioConDescuento } from './promocionesUtils';
+import Campo from './Campo';
 
 /**
  * «¿Esta promoción además le baja el precio al cliente?»
@@ -322,20 +323,3 @@ function FilaPrecio({ producto, datos, tipo, monto }) {
     );
 }
 
-/** El rótulo de los controles que no traen el suyo (`LiquidSelect`, el de fecha). */
-function Campo({ rotulo, children }) {
-    return (
-        /* `space-y-1` en BLOQUE y no `flex flex-col`: `LiquidDatePicker`
-           declara `basis-[140px]` —su ANCHO cuando vive en una fila— y en un
-           contenedor `flex-col` ese basis manda sobre el eje VERTICAL, así que
-           su ancho se convertía en 140px de ALTO. Medido el 2026-09-05: el
-           control declara `h-[max(40px,var(--tap-min))]` y computaba 140px.
-           En un contenedor `block`, `flex-basis` no aplica. */
-        <div className="space-y-1 min-w-0">
-            <span className="text-label uppercase tracking-wide font-semibold text-content-2">
-                {rotulo}
-            </span>
-            {children}
-        </div>
-    );
-}

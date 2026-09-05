@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     AlertTriangle, Calendar, Info, Percent, Pencil, Search, Store, Tag, Trash2,
 } from 'lucide-react';
@@ -11,6 +11,23 @@ import { borrarDescuento } from '../../data/descuentos';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
 import { fmtVigencia, hoySV } from './promocionesUtils';
+
+/** Vigente, programado o terminado — sale de las fechas, que es lo único que hay. */
+function estado(d) {
+    const hoy = hoySV();
+    if (d.fin < hoy) return { clave: 'terminados', rotulo: 'Terminado', variant: 'neutral' };
+    if (d.inicio > hoy) return { clave: 'programados', rotulo: 'Programado', variant: 'info' };
+    return { clave: 'activos', rotulo: 'Descontando', variant: 'success' };
+}
+
+/* El subtítulo dice QUÉ HACE cada grupo, no lo que ya dice su nombre: la
+   diferencia entre los tres es si un precio está bajo ahora, lo va a estar, o
+   lo estuvo — y eso es lo que decide si hay que mirarlo hoy. */
+const SECCIONES = [
+    { clave: 'activos',     titulo: 'Descontando ahora', sub: 'bajan el precio hoy' },
+    { clave: 'programados', titulo: 'Programados',       sub: 'todavía no empiezan' },
+    { clave: 'terminados',  titulo: 'Terminados',        sub: 'ya no tocan ningún precio' },
+];
 
 /**
  * Los descuentos que la venta aplica al renglón.
@@ -26,6 +43,18 @@ export default function TabDescuentos({
     const [borrando, setBorrando] = useState(null);   // el descuento que se va a borrar
     const [ocupado, setOcupado] = useState(false);
     const [fallo, setFallo] = useState(null);
+
+    /* Dentro de cada sección, por fecha y en la dirección que sirve: los que
+       descuentan hoy y los terminados, por el que ACABA antes —lo que vence es
+       lo urgente—; los programados, por el que EMPIEZA antes. */
+    const porEstado = useMemo(() => {
+        const g = { activos: [], programados: [], terminados: [] };
+        for (const d of descuentos) g[estado(d).clave].push(d);
+        g.activos.sort((a, b) => String(a.fin).localeCompare(String(b.fin)));
+        g.programados.sort((a, b) => String(a.inicio).localeCompare(String(b.inicio)));
+        g.terminados.sort((a, b) => String(b.fin).localeCompare(String(a.fin)));
+        return g;
+    }, [descuentos]);
 
     const confirmarBorrado = async () => {
         setOcupado(true);
@@ -73,19 +102,43 @@ export default function TabDescuentos({
 
             {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {descuentos.map((d) => (
-                    <Tarjeta
-                        key={d.id}
-                        d={d}
-                        salas={salas}
-                        alcanceTodo={alcanceTodo}
-                        puedeEditar={puedeEditar}
-                        onEditar={() => onEditar?.(d.id)}
-                        onBorrar={() => { setFallo(null); setBorrando(d); }}
-                    />
-                ))}
-            </div>
+            {/* Tres secciones, y el ORDEN no es alfabético ni por fecha: es el
+                de la atención. Lo que está descontando AHORA es lo que puede
+                estar vendiendo a pérdida hoy; lo programado se puede corregir
+                antes de que empiece; lo terminado ya no toca ningún precio y
+                sólo se consulta. En una sola lista, un descuento vivo quedaba
+                entre dos de marzo y no se distinguía de ellos.
+
+                Una sección vacía NO se dibuja: un encabezado «Programados» con
+                nada debajo se lee como que algo no cargó. */}
+            {SECCIONES.map(({ clave, titulo, sub }) => {
+                const filas = porEstado[clave];
+                if (!filas.length) return null;
+                return (
+                    <section key={clave} className="space-y-2">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                            <h2 className="text-body-lg font-semibold text-content">{titulo}</h2>
+                            <span className="text-caption text-content-3 tabular-nums">
+                                {filas.length}
+                            </span>
+                            <span className="text-caption text-content-3">· {sub}</span>
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            {filas.map((d) => (
+                                <Tarjeta
+                                    key={d.id}
+                                    d={d}
+                                    salas={salas}
+                                    alcanceTodo={alcanceTodo}
+                                    puedeEditar={puedeEditar}
+                                    onEditar={() => onEditar?.(d.id)}
+                                    onBorrar={() => { setFallo(null); setBorrando(d); }}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                );
+            })}
 
             {/* No hay «apagar» en el sistema de la caja: o se mueve la fecha de
                 fin, o se borra. El diálogo lo dice con esas palabras en vez de
@@ -105,13 +158,6 @@ export default function TabDescuentos({
     );
 }
 
-/** Vigente, programado o terminado — sale de las fechas, que es lo único que hay. */
-function estado(d) {
-    const hoy = hoySV();
-    if (d.fin < hoy) return { rotulo: 'Terminado', variant: 'neutral' };
-    if (d.inicio > hoy) return { rotulo: 'Programado', variant: 'info' };
-    return { rotulo: 'Descontando', variant: 'success' };
-}
 
 function Tarjeta({ d, salas, alcanceTodo, puedeEditar, onEditar, onBorrar }) {
     const est = estado(d);

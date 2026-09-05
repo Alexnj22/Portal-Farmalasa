@@ -18,6 +18,7 @@ import {
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fmtMoneda, mesAnterior, mesesRecientes, rotuloMes } from './promocionesUtils';
+import Campo from './Campo';
 
 /**
  * La liquidación mensual: lo que le toca a cada persona, de los tres programas.
@@ -116,16 +117,7 @@ export default function TabLiquidacion({ puedeEditar, puedeAprobar }) {
     return (
         <div className="space-y-4">
             <div className="flex flex-wrap items-end gap-3">
-                /* `space-y-1` en BLOQUE y no `flex flex-col`: `LiquidDatePicker`
-           declara `basis-[140px]` —su ANCHO cuando vive en una fila— y en un
-           contenedor `flex-col` ese basis manda sobre el eje VERTICAL, así que
-           su ancho se convertía en 140px de ALTO. Medido el 2026-09-05: el
-           control declara `h-[max(40px,var(--tap-min))]` y computaba 140px.
-           En un contenedor `block`, `flex-basis` no aplica. */
-        <div className="space-y-1 min-w-0">
-                    <span className="text-label uppercase tracking-wide font-semibold text-content-2">
-                        Mes
-                    </span>
+                <Campo rotulo="Mes">
                     <LiquidSelect
                         value={mes}
                         onChange={setMes}
@@ -133,7 +125,7 @@ export default function TabLiquidacion({ puedeEditar, puedeAprobar }) {
                         clearable={false}
                         ariaLabel="Mes de la liquidación"
                     />
-                </div>
+                </Campo>
 
                 <Badge variant={aprobada ? 'success' : estado === 'borrador' ? 'warning' : 'neutral'}>
                     {aprobada ? 'Aprobada' : estado === 'borrador' ? 'Borrador' : 'Sin armar'}

@@ -224,16 +224,31 @@ export default function PromocionesView() {
                con él—, y puesta en las DOS dejaba la barra con dos botones
                larguísimos que no se compactaban ni cediendo ancho. Sin ella,
                la medida de la fila decide, y el rótulo sigue en el tooltip.
-               Y el rótulo dice «Nueva por…», no «Nueva promoción por…»: en
-               una vista llamada Promociones, la palabra ya la dijo el título. */
+
+               ── Y el rótulo es de DOS palabras, no de tres (2026-09-05) ────
+               Reportado con captura: «mejora la filterbar, es enorme». El
+               canónico cede el texto de las acciones cuando falta ancho, pero
+               acá NUNCA falta: la píldora es lo único en su fila —a la
+               izquierda hay un `flex-1` vacío que le cede todo—, así que su
+               presupuesto es la pantalla entera y se estira hasta ocuparla.
+               En Bitácoras, en cambio, el carril de tarjetas le disputa el
+               ancho y por eso allá se ve compacta.
+
+               O sea que la única forma de achicarla acá es que **necesite
+               menos**. «Nueva» la dice el `+`, y «promoción» la dijo el título
+               de la vista: lo que queda —«Por producto»— es lo único que las
+               distingue entre sí. La frase completa vive en `title`, que es
+               donde no cuesta ancho. */
             {
-                key: 'nueva-producto', icon: Plus, label: 'Nueva por producto',
+                key: 'nueva-producto', icon: Plus, label: 'Por producto',
+                title: 'Nueva promoción por producto',
                 rotulo: 'Por producto', variant: 'primary',
                 onClick: () => setModal(true),
             },
             {
                 key: 'nueva-laboratorio', icon: FlaskConical,
-                label: 'Nueva por laboratorio',
+                label: 'Por laboratorio',
+                title: 'Nueva promoción por laboratorio',
                 rotulo: 'Por laboratorio', variant: 'secondary',
                 onClick: () => setModalLab(true),
             },

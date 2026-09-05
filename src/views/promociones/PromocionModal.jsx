@@ -23,6 +23,7 @@ import { guardarDescuento } from '../../data/descuentos';
 import { useAuth } from '../../context/AuthContext';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import Campo from './Campo';
 import {
     hoySV, fmtUnidades, rotuloPresentacion,
     descuentoDesdeLaPromocion, problemasDelDescuento,
@@ -714,28 +715,6 @@ function RenglonListo({ r, proveedores, onEditar, onQuitar }) {
     );
 }
 
-/**
- * El rótulo de un control que no trae el suyo — `LiquidSelect` y
- * `LiquidDatePicker` no llevan etiqueta y `PortalInput` sí. Mezclarlos en una
- * fila sin esto deja las columnas arrancando a alturas distintas.
- */
-function Campo({ rotulo, falta = false, children }) {
-    return (
-        /* `space-y-1` en BLOQUE y no `flex flex-col`: `LiquidDatePicker`
-           declara `basis-[140px]` —su ANCHO cuando vive en una fila— y en un
-           contenedor `flex-col` ese basis manda sobre el eje VERTICAL, así que
-           su ancho se convertía en 140px de ALTO. Medido el 2026-09-05: el
-           control declara `h-[max(40px,var(--tap-min))]` y computaba 140px.
-           En un contenedor `block`, `flex-basis` no aplica. */
-        <div className="space-y-1 min-w-0">
-            <span className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
-                {rotulo}
-                {falta && <span className="text-danger" aria-label="requerido">*</span>}
-            </span>
-            {children}
-        </div>
-    );
-}
 
 function RenglonEditor({ r, salas, proveedores, onCambiar, onReparto, onQuitar, onListo }) {
     const [presentaciones, setPresentaciones] = useState([]);

@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1011.0 — El comentario que salió en pantalla, las secciones de Descuentos y la barra compacta
+
+Tres cosas reportadas por el usuario con capturas.
+
+**1 · Un comentario de código salió PINTADO en producción.** Liquidación y la
+matriz de laboratorio mostraban un párrafo entero —«`space-y-1` en BLOQUE y no
+`flex flex-col`…»— arriba de la pantalla. Dentro de JSX, `/* … */` fuera de
+llaves no es un comentario: es texto.
+
+La causa de fondo no es el descuido, es que **`Campo` estaba escrito siete veces
+dentro del módulo**. El 5-sep hubo que corregir en las siete el mismo defecto de
+forma (el `basis-[140px]` del control de fecha mandando sobre el eje vertical), y
+al pegar el comentario que lo explica, en dos quedó fuera de las llaves. Siete
+arreglos a mano son siete oportunidades de equivocarse.
+
+Ahora `Campo` vive UNA vez, en `promociones/Campo.jsx`, y las siete pantallas lo
+importan. El arreglo siguiente llega solo.
+
+**2 · Descuentos se ordena por secciones.** Antes era una sola grilla donde un
+descuento vivo quedaba entre dos de marzo y no se distinguía de ellos. Ahora son
+tres —**Descontando ahora**, **Programados**, **Terminados**— y el orden es el de
+la atención: lo que baja un precio hoy puede estar vendiendo a pérdida ahora
+mismo; lo programado todavía se corrige antes de empezar; lo terminado sólo se
+consulta.
+
+Dentro de cada sección la fecha ordena en la dirección que sirve: los activos y
+los terminados por el que ACABA antes, los programados por el que EMPIEZA antes.
+Una sección vacía no se dibuja — un encabezado con nada debajo se lee como que
+algo no cargó.
+
+**3 · La barra de filtros, más compacta.** El canónico cede el texto de las
+acciones cuando falta ancho, pero en Promociones nunca falta: la píldora es lo
+único en su fila, así que su presupuesto es la pantalla entera y se estira hasta
+ocuparla (en Bitácoras el carril de tarjetas le disputa el ancho, y por eso allá
+se ve bien). La única forma de achicarla es que necesite menos: los dos botones
+pasaron de «Nueva por producto» a **«Por producto»** — «nueva» la dice el `+` y
+«promoción» la dijo el título de la vista—. La frase completa vive en el `title`,
+donde no cuesta ancho.
+
 ## v2.1010.0 — La lista dice cuáles bajan el precio, y la ficha deja crearlo
 
 Dos preguntas del usuario sobre la misma captura —dos tarjetas idénticas, una

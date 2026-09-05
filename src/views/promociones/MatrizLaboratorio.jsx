@@ -8,6 +8,7 @@ import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import { fetchPromocionLaboratorio } from '../../data/promociones';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from './promocionesUtils';
+import Campo from './Campo';
 
 /**
  * La matriz de una promoción de laboratorio: qué vendió cada sala en el mes,
@@ -93,16 +94,7 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
             )}
 
             <div className="flex flex-wrap items-end gap-3">
-                /* `space-y-1` en BLOQUE y no `flex flex-col`: `LiquidDatePicker`
-           declara `basis-[140px]` —su ANCHO cuando vive en una fila— y en un
-           contenedor `flex-col` ese basis manda sobre el eje VERTICAL, así que
-           su ancho se convertía en 140px de ALTO. Medido el 2026-09-05: el
-           control declara `h-[max(40px,var(--tap-min))]` y computaba 140px.
-           En un contenedor `block`, `flex-basis` no aplica. */
-        <div className="space-y-1 min-w-0">
-                    <span className="text-label uppercase tracking-wide font-semibold text-content-2">
-                        Medir contra el mes
-                    </span>
+                <Campo rotulo="Medir contra el mes">
                     <LiquidSelect
                         value={mes || datos.year_month}
                         onChange={setMes}
@@ -110,7 +102,7 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
                         clearable={false}
                         ariaLabel="Mes contra el que se mide"
                     />
-                </div>
+                </Campo>
                 {datos.simulacion && (
                     <Button variant="secondary" size="sm" onClick={() => setMes('')}>
                         Volver a {rotuloMes(datos.year_month)}

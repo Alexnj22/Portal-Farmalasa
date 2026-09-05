@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Scale, Check, X, AlertTriangle, CircleCheck } from 'lucide-react';
+import {
+    Scale, Check, X, AlertTriangle, CircleCheck, Package, DollarSign, Users,
+} from 'lucide-react';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -25,7 +27,7 @@ import { fmtMoneda, fmtUnidades } from './promocionesUtils';
  * bajarle a $100. Un número que se muestra y después se corrige es peor que uno
  * que llega más tarde.
  */
-export default function TabExcedentes({ puedeAprobar }) {
+export default function TabExcedentes({ puedeAprobar, onResumen }) {
     const [filas, setFilas] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
@@ -44,6 +46,22 @@ export default function TabExcedentes({ puedeAprobar }) {
             .finally(() => { if (vivo) setCargando(false); });
         return () => { vivo = false; };
     }, [recarga]);
+
+    /* Las tarjetas de arriba. Salen de acá porque los excedentes son otra
+       consulta —`fetchExcedentes`— que sólo esta pestaña hace. */
+    useEffect(() => {
+        onResumen?.(filas.length ? [
+            { key: 'n', icon: Scale, label: 'Por decidir', value: filas.length,
+              iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
+            { key: 'u', icon: Package, label: 'Unidades de más',
+              value: fmtUnidades(filas.reduce((a, f) => a + (Number(f.unidades) || 0), 0)) },
+            { key: 'm', icon: DollarSign, label: 'Serían',
+              value: fmtMoneda(filas.reduce((a, f) => a + (Number(f.monto) || 0), 0)),
+              iconBg: 'bg-brand/10', iconCls: 'text-brand-text', valueCls: 'text-brand' },
+            { key: 'p', icon: Users, label: 'Personas',
+              value: new Set(filas.map((f) => f.persona)).size },
+        ] : null);
+    }, [filas, onResumen]);
 
     const decidir = useCallback(async (fila, aprobar, motivo) => {
         setOcupado(fila.id);

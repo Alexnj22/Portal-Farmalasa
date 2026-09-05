@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1013.0 — Tarjetas en todas las pestañas, y la promoción y el mes entran a la píldora
+
+Reportado con captura: «liquidación sigue sin ser canónico, no hay filterbar ni
+cards».
+
+**La píldora se dibuja ahora en TODAS las pestañas.** Antes sólo en tres, y en
+las otras los controles quedaban sueltos arriba del contenido: en Liquidación,
+un rótulo «MES» y su desplegable flotando sin caja; en Seguimiento, el selector
+de promoción. Los dos entraron a la píldora como ranuras **fijas** —sin ellas la
+pestaña no muestra nada, así que no pueden ceder ancho ni irse al desborde como
+los recortes opcionales—. Los recortes de la lista, en cambio, siguen apareciendo
+sólo donde hay lista que recortar.
+
+**Y cada pestaña tiene su fila de tarjetas.** Describen lo que se está mirando y
+se calculan sobre lo ya filtrado, así que al recortar por laboratorio los números
+bajan con la lista — una fila de métricas que ignora el filtro puesto dice que
+hay 30 cosas mientras la pantalla muestra 4.
+
+De dónde salen los números es la parte que importa: Activas, Histórico y
+Descuentos leen la misma fuente que la vista y se calculan ahí; Seguimiento,
+Liquidación y Excedentes tienen su propia consulta y **publican** el resumen
+hacia arriba (`onResumen`), porque pedir sus datos otra vez desde el padre para
+pintar cuatro números sería pagar de nuevo una consulta cara. Al cambiar de
+pestaña el resumen se borra: una fila de métricas que describe otra cosa es peor
+que no tenerla.
+
+**Efecto secundario buscado: la píldora se compacta sola.** `useMedidaFila` le
+descuenta el ancho del carril cuando lo tiene al lado, y ese descuento es lo que
+la obliga a ceder texto. Sin vecino se estiraba hasta ocupar la pantalla, que era
+el reporte de «la filterbar es enorme».
+
+**Los dos rótulos vacíos.** «Cualquiera» y «Todos» pasaron a llamarse **Estado**
+y **Laboratorio**. Es el canon que `FilterBar.Sucursal` ya traía escrito —«nombra
+el filtro en vez de describir su estado vacío, que es lo que hace que se lea
+igual esté puesto o no»— y de paso ocupan la mitad.
+
 ## v2.1012.0 — La vista usa los canónicos y el portal encuentra a la persona
 
 Seis reparos del usuario sobre la vista recién estrenada, con captura. Cinco eran

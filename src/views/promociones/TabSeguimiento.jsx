@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Layers, Search, AlertTriangle, Download } from 'lucide-react';
+import {
+    Layers, Search, AlertTriangle, Download, Package, FileText, Users, DollarSign,
+} from 'lucide-react';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import LiquidSelect from '../../components/common/LiquidSelect';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
@@ -21,17 +22,10 @@ import {
  * cálculo cruza los renglones de venta del período: pedirlo para todas a la vez
  * sería pagar esa consulta N veces para que alguien mire una.
  */
-export default function TabSeguimiento({ promos, busqueda }) {
-    const [elegida, setElegida] = useState(null);
+export default function TabSeguimiento({ promos, busqueda, elegida, onResumen }) {
     const [detalle, setDetalle] = useState(null);
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState(null);
-
-    // La primera de la lista, para que la pestaña abra con algo y no con un
-    // desplegable vacío que parece un error.
-    useEffect(() => {
-        if (!elegida && promos.length) setElegida(String(promos[0].id));
-    }, [promos, elegida]);
 
     // Una promoción de laboratorio no tiene renglones: pedirle `get_promocion`
     // devolvería un detalle vacío que se leería como «no vendió nada». Su
@@ -54,15 +48,30 @@ export default function TabSeguimiento({ promos, busqueda }) {
         return () => { vivo = false; };
     }, [elegida, esLab]);
 
-    // El tipo va en el rótulo: dos promociones pueden llamarse parecido y lo
-    // que se ve abajo es completamente distinto según cuál sea.
-    const opciones = useMemo(
-        () => promos.map((p) => ({
-            value: String(p.id),
-            label: esLaboratorio(p) ? `${p.nombre} · laboratorio` : p.nombre,
-        })),
-        [promos],
-    );
+
+    /* `useMemo` y no `?? []` suelto: el arreglo nuevo de cada render haría que
+       el efecto de abajo se dispare siempre, y ése llama al padre. */
+    const renglones  = useMemo(() => detalle?.renglones ?? [], [detalle]);
+    const vendedores = useMemo(() => detalle?.vendedores ?? [], [detalle]);
+    const sinDueno   = detalle?.sin_dueno;
+
+    /* Las tarjetas de arriba las pinta la vista, pero los números salen de ACÁ:
+       son de la promoción elegida, y pedir `get_promocion` otra vez desde el
+       padre para mostrarlos sería pagar dos veces la consulta que cruza los
+       renglones de venta del período. */
+    useEffect(() => {
+        if (!detalle) { onResumen?.(null); return; }
+        onResumen?.([
+            { key: 'u', icon: Package, label: 'Unidades vendidas',
+              value: fmtUnidades(renglones.reduce((a, r) => a + (r.vendido_base || 0), 0)) },
+            { key: 'd', icon: FileText, label: 'Documentos',
+              value: fmtUnidades(renglones.reduce((a, r) => a + (r.documentos || 0), 0)) },
+            { key: 'v', icon: Users, label: 'Vendedores', value: vendedores.length },
+            { key: 'b', icon: DollarSign, label: 'Se habría ganado',
+              value: fmtMoneda(vendedores.reduce((a, v) => a + Number(v.bono || 0), 0)),
+              iconBg: 'bg-brand/10', iconCls: 'text-brand-text', valueCls: 'text-brand' },
+        ]);
+    }, [detalle, renglones, vendedores, onResumen]);
 
     if (!promos.length) {
         return busqueda.trim()
@@ -71,10 +80,6 @@ export default function TabSeguimiento({ promos, busqueda }) {
             : <EmptyState icon={Layers} title="Sin promociones activas"
                 subtitle="Cuando haya una en marcha, aquí se ve cuánto lleva vendido cada sala." />;
     }
-
-    const renglones  = detalle?.renglones ?? [];
-    const vendedores = detalle?.vendedores ?? [];
-    const sinDueno   = detalle?.sin_dueno;
 
     const exportar = () => {
         exportCsv(
@@ -87,16 +92,6 @@ export default function TabSeguimiento({ promos, busqueda }) {
 
     return (
         <div className="space-y-4">
-            <div className="max-w-sm">
-                <LiquidSelect
-                    value={elegida}
-                    onChange={setElegida}
-                    options={opciones}
-                    placeholder="Elige una promoción"
-                    clearable={false}
-                    ariaLabel="Promoción a seguir"
-                />
-            </div>
 
             {esLab && elegida && (
                 <MatrizLaboratorio key={elegida} promocionId={elegida} />

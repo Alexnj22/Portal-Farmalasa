@@ -1,8 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent } from 'lucide-react';
+import {
+    Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
+    CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText,
+} from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
+import CarrilCards from '../../components/common/CarrilCards';
+import StatCard from '../../components/common/StatCard';
 import Notice from '../../components/common/Notice';
 import { LoadingState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../hooks/usePestanaEnUrl';
@@ -12,7 +17,9 @@ import { fetchDescuentos } from '../../data/descuentos';
 import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { estadoVisible, esLaboratorio, textoBuscable } from './promocionesUtils';
+import {
+    estadoVisible, esLaboratorio, textoBuscable, hoySV, mesesRecientes, mesAnterior,
+} from './promocionesUtils';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';
@@ -57,8 +64,14 @@ import MatrizLaboratorioModal from './MatrizLaboratorioModal';
 /* Los estados que la pantalla PINTA, en el orden en que se buscan. Salen de
    `estadoVisible`, que es quien los decide: escribirlos aparte los dejaría
    desincronizados de las tarjetas el día que se agregue uno. */
+/* La opción vacía se llama como el FILTRO, no como su estado vacío. Es el
+   canon que `FilterBar.Sucursal` ya trae escrito —«nombra el filtro en vez de
+   describir su estado vacío, que es lo que hace que se lea igual esté puesto o
+   no»— y de paso ocupa la mitad, que es ancho que la píldora le devuelve a lo
+   demás. Reportado el 2026-09-05: la barra mostraba «Cualquiera» y «Todos», dos
+   palabras que no dicen de qué son. */
 const ESTADOS = [
-    { value: '',           label: 'Cualquiera' },
+    { value: '',           label: 'Estado' },
     { value: 'activa',     label: 'Activa' },
     { value: 'por_vencer', label: 'Por vencer' },
     { value: 'vencida',    label: 'Vencida' },
@@ -91,6 +104,13 @@ export default function PromocionesView() {
     const [fEstado, setFEstado] = useState('');   // '' | activa | borrador | finalizada
     const [fLab, setFLab] = useState('');         // nombre de laboratorio
 
+    /* Estos dos NO son recortes de una lista: son «de qué estoy hablando». Aun
+       así viven en la píldora, porque es el único sitio de la vista donde se
+       mira qué está seleccionado (§17), y sueltos arriba del contenido eran dos
+       controles flotando sin caja —reportado con captura en Liquidación—. */
+    const [seguida, setSeguida] = useState('');  // la promoción que se sigue
+    const [mesLiq, setMesLiq] = useState('');    // el mes de la liquidación
+
     const [promos, setPromos] = useState([]);
     const [cargando, setCargando] = useState(true);
     // El error se guarda entero, no sólo su texto: hace falta el `code` para
@@ -104,6 +124,17 @@ export default function PromocionesView() {
     const [recarga, setRecarga] = useState(0);
 
     // ── Los descuentos, aparte: viven en el sistema de la caja ─────────────
+    /* El resumen que va en las tarjetas. Las pestañas que leen de la MISMA
+       fuente que esta vista (Activas, Histórico, Descuentos) se calculan acá
+       abajo; las que tienen su propia consulta —Seguimiento, Liquidación,
+       Excedentes— lo publican con `onResumen`, porque pedir sus datos dos veces
+       para pintar cuatro números sería pagar la consulta de nuevo.
+
+       Se borra al cambiar de pestaña: una fila de métricas que describe otra
+       cosa es peor que no tenerla. */
+    const [resumenTab, setResumenTab] = useState(null);
+    useEffect(() => { setResumenTab(null); }, [tab]); // eslint-disable-line react-hooks/set-state-in-effect -- el resumen es DE una pestaña; conservarlo al cambiar mostraría números de la anterior
+
     const [descuentos, setDescuentos] = useState([]);
     const [alcanceTodo, setAlcanceTodo] = useState(false);
     const [cargandoDesc, setCargandoDesc] = useState(false);
@@ -199,6 +230,81 @@ export default function PromocionesView() {
     const vivas      = useMemo(() => filtradas.filter((p) => p.estado !== 'finalizada'), [filtradas]);
     const terminadas = useMemo(() => filtradas.filter((p) => p.estado === 'finalizada'), [filtradas]);
 
+    /* Lo que llenan las dos ranuras nuevas. El tipo va en el rótulo de la
+       promoción porque dos pueden llamarse parecido y lo que se ve abajo es
+       completamente distinto según cuál sea. */
+    const opcionesSeguimiento = useMemo(
+        () => vivas.map((p) => ({
+            value: String(p.id),
+            label: esLaboratorio(p) ? `${p.nombre} · laboratorio` : p.nombre,
+        })),
+        [vivas],
+    );
+    const mesesLiquidacion = useMemo(() => mesesRecientes(), []);
+
+    /* La primera de la lista, para que Seguimiento abra con algo y no con un
+       desplegable vacío que parece un error. Y el mes ANTERIOR para la
+       liquidación: el mes en curso todavía se mueve, y una hoja que cambia sola
+       entre dos miradas no sirve para pagar. */
+    useEffect(() => {
+        if (!seguida && vivas.length) setSeguida(String(vivas[0].id)); // eslint-disable-line react-hooks/set-state-in-effect -- la lista llega asincrónica; el default no se puede fijar antes de tenerla
+    }, [vivas, seguida]);
+    useEffect(() => {
+        if (!mesLiq) setMesLiq(mesAnterior()); // eslint-disable-line react-hooks/set-state-in-effect -- valor inicial derivado, no un efecto sobre datos externos
+    }, [mesLiq]);
+
+    /* ── Las tarjetas de la fila de arriba ────────────────────────────────
+       Describen LO QUE SE ESTÁ MIRANDO, no la vista entera: se calculan sobre
+       `filtradas`, así que al recortar por laboratorio los números bajan con la
+       lista. Una fila de métricas que ignora el filtro puesto dice que hay 30
+       cosas mientras la pantalla muestra 4.
+
+       Y comparten fila con la píldora a propósito (§17.0): `useMedidaFila` le
+       descuenta el ancho del carril, que es lo que la obliga a compactarse. Sin
+       vecino, la píldora se estira hasta ocupar la pantalla — que es el reporte
+       de «la filterbar es enorme». */
+    const tarjetas = useMemo(() => {
+        if (resumenTab) return resumenTab;
+
+        if (tab === 'descuentos') {
+            const hoy = hoySV();
+            const n = (f) => descuentosFiltrados.filter(f).length;
+            return [
+                { key: 'act', icon: Percent, label: 'Descontando', value: n((d) => d.inicio <= hoy && d.fin >= hoy),
+                  iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+                { key: 'pro', icon: CalendarClock, label: 'Programados', value: n((d) => d.inicio > hoy),
+                  iconBg: 'bg-brand/10', iconCls: 'text-brand-text' },
+                { key: 'ter', icon: CheckCircle2, label: 'Terminados', value: n((d) => d.fin < hoy) },
+                { key: 'pro2', icon: Package, label: 'Productos',
+                  value: new Set(descuentosFiltrados.flatMap((d) => (d.productos || []).map((p) => p.id))).size },
+            ];
+        }
+
+        if (tab === 'historico') {
+            return [
+                { key: 'n', icon: History, label: 'Terminadas', value: terminadas.length },
+                { key: 'r', icon: Package, label: 'Productos',
+                  value: terminadas.reduce((a, p) => a + (p.renglones || 0), 0) },
+                { key: 'l', icon: FlaskConical, label: 'Laboratorios',
+                  value: new Set(terminadas.flatMap((p) => p.laboratorios || [])).size },
+            ];
+        }
+
+        // Activas — y también el estado por defecto de la vista.
+        const porEstado = (clave) => vivas.filter((p) => estadoVisible(p).clave === clave).length;
+        return [
+            { key: 'act', icon: Tag, label: 'Activas', value: porEstado('activa'),
+              iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+            { key: 'ven', icon: CalendarClock, label: 'Por vencer', value: porEstado('por_vencer'),
+              iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
+            { key: 'bor', icon: FileText, label: 'En borrador', value: porEstado('borrador') },
+            { key: 'abi', icon: Package, label: 'Productos abiertos',
+              value: vivas.reduce((a, p) => a + (p.abiertos || 0), 0) },
+            { key: 'des', icon: Percent, label: 'Bajan el precio',
+              value: vivas.filter((p) => p.descuentos > 0).length },
+        ];
+    }, [resumenTab, tab, descuentosFiltrados, terminadas, vivas]);
+
     const filtersContent = (
         <ViewTabBar
             tabs={tabs}
@@ -262,8 +368,19 @@ export default function PromocionesView() {
        `undefined`, LANZA en cada render y se lleva la vista entera al
        ErrorBoundary. Lo cazó `npm run gate:tdz` — el aviso del navegador traía
        el nombre minificado y una pila apuntando a react-dom. */
-    const muestraFiltros = ['activas', 'seguimiento', 'historico'].includes(tab)
-        && (acciones.length > 0 || promos.length > 0);
+    /* La píldora se dibuja en TODAS las pestañas, porque en todas hay algo que
+       elegir o algo que contar. Lo que cambia es QUÉ lleva adentro: los recortes
+       de la lista en las que listan promociones, la promoción en Seguimiento y
+       el mes en Liquidación. Antes se escondía en tres pestañas, y ahí los
+       controles quedaban sueltos arriba del contenido —dos cajas flotando sin
+       píldora, que es lo que se reportó de Liquidación—. */
+    const muestraFiltros = acciones.length > 0 || promos.length > 0
+        || tarjetas.length > 0 || ['seguimiento', 'liquidacion'].includes(tab);
+
+    /* Los recortes de la lista sólo tienen sentido donde se lista: en
+       Descuentos, Excedentes y Liquidación recortarían algo que no está en
+       pantalla. Una ranura que no afecta a lo que se mira es peor que ninguna. */
+    const recortaLaLista = ['activas', 'seguimiento', 'historico'].includes(tab);
 
     /* Los tres estados van separados a propósito. Un rechazo de permiso NO se
        puede ver como una lista vacía: deja a la persona sin nada que reportar
@@ -317,13 +434,29 @@ export default function PromocionesView() {
             );
         }
         if (tab === 'seguimiento') {
-            return <TabSeguimiento promos={vivas} busqueda={busqueda} />;
+            return (
+                <TabSeguimiento
+                    promos={vivas}
+                    busqueda={busqueda}
+                    elegida={seguida}
+                    onElegir={setSeguida}
+                    onResumen={setResumenTab}
+                />
+            );
         }
         if (tab === 'excedentes') {
-            return <TabExcedentes puedeAprobar={puedeAprobar} />;
+            return <TabExcedentes puedeAprobar={puedeAprobar} onResumen={setResumenTab} />;
         }
         if (tab === 'liquidacion') {
-            return <TabLiquidacion puedeEditar={puedeEditar} puedeAprobar={puedeAprobar} />;
+            return (
+                <TabLiquidacion
+                    puedeEditar={puedeEditar}
+                    puedeAprobar={puedeAprobar}
+                    mes={mesLiq}
+                    onMes={setMesLiq}
+                    onResumen={setResumenTab}
+                />
+            );
         }
         if (tab === 'historico') {
             return <TabHistorico promos={terminadas} busqueda={busqueda} />;
@@ -366,19 +499,67 @@ export default function PromocionesView() {
                     que es la forma que ninguna otra vista tiene. */}
                 {muestraFiltros && (
                     <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                        <div className="flex-1" />
+                        {/* El carril y la píldora comparten UNA fila (§17.0):
+                            `useMedidaFila` busca el carril en el abuelo de la
+                            píldora y le descuenta su ancho sólo si están al
+                            lado. Ese descuento es lo que la obliga a
+                            compactarse — sin vecino se estira hasta ocupar la
+                            pantalla, que es el reporte de «es enorme». */}
+                        {tarjetas.length > 0 ? (
+                            <CarrilCards className="flex-1" ariaLabel="Resumen de lo que se está mirando">
+                                {tarjetas.map((m) => (
+                                    <StatCard key={m.key} icon={m.icon}
+                                        iconBg={m.iconBg} iconCls={m.iconCls} valueCls={m.valueCls}
+                                        label={m.label} value={m.value} sub={m.sub} />
+                                ))}
+                            </CarrilCards>
+                        ) : <div className="flex-1" />}
                         <div className="flex justify-end min-w-0">
                             <FilterBar
                                 acciones={acciones}
                                 activeCount={filtrosPuestos}
                                 onClear={filtrosPuestos > 0 ? limpiarFiltros : undefined}
                             >
+                                {/* La promoción que se sigue. Es una ranura
+                                    `fija`: sin ella la pestaña no muestra nada,
+                                    así que no puede ceder ancho ni irse al
+                                    desborde como los recortes opcionales. */}
+                                {tab === 'seguimiento' && (
+                                    <FilterBar.Section label="promoción" fija>
+                                        <FilterBar.Opciones
+                                            value={String(seguida || '')}
+                                            onChange={(v) => setSeguida(v || '')}
+                                            label="Promoción"
+                                            options={opcionesSeguimiento}
+                                            placeholder="Promoción"
+                                            umbral={0}
+                                            ancho="240px"
+                                        />
+                                    </FilterBar.Section>
+                                )}
+
+                                {/* El mes de la liquidación, por lo mismo. */}
+                                {tab === 'liquidacion' && (
+                                    <FilterBar.Section label="mes" fija>
+                                        <FilterBar.Opciones
+                                            value={mesLiq}
+                                            onChange={(v) => setMesLiq(v || '')}
+                                            label="Mes"
+                                            options={mesesLiquidacion}
+                                            placeholder="Mes"
+                                            umbral={0}
+                                            ancho="190px"
+                                        />
+                                    </FilterBar.Section>
+                                )}
+
                                 {/* `FilterBar.Opciones` y no un `SegmentedControl`
                                     a mano: el canónico decide el control por el
                                     NÚMERO de opciones —hasta 3 segmentado, de 4
                                     en adelante desplegable— y esa decisión no se
                                     toma vista por vista, o se toma distinto en
                                     cada una. */}
+                                {recortaLaLista && (
                                 <FilterBar.Section label="tipo" active={!!fTipo}
                                     onClear={() => setFTipo('')}>
                                     <FilterBar.Opciones
@@ -392,7 +573,9 @@ export default function PromocionesView() {
                                         ]}
                                     />
                                 </FilterBar.Section>
+                                )}
 
+                                {recortaLaLista && (
                                 <FilterBar.Section label="estado" active={!!fEstado}
                                     onClear={() => setFEstado('')}>
                                     <FilterBar.Opciones
@@ -400,19 +583,23 @@ export default function PromocionesView() {
                                         onChange={(v) => setFEstado(v || '')}
                                         label="Estado"
                                         options={ESTADOS}
-                                        placeholder="Cualquiera"
+                                        placeholder="Estado"
                                     />
                                 </FilterBar.Section>
+                                )}
 
-                                {labsDisponibles.length > 1 && (
+                                {recortaLaLista && labsDisponibles.length > 1 && (
                                     <FilterBar.Section label="laboratorio" active={!!fLab}
                                         onClear={() => setFLab('')}>
                                         <FilterBar.Opciones
                                             value={fLab}
                                             onChange={(v) => setFLab(v || '')}
                                             label="Laboratorio"
-                                            options={labsDisponibles.map((l) => ({ value: l, label: l }))}
-                                            placeholder="Todos"
+                                            options={[
+                                                { value: '', label: 'Laboratorio' },
+                                                ...labsDisponibles.map((l) => ({ value: l, label: l })),
+                                            ]}
+                                            placeholder="Laboratorio"
                                         />
                                     </FilterBar.Section>
                                 )}

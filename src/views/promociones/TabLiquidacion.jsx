@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    Wallet, AlertTriangle, Calculator, Check, Lock, Unlock, Download, Users,
+    Wallet, AlertTriangle, Calculator, Check, Lock, Unlock, Download, Users, DollarSign,
 } from 'lucide-react';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
-import LiquidSelect from '../../components/common/LiquidSelect';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
@@ -17,8 +16,7 @@ import {
 } from '../../data/liquidacion';
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fmtMoneda, mesAnterior, mesesRecientes, rotuloMes } from './promocionesUtils';
-import Campo from './Campo';
+import { fmtMoneda, rotuloMes } from './promocionesUtils';
 
 /**
  * La liquidación mensual: lo que le toca a cada persona, de los tres programas.
@@ -40,14 +38,15 @@ import Campo from './Campo';
  * partir de ahí la hoja no se recalcula ni se toca, porque es la que se pagó.
  * Reabrir se puede, con permiso de gerencia y con el motivo escrito.
  */
-export default function TabLiquidacion({ puedeEditar, puedeAprobar }) {
-    const meses = useMemo(() => mesesRecientes(), []);
-    // Arranca en el mes ANTERIOR: el mes en curso todavía se mueve, y una hoja
-    // que cambia sola entre dos miradas no sirve para pagar. Sale de
-    // `mesAnterior()` y no de una posición de la lista — `meses[1]` se leía como
-    // «el anterior» y era otro mes.
-    const [mes, setMes] = useState(mesAnterior);
+/* El mes lo elige la píldora de la vista, no esta pestaña: sueltos arriba del
+   contenido, el rótulo «MES» y su desplegable eran dos cajas flotando sin
+   píldora —reportado con captura el 2026-09-05, «sigue sin ser canónico, no hay
+   filterbar ni cards»—. Acá llega ya elegido.
 
+   Sigue arrancando en el mes ANTERIOR (lo fija la vista): el mes en curso
+   todavía se mueve, y una hoja que cambia sola entre dos miradas no sirve para
+   pagar. */
+export default function TabLiquidacion({ puedeEditar, puedeAprobar, mes, onResumen }) {
     const [hoja, setHoja] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
@@ -114,19 +113,31 @@ export default function TabLiquidacion({ puedeEditar, puedeAprobar }) {
     const estado = hoja?.estado || 'sin_armar';
     const aprobada = estado === 'aprobada';
 
+    /* Las tarjetas de arriba. Salen de la hoja —que sólo esta pestaña
+       consulta—, y describen el mes elegido: cuánta gente entra, cuánto suma y
+       en qué estado está. Sin hoja se manda `null` y la fila no se dibuja: unos
+       ceros ahí se leerían como «nadie ganó nada» en vez de «todavía no se
+       calculó». */
+    useEffect(() => {
+        if (!hoja?.existe) { onResumen?.(null); return; }
+        onResumen?.([
+            { key: 'p', icon: Users, label: 'Personas', value: personas.length },
+            { key: 't', icon: DollarSign, label: 'Se habría ganado',
+              value: fmtMoneda(personas.reduce((a, p) => a + Number(p.total || 0), 0)),
+              iconBg: 'bg-brand/10', iconCls: 'text-brand-text', valueCls: 'text-brand' },
+            { key: 'f', icon: Wallet, label: 'Fondos',
+              value: fmtMoneda(fondos.reduce((a, f) => a + Number(f.monto || 0), 0)) },
+            { key: 'e', icon: aprobada ? Lock : Calculator, label: 'Estado',
+              value: aprobada ? 'Aprobada' : (estado === 'borrador' ? 'Borrador' : 'Sin armar'),
+              iconBg: aprobada ? 'bg-success/10' : 'bg-warning/10',
+              iconCls: aprobada ? 'text-success-text' : 'text-warning-text',
+              valueCls: aprobada ? 'text-success-text' : 'text-warning-text' },
+        ]);
+    }, [hoja, personas, fondos, estado, aprobada, onResumen]);
+
     return (
         <div className="space-y-4">
-            <div className="flex flex-wrap items-end gap-3">
-                <Campo rotulo="Mes">
-                    <LiquidSelect
-                        value={mes}
-                        onChange={setMes}
-                        options={meses}
-                        clearable={false}
-                        ariaLabel="Mes de la liquidación"
-                    />
-                </Campo>
-
+            <div className="flex flex-wrap items-center gap-3">
                 <Badge variant={aprobada ? 'success' : estado === 'borrador' ? 'warning' : 'neutral'}>
                     {aprobada ? 'Aprobada' : estado === 'borrador' ? 'Borrador' : 'Sin armar'}
                 </Badge>

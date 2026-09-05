@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1016.6 — El afiche se aligera: los derechos van solo con su nombre
+
+«¿Alguna forma de reducir la información, para que se sienta menos cargado?». El
+bloque que pesaba era el de los ocho derechos con su explicación al lado:
+**dieciséis renglones**, y un afiche con dieciséis renglones de lista se lee como
+una hoja de estudio, no como una pared.
+
+Elegido por el usuario entre tres recortes. Los ocho quedan en **una tira de dos
+renglones**, sólo con su nombre.
+
+Funciona porque **la bajada ya los explica**, en castellano llano y sin nombrar
+ninguno: «puedes verlo, corregirlo, borrarlo o pedir que dejemos de usarlo». Ésos
+son cuatro de los ocho, y son los que la gente usa. Los nombres quedan como lo
+que son —los que la ley les da— y el código lleva al detalle.
+
+Lo que cuesta, y hay que saberlo: **quien lea «Portabilidad» en la pared no va a
+saber qué es sin escanear.** Es el precio de que el afiche se lea de un vistazo,
+y con el aviso completo a un código de distancia es un precio razonable.
+
+Y el espacio que se liberó no se dejó en blanco: el titular pasó de 50 a 62px y
+volvió el `min-height` de la hoja, para que el pie ancle abajo en vez de quedar
+flotando a media página. Un afiche con un cuarto de hoja vacío se ve inacabado,
+no espacioso.
+
+**«Es gratis» también se fue**, por pedido del usuario. Ya no se menciona el
+costo en ninguna parte del afiche, que es coherente con la decisión de v2.1015.0:
+un trámite gratuito que nombra un precio hace dudar de si es gratuito.
+
 ## v2.1016.5 — El afiche dice qué poner en el mensaje
 
 Consecuencia directa de haber confirmado que **la ley no exige formulario**: si

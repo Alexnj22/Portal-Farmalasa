@@ -129,6 +129,18 @@
     html { font-size: 10.5pt; }
     body { font-size: 1rem; line-height: 1.42; }
     body { background: #fff; color: #000; }
+    /* ── En papel no hay grises de apoyo ─────────────────────────────────
+       El encabezado de una tabla y el número de una cláusula se pintan en
+       `--ink-3` porque en pantalla el gris jerarquiza sin gritar. Impresos,
+       ese gris se vuelve casi invisible: reportado sobre los títulos de
+       columna y los números. En papel la jerarquía la hacen el peso y la
+       versalita, no el tono. */
+    th, h2 .num, ol.clausulas > li::before, .rotulo, .grupo { color: #000; }
+
+    /* Y una fila no se parte entre páginas: cortada, el rótulo queda en una
+       hoja y su valor en la otra. */
+    tr, ol.clausulas > li { break-inside: avoid; }
+
 
     /* El `clamp(..., 4.5vw, ...)` del título es para pantalla: en papel el `vw`
        es el ancho de la hoja y siempre gana el tope, así que el h1 salía a 17pt
@@ -174,17 +186,20 @@
     </div>
   </div>
 
-  <p class="entrada">Este documento explica qué datos suyos guardamos, para qué
-  los usamos, con quién los compartimos y qué puede pedirnos sobre ellos.</p>
+  <p class="entrada">Farmacias La Popular y La Salud guarda información suya
+  cuando usted compra, cuando trabaja aquí o cuando nos provee. Este documento
+  dice cuál es esa información, por qué la Empresa puede tenerla, con quién la
+  comparte, cuánto tiempo la conserva y qué puede pedir usted sobre ella. Lo
+  exige la Ley para la Protección de Datos Personales.</p>
 
   <section>
     <h2><span class="num">1</span> Quién trata sus datos</h2>
     <ol class="clausulas">
       <li>José Alemán V., quien opera bajo el nombre comercial
       <strong>Farmacias La Popular y La Salud</strong> (en adelante,
-      <strong>la Empresa</strong>), es el responsable del tratamiento. Su
-      domicilio es Carretera a Chalatenango, Caserío Totolco, Chalatenango Sur,
-      departamento de Chalatenango.</li>
+      <strong>la Empresa</strong>), es quien guarda su información y quien
+      responde por ella. Su domicilio es Carretera a Chalatenango, Caserío
+      Totolco, Chalatenango Sur, departamento de Chalatenango.</li>
       <li>Este aviso cubre los datos que se recogen en las salas de ventas y en el
       portal <strong>portal.farmasalud.lat</strong>.</li>
     </ol>
@@ -355,9 +370,8 @@
       </li>
       <li>Puede además retirar en cualquier momento el permiso dado para el
       programa de puntos o para recibir promociones, sin expresar motivo.</li>
-      <li>Ejercerlos es gratuito. Solo se cobran, al costo, las copias o el envío
-      cuando usted pida la información en papel; por medios electrónicos no tiene
-      costo alguno.</li>
+      <li>Ejercerlos no tiene ningún costo, ni siquiera si pide la información
+      impresa.</li>
     </ol>
   </section>
 

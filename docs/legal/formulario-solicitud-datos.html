@@ -211,6 +211,18 @@
     html { font-size: 10.5pt; }
     body { font-size: 1rem; line-height: 1.42; }
     body { background: #fff; color: #000; }
+    /* ── En papel no hay grises de apoyo ─────────────────────────────────
+       El encabezado de una tabla y el número de una cláusula se pintan en
+       `--ink-3` porque en pantalla el gris jerarquiza sin gritar. Impresos,
+       ese gris se vuelve casi invisible: reportado sobre los títulos de
+       columna y los números. En papel la jerarquía la hacen el peso y la
+       versalita, no el tono. */
+    th, h2 .num, ol.clausulas > li::before, .rotulo, .grupo { color: #000; }
+
+    /* Y una fila no se parte entre páginas: cortada, el rótulo queda en una
+       hoja y su valor en la otra. */
+    tr, ol.clausulas > li { break-inside: avoid; }
+
 
     /* El `clamp(..., 4.5vw, ...)` del título es para pantalla: en papel el `vw`
        es el ancho de la hoja y siempre gana el tope, así que el h1 salía a 17pt

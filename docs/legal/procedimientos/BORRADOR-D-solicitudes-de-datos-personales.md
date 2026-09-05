@@ -198,11 +198,16 @@ las pruebas y documentos que se tuvieron en cuenta.
 
 ## 10 · Qué cuesta
 
-Nada. El ejercicio de estos derechos es **gratuito**.
+Nada, y sin excepciones.
 
-Sólo pueden cobrarse, **al costo**, la reproducción, la certificación o el envío
-en papel, sin superar el precio de los materiales o de la remisión. La tarifa se
-publica junto al aviso de privacidad. Por medios electrónicos no se cobra.
+El **Art. 23** permitiría cobrar la reproducción, la certificación o el envío en
+papel, al costo. **La Empresa decidió no cobrarlos.** Es una decisión que puede
+tomar porque mejora lo que la ley concede, y ahorra la tarifa publicada que ese
+mismo artículo exige cuando sí se cobra.
+
+Ni el aviso de privacidad ni el formulario mencionan costo alguno, y no deben
+mencionarlo: un trámite gratuito que nombra un precio hace dudar de si es
+gratuito.
 
 Si la información se entrega en un dispositivo de almacenamiento, lo aporta la
 persona que solicita.

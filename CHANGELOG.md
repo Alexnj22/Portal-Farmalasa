@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1014.5 — El aviso se lee mejor y no se cobra nada
+
+Cinco observaciones del usuario leyendo el aviso impreso.
+
+**El resumen era genérico.** Decía «este documento explica qué datos suyos
+guardamos, para qué los usamos…», que es la descripción de lo que es un aviso de
+privacidad, no de lo que trae éste. Ahora abre diciendo **cuándo** la Empresa
+guarda información suya (al comprar, al trabajar, al proveer), lo que orienta a
+quien lo levanta sin saber si le concierne.
+
+**«Es el responsable del tratamiento»** es la palabra de la ley y de nadie más.
+Quedó **«es quien guarda su información y quien responde por ella»**, que dice lo
+mismo y no hay que traducirlo.
+
+**Los grises no se distinguen en papel.** El encabezado de una tabla, el número
+de una sección y el de una cláusula se pintan en `--ink-3` porque en pantalla el
+gris jerarquiza sin gritar. Impreso, ese gris se vuelve casi invisible. En papel
+la jerarquía la hacen el peso y la versalita, no el tono: los cuatro documentos
+llevan ahora esos elementos en negro puro cuando se imprimen. Verificado con el
+color computado bajo `@media print`, no a ojo: lo que parecía gris en una vista
+de 74 ppp era el suavizado.
+
+**Las filas de tabla no se parten entre páginas.** Cortada, el rótulo queda en
+una hoja y su valor en la otra. Mismo trato para las cláusulas numeradas.
+
+**Y no se cobra nada.** El Art. 23 permitiría cobrar la reproducción o el envío
+en papel, al costo. La Empresa decidió no cobrarlos, y esa decisión se puede
+tomar porque mejora lo que la ley concede. Se quitó la mención de los tres
+documentos donde estaba, porque **un trámite gratuito que nombra un precio hace
+dudar de si es gratuito**. De paso ahorra la tarifa publicada que el mismo
+artículo exige cuando sí se cobra, que era uno de los pendientes.
+
+Las cuatro salidas conservan sus páginas: 3, 4, 3 y 4.
+
 ## v2.1014.4 — Los cuatro documentos comparten una escala de papel
 
 Reportado por el usuario: «el texto lo veo grande en casi todos los PDF». Al

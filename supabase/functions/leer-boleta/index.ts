@@ -95,6 +95,52 @@ const mismoMonto = (a: unknown, b: unknown) => {
 }
 
 /**
+ * ¿El total leído lo dice el papel MÁS DE UNA VEZ?
+ *
+ * Nació de una corrección real (boleta 018540, Salud 4, 5-sep-2026): el papel
+ * dice **US$240.50** y el lector puso **248.50**. La causa está en la tipografía
+ * del POS, que escribe el cero con una barra diagonal —`Ø`—: a la resolución en
+ * que la foto viaja, esa barra cierra el hueco y el cero queda casi idéntico a
+ * un 8. No es un defecto que se arregle pidiendo «leé con cuidado».
+ *
+ * Lo que sí lo ataja es que el papel **repite el total**: una boleta de remesa
+ * lo imprime arriba sin moneda (`MONTO: $240.5`) y abajo con ella
+ * (`MONTO: US$240.50`). Dos renglones distintos, la misma cifra. Si los dos se
+ * leen igual, la lectura está confirmada por el propio papel; si difieren, un
+ * dígito se leyó mal y no se sabe cuál — y ahí lo honesto es no cerrarle el
+ * campo a nadie.
+ *
+ * Devuelve:
+ *   'CONFIRMADO'  el total aparece dos o más veces con el mismo valor
+ *   'CONTRADICHO' hay otro importe rotulado MONTO/TOTAL con un valor distinto
+ *   'UNICO'       el papel sólo lo dice una vez: no se puede cotejar
+ *
+ * `CONTRADICHO` y `UNICO` NO son lo mismo y por eso son tres valores y no un
+ * booleano: uno dice «el papel se desmiente», el otro «el papel no tiene con qué
+ * confirmarlo». La primera versión de esto los juntaba en `false`, y así una
+ * boleta de un solo importe —la mayoría de los pagos de servicio— habría
+ * quedado marcada como sospechosa para siempre.
+ */
+const ES_TOTAL = /\b(MONTO|TOTAL|IMPORTE|VALOR)\b/
+const confianzaDelMonto = (leido: Record<string, unknown>): 'CONFIRMADO' | 'CONTRADICHO' | 'UNICO' => {
+  const total = Number(leido.monto)
+  if (!Number.isFinite(total)) return 'UNICO'
+  const lista = Array.isArray(leido.importes_del_papel) ? leido.importes_del_papel : []
+  const importes = lista
+    .map((i) => {
+      const fila = (i ?? {}) as Record<string, unknown>
+      return { rotulo: norm(fila.rotulo), valor: Number(fila.valor) }
+    })
+    .filter((i) => Number.isFinite(i.valor))
+
+  const iguales = importes.filter((i) => mismoMonto(i.valor, total)).length
+  if (iguales >= 2) return 'CONFIRMADO'
+  // Un rótulo de total con OTRO número: el papel se está desmintiendo.
+  if (importes.some((i) => ES_TOTAL.test(i.rotulo) && !mismoMonto(i.valor, total))) return 'CONTRADICHO'
+  return 'UNICO'
+}
+
+/**
  * La entidad se compara con tolerancia: en la boleta puede salir
  * `TRANSNETWORK WS` y en el portal `TRANSNETWORK`. Basta con que una contenga
  * a la otra una vez normalizadas — es el mismo criterio de `buscarCargo`.
@@ -152,6 +198,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
   "detalle_servicio": "qué servicio de esa empresa (LINEA MOVIL, RESIDENCIAL, PREPAGO...), o null",
   "referencia_servicio": "el número que identifica a quién se le pagó (teléfono, NIC, cuenta), o null",
   "monto": 0.00,
+  "importes_del_papel": [{ "rotulo": "el rótulo tal como está impreso, o null", "valor": 0.00 }],
   "moneda": "USD" | null,
   "fecha": "YYYY-MM-DD o null",
   "recuadro": { "x": 0.0, "y": 0.0, "w": 1.0, "h": 1.0 },
@@ -167,6 +214,20 @@ Reglas:
   Una misma boleta puede traer DOS renglones "MONTO": uno arriba, entre los datos
   del cliente y sin símbolo ("MONTO: 125"), y el total abajo, con moneda
   ("MONTO: US$125.00"). Vale el de abajo, el que lleva la moneda.
+- ⚠️ ESTAS IMPRESORAS ESCRIBEN EL CERO CON UNA BARRA DIAGONAL ADENTRO: Ø. A la
+  resolución de una foto de mostrador esa barra cierra el hueco y el cero se
+  vuelve casi idéntico a un OCHO. Ante la duda entre 0 y 8 en un importe, mirá
+  la forma: el 8 son dos círculos COMPLETOS uno sobre otro, con la cintura
+  cerrada a los lados; el cero barrado es UN óvalo con una raya que lo cruza en
+  diagonal y no toca los bordes. Costó una corrección real: la boleta 018540 del
+  5-sep-2026 decía US$240.50 y se leyó 248.50.
+- "importes_del_papel" lista TODOS los importes impresos, cada uno con el rótulo
+  que lleva al lado tal como está escrito ("MONTO", "TOTAL", "MONTO:", null si no
+  tiene). Sin interpretarlos y sin descartar los repetidos: si el mismo número
+  sale dos veces, va dos veces. Sirve para comprobar el total contra un segundo
+  renglón del propio papel — una boleta de remesa lo imprime arriba sin moneda y
+  abajo con ella, y leer distinto en cada uno es la señal de que un dígito se
+  leyó mal.
 - "nombres" lista TODO nombre propio de empresa, banco, marca o red de remesas que
   aparezca en el papel, esté donde esté: la cabecera, el cuerpo, el pie, el logo.
   Una boleta de remesa suele llevar DOS —el banco que procesa el cobro arriba y la
@@ -317,6 +378,19 @@ Deno.serve(async (req) => {
         : null,
     }
 
+    /* ── Cuánto se le puede creer al monto ──────────────────────────────────
+     *
+     * Va aparte del veredicto a propósito. El veredicto contesta «¿esta foto es
+     * de esta operación?»; esto contesta «¿el número que leí es el que está
+     * impreso?», que es otra pregunta y tiene otra consecuencia: no frena nada,
+     * decide si el campo del monto se le puede CERRAR a quien anota.
+     *
+     * El usuario pidió el 2026-08-29 que la boleta y el monto no se pudieran
+     * modificar cuando la foto los detecta, y esa regla sigue en pie — lo que
+     * cambia es qué cuenta como «detectado». Un número que el papel no confirma
+     * por segunda vez no está detectado: está leído. */
+    const montoConfianza = confianzaDelMonto(leido)
+
     // El VEREDICTO es lo que frena. Son los cuatro que prueban que esta foto es
     // de ESTA operación y no de otra: que sea una boleta, que se lea, y que el
     // monto y el número sean los que se escribieron.
@@ -345,7 +419,7 @@ Deno.serve(async (req) => {
       }]
       : []
 
-    return new Response(JSON.stringify({ leido, coincide, veredicto, avisos }), {
+    return new Response(JSON.stringify({ leido, coincide, veredicto, avisos, montoConfianza }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {

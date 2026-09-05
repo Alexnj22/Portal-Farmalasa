@@ -977,13 +977,16 @@ export async function iniciarTurno(sala, { simular = false } = {}) {
 }
 
 export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null,
-    fotoUrl = null, vendedor = '', conceptoCompleto = null }) {
+    fotoUrl = null, vendedor = '', conceptoCompleto = null, lectura = null }) {
     // `detalle` es el concepto SIN el recorte a 50 del sistema de la caja. Va
     // igual que en la salida: un ingreso escrito largo perdía la cola por el
     // mismo motivo, y nadie iba a mirar dos veces el mismo defecto.
+    //
+    // `lectura` es lo que la máquina leyó de la foto, para poder auditarla
+    // después: sin ese rastro, un monto mal leído no deja ninguna huella.
     return operar({
         accion: 'ingreso', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, vendedor,
-        detalle: conceptoCompleto,
+        detalle: conceptoCompleto, lectura,
     });
 }
 
@@ -1028,10 +1031,13 @@ export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono 
  * es de la casa —una devolución se la lleva un cliente y no tiene carné—.
  */
 export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null,
-    fotoUrl = null, recibe = '', recibidoPor = null, vale = null, detalle = null }) {
+    fotoUrl = null, recibe = '', recibidoPor = null, vale = null, detalle = null,
+    lectura = null }) {
     return operar({
         accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe,
         recibido_por: recibidoPor, vale,
+        // Lo que la máquina leyó de la foto, para poder auditarla después.
+        lectura,
         // El concepto SIN el recorte a 50 del sistema de la caja. Viaja aparte
         // porque `concepto` es lo que se le manda a él y esto es lo que se
         // escribió — ver la migración `..._concepto_completo`.

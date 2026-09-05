@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1020.0 — La foto no puede cerrar un monto que el papel no confirma
+
+La otra mitad de v2.1019.0: **por qué hubo que corregir esa remesa.**
+
+La boleta 018540 de Salud 4 dice **US$240.50** y el lector puso **248.50**. La
+causa está en la tipografía del POS, que escribe el cero con una barra diagonal
+—`Ø`—: a los 1400 px a los que la foto viaja, esa barra cierra el hueco del
+óvalo y el cero queda casi idéntico a un 8. No es una lectura descuidada, es un
+dibujo genuinamente ambiguo. Comprobado ampliando el renglón del propio papel.
+
+Tres cosas cambian, y ninguna es «pedirle al modelo que lea mejor»:
+
+**1. El papel se coteja contra sí mismo.** Una boleta de remesa imprime el total
+DOS veces —`MONTO: $240.5` arriba, sin moneda, y `MONTO: US$240.50` abajo, con
+ella—. `leer-boleta` ahora devuelve `importes_del_papel` (todos los importes con
+su rótulo, sin interpretar) y el veredicto se arma **en código**, como el resto
+de esta función: `CONFIRMADO` si el total aparece dos o más veces con el mismo
+valor, `CONTRADICHO` si otro renglón rotulado MONTO/TOTAL dice otra cosa,
+`UNICO` si el papel sólo lo dice una vez.
+
+Son tres valores y no un booleano a propósito. `CONTRADICHO` es «el papel se
+desmiente»; `UNICO` es «el papel no tiene con qué confirmarlo», que es el caso
+normal de casi todo pago de servicio. Juntarlos en `false` habría marcado como
+sospechosa a la mayoría de las boletas buenas.
+
+**2. El monto se llena siempre, pero sólo se CIERRA si el papel lo confirma.** El
+pedido del 2026-08-29 —«la boleta y el monto que no se puedan modificar si al
+subir la foto se detecta»— sigue en pie; lo que cambia es qué cuenta como
+detectado. Con `CONTRADICHO`, un dígito se leyó mal y no se sabe cuál: cerrar el
+campo ahí encierra a quien tiene el papel en la mano y ve el error, y lo obliga a
+pedir una corrección firmada por otra persona. Vale para el cajón y para la
+salida de bolsa.
+
+**3. El aviso dice el monto, no que lo llenó.** Decía «La foto llenó el monto, el
+número y el concepto» y la cifra quedaba en un campo gris de sólo lectura, que es
+justo lo que el ojo saltea. Ahora dice **«La foto leyó $240.50, boleta 018540.
+Compáralo con el papel antes de anotar.»** Cotejar es la última defensa que queda
+cuando el lector se equivoca, y para cotejar el número tiene que estar escrito
+donde se lee.
+
+Además, el prompt ahora nombra el cero barrado con la diferencia de forma que lo
+separa del 8 (un óvalo cruzado por una raya que no toca los bordes, contra dos
+círculos completos con la cintura cerrada).
+
+**Y queda el rastro, que es lo que faltaba para poder medir esto.**
+`caja_movimientos_portal.foto_lectura` guarda lo que el lector contestó, igual
+que `bolsas_operaciones` ya hacía. Hasta hoy, del lado del cajón, la ÚNICA
+evidencia de que la máquina leyó 248.50 sobre un papel que dice 240.50 era la
+frase que una persona escribió a mano al pedir la corrección. Sin rastro no se
+puede contar cuántas veces falla, o sea que tampoco se puede saber si algo lo
+mejoró.
+
+**Lo que NO está medido:** que el prompt nuevo lea bien esta boleta. Probarlo
+exige llamar al lector con una sesión de sala, y desde acá no se puede. Lo que sí
+está medido es la causa —el papel, ampliado, dice 240.50 dos veces— y lo que sí
+es determinista es el cotejo de los dos renglones, que no depende de que el
+modelo mejore.
+
 ## v2.1019.2 — La pantalla del corte deja de nombrar el papel
 
 Levantado por el usuario sobre la nota de v2.1019.1: «¿por qué dice que el

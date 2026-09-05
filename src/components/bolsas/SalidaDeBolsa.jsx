@@ -503,7 +503,21 @@ export default function SalidaDeBolsa({
                 const habia = monto.trim();
                 if (habia && Math.abs(Number(habia) - montoLeido) > 0.005) pisados.push('el monto');
                 setMonto(String(l.monto));
-                puestos.push('el monto');
+                /* Se llena siempre; se CIERRA sólo si el papel lo confirma.
+                 *
+                 * El pedido del 2026-08-29 —«la boleta y el monto que no se
+                 * puedan modificar si al subir la foto se detecta»— no cambia:
+                 * lo que cambia es qué cuenta como detectado. `CONTRADICHO`
+                 * significa que el papel imprime el total DOS veces y las dos
+                 * lecturas no dieron lo mismo, así que un dígito se leyó mal y
+                 * no se sabe cuál. Cerrarlo ahí encierra a quien ve el error.
+                 *
+                 * Pasa de verdad: la boleta 018540 del cajón (Salud 4,
+                 * 5-sep-2026) dice US$240.50 y se leyó 248.50 — estas impresoras
+                 * escriben el cero con una barra diagonal que a la resolución en
+                 * que la foto viaja se confunde con un 8. */
+                if (r?.montoConfianza !== 'CONTRADICHO') puestos.push('el monto');
+                else pisados.push('el monto, que la boleta dice dos veces y no coinciden');
             }
             if (l.numero_boleta) {
                 const habia = boleta.trim();

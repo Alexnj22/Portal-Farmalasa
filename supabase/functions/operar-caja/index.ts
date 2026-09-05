@@ -73,6 +73,30 @@ function getCortesCreds(): { username: string; password: string } {
   return JSON.parse(raw);
 }
 
+/**
+ * La lectura del comprobante, acotada antes de guardarla.
+ *
+ * Viene de afuera —es la respuesta de un modelo— así que el tamaño no está bajo
+ * control de nadie. Si no cabe se guarda el VEREDICTO y se dice que se recortó,
+ * en vez de dejar `null`: «no hubo lectura» y «la lectura no cupo» son cosas
+ * distintas y sólo una de las dos es un defecto de esta función. Y nunca hace
+ * fallar el movimiento: es auditoría, y el dinero ya se movió.
+ */
+const TOPE_LECTURA = 20_000
+function lecturaParaGuardar(cruda: unknown): Record<string, unknown> | null {
+  if (!cruda || typeof cruda !== "object") return null
+  const l = cruda as Record<string, unknown>
+  try {
+    if (JSON.stringify(l).length <= TOPE_LECTURA) return l
+  } catch { /* referencias cíclicas: cae al resumen */ }
+  return {
+    recortada: true,
+    veredicto: l.veredicto ?? null,
+    montoConfianza: l.montoConfianza ?? null,
+    monto: (l.leido as Record<string, unknown> | undefined)?.monto ?? null,
+  }
+}
+
 async function getSessionCookie(u: string, p: string): Promise<string> {
   const res = await fetch(LOGIN_URL, {
     method: "POST",
@@ -1182,6 +1206,20 @@ Deno.serve(async (req) => {
           tipo_codigo: body.tipo ? String(body.tipo).slice(0, 40) : null,
           numero_boleta: body.boleta ? String(body.boleta).slice(0, 40) : null,
           foto_url: body.foto_url ? String(body.foto_url) : null,
+          /* QUÉ LEYÓ la máquina de esa foto, tal cual lo contestó.
+           *
+           * `bolsas_operaciones` ya lo guardaba y el cajón no. La boleta 018540
+           * de Salud 4 (5-sep-2026) dice US$240.50 y el lector puso 248.50 —el
+           * cero de estas impresoras lleva una barra diagonal que a la
+           * resolución en que la foto viaja se confunde con un 8—, y la única
+           * evidencia que quedó de esa lectura fue la frase que una persona
+           * escribió al pedir la corrección. Sin rastro no se puede contar
+           * cuántas veces falla, ni saber si algo lo mejoró.
+           *
+           * No frena nada y no se valida campo por campo: es auditoría de lo que
+           * contestó un tercero, y recortarla a lo que hoy entendemos perdería
+           * justo el campo nuevo del día que haga falta. */
+          foto_lectura: lecturaParaGuardar(body.lectura),
           // Las dos mitades de «quien recibio», y nunca las dos a la vez: o se
           // comprobo con carne, o se escribio un nombre porque el receptor no
           // es de la casa.

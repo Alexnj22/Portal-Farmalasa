@@ -685,6 +685,8 @@ export default function MiCajaView({ comoPestana = false }) {
             recibe: datos.recibe,
             recibidoPor: datos.recibidoPor,
             vale: datos.vale,
+            // Lo que la máquina leyó de la foto, para poder auditarla después.
+            lectura: datos.lectura,
             // El texto entero. `concepto` va recortado a 50 porque es lo que le
             // cabe al sistema de la caja; esto es lo que alguien escribió, y sin
             // guardarlo la cola se perdía en los dos lados.
@@ -2135,6 +2137,15 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     const [aviso, setAviso] = useState(null);
     // Qué llenó la foto. Esos campos quedan cerrados: el papel manda.
     const [deLaFoto, setDeLaFoto] = useState({});
+    /* Lo que el lector contestó, entero, para guardarlo con el movimiento.
+     *
+     * `bolsas_operaciones` ya lo hacía y el cajón no, así que de este lado no
+     * quedaba ni un rastro de qué había leído la máquina: la única evidencia de
+     * que la boleta 018540 se leyó 248.50 sobre un papel que dice 240.50 es la
+     * frase que una persona escribió a mano al pedir la corrección. Sin el
+     * rastro no se puede medir cuántas veces falla, o sea que tampoco se puede
+     * saber si algo lo mejoró. */
+    const [lectura, setLectura] = useState(null);
     // La escotilla, cuando el papel no se deja leer o leyó mal.
     const [aMano, setAMano] = useState(false);
 
@@ -2191,22 +2202,51 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             return;
         }
         const leido = r?.leido || {};
+        setLectura(r || null);
+
+        /* El monto se LLENA siempre y se CIERRA sólo si el papel lo confirma.
+         *
+         * El pedido del usuario del 2026-08-29 —«la boleta y el monto que no se
+         * puedan modificar si al subir la foto se detecta»— sigue en pie; lo que
+         * cambió es qué cuenta como detectado. `CONTRADICHO` significa que el
+         * papel imprime el total dos veces y las dos lecturas no dieron lo
+         * mismo: un dígito se leyó mal y no se sabe cuál. Cerrar el campo ahí
+         * obliga a quien ve el error a encontrar un enlace para poder
+         * escribirlo, y si no lo encuentra, a pedir una corrección firmada por
+         * otra persona — que es el circuito que la boleta 018540 recorrió. */
+        const dudoso = r?.montoConfianza === 'CONTRADICHO';
         const puesto = {};
-        if (Number.isFinite(Number(leido.monto)) && Number(leido.monto) > 0) {
-            setMonto(String(leido.monto)); puesto.monto = true;
-        }
+        const montoLeido = Number(leido.monto);
+        const hayMonto = Number.isFinite(montoLeido) && montoLeido > 0;
+        if (hayMonto) { setMonto(String(leido.monto)); puesto.monto = !dudoso; }
         if (leido.numero_boleta) { setBoleta(String(leido.numero_boleta)); puesto.boleta = true; }
         const texto = conceptoDelPapel(leido);
         if (texto) { setConcepto(texto.slice(0, 50)); puesto.concepto = true; }
         setDeLaFoto(puesto);
 
-        const nombres = { monto: 'el monto', boleta: 'el número', concepto: 'el concepto' };
-        const llenados = Object.keys(puesto).map((k) => nombres[k]);
-        const faltan = ['monto', 'boleta', 'concepto'].filter((k) => !puesto[k]).map((k) => nombres[k]);
-        setAviso(llenados.length
-            ? `La foto llenó ${llenados.join(', ')}.${faltan.length ? ` Falta ${faltan.join(' y ')}.` : ''}`
-            : 'La foto no se dejó leer. Escribe los datos a mano.');
-        if (!llenados.length) setAMano(true);
+        /* El aviso DICE el monto, no que lo llenó.
+         *
+         * Decía «La foto llenó el monto, el número y el concepto», y la cifra
+         * quedaba en un campo gris de sólo lectura, que es lo que el ojo
+         * saltea. Cotejar contra el papel es la última defensa cuando el lector
+         * se equivoca —y se equivoca: estas impresoras escriben el cero con una
+         * barra (`Ø`) que a la resolución en que la foto viaja se confunde con
+         * un 8—, así que el número tiene que estar escrito donde se lee. */
+        const nombres = { boleta: 'el número', concepto: 'el detalle' };
+        const faltan = ['boleta', 'concepto']
+            .filter((k) => !puesto[k] && (k !== 'boleta' || tipo?.pide_boleta))
+            .map((k) => nombres[k]);
+        setAviso(
+            !hayMonto && !puesto.boleta && !puesto.concepto
+                ? 'La foto no se dejó leer. Escribe los datos a mano.'
+                : dudoso
+                    ? `La boleta trae el monto dos veces y no dicen lo mismo: leí ${formatMoney(montoLeido)}. Escribe el que dice el papel.`
+                    : hayMonto
+                        ? `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, boleta ${leido.numero_boleta}` : ''}.`
+                          + ` Compáralo con el papel antes de anotar.${faltan.length ? ` Falta ${faltan.join(' y ')}.` : ''}`
+                        : `La foto no leyó el monto: escríbelo.${faltan.length ? ` Falta también ${faltan.join(' y ')}.` : ''}`,
+        );
+        if (!hayMonto && !puesto.boleta && !puesto.concepto) setAMano(true);
     };
 
     const guardar = async () => {
@@ -2228,6 +2268,9 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             conceptoCompleto: [tipo?.etiqueta, concepto.trim()].filter(Boolean).join(' · '),
             tipo: tipo?.codigo || null,
             boleta: boleta.trim() || null, fotoUrl,
+            // Lo que el lector contestó, para poder medirlo después. Sólo si
+            // hubo foto: sin ella no hay lectura que guardar.
+            lectura: fotoUrl ? lectura : null,
             /* El ingreso ya no manda vendedor: lo resuelve el servidor con la
              * sesión de quien lo anota. Pero SÍ manda la persona cuando el tipo
              * la pide —«de quién» en un abono a crédito—, y va por `vendedor`

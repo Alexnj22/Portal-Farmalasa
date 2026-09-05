@@ -14,14 +14,19 @@ import { supabase } from '../supabaseClient';
  * Ni el documento ni el teléfono. Quien preguntó ya los tenía, y devolverlos
  * sólo agrega una copia más de un dato sensible viajando por la red.
  */
-export async function consultarMisPuntos({ documento, dui, telefono }) {
+export async function consultarMisPuntos({ documento, dui, telefono, consentimiento }) {
     try {
         const { data, error } = await supabase.functions.invoke('mis-puntos', {
             // `documento` es el nombre nuevo: ya no es sólo un DUI, puede ser el
             // NIT, el pasaporte o el código que le dio la sala. `dui` sigue
             // viajando por si alguna pantalla vieja todavía lo manda así — la
             // edge function acepta los dos y prefiere `documento`.
-            body: { documento: documento ?? dui, dui: documento ?? dui, telefono },
+            // `consentimiento` viaja por la MISMA puerta que la consulta, y no
+            // por una propia: así la respuesta a los permisos pasa por la
+            // verificación de identidad y por el freno por IP que ya protegen
+            // al saldo. Una segunda entrada sería una segunda entrada que
+            // vigilar.
+            body: { documento: documento ?? dui, dui: documento ?? dui, telefono, consentimiento },
         });
         // `functions.invoke` marca error para cualquier código que no sea 2xx,
         // y el 429 del freno viene por ahí con su cuerpo adentro. Sin esto, a

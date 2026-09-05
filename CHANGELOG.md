@@ -21,6 +21,89 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1018.0 — El cliente da o retira su permiso desde Mis puntos
+
+El Art. 27 de la Ley para la Protección de Datos Personales pide que el
+consentimiento sea **específico** (letra b), **expreso** (letra d) e
+**individualizado** (letra e), y el Art. 54 pone la carga de probarlo en la
+Empresa. Las 28,161 fichas del programa de puntos entraron sin nada de eso: la
+cláusula 11 del reglamento dice que acumular o canjear implica aceptarlo —que es
+la «clara acción afirmativa» del Art. 4 letra d— pero no hay una fila que diga
+cuándo, qué leyó la persona ni cómo se identificó.
+
+Ahora `/mis-puntos` pregunta antes de mostrar el saldo. Dos preguntas y no una,
+porque son dos finalidades distintas y una sola casilla no valdría para ninguna:
+seguir en el programa, y recibir promociones. Se vuelve a preguntar sólo a quien
+todavía no contestó o a quien declinó el programa; a quien dijo que no a las
+promociones no se le insiste.
+
+**Los botones son «Sí, acepto» y «No», no una casilla.** Una casilla vacía
+significa a la vez «no quiero» y «no la leí», y el Art. 27 letra d) pide que el
+consentimiento sea inequívoco. Con dos botones no hay respuesta por omisión.
+
+**El texto que se acepta vive en el servidor, no en la pantalla.** Si viniera del
+navegador, quien llama podría mandar cualquier cosa y la fila de evidencia diría
+lo que él quiso. La pantalla lo pide y lo muestra; lo que se archiva en
+`consentimientos_cliente` es esa cadena, con su versión al lado, así que
+reescribir la redacción mañana no altera lo que alguien aceptó hoy.
+
+### Declinar CONGELA el saldo, y eso costó una columna nueva
+
+`customers.acumula_puntos = false` ya existía, pero significaba otra cosa: la
+decisión de la **Empresa** —MAPFRE, un convenio, una ficha que no es una persona
+que vaya a llegar a canjear— y `sync-puntos` barre esos tiquetes y los **borra**
+del sistema de puntos, porque una exclusión que sólo vale hacia adelante deja el
+pasado contradiciendo la regla.
+
+Reusarla habría hecho que un toque en un teléfono destruyera un saldo sin vuelta
+atrás, en una puerta que se abre con DUI y teléfono —que, dice su propio
+encabezado, los sabe la familia y salen en papeles—. Medido antes de escribir la
+guarda: la ficha de prueba tenía **500 tiquetes vivos** que el barrido se habría
+llevado.
+
+Por eso `acepta_programa_puntos` no reemplaza a la vieja, la califica:
+
+| `acumula_puntos` | `acepta_programa_puntos` | qué pasa |
+|---|---|---|
+| `false` | `NULL` | convenio: los tiquetes se retiran, como siempre |
+| `false` | `false` | el cliente declinó: **no se toca nada** |
+
+El barrido pasó a exigir `acepta_programa_puntos IS DISTINCT FROM false`. Sin esa
+línea todo lo demás es decorado. Verificado con las dos ramas: como convenio ve
+500 tiquetes, como declinado ve 0.
+
+Y aceptar reactiva **sólo** lo que el propio cliente había apagado: una ficha
+excluida por la Empresa no se enciende porque alguien conteste que sí, porque esa
+decisión no era suya. También verificado.
+
+### La puerta pública ahora escribe, y eso se dice en su encabezado
+
+`mis-puntos` estaba documentada como de sólo lectura: «muestra el saldo y los
+movimientos, y NADA de lo que no se puede deshacer». Sigue siendo cierto, y por
+eso la respuesta a los permisos entra bajo esa misma regla: no borra nada y
+volver a entrar y aceptar devuelve el saldo como estaba. La escritura va
+**después** de la identidad y **después** del freno por IP, por la misma puerta y
+no por una propia — una segunda entrada sería una segunda entrada que vigilar.
+Un fallo al guardar corta y avisa, al revés que todo lo demás en esa función:
+contestar como si nada dejaría a la persona creyendo que se dio de baja mientras
+el sistema la sigue contando.
+
+### Lo que cambió en papel
+
+La cláusula 10 del reglamento decía «el retiro cancela la cuenta y los puntos no
+canjeados». Ya no es lo que hace el sistema, así que se corrigió: salir deja de
+acumular, los puntos quedan retenidos sin vencer y sin poder canjearse, y vuelven
+si el cliente reingresa. Vale para las dos vías, la pantalla y la sala de ventas
+— dos reglas para el mismo acto es lo que produce un reclamo.
+
+### De paso
+
+`scripts/db/boolean-columns.json` estaba cinco días viejo y le faltaban **14
+tablas**, `customers` entera entre ellas. El detector de `.eq('col', true)` sobre
+una columna que no es booleana no opina sobre una tabla que no está en el
+snapshot, así que esas 14 no las miraba nadie. Regenerado contra producción: 66 →
+80 tablas.
+
 ## v2.1017.0 — Agregar o quitar un producto pregunta si también va al descuento
 
 Pregunta del usuario: «al agregar un producto nuevo y tiene descuento del ERP,

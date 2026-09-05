@@ -78,6 +78,25 @@ function codigoDeLaDireccion() {
 /** Cuántos puntos hacen falta para poder canjear. Lo dice el reglamento §4. */
 const MINIMO_DE_CANJE = 100;
 
+/**
+ * ¿Hay que preguntarle los permisos antes de mostrarle el saldo?
+ *
+ * Sí en dos casos, y son distintos a propósito:
+ *
+ *   · Nunca contestó (`null`). Es el de los 28,161 registros que entraron antes
+ *     de que existiera esta pregunta.
+ *   · Contestó que NO al programa. Ahí se vuelve a preguntar cada vez, porque
+ *     su saldo quedó congelado esperándolo: si no se le ofreciera volver, la
+ *     única forma de deshacer un toque sería ir a una sala de ventas.
+ *
+ * Quien dijo que no a las PROMOCIONES ya contestó, y no se le insiste: negarse
+ * a la publicidad no le cuesta nada y repreguntarlo sería empujarlo.
+ */
+function faltaResponder(c) {
+    if (!c) return false;          // una respuesta vieja del servidor: no se bloquea
+    return c.programa !== true || c.promociones === null || c.promociones === undefined;
+}
+
 /** Cuántos movimientos se ven sin pedir más. El resto entra con un toque. */
 const MOVIMIENTOS_A_LA_VISTA = 6;
 
@@ -291,6 +310,12 @@ export default function MisPuntosView() {
     const [error, setError] = useState('');
     const [datos, setDatos] = useState(null);
     const [todos, setTodos] = useState(false);
+    const [guardando, setGuardando] = useState(false);
+    const [errorPermisos, setErrorPermisos] = useState('');
+    // La identificación con la que se entró, para reusarla al contestar los
+    // permisos. En un `ref` y no en estado: no se pinta, así que cambiarla no
+    // tiene por qué provocar un render.
+    const llaveUsada = useRef(null);
 
     // ── Dos caminos, y por eso TRES campos ────────────────────────────────
     // El código en un campo propio y no compartiendo el del DUI: así el DUI
@@ -315,12 +340,33 @@ export default function MisPuntosView() {
      * `true`: sin él habría que encenderlo otra vez desde el efecto, y un
      * setState sincrónico ahí encadena renders sin necesidad.
      */
-    const pedir = async (llave, { yaEncendido = false } = {}) => {
+    const pedir = async (llave, { yaEncendido = false, consentimiento } = {}) => {
         if (!yaEncendido) { setCargando(true); setError(''); }
-        const r = await consultarMisPuntos(llave);
+        const r = await consultarMisPuntos({ ...llave, consentimiento });
         setCargando(false);
-        if (r.ok) { setDatos(r); setTodos(false); return; }
+        if (r.ok) {
+            // La llave se guarda para poder volver a llamar cuando la persona
+            // conteste los permisos: la respuesta se manda por la MISMA puerta,
+            // que es la que verifica la identidad y aplica el freno por IP.
+            // Mandarla por otro lado sería abrir una segunda entrada con menos
+            // controles a la única escritura que esta pantalla admite.
+            llaveUsada.current = llave;
+            setDatos(r); setTodos(false); return;
+        }
         setError(r.mensaje);
+    };
+
+    // La respuesta a los permisos. El error se muestra DENTRO de la tarjeta de
+    // permisos y no en la pantalla anterior: quien acaba de tocar «Continuar»
+    // está mirando ahí, y un aviso que aparece en otro lado se lee como que no
+    // pasó nada.
+    const responderPermisos = async (consentimiento) => {
+        if (!llaveUsada.current) return;
+        setGuardando(true); setErrorPermisos('');
+        const r = await consultarMisPuntos({ ...llaveUsada.current, consentimiento });
+        setGuardando(false);
+        if (r.ok) { setDatos(r); return; }
+        setErrorPermisos(r.mensaje ?? 'No se pudo guardar tu respuesta.');
     };
 
     const consultar = (e) => {
@@ -345,7 +391,10 @@ export default function MisPuntosView() {
         pedir({ documento: delEnlace }, { yaEncendido: true }); // eslint-disable-line react-hooks/set-state-in-effect -- con `yaEncendido` no toca el estado hasta después del await, pero la regla no puede verlo
     }, []);
 
-    const volver = () => { setDatos(null); setError(''); setDui(''); setTel(''); };
+    const volver = () => {
+        setDatos(null); setError(''); setDui(''); setTel('');
+        setErrorPermisos(''); llaveUsada.current = null;
+    };
 
     return (
         <div className="min-h-[100dvh] flex flex-col items-center px-4 py-8 sm:py-14">
@@ -433,6 +482,9 @@ export default function MisPuntosView() {
 
                         <ComoFunciona />
                     </>
+                ) : faltaResponder(datos.consentimiento) ? (
+                    <Permisos datos={datos} onResponder={responderPermisos}
+                        guardando={guardando} error={errorPermisos} />
                 ) : (
                     <Resultado datos={datos} todos={todos} setTodos={setTodos} volver={volver} />
                 )}
@@ -455,6 +507,101 @@ export default function MisPuntosView() {
                     </a>
                 </footer>
             </div>
+        </div>
+    );
+}
+
+/**
+ * Una pregunta con dos botones, sin ninguno marcado de entrada.
+ *
+ * No es una casilla, y la diferencia importa: una casilla vacía significa a la
+ * vez «no quiero» y «no la leí», y el Art. 27 letra d) pide que el
+ * consentimiento sea inequívoco. Con dos botones no hay respuesta por omisión —
+ * cualquiera de las dos exige haber tocado.
+ */
+function Pregunta({ texto, valor, onElegir }) {
+    return (
+        <div className="space-y-2.5">
+            <p className="text-body text-content-2 leading-relaxed">{texto}</p>
+            <div className="flex gap-2">
+                <Button type="button" size="sm" className="flex-1"
+                    variant={valor === true ? 'primary' : 'secondary'}
+                    aria-pressed={valor === true}
+                    onClick={() => onElegir(true)}>
+                    Sí, acepto
+                </Button>
+                <Button type="button" size="sm" className="flex-1"
+                    variant={valor === false ? 'primary' : 'secondary'}
+                    aria-pressed={valor === false}
+                    onClick={() => onElegir(false)}>
+                    No
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Los dos permisos, antes del saldo.
+ *
+ * Son DOS y no uno porque son dos finalidades distintas, y el Art. 27 letra b)
+ * pide que el consentimiento sea específico: una sola pregunta para las dos
+ * cosas no valdría para ninguna de las dos.
+ *
+ * El texto de cada una viene del SERVIDOR, no está escrito acá. Es el mismo
+ * que se archiva como prueba, así que lo que la persona lee y lo que queda
+ * guardado no pueden separarse — y el día que se reescriba, las respuestas
+ * viejas conservan la redacción con la que se dieron.
+ */
+function Permisos({ datos, onResponder, guardando, error }) {
+    const c = datos.consentimiento ?? {};
+    // Arranca en lo que ya haya contestado. Para el programa eso es `false`
+    // sólo si declinó antes: se le muestra su propia respuesta, no un formulario
+    // en blanco que lo obligue a acordarse de qué había dicho.
+    const [programa, setPrograma] = useState(c.programa ?? null);
+    const [promos, setPromos] = useState(c.promociones ?? null);
+
+    const completo = typeof programa === 'boolean' && typeof promos === 'boolean';
+
+    return (
+        <div data-surface="card" className="p-4 space-y-4">
+            <div className="space-y-1">
+                <h2 className="text-title font-bold text-content-1">
+                    Hola, {datos.nombre}
+                </h2>
+                <p className="text-body-sm text-content-3 leading-relaxed">
+                    Antes de mostrarte tus puntos necesitamos tu permiso para dos cosas.
+                    Puedes cambiarlo cuando quieras.
+                </p>
+            </div>
+
+            <Pregunta texto={c.textos?.programa} valor={programa} onElegir={setPrograma} />
+
+            {programa === false && (
+                <Notice variant="warning" bloque>
+                    Sales del programa y dejas de acumular puntos. Los que ya tienes
+                    quedan guardados, sin vencer y sin poder canjearse, hasta que
+                    vuelvas a entrar aquí y aceptes.
+                </Notice>
+            )}
+
+            <div className="h-px bg-divider" />
+
+            <Pregunta texto={c.textos?.promociones} valor={promos} onElegir={setPromos} />
+
+            {error && <Notice variant="danger">{error}</Notice>}
+
+            <Button type="button" variant="primary" className="w-full"
+                disabled={!completo || guardando}
+                onClick={() => onResponder({ programa, promociones: promos })}>
+                {guardando ? 'Guardando…' : 'Continuar'}
+            </Button>
+
+            <p className="text-caption text-content-3 leading-relaxed">
+                Decir que no a las promociones no afecta tus puntos. El detalle de qué
+                datos usamos y qué puedes pedirnos está en el{' '}
+                <a href="/privacidad" className="underline hover:text-content-2">aviso de privacidad</a>.
+            </p>
         </div>
     );
 }

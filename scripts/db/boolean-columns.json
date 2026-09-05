@@ -1,8 +1,26 @@
 {
   "_comment": "Snapshot de las columnas BOOLEAN de public.* en prod. Lo usa scripts/data-gate.mjs para detectar el bug de `.eq('col', true)` sobre una columna que NO es booleana (caso recibido_mh, auditoría 2026-07-30). Regenerar con: npm run gate:data -- --regen-schema (imprime el SQL a correr).",
   "_por_que_importa_la_fecha": "El detector NO opina sobre una tabla que no está acá (`if (!(tabla in BOOLEANAS)) continue`), así que un snapshot viejo falla en las DOS direcciones: una tabla nueva entera queda sin vigilar, y una columna nueva de una tabla que SÍ está se reporta como «no es boolean» cuando sí lo es. Medido el 2026-08-21: el snapshot del 30-jul tenía 71 columnas y en prod había 96 — 25 invisibles en tres semanas, entre ellas employees.carne_pendiente, role_permissions.delega_en_ausencia y proveedores_maestro.iva_deducible, que son de tablas ya listadas y por lo tanto candidatas a falso positivo. Si esta fecha tiene más de un mes, regenerar ANTES de creerle al verde.",
-  "_generado": "2026-08-31",
+  "_generado": "2026-09-05",
   "_fuente": "pg_attribute atttypid='boolean' sobre pg_class relkind in ('r','v','m') del esquema public — incluye VISTAS y MATERIALIZADAS, no sólo tablas. El snapshot del 30-jul sólo traía tablas base, y el frontend consulta employees_safe, products_with_lab, v_inventario_lotes, v_sync_health y dte_rechazos_vigentes por nombre igual que a una tabla: sin ellas el detector se callaba justo donde más se lee.",
+  "tablas_grandes": {
+    "_comment": "Tablas que REQUIEREN paginación (>1000 filas o creciendo sin tope). Conteos reales al 2026-08-21, salvo los `null`, que son «crece sin tope» y no se cuentan. approval_requests entra por la SEGUNDA mitad del criterio, no por tamaño: hoy son cientos de filas, pero es un expediente que sólo crece y el día que cruce las 1000 el corte de PostgREST es mudo.",
+    "_ojo_pedido_items": "pedido_items tiene 673 filas VIVAS y aun así está acá con razón: el conteo que importa no es el de la tabla sino el de UNA consulta. El mayor (pedido, sucursal) de la historia son 1,108 renglones — ya por encima del tope. Un `count(*)` de la tabla no lo habría mostrado nunca.",
+    "products": 5215,
+    "sales_invoices": 352802,
+    "sales_invoice_items": null,
+    "inventory": 23896,
+    "product_stock_params": 18364,
+    "audit_logs": null,
+    "pedido_items": null,
+    "pedido_item_eventos": null,
+    "pedido_traslado_linea": 3038,
+    "notifications": 3010,
+    "purchase_dte_documents": null,
+    "dte_sales": null,
+    "timesheets": null,
+    "approval_requests": 318
+  },
   "tablas": {
     "announcements": [
       "is_archived"
@@ -27,19 +45,33 @@
     "bitacora_limpiezas": [
       "tarde"
     ],
+    "bitacora_limpiezas_historial": [
+      "tarde_antes"
+    ],
     "bolsas_entidades": [
       "activo"
     ],
     "bolsas_tipos_salida": [
       "activo",
+      "entidad_la_dice_el_papel",
       "pide_boleta",
       "pide_receptor"
     ],
     "branches": [
       "conteo_ciclico_activo"
     ],
+    "caja_tipos_movimiento": [
+      "activo",
+      "identifica_receptor",
+      "lleva_comprobante",
+      "pide_boleta",
+      "pide_persona"
+    ],
     "compra_renglon_pendiente": [
       "ignorado"
+    ],
+    "consentimientos_cliente": [
+      "otorgado"
     ],
     "conteo_inventario_items": [
       "es_agregado_manual",
@@ -50,11 +82,23 @@
       "incluye_vencidos",
       "pendientes_como_cero"
     ],
+    "cortes_caja_aperturas": [
+      "turno_corriendo"
+    ],
     "cortes_caja_diferencia_personas": [
       "del_turno"
     ],
     "cotizaciones": [
       "applies_retention"
+    ],
+    "creditos_sync": [
+      "id",
+      "ok"
+    ],
+    "customers": [
+      "acepta_programa_puntos",
+      "acepta_promociones",
+      "acumula_puntos"
     ],
     "dispatch_rules": [
       "caja_especial",
@@ -103,6 +147,9 @@
     "erp_sucursal_map": [
       "es_bodega"
     ],
+    "faltas_disciplinarias": [
+      "activa"
+    ],
     "holidays": [
       "is_recurring"
     ],
@@ -129,7 +176,11 @@
       "succeeded"
     ],
     "laboratorios": [
+      "acumula_puntos",
       "ocultar_en_minmax"
+    ],
+    "liquidacion": [
+      "informativa"
     ],
     "metas_config": [
       "bonificaciones_activas",
@@ -156,6 +207,9 @@
     "pedido_sucursal_status": [
       "electrolit_ok"
     ],
+    "pos_proveedores": [
+      "activo"
+    ],
     "product_precios": [
       "activo"
     ],
@@ -179,6 +233,9 @@
       "activo",
       "es_antibiotico"
     ],
+    "promocion_renglon": [
+      "tiene_bono"
+    ],
     "proveedores": [
       "devolutivo"
     ],
@@ -189,8 +246,18 @@
       "percibe_1_override",
       "retiene_renta"
     ],
+    "puntos_config": [
+      "acumulacion_activa",
+      "id"
+    ],
     "puntos_consulta_intentos": [
       "acerto"
+    ],
+    "puntos_cuenta": [
+      "activa"
+    ],
+    "puntos_vencimiento_log": [
+      "simulado"
     ],
     "purchase_claim_rules": [
       "activo"
@@ -226,6 +293,10 @@
     "shifts": [
       "is_active"
     ],
+    "solicitudes_datos": [
+      "negada",
+      "por_representacion"
+    ],
     "stock_config": [
       "pedido_recepcion_activa"
     ],
@@ -258,23 +329,5 @@
     "vacation_plan_headers": [
       "ai_generated"
     ]
-  },
-  "tablas_grandes": {
-    "_comment": "Tablas que REQUIEREN paginación (>1000 filas o creciendo sin tope). Conteos reales al 2026-08-21, salvo los `null`, que son «crece sin tope» y no se cuentan. approval_requests entra por la SEGUNDA mitad del criterio, no por tamaño: hoy son cientos de filas, pero es un expediente que sólo crece y el día que cruce las 1000 el corte de PostgREST es mudo.",
-    "_ojo_pedido_items": "pedido_items tiene 673 filas VIVAS y aun así está acá con razón: el conteo que importa no es el de la tabla sino el de UNA consulta. El mayor (pedido, sucursal) de la historia son 1,108 renglones — ya por encima del tope. Un `count(*)` de la tabla no lo habría mostrado nunca.",
-    "products": 5215,
-    "sales_invoices": 352802,
-    "sales_invoice_items": null,
-    "inventory": 23896,
-    "product_stock_params": 18364,
-    "audit_logs": null,
-    "pedido_items": null,
-    "pedido_item_eventos": null,
-    "pedido_traslado_linea": 3038,
-    "notifications": 3010,
-    "purchase_dte_documents": null,
-    "dte_sales": null,
-    "timesheets": null,
-    "approval_requests": 318
   }
 }

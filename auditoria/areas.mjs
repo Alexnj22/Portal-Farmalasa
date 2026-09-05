@@ -856,7 +856,11 @@ export const AREAS = [
             'docs/legal/afiche-aviso-de-privacidad.html',
             'public/privacidad.html',
         ],
-        tablas: ['solicitudes_datos', 'solicitudes_datos_folios'],
+        // `consentimientos_cliente` vive acá y no en Puntos aunque la respuesta
+        // se dé en `/mis-puntos`: es la evidencia del Art. 54, la lee el permiso
+        // de este módulo, y lo que prueba no son los puntos sino que la persona
+        // dijo que sí. La pantalla que pregunta es de otro dueño que la prueba.
+        tablas: ['solicitudes_datos', 'solicitudes_datos_folios', 'consentimientos_cliente'],
         // La pagina publica no tiene edge function ni cron: es HTML plano
         // servido por una reescritura de `vercel.json`. Que no dependa de nada
         // es justo lo que la hace confiable — un documento que promete estar

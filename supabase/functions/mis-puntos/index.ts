@@ -14,8 +14,14 @@
 //
 // No es autenticación fuerte y no se pretende que lo sea. Por eso esta puerta
 // muestra el saldo y los movimientos, y NADA de lo que no se puede deshacer:
-// no permite canjear, no permite cambiar la ficha, y no devuelve el documento
-// que se usó para entrar.
+// no permite canjear y no devuelve el documento que se usó para entrar.
+//
+// La única escritura que admite es la respuesta a los dos permisos —el programa
+// de puntos y las promociones— y entra bajo esa misma regla: declinar CONGELA
+// el saldo, no lo borra, y volver a entrar y aceptar lo devuelve como estaba.
+// Por eso `puntos_guardar_consentimiento` nunca toca los tickets, y el barrido
+// de `sync-puntos` que sí los borra excluye a quien declinó. Si alguna vez esa
+// escritura pasa a ser destructiva, esta puerta deja de ser el lugar.
 //
 // ── Las tres reglas que la hacen publicable ─────────────────────────────────
 //   1. FRENO por IP: 8 fallos en 15 minutos y deja de contestar.
@@ -48,6 +54,31 @@ const TOPE_FALLOS_CODIGO = 5;
 // por su FORMA, no porque el cliente elija «entro con código» — una pantalla
 // que pregunta con qué vas a entrar ya perdió a la mitad de la gente.
 const ES_CODIGO = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/;
+
+// ── Los dos permisos, escritos ACÁ y no en la pantalla ──────────────────────
+// El Art. 27 letra c) exige que el consentimiento sea informado, y la prueba de
+// eso es el texto que la persona tenía delante. Si ese texto viniera del
+// navegador, quien llama podría mandar cualquier cosa y la evidencia diría lo
+// que él quiso: la fila que guardamos no probaría nada.
+//
+// Por eso viven en el servidor. La pantalla los PIDE y los muestra; lo que se
+// archiva es esta cadena. Cambiar la redacción es un despliegue, y las filas
+// viejas conservan la suya con su versión al lado.
+//
+// Y son DOS porque son dos finalidades distintas. El Art. 27 letra b) pide que
+// el consentimiento sea específico: una sola casilla para las dos cosas no
+// serviría para ninguna.
+const TEXTOS = {
+  version: "consentimiento-2026-09-05",
+  aviso: "aviso-2026-09-04",
+  programa:
+    "Acepto seguir en el Programa de Puntos Salud. Para administrarlo, la " +
+    "Empresa usa mi nombre, mi documento, mi teléfono y el historial de mis " +
+    "compras y canjes.",
+  promociones:
+    "Acepto recibir promociones y descuentos especiales al teléfono o al " +
+    "correo que tengo registrados.",
+};
 
 function conf() {
   const host = Deno.env.get("PUNTOS_MYSQL_HOST");
@@ -145,6 +176,72 @@ Deno.serve(async (req) => {
       { p_ip: ip, p_huella_dui: h, p_acerto: true });
     if (eAcierto) console.error("no se pudo anotar el acierto:", eAcierto.message);
 
+    // ── Los permisos del cliente ──────────────────────────────────────────
+    // Esta puerta era de sólo lectura a propósito, y sigue siéndolo para todo
+    // lo que no se puede deshacer: no canjea, no edita la ficha, no devuelve el
+    // documento con que se entró. Lo único que ahora escribe es la respuesta a
+    // dos preguntas, y esa escritura es REVERSIBLE: quien declinó vuelve a
+    // entrar y acepta, y su saldo estaba congelado, no borrado.
+    //
+    // Va acá, después de la identidad y después del freno por IP. Nunca antes:
+    // el orden ES la protección.
+    let permisos: { programa: boolean | null; promociones: boolean | null } =
+      { programa: null, promociones: null };
+
+    const resp = body?.consentimiento;
+    if (resp && (typeof resp.programa === "boolean" || typeof resp.promociones === "boolean")) {
+      const { data: guardado, error: eCons } = await admin.rpc("puntos_guardar_consentimiento", {
+        p_customer_id: cli.id,
+        p_programa:    typeof resp.programa === "boolean" ? resp.programa : null,
+        p_promociones: typeof resp.promociones === "boolean" ? resp.promociones : null,
+        p_texto_programa: TEXTOS.programa,
+        p_texto_promos:   TEXTOS.promociones,
+        p_version_aviso:  `${TEXTOS.version} · ${TEXTOS.aviso}`,
+        p_identificado_por: esCodigo ? "codigo" : "dui_telefono",
+        p_origen: "mis-puntos",
+      });
+      // Acá el error SÍ corta. En todo lo demás de esta función se sigue
+      // adelante porque quien preguntó tiene derecho a su saldo; pero si la
+      // respuesta no se guardó, contestar como si nada dejaría a la persona
+      // creyendo que se dio de baja mientras el sistema la sigue contando.
+      if (eCons) {
+        console.error("no se pudo guardar el consentimiento:", eCons.message);
+        return json({
+          ok: false, motivo: "consentimiento",
+          mensaje: "No se pudo guardar tu respuesta. Intenta de nuevo.",
+        }, 503);
+      }
+      permisos = {
+        programa:    (guardado as any)?.acepta_programa_puntos ?? null,
+        promociones: (guardado as any)?.acepta_promociones ?? null,
+      };
+    } else {
+      const { data: fila, error: ePerm } = await admin
+        .from("customers")
+        .select("acepta_programa_puntos, acepta_promociones")
+        .eq("id", cli.id)
+        .maybeSingle();
+      // Si no se pudo leer, se responde `null` en las dos, que es «todavía no
+      // contestó» y hace que la pantalla vuelva a preguntar. Preguntar de más
+      // molesta; darlo por aceptado sin haberlo leído es inventar la prueba.
+      if (ePerm) console.error("no se pudieron leer los permisos:", ePerm.message);
+      permisos = {
+        programa:    fila?.acepta_programa_puntos ?? null,
+        promociones: fila?.acepta_promociones ?? null,
+      };
+    }
+
+    // Lo mismo en las tres salidas de abajo, que son tres porque el saldo puede
+    // venir del libro del portal, del sistema viejo, o de ninguno todavía.
+    const consentimiento = {
+      programa: permisos.programa,
+      promociones: permisos.promociones,
+      textos: {
+        programa: TEXTOS.programa,
+        promociones: TEXTOS.promociones,
+      },
+    };
+
     // ── ¿Quién contesta el saldo? ─────────────────────────────────────────
     // Una FILA lo decide (`puntos_config.fuente`), no un despliegue: el día del
     // corte se cambia un valor y esta pantalla pasa a leer el libro mayor del
@@ -179,6 +276,7 @@ Deno.serve(async (req) => {
 
       return json({
         ok: true,
+        consentimiento,
         nombre: cli.name,
         saldo: saldoP,
         // Los tres próximos, igual que del otro lado. Acá NO hace falta
@@ -230,7 +328,7 @@ Deno.serve(async (req) => {
     // de mostrar un cero que se lee como «gasté y no me dieron nada».
     if (!cuentas?.length || cuentas.length > 1) {
       return json({
-        ok: true, nombre: cli.name, saldo: 0, equivale: 0,
+        ok: true, consentimiento, nombre: cli.name, saldo: 0, equivale: 0,
         acumulados: 0, canjeados: 0, movimientos: [], vencimientos: [],
         aviso: "Todavía no tienes cuenta de puntos. Se te crea en la sala la primera vez que acumulás.",
       });
@@ -307,6 +405,7 @@ Deno.serve(async (req) => {
 
     return json({
       ok: true,
+      consentimiento,
       nombre: cli.name,
       saldo,
       // Sólo los tres próximos: la lista completa de una persona con doscientas

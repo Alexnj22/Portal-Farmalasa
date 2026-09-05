@@ -56,6 +56,7 @@ const DESTINOS = [
     'docs/legal/aviso-de-privacidad.html',
     'docs/legal/acuerdo-de-nombramiento-delegado.html',
     'docs/legal/formulario-solicitud-datos.html',
+    'docs/legal/afiche-aviso-de-privacidad.html',
 ];
 
 /* El `alt` es el ancla, y no la posición ni el tamaño de la cadena: es lo único

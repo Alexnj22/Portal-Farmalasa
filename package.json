@@ -22,6 +22,7 @@
     "nombramiento:pdf": "node scripts/documento-legal-pdf.mjs docs/legal/acuerdo-de-nombramiento-delegado.html docs/legal/NOMBRAMIENTO-DELEGADO-DATOS.pdf --sin-firma",
     "formulario:pdf": "node scripts/documento-legal-pdf.mjs docs/legal/formulario-solicitud-datos.html docs/legal/FORMULARIO-SOLICITUD-DATOS.pdf --sin-firma",
     "afiche:puntos": "node scripts/afiche-puntos-pdf.mjs docs/legal/afiche-programa-de-puntos.html",
+    "afiche:privacidad": "node scripts/afiche-puntos-pdf.mjs docs/legal/afiche-aviso-de-privacidad.html docs/legal/AFICHE-AVISO-DE-PRIVACIDAD.pdf",
     "logo:incrustar": "node scripts/incrustar-logo.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

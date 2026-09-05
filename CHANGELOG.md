@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1016.0 — El afiche del aviso de privacidad para la vitrina
+
+Pedido del usuario, con la pregunta correcta al lado: «¿se puede hacer ante la
+ley?». Sí, y de hecho **es el canal que la ley prevé**: el **Art. 16 letra g)**
+manda publicar el aviso «en el sitio web del responsable **o en lugares visibles
+dentro de los establecimientos**».
+
+Pero hay una tensión que decide cómo se diseña. El **Art. 24** pide nueve
+contenidos, y el **Art. 5 letra e)** prohíbe «textos extensos… y letra pequeña».
+Colgar las cinco páginas del aviso en una vitrina cumpliría el primero y
+violaría el segundo: nadie lee mil setecientas palabras de pie.
+
+La salida es la que la propia ley sugiere al ofrecer el sitio **o** el
+establecimiento: **el afiche es la puerta y el aviso completo es el documento.**
+Una hoja carta con lo que hay que saber de pie, los siete derechos nombrados uno
+por uno, dónde pedirlo, y un QR al aviso entero. Y lo dice de sí mismo en el
+pie: «este afiche es un resumen».
+
+**Los derechos van nombrados y no resumidos en una frase.** Un afiche que dijera
+«usted tiene derechos sobre sus datos» obligaría a ir a buscar cuáles, que es
+justo lo que un afiche existe para evitar.
+
+Sigue la maqueta del afiche de puntos, con el acento en azul en vez del morado
+de la marca del programa: los dos cuelgan de la misma vitrina y quien ve uno
+reconoce al otro, pero no dicen lo mismo. Aquel invita; éste informa de un
+derecho.
+
+**El QR se verifica solo.** El generador lo dibuja en un lienzo, lee sus píxeles
+y lo decodifica de verdad antes de dar el PDF por bueno; si no coincide con la
+dirección escrita al lado, falla. Es la misma norma que usa el login para leer
+un carné, y existe porque un QR mal armado no se ve mal: se ve como un QR, y
+nadie lo nota hasta que hay cien copias pegadas.
+
+**Y el aviso decía algo que ya no era cierto.** Su cláusula 9.3 afirmaba estar
+publicado «en lugar visible de cada sala de ventas», y en la pared va el
+resumen. Ahora dice que el completo está en línea, que el resumen está en la
+pared y que se entrega entero a quien lo pida.
+
+Un tropiezo de maqueta que vale anotar: el `min-height: 243mm` de la hoja
+—heredado del afiche de puntos— obligaba a medir esa altura **antes** de contar
+el contenido, así que el pie caía fuera y salían dos páginas. Un afiche de una
+página no necesita un mínimo; necesita que quepa.
+
 ## v2.1015.6 — El representante tiene su propio renglón en el aviso
 
 «8.2 está mejor, pero la parte del documento que lo autoriza siento que se puede

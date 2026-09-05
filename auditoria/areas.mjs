@@ -853,6 +853,7 @@ export const AREAS = [
             'docs/legal/aviso-de-privacidad.html',
             'docs/legal/formulario-solicitud-datos.html',
             'docs/legal/acuerdo-de-nombramiento-delegado.html',
+            'docs/legal/afiche-aviso-de-privacidad.html',
             'public/privacidad.html',
         ],
         tablas: ['solicitudes_datos', 'solicitudes_datos_folios'],

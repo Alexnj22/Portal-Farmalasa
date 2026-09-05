@@ -183,9 +183,12 @@ export async function buscarPersona({ numero, nombre, telefono } = {}) {
         { clave: 'cliente', rotulo: 'ficha de cliente', tabla: 'customers',
           cols: 'id, erp_id, name, dui, nit, phone, email, direccion, fecha_nacimiento, acumula_puntos',
           docCols: ['dui', 'nit'], telCols: ['phone'], nombreCol: 'name' },
-        { clave: 'empleado', rotulo: 'expediente de personal', tabla: 'employees',
-          cols: 'id, name, code, dui, phone, email, address, birth_date, status',
-          docCols: ['dui'], telCols: ['phone'], nombreCol: 'name' },
+        // El personal NO se consulta con un `select`. `employees.dui` y
+        // `employees.code` no tienen GRANT para `authenticated`, y un select que
+        // los NOMBRE falla entero —no devuelve la fila sin ellos—, incluido
+        // filtrar por `dui`. Por eso va por función, que además exige el permiso
+        // del módulo. Ver la migración `buscar_empleado_para_solicitud`.
+        { clave: 'empleado', rotulo: 'expediente de personal', rpc: 'buscar_empleado_para_solicitud' },
         { clave: 'practicante', rotulo: 'horas sociales o pasantía', tabla: 'practicantes',
           cols: 'id, first_names, last_names, dui, phone, birth_date, institucion_educativa, estado',
           docCols: ['dui'], telCols: ['phone'], nombreCol: 'last_names' },
@@ -200,6 +203,13 @@ export async function buscarPersona({ numero, nombre, telefono } = {}) {
     ];
 
     const consultas = donde.map((d) => {
+        if (d.rpc) {
+            return supabase.rpc(d.rpc, {
+                p_dui: doc ? numero : null,
+                p_telefono: tel ? telefono : null,
+                p_nombre: porNombre ? nom : null,
+            });
+        }
         let q = supabase.from(d.tabla).select(d.cols).limit(20);
         if (doc) {
             q = q.or(d.docCols.flatMap((c) => formas.map((v) => `${c}.eq.${v}`)).join(','));
@@ -207,7 +217,7 @@ export async function buscarPersona({ numero, nombre, telefono } = {}) {
             // El teléfono vive con guion, sin él y a veces con el código de
             // país. Se buscan las tres formas y, si la tabla no guarda
             // teléfono, la consulta no devuelve nada en vez de fallar.
-            if (!d.telCols.length) return supabase.from(d.tabla).select(d.cols).limit(0);
+            if (!d.telCols?.length) return supabase.from(d.tabla).select(d.cols).limit(0);
             const conGuionTel = tel.length === 8 ? `${tel.slice(0, 4)}-${tel.slice(4)}` : null;
             const formasTel = [tel, conGuionTel, `+503${tel}`].filter(Boolean);
             q = q.or(d.telCols.flatMap((c) => formasTel.map((v) => `${c}.eq.${v}`)).join(','));

@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1014.2 — El personal se busca por función, no por select
+
+Reportado por el usuario con captura: buscando «joya» aparecían diez fichas de
+cliente y el expediente de personal decía **«no se pudo consultar»**.
+
+**No era un defecto del portal: era una protección haciendo su trabajo.**
+`employees.dui` y `employees.code` NO tienen GRANT de SELECT para
+`authenticated` — se leen sólo por funciones, y eso está bien: el DUI de las 48
+personas no puede estar al alcance de cualquiera que sepa escribir una consulta.
+
+Lo que cuesta ver es la consecuencia. Un `select` que **nombre** una de esas dos
+columnas **falla entero**: no devuelve la fila sin ellas, devuelve
+«permission denied for column dui». Y eso incluye **filtrar** por `dui`, no sólo
+leerlo. Mi búsqueda las pedía, así que la consulta de personal moría siempre, no
+sólo cuando había algo que ocultar.
+
+El aviso que se vio en pantalla es el que este mismo módulo estrenó ayer: «esta
+búsqueda está incompleta, no la uses para responder que no hay información».
+Funcionó exactamente para lo que se puso, y por eso el usuario pudo verlo en vez
+de recibir un «sin coincidencias» falso.
+
+**La salida no es abrir el GRANT**, que expondría el DUI de todo el personal al
+portal entero. Es `buscar_empleado_para_solicitud`, una función `SECURITY
+DEFINER` que exige `can_edit` en el módulo `datos_personales` y no sirve para
+nada más. Sin ningún criterio devuelve vacío y no el padrón: una función que con
+argumentos vacíos lista a las 48 personas es un volcado disfrazado de búsqueda.
+
+Es el mismo patrón que ya usaba `dui_disponible`, que existe por la misma razón.
+
 ## v2.1014.1 — La persona se busca mientras se escribe
 
 Pedido del usuario sobre el buscador de la solicitud: «que sea un input /

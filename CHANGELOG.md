@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1016.1 — La redacción del afiche
+
+Pasada de redacción sobre el afiche, sin tocar el diseño. Catorce cambios, y
+tres de ellos son defectos de verdad y no preferencias.
+
+**La bajada mezclaba dos voces en una sola oración.** Decía «pedir que **se la
+mostremos**, que **se corrija**, que **se borre** o que **dejemos** de usarla»:
+primera persona del plural y pasiva refleja alternándose cuatro veces. Ahora las
+cuatro son primera persona, que es además quien responde.
+
+**Los ocho derechos estaban en dos formas gramaticales distintas.** Seis en
+infinitivo («Saber», «Corregir», «Borrar») y dos en subordinada («Que dejemos de
+usarla», «Que se retire de internet»). En una lista de ocho renglones cortos, la
+falta de paralelismo se siente aunque no se sepa nombrar. Todos en infinitivo.
+
+**Y dos descripciones no describían nada.** «Que dejemos de usarla **para algo**»
+y «Borrar lo que **ya no haga falta**» dejaban al lector sin saber para qué ni a
+quién. Quedaron «Dejar de usarla para un fin determinado» y «Borrar la que ya no
+sea necesaria». También se completó «Recibirla en un archivo», que no decía para
+qué serviría.
+
+El titular pasó de «La información que guardamos de usted es suya» a
+**«Su información le pertenece. Usted decide.»** El anterior apilaba
+«guardamos **de usted**» y dejaba la idea principal —que es suya— al final de una
+frase larga. El nuevo son dos afirmaciones cortas: la primera dice de quién es,
+la segunda quién manda.
+
+Las tres columnas del pie dejaron de mezclar lugar con instrucción: «Traiga su
+DUI» era una orden entre dos sitios, y quedó «Con su documento». También se le
+puso verbo a la del medio («Llame al… o escriba a…»), que era sólo dos datos
+sueltos.
+
+El afiche siguió en **una página**: lo que el texto ganó en precisión se recuperó
+de la escala, no cortando contenido.
+
 ## v2.1016.0 — El afiche del aviso de privacidad para la vitrina
 
 Pedido del usuario, con la pregunta correcta al lado: «¿se puede hacer ante la

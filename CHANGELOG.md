@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1015.3 — Siempre «sala de ventas», también cuando va sola
+
+Regla del usuario: «en la sala, siempre sala de ventas. Eso es fijo». La pasada
+anterior había arreglado el singular contra el plural («sala de venta» →
+«sala**s** de ventas») y dejó viva la otra mitad: **«la sala» a secas**.
+
+Doce sitios corregidos en los cinco documentos: el aviso («en qué sala de
+ventas», «En la sala de ventas se entrega»), el nombramiento («La sala de ventas
+remite», «a todas sus salas de ventas»), el reglamento («al precio de venta al
+público de la sala de ventas») y ocho del procedimiento, incluidas las cuatro
+filas de su tabla de pasos.
+
+Quedan tres apariciones y las tres son `.bloque-sala`, un nombre de clase CSS
+que no ve nadie. Los comentarios del código tampoco se tocaron: la regla es
+sobre lo que se lee, y el propio CLAUDE.md dice que los comentarios conservan su
+trazabilidad.
+
+### El portal completo queda pendiente, y tiene una trampa
+
+Un barrido de `src/` devuelve **387 candidatos**. No los toqué, y no por pereza:
+entre ellos están **«Jefe/a de Sala» y «Subjefe/a de Sala»**, que no son rótulos
+sino **nombres de cargo en la tabla `roles`**. Cambiar ese texto en la pantalla
+rompe el cruce contra la base, que es exactamente el defecto que documenta
+`feedback_un_rotulo_no_es_una_clave`: el formulario ofrecía «Regente de
+Enfermería» con tilde, la tabla decía «Regente de Enfermeria» sin ella, y relevar
+a esa persona la guardaba con `role_id: null` sin lanzar ni avisar.
+
+Además la mayoría de esos 387 son falsos positivos: variables llamadas `sala`,
+`miSala`, `salas.map(...)`. Separar los rótulos de las claves y de los
+identificadores es una pasada propia, con su medición, no un `sed`.
+
 ## v2.1015.2 — El correo de la Empresa entra en los cuatro documentos
 
 `Farmasalud.sv@gmail.com`, dado por el usuario. Cierra el **Art. 7 letra c)**,

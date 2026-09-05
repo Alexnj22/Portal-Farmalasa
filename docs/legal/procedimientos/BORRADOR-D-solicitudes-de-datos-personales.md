@@ -39,8 +39,8 @@ ellos, sobre los datos descritos en el aviso de privacidad.
 
 Aplica en **todas las salas de ventas** y en la administración.
 
-**La sala no resuelve la solicitud.** La recibe correctamente y la remite. Todo
-lo que la sala necesita saber está en los numerales 4, 5 y 6.
+**La sala de ventas no resuelve la solicitud.** La recibe correctamente y la remite. Todo
+lo que la sala de ventas necesita saber está en los numerales 4, 5 y 6.
 
 ## 3 · Quién interviene
 
@@ -48,17 +48,17 @@ lo que la sala necesita saber está en los numerales 4, 5 y 6.
 |---|---|
 | **Delegado de protección de datos** | `[nombre]`. Recibe, tramita y resuelve. Firma la respuesta. Revisa **Farmasalud.sv@gmail.com** todos los días hábiles |
 | **Sustituto** | `[nombre]`. Asume durante ausencias, vacaciones o incapacidad. Los plazos no se suspenden |
-| **Jefe o jefa de sala** | Entrega el formulario, comprueba la identidad, sella el acuse y remite la solicitud el mismo día |
+| **Jefe o jefa de sala de ventas** | Entrega el formulario, comprueba la identidad, sella el acuse y remite la solicitud el mismo día |
 | **Cualquier empleado o proveedor** | Está obligado a asistir al delegado en lo que éste le pida (**Art. 17**) |
 
 ## 4 · El trámite en resumen
 
 | Paso | Quién | Qué pasa | Cuándo |
 |---|---|---|---|
-| 1 | Sala | Entrega el formulario y ayuda a llenarlo | En el momento |
-| 2 | Sala | **Comprueba la identidad** con el documento a la vista | En el momento |
-| 3 | Sala | Sella el acuse y se lo entrega a la persona | En el momento |
-| 4 | Sala | Remite el formulario al delegado | **El mismo día** |
+| 1 | Sala de ventas | Entrega el formulario y ayuda a llenarlo | En el momento |
+| 2 | Sala de ventas | **Comprueba la identidad** con el documento a la vista | En el momento |
+| 3 | Sala de ventas | Sella el acuse y se lo entrega a la persona | En el momento |
+| 4 | Sala de ventas | Remite el formulario al delegado | **El mismo día** |
 | 5 | Delegado | Reúne la información y resuelve | Dentro de 20 días hábiles |
 | 6 | Delegado | Entrega la respuesta por el medio que la persona señaló | Dentro de 20 días hábiles |
 | 7 | Delegado | Archiva la solicitud con su constancia | Al cerrar |
@@ -85,7 +85,7 @@ esa fecha depende todo el plazo.
 4. Se comprueba la identidad conforme al numeral 6.
 5. **Se sella el acuse y se le entrega.** Lleva la fecha de recepción, que es la
    que hace correr el plazo de veinte días hábiles.
-6. La sala remite el formulario al delegado **el mismo día**. El plazo corre
+6. La sala de ventas remite el formulario al delegado **el mismo día**. El plazo corre
    desde que la solicitud se recibió, no desde que el delegado se enteró.
 7. Si el formulario llegara incompleto, el delegado hace **una sola prevención**
    y la persona tiene diez días hábiles para completarlo. Si no lo hace, se
@@ -118,7 +118,7 @@ ajeno.
 
 ### Qué sí comprueba, según quién pide
 
-| Quién pide | Qué presenta | Qué anota la sala |
+| Quién pide | Qué presenta | Qué anota la sala de ventas |
 |---|---|---|
 | **El titular** | Su Documento Único de Identidad. La persona extranjera, su pasaporte o su carné de residente | Clase y número del documento, y que se cotejó la fotografía con la persona |
 | **Un representante** | Su propio documento, más el poder o el instrumento que acredite la representación | Los dos documentos y la clase de instrumento |
@@ -133,7 +133,7 @@ minimización del **Art. 5 letra d)** lo impide.
 
 ### Cómo se entrega la respuesta
 
-En la sala, contra firma de quien la recibe, o por el medio que la persona
+En la sala de ventas, contra firma de quien la recibe, o por el medio que la persona
 señaló en el formulario y sólo después de comprobada su identidad.
 
 Si pidió acceso, el informe **no puede revelar datos de terceros**, aunque estén

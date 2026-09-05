@@ -265,7 +265,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                             <div className="space-y-2">
                                 <Checkbox
                                     checked={f.todas}
-                                    onChange={(e) => set('todas', e.target.checked)}
+                                    onChange={(v) => set('todas', v)}
                                     label="En todas las salas"
                                     description="Sin esto, el descuento vale sólo en la sala que elijas."
                                 />

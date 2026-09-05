@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, FlaskConical, Plus, Search } from 'lucide-react';
+import { AlertTriangle, Check, FlaskConical, Plus, Search } from 'lucide-react';
 import SearchInput from '../../components/common/SearchInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import Button from '../../components/common/Button';
@@ -39,6 +39,12 @@ import { fetchProductosParaPromocion } from '../../data/promociones';
  * @param yaElegidos  ids que la promoción ya tiene — se marcan y no se repiten.
  * @param onAgregar   recibe `[{ id, nombre, laboratorio_nombre }]`.
  */
+/* El tope lo pone la BASE: `crear_promocion` lanza `DEMASIADOS_PRODUCTOS` con
+   más de 50. Se repite acá para poder avisar AL AGREGAR y no al guardar —
+   traerse los 150 de un laboratorio y enterarse recién al final es perder el
+   trabajo entero. Si cambia allá, cambia acá. */
+export const TOPE_PRODUCTOS = 50;
+
 export default function AgregarProductos({ yaElegidos = [], onAgregar, laboratorios = [] }) {
     const [modo, setModo] = useState('texto');      // 'texto' | 'laboratorio'
     const [texto, setTexto] = useState('');
@@ -84,16 +90,17 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
     const disponibles = useMemo(() => filas.filter((p) => !yaSet.has(Number(p.id))), [filas, yaSet]);
     const todosMarcados = disponibles.length > 0 && disponibles.every((p) => marcados.has(p.id));
 
+    /* Van ANTES de las funciones que los leen: `alternarHastaElTope` usa
+       `caben`, y aunque hoy no puede fallar —el cuerpo de una función corre
+       después—, `gate:tdz` lo cuenta como deuda porque mover ese uso fuera de
+       la función lo convertiría en una lectura que lanza. */
+    const cuantos = [...marcados].filter((id) => !yaSet.has(Number(id))).length;
+    const caben = Math.max(0, TOPE_PRODUCTOS - yaSet.size);
+    const sePasa = cuantos > caben;
+
     const alternar = (id) => setMarcados((s) => {
         const n = new Set(s);
         if (n.has(id)) n.delete(id); else n.add(id);
-        return n;
-    });
-
-    const alternarTodos = () => setMarcados((s) => {
-        const n = new Set(s);
-        if (todosMarcados) disponibles.forEach((p) => n.delete(p.id));
-        else disponibles.forEach((p) => n.add(p.id));
         return n;
     });
 
@@ -104,7 +111,19 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
         setMarcados(new Set());
     };
 
-    const cuantos = [...marcados].filter((id) => !yaSet.has(Number(id))).length;
+    /* Marcar TODOS cuando no caben todos marcaría de más y el botón quedaría
+       bloqueado sin decir por qué. Se marcan los que entran, y el aviso dice
+       cuántos son. */
+    const alternarHastaElTope = () => setMarcados((s2) => {
+        const n = new Set(s2);
+        if (todosMarcados) { disponibles.forEach((p) => n.delete(p.id)); return n; }
+        for (const p of disponibles) {
+            if (n.size >= caben) break;
+            n.add(p.id);
+        }
+        return n;
+    });
+
 
     return (
         <div className="rounded-lg border border-border-card p-3 space-y-3">
@@ -163,9 +182,13 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                         <Checkbox
                             checked={todosMarcados}
                             indeterminate={!todosMarcados && disponibles.some((p) => marcados.has(p.id))}
-                            onChange={alternarTodos}
-                            label={todosMarcados ? 'Quitar la marca de todos' : `Marcar los ${disponibles.length}`}
-                            disabled={disponibles.length === 0}
+                            onChange={alternarHastaElTope}
+                            label={todosMarcados
+                                ? 'Quitar la marca de todos'
+                                : (disponibles.length > caben
+                                    ? `Marcar ${caben} (es el máximo)`
+                                    : `Marcar los ${disponibles.length}`)}
+                            disabled={disponibles.length === 0 || caben === 0}
                         />
                         {/* Cuántos hay de verdad contra cuántos se muestran. El RPC
                             devuelve hasta 400 y el total sin tope, así que una lista
@@ -185,7 +208,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                         enorme y un scroll que no terminaba. `contain` corta esa
                         propagación: lo de adentro deja de contar para el alto de
                         afuera. */}
-                    <div className="rounded-lg border border-border-card overflow-hidden [contain:layout_paint]">
+                    <div className="rounded-lg border border-border-card overflow-hidden [contain:layout]">
                     <ul className="max-h-64 overflow-y-auto overscroll-contain divide-y divide-border-card">
                         {filas.map((p) => {
                             const yaEsta = yaSet.has(Number(p.id));
@@ -206,7 +229,23 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                     </ul>
                     </div>
 
-                    <Button icon={Plus} onClick={agregar} disabled={cuantos === 0} className="w-full">
+                    {/* El tope se dice ANTES de agregar. La base lo rechaza igual,
+                        pero enterarse al guardar —después de elegir 150— es perder
+                        el trabajo entero. */}
+                    {caben === 0 && (
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            La promoción ya tiene {TOPE_PRODUCTOS} productos, que es el máximo.
+                            Quita alguno para agregar otro.
+                        </Notice>
+                    )}
+                    {caben > 0 && sePasa && (
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            Caben {caben} más — una promoción admite hasta {TOPE_PRODUCTOS} productos.
+                        </Notice>
+                    )}
+
+                    <Button icon={Plus} onClick={agregar}
+                        disabled={cuantos === 0 || sePasa || caben === 0} className="w-full">
                         {cuantos === 0
                             ? 'Marca los que entran'
                             : `Agregar ${cuantos} ${cuantos === 1 ? 'producto' : 'productos'}`}

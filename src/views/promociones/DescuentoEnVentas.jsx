@@ -90,7 +90,7 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
         <div className="rounded-lg border border-border-card bg-surface-card-hover p-3 space-y-3">
             <Checkbox
                 checked={!!valor.activo}
-                onChange={(e) => onCambiar('activo', e.target.checked)}
+                onChange={(v) => onCambiar('activo', v)}
                 label="Además baja el precio en la venta"
                 description="El sistema de ventas le descuenta al renglón cuando se vende cualquiera de estos productos."
             />
@@ -144,7 +144,7 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                             {alcanceTodo && (
                                 <Checkbox
                                     checked={!!valor.todas}
-                                    onChange={(e) => onCambiar('todas', e.target.checked)}
+                                    onChange={(v) => onCambiar('todas', v)}
                                     label="En todas las salas"
                                     description="Sin esto, el descuento vale sólo en la sala que elijas."
                                 />

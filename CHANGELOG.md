@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1005.7 — La casilla del descuento responde, y el tope de 50 avisa al agregar
+
+Tres cosas reportadas con captura, y la primera **la había respondido mal**.
+
+### «Además baja el precio en la venta» no se podía marcar
+
+Cuando lo preguntó la primera vez contesté que sí se podía. **Era falso.**
+Medido ahora en el navegador: `disabled: false`, el click llega, `pointerEvents`
+en `auto`… y `checked` seguía en `false` después de tocarla.
+
+La causa es un contrato que **supuse en vez de leer**: `Checkbox` llama
+`onChange(checked, evento)` — **el booleano PRIMERO**. Yo escribí
+`onChange={(e) => onCambiar('activo', e.target.checked)}`, tratando el primer
+argumento como un evento; sobre un booleano, `.target` es `undefined` y leerle
+`.checked` lanza. Estaba en **tres** casillas que escribí hoy: «Además baja el
+precio», «En todas las salas» del formulario y la misma del modal de corregir.
+
+### El tope de 50 avisaba al GUARDAR
+
+`crear_promocion` rechaza más de 50 productos desde antes —`DEMASIADOS_PRODUCTOS`—
+y agregar en bloque volvió trivial cruzarlo: los 150 de un laboratorio entran de
+un clic. El freno llegaba al final, con el trabajo hecho.
+
+Ahora el bloque de agregar conoce el tope: «Marcar 50 (es el máximo)» en vez de
+«Marcar los 150», el botón se bloquea si la selección se pasa, y un aviso dice
+cuántos caben. Verificado: con MEDIKEM el rótulo sale «Marcar 50 (es el máximo)»
+y el botón «Agregar 50 productos» queda habilitado.
+
+### El scroll
+
+La contención pasa de `[contain:layout_paint]` a **`[contain:layout]`**: medido,
+corta igual la propagación del `scrollHeight` al modal (1093 contra los 7269 de
+antes) sin tocar el pintado, que es lo que podía alterar cómo se siente el
+scroll.
+
 ## v2.1005.6 — El formulario y el procedimiento se reordenan, y el nombramiento pierde el recuadro
 
 Cuatro observaciones del usuario sobre los documentos entregados.

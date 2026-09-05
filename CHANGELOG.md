@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1015.2 — El correo de la Empresa entra en los cuatro documentos
+
+`Farmasalud.sv@gmail.com`, dado por el usuario. Cierra el **Art. 7 letra c)**,
+que exige el correo electrónico del responsable entre lo que se informa al
+recoger los datos. Era uno de los dos pendientes; queda el nombre del delegado.
+
+No va sólo en la cláusula de identificación: **es un canal de solicitud**, y eso
+tiene una consecuencia que hay que dejar escrita en el mismo movimiento. El
+**Art. 20** cuenta los veinte días hábiles desde la recepción, y por correo la
+recepción es **la fecha del mensaje**, no el día en que alguien lo abre. Un buzón
+que se revisa cuando hay tiempo convierte un plazo legal en una lotería.
+
+Por eso el correo entra en cuatro sitios y no en uno:
+
+| documento | qué dice |
+|---|---|
+| **Aviso**, cláusula 1 | el correo del responsable, junto al domicilio y el teléfono |
+| **Aviso**, cláusula 8 | tercer canal de solicitud, y que por correo la fecha es la del mensaje |
+| **Formulario**, en el acuse | dónde consultar por una solicitud ya presentada |
+| **Nombramiento**, cláusula 4 | llena el espacio que estaba en blanco, y fija que el delegado **revisa ese buzón todos los días hábiles** |
+| **Procedimiento** `FLS-PRO-03` | el canal y la misma regla de la fecha, más la obligación de revisarlo en la tabla de quién hace qué |
+
+El nombramiento tenía ahí una raya que decía «si la Empresa habilita un correo».
+Ya lo habilitó, así que la raya se fue y en su lugar quedó la obligación.
+
 ## v2.1015.1 — El aviso cierra los dos huecos del contraste con la ley
 
 Contraste artículo por artículo, pedido por el usuario: que no falte nada y que

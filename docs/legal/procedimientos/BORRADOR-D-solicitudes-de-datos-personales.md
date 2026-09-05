@@ -46,7 +46,7 @@ lo que la sala necesita saber está en los numerales 4, 5 y 6.
 
 | Quién | Qué le toca |
 |---|---|
-| **Delegado de protección de datos** | `[nombre]`. Recibe, tramita y resuelve. Firma la respuesta |
+| **Delegado de protección de datos** | `[nombre]`. Recibe, tramita y resuelve. Firma la respuesta. Revisa **Farmasalud.sv@gmail.com** todos los días hábiles |
 | **Sustituto** | `[nombre]`. Asume durante ausencias, vacaciones o incapacidad. Los plazos no se suspenden |
 | **Jefe o jefa de sala** | Entrega el formulario, comprueba la identidad, sella el acuse y remite la solicitud el mismo día |
 | **Cualquier empleado o proveedor** | Está obligado a asistir al delegado en lo que éste le pida (**Art. 17**) |
@@ -69,8 +69,10 @@ esa fecha depende todo el plazo.
 
 ## 5 · Cómo se recibe una solicitud
 
-1. La persona puede presentarla **en cualquier sala de ventas** o llamando al
-   **2301-0013**.
+1. La persona puede presentarla **en cualquier sala de ventas**, llamando al
+   **2301-0013** o escribiendo a **Farmasalud.sv@gmail.com**. Ese buzón se revisa todos los días
+   hábiles, y **la fecha del mensaje es la fecha de recepción**: el plazo corre
+   desde ahí, no desde que alguien lo abre.
 2. **Si sólo llama o lo pide de palabra**, se le explica que para entregarle
    información tiene que presentarse con su documento, y se le dice qué traer.
    Se anota el llamado con su fecha. Una solicitud verbal es válida, pero

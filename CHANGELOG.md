@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1002.1 — El aviso de descuentos habla en español
+
+Encontrado auditando el módulo con el barrido en teléfono, y es la regla que ya
+estaba escrita: **la pantalla llegó a decir «Failed to send a request to the
+Edge Function»** — en inglés y nombrando la tubería.
+
+El canónico `mensajeAmigable` **ya traducía ese caso** (su lista de patrones
+tiene `/\bnon-2xx\b|\bedge function\b/i` desde el 2-sep). Lo que faltaba era
+usarlo: la pestaña pintaba `errorDesc.message` crudo mientras las otras cinco
+de la misma vista sí pasaban por el canónico. Ahora dice «No se pudieron
+consultar los descuentos. Vuelve a intentar en un momento.»
+
+**El defecto no lo vio ningún gate y no podía verlo**: sólo aparece cuando la
+llamada al sistema de ventas falla, y sólo se leyó abriendo la captura del
+barrido. Es la misma lección de la tanda de móvil — compilar y pasar los gates
+no prueba nada sobre lo que se ve.
+
 ## v2.1002.0 — El descuento en ventas se decide al crear la promoción
 
 Corregido por el usuario sobre lo que salió en v2.1001.0:

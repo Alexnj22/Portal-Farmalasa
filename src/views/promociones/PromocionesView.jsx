@@ -11,6 +11,7 @@ import { fetchPromociones } from '../../data/promociones';
 import { fetchDescuentos } from '../../data/descuentos';
 import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
+import { mensajeAmigable } from '../../utils/errorMessages';
 import { textoBuscable } from './promocionesUtils';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
@@ -202,9 +203,15 @@ export default function PromocionesView() {
                 return <LoadingState label="Consultando los descuentos…" />;
             }
             if (errorDesc) {
+                /* Por `mensajeAmigable` y NO por `.message` crudo. Medido en el
+                   barrido del teléfono: la pantalla llegó a decir «Failed to
+                   send a request to the Edge Function» —en inglés y nombrando
+                   la tubería, que es lo que la regla de copy prohíbe—. El
+                   canónico ya traduce ese caso; lo que faltaba era usarlo. */
                 return (
                     <Notice variant="danger" icon={AlertTriangle}>
-                        {errorDesc.message || 'No se pudieron consultar los descuentos. Vuelve a intentar en un momento.'}
+                        {mensajeAmigable(errorDesc,
+                            'No se pudieron consultar los descuentos. Vuelve a intentar en un momento.')}
                     </Notice>
                 );
             }

@@ -12,7 +12,9 @@ import { fetchDescuentos } from '../../data/descuentos';
 import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { textoBuscable } from './promocionesUtils';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import SegmentedControl from '../../components/common/SegmentedControl';
+import { estadoVisible, esLaboratorio, textoBuscable } from './promocionesUtils';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';
@@ -53,6 +55,17 @@ import MatrizLaboratorioModal from './MatrizLaboratorioModal';
  * Por eso se carga sólo cuando se abre su pestaña — cada visita son varias
  * peticiones a un sistema ajeno.
  */
+/* Los estados que la pantalla PINTA, en el orden en que se buscan. Salen de
+   `estadoVisible`, que es quien los decide: escribirlos aparte los dejaría
+   desincronizados de las tarjetas el día que se agregue uno. */
+const ESTADOS = [
+    { value: 'activa',     label: 'Activa' },
+    { value: 'por_vencer', label: 'Por vencer' },
+    { value: 'vencida',    label: 'Vencida' },
+    { value: 'borrador',   label: 'Borrador' },
+    { value: 'finalizada', label: 'Terminada' },
+];
+
 export default function PromocionesView() {
     const { hasPermission, permsLoading } = useAuth();
     const puedeEditar  = hasPermission('promociones', 'can_edit');
@@ -69,6 +82,14 @@ export default function PromocionesView() {
 
     const [tab, setTab] = usePestanaEnUrl(tabs, 'activas');
     const [busqueda, setBusqueda] = useState('');
+
+    /* Los filtros de la vista. Van en la píldora del cuerpo porque ahí es donde
+       se mira qué está recortado (§17), y no existían: `get_promociones` acepta
+       `p_estado` y `p_tipo` desde que nació y la pantalla nunca los usó, así que
+       la píldora quedaba con dos botones y ningún filtro — una isla. */
+    const [fTipo, setFTipo] = useState('');       // '' | 'producto' | 'laboratorio'
+    const [fEstado, setFEstado] = useState('');   // '' | activa | borrador | finalizada
+    const [fLab, setFLab] = useState('');         // nombre de laboratorio
 
     const [promos, setPromos] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -120,7 +141,9 @@ export default function PromocionesView() {
     useEffect(() => {
         if (tab !== 'descuentos') return undefined;
         let vivo = true;
-        setCargandoDesc(true); // eslint-disable-line react-hooks/set-state-in-effect -- los descuentos viven en un sistema ajeno: no hay forma de tenerlos antes de pedirlos
+        // Los descuentos viven en un sistema ajeno: no hay forma de tenerlos
+        // antes de pedirlos, así que el cargador se enciende acá.
+        setCargandoDesc(true);
         setErrorDesc(null);
         fetchDescuentos()
             .then(({ descuentos: filas, alcanceTodo: todo }) => {
@@ -133,11 +156,33 @@ export default function PromocionesView() {
         return () => { vivo = false; };
     }, [tab, recargaDesc]);
 
+    /* Los laboratorios que de verdad aparecen, sacados de las promociones —no de
+       una lista escrita a mano ni del catálogo entero—: ofrecer un laboratorio
+       que no tiene ninguna promoción es ofrecer un filtro que sólo puede dar
+       vacío. */
+    const labsDisponibles = useMemo(() => {
+        const vistos = new Set();
+        for (const p of promos) for (const l of (p.laboratorios || [])) vistos.add(l);
+        return [...vistos].sort((a, b) => a.localeCompare(b, 'es'));
+    }, [promos]);
+
     const filtradas = useMemo(() => {
         const q = busqueda.trim().toLowerCase();
-        if (!q) return promos;
-        return promos.filter((p) => textoBuscable(p).includes(q));
-    }, [promos, busqueda]);
+        return promos.filter((p) => {
+            if (q && !textoBuscable(p).includes(q)) return false;
+            if (fTipo && (esLaboratorio(p) ? 'laboratorio' : 'producto') !== fTipo) return false;
+            /* Por el estado VISIBLE y no por `p.estado`: la pantalla pinta
+               «Vencida» y «Por vencer», que no son estados guardados sino una
+               lectura de la fecha. Filtrar por el de la base ofrecería opciones
+               que no coinciden con lo que se ve en las tarjetas. */
+            if (fEstado && estadoVisible(p).clave !== fEstado) return false;
+            if (fLab && !(p.laboratorios || []).includes(fLab)) return false;
+            return true;
+        });
+    }, [promos, busqueda, fTipo, fEstado, fLab]);
+
+    const filtrosPuestos = [fTipo, fEstado, fLab].filter(Boolean).length;
+    const limpiarFiltros = useCallback(() => { setFTipo(''); setFEstado(''); setFLab(''); }, []);
 
     /* Busca por nombre del descuento y también por el de sus productos: quien
        pregunta «¿este producto tiene descuento?» escribe el producto. */
@@ -188,6 +233,17 @@ export default function PromocionesView() {
                 onClick: () => setModalLab(true),
             },
         ];
+
+    /* Sólo donde los filtros recortan lo que se ve. Seguimiento e Histórico sí
+       listan promociones; Descuentos sale del sistema de ventas y Excedentes y
+       Liquidación miran otra cosa.
+
+       ⚠️ Va DESPUÉS de `acciones` y no antes: leerlo arriba de su `const` no da
+       `undefined`, LANZA en cada render y se lleva la vista entera al
+       ErrorBoundary. Lo cazó `npm run gate:tdz` — el aviso del navegador traía
+       el nombre minificado y una pila apuntando a react-dom. */
+    const muestraFiltros = ['activas', 'seguimiento', 'historico'].includes(tab)
+        && (acciones.length > 0 || promos.length > 0);
 
     /* Los tres estados van separados a propósito. Un rechazo de permiso NO se
        puede ver como una lista vacía: deja a la persona sin nada que reportar
@@ -273,7 +329,69 @@ export default function PromocionesView() {
             transparentBody
         >
             <div className="p-4 md:p-6 space-y-6">
-                {acciones.length > 0 && <FilterBar acciones={acciones} />}
+                {/* La píldora del cuerpo: TODO el filtro de la vista y todas sus
+                    acciones (§17). Antes llevaba sólo los dos botones y ningún
+                    filtro, así que se leía como dos controles flotando en una
+                    caja sin motivo — reportado con captura.
+
+                    Los filtros son de las promociones, así que la barra no se
+                    dibuja en las pestañas que muestran otra cosa (Descuentos
+                    tiene su propia fuente; Excedentes y Liquidación no listan
+                    promociones): una píldora que ofrece recortes que no
+                    afectan a lo que se está mirando es peor que ninguna. */}
+                {muestraFiltros && (
+                    <FilterBar
+                        acciones={acciones}
+                        activeCount={filtrosPuestos}
+                        onClear={filtrosPuestos > 0 ? limpiarFiltros : undefined}
+                    >
+                        <FilterBar.Section label="tipo" active={!!fTipo}
+                            onClear={() => setFTipo('')}>
+                            <SegmentedControl
+                                value={fTipo}
+                                onChange={setFTipo}
+                                /* Rótulos cortos: con «Por producto» / «Por
+                                   laboratorio» el segmentado se partía en dos
+                                   renglones y engordaba la píldora entera. El
+                                   «por» ya lo dice la etiqueta de la sección. */
+                                options={[
+                                    { value: '', label: 'Todas' },
+                                    { value: 'producto', label: 'Producto' },
+                                    { value: 'laboratorio', label: 'Laboratorio' },
+                                ]}
+                                size="sm"
+                            />
+                        </FilterBar.Section>
+
+                        <FilterBar.Section label="estado" active={!!fEstado}
+                            onClear={() => setFEstado('')}>
+                            <LiquidSelect
+                                value={fEstado}
+                                onChange={(v) => setFEstado(v || '')}
+                                options={ESTADOS}
+                                placeholder="Cualquiera"
+                                clearLabel="Cualquiera"
+                                compact
+                                ariaLabel="Estado de la promoción"
+                            />
+                        </FilterBar.Section>
+
+                        {labsDisponibles.length > 1 && (
+                            <FilterBar.Section label="laboratorio" active={!!fLab}
+                                onClear={() => setFLab('')}>
+                                <LiquidSelect
+                                    value={fLab}
+                                    onChange={(v) => setFLab(v || '')}
+                                    options={labsDisponibles.map((l) => ({ value: l, label: l }))}
+                                    placeholder="Todos"
+                                    clearLabel="Todos"
+                                    compact
+                                    ariaLabel="Laboratorio"
+                                />
+                            </FilterBar.Section>
+                        )}
+                    </FilterBar>
+                )}
 
                 {/* El aviso va una sola vez y arriba de todo: la pantalla no
                     puede prometer un pago que hoy no existe.

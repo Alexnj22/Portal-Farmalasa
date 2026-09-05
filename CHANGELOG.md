@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1003.0 — Promociones: la píldora tiene sus filtros y el corte del lote es 2× más liviano
+
+Dos cosas de la auditoría del módulo, y la lección de la segunda vale más que
+la mejora.
+
+### La píldora tenía dos botones y ningún filtro
+
+Reportado con captura: la barra de acciones se veía como dos controles flotando
+en una caja sin motivo. El §17 dice que esa píldora lleva «TODO el filtro de la
+vista y todas sus acciones» — y Promociones no ofrecía ninguno, aunque
+`get_promociones` acepta `p_estado` y `p_tipo` **desde que nació**.
+
+Ahora lleva **tipo** (todas / producto / laboratorio), **estado** y
+**laboratorio**. Tres decisiones:
+
+- El estado filtra por el **visible**, no por `promociones.estado`: la pantalla
+  pinta «Vencida» y «Por vencer», que no son estados guardados sino una lectura
+  de la fecha. Filtrar por el de la base ofrecería opciones que no coinciden con
+  lo que dicen las tarjetas.
+- Los laboratorios salen de las promociones que hay, no del catálogo: ofrecer
+  uno sin promociones es ofrecer un filtro que sólo puede dar vacío.
+- La barra no se dibuja en Descuentos, Excedentes ni Liquidación — una píldora
+  que ofrece recortes que no afectan lo que se mira es peor que ninguna.
+
+Y al escribirlo introduje un **TDZ**: `muestraFiltros` leía `acciones` 40 líneas
+antes de su `const`. Eso no da `undefined` — **lanza en cada render** y se llevó
+la vista entera al ErrorBoundary. El aviso del navegador decía «Cannot access
+'ia' before initialization» con la pila apuntando a react-dom. Lo cazó
+`npm run gate:tdz` señalando la línea exacta.
+
+### `promocion_corte_del_lote`: 9,498 → 5,056 bloques
+
+Es lo que usan la liquidación mensual y el ciclo diario. Su CTE `facturas`
+materializaba **todas** las facturas del rango: medido con una promoción de un
+producto y un mes, bajaba 21,603 facturas para quedarse con 64. Y el ciclo
+diario la llama sin filtro, con el rango de `min(inicio)..max(fin)` de todas las
+promociones — dos campañas en extremos del año materializan el año entero
+(268,222 facturas, 148 MB, con spill a disco).
+
+Ahora entra por los renglones de venta, donde el producto filtra fuerte y hay
+índice. **El cálculo no cambia una línea**: verificado con huella md5 del
+resultado completo — 30 filas, 129 unidades, $129 de bono, idénticas.
+
+### Y la misma reescritura en su hermana era una REGRESIÓN
+
+`promocion_avance` recibió el mismo cambio y hubo que revertirlo. La diferencia
+entre las dos es **una columna**: `promocion_avance` no pide `cod_vendedor`, así
+que `idx_si_fecha_estado_branch` la cubre entera y entra por **Index Only Scan**.
+Filtrar por `si.id IN (items)` la obliga a ir al heap por cada factura.
+
+| un año, 12 productos | original | reescrita |
+|---|---:|---:|
+| bloques | **4,911** | 7,098 |
+| tiempo | **805 ms** | 1,815 ms |
+
+Lo que la delató fueron los **bloques**, que subieron de 3,574 a 4,165 mientras
+el reloj bajaba de 31.6 a 12.1 ms. Con el reloj solo, la regresión pasaba por
+mejora.
+
 ## v2.1002.1 — El aviso de descuentos habla en español
 
 Encontrado auditando el módulo con el barrido en teléfono, y es la regla que ya

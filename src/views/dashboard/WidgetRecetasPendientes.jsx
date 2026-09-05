@@ -62,7 +62,7 @@ export default function WidgetRecetasPendientes() {
     const puedeCompletar = hasPermission('bitacoras', 'can_edit');
     const miSala = user?.branchId ?? user?.branch_id ?? null;
     const branches = useStaff((st) => st.branches);
-    // Sólo las salas de venta dispensan. En Bodega o Administración un «sin
+    // Sólo las salas de ventas dispensan. En Bodega o Administración un «sin
     // pendientes» se leería como «todo al día», cuando en realidad ahí no se
     // vende — y ese matiz importa cuando el widget existe para no olvidarse.
     const dispensa = (branches || []).some(
@@ -95,13 +95,13 @@ export default function WidgetRecetasPendientes() {
     if (!miSala) {
         return <EmptyState icon={Pill} compact
             title="Sin sala asignada"
-            subtitle="El libro bajo receta es de una sala de venta." />;
+            subtitle="El libro bajo receta es de una sala de ventas." />;
     }
 
     if (!dispensa) {
         return <EmptyState icon={Pill} compact
             title="Aquí no se dispensa"
-            subtitle="El libro bajo receta es de las salas de venta." />;
+            subtitle="El libro bajo receta es de las salas de ventas." />;
     }
 
     if (!filas.length) {

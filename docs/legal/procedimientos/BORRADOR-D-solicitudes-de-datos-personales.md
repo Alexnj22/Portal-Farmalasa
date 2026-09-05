@@ -37,7 +37,7 @@ Aplica a toda solicitud presentada por un cliente, un empleado, quien realiza
 horas sociales o una pasantía, un proveedor, o el representante de cualquiera de
 ellos, sobre los datos descritos en el aviso de privacidad.
 
-Aplica en **todas las salas de venta** y en la administración.
+Aplica en **todas las salas de ventas** y en la administración.
 
 **La sala no resuelve la solicitud.** La recibe correctamente y la remite. Todo
 lo que la sala necesita saber está en los numerales 4, 5 y 6.
@@ -69,7 +69,7 @@ esa fecha depende todo el plazo.
 
 ## 5 · Cómo se recibe una solicitud
 
-1. La persona puede presentarla **en cualquier sala de venta** o llamando al
+1. La persona puede presentarla **en cualquier sala de ventas** o llamando al
    **2301-0013**.
 2. **Si sólo llama o lo pide de palabra**, se le explica que para entregarle
    información tiene que presentarse con su documento, y se le dice qué traer.
@@ -243,5 +243,5 @@ documenta la fecha, el motivo, los hechos, los efectos y las medidas adoptadas.
 ## 13 · Anexo
 
 **Formulario de solicitud sobre datos personales.** Se mantiene impreso y
-disponible en todas las salas de venta. Consta de dos partes: la solicitud, que
+disponible en todas las salas de ventas. Consta de dos partes: la solicitud, que
 se remite al delegado, y el acuse, que se sella y se entrega a la persona.

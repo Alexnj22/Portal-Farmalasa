@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1006.2 — El formulario se dirige al cliente y todo el portal dice sala de ventas
+
+Siete observaciones del usuario leyendo el formulario impreso. Casi todas eran
+rótulos que sólo se entienden si ya se sabe la respuesta.
+
+| Decía | Dice |
+|---|---|
+| «Solicitud sobre sus datos» | **Solicitud sobre sus datos personales** |
+| «Número» a secas | **Número del documento**, porque al lado de la dirección y el teléfono no se sabía de qué número hablaba |
+| «Documento de la representación» | **Documento que autoriza a representar** |
+| «se anota la clase y el número» | **se anota qué documento es y cuál es su número** |
+| «Aquí en la sala» | **En la sala de ventas** |
+| «Impresa, a su dirección» | **Impresa** |
+| «Traiga su documento de identidad» | **Para presentarla es indispensable mostrar el documento de identidad** |
+
+**Fuera los términos legales entre paréntesis** de las ocho casillas. Estaban
+para que el delegado supiera qué plazo aplicar, pero el **Art. 18 letra e)** pide
+«la descripción del derecho que se pretende ejercer, **o bien, lo que solicita el
+titular**»: la frase sola basta, y el paréntesis sólo sirve a quien ya conoce la
+ley.
+
+**Fuera la nota del costo del papel**, que ya está en el aviso de privacidad y en
+el acuse.
+
+**El apartado 3 no decía qué escribir.** Se llamaba «Sobre qué información» y su
+única indicación era cuándo dejarlo en blanco. Ahora se llama «A qué información
+se refiere» y da tres ejemplos concretos: el número de teléfono, la dirección, o
+las compras de un mes determinado.
+
+### El acuse dejó de ser un talón suelto
+
+Es lo único de la hoja que el cliente se lleva a su casa, y salía sin marca:
+fuera de la farmacia no se distinguía de un papel cualquiera. Ahora va
+**enmarcado, con el logo y su propio encabezado** («Acuse de recibo», con el
+número de formulario debajo), y recoge además el **documento de identidad** de
+quien solicita, que antes no aparecía. El marco no es adorno: al cortarlo pierde
+el borde de la hoja que lo contenía.
+
+### «Sala de ventas», en singular no
+
+Instrucción del usuario: siempre en plural, en todos lados. Estaba dicho de las
+dos formas, **10 veces en singular y 8 en plural** entre los documentos legales,
+más tres sitios del portal. Normalizadas las 20.
+
+Efecto secundario que conviene saber: el reglamento del programa de puntos pasó
+de 4 a 5 páginas, y la quinta lleva sólo el pie de firma. Nueve letras de más
+bastaron para empujarlo. No se tocó su maquetado para evitarlo, porque ajustar
+el espacio de la firma cambiaría también el del aviso de privacidad, que comparte
+generador.
+
 ## v2.1006.1 — El formulario habla como el portal y pide solo lo que el Art. 18 exige
 
 Pedido del usuario: más sencillo, con la voz del portal, con lo mínimo que la

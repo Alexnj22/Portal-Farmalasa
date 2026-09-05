@@ -471,7 +471,10 @@ function GeneralDeLaPromocion({ valor, onCambiar, proveedores }) {
 
     return (
         <div className="rounded-lg border border-border-card bg-surface-card-hover p-3 space-y-3">
-            <div className="grid gap-3 sm:grid-cols-3">
+            {/* `items-start`: sin él, el grid estira cada celda al alto de la
+                más alta y el campo de fecha —que mide 40px— salía de 140.
+                Medido el 2026-09-05. */}
+            <div className="grid gap-3 sm:grid-cols-3 items-start">
                 <Campo rotulo="Empieza" falta={!valor.inicio}>
                     <LiquidDatePicker value={valor.inicio} onChange={(v) => onCambiar('inicio', v)} />
                 </Campo>
@@ -581,7 +584,13 @@ function RenglonListo({ r, proveedores, onEditar, onQuitar }) {
  */
 function Campo({ rotulo, falta = false, children }) {
     return (
-        <div className="flex flex-col gap-1 min-w-0">
+        /* `space-y-1` en BLOQUE y no `flex flex-col`: `LiquidDatePicker`
+           declara `basis-[140px]` —su ANCHO cuando vive en una fila— y en un
+           contenedor `flex-col` ese basis manda sobre el eje VERTICAL, así que
+           su ancho se convertía en 140px de ALTO. Medido el 2026-09-05: el
+           control declara `h-[max(40px,var(--tap-min))]` y computaba 140px.
+           En un contenedor `block`, `flex-basis` no aplica. */
+        <div className="space-y-1 min-w-0">
             <span className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
                 {rotulo}
                 {falta && <span className="text-danger" aria-label="requerido">*</span>}

@@ -456,7 +456,13 @@ function useSalasDeVenta() {
 /** El rótulo de un control que no trae el suyo — `LiquidSelect` no lleva. */
 function Campo({ rotulo, falta = false, children }) {
     return (
-        <div className="flex flex-col gap-1 min-w-0">
+        /* `space-y-1` en BLOQUE y no `flex flex-col`: `LiquidDatePicker`
+           declara `basis-[140px]` —su ANCHO cuando vive en una fila— y en un
+           contenedor `flex-col` ese basis manda sobre el eje VERTICAL, así que
+           su ancho se convertía en 140px de ALTO. Medido el 2026-09-05: el
+           control declara `h-[max(40px,var(--tap-min))]` y computaba 140px.
+           En un contenedor `block`, `flex-basis` no aplica. */
+        <div className="space-y-1 min-w-0">
             <span className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
                 {rotulo}
                 {falta && <span className="text-danger" aria-label="requerido">*</span>}

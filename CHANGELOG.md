@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1005.3 — El campo de fecha vuelve a medir 40px
+
+Reportado con captura: «¿por qué la fecha se ve así?». Los dos campos de
+vigencia salían como cajas altas y casi vacías, con el texto flotando al medio.
+
+**El control declara 40px y computaba 140.** La causa está en una línea de su
+propio `className`: `LiquidDatePicker` termina en **`basis-[140px]`**, que es su
+ANCHO cuando vive en una fila —el ancho que quiere ocupar en una píldora de
+filtros—. Pero el envoltorio `Campo` de este módulo es `flex flex-col`, y en un
+contenedor de columna **`flex-basis` manda sobre el eje VERTICAL**: su ancho se
+convertía en 140px de alto.
+
+La corrección es del envoltorio, no del control: `Campo` pasa a `space-y-1` en
+BLOQUE, donde `flex-basis` no aplica. Medido antes y después: el control de
+140px → **40px**, y su celda de 161 → **61**.
+
+**Estaba en las SIETE copias de `Campo` del módulo** —una por archivo, todas
+`flex flex-col gap-1 min-w-0`— así que el mismo defecto vivía en el editor de
+promoción, el de laboratorio, el de descuento, la matriz y la liquidación.
+Corregidas las siete.
+
+**Lo que casi me hace buscar donde no era:** el primer intento fue poner
+`items-start` en el grid, dando por hecho que lo estiraba la fila. No cambió
+nada —161 y 140 idénticos— y ése fue el dato que descartó al grid y mandó a
+mirar el `className` del propio control. Sin medir después del cambio, habría
+quedado un `items-start` inútil y el defecto vivo.
+
 ## v2.1005.2 — El aviso de privacidad se acorta sin soltar ningún punto exigible
 
 Pregunta del usuario: «¿seguro que el aviso no es demasiado?». Lo era, y el

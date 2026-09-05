@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1016.2 — El afiche tutea, como el de puntos
+
+«El texto es el que no me convence, que sea empresarial, como el afiche de
+puntos». Al poner los dos textos uno al lado del otro, la diferencia no era de
+tono: era **de persona gramatical**.
+
+El afiche de puntos **tutea** de punta a punta: «ya no **tienes** que pedirlos»,
+«solo **identifícate** antes de pagar», «**tu** saldo», «los que **quieras**». Yo
+había escrito el de privacidad en **usted**, porque lo redacté al lado del aviso,
+que sí es un documento legal y sí lleva usted.
+
+**Un afiche de vitrina no es un documento legal**, y ésa es la corrección de
+fondo: es la misma pieza que el de puntos, colgada en la misma pared, leída por
+la misma persona de pie. Todo el texto pasó a tuteo, y con él vinieron las otras
+dos diferencias que se ven al comparar:
+
+- **Frases de cinco palabras.** «Los puntos se acumulan solos» contra «Su
+  información le pertenece. Usted decide». El titular quedó **«Puedes ver lo que
+  tenemos de ti»**: un hecho, no una declaración de principios.
+- **Encabezados de dos palabras.** El de puntos usa «Vigencia», «Mínimo 100»,
+  «Donde quieras». Acá quedaron «Aquí mismo», «O sin venir», «Trae tu documento».
+
+**Se fueron los dos rótulos de sección** que había agregado en la pasada
+anterior. El afiche de puntos no los tiene: separa los bloques con una regla y
+nada más, y funciona. Quitarlos devolvió además la página que se había perdido.
+
+El pie sigue la misma forma que el del reglamento —«está en cualquier sala de
+ventas y en el código QR de arriba»— y suma la única condición que no se puede
+resolver a distancia: para entregar la información hay que ver el documento.
+
+**Los ocho nombres de los derechos se conservan** tal cual, porque son los de la
+ley. Lo que cambió es su explicación, que ahora cabe en un renglón.
+
 ## v2.1016.1 — La redacción del afiche
 
 Pasada de redacción sobre el afiche, sin tocar el diseño. Catorce cambios, y

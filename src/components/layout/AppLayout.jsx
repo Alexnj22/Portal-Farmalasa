@@ -142,6 +142,10 @@ const MENU_GROUPS = [
     // módulo el grupo se pinta plano, así que queda a un clic desde cualquier
     // pantalla en vez de detrás de un acordeón.
     { key: 'bitacoras',    label: 'Bitácoras',     icon: Thermometer,   modules: ['bitacoras'] },
+    // Vecino de Bitácoras y por el mismo motivo: es el expediente que otra
+    // autoridad —la Agencia de Ciberseguridad del Estado— puede pedir ver, y
+    // quien lo abre entra por eso. Grupo propio y plano, con un solo módulo.
+    { key: 'datos_personales', label: 'Solicitudes de datos', icon: ShieldCheck, modules: ['datos_personales'] },
     // «Facturas de Sala» entra acá y no en Datos Contables: quien revisa que la
     // factura tomada haya quedado cargada como compra trabaja en este grupo, no
     // en el de los documentos que llegan por correo. Decisión del usuario

@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1009.2 — Solicitudes de datos aparece en el menú
+
+Reportado por el usuario: «no la encuentro como edwin». Eran dos cosas, y la
+primera es un defecto que los gates no podían ver.
+
+**El módulo no estaba en el menú.** Declararlo en `moduleMap` le da la ruta, el
+rótulo y el ícono, y `gate:rutas` y `gate:permisos` pasaron los dos en verde
+porque desde su punto de vista todo estaba declarado. Pero la barra lateral no
+sale de ahí: sale de una lista aparte en `AppLayout.jsx`, y sin una entrada en
+esa lista el módulo **existe, responde por su dirección y no se puede
+encontrar**. No hay error ni pantalla rota: sólo un módulo invisible.
+
+Va en grupo propio y plano, vecino de Bitácoras y por el mismo motivo: es el
+expediente que otra autoridad puede pedir ver, y quien lo abre entra por eso.
+Con sus palabras de búsqueda en el menú, para que se encuentre escribiendo
+«privacidad», «arco» o «delegado».
+
+**Y el permiso.** El módulo arrancó sólo para Gerente General y Administrador;
+el cargo del usuario es Supervisor/a de Ventas, que no lo tenía. Habilitado
+—afecta a una sola persona, que es quien lo pidió— y se puede quitar desde
+Permisos cuando se nombre al delegado y el módulo pase a su cargo.
+
+## v2.1009.1 — El aviso dice cuánto se pierde por unidad
+
+Pedido por el usuario: «puedes poner a la par cuanto se le pierde por unidad».
+
+«Bajo el costo» a secas no dice si son tres centavos o dos dólares, y la
+decisión no es la misma: una campaña puede aceptar perder poco para mover
+volumen, no perder el doble de lo que cuesta. Ahora al lado del aviso va
+**«pierde $X.XX por unidad»** —la resta entre el costo con IVA y en cuánto queda
+el precio—, en las dos pantallas y también en el aviso que devuelve el servidor
+antes de guardar.
+
+Va por unidad y no por renglón porque es la única cifra que se puede multiplicar
+por lo que se espera vender.
+
 ## v2.1009.0 — El registro de solicitudes de datos, con su correlativo y sus plazos
 
 Pedido del usuario, y cierra el hueco que el propio formulario dejaba a la

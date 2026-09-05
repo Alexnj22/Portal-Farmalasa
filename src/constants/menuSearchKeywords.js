@@ -58,6 +58,9 @@ export const MODULE_SEARCH_KEYWORDS = {
     // Las palabras con las que la sala y el regente la buscan de verdad. «SRS»,
     // «DNM» y «BPA» van porque el inspector las nombra así, y «antibiotico»
     // porque es como se le dice al libro aunque cubra todo lo bajo receta.
+    datos_personales:   ['privacidad', 'datos personales', 'arco', 'acceso', 'rectificacion',
+                         'cancelacion', 'oposicion', 'portabilidad', 'olvido', 'limitacion',
+                         'delegado', 'ley de datos', 'solicitud', 'formulario'],
     bitacoras:          ['temperatura', 'humedad', 'termometro', 'refrigerador', 'cadena de frio',
                          'limpieza', 'orden', 'libro de antibioticos', 'antibiotico', 'bajo receta',
                          'receta', 'dispensacion', 'folio', 'regente', 'inspeccion', 'srs', 'dnm', 'bpa'],

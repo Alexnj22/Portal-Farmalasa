@@ -380,6 +380,12 @@ function FilaProducto({ producto, datos, tipo, monto, onQuitar }) {
     const costo = Number(datos?.costo_con_iva) || 0;
     const queda = precio ? precioConDescuento(precio, tipo, monto) : null;
     const bajoCosto = queda !== null && costo > 0 && queda < costo;
+    /* Cuánto se pierde POR UNIDAD. El «bajo el costo» a secas no dice si son
+       tres centavos o dos dólares, y la decisión no es la misma: una campaña
+       puede aceptar perder poco por mover volumen, no perder el doble de lo que
+       cuesta. Va por unidad porque es la única cifra que se puede multiplicar
+       por lo que se espera vender. */
+    const pierde = bajoCosto ? costo - queda : 0;
 
     return (
         <div className="flex items-center gap-2 px-3 py-2.5">
@@ -395,8 +401,13 @@ function FilaProducto({ producto, datos, tipo, monto, onQuitar }) {
                 </p>
             </div>
             {bajoCosto && (
-                <span className="text-caption text-danger font-semibold shrink-0 flex items-center gap-1">
-                    <AlertTriangle size={13} aria-hidden /> bajo el costo
+                <span className="text-caption text-danger font-semibold shrink-0 text-right leading-tight">
+                    <span className="flex items-center gap-1 justify-end">
+                        <AlertTriangle size={13} aria-hidden /> bajo el costo
+                    </span>
+                    <span className="block tabular-nums font-normal">
+                        pierde {formatMoney(pierde)} por unidad
+                    </span>
                 </span>
             )}
             <Button variant="ghost" size="sm" iconOnly icon={Trash2} onClick={onQuitar} title="Quitar" />

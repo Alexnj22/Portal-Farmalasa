@@ -301,7 +301,7 @@ Deno.serve(async (req) => {
           if (queda < costo) {
             avisos.push({
               tipo: "bajo_costo",
-              texto: `${nombres.get(pid) ?? `Producto ${pid}`} quedaría en $${queda.toFixed(2)} y cuesta $${costo.toFixed(2)} con IVA.`,
+              texto: `${nombres.get(pid) ?? `Producto ${pid}`} quedaría en $${queda.toFixed(2)} y cuesta $${costo.toFixed(2)} con IVA: se pierden $${(costo - queda).toFixed(2)} por unidad.`,
             });
           }
         }

@@ -14,7 +14,7 @@
  * imprimirse hoy y volver llena la semana que viene.
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FileText, Loader2, ShieldCheck, Clock } from 'lucide-react';
+import { FileText, Loader2, ShieldCheck, Clock, Search, Printer, Download, UserCheck } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -25,8 +25,12 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { DERECHOS, guardarSolicitud, plazoDe } from '../../data/solicitudesDatos';
+import { DERECHOS, guardarSolicitud, plazoDe, buscarPersona, resumenDeCliente } from '../../data/solicitudesDatos';
+import { papelDeRespuesta, filasParaPortabilidad } from '../../utils/respuestaDeDatos';
+import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '../../utils/ventanaDeImpresion';
+import { exportCsv } from '../../utils/csvExport';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const paraInput = (iso) => {
     if (!iso) return '';
@@ -93,7 +97,58 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
     });
     const [guardando, setGuardando] = useState(false);
 
+    // ── Encontrar a la persona ────────────────────────────────────────────
+    // `null` es «todavía no se buscó» y un objeto es «se buscó»: son estados
+    // distintos, y pintar «no se encontró» antes de haber buscado sería mentir.
+    const [hallazgo, setHallazgo] = useState(null);
+    const [buscando, setBuscando] = useState(false);
+
     useEffect(() => { saveDraft(claveBorrador, f); }, [claveBorrador, f]);
+
+    const buscar = async () => {
+        setBuscando(true);
+        try {
+            const r = await buscarPersona({
+                numero: f.identidad_numero || f.solicitante_numero,
+                nombre: f.solicitante_nombre,
+            });
+            // El resumen se pide sólo cuando hay UNA ficha: con varias, elegir
+            // por nosotros es adivinar de quién son los datos que se entregan.
+            const cliente = r.clientes.length === 1 ? r.clientes[0] : null;
+            const resumen = cliente ? await resumenDeCliente(cliente.id) : null;
+            setHallazgo({ ...r, cliente, empleado: r.empleados.length === 1 ? r.empleados[0] : null, resumen });
+        } catch (e) {
+            showToast('No se pudo buscar', mensajeAmigable(e), 'error');
+        } finally {
+            setBuscando(false);
+        }
+    };
+
+    const imprimirRespuesta = () => {
+        const win = abrirVentanaDeImpresion({ ancho: 900, alto: 1000 });
+        if (!win) { showToast('No se pudo imprimir', VENTANA_BLOQUEADA, 'error'); return; }
+        const r = escribirEImprimir(win, papelDeRespuesta({
+            solicitud: { ...solicitud, solicitante_nombre: f.solicitante_nombre, recibida_at: f.recibida_at },
+            cliente: hallazgo?.cliente ?? null,
+            empleado: hallazgo?.empleado ?? null,
+            resumen: hallazgo?.resumen ?? null,
+        }));
+        useStaff.getState().appendAuditLog?.('ENTREGAR_DATOS_SOLICITUD', String(solicitud.id),
+            { folio: solicitud.folio_txt, formato: 'papel' });
+        if (!r.ok) showToast('No se pudo imprimir', r.motivo ?? 'La ventana no respondió.', 'error');
+    };
+
+    const descargarArchivo = () => {
+        const filas = filasParaPortabilidad({
+            cliente: hallazgo?.cliente ?? null,
+            empleado: hallazgo?.empleado ?? null,
+            resumen: hallazgo?.resumen ?? null,
+        });
+        exportCsv(['Grupo', 'Dato', 'Valor'], filas,
+            `datos-${solicitud.folio_txt}.csv`, 'datos_personales');
+        useStaff.getState().appendAuditLog?.('ENTREGAR_DATOS_SOLICITUD', String(solicitud.id),
+            { folio: solicitud.folio_txt, formato: 'csv', filas: filas.length });
+    };
 
     const set = useCallback((k, v) => setF((p) => ({ ...p, [k]: v })), []);
     const alternarDerecho = useCallback((clave) => setF((p) => {
@@ -226,6 +281,79 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                             <PortalInput label="Documento que lo autoriza a representar" name="representacion_doc"
                                 value={f.representacion_doc ?? ''} readOnly={resuelta}
                                 onChange={(e) => set('representacion_doc', e.target.value)} />
+                        )}
+                    </Seccion>
+
+                    {/* ── Encontrar a la persona en el portal ────────────
+                        Sin esto, resolver un acceso significa buscar a mano en
+                        Clientes, en Personal y en Puntos, y armar la respuesta
+                        copiando. Tres pantallas y una transcripción es donde se
+                        pierde un dato. */}
+                    <Seccion titulo="Qué consta en el portal"
+                        nota="Busca por el número del documento cotejado; si no hay número, por el nombre.">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button variant="secondary" icon={buscando ? Loader2 : Search}
+                                disabled={buscando || !(f.identidad_numero?.trim() || f.solicitante_numero?.trim() || f.solicitante_nombre?.trim())}
+                                onClick={buscar}>Buscar a esta persona</Button>
+                            {hallazgo && (
+                                <>
+                                    <Button variant="secondary" icon={Printer}
+                                        onClick={imprimirRespuesta}>Imprimir la respuesta</Button>
+                                    {(f.derechos ?? []).includes('portabilidad') && (
+                                        <Button variant="secondary" icon={Download}
+                                            onClick={descargarArchivo}>Descargar en archivo</Button>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {hallazgo && (
+                            <div data-surface="card" className="p-3.5 flex flex-col gap-2">
+                                {hallazgo.porNombre && (
+                                    <Notice variant="warning" compact>
+                                        Se buscó por nombre porque no hay número de documento. Un nombre
+                                        trae homónimos: comprueba que la ficha sea la de esta persona
+                                        antes de entregarle nada.
+                                    </Notice>
+                                )}
+                                {hallazgo.clientes.length > 1 && (
+                                    <Notice variant="warning" compact>
+                                        {hallazgo.clientes.length} fichas de cliente coinciden. Afiná el
+                                        documento: no se puede elegir por usted de quién son los datos.
+                                    </Notice>
+                                )}
+                                {hallazgo.cliente && (
+                                    <p className="text-body-sm text-content-2 flex items-start gap-2">
+                                        <UserCheck size={15} className="text-success-text mt-0.5 shrink-0" />
+                                        <span>
+                                            <strong className="text-content">{hallazgo.cliente.name}</strong>
+                                            {' · ficha de cliente'}
+                                            {hallazgo.resumen?.compras
+                                                ? ` · ${hallazgo.resumen.compras.facturas ?? 0} documentos de venta`
+                                                : ''}
+                                            {hallazgo.resumen?.puntos
+                                                ? ` · ${hallazgo.resumen.puntos.saldo ?? 0} puntos`
+                                                : ''}
+                                        </span>
+                                    </p>
+                                )}
+                                {hallazgo.empleado && (
+                                    <p className="text-body-sm text-content-2 flex items-start gap-2">
+                                        <UserCheck size={15} className="text-success-text mt-0.5 shrink-0" />
+                                        <span>
+                                            <strong className="text-content">{shortEmployeeName(hallazgo.empleado)}</strong>
+                                            {' · expediente de personal'}
+                                        </span>
+                                    </p>
+                                )}
+                                {!hallazgo.cliente && !hallazgo.empleado && hallazgo.clientes.length <= 1 && (
+                                    <p className="text-body-sm text-content-3">
+                                        No consta ninguna ficha con esos datos. La respuesta se imprime
+                                        igual y dice que no hay información suya, que también es una
+                                        respuesta al acceso.
+                                    </p>
+                                )}
+                            </div>
                         )}
                     </Seccion>
 

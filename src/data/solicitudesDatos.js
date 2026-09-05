@@ -142,3 +142,91 @@ export async function guardarSolicitud(id, campos) {
     if (error) throw error;
     return data;
 }
+
+// ── Encontrar a la persona que pide ────────────────────────────────────────
+// Sin esto, resolver un acceso significa que alguien busque a mano en Clientes,
+// en Personal y en Puntos, y arme la respuesta copiando. Tres pantallas y una
+// transcripción es donde se pierde un dato.
+//
+// Busca por DOCUMENTO primero y por nombre sólo si no hay documento: el DUI es
+// exacto y el nombre no. Un nombre trae homónimos, y entregarle a alguien el
+// expediente de su tocayo es la vulneración que el Art. 25 obliga a notificar.
+
+const soloDigitos = (s) => String(s ?? '').replace(/\D/g, '');
+
+/**
+ * Quién es, en la base, la persona que presentó la solicitud.
+ *
+ * @param {{documento?: string, numero?: string, nombre?: string}} quien
+ * @returns {Promise<{clientes: object[], empleados: object[], porNombre: boolean}>}
+ */
+export async function buscarPersona({ numero, nombre } = {}) {
+    const doc = soloDigitos(numero);
+    const porNombre = !doc && !!nombre?.trim();
+
+    if (!doc && !porNombre) return { clientes: [], empleados: [], porNombre: false };
+
+    // El DUI vive con guion en unas fichas y sin él en otras. Se prueban las dos
+    // formas antes que normalizar en la base: un `replace` por fila en 28,161
+    // fichas es un barrido, y acá se busca UNA persona.
+    const conGuion = doc.length === 9 ? `${doc.slice(0, 8)}-${doc.slice(8)}` : null;
+
+    const [cli, emp] = await Promise.all([
+        doc
+            ? supabase.from('customers')
+                .select('id, erp_id, name, dui, nit, phone, email, direccion, fecha_nacimiento, acumula_puntos')
+                .or([`dui.eq.${doc}`, conGuion && `dui.eq.${conGuion}`, `nit.eq.${doc}`]
+                    .filter(Boolean).join(','))
+                .limit(20)
+            : supabase.from('customers')
+                .select('id, erp_id, name, dui, nit, phone, email, direccion, fecha_nacimiento, acumula_puntos')
+                .ilike('name', `%${nombre.trim()}%`)
+                .limit(20),
+        doc
+            ? supabase.from('employees')
+                .select('id, name, code, dui, phone, email, address, birth_date, status')
+                .or([`dui.eq.${doc}`, conGuion && `dui.eq.${conGuion}`].filter(Boolean).join(','))
+                .limit(20)
+            : supabase.from('employees')
+                .select('id, name, code, dui, phone, email, address, birth_date, status')
+                .ilike('name', `%${nombre.trim()}%`)
+                .limit(20),
+    ]);
+
+    if (cli.error) throw cli.error;
+    if (emp.error) throw emp.error;
+    return { clientes: cli.data ?? [], empleados: emp.data ?? [], porNombre };
+}
+
+/**
+ * Lo que el portal sabe de un cliente, para responder un acceso.
+ *
+ * Devuelve el resumen y NO el detalle de cada compra: el Art. 8 pide la
+ * información «en forma clara y exenta de codificaciones», y 300 renglones de
+ * factura no es claridad. Si la persona pide el detalle, se le entrega aparte.
+ */
+export async function resumenDeCliente(customerId) {
+    const [actividad, puntos, creditos] = await Promise.all([
+        supabase.from('customer_activity')
+            .select('facturas, facturas_ccf, facturas_anuladas, total, primera_fecha, ultima_fecha')
+            .eq('customer_id', customerId).maybeSingle(),
+        supabase.from('puntos_cuenta')
+            .select('saldo, ganados, usados, activa, updated_at').eq('customer_id', customerId).maybeSingle(),
+        supabase.from('creditos_de_clientes')
+            .select('saldo').eq('customer_id', customerId),
+    ]);
+
+    // Un error acá NO tumba la respuesta: el resumen es un complemento de la
+    // ficha, y quedarse sin él es peor que no responder nada. Pero se avisa,
+    // porque un cero silencioso se lee igual que «no tiene».
+    for (const [que, r] of [['actividad', actividad], ['puntos', puntos], ['créditos', creditos]]) {
+        if (r.error) console.warn(`[solicitudes] no se pudo leer ${que}: ${r.error.message}`);
+    }
+
+    const saldoCredito = (creditos.data ?? []).reduce((a, c) => a + Number(c.saldo ?? 0), 0);
+    return {
+        compras: actividad.data ?? null,
+        puntos: puntos.data ?? null,
+        creditoPendiente: creditos.error ? null : saldoCredito,
+    };
+}

@@ -21,6 +21,81 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1012.0 — La vista usa los canónicos y el portal encuentra a la persona
+
+Seis reparos del usuario sobre la vista recién estrenada, con captura. Cinco eran
+de maqueta y el sexto es una capacidad que faltaba entera.
+
+### La maqueta estaba armada al revés
+
+Puse el botón suelto en `filtersContent` y las pestañas en `subContent`. El canon
+(§17) es al revés y por un motivo: **`ViewTabBar` va en `filtersContent`** porque
+es la píldora del encabezado y es **quien publica el buscador** por el canal de
+`CanalDeVista`; **`FilterBar` va en el cuerpo** y lo consume. Armado como estaba,
+la vista no tenía buscador y no podía tenerlo.
+
+Ahora: pestañas y buscador arriba, y abajo la píldora con **período** y
+**estado**, más «Nueva solicitud» como acción primaria del canónico, que en
+táctil se convierte sola en la barra flotante.
+
+El período filtra por la fecha del **acuse** cuando existe y por la de impresión
+cuando no: una hoja que todavía no volvió no tiene fecha de recepción, y
+descartarla la haría invisible. Y arranca **vacío**, porque estrenar la vista con
+un recorte de fechas escondería las solicitudes viejas, que son justo las que
+llevan más tiempo esperando.
+
+**No hay ranura de sucursal**, y es deliberado: el delegado es uno para toda la
+empresa (Art. 15), así que un alcance por sala partiría en siete un registro que
+la ley trata como uno solo.
+
+### Reimprimir
+
+Cada fila tiene su acción. El correlativo no cambia: se reimprime **la misma
+hoja**, porque un formulario que se pierde y se vuelve a imprimir con número
+nuevo deja un hueco en la serie que después nadie puede explicar.
+
+### El portal encuentra a la persona
+
+Es lo que pedía el sexto punto, y era el hueco de fondo: sin esto, resolver un
+acceso significa buscar a mano en Clientes, en Personal y en Puntos, y armar la
+respuesta copiando. Tres pantallas y una transcripción es donde se pierde un
+dato.
+
+Desde el modal, **Buscar a esta persona** cruza el número del documento contra
+`customers` y `employees`, y trae el resumen de compras, puntos y crédito. De
+ahí salen dos entregas, en el formato que la persona pidió:
+
+- **Imprimir la respuesta**, una hoja con rótulos en español y sin claves
+  internas, como exige el Art. 8 («en forma clara y exenta de codificaciones»).
+- **Descargar en archivo**, sólo si marcó portabilidad, porque el Art. 14 pide
+  «formato estructurado, de uso común, de lectura mecánica».
+
+Tres decisiones que evitan entregar los datos de otro:
+
+- **Se busca por documento primero y por nombre sólo si no hay documento.** El
+  DUI es exacto y el nombre no. Cuando se busca por nombre, la pantalla lo avisa.
+- **Con más de una ficha no se elige por nadie.** Se pide afinar el documento.
+  Entregarle a alguien el expediente de su tocayo es la vulneración que el
+  Art. 25 obliga a notificar a tres autoridades en 72 horas.
+- **La hoja no lleva el detalle de cada compra.** El Art. 8 pide claridad, y
+  trescientos renglones no son claros; además prohíbe revelar datos de terceros,
+  y una línea de venta nombra al vendedor.
+
+La descarga pasa por `exportCsv` con su módulo declarado, así que queda anotada
+en `export_log` como toda salida de datos del portal.
+
+### Y en el formulario impreso
+
+«Tipo de documento» era una raya, y una raya no dice qué escribir. Ahora son las
+mismas tres casillas del apartado 5: Documento Único de Identidad, Pasaporte,
+Carné de residente.
+
+### Dos cosas que encontraron los gates
+
+Una tarjeta escrita a mano en vez de `data-surface="card"`, y el nombre de un
+empleado pintado entero donde va `shortEmployeeName`. El del cliente se queda
+completo a propósito: el canónico es sobre personal, y un cliente no lo es.
+
 ## v2.1011.0 — El comentario que salió en pantalla, las secciones de Descuentos y la barra compacta
 
 Tres cosas reportadas por el usuario con capturas.

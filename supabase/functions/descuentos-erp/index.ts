@@ -21,8 +21,10 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // ── Las tres cosas que el portal sabe y el sistema de la caja no ──────────
 //  1. **Cuánto queda el precio, y si cae bajo el costo.** El portal tiene
 //     `product_precios` (`vineta` es el precio al público, `costo` el costo).
-//     Un 29.67 % sobre $13.50 deja $9.49 contra un costo de $6.21 y está bien;
-//     un 60 % dejaría $5.40 y se vende perdiendo. El origen no avisa nada.
+//     Los dos se comparan CON IVA: `vineta` ya lo trae y `costo` es el precio
+//     neto de la compra, así que va × 1.13. Un 29.67 % sobre $13.50 deja $9.49
+//     contra un costo de $7.02 y está bien; un 60 % dejaría $5.40 y se vende
+//     perdiendo. El origen no avisa nada.
 //  2. **Si otro descuento ya toma ese producto en esas fechas.** Nada lo
 //     impide allá, y cuando pasa el origen aplica UNO SOLO sin decir cuál.
 //  3. **Quién lo hizo.** Allá todo queda a nombre de la cuenta con la que el
@@ -277,7 +279,15 @@ Deno.serve(async (req) => {
           if (p.activo === false) continue;
           const pid = Number(p.product_id);
           const precio = Number(p.vineta) || 0;
-          const costo = Number(p.costo) || 0;
+          /* × 1.13 porque los dos números tienen que vivir en la misma escala:
+             `vineta` es el precio al público —CON IVA— y `costo` es tal cual el
+             precio neto de la factura de compra. Comparados crudos, el costo
+             salía 13 % más barato y este aviso dejaba pasar descuentos que sí
+             venden perdiendo. La tasa es 13 % y no una columna: de 3,039
+             recibos de 2026 ninguno tiene otra. Misma cuenta que hace
+             `get_precios_para_descuento` para la pantalla — si una cambia,
+             cambian las dos. */
+          const costo = (Number(p.costo) || 0) * 1.13;
           const antes = porProducto.get(pid);
           porProducto.set(pid, {
             precio: antes ? Math.min(antes.precio, precio) : precio,
@@ -291,7 +301,7 @@ Deno.serve(async (req) => {
           if (queda < costo) {
             avisos.push({
               tipo: "bajo_costo",
-              texto: `${nombres.get(pid) ?? `Producto ${pid}`} quedaría en $${queda.toFixed(2)} y cuesta $${costo.toFixed(2)}.`,
+              texto: `${nombres.get(pid) ?? `Producto ${pid}`} quedaría en $${queda.toFixed(2)} y cuesta $${costo.toFixed(2)} con IVA.`,
             });
           }
         }

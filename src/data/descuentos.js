@@ -81,6 +81,10 @@ export async function borrarDescuento(id) {
  * decidir—, pero verlo antes es lo que evita el error: un 60 % se escribe igual
  * de rápido que un 25 %, y sólo el precio resultante dice cuál de los dos vende
  * a pérdida.
+ *
+ * Devuelve `{ id, nombre, precio, costo_con_iva }`. El costo llega YA con IVA:
+ * `vineta` es el precio al público y la columna `costo` es el precio neto de la
+ * factura de compra, así que crudos no se pueden comparar.
  */
 export async function fetchPreciosDeProductos(ids) {
     const lista = [...new Set((ids || []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];

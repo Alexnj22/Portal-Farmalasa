@@ -47,6 +47,13 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
         [salas, salasDeLaPromocion],
     );
 
+    /* Las que NO entran en la promoción — sólo importan cuando el descuento se
+       manda «a todas»: ahí el precio baja donde la promoción no aplica. */
+    const salasSinPromocion = useMemo(
+        () => salas.filter((s) => !salasDeLaPromocion?.[s.id]),
+        [salas, salasDeLaPromocion],
+    );
+
     // ── Lo que se hereda ───────────────────────────────────────────────────
     const productos = useMemo(() => {
         const vistos = new Map();
@@ -191,6 +198,27 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                                             ariaLabel="Dónde baja el precio"
                                         />
                                     </Campo>
+
+                                    {/* La consecuencia de elegir «todas», dicha
+                                        con nombre y apellido. Es una decisión
+                                        razonable —evita tener que partir la
+                                        promoción— pero el precio baja TAMBIÉN
+                                        donde la promoción no aplica, y eso no
+                                        se ve en ninguna otra pantalla: allá el
+                                        descuento no dice a qué promoción
+                                        pertenece. Nombrar las salas y no decir
+                                        «en las demás» es a propósito: quien
+                                        decide tiene que poder mirar si en ésas
+                                        el margen aguanta. */}
+                                    {valor.todas && salasSinPromocion.length > 0 && (
+                                        <Notice variant="warning" icon={AlertTriangle}>
+                                            El precio va a bajar también en{' '}
+                                            <span className="font-semibold">
+                                                {salasSinPromocion.map((x) => x.name).join(', ')}
+                                            </span>, donde esta promoción no aplica: el bono no se
+                                            acumula ahí, pero el producto sí se vende más barato.
+                                        </Notice>
+                                    )}
                                 </>
                             )}
 
@@ -242,7 +270,12 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
 
 function FilaPrecio({ producto, datos, tipo, monto }) {
     const precio = Number(datos?.precio) || 0;
-    const costo = Number(datos?.costo) || 0;
+    /* El costo llega YA con IVA desde `get_precios_para_descuento`. Tiene que
+       ser así: `vineta` es el precio al público —con IVA— y la columna `costo`
+       es el precio neto de la factura de compra, o sea 13 % más barato. Sin la
+       conversión, «bajo el costo» dejaba pasar descuentos que venden
+       perdiendo. */
+    const costo = Number(datos?.costo_con_iva) || 0;
     const queda = precio ? precioConDescuento(precio, tipo, monto) : null;
     const bajoCosto = queda !== null && costo > 0 && queda < costo;
 
@@ -257,7 +290,7 @@ function FilaPrecio({ producto, datos, tipo, monto }) {
                             <span className={bajoCosto ? 'text-danger font-semibold' : 'text-success font-semibold'}>
                                 {formatMoney(queda)}
                             </span>
-                            {costo > 0 && <> · cuesta {formatMoney(costo)}</>}
+                            {costo > 0 && <> · cuesta {formatMoney(costo)} con IVA</>}
                         </>
                     )}
                 </p>

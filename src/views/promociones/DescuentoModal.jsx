@@ -372,7 +372,12 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
  */
 function FilaProducto({ producto, datos, tipo, monto, onQuitar }) {
     const precio = Number(datos?.precio) || 0;
-    const costo = Number(datos?.costo) || 0;
+    /* El costo llega YA con IVA desde `get_precios_para_descuento`. Tiene que
+       ser así: `vineta` es el precio al público —con IVA— y la columna `costo`
+       es el precio neto de la factura de compra, o sea 13 % más barato. Sin la
+       conversión, «bajo el costo» dejaba pasar descuentos que venden
+       perdiendo. */
+    const costo = Number(datos?.costo_con_iva) || 0;
     const queda = precio ? precioConDescuento(precio, tipo, monto) : null;
     const bajoCosto = queda !== null && costo > 0 && queda < costo;
 
@@ -384,7 +389,7 @@ function FilaProducto({ producto, datos, tipo, monto, onQuitar }) {
                     {!precio ? 'Sin precio registrado' : (
                         <>
                             {formatMoney(precio)} → <span className={bajoCosto ? 'text-danger font-semibold' : 'text-success font-semibold'}>{formatMoney(queda)}</span>
-                            {costo > 0 && <> · cuesta {formatMoney(costo)}</>}
+                            {costo > 0 && <> · cuesta {formatMoney(costo)} con IVA</>}
                         </>
                     )}
                 </p>

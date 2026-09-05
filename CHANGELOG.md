@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1009.0 — El registro de solicitudes de datos, con su correlativo y sus plazos
+
+_(pendiente de redactar)_
+
+## v2.1008.0 — El costo del descuento se compara con IVA
+
+Dos cosas, las dos pedidas por el usuario sobre el módulo de promociones.
+
+**1 · El costo se muestra y se juzga CON IVA.** La pantalla comparaba dos
+números que no viven en la misma escala: `product_precios.vineta` es el precio
+al público —con IVA— y `product_precios.costo` es, exactamente, el
+`precio_unitario` de la factura de compra, que es **neto**.
+
+Medido el 2026-09-05: `costo` = `precio_unitario` de la compra con ratio 1.0000
+en las 8 comparaciones; y de 1,237 recibos con IVA de los últimos tres meses, la
+suma de sus renglones da el **subtotal** en 471 y el **total** en **cero** — o
+sea que los renglones son netos. La tasa es 13 % y no una columna: de 3,039
+recibos de 2026 ninguno tiene otra (7 no llevan IVA, y son exentos).
+
+Así que el costo salía **13 % más barato de lo que es** y el aviso «bajo el
+costo» dejaba pasar descuentos que sí venden perdiendo. El producto 87 lo
+muestra: precio $63.13, costo real $52.73 con IVA. Un 20 % lo deja en $50.50 —
+bajo el costo— y con el costo neto ($46.67) la pantalla no decía nada.
+
+Se corrigió en los tres sitios que tenían que moverse juntos: la función
+`get_precios_para_descuento` (que ahora devuelve `costo_con_iva` y no `costo`
+—el nombre nuevo es a propósito: `costo` a secas invitaba a compararlo otra vez
+sin enterarse—), las dos pantallas que lo pintan, y la verificación del lado del
+servidor en `descuentos-erp`, que es la que decide de verdad.
+
+**2 · El aviso de las salas.** Cuando la promoción aplica en varias salas y el
+descuento se manda «a todas», la pantalla ahora **nombra las salas donde el
+precio va a bajar sin que la promoción aplique**. El sistema de ventas admite un
+solo descuento por producto y ventana de fechas en toda la cadena —medido cuatro
+veces—, así que mandarlo a todas es una salida razonable; lo que faltaba era
+decir su consecuencia, porque no se ve en ninguna otra pantalla: allá el
+descuento no dice a qué promoción pertenece.
+
 ## v2.1007.0 — Las salas se marcan una vez, y una promoción se puede duplicar
 
 Pedido por el usuario: «que se marquen las sucursales a las que aplica, y por lo

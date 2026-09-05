@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1014.4 — Los cuatro documentos comparten una escala de papel
+
+Reportado por el usuario: «el texto lo veo grande en casi todos los PDF». Al
+medirlo, el cuerpo NO era grande: era de 10pt, que es chico. Lo que estaba
+grande era todo lo demás, y por un motivo que no se ve leyendo el CSS.
+
+**`body { font-size }` no cambia lo que se mide en `rem`.** El `rem` se calcula
+contra el ROOT, y el root nunca bajó de su valor de pantalla. Así que el
+documento imprimía su cuerpo a 10pt y su jerarquía a escala de 16px: el título
+salía a **19.4pt sobre un texto de 10**, que es proporción de revista.
+
+Medido en los cuatro documentos, antes y después:
+
+| | antes | ahora |
+|---|---:|---:|
+| root | 12pt | **10.5pt** |
+| cuerpo | 10pt | 10.5pt |
+| título | 19.4pt | **14.7pt** |
+| encabezado de sección | 11.4pt | 10pt |
+| interlineado | 1.55 | **1.42** |
+
+Bajar el ROOT y no el body es lo que arregla la proporción: todo se mueve junto.
+El interlineado también, porque 1.55 es cómodo en pantalla y suelto en papel.
+
+Dos ajustes que sólo aparecieron al medir el resultado:
+
+- **El `clamp(1.3rem, 4.5vw, 1.62rem)` del título es para pantalla.** En papel el
+  `vw` es el ancho de la hoja y siempre gana el tope, así que el h1 nunca se
+  adaptaba a nada: en impresión va fijo.
+- **El membrete tenía su propia regla de impresión** (`.66rem`, para que los
+  datos fiscales no se partan en dos líneas) que gana sobre la general. Con el
+  root nuevo habría caído a 6.9pt, así que se recalculó a `.75rem` para
+  conservar sus 7.9pt.
+
+El aviso y el reglamento pasaron de 5 a **4 páginas**; el formulario y el
+nombramiento siguen en 3.
+
+**Sobre APA:** no aplica acá y conviene decirlo. APA es formato de manuscrito
+académico —doble espacio, sangría de primera línea, encabezado de página— y estos
+son documentos comerciales y legales que se cuelgan en una sala de ventas. Lo que
+se aplicó es la convención de documento formal: cuerpo de 10.5pt, jerarquía
+proporcional, interlineado de 1.42 y márgenes de 20mm laterales por 18mm
+verticales, ya declarados en el `@page` de cada documento.
+
 ## v2.1014.3 — El papel dice sus propios márgenes
 
 Reportado por el usuario: el formulario impreso desde el portal no tiene los

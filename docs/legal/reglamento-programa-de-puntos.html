@@ -133,11 +133,35 @@
   @page { size: Letter; margin: 18mm 20mm; }
 
   @media print {
-    body { background: #fff; color: #000; font-size: 10pt; }
+    /* ── La escala del papel ─────────────────────────────────────────────
+       `body { font-size }` NO alcanza: todo lo que este documento mide en
+       `rem` —los títulos, los rótulos, las tablas— se calcula contra el
+       ROOT, no contra el body. Con el root en su valor de pantalla (16px)
+       y el body en 10pt, la jerarquía quedaba a escala de pantalla sobre un
+       cuerpo de papel: el h1 salía a 19.4pt contra un texto de 10, que es
+       proporción de revista y no de documento.
+
+       Bajando el ROOT baja todo junto y las proporciones se conservan. El
+       interlineado también se aprieta: 1.55 es cómodo en pantalla y suelto
+       en papel. */
+    html { font-size: 10.5pt; }
+    body { font-size: 1rem; line-height: 1.42; }
+    body { background: #fff; color: #000; }
+
+    /* El `clamp(..., 4.5vw, ...)` del título es para pantalla: en papel el `vw`
+       es el ancho de la hoja y siempre gana el tope, así que el h1 salía a 17pt
+       contra un cuerpo de 10.5. En un documento el título encabeza, no domina. */
+    h1 { font-size: 1.4rem; }
+
+    /* Y el piso de lo pequeño. Al bajar el root, los rótulos en versalita
+       cayeron a 6.9pt, que en papel se lee con esfuerzo. Ocho es el mínimo
+       cómodo para texto en mayúsculas. */
+    .rotulo, .nota, .acuse-nota, .corte-rotulo { font-size: .78rem; }
+
     .membrete .fila { display: flex; }
     .mem-emisor { text-align: right; border-left: 1px solid #C9CEC9; padding-left: 1.4rem; margin-top: 0; }
     .marca { justify-content: flex-end; }
-    .fiscal { white-space: nowrap; font-size: .66rem; }
+    .fiscal { white-space: nowrap; font-size: .75rem; }
     .doc { max-width: none; padding: 0; }
     h2 { break-after: avoid; }
     ol.clausulas > li { break-inside: avoid; }

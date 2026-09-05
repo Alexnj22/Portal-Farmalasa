@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1016.5 — El afiche dice qué poner en el mensaje
+
+Consecuencia directa de haber confirmado que **la ley no exige formulario**: si
+la solicitud puede llegar por correo, el afiche tiene que decir qué debe traer
+ese correo.
+
+Antes daba el teléfono y la dirección y nada más. Con eso lo que llega es
+«quiero mis datos», que no cumple los requisitos del **Art. 18**, así que hay que
+**prevenir**. Y la prevención no detiene el reloj: **esos días salen del mismo
+plazo de veinte**. O sea que la falta de una línea en la pared se paga en días
+para resolver.
+
+Ahora la columna dice: **«Dinos tu nombre, qué necesitas y cómo contactarte»**.
+Son las tres cosas del Art. 18 que sólo la persona puede aportar; el resto —qué
+derecho ejerce, sobre qué datos— se aclara en la sala de ventas cuando llegue con
+su documento.
+
+No se prometió ningún formulario en línea, porque todavía no existe. El afiche
+dice lo que hoy se puede hacer.
+
+Una línea más en una columna estrecha empujó el pie a otra hoja; se recuperó del
+ritmo vertical y del titular, no cortando contenido. Sigue en una página.
+
 ## v2.1016.4 — Las tres vías del afiche cuentan una secuencia
 
 «¿Cómo sería sin venir?». La pregunta destapó que las tres columnas del afiche

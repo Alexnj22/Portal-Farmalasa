@@ -1542,6 +1542,16 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
  * no toca la caja, porque su propio cierre ya lo descontó. Es la regla que
  * decide si el corte de esta tarde cuadra o falta.
  */
+/* Cómo se nombra en pantalla de dónde salió un monto.
+ *
+ * `FOTO_CONFIRMADA` no está y es a propósito: es el caso normal y rotularlo
+ * sería ponerle una etiqueta a casi todas las líneas. Una marca que aparece
+ * siempre deja de leerse, y entonces tampoco se lee la que importa. */
+const ROTULO_DE_ORIGEN = {
+    A_MANO: 'monto escrito a mano',
+    FOTO_SIN_CONFIRMAR: 'monto sin comprobar',
+};
+
 /**
  * La corrección que se le pidió a un movimiento, contada entera.
  *
@@ -1680,6 +1690,10 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
              * bolsa se corrige por otro camino, y un cobro de crédito por el
              * suyo. */
             correcciones: correcciones?.get(m.id) || VACIO,
+            /* Si el papel respalda ese monto, o si lo puso una persona. Sólo se
+             * pinta cuando NO está confirmado: marcar los buenos es ruido, y el
+             * ruido es lo que hace que nadie mire la marca que sí importa. */
+            montoOrigen: m.monto_origen || null,
         }));
         const deLasBolsas = (deBolsas || []).map((o) => {
             const total = Math.abs(Number(o.monto || 0));
@@ -1896,10 +1910,26 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                             {/* Apagado cuando no toca el cajón: en verde y con
                                 el resto de las entradas, un cobro con tarjeta se
                                 lee como billetes que hay que tener. */}
-                            <span className={`tabular-nums font-bold ${
-                                l.sinEfectivo ? 'text-content-3'
-                                    : l.entra ? 'text-success-text' : 'text-warning-text'}`}>
-                                {l.entra ? '' : '−'}{formatMoney(l.monto)}
+                            <span className="flex flex-col items-end">
+                                <span className={`tabular-nums font-bold ${
+                                    l.sinEfectivo ? 'text-content-3'
+                                        : l.entra ? 'text-success-text' : 'text-warning-text'}`}>
+                                    {l.entra ? '' : '−'}{formatMoney(l.monto)}
+                                </span>
+                                {/* De dónde salió ese número, cuando el papel no
+                                    lo respalda. Pedido del usuario (2026-09-05):
+                                    «si no está seguro el resultado, debe decirlo
+                                    y permitir poner el monto manualmente y
+                                    marcarlo». Guardados, un monto comprobado dos
+                                    veces contra la boleta y uno que nadie pudo
+                                    verificar se ven idénticos — y la diferencia
+                                    es justo la que hace falta al revisar un
+                                    corte. */}
+                                {ROTULO_DE_ORIGEN[l.montoOrigen] && (
+                                    <span className="text-micro text-content-3 leading-tight">
+                                        {ROTULO_DE_ORIGEN[l.montoOrigen]}
+                                    </span>
+                                )}
                             </span>
                             {puedeOperar && l.movimiento && !l.anulado && (
                                 <Button variant="ghost" size="sm" onClick={() => onCorregir(l.movimiento)}>
@@ -2204,47 +2234,58 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         const leido = r?.leido || {};
         setLectura(r || null);
 
-        /* El monto se LLENA siempre y se CIERRA sólo si el papel lo confirma.
+        /* ── El monto se LLENA siempre; se CIERRA sólo si el papel lo confirma ──
          *
-         * El pedido del usuario del 2026-08-29 —«la boleta y el monto que no se
-         * puedan modificar si al subir la foto se detecta»— sigue en pie; lo que
-         * cambió es qué cuenta como detectado. `CONTRADICHO` significa que el
-         * papel imprime el total dos veces y las dos lecturas no dieron lo
-         * mismo: un dígito se leyó mal y no se sabe cuál. Cerrar el campo ahí
-         * obliga a quien ve el error a encontrar un enlace para poder
-         * escribirlo, y si no lo encuentra, a pedir una corrección firmada por
-         * otra persona — que es el circuito que la boleta 018540 recorrió. */
-        const dudoso = r?.montoConfianza === 'CONTRADICHO';
+         * Regla del usuario (2026-09-05): «si no está seguro el resultado, debe
+         * decirlo y permitir poner el monto manualmente y marcarlo».
+         *
+         * «Seguro» es una cosa concreta y no una impresión: que la boleta
+         * imprima el total MÁS DE UNA VEZ y las dos lecturas coincidan. Una
+         * boleta de remesa lo trae arriba sin moneda y abajo con ella; ahí el
+         * papel se confirma a sí mismo y el campo se cierra, que es el pedido
+         * del 2026-08-29 y sigue en pie.
+         *
+         * Los otros dos casos NO se cierran, y son distintos entre sí:
+         *   CONTRADICHO — el papel dice dos cosas: un dígito se leyó mal y no se
+         *                 sabe cuál. Es lo que pasó con la boleta 018540.
+         *   UNICO       — el papel lo dice una sola vez, así que no hay con qué
+         *                 comprobarlo. No es un error, pero tampoco es seguro,
+         *                 y cerrarlo sería afirmar algo que nadie verificó. */
+        const confianza = r?.montoConfianza;
+        const seguro = confianza === 'CONFIRMADO';
         const puesto = {};
         const montoLeido = Number(leido.monto);
         const hayMonto = Number.isFinite(montoLeido) && montoLeido > 0;
-        if (hayMonto) { setMonto(String(leido.monto)); puesto.monto = !dudoso; }
+        if (hayMonto) { setMonto(String(leido.monto)); puesto.monto = seguro; }
         if (leido.numero_boleta) { setBoleta(String(leido.numero_boleta)); puesto.boleta = true; }
         const texto = conceptoDelPapel(leido);
         if (texto) { setConcepto(texto.slice(0, 50)); puesto.concepto = true; }
         setDeLaFoto(puesto);
 
-        /* El aviso DICE el monto, no que lo llenó.
+        /* El aviso DICE el monto y DICE si está comprobado.
          *
-         * Decía «La foto llenó el monto, el número y el concepto», y la cifra
-         * quedaba en un campo gris de sólo lectura, que es lo que el ojo
+         * Antes decía «La foto llenó el monto, el número y el concepto» y la
+         * cifra quedaba en un campo gris de sólo lectura, que es lo que el ojo
          * saltea. Cotejar contra el papel es la última defensa cuando el lector
          * se equivoca —y se equivoca: estas impresoras escriben el cero con una
          * barra (`Ø`) que a la resolución en que la foto viaja se confunde con
-         * un 8—, así que el número tiene que estar escrito donde se lee. */
+         * un 8—, así que el número tiene que estar escrito donde se lee, y al
+         * lado tiene que decir si alguien más que la máquina lo respalda. */
         const nombres = { boleta: 'el número', concepto: 'el detalle' };
         const faltan = ['boleta', 'concepto']
             .filter((k) => !puesto[k] && (k !== 'boleta' || tipo?.pide_boleta))
             .map((k) => nombres[k]);
+        const cola = faltan.length ? ` Falta ${faltan.join(' y ')}.` : '';
         setAviso(
             !hayMonto && !puesto.boleta && !puesto.concepto
                 ? 'La foto no se dejó leer. Escribe los datos a mano.'
-                : dudoso
-                    ? `La boleta trae el monto dos veces y no dicen lo mismo: leí ${formatMoney(montoLeido)}. Escribe el que dice el papel.`
-                    : hayMonto
-                        ? `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, boleta ${leido.numero_boleta}` : ''}.`
-                          + ` Compáralo con el papel antes de anotar.${faltan.length ? ` Falta ${faltan.join(' y ')}.` : ''}`
-                        : `La foto no leyó el monto: escríbelo.${faltan.length ? ` Falta también ${faltan.join(' y ')}.` : ''}`,
+                : !hayMonto
+                    ? `La foto no leyó el monto: escríbelo.${cola}`
+                    : confianza === 'CONTRADICHO'
+                        ? `La boleta trae el monto dos veces y no dicen lo mismo: leí ${formatMoney(montoLeido)}. Escribe el que dice el papel.`
+                        : !seguro
+                            ? `Leí ${formatMoney(montoLeido)}, pero la boleta sólo lo dice una vez: compáralo con el papel y corrígelo si no es.${cola}`
+                            : `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, boleta ${leido.numero_boleta}` : ''}, y la boleta lo confirma.${cola}`,
         );
         if (!hayMonto && !puesto.boleta && !puesto.concepto) setAMano(true);
     };

@@ -97,6 +97,33 @@ function lecturaParaGuardar(cruda: unknown): Record<string, unknown> | null {
   }
 }
 
+/**
+ * De dónde salió el monto que se está guardando.
+ *
+ * Lo DERIVA el servidor y no lo declara el navegador: una marca de auditoría
+ * que el cliente puede elegir no es una marca, es una opinión. Acá ya están las
+ * dos piezas —lo que el lector contestó y lo que finalmente se guarda—, así que
+ * la respuesta sale de compararlas.
+ *
+ * Regla del usuario (2026-09-05): «si no está seguro el resultado, debe decirlo
+ * y permitir poner el monto manualmente y marcarlo». Esto es el marcarlo.
+ *
+ * `FOTO_SIN_CONFIRMAR` existe porque no alcanza con separar «lo leyó la
+ * máquina» de «lo escribió alguien»: un total que el papel imprime UNA sola vez
+ * lo leyó la máquina y no lo respalda nadie más, y ése es justo el caso donde un
+ * dígito mal leído pasa sin que nada lo note.
+ */
+function origenDelMonto(lectura: unknown, montoGuardado: number): string | null {
+  if (!lectura || typeof lectura !== "object") return null
+  const l = lectura as Record<string, unknown>
+  const leido = Number((l.leido as Record<string, unknown> | undefined)?.monto)
+  if (!Number.isFinite(leido)) return "A_MANO"
+  // Medio centavo: por debajo de eso es ruido de coma flotante, no una
+  // diferencia que alguien haya tecleado.
+  if (Math.abs(leido - montoGuardado) >= 0.005) return "A_MANO"
+  return l.montoConfianza === "CONFIRMADO" ? "FOTO_CONFIRMADA" : "FOTO_SIN_CONFIRMAR"
+}
+
 async function getSessionCookie(u: string, p: string): Promise<string> {
   const res = await fetch(LOGIN_URL, {
     method: "POST",
@@ -1220,6 +1247,9 @@ Deno.serve(async (req) => {
            * contestó un tercero, y recortarla a lo que hoy entendemos perdería
            * justo el campo nuevo del día que haga falta. */
           foto_lectura: lecturaParaGuardar(body.lectura),
+          // Y si ese monto lo respalda el papel o lo puso una persona. Sale de
+          // comparar las dos cosas que esta función ya tiene en la mano.
+          monto_origen: origenDelMonto(body.lectura, Number(dosDecimales(monto))),
           // Las dos mitades de «quien recibio», y nunca las dos a la vez: o se
           // comprobo con carne, o se escribio un nombre porque el receptor no
           // es de la casa.

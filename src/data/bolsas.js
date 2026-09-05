@@ -1246,7 +1246,7 @@ export async function fetchMovimientosDelPortal(sala, dia = null) {
      * quien lo hizo, no se puede ver la foto». Los tres datos existían. */
     const { data, error } = await supabase.from('caja_movimientos_portal')
         .select('id, tipo, monto, concepto, detalle, numero_boleta, erp_movimiento_id,'
-              + ' anulado_at, registrado_at, registrado_por, foto_url')
+              + ' anulado_at, registrado_at, registrado_por, foto_url, monto_origen')
         .eq('branch_id', sala).eq('fecha', cual)
         .order('registrado_at', { ascending: false });
     if (error) { console.error('caja: movimientos del portal:', error.message); return []; }

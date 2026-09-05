@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1021.0 — Un monto que el papel no comprueba se escribe a mano y queda marcado
+
+Regla del usuario, dicha entera: **«si no está seguro el resultado, debe decirlo
+y permitir poner el monto manualmente y marcarlo».** Las versiones anteriores
+cumplían las dos primeras partes sólo a medias y ninguna la tercera.
+
+**Lo que faltaba: `UNICO` cerraba el campo igual.** Cuando la boleta imprime el
+total una sola vez no hay con qué comprobarlo —no es un error, pero tampoco es
+seguro— y el campo se cerraba de todos modos. Cerrarlo es afirmar que el número
+está verificado, y ahí nadie lo verificó. Ahora **sólo `CONFIRMADO` cierra el
+campo**: el papel tiene que decir el total más de una vez y las dos lecturas
+tienen que coincidir. Vale para el cajón y para la salida de bolsa.
+
+**Y el aviso nombra los tres casos**, porque no significan lo mismo:
+
+| | qué dice la pantalla | campo |
+|---|---|---|
+| el papel lo repite y coincide | «La foto leyó $70.32, boleta 000537, y la boleta lo confirma.» | cerrado |
+| el papel lo dice una sola vez | «Leí $75.00, pero la boleta sólo lo dice una vez: compáralo con el papel y corrígelo si no es.» | **abierto** |
+| el papel se desmiente | «La boleta trae el monto dos veces y no dicen lo mismo: leí $248.50. Escribe el que dice el papel.» | **abierto** |
+
+**Y queda marcado.** `caja_movimientos_portal.monto_origen` guarda de dónde salió
+el número —`FOTO_CONFIRMADA`, `FOTO_SIN_CONFIRMAR`, `A_MANO`— y la tarjeta del
+movimiento lo pinta bajo el importe cuando **no** está confirmado
+(«monto sin comprobar», «monto escrito a mano»). Guardados, un monto comprobado
+dos veces contra la boleta y uno que nadie pudo verificar se ven idénticos, y esa
+diferencia es justo la que hace falta al revisar un corte.
+
+Dos decisiones sobre esa marca:
+
+- **La deriva el servidor, no la declara el navegador.** `operar-caja` ya recibe
+  la lectura y el monto que se guarda: la respuesta sale de compararlos. Una
+  marca de auditoría que el cliente puede elegir no es una marca, es una opinión.
+- **`FOTO_CONFIRMADA` no se pinta.** Es el caso normal —13 de 15 en la medición—
+  y rotularlo pondría una etiqueta en casi todas las líneas. Una marca que
+  aparece siempre deja de leerse, y entonces tampoco se lee la que importa.
+
+Medido sobre las mismas 15 boletas reales de v2.1020.1: **13 cerradas y
+confirmadas**, todas con el monto que dice el papel; **2 abiertas y marcadas** —
+la de un solo importe y la que se desmiente. Con el reintento girado de
+v2.1020.1, esa última termina en $240.50 confirmado.
+
 ## v2.1020.1 — Un monto que el papel desmiente se vuelve a leer con la foto derecha
 
 Probado el prompt de v2.1020.0 contra **15 comprobantes reales** ya subidos,

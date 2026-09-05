@@ -505,19 +505,26 @@ export default function SalidaDeBolsa({
                 setMonto(String(l.monto));
                 /* Se llena siempre; se CIERRA sólo si el papel lo confirma.
                  *
-                 * El pedido del 2026-08-29 —«la boleta y el monto que no se
-                 * puedan modificar si al subir la foto se detecta»— no cambia:
-                 * lo que cambia es qué cuenta como detectado. `CONTRADICHO`
-                 * significa que el papel imprime el total DOS veces y las dos
-                 * lecturas no dieron lo mismo, así que un dígito se leyó mal y
-                 * no se sabe cuál. Cerrarlo ahí encierra a quien ve el error.
+                 * Regla del usuario (2026-09-05): «si no está seguro el
+                 * resultado, debe decirlo y permitir poner el monto manualmente
+                 * y marcarlo». Y «seguro» es concreto: que la boleta imprima el
+                 * total MÁS DE UNA VEZ y las dos lecturas coincidan.
                  *
-                 * Pasa de verdad: la boleta 018540 del cajón (Salud 4,
-                 * 5-sep-2026) dice US$240.50 y se leyó 248.50 — estas impresoras
-                 * escriben el cero con una barra diagonal que a la resolución en
-                 * que la foto viaja se confunde con un 8. */
-                if (r?.montoConfianza !== 'CONTRADICHO') puestos.push('el monto');
-                else pisados.push('el monto, que la boleta dice dos veces y no coinciden');
+                 * El pedido del 2026-08-29 —«la boleta y el monto que no se
+                 * puedan modificar si al subir la foto se detecta»— no se cae:
+                 * lo que cambia es qué cuenta como detectado.
+                 *
+                 * `CONTRADICHO` es el papel diciendo dos cosas —pasó con la
+                 * boleta 018540 del cajón: dice US$240.50 y se leyó 248.50,
+                 * porque estas impresoras escriben el cero con una barra
+                 * diagonal que a la resolución en que la foto viaja se confunde
+                 * con un 8—. `UNICO` es el papel diciéndolo una sola vez: no es
+                 * un error, pero tampoco hay con qué comprobarlo, y cerrar el
+                 * campo ahí afirma algo que nadie verificó. */
+                if (r?.montoConfianza === 'CONFIRMADO') puestos.push('el monto');
+                else if (r?.montoConfianza === 'CONTRADICHO') {
+                    pisados.push('el monto, que la boleta dice dos veces y no coinciden');
+                }
             }
             if (l.numero_boleta) {
                 const habia = boleta.trim();

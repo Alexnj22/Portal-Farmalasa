@@ -848,8 +848,24 @@ export default function CorteDetalleModal({
                                                     {formatMoney(cobros.sinContar)} entraron en efectivo y el comprobante no los cuenta.
                                                 </span>{' '}
                                                 Ese dinero sí está en el cajón, así que se le suma a lo que
-                                                debía haber en caja. Sin sumarlo, el conteo aparece como un
-                                                sobrante que nadie hizo.
+                                                debía haber en caja.{' '}
+                                                {/* ── La última frase depende de si QUEDÓ diferencia ──
+                                                    «Sin sumarlo, el conteo aparece como un sobrante que
+                                                    nadie hizo» describe lo que pasaría si NO se corrigiera,
+                                                    pero se leía como la descripción de lo que se está
+                                                    viendo. En el corte de las 14:18 de Salud 1 del 5-sep el
+                                                    cobro fue de $4.60 y el sobrante que quedó después de
+                                                    corregirlo también: dos veces la misma cifra en la misma
+                                                    pantalla, una ya descontada y la otra no, sin nada que
+                                                    las distinguiera. El usuario preguntó si el error era
+                                                    ése. Cuando queda diferencia hay que decir que es
+                                                    APARTE; el «aparece» pasa a «aparecería» porque es un
+                                                    supuesto, no lo que hay en pantalla. La cifra sale de
+                                                    `cifra`, la misma que pinta el encabezado — nombrar acá
+                                                    otro número sería el defecto que se viene a corregir. */}
+                                                {sev === 'ok'
+                                                    ? 'Sin sumarlo, el conteo aparecería como un sobrante que nadie hizo.'
+                                                    : `El ${sev === 'falta' ? 'faltante' : 'sobrante'} de ${formatMoney(Math.abs(cifra ?? 0))} que dice arriba ya tiene este cobro descontado: es dinero aparte y hay que buscarlo.`}
                                             </p>
                                         )}
                                         {cobros.noEfectivo > 0.005 && (

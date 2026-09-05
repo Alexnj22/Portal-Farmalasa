@@ -823,7 +823,16 @@ export function notaDeCifra(corte) {
         return {
             alerta: false,
             titulo: 'El comprobante no contó los cobros de crédito',
-            detalle: `Entraron ${formatMoney(c.sinContar)} en efectivo por cobros de crédito que el comprobante deja fuera de su cuenta. Con ellos, en la caja debía haber ${formatMoney(c.esperado)}.`,
+            /* La última frase es la que faltaba, y su ausencia costó una
+             * consulta del usuario sobre el corte de las 14:18 de Salud 1 del
+             * 5-sep: el cobro fue de $4.60 y el sobrante que quedó DESPUÉS de
+             * corregir también, así que la nota se leyó como «el sobrante es
+             * el cobro». No nombra la cifra a propósito — el encabezado muestra
+             * el TRAMO y acá se conoce el ACUMULADO, que no siempre son el
+             * mismo número (ver la nota de `porCobrosCredito` más abajo). Lo
+             * único que hay que entender es que lo que se ve YA viene
+             * corregido. */
+            detalle: `Entraron ${formatMoney(c.sinContar)} en efectivo por cobros de crédito que el comprobante deja fuera de su cuenta. Con ellos, en la caja debía haber ${formatMoney(c.esperado)}. La diferencia que se muestra ya tiene ese cobro descontado.`,
         };
     }
 

@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1019.1 — La nota del cobro de crédito dice si quedó diferencia aparte
+
+Preguntado sobre el corte de las 14:18 de Salud 1 del 5-sep: «¿el sobrante es
+el error del portal?». No lo era —el papel dice `DIFERENCIA + 9.20` sobre un
+cobro de $4.60, o sea el cobro dos veces— pero la pantalla no daba forma de
+saberlo.
+
+El cobro de crédito que el comprobante no cuenta se le suma al esperado, y eso
+está bien. Lo que faltaba era decir qué pasa **después** de sumarlo. La nota al
+pie cerraba con «Sin sumarlo, el conteo aparece como un sobrante que nadie
+hizo», que describe lo que pasaría si no se corrigiera; leída con un `+$4.60`
+en amarillo justo arriba, se entiende como la descripción de lo que se está
+viendo. Y las dos cifras eran idénticas —$4.60 de cobro, $4.60 de sobrante—,
+una ya descontada y la otra no, sin nada que las distinguiera.
+
+- La nota al pie ahora depende de si quedó diferencia: cuando el corte cuadra
+  dice «aparecería» (es un supuesto, no lo que hay en pantalla) y cuando no,
+  nombra el sobrante o el faltante y dice que **ya tiene el cobro descontado**.
+  La cifra sale de `cifra`, la misma que pinta el encabezado — nombrar acá otro
+  número sería el defecto que se viene a corregir.
+- La nota de arriba (`notaDeCifra`, compartida con la tarjeta) cierra con «La
+  diferencia que se muestra ya tiene ese cobro descontado». No nombra la cifra
+  a propósito: el encabezado muestra el TRAMO y ahí se conoce el ACUMULADO, que
+  no siempre son el mismo número.
+
+Sólo cambia la copia; el cálculo no se toca. Verificado contra el papel del
+corte 14504 y sus 13 movimientos: `INGRESOS 140.18` es exactamente la suma de
+los otros diez, así que el abono queda fuera del esperado y la corrección de
+$4.60 se aplica una sola vez. La regresión quedó anclada en
+`tests/unit/cortesDiagnostico.test.js` con ese corte real.
+
 ## v2.1019.0 — El movimiento corregido dice quién lo pidió, quién lo aprobó y cuánto decía
 
 Reportado sobre la remesa de $240.50 de Salud 4: «no identifico bien la

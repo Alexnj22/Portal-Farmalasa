@@ -450,6 +450,29 @@ describe('el efectivo del portal que el comprobante deja fuera', () => {
         expect(n.detalle).toContain('$319.10');
     });
 
+    /* ── Y dice que lo que queda ya viene corregido ──────────────────────────
+     * Corte 14504 de Salud 1, 5-sep 14:18, real. El cobro fue de $4.60 y el
+     * sobrante que quedó DESPUÉS de sumarlo también: la nota nombraba el cobro,
+     * el encabezado el sobrante, y las dos cifras eran idénticas. El usuario
+     * preguntó si el error era del portal. No lo era —el papel dice
+     * `DIFERENCIA + 9.20`, o sea el cobro dos veces— pero la nota no daba forma
+     * de saberlo. */
+    const S1_14504 = corte({
+        hora: '14:18:46', estado: 'CONFIRMADO', total_declarado: 727.53, diferencia_erp: 9.20,
+        tk_subtotal: 818.33, tk_vales: 100.00, tk_cobros_credito: null,
+        tk_total_caja: 718.33, cobros_portal_efectivo: 4.60,
+    });
+
+    it('avisa que la diferencia que queda ya tiene el cobro descontado', () => {
+        expect(diferenciaDelCorte(S1_14504).esperado).toBe(722.93);
+        // Lo que queda es del mismo tamaño que el cobro, y no es el cobro.
+        expect(diferenciaDelCorte(S1_14504).valor).toBe(4.60);
+        const n = notaDeCifra(S1_14504);
+        expect(n.titulo).toBe('El comprobante no contó los cobros de crédito');
+        expect(n.detalle).toContain('$722.93');
+        expect(n.detalle).toContain('ya tiene ese cobro descontado');
+    });
+
     it('el tramo del día sale del esperado corregido', () => {
         // Un corte anterior confirmado corre la base; el de las 13:00 tiene que
         // medirse contra el esperado bueno, no contra el del comprobante.

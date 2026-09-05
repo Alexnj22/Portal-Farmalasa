@@ -140,7 +140,14 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                         <LiquidSelect
                             value={lab}
                             onChange={(v) => { setLab(v || ''); setMarcados(new Set()); }}
-                            options={laboratorios.map((l) => ({ value: String(l.id), label: l.nombre }))}
+                            /* El conteo va en el rótulo: con 324 laboratorios el
+                               desplegable exige escribir, así que quien elige lo
+                               hace a ciegas — el número es lo único que anticipa
+                               cuántos productos va a traer. */
+                            options={laboratorios.map((l) => ({
+                                value: String(l.id),
+                                label: l.productos ? `${l.nombre} · ${l.productos}` : l.nombre,
+                            }))}
                             placeholder="Elige el laboratorio"
                             ariaLabel="Laboratorio"
                         />
@@ -170,7 +177,16 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                         </span>
                     </div>
 
-                    <ul className="max-h-64 overflow-y-auto divide-y divide-border-card rounded-lg border border-border-card">
+                    {/* El scroll va AISLADO en su propio contenedor.
+                        Medido el 2026-09-05 con 150 productos: la lista se
+                        acotaba bien (256px) pero el cuerpo del modal contaba su
+                        contenido COMPLETO —`scrollHeight` 7269 sobre 1051 px de
+                        contenido real—, así que el modal quedaba con un vacío
+                        enorme y un scroll que no terminaba. `contain` corta esa
+                        propagación: lo de adentro deja de contar para el alto de
+                        afuera. */}
+                    <div className="rounded-lg border border-border-card overflow-hidden [contain:layout_paint]">
+                    <ul className="max-h-64 overflow-y-auto overscroll-contain divide-y divide-border-card">
                         {filas.map((p) => {
                             const yaEsta = yaSet.has(Number(p.id));
                             return (
@@ -188,6 +204,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                             );
                         })}
                     </ul>
+                    </div>
 
                     <Button icon={Plus} onClick={agregar} disabled={cuantos === 0} className="w-full">
                         {cuantos === 0

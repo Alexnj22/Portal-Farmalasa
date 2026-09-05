@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1005.4 — El scroll de la lista de productos deja de propagarse al modal
+
+Reportado con captura: «después de agregar productos por laboratorio, se me
+puso así, el scroll no tiene fin». El modal quedaba con un vacío enorme debajo
+de la nota y un scroll que no terminaba.
+
+**Medido con los 150 de MEDIKEM:** la lista SÍ estaba acotada —256px, su
+`max-h-64`— pero el cuerpo del modal reportaba `scrollHeight` **7269px** cuando
+su contenido real medía **1051**. Estaba contando el interior del scroll
+anidado, no su alto visible.
+
+La corrección es aislarlo: la lista va dentro de un contenedor con
+`overflow-hidden` y `[contain:layout_paint]`, más `overscroll-contain`. Con eso
+lo de adentro deja de contar para el alto de afuera. Medido después:
+**7269 → 1093**, que coincide con los 1053 de contenido real.
+
+**Y de paso, el desplegable de laboratorios.** Salía vacío diciendo «Escribe
+para buscar» —correcto: `LiquidSelect` exige escribir arriba de 80 opciones y
+hay **358 laboratorios**—. Ahora sale de `get_laboratorios_con_productos`, que
+devuelve los **324 que tienen productos activos**: los otros 34 sólo podían dar
+vacío, y un vacío se lee como «ese laboratorio no tiene nada en promoción» en
+vez de «ese laboratorio no tiene productos». Es la misma decisión que dejó
+fuera el filtro por categoría.
+
+El rótulo ahora dice **«MEDIKEM · 150»**: con 324 opciones y un umbral de
+búsqueda de 80, quien elige escribe a ciegas y el número es lo único que
+anticipa cuántos productos va a traer.
+
 ## v2.1005.3 — El campo de fecha vuelve a medir 40px
 
 Reportado con captura: «¿por qué la fecha se ve así?». Los dos campos de

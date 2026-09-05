@@ -15,8 +15,8 @@ import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
 import {
     crearPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
+    fetchLaboratoriosConProductos,
 } from '../../data/promociones';
-import { fetchLaboratoriosBasic } from '../../data/laboratorios';
 import AgregarProductos from './AgregarProductos';
 import { guardarDescuento } from '../../data/descuentos';
 import { useAuth } from '../../context/AuthContext';
@@ -146,8 +146,8 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     useEffect(() => {
         if (!open) return;
         fetchProveedoresDelSistema().then(setProveedores).catch(() => setProveedores([]));
-        fetchLaboratoriosBasic()
-            .then(({ data }) => setLaboratorios(data || []))
+        fetchLaboratoriosConProductos()
+            .then(setLaboratorios)
             .catch(() => setLaboratorios([]));
     }, [open]);
 

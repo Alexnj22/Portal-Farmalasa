@@ -22,6 +22,20 @@ export async function fetchPromociones(estado = null, tipo = null) {
 }
 
 /**
+ * Los laboratorios que TIENEN productos activos, con cuántos.
+ *
+ * No `fetchLaboratoriosBasic`: de los 358 laboratorios sólo 324 tienen
+ * productos activos (medido el 2026-09-05), y ofrecer los otros 34 en un
+ * desplegable de «agregar sus productos» es ofrecer opciones que sólo pueden
+ * dar vacío.
+ */
+export async function fetchLaboratoriosConProductos() {
+    const { data, error } = await supabase.rpc('get_laboratorios_con_productos');
+    if (error) throw error;
+    return data ?? [];
+}
+
+/**
  * Los productos que se pueden meter en una promoción, para elegir VARIOS.
  *
  * Dos caminos y no tres: por nombre y por laboratorio. **Por categoría no se

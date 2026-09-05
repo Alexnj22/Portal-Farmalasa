@@ -55,17 +55,17 @@
   /* Los siete derechos. Es lo único del aviso que se copia entero: son LOS
      derechos, y un afiche que dijera «usted tiene derechos» sin nombrarlos
      obligaría a ir a buscar cuáles. */
-  /* Los ocho nombres en una tira y sin explicación. La bajada de arriba ya
-     dice en castellano llano qué se puede pedir; estos son los nombres que
-     la ley les da, y quien quiera el detalle tiene el código de abajo. Con
-     su explicación al lado eran dieciséis renglones, y el afiche se leía
-     como una hoja de estudio y no como una pared. */
-  .derechos { margin-top: 1.3rem; border-top: 2px solid var(--marca);
-              padding-top: 1.15rem;
-              font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
-              font-weight: 700; font-size: 29px; line-height: 1.38;
-              letter-spacing: -.012em; text-wrap: balance; }
-  .derechos .sep { color: var(--marca); font-weight: 600; padding: 0 .18em; }
+  /* Nombre y explicación, pero la explicación en DOS o TRES palabras. Con
+     una frase entera cada una eran dieciséis renglones y el afiche se leía
+     como una hoja de estudio; sin explicación no se entendía qué era cada
+     derecho. Dos palabras alcanzan, y caben en el mismo renglón. */
+  .derechos { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem 1.6rem;
+              margin-top: 1.2rem; border-top: 2px solid var(--marca); padding-top: 1.05rem; }
+  .derecho { display: flex; gap: .5rem; align-items: baseline; }
+  .derecho b { font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+               font-weight: 700; font-size: 21px; letter-spacing: -.012em;
+               white-space: nowrap; }
+  .derecho span { font-size: 17px; color: var(--tinta-2); }
 
   .datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem;
            margin-top: 1.3rem; border-top: 2px solid var(--marca); padding-top: 1.15rem; }
@@ -114,23 +114,16 @@
     usarlo.</p>
   </div>
 
-  <p class="derechos">
-    Acceso
-    <span class="sep">·</span>
-    Rectificación
-    <span class="sep">·</span>
-    Cancelación
-    <span class="sep">·</span>
-    Oposición
-    <span class="sep">·</span>
-    Portabilidad
-    <span class="sep">·</span>
-    Limitación
-    <span class="sep">·</span>
-    Olvido
-    <span class="sep">·</span>
-    Retirar un permiso
-  </p>
+  <div class="derechos">
+    <div class="derecho"><b>Acceso</b><span>Ver qué tenemos.</span></div>
+    <div class="derecho"><b>Rectificación</b><span>Corregir un dato.</span></div>
+    <div class="derecho"><b>Cancelación</b><span>Borrarlo.</span></div>
+    <div class="derecho"><b>Oposición</b><span>Que dejemos de usarlo.</span></div>
+    <div class="derecho"><b>Portabilidad</b><span>Llevártelo en un archivo.</span></div>
+    <div class="derecho"><b>Limitación</b><span>Pausar su uso.</span></div>
+    <div class="derecho"><b>Olvido</b><span>Sacarlo de internet.</span></div>
+    <div class="derecho"><b>Retirar un permiso</b><span>Salir de los puntos.</span></div>
+  </div>
 
   <div class="datos">
     <div class="dato">

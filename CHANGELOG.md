@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1016.7 — Los derechos vuelven con su explicación, en dos palabras
+
+Quitarles la explicación fue un recorte demasiado grande, y era el costo que la
+propia decisión anterior había anotado: «quien lea *Portabilidad* en la pared no
+va a saber qué es sin escanear». El usuario lo confirmó al verlo.
+
+Vuelven con su explicación, pero **en dos o tres palabras** en vez de una frase.
+Ahí estaba el peso real: no en que hubiera explicación, sino en su largo.
+
+| antes | ahora |
+|---|---|
+| Borrar lo que ya no se necesita. | **Borrarlo.** |
+| Que dejemos de usarlo para algo en concreto. | **Que dejemos de usarlo.** |
+| Pausar su uso mientras se resuelve un reclamo. | **Pausar su uso.** |
+| Sacarlo de internet, cuando corresponda. | **Sacarlo de internet.** |
+
+Con eso cada derecho cabe en **un solo renglón**, así que los ocho ocupan cuatro
+filas de dos columnas en vez de dieciséis renglones. La mitad del bloque, sin
+perder ninguno de los ocho ni dejar a nadie adivinando.
+
+Lo que se recorta es la matización —«cuando corresponda», «mientras se resuelve
+un reclamo»—, y ése es el lugar correcto para recortarla: el afiche dice de sí
+mismo que es un resumen, y el aviso completo está a un código de distancia.
+
 ## v2.1016.6 — El afiche se aligera: los derechos van solo con su nombre
 
 «¿Alguna forma de reducir la información, para que se sienta menos cargado?». El

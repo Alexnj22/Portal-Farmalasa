@@ -300,11 +300,20 @@ Deno.serve(async (req) => {
      * Un freno sin salida no se cumple: se esquiva escribiendo el cobro como
      * otra cosa, y ahí se pierde hasta el rastro.
      *
-     * Decisión del usuario, 2026-09-04: **pasa, con aviso y marca.** El aviso
-     * habla en pantalla —«comprueba que el pago haya entrado»— y la marca queda
-     * dentro de `lectura`, que se guarda en `creditos_abonos_portal.lectura`,
-     * así que los comprobantes con nombre sin reconocer se pueden listar
-     * después sin que nadie tenga que acordarse de anotarlos.
+     * Decisión del usuario, 2026-09-04, y son DOS: primero «pasa, con aviso y
+     * marca», corregida el mismo día — *«debería de quedar como solicitud, a
+     * admin, así validan si se hizo efectivo el pago y confirman»*. Tenía razón:
+     * pasar con un aviso da por cobrado un dinero que nadie comprobó que entró,
+     * y el aviso lo lee justo quien no puede verificarlo.
+     *
+     * Así que acá el nombre no frena, pero **tampoco deja aplicar**: la marca
+     * viaja en `nombreSinReconocer` y es `creditos-erp` —el servidor, no la
+     * pantalla— quien la convierte en solicitud de aprobación. Esta función
+     * sigue contestando `OK`; lo que decide qué pasa con ese cobro está allá.
+     *
+     * La marca queda además dentro de `lectura`, que se guarda en
+     * `creditos_abonos_portal.lectura`, así que los comprobantes con nombre sin
+     * reconocer se pueden listar después sin que nadie tenga que anotarlos.
      *
      * Lo que SÍ sigue frenando no depende de ningún nombre: que no sea un
      * comprobante, que no se lea, que el propio papel diga que la operación no

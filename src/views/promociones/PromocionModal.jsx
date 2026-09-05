@@ -59,7 +59,7 @@ const useSalasDeVenta = () => {
  * llegar en fechas distintas—. Lo que cambia es de dónde salen: se rellenan
  * desde acá, y el que necesite otra cosa se ajusta uno por uno.
  */
-const generalNuevo = () => ({
+const generalNuevo = (salas = []) => ({
     inicio: hoySV(),
     // Vacío a propósito: «todavía no se sabe» es un estado válido y se puede
     // guardar así. La promoción cuenta las ventas de sus fechas igual.
@@ -72,6 +72,11 @@ const generalNuevo = () => ({
     bono_adm: '0.25',
     bono_bodega: '0.25',
     unidades_por_bono: '1',
+    /* A qué salas va el lote. Vacío = a todas: sin reparto la promoción cuenta
+       las ventas de TODAS, que es lo que hace falta la mayoría de las veces.
+       Repartir sirve para acotar cuántas unidades le tocan a cada una, y la
+       base exige que la suma dé exactamente el lote. */
+    reparto: Object.fromEntries(salas.map((s) => [s.id, ''])),
 });
 
 /* Un producto nace con los valores generales YA puestos y **confirmado**: antes
@@ -93,7 +98,7 @@ const renglonNuevo = (prod, salas, general) => ({
     bono_adm: general.bono_adm,
     bono_bodega: general.bono_bodega,
     unidades_por_bono: general.unidades_por_bono,
-    reparto: Object.fromEntries(salas.map((s) => [s.id, ''])),
+    reparto: { ...(general.reparto || {}) },
     confirmado: true,
     /* Marca si alguien lo tocó a mano. Sin esto, cambiar la fecha general
        después de agregar productos pisaría en silencio el ajuste que alguien ya
@@ -116,7 +121,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     const [nombre, setNombre] = useState('');
     const [nota, setNota] = useState('');
     const [renglones, setRenglones] = useState([]);
-    const [general, setGeneral] = useState(generalNuevo);
+    const [general, setGeneral] = useState(() => generalNuevo(salas));
     const [laboratorios, setLaboratorios] = useState([]);
     const [guardando, setGuardando] = useState(false);
     const [fallo, setFallo] = useState(null);
@@ -157,6 +162,13 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     const cambiarGeneral = useCallback((campo, v) => {
         setGeneral((g) => ({ ...g, [campo]: v }));
         setRenglones((rs) => rs.map((r) => (r.ajustado ? r : { ...r, [campo]: v })));
+    }, []);
+
+    const cambiarRepartoGeneral = useCallback((salaId, v) => {
+        setGeneral((g) => ({ ...g, reparto: { ...g.reparto, [salaId]: v } }));
+        setRenglones((rs) => rs.map((r) => (
+            r.ajustado ? r : { ...r, reparto: { ...r.reparto, [salaId]: v } }
+        )));
     }, []);
 
     const valor = useMemo(() => ({ nombre, nota, renglones, desc, general }),
@@ -343,6 +355,8 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     <GeneralDeLaPromocion
                         valor={general}
                         onCambiar={cambiarGeneral}
+                        onReparto={cambiarRepartoGeneral}
+                        salas={salas}
                         proveedores={proveedores}
                     />
 
@@ -464,10 +478,13 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
  * «Ajustar» y a partir de ahí queda a salvo: pisar un ajuste hecho a mano sería
  * deshacer trabajo sin decirlo.
  */
-function GeneralDeLaPromocion({ valor, onCambiar, proveedores }) {
+function GeneralDeLaPromocion({ valor, onCambiar, onReparto, salas, proveedores }) {
     const unidadPago = Number(valor.unidades_por_bono) > 1
         ? `por cada ${valor.unidades_por_bono} u.`
         : 'por unidad';
+    const loteNum = Number(valor.lote_total) || 0;
+    const repartoPuesto = Object.values(valor.reparto || {})
+        .reduce((a, v) => a + (Number(v) || 0), 0);
 
     return (
         <div className="rounded-lg border border-border-card bg-surface-card-hover p-3 space-y-3">
@@ -492,6 +509,41 @@ function GeneralDeLaPromocion({ valor, onCambiar, proveedores }) {
                     onChange={(e) => onCambiar('lote_total', e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="Se sabrá al llegar"
                 />
+            </div>
+
+            {/* A qué salas va el lote. Sube acá desde el editor de cada producto
+                (2026-09-05): con 50 productos, decir el reparto uno por uno son
+                50 formularios — justo lo que este rediseño vino a quitar.
+
+                Vacío = a TODAS. No es un descuido: sin reparto la promoción
+                cuenta las ventas de todas las salas, que es lo que hace falta la
+                mayoría de las veces. Repartir sirve para acotar cuántas unidades
+                le tocan a cada una, y la base exige que la suma dé exactamente
+                el lote. */}
+            <div className="space-y-1">
+                <span className="text-label uppercase tracking-wide font-semibold text-content-2">
+                    Reparto por sala
+                </span>
+                <p className="text-caption text-content-3">
+                    {repartoPuesto === 0
+                        ? 'Sin repartir cuenta las ventas de todas las salas.'
+                        : (repartoPuesto === loteNum && loteNum > 0
+                            ? `Reparte las ${loteNum} unidades del lote.`
+                            : `Repartes ${repartoPuesto}${loteNum ? ` de ${loteNum}` : ''} — tiene que sumar exactamente el lote.`)}
+                </p>
+                <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+                    {salas.map((s) => (
+                        <PortalInput
+                            key={s.id}
+                            label={s.name}
+                            name={`rep-gen-${s.id}`}
+                            value={valor.reparto?.[s.id] ?? ''}
+                            onChange={(e) => onReparto(s.id, e.target.value.replace(/[^0-9]/g, ''))}
+                            inputMode="numeric"
+                            placeholder="—"
+                        />
+                    ))}
+                </div>
             </div>
 
             <Campo rotulo="¿Paga bono?">

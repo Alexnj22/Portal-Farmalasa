@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, FlaskConical, Plus, Search } from 'lucide-react';
+import { Check, FlaskConical, Plus, Search } from 'lucide-react';
 import SearchInput from '../../components/common/SearchInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import Button from '../../components/common/Button';
@@ -39,11 +39,11 @@ import { fetchProductosParaPromocion } from '../../data/promociones';
  * @param yaElegidos  ids que la promoción ya tiene — se marcan y no se repiten.
  * @param onAgregar   recibe `[{ id, nombre, laboratorio_nombre }]`.
  */
-/* El tope lo pone la BASE: `crear_promocion` lanza `DEMASIADOS_PRODUCTOS` con
-   más de 50. Se repite acá para poder avisar AL AGREGAR y no al guardar —
-   traerse los 150 de un laboratorio y enterarse recién al final es perder el
-   trabajo entero. Si cambia allá, cambia acá. */
-export const TOPE_PRODUCTOS = 50;
+/* Sin tope de productos: `crear_promocion` tenía uno de 50 SIN motivo escrito
+   y se quitó el 2026-09-05 después de medirlo. El resultado desarmó al propio
+   límite — con 50 productos `promocion_corte_del_lote` lee **47,174 bloques
+   (369 MB) en 3,889 ms**, y con 150 lee **27,771 (217 MB) en 977 ms**: el caso
+   que el tope permitía era MÁS caro que el que prohibía. */
 
 export default function AgregarProductos({ yaElegidos = [], onAgregar, laboratorios = [] }) {
     const [modo, setModo] = useState('texto');      // 'texto' | 'laboratorio'
@@ -95,8 +95,6 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
        después—, `gate:tdz` lo cuenta como deuda porque mover ese uso fuera de
        la función lo convertiría en una lectura que lanza. */
     const cuantos = [...marcados].filter((id) => !yaSet.has(Number(id))).length;
-    const caben = Math.max(0, TOPE_PRODUCTOS - yaSet.size);
-    const sePasa = cuantos > caben;
 
     const alternar = (id) => setMarcados((s) => {
         const n = new Set(s);
@@ -111,16 +109,10 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
         setMarcados(new Set());
     };
 
-    /* Marcar TODOS cuando no caben todos marcaría de más y el botón quedaría
-       bloqueado sin decir por qué. Se marcan los que entran, y el aviso dice
-       cuántos son. */
-    const alternarHastaElTope = () => setMarcados((s2) => {
+    const alternarTodos = () => setMarcados((s2) => {
         const n = new Set(s2);
-        if (todosMarcados) { disponibles.forEach((p) => n.delete(p.id)); return n; }
-        for (const p of disponibles) {
-            if (n.size >= caben) break;
-            n.add(p.id);
-        }
+        if (todosMarcados) disponibles.forEach((p) => n.delete(p.id));
+        else disponibles.forEach((p) => n.add(p.id));
         return n;
     });
 
@@ -182,13 +174,11 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                         <Checkbox
                             checked={todosMarcados}
                             indeterminate={!todosMarcados && disponibles.some((p) => marcados.has(p.id))}
-                            onChange={alternarHastaElTope}
+                            onChange={alternarTodos}
                             label={todosMarcados
                                 ? 'Quitar la marca de todos'
-                                : (disponibles.length > caben
-                                    ? `Marcar ${caben} (es el máximo)`
-                                    : `Marcar los ${disponibles.length}`)}
-                            disabled={disponibles.length === 0 || caben === 0}
+                                : `Marcar los ${disponibles.length}`}
+                            disabled={disponibles.length === 0}
                         />
                         {/* Cuántos hay de verdad contra cuántos se muestran. El RPC
                             devuelve hasta 400 y el total sin tope, así que una lista
@@ -229,23 +219,8 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                     </ul>
                     </div>
 
-                    {/* El tope se dice ANTES de agregar. La base lo rechaza igual,
-                        pero enterarse al guardar —después de elegir 150— es perder
-                        el trabajo entero. */}
-                    {caben === 0 && (
-                        <Notice variant="warning" icon={AlertTriangle}>
-                            La promoción ya tiene {TOPE_PRODUCTOS} productos, que es el máximo.
-                            Quita alguno para agregar otro.
-                        </Notice>
-                    )}
-                    {caben > 0 && sePasa && (
-                        <Notice variant="warning" icon={AlertTriangle}>
-                            Caben {caben} más — una promoción admite hasta {TOPE_PRODUCTOS} productos.
-                        </Notice>
-                    )}
-
                     <Button icon={Plus} onClick={agregar}
-                        disabled={cuantos === 0 || sePasa || caben === 0} className="w-full">
+                        disabled={cuantos === 0} className="w-full">
                         {cuantos === 0
                             ? 'Marca los que entran'
                             : `Agregar ${cuantos} ${cuantos === 1 ? 'producto' : 'productos'}`}

@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1006.0 — Sin tope de productos, y el reparto por sala se dice una vez
+
+Dos preguntas del usuario, y la primera desarmó una regla que nadie podía
+defender.
+
+### «¿Por qué hay límite? Si no es necesario quítalo»
+
+`crear_promocion` rechazaba más de 50 productos con `DEMASIADOS_PRODUCTOS`, y
+**ese número no tenía motivo escrito en ninguna parte**. Antes de tocarlo se
+midió, y el resultado desarma al propio tope:
+
+| productos | bloques | tamaño | tiempo |
+|---:|---:|---:|---:|
+| **50** | 47,174 | 369 MB | 3,889 ms |
+| **150** | 27,771 | 217 MB | 977 ms |
+
+**El caso que el tope PERMITÍA es más caro que el que prohibía.** No protegía de
+nada, y el número no correspondía a ningún óptimo — la diferencia es de PLAN:
+con 50 ids el planificador elige peor que con 150. Se quitó.
+
+Se quitó en vez de subirlo a otro número igual de arbitrario. Un límite que
+nadie puede explicar se termina saltando por la vía equivocada: el usuario
+propuso **partir la campaña en dos promociones**, y eso no habría engañado al
+sistema de ventas sino al portal — dos lotes, dos tarjetas, dos filas en
+Seguimiento y **dos hojas de liquidación** para lo que el laboratorio negoció
+como una sola.
+
+⚠️ **Queda abierto:** con muchos productos `promocion_corte_del_lote` lee entre
+217 y 369 MB por llamada, por encima del techo de 195 MB que vigila la sección
+F de `gate:perf`. Hoy no lo ve porque no hay ninguna promoción viva.
+
+### «¿Dónde se agrega a qué sucursal aplica?»
+
+No existía esa pregunta en el formulario. Lo que hay es el **reparto del lote
+por sala** —cuántas unidades le tocan a cada una— y estaba **sólo dentro de
+«Ajustar», producto por producto**: con 50 productos, 50 formularios. Justo lo
+que este rediseño vino a quitar.
+
+Sube al bloque general, como las fechas y el bono: se dice una vez y se copia a
+todos los que nadie ajustó. Y la pantalla ahora explica lo que antes había que
+adivinar: **vacío = todas las salas**. Sin reparto la promoción cuenta las
+ventas de todas, que es lo que hace falta la mayoría de las veces; repartir
+sirve para acotar cuántas unidades le tocan a cada una, y la base exige que la
+suma dé exactamente el lote.
+
 ## v2.1005.7 — La casilla del descuento responde, y el tope de 50 avisa al agregar
 
 Tres cosas reportadas con captura, y la primera **la había respondido mal**.

@@ -559,6 +559,32 @@ export default function MiCajaView({ comoPestana = false }) {
     // primero manda a cortar, el segundo a revisar lo que ya se contó.
     const corteSinConfirmar = sinCorteHoy && cortesC.length > 0;
 
+    /* ── LOS QUE QUEDARON A MEDIAS ─────────────────────────────────────────
+     *
+     * Ni confirmados ni descartados. Frenan DOS cosas (regla del usuario,
+     * 6-sep): hacer otro corte y cerrar el día.
+     *
+     * No es lo mismo que `corteSinConfirmar`, que pregunta si falta el
+     * conteo bueno. Acá la pregunta es si quedó uno colgado — y se puede
+     * tener las dos cosas: Salud 1 el 5-sep cerró su día con el corte del
+     * mediodía confirmado y los dos de la noche en pendiente.
+     *
+     * Sale de `estado.cortes` —que contesta la base para cualquiera que pueda
+     * mirar la caja— y no de `cortesDelDia`, que necesita además el permiso
+     * del módulo de cortes: sin eso, quien no lo tiene vería «no hay ninguno»
+     * sobre un día que sí los tiene, que es la peor de las dos respuestas.
+     * Para RESOLVERLOS sí hace falta la fila completa, y ésa es `pendientesDelDia`. */
+    const cortesSinResolver = cortesC.filter((c) => c.estado === 'PENDIENTE');
+
+    /* Los mismos, pero con la FILA entera: es lo que `resolver` necesita para
+     * escribir y para armar el papel. Puede venir vacía cuando la de arriba no
+     * lo está —quien mira la caja sin ver el módulo de cortes—, y ahí la
+     * pantalla dice el freno sin ofrecer el botón que no le va a funcionar. */
+    const pendientesDelDia = useMemo(
+        () => cortesDelDia.filter((c) => c.tipo === 'C' && c.estado === 'PENDIENTE'),
+        [cortesDelDia],
+    );
+
     /* ── LO QUE YA ESTÁ EMBOLSADO DE HOY ───────────────────────────────────
      *
      * En cada corte confirmado el efectivo se EMBOLSA (regla del usuario,
@@ -1169,6 +1195,16 @@ export default function MiCajaView({ comoPestana = false }) {
                 pendientes={pendientes.length} onImprimir={imprimirCorte}
                 yaEmbolsado={yaEmbolsado} bolsasDeHoy={bolsasDeHoy.length}
                 resolviendo={ocupadoId != null}
+                /* Los que quedaron a medias. Con uno solo, el diálogo no pide
+                   un número: pide resolver aquél. Van los DOS —la cuenta que
+                   sale de la caja y las filas que se pueden firmar— porque no
+                   siempre coinciden: ver `pendientesDelDia`. */
+                sinResolver={cortesSinResolver}
+                sinResolverFilas={pendientesDelDia}
+                onResolverPendiente={async (corte, decision, motivo) => {
+                    if (!await resolver(corte, decision, { motivo })) return;
+                    cargar();
+                }}
                 onResolver={async (estado, motivo) => {
                     /* La fila del corte llega por el sync, que corre después:
                      * se busca por el número que devolvió el sistema de la caja.
@@ -1239,7 +1275,26 @@ export default function MiCajaView({ comoPestana = false }) {
                      * `cerrarElDia` (Z + cerrar turno). */
                     setDialogo(null); setResultado(null); cargar();
                 }}
-                onClose={() => { setDialogo(null); setResultado(null); }}
+                onClose={() => {
+                    /* ── SALIR DE ACÁ DEJA EL CORTE SIN RESOLVER, Y SE DICE ──
+                     *
+                     * El corte YA EXISTE en el sistema de la caja apenas se
+                     * aprieta: cerrar esta pantalla no lo deshace, lo deja
+                     * PENDIENTE. Y en silencio, que es lo que hizo que en
+                     * Salud 1 se repitiera dos veces —«les imprime el corte
+                     * pero el corte no queda confirmado ni descartado»—: no
+                     * hay error, no falta nada en pantalla, y el papel salió.
+                     *
+                     * El aviso dura más que un toast normal a propósito: dice
+                     * lo que se rompe después, que es lo que nadie relaciona
+                     * con haber cerrado un diálogo. */
+                    if (resultado?.ok) {
+                        showToast('El corte quedó sin resolver',
+                            'No se confirmó ni se descartó. Mientras siga así no se puede '
+                            + 'hacer otro corte ni cerrar el día.', 'warning', 9000);
+                    }
+                    setDialogo(null); setResultado(null);
+                }}
                 onCortar={async (efectivo) => {
                     setOcupado(true);
                     const bruto = await hacerCorte({ sala, efectivo });
@@ -1287,6 +1342,7 @@ export default function MiCajaView({ comoPestana = false }) {
 
             {dialogo === 'cerrar' && (
                 <DialogoCerrar ocupado={ocupado} sinCorte={sinCorteHoy} sinConfirmar={corteSinConfirmar}
+                    sinResolver={cortesSinResolver}
                     onClose={() => setDialogo(null)}
                     /* El Z se COMPRUEBA y su respuesta se dice. `z: false` llega
                        como `aviso`, que `correr` ahora muestra. */
@@ -2462,12 +2518,79 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
 }
 
 function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0, bolsasDeHoy = 0,
-    resolviendo = false, onResolver, onClose, onCortar, onImprimir }) {
+    resolviendo = false, sinResolver = VACIO, sinResolverFilas = VACIO,
+    onResolver, onResolverPendiente, onClose, onCortar, onImprimir }) {
     const [efectivo, setEfectivo] = useState('');
     const valido = efectivo !== '' && Number(efectivo) >= 0;
     /* Lo que se declara es el ACUMULADO del día; lo que se cuenta, sólo el
      * cajón. La suma la hace el portal — ver `yaEmbolsado` en la vista. */
     const declarado = (Number(efectivo) || 0) + yaEmbolsado;
+
+    /* ── UN CORTE A MEDIAS NO DEJA HACER OTRO ──────────────────────────────
+     *
+     * Regla del usuario (6-sep). El servidor lo rechaza igual —ahí está el
+     * candado— pero enterarse recién al apretar significa haber contado el
+     * cajón para nada.
+     *
+     * Y no es un cartel: la salida está ACÁ. Mandar a otra pantalla es
+     * exactamente lo que ya se abandonó una vez — Salud 1, 5-sep: el corte de
+     * las 21:17 quedó pendiente, el de las 22:02 no se pudo confirmar por él,
+     * y los dos amanecieron sin resolver. Quien está parado frente al cajón es
+     * quien sabe si aquel conteo servía.
+     *
+     * Va antes que `resultado` sólo cuando no hay resultado en mano: si acaban
+     * de cortar, la pantalla tiene que decir cómo salió ese corte. */
+    if (!resultado && sinResolver.length > 0) {
+        // Las filas completas son las que se pueden firmar. Sin ellas —quien
+        // mira la caja pero no el módulo de cortes— queda el freno dicho y
+        // ningún botón que no vaya a funcionar.
+        const firmables = sinResolverFilas.length ? sinResolverFilas : VACIO;
+        const cuantos = sinResolver.length;
+        return (
+            <Marco abierto={abierto} onClose={onClose}
+                titulo={cuantos === 1 ? 'Hay un corte sin resolver' : 'Hay cortes sin resolver'}
+                bajada="Antes de hacer otro corte hay que decir qué pasa con el que quedó a medias."
+                pie={<Button variant="ghost" onClick={onClose}>Cerrar</Button>}
+            >
+                <Notice variant="warning" icon={AlertTriangle}>
+                    Los cortes del día se <b>suman</b>: el de la noche contiene al de la
+                    mañana. Mientras uno quede sin confirmar ni descartar, el que venga
+                    después tampoco se va a poder confirmar.
+                </Notice>
+                {firmables.length === 0 ? (
+                    <p className="text-body-sm text-content-2">
+                        {cuantos === 1
+                            ? `El corte de las ${String(sinResolver[0].hora || '').slice(0, 5)} quedó sin resolver.`
+                            : `Quedaron ${cuantos} cortes sin resolver.`}{' '}
+                        Alguien con acceso a <b>Cortes</b> tiene que confirmarlo o descartarlo.
+                    </p>
+                ) : firmables.map((c) => (
+                    <div key={c.id} className="rounded-xl ring-1 ring-border-card bg-surface-card-hover p-3 space-y-2">
+                        <div className="flex items-baseline justify-between gap-3">
+                            <span className="text-body-sm font-bold text-content">
+                                Corte de las {String(c.hora || '').slice(0, 5)}
+                            </span>
+                            <span className="text-body-sm tabular-nums text-content-2">
+                                {formatMoney(c.total_declarado)}
+                            </span>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button size="sm" variant="ghost" className="flex-1"
+                                disabled={resolviendo}
+                                onClick={() => onResolverPendiente?.(c, 'DESCARTADO', 'Conteo descartado desde la caja')}>
+                                Descartar
+                            </Button>
+                            <Button size="sm" variant="primary" className="flex-1"
+                                disabled={resolviendo}
+                                onClick={() => onResolverPendiente?.(c, 'CONFIRMADO')}>
+                                Confirmar
+                            </Button>
+                        </div>
+                    </div>
+                ))}
+            </Marco>
+        );
+    }
 
     // Con resultado, la pantalla cambia de trabajo: ya no pide un número, dice
     // cómo salió. Son dos momentos y no dos diálogos porque es el mismo acto.
@@ -2644,7 +2767,38 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
  *
  * Lo monta el llamador sólo cuando está abierto.
  */
-function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, onClose, onCerrar }) {
+function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, onClose, onCerrar }) {
+    /* ── NINGUNO PUEDE QUEDAR A MEDIAS (regla del usuario, 6-sep) ───────────
+     *
+     * Va ANTES del freno de abajo, que sólo pregunta si hay UNO confirmado.
+     * Los dos hacen falta y no son el mismo: Salud 1 cerró el 5-sep con el
+     * corte del mediodía confirmado —o sea que aquél daba por buena la
+     * jornada— y los dos de la noche sin resolver. El efectivo de la tarde
+     * quedó sin que nadie firmara el conteo, y el cierre no se deshace.
+     *
+     * Nombra la HORA porque es lo único que permite ir a buscarlo: «hay un
+     * corte pendiente» sobre un día de seis cortes no dice cuál. */
+    if (sinResolver.length > 0) {
+        const horas = sinResolver.map((c) => String(c.hora || '').slice(0, 5))
+            .filter(Boolean).join(', ');
+        return (
+            <Marco abierto onClose={onClose}
+                titulo={sinResolver.length === 1 ? 'Falta resolver un corte' : 'Faltan cortes por resolver'}
+                bajada={sinResolver.length === 1
+                    ? `El corte de las ${horas} no está confirmado ni descartado.`
+                    : `Quedaron ${sinResolver.length} cortes sin confirmar ni descartar (${horas}).`}>
+                <Notice variant="warning" icon={AlertTriangle}>
+                    Los cortes del día se <b>suman</b> entre sí, así que uno sin resolver deja
+                    sin base a los que vienen después. Resuélvelo en <b>Cortes</b> antes de
+                    cerrar — el cierre no se deshace.
+                </Notice>
+                <div className="flex justify-end">
+                    <Button variant="primary" onClick={onClose}>Entendido</Button>
+                </div>
+            </Marco>
+        );
+    }
+
     /* Sin corte CONFIRMADO no se cierra, y se dice ANTES. El servidor lo
      * rechaza igual —ahí está el candado— pero enterarse recién al apretar es
      * hacer perder el tiempo por una condición que la pantalla ya conocía al

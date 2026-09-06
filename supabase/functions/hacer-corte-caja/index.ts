@@ -627,6 +627,68 @@ Deno.serve(async (req) => {
       }, 409);
     }
 
+    /* ── UN CORTE SIN RESOLVER FRENA EL SIGUIENTE Y EL CIERRE ─────────────
+     *
+     * Regla del usuario (6-sep): «que no permita hacer un nuevo corte si hay
+     * otro pendiente de confirmar / rechazar».
+     *
+     * No es una comodidad: los cortes del día se SUMAN —el de la noche
+     * contiene al de la mañana— y `resolver_corte_caja` ya se niega a
+     * confirmar salteado. O sea que un corte que queda a medias TRABA todos
+     * los que vengan después, y la sala se entera recién al querer firmar el
+     * siguiente, con el conteo hecho y el papel impreso.
+     *
+     * Medido en Salud 1 el 5-sep: el corte de las 21:17 quedó sin resolver, a
+     * las 22:01 hicieron otro y lo descartaron, a las 22:02 un tercero — y ése
+     * ya no se pudo confirmar («antes hay que resolver el corte de las
+     * 21:17»). Se abandonó ahí: los dos quedaron pendientes hasta el día
+     * siguiente. Frenando ANTES del corte, el conteo no se gasta.
+     *
+     * Vale también para el **Z**, y ese orden es el que importa: `cerrarElDia`
+     * emite el Z primero y cierra el turno después, así que el freno del
+     * cierre —que vive en `operar-caja`— llegaría con el Z ya emitido y no se
+     * deshace. Acá todavía no salió nada.
+     *
+     * El día es el que la caja tiene ABIERTO, no el del reloj: una caja que
+     * cruzó la medianoche sigue en su día. Misma lectura que `operar-caja`.
+     *
+     * `simular` no escribe ni corta nada, así que no se frena: es una sonda. */
+    if (!simular) {
+      const { data: apViva, error: errAp } = await supabase
+        .from("cortes_caja_aperturas")
+        .select("abierta_el")
+        .eq("branch_id", sala).is("cerrada_at", null)
+        .order("abierta_el", { ascending: false }).limit(1);
+      if (errAp) throw new Error(`leyendo el día abierto: ${errAp.message}`);
+      const diaAbierto = apViva?.[0]?.abierta_el
+        ?? new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+
+      const { data: sinResolver, error: errSin } = await supabase
+        .from("cortes_caja").select("hora")
+        .eq("branch_id", sala).eq("fecha", diaAbierto)
+        .eq("tipo", "C").eq("estado", "PENDIENTE")
+        .order("hora", { ascending: true });
+      // Un error acá NO se puede leer como «no hay ninguno»: sería dejar pasar
+      // el corte justo cuando no se pudo comprobar que no hubiera uno trabado.
+      if (errSin) throw new Error(`revisando los cortes sin resolver: ${errSin.message}`);
+
+      if (sinResolver?.length) {
+        const horas = sinResolver.map((c: { hora: string | null }) =>
+          String(c.hora ?? "").slice(0, 5)).filter(Boolean).join(", ");
+        const cuales = sinResolver.length === 1
+          ? `El corte de las ${horas} no está confirmado ni descartado.`
+          : `Hay ${sinResolver.length} cortes sin resolver (${horas}).`;
+        return json({
+          ok: false, corte_sin_resolver: true,
+          error: esZ
+            ? `${cuales} Resuélvelo antes de cerrar el día: los cortes se suman entre sí, `
+              + "y el cierre no se deshace."
+            : `${cuales} Resuélvelo antes de hacer otro: los cortes del día se suman, `
+              + "así que el nuevo no se va a poder confirmar hasta que aquél quede resuelto.",
+        }, 409);
+      }
+    }
+
     /* ── 1. El vale de las salidas del día, ANTES del corte ────────────────
      *
      * El Z NO lo escribe: el corte de caja que lo precede ya lo hizo, y volver

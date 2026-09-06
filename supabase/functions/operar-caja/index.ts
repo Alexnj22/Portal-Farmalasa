@@ -1400,6 +1400,36 @@ Deno.serve(async (req) => {
               + "si cierras ahora, el efectivo de toda la jornada queda sin contar y el cierre no se deshace.",
         }, 409);
       }
+
+      /* ── Y NINGUNO PUEDE QUEDAR SIN RESOLVER (regla del usuario, 6-sep) ───
+       *
+       * El freno de arriba pide que HAYA uno confirmado; éste pide que no
+       * quede NINGUNO a medias. No son el mismo freno y se ve en los datos:
+       * Salud 1 el 5-sep cerró su día a las 22:04 con el corte de las 21:17 y
+       * el de las 22:02 **los dos en PENDIENTE**, porque el del mediodía —el
+       * de las 14:18— sí estaba confirmado y alcanzaba para pasar. O sea que
+       * el efectivo de toda la tarde y la noche se cerró sin que nadie firmara
+       * el conteo, y el cierre no se deshace.
+       *
+       * Los cortes del día se SUMAN —el de la noche contiene al de la
+       * mañana—, así que uno sin resolver deja sin base a todos los que vienen
+       * después: `resolver_corte_caja` ya se niega a confirmar salteado. Cerrar
+       * encima de eso convierte un pendiente en algo que ya no se puede
+       * arreglar. */
+      const sinResolver = (cortesDelDia ?? []).filter(
+        (c) => c.tipo === "C" && c.estado === "PENDIENTE");
+      if (sinResolver.length) {
+        const horas = sinResolver.map((c) => String(c.hora ?? "").slice(0, 5))
+          .filter(Boolean).join(", ");
+        return json({
+          ok: false, corte_sin_resolver: true,
+          error: sinResolver.length === 1
+            ? `El corte de las ${horas} no está confirmado ni descartado. Resuélvelo antes `
+              + "de cerrar: los cortes del día se suman, y el cierre no se deshace."
+            : `Hay ${sinResolver.length} cortes sin resolver (${horas}). Resuélvelos antes `
+              + "de cerrar: los cortes del día se suman, y el cierre no se deshace.",
+        }, 409);
+      }
     }
 
     const resp = await (await fetch(APERTURA, {

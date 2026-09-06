@@ -1,11 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchCorteParaElPapel, resolverCorte, salaYaCerro } from '../data/cortes';
+import { fetchCorteParaElPapel, resolverCorte, salaConCajaAbierta, salaYaCerro } from '../data/cortes';
+import CerrarElDiaAhora from '../components/cortes/CerrarElDiaAhora';
 import EntregaDeCaja from '../components/cortes/EntregaDeCaja';
-import { fetchBolsaDeCorte } from '../data/bolsas';
+import { cerrarElDia, fetchBolsaDeCorte } from '../data/bolsas';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
+
+// El día de caja en hora de El Salvador. Se usa para no ofrecer el cierre del
+// día al confirmar un corte VIEJO: `sala_ya_cerro` mira el reloj de ahora, así
+// que firmar el de anteayer a las 21:00 contestaría que sí — y lo que se
+// cerraría es el día de HOY, que no tiene nada que ver.
+const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
 /**
  * Confirmar o descartar un corte — la ÚNICA escritura, para las cuatro
@@ -49,7 +56,7 @@ import { useToastStore } from '../store/toastStore';
  * diálogo no aparece y la confirmación se queda esperando para siempre.
  */
 export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } = {}) {
-    const { user } = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
     const appendAuditLog = useStaff((s) => s.appendAuditLog);
     const showToast = useToastStore((s) => s.showToast);
     const [ocupadoId, setOcupadoId] = useState(null);
@@ -274,6 +281,67 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
         esperando.current = null;
     }, []);
 
+    /* ── Y DESPUÉS DEL ÚLTIMO CORTE, EL CIERRE DEL DÍA ─────────────────────
+     *
+     * Pedido del usuario (6-sep): «al confirmar un corte cerca de la hora de
+     * cierre —con los tiempos que te dije cuando no pide entregar caja— que
+     * pregunte de un solo si se hace cierre del día. Así no queda pendiente
+     * hacerlo». Pasó en Salud 4 el 5-sep: corte confirmado a las 21:00, su
+     * hora de cierre, y el día siguió abierto hasta las 22:37.
+     *
+     * La ventana es la MISMA que la de la entrega, mirada del otro lado: donde
+     * `sala_ya_cerro` dice que sí, no hay a quién entregarle **porque es el
+     * último corte** — o sea que lo que falta después es cerrar.
+     *
+     * Va en el hook y no en Mi caja por lo mismo que la entrega: sobre 7 días,
+     * el módulo confirma 12 veces, la campana 8, Mi caja 3 y el Inicio 3.
+     * Puesto en Mi caja, la pregunta no llegaría en el 80% de los cierres.
+     *
+     * `esperandoCierre` guarda el `resolve` como en la entrega: quien confirmó
+     * sigue detenido en su `await` hasta que se conteste, así que su trabajo de
+     * después —recargar la lista— corre con el día ya cerrado y no antes.
+     */
+    const esperandoCierre = useRef(null);
+    const [cerrando, setCerrando] = useState(null);
+    const [cerrandoOcupado, setCerrandoOcupado] = useState(false);
+    const [errorDelCierre, setErrorDelCierre] = useState(null);
+
+    const terminarCierre = useCallback(() => {
+        setCerrando(null);
+        setCerrandoOcupado(false);
+        setErrorDelCierre(null);
+        esperandoCierre.current?.();
+        esperandoCierre.current = null;
+    }, []);
+
+    /* Tres condiciones antes de ofrecerlo, y ninguna sobra:
+     *
+     * 1. **Poder cerrar.** Cerrar el día es `caja_vales can_edit` con alcance,
+     *    que NO es el permiso con el que se confirma un corte (`cortes_caja`).
+     *    Gerente General y Subjefe/a de Sala confirman y no operan la caja:
+     *    ofrecerles el botón sería un rechazo del servidor por respuesta.
+     * 2. **Que el corte sea de HOY.** `sala_ya_cerro` mira el reloj de ahora,
+     *    así que firmar a las 21:10 un corte de anteayer contestaría que sí — y
+     *    lo que se cerraría es el día de hoy, que no es el de ese corte.
+     * 3. **Que el día siga abierto.** Lo contesta `sala_con_caja_abierta`, que
+     *    es la misma función que ya usa el portal para saberlo: sin esto, la
+     *    sala que ya cerró vería la pregunta y el servidor la rechazaría.
+     *    `null` es «no se pudo saber» y NO se ofrece: preguntar por algo que
+     *    tal vez ya pasó es peor que no preguntar.
+     */
+    const ofrecerElCierre = useCallback(async (corte) => {
+        if (!hasPermission?.('caja_vales', 'can_edit')) return;
+        const alcance = getScope?.('caja_vales');
+        const miSala = user?.branchId ?? user?.branch_id ?? null;
+        if (alcance !== 'ALL' && String(miSala ?? '') !== String(corte.branch_id)) return;
+        if (String(corte.fecha || '') !== hoySV()) return;
+        if (await salaConCajaAbierta(corte.branch_id) !== true) return;
+        await new Promise((resolve) => {
+            esperandoCierre.current = resolve;
+            setCerrando(corte);
+        });
+    }, [hasPermission, getScope, user]);
+
     const resolver = useCallback(async (corte, estado, opts = {}) => {
         if (!corte || ocupadoId) return false;
         // Descartar no termina el turno de nadie: un conteo que no se firmó no
@@ -290,13 +358,21 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
          * `null` es «no se pudo saber», y ahí SÍ se pregunta: dar por cerrado
          * lo que no se pudo mirar es cómo un control se apaga solo. */
         const cerro = await salaYaCerro(corte.branch_id);
-        if (cerro === true) return escribir(corte, estado, opts);
+        if (cerro === true) {
+            const ok = await escribir(corte, estado, opts);
+            // El cierre se OFRECE después de guardar y sólo si guardó. Que la
+            // pregunta se conteste o no, no cambia lo que devuelve `resolver`:
+            // el corte ya quedó firmado, y decir «no se guardó» por haber
+            // dicho «ahora no» sería mentirle al llamador.
+            if (ok) await ofrecerElCierre(corte);
+            return ok;
+        }
 
         return new Promise((resolve) => {
             esperando.current = resolve;
             setPidiendo({ corte, estado, opts });
         });
-    }, [ocupadoId, escribir]);
+    }, [ocupadoId, escribir, ofrecerElCierre]);
 
     const dialogoDeEntrega = pidiendo ? (
         <EntregaDeCaja
@@ -319,9 +395,67 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
                 });
                 if (ok) terminar(true);
             }}
-            onClose={() => terminar(false)}
+            /* Salir de acá deja el corte **sin confirmar ni descartar**, y hasta
+             * hoy no lo decía nadie: la pantalla volvía a su sitio y el corte
+             * quedaba PENDIENTE en silencio. Es la mitad de lo que le pasó a
+             * Salud 1 —el corte de las 21:17 del 5-sep— y el aviso es lo único
+             * que separa «decidí no firmarlo» de «creí que ya estaba». */
+            onClose={() => {
+                showToast?.('El corte quedó sin resolver',
+                    'No se confirmó ni se descartó. Mientras siga así no se puede '
+                    + 'hacer otro corte ni cerrar el día.', 'warning', 9000);
+                terminar(false);
+            }}
         />
     ) : null;
 
-    return { resolver, ocupadoId, dialogoDeEntrega };
+    /* El cierre del día, ofrecido en el acto. Va en el MISMO nodo que la
+     * entrega y no en un segundo valor de retorno: las cinco pantallas que usan
+     * el hook ya pintan éste, y una prop nueva que hay que acordarse de
+     * enchufar es una prop que alguna se olvida — y el modo de falla sería
+     * mudo, igual que el de la entrega (el diálogo no aparece y quien confirmó
+     * se queda esperando para siempre). */
+    const dialogos = (
+        <>
+            {dialogoDeEntrega}
+            {cerrando && (
+                <CerrarElDiaAhora
+                    sala={nombreSala[cerrando.branch_id] || ''}
+                    hora={String(cerrando.hora || '').slice(0, 5)}
+                    ocupado={cerrandoOcupado}
+                    error={errorDelCierre}
+                    onCerrar={async () => {
+                        setCerrandoOcupado(true);
+                        setErrorDelCierre(null);
+                        const r = await cerrarElDia(cerrando.branch_id);
+                        setCerrandoOcupado(false);
+                        if (r?.error) {
+                            // El motivo se queda EN el diálogo: un aviso que se
+                            // va solo, sobre un acto que no se deshace, deja a
+                            // quien lo apretó sin saber si el día cerró.
+                            setErrorDelCierre(mensajeAmigable(r.error));
+                            return;
+                        }
+                        /* El `aviso` del servidor GANA sobre el mensaje de
+                         * éxito: `operar-caja` contesta `ok: true` con un aviso
+                         * cuando el día cerró y **no apareció el cierre**. Es lo
+                         * mismo que hace `correr` en Mi caja, y por el mismo
+                         * motivo: decir «quedó cerrado» encima de eso ya costó
+                         * un cierre a mano en Salud 3. */
+                        if (r?.aviso) showToast?.('Quedó algo pendiente', r.aviso, 'warning', 9000);
+                        else showToast?.('El día quedó cerrado', nombreSala[cerrando.branch_id] || '', 'success');
+                        terminarCierre();
+                    }}
+                    onDespues={terminarCierre}
+                />
+            )}
+        </>
+    );
+
+    /* `dialogoDeEntrega` sigue siendo el nombre con el que las cinco pantallas
+     * lo enchufan, y hoy trae los DOS diálogos. Renombrarlo era peor que el
+     * nombre corto: una pantalla que se quedara con el nombre viejo recibiría
+     * `undefined` y no pintaría nada — sin error, y con la confirmación
+     * esperando una respuesta que nadie puede dar. */
+    return { resolver, ocupadoId, dialogoDeEntrega: dialogos };
 }

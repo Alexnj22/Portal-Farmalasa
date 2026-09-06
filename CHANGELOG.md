@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1022.0 — Cortes: uno sin resolver frena el siguiente y el cierre, y el último ofrece cerrar el día
+
+Tres pedidos del usuario del 6-sep, y el defecto de Salud 1 que los explica a
+los tres: «va pasando 2 veces en Salud 1, que hacen corte, les imprime el corte
+pero el corte no queda confirmado ni descartado».
+
+**El corte que queda a medias TRABA a los que vienen después, y nadie lo sabía.**
+Los cortes del día se suman —el de la noche contiene al de la mañana— así que
+`resolver_corte_caja` se niega a confirmar salteado. Medido en Salud 1 el 5-sep:
+el corte de las 21:17 quedó pendiente, a las 22:01 hicieron otro y lo
+descartaron, a las 22:02 un tercero — y ése ya no se pudo confirmar («antes hay
+que resolver el corte de las 21:17»). Se abandonó ahí. Los dos amanecieron sin
+resolver y los cerró alguien a mano al día siguiente, 15 horas después.
+
+**1 · No se cierra el día con un corte sin resolver.** El freno que había pedía
+que HUBIERA uno confirmado, que no es lo mismo: Salud 1 emitió su cierre a las
+22:04 con el corte del mediodía confirmado —alcanzaba para pasar— y los dos de
+la noche en pendiente. O sea que el efectivo de toda la tarde se cerró sin que
+nadie firmara el conteo, y el cierre no se deshace. Ahora se frena en
+`operar-caja`, y el diálogo de Mi caja lo dice antes nombrando la hora del corte
+que falta.
+
+**2 · No se hace un corte nuevo con otro sin resolver.** El freno vive en
+`hacer-corte-caja` y vale también para el **Z**: `cerrarElDia` emite el Z primero
+y cierra el turno después, así que el freno del cierre llegaría con el Z ya
+emitido — y un Z no se deshace. Acá todavía no salió nada.
+
+Y no es sólo un cartel: el diálogo del corte muestra el pendiente con su hora y
+su monto, y **Confirmar / Descartar ahí mismo**. Mandar a otra pantalla es lo que
+ya se abandonó una vez.
+
+**3 · Al confirmar el último corte, se pregunta si se cierra el día.** En la
+MISMA ventana en que el corte deja de pedir entrega de caja —los 15 minutos
+previos al cierre de esa sala, que decide `sala_ya_cerro`—, porque es la misma
+regla mirada del otro lado: donde no hay a quién entregarle es porque es el
+último. Pasó en Salud 4 el 5-sep: corte confirmado a las 21:00, su hora de
+cierre, y el día siguió abierto hasta las 22:37, cuando alguien lo notó desde
+afuera. El aviso de la noche no alcanza — llega cuando la sala ya se fue.
+
+Vive en `useResolverCorte` y no en Mi caja, por lo mismo que la entrega: sobre 7
+días el módulo confirma 12 veces, la campana 8, Mi caja 3 y el Inicio 3. Puesto
+en Mi caja no llegaría al 80% de los cierres. Se ofrece sólo a quien puede
+cerrar (`caja_vales can_edit` con alcance), sólo si el corte es de HOY —
+`sala_ya_cerro` mira el reloj de ahora, así que firmar el de anteayer a las 21:10
+cerraría el día equivocado— y sólo si el día sigue abierto.
+
+**Y salir sin decidir ahora AVISA.** Cerrar el diálogo del corte, o el de la
+entrega, dejaba el corte en pendiente sin decir una palabra: no hay error, no
+falta nada en pantalla, y el papel ya salió. Es exactamente la forma que tenía
+el defecto de Salud 1. El aviso dice lo que se rompe después —no se puede hacer
+otro corte ni cerrar el día—, que es lo que nadie relaciona con haber cerrado un
+diálogo.
+
 ## v2.1021.2 — La marca del monto llega también a las salidas
 
 Pregunta del usuario: «eso aplica para entradas y salidas verdad?». Al mirarlo,

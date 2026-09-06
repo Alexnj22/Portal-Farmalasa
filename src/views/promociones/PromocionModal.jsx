@@ -397,6 +397,22 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     const listo = nombre.trim() && renglones.length > 0 && !hayEditando
         && problemasDesc.length === 0;
 
+    /* ── PRODUCTOS QUE NACEN VENCIDOS ──────────────────────────────────────
+     *
+     * Reportado por el usuario el 2026-09-06: le llegó «Promoción terminada —
+     * AD» por una campaña que había terminado hacía cinco días. No era un aviso
+     * atrasado: la promoción se cargó y se activó el 5-sep con vigencia
+     * 25-jul → 31-ago, y el cierre diario la finalizó en su primera pasada.
+     *
+     * Cargar una campaña ya terminada es legítimo —para el histórico y para la
+     * liquidación—, así que esto **avisa y no frena**: quien la escribe puede
+     * seguir. Lo que no puede pasar es que la fecha vencida se cuele sin que
+     * nadie la mire, que es lo que pasó.
+     *
+     * Mira el `fin` de cada producto y no el general: el general se copia al
+     * agregarlos y un producto ajustado a mano puede tener otro. */
+    const vencidos = renglones.filter((r) => r.fin && r.fin < hoySV());
+
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Nueva promoción">
             <LiquidModal.Header>
@@ -559,6 +575,27 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                                     la venta aplica uno solo y no dice cuál.
                                 </p>
                             )}
+                        </Notice>
+                    )}
+
+                    {/* Avisa, no frena: una campaña terminada se carga a
+                        propósito para el histórico y la liquidación. Lo que
+                        evita es que la fecha pase sin que nadie la mire. */}
+                    {vencidos.length > 0 && (
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            <span className="font-bold">
+                                {vencidos.length === 1
+                                    ? 'Un producto ya está vencido de fecha.'
+                                    : `${vencidos.length} productos ya están vencidos de fecha.`}
+                            </span>
+                            <span className="block mt-0.5 font-normal">
+                                {vencidos.length === 1
+                                    ? `Termina el ${vencidos[0].fin} y hoy es ${hoySV()}.`
+                                    : `El último termina el ${vencidos.map((r) => r.fin).sort().pop()} y hoy es ${hoySV()}.`}
+                                {' '}Se puede guardar igual —sirve para el histórico y la
+                                liquidación— pero el cierre diario la va a dar por terminada
+                                apenas la actives.
+                            </span>
                         </Notice>
                     )}
 

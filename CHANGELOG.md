@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1022.1 — El aviso de promoción terminada dice cuándo, y la que nació vencida no avisa
+
+Reportado por el usuario: «me llegó notificación de promoción finalizada AD,
+pero fue retroactiva, ¿por qué me llegó si finalizó hace bastante?».
+
+**No llegó tarde.** La promoción AD se creó y se activó el **5-sep a las 09:00**
+con sus tres productos vigentes del **25-jul al 31-ago** — o sea nació vencida
+hacía cinco días. `promociones_ciclo_diario` corre una vez al día a las 07:30 y
+en su primera pasada hizo lo que le toca: cerró los tres por vencimiento,
+finalizó la promoción y avisó. El aviso decía «Cerró su último producto», que es
+cierto —cerró esa mañana— pero no decía **cuándo había vencido**, así que se lee
+como noticia de algo que acaba de pasar.
+
+**El cuerpo ahora nombra la fecha.** «Venció el 31 de agosto» en vez de «cerró su
+último producto». No es sólo para este caso: una promoción que termina el domingo
+se cierra el lunes, y el aviso ya no confunde el día del cierre con el del
+vencimiento. Cuando lo que la cerró fue el lote y no la fecha, lo dice así — y
+con una promoción que cerró mitad por fecha y mitad por lote no dice ninguno de
+los dos, porque cualquiera de ellos sería media verdad.
+
+**Y la que nunca estuvo viva no se anuncia.** Si el último producto venció ANTES
+del día en que la promoción se activó, no hubo campaña que contar: se cierra
+igual, queda en el histórico y en la liquidación, pero no le llega a nadie.
+
+El anclaje es la **activación** y no la creación, y la diferencia importa: una
+promoción puede pasar semanas en borrador y eso no dice nada de si corrió. Sin
+registro de activación —las anteriores a la bitácora— cae a la fecha de creación.
+Y no se calla en silencio: queda un `finalizada_sin_aviso` en la bitácora de la
+promoción diciendo por qué. Un aviso que no sale y no deja rastro es
+indistinguible de uno que se perdió.
+
+Verificado contra producción con las dos ramas, en una transacción revertida: la
+que nació vencida cierra, finaliza, escribe su motivo y manda **0 avisos**; la
+que sí estuvo viva manda los 4 de siempre con el cuerpo «Venció el 1 de
+septiembre».
+
+**Al cargarla, el formulario avisa.** Un producto con la fecha de fin ya pasada
+saca un aviso antes de guardar — que **no frena**: cargar una campaña terminada
+es legítimo para el histórico y la liquidación. Lo que evita es que la fecha
+vencida se cuele sin que nadie la mire, que es lo que pasó.
+
 ## v2.1022.0 — Cortes: uno sin resolver frena el siguiente y el cierre, y el último ofrece cerrar el día
 
 Tres pedidos del usuario del 6-sep, y el defecto de Salud 1 que los explica a

@@ -576,6 +576,23 @@ export default function MiCajaView({ comoPestana = false }) {
      * Para RESOLVERLOS sí hace falta la fila completa, y ésa es `pendientesDelDia`. */
     const cortesSinResolver = cortesC.filter((c) => c.estado === 'PENDIENTE');
 
+    /* ── LO QUE ENTRÓ AL CAJÓN DESDE EL ÚLTIMO CONTEO FIRMADO ──────────────
+     *
+     * Regla del usuario (6-sep): «no permitas hacer cierre del día si han
+     * habido ventas después del último corte y no se ha hecho otro».
+     *
+     * `sinCorteHoy` de arriba pregunta otra cosa —¿hay AL MENOS UNO
+     * confirmado?— y por eso dejó pasar el cierre de Salud 2 del 6-sep: su
+     * corte de las 11:59 estaba confirmado y el día cerró SEIS HORAS después,
+     * con $159.39 de ventas e ingresos de la tarde sin contar, sin firma y sin
+     * bolsa. Los dos frenos hacen falta y no se reemplazan.
+     *
+     * Lo calcula la BASE (`caja_falta_por_contar`, dentro de `caja_estado`) y
+     * no esta pantalla: es el mismo juez que usa el candado del servidor, así
+     * que el aviso de acá no puede decir algo distinto de lo que el botón va a
+     * contestar. */
+    const faltaPorContar = estado?.falta_por_contar ?? null;
+
     /* Los mismos, pero con la FILA entera: es lo que `resolver` necesita para
      * escribir y para armar el papel. Puede venir vacía cuando la de arriba no
      * lo está —quien mira la caja sin ver el módulo de cortes—, y ahí la
@@ -1342,8 +1359,9 @@ export default function MiCajaView({ comoPestana = false }) {
 
             {dialogo === 'cerrar' && (
                 <DialogoCerrar ocupado={ocupado} sinCorte={sinCorteHoy} sinConfirmar={corteSinConfirmar}
-                    sinResolver={cortesSinResolver}
+                    sinResolver={cortesSinResolver} falta={faltaPorContar}
                     onClose={() => setDialogo(null)}
+                    onCortar={() => { setResultado(null); setDialogo('corte'); }}
                     /* El Z se COMPRUEBA y su respuesta se dice. `z: false` llega
                        como `aviso`, que `correr` ahora muestra. */
                     onCerrar={() => correr(() => cerrarElDia(sala), 'El día quedó cerrado.')} />
@@ -2767,7 +2785,8 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
  *
  * Lo monta el llamador sólo cuando está abierto.
  */
-function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, onClose, onCerrar }) {
+function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, falta,
+    onClose, onCortar, onCerrar }) {
     /* ── NINGUNO PUEDE QUEDAR A MEDIAS (regla del usuario, 6-sep) ───────────
      *
      * Va ANTES del freno de abajo, que sólo pregunta si hay UNO confirmado.
@@ -2821,6 +2840,60 @@ function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, o
                 <div className="flex justify-end">
                     <Button variant="primary" onClick={onClose}>Entendido</Button>
                 </div>
+            </Marco>
+        );
+    }
+
+    /* ── NI CON DINERO SIN CONTAR (regla del usuario, 6-sep) ────────────────
+     *
+     * «No permitas hacer cierre del día si han habido ventas después del último
+     * corte y no se ha hecho otro.»
+     *
+     * Va DESPUÉS de los dos de arriba porque son más básicos —uno colgado, o
+     * ninguno confirmado— y antes del cierre: es el último que puede aparecer.
+     *
+     * Los tres hacen falta y ninguno cubre a otro. Salud 2 cerró el 6-sep con
+     * los dos primeros en verde: tenía su corte de las 11:59 confirmado y nada
+     * pendiente. Lo que no tenía era contado el efectivo de la tarde — $159.39
+     * que a esta altura ya no puede contar nadie, porque el cierre no se
+     * deshace y la caja no vuelve a abrir hasta mañana.
+     *
+     * El monto va EN el aviso porque es lo que hace que alguien se detenga:
+     * «falta contar» se lee como un trámite, «$159.39 sin contar» no. Y el
+     * botón lleva a hacer el corte en vez de sólo cerrar la puerta: el freno
+     * que no ofrece la salida es el que se termina esquivando.
+     *
+     * `medido === false` es «no se pudo medir», y frena igual — el servidor
+     * hace lo mismo. Un cero supuesto acá sería dar por bueno justo el caso en
+     * que no se sabe. */
+    const noSePudoMedir = falta && falta.medido === false;
+    const pendiente = Number(falta?.falta);
+    if (noSePudoMedir || (Number.isFinite(pendiente) && pendiente >= 0.01)) {
+        return (
+            <Marco abierto onClose={onClose}
+                titulo={noSePudoMedir ? 'No se pudo revisar la caja' : 'Falta contar el efectivo'}
+                bajada={noSePudoMedir
+                    ? 'No se pudo comprobar si quedó dinero sin contar.'
+                    : (falta?.desde
+                        ? `Desde el corte de las ${falta.desde} entraron ${formatMoney(pendiente)} que nadie ha contado.`
+                        : `Hoy entraron ${formatMoney(pendiente)} que nadie ha contado.`)}
+                pie={noSePudoMedir ? undefined : <>
+                    <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                    <Button variant="primary" onClick={onCortar}>Hacer corte</Button>
+                </>}>
+                <Notice variant="warning" icon={AlertTriangle}>
+                    {noSePudoMedir
+                        ? <>El día no se cierra sin saberlo: el cierre no se deshace y la caja
+                            no vuelve a abrir hasta mañana. Vuelve a intentarlo en un momento.</>
+                        : <>Si cierras ahora, ese dinero queda <b>fuera de todo conteo</b>: la caja
+                            no vuelve a abrir hasta mañana y el cierre no se deshace. Haz el corte
+                            primero.</>}
+                </Notice>
+                {noSePudoMedir && (
+                    <div className="flex justify-end">
+                        <Button variant="primary" onClick={onClose}>Entendido</Button>
+                    </div>
+                )}
             </Marco>
         );
     }

@@ -114,6 +114,54 @@ SELECT b.name AS sala, c.fecha::text AS fecha, c.hora::text AS hora, c.id::text 
        public.cobros_portal_en_efectivo(c.branch_id, c.fecha, c.hora)
  ORDER BY c.fecha DESC, b.name`;
 
+/* D. Días CERRADOS que se llevaron efectivo sin contar.
+ *
+ * Es la otra mitad de A y pregunta algo distinto: A mira si el esperado del
+ * corte deja fuera dinero que entró; ésta mira si el día se CERRÓ con dinero
+ * que ningún corte llegó a medir. Un día así ya no se puede arreglar —la caja
+ * no vuelve a abrir y el cierre no se deshace—, así que el gate no lo previene:
+ * lo NOMBRA, que es lo único que queda.
+ *
+ * Existe porque el freno vive en `hacer-corte-caja` y en la pantalla, y los dos
+ * se pueden esquivar: un corte hecho desde el sistema de la caja no pasa por
+ * ninguno. Si esto vuelve a dar un número, el freno no está alcanzando.
+ *
+ * Usa el MISMO juez que el freno (`caja_falta_por_contar`), no una copia: dos
+ * respuestas distintas sobre la misma pregunta es exactamente lo que este
+ * archivo existe para evitar.
+ *
+ * `>= 0.01` y no `> 0.005`: el freno del servidor usa ese corte, y el gate no
+ * puede acusar a un cierre que el freno habría dejado pasar.
+ *
+ * Medido el 6-sep sobre los 143 cierres de 45 días: **dos**, los dos anteriores
+ * al freno. Van en `YA_PASADOS` porque un hallazgo histórico que no se puede
+ * reparar no puede dejar el gate en rojo para siempre — pero se declaran con su
+ * monto y su motivo, no se borran: son la única prueba de que el detector ve
+ * algo. Fabricarle la regresión salió gratis, y funcionó: el segundo lo encontró
+ * él, no yo.
+ *
+ *   · Salud 2, 6-sep   $159.39  — 25 ventas, el pago de CAESS y una inyección,
+ *     seis horas después de su único corte confirmado. Es el caso que originó
+ *     el freno.
+ *   · Salud 1, 17-ago  $11.55   — anotaron un ingreso de $11.55 después del
+ *     corte confirmado de las 22:01, rehicieron el corte (que ya daba exacto) y
+ *     **descartaron ése**, dejando confirmado el del sobrante. Cerraron a las
+ *     22:03.
+ *
+ * Una entrada nueva acá NO se agrega para que el gate calle: sólo para un día
+ * ya cerrado que no se puede reparar, y con el monto escrito. */
+const YA_PASADOS = new Set(['Salud 2/2026-09-06', 'Salud 1/2026-08-17']);
+
+const SQL_CERRO_SIN_CONTAR = `
+SELECT b.name AS sala, z.fecha::text AS fecha, z.hora::text AS hora,
+       (public.caja_falta_por_contar(z.branch_id::int, z.fecha)->>'falta')::text AS falta,
+       coalesce(public.caja_falta_por_contar(z.branch_id::int, z.fecha)->>'desde', '—') AS desde
+  FROM public.cortes_caja z
+  JOIN public.branches b ON b.id = z.branch_id
+ WHERE z.tipo = 'Z'
+   AND coalesce((public.caja_falta_por_contar(z.branch_id::int, z.fecha)->>'falta')::numeric, 0) >= 0.01
+ ORDER BY z.fecha DESC, b.name`;
+
 /* Que los dos triggers sigan puestos. Un hallazgo de C dice que el número está
  * viejo; éste dice POR QUÉ, y aparece aunque todavía no haya un número mal. */
 const SQL_TRIGGERS = `
@@ -173,6 +221,22 @@ function main() {
       });
     }
     console.log(`  sello:       ${sello.length === 0 ? 'al día en todos los cortes' : `${sello.length} corte(s) con el número viejo`}`);
+
+    const cerroSinContar = canal.consultar(SQL_CERRO_SIN_CONTAR);
+    const nuevos = cerroSinContar.filter(r => !YA_PASADOS.has(`${r.sala}/${r.fecha}`));
+    for (const r of nuevos) {
+      fallas.push({
+        clave: `cerro-sin-contar:${r.sala}/${r.fecha}`,
+        detalle: `cerró el día a las ${String(r.hora).slice(0, 5)} con ${money(r.falta)} sin contar `
+               + `(último conteo firmado: ${r.desde})`,
+        porque: 'Ese dinero ya no lo puede contar nadie: la caja de ese día no vuelve a abrir y el '
+              + 'cierre no se deshace. Si aparece acá, el freno de `hacer-corte-caja` no alcanzó — '
+              + 'lo más probable es un corte hecho desde el sistema de la caja, que no pasa por él.',
+      });
+    }
+    console.log(`  cierres:     ${nuevos.length === 0
+      ? `ninguno se llevó efectivo sin contar${cerroSinContar.length ? ` (${cerroSinContar.length} histórico(s) declarado(s))` : ''}`
+      : `${nuevos.length} día(s) cerrados con efectivo sin contar`}`);
   } finally {
     canal.cerrar();
   }

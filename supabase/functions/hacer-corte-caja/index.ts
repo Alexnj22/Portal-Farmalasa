@@ -687,6 +687,64 @@ Deno.serve(async (req) => {
               + "así que el nuevo no se va a poder confirmar hasta que aquél quede resuelto.",
         }, 409);
       }
+
+      /* ── NO SE CIERRA EL DÍA CON DINERO SIN CONTAR ─────────────────────
+       *
+       * Regla del usuario (6-sep): «no permitas hacer cierre del día si han
+       * habido ventas después del último corte y no se ha hecho otro».
+       *
+       * El freno que ya existía —el de la pantalla— preguntaba si hay AL MENOS
+       * UN corte confirmado hoy, y ésa es otra pregunta. Salud 2 cerró el 6-sep
+       * con esa respuesta en verde, porque su corte de las 11:59 estaba
+       * confirmado, y **seis horas después**: 25 ventas en efectivo por
+       * $152.65, el pago de CAESS de $5.74 y una inyección de $1.00 —$159.39—
+       * quedaron en el cajón sin contar, sin firma y sin bolsa. El cierre no se
+       * deshace y la caja no vuelve a abrir hasta mañana, así que ese dinero ya
+       * no lo puede contar nadie desde el portal.
+       *
+       * El número lo da `caja_falta_por_contar`, que es el MISMO que la
+       * pantalla recibe dentro de `caja_estado` para avisarlo antes de apretar.
+       * Un solo juez: si el aviso y el candado pudieran contestar distinto, la
+       * sala vería «todo bien» y el botón la rechazaría, o peor, al revés.
+       *
+       * Va acá y no en `operar-caja`: `cerrarElDia` emite el Z primero y cierra
+       * el turno después, así que un freno en el cierre llegaría con el Z ya
+       * emitido — y un Z no se deshace. Es la misma razón por la que el freno
+       * de los cortes sin resolver vive en esta función.
+       *
+       * `medido: false` NO se lee como cero: sin poder medirlo tampoco se
+       * cierra, porque el precio de equivocarse es un día cerrado sobre plata
+       * que nadie contó. De los 295 cortes confirmados que existen, ninguno
+       * está sin tiquete, así que esa rama no le cuesta el paso a nadie.
+       *
+       * Sólo para el Z: un corte C no cierra nada, y frenarlo por dinero sin
+       * contar sería frenar justamente al que viene a contarlo. */
+      if (esZ) {
+        const { data: falta, error: errFalta } = await supabase
+          .rpc("caja_falta_por_contar", { p_branch_id: sala, p_dia: diaAbierto });
+        // Igual que arriba: un error no puede leerse como «no falta nada».
+        if (errFalta) throw new Error(`revisando el efectivo sin contar: ${errFalta.message}`);
+
+        const pendiente = Number(falta?.falta);
+        if (falta?.medido === false || !Number.isFinite(pendiente)) {
+          return json({
+            ok: false, sin_contar: true,
+            error: "No se pudo comprobar si quedó efectivo sin contar, y el día no se"
+              + " cierra sin saberlo. Volvé a intentarlo en un momento.",
+          }, 503);
+        }
+        if (pendiente >= 0.01) {
+          const desde = falta?.hay_corte && falta?.desde
+            ? `Desde el corte de las ${falta.desde} entraron`
+            : "Hoy entraron";
+          return json({
+            ok: false, sin_contar: true, falta: pendiente, desde: falta?.desde ?? null,
+            error: `${desde} $${pendiente.toFixed(2)} que nadie ha contado.`
+              + " Hacé un corte antes de cerrar el día: la caja no vuelve a abrir"
+              + " y ese dinero ya no se podría contar.",
+          }, 409);
+        }
+      }
     }
 
     /* ── 1. El vale de las salidas del día, ANTES del corte ────────────────

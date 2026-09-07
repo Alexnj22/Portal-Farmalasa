@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.0 — El día no se cierra con efectivo sin contar
+
+Regla del usuario: «no permitas hacer cierre del día si han habido ventas
+después del último corte y no se ha hecho otro».
+
+**Salió de revisar el cierre de Salud 2 del 6-sep.** El día cerró a las 17:58 y
+su único conteo firmado era el de las **11:59**. En el medio: 25 ventas en
+efectivo por $152.65, el pago de CAESS de $5.74 y una inyección de $1.00 —
+**$159.39** que quedaron en el cajón sin contar, sin firma y sin bolsa. El
+cierre no se deshace y la caja no vuelve a abrir, así que ese dinero ya no lo
+puede contar nadie desde el portal.
+
+El freno que existía preguntaba **otra cosa**: ¿hay al menos un corte
+confirmado hoy? Salud 2 tenía esa respuesta en verde. Los dos frenos hacen falta
+y ninguno cubre al otro — igual que el de «cortes sin resolver» de v2.1022.0.
+
+**No es un cronómetro: mide dinero, no tiempo.** Salud 4 el 5-sep cerró hora y
+media después de su corte (21:00 → 22:37) y Salud 3 el 4-sep igual; los dos
+pasan. Lo que frena es que haya ENTRADO plata.
+
+### Cómo se decide
+
+`caja_falta_por_contar` compara **dos esperados**, nunca un esperado contra un
+conteo: lo que el sistema espera en el cajón hoy contra el esperado que el
+último corte **confirmado** dio por medido (los descartados se ignoran, mismo
+criterio que `corte_tramo`). Que sean los dos esperados es lo que hace que un
+faltante o un sobrante firmado no mueva la resta — restando contra lo contado,
+un faltante de $2.54 se leería como «$2.54 sin contar» y trabaría un cierre
+correcto. Lo que el corte midió se **despeja del canónico**
+(`declarado − corte_diferencia(...)`), no se copia su fórmula.
+
+**Un diseño se midió y se descartó**: restarle a las entradas del día las del
+tiquete (`entradas − tk_ingresos`) parecía más directo y es ruido — disparaba
+60 veces sobre 143 cierres, y en 59 no hubo ni una venta después del corte. El
+tiquete no pone los cobros de crédito en INGRESOS sino en su propia línea.
+
+### Verificación
+
+Medido sobre los **143 cierres de 45 días**: dispara **2 veces y las dos son
+reales** — Salud 2 del 6-sep ($159.39) y Salud 1 del 17-ago ($11.55: anotaron
+un ingreso después del corte confirmado, rehicieron el corte que ya daba exacto
+y **descartaron ése**, dejando confirmado el del sobrante). Los **41 cierres de
+la última semana** dan $0.00 exacto salvo el de Salud 2. Tres negativos
+(−4.00, −4.30, −242.10) no frenan y tienen causa conocida: facturas en efectivo
+que el tiquete contó y Hacienda invalidó después.
+
+### Dónde vive
+
+- **El candado** en `hacer-corte-caja`, sólo para el Z y junto al freno de
+  cortes sin resolver — ahí todavía no salió nada. En `operar-caja` llegaría con
+  el Z ya emitido.
+- **El aviso** en Mi caja, con el monto y la hora del último conteo, y su botón
+  lleva a **hacer el corte**: el freno que no ofrece la salida se esquiva. Sale
+  del mismo juez, dentro de `caja_estado`, así que el aviso y el candado no
+  pueden decir cosas distintas.
+- **La vigilancia** en `npm run gate:cortes` (sección D), que nombra los días ya
+  cerrados que se llevaron efectivo sin contar. Encontró solo el caso de Salud 1
+  del 17-ago; los dos históricos quedan declarados con su monto en `YA_PASADOS`.
+
+`medido: false` frena igual en los tres sitios: un cero supuesto sería dar por
+bueno justo el caso en que no se sabe.
+
 ## v2.1022.1 — El aviso de promoción terminada dice cuándo, y la que nació vencida no avisa
 
 Reportado por el usuario: «me llegó notificación de promoción finalizada AD,

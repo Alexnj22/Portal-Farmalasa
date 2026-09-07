@@ -812,6 +812,49 @@ el corte de esa hora cerró exacto), y la referencia es el corte que **más lleg
 contar** en el día y no el último (hay cortes de apertura de turno que declaran
 $0.00).
 
+### El cierre del día tiene TRES frenos, y ninguno cubre a los otros (2026-09-06)
+
+Cerrar el día emite el Z y **no se deshace**: esa caja no vuelve a abrir. Los
+tres frenos viven en `hacer-corte-caja` —nunca en `operar-caja`, que llegaría
+con el Z ya emitido— y los tres se repiten en la pantalla para avisar ANTES:
+
+| freno | pregunta | qué costó no tenerlo |
+|---|---|---|
+| corte sin resolver | ¿quedó alguno ni confirmado ni descartado? | Salud 1, 5-sep |
+| sin corte confirmado | ¿hay AL MENOS UNO confirmado hoy? | — |
+| **efectivo sin contar** | **¿entró plata desde el último confirmado?** | **Salud 2, 6-sep** |
+
+Los dos primeros estaban **en verde** cuando Salud 2 cerró el 6-sep a las 17:58
+con su único conteo firmado a las **11:59**: $152.65 de ventas, $5.74 de CAESS y
+$1.00 de una inyección — **$159.39** en el cajón que ya no puede contar nadie.
+«Hay un corte confirmado hoy» y «lo que hay ahora está contado» son preguntas
+distintas, y seis horas separan una respuesta de la otra.
+
+**El juez es `caja_falta_por_contar`, y es UNO solo**: lo llama el candado del
+servidor y viaja dentro de `caja_estado` para el aviso de la pantalla. Si el
+aviso y el candado pudieran contestar distinto, la sala vería «todo bien» y el
+botón la rechazaría — o peor, al revés.
+
+**Compara dos ESPERADOS, nunca un esperado contra un conteo.** Lo que el sistema
+espera en el cajón hoy contra el esperado que el último corte **confirmado** dio
+por medido (los descartados no cuentan, igual que en `corte_tramo`). Restando
+contra lo CONTADO, un faltante firmado de $2.54 se leería como «$2.54 sin
+contar» y trabaría un cierre correcto. Y lo que el corte midió se **despeja del
+canónico** (`declarado − corte_diferencia(...)`), no se copia su fórmula.
+
+**No es un cronómetro.** Salud 4 el 5-sep cerró hora y media después de su corte
+y pasa: lo que frena es que haya entrado plata, no que haya pasado el rato.
+
+⚠️ **La resta obvia es ruido, y está medida.** `entradas_del_día − tk_ingresos`
+parece decir lo mismo y dispara **60 veces sobre 143 cierres, 59 de ellas sin
+una sola venta después del corte**: el tiquete no pone los cobros de crédito en
+INGRESOS sino en su propia línea. `tk_total_caja` sí los incluye.
+
+Lo vigila la **sección D de `npm run gate:cortes`**, que nombra los días ya
+cerrados que se llevaron efectivo sin contar. Su `YA_PASADOS` lleva los dos
+históricos **con su monto escrito**; una entrada nueva ahí es sólo para un día
+cerrado que no se puede reparar, nunca para que el gate calle.
+
 ---
 
 ## MIN·MAX: ABC/XYZ son SOLO clasificación (decisión, no bug)

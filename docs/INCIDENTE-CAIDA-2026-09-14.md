@@ -104,6 +104,22 @@ en Supabase → Observability (memoria y swap del 10 y del 14).
 
 ## Causa 2 — procesos de fondo que leen mucho, cada minuto, las 24 horas
 
+> **Corrección (mismo día, al remedir).** Los MB de las dos tablas de abajo son
+> bloques **tocados**, y casi todos salieron de la memoria, no del disco.
+> Medido en los 30 minutos siguientes al reinicio: `ventas_para_puntos` tocó
+> 11,924 MB desde memoria y sólo 11.5 MB desde disco, en 31 corridas.
+> Remedido su plan, tarda **80 ms** y entra por índice en todos los nodos, que
+> es lo mismo que ya había concluido la auditoría del 2-sep
+> (`scripts/bloques-por-llamada.json`). O sea que **no es lo que satura la
+> memoria ni el disco**: gasta procesador, ~200 ms por minuto. Sus 47 s del 14
+> fueron de víctima de la lentitud general, no de culpable, y **no se
+> reescribe**.
+>
+> Lo que sí lee del disco son otras cosas: `VACUUM ANALYZE sales_invoices` lee
+> 180 MB por corrida (cron de cada hora) y `v_sync_health` 20 MB por consulta.
+> Lo de `puntos_anotar_aplicado` sí era un defecto real (barría las 380 mil
+> filas en cada llamada) y quedó corregido el mismo día con un índice.
+
 Qué leyó la base en los primeros 10 minutos después del reinicio
 (`pg_stat_statements`, bloques leídos, que no dependen de la carga del momento):
 
@@ -134,8 +150,9 @@ de que el reinicio borrara la estadística):
 `sync-puntos-1min` existe desde el 28-ago y corre **`* * * * *`**: cada minuto,
 también de noche. Cada corrida llama a `ventas_para_puntos` (384 MB),
 `puntos_marcar_sin_enviar` (160 MB), `puntos_ventas_anuladas` (95 MB) y
-`puntos_anotar_aplicado`. Son **~700 MB leídos por minuto** para mandar ~600
-ventas al día.
+`puntos_anotar_aplicado`. Son ~700 MB de bloques tocados por minuto para
+mandar ~600 ventas al día, casi todos desde memoria (ver la corrección de
+arriba).
 
 `puntos_anotar_aplicado` además barre la tabla entera. Su `UPDATE` cruza por
 `(sucursal, erp_invoice_id)` y `puntos_enviados` **no tiene índice sobre ese
@@ -209,9 +226,9 @@ que el resto de la gente se quede sin conexión.
      barrida de 380 mil filas.
    - Limitar `sync-puntos-1min` al horario de las salas (como los demás syncs,
      `12-23,0-5`) o espaciarlo.
-   - `ventas_para_puntos` lee 384 MB para encontrar unas pocas ventas nuevas:
-     reescribirla para que entre por las facturas sin fila en `puntos_enviados`.
-     Hay que medirla antes y después, en el caso grande.
+   - ~~Reescribir `ventas_para_puntos`~~: al remedirla no hace falta. Tarda 80
+     ms con un plan correcto y lo que lee sale de memoria (ver la corrección
+     de la Causa 2).
 3. **Arreglar la ráfaga de recepción.** Juntar los eventos de un mismo pedido en
    una sola recarga cada ~2 s, y sólo si esa tarjeta está abierta.
 4. **Revisar la publicación de Realtime** y sacar las tablas a las que nadie se

@@ -213,10 +213,22 @@ const CRONS = [
           + 'ventana ancha no cuesta lo que parece—, o sea 49 segundos de base por día. Si ese '
           + 'número crece, ACÁ hay que mirar antes de dejar la cadencia: una lectura lenta cada '
           + 'minuto llena el pool de PostgREST y tira el portal entero. '
-          + 'Y CRECIÓ: el 14-sep promediaba 300 ms y 384 MB por llamada, con picos de 47 s, y el '
-          + 'portal se cayó (docs/INCIDENTE-CAIDA-2026-09-14.md). Desde ese día corre sólo en '
+          + 'El 14-sep llegó a 47 s y el portal se cayó, pero como VÍCTIMA: remedida esa noche '
+          + 'tarda 80 ms con el mismo plan, y sus ~380 MB por llamada salen de memoria (11.5 MB '
+          + 'de disco en 31 corridas) (docs/INCIDENTE-CAIDA-2026-09-14.md). Desde ese día corre sólo en '
           + 'horario de sala (`12-23,0-5` UTC = 06:00–23:59 SV), como los demás syncs de ventas: '
           + 'medido sobre 30 días no hay facturas de 00:00 a 05:59, y cada corrida vacía leía igual.',
+  },
+  {
+    job: 'vigilar-reinicio-de-la-base', slug: null, cadencia: '*/5 * * * *',
+    corridasDia: 288, sistema: 0,
+    motivo: 'CERO peticiones al sistema de origen: SQL puro, compara `pg_postmaster_start_time()` '
+          + 'contra el último arranque anotado y avisa al rol de alertas técnicas si cambió. Nació '
+          + 'porque el 10-sep la base se cayó de golpe a las 14:31 SV y nadie se enteró '
+          + '(docs/INCIDENTE-CAIDA-2026-09-14.md). Todo el día y no en horario de sala a propósito: '
+          + 'un reinicio de madrugada también deja la estadística en cero y hay que saberlo. '
+          + 'Cada 5 minutos alcanza: el aviso sirve para explicar un rato de lentitud, no para '
+          + 'evitarlo, y la consulta es una inserción que casi siempre no inserta nada.',
   },
   {
     job: 'aperturas-caja-30min', slug: 'sync-aperturas-caja', cadencia: '*/30 12-23,0-4 * * *',

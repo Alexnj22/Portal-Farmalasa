@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.2 — Un reinicio de la base ya no pasa inadvertido
+
+El 10-sep a las 14:31 la base se cayó de golpe y se recuperó sola en ~2.5
+minutos. Nadie se enteró: ninguna pantalla lo dice, y el reinicio borra la
+estadística de consultas, que es con lo que se diagnostica la lentitud
+(`docs/INCIDENTE-CAIDA-2026-09-14.md`).
+
+- **`vigilar_reinicio_de_la_base()`**, llamada cada 5 minutos por el cron
+  `vigilar-reinicio-de-la-base`, compara `pg_postmaster_start_time()` contra el
+  último arranque anotado. Si es nuevo, lo anota y avisa con campana y push al
+  rol «Sistema — Alertas Técnicas», igual que las alertas de sincronización.
+- **`reinicios_de_la_base`** guarda un renglón por arranque: es la historia que
+  faltaba y no se purga. Guarda también a cuántas personas les llegó el aviso;
+  un 0 queda escrito, porque sin nadie en el rol el aviso no le llega a nadie y
+  eso tiene que verse.
+- Nace con dos arranques sembrados (el del 10-sep y el en curso), así que la
+  primera corrida no avisa de algo que ya se sabe.
+- Probado de punta a punta dentro de una transacción que se deshace. Con un
+  arranque no anotado, la primera corrida crea 1 aviso y 1 push, anota 1
+  destinatario y dice «Volvió a arrancar a las 17:02 del 14/09». La segunda
+  corrida no avisa de nuevo. Después de deshacerla quedaron 0 avisos guardados.
+
+También se corrigió el informe del incidente: remedida, `ventas_para_puntos` no
+es un problema. Tarda 80 ms y lo que lee sale de memoria (11.5 MB de disco en
+31 corridas); el 14-sep fue víctima de la lentitud, no la causa.
+
 ## v2.1023.1 — Recibir un pedido ya no dispara una recarga por renglón
 
 El portal se cayó el 14-sep de 16:25 a 17:03 (`docs/INCIDENTE-CAIDA-2026-09-14.md`).

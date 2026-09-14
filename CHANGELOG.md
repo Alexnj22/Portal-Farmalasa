@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.1 — Recibir un pedido ya no dispara una recarga por renglón
+
+El portal se cayó el 14-sep de 16:25 a 17:03 (`docs/INCIDENTE-CAIDA-2026-09-14.md`).
+Uno de los tres factores fue este. Recibir un pedido actualiza todos sus
+renglones de una vez, Realtime manda **un aviso por renglón**, y cada aviso
+recargaba el detalle entero del pedido: 5 peticiones, una de ellas paginada. A
+las 16:29 un pedido de 206 renglones hizo ~1,040 peticiones en un minuto desde
+un solo navegador. El defecto existía desde junio y pasaba todos los días
+hábiles (hasta 415 por minuto el 8-sep).
+
+- Las recargas que pide Realtime se **juntan por clave** durante 1.5 s: la
+  primera se agenda y las que llegan dentro de la ventana no suman nada. Una
+  recepción de 206 renglones pasa a una o dos recargas.
+- Un aviso de un pedido cuyo detalle esta pantalla nunca pidió **no recarga
+  nada**. Antes, alguien de bodega con Pedidos abierto recargaba el detalle de
+  todos los pedidos de todas las salas. Cuando se abre la tarjeta, `!items[key]`
+  lo trae fresco.
+- Lo mismo para la lista de pedidos activos y las rutas, que se recargaban por
+  cada evento de `pedido_item_eventos` y `pedido_sucursal_status`.
+
+En la base, el mismo día:
+- **Índice `(sucursal, erp_invoice_id)` en `puntos_enviados`.**
+  `puntos_anotar_aplicado` barría las 380 mil filas en cada llamada y llegó a
+  tardar 97 s. Ahora entra por el índice.
+- **`sync-puntos-1min` sólo corre en horario de sala** (`* 12-23,0-5` UTC =
+  06:00–23:59 SV). En 30 días no hay ni una factura de 00:00 a 05:59, y cada
+  corrida vacía leía ~700 MB igual. Sigue corriendo cada minuto mientras las
+  salas están abiertas.
+
 ## v2.1023.0 — El día no se cierra con efectivo sin contar
 
 Regla del usuario: «no permitas hacer cierre del día si han habido ventas

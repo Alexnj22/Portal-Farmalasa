@@ -39,6 +39,11 @@ import { cajasDeRenglon, construirCajasEspeciales } from '../../../utils/cajasEs
 import { fetchEmployeesPublicByIds } from '../../../data/employees';
 const ERP_ORDER = [5, 1, 2, 3, 4, 7];
 
+// Cuánto se esperan los avisos de Realtime antes de recargar. Un UPDATE sobre
+// los renglones de un pedido llega como UN aviso por renglón, casi juntos: con
+// esta ventana, los 206 de una recepción se vuelven una o dos recargas.
+const ESPERA_RECARGA_MS = 1500;
+
 // @capacitor-community/background-geolocation es un plugin 100% nativo sin
 // entrada JS — el import() dinámico que se usaba antes hacía que
 // vite:import-analysis intentara resolverlo como paquete real al cargar
@@ -92,6 +97,23 @@ export function usePedidosData({ searchTerm = '' }) {
     const [expandedMeta, setExpandedMeta] = useState(null);
     const expandedMetaRef = useRef(null);
     useEffect(() => { expandedMetaRef.current = expandedMeta; }, [expandedMeta]);
+
+    // ── Recargas pedidas por Realtime, juntadas (2026-09-14) ──
+    // Cada aviso de `pedido_items` recargaba el detalle entero del pedido: 5
+    // peticiones, una de ellas paginada. Recibir un pedido de 206 renglones
+    // fueron ~1,040 peticiones en un minuto desde un solo navegador, y ese día
+    // tumbaron el portal (docs/INCIDENTE-CAIDA-2026-09-14.md). La primera
+    // recarga de una clave se agenda; las que llegan dentro de la ventana no
+    // agregan nada, porque la recarga agendada ya va a leer lo último.
+    const recargasRef = useRef(new Map());
+    // Los detalles que esta pantalla pidió alguna vez, aunque sigan en vuelo. Un
+    // aviso de un pedido cuyo detalle nadie pidió no tiene nada que refrescar:
+    // el día que se abra, `!items[key]` lo trae fresco.
+    const detallesPedidosRef = useRef(new Set());
+    useEffect(() => () => {
+        recargasRef.current.forEach(t => clearTimeout(t));
+        recargasRef.current.clear();
+    }, []);
 
     const [items,         setItems]         = useState({});
     const [eventosMap,    setEventosMap]    = useState({});
@@ -275,10 +297,20 @@ export function usePedidosData({ searchTerm = '' }) {
     // ── Realtime ──────────────────────────────────────────────────────────────
 
     useEffect(() => {
+        const juntar = (clave, recargar) => {
+            const pendientes = recargasRef.current;
+            if (pendientes.has(clave)) return;
+            pendientes.set(clave, setTimeout(() => { pendientes.delete(clave); recargar(); }, ESPERA_RECARGA_MS));
+        };
+        const recargarActivos = () => juntar('activos', () => loadActive());
+        const recargarDetalle = (key, pedidoId, sucId) => {
+            if (!key || !detallesPedidosRef.current.has(key)) return;
+            juntar(`detalle:${key}`, () => fetchItems(key, pedidoId, sucId));
+        };
         const ch = supabase.channel('tab-pedidos-rt')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, (payload) => {
-                loadActive();
-                loadActiveRutas(); // rutas/ruta_pedidos pueden no estar en la pub; pedidos sí
+                recargarActivos();
+                juntar('rutas', () => loadActiveRutas()); // rutas/ruta_pedidos pueden no estar en la pub; pedidos sí
                 const s = payload.new?.status;
                 if (isBranch && s === 'enviado') {
                     const ids = payload.new?.sucursal_ids ?? [];
@@ -289,21 +321,19 @@ export function usePedidosData({ searchTerm = '' }) {
                 }
                 const meta = expandedMetaRef.current;
                 const affectedId = payload.new?.id ?? payload.old?.id;
-                if (meta && meta.pedidoId === affectedId) fetchItems(expanded, meta.pedidoId, meta.sucId);
+                if (meta && meta.pedidoId === affectedId) recargarDetalle(expanded, meta.pedidoId, meta.sucId);
             })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'pedido_sucursal_status' }, () => { loadActive(); })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'pedido_sucursal_status' }, () => { recargarActivos(); })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pedido_item_eventos' }, (payload) => {
                 const { pedido_id, erp_sucursal_id } = payload.new ?? {};
                 if (!pedido_id) return;
-                const key = `act_${pedido_id}_${erp_sucursal_id}`;
-                fetchItems(key, pedido_id, erp_sucursal_id);
-                loadActive();
+                recargarDetalle(`act_${pedido_id}_${erp_sucursal_id}`, pedido_id, erp_sucursal_id);
+                recargarActivos();
             })
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedido_items' }, (payload) => {
                 const { pedido_id, erp_sucursal_id } = payload.new ?? {};
                 if (!pedido_id) return;
-                const key = `act_${pedido_id}_${erp_sucursal_id}`;
-                fetchItems(key, pedido_id, erp_sucursal_id);
+                recargarDetalle(`act_${pedido_id}_${erp_sucursal_id}`, pedido_id, erp_sucursal_id);
             })
             .subscribe();
         return () => supabase.removeChannel(ch);
@@ -487,6 +517,7 @@ export function usePedidosData({ searchTerm = '' }) {
 
     const fetchItems = useCallback(async (key, pedidoId, sucId) => {
         if (!pedidoId) return;
+        detallesPedidosRef.current.add(key);
         setLoadingItems(true);
         const sucFilter = sucId ?? (isBranch && erpSucursalId ? erpSucursalId : null);
         try {

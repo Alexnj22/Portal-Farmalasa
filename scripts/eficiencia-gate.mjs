@@ -199,8 +199,8 @@ const CRONS = [
           + 'hasta entonces lo único que hace es dejar su medición en `puntos_vencimiento_log`.',
   },
   {
-    job: 'sync-puntos-1min', slug: 'sync-puntos', cadencia: '* * * * *',
-    corridasDia: 1440, sistema: 0,
+    job: 'sync-puntos-1min', slug: 'sync-puntos', cadencia: '* 12-23,0-5 * * *',
+    corridasDia: 1080, sistema: 0,
     motivo: 'Las ventas que ganan puntos, al sistema de puntos. `sistema: 0` porque NO le pega al '
           + 'sistema de origen: lee del portal y escribe por MySQL en la base de puntos, así que '
           + 'no gasta ninguna petición de las que este gate cuida. '
@@ -212,7 +212,11 @@ const CRONS = [
           + 'días tarda 34 ms —la bitácora `puntos_enviados` descarta lo ya enviado, así que la '
           + 'ventana ancha no cuesta lo que parece—, o sea 49 segundos de base por día. Si ese '
           + 'número crece, ACÁ hay que mirar antes de dejar la cadencia: una lectura lenta cada '
-          + 'minuto llena el pool de PostgREST y tira el portal entero.',
+          + 'minuto llena el pool de PostgREST y tira el portal entero. '
+          + 'Y CRECIÓ: el 14-sep promediaba 300 ms y 384 MB por llamada, con picos de 47 s, y el '
+          + 'portal se cayó (docs/INCIDENTE-CAIDA-2026-09-14.md). Desde ese día corre sólo en '
+          + 'horario de sala (`12-23,0-5` UTC = 06:00–23:59 SV), como los demás syncs de ventas: '
+          + 'medido sobre 30 días no hay facturas de 00:00 a 05:59, y cada corrida vacía leía igual.',
   },
   {
     job: 'aperturas-caja-30min', slug: 'sync-aperturas-caja', cadencia: '*/30 12-23,0-4 * * *',

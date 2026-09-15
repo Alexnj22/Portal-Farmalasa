@@ -212,8 +212,47 @@ Deno.serve(async (req) => {
         return responder({ ok: false, error: "No tienes permiso para decidir esto." }, 403);
       }
 
-      // 1. Borrar el abono viejo, y COMPROBARLO releyendo: el origen contesta
-      //    «Success» aunque no haya borrado nada, así que su palabra no prueba.
+      /* 1. ¿El abono TODAVÍA está? Si ya no está, no hay nada que corregir.
+       *
+       * ⚠️ **El borrado del origen NO se puede repetir.** `quitar` lleva el
+       * `monto` y se lo devuelve al saldo del crédito **lo haya borrado o no**:
+       * mandarlo dos veces sobre el mismo abono descuenta dos veces, y el
+       * origen contesta «Success» las dos. Medido el 15-sep en el crédito 2405
+       * de Salud 3: se aprobó TRES veces —la solicitud no se cerraba, ver
+       * `resolved_at` más abajo— y el crédito quedó debiendo $20.85 sobre una
+       * deuda real de $6.95, con el abonado en −$13.90.
+       *
+       * Cerrar bien la solicitud ya evita esa repetición. Esto es el segundo
+       * cerrojo, y existe porque el primero falló: que no se le cobre de más a
+       * un cliente no puede depender de que otra escritura no falle. Con el
+       * abono ausente se cierra la solicitud y NO se escribe nada en la caja
+       * —ni el borrado ni el abono nuevo—, porque no se puede distinguir «ya se
+       * aplicó» de «lo borraron a mano», y de los dos errores posibles, cobrar
+       * dos veces es el que no se deshace. */
+      const antesDeBorrar = await abonosDelCredito(cookie, entrada.erpId, credito);
+      if (!antesDeBorrar.some((a) => a.erp_id === abonoErp)) {
+        const { error: eYaEstaba } = await supabase.from("approval_requests")
+          .update({ status: "APPROVED", approver_id: quien.id })
+          .eq("id", solId);
+        if (eYaEstaba) {
+          console.error("[creditos-erp] cerrando una ya aplicada:", eYaEstaba.message);
+          return responder({
+            ok: false,
+            error: "Ese abono ya no estaba en la caja y la solicitud no se pudo cerrar. "
+                 + "NO la apruebes de nuevo: avísale a Sistemas.",
+          }, 500);
+        }
+        return responder({
+          ok: true,
+          que,
+          nuevo: null,
+          aviso: "Ese abono ya no estaba en la caja, así que no se volvió a tocar nada. "
+               + "La solicitud queda cerrada.",
+        });
+      }
+
+      // 2. Borrarlo, y COMPROBARLO releyendo: el origen contesta «Success»
+      //    aunque no haya borrado nada, así que su palabra no prueba.
       const dijoQueSi = await quitarAbonoDelOrigen(
         cookie, entrada.erpId, abonoErp, credito, Number(meta.monto_actual) || 0);
       const quedan = await abonosDelCredito(cookie, entrada.erpId, credito);
@@ -226,7 +265,7 @@ Deno.serve(async (req) => {
         }, 502);
       }
 
-      // 2. Si era una corrección, se vuelve a abonar con los datos nuevos.
+      // 3. Si era una corrección, se vuelve a abonar con los datos nuevos.
       let nuevo: Record<string, unknown> | null = null;
       if (que !== "ANULAR") {
         const monto = que === "MONTO" ? Number(meta.monto_nuevo) : Number(meta.monto_actual);
@@ -258,7 +297,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      /* 3. Cerrar la solicitud y dejar el rastro del lado del portal.
+      /* 4. Cerrar la solicitud y dejar el rastro del lado del portal.
        *
        * ⚠️ Esto escribía además `resolved_at`, que en `approval_requests` **no
        * existe** — sus columnas de cierre son `status`, `approver_id`,

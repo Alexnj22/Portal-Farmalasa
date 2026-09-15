@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.6 — Aprobar dos veces la misma corrección ya no descuenta dos veces
+
+El daño que dejó el defecto anterior antes de que estuviera corregido, y el
+cerrojo que faltaba.
+
+**El borrado del origen no se puede repetir.** `quitar` lleva el `monto` y se lo
+devuelve al saldo del crédito **lo haya borrado o no** —contesta «Success» en
+los dos casos—, así que mandarlo dos veces sobre el mismo abono descuenta dos
+veces. Con la solicitud sin cerrarse (v2.1023.4), volvía a la bandeja y se
+aprobaba de nuevo: el crédito **2405 de Salud 3** se aprobó TRES veces y quedó
+debiendo **$20.85 sobre una deuda real de $6.95**, con el abonado en −$13.90. El
+2354, aprobado una sola vez ya con los dos arreglos vivos, quedó perfecto.
+
+La caja NO se dañó: los dos movimientos «POR ABONO A CREDITO» figuran con
+`desaparecido_at` —el origen borra, no anula— y los descuentos de más no
+generaron movimientos nuevos. El corte confirmado del día es anterior.
+
+**Ahora se comprueba que el abono siga estando ANTES de borrarlo.** Si ya no
+está, se cierra la solicitud y no se escribe nada en la caja —ni el borrado ni
+el abono nuevo—, porque no se puede distinguir «ya se aplicó» de «lo borraron a
+mano», y de los dos errores posibles **cobrar dos veces es el que no se
+deshace**.
+
+Cerrar bien la solicitud ya evitaba la repetición; esto es el segundo cerrojo, y
+existe porque el primero falló. Que no se le cobre de más a un cliente no puede
+depender de que otra escritura no falle.
+
 ## v2.1023.5 — Aprobar días de planilla en bloque no aprobaba ninguno
 
 Tercer hallazgo del mismo barrido, y en otro módulo: se cruzó **toda** escritura

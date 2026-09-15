@@ -199,20 +199,6 @@ export async function abonosDelCredito(
 
 
 /**
- * Borrar un abono del sistema de la caja.
- *
- * ⚠️ **`id_factura` lleva acá el id del ABONO** — es el TERCER significado del
- * mismo parámetro en este origen: en el listado nombra la factura, al abonar
- * lleva el id del CRÉDITO, y al borrar el del ABONO. Auditado el 2-sep
- * probando con un id inexistente, que es la única forma de sondear un borrado
- * sin arriesgar dinero de verdad.
- *
- * ⚠️ **Contesta «Success» aunque no haya borrado nada.** Con un id que no
- * existe devuelve exactamente la misma respuesta que con uno bueno, así que su
- * palabra no prueba nada: quien llama tiene que RELEER el crédito y comprobar
- * que el abono ya no está. Eso lo hace `creditos-erp`.
- */
-/**
  * Abonar a un crédito en el sistema de la caja.
  *
  * Escrito una vez: lo usan el cobro directo, la recolocación de una corrección
@@ -255,8 +241,34 @@ export async function abonarEnOrigen(
   return { ok, datos, crudo };
 }
 
+/**
+ * Borrar un abono del sistema de la caja.
+ *
+ * ⚠️ **Son CUATRO campos y ninguno sobra.** El formulario del origen manda
+ * `process=quitar`, `id_abono` (el abono), `id_factura` (el CRÉDITO) y `monto`
+ * — verificado leyendo su propio `js/funciones/funciones_credito.js`:
+ *
+ *     'process=quitar' + '&id_abono=' + id_abono
+ *                      + '&id_factura=' + id_factura + '&monto=' + monto
+ *
+ * O sea que acá `id_factura` NO cambia de significado: es el crédito, igual que
+ * al abonar. Quien dice qué borrar es `id_abono`, y `monto` es lo que se le
+ * devuelve al saldo.
+ *
+ * ⚠️ **Contesta «Success» aunque no haya borrado nada**, y ahí está la trampa
+ * que costó el 15-sep: esta función mandaba dos campos —sin `id_abono`, sin
+ * `monto`, y con el id del abono metido en `id_factura`— así que el origen no
+ * borraba nunca y contestaba que sí. La auditoría del 2-sep la había probado
+ * **con un id inexistente**, que es justo la prueba que NO puede distinguir una
+ * petición bien armada de una mal armada: las dos devuelven
+ * `{"typeinfo":"Success","msg":"Abono eliminado correctamente!"}`.
+ *
+ * Por eso su palabra no prueba nada y quien llama tiene que RELEER el crédito y
+ * comprobar que el abono ya no está. Eso lo hace `creditos-erp`, y es lo único
+ * que impidió que una corrección se diera por aplicada sin aplicarse.
+ */
 export async function quitarAbonoDelOrigen(
-  cookie: string, erpId: number, abonoErpId: string,
+  cookie: string, erpId: number, abonoErpId: string, creditoErpId: string, monto: number,
 ): Promise<boolean> {
   await abrirSala(cookie, erpId);
   const t = await (await fetch(ABONO_URL, {
@@ -265,7 +277,12 @@ export async function quitarAbonoDelOrigen(
       Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
       "X-Requested-With": "XMLHttpRequest",
     },
-    body: new URLSearchParams({ process: "quitar", id_factura: abonoErpId }).toString(),
+    body: new URLSearchParams({
+      process: "quitar",
+      id_abono: abonoErpId,
+      id_factura: creditoErpId,
+      monto: monto.toFixed(2),
+    }).toString(),
     signal: AbortSignal.timeout(45_000),
   })).text();
   try { return String(JSON.parse(t)?.typeinfo ?? "").toLowerCase() === "success"; }

@@ -64,7 +64,21 @@ export function severidadDeDias(dias, saldo = 1) {
 async function pedir(body) {
     try {
         const { data, error } = await supabase.functions.invoke('creditos-erp', { body });
-        if (error) return { error };
+        if (error) {
+            /* El motivo real viaja en el CUERPO; `error.message` sólo dice
+             * «Edge Function returned a non-2xx status code», que es el mismo
+             * texto para «no tienes permiso», «ya se resolvió» y «el origen dijo
+             * que lo borró y el abono sigue ahí». Sin leerlo, la pantalla
+             * muestra un genérico y el motivo se pierde: el 15-sep una
+             * corrección falló siete veces diciendo «No se pudo completar la
+             * operación» mientras el servidor mandaba la causa exacta, y hubo
+             * que sacarla del LARGO de la respuesta en los registros.
+             *
+             * Es lo que `aplicarCorreccionDeCaja` ya hacía en `data/requests`. */
+            let detalle = '';
+            try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
+            return { ok: false, error: detalle || error };
+        }
         if (!data) return { error: new Error('NO_SE_PUDO') };
         return data;
     } catch (err) {

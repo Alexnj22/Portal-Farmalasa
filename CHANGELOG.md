@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.3 — El borrado de un abono manda los cuatro campos que pide el origen
+
+Aprobar una corrección de abono fallaba siempre. Salud 3 pidió anular dos
+abonos el 15-sep («se cobró efectivo y es transferencia») y los siete intentos
+de aprobarlos murieron con **«No se pudo completar la operación»**.
+
+**El borrado nunca borró nada, y el origen contestaba que sí.** Su formulario
+manda cuatro campos —verificado leyendo su propio
+`js/funciones/funciones_credito.js`—:
+
+```
+process=quitar & id_abono=<el ABONO> & id_factura=<el CRÉDITO> & monto=<monto>
+```
+
+y `quitarAbonoDelOrigen` mandaba dos: sin `id_abono` —que es el único campo que
+dice **qué** borrar—, sin `monto` —que es lo que se le devuelve al saldo— y con
+el id del abono metido en `id_factura`, que ahí significa el crédito.
+
+**Por qué sobrevivió desde el 2-sep.** La auditoría de ese día probó el borrado
+«con un id inexistente, que es la única forma de sondear un borrado sin
+arriesgar dinero». Esa prueba **no puede distinguir una petición bien armada de
+una mal armada**: las dos devuelven
+`{"typeinfo":"Success","msg":"Abono eliminado correctamente!"}`. El instrumento
+daba verde para las dos respuestas posibles, así que confirmó una conjetura en
+vez de ponerla a prueba. Es
+[[feedback_un_detector_que_da_verde_puede_estar_tapando_lo_que_busca]] sobre una
+escritura.
+
+**No se perdió un centavo, y eso no fue suerte:** el código relee el crédito
+después de borrar en vez de creerle al «Success», y ahí cazó el no-op. El freno
+funcionó; lo que estaba roto era el borrado. Los dos abonos siguieron vivos y
+las dos solicitudes siguieron `PENDING`.
+
+**Segundo defecto, el que hizo caro el diagnóstico.** `pedir()` de
+`data/creditos` devolvía el error crudo de `functions.invoke` sin leer el
+cuerpo, así que el motivo exacto que el servidor sí mandaba —«el sistema de la
+caja dijo que lo borró, pero el abono sigue ahí»— nunca llegaba a la pantalla:
+la sala veía un genérico y hubo que sacar el mensaje del **largo en bytes** de
+la respuesta en los registros. Ahora lee `error.context.json()`, que es lo que
+`aplicarCorreccionDeCaja` ya hacía en `data/requests`.
+
+Auditado además el resto del circuito de créditos contra el JS del origen
+—abonar, el listado, el panel de abonos—: los tres coinciden campo por campo.
+El borrado era el único contrato roto.
+
 ## v2.1023.2 — Un reinicio de la base ya no pasa inadvertido
 
 El 10-sep a las 14:31 la base se cayó de golpe y se recuperó sola en ~2.5

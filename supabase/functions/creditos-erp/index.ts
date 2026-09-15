@@ -214,7 +214,8 @@ Deno.serve(async (req) => {
 
       // 1. Borrar el abono viejo, y COMPROBARLO releyendo: el origen contesta
       //    «Success» aunque no haya borrado nada, así que su palabra no prueba.
-      const dijoQueSi = await quitarAbonoDelOrigen(cookie, entrada.erpId, abonoErp);
+      const dijoQueSi = await quitarAbonoDelOrigen(
+        cookie, entrada.erpId, abonoErp, credito, Number(meta.monto_actual) || 0);
       const quedan = await abonosDelCredito(cookie, entrada.erpId, credito);
       if (quedan.some((a) => a.erp_id === abonoErp)) {
         return responder({
@@ -426,7 +427,7 @@ Deno.serve(async (req) => {
           resultado.push({ ...r, decision: "RECHAZADO", motivo: d?.motivo ?? null, deshecho: false });
           continue;
         }
-        await quitarAbonoDelOrigen(cookie, entrada.erpId, abono.erp_id);
+        await quitarAbonoDelOrigen(cookie, entrada.erpId, abono.erp_id, credito, abono.monto);
         // El origen dice «Success» aunque no borre nada: se comprueba releyendo.
         const quedan = await abonosDelCredito(cookie, entrada.erpId, credito);
         const sigue = quedan.some((a) => a.erp_id === abono.erp_id);

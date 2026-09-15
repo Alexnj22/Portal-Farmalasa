@@ -976,7 +976,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     const pending = quincenaTS.filter(ts => String(ts.employee_id) === String(emp.id) && ts.status !== 'APPROVED');
     if (!pending.length) return;
     const ids = pending.map(ts => ts.id);
-    const { error } = await approveTimesheetsBulk(ids, user?.id);
+    const { error } = await approveTimesheetsBulk(ids);
     if (!error) {
       setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
       appendAuditLog?.('TIMESHEETS_BULK_APPROVED', user?.id, { empId: emp.id, count: ids.length, quincena: selectedQuincena, actorName: user?.name });

@@ -74,9 +74,27 @@ export function fetchQuincenaTimesheets(startDate, endDate) {
         .gte('work_date', startDate).lte('work_date', endDate);
 }
 
-export function approveTimesheetsBulk(ids, approverId) {
+/**
+ * Aprobar días de planilla en bloque.
+ *
+ * ⚠️ **No lleva `approver_id`: esa columna NO existe en `timesheets`.** Sus
+ * columnas son las del día trabajado (`work_date`, las horas, `is_absent`, …)
+ * más `status`. Y PostgREST rechaza el UPDATE **entero** cuando una sola
+ * columna no existe (PGRST204), así que con ese campo adentro esto no aprobaba
+ * NINGÚN día: la pantalla contestaba «No se pudo aprobar» y la quincena se
+ * quedaba sin aprobar. `closeQuincenaTimesheets`, que manda sólo `status`,
+ * siempre funcionó — por eso el defecto no se veía como «la planilla no
+ * aprueba» sino como un botón que a veces no anda.
+ *
+ * Quién aprobó queda en la bitácora (`TIMESHEETS_BULK_APPROVED` en
+ * `audit_logs`), que es donde el portal guarda las firmas.
+ *
+ * Encontrado el 2026-09-15 cruzando TODA escritura del repo contra el catálogo
+ * real de columnas de producción, a raíz del mismo defecto en `creditos-erp`.
+ */
+export function approveTimesheetsBulk(ids) {
     return supabase.from('timesheets')
-        .update({ status: 'APPROVED', approver_id: approverId, updated_at: new Date().toISOString() })
+        .update({ status: 'APPROVED', updated_at: new Date().toISOString() })
         .in('id', ids);
 }
 

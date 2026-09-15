@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.5 — Aprobar días de planilla en bloque no aprobaba ninguno
+
+Tercer hallazgo del mismo barrido, y en otro módulo: se cruzó **toda** escritura
+del repo (339 pares tabla→columna de `.insert`/`.update`/`.upsert`) contra el
+catálogo real de columnas de producción, para responder si el defecto de
+`creditos-erp` estaba en algún otro lado. Estaba en uno.
+
+`approveTimesheetsBulk` escribía `approver_id` en `timesheets`, y esa columna
+**no existe**: las de esa tabla son las del día trabajado —`work_date`, las
+horas, `is_absent`, `absence_type`— más `status`. Como PostgREST rechaza el
+UPDATE entero cuando una sola columna falta (PGRST204), **no se aprobaba ni un
+día**: la pantalla contestaba «No se pudo aprobar» y la quincena seguía sin
+aprobar.
+
+`closeQuincenaTimesheets`, que manda sólo `status`, siempre funcionó — por eso
+no se veía como «la planilla no aprueba» sino como un botón que a veces no anda.
+
+Quién aprobó no se pierde: ya quedaba en la bitácora
+(`TIMESHEETS_BULK_APPROVED` en `audit_logs`), que es donde el portal guarda las
+firmas. Por eso se quita la columna del UPDATE en vez de agregarla a la tabla.
+
+**Del barrido, el resto quedó limpio:** 22 pares no existían en el catálogo y
+**20 eran ruido del extractor**, no del portal — texto dentro de comentarios
+(`…haya entrado sólo una parte:`, `…tan urgente como un error:`, `…no la
+resta:`) y ternarios (`? recipientIds : null`, `? aplicado :`), que desde un
+regex se ven igual que una clave. Fabricarle esa regresión al instrumento antes
+de creerle el número es lo que separó un hallazgo de veintiuno.
+
 ## v2.1023.4 — Cerrar una solicitud de crédito escribía una columna que no existe
 
 El defecto hermano del anterior, encontrado al verificar que el arreglo del

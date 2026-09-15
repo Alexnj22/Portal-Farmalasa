@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.4 — Cerrar una solicitud de crédito escribía una columna que no existe
+
+El defecto hermano del anterior, encontrado al verificar que el arreglo del
+borrado dejara la solicitud bien cerrada. `creditos-erp` cerraba las dos
+solicitudes de cuentas por cobrar escribiendo `resolved_at`, y esa columna **no
+existe en `approval_requests`**: sus columnas de cierre son `status`,
+`approver_id`, `approver_note` y `updated_at`, que es exactamente como cierran
+`operar-caja`, `aplicar-solicitud-facturacion`, `aplicar-movimiento-inventario`
+y `aplicar-traslado-inventario`. Era el único sitio del repo que la nombraba
+sobre esa tabla; los demás `resolved_at` son de otras tablas donde sí existe.
+
+**PostgREST rechaza el UPDATE entero cuando una sola columna no está** (PGRST204),
+así que el cierre no se escribía nunca. Las consecuencias eran distintas en cada
+sitio, y las dos malas:
+
+- **Corregir un abono** (`aplicar_correccion`) mandaba el fallo a consola y
+  seguía. Con el borrado ya arreglado, el abono se habría anulado en la caja y
+  la solicitud habría quedado **`PENDING`**: vuelve a la bandeja, alguien la
+  aprueba otra vez y —si era MONTO o FORMA— se abona de nuevo.
+- **Resolver un cobro con «Otro»** (`resolver_otro`) sí lanzaba, o sea que
+  moría en un 500 **después de haber abonado en el origen**.
+
+Ahora el cierre no lleva esa columna y su fallo ya no se traga: si el abono se
+corrigió en la caja y la solicitud no se pudo cerrar, se contesta en rojo
+diciendo que no se vuelva a aprobar. El rastro que va antes —marcar el abono
+anulado y refrescar el espejo— se escribe igual, porque en la caja la corrección
+ya ocurrió.
+
+La lección se repite en la misma sesión: **una escritura que falla sin que nadie
+se entere**. El borrado le creía al «Success» del origen; éste le creía a un
+`console.error`. Las dos se veían como que todo estaba bien.
+
 ## v2.1023.3 — El borrado de un abono manda los cuatro campos que pide el origen
 
 Aprobar una corrección de abono fallaba siempre. Salud 3 pidió anular dos

@@ -258,9 +258,22 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 3. Cerrar la solicitud y dejar el rastro del lado del portal.
+      /* 3. Cerrar la solicitud y dejar el rastro del lado del portal.
+       *
+       * ⚠️ Esto escribía además `resolved_at`, que en `approval_requests` **no
+       * existe** — sus columnas de cierre son `status`, `approver_id`,
+       * `approver_note` y `updated_at`, que es como cierran `operar-caja` y las
+       * otras tres. PostgREST rechaza el UPDATE ENTERO con PGRST204 cuando una
+       * sola columna no está, así que el cierre no se escribía nunca; y como el
+       * error sólo iba a consola, la corrección se aplicaba y la solicitud
+       * seguía PENDING. Es la misma familia que el borrado de arriba: una
+       * escritura que falla sin que nadie se entere.
+       *
+       * Su fallo NO se traga: acá el abono ya se borró y no hay «restaurar», así
+       * que una solicitud que queda pendiente es una que alguien va a aprobar de
+       * nuevo — y si era MONTO o FORMA, el segundo intento vuelve a abonar. */
       const { error: eCerrar } = await supabase.from("approval_requests")
-        .update({ status: "APPROVED", approver_id: quien.id, resolved_at: new Date().toISOString() })
+        .update({ status: "APPROVED", approver_id: quien.id })
         .eq("id", solId);
       if (eCerrar) console.error("[creditos-erp] cerrando la solicitud:", eCerrar.message);
 
@@ -291,6 +304,18 @@ Deno.serve(async (req) => {
         }
       } catch (e) {
         console.error(`[creditos-erp] espejo tras corregir: ${(e as Error).message}`);
+      }
+
+      /* Se contesta en rojo, pero recién acá: el rastro de arriba —marcar el
+       * abono anulado y refrescar el espejo— tiene que escribirse igual, porque
+       * en la caja la corrección ya ocurrió. Lo que NO puede pasar es que la
+       * pantalla diga «aprobada» sobre una solicitud que sigue pendiente. */
+      if (eCerrar) {
+        return responder({
+          ok: false,
+          error: "El abono se corrigió en la caja, pero la solicitud no se pudo "
+               + "cerrar. NO la apruebes de nuevo: avísale a Sistemas.",
+        }, 500);
       }
 
       return responder({ ok: true, que, nuevo });
@@ -503,8 +528,11 @@ Deno.serve(async (req) => {
       if (!nadaEntro) {
         const { error: eCerrar } = await supabase.from("approval_requests")
           .update({
+            // Sin `resolved_at`: esa columna no existe en `approval_requests` y
+            // PostgREST rechazaba el UPDATE entero (PGRST204). Acá el fallo sí
+            // lanzaba, así que aprobar un cobro con «Otro» moría en un 500 —
+            // después de haber abonado en el origen.
             status: "APPROVED", approver_id: quien.id,
-            resolved_at: new Date().toISOString(),
             metadata: { ...meta, creditos: resultado, resuelto_por: quien.id,
                         pago_id: pagoId ? String(pagoId) : (meta.pago_id ?? null) },
           })

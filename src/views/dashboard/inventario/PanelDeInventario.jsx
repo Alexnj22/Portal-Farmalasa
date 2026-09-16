@@ -947,7 +947,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
           )}
         </div>
 
-        <PhotoLightbox src={lightboxUrl} alt="Foto del producto" onClose={() => setLightboxUrl(null)} zClass="z-toast" />
+        <PhotoLightbox src={lightboxUrl} alt="Foto del producto" onClose={() => setLightboxUrl(null)} />
 
         {/* El detalle sale por su propio `return`, así que el modal de la
             pantalla de búsqueda no llega hasta acá: sin montarlo también en
@@ -1243,7 +1243,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
         )}
       </div>
 
-      <PhotoLightbox src={lightboxUrl} alt="Foto del producto" onClose={() => setLightboxUrl(null)} zClass="z-toast" />
+      <PhotoLightbox src={lightboxUrl} alt="Foto del producto" onClose={() => setLightboxUrl(null)} />
 
       {/* Se monta SOLO al pedir: si no, cada faltante de la lista traería sus
           presentaciones al abrir el widget. */}

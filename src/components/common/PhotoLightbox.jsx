@@ -25,7 +25,20 @@ import Button from './Button';
 // contestar que había debajo, que es justo lo que no se puede perder.
 // `ModalShell` escucha en `window` y esto en `document`, o sea un escalón antes
 // en el burbujeo: `stopPropagation` lo corta ahí y el de atrás ni se entera.
-export default function PhotoLightbox({ src, alt, onClose, zClass = 'z-flyout' }) {
+// ── Por qué la capa por defecto es `z-lightbox` (99998) y no `z-flyout` ────
+// Porque una foto se mira ENCIMA del diálogo que la abrió, y «encima» no se
+// puede decidir mirando un solo diálogo. El default era `z-flyout` (300) con el
+// argumento de que estaba «por encima de z-modal (100)» — cierto el día que se
+// escribió, y falso desde que cuatro pantallas pasaron a abrir su diálogo en
+// `z-toast` (9999): el detalle de una solicitud, el historial de traslados y
+// las filas de traslado. Ahí la foto se abría DETRÁS, sin error y sin que
+// ningún gate pudiera verlo, porque el defecto no está en ninguno de los dos
+// archivos sino en la relación entre sus capas.
+//
+// Tres pantallas lo habían parcheado a mano pasando `zClass="z-toast"`, que
+// deja la foto EMPATADA con el diálogo y sólo se ve encima porque su portal se
+// monta después en el DOM. Eso no es una capa, es una carrera que hoy gana.
+export default function PhotoLightbox({ src, alt, onClose, zClass = 'z-lightbox' }) {
     useEffect(() => {
         if (!src) return;
         const handler = e => {

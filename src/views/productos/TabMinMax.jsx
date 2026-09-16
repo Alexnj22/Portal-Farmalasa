@@ -1789,7 +1789,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             </ModalShell>
             )}
 
-            <PhotoLightbox src={zoomPhoto} alt="Foto del producto" onClose={() => setZoomPhoto(null)} zClass="z-toast" />
+            <PhotoLightbox src={zoomPhoto} alt="Foto del producto" onClose={() => setZoomPhoto(null)} />
 
             {/* ── Confirm publish modal ── */}
             {/* El detalle de la regla y su sugerencia. `key` por producto·sala:

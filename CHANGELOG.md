@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.7 — La evidencia de una solicitud ya no se abre detrás del diálogo
+
+Reportado en una línea: *«al dar clic en evidencia de la solicitud, me la pone
+atrás y no puedo ver»* — sobre un abono de $15.55 que no se podía decidir sin
+mirar el comprobante.
+
+La foto SÍ se abría; quedaba debajo. `PhotoLightbox` usaba `z-flyout` (**300**)
+y el detalle de la solicitud se abre en `z-toast` (**9999**).
+
+**El comentario del componente explicaba por qué eso estaba bien:** «vive en
+`z-flyout` (300), o sea por encima de `z-modal` (100)». Era cierto el día que se
+escribió. Después, cuatro pantallas pasaron a abrir su diálogo en `z-toast` —el
+detalle de una solicitud, el historial de traslados (×2) y las filas de
+traslado— y en las cuatro la evidencia quedó detrás, sin error y sin que ningún
+gate pudiera verlo: el defecto no vive en ninguno de los dos archivos sino en la
+**relación entre sus capas**. Es
+[[feedback_una_afirmacion_que_nadie_verifica_deja_de_ser_cierta]] otra vez.
+
+Tres pantallas ya lo habían parcheado a mano pasándole `zClass="z-toast"` al
+visor, que lo deja **empatado** con el diálogo y sólo se ve encima porque su
+portal se monta después en el DOM. Eso no es una capa, es una carrera que hoy
+gana. Los tres parches se quitaron.
+
+Ahora hay un token propio, `z-lightbox` (**99998**): por encima de cualquier
+diálogo que pueda abrir una foto, y por debajo de `z-confirm` para que una
+confirmación siga tapándola. Verificado en el CSS compilado y no sólo en el
+fuente — `z-ribbon` estuvo escrita en el código desde v2.57.1 **sin que la
+utilidad existiera**, y sin regla el elemento se queda en `z-index: auto`, que
+es peor que la capa equivocada.
+
 ## v2.1023.6 — Aprobar dos veces la misma corrección ya no descuenta dos veces
 
 El daño que dejó el defecto anterior antes de que estuviera corregido, y el

@@ -33,8 +33,15 @@ import PhotoLightbox from './PhotoLightbox';
  * volver de la pestaña de la foto es un viaje de ida y vuelta por el navegador
  * que en el teléfono ni siquiera es obvio. La foto es evidencia PARA esa
  * decisión, así que se mira sin soltarla. `PhotoLightbox` es el visor canónico
- * y vive en `z-flyout` (300), o sea por encima de `z-modal` (100): funciona
- * igual dentro del diálogo del tablero que en la vista de traslados.
+ * y vive en `z-lightbox` (99998), por encima de CUALQUIER diálogo que pueda
+ * abrirlo.
+ *
+ * ⚠️ Acá decía «vive en `z-flyout` (300), o sea por encima de `z-modal` (100)».
+ * Era cierto el día que se escribió, y dejó de serlo sin que nadie lo mirara:
+ * cuatro pantallas abren su diálogo en `z-toast` (9999), y en las cuatro la
+ * evidencia se abría DETRÁS. Lo reportó el usuario el 15-sep —«al dar clic en
+ * la evidencia me la pone atrás y no puedo ver»— sobre una solicitud de abono
+ * que no se podía decidir sin mirar el comprobante.
  */
 const EvidenciaFotos = memo(({ urls, titulo = 'Evidencia' }) => {
     const [firmadas, setFirmadas] = useState(null);

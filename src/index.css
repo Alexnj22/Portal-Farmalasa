@@ -2611,6 +2611,18 @@ thead.sticky,
 @utility z-banner          { z-index: 500;   }
 @utility z-tooltip         { z-index: 9998;  }
 @utility z-toast           { z-index: 9999;  }
+/* La foto a pantalla completa (`PhotoLightbox`). Va por encima de TODO diálogo
+   —incluidos los que se abren en `z-toast` (9999): el detalle de una solicitud,
+   el historial de traslados y las filas de traslado— porque una foto se mira
+   siempre ENCIMA de lo que la abrió. Y por debajo de `z-confirm`, para que una
+   confirmación siga tapándola.
+
+   Existe porque el visor vivía en `z-flyout` (300) «o sea por encima de
+   z-modal (100)», que era cierto el día que se escribió y dejó de serlo cuando
+   esos cuatro diálogos pasaron a `z-toast`: la evidencia de una solicitud se
+   abría DETRÁS, sin error y sin que ningún gate lo viera. Reportado el 15-sep
+   sobre un abono que no se podía decidir sin mirar el comprobante. */
+@utility z-lightbox        { z-index: 99998; }
 @utility z-confirm         { z-index: 99999; }
 
 

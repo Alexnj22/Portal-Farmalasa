@@ -318,7 +318,27 @@ Deno.serve(async (req) => {
      * Lo que SÍ sigue frenando no depende de ningún nombre: que no sea un
      * comprobante, que no se lea, que el propio papel diga que la operación no
      * se aplicó, que no tenga monto, o que diga más de lo que el cliente debe. */
+    /* ⚠️ **Si la CASILLA de quien recibe ya nos nombró, no se pide firma.**
+     *
+     * `nombradoEnElPapel` responde otra pregunta —«¿aparecemos en algún lado
+     * del papel?»— y por eso exige MÁS parecido: tres de las cuatro palabras
+     * del titular en vez de dos, porque ahí no hay rótulo que respalde el
+     * nombre y un cliente llamado José o apellidado Vásquez cumpliría con el
+     * suyo. Ese umbral está bien para lo que mide.
+     *
+     * Lo que estaba mal era decidir SÓLO con él, descartando la respuesta más
+     * confiable de las dos. Medido el 15-sep en una transferencia de $15.55 de
+     * Salud 4: el comprobante decía «Rutilio Aleman» —el titular es JOSÉ
+     * RUTILIO ALEMÁN VÁSQUEZ—, la casilla del beneficiario lo reconoció
+     * (`titular: true`, dos palabras: RUTILIO y ALEMAN) y la otra pregunta lo
+     * rechazó (le faltaba la tercera). La lectura quedó guardada diciendo las
+     * dos cosas a la vez, y el cobro se fue a firma siete horas sobre un pago
+     * que el propio portal daba por nuestro.
+     *
+     * Siguen yendo a firma los dos casos que importan: el papel nombra a un
+     * tercero, o no se leyó a quién se le pagó. */
     const nombreSinReconocer = clave !== "tarjeta" && nombradoEnElPapel === false
+      && coincide.titular !== true
 
     /* El aviso del nombre NO va acá y es a propósito: `nombreSinReconocer` viaja
      * como bandera y la frase la escribe la pantalla, que es la que sabe con

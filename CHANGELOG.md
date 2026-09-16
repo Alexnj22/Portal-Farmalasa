@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.8 — Un comprobante a nombre del titular ya no espera firma
+
+Pregunta del usuario: *«si decía Rutilio Aleman, ¿por qué dio error, si el
+gerente se llama así?»*. Tenía razón, y **el portal se contradecía a sí mismo**:
+esa lectura quedó guardada diciendo `titular: true` y `nombradoEnElPapel: false`
+a la vez, y se mandó a firma igual.
+
+Son dos preguntas distintas sobre el mismo papel, y cada una tiene su umbral
+contra las cuatro palabras de JOSÉ RUTILIO ALEMÁN VÁSQUEZ:
+
+| | qué mide | pide |
+|---|---|---|
+| casilla del beneficiario | ¿el que RECIBE somos nosotros? | 2 de 4 |
+| nombre suelto en el papel | ¿aparecemos en algún lado? | 3 de 4 |
+
+El umbral de 3 está bien y el test ya lo fija (`JOSE VASQUEZ`: «con rótulo,
+pasa; suelto, no»): sin un rótulo que respalde el nombre, un cliente llamado
+José o apellidado Vásquez cumpliría con el suyo.
+
+**Lo que estaba mal era decidir sólo con el estricto**, descartando la respuesta
+más confiable de las dos. «Rutilio Aleman» tiene RUTILIO + ALEMAN = 2, así que
+la casilla lo reconoció y la otra pregunta lo rechazó por una palabra. El cobro
+de $15.55 de Salud 4 quedó siete horas esperando firma sobre un pago que el
+propio portal daba por nuestro.
+
+Ahora, si la casilla de quien recibe ya nos nombró, no se pide firma. Siguen
+yendo a firma los dos casos que importan: el papel nombra a un tercero, o no se
+leyó a quién se le pagó.
+
+⚠️ No alcanza con desplegar: las solicitudes **ya creadas** no se deshacen solas.
+La de Salud 4 se resuelve con «Confirmar» en la bandeja — que desde v2.1023.4
+vuelve a funcionar, porque antes moría en un 500 al cerrarla.
+
 ## v2.1023.7 — La evidencia de una solicitud ya no se abre detrás del diálogo
 
 Reportado en una línea: *«al dar clic en evidencia de la solicitud, me la pone

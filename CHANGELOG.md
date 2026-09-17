@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.10 — Los lectores que no se midieron conservan su pensamiento
+
+Cabo suelto de v2.1023.9. El techo de pensamiento en 128 quedó como valor por
+defecto de `_shared/gemini.ts`, así que cayó sobre **todos** los que llaman a
+Gemini — y sólo estaba medido sobre uno: las boletas de POS.
+
+Los otros cuatro vuelven al pensamiento de antes, con su motivo escrito:
+
+| función | por qué queda afuera |
+|---|---|
+| `leer-dui` (lectura) | un dígito mal leído entra en la ficha de una persona |
+| `leer-dui` (recuadro) | es geometría sobre una foto, otra pregunta |
+| `analyze-document` | un contrato tiene varias páginas y varias fechas, y hay que elegir cuál vence |
+| `analyze-branch` / `analyze-history` | REDACTAN un resumen, no extraen un dato |
+
+**Lo que se ahorraba incluyéndolos eran centavos** —seis llamadas al día entre
+todas— y lo que se arriesgaba era leer peor un documento de identidad. Con el
+número medido sobre boletas de papel térmico, que es la entrada más difícil de
+todas, lo más probable es que 128 les alcance; pero «lo más probable» no es una
+medición, y el pedido era mismo resultado o mejor.
+
+El techo por defecto sigue en 128, que es lo que protege al código nuevo: quien
+escriba otro lector lo hereda sin tener que saber que el pensamiento se cobra.
+Salirse exige escribirlo y decir por qué.
+
 ## v2.1023.9 — Leer una boleta cuesta 12 veces menos y tarda la mitad
 
 Salió de un aviso de Google: *90% del presupuesto alcanzado*, $9.54 del 1 al 17

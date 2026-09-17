@@ -77,6 +77,11 @@ Deno.serve(async (req) => {
       prompt,
       inlineData: [{ mimeType, data: base64 }],
       jsonOutput: true,
+      /* Sin techo: no se midió sobre estos papeles. Un contrato o un acuerdo
+       * del Ministerio es más difícil que una boleta —varias páginas, varias
+       * fechas, y hay que elegir cuál vence—, así que el número medido sobre
+       * boletas no habla de esto. Ver `_shared/gemini.ts`. */
+      thinkingBudget: null,
     })
     const parsedAI = parseGeminiJson(rawText)
 

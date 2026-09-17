@@ -307,6 +307,12 @@ Deno.serve(async (req: Request) => {
         prompt: PROMPT_RECUADRO,
         inlineData: [{ mimeType: mime, data: b64 }],
         jsonOutput: true,
+        /* Sin techo de pensamiento porque NO se midió acá. El de
+         * `_shared/gemini.ts` está medido sobre boletas de POS, y esto es otra
+         * pregunta (geometría sobre una foto de un documento). Son seis
+         * llamadas al día: acotarlo sin medirlo arriesga un recorte peor para
+         * ahorrar centavos. Se mide y recién entonces se le pone número. */
+        thinkingBudget: null,
       })
       const r = parseGeminiJson<Record<string, unknown>>(crudoR)
       const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
@@ -370,7 +376,11 @@ Deno.serve(async (req: Request) => {
       inlineData.push({ mimeType: data.type || 'image/jpeg', data: aBase64(buf) })
     }
 
-    const crudo = await callGemini({ prompt: PROMPT, inlineData, jsonOutput: true })
+    /* `thinkingBudget: null` = el pensamiento de siempre. El techo por defecto
+     * está medido sobre boletas, no sobre documentos de identidad, y acá un
+     * dígito mal leído entra en la ficha de una persona. Ver la nota de
+     * `_shared/gemini.ts`: se mide antes de acotar. */
+    const crudo = await callGemini({ prompt: PROMPT, inlineData, jsonOutput: true, thinkingBudget: null })
     const leido = parseGeminiJson<Record<string, unknown>>(crudo)
 
     if (leido?.es_dui === false) {

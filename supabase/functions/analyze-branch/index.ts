@@ -39,7 +39,10 @@ Deno.serve(async (req) => {
     DATOS EN TIEMPO REAL:
     ${branchData}`
 
-    const cleanResponse = (await callGemini({ prompt })).trim()
+    /* Sin techo de pensamiento: esto REDACTA un resumen, no extrae un dato de
+     * una foto, y el número por defecto de `_shared/gemini.ts` está medido
+     * sobre lo segundo. Es el mismo motivo por el que Saly queda afuera. */
+    const cleanResponse = (await callGemini({ prompt, thinkingBudget: null })).trim()
 
     return new Response(JSON.stringify({ success: true, aiSummary: cleanResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

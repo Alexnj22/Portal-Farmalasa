@@ -37,7 +37,10 @@ Deno.serve(async (req) => {
     HISTORIAL DE SUCURSAL:
     ${historyData}`
 
-    const cleanResponse = (await callGemini({ prompt })).trim()
+    /* Sin techo de pensamiento: esto REDACTA un resumen del historial, no
+     * extrae un dato de una foto. El número por defecto está medido sobre
+     * extracción — ver `_shared/gemini.ts`. */
+    const cleanResponse = (await callGemini({ prompt, thinkingBudget: null })).trim()
 
     return new Response(JSON.stringify({ success: true, aiSummary: cleanResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -35,7 +35,7 @@ import { decidirDiferencia, confirmarLlegadaDiferencia } from '../../../data/dif
 import { registerPlugin } from '@capacitor/core';
 
 import { mensajeAmigable } from '../../../utils/errorMessages';
-import { cajasDeRenglon, construirCajasEspeciales } from '../../../utils/cajasEspeciales';
+import { cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '../../../utils/cajasEspeciales';
 import { fetchEmployeesPublicByIds } from '../../../data/employees';
 const ERP_ORDER = [5, 1, 2, 3, 4, 7];
 
@@ -732,11 +732,17 @@ export function usePedidosData({ searchTerm = '' }) {
         if (!finalizarModal) return;
         const { pedidoId, sucId } = finalizarModal;
         const allRows = finalizarModal.rows ?? [];
+        // Las dos cuentas de cajas salen de lo que de verdad SALE, no de lo
+        // asignado: `ajustesEnvio` ya dice qué renglón se despacha corto o no se
+        // despacha. Contar una caja que acaba de declararse no enviada le pide a
+        // la sala que reciba algo que nunca viajó — ver `renglonesQueSalen`.
+        const rowsQueSalen = renglonesQueSalen(allRows, ajustesEnvio);
+
         // Contar cajas Electrolit: solo los que despachan por CAJA (625ml).
         // Cuenta CAJAS con la misma fórmula que las especiales — antes tenía su
         // propio `Math.round(...)` copiado, y dos fórmulas para "cuántas cajas
         // son estas unidades" es una discrepancia esperando su parcial.
-        const cajasElectrolit = allRows
+        const cajasElectrolit = rowsQueSalen
             .filter(r =>
                 (r.products?.nombre ?? '').toLowerCase().includes('electrolit') &&
                 (r.dispatch_tipo ?? '').toUpperCase() === 'CAJA'
@@ -745,7 +751,7 @@ export function usePedidosData({ searchTerm = '' }) {
 
         // Cajas especiales: E1, E2… una por CAJA. Un Electrolit ×12 es una caja
         // especial, no doce.
-        const cajasEspeciales = construirCajasEspeciales(allRows);
+        const cajasEspeciales = construirCajasEspeciales(rowsQueSalen);
 
         setFinalizarModal(null);
         setBusyAction('finalizar');
@@ -905,21 +911,33 @@ export function usePedidosData({ searchTerm = '' }) {
             }
 
             // 2c. Marcar items de cajas especiales faltantes como falta_caja: true
-            if (especialesLlegadas && Object.values(especialesLlegadas).some(v => v === 'faltante') && rows.length > 0) {
-                const faltaLabels = new Set(Object.entries(especialesLlegadas).filter(([, v]) => v === 'faltante').map(([k]) => k));
-                let ec = 1;
-                const faltaIds = new Set();
-                [...rows]
-                    .filter(r => r.caja_especial && (r.cantidad_asignada ?? 0) > 0 && r.status !== 'recibido')
-                    .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es'))
-                    .forEach(r => {
-                        for (let i = 0; i < (r.cantidad_asignada ?? 1); i++) {
-                            if (faltaLabels.has(`E${ec}`)) faltaIds.add(r.id);
-                            ec++;
-                        }
-                    });
-                if (faltaIds.size > 0) {
-                    const { error: espErr } = await updatePedidoItemsFaltaCaja([...faltaIds], true);
+            //
+            //     La etiqueta E1…En es una CLAVE y su dueño ya está guardado:
+            //     `cajas_especiales` lo escribió `construirCajasEspeciales` al
+            //     finalizar el despacho, con el `pedido_item_id` adentro, y es la
+            //     MISMA lista que esta pantalla le mostró a la sala. Acá se lee;
+            //     no se vuelve a derivar — ver `renglonesDeCajasFaltantes` y lo
+            //     que costó el pedido #178 de Salud 4.
+            //
+            //     Se relee de la base en vez de usar `rows` a propósito: `rows`
+            //     es lo que esta sesión tiene en memoria, y el mapa tiene que
+            //     salir de lo que se imprimió en las cajas.
+            let cajasEspecialesDb = [];
+            if (hasFaltaEsp) {
+                const { data: pssEsp, error: pssEspErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'cajas_especiales');
+                if (pssEspErr) throw pssEspErr;
+                cajasEspecialesDb = pssEsp?.cajas_especiales ?? [];
+
+                const { ids: faltaIds, huerfanas } = renglonesDeCajasFaltantes(cajasEspecialesDb, especialesLlegadas);
+
+                //  Una etiqueta sin dueño NO se saltea. Seguir dejaría la llegada
+                //  confirmada con el faltante sin ningún renglón bloqueado, o sea
+                //  invisible: peor que no poder confirmar.
+                if (huerfanas.length > 0) {
+                    throw new Error(`No se pudo identificar qué producto es la caja ${huerfanas.join(', ')}. Avisa a bodega antes de confirmar la llegada.`);
+                }
+                if (faltaIds.length > 0) {
+                    const { error: espErr } = await updatePedidoItemsFaltaCaja(faltaIds, true);
                     if (espErr) throw espErr;
                 }
             }
@@ -998,12 +1016,20 @@ export function usePedidosData({ searchTerm = '' }) {
             }
 
             // 5d. Notificar si faltan cajas especiales
-            if (especialesLlegadas && Object.values(especialesLlegadas).some(v => v === 'faltante')) {
+            //
+            //     Nombra el PRODUCTO, no sólo la etiqueta. «no recibida: E2» le
+            //     pide a quien despacha que reconstruya de memoria a qué caja
+            //     apuntaba esa letra en ese despacho — que es justamente la
+            //     cuenta que esta pantalla hacía mal, y con el nombre al lado el
+            //     error se habría visto el mismo día.
+            if (hasFaltaEsp) {
                 fetchBodegaBranchId().then(({ data: b }) => {
                     if (!b?.branch_id) return;
                     const faltanE = Object.entries(especialesLlegadas).filter(([, v]) => v === 'faltante').map(([k]) => k);
+                    const nombreDe = new Map(cajasEspecialesDb.map(e => [e?.label, e?.product_name]));
+                    const detalle  = faltanE.map(l => (nombreDe.get(l) ? `${l} (${nombreDe.get(l)})` : l)).join(', ');
                     const title   = `Caja especial faltante — ${branchName}`;
-                    const message = `${branchName} reporta caja${faltanE.length > 1 ? 's' : ''} especial${faltanE.length > 1 ? 'es' : ''} no recibida${faltanE.length > 1 ? 's' : ''}: ${faltanE.join(', ')}.`;
+                    const message = `${branchName} reporta caja${faltanE.length > 1 ? 's' : ''} especial${faltanE.length > 1 ? 'es' : ''} no recibida${faltanE.length > 1 ? 's' : ''}: ${detalle}.`;
                     notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true });
                 }).catch(() => {});
             }
@@ -1399,6 +1425,11 @@ export function usePedidosData({ searchTerm = '' }) {
         }
 
         const especialesLlegadas = activeRow?.cajas_especiales_llegadas ?? {};
+        // La lista de cajas especiales tal como se imprimió, para que la pantalla
+        // de recepción rotule E1…En con las MISMAS etiquetas con las que la sala
+        // reportó la llegada. Derivarla de `rows` las corre: `rows` es lo que
+        // queda pendiente, no lo que salió de bodega.
+        const cajasEspeciales = Array.isArray(activeRow?.cajas_especiales) ? activeRow.cajas_especiales : [];
 
         // `rows` sólo lleva lo que queda PENDIENTE, así que una hoja contada en
         // una sesión anterior llega al modal sin un solo renglón — idéntica a una
@@ -1408,7 +1439,7 @@ export function usePedidosData({ searchTerm = '' }) {
         const itemsEnReenvio  = (loaded || []).filter(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0).map(r => r.id);
         const itemsYaContados = (loaded || []).filter(r => r.status !== 'pendiente').map(r => r.id);
 
-        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, confirmados, cajaDanada, cajaMap, paginaItems, paginas, hojasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas, itemsEnReenvio, itemsYaContados });
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, confirmados, cajaDanada, cajaMap, paginaItems, paginas, hojasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas, cajasEspeciales, itemsEnReenvio, itemsYaContados });
     }, [fetchItems, activeRows]);
 
     const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {

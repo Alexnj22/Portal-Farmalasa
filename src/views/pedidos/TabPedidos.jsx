@@ -1000,6 +1000,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     faltaCajas={modal.faltaCajas     ?? []}
                     hasFaltaItems={modal.hasFaltaItems ?? false}
                     especialesLlegadas={modal.especialesLlegadas ?? {}}
+                    cajasEspeciales={modal.cajasEspeciales ?? []}
                     itemsEnReenvio={modal.itemsEnReenvio ?? []}
                     itemsYaContados={modal.itemsYaContados ?? []}
                     /* Corregir un conteo NO cierra el modal —la sala puede

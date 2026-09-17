@@ -600,6 +600,11 @@ export default function RecepcionModal({
     faltaCajas   = [],   // cajas que no llegaron (sus productos quedan excluidos)
     hasFaltaItems = false, // hay items falta_caja:true en otros grupos (electrolit/especial/caja pendiente)
     especialesLlegadas = {}, // { 'E1': 'ok'|'danada'|'faltante', ... }
+    // La lista de cajas especiales del despacho, tal como se guardó al
+    // finalizarlo: `[{ label, pedido_item_id, product_name }]`. Es la MISMA que
+    // vio quien reportó la llegada, y por eso llega como prop en vez de
+    // derivarse acá — ver abajo.
+    cajasEspeciales = [],
     itemsEnReenvio  = [],  // ids de renglones que quedaron en una caja que no llegó
     itemsYaContados = [],  // ids de renglones que ya se contaron (en cualquier sesión)
 }) {
@@ -723,14 +728,22 @@ export default function RecepcionModal({
     // Cajas especiales: E1, E2… una por CAJA, con la numeración compartida (así
     // marcar «E2 dañada» en el aviso de llegada señala la misma caja acá).
     //
+    // Y «compartida» quiere decir LEÍDA, no recalculada. La lista guardada gana
+    // sobre derivarla de `rows`, porque `rows` es lo que queda pendiente —sin lo
+    // ya contado y sin lo que viajaba en una caja que no llegó— así que
+    // renumerarlo desde acá corre las etiquetas y la misma letra pasa a señalar
+    // otra caja. `construirCajasEspeciales` queda de respaldo para los despachos
+    // viejos, anteriores a que la lista se guardara.
+    //
     // Pero la BALDOSA es por renglón, no por caja: la recepción confirma la
     // cantidad de un renglón de una sola vez —`receive_pedido_sucursal` recibe un
     // número por `pedido_item`— así que dos baldosas del mismo producto serían
     // dos veces la misma confirmación, y tocar una desactivaría la otra. La
     // baldosa dice entonces qué cajas cubre: «E1–E2».
     const especialItems = useMemo(() => {
+        const guardadas = Array.isArray(cajasEspeciales) ? cajasEspeciales : [];
         const porRenglon = new Map();
-        for (const caja of construirCajasEspeciales(rows)) {
+        for (const caja of (guardadas.length > 0 ? guardadas : construirCajasEspeciales(rows))) {
             const previo = porRenglon.get(caja.pedido_item_id);
             if (previo) { previo.labels.push(caja.label); continue; }
             const item = rows.find(r => r.id === caja.pedido_item_id);
@@ -741,7 +754,7 @@ export default function RecepcionModal({
             labels,
             item,
         }));
-    }, [rows]);
+    }, [rows, cajasEspeciales]);
 
     // ── Hojas: la unidad de conteo ──────────────────────────────────────────────
     // `paginaItems` dice qué productos van en cada hoja, y es el mismo reparto

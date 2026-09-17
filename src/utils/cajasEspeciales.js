@@ -68,6 +68,39 @@ export function alcanceDeRecepcion({ especial = null, hoja = null, hayHojas = fa
     return 'pedido';
 }
 
+/**
+ * Los renglones con la cantidad que de verdad SALE, para contar cajas sobre eso
+ * y no sobre lo asignado.
+ *
+ * `ajustesEnvio` —`[{ pedido_item_id, cantidad_enviada }]`— sólo trae las
+ * EXCEPCIONES: lo normal es que salga lo asignado, así que un renglón sin ajuste
+ * vale por su `cantidad_asignada` y se devuelve tal cual.
+ *
+ * Existe porque una caja que quien despacha acaba de declarar que NO envía no es
+ * una caja que la sala pueda recibir. Contarla igual le imprime una etiqueta
+ * E1…En a algo que nunca viajó, y quien recibe la reporta como faltante —con
+ * razón— sobre un renglón que ya estaba resuelto como `no_enviado`.
+ *
+ * Es la primera mitad de lo que costó el pedido #178 de Salud 4 (17-sep-2026):
+ * se le preguntó a la sala por «E2 — ELECTROLIT MANZANA 625ML», despachado en 0
+ * de 12. La segunda mitad es `renglonesDeCajasFaltantes`, que mandó ese reporte
+ * al renglón equivocado.
+ */
+export function renglonesQueSalen(rows, ajustesEnvio = []) {
+    //  `Number.isFinite(Number(x))` a secas NO alcanza: `Number(null)` y
+    //  `Number('')` valen 0, o sea que un ajuste sin cantidad se leería como
+    //  «no envío nada» y borraría las cajas de ese renglón. Un ajuste que no
+    //  dice cuánto sale no dice nada: el renglón vale por lo asignado.
+    const enviadoDe = new Map((ajustesEnvio ?? [])
+        .filter(a => a?.pedido_item_id != null && a?.cantidad_enviada != null && a.cantidad_enviada !== ''
+                     && Number.isFinite(Number(a.cantidad_enviada)))
+        .map(a => [Number(a.pedido_item_id), Number(a.cantidad_enviada)]));
+    if (enviadoDe.size === 0) return [...(rows ?? [])];
+    return [...(rows ?? [])].map(r => (
+        enviadoDe.has(r?.id) ? { ...r, cantidad_asignada: enviadoDe.get(r.id) } : r
+    ));
+}
+
 export function construirCajasEspeciales(rows) {
     let n = 1;
     return [...(rows ?? [])]
@@ -79,6 +112,50 @@ export function construirCajasEspeciales(rows) {
             erp_product_id: r.erp_product_id,
             product_name:   r.products?.nombre ?? '',
         })));
+}
+
+/**
+ * Qué renglones bloquea un reporte de cajas especiales faltantes: la INVERSA de
+ * `construirCajasEspeciales`, y vive pegada a ella a propósito.
+ *
+ * La etiqueta E1…En es una **clave**, y la lista que se guardó al finalizar ya
+ * dice de qué renglón salió cada caja. Quien recibe la lee; no la vuelve a
+ * derivar.
+ *
+ * Derivarla de nuevo costó el pedido #178 de Salud 4 (17-sep-2026). La pantalla
+ * de llegada reconstruía el orden con los renglones vivos y contaba una etiqueta
+ * por **unidad**, no por caja: con 12 botellas por caja, E1…E12 caían todas
+ * sobre el primer producto. El «E2 faltante» que reportó la sala —ELECTROLIT
+ * MANZANA, que bodega nunca despachó— marcó ELECTROLIT COCO, que estaba en el
+ * estante. Encima salteaba los renglones ya `recibido`, o sea que las etiquetas
+ * se corrían otra vez. Es el mismo aviso que el encabezado de este archivo ya
+ * traía escrito desde el pedido #114, y la razón de que las dos mitades del mapa
+ * vivan ahora en el mismo lugar: mientras cada pantalla lo reconstruya a su
+ * manera, van a volver a discrepar.
+ *
+ * Ninguna de las dos mitades del defecto da error: la sala ve dada por no
+ * llegada una caja que tiene en la mano, y la que falta de verdad no la persigue
+ * nadie.
+ *
+ * Devuelve `{ ids, huerfanas }`. Una etiqueta sin dueño **no se saltea** — se
+ * devuelve para que el llamador se plante. Saltearla deja la llegada confirmada
+ * y el faltante sin ningún renglón bloqueado, que es un faltante invisible.
+ */
+export function renglonesDeCajasFaltantes(cajasEspeciales, especialesLlegadas) {
+    const faltantes = Object.entries(especialesLlegadas ?? {})
+        .filter(([, v]) => v === 'faltante')
+        .map(([label]) => label);
+    //  `Array.isArray` y no `?? []`: el DEFAULT de la columna es `'{}'::jsonb`,
+    //  o sea un OBJETO vacío, no un arreglo. `{}.filter` no existe — con `?? []`
+    //  un pedido viejo reventaría acá con un TypeError en vez de denunciar sus
+    //  etiquetas como huérfanas, que es lo que de verdad pasa.
+    const duenoDe = new Map((Array.isArray(cajasEspeciales) ? cajasEspeciales : [])
+        .filter(c => c?.label != null && c?.pedido_item_id != null)
+        .map(c => [c.label, c.pedido_item_id]));
+    return {
+        ids:       [...new Set(faltantes.map(l => duenoDe.get(l)).filter(id => id != null))],
+        huerfanas: faltantes.filter(l => !duenoDe.has(l)),
+    };
 }
 
 /**

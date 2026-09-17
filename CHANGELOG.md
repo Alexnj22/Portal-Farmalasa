@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.16 — la caja especial que no llegó marca el producto que de verdad falta
+
+Salud 4 reportó que de su pedido #178 no le llegó la caja **E2 — ELECTROLIT
+MANZANA 625ML**, y el portal bloqueó **ELECTROLIT COCO**, que estaba en el
+estante. El pedido quedó trabado y el producto que de verdad faltaba no lo
+persiguió nadie.
+
+Ninguna de las dos mitades da error, y por eso se veía bien:
+
+**La etiqueta apuntaba al renglón equivocado.** La pantalla de llegada volvía a
+armar el mapa `E1…En` desde cero en vez de leer el que se guardó al despachar, y
+contaba **una etiqueta por unidad** en lugar de una por caja: con 12 botellas
+adentro, E1…E12 caían todas sobre el primer producto. Encima salteaba los
+renglones ya contados, así que las etiquetas se corrían otra vez. Ahora la
+etiqueta es una clave y se lee de la lista que se imprimió — `cajas_especiales`
+ya la traía, con su producto adentro. Una etiqueta sin dueño ya no se saltea en
+silencio: frena la confirmación y lo dice.
+
+**Y esa caja nunca debió existir.** Las cajas especiales se contaban sobre lo
+*asignado*, no sobre lo que de verdad sale. ELECTROLIT MANZANA se había
+despachado en **0 de 12**, y aun así se le imprimió una etiqueta y se le
+preguntó a la sala por ella. Hoy las dos cuentas de cajas —especiales y
+Electrolit— salen de lo que sale.
+
+**El aviso nombra el producto.** «No recibida: E2» obligaba a quien despacha a
+reconstruir de memoria a qué caja apuntaba esa letra en ese despacho — que es
+justo la cuenta que estaba mal. Ahora dice «E2 (ELECTROLIT MANZANA 625ML)», y
+con el nombre al lado el error se habría visto el mismo día.
+
+La pantalla de recepción también rotula con la lista guardada en vez de
+renumerar: `rows` es lo que queda pendiente, así que renumerar desde ahí hacía
+que la misma letra señalara otra caja.
+
+Las dos mitades del mapa viven ahora en `src/utils/cajasEspeciales.js`, una al
+lado de la otra —`construirCajasEspeciales` y `renglonesDeCajasFaltantes`— con
+30 pruebas ancladas en los pedidos reales #114 y #178, una de ellas recorriendo
+caja por caja que la segunda sea la inversa exacta de la primera. Es lo que el
+encabezado de ese archivo ya avisaba desde agosto: mientras cada pantalla
+reconstruya la numeración a su manera, van a volver a discrepar.
+
+El renglón de Salud 4 quedó corregido en la base: ELECTROLIT COCO ya no figura
+como no llegado.
+
 ## v2.1023.15 — El gate de cortes vigila los movimientos duplicados
 
 Los frenos que salieron entre v2.1023.11 y v2.1023.14 son **prevención**, y

@@ -55,7 +55,7 @@ const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
 import { construirComprobanteDeAbono } from '../utils/abonoTicket';
 import { construirComprobanteDeCorte } from '../utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '../utils/movimientoTicket';
-import { conceptoDelPapel } from '../utils/conceptoDelPapel';
+import { conceptoDelPapel, sentidoDelPapel } from '../utils/conceptoDelPapel';
 import { conSigno, formatMoney } from '../utils/formatNumber';
 import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -2276,6 +2276,12 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     }
     const [aviso, setAviso] = useState(null);
+    /* Cuando el papel dice que el dinero va para el OTRO lado.
+     *
+     * Aparte de `aviso` porque son dos hechos distintos: aquél cuenta qué se
+     * leyó, éste dice que puede haber una equivocación. El segundo tiene que
+     * verse — va como `Notice` y no como una línea de texto chica. */
+    const [choqueDeSentido, setChoqueDeSentido] = useState(null);
     // Qué llenó la foto. Esos campos quedan cerrados: el papel manda.
     const [deLaFoto, setDeLaFoto] = useState({});
     /* Lo que el lector contestó, entero, para guardarlo con el movimiento.
@@ -2332,6 +2338,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     const alElegirFoto = async (f) => {
         setFoto(f);
         setAviso(null);
+        setChoqueDeSentido(null);
         setDeLaFoto({});
         if (!f) return;
         setLeyendo(true);
@@ -2399,6 +2406,25 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                             : `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, boleta ${leido.numero_boleta}` : ''}, y la boleta lo confirma.${cola}`,
         );
         if (!hayMonto && !puesto.boleta && !puesto.concepto) setAMano(true);
+
+        /* ── ¿El papel va para el otro lado? ────────────────────────────────
+         *
+         * Una remesa SALE del cajón y el pago de un recibo ENTRA. Se anotan en
+         * la misma pantalla con un papel que se ve igual, y confundirlos ya
+         * costó tres correcciones a mano —«se realizó entrada y era remesa»—.
+         * El dato estaba desde siempre en la lectura; lo que faltaba era
+         * mirarlo.
+         *
+         * Avisa y no frena: quien tiene el papel en la mano decide. Y se calla
+         * cuando el papel no lo dice con claridad (`COMPRA`, `OTRO`), que es
+         * justo lo que evita que el aviso se vuelva ruido. */
+        const lado = sentidoDelPapel(leido);
+        const seAnota = entra ? 'ENTRADA' : 'SALIDA';
+        setChoqueDeSentido(lado && lado !== seAnota
+            ? `Revisa el motivo: el papel dice ${conceptoDelPapel(leido) || 'otra operación'}, `
+              + `y eso normalmente ${lado === 'ENTRADA' ? 'ENTRA a la caja' : 'SALE de la caja'}. `
+              + `Estás anotando ${entra ? 'un ingreso' : 'una salida'}.`
+            : null);
     };
 
     const guardar = async () => {
@@ -2540,6 +2566,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                         accept="image/*" value={foto}
                         onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
                     {aviso && <p className="text-caption text-content-2">{aviso}</p>}
+                    {choqueDeSentido && (
+                        <Notice variant="warning" compact icon={AlertTriangle}>
+                            {choqueDeSentido}
+                        </Notice>
+                    )}
 
                     {!pedirDatos && !leyendo && (
                         <Notice variant="info" icon={Landmark}>

@@ -117,4 +117,60 @@ export function conceptoDelPapel(leido) {
     }
 }
 
+/**
+ * Para qué lado va el dinero, según el papel.
+ *
+ * ── Por qué existe ──────────────────────────────────────────────────────────
+ *
+ * Una remesa es dinero que SALE del cajón —la farmacia se la entrega a quien
+ * viene a cobrarla— y el pago de un recibo es dinero que ENTRA. Pero las dos
+ * cosas se anotan en la misma pantalla, y confundirlas es fácil: el papel sale
+ * del mismo POS y se ve igual.
+ *
+ * Pasó, y dejó rastro. Tres movimientos anotados al revés que alguien tuvo que
+ * corregir a mano con un contra-movimiento, escribiendo el motivo en el
+ * concepto: «se realizó entrada y era remesa», «corrección de remesa que se
+ * hizo como ingreso». El portal tenía el dato para avisarlo desde el principio
+ * —el lector ya devuelve `tipo_operacion`— y no lo miraba.
+ *
+ * ── Los valores salen de lo MEDIDO, no de lo que suena bien ─────────────────
+ *
+ * Sobre 726 movimientos con foto leída (2026-09-17):
+ *
+ * | el papel dice | se anotó ENTRADA | se anotó SALIDA |
+ * |---------------|-----------------:|----------------:|
+ * | PAGO_SERVICIO |          **606** |               0 |
+ * | DEPOSITO      |           **24** |               1 |
+ * | REMESA        |                5 |          **80** |
+ * | RETIRO        |                3 |           **9** |
+ * | COMPRA        |               13 |               7 |
+ *
+ * `COMPRA` y `OTRO` devuelven `null` **a propósito**: con 13 contra 7 el papel
+ * no dice para qué lado va, y un aviso que se equivoca una de cada tres veces
+ * enseña a ignorarlo — que es peor que no tenerlo. `RETIRO` sí va, aunque sea
+ * 9 de 12: el POS entrega efectivo, así que sale, y esos 3 son del mismo tipo
+ * de error que esto viene a cazar.
+ *
+ * ── Avisa, no frena ─────────────────────────────────────────────────────────
+ *
+ * Quien tiene el papel en la mano decide. El portal sólo dice lo que leyó, del
+ * mismo modo que la entidad en la salida de una bolsa: un dato que el papel a
+ * veces no trae no puede bloquear una operación que ya ocurrió.
+ *
+ * @param {object} leido  lo que devolvió el lector de boletas
+ * @returns {'ENTRADA'|'SALIDA'|null} `null` = el papel no lo dice con claridad
+ */
+export function sentidoDelPapel(leido) {
+    switch (String(leido?.tipo_operacion || '').toUpperCase()) {
+        case 'PAGO_SERVICIO':
+        case 'DEPOSITO':
+            return 'ENTRADA';
+        case 'REMESA':
+        case 'RETIRO':
+            return 'SALIDA';
+        default:
+            return null;
+    }
+}
+
 export default conceptoDelPapel;

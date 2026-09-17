@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { conceptoDelPapel } from '../../src/utils/conceptoDelPapel';
+import { conceptoDelPapel, sentidoDelPapel } from '../../src/utils/conceptoDelPapel';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Qué operación fue, dicho por el papel.
@@ -165,5 +165,55 @@ describe('lo que hace buscable un pago de servicio', () => {
             tipo_operacion: 'REMESA', red_remesas: 'MONEY GRAM WS',
             detalle_servicio: 'X', referencia_servicio: '99999999',
         })).toBe('Remesa MONEY GRAM WS');
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Para qué lado va el dinero.
+//
+// Una remesa SALE del cajón y el pago de un recibo ENTRA, pero se anotan en la
+// misma pantalla con un papel que se ve igual. Tres movimientos reales se
+// anotaron al revés y hubo que corregirlos a mano con un contra-movimiento
+// («se realizó entrada y era remesa»).
+//
+// Los valores salen de 726 movimientos con foto leída, no de lo que suena bien.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('sentidoDelPapel', () => {
+    it('el pago de un recibo ENTRA — 606 de 606 en producción', () => {
+        expect(sentidoDelPapel({ tipo_operacion: 'PAGO_SERVICIO' })).toBe('ENTRADA');
+    });
+
+    it('un depósito ENTRA', () => {
+        expect(sentidoDelPapel({ tipo_operacion: 'DEPOSITO' })).toBe('ENTRADA');
+    });
+
+    it('una remesa SALE: es el error que esto viene a cazar', () => {
+        // Los 5 casos que se anotaron como entrada terminaron en una corrección
+        // manual. Ver `caja_movimientos_portal`, boletas 000514, 000449, 000513.
+        expect(sentidoDelPapel({ tipo_operacion: 'REMESA' })).toBe('SALIDA');
+    });
+
+    it('un retiro SALE: el POS entrega el efectivo', () => {
+        expect(sentidoDelPapel({ tipo_operacion: 'RETIRO' })).toBe('SALIDA');
+    });
+
+    it('una COMPRA no dice para qué lado: 13 entradas contra 7 salidas', () => {
+        // Callarse es la respuesta correcta. Un aviso que se equivoca una de
+        // cada tres veces enseña a ignorarlo, y entonces tampoco sirve para los
+        // casos en que acierta.
+        expect(sentidoDelPapel({ tipo_operacion: 'COMPRA' })).toBeNull();
+    });
+
+    it('lo que no se reconoce tampoco inventa un lado', () => {
+        expect(sentidoDelPapel({ tipo_operacion: 'OTRO' })).toBeNull();
+        expect(sentidoDelPapel({ tipo_operacion: null })).toBeNull();
+        expect(sentidoDelPapel({})).toBeNull();
+        expect(sentidoDelPapel(null)).toBeNull();
+    });
+
+    it('no le importan las mayúsculas ni los espacios del enum', () => {
+        expect(sentidoDelPapel({ tipo_operacion: 'remesa' })).toBe('SALIDA');
+        expect(sentidoDelPapel({ tipo_operacion: 'pago_servicio' })).toBe('ENTRADA');
     });
 });

@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.13 — El portal avisa si el papel va para el otro lado
+
+Pedido del usuario: *«¿podríamos de una sola avisar si están haciendo un
+ingreso cuando era salida? o viceversa, para ayudarlos y que no se confundan»*.
+
+Se puede, y el dato estaba desde siempre: el lector ya devuelve qué operación
+dice el papel. Nadie lo comparaba contra entrada/salida.
+
+Una remesa **sale** del cajón —la farmacia se la entrega a quien viene a
+cobrarla— y el pago de un recibo **entra**. Las dos se anotan en la misma
+pantalla, con un papel del mismo POS que se ve igual. Confundirlas ya costó
+tres correcciones a mano, y quedaron escritas en el concepto: *«se realizó
+entrada y era remesa»*, *«corrección de remesa que se hizo como ingreso»*.
+
+**El mapa sale de lo medido, no de lo que suena bien** — 726 movimientos con
+foto leída:
+
+| el papel dice | se anotó ENTRADA | se anotó SALIDA | qué avisa |
+|---|---:|---:|---|
+| Pago de servicio | **606** | 0 | entra |
+| Depósito | **24** | 1 | entra |
+| Remesa | 5 ← *el error* | **80** | sale |
+| Retiro | 3 | **9** | sale |
+| Compra | 13 | 7 | **nada** |
+
+`Compra` y `Otro` **se callan a propósito**: con 13 contra 7 el papel no dice
+para qué lado va, y un aviso que se equivoca una de cada tres veces enseña a
+ignorarlo — y entonces tampoco sirve para los casos en que acierta.
+
+**Avisa, no frena.** Quien tiene el papel en la mano decide; el portal sólo
+dice lo que leyó, igual que con la entidad en la salida de una bolsa. El aviso
+aparece apenas se lee la foto, antes de anotar nada, y va como recuadro
+amarillo y no como línea de texto chica: es el único de la pantalla que dice
+«puede haber una equivocación» y no «esto fue lo que leí».
+
+La regla vive en `sentidoDelPapel`, junto a `conceptoDelPapel` —mismo dato de
+entrada, misma familia— con sus pruebas y la medición escrita al lado.
+
 ## v2.1023.12 — El botón dice que está anotando, y no deja cerrar a mitad
 
 Preguntas del usuario sobre lo que salió en v2.1023.11: *«cuando se sube ¿hay

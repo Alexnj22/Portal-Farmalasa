@@ -1162,6 +1162,43 @@ Deno.serve(async (req) => {
         }
       }
 
+      /* ── Esa boleta ya se anotó en esta sala ─────────────────────────────
+       *
+       * El número de una boleta de POS es el ID de la transacción: el aparato
+       * no lo repite nunca. Así que el mismo número, en la misma sala y para el
+       * MISMO sentido, es la misma operación anotada dos veces — y eso cuenta
+       * el dinero doble.
+       *
+       * El sentido contrario NO frena: es la corrección de un movimiento
+       * anotado al revés (una remesa entra al cajón cuando en realidad sale), y
+       * las tres correcciones reales de septiembre tienen esa forma.
+       *
+       * Usa la MISMA función que consulta la pantalla, a propósito: escrita dos
+       * veces, el día que una cambie la otra diría algo distinto y la sala vería
+       * un aviso que el servidor no respeta, o al revés.
+       *
+       * Va antes de tocar la caja. Después sería tarde: el dinero ya se movió. */
+      if (String(body.boleta ?? "").trim()) {
+        const { data: repetidas, error: errBoleta } = await supabase
+          .rpc("boleta_ya_en_caja", { p_branch_id: sala, p_numero_boleta: String(body.boleta) });
+        // Un fallo de lectura no frena el movimiento: es una comprobación, no
+        // un permiso, y la sala tiene el papel en la mano.
+        if (errBoleta) console.error(`[operar-caja] ${accion} boleta sala=${sala}: ${errBoleta.message}`);
+        const sentido = esEntrada ? "ENTRADA" : "SALIDA";
+        const choque = (Array.isArray(repetidas) ? repetidas : [])
+          .find((m: { tipo?: string }) => String(m?.tipo ?? "").toUpperCase() === sentido);
+        if (choque) {
+          const c = choque as { numero_boleta?: string; fecha?: string; monto?: number; concepto?: string };
+          return json({
+            ok: false,
+            error: `La boleta ${c.numero_boleta ?? ""} ya se anotó en esta sala`
+              + `${c.fecha ? ` el ${c.fecha}` : ""}`
+              + `${c.monto != null ? ` por $${Number(c.monto).toFixed(2)}` : ""}`
+              + `${c.concepto ? ` (${c.concepto})` : ""}.`,
+          }, 409);
+        }
+      }
+
       /* ── EL ABONO DE CLIENTE ────────────────────────────────────────────
        *
        * Es un ingreso con un contrato encima: el dinero entra al cajón igual

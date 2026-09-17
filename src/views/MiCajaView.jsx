@@ -31,7 +31,7 @@ import {
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion,
-    subirComprobante,
+    subirComprobante, boletaYaEnCaja,
 } from '../data/bolsas';
 import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
 import MetaDelDia from '../components/cortes/MetaDelDia';
@@ -56,6 +56,7 @@ import { construirComprobanteDeAbono } from '../utils/abonoTicket';
 import { construirComprobanteDeCorte } from '../utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '../utils/movimientoTicket';
 import { conceptoDelPapel, sentidoDelPapel } from '../utils/conceptoDelPapel';
+import { choqueDeBoleta } from '../utils/boletaRepetida';
 import { conSigno, formatMoney } from '../utils/formatNumber';
 import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -2282,6 +2283,12 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * leyó, éste dice que puede haber una equivocación. El segundo tiene que
      * verse — va como `Notice` y no como una línea de texto chica. */
     const [choqueDeSentido, setChoqueDeSentido] = useState(null);
+    /* Los movimientos de esta sala que YA llevan ese número de boleta.
+     *
+     * El número de una boleta de POS es el ID de la transacción: el aparato no
+     * lo repite nunca. Así que si aparece, es la misma operación — un duplicado
+     * o la corrección de uno anotado al revés. Ver `utils/boletaRepetida`. */
+    const [repetidaEnCaja, setRepetidaEnCaja] = useState([]);
     // Qué llenó la foto. Esos campos quedan cerrados: el papel manda.
     const [deLaFoto, setDeLaFoto] = useState({});
     /* Lo que el lector contestó, entero, para guardarlo con el movimiento.
@@ -2334,6 +2341,55 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         setCodigo(v);
     };
     const cerrado = (campo) => !!deLaFoto[campo] && !aMano;
+
+    /* Se pregunta mientras se escribe, con un respiro de 400 ms: sin él, una
+     * boleta de seis dígitos son seis consultas —`0`, `00`, `000`…—. Es el
+     * mismo patrón que la salida de una bolsa. */
+    useEffect(() => {
+        const num = boleta.trim();
+        if (!num || !sala) { setRepetidaEnCaja([]); return undefined; }
+        let vivo = true;
+        const id = setTimeout(() => {
+            boletaYaEnCaja(sala, num).then((filas) => {
+                if (vivo) setRepetidaEnCaja(filas);
+            });
+        }, 400);
+        return () => { vivo = false; clearTimeout(id); };
+    }, [boleta, sala]);
+
+    /**
+     * Qué pasa si ese número ya está anotado. Dos desenlaces, y no son el mismo.
+     *
+     * **Mismo sentido** es la misma operación anotada dos veces: el dinero se
+     * contaría doble. Frena — y frena acá además de en el servidor porque un
+     * rechazo del servidor no puede decir cuál era, de cuándo ni de cuánto.
+     *
+     * **Sentido contrario** es una corrección: alguien anotó una remesa como
+     * ingreso —una remesa sale del cajón— y la contra-anota para arreglarlo.
+     * Eso se avisa y quien registra decide. Frenarlo dejaría sin salida a quien
+     * ya se equivocó, que es la peor forma de castigar un error honesto.
+     */
+    const problemaDeLaBoleta = useMemo(() => {
+        const r = choqueDeBoleta(repetidaEnCaja, entra);
+        if (!r) return null;
+        const m = r.movimiento || {};
+        const cuando = String(m.fecha || '').slice(0, 10);
+        const cuanto = formatMoney(Number(m.monto) || 0);
+        if (r.bloquea) {
+            return {
+                tono: 'danger', bloquea: true,
+                texto: `La boleta ${m.numero_boleta || boleta.trim()} ya se anotó en esta sala`
+                     + `${cuando ? ` el ${cuando}` : ''} por ${cuanto}`
+                     + `${m.concepto ? ` (${m.concepto})` : ''}.`,
+            };
+        }
+        return {
+            tono: 'warning', bloquea: false,
+            texto: `Ese número ya está anotado como ${m.tipo === 'ENTRADA' ? 'ingreso' : 'salida'}`
+                 + `${cuando ? ` del ${cuando}` : ''} por ${cuanto}. `
+                 + 'Si estás corrigiendo el sentido, puedes seguir.',
+        };
+    }, [repetidaEnCaja, entra, boleta]);
 
     const alElegirFoto = async (f) => {
         setFoto(f);
@@ -2505,7 +2561,8 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 pie={<>
                     <Button variant="ghost" onClick={() => setPaso('DATOS')} disabled={enviando}>Atrás</Button>
                     <Button variant="primary" loading={enviando}
-                        disabled={ocupado || !persona || !vale} onClick={guardar}>
+                        disabled={ocupado || !persona || !vale || !!problemaDeLaBoleta?.bloquea}
+                        onClick={guardar}>
                         {enviando ? 'Anotando…' : 'Anotar'}
                     </Button>
                 </>}
@@ -2539,7 +2596,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                     vuelve a tocarlo. La foto tarda cientos de ms en subir, así
                     que ese silencio es justo la ventana del doble toque. */}
                 <Button variant="primary" loading={enviando}
-                    disabled={ocupado || leyendo || !valido}
+                    disabled={ocupado || leyendo || !valido || !!problemaDeLaBoleta?.bloquea}
                     onClick={() => (identifica ? setPaso('IDENTIDAD') : guardar())}>
                     {identifica ? 'Continuar' : (enviando ? 'Anotando…' : 'Anotar')}
                 </Button>
@@ -2569,6 +2626,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                     {choqueDeSentido && (
                         <Notice variant="warning" compact icon={AlertTriangle}>
                             {choqueDeSentido}
+                        </Notice>
+                    )}
+                    {problemaDeLaBoleta && (
+                        <Notice variant={problemaDeLaBoleta.tono} compact icon={AlertTriangle}>
+                            {problemaDeLaBoleta.texto}
                         </Notice>
                     )}
 

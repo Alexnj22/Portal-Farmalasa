@@ -731,6 +731,34 @@ export async function boletaYaRegistrada(branchId, numeroBoleta) {
 }
 
 /**
+ * Lo mismo, pero para los movimientos del CAJÓN.
+ *
+ * Son dos tablas distintas y hasta el 2026-09-17 sólo bolsas tenía el chequeo:
+ * por eso los duplicados de septiembre no chocaron con nada. El camino del
+ * cajón escribe en `caja_movimientos_portal`, y ni el aviso ni el índice único
+ * de bolsas lo alcanzaban.
+ *
+ * Devuelve cada coincidencia con su `tipo` (ENTRADA/SALIDA), que es lo que
+ * permite distinguir un duplicado de una corrección — ver `utils/boletaRepetida`.
+ *
+ * Ante un fallo devuelve lista vacía: es una ayuda para avisar temprano, y no
+ * puede impedir registrar un movimiento que ya ocurrió. El freno de verdad lo
+ * pone el servidor.
+ */
+export async function boletaYaEnCaja(branchId, numeroBoleta) {
+    if (!branchId || !String(numeroBoleta || '').trim()) return [];
+    const { data, error } = await supabase.rpc('boleta_ya_en_caja', {
+        p_branch_id: branchId,
+        p_numero_boleta: String(numeroBoleta).trim(),
+    });
+    if (error) {
+        console.error('caja: no se pudo comprobar la boleta:', error.message);
+        return [];
+    }
+    return Array.isArray(data) ? data : [];
+}
+
+/**
  * Registrar una salida (o un reintegro) de una o más bolsas.
  *
  * `repartos` es `[{ bolsa_id, monto }]` — de qué bolsas sale. La regla es **la

@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.14 — La boleta repetida ya no se puede anotar dos veces
+
+Pregunta del usuario: *«¿por qué podría ingresar de nuevo una boleta que ya
+ingresé? ¿no estaría duplicando?»*. Tenía razón, y mi respuesta anterior estaba
+incompleta: describía lo que hace la clave de envío —que identifica un envío, no
+una boleta— cuando lo que faltaba era otra cosa. **El cajón no tenía ninguna
+guarda de boleta repetida.** Bolsas la tiene desde siempre; el cajón escribe en
+otra tabla y ni el aviso ni el índice único la alcanzaban.
+
+**Y el dato que lo cierra lo puso el usuario:** el número de una boleta de POS
+es el ID de la transacción — el aparato no lo repite nunca. Así que dos
+movimientos con el mismo número en la misma sala son SIEMPRE la misma
+operación. No hay coincidencia posible.
+
+Eso deja dos casos, y tratarlos igual rompe uno:
+
+| | qué es | qué hace el portal |
+|---|---|---|
+| **mismo sentido** (dos ingresos, o dos salidas) | duplicado: el dinero se cuenta dos veces | **frena** |
+| **sentido contrario** (un ingreso y una salida) | corrección de un movimiento anotado al revés | avisa y deja seguir |
+
+Las tres correcciones reales de septiembre tienen esa forma y lo dicen en el
+concepto: *«se realizó entrada y era remesa»*. Frenarlas dejaría sin salida a
+quien ya se equivocó.
+
+**Frena en los dos lados.** En la pantalla, para poder decir cuál boleta era, de
+cuándo y de cuánto —un rechazo del servidor no puede decir nada de eso—. Y en
+`operar-caja`, que es lo que de verdad protege: va **antes** de tocar la caja,
+porque después el dinero ya se movió. Los dos preguntan a la MISMA función
+(`boleta_ya_en_caja`), así que no pueden contestar distinto.
+
+### El caso de Salud 1, que sigue vivo
+
+El 5 de septiembre a las 15:02, un pago de CAESS de **$12.30** (boleta 000467)
+se anotó **dos veces con 634 milisegundos de diferencia** — el envío doble que
+se corrigió en v2.1023.11.
+
+Lo que lo vuelve distinto de los otros doce es que **nadie lo anuló**: las dos
+filas siguen vigentes, y cada una creó su propio movimiento en el sistema de la
+caja (44117 y 44118), los dos todavía ahí. O sea que la caja cuenta **$24.60 de
+ingreso donde sólo entraron $12.30**, y el efectivo esperado de esa sala quedó
+$12.30 por encima de lo que hay.
+
+Se corrige anulando uno de los dos, como se hizo con los demás. Es lo único que
+falta para poder poner además el índice único en la base: hoy lo rechazaría
+justamente por esas dos filas.
+
 ## v2.1023.13 — El portal avisa si el papel va para el otro lado
 
 Pedido del usuario: *«¿podríamos de una sola avisar si están haciendo un

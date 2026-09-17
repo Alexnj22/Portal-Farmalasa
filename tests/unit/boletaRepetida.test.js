@@ -26,7 +26,7 @@ describe('choqueDeBoleta', () => {
     });
 
     it('anotar un ingreso cuando ya hay un ingreso con ese número: FRENA', () => {
-        // Es el caso de Salud 1 del 5-sep: $12.30 de CAESS, dos entradas con la
+        // Es el caso de Salud 2 del 5-sep: $12.30 de CAESS, dos entradas con la
         // boleta 000467, separadas por 634 ms, las dos vigentes.
         const r = choqueDeBoleta([ENTRADA], true);
         expect(r).toEqual({ bloquea: true, movimiento: ENTRADA });

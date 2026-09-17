@@ -39,6 +39,15 @@
  *      resultado: un trigger que alguien borra no da ningún error, deja el
  *      número viejo, y el portal vuelve a mentir exactamente igual que antes.
  *
+ *   E. Ningún movimiento está anotado dos veces. Dos detectores, porque el
+ *      duplicado entra por dos puertas distintas: el mismo número de boleta
+ *      repetido en la sala con el MISMO sentido, y la ráfaga —dos movimientos
+ *      idénticos en 15 segundos— que es la única forma de ver el duplicado
+ *      cuando el movimiento no lleva boleta. Existe porque los frenos que se
+ *      pusieron el 17-sep son PREVENCIÓN, y prevención sin vigilancia es una
+ *      creencia: si mañana entra un duplicado por un camino que nadie previó,
+ *      esto lo dice.
+ *
  * ── Dos decisiones de medición, las dos costaron ────────────────────────────
  *
  *   · Los movimientos con `desaparecido_at` NO cuentan. El origen no anula:
@@ -162,6 +171,87 @@ SELECT b.name AS sala, z.fecha::text AS fecha, z.hora::text AS hora,
    AND coalesce((public.caja_falta_por_contar(z.branch_id::int, z.fecha)->>'falta')::numeric, 0) >= 0.01
  ORDER BY z.fecha DESC, b.name`;
 
+/* E. Movimientos de caja anotados dos veces.
+ *
+ * ── Los dos detectores, y por qué hacen falta los dos ───────────────────────
+ *
+ *   · **Boleta repetida.** El número de una boleta de POS es el ID de la
+ *     transacción: el aparato no lo repite nunca. Así que el mismo número, en
+ *     la misma sala y con el MISMO sentido, es la misma operación anotada dos
+ *     veces. El sentido CONTRARIO no cuenta: ésa es la corrección de un
+ *     movimiento anotado al revés —una remesa entra al cajón cuando en realidad
+ *     sale— y es legítima; las tres reales lo dicen en el concepto.
+ *
+ *   · **Ráfaga.** Dos movimientos idénticos separados por 15 segundos o menos.
+ *     Es la única manera de ver el duplicado cuando NO hay boleta, y es la
+ *     firma exacta del defecto del 17-sep: los pares reales estaban a 34-73 ms
+ *     y uno tenía tres filas en un segundo.
+ *
+ * ── Por qué 15 segundos y no «el mismo día» ─────────────────────────────────
+ *
+ * Porque hay movimientos que se repiten DE VERDAD: la aplicación de una
+ * inyección y la prueba de glucosa son $1, y una sala hace varias por día —
+ * ocho en Salud 4 el 14-sep—. Medido: con el corte en 15 s, esos 55 grupos no
+ * disparan ni una vez, y los 10 duplicados verdaderos caen todos adentro. Una
+ * regla de «mismo monto y concepto el mismo día» los acusaría a todos, y un
+ * gate que acusa a quien hizo bien el trabajo se termina desactivando.
+ *
+ * Sólo mira los VIGENTES: un duplicado que ya se anuló está resuelto, y volver
+ * a nombrarlo sería pedir que se arregle dos veces.
+ */
+const SQL_DUPLICADOS = `
+WITH vivos AS (
+  SELECT m.id, m.branch_id, m.fecha, m.tipo, m.tipo_codigo, m.monto, m.concepto,
+         m.registrado_at,
+         ltrim(regexp_replace(coalesce(m.numero_boleta, ''), '\\D', '', 'g'), '0') AS num
+    FROM public.caja_movimientos_portal m
+   WHERE m.anulado_at IS NULL
+),
+por_boleta AS (
+  SELECT branch_id, min(fecha) AS fecha, 'boleta repetida'::text AS regla,
+         ('boleta ' || num || ' anotada ' || count(*) || ' veces como ' || lower(tipo))::text AS detalle,
+         array_agg(id ORDER BY id) AS ids
+    FROM vivos WHERE num <> ''
+   GROUP BY branch_id, num, tipo
+  HAVING count(*) > 1
+),
+por_rafaga AS (
+  SELECT branch_id, fecha, 'ráfaga'::text AS regla,
+         (count(*) || ' movimientos iguales en '
+           || round(extract(epoch FROM (max(registrado_at) - min(registrado_at)))::numeric, 1)
+           || ' s: ' || left(concepto, 40) || ' por $' || to_char(monto, 'FM999990.00'))::text AS detalle,
+         array_agg(id ORDER BY registrado_at) AS ids
+    FROM vivos
+   GROUP BY branch_id, fecha, tipo_codigo, monto, concepto
+  HAVING count(*) > 1
+     AND extract(epoch FROM (max(registrado_at) - min(registrado_at))) <= 15
+)
+SELECT b.name AS sala, d.fecha::text AS fecha, d.regla, d.detalle,
+       array_to_string(d.ids, ', ') AS ids
+  FROM (SELECT * FROM por_boleta UNION ALL SELECT * FROM por_rafaga) d
+  JOIN public.branches b ON b.id = d.branch_id
+ ORDER BY d.fecha DESC, b.name`;
+
+/* Lo que ya estaba cuando se escribió el detector (2026-09-17).
+ *
+ * Se declara por los ids de las filas y no por sala-día: identifica EL caso, y
+ * así un duplicado nuevo en la misma sala el mismo día igual aparece.
+ *
+ *   · `214, 215` — Salud 2, 5-sep. Un pago de CAESS de $12.30 (boleta 000467)
+ *     anotado dos veces con 634 ms de diferencia: el envío doble que se corrigió
+ *     el 17-sep.
+ *
+ *     ⚠️ **NO se anula ninguna de las dos.** La sala lo vio el mismo día y lo
+ *     resolvió con un contra-movimiento —una salida de $12.30 que dice «por
+ *     error se ingresó 2 veces»—, así que el dinero YA está cuadrado y el corte
+ *     de ese día cerró exacto. Anular una de las dos entradas ahora
+ *     descuadraría la caja en $12.30. Queda acá como lo que es: la prueba de
+ *     que el detector ve algo.
+ *
+ * Una entrada nueva acá NO se agrega para que el gate calle: sólo para un caso
+ * ya resuelto por otra vía, y con su explicación escrita. */
+const DUPLICADOS_YA_PASADOS = new Set(['214, 215']);
+
 /* Que los dos triggers sigan puestos. Un hallazgo de C dice que el número está
  * viejo; éste dice POR QUÉ, y aparece aunque todavía no haya un número mal. */
 const SQL_TRIGGERS = `
@@ -237,6 +327,30 @@ function main() {
     console.log(`  cierres:     ${nuevos.length === 0
       ? `ninguno se llevó efectivo sin contar${cerroSinContar.length ? ` (${cerroSinContar.length} histórico(s) declarado(s))` : ''}`
       : `${nuevos.length} día(s) cerrados con efectivo sin contar`}`);
+
+    /* Un mismo caso puede caer en los DOS detectores —el par de Salud 1 lo
+     * hace—, y nombrarlo dos veces haría creer que son dos problemas. Se
+     * agrupa por los ids, que es lo que identifica el caso. */
+    const duplicados = canal.consultar(SQL_DUPLICADOS);
+    const porCaso = new Map();
+    for (const r of duplicados) {
+      if (!porCaso.has(r.ids)) porCaso.set(r.ids, { ...r, reglas: [] });
+      porCaso.get(r.ids).reglas.push(r.regla);
+    }
+    const dupNuevos = [...porCaso.values()].filter(r => !DUPLICADOS_YA_PASADOS.has(r.ids));
+    for (const r of dupNuevos) {
+      fallas.push({
+        clave: `movimiento-duplicado:${r.sala}/${r.fecha}`,
+        detalle: `${r.detalle} — filas ${r.ids} (${r.reglas.join(' + ')})`,
+        porque: 'El mismo dinero contado dos veces en la caja. Los frenos del 17-sep lo cortan '
+              + 'antes de escribirlo, así que si aparece acá entró por un camino que no pasa por '
+              + 'ellos. Revisar de dónde vino ANTES de anular: si la sala ya lo corrigió con un '
+              + 'contra-movimiento, anular descuadraría la caja.',
+      });
+    }
+    console.log(`  duplicados:  ${dupNuevos.length === 0
+      ? `ninguno vigente${porCaso.size ? ` (${porCaso.size} histórico(s) declarado(s))` : ''}`
+      : `${dupNuevos.length} movimiento(s) anotados dos veces`}`);
   } finally {
     canal.cerrar();
   }

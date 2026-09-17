@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.15 — El gate de cortes vigila los movimientos duplicados
+
+Los frenos que salieron entre v2.1023.11 y v2.1023.14 son **prevención**, y
+prevención sin vigilancia es una creencia: si mañana entra un duplicado por un
+camino que nadie previó, nadie se entera. Eso ahora lo dice `gate:cortes`, en su
+sección E.
+
+**Dos detectores, porque el duplicado entra por dos puertas:**
+
+- **Boleta repetida** — el mismo número, en la misma sala, con el **mismo
+  sentido**. El número de una boleta de POS es el ID de la transacción, así que
+  eso es la misma operación anotada dos veces. El sentido contrario no cuenta:
+  ésa es la corrección de un movimiento anotado al revés.
+- **Ráfaga** — dos movimientos idénticos separados por 15 segundos o menos. Es
+  la única forma de ver el duplicado cuando el movimiento **no lleva boleta**, y
+  es la firma exacta del defecto: los pares reales estaban a 34–73 ms.
+
+**Por qué 15 segundos y no «el mismo día»:** porque hay movimientos que se
+repiten de verdad. La aplicación de una inyección y la prueba de glucosa son $1
+y una sala hace varias por día — ocho en Salud 4 el 14-sep. Medido: con el corte
+en 15 s esos 55 grupos no disparan ni una vez, y los 10 duplicados verdaderos
+caen todos adentro. Una regla de «mismo monto y concepto el mismo día» los
+acusaría a todos, y un gate que acusa a quien hizo bien el trabajo se termina
+desactivando.
+
+**Le fabriqué la regresión antes de creerle el verde**: quitando la declaración,
+el gate se pone rojo y nombra el caso con los dos detectores a la vez. Sin esa
+prueba, un cero sólo dice que la consulta no devolvió nada.
+
+### Corrección: la sala es Salud 2, no Salud 1
+
+En v2.1023.14 escribí que el duplicado vivo era de **Salud 1**. Es de **Salud
+2** — la sucursal 25. Lo demás de aquella entrada queda igual: $12.30 de CAESS,
+boleta 000467, 5 de septiembre, 634 ms entre las dos filas, ya cuadrado por la
+sala con un contra-movimiento.
+
+Queda declarado en el gate con su explicación y un aviso escrito: **no se anula
+ninguna de las dos**, porque la corrección ya está hecha del otro lado y
+anularlas descuadraría la caja en $12.30.
+
 ## v2.1023.14 — La boleta repetida ya no se puede anotar dos veces
 
 Pregunta del usuario: *«¿por qué podría ingresar de nuevo una boleta que ya

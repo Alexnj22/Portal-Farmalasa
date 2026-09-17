@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.9 — Leer una boleta cuesta 12 veces menos y tarda la mitad
+
+Salió de un aviso de Google: *90% del presupuesto alcanzado*, $9.54 del 1 al 17
+de septiembre con $18.15 proyectados para el mes. El desglose por SKU dice que
+**el 100% es Gemini** —Maps aportó $0— y que $8.66 de esos $9.54 son un solo
+renglón: `output token count`, 3,463,824 tokens de SALIDA.
+
+Ahí está el hallazgo: **la salida superaba a la entrada** (2,647,315 tokens) en
+una tarea que manda un prompt largo con una foto y devuelve un JSON de veinte
+campos. Eran ~2,770 tokens de salida por llamada cuando la respuesta real son
+300 o 400. El resto es **pensamiento**, que 2.5-flash hace por su cuenta y
+Google factura al precio de salida — $2.50/M contra $0.30/M de entrada.
+
+Nada lo acotaba: `_shared/gemini.ts` fijaba `temperature` y el formato de la
+respuesta, y el costo de cada llamada lo elegía el modelo.
+
+**Dos cosas cambian, y las dos están medidas contra las 127 boletas que tienen
+foto guardada, comparando contra el monto que la persona confirmó:**
+
+1. **Techo de pensamiento en 128.** Misma foto en las tres corridas:
+
+   | techo | monto | número | pensamiento | tiempo |
+   |---|---|---|---|---|
+   | dinámico (antes) | 127/127 | 122/127 | 251,672 | 11.0 s |
+   | 0 | **126/127** | 123/127 | 0 | 4.6 s |
+   | **128 (ahora)** | **127/127** | **124/127** | **14,806** | **4.8 s** |
+
+   Apagarlo del todo NO sirve y por poco se hace: con techo 0 una boleta real
+   de $121.90 devuelve `monto: 0` y cero importes — la lectura no se degrada,
+   se derrumba—, y eso **no se ve en una muestra fácil**, donde 14 de 14 salían
+   bien. Con 128 el monto empata, el número mejora y el pensamiento baja 94%.
+
+2. **La foto se lee UNA vez, no dos.** `FileField` entrega el archivo crudo
+   (lectura 1, que además abría el editor) y otra vez ya recortado (lectura 2),
+   y `alElegirFoto` leía antes de mirar esa bandera. La segunda pisaba a la
+   primera —`setMonto`/`setBoleta` se aplican siempre—, así que la primera no
+   decidía nada: sólo pagaba. Medido: 101 operaciones guardadas en septiembre
+   contra ~1,100 lecturas.
+
+   Lo único que la cruda aportaba era el recuadro para abrir el editor
+   encuadrado, y eso ahora lo contesta `buscarEsquinas` mirando los **píxeles**
+   — gratis, 5 a 13 ms y menos del 1% de desvío, contra el 10–15% que erraba el
+   modelo. **El editor ahora abre de inmediato**: antes había que esperar la
+   lectura entera, unos 11 segundos, con alguien enfrente del mostrador.
+
+Los tres que usan 2.5-pro —Saly, el armador de horarios y el plan de
+vacaciones— quedan **fuera** del techo, con su motivo escrito: planificar no es
+extraer un dato de una foto, y la medición de arriba no habla de ellos.
+
+Y `_shared/gemini.ts` ahora registra en el log qué consumió cada llamada
+(entrada, salida, pensamiento, caché). Antes el único lugar del mundo donde ese
+gasto aparecía era la factura, agregada y a fin de mes.
+
 ## v2.1023.8 — Un comprobante a nombre del titular ya no espera firma
 
 Pregunta del usuario: *«si decía Rutilio Aleman, ¿por qué dio error, si el

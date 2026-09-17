@@ -191,6 +191,20 @@ export default function SalidaDeBolsa({
     const [foto, setFoto] = useState(null);
     // La foto recién elegida, en camino al editor. Ver la nota del `FileField`.
     const [porEditar, setPorEditar] = useState(null);
+    /* Dónde está el papel dentro de esa foto, para que el editor abra ya
+     * encuadrado.
+     *
+     * Sale de `buscarEsquinas`, que mira primero los PÍXELES —gratis, 5 a 13 ms
+     * y menos del 1% de desvío— y sólo le pregunta al modelo si el umbral no
+     * puede decidir. Hasta el 2026-09-17 lo contestaba la lectura de la boleta:
+     * costaba una llamada ENTERA al lector sobre la foto cruda, y encima erraba
+     * entre el 10% y el 15% en cada esquina (medido el 2026-08-29, ver el
+     * encabezado de `utils/detectarPapel`). */
+    const [sugerido, setSugerido] = useState(null);
+    /* Cuál es la foto que está esperando su recuadro. Alguien puede cancelar y
+     * elegir otra mientras la pregunta viaja, y aplicar el recuadro de la
+     * anterior es recortar por donde no va. */
+    const fotoParaRecortar = useRef(null);
     // Qué dijo el lector de la foto: `{ leido, coincide, veredicto }` cuando
     // contestó, `{ error }` cuando no se pudo preguntar, `null` mientras lee.
     const [lectura, setLectura] = useState(null);
@@ -448,7 +462,43 @@ export default function SalidaDeBolsa({
      * hay que devolver, y recortar primero volvería el recuadro un sinsentido.
      */
     const alElegirFoto = useCallback(async (f, { yaPreparado = false } = {}) => {
-        if (!f) { setFoto(null); setLectura(null); setDeLaFoto([]); setPisadosPorLaFoto([]); return; }
+        if (!f) { setFoto(null); setLectura(null); setDeLaFoto([]); setPisadosPorLaFoto([]); setSugerido(null); return; }
+
+        /* ── La foto CRUDA no se lee: va derecho al editor ───────────────────
+         *
+         * Hasta el 2026-09-17 se leía DOS veces: una acá, sobre la foto cruda,
+         * y otra cuando volvía del editor ya recortada. Y la segunda pisaba a
+         * la primera —`setMonto`/`setBoleta` se aplican siempre—, así que la
+         * primera lectura no decidía nada: sólo pagaba.
+         *
+         * Medido: 101 operaciones guardadas en septiembre contra ~1,100
+         * lecturas. La segunda llamada es la que manda, y es la que mira la
+         * imagen mejor —recortada y enderezada—, así que la que sobra es ésta.
+         *
+         * Lo único que la cruda aportaba era el RECUADRO para abrir el editor,
+         * y eso ahora lo contesta `buscarEsquinas` mirando los píxeles: gratis,
+         * instantáneo y más preciso que el modelo.
+         *
+         * Efecto de lado que se agradece: el editor abre YA. Antes había que
+         * esperar la lectura entera —unos 11 segundos— antes de ver la foto,
+         * con alguien enfrente del mostrador. */
+        if (!yaPreparado) {
+            setLectura(null);
+            setDeLaFoto([]);
+            setPisadosPorLaFoto([]);
+            setSugerido(null);
+            setPorEditar(f);
+            fotoParaRecortar.current = f;
+            (async () => {
+                try {
+                    const { buscarEsquinas } = await import('../../data/recorteSugerido');
+                    const r = await buscarEsquinas(f);
+                    if (fotoParaRecortar.current === f && r) setSugerido(r);
+                } catch { /* sin recuadro: el editor abre como siempre */ }
+            })();
+            return;
+        }
+
         setLeyendo(true);
         setLectura(null);
         /* El motivo NO viaja como esperado, y desde el 2-sep es a propósito.
@@ -609,14 +659,12 @@ export default function SalidaDeBolsa({
         setDeLaFoto(puestos);
         setPisadosPorLaFoto(pisados);
 
-        /* `yaPreparado` = la foto vino del teléfono, donde ya se recortó, se
-         * enderezó y se le dio el acabado. Volver a abrir el editor acá es
-         * pedir dos veces el mismo trabajo, sobre una foto que alguien ya
-         * cuadró — lo reportó el usuario el 2026-09-03. La LECTURA de arriba sí
-         * corre igual: es la que llena el monto y el número, y no tiene nada
-         * que ver con encuadrar. Ver el contrato de `onChange` en `FileField`. */
-        if (yaPreparado) { setFoto(f); return; }
-        setPorEditar(f);
+        /* Acá sólo llega lo que YA está preparado —salió del editor, o vino del
+         * teléfono, donde ya se recortó y se enderezó—, así que se adjunta y
+         * listo: volver a abrir el editor es pedir dos veces el mismo trabajo
+         * sobre una foto que alguien ya cuadró (lo reportó el usuario el
+         * 2026-09-03). Ver el contrato de `onChange` en `FileField`. */
+        setFoto(f);
     }, [entidad, boleta, monto, nota, n, opciones, t, laFotoManda]);
 
     /**
@@ -1464,7 +1512,9 @@ export default function SalidaDeBolsa({
                                 <EditorDeDocumento
                                     tipo="boleta"
                                     file={porEditar}
-                                    recuadro={lectura?.leido?.recuadro || null}
+                                    recuadro={sugerido?.recuadro || null}
+                                    esquinas={sugerido?.esquinas || null}
+                                    giroSugerido={sugerido?.giro || 0}
                                     onCancel={() => setPorEditar(null)}
                                     onConfirm={(lista) => { setFoto(lista); setPorEditar(null); }}
                                 />

@@ -124,6 +124,11 @@ Deno.serve(async (req) => {
       model: "gemini-2.5-pro",
       temperature: 0.1,
       jsonOutput: true,
+      /* Acá el pensamiento NO se recorta: armar un horario es repartir turnos
+       * respetando 44 horas, cobertura de apertura a cierre, almuerzos
+       * escalonados y lactancia — o sea razonar, no extraer un dato de una
+       * foto. El techo por defecto está medido sobre extracción. */
+      thinkingBudget: null,
     });
 
     const aiScheduleJSON = parseGeminiJson(rawText);

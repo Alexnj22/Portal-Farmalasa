@@ -120,6 +120,10 @@ FORMATO DE RESPUESTA:
       model: "gemini-2.5-pro",
       temperature: 0.1,
       jsonOutput: true,
+      /* Repartir vacaciones de todo un año sin dejar una sucursal corta de
+       * personal es planificación, no extracción: el techo por defecto está
+       * medido sobre leer una boleta y no dice nada de esto. */
+      thinkingBudget: null,
     });
 
     const aiPlan: Array<{ employee_id: string; start_date: string; end_date: string; days: number }> =

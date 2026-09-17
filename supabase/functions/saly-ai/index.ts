@@ -230,6 +230,12 @@ Reglas estrictas:
       temperature,
       jsonOutput: mimeType === "application/json",
       inlineData,
+      /* Saly PIENSA a propósito: redacta, resume comentarios de clima y arma
+       * borradores de aviso, que es justo donde el pensamiento se gana el
+       * precio. El techo barato de `_shared/gemini.ts` está medido sobre
+       * EXTRACCIÓN —leer un monto de una boleta—, y aplicárselo acá sería
+       * abaratar una tarea distinta con una medición que no habla de ella. */
+      thinkingBudget: null,
     });
 
     // 🤖 INTERCEPTOR DE BORRADORES (Agentic AI - HITL)

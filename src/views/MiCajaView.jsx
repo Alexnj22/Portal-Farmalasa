@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
     AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
+import { unaSolaVez } from '../utils/unaSolaVez';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
@@ -730,6 +731,9 @@ export default function MiCajaView({ comoPestana = false }) {
             vale: datos.vale,
             // Lo que la máquina leyó de la foto, para poder auditarla después.
             lectura: datos.lectura,
+            // La clave del envío: si esta misma salida llega dos veces, el
+            // servidor contesta con la que ya escribió. Ver `unaSolaVez`.
+            clave: datos.clave,
             // El texto entero. `concepto` va recortado a 50 porque es lo que le
             // cabe al sistema de la caja; esto es lo que alguien escribió, y sin
             // guardarlo la cola se perdía en los dos lados.
@@ -1156,6 +1160,9 @@ export default function MiCajaView({ comoPestana = false }) {
                                 clienteTelefono: datos.cliente_telefono,
                                 renglones: datos.renglones, total: datos.total,
                                 venceEl: datos.vence_el,
+                                // Si este mismo abono llega dos veces, el
+                                // servidor contesta con el que ya escribió.
+                                clave: datos.clave,
                             });
                             setOcupado(false);
                             if (r.error) { showToast('No se pudo anotar el abono', mensajeAmigable(r.error), 'error'); return; }
@@ -2242,6 +2249,32 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     const [recibe, setRecibe] = useState('');
     const [foto, setFoto] = useState(null);
     const [leyendo, setLeyendo] = useState(false);
+    /* ── Que un toque de más no anote un movimiento de más ───────────────────
+     *
+     * `enviando` apaga el botón a la vista; `enviandoRef` es el cerrojo de
+     * verdad. Son dos porque un `useState` no cambia nada hasta el próximo
+     * render: dos toques dentro del mismo tick pasarían los dos por el `if`.
+     *
+     * Y hacía falta porque el botón ya tenía `disabled={ocupado}` y aun así se
+     * duplicó: `ocupado` lo enciende el padre DESPUÉS de que esta función suba
+     * la foto, que tarda cientos de ms. Ésa era la ventana — medida en 13
+     * movimientos de más y $377.61 entre el 4 y el 16 de septiembre. */
+    const [enviando, setEnviando] = useState(false);
+    const enviandoRef = useRef(false);
+    /* La clave de ESTE formulario, una sola para todos sus reintentos.
+     *
+     * El cerrojo de arriba cubre el doble toque; esto cubre lo que el navegador
+     * no puede ver — dos pestañas, un reintento de red, la respuesta que se
+     * perdió a la vuelta. El servidor contesta con el movimiento que ya escribió
+     * en vez de escribir otro (`clave_envio` en `operar-caja`).
+     *
+     * Vive en un ref y NO se regenera por render: el diálogo se monta con
+     * `key={dialogo}`, así que cada apertura ya trae la suya. */
+    const claveDeEnvio = useRef(null);
+    if (claveDeEnvio.current === null) {
+        claveDeEnvio.current = globalThis.crypto?.randomUUID?.()
+            ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
     const [aviso, setAviso] = useState(null);
     // Qué llenó la foto. Esos campos quedan cerrados: el papel manda.
     const [deLaFoto, setDeLaFoto] = useState({});
@@ -2369,11 +2402,31 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     };
 
     const guardar = async () => {
+        /* ── El cerrojo va ACÁ, antes del primer `await` ─────────────────────
+         *
+         * `enviandoRef` se escribe y se lee en la misma vuelta, así que un
+         * segundo toque en el mismo tick se topa con él. Un `useState` no
+         * serviría: su valor nuevo no existe hasta el próximo render.
+         *
+         * Y el orden importa. Abajo hay un `await` que sube la foto y tarda
+         * cientos de milisegundos; hasta el 2026-09-17 el botón vivía todo ese
+         * rato porque lo apagaba `ocupado`, que lo enciende el PADRE recién
+         * cuando esta función termina. Ésa era la ventana. */
+        if (enviandoRef.current) return;
+        enviandoRef.current = true;
+        setEnviando(true);
         let fotoUrl = null;
         if (foto) {
             try { fotoUrl = await subirComprobante(foto, { salaId: sala, userId }); } catch { fotoUrl = null; }
         }
-        onAnotar({
+        /* `Promise.resolve(...)` y no `await`: envuelve igual si quien llama
+         * devolviera algo que no es una promesa, y así el cerrojo se suelta
+         * siempre sin tener que re-indentar todo el cuerpo. */
+        Promise.resolve(onAnotar({
+            /* La clave de ESTE envío. Si la misma llega dos veces —dos
+             * pestañas, un reintento de red—, el servidor contesta con el
+             * movimiento que ya escribió en vez de escribir otro. */
+            clave: claveDeEnvio.current,
             monto: Number(monto),
             // Lo que se GUARDA como concepto es el rótulo del tipo más el
             // detalle: del otro lado —el sistema de la caja— no hay tipo, sólo
@@ -2406,7 +2459,12 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 }),
             // Para el papel: el detalle suelto y quién, sin el rótulo pegado.
             detalle: concepto.trim(),
-        }, tipo, identifica ? persona : null);
+        }, tipo, identifica ? persona : null))
+            /* Se suelta PASE LO QUE PASE. Si sólo se soltara al salir bien, un
+             * fallo de red dejaría el botón muerto con el diálogo todavía
+             * abierto —`correr` no lo cierra cuando hay error— y la única
+             * salida sería recargar la página, perdiendo lo escrito. */
+            .finally(() => { enviandoRef.current = false; setEnviando(false); });
     };
 
     /* El paso del carné va SOLO en pantalla, sin ningún campo de texto dibujado.
@@ -2420,7 +2478,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 bajada={`${formatMoney(Number(monto) || 0)} · ${tipo?.etiqueta || ''}${concepto.trim() ? ` · ${concepto.trim()}` : ''}`}
                 pie={<>
                     <Button variant="ghost" onClick={() => setPaso('DATOS')}>Atrás</Button>
-                    <Button variant="primary" disabled={ocupado || !persona || !vale} onClick={guardar}>
+                    <Button variant="primary" disabled={ocupado || enviando || !persona || !vale} onClick={guardar}>
                         Anotar
                     </Button>
                 </>}
@@ -2447,7 +2505,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 {/* Con identidad el botón no anota: pasa al carné. Anotar antes
                     de comprobar dejaría plata salida a nombre de nadie si la
                     comprobación falla. */}
-                <Button variant="primary" disabled={ocupado || leyendo || !valido}
+                <Button variant="primary" disabled={ocupado || enviando || leyendo || !valido}
                     onClick={() => (identifica ? setPaso('IDENTIDAD') : guardar())}>
                     {identifica ? 'Continuar' : 'Anotar'}
                 </Button>

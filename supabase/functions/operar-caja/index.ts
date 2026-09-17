@@ -1119,6 +1119,49 @@ Deno.serve(async (req) => {
       if (!(Number.isFinite(monto) && monto > 0)) return json({ ok: false, error: "Falta el monto." }, 400);
       if (!esAbono && !concepto) return json({ ok: false, error: "Falta el concepto." }, 400);
 
+      /* ── El MISMO envío no escribe dos movimientos ─────────────────────────
+       *
+       * `clave_envio` la genera el formulario una sola vez y viaja igual en
+       * cada reintento de ESE envío. Si ya hay una fila con esa clave, se
+       * contesta con ella y no se toca nada más — sobre todo, no se toca la
+       * caja, que es lo que deja el dinero contado dos veces.
+       *
+       * Va ACÁ arriba, antes de cualquier trabajo, por eso mismo.
+       *
+       * Medido el 2026-09-17: 13 movimientos de más y $377.61 entre el 4 y el
+       * 16 de septiembre, con los pares a 34–73 ms y un caso de TRES filas en
+       * un segundo. El navegador ya tiene su cerrojo (`utils/unaSolaVez`), pero
+       * ése no cubre dos pestañas ni un reintento de red: esto sí. */
+      const claveEnvio = String(body.clave_envio ?? "").trim().slice(0, 100) || null;
+      if (claveEnvio) {
+        const { data: ya, error: errYa } = await supabase
+          .from("caja_movimientos_portal")
+          .select("*").eq("clave_envio", claveEnvio).maybeSingle();
+        // Un fallo de LECTURA no puede frenar el movimiento: se sigue, y el
+        // índice único de abajo es el que no deja pasar el duplicado.
+        if (errYa) console.error(`[operar-caja] ${accion} clave=${claveEnvio}: ${errYa.message}`);
+        if (ya) {
+          let abonoYa: Record<string, unknown> | null = null;
+          if (esAbono) {
+            const { data: fa, error: errFa } = await supabase.from("abonos_de_cliente")
+              .select("*").eq("movimiento_ingreso_id", ya.id).maybeSingle();
+            // El abono es para el PAPEL; el movimiento ya está y no se repite.
+            // Si no se pudo leer, se dice y se sigue: quedarse sin comprobante
+            // es molesto, escribir el ingreso dos veces es plata.
+            if (errFa) console.error(`[operar-caja] abono repetido clave=${claveEnvio}: ${errFa.message}`);
+            abonoYa = fa ?? null;
+          }
+          console.log(`[operar-caja] ${accion} repetido: clave=${claveEnvio} ya era la fila ${ya.id}`);
+          return json({
+            ok: true, movimiento_del_portal: ya.id, movimiento_en_caja: ya.erp_movimiento_id,
+            abono: abonoYa, movimiento: ya,
+            // Para que quien llame pueda distinguir «se anotó» de «ya estaba»
+            // sin tener que adivinarlo comparando ids.
+            repetido: true,
+          });
+        }
+      }
+
       /* ── EL ABONO DE CLIENTE ────────────────────────────────────────────
        *
        * Es un ingreso con un contrato encima: el dinero entra al cajón igual
@@ -1259,8 +1302,38 @@ Deno.serve(async (req) => {
             ? String(body.recibe).slice(0, 60) : null,
           fecha: diaAbierto, erp_apertura_id: Number(estado.aper),
           registrado_por: quien.id,
+          // La clave de ESTE envío: su índice único es lo que hace que dos
+          // peticiones en paralelo no puedan escribir dos movimientos.
+          clave_envio: claveEnvio,
         })
         .select("*").single();
+
+      /* Las dos peticiones pasaron la comprobación de arriba a la vez.
+       *
+       * Es EL caso real: en producción los `erp_movimiento_id` volvieron en
+       * orden invertido respecto al de inserción, o sea que viajaban juntas. La
+       * comprobación de arriba sola no alcanza —entre leer y escribir hay un
+       * hueco—; lo que decide es el índice único, y acá se traduce su rechazo a
+       * la misma respuesta que hubiera dado la primera. */
+      if (errFila?.code === "23505" && claveEnvio) {
+        const { data: ya, error: errRelectura } = await supabase
+          .from("caja_movimientos_portal")
+          .select("*").eq("clave_envio", claveEnvio).maybeSingle();
+        /* Si NO se pudo releer, no se inventa una respuesta buena: cae al
+         * `throw` de abajo y quien llama ve que algo falló. Decir «ok» sin
+         * tener la fila en la mano sería afirmar que el movimiento existe sin
+         * haberlo comprobado — y el índice ya garantizó que no se duplicó. */
+        if (errRelectura) {
+          console.error(`[operar-caja] ${accion} carrera clave=${claveEnvio}: ${errRelectura.message}`);
+        }
+        if (ya) {
+          console.log(`[operar-caja] ${accion} carrera: clave=${claveEnvio} gano la fila ${ya.id}`);
+          return json({
+            ok: true, movimiento_del_portal: ya.id, movimiento_en_caja: ya.erp_movimiento_id,
+            abono: null, movimiento: ya, repetido: true,
+          });
+        }
+      }
       if (errFila) throw new Error(`guardando el movimiento: ${errFila.message}`);
 
       let abono: Record<string, unknown> | null = null;

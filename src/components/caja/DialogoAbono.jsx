@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Trash2, User } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
@@ -6,6 +6,7 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import BuscadorDeProducto from '../common/BuscadorDeProducto';
 import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
+import { unaSolaVez } from '../../utils/unaSolaVez';
 import { formatMoney } from '../../utils/formatNumber';
 import { DIAS_DE_RESERVA, POLITICA_DE_RESERVA, vencimientoDeReserva } from '../../utils/abonoTicket';
 
@@ -129,7 +130,21 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
         saveDraft(claveDeBorrador(sala), { cliente, telefono, renglones, abonado });
     }, [abierto, sala, cliente, telefono, renglones, abonado]);
 
-    const guardar = () => {
+    /* La clave de ESTE envío, una sola para todos sus reintentos. El diálogo se
+     * monta en cada apertura, así que un ref inicializado una vez ya da una por
+     * apertura — y el servidor contesta con el movimiento que ya escribió si la
+     * misma clave vuelve a llegar. Ver `operar-caja` y `utils/unaSolaVez`. */
+    const claveDeEnvio = useRef(null);
+    if (claveDeEnvio.current === null) {
+        claveDeEnvio.current = globalThis.crypto?.randomUUID?.()
+            ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    /* El cuerpo vive en un ref para que el cerrojo sea UNO SOLO durante toda la
+     * vida del diálogo: envolver una función nueva en cada render daría un
+     * cerrojo nuevo por render, o sea ninguno. */
+    const cuerpoDeGuardar = useRef(null);
+    cuerpoDeGuardar.current = () => {
         // El borrador se borra ANTES de mandar: si el envío falla, el formulario
         // sigue en pantalla con todo puesto, así que no hay nada que recuperar.
         // Dejarlo haría que el próximo abono empiece con los datos del anterior.
@@ -137,7 +152,19 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
         return enviar();
     };
 
+    /* Dos toques seguidos anotan UN abono. El botón se apaga con `ocupado`, que
+     * lo enciende el padre — o sea un render después—, así que entre el primer
+     * toque y el apagado hay una ventana real. Es el mismo defecto que dejó 13
+     * movimientos de caja duplicados en septiembre; ver `utils/unaSolaVez`. */
+    const guardar = useMemo(() => unaSolaVez((...a) => cuerpoDeGuardar.current(...a)), []);
+
     const enviar = () => onGuardar({
+        /* La clave de ESTE envío, una sola para todos sus reintentos. El
+         * cerrojo de arriba cubre el doble toque; esto cubre lo que el
+         * navegador no ve —dos pestañas, un reintento de red— porque el
+         * servidor contesta con el movimiento que ya escribió. El diálogo se
+         * monta en cada apertura, así que cada una trae la suya. */
+        clave: claveDeEnvio.current,
         cliente_nombre: cliente.trim(),
         cliente_telefono: telefono.trim() || null,
         monto,

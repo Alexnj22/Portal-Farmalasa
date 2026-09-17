@@ -21,6 +21,76 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.11 — Un toque de más ya no anota un movimiento de más
+
+Salió de las solicitudes de anulación: *«se anotó dos veces»*, *«se anotó 3
+veces»*, *«Duplicado, se ingresó 2 veces»*. Y la primera búsqueda miró donde no
+era —los duplicados NO están en las bolsas, donde sí hay un aviso y un índice
+único— sino en los **movimientos de caja**, que es el camino del cajón y no
+pasa por ninguno de los dos.
+
+**No era la sala escribiendo dos veces.** Los pares están separados por **34 a
+73 milisegundos**, misma persona, misma apertura, misma boleta y misma foto — y
+un caso tiene **tres filas en un solo segundo**. Los `erp_movimiento_id`
+volvieron en orden **invertido** respecto al de inserción, o sea que las
+peticiones viajaban en paralelo.
+
+La causa está en el orden de `guardar()`:
+
+```js
+if (foto) fotoUrl = await subirComprobante(foto, …);  // ← cientos de ms
+onAnotar({ … });                                       // ← recién acá se enciende `ocupado`
+```
+
+El botón tenía `disabled={ocupado}`, pero `ocupado` lo enciende el padre
+**después** de que la foto suba. Toda esa subida el botón está vivo.
+
+El tell que lo confirma, y que separa el defecto del ruido:
+
+| tipo | ¿pide foto? | duplicados instantáneos | repeticiones lentas |
+|---|---|---:|---:|
+| POS Promerica | sí | **9 de 9** | 0 |
+| Otro (con foto) | sí | 1 | 0 |
+| Aplicación de inyección ($1) | no | **0** | 51 |
+| Prueba de glucosa ($1) | no | **0** | 4 |
+
+Los instantáneos aparecen **sólo** donde hay foto. Y las repeticiones lentas de
+$1 **son reales** —cada inyección es de un cliente distinto—, así que una regla
+de «mismo monto y concepto el mismo día» habría roto justo eso.
+
+**Alcance:** 13 movimientos de más, **$377.61**, entre el 4 y el 16 de
+septiembre. Cada envío creó además su propio movimiento en el sistema de la
+caja, que es por qué hacía falta una anulación y no bastaba con borrar.
+
+**Se corrigió en las dos capas, porque ninguna alcanza sola:**
+
+1. **El cerrojo del navegador** (`utils/unaSolaVez`, con sus pruebas) es
+   síncrono y va **antes** del primer `await`. Un `useState` no sirve: su valor
+   nuevo no existe hasta el próximo render, así que dos toques en el mismo tick
+   pasan los dos. Se suelta pase lo que pase — si sólo se soltara al salir bien,
+   un fallo de red dejaría el botón muerto y habría que recargar, perdiendo lo
+   escrito.
+2. **La clave de envío en el servidor.** El formulario genera una clave por
+   apertura y la manda igual en cada reintento; `operar-caja` contesta con el
+   movimiento que ya escribió y **no vuelve a tocar la caja**. Su índice único
+   (`caja_mov_portal_clave_envio_unica`) cierra la carrera que la comprobación
+   previa no puede: entre leer y escribir hay un hueco, y ahí es donde entraron
+   los pares de 34 ms. Cubre además lo que el navegador no ve — dos pestañas, un
+   reintento de red, una respuesta perdida a la vuelta.
+
+Comprobado: el índice **rechaza** el segundo envío con la misma clave (probado
+en una transacción revertida), y las seis pruebas del cerrojo anclan el doble
+toque, el triple, el reintento tras un fallo y que los argumentos sean los del
+primer toque y no los del segundo.
+
+El mismo cerrojo va en el diálogo de abono, que tiene la misma forma con una
+ventana más corta.
+
+**Queda abierto a propósito:** el cajón sigue sin el aviso de «esa boleta ya se
+registró» que sí tienen las bolsas. Eso es otro caso —una persona reingresando
+horas después, no un doble toque— y hay uno medido: Salud 1, 9-sep, remesa de
+$100 con la boleta 000513 anotada a las 19:56 y a la 01:51, las dos vigentes.
+
 ## v2.1023.10 — Los lectores que no se midieron conservan su pensamiento
 
 Cabo suelto de v2.1023.9. El techo de pensamiento en 128 quedó como valor por

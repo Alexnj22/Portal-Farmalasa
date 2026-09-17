@@ -1004,7 +1004,7 @@ export async function iniciarTurno(sala, { simular = false } = {}) {
 }
 
 export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null,
-    fotoUrl = null, vendedor = '', conceptoCompleto = null, lectura = null }) {
+    fotoUrl = null, vendedor = '', conceptoCompleto = null, lectura = null, clave = null }) {
     // `detalle` es el concepto SIN el recorte a 50 del sistema de la caja. Va
     // igual que en la salida: un ingreso escrito largo perdía la cola por el
     // mismo motivo, y nadie iba a mirar dos veces el mismo defecto.
@@ -1014,6 +1014,10 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
     return operar({
         accion: 'ingreso', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, vendedor,
         detalle: conceptoCompleto, lectura,
+        /* La misma clave para los reintentos del MISMO envío. El servidor la
+         * usa para contestar con el movimiento que ya escribió en vez de
+         * escribir otro: ver `clave_envio` en `operar-caja`. */
+        clave_envio: clave,
     });
 }
 
@@ -1038,11 +1042,14 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
  * con eso y no con lo que el navegador creía estar mandando.
  */
 export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono = null,
-    clienteErpId = null, renglones = [], total = null, venceEl }) {
+    clienteErpId = null, renglones = [], total = null, venceEl, clave = null }) {
     return operar({
         accion: 'abono', sala, monto,
         cliente_nombre: clienteNombre, cliente_telefono: clienteTelefono,
         cliente_erp_id: clienteErpId, renglones, total, vence_el: venceEl,
+        /* Ver `anotarIngreso`: un abono entra al cajón por el mismo camino, así
+         * que hereda la misma protección contra el envío repetido. */
+        clave_envio: clave,
     });
 }
 
@@ -1059,10 +1066,13 @@ export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono 
  */
 export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, recibe = '', recibidoPor = null, vale = null, detalle = null,
-    lectura = null }) {
+    lectura = null, clave = null }) {
     return operar({
         accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe,
         recibido_por: recibidoPor, vale,
+        /* Ver `anotarIngreso`: la clave hace que un envío repetido —dos toques,
+         * un reintento de red— conteste con el movimiento que ya existe. */
+        clave_envio: clave,
         // Lo que la máquina leyó de la foto, para poder auditarla después.
         lectura,
         // El concepto SIN el recorte a 50 del sistema de la caja. Viaja aparte

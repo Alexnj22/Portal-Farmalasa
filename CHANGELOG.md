@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.12 — El botón dice que está anotando, y no deja cerrar a mitad
+
+Preguntas del usuario sobre lo que salió en v2.1023.11: *«cuando se sube ¿hay
+estado de carga? ¿deshabilita el botón? ¿avisa que se está procesando?»*.
+
+Deshabilitaba, sí. **Avisar, no** — y ése era el hueco que quedaba, porque es
+justo lo que produce el segundo toque: un botón que se pone gris y mudo se lee
+como «no funcionó». La subida de la foto tarda cientos de milisegundos, así que
+ese silencio era la ventana entera.
+
+`Button` ya sabía hacerlo (`loading` dibuja un spinner en lugar del icono y
+conserva el texto) y **Bolsas ya lo usaba** — `loading={guardando}`. Mi caja no:
+tenía el `disabled` y nada más.
+
+Ahora, mientras se envía:
+
+- el botón muestra **spinner + «Anotando…»**;
+- **«Cancelar» se apaga** y el diálogo **no se puede cerrar** — el movimiento ya
+  salió de la pantalla y cerrar no lo deshace, sólo esconde en qué quedó. Es lo
+  que hace la salida de bolsa desde siempre;
+- lo mismo en el diálogo de abono, con su propio `enviando`.
+
+**Y sobre volver a ingresar una boleta a propósito: se puede.** La clave de
+envío identifica UN envío, no una boleta: el diálogo se remonta en cada
+apertura, así que cerrarlo y volver a abrirlo da una clave nueva y la misma
+boleta entra de nuevo sin problema. Lo que no se puede es que el MISMO envío se
+escriba dos veces.
+
+Eso deja en pie lo que ya estaba anotado como pendiente: el cajón sigue sin el
+aviso de «esa boleta ya se registró» que sí tienen las bolsas, que es el que
+cazaría un reingreso hecho horas después.
+
 ## v2.1023.11 — Un toque de más ya no anota un movimiento de más
 
 Salió de las solicitudes de anulación: *«se anotó dos veces»*, *«se anotó 3

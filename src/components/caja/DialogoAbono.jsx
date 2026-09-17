@@ -130,6 +130,11 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
         saveDraft(claveDeBorrador(sala), { cliente, telefono, renglones, abonado });
     }, [abierto, sala, cliente, telefono, renglones, abonado]);
 
+    /* Para que el botón DIGA que está trabajando, no sólo que no se puede
+     * tocar. El cerrojo real es `unaSolaVez`, de abajo; esto es lo que ve la
+     * persona que está esperando con el cliente enfrente. */
+    const [enviando, setEnviando] = useState(false);
+
     /* La clave de ESTE envío, una sola para todos sus reintentos. El diálogo se
      * monta en cada apertura, así que un ref inicializado una vez ya da una por
      * apertura — y el servidor contesta con el movimiento que ya escribió si la
@@ -144,12 +149,20 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
      * vida del diálogo: envolver una función nueva en cada render daría un
      * cerrojo nuevo por render, o sea ninguno. */
     const cuerpoDeGuardar = useRef(null);
-    cuerpoDeGuardar.current = () => {
-        // El borrador se borra ANTES de mandar: si el envío falla, el formulario
-        // sigue en pantalla con todo puesto, así que no hay nada que recuperar.
-        // Dejarlo haría que el próximo abono empiece con los datos del anterior.
-        clearDraft(claveDeBorrador(sala));
-        return enviar();
+    cuerpoDeGuardar.current = async () => {
+        setEnviando(true);
+        try {
+            // El borrador se borra ANTES de mandar: si el envío falla, el
+            // formulario sigue en pantalla con todo puesto, así que no hay nada
+            // que recuperar. Dejarlo haría que el próximo abono empiece con los
+            // datos del anterior.
+            clearDraft(claveDeBorrador(sala));
+            return await enviar();
+        } finally {
+            // Se suelta siempre: si sólo se soltara al salir bien, un fallo de
+            // red dejaría el botón muerto con el formulario lleno.
+            setEnviando(false);
+        }
     };
 
     /* Dos toques seguidos anotan UN abono. El botón se apaga con `ocupado`, que
@@ -312,9 +325,13 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
                 </div>
 
                 <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                    <Button variant="primary" disabled={ocupado || !valido || !sala} onClick={guardar}>
-                        Anotar e imprimir
+                    <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
+                    {/* `loading` y no sólo `disabled`: un botón gris y mudo se
+                        lee como «no funcionó», y ahí es cuando alguien vuelve a
+                        tocarlo. Ver `utils/unaSolaVez`. */}
+                    <Button variant="primary" loading={enviando}
+                        disabled={ocupado || !valido || !sala} onClick={guardar}>
+                        {enviando ? 'Anotando…' : 'Anotar e imprimir'}
                     </Button>
                 </div>
             </div>

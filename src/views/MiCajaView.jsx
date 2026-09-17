@@ -2474,12 +2474,13 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * Es el mismo defecto que se corrigió en el login (v2.638.0). */
     if (paso === 'IDENTIDAD') {
         return (
-            <Marco abierto={abierto} onClose={onClose} titulo="Quién se lleva el efectivo"
+            <Marco abierto={abierto} onClose={enviando ? undefined : onClose} titulo="Quién se lleva el efectivo"
                 bajada={`${formatMoney(Number(monto) || 0)} · ${tipo?.etiqueta || ''}${concepto.trim() ? ` · ${concepto.trim()}` : ''}`}
                 pie={<>
-                    <Button variant="ghost" onClick={() => setPaso('DATOS')}>Atrás</Button>
-                    <Button variant="primary" disabled={ocupado || enviando || !persona || !vale} onClick={guardar}>
-                        Anotar
+                    <Button variant="ghost" onClick={() => setPaso('DATOS')} disabled={enviando}>Atrás</Button>
+                    <Button variant="primary" loading={enviando}
+                        disabled={ocupado || !persona || !vale} onClick={guardar}>
+                        {enviando ? 'Anotando…' : 'Anotar'}
                     </Button>
                 </>}
             >
@@ -2495,19 +2496,26 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     }
 
     return (
-        <Marco abierto={abierto} onClose={onClose}
+        <Marco abierto={abierto} onClose={enviando ? undefined : onClose}
             titulo={entra ? 'Anotar un ingreso' : 'Anotar una salida'}
             bajada={entra
                 ? 'Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.'
                 : 'Sale del cajón porque ninguna bolsa de cortes anteriores alcanza. Esto sí se le anota a la caja.'}
             pie={<>
-                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                {/* Cancelar se apaga mientras se envía: el movimiento ya salió
+                    de acá y cerrar no lo deshace — sólo esconde en qué quedó. */}
+                <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
                 {/* Con identidad el botón no anota: pasa al carné. Anotar antes
                     de comprobar dejaría plata salida a nombre de nadie si la
                     comprobación falla. */}
-                <Button variant="primary" disabled={ocupado || enviando || leyendo || !valido}
+                {/* `loading` y no sólo `disabled`: un botón que se pone gris sin
+                    decir nada se lee como «no funcionó», y ahí es cuando alguien
+                    vuelve a tocarlo. La foto tarda cientos de ms en subir, así
+                    que ese silencio es justo la ventana del doble toque. */}
+                <Button variant="primary" loading={enviando}
+                    disabled={ocupado || leyendo || !valido}
                     onClick={() => (identifica ? setPaso('IDENTIDAD') : guardar())}>
-                    {identifica ? 'Continuar' : 'Anotar'}
+                    {identifica ? 'Continuar' : (enviando ? 'Anotando…' : 'Anotar')}
                 </Button>
             </>}
         >

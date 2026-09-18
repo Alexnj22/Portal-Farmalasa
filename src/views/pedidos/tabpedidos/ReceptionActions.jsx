@@ -35,7 +35,7 @@ const LLEGADA_TIPO_LABEL = {
 // La legibilidad de estos avisos NO se arregló acá: su causa era el material
 // (§5.bis.1 de DESIGN.md, el escalón anidado iba al revés en Liquid claro).
 // Sobre eso siguen quedando cortos contra AA y está anotado allá.
-export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null, canEdit = true }) {
+export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null, canEdit = true, cajasEspeciales = [] }) {
     // Sin permiso para gestionar pedidos NO se pinta ningún botón. Antes se
     // pintaban todos y ninguno podía funcionar: la base rechaza la escritura y
     // el 2026-08-14 eso costó una recepción entera, contada dos veces contra
@@ -123,7 +123,13 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                     {reenviosHistorial.length > 1 ? `Reenvío ${cicloEnCamino.ciclo} en camino` : 'Reenvío en camino'}
                     {(cicloEnCamino.cajas ?? []).length > 0 && ` — caja${cicloEnCamino.cajas.length > 1 ? 's' : ''} ${cicloEnCamino.cajas.map(n => `#${n}`).join(', ')}`}
                     {(cicloEnCamino.electrolits ?? 0) > 0 && ` · ${cicloEnCamino.electrolits} Electrolit`}
-                    {(cicloEnCamino.especiales ?? []).length > 0 && ` · ${cicloEnCamino.especiales.join(', ')}`}
+                    {/* Con su producto: «E2» a secas no dice qué esperar. El ciclo
+                        guarda sólo la etiqueta; el nombre sale de la lista del
+                        despacho, la misma que imprimió la etiqueta. */}
+                    {(cicloEnCamino.especiales ?? []).length > 0 && ` · ${cicloEnCamino.especiales.map(l => {
+                        const producto = (Array.isArray(cajasEspeciales) ? cajasEspeciales : []).find(c => c?.label === l)?.product_name;
+                        return producto ? `${l} · ${producto}` : l;
+                    }).join(', ')}`}
                 </Notice>
             )}
 

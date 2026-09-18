@@ -12,7 +12,7 @@ import { tokenMatch } from '../../../utils/searchUtils';
 import { ERP_NAMES } from '../../../constants/erp';
 import { printFromPedidoItems, getExactPageGroups } from '../../../utils/pedidoPrint';
 import { PAUSE_REASONS } from './constants';
-import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion } from './helpers';
+import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, faltantesDeLaSala, describirFaltantes } from './helpers';
 import {
     fetchEmployeeBranchId, fetchSucursalIdForBranch, fetchBodegaBranchId, fetchBranchIdForSucursal,
     fetchBranchInfoForSucursal, fetchBranchNamesForSucursales, fetchApoyoForPedidos, fetchApoyoForPedido,
@@ -1044,16 +1044,21 @@ export function usePedidosData({ searchTerm = '' }) {
         } finally { setBusyAction(null); }
     }, [llegadaModal, user, branchName, loadActive, fetchItems]);
 
+    // `especialesFaltantes` llega como `[{ label, producto }]` —de
+    // `faltantesDeLaSala`— para que el aviso nombre el producto. El ciclo guarda
+    // sólo las etiquetas: es la clave que leen la segunda llegada y
+    // `cajas_especiales_llegadas`.
     const handleReenviarCaja = useCallback(async (pedidoId, sucId, numero, cajasFaltantes, electrolitsFaltantes = 0, especialesFaltantes = []) => {
         setBusyAction('reenvio');
         try {
             const now = new Date().toISOString();
+            const especialesLabels = especialesFaltantes.map(e => (typeof e === 'string' ? e : e.label));
             // Leer historial actual para calcular ciclo
             const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'reenvios_historial');
             if (pssErr) throw pssErr;
             const historial = pss?.reenvios_historial ?? [];
             const ciclo     = historial.length + 1;
-            const nuevoCiclo = { ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesFaltantes, sent_at: now, sent_by: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
+            const nuevoCiclo = { ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels, sent_at: now, sent_by: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
 
             const { error: reenvioErr } = await updatePedidoSucursalStatus(pedidoId, sucId, {
                 reenvio_bodega_at:  now,
@@ -1062,13 +1067,16 @@ export function usePedidosData({ searchTerm = '' }) {
             });
             if (reenvioErr) throw reenvioErr;
 
-            useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes });
+            useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels });
 
             fetchBranchIdForSucursal(sucId).then(({ data: m }) => {
                 if (!m?.branch_id) return;
-                const cajasStr = cajasFaltantes.map(n => `#${n}`).join(', ');
+                // Armado sólo con las cajas numeradas, un reenvío de una caja
+                // especial decía «La caja  del pedido #178»: vacío justo donde
+                // iba lo que había que esperar.
+                const que = describirFaltantes({ cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesFaltantes.map(e => (typeof e === 'string' ? { label: e } : e)) }).join(' · ');
                 // Accionable (deben confirmar llegada) → con push
-                notifyBranch(m.branch_id, { type: 'PEDIDO_REENVIO', title: `Reenvío en camino — pedido #${numero}`, body: `La caja ${cajasStr} del pedido #${numero} ya salió de bodega. Confirma la llegada cuando la recibas.`, link: '/pedidos', push: true });
+                notifyBranch(m.branch_id, { type: 'PEDIDO_REENVIO', title: `Reenvío en camino — pedido #${numero}`, body: `Ya salió de bodega lo que faltaba del pedido #${numero}: ${que}. Confirma la llegada cuando lo recibas.`, link: '/pedidos', push: true });
             }).catch(() => {});
             await loadActive();
             setCrearRutaOpen([`${pedidoId}__${sucId}`]);
@@ -1787,7 +1795,9 @@ export function usePedidosData({ searchTerm = '' }) {
         if (filterStatus === 'completado') {
             rows = rows.filter(r => r.pedido_status === 'completado');
         } else if (filterStatus === 'observacion') {
-            rows = rows.filter(r => hasObservacion(r) && r.pedido_status !== 'completado');
+            // Lo que todavía no llegó es una observación viva aunque la sala ya
+            // haya contado lo demás y el pedido diga «completado».
+            rows = rows.filter(r => (hasObservacion(r) && r.pedido_status !== 'completado') || faltantesDeLaSala(r).hay);
         } else if (filterStatus !== 'all') {
             // «Pendientes» y «En ruta» se comparan contra el estado de la SALA,
             // que es el que la tarjeta pinta. Contra `pedido_status`, la Salud 2

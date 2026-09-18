@@ -161,6 +161,58 @@ export function hayRecepcionPendiente({ enviadoAt = null, pedidoStatus, pendient
     return (reenviosHistorial ?? []).some(c => c.sent_at && !c.arrived_at);
 }
 
+/**
+ * Qué le falta todavía a ESTA sala de lo que se le despachó.
+ *
+ * Tres clases de cosa pueden no llegar —una caja numerada, Electrolit suelto,
+ * una caja especial E1…En— y la pregunta estaba respondida en cuatro sitios con
+ * cuatro listas distintas: el botón «Reenviar caja» sabía de las tres, las
+ * etiquetas de la tarjeta sólo de dos, y la sala, en cuanto terminaba de
+ * contar, de ninguna. Pedido #178 de Salud 4 (17-sep-2026): con sólo una caja
+ * especial faltando, la tarjeta de bodega tenía el botón rojo y ninguna línea
+ * que dijera QUÉ reenviar, y la de la sala decía «Completado» a secas.
+ *
+ * La caja especial se nombra con su PRODUCTO, que sale de la lista guardada al
+ * despachar (`cajas_especiales`), la misma que imprimió la etiqueta. «E2» solo
+ * no le dice nada a quien tiene que ir a buscarla al estante.
+ *
+ * `enCamino` es que bodega ya la reenvió y todavía nadie confirmó la llegada:
+ * lo que falta sigue faltando, pero ya no depende de bodega.
+ */
+export function faltantesDeLaSala(row) {
+    const cajas = Array.isArray(row?.falta_cajas) ? row.falta_cajas : [];
+    const electrolits = (row?.electrolit_faltantes ?? 0) > 0 && row?.electrolit_ok !== true
+        ? row.electrolit_faltantes
+        : 0;
+    //  El default de la columna es `'{}'::jsonb` —un objeto— y el de
+    //  `cajas_especiales` también: `Array.isArray` y no `?? []`.
+    const llegadas = row?.cajas_especiales_llegadas && typeof row.cajas_especiales_llegadas === 'object'
+        && !Array.isArray(row.cajas_especiales_llegadas) ? row.cajas_especiales_llegadas : {};
+    const lista = Array.isArray(row?.cajas_especiales) ? row.cajas_especiales : [];
+    const especiales = Object.entries(llegadas)
+        .filter(([, v]) => v === 'faltante')
+        .map(([label]) => ({ label, producto: lista.find(c => c?.label === label)?.product_name ?? null }));
+    return {
+        cajas,
+        electrolits,
+        especiales,
+        hay: cajas.length > 0 || electrolits > 0 || especiales.length > 0,
+        enCamino: (row?.reenvios_historial ?? []).some(c => c?.sent_at && !c?.arrived_at),
+    };
+}
+
+// Cada faltante como una línea que se lee sola: «Caja #3», «2 Electrolit»,
+// «E2 · ELECTROLIT MANZANA 625ML». La usan el aviso de la tarjeta, la
+// confirmación del reenvío y la notificación a la sala, para que las tres
+// digan lo mismo.
+export function describirFaltantes({ cajas = [], electrolits = 0, especiales = [] } = {}) {
+    const lineas = [];
+    if (cajas.length > 0) lineas.push(`Caja${cajas.length > 1 ? 's' : ''} ${cajas.map(n => `#${n}`).join(', ')}`);
+    if (electrolits > 0)  lineas.push(`${electrolits} Electrolit`);
+    for (const e of especiales) lineas.push(e.producto ? `${e.label} · ${e.producto}` : e.label);
+    return lineas;
+}
+
 // Las dos guardas de preparación de una SALA. Viven acá, exportadas, y no
 // escritas dentro del JSX: una prueba que copia la expresión en vez de
 // importarla no prueba nada — se escribió así primero y pasaba en verde con el
@@ -220,10 +272,16 @@ export function estadoDeLaSala(row) {
  *     (`llegada_fisica_at` sin `recibido_erp_at`). Un pedido todavía en ruta no
  *     entra: nadie puede hacer nada con él, y subirlo dejaría a media lista
  *     «arriba», que es lo mismo que no ordenar.
+ *  3. Algo no llegó y bodega todavía no lo reenvió — `faltantesDeLaSala`. Es
+ *     un pendiente aunque la sala ya haya contado todo lo demás: el pedido #178
+ *     de Salud 4 quedó «Completado» con una caja sin llegar, abajo de todo. Ya
+ *     reenviado, en cambio, no sube: va en camino, igual que el caso 2.
  */
 export function necesitaAtencion(row, stats = {}) {
     if (!row) return false;
     if ((stats.sinResolver ?? 0) > 0) return true;
+    const faltan = faltantesDeLaSala(row);
+    if (faltan.hay && !faltan.enCamino) return true;
     return !!row.llegada_fisica_at && !row.recibido_erp_at;
 }
 

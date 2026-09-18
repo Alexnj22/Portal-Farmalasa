@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.19 — Lo que no llegó se nombra, y la sala lo ve pendiente
+
+Lo que no llegó a una sala ahora se dice, con nombre, en la tarjeta de bodega
+y en la de la sala.
+
+Salud 4, pedido #178: la tarjeta de bodega tenía el botón rojo «Reenviar
+caja» y ninguna línea que dijera qué reenviar. La de la sala decía
+«Completado» a secas, sin nada pendiente, porque en cuanto terminó de contar
+lo demás se le cerró el bloque de Recepción. El faltante era una caja especial,
+«E2 — ELECTROLIT MANZANA 625ML», y las etiquetas de la tarjeta sólo conocían
+las cajas numeradas y el Electrolit suelto.
+
+- **Etiqueta roja por cada caja especial que no llegó**, con su producto:
+  «Faltante: E2 · ELECTROLIT MANZANA 625ML». La ven bodega y la sala.
+- **La sala ve el pendiente** mientras bodega no lo reenvíe: «Pendiente — no
+  llegó: …». Ya reenviado, lo avisa Recepción como antes, ahora con el producto.
+- **La confirmación del reenvío** nombra cada caja especial con su producto.
+- **El aviso a la sala** al reenviar decía «La caja  del pedido #178» —vacío—
+  cuando lo único que viajaba era una caja especial. Ahora lista lo que va.
+- Una tarjeta con algo sin llegar **sube arriba del tablero**, no se apaga
+  aunque diga «Completado», y entra en el filtro «Con observación».
+
+Todo sale de un solo sitio, `faltantesDeLaSala` (`tabpedidos/helpers.js`):
+el botón, las etiquetas, el aviso y el orden contestaban la misma pregunta con
+cuatro listas distintas. Siete pruebas nuevas en `necesitaAtencion.test.js`,
+ancladas en el pedido real.
+
 ## v2.1023.18 — las consultas de Ventas leen la mitad, y el abono avisa si no sale el papel
 
 Mismos resultados, bastante menos trabajo de base. Cada cambio se verificó

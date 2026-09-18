@@ -14,7 +14,7 @@ import {
     Truck, Pause, Play, Home,
     X, Send, Check, RotateCcw, Flag,
     ClipboardList, UserPlus, Inbox, FileDown, Box, Zap, Map as MapIcon,
-    CalendarClock, Ban, Star, Search, Radio, RefreshCw,
+    CalendarClock, Ban, Star, Search, Radio, RefreshCw, PackageX,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -23,7 +23,7 @@ import { notifyBranch } from '../../utils/notify';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SucPill from './tabpedidos/SucPill';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse } from './tabpedidos/helpers';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes } from './tabpedidos/helpers';
 import ItemSections from './tabpedidos/ItemSections';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
 import DifSection from './tabpedidos/DifSection';
@@ -307,6 +307,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                         const cards = displayRows.map(row => {
                             const stage      = getBranchStage(row);
                             const estadoSala = estadoDeLaSala(row);
+                            // Lo que no llegó, de una sola fuente para la etiqueta,
+                            // el aviso de la sala y el botón de reenvío.
+                            const faltan     = faltantesDeLaSala(row);
                             const cardKey    = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
                             // De la MISMA fuente que el orden del tablero: la
                             // stat que calcula la base. Antes se contaba sobre
@@ -363,7 +366,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 && !(pedidoStageMap.get(row.pedido_id)?.anyFinalized);
 
                             // Solo fade cuando completado: parcial queda visible (pendiente corrección)
-                            const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at;  // sutil: solo baja un poco la opacidad
+                            // …salvo que le falte algo: «Completado» con una caja sin
+                            // llegar no es un pedido cerrado, y apagarlo lo escondía.
+                            const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at && !faltan.hay;  // sutil: solo baja un poco la opacidad
 
                             return (
                                 <motion.div
@@ -381,7 +386,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     className={`select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-warning/45 shadow-[var(--shadow-glow-warning-lg)]'
-                                            : hasObservacion(row) && row.pedido_status !== 'completado'
+                                            : (hasObservacion(row) && row.pedido_status !== 'completado') || faltan.hay
                                                 ? 'ring-2 ring-chart-4/45 shadow-[var(--shadow-glow-chart-4)]'
                                                 : isFadedOut
                                                     ? 'opacity-80'
@@ -579,6 +584,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {(row.falta_cajas ?? []).length > 0 && (
                                             <Badge variant="danger" icon={Package} uppercase={false}>Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}</Badge>
                                         )}
+                                        {/* La caja especial que no llegó, con su producto. Sin
+                                            esta etiqueta, el único rastro era el botón rojo de
+                                            reenvío: bodega veía que había que mandar algo y no
+                                            qué (pedido #178, Salud 4). */}
+                                        {faltan.especiales.map(e => (
+                                            <Badge key={`esp-${e.label}`} variant="danger" icon={Star} uppercase={false}>
+                                                Faltante: {e.producto ? `${e.label} · ${e.producto}` : e.label}
+                                            </Badge>
+                                        ))}
                                         {/* De ESTA sala y sin resolver — ver `difsSinResolver`.
                                             Con `pedido_status === 'parcial'` decía «Difs.
                                             pendientes» sobre Salud 5 con su única diferencia
@@ -647,13 +661,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             )}
                                             {canMarcarEnRuta && <Button tone="chart-3" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear ruta</Button>}
                                             {(() => {
-                                                const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok !== true;
-                                                const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
-                                                const hasPendingFalta  = (row.falta_cajas ?? []).length > 0 || hasElecFaltantes || hasEspFaltantes;
-                                                const reenvioEnCamino  = (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at);
                                                 const rutaActiva       = pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta;
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
-                                                if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
+                                                if (!canActuar || isBranch || !faltan.hay || faltan.enCamino) return null;
                                                 /* Era un `div` con `role="img"` —que le promete
                                                    a un lector de pantalla una imagen— y con el
                                                    motivo escondido en `title`, o sea sólo para
@@ -664,14 +674,28 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                         Esperando que el conductor vuelva a base
                                                     </Notice>
                                                 );
-                                                const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
-                                                    <Button variant="destructive" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })}>Reenviar caja</Button>
+                                                    <Button variant="destructive" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: faltan.cajas, electrolits: faltan.electrolits, especiales: faltan.especiales })}>Reenviar caja</Button>
                                                 );
                                             })()}
                                         </div>
                                     </div>
 
+
+                                    {/* Lo que no llegó, dicho a la SALA. En cuanto terminaba
+                                        de contar lo demás, el bloque de Recepción se cerraba y
+                                        la tarjeta decía «Completado» a secas: nada le avisaba
+                                        que todavía le debían una caja (pedido #178, Salud 4).
+                                        Ya reenviado no hace falta: ese aviso lo da Recepción,
+                                        con su botón para confirmar la llegada. */}
+                                    {isBranch && faltan.hay && !faltan.enCamino && (
+                                        <div className="px-3 pb-2">
+                                            <Notice variant="danger" icon={PackageX} bloque>
+                                                <strong>Pendiente — no llegó:</strong>{' '}
+                                                {describirFaltantes(faltan).join(' · ')}. Bodega tiene que reenviarlo; te llega un aviso cuando salga.
+                                            </Notice>
+                                        </div>
+                                    )}
 
                                     {/* Entrega estimada — visible en sucursal cuando hay programación y el pedido no ha llegado.
                                         Era una franja a sangre pegada al borde de la tarjeta:
@@ -725,6 +749,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 cajasDanadas={row.cajas_danadas ?? []}
                                                 reenvioBodygaAt={row.reenvio_bodega_at ?? null}
                                                 segundaLlegadaAt={row.segunda_llegada_at ?? null}
+                                                cajasEspeciales={row.cajas_especiales ?? []}
                                                 hasFaltaItems={(items[cardKey] ?? []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0)}
                                             />
                                         </div>
@@ -1142,12 +1167,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 <span>{reenviarConfirmModal.electrolits} Electrolit faltante{reenviarConfirmModal.electrolits > 1 ? 's' : ''}</span>
                             </div>
                         )}
-                        {reenviarConfirmModal.especiales.length > 0 && (
-                            <div className="flex items-center gap-2 text-body-sm text-content-2">
+                        {/* Una línea por caja especial, con su producto: «E2» a
+                            secas no le dice a bodega qué ir a buscar. */}
+                        {reenviarConfirmModal.especiales.map(e => (
+                            <div key={e.label} className="flex items-center gap-2 text-body-sm text-content-2">
                                 <Star size={13} className="text-chart-6-text shrink-0" />
-                                <span>Especial{reenviarConfirmModal.especiales.length > 1 ? 'es' : ''}: {reenviarConfirmModal.especiales.join(', ')}</span>
+                                <span>{describirFaltantes({ especiales: [e] })[0]}</span>
                             </div>
-                        )}
+                        ))}
                     </div>
                 )}
                 onConfirm={() => {

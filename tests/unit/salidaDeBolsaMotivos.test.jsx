@@ -33,6 +33,11 @@ const leerBoleta = vi.fn(async () => ({
     coincide: { entidad: null, numeroBoleta: null, monto: null },
     veredicto: 'OK',
     avisos: [],
+    // Desde v2.1021.0 el monto sólo se cierra si el papel lo CONFIRMA (lo
+    // imprime dos veces y coinciden). Sin este campo el mock describía una
+    // respuesta que `leer-boleta` ya no da, y dos pruebas quedaron en rojo
+    // desde entonces — tapando que cf201b71 rompió otras cinco.
+    montoConfianza: 'CONFIRMADO',
 }));
 
 /* El catálogo, calcado de las filas reales de `bolsas_tipos_salida` — con los
@@ -310,7 +315,7 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
         leerBoleta.mockResolvedValueOnce({
             leido: { es_boleta: true, legible: true, monto: 100, numero_boleta: null },
             coincide: { entidad: null, numeroBoleta: null, monto: null },
-            veredicto: 'OK', avisos: [],
+            veredicto: 'OK', avisos: [], montoConfianza: 'CONFIRMADO',
         });
         await abrir();
         await elegirMotivo('POS Promerica');
@@ -356,5 +361,53 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
         fireEvent.click(screen.getByRole('button', { name: /Registrar e imprimir/i }));
         await act(async () => {});
         expect(registrarSalida.mock.calls[0][0].monto).toBe(120.5);
+    });
+
+    // Boleta 018762, Salud 4, 17-sep: la foto que sale del editor no se leía
+    // (cf201b71). Mientras la lectura viaja, el botón no puede registrar —
+    // antes quedaba habilitado con la foto anterior y sin lectura.
+    it('mientras la foto se lee, no se puede registrar', async () => {
+        let contestar;
+        leerBoleta.mockImplementationOnce(() => new Promise((res) => { contestar = res; }));
+        await abrir();
+        await elegirMotivo('POS Promerica');
+        await elegirFoto();
+
+        expect(leerBoleta).toHaveBeenCalledTimes(1);
+        const boton = screen.getByRole('button', { name: /Registrar e imprimir/i });
+        expect(boton.disabled).toBe(true);
+        expect(screen.getAllByText('Revisando la boleta…').length).toBeGreaterThan(0);
+
+        await act(async () => {
+            contestar({
+                leido: { es_boleta: true, legible: true, monto: 100, numero_boleta: '000318' },
+                coincide: { entidad: null, numeroBoleta: null, monto: null },
+                veredicto: 'OK', avisos: [], montoConfianza: 'CONFIRMADO',
+            });
+        });
+        expect(tarjeta('Cuánto').textContent).toContain('$100.00');
+        expect(screen.getByRole('button', { name: /Registrar e imprimir/i }).disabled).toBe(false);
+    });
+
+    // Otra foto es otro papel: lo que trajo la anterior no puede viajar como
+    // «lo esperado» —se estaría cotejando un papel contra otro— ni quedarse en
+    // el formulario si la nueva no se deja leer.
+    it('elegir otra foto se lleva lo que trajo la anterior', async () => {
+        await abrir();
+        await elegirMotivo('POS Promerica');
+        await elegirFoto();
+        expect(tarjeta('Número de boleta').textContent).toContain('000318');
+
+        leerBoleta.mockResolvedValueOnce({ error: 'sin red' });
+        await elegirFoto();
+
+        expect(leerBoleta).toHaveBeenCalledTimes(2);
+        const esperado = leerBoleta.mock.calls[1][1];
+        expect(esperado.monto).toBeNull();
+        expect(esperado.numeroBoleta).toBeNull();
+        // La segunda no se pudo leer: los datos se piden a mano, vacíos.
+        expect(screen.getByLabelText(/Cuánto/i).value).toBe('');
+        expect(screen.getByLabelText('Número de boleta').value).toBe('');
+        expect(screen.getByRole('button', { name: /Registrar e imprimir/i }).disabled).toBe(true);
     });
 });

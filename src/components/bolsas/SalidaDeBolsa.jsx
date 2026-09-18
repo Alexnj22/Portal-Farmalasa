@@ -481,10 +481,32 @@ export default function SalidaDeBolsa({
          *
          * Efecto de lado que se agradece: el editor abre YA. Antes había que
          * esperar la lectura entera —unos 11 segundos— antes de ver la foto,
-         * con alguien enfrente del mostrador. */
+         * con alguien enfrente del mostrador.
+         *
+         * ⚠️ La premisa de arriba estaba MAL, y costó la boleta 018762 de Salud
+         * 4 el mismo 17-sep: lo que salía del editor NO se leía —su `onConfirm`
+         * sólo hacía `setFoto`—, así que la cruda era la ÚNICA lectura de toda
+         * foto tomada con la cámara o elegida del disco. Quitarla dejó sin leer
+         * a todas menos las del QR: el formulario quedaba en «Falta cuánto» sin
+         * campo donde escribirlo, porque el monto sólo aparece cuando hay
+         * lectura. Hoy la lectura la dispara el `onConfirm` del editor, que
+         * vuelve a entrar acá con `yaPreparado`.
+         *
+         * Y la foto anterior se va ENTERA: ella, su lectura y lo que puso en el
+         * formulario. Si su monto se quedara, viajaría como «lo esperado» a la
+         * lectura de la foto nueva —el papel se estaría comparando contra otro
+         * papel— y, mientras la nueva se lee, el botón quedaba habilitado con
+         * la foto vieja sin lectura. Cancelar el editor deja el campo vacío,
+         * como ya decía la nota del `EditorDeDocumento`. */
         if (!yaPreparado) {
+            setFoto(null);
             setLectura(null);
-            setDeLaFoto([]);
+            setDeLaFoto((puestos) => {
+                if (puestos.includes('el monto')) setMonto('');
+                if (puestos.includes('el número')) setBoleta('');
+                if (puestos.includes('de qué fue')) setNota('');
+                return [];
+            });
             setPisadosPorLaFoto([]);
             setSugerido(null);
             setPorEditar(f);
@@ -838,7 +860,21 @@ export default function SalidaDeBolsa({
             if (t.etiqueta_entidad && !t.entidad_la_dice_el_papel && !entidad.trim()) {
                 return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
             }
+            // La foto nueva se adjunta recién cuando el lector contesta: mientras
+            // tanto el campo está vacío, y decir «falta la foto» sobre una que
+            // se está revisando la contradice.
+            if (leyendo) return 'Revisando la boleta…';
             if (!foto) return 'Falta la foto del comprobante.';
+            /* Con la foto mandando, una foto SIN LECTURA no alcanza.
+             *
+             * Pasó con la boleta 018762 (Salud 4, 17-sep): el monto, el número y
+             * «qué fue» volvieron de un borrador —que es por navegador, no por
+             * persona: los había dejado otra sesión en esa computadora—, la foto
+             * nueva no se leyó, y la salida se registró sin que nada cotejara el
+             * papel. La regla del 2026-08-20 —«sin una boleta que cuadre, no se
+             * registra»— vivía en `bloqueoDeLaFoto`, que sólo mira una lectura
+             * que EXISTE: sin lectura no había qué bloquear. */
+            if (!lectura) return 'La foto no se revisó: vuelve a elegirla.';
         }
         if (!Number.isFinite(n) || n <= 0) return 'Falta cuánto.';
         if (!eleccion.alcanza) {
@@ -878,7 +914,7 @@ export default function SalidaDeBolsa({
         if (problemaDeLaBoleta?.bloquea) return problemaDeLaBoleta.texto;
         return null;
     }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto, problemaDeLaBoleta,
-        laFotoManda, puedeSalirDelCajon]);
+        laFotoManda, puedeSalirDelCajon, lectura, leyendo]);
 
     const falta = useMemo(() => {
         if (faltaEnElFormulario) return faltaEnElFormulario;
@@ -1516,7 +1552,15 @@ export default function SalidaDeBolsa({
                                     esquinas={sugerido?.esquinas || null}
                                     giroSugerido={sugerido?.giro || 0}
                                     onCancel={() => setPorEditar(null)}
-                                    onConfirm={(lista) => { setFoto(lista); setPorEditar(null); }}
+                                    /* Lo que sale del editor SE LEE: es la
+                                       única lectura de una foto tomada acá
+                                       (ver la nota de `alElegirFoto`). Sin
+                                       esto la foto se adjuntaba muda y el
+                                       formulario quedaba sin salida. */
+                                    onConfirm={(lista) => {
+                                        setPorEditar(null);
+                                        alElegirFoto(lista, { yaPreparado: true });
+                                    }}
                                 />
                             </Suspense>
                         )}

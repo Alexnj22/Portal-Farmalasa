@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.17 — la foto de la salida se vuelve a leer, y sin lectura no se registra
+
+Salud 4 no pudo registrar desde el teléfono la remesa de la boleta **018762**
+($160, MoneyGram): al confirmar la foto, el pie decía «Falta cuánto», el botón
+de registrar quedaba apagado y no había ningún campo donde escribir el monto.
+Desde la computadora sí se pudo.
+
+**La foto no se estaba leyendo.** v2.1023.9 quitó la lectura de la foto cruda
+creyendo que lo que salía del editor se leía otra vez. No era así: el
+`onConfirm` del editor sólo adjuntaba la foto, así que la cruda era la ÚNICA
+lectura de toda foto tomada con la cámara o elegida del disco. Desde ese
+despliegue sólo se leían las fotos que llegan por el QR del teléfono, y el
+monto —que aparece recién cuando hay lectura— quedaba escondido para siempre.
+Los logs lo muestran: tres fotos con búsqueda de recuadro desde dos teléfonos
+de la sala entre las 16:13 y las 16:16, y ninguna llamada a `leer-boleta`. Ahora la foto que sale
+del editor se lee.
+
+**Y la que sí entró, entró sin revisar.** En la computadora, otra sesión había
+leído esa boleta por el QR y la dejó sin registrar; la sesión se cerró, entró
+otra persona, el borrador —que es por navegador, no por persona— repuso monto,
+número y «qué fue», y la foto nueva, sin leer, no tuvo nada que la cotejara. Es
+la única salida con foto de los últimos dos días sin `foto_lectura` ni
+`monto_origen`. Los datos resultaron correctos (se revisó la foto guardada:
+US$160.00, boleta 018762), pero la regla del 2026-08-20 —sin boleta que cuadre
+no se registra— vivía en un bloqueo que sólo mira una lectura que existe. Ahora
+una foto sin lectura frena el registro.
+
+**Elegir otra foto se lleva lo que trajo la anterior**: su lectura, su monto,
+su número y su «qué fue». Antes esos datos viajaban como «lo esperado» a la
+lectura de la foto nueva, y mientras se leía el botón quedaba habilitado con la
+foto vieja.
+
+`salidaDeBolsaMotivos.test.jsx` ya simulaba este camino y habría cazado el
+defecto: con v2.1023.9 fallaban **7** de sus 14 pruebas. No se notó porque dos
+ya estaban en rojo desde v2.1021.0 —el mock no traía `montoConfianza`— y porque
+el pre-commit no corre las pruebas. Se corrigió el mock y se agregaron dos
+pruebas; las 9 que fallan contra v2.1023.16 pasan.
+
 ## v2.1023.16 — la caja especial que no llegó marca el producto que de verdad falta
 
 Salud 4 reportó que de su pedido #178 no le llegó la caja **E2 — ELECTROLIT

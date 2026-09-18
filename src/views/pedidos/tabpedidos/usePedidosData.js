@@ -20,7 +20,7 @@ import {
     fetchPedidoItemsAll, fetchPedidoItemEventosAll, fetchPedidoItemsPendientesIds,
     fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, updatePedidoItemsFaltaCaja,
     fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
-    confirmarEnvioPedido, despacharTrasladoPedido, tieneEtiquetaDeDespacho,
+    confirmarEnvioPedido, despacharTrasladoPedido, tieneEtiquetaDeDespacho, noReenviarEspeciales,
     fetchTrasladosDePedidos,
     fetchResumenIngresoPedidos,
     fetchItemsSinIngresar,
@@ -1086,6 +1086,52 @@ export function usePedidosData({ searchTerm = '' }) {
         } finally { setBusyAction(null); }
     }, [user, loadActive]);
 
+    // Lo que bodega decidió sobre lo que no llegó: una parte se reenvía y otra
+    // no. «No reenviar» va PRIMERO y, si falla, no se reenvía nada: son la misma
+    // decisión y quien la tomó tiene que ver el error antes de que la mitad ya
+    // esté hecha.
+    //
+    // `noReenviar` son productos, no cajas —`[{ labels, producto }]`—: el
+    // sistema hace un traslado por producto y se anula entero.
+    const handleResolverFaltantes = useCallback(async ({ pedidoId, sucId, numero, cajas = [], electrolits = 0, reenviarEspeciales = [], noReenviar = [] }) => {
+        if (noReenviar.length > 0) {
+            setBusyAction('reenvio');
+            const labels = noReenviar.flatMap(p => p.labels);
+            const r = await noReenviarEspeciales(pedidoId, sucId, labels);
+            if (!r?.ok) {
+                setBusyAction(null);
+                useToastStore.getState().showToast('No se pudo cancelar el reenvío', r?.error ?? 'Intenta de nuevo.', 'error');
+                return;
+            }
+            useStaff.getState().appendAuditLog('PEDIDO_NO_REENVIO', pedidoId, {
+                sucursal_id: sucId, labels, items: r.items ?? [],
+                traslados_anulados: r.anulados ?? [], ya_anulados: r.ya_anulados ?? [],
+            });
+            const que = noReenviar.map(p => (p.producto ? `${p.labels.join('–')} · ${p.producto}` : p.labels.join('–'))).join(' · ');
+            const regresa = (r.anulados ?? []).length > 0 || (r.ya_anulados ?? []).length > 0;
+            fetchBranchIdForSucursal(sucId).then(({ data: m }) => {
+                if (!m?.branch_id) return;
+                notifyBranch(m.branch_id, {
+                    type: 'PEDIDO_PROBLEMA',
+                    title: `No se reenvía — pedido #${numero}`,
+                    body: `Bodega decidió no reenviar lo que no llegó del pedido #${numero}: ${que}.${regresa ? ' Ese producto regresó a bodega.' : ''} Ya no queda pendiente.`,
+                    link: '/pedidos',
+                });
+            }).catch(() => {});
+            useToastStore.getState().showToast(
+                'Reenvío cancelado',
+                regresa ? `${que}: regresó a bodega.` : `${que}: no había salido, quedó cerrado.`,
+                'success',
+            );
+            setBusyAction(null);
+        }
+        if (cajas.length > 0 || electrolits > 0 || reenviarEspeciales.length > 0) {
+            await handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, reenviarEspeciales);
+        } else {
+            await loadActive();
+        }
+    }, [handleReenviarCaja, loadActive]);
+
     // Abre el modal de confirmación de llegada de reenvío (sustituye el botón ciego anterior)
     const handleSegundaLlegada = useCallback((pedidoId, sucId, key, reenviosHistorial, faltaCajasLegacy = [], cajaMap = {}) => {
         const historial = reenviosHistorial ?? [];
@@ -1929,6 +1975,7 @@ export function usePedidosData({ searchTerm = '' }) {
         handleLlegada,
         handleLlegadaConfirm,
         handleReenviarCaja,
+        handleResolverFaltantes,
         handleSegundaLlegada,
         handleReenvioLlegadaConfirm,
         handleEntregarStop,

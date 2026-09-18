@@ -104,3 +104,37 @@ describe('faltantesDeLaSala', () => {
         expect(necesitaAtencion(reenviado, { sinResolver: 0 })).toBe(false);
     });
 });
+
+/**
+ * «No reenviar» se decide por PRODUCTO: el sistema hace un traslado por
+ * producto y se anula entero. De los 240 renglones que viajaron en cajas
+ * especiales hasta el 2026-09-17, 30 iban en más de una caja.
+ */
+describe('faltantesDeLaSala · productosEspeciales', () => {
+    const lista = [
+        { label: 'E1', product_name: 'ELECTROLIT COCO 625ML',  pedido_item_id: 1 },
+        { label: 'E2', product_name: 'ELECTROLIT COCO 625ML',  pedido_item_id: 1 },
+        { label: 'E3', product_name: 'ELECTROLIT FRESA 625ML', pedido_item_id: 2 },
+    ];
+
+    it('las cajas del mismo producto van juntas', () => {
+        const f = faltantesDeLaSala({ cajas_especiales: lista, cajas_especiales_llegadas: { E1: 'faltante', E2: 'faltante', E3: 'ok' } });
+        expect(f.productosEspeciales).toEqual([
+            { itemId: 1, producto: 'ELECTROLIT COCO 625ML', labels: ['E1', 'E2'], parcial: false },
+        ]);
+    });
+
+    it('si una de sus cajas llegó, el producto es parcial y no se puede anular', () => {
+        const f = faltantesDeLaSala({ cajas_especiales: lista, cajas_especiales_llegadas: { E1: 'ok', E2: 'faltante', E3: 'faltante' } });
+        expect(f.productosEspeciales).toEqual([
+            { itemId: 1, producto: 'ELECTROLIT COCO 625ML',  labels: ['E2'], parcial: true },
+            { itemId: 2, producto: 'ELECTROLIT FRESA 625ML', labels: ['E3'], parcial: false },
+        ]);
+    });
+
+    it('lo que bodega decidió no reenviar ya no es un faltante', () => {
+        const f = faltantesDeLaSala({ cajas_especiales: lista, cajas_especiales_llegadas: { E1: 'ok', E2: 'ok', E3: 'no_reenviada' } });
+        expect(f.hay).toBe(false);
+        expect(f.productosEspeciales).toEqual([]);
+    });
+});

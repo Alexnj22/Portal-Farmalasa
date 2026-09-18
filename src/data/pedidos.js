@@ -404,6 +404,34 @@ export async function despacharTrasladoPedido(pedidoId, sucId) {
 }
 
 /**
+ * «No reenviar»: bodega decide que unas cajas especiales que la sala reportó
+ * como no llegadas ya no se mandan.
+ *
+ * Si el producto salió en un traslado, la función lo ANULA en el sistema —que
+ * devuelve la existencia a Bodega— y sólo después lo cierra en el portal. Si
+ * no salió, sólo lo cierra. Van las etiquetas de TODAS las cajas del producto:
+ * uno que viajó en dos cajas y del que llegó una se rechaza (`PARCIAL`), porque
+ * anular su traslado regresaría también la que la sala tiene.
+ *
+ * Nunca lanza: devuelve `{ ok, error?, codigo? }`.
+ */
+export async function noReenviarEspeciales(pedidoId, sucId, labels) {
+    try {
+        const { data, error } = await supabase.functions.invoke('no-reenviar-pedido-erp', {
+            body: { pedido_id: pedidoId, erp_sucursal_id: sucId, labels, simulacro: false },
+        });
+        if (!error) return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+        try {
+            const cuerpo = await error.context?.json?.();
+            if (cuerpo) return cuerpo;
+        } catch { /* el cuerpo no era JSON */ }
+        return { ok: false, error: error.message ?? 'No se pudo cancelar el reenvío.' };
+    } catch (e) {
+        return { ok: false, error: e?.message ?? String(e) };
+    }
+}
+
+/**
  * Ingresa en la sucursal lo que ya salió de bodega.
  *
  * `hoja` recibe una hoja entera; `itemIds` recibe productos sueltos —el que la

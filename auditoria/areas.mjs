@@ -677,7 +677,7 @@ export const AREAS = [
                  'pedido_sucursal_status', 'pedido_traslado_erp', 'pedido_traslado_linea',
                  'pedidos_snapshots', 'dispatch_rules', 'rutas', 'ruta_pedidos', 'ruta_locations',
                  'diferencia_opcion'],
-        edge: ['trasladar-pedido-erp', 'devolver-pedido-erp', 'maps-proxy'],
+        edge: ['trasladar-pedido-erp', 'devolver-pedido-erp', 'no-reenviar-pedido-erp', 'maps-proxy'],
         crons: ['continuar-traslados-pedido', 'reintentar-ingreso-pedido'],
         docs: ['docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md', 'docs/INCIDENTE-RECEPCION-2026-08-14.md',
                'docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md'],

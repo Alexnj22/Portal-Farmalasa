@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1024.0 — Bodega puede no reenviar una caja especial, y el producto regresa a bodega
+
+Cuando una sala reporta que no le llegó una caja especial, bodega ya no tiene
+una sola salida. En la ventana de «Reenviar caja» cada producto suelto trae
+dos opciones —**Reenviar** o **No reenviar**—, una por una o todas de una vez.
+Las cajas numeradas llevan muchos productos y se siguen reenviando enteras.
+
+**«No reenviar» regresa el producto a bodega** si había salido. El sistema
+hace un traslado por producto, y el de una caja que no llegó sigue sin
+recibir: se anula —el mismo «Anular» de su menú de traslados, cuya
+confirmación dice «el stock del producto regresará al local de origen»—. El
+orden es a propósito:
+
+1. se comprueba que el traslado siga pendiente de entrar a la sala;
+2. se anula desde Bodega;
+3. se vuelve a mirar, y sólo si el sistema lo muestra anulado se cierra en el
+   portal: el producto queda «no enviado», la sala deja de verlo pendiente y
+   le llega un aviso.
+
+Si el producto nunca salió (se despachó en 0) no hay nada que anular: sólo se
+cierra. Y si una de las cajas de ese producto sí llegó, «No reenviar» no se
+ofrece: va en un solo traslado, y anularlo regresaría también la que la sala
+tiene en la mano. Pasa: de 240 productos que viajaron en cajas especiales, 30
+iban en más de una.
+
+- Función nueva `no-reenviar-pedido-erp` (Bodega o alcance total; con
+  candado por línea, verificación antes y después, y el freno `anular` en
+  `traslado_interruptor`, que nace abierto).
+- `cerrar_no_reenviadas` cierra en el portal y se niega mientras el traslado
+  siga vivo. Estados nuevos de línea: `anulando` y `anulada`.
+- La tarjeta muestra en gris «No se reenvió: E2 · …», y la actividad del
+  producto dice quién lo decidió.
+
+**Pedido #178 de Salud 4, corregido en la base.** Su «E2 — ELECTROLIT
+MANZANA 625ML» nunca existió: Manzana se despachó en 0 de 12 y la etiqueta
+salió por el conteo sobre lo asignado (corregido en v2.1023.16). Se quitó E2
+del despacho y la llegada quedó completa; queda en la bitácora como
+`PEDIDO_CORRECCION_DATOS`.
+
 ## v2.1023.19 — Lo que no llegó se nombra, y la sala lo ve pendiente
 
 Lo que no llegó a una sala ahora se dice, con nombre, en la tarjeta de bodega

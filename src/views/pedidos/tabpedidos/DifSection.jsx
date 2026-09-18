@@ -70,6 +70,7 @@ const EVENTO_LABEL = {
     traslado_recibido:       'confirmó la entrada al inventario',
     extra_anotado:           'anotó un producto que llegó de más',
     extra_quitado:           'quitó lo que había anotado de más',
+    no_reenviado:            'decidió no reenviar la caja que no llegó',
 };
 
 const DIF_MAX = 3;

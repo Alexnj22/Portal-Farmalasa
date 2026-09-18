@@ -22,6 +22,7 @@ import { useToastStore } from '../../store/toastStore';
 import { notifyBranch } from '../../utils/notify';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import SucPill from './tabpedidos/SucPill';
 import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes } from './tabpedidos/helpers';
 import ItemSections from './tabpedidos/ItemSections';
@@ -171,7 +172,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         handleFinalizarConCajas,
         handleLlegada,
         handleLlegadaConfirm,
-        handleReenviarCaja,
+        handleResolverFaltantes,
         handleSegundaLlegada,
         handleReenvioLlegadaConfirm,
         handleEntregarStop,
@@ -593,6 +594,20 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 Faltante: {e.producto ? `${e.label} · ${e.producto}` : e.label}
                                             </Badge>
                                         ))}
+                                        {/* Lo que bodega decidió no reenviar. Ya no es un
+                                            pendiente —por eso gris—, pero sin esta línea la
+                                            caja simplemente desaparecía de la tarjeta y la
+                                            sala no sabía si seguía esperándola. */}
+                                        {Object.entries(row.cajas_especiales_llegadas ?? {})
+                                            .filter(([, v]) => v === 'no_reenviada')
+                                            .map(([label]) => {
+                                                const producto = (Array.isArray(row.cajas_especiales) ? row.cajas_especiales : []).find(c => c?.label === label)?.product_name;
+                                                return (
+                                                    <Badge key={`noreenv-${label}`} variant="neutral" icon={Star} uppercase={false}>
+                                                        No se reenvió: {producto ? `${label} · ${producto}` : label}
+                                                    </Badge>
+                                                );
+                                            })}
                                         {/* De ESTA sala y sin resolver — ver `difsSinResolver`.
                                             Con `pedido_status === 'parcial'` decía «Difs.
                                             pendientes» sobre Salud 5 con su única diferencia
@@ -675,7 +690,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     </Notice>
                                                 );
                                                 return (
-                                                    <Button variant="destructive" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: faltan.cajas, electrolits: faltan.electrolits, especiales: faltan.especiales })}>Reenviar caja</Button>
+                                                    <Button variant="destructive" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: faltan.cajas, electrolits: faltan.electrolits, productos: faltan.productosEspeciales, noReenviar: [] })}>Reenviar caja</Button>
                                                 );
                                             })()}
                                         </div>
@@ -1141,49 +1156,110 @@ export default function TabPedidos({ searchTerm = '' }) {
                 Escape y sin la hoja inferior que el canónico da en táctil.
                 `ConfirmModal` ya estaba importado en este archivo y no lo usaba
                 nadie — importarlo no es adoptarlo. */}
-            {reenviarConfirmModal && (
+            {reenviarConfirmModal && (() => {
+                const m = reenviarConfirmModal;
+                const productos = m.productos ?? [];
+                const noVa = (p) => m.noReenviar.includes(p.itemId);
+                const aReenviar = productos.filter(p => !noVa(p));
+                const aCancelar = productos.filter(noVa);
+                const hayReenvio = m.cajas.length > 0 || m.electrolits > 0 || aReenviar.length > 0;
+                const elegir = (p, va) => setReenviarConfirmModal(prev => prev && ({
+                    ...prev,
+                    noReenviar: va ? prev.noReenviar.filter(id => id !== p.itemId) : [...new Set([...prev.noReenviar, p.itemId])],
+                }));
+                // «Todas»: sólo sobre lo que se puede cancelar; lo parcial no entra.
+                const cancelables = productos.filter(p => !p.parcial);
+                return (
             <ConfirmModal
                 isOpen
                 onClose={() => setReenviarConfirmModal(null)}
-                title={`¿Reenviar lo que falta del pedido #${reenviarConfirmModal.numero}?`}
-                confirmText="Reenviar"
-                /* Reenviar una caja no destruye nada: es pedirle a bodega que
-                   mande de nuevo lo que no llegó. Con `isDestructive` el
-                   canónico rotula el botón «Eliminando…» mientras corre. */
+                title={`Lo que no llegó del pedido #${m.numero}`}
+                confirmText={!hayReenvio ? 'No reenviar' : aCancelar.length > 0 ? 'Confirmar' : 'Reenviar'}
+                /* Reenviar no destruye nada. «No reenviar» sí es definitivo —
+                   anula el traslado—, pero lo dice el texto de abajo; con
+                   `isDestructive` el canónico rotula el botón «Eliminando…». */
                 isDestructive={false}
                 isProcessing={busyAction === 'reenvio'}
                 message={(
-                    <div className="space-y-2 text-left">
-                        <p className="text-label font-semibold text-content-2 uppercase tracking-wide">Pendiente de enviar</p>
-                        {reenviarConfirmModal.cajas.length > 0 && (
-                            <div className="flex items-center gap-2 text-body-sm text-content-2">
-                                <Box size={13} className="text-danger shrink-0" />
-                                <span>Caja{reenviarConfirmModal.cajas.length > 1 ? 's' : ''}: {reenviarConfirmModal.cajas.map(n => `#${n}`).join(', ')}</span>
+                    <div className="space-y-3 text-left">
+                        {(m.cajas.length > 0 || m.electrolits > 0) && (
+                            <div className="space-y-1.5">
+                                <p className="text-label font-semibold text-content-2 uppercase tracking-wide">Se reenvía</p>
+                                {m.cajas.length > 0 && (
+                                    <div className="flex items-center gap-2 text-body-sm text-content-2">
+                                        <Box size={13} className="text-danger shrink-0" />
+                                        <span>Caja{m.cajas.length > 1 ? 's' : ''}: {m.cajas.map(n => `#${n}`).join(', ')}</span>
+                                    </div>
+                                )}
+                                {m.electrolits > 0 && (
+                                    <div className="flex items-center gap-2 text-body-sm text-content-2">
+                                        <Inbox size={13} className="text-warning shrink-0" />
+                                        <span>{m.electrolits} Electrolit faltante{m.electrolits > 1 ? 's' : ''}</span>
+                                    </div>
+                                )}
                             </div>
                         )}
-                        {reenviarConfirmModal.electrolits > 0 && (
-                            <div className="flex items-center gap-2 text-body-sm text-content-2">
-                                <Inbox size={13} className="text-warning shrink-0" />
-                                <span>{reenviarConfirmModal.electrolits} Electrolit faltante{reenviarConfirmModal.electrolits > 1 ? 's' : ''}</span>
+                        {/* Una línea por PRODUCTO, con su decisión. Las cajas
+                            numeradas llevan muchos productos y se reenvían
+                            enteras; lo suelto —una caja especial— se puede
+                            dejar de mandar. Decisión del usuario, 2026-09-17. */}
+                        {productos.length > 0 && (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <p className="text-label font-semibold text-content-2 uppercase tracking-wide">Cajas especiales</p>
+                                    {cancelables.length > 1 && (
+                                        <div className="flex items-center gap-1.5">
+                                            <Button size="xs" variant="secondary" onClick={() => setReenviarConfirmModal(prev => prev && ({ ...prev, noReenviar: [] }))}>Reenviar todas</Button>
+                                            <Button size="xs" variant="secondary" onClick={() => setReenviarConfirmModal(prev => prev && ({ ...prev, noReenviar: cancelables.map(p => p.itemId) }))}>No reenviar ninguna</Button>
+                                        </div>
+                                    )}
+                                </div>
+                                {productos.map(p => (
+                                    <div key={p.itemId} className="space-y-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <Star size={13} className="text-chart-6-text shrink-0" />
+                                            <span className="text-body-sm text-content-2 flex-1 min-w-0">
+                                                {p.labels.join('–')}{p.producto ? ` · ${p.producto}` : ''}
+                                            </span>
+                                            <SegmentedControl
+                                                size="sm"
+                                                label={`Qué hacer con ${p.labels.join('–')}`}
+                                                value={noVa(p) ? 'no' : 'si'}
+                                                onChange={v => elegir(p, v === 'si')}
+                                                options={[
+                                                    { value: 'si', label: 'Reenviar' },
+                                                    { value: 'no', label: 'No reenviar', tone: 'danger', disabled: p.parcial },
+                                                ]}
+                                            />
+                                        </div>
+                                        {p.parcial && (
+                                            <p className="text-caption text-content-3 pl-5">
+                                                Una de sus cajas sí llegó. Va en un solo traslado: no reenviarla regresaría también la que la sala tiene.
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         )}
-                        {/* Una línea por caja especial, con su producto: «E2» a
-                            secas no le dice a bodega qué ir a buscar. */}
-                        {reenviarConfirmModal.especiales.map(e => (
-                            <div key={e.label} className="flex items-center gap-2 text-body-sm text-content-2">
-                                <Star size={13} className="text-chart-6-text shrink-0" />
-                                <span>{describirFaltantes({ especiales: [e] })[0]}</span>
-                            </div>
-                        ))}
+                        {aCancelar.length > 0 && (
+                            <Notice variant="warning" icon={AlertTriangle} bloque>
+                                {aCancelar.map(p => p.labels.join('–')).join(', ')} no se reenvía: el producto regresa a bodega y la sala deja de verlo pendiente. No se puede deshacer.
+                            </Notice>
+                        )}
                     </div>
                 )}
                 onConfirm={() => {
-                    const { pedidoId, sucId, numero, cajas, electrolits, especiales } = reenviarConfirmModal;
                     setReenviarConfirmModal(null);
-                    handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, especiales);
+                    handleResolverFaltantes({
+                        pedidoId: m.pedidoId, sucId: m.sucId, numero: m.numero,
+                        cajas: m.cajas, electrolits: m.electrolits,
+                        reenviarEspeciales: aReenviar.flatMap(p => p.labels.map(label => ({ label, producto: p.producto }))),
+                        noReenviar: aCancelar.map(p => ({ labels: p.labels, producto: p.producto })),
+                    });
                 }}
             />
-            )}
+                );
+            })()}
         </div>
     );
 }

@@ -192,10 +192,27 @@ export function faltantesDeLaSala(row) {
     const especiales = Object.entries(llegadas)
         .filter(([, v]) => v === 'faltante')
         .map(([label]) => ({ label, producto: lista.find(c => c?.label === label)?.product_name ?? null }));
+
+    // Las mismas cajas especiales, agrupadas por PRODUCTO. Es la unidad de
+    // «No reenviar»: el sistema hace un traslado por producto, así que uno que
+    // viajó en dos cajas se anula entero o no se anula. `parcial` es que alguna
+    // de sus cajas sí llegó — anular regresaría también esa, y no se ofrece.
+    const porRenglon = new Map();
+    for (const e of especiales) {
+        const itemId = lista.find(c => c?.label === e.label)?.pedido_item_id ?? `sin-${e.label}`;
+        const g = porRenglon.get(itemId) ?? { itemId, producto: e.producto, labels: [], parcial: false };
+        g.labels.push(e.label);
+        porRenglon.set(itemId, g);
+    }
+    for (const g of porRenglon.values()) {
+        g.parcial = lista.some(c => c?.pedido_item_id === g.itemId && !g.labels.includes(c.label));
+    }
+
     return {
         cajas,
         electrolits,
         especiales,
+        productosEspeciales: [...porRenglon.values()],
         hay: cajas.length > 0 || electrolits > 0 || especiales.length > 0,
         enCamino: (row?.reenvios_historial ?? []).some(c => c?.sent_at && !c?.arrived_at),
     };

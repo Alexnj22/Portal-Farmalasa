@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1023.18 — las consultas de Ventas leen la mitad, y el abono avisa si no sale el papel
+
+Mismos resultados, bastante menos trabajo de base. Cada cambio se verificó
+enfrentando la versión nueva contra la vieja **en el mismo instante**, porque
+las tres leen datos que se mueven solos.
+
+### Lo que se midió, y lo que cambió
+
+| | antes | después |
+|---|---:|---:|
+| `traslados_en_vuelo` | 44.0 ms · 515 bloques | **26.3 ms · 442** |
+| ¿dónde hay este producto? | 57.5 ms | **34.7 ms** |
+| total de ventas de un producto | 28,909 bloques · 226 MB | **16,102 · 126 MB** |
+| listado de Ventas > Productos | 115,331 bloques · 358 ms | **108,181 · 328 ms** |
+
+**El filtro de jsonb se evaluaba 8,624 veces para contestar que no hay nada.**
+`traslados_en_vuelo` entraba con un nested loop —1,232 traslados aprobados × las
+7 filas de sincronización— y extraía y parseaba la fecha del `metadata` en cada
+vuelta. El planificador lo elegía por una estimación equivocada: le daba **una**
+fila al filtro cuando pasan 1,232. No se tocó ni un predicado: los tres campos
+del jsonb se extraen ahora una vez por fila en un CTE con cerca, y con columnas
+planas a los dos lados el plan pasa a Hash Right Join. El gemelo de vencidos
+tenía la misma forma y se corrigió igual. Importa por frecuencia: lo lee
+`v_inventario_disponible`, que tiene cuatro puertas —el widget del tablero al
+entrar, la consulta de inventario, la pantalla de aprobar y el trigger que
+valida la solicitud—.
+
+**Dos funciones de Ventas nunca veían sus propios argumentos.** Eran
+`LANGUAGE sql` con cláusula `SET`, o sea que nacían con un plan genérico y no
+había plan personalizado que pedir. Con eso, `(p_branch_id IS NULL OR branch_id
+= p_branch_id)` no se puede plegar y la sala deja de entrar por índice: hay que
+leer las otras seis para tirarlas. Pasan a `plpgsql` con
+`plan_cache_mode = force_custom_plan`, **sin tocar una línea del cuerpo**.
+
+`get_product_sales_total` lee ahora la mitad. En el listado completo la mejora
+fue del 6% y no del doble —ahí el trabajo es genuinamente el agregado del rango,
+no el plan—, pero es mejora y el resultado es idéntico: **0 filas de diferencia
+sobre 2,180** comparando contra el cuerpo original en el mismo instante.
+
+### Y el abono avisa si el comprobante no salió
+
+El guardado del abono tenía un `try/finally` sin `catch`. El fallo del abono
+**sí** se avisaba; lo que se caía en silencio era lo último que hace: imprimir.
+`imprimirDocumento` carga la cola de la caja con un `import()` dinámico, y un
+chunk que no carga —lo normal justo después de publicar una versión— lanza. Ese
+error salía por el `finally` y moría como promesa rechazada, con la pantalla ya
+diciendo «Abono anotado · el comprobante va a la impresora». El abono estaba a
+salvo; lo que faltaba era enterarse de que no hubo papel.
+
+### Lo que NO se tocó, y por qué
+
+Las dos funciones del detalle de producto siguen por encima de su techo (5,248 y
+4,508 MB por llamada contra 2,156 y 1,813). Están **auditadas desde el
+2026-09-04** y su manifiesto deja escrito que las dos salidas posibles exigen
+medir un punto de cruce: la forma original paga el rango entero y la invertida
+paga el producto entero, y cada una gana en un caso. Cambiarlas a ojo empeora el
+caso mayoritario —el mes, que es el rango por defecto de la vista— 4.9×. Además
+sus promedios de hoy salen de **4 llamadas**, así que podrían ser un rango muy
+ancho y no una regresión; distinguirlo es una lectura de 5 GB y no se corrió con
+las salas abiertas.
+
+### Una nota sobre el instrumento
+
+`scripts/planes-genericos.json` daba a estas dos funciones por «sanas · 1.0×».
+Era cierto **sobre el tiempo** —la auditoría de agosto midió 15–237 ms contra
+8–235 ms de la candidata y acertó—. Lo que nadie midió fueron los bloques, que
+es la métrica de la sección F, nacida después. «Divergencia 1.0» sobre una
+función `LANGUAGE sql` + `SET` responde *el plan no cambia con los argumentos*,
+que es la **definición** del problema y no evidencia de salud. Las dos entradas
+salieron del manifiesto con esa lección escrita al lado.
+
 ## v2.1023.17 — la foto de la salida se vuelve a leer, y sin lectura no se registra
 
 Salud 4 no pudo registrar desde el teléfono la remesa de la boleta **018762**

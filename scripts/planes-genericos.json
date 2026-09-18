@@ -1,429 +1,418 @@
 {
-  "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
-  "actualizado": "2026-09-04",
-  "medidas": 46,
-  "sin_medir": 24,
-  "funciones": {
-    "auth_module_scope": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "bitacora_pendientes_por_vencer": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "bolsa_saldo_para_el_corte": {
-      "ms": "0.23",
-      "casos": "una bolsa con dos salidas · 7 bloques",
-      "divergencia": null,
-      "nota": "medida el 2026-09-03 con literales: 0.233 ms, todo Index Scan (bolsas_pkey, bolsas_mov_bolsa, caja_vales_portal_pkey). El plan NO puede depender de los argumentos: los dos parámetros entran como Index Cond de una PK y como Filter sobre una fila, así que el genérico es el mismo plan y forzar el personalizado sólo agregaría el costo de replanificar"
-    },
-    "buscar_inventario_global_v2": {
-      "ms": "74",
-      "casos": "triage fuera de la ventana del corte",
-      "divergencia": null,
-      "nota": "sana"
-    },
-    "calc_credito_declarable": {
-      "ms": "0.1",
-      "casos": "julio (cierre)",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "clasificar_observacion_mh": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "cola_espejo_portal_erp": {
-      "ms": "9.2",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "conteo_lineas_netas": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "creditos_del_cliente": {
-      "ms": "3.0",
-      "casos": "crédito 691 · 10 créditos del mismo cliente en Salud 1",
-      "divergencia": "imposible",
-      "nota": "medida el 2026-09-03: 3.0 ms por la función contra 1.0 ms con literales, y el plan es el MISMO —Index Scan por la PK para el CTE `base`, BitmapAnd de `creditos_clientes_con_saldo_idx` + `creditos_clientes_branch_idx` para el resto—. El plan NO puede depender del argumento: `p_credito_id` sólo entra como Index Cond de una clave primaria que devuelve exactamente 1 fila, y `branch_id`/`customer_id` salen de ESA fila en tiempo de ejecución, nunca como constantes. Conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción y forzar el personalizado sólo agregaría el costo de replanificar"
-    },
-    "envios_por_continuar": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "es_dui_valido": {
-      "ms": "0.0",
-      "casos": "un DUI",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "find_sync_gaps": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_bolsa_eventos": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_bolsas_invariante": {
-      "ms": "5",
-      "casos": "el año entero · 6 días-sala juzgados",
-      "divergencia": null,
-      "nota": "remedida el 2026-09-03 al pasar a bolsa_saldo_para_el_corte: 10 → 5 ms, 521 bloques (6 días-sala, el año entero). El plan bueno no depende de los argumentos (las fechas sólo recortan un Seq Scan de 601 filas de cortes_caja), así que el genérico sirve y forzar el personalizado sería la regresión"
-    },
-    "get_ccf_con_problema": {
-      "ms": "70–865",
-      "casos": "julio y 20 meses",
-      "divergencia": "0.2–0.7",
-      "nota": "su plan GENÉRICO es MEJOR: forzar el personalizado la deja 6.6x más lenta. Medida por tiempo; devuelve 0 filas, la igualdad no se pudo verificar sobre datos"
-    },
-    "get_ccf_repaso": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_cheques_de_bolsa": {
-      "ms": "3.1",
-      "casos": "las 20 bolsas mas nuevas de produccion, 61 ms / 20 llamadas",
-      "divergencia": "imposible",
-      "nota": "sana — el plan no depende del argumento: entra siempre por bolsas_pkey y por idx_si_branch_fecha_no_anulada, o sea que el generico es el mismo que el personalizado. Medida contra su cuerpo con literales: 0.7 ms de ejecucion (EXPLAIN ANALYZE TIMING OFF, bolsa 158)"
-    },
-    "get_conteo_items_count": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_corte_eventos": {
-      "ms": "4",
-      "casos": "el corte con más eventos",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "get_corte_z_dias": {
-      "ms": "23",
-      "casos": "sala 4, agosto · 26 filas",
-      "divergencia": null,
-      "nota": "barrido; julio daba 0 filas — cortes existen desde el 14-ago"
-    },
-    "get_cortes_diferencias": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_cortes_z": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_cuentas_por_pagar": {
-      "ms": "25",
-      "casos": "desde enero",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "get_documentos_por_barrer": {
-      "ms": "1.7",
-      "casos": "30 días, tope 500",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "get_documentos_sin_cargar": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_donde_hay": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_faltantes_con_stock_en_otra_sala": {
-      "ms": "128–191",
-      "casos": "7 sucursales · 7/7 idéntico",
-      "divergencia": "1.0",
-      "nota": "widget del tablero; en la sala 3 la corrección va PEOR (135→216 ms)"
-    },
-    "get_invoice_observations": {
-      "ms": "74",
-      "casos": "julio completo",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "get_libro_compras_completo": {
-      "ms": "1,598",
-      "casos": "4 rangos · 4/4 idéntico",
-      "divergencia": "1.0",
-      "nota": "LENTA DE VERDAD pero por su SQL, no por su plan. 5.7 s en 4 meses. Cierre fiscal — trabajo aparte"
-    },
-    "get_libro_compras_declarable": {
-      "ms": "1,266–1,931",
-      "casos": "julio y junio (cierre)",
-      "divergencia": "1.0–1.1",
-      "nota": "LENTA DE VERDAD pero por su SQL. Cierre fiscal — trabajo aparte"
-    },
-    "get_metas_dashboard": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_minmax_contexto_producto": {
-      "ms": "1.4",
-      "casos": "producto top, sala 6",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "get_no_sales_products": {
-      "ms": "1,350",
-      "casos": "sala 1 · 31 filas",
-      "divergencia": "1.0",
-      "nota": "1.35 s para devolver 31 filas: lenta por su SQL"
-    },
-    "get_pagos_compra": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_pedido_diferencias_stats": {
-      "ms": "27",
-      "casos": "últimos 90 días",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "get_pedido_entregas": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_pedido_kpis": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_pedido_sucursal_stats": {
-      "ms": "301",
-      "casos": "las 7 salas",
-      "divergencia": "1.1",
-      "nota": null
-    },
-    "get_personas_de_solicitudes": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_product_branch_summary": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_product_drill_lines": {
-      "ms": "192",
-      "casos": "triage fuera de la ventana del corte",
-      "divergencia": null,
-      "nota": "figuraba con 4,189 ms: HACÍA COLA"
-    },
-    "get_product_drill_summary": {
-      "ms": "78",
-      "casos": "producto top, mes",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "get_product_sales_agg": {
-      "ms": "426–715",
-      "casos": "3 rangos (vía su envoltorio _jsonb)",
-      "divergencia": "sin escalón",
-      "nota": "MEJORA después de la 6a llamada; sus 426 ms son serializar 1.77 MB de JSON"
-    },
-    "get_product_sales_total": {
-      "ms": "15–237",
-      "casos": "5 rangos · 5/5 idéntico",
-      "divergencia": "1.0",
-      "nota": "los 1,972 ms del log eran red y serialización, no base"
-    },
-    "get_product_trend": {
-      "ms": "38",
-      "casos": "producto top, un año",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "get_product_vencimiento_policy": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_products_sold_no_minmax": {
-      "ms": "291",
-      "casos": "sala 1 · 621 filas",
-      "divergencia": "0.7",
-      "nota": "la corrección la deja peor: 291 → 445 ms"
-    },
-    "get_puntos_canjeados": {
-      "ms": "5–11",
-      "casos": "4 rangos reales · 4/4 idéntico",
-      "divergencia": "0.7",
-      "nota": "figuraba con 831 ms en pg_stat_statements: HACÍA COLA. La corrección la empeora (10.9→16.2 ms)"
-    },
-    "get_salidas_de_bolsa": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "get_stagnant_inventory": {
-      "ms": "799–822",
-      "casos": "salas 1 y 7",
-      "divergencia": "0.9–1.1",
-      "nota": null
-    },
-    "get_stock_analysis": {
-      "ms": "437",
-      "casos": "sala 1 · 4,249 filas",
-      "divergencia": "0.9",
-      "nota": null
-    },
-    "get_traslado_disponibilidad": {
-      "ms": "213–249",
-      "casos": "5 solicitudes · 5/5 idéntico",
-      "divergencia": "0.9",
-      "nota": "la corrección la deja peor en las CINCO"
-    },
-    "get_ventas_stats": {
-      "ms": "30–150",
-      "casos": "mes en curso y un año",
-      "divergencia": null,
-      "nota": "barrido: bajo 200 ms"
-    },
-    "insert_missing_products": {
-      "ms": "3.3",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "metas_calculo_propuesta": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "nombre_corto_de_empleado": {
-      "ms": "0.03",
-      "casos": "el nombre de una ficha · sin tablas",
-      "divergencia": null,
-      "nota": "medida el 2026-09-04: 0.025 ms de ejecución, plan `Result` a secas. NO PUEDE tener el defecto: no toca ninguna tabla — es manipulación de texto sobre sus tres parámetros—, así que no hay estimación de filas que el planificador pueda errar y el genérico ES el plan. Entra al manifiesto sólo porque el detector la ve (LANGUAGE sql + SET + un CTE de legibilidad), no porque haya algo que vigilar. Es el gemelo en SQL de shortEmployeeName."
-    },
-    "puntos_cliente_por_dui_y_telefono": {
-      "ms": "41-82",
-      "casos": "la puerta pública de /mis-puntos, 28,105 fichas",
-      "divergencia": "imposible",
-      "nota": "sana — el plan NO puede depender de los argumentos: los dos predicados envuelven la columna en regexp_replace, así que ningún índice los sirve y el plan es un Seq Scan sobre customers con cualquier valor. Medido el 2026-08-31 con EXPLAIN(ANALYZE,TIMING OFF): la función da 41-82 ms y el mismo cuerpo con literales 58 ms — el mismo plan, dentro del ruido. Forzarle plan personalizado sólo agregaría el costo de replanificar."
-    },
-    "recalcular_totales_conteo": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "search_inventory_descripcion_ids": {
-      "ms": "89",
-      "casos": "buscar «aceta», sala 1",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "session_idle_limit_minutes": {
-      "ms": "0.1",
-      "casos": "usuario real, escritorio",
-      "divergencia": null,
-      "nota": "barrido"
-    },
-    "sync_inventory_batch": {
-      "ms": "109.0",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "sync_laboratorios_batch": {
-      "ms": "4.0",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "sync_presentaciones_batch": {
-      "ms": "3.2",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "sync_purchase_receipt_items_batch": {
-      "ms": "3.5",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "sync_purchase_receipts_batch": {
-      "ms": "2.5",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "sync_suppliers_batch": {
-      "ms": "1.5",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "traslado_por_codigo": {
-      "ms": null,
-      "casos": null,
-      "divergencia": null,
-      "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-    },
-    "upsert_product_precios_batch": {
-      "ms": "236.9",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "upsert_products_minimal": {
-      "ms": "5.6",
-      "casos": "producción, ventana limpia de 17.5 h",
-      "divergencia": "imposible",
-      "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
-    },
-    "verificar_hojas_pedido": {
-      "ms": "0.1",
-      "casos": "pedido reciente, sala 1",
-      "divergencia": null,
-      "nota": "barrido"
-    }
+ "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
+ "actualizado": "2026-09-18",
+ "medidas": 44,
+ "sin_medir": 24,
+ "funciones": {
+  "auth_module_scope": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
   },
-  "_2026_09_02_el_ms_no_alcanza": "get_top_supplier_per_product y get_sucursal_net_stock SALEN de esta lista: se pasaron a plpgsql con plan_cache_mode='force_custom_plan' (migración 20260902153208). Las dos TENÍAN el defecto y esta lista las daba por sanas — la primera con «19 ms» y la segunda con «costo despreciable». El número no estaba mal: con la caché caliente el plan malo cuesta 43 ms. Lo que estaba mal es el CRITERIO. La auditoría del 25-ago descartaba candidatas por TIEMPO («bajo 200 ms no hace falta medirla a fondo»), y el tiempo sobre una base en reposo no puede ver una diferencia de 61× en TRABAJO: 48,441 bloques contra 791 para devolver las mismas 1,000 filas. La primera llamada del día, con lo que sí hay que ir a buscar al disco, costó 876 ms. El hallazgo salió de la sección F de gate:perf (bloques por llamada), no de ésta. PENDIENTE: quedan 12 funciones de esta lista con un parámetro de ARRAY — la forma donde el plan genérico más se equivoca, porque estima la lista en 127 filas sin verla. Ninguna está medida POR BLOQUES."
+  "bitacora_pendientes_por_vencer": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "bolsa_saldo_para_el_corte": {
+   "ms": "0.23",
+   "casos": "una bolsa con dos salidas · 7 bloques",
+   "divergencia": null,
+   "nota": "medida el 2026-09-03 con literales: 0.233 ms, todo Index Scan (bolsas_pkey, bolsas_mov_bolsa, caja_vales_portal_pkey). El plan NO puede depender de los argumentos: los dos parámetros entran como Index Cond de una PK y como Filter sobre una fila, así que el genérico es el mismo plan y forzar el personalizado sólo agregaría el costo de replanificar"
+  },
+  "buscar_inventario_global_v2": {
+   "ms": "74",
+   "casos": "triage fuera de la ventana del corte",
+   "divergencia": null,
+   "nota": "sana"
+  },
+  "calc_credito_declarable": {
+   "ms": "0.1",
+   "casos": "julio (cierre)",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "clasificar_observacion_mh": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "cola_espejo_portal_erp": {
+   "ms": "9.2",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "conteo_lineas_netas": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "creditos_del_cliente": {
+   "ms": "3.0",
+   "casos": "crédito 691 · 10 créditos del mismo cliente en Salud 1",
+   "divergencia": "imposible",
+   "nota": "medida el 2026-09-03: 3.0 ms por la función contra 1.0 ms con literales, y el plan es el MISMO —Index Scan por la PK para el CTE `base`, BitmapAnd de `creditos_clientes_con_saldo_idx` + `creditos_clientes_branch_idx` para el resto—. El plan NO puede depender del argumento: `p_credito_id` sólo entra como Index Cond de una clave primaria que devuelve exactamente 1 fila, y `branch_id`/`customer_id` salen de ESA fila en tiempo de ejecución, nunca como constantes. Conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción y forzar el personalizado sólo agregaría el costo de replanificar"
+  },
+  "envios_por_continuar": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "es_dui_valido": {
+   "ms": "0.0",
+   "casos": "un DUI",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "find_sync_gaps": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_bolsa_eventos": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_bolsas_invariante": {
+   "ms": "5",
+   "casos": "el año entero · 6 días-sala juzgados",
+   "divergencia": null,
+   "nota": "remedida el 2026-09-03 al pasar a bolsa_saldo_para_el_corte: 10 → 5 ms, 521 bloques (6 días-sala, el año entero). El plan bueno no depende de los argumentos (las fechas sólo recortan un Seq Scan de 601 filas de cortes_caja), así que el genérico sirve y forzar el personalizado sería la regresión"
+  },
+  "get_ccf_con_problema": {
+   "ms": "70–865",
+   "casos": "julio y 20 meses",
+   "divergencia": "0.2–0.7",
+   "nota": "su plan GENÉRICO es MEJOR: forzar el personalizado la deja 6.6x más lenta. Medida por tiempo; devuelve 0 filas, la igualdad no se pudo verificar sobre datos"
+  },
+  "get_ccf_repaso": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_cheques_de_bolsa": {
+   "ms": "3.1",
+   "casos": "las 20 bolsas mas nuevas de produccion, 61 ms / 20 llamadas",
+   "divergencia": "imposible",
+   "nota": "sana — el plan no depende del argumento: entra siempre por bolsas_pkey y por idx_si_branch_fecha_no_anulada, o sea que el generico es el mismo que el personalizado. Medida contra su cuerpo con literales: 0.7 ms de ejecucion (EXPLAIN ANALYZE TIMING OFF, bolsa 158)"
+  },
+  "get_conteo_items_count": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_corte_eventos": {
+   "ms": "4",
+   "casos": "el corte con más eventos",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "get_corte_z_dias": {
+   "ms": "23",
+   "casos": "sala 4, agosto · 26 filas",
+   "divergencia": null,
+   "nota": "barrido; julio daba 0 filas — cortes existen desde el 14-ago"
+  },
+  "get_cortes_diferencias": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_cortes_z": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_cuentas_por_pagar": {
+   "ms": "25",
+   "casos": "desde enero",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "get_documentos_por_barrer": {
+   "ms": "1.7",
+   "casos": "30 días, tope 500",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "get_documentos_sin_cargar": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_donde_hay": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_faltantes_con_stock_en_otra_sala": {
+   "ms": "128–191",
+   "casos": "7 sucursales · 7/7 idéntico",
+   "divergencia": "1.0",
+   "nota": "widget del tablero; en la sala 3 la corrección va PEOR (135→216 ms)"
+  },
+  "get_invoice_observations": {
+   "ms": "74",
+   "casos": "julio completo",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "get_libro_compras_completo": {
+   "ms": "1,598",
+   "casos": "4 rangos · 4/4 idéntico",
+   "divergencia": "1.0",
+   "nota": "LENTA DE VERDAD pero por su SQL, no por su plan. 5.7 s en 4 meses. Cierre fiscal — trabajo aparte"
+  },
+  "get_libro_compras_declarable": {
+   "ms": "1,266–1,931",
+   "casos": "julio y junio (cierre)",
+   "divergencia": "1.0–1.1",
+   "nota": "LENTA DE VERDAD pero por su SQL. Cierre fiscal — trabajo aparte"
+  },
+  "get_metas_dashboard": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_minmax_contexto_producto": {
+   "ms": "1.4",
+   "casos": "producto top, sala 6",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "get_no_sales_products": {
+   "ms": "1,350",
+   "casos": "sala 1 · 31 filas",
+   "divergencia": "1.0",
+   "nota": "1.35 s para devolver 31 filas: lenta por su SQL"
+  },
+  "get_pagos_compra": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_pedido_diferencias_stats": {
+   "ms": "27",
+   "casos": "últimos 90 días",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "get_pedido_entregas": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_pedido_kpis": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_pedido_sucursal_stats": {
+   "ms": "301",
+   "casos": "las 7 salas",
+   "divergencia": "1.1",
+   "nota": null
+  },
+  "get_personas_de_solicitudes": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_product_branch_summary": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_product_drill_lines": {
+   "ms": "192",
+   "casos": "triage fuera de la ventana del corte",
+   "divergencia": null,
+   "nota": "figuraba con 4,189 ms: HACÍA COLA"
+  },
+  "get_product_drill_summary": {
+   "ms": "78",
+   "casos": "producto top, mes",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "get_product_trend": {
+   "ms": "38",
+   "casos": "producto top, un año",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "get_product_vencimiento_policy": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_products_sold_no_minmax": {
+   "ms": "291",
+   "casos": "sala 1 · 621 filas",
+   "divergencia": "0.7",
+   "nota": "la corrección la deja peor: 291 → 445 ms"
+  },
+  "get_puntos_canjeados": {
+   "ms": "5–11",
+   "casos": "4 rangos reales · 4/4 idéntico",
+   "divergencia": "0.7",
+   "nota": "figuraba con 831 ms en pg_stat_statements: HACÍA COLA. La corrección la empeora (10.9→16.2 ms)"
+  },
+  "get_salidas_de_bolsa": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_stagnant_inventory": {
+   "ms": "799–822",
+   "casos": "salas 1 y 7",
+   "divergencia": "0.9–1.1",
+   "nota": null
+  },
+  "get_stock_analysis": {
+   "ms": "437",
+   "casos": "sala 1 · 4,249 filas",
+   "divergencia": "0.9",
+   "nota": null
+  },
+  "get_traslado_disponibilidad": {
+   "ms": "213–249",
+   "casos": "5 solicitudes · 5/5 idéntico",
+   "divergencia": "0.9",
+   "nota": "la corrección la deja peor en las CINCO"
+  },
+  "get_ventas_stats": {
+   "ms": "30–150",
+   "casos": "mes en curso y un año",
+   "divergencia": null,
+   "nota": "barrido: bajo 200 ms"
+  },
+  "insert_missing_products": {
+   "ms": "3.3",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "metas_calculo_propuesta": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "nombre_corto_de_empleado": {
+   "ms": "0.03",
+   "casos": "el nombre de una ficha · sin tablas",
+   "divergencia": null,
+   "nota": "medida el 2026-09-04: 0.025 ms de ejecución, plan `Result` a secas. NO PUEDE tener el defecto: no toca ninguna tabla — es manipulación de texto sobre sus tres parámetros—, así que no hay estimación de filas que el planificador pueda errar y el genérico ES el plan. Entra al manifiesto sólo porque el detector la ve (LANGUAGE sql + SET + un CTE de legibilidad), no porque haya algo que vigilar. Es el gemelo en SQL de shortEmployeeName."
+  },
+  "puntos_cliente_por_dui_y_telefono": {
+   "ms": "41-82",
+   "casos": "la puerta pública de /mis-puntos, 28,105 fichas",
+   "divergencia": "imposible",
+   "nota": "sana — el plan NO puede depender de los argumentos: los dos predicados envuelven la columna en regexp_replace, así que ningún índice los sirve y el plan es un Seq Scan sobre customers con cualquier valor. Medido el 2026-08-31 con EXPLAIN(ANALYZE,TIMING OFF): la función da 41-82 ms y el mismo cuerpo con literales 58 ms — el mismo plan, dentro del ruido. Forzarle plan personalizado sólo agregaría el costo de replanificar."
+  },
+  "recalcular_totales_conteo": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "search_inventory_descripcion_ids": {
+   "ms": "89",
+   "casos": "buscar «aceta», sala 1",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "session_idle_limit_minutes": {
+   "ms": "0.1",
+   "casos": "usuario real, escritorio",
+   "divergencia": null,
+   "nota": "barrido"
+  },
+  "sync_inventory_batch": {
+   "ms": "109.0",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "sync_laboratorios_batch": {
+   "ms": "4.0",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "sync_presentaciones_batch": {
+   "ms": "3.2",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "sync_purchase_receipt_items_batch": {
+   "ms": "3.5",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "sync_purchase_receipts_batch": {
+   "ms": "2.5",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "sync_suppliers_batch": {
+   "ms": "1.5",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "traslado_por_codigo": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "upsert_product_precios_batch": {
+   "ms": "236.9",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "upsert_products_minimal": {
+   "ms": "5.6",
+   "casos": "producción, ventana limpia de 17.5 h",
+   "divergencia": "imposible",
+   "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "verificar_hojas_pedido": {
+   "ms": "0.1",
+   "casos": "pedido reciente, sala 1",
+   "divergencia": null,
+   "nota": "barrido"
+  }
+ },
+ "_2026_09_02_el_ms_no_alcanza": "get_top_supplier_per_product y get_sucursal_net_stock SALEN de esta lista: se pasaron a plpgsql con plan_cache_mode='force_custom_plan' (migración 20260902153208). Las dos TENÍAN el defecto y esta lista las daba por sanas — la primera con «19 ms» y la segunda con «costo despreciable». El número no estaba mal: con la caché caliente el plan malo cuesta 43 ms. Lo que estaba mal es el CRITERIO. La auditoría del 25-ago descartaba candidatas por TIEMPO («bajo 200 ms no hace falta medirla a fondo»), y el tiempo sobre una base en reposo no puede ver una diferencia de 61× en TRABAJO: 48,441 bloques contra 791 para devolver las mismas 1,000 filas. La primera llamada del día, con lo que sí hay que ir a buscar al disco, costó 876 ms. El hallazgo salió de la sección F de gate:perf (bloques por llamada), no de ésta. PENDIENTE: quedan 12 funciones de esta lista con un parámetro de ARRAY — la forma donde el plan genérico más se equivoca, porque estima la lista en 127 filas sin verla. Ninguna está medida POR BLOQUES.",
+ "_corregidas_2026_09_18": "`get_product_sales_total` y `get_product_sales_agg` SALEN de esta lista porque ya no son `LANGUAGE sql`: se pasaron a plpgsql con `plan_cache_mode = force_custom_plan` (migraciones 20260918014825 y 20260918015225), o sea que ahora entran al cache de planes y ven sus argumentos. La lista es de funciones que NO pueden pedir un plan personalizado; una que ya puede no pertenece aca. Sus fichas decian «sana · 1.0x», y eso era cierto SOBRE EL TIEMPO —la auditoria del 2026-08-25 midio 15-237 ms contra 8-235 ms de la candidata y acerto—. Lo que nadie midio fueron los BLOQUES, que es la metrica de la seccion F, nacida despues (2026-09-01). Medido el 2026-09-18 en caliente, mismos argumentos y mismo resultado verificado: get_product_sales_total 28,909 -> 16,102 bloques (226 -> 126 MB); get_product_sales_agg_jsonb 115,331 -> 108,181 bloques sobre agosto/Salud 4, o sea un 6% y no el 2x que se esperaba: ahi el trabajo es genuinamente el agregado del rango y no el plan. La leccion para quien retome esta lista: «divergencia 1.0» responde «el plan no cambia con los argumentos», que es la DEFINICION del problema cuando la funcion es LANGUAGE sql + SET, no evidencia de salud. Hay que decir sobre QUE metrica se midio."
 }

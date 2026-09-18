@@ -9,6 +9,8 @@ import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
 import { unaSolaVez } from '../../utils/unaSolaVez';
 import { formatMoney } from '../../utils/formatNumber';
 import { DIAS_DE_RESERVA, POLITICA_DE_RESERVA, vencimientoDeReserva } from '../../utils/abonoTicket';
+import { useToastStore } from '../../store/toastStore';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 /**
  * El abono de un cliente para apartar un producto.
@@ -158,6 +160,33 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
             // datos del anterior.
             clearDraft(claveDeBorrador(sala));
             return await enviar();
+        } catch (e) {
+            /* Un `try/finally` sin `catch` acá NO era el bug clásico del
+             * spinner que se apaga callado: un abono que falla se avisa igual,
+             * porque `operar()` convierte todo tropiezo en `{ error }` y quien
+             * llama lo muestra.
+             *
+             * Lo que sí se caía en silencio es lo ÚLTIMO que hace el guardado:
+             * imprimir el comprobante. `imprimirDocumento` no tiene `catch` de
+             * primer nivel y hace un `import()` dinámico para hablarle a la
+             * cola de la caja — o sea que un chunk que no carga (lo normal
+             * después de publicar una versión) lanza. Ese throw subía por acá,
+             * salía de `unaSolaVez` y moría como promesa rechazada en el
+             * `onClick`, sin un toast.
+             *
+             * Y el momento es el peor posible: la pantalla ya dijo «Abono
+             * anotado · el comprobante va a la impresora». El abono está a
+             * salvo —lo escribió el servidor— pero no sale papel y nadie se
+             * entera hasta que el cliente lo pide.
+             *
+             * Se avisa y NO se relanza: el abono ya ocurrió, así que volver a
+             * apretar no corresponde. */
+            console.error('guardar abono:', e);
+            useToastStore.getState().showToast(
+                'El abono quedó anotado, pero algo falló después',
+                mensajeAmigable(e, 'Revisa si salió el comprobante; si no, vuelve a imprimirlo desde la lista.'),
+                'warning',
+            );
         } finally {
             // Se suelta siempre: si sólo se soltara al salir bien, un fallo de
             // red dejaría el botón muerto con el formulario lleno.

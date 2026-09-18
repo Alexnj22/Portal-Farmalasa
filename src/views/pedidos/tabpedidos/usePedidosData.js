@@ -260,9 +260,11 @@ export function usePedidosData({ searchTerm = '' }) {
         })();
     }, []); // eslint-disable-line
 
-    // Auto-load items for pedidos parciales so DifSection always shows item details
+    // Auto-load items for pedidos parciales so DifSection always shows item details.
+    // Por SALA: sólo la que reportó diferencias pinta DifSection, y con el
+    // `pedido_status` del pedido se bajaban los renglones de todas.
     useEffect(() => {
-        const parciales = activeRows.filter(r => r.pedido_status === 'parcial');
+        const parciales = activeRows.filter(r => r.diferencias_reportadas_at && r.pedido_status !== 'completado');
         if (!parciales.length) return;
         parciales.forEach(r => {
             const key = `act_${r.pedido_id}_${r.erp_sucursal_id}`;
@@ -1805,8 +1807,12 @@ export function usePedidosData({ searchTerm = '' }) {
     // entran en `llegada_tipo`: un despacho donde lo único que no llegó fueron
     // cuatro cajas de Electrolit tiene una observación, y sin estas dos líneas se
     // ocultaba solo del filtro que existe para encontrarlo.
+    //
+    // La diferencia se mira por SALA (`diferencias_reportadas_at`), no por
+    // `pedido_status === 'parcial'`: ese es del pedido, y una diferencia de una
+    // sala marcaba como «con observación» a todas las demás (#174, 2026-09-17).
     const hasObservacion = useCallback((r) =>
-        r.pedido_status === 'parcial' ||
+        (!!r.diferencias_reportadas_at && !r.confirmado_correccion_at) ||
         (r.llegada_tipo && r.llegada_tipo !== 'completa') ||
         (r.falta_cajas?.length  > 0) ||
         (r.cajas_danadas?.length > 0) ||

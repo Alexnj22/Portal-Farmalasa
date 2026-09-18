@@ -770,8 +770,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     )}
 
-                                    {/* Diferencias — visible cuando parcial o completado con diffs en historial */}
-                                    {(row.pedido_status === 'parcial' || (row.pedido_status === 'completado' && (items[cardKey] ?? []).some(r => r.error_tipo))) && (
+                                    {/* Diferencias — sólo si ESTA sala reportó alguna. Colgaba de
+                                        `pedido_status === 'parcial'`, que es del PEDIDO: en el #174
+                                        una sola diferencia de Salud 5 pintaba «Diferencias — te toca
+                                        resolver (0)» en Salud 4 y La Popular, que no tenían ninguna.
+                                        `diferencias_reportadas_at` es por sala y coincide con tener
+                                        un renglón con diferencia en 130 de 130 salas (medido el
+                                        2026-09-17). */}
+                                    {row.diferencias_reportadas_at && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <DifSection
                                                 row={row}

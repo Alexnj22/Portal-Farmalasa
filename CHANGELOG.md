@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1024.1 — Las diferencias de una sala ya no aparecen en las otras del mismo pedido
+
+En el pedido #174, Salud 4 y La Popular mostraban «Diferencias — te toca
+resolver (0)» sin tener ninguna. La única diferencia del pedido era de Salud 5.
+
+El bloque de diferencias colgaba de `pedido_status === 'parcial'`, que es el
+estado del PEDIDO: basta que una sala reporte una diferencia para que el pedido
+entero quede «parcial», y el bloque salía en todas sus salas, con cero adentro.
+Ahora sale sólo en la sala que reportó (`diferencias_reportadas_at`, por sala;
+coincide con tener un renglón con diferencia en 130 de 130 salas medidas).
+
+Lo mismo en otros dos sitios que preguntaban igual: «Con observación» y la
+precarga de renglones, que bajaba los de todas las salas del pedido.
+
+Es la misma familia que `estadoDeLaSala` y `difsDeLaSala`: la tarjeta es de
+una sala y no puede leer el estado del pedido.
+
 ## v2.1024.0 — Bodega puede no reenviar una caja especial, y el producto regresa a bodega
 
 Cuando una sala reporta que no le llegó una caja especial, bodega ya no tiene

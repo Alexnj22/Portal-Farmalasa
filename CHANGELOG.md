@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1024.2 — Un pedido cuya última diferencia se cierra por acuerdo ya no queda en parcial
+
+La otra mitad del #174. Su única diferencia (Salud 5) estaba resuelta y el
+pedido seguía «parcial» — que es lo que hacía aparecer el bloque de diferencias
+en las otras salas antes de v2.1024.1.
+
+Cuando las dos partes acuerdan una salida que se cierra en el acto
+(`resuelto`: no hay nada que mover ni que esperar), `decidir_diferencia_pedido`
+confirmaba la diferencia pero no revisaba si con eso terminaba el pedido. Los
+otros tres caminos de cierre sí lo hacen. Ahora también
+(`20260918024021`, parcheando la definición viva sobre un ancla única).
+
+Cuatro pedidos estaban atorados así —#121, #133, #174 y #180, todo contado y
+toda diferencia resuelta— y se cerraron con el mismo cierre que usa el portal.
+Quedan en la bitácora como `PEDIDO_CORRECCION_DATOS`.
+
 ## v2.1024.1 — Las diferencias de una sala ya no aparecen en las otras del mismo pedido
 
 En el pedido #174, Salud 4 y La Popular mostraban «Diferencias — te toca

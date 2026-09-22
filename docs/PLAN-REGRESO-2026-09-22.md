@@ -34,7 +34,7 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
   del 21-sep dan 109/8/29/6/6/46 facturas en 5–22 ms. Mínimo de 3 letras en
   pantalla (con 2, la búsqueda sola tarda ~8 s).
 
-### A2 ⬜ Llamadas que llegan sin sesión (`permission denied` diario)
+### A2 🔎 Llamadas que llegan sin sesión (`permission denied` diario)
 
 - **Medido (21-sep):** `soltar_push_del_equipo` 302, `mis_permisos_heredados`
   97, `employees` 25, `bolsas` 18, `get_cortes_por_embolsar` 16,
@@ -51,6 +51,14 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
   los fetch de arranque no salgan sin token.
 - **Verificar después:** al día siguiente, los `permission denied` del log
   por función; objetivo ~0.
+- **Corregido (v2.1025.1), falta la medición del día siguiente:** confirmado en
+  el log — en el minuto de cada cierre, la misma IP manda `soltar_push` y
+  `mis_permisos_heredados` con 401. `soltar_push`: 300 de 361 fallaban. El
+  token se toma antes del primer `await` y va por `fetch`; el oyente de
+  `visibilitychange` espera un tick. **Queda como ruido** (no se tocó): las
+  vistas que recargan al volver a la pestaña (bolsas, conteos,
+  `get_cortes_por_embolsar`) también salen con 401 cuando esa vuelta cierra la
+  sesión — ~50/día, sin daño.
 
 ### A3 ⬜ Movimiento de caja duplicado DESPUÉS de los frenos del 17-sep
 
@@ -154,6 +162,11 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 - **E4 ⬜** `gate:receta`: 47 productos sin principio activo y 137 renglones
   de venta genéricos — deuda de catálogo, se reporta con la lista.
 - **E5 ⬜** Auditoría: «Promociones» y «Protección de datos» en 0%.
+- **E6 ⬜** Pruebas unitarias en rojo en `main`: 16 en 8 archivos
+  (`ajusteAMano` 5, `bitacorasLogica` 4, `bitacoraDeAcciones` 2,
+  `bandejaYCatalogosDeSala`, `capasDeLecturaYMarcado`, `capturaDeFoto`,
+  `decisionDiferencia`, `registroDePermisos`). Una prueba roja tapa a las que
+  vienen detrás (así se escondió el defecto de la foto del 17-sep).
 
 ---
 

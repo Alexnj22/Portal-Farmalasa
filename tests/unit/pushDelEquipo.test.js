@@ -100,14 +100,30 @@ describe('reclamar el equipo al entrar', () => {
 });
 
 describe('soltar al cerrar sesión — el `if` que decide todo', () => {
+    beforeEach(() => {
+        globalThis.fetch = vi.fn(async () => ({ ok: true, status: 204 }));
+        globalThis.localStorage = {
+            _v: JSON.stringify({ access_token: 'tok' }),
+            getItem: () => globalThis.localStorage._v,
+        };
+    });
+    afterEach(() => { delete globalThis.fetch; delete globalThis.localStorage; });
+
+    const soltadoCon = () => {
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        const [url, opts] = globalThis.fetch.mock.calls[0];
+        expect(url).toMatch(/\/rest\/v1\/rpc\/soltar_push_del_equipo$/);
+        return { token: opts.headers.Authorization, cuerpo: JSON.parse(opts.body) };
+    };
+
     it('en el TELÉFONO no se suelta nunca', async () => {
         await mod.soltarPushDelEquipoSiEsCompartido('app');
-        expect(soltarPushSubscription).not.toHaveBeenCalled();
+        expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 
     it('en una computadora compartida sí se suelta', async () => {
         await mod.soltarPushDelEquipoSiEsCompartido('navegador');
-        expect(soltarPushSubscription).toHaveBeenCalledWith('https://push.example/abc');
+        expect(soltadoCon()).toEqual({ token: 'Bearer tok', cuerpo: { p_endpoint: 'https://push.example/abc' } });
     });
 
     it('una clase desconocida se trata como compartida', async () => {
@@ -115,11 +131,38 @@ describe('soltar al cerrar sesión — el `if` que decide todo', () => {
         // hasta que vuelva a entrar; soltar de menos deja los avisos de una
         // persona cayendo en una pantalla ajena.
         await mod.soltarPushDelEquipoSiEsCompartido(undefined);
-        expect(soltarPushSubscription).toHaveBeenCalled();
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('sale con el token aunque la sesión se borre en el MISMO tick', async () => {
+        // El defecto del 21-sep: `doLogout` llama a esto y sigue con `signOut()`
+        // sin esperar. Cuando la llamada iba a buscar el token ya no había, salía
+        // como `anon` y el servidor contestaba 401 — 300 de 361 cierres dejaron
+        // el equipo ligado a quien se fue. El token se toma ANTES del primer
+        // `await`, así que borrar la sesión después no lo alcanza.
+        const soltando = mod.soltarPushDelEquipoSiEsCompartido('navegador');
+        globalThis.localStorage._v = 'null';   // lo que hace `signOut()` en el mismo tick
+        await soltando;
+        expect(soltadoCon().token).toBe('Bearer tok');
+    });
+
+    it('usa el equipo ya recordado sin volver a preguntarle al navegador', async () => {
+        await mod.reclamarPushDelEquipo('emp-1');
+        montarNavegador(null);   // si le preguntara, no encontraría nada
+        await mod.soltarPushDelEquipoSiEsCompartido('navegador');
+        expect(soltadoCon().cuerpo).toEqual({ p_endpoint: 'https://push.example/abc' });
+    });
+
+    it('sin sesión guardada no manda nada: no hay a quién soltar', async () => {
+        globalThis.localStorage._v = 'null';
+        await mod.soltarPushDelEquipoSiEsCompartido('navegador');
+        expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 
     it('un fallo al soltar no lanza — el cierre de sesión sigue', async () => {
-        soltarPushSubscription.mockResolvedValue({ error: { message: 'nope' } });
+        globalThis.fetch = vi.fn(async () => ({ ok: false, status: 401 }));
+        await expect(mod.soltarPushDelEquipoSiEsCompartido('navegador')).resolves.toBeUndefined();
+        globalThis.fetch = vi.fn(async () => { throw new Error('red caída'); });
         await expect(mod.soltarPushDelEquipoSiEsCompartido('navegador')).resolves.toBeUndefined();
     });
 });
@@ -127,7 +170,7 @@ describe('soltar al cerrar sesión — el `if` que decide todo', () => {
 describe('soltar cuando se va la PÁGINA', () => {
     const LS = 'sb-auth-token';
     beforeEach(() => {
-        globalThis.fetch = vi.fn(() => ({ catch: () => {} }));
+        globalThis.fetch = vi.fn(() => Promise.resolve({ ok: true, status: 204 }));
         globalThis.localStorage = {
             _v: JSON.stringify({ access_token: 'tok' }),
             getItem: () => globalThis.localStorage._v,

@@ -390,11 +390,22 @@ export const AuthProvider = ({ children }) => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- doLogout usa sólo setters y refs estables
 
   useEffect(() => {
+    // Un tick después, y no en el acto: este oyente y el del cierre por
+    // inactividad escuchan el MISMO `visibilitychange`. Volviendo a una pestaña
+    // que ya se venció, uno cerraba la sesión y el otro salía a pedir permisos
+    // con la sesión ya borrada — un 401 de `mis_permisos_heredados` en casi
+    // cada cierre (97 el 21-sep). `userRef` recién se apaga en el render que
+    // sigue a `setUser(null)`, pero `doLogout` borra `LS_USER` en el acto
+    // (`clearAuthCache`): esperando un tick y preguntándole a ése, el orden de
+    // los oyentes deja de importar.
     const onVisible = () => {
-      if (userRef.current && document.visibilityState === 'visible') {
+      if (document.visibilityState !== 'visible') return;
+      setTimeout(() => {
+        if (!userRef.current) return;
+        try { if (!localStorage.getItem(LS_USER)) return; } catch { /* sin localStorage: se sigue */ }
         refreshPermissions();
         revalidarSesion();
-      }
+      }, 0);
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);

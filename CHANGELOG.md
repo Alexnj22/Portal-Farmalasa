@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1025.1 — Cerrar sesión suelta de verdad los avisos del equipo
+
+En una computadora compartida, cerrar sesión tiene que soltar el aviso del
+equipo: si no, los avisos de quien se fue siguen cayendo en esa pantalla. El
+21-sep, **300 de 361** cierres de sesión no lo soltaron — el servidor contestó
+401 (`permission denied for function soltar_push_del_equipo`).
+
+Era una carrera. `doLogout` llamaba a soltar y, en el mismo tick y sin esperar,
+seguía con `signOut()`. Soltar primero le preguntaba al service worker por la
+suscripción; cuando `supabase.rpc` iba a buscar el token, `signOut` ya había
+borrado la sesión y la llamada salía como `anon`. Ahora el token se toma
+**antes del primer `await`** y la llamada va con `fetch` directo —igual que ya
+hacía el camino de `pagehide`—, usando el equipo que se recordó al reclamarlo.
+El token capturado sirve aunque la sesión se haya cerrado: el servidor valida
+la firma y el vencimiento del JWT.
+
+Mismo patrón, otro síntoma: volviendo a una pestaña ya vencida por
+inactividad, un oyente de `visibilitychange` cerraba la sesión y el otro salía
+a recargar permisos con la sesión borrada (97 × 401 de
+`mis_permisos_heredados` el 21-sep). Ahora espera un tick y pregunta si
+todavía hay alguien adentro.
+
+`pushDelEquipo.test.js` suma la prueba que lo ancla —la sesión se borra en el
+mismo tick y la llamada igual sale con el token— y contra el código viejo
+fallan 4 de sus 20.
+
 ## v2.1025.0 — Buscar en Ventas encuentra el producto y ya no se cae con un año
 
 El 21-sep alguien buscó en Ventas, durante cinco horas y con el rango «Este

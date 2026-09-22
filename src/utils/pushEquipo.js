@@ -17,7 +17,7 @@
 // suscripción del navegador se deja viva. Así el permiso ya concedido sigue
 // puesto y el siguiente empleado queda ligado en silencio al iniciar sesión, sin
 // tener que enterarse de nada ni volver a autorizar avisos.
-import { reclamarPushSubscription, soltarPushSubscription } from '../data/pushSubscriptions';
+import { reclamarPushSubscription } from '../data/pushSubscriptions';
 import { AUTH_STORAGE_KEY } from '../supabaseClient';
 
 // El endpoint se RECUERDA al reclamar. En `pagehide` no hay tiempo de
@@ -96,16 +96,57 @@ export function reclamarPushDelEquipo(employeeId) {
  */
 export async function soltarPushDelEquipoSiEsCompartido(claseDispositivo) {
     reclamo = { employeeId: null, promesa: null };
+    const recordado = endpointDelEquipo;
     endpointDelEquipo = null;
     if (claseDispositivo === 'app') return;
+
+    // El token se lee ANTES del primer `await`, y la llamada no pasa por el
+    // cliente de supabase. `doLogout` llama a esto y en el MISMO tick sigue con
+    // `signOut()`, que borra la sesión del cliente: cuando `supabase.rpc` iba a
+    // buscar el token, ya no había, la llamada salía como `anon` y el servidor
+    // contestaba 401. Medido el 21-sep: **300 de 361** cierres de sesión no
+    // soltaron el equipo, así que los avisos de quien se fue seguían cayendo en
+    // esa pantalla — justo lo que esta función existe para evitar.
+    // El token capturado sigue sirviendo después del `signOut`: el servidor
+    // valida la firma y el vencimiento del JWT, no si la sesión sigue abierta.
+    const token = tokenDeLaSesion();
+    if (!token) return;
     try {
-        const sub = await suscripcionDeEsteNavegador();
-        if (!sub) return;
-        const { error } = await soltarPushSubscription(sub.toJSON().endpoint);
-        if (error) console.error('Push: no se pudo soltar el equipo:', error.message);
+        const endpoint = recordado || (await suscripcionDeEsteNavegador())?.toJSON().endpoint;
+        if (!endpoint) return;
+        const res = await soltarConToken(endpoint, token);
+        if (res && !res.ok) console.error('Push: no se pudo soltar el equipo:', res.status);
     } catch (err) {
         console.error('Push: no se pudo soltar el equipo:', err);
     }
+}
+
+// El token de la sesión, leído de `localStorage` en el acto: `getSession()` es
+// asíncrono, y los dos llamadores de abajo no tienen futuro que esperar.
+function tokenDeLaSesion() {
+    try {
+        return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null')?.access_token || null;
+    } catch {
+        return null;   // sin sesión guardada: no hay a quién soltar
+    }
+}
+
+// `keepalive` en los dos casos: en `pagehide` la página se muere, y en el
+// cierre de sesión el portal navega al login mientras la llamada vuela.
+function soltarConToken(endpoint, token) {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!url || !anon) return Promise.resolve(null);
+    return fetch(`${url}/rest/v1/rpc/soltar_push_del_equipo`, {
+        method: 'POST',
+        keepalive: true,
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: anon,
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ p_endpoint: endpoint }),
+    });
 }
 
 /**
@@ -136,27 +177,12 @@ export function soltarPushAlCerrarLaPagina(claseDispositivo) {
     if (claseDispositivo === 'app') return;
     if (!endpointDelEquipo) return;
 
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    if (!url || !anon) return;
-
-    let token = null;
-    try {
-        token = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null')?.access_token || null;
-    } catch { /* sin sesión guardada: no hay a quién soltar */ }
+    const token = tokenDeLaSesion();
     if (!token) return;
 
     try {
-        fetch(`${url}/rest/v1/rpc/soltar_push_del_equipo`, {
-            method: 'POST',
-            keepalive: true,
-            headers: {
-                'Content-Type': 'application/json',
-                apikey: anon,
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ p_endpoint: endpointDelEquipo }),
-        }).catch(() => { /* la página ya se fue: no hay dónde reportarlo */ });
+        soltarConToken(endpointDelEquipo, token)
+            .catch(() => { /* la página ya se fue: no hay dónde reportarlo */ });
     } catch { /* idem */ }
 
     endpointDelEquipo = null;

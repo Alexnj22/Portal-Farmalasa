@@ -1,8 +1,28 @@
 # El factor de presentación y el MIN·MAX — hallazgo y plan (2026-08-13)
 
-**Estado: nada aplicado.** Todo lo de abajo son lecturas contra producción. No se
-escribió una sola fila ni se aplicó ninguna migración. Queda una decisión abierta
-(§7) antes de tocar nada.
+**Estado al 2026-09-22: (A) aplicada; falta que el recálculo del 1-oct la tome.**
+
+- **§7 decidido: (A).** El usuario corrigió en el sistema de la caja el texto de
+  los 24 renglones —los 20 del grupo con factor bueno y los 4 donde el texto
+  decía una cosa y el factor otra—. Después de la sincronización de las 22:30
+  UTC, **0 renglones** activos tienen texto y factor en desacuerdo (sin contar
+  recargas: no tienen MIN·MAX y su «Unidad» decimal —0.25, 2.1— no cabe en el
+  factor entero del portal; se dejan como están, decisión del usuario).
+- **Historial corregido** (migración `20260922223615`): 236 líneas de 10
+  productos toman el factor del catálogo. Sólo `factor_unidades`.
+- **NO se recalculó** a mano: recalcular una sala rehace su catálogo entero, y
+  la simulación dejaba ~7,300 borradores por revisar. Lo toma el recálculo del
+  **1-oct** (decisión del usuario). Lo que la simulación anticipa: ACETAMINOFEN
+  FORTE Salud 2 0/1 → 11/16 y Salud 3 1/2 → 12/18; DICLOFENAC MK Salud 4 0/0 →
+  6/10; MASCARILLA KN95 BLANCA y NIKZON suben en 3–4 salas.
+- **Y ese recálculo ya no se salta salas** (migración `20260922223748`): el cron
+  del día 1 pisa los borradores pendientes. Lo destapó esto mismo: La Popular y
+  Salud 5 iban a quedar sin recálculo por un borrador de un producto INACTIVO que
+  la pantalla no muestra.
+
+**Queda:** verificar el 1-oct que los números de arriba se publicaron; §8.3
+(factor 0 de las recargas en `get_stock_analysis`) y §9 (que el trigger deje de
+leer el texto) siguen abiertos como decisión aparte.
 
 ---
 

@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1033.3 — El MIN·MAX deja de leer mal 10 productos, y el recálculo del 1 ya no se salta salas
+
+`docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md`, opción (A). El MIN·MAX lee las
+unidades del TEXTO de la presentación («1X16»), y en 24 renglones del catálogo
+estaba mal escrito («1X 16», «1X1» sobre una caja de 10): esos productos se
+contaban como una tableta por caja y no entraban nunca al pedido.
+
+- El usuario corrigió los 24 textos en el sistema de la caja; tras la
+  sincronización, 0 renglones en desacuerdo.
+- Las 236 líneas de venta ya registradas toman el factor corregido
+  (`20260922223615`). Sólo cambia `factor_unidades`; ni cantidades ni montos.
+- El MIN·MAX NO se recalculó hoy (dejaba ~7,300 borradores): lo toma el
+  recálculo mensual del 1-oct.
+- **El recálculo del día 1 ya no se salta salas por borradores pendientes**
+  (`20260922223748`): los pisa. El botón manual conserva el freno, pero sin
+  contar productos inactivos. La Popular y Salud 5 tenían un borrador de un
+  producto inactivo —invisible en la pantalla— que las iba a dejar fuera de
+  octubre.
+
 ## v2.1033.2 — Cuatro planes terminados pasan a cerrados
 
 Roles sin `system_role`, Solicitud a varias salas, Ticket de traslado y Planes

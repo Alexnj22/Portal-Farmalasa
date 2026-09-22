@@ -274,6 +274,14 @@ const PLANES = [
           + '(producto, presentación, detalle) y es lo que deja el barrido en 97 ms. Sin él, '
           + 'son 17,719 laterales — la primera forma de esto llevó los faltantes de 122 a 692 ms.',
   },
+  {
+    clave: 'plan-cola-impresion-trabada',
+    sql: `SELECT id FROM public.cola_impresion
+          WHERE branch_id = 4 AND estado = 'IMPRIMIENDO' AND reclamado_at < now() - interval '2 minutes'`,
+    exigido: 'idx_cola_impresion_imprimiendo',
+    porque: 'La pregunta de `reclamar_impresion`, ~7,400 veces por hora. Sin el índice parcial recorre '
+          + 'la historia entera de la sala: 206 bloques contra 5, y crece con cada ticket (2026-09-22).',
+  },
 ];
 
 /* ── E. Planes genéricos declarados ──────────────────────────────────────────

@@ -212,15 +212,15 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 
 - 5,763 peticiones en 12 h el 21-sep. Ahora aplica la fila del evento (v2.1026.1).
 
-### D6 ⏸ `reclamar_impresion`: 7,400 llamadas/h, 189 bloques cada una 🔒
+### D6 ✅ `reclamar_impresion`: 7,400 llamadas/h, 189 bloques cada una — resuelto en F3
 
 - El agente de cada caja pregunta cada ~3 s y el `UPDATE … estado='IMPRIMIENDO'`
   recorre toda la historia de la sala (461 filas, 205 bloques) porque ese
   estado no tiene índice parcial. 1.2 TB tocados en 4.6 días.
-- **Preparado, NO aplicado (el usuario lo dejó para después):**
-  `CREATE INDEX ON cola_impresion (branch_id) WHERE estado = 'IMPRIMIENDO'` —
-  la tabla pesa 2 MB. Medir antes/después con `EXPLAIN` del UPDATE. SQL en
-  `docs/PLAN-REGRESO-2026-09-22-borradores/cola_impresion_indice_imprimiendo.sql`.
+- ✅ Aplicado el 22-sep como F3 (v2.1026.5, migración `20260922163913`):
+  índice parcial `idx_cola_impresion_imprimiendo`. **206 → 5 bloques** por
+  llamada. Lo vigila `plan-cola-impresion-trabada` en la sección C de
+  `gate:perf`.
 
 ---
 
@@ -280,7 +280,7 @@ Aprobado por el usuario el 22-sep («hagámoslo»).
 |---|---|---|---|
 | F1 | Envíos · historial y vivos: el JSON por lote (`envios_json(ids[])`), RLS intacto | 1,100 ms / 113 ms como usuario | ✅ v2.1026.2 · **38 ms / 33 ms**, 8 huellas idénticas en dos cuentas |
 | F2 | Aprobar traslado: `v_inventario_disponible` calculada una vez | 810 MB, 255 ms | ✅ v2.1026.3 · **7 MB, 36 ms**, 120/120 idénticas; desempate por sala en `alternativas` |
-| F3 | Cola de impresión: índice parcial `WHERE estado='IMPRIMIENDO'` | 1.2 TB/semana | ⬜ |
+| F3 | Cola de impresión: índice parcial `WHERE estado='IMPRIMIENDO'` | 1.2 TB/semana | ✅ v2.1026.5 · **206 → 5 bloques** por llamada; vigilado en `gate:perf` C |
 | F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ✅ v2.1026.4 · **2.3 ms**, idéntica en 8 cortes simulados (0 a 1,225 filas en vuelo) |
 | F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ⬜ |
 | F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ⬜ tabla caliente: `CONCURRENTLY` y fuera de horario |

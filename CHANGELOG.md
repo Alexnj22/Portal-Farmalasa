@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1026.5 — Cola de impresión: índice para lo que quedó imprimiendo
+
+`reclamar_impresion` corre ~7,400 veces por hora —el agente de cada caja
+pregunta cada 3 s— y en cada llamada busca tickets trabados en IMPRIMIENDO. Ese
+estado no tenía índice parcial, así que recorría la historia entera de la sala
+para no encontrar nada: 206 bloques por llamada, 1.2 TB tocados en 4.6 días, y
+creciendo con cada ticket.
+
+Migración `20260922163913_cola_impresion_indice_imprimiendo`: índice parcial
+`(branch_id) WHERE estado = 'IMPRIMIENDO'`. **206 → 5 bloques**, 0.78 → 0.08 ms.
+No cambia ningún resultado.
+
+Nueva entrada `plan-cola-impresion-trabada` en la sección C de `gate:perf`: si el
+plan deja de usar el índice, el gate falla.
+
 ## v2.1026.4 — Traslados en vuelo: deja de recorrer la historia entera
 
 `traslados_en_vuelo()` la llama toda lectura de `v_inventario_disponible` —dónde

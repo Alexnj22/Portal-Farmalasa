@@ -1,7 +1,7 @@
 {
  "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
- "actualizado": "2026-09-18",
- "medidas": 44,
+ "actualizado": "2026-09-22",
+ "medidas": 42,
  "sin_medir": 24,
  "funciones": {
   "auth_module_scope": {
@@ -243,18 +243,6 @@
    "casos": null,
    "divergencia": null,
    "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
-  },
-  "get_product_drill_lines": {
-   "ms": "192",
-   "casos": "triage fuera de la ventana del corte",
-   "divergencia": null,
-   "nota": "figuraba con 4,189 ms: HACÍA COLA"
-  },
-  "get_product_drill_summary": {
-   "ms": "78",
-   "casos": "producto top, mes",
-   "divergencia": null,
-   "nota": "barrido"
   },
   "get_product_trend": {
    "ms": "38",

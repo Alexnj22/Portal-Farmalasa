@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1025.3 — Buscar en Ventas y abrir un producto, rápidos también para el usuario real
+
+**v2.1025.0 no alcanzaba.** Aquella medición se hizo como `postgres`, que se
+salta el RLS. Remedido como usuario (`authenticated`, que es como llega el
+portal), buscar «EXFORGE HCT» en un año seguía tardando **15,143 ms**: el `LIKE`
+de la búsqueda usa `textlike`, que no es *leakproof*, y con RLS Postgres no lo
+deja entrar al índice de trigramas antes de la policy.
+
+`search_ventas_ids` pasa a SECURITY DEFINER y aplica el mismo alcance que la
+policy de `sales_invoices`, escrito una sola vez en `alcance_de_ventas()`
+(`20260922153459`). Como usuario: **15,143 → 31 ms**.
+
+**El detalle de un producto** era la función que más leía de toda la base —617
+mil bloques de promedio, peor 11.7 s— y la auditoría del 4-sep no lo vio
+porque midió con literales. Era `LANGUAGE sql` con `SET` (la trampa 4 de
+CLAUDE.md): nacía genérica y, sin ver las fechas, recorría los renglones factura
+por factura. Pasa a `plpgsql` + `force_custom_plan` y a DEFINER con el mismo
+alcance (`20260922153822`). Un año: **683,904 → 73,262 bloques** (5.3 GB →
+570 MB).
+
+Comprobado antes y después con una cuenta de alcance total y una limitada a
+Salud 1: 16 de 16 y 12 de 12 resultados idénticos por md5. Si la policy
+`sales_invoices_select` cambia, `alcance_de_ventas()` cambia con ella.
+
 ## v2.1025.2 — Corregir un abono anota el abono nuevo, no sólo anula el viejo
 
 Aprobar una corrección de MONTO o de FORMA borra el abono en la caja y lo

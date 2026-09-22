@@ -77,14 +77,12 @@
       "motivo": "AUDITADA el 2026-09-02: NO es un defecto. 39,821 bloques / 51 ms, y el plan es correcto de punta a punta — índices en todos los nodos, ningún barrido, ninguna estimación reventada. El costo son 8,222 sondeos por clave primaria: para cada una de las 4,111 facturas de la ventana de 7 días pregunta a `customers` si el cliente acumula y a `puntos_enviados` si ya se envió. De las 4,111 quedan 181 candidatas y hoy devuelve 0. O sea que el costo NO está en cómo está escrita sino en la CADENCIA: rehace la ventana de 7 días cada minuto. Bajarlo es una decisión sobre el comportamiento (acortar la ventana pierde la red que atrapa facturas que llegan tarde), no un arreglo. 236 MB de los 311 se van en esos sondeos."
     },
     "get_product_drill_summary": {
-      "bloques": 276000,
-      "deuda": true,
-      "motivo": "1,659 MB por llamada (212,310 bloques, 7 llamadas) el 2026-09-04. Es el detalle de UN producto al abrirlo en Ventas, y se dispara junto con get_product_drill_lines en el mismo Promise.all: abrir un producto son DOS ranuras del pool a la vez. Su CTE `inv` pide `cod_vendedor`, que ningun indice de sales_invoices cubre, asi que toca el heap de todas las facturas del rango. AUDITADA el 2026-09-04 y NO se toca; el detalle esta abajo en _2026_09_04_por_que_no_se_toco."
+      "bloques": 95000,
+      "motivo": "AUDITADA y CORREGIDA el 2026-09-22 (migraciones 20260922153459 y 20260922153822). Medía 617,313 bloques de promedio en producción —la que más leía de la base, peor 11.7 s— y la auditoría del 2026-09-04 no lo vio porque midió con literales y como `postgres`: era LANGUAGE sql + SET (trampa 4), nacía genérica y con el rango como parámetro recorría los renglones factura por factura. Pasó a plpgsql + force_custom_plan y a SECURITY DEFINER con el alcance de la policy (`alcance_de_ventas`). Medido como usuario, producto más vendido: un año 683,904 → 73,262 bloques; un mes ~57,000 (40–130 ms, el planificador lo elige a sabiendas). Techo = 1.3x el año."
     },
     "get_product_drill_lines": {
-      "bloques": 232000,
-      "deuda": true,
-      "motivo": "1,390 MB por llamada (177,867 bloques, 7 llamadas) el 2026-09-04. Los renglones del mismo detalle de producto. Medida en el caso peor (producto mas vendido, un ano, todas las salas): 110 MB. Su `MATERIALIZED` esta bien fundado, igual que el de get_product_drill_summary — ver _2026_09_04_por_que_no_se_toco. AUDITADA y no se toca."
+      "bloques": 58000,
+      "motivo": "AUDITADA y CORREGIDA el 2026-09-22, junto con get_product_drill_summary (ver su motivo). Medida como usuario, producto más vendido: un mes 44,554 bloques, un año 14,954 (con el plan propio el año entra por el producto). Techo = 1.3x el mes, que es el caso caro y el default de la vista."
     },
     "get_product_sales_agg_jsonb": {
       "bloques": 117000,

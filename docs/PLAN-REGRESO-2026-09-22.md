@@ -33,6 +33,12 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
   usuario la búsqueda encuentra también el producto (`20260922145219`): las 6
   del 21-sep dan 109/8/29/6/6/46 facturas en 5–22 ms. Mínimo de 3 letras en
   pantalla (con 2, la búsqueda sola tarda ~8 s).
+- **Reabierto y cerrado otra vez (v2.1025.3):** la medición de arriba era como
+  `postgres`. Como usuario la búsqueda seguía en 15 s por el RLS (`textlike` no
+  es leakproof y no entra al índice bajo la policy). DEFINER + alcance de la
+  policy en `alcance_de_ventas()`: 15,143 → 31 ms. **Lección: medir las
+  funciones que llama el portal como `authenticated`, nunca sólo como
+  `postgres`.**
 
 ### A2 🔎 Llamadas que llegan sin sesión (`permission denied` diario)
 
@@ -148,10 +154,14 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   de antes y después del arreglo del 17. Resetear sólo esas y remedir antes
   de concluir.
 
-### D2 ⬜ Las más pesadas: `get_product_drill_summary` / `_lines`
+### D2 ✅ Las más pesadas: `get_product_drill_summary` / `_lines`
 
 - 5.1 y 4.4 GB por llamada, peor 11.7 s. Auditadas el 4-sep con una salida
   que «exige medir un punto de cruce». Medir ese punto y decidir.
+- **Cerrado (v2.1025.3):** la auditoría del 4-sep midió con literales; la
+  función era `sql`+`SET` (trampa 4). Pasó a plpgsql + force_custom_plan y a
+  DEFINER: un año 683,904 → 73,262 bloques, 12/12 idénticas. Techos bajados en
+  `bloques-por-llamada.json` y fuera de `planes-genericos.json`.
 
 ### D3 ⬜ `gate:eficiencia` — escrituras sin inserción 1,380/h (tope 1,240)
 

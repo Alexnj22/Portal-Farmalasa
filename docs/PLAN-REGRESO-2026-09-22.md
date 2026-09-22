@@ -264,6 +264,44 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 
 ---
 
+## F. Eficiencia medida como usuario (22-sep, tarde)
+
+Nace de la lección de A1: la búsqueda se «arregló» midiéndola como `postgres`
+y como usuario seguía en 15 s. Instrumento nuevo: **`npm run
+medir:como-usuario`** — el ranking real por rol de `pg_stat_statements` y un
+manifiesto de 29 llamadas medidas como postgres / usuario de alcance total /
+usuario de sala, con huella md5. **Regla de integridad para todo este bloque:**
+cada cambio se prueba en `pg_temp` y se aplica sólo si da el MISMO resultado
+(md5) que la versión actual con las dos cuentas; después se remide igual.
+
+Aprobado por el usuario el 22-sep («hagámoslo»).
+
+| # | mejora | medido antes | estado |
+|---|---|---|---|
+| F1 | Envíos · historial y vivos: el JSON por lote (`envios_json(ids[])`), RLS intacto | 1,100 ms / 113 ms como usuario | ⬜ |
+| F2 | Aprobar traslado: `v_inventario_disponible` calculada una vez | 810 MB, 255 ms | ⬜ |
+| F3 | Cola de impresión: índice parcial `WHERE estado='IMPRIMIENDO'` | 1.2 TB/semana | ⬜ |
+| F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ⬜ |
+| F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ⬜ |
+| F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ⬜ tabla caliente: `CONCURRENTLY` y fuera de horario |
+| F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | ⬜ diseñar antes de tocar |
+| F8 | Inicio · faltantes (629 GB/sem) y top productos (197 GB/sem) | — | ⬜ medir con la técnica de F2 |
+
+Hallazgos que explican F1 y F2, para no redescubrirlos:
+
+- **F1 no es la lectura, es la PLANIFICACIÓN.** `envio_json(id)` lleva `SET` y
+  nunca se inlinea: el historial la planificaba 100 veces, y bajo la policy de
+  5 ramas de `approval_requests` planificar es caro. Como `postgres` no hay
+  policy que expandir y por eso no se veía.
+- **F2: pedirle a `v_inventario_disponible` una LISTA de productos cuesta 20×
+  más que calcularla entera** (10 productos: 52,179 bloques; la vista entera:
+  2,681). El planificador rehace el trabajo por producto.
+- Lo más grande de la base no son las pantallas: Realtime decodificando el WAL
+  (13.7 TB/semana) y los procesos de cada minuto. Realtime baja sola con cada
+  escritura inútil que se elimina (D3).
+
+---
+
 ## Cierre
 
 Todos los gates de producción en verde (`gate:perf`, `gate:eficiencia`,

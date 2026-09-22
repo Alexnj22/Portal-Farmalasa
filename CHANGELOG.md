@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1026.3 — Aprobar un traslado: la existencia se calcula una vez
+
+`get_traslado_disponibilidad` —el panel que muestra, al aprobar una solicitud de
+traslado, cuánto hay en el origen y quién más lo tiene— leía **810 MB por
+llamada** como usuario: la más cara del portal por llamada. Consultaba
+`v_inventario_disponible` dos veces filtrada por el producto de cada renglón, y
+esa vista agrupa los lotes y resta los traslados en vuelo: pedírsela renglón por
+renglón la rehacía por renglón.
+
+Migración `20260922163329_aprobar_traslado_calcula_la_existencia_una_vez`: un
+CTE `disp` la calcula una vez, sólo para los productos de la solicitud, y las
+dos lecturas salen de ahí. Sigue INVOKER.
+
+- alcance total: mediana **259 → 36 ms**, promedio 304 → 83 ms, **810 → 7 MB**
+- Salud 1: promedio 85 → 20 ms
+- 60 solicitudes reales (las 10 de vencidos, las 10 más largas y las 40
+  últimas) × 2 cuentas: **120/120 idénticas**, antes de aplicar en `pg_temp` y
+  después contra la función viva.
+
+Un desempate nuevo, y es la única diferencia visible: `alternativas` se ordenaba
+sólo por unidades, así que dos salas con la misma existencia salían en el orden
+que dejara el plan. Al cambiar el plan se permutaban en 11 de 40 solicitudes sin
+cambiar un dato. Ahora desempata por sala.
+
+Sale de `scripts/bloques-por-llamada.json` (quedó bajo el umbral) y su entrada de
+`planes-genericos.json` lleva la medición nueva.
+
 ## v2.1026.2 — Envíos: el historial y los vivos se arman por lote
 
 El historial de envíos tardaba **1,100 ms y leía 145 MB** para quien lo abría;

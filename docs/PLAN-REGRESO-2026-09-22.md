@@ -279,7 +279,7 @@ Aprobado por el usuario el 22-sep («hagámoslo»).
 | # | mejora | medido antes | estado |
 |---|---|---|---|
 | F1 | Envíos · historial y vivos: el JSON por lote (`envios_json(ids[])`), RLS intacto | 1,100 ms / 113 ms como usuario | ✅ v2.1026.2 · **38 ms / 33 ms**, 8 huellas idénticas en dos cuentas |
-| F2 | Aprobar traslado: `v_inventario_disponible` calculada una vez | 810 MB, 255 ms | ⬜ |
+| F2 | Aprobar traslado: `v_inventario_disponible` calculada una vez | 810 MB, 255 ms | ✅ v2.1026.3 · **7 MB, 36 ms**, 120/120 idénticas; desempate por sala en `alternativas` |
 | F3 | Cola de impresión: índice parcial `WHERE estado='IMPRIMIENDO'` | 1.2 TB/semana | ⬜ |
 | F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ⬜ |
 | F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ⬜ |

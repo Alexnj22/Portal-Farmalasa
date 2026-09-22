@@ -283,7 +283,7 @@ Aprobado por el usuario el 22-sep («hagámoslo»).
 | F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ✅ v2.1026.4 · **2.3 ms**, idéntica en 8 cortes simulados (0 a 1,225 filas en vuelo) |
 | F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ✅ v2.1026.6 + v2.1026.7 · **1.46 GB → 670 MB** con alcance total (sala sin cambio), 12/12 idénticas en cada paso |
 | F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ⏸ **preparado** para el 23-sep 06:00–11:59 UTC (tabla caliente, sin syncs): `borradores/pendiente_mh_indice_sin_sello.sql`. Hoy con la cola VACÍA lee 104k bloques y 915 ms para no devolver nada. Probado en staging |
-| F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | ⬜ diseñar antes de tocar |
+| F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | 📐 **diseño abajo, espera OK** |
 | F8 | Inicio · faltantes (629 GB/sem) y top productos (197 GB/sem) | — | ✅ medido, **sin cambio**: ver abajo |
 
 Hallazgos que explican F1 y F2, para no redescubrirlos:
@@ -295,6 +295,37 @@ Hallazgos que explican F1 y F2, para no redescubrirlos:
 - **F2: pedirle a `v_inventario_disponible` una LISTA de productos cuesta 20×
   más que calcularla entera** (10 productos: 52,179 bloques; la vista entera:
   2,681). El planificador rehace el trabajo por producto.
+- **F7 — diseño (22-sep), espera el OK del usuario.** Todo corre como
+  `service_role` desde `sync-puntos`, cada minuto; medido como `postgres`, que
+  para `service_role` sí es la identidad correcta (salta el RLS igual).
+
+  | pieza | hoy | qué hace de más |
+  |---|---|---|
+  | `ventas_para_puntos` | 46k bloques/min (2.4 TB/sem) | re-evalúa las ~443 facturas `sin_enviar` de 7 días —que casi nunca cambian— y prueba `puntos_enviados` para las 4,119 facturas de la semana. Medido: **360 MB para mandar 0** |
+  | `puntos_marcar_sin_enviar` | 20k bloques/min (1 TB/sem) | el mismo anti-join de 7 días, cada minuto |
+  | `puntos_ventas_anuladas` | 13k bloques/min (0.6 TB/sem) | recorre el índice de las 373k facturas para hallar las 1,066 no finalizadas |
+  | `puntos_anotar_aplicado` (barrido) | ~100k bloques cada 10 min (0.5 TB/sem) | 23k filas en 5 tandas; cada fila es una búsqueda por índice |
+
+  Propuesta, en tres piezas independientes:
+  1. **Ventana corta cada minuto, completa cada hora** (`sync-puntos` +
+     parámetro nuevo `p_reevaluar` con default que conserva lo de hoy): cada
+     minuto mira 2 días y sólo facturas SIN fila en la bitácora; en el minuto 0
+     de cada hora, los 7 días y las `sin_enviar`. **Costo de negocio: una
+     factura que entra tarde (fecha de hace 3+ días) o una `sin_enviar` que se
+     vuelve elegible se manda en ≤1 h en vez de ≤1 min.** Una venta normal del
+     día sigue saliendo al minuto. Estimado: 3.4 → ~0.5 TB/sem.
+  2. **Índice parcial `sales_invoices (id) WHERE estado <> 'FINALIZADA'`**
+     (1,066 filas) para `puntos_ventas_anuladas`: 13k → ~4.5k bloques, mismo
+     resultado. Tabla caliente → misma ventana que F6.
+  3. **El barrido de «acumulado» en una sola llamada con hash join**: una
+     lectura secuencial de `puntos_enviados` (~8k bloques) en vez de 23k
+     búsquedas (~100k). Mismo resultado (el `IS DISTINCT FROM` no cambia).
+     Alternativa más simple pero con costo de negocio: barrido cada hora en vez
+     de cada 10 min.
+
+  Integridad: (2) y (3) no cambian resultados; (1) no cambia QUÉ se manda, sólo
+  CUÁNDO en los casos tardíos — se verifica corriendo la versión nueva en
+  modo `simular` contra la vieja sobre la misma ventana.
 - **F8, medido el 22-sep — ninguna de las dos se toca:**
   - `get_faltantes_con_stock_en_otra_sala`: la técnica de F2 (la vista entera
     una vez) la EMPEORA —16–47k bloques y 39–98 ms hoy, 53–60k y 131–183 ms

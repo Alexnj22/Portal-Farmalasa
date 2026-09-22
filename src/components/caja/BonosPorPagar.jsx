@@ -13,7 +13,7 @@ import { useToastStore } from '../../store/toastStore';
 
 /**
  * Los bonos de promoción que la sala tiene por pagar — Fase 3 de
- * docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
+ * docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
  *
  * Regla del usuario (2026-09-22): el bono de producto se paga EN LA SALA, con
  * salida de efectivo, y lo paga la JEFATURA. El de bodega sale de la caja de

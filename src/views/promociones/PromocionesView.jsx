@@ -34,7 +34,7 @@ import PromocionLaboratorioModal from './PromocionLaboratorioModal';
 import MatrizLaboratorioModal from './MatrizLaboratorioModal';
 
 /**
- * Promociones — `docs/PLAN-PROMOCIONES-2026-09-01.md`.
+ * Promociones — `docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md`.
  *
  * Es la Fase 4 del plan de Metas §9a y §9b. Hay DOS tipos y no se parecen:
  *
@@ -92,7 +92,7 @@ export default function PromocionesView() {
         // La «Liquidación» mensual se retiró el 2026-09-22: ningún bono se paga
         // por mes. El de meta es semestral (Metas → Pago semestral) y el de
         // producto se paga en la sala; acá sólo se mira cómo va ese pago —
-        // docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
+        // docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
         { key: 'pagos',       label: 'Pagos',       icon: Wallet },
         { key: 'historico',   label: 'Histórico',   icon: History },
     ]), []);

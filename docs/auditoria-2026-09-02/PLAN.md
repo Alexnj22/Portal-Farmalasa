@@ -339,7 +339,7 @@ días sin correr (los 4 de §2); textos «sync»/«ERP»; huérfanos. Impresión
 sala, `imprimirDocumento` único (grep `ticketPrint` en `src/` y listar quién NO lo usa),
 ASCII, 54/40 columnas, purga. Metas: mes en curso, propuesta el 28, cierre, gastos, sin
 comisiones; sala nueva sin histórico; `TabConfirmacion.jsx` (lint: componente creado en
-render ×2). Promociones: lo más nuevo (`docs/PLAN-PROMOCIONES-2026-09-01.md`): vigencia
+render ×2). Promociones: lo más nuevo (`docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md`): vigencia
 en hora SV, producto × sala, precio con/sin IVA, solapamiento, cron sin corrida, cómo
 llega al sistema de origen; `promociones.js` y `PromocionModal.jsx` tienen cambios sin
 commitear de otra sesión. `CierrePeriodoView.jsx` (lint: `entra` reasignado tras render).

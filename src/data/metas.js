@@ -250,7 +250,7 @@ export async function fetchMetaSala(branchId = null) {
 }
 
 // ── El pago semestral del bono ───────────────────────────────────────────────
-// docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md. El bono de meta se paga dos
+// docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md. El bono de meta se paga dos
 // veces al año y es la SUMA del de cada mes. Toda la cuenta vive en la base: los
 // meses cerrados salen de la foto que toma el cierre del día 5, y el que sigue
 // abierto se calcula en vivo y viene marcado `provisional`.

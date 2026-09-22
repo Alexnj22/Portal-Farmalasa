@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1033.1 — Los planes de bonos y de promociones pasan a cerrados
+
+`PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md` (las tres fases en producción) y
+`PLAN-PROMOCIONES-2026-09-01.md` (construido y en uso desde el 5-sep) se mueven a
+`docs/planes-cerrados/`, con la cabecera en «cerrado». Queda como seguimiento en
+sala el primer pago real de un bono de producto. Rutas actualizadas en el código,
+en `auditoria/` y en el plan de la auditoría del 2-sep. Sin cambios de conducta.
+
 ## v2.1033.0 — El bono de producto se paga en la sala
 
 Fase 3 de `docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md`. Regla del usuario: el

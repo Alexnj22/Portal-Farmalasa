@@ -11,7 +11,7 @@ const PAGADO = new Set(['pagado', 'fuera_del_portal']);
 
 /**
  * Cómo va el pago del bono de las promociones que terminaron —
- * docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md, Fase 3.
+ * docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md, Fase 3.
  *
  * Cada parte se paga en un lugar distinto (regla del usuario, 2026-09-22):
  *   · vendedores → en su sala, con salida de efectivo (lo paga la jefatura);

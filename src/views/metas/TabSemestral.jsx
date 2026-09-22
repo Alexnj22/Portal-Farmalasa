@@ -42,7 +42,7 @@ const STATUS_ROTULO = {
 };
 
 /**
- * El pago semestral del bono de meta — docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
+ * El pago semestral del bono de meta — docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
  *
  * El bono se gana cada mes (pestaña Bono) y se PAGA dos veces al año: enero–
  * junio en la 1ª quincena de julio y julio–diciembre en la 1ª de enero. Esta

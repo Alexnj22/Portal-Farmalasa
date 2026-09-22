@@ -473,7 +473,7 @@ export const AREAS = [
         edge: [],
         crons: ['metas-ciclo-diario'],
         docs: ['docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md',
-               'docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md'],
+               'docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md'],
     },
     {
         id: 'promociones',
@@ -499,7 +499,7 @@ export const AREAS = [
         // esta pantalla configura — aunque el dato viva en el sistema de la caja.
         edge: ['descuentos-erp'],
         crons: ['promociones-ciclo-diario'],
-        docs: ['docs/PLAN-PROMOCIONES-2026-09-01.md',
+        docs: ['docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md',
                'docs/DESCUENTOS-EN-LA-VENTA-2026-09-04.md'],
     },
     {

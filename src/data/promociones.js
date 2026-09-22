@@ -2,7 +2,7 @@ import { supabase } from '../supabaseClient';
 import { fetchLaboratoriosBasic } from './laboratorios';
 
 /**
- * Promociones por producto — Fase 4 de `docs/PLAN-PROMOCIONES-2026-09-01.md`.
+ * Promociones por producto — Fase 4 de `docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md`.
  *
  * Todas las escrituras pasan por RPC: las tablas no tienen policy de INSERT ni
  * de UPDATE a propósito, así que un `.insert()` desde acá no fallaría con un

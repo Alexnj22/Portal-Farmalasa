@@ -1,5 +1,10 @@
 # Plan — los bonos se pagan en dos calendarios, no en una hoja mensual (2026-09-22)
 
+**Estado: CERRADO el 2026-09-22** (v2.1032.0 → v2.1033.0). Las tres fases en
+producción. **Seguimiento en sala:** ver el primer pago real de un bono de
+producto cuando termine una promoción con bono — el circuito se probó con
+rollback, no con dinero.
+
 ## Por qué existe
 
 La pestaña «Liquidación» de `/promociones` es una hoja MENSUAL que junta el bono

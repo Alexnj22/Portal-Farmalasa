@@ -1,7 +1,7 @@
 import { supabase } from '../supabaseClient';
 
 /**
- * El bono de PRODUCTO se paga en la sala — docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
+ * El bono de PRODUCTO se paga en la sala — docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
  *
  * El dinero sale por la salida de caja de siempre (`anotarSalida`, en
  * `bolsas.js`). Lo que vive acá es el candado del bono: la lista de lo que la

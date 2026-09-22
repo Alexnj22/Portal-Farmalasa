@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1030.2 — El restablecimiento de contraseña queda en la bitácora
+
+En v2.1030.0 el registro de `CONTRASENA_RESTABLECIDA` quedó en `FormSetPassword`,
+un formulario que nada abre. El restablecimiento real es el botón de la ficha
+del empleado (`EmployeeDetailView`), y ése no dejaba rastro. Ahora sí: quién la
+restableció y a quién, nunca la contraseña.
+
 ## v2.1030.1 — gate:perf — techo proporcional para las reconstrucciones sobre el historial
 
 Cierra D1 del plan de regreso. `refresh_primera_venta_producto` cruzó su techo

@@ -396,6 +396,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             );
             if (error) throw error;
             if (data?.ok) {
+                // Restablecer es el ÚNICO camino para cambiar una contraseña (el
+                // autoservicio se quitó en v2.1030.0): queda quién y a quién.
+                // Nunca la contraseña.
+                useStaffStore.getState().appendAuditLog('CONTRASENA_RESTABLECIDA', String(emp.id), {
+                    usuario: emp.username,
+                });
                 setShowResetConfirm(false);
                 if (data.tempPassword) {
                     setCopiedPwd(false);

@@ -57,6 +57,8 @@ const fmtNum = (n) => formatQty(parseInt(n || 0));
 const fmtPct = (n) => `${parseFloat(n || 0).toFixed(1)}%`;
 
 const CANCELLED_ESTADOS = ['NULA', 'DTE INVALIDADO EN MH'];
+// Ver `isSearching` en TabVentas: por debajo de 3 el índice de texto no entra.
+const MIN_LETRAS_BUSQUEDA = 3;
 // Only these changelog campos are surfaced in the row indicator
 const RELEVANT_CAMPOS = new Set(['tipo_pago', 'recibido_mh']);
 const CAMPO_LABELS = { tipo_pago: 'Forma de pago', recibido_mh: 'Sello MH' };
@@ -427,7 +429,13 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
     const [fini, ffin] = monthRange.split('|');
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
-    const isSearching = searchTerm?.trim().length > 0;
+    // Buscar con 1–2 letras no filtra nada útil («ma» son 41,165 facturas en un
+    // año) y le cuesta a la base ~8 s: el índice de trigramas necesita 3 para
+    // entrar, así que `search_ventas_ids` barre el rango entero. Con menos de 3
+    // la lista sigue sin filtrar y un aviso dice cuánto falta.
+    const letrasBuscadas = searchTerm?.trim().length ?? 0;
+    const isSearching = letrasBuscadas >= MIN_LETRAS_BUSQUEDA;
+    const busquedaCorta = letrasBuscadas > 0 && !isSearching;
 
     const empMap = useMemo(() => {
         const m = new Map();
@@ -930,6 +938,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 (`ventas_no_producto`) lo resuelve el servidor; esto es la otra
                 mitad de la misma regla. */}
             {verCards && <AvisoSinProducto datos={sinProducto} contexto="El período que se muestra" />}
+
+            {busquedaCorta && (
+                <Notice variant="info" icon={Search} className="mb-3">
+                    Escribe al menos {MIN_LETRAS_BUSQUEDA} letras para buscar
+                </Notice>
+            )}
 
             <DataTable
                 columns={COLS_VENTAS}
@@ -2969,7 +2983,7 @@ export default function VentasView() {
     );
 
     const searchPlaceholder =
-        activeTab === 'ventas'     ? 'Buscar correlativo o cliente...' :
+        activeTab === 'ventas'     ? 'Buscar correlativo, cliente o producto...' :
         activeTab === 'vendedores' ? 'Buscar vendedor...' :
                                      'Buscar producto...';
 

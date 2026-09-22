@@ -14,7 +14,7 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
 
 ## A. Lo que hoy le falla a alguien
 
-### A1 ⬜ Buscar un producto en Ventas con rango de un año se cae
+### A1 ✅ Buscar un producto en Ventas con rango de un año se cae
 
 - **Medido:** `get_ventas_con_receta` + `get_ventas_receta_stats` → 500 por
   `statement timeout` (~28 s). 47 pares el 21-sep (10:15–15:30 SV), 16 el 19.
@@ -27,6 +27,12 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
 - **Corregir:** la función (🔒 migración) y/o el frontend si pide de más.
 - **Verificar después:** las 6 búsquedas reales bajo 2 s; 0 filas de
   diferencia contra el cuerpo viejo en rangos chicos; `gate:perf` la declara.
+- **Cerrado (v2.1025.0):** el planificador suponía 1,000 coincidencias y
+  barría el año por fecha. `= ANY (ARRAY(…))`: sin coincidencias 4,718 → 9.7 ms,
+  9 huellas idénticas antes/después (`20260922145014`). Por decisión del
+  usuario la búsqueda encuentra también el producto (`20260922145219`): las 6
+  del 21-sep dan 109/8/29/6/6/46 facturas en 5–22 ms. Mínimo de 3 letras en
+  pantalla (con 2, la búsqueda sola tarda ~8 s).
 
 ### A2 ⬜ Llamadas que llegan sin sesión (`permission denied` diario)
 

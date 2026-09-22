@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1025.0 — Buscar en Ventas encuentra el producto y ya no se cae con un año
+
+El 21-sep alguien buscó en Ventas, durante cinco horas y con el rango «Este
+año», EXFORGE HCT, CLOPERA, PREDIAL PLUS, MODUSI, IMOT y METGLITAL LE. Las 47
+búsquedas terminaron en error por `statement timeout` (~28 s), y aunque
+hubieran respondido, la respuesta era «Sin resultados»: la búsqueda miraba el
+número interno, el correlativo y el cliente, nunca el producto.
+
+**El timeout** (`20260922145014`). `si.id IN (SELECT … FROM search_ventas_ids(…))`
+hace que el planificador suponga 1,000 coincidencias —el ROWS por defecto de una
+función— y elija recorrer el año por fecha esperando llenar las 50 enseguida.
+Con pocas o ninguna coincidencia recorre las 192,554 facturas del año: 550 MB por
+llamada, 4.7 s en frío y ~28 s con el portal cargado. Pasado a
+`= ANY (ARRAY(SELECT …))`, la búsqueda corre una vez y se entra por la llave:
+sin coincidencias, **4,718 → 9.7 ms**; con 11,031 coincidencias, 594 → 618 ms
+(sin cambio). Las dos funciones —lista y encabezado— se movieron juntas, y sus
+resultados se compararon antes y después en 9 casos: huellas idénticas.
+
+**El producto** (`20260922145219`). `search_ventas_ids` suma una cuarta rama:
+las facturas que llevan un producto cuyo nombre tiene todas las palabras
+buscadas, con el mismo criterio que las otras tres. Las seis búsquedas del 21
+ahora encuentran 109, 8, 29, 6, 6 y 46 facturas en 5–22 ms. Peor caso medido,
+«tab» sobre un año: 63 mil facturas en 1.0 s.
+
+**Mínimo de 3 letras.** Con 1 o 2 el índice de texto no entra y la búsqueda
+sola tarda ~8 s («ma» son 41,165 facturas en un año, o sea nada útil). Ahora la
+lista sigue sin filtrar y se avisa cuántas letras faltan.
+
 ## v2.1024.2 — Un pedido cuya última diferencia se cierra por acuerdo ya no queda en parcial
 
 La otra mitad del #174. Su única diferencia (Salud 5) estaba resuelta y el

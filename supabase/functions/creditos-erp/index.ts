@@ -267,9 +267,13 @@ Deno.serve(async (req) => {
 
       // 3. Si era una corrección, se vuelve a abonar con los datos nuevos.
       let nuevo: Record<string, unknown> | null = null;
+      let montoNuevo = 0;
+      let formaNueva = "";
       if (que !== "ANULAR") {
         const monto = que === "MONTO" ? Number(meta.monto_nuevo) : Number(meta.monto_actual);
         const forma = que === "FORMA" ? String(meta.forma_nueva) : String(meta.forma_actual ?? "Efectivo");
+        montoNuevo = monto;
+        formaNueva = forma;
         const resp = await (await fetch(ABONO_URL, {
           method: "POST",
           headers: {
@@ -318,12 +322,53 @@ Deno.serve(async (req) => {
 
       /* El abono del portal se marca anulado —el trigger recalcula la fecha del
        * último abono— y, si hubo uno nuevo, se anota como otra fila. No se EDITA
-       * la vieja: la bitácora dice lo que pasó, no lo que hubiera querido. */
-      const { error: eAnular } = await supabase.from("creditos_abonos_portal")
+       * la vieja: la bitácora dice lo que pasó, no lo que hubiera querido.
+       *
+       * ⚠️ Hasta el 2026-09-22 esto sólo anulaba: el comentario ya prometía la
+       * fila nueva y el código nunca la escribía. La corrección del 19-sep
+       * (crédito 2365 de Salud 1, $19.40 de efectivo a transferencia) dejó el
+       * crédito pagado en la caja y, en el portal, un único abono ANULADO. Con
+       * una corrección de MONTO en efectivo el daño es de plata: el corte de ese
+       * día pierde el efectivo del esperado —`creditos_abonos_portal` es lo que
+       * lee `cobros_portal_en_efectivo`— y anuncia un sobrante que nadie hizo.
+       *
+       * La fila nueva copia de la vieja lo que no cambió, **incluida la fecha**:
+       * el cobro ocurrió ese día, con otro monto o por otra vía, y es ese corte
+       * el que lo tiene que contar. */
+      const { data: anulados, error: eAnular } = await supabase.from("creditos_abonos_portal")
         .update({ anulado_at: new Date().toISOString(), anulado_por: quien.id })
         .eq("branch_id", sala).eq("credito_erp", credito).is("anulado_at", null)
-        .eq("monto", Number(meta.monto_actual));
+        .eq("monto", Number(meta.monto_actual))
+        .select("pago_id, factura_erp, cliente, saldo_antes, abonado_por, created_at, fecha_documento, pos_proveedor, comprobante_url");
       if (eAnular) console.error("[creditos-erp] anulando el abono del portal:", eAnular.message);
+
+      if (nuevo) {
+        const viejo = (anulados ?? [])[0] as Record<string, unknown> | undefined;
+        const saldoAntes = viejo?.saldo_antes == null ? null : Number(viejo.saldo_antes);
+        const { error: eNuevo } = await supabase.from("creditos_abonos_portal").insert({
+          pago_id: viejo?.pago_id ?? null,
+          branch_id: sala,
+          credito_erp: credito,
+          factura_erp: viejo?.factura_erp ?? null,
+          cliente: String(viejo?.cliente ?? meta.cliente ?? ""),
+          monto: Number(montoNuevo.toFixed(2)),
+          forma: formaNueva,
+          // Lo mismo que se le mandó a la caja como `num_doc` al volver a abonar.
+          documento: String(meta.documento_nuevo ?? "") || null,
+          saldo_antes: saldoAntes,
+          saldo_despues: saldoAntes == null ? null : Number((saldoAntes - montoNuevo).toFixed(2)),
+          /* Quien COBRÓ, no quien firmó la corrección: el cobro sigue siendo de
+           * quien lo recibió del cliente. */
+          abonado_por: viejo?.abonado_por ?? sol.employee_id,
+          ...(viejo?.created_at ? { created_at: viejo.created_at } : {}),
+          fecha_documento: (meta.fecha_documento as string | null) || (viejo?.fecha_documento ?? null),
+          comprobante_url: (meta.comprobante_url as string | null) || (viejo?.comprobante_url ?? null),
+          lectura: meta.lectura ?? null,
+          pos_proveedor: (meta.pos as string | null) || (viejo?.pos_proveedor ?? null),
+          erp_abono_id: nuevo.id_abono_credito ? String(nuevo.id_abono_credito) : null,
+        });
+        if (eNuevo) console.error("[creditos-erp] anotando el abono corregido:", eNuevo.message);
+      }
 
       // Refrescar el espejo para que la pantalla no muestre el saldo viejo.
       try {

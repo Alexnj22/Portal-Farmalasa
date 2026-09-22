@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1025.2 — Corregir un abono anota el abono nuevo, no sólo anula el viejo
+
+Aprobar una corrección de MONTO o de FORMA borra el abono en la caja y lo
+vuelve a hacer con los datos nuevos. Del lado del portal, el comentario decía
+«se marca anulado y, si hubo uno nuevo, se anota como otra fila», pero el
+código sólo anulaba: el abono nuevo no quedaba en `creditos_abonos_portal`.
+
+Pasó una vez: la corrección del 19-sep (Salud 1, crédito 2365, $19.40 de
+efectivo a transferencia) dejó el crédito pagado en la caja y, en el portal,
+un único abono ANULADO. Esa vez no tocó el efectivo. Con una corrección de
+MONTO en efectivo sí: `cobros_portal_en_efectivo` lee esa tabla, así que el
+corte del día habría perdido el efectivo del esperado y anunciado un sobrante
+que nadie hizo.
+
+Ahora la anulación devuelve la fila vieja y el abono nuevo se anota copiando
+lo que no cambió —cliente, pago, quién cobró— **con la misma fecha**: el
+cobro ocurrió ese día y es ese corte el que lo tiene que contar. `creditos-erp`
+v27 (lo desplegado era idéntico al repo antes del cambio).
+
 ## v2.1025.1 — Cerrar sesión suelta de verdad los avisos del equipo
 
 En una computadora compartida, cerrar sesión tiene que soltar el aviso del

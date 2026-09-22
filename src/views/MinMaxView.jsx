@@ -3,6 +3,7 @@ import { BarChart2 } from 'lucide-react';
 import GlassViewLayout    from '../components/GlassViewLayout';
 import ViewTabBar         from '../components/common/ViewTabBar';
 import TabMinMax          from './productos/TabMinMax';
+import TabQuiebres        from './productos/TabQuiebres';
 import { useAuth }       from '../context/AuthContext';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { fetchStockConfigFull, fetchErpSucursalIdForBranchLocked } from '../data/stockParams';
@@ -14,6 +15,11 @@ import { fetchStockConfigFull, fetchErpSucursalIdForBranchLocked } from '../data
 // sigue en el registro es deuda que parece función.
 const ALL_MINMAX_TABS = [
     { key: 'sucursal', label: 'Sucursal' },
+    // «Agotados» (2026-09-22): lo que la sala no tiene y sí vende. Vive acá y no
+    // en Inventario porque Inventario muestra lo que HAY —un producto agotado no
+    // tiene fila— y porque la decisión que destapa (¿el Min/Max de esto es el
+    // correcto?) se toma en esta pantalla.
+    { key: 'agotados', label: 'Agotados' },
 ];
 
 const DEFAULT_CONFIG = {
@@ -83,8 +89,8 @@ export default function MinMaxView() {
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
             placeholder={
-            activeTab === 'solicitudes' ? 'Buscar solicitud…'
-                                        : 'Buscar producto en Min/Max…'
+            activeTab === 'agotados' ? 'Buscar producto agotado…'
+                                     : 'Buscar producto en Min/Max…'
         }
         />
     );
@@ -98,6 +104,9 @@ export default function MinMaxView() {
                     onConfigChange={setConfig}
                     lockedErpId={lockedErpId}
                 />
+            )}
+            {activeTab === 'agotados' && (
+                <TabQuiebres searchTerm={debouncedSearch} lockedErpId={lockedErpId} />
             )}
         </GlassViewLayout>
     );

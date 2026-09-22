@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1028.0 — Agotados: lo que la sala no tiene y sí vende
+
+Cuando un producto se agota, el cálculo de Min/Max lo lee como «no se vende»:
+divide lo vendido entre los días de la ventana, y los días sin producto cuentan
+como días sin demanda. Le baja el número, se pide menos, se vuelve a agotar.
+
+Medido el 22-sep sobre los 21 días de foto diaria (`inventory_daily` arrancó el
+1-sep), de 10,589 pares producto·sala con Min/Max:
+
+- **2,114 (20%)** tuvieron al menos un día sin existencia — parejo en las seis
+  salas (18–26%)
+- **331** estuvieron los 21 días en cero habiendo vendido en los últimos 90 días
+  (133 de ellos en Salud 5): demanda real sin nada que vender, invisible para
+  todas las pantallas, porque el inventario muestra lo que HAY
+- de los que vendieron con días en cero, venden **1.68× más rápido** de lo que
+  dice su número
+
+Esta versión es la Fase 1 —mostrar y proteger—, que no cambia ningún cálculo:
+
+**Pestaña «Agotados» en Min/Max** (`get_quiebres_sala`, nueva): por sala, qué
+está faltando, cuántos días de los mirados estuvo en cero, cuándo se vendió por
+última vez, su Min/Max y si ya reingresó. Sólo lo que vendió en los últimos 90
+días: un descontinuado también está en cero, y mezclarlos vuelve la lista ruido.
+Hereda el permiso de la pestaña «Sucursal» — no se abre a nadie nuevo.
+
+**La guarda del auto-aplicar se amplía**: frenaba una BAJA automática sólo si la
+sala estaba vacía EN ESE INSTANTE, así que un producto que se agotó y reingresó
+ayer quedaba sin protección — y son **1,304 de los 2,114**. Ahora frena también
+si tuvo días en cero dentro de la ventana, y esos casos van a revisión en vez de
+aplicarse solos.
+
+De paso, la foto diaria tenía sólo su clave primaria y se consulta por sala:
+índice `(sala, producto, fecha) INCLUDE (unidades)` más un VACUUM. La consulta
+de la pestaña pasó de **89,716 a 9,141 bloques** por llamada (146 → 85 ms).
+
+Queda medido y anotado para diciembre (Fase 2, cuando haya 90 días de foto):
+contar en el denominador sólo los días con existencia, con piso de 30 días y
+tope al factor. Sin esos topes explota — un producto con un solo día de
+existencia y una venta grande proponía un máximo de 840 contra 33.
+
 ## v2.1027.1 — Pendiente MH y anuladas de puntos: dos índices parciales
 
 Dos consultas recorrían las 373,856 facturas para encontrar unas pocas filas o

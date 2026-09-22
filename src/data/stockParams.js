@@ -234,3 +234,25 @@ export function fetchProductCostHistory(erpProductId) {
         .order('fecha', { ascending: false })
         .limit(6);
 }
+
+/**
+ * Lo que está AGOTADO y sí vende, en una sala.
+ *
+ * Sale de `inventory_daily`, la foto diaria del inventario: un día en cero es
+ * la AUSENCIA de la fila (la foto sólo guarda lo que hay), así que los días sin
+ * existencia se cuentan restando los días fotografiados menos los días en que
+ * el producto aparece. Por eso la respuesta trae `dias_foto`: con 21 días de
+ * historia, «7 días sin existencia» significa otra cosa que con 180, y la
+ * pantalla tiene que poder decirlo.
+ *
+ * Sólo lo que vendió en los últimos 90 días: un descontinuado también está en
+ * cero, y mezclarlos convierte la lista en ruido que nadie mira.
+ */
+export async function fetchQuiebresSala(erpSucursalId, dias = 30) {
+    const { data, error } = await supabase.rpc('get_quiebres_sala', {
+        p_erp_sucursal_id: erpSucursalId,
+        p_dias: dias,
+    });
+    if (error) return { data: null, error };
+    return { data: { ...data, filas: data?.filas ?? [] }, error: null };
+}

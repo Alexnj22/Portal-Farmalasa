@@ -635,10 +635,15 @@ export const AREAS = [
         id: 'minmax',
         nombre: 'Min · Máx',
         resumen: 'El cálculo de mínimo y máximo por producto y sala: velocidad, clasificación ABC/XYZ, borradores, publicación y ajuste a mano.',
-        modulos: ['minmax', 'minmax_tab_sucursal', 'minmax_ver_costos', 'minmax_descargar'],
+        modulos: ['minmax', 'minmax_tab_sucursal', 'minmax_tab_agotados',
+                  'minmax_ver_costos', 'minmax_descargar'],
         rutas: ['/minmax'],
         archivos: [
             'src/views/MinMaxView.jsx', 'src/views/productos/TabMinMax.jsx',
+            // «Agotados»: lo que la sala no tiene y sí vende. Vive en esta área
+            // y no en `inventario` por lo mismo que `inventory_daily` — lo que
+            // mira es la entrada del cálculo, no la existencia de hoy.
+            'src/views/productos/TabQuiebres.jsx',
             'src/views/productos/tabminmax/',
             'src/data/stockParams.js', 'src/data/minmaxRequests.js',
         ],

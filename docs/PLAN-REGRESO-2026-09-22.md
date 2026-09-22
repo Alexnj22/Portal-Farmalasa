@@ -164,16 +164,17 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   de concluir.
 - **Estado 22-sep:** `get_product_sales_total` y `get_ventas_con_receta` ya no
   aparecen (A1 + estadística reseteada). Quedan:
-  - `get_product_sales_agg_jsonb` — **reescritura preparada y NO aplicada**
-    (el usuario la dejó para después): `get_product_sales_agg` leía dos veces
-    los renglones del mes en curso (`pres_live` y `last_sale_live`); un CTE
-    `lineas_mes AS MATERIALIZED` los lee una vez. Idéntica en 6/6 casos (md5),
-    −30% en el caso por defecto, −23% en un año. El SQL está en el historial de
-    `docs/PLAN-REGRESO-2026-09-22-borradores/productos_leer_el_mes_una_vez.sql`;
-    se rearma sobre la definición viva de
-    `20260918015225_get_product_sales_agg_entra_al_cache_de_planes.sql`.
-    Ojo al fijar el techo: la parte del mes en curso crece con el DÍA del mes
-    (el techo actual se midió el 4-sep, con 4 días de datos).
+  - `get_product_sales_agg_jsonb` — ✅ **aplicada en F5** (v2.1026.6, migración
+    `20260922164443`): los renglones del mes en curso se leen una vez. 12/12
+    idénticas como usuario; −32% en el caso por defecto (187k → 128k bloques),
+    −21% en un año. **Sigue sobre el techo en el caso por defecto** (998 MB
+    contra 914): lo que queda es trabajo real —54k bloques los renglones del mes
+    (13,399 facturas por índice cubridor), 29k la última venta histórica por
+    producto, 28k emparejar presentaciones— y el techo se midió el 4-sep con 4
+    días de mes. Estadística reseteada el 22-sep 16:45 UTC: **mañana mirar el
+    promedio con tráfico real** (las cuentas de sala leen bastante menos) antes
+    de decidir. Si no alcanza, la salida estructural es un rollup del mes en
+    curso, y eso es otra decisión (se resincroniza cada hora).
   - `refresh_primera_venta_producto` 388 vs 359 MB — rollup diario, deuda
     declarada; crece con la historia.
   - `donde-hay-un-producto` 30.5 vs 30 ms — ✅ **resuelto en F4** (v2.1026.4):
@@ -282,7 +283,7 @@ Aprobado por el usuario el 22-sep («hagámoslo»).
 | F2 | Aprobar traslado: `v_inventario_disponible` calculada una vez | 810 MB, 255 ms | ✅ v2.1026.3 · **7 MB, 36 ms**, 120/120 idénticas; desempate por sala en `alternativas` |
 | F3 | Cola de impresión: índice parcial `WHERE estado='IMPRIMIENDO'` | 1.2 TB/semana | ✅ v2.1026.5 · **206 → 5 bloques** por llamada; vigilado en `gate:perf` C |
 | F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ✅ v2.1026.4 · **2.3 ms**, idéntica en 8 cortes simulados (0 a 1,225 filas en vuelo) |
-| F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ⬜ |
+| F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ✅ v2.1026.6 · −32% (1.46 GB → 998 MB), 12/12 idénticas; techo del gate pendiente (ver D1) |
 | F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ⬜ tabla caliente: `CONCURRENTLY` y fuera de horario |
 | F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | ⬜ diseñar antes de tocar |
 | F8 | Inicio · faltantes (629 GB/sem) y top productos (197 GB/sem) | — | ⬜ medir con la técnica de F2 |

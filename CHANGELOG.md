@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1026.6 — Ventas › Productos: el mes en curso se lee una vez
+
+`get_product_sales_agg` —la pestaña Productos de Ventas— leía dos veces los
+renglones del mes en curso: para las ventas del período y para la última venta
+por sala. El rollup mensual no cubre el mes en curso, así que ese mes siempre se
+lee en vivo y su costo crece con el día.
+
+Migración `20260922164443_ventas_productos_lee_el_mes_una_vez`: un CTE
+`lineas_mes AS MATERIALIZED` los lee una vez. Rearmada sobre la definición viva
+(md5 del cuerpo idéntico al de `20260918015225`), y lo aplicado es byte a byte
+lo probado.
+
+Seis casos × dos cuentas, como usuario: **12/12 idénticas**. Bloques por llamada
+(alcance total): mes todas las salas 187k → 128k (**−32%**, el caso con que abre
+la vista), un año −21%, mes de una sala −11%, rango que cruza meses −13%, agosto
+sin cambio. El reloj casi no se mueve (387 → 349 ms en el caso por defecto).
+
+**Queda sobre su techo en `gate:perf`** (998 MB contra 914, medido el 4-sep con
+4 días de mes): lo que resta es trabajo real, anotado en el plan (D1) para
+mirarlo mañana con tráfico real.
+
 ## v2.1026.5 — Cola de impresión: índice para lo que quedó imprimiendo
 
 `reclamar_impresion` corre ~7,400 veces por hora —el agente de cada caja

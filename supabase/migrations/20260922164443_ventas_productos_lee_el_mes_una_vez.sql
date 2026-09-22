@@ -1,15 +1,22 @@
--- BORRADOR — NO APLICADO. Preparado el 2026-09-22 (plan D1), el usuario lo dejó
--- para después. Al retomarlo: rearmarlo sobre la definición VIVA
--- (`pg_get_functiondef`), volver a comparar md5 en los 6 casos contra la
--- función actual y medir como `authenticated`, no sólo como `postgres`.
+-- F5 · Ventas › Productos: los renglones del mes en curso se leen UNA vez.
 --
--- `get_product_sales_agg` leía dos veces los renglones del mes en curso: una
--- para las ventas del período (`pres_live`) y otra para la última venta por
--- sala (`last_sale_live`). El rollup mensual no cubre el mes en curso, así que
--- ese mes siempre se lee en vivo y su costo crece con el día del mes.
--- Medido el 2026-09-22 (mes todas las salas / año / mes Salud 1 / con búsqueda
--- / agosto / rango parcial): idéntica 6/6 por md5; bloques −30 / −23 / −10 /
--- −16 / 0 / −5 %.
+-- `get_product_sales_agg` los leía dos veces: para las ventas del período
+-- (`pres_live`) y para la última venta por sala (`last_sale_live`). El rollup
+-- mensual no cubre el mes en curso, así que ese mes siempre se lee en vivo y su
+-- costo crece con el día del mes. Ahora `lineas_mes AS MATERIALIZED` lo lee una
+-- vez y los dos CTE salen de ahí. Nada más cambia.
+--
+-- Rearmado sobre la definición viva (md5 del cuerpo = el de
+-- 20260918015225_get_product_sales_agg_entra_al_cache_de_planes). Comprobado en
+-- pg_temp el 2026-09-22 COMO USUARIO, con la cuenta de alcance total y la de
+-- Salud 1, en seis casos (mes todas las salas, un año, mes de una sala, con
+-- búsqueda, agosto, rango que cruza meses): 12/12 idénticas por md5.
+-- Bloques por llamada, alcance total:
+--   mes todas las salas  187,365 → 127,684  (−32%, el caso con que abre la vista)
+--   un año               267,560 → 211,623  (−21%)
+--   mes de una sala      118,079 → 105,499  (−11%)
+--   cruza meses          212,092 → 185,408  (−13%)
+--   agosto               145,707 → 145,289  (sin cambio: no usa el mes en curso para ventas)
 SET lock_timeout = '5s';
 
 CREATE OR REPLACE FUNCTION public.get_product_sales_agg(

@@ -13,6 +13,58 @@ romperlo, dime: esto está mal, debería ser de esta forma»*.
 > fila—. **D1 sigue abierto tal cual**: `cotizacion_items_write` es `FOR ALL` y no
 > pregunta nada. D6 —el resto de las 83— es el grueso de las 70 que quedan.
 
+> **Remedido y re-decidido el 2026-09-22.** Regla del usuario, que manda sobre
+> todo lo de abajo: *«cada uno debe tener acceso solo a lo suyo, sin nada más»* —
+> y la condición: *«confirma que no quite información o acceso»*.
+>
+> 555 policies en `public`; **73** no preguntan nada, pero no son 73 problemas:
+>
+> | grupo | cuántas | qué se hace |
+> |---|---:|---|
+> | catálogos que toda pantalla necesita (sucursales, cargos, permisos, feriados, productos, presentaciones, laboratorios, faltas, encuestas…) | ~30 | **nada** — se declaran intencionales |
+> | protegidas por su tabla madre vía `EXISTS` (bolsas, solicitudes, cotizaciones) | ~6 | nada; D1 se revisa aparte |
+> | **datos que no son de todos** | ~35 | se cierran, en dos fases |
+>
+> **Fase 1** — tablas chicas y frías, con pocos lectores: historiales de cambios
+> (precios, productos, facturas, MIN·MAX), resoluciones de facturación,
+> `espejo_conflictos` (datos de clientes), ventas perdidas, estadísticas
+> mensuales, reglas de reclamo, WFM, `inventory_sync_log`, metas.
+>
+> **Fase 2** — las grandes y calientes: `sales_invoice_items` (594k),
+> `inventory`, `product_precios` (costos), `product_stock_params`,
+> `sales_daily_stats`, `product_sales_*`. Las leen hasta 22 funciones INVOKER:
+> el acceso tiene que ser la unión de todos esos módulos. Staging primero y
+> ventana 06:00–11:59 UTC (tablas calientes).
+>
+> **El método, por tabla, para no quitarle a nadie lo que usa:**
+> 1. todos los lectores: `.from()` directo, embebidos en otro `select`,
+>    funciones INVOKER y vistas `security_invoker`;
+> 2. la policy nueva = `can_view` en la unión de los módulos que abren esas
+>    pantallas, con el alcance de sala si la pantalla lo recorta;
+> 3. medir filas visibles por cargo antes y después en una transacción con
+>    rollback: **igual** para todo cargo con alguno de esos módulos, **0** para
+>    los demás. Si un cargo que usa la pantalla pierde una fila, no se aplica.
+
+> **Tanda 1 aplicada el 2026-09-22** (`20260922231032`, v2.1034.0): 24 tablas.
+> Cinco sin ningún lector desde el navegador quedan cerradas
+> (`espejo_conflictos`, `purchase_claim_lines`, `purchase_claim_rules`,
+> `wfm_snapshots`, `sales_alert_log`); las otras 19 pasan a `can_view` del
+> módulo de las pantallas que las leen. Medido por cargo antes, simulado y
+> después: 288 combinaciones tabla·cargo, **0 diferencias** entre lo simulado y lo
+> real, **ningún cargo perdió filas a medias**, y los 89 casos que pasaron a 0
+> son cargos sin permiso para esa pantalla (cruzado contra `role_permissions`).
+>
+> **Siguiente:** el recorte por SALA de las que la pantalla ya recorta
+> (`sales_invoice_changelog`, `ventas_monthly_stats` con su fila `-1`,
+> `product_stock_params_history`, `metas_sucursal`); `inventory_sync_log`
+> (decidir qué hace el indicador de sincronización del menú); y la Fase 2.
+>
+> ⚠️ **Lección de medición:** medir con el DDL aplicado DENTRO de una
+> transacción mantiene tomadas las tablas con ACCESS EXCLUSIVE mientras dura; una
+> corrida tardó >5 min (sin 5xx, pero es exactamente el patrón del outage del
+> 8-jul). Cuando la policy nueva no depende de la fila —todo o nada según el
+> permiso—, el «después» se calcula evaluando el permiso por cargo, sin DDL.
+
 ## De dónde salen
 
 De las **252 policies** de `public`, **83 no preguntaban nada** — ni permiso ni

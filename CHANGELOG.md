@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1034.0 — Cada cargo lee sólo las tablas de sus pantallas (tanda 1)
+
+Regla del usuario: «cada uno debe tener acceso solo a lo suyo, sin nada más»,
+sin quitarle a nadie lo que usa. 24 tablas que cualquier cuenta podía leer
+(historiales de precios, productos, facturas y MIN·MAX; resoluciones de
+facturación; datos de fichas de clientes; ventas perdidas; metas; reglas de
+despacho…) pasan a leerse sólo con el permiso de la pantalla que las usa, y cinco
+que ninguna pantalla lee quedan cerradas (`20260922231032`).
+
+Cada tabla se trazó hasta sus pantallas (lecturas directas, embebidas, funciones
+y vistas). Medido por cargo: 0 diferencias entre lo simulado y lo aplicado,
+ningún cargo perdió filas de una pantalla que puede abrir. Detalle y lo que
+sigue en `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`.
+
 ## v2.1033.4 — Un producto inactivo ya no entra al pedido
 
 Regla del usuario: «si están ocultos, inactivos, no debe de afectar».

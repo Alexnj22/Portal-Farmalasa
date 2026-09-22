@@ -68,8 +68,8 @@
       "motivo": "Escritura del sync de precios, con el ON CONFLICT ... WHERE IS DISTINCT FROM. Lee mucho porque compara el lote contra lo guardado — que es exactamente lo que evita reescribir filas que no cambiaron, y el churn de WAL que costó los 935M de updates sobre inventory."
     },
     "ventas_para_puntos": {
-      "bloques": 50000,
-      "motivo": "AUDITADA el 2026-09-02: NO es un defecto. 39,821 bloques / 51 ms, y el plan es correcto de punta a punta — índices en todos los nodos, ningún barrido, ninguna estimación reventada. El costo son 8,222 sondeos por clave primaria: para cada una de las 4,111 facturas de la ventana de 7 días pregunta a `customers` si el cliente acumula y a `puntos_enviados` si ya se envió. De las 4,111 quedan 181 candidatas y hoy devuelve 0. O sea que el costo NO está en cómo está escrita sino en la CADENCIA: rehace la ventana de 7 días cada minuto. Bajarlo es una decisión sobre el comportamiento (acortar la ventana pierde la red que atrapa facturas que llegan tarde), no un arreglo. 236 MB de los 311 se van en esos sondeos."
+      "bloques": 20000,
+      "motivo": "AUDITADA el 2026-09-02 (el plan es correcto: el costo eran 8,222 sondeos por clave primaria sobre la ventana de 7 días) y CORREGIDA el 2026-09-22 (migración 20260922170243, F7 del plan de regreso). La auditoría había dicho que bajarlo era una decisión sobre el comportamiento, y el usuario la tomó: cada minuto se miran 2 días y sólo facturas SIN fila en la bitácora (`p_reevaluar = false`), y en el minuto 0 de cada hora los 7 días con las `sin_enviar`. Medido en la corrida real: 46,149 → 10,796 bloques por minuto; la corrida completa de cada hora sigue costando ~46,000, así que el promedio queda en ~11,400 y el techo lleva margen para esa mezcla."
     },
     "get_product_drill_summary": {
       "bloques": 95000,

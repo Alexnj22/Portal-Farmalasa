@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1027.0 — Puntos: la corrida de cada minuto deja de rehacer la semana
+
+`sync-puntos` corre cada minuto —porque el cliente puede presentar el ticket al
+rato de comprar— y cada corrida leía **637 MB para mandar, casi siempre, cero
+ventas**: `ventas_para_puntos` re-evaluaba las ~443 facturas «sin enviar» de los
+últimos 7 días, que casi nunca cambian, y preguntaba por las 4,119 facturas de
+la semana; `puntos_marcar_sin_enviar` repetía el mismo barrido. Era el proceso
+más caro de la base: 4.6 TB por semana entre sus cuatro piezas.
+
+Decisión del usuario el 22-sep: **cada minuto, 2 días y sólo facturas nuevas; en
+el minuto 0 de cada hora, los 7 días y las «sin enviar»**. Una venta del día
+sigue saliendo al minuto; una que entra tarde, o una que se vuelve elegible
+después de descartarse, sale en ≤1 h en vez de ≤1 min.
+
+Migraciones `20260922170243` y `20260922170412`, más el despliegue de
+`sync-puntos`:
+
+- `ventas_para_puntos` gana `p_reevaluar` (default `true` = lo de siempre).
+  Comprobado en pg_temp con seis ventanas y márgenes: **6/6 idénticas** con
+  `true`, y con `false` sólo deja afuera facturas que ya tienen fila «sin
+  enviar» (0 excepciones). **46,149 → 10,796 bloques** por corrida, medido en
+  producción.
+- `puntos_marcar_sin_enviar`: 20,501 → 12,158 bloques, y ya no sella una factura
+  que todavía no tiene renglones. `sync-dte-sales` escribe la factura y sus
+  renglones en dos sentencias, así que existe una ventana en la que se ve vacía;
+  antes eso lo corregía la re-evaluación de cada minuto y ahora la esperaría una
+  hora. Se decide cuando tiene renglones, o a los 15 minutos (hay 4 facturas en
+  30 días que nunca los tuvieron).
+- `puntos_anotar_aplicado` cruza los lotes grandes con una sola lectura de la
+  bitácora en vez de buscar fila por fila: el barrido de «acumulado» (23k filas
+  cada 10 min) pasa de 92k bloques a 8k por lote. Con pocas filas sigue buscando
+  por índice — medido, el corte está en ~2,000 filas.
+
+Queda `puntos_ventas_anuladas` (13,113 bloques por minuto): recorre el índice de
+las 373k facturas para hallar las 1,066 no finalizadas. Su índice parcial va
+mañana, en la ventana sin syncs, junto con el de Pendiente MH.
+
 ## v2.1026.7 — Ventas › Productos: el mes se lee por rango de factura
 
 Después de v2.1026.6 los renglones del mes en curso se leían una vez, pero

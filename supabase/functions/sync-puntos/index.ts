@@ -55,11 +55,22 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Cuántos días mira hacia atrás por defecto. NO es «cuántos días de trabajo»:
-// la bitácora ya descarta lo enviado, así que en régimen la ventana de siete
-// días cuesta casi lo mismo que la de uno — lo que compra es que una factura
-// que entre tarde al portal igual se mande.
+// Cuántos días mira hacia atrás. Dos ventanas, y la diferencia importa:
+//
+//   · CADA MINUTO, 2 días y sólo facturas sin fila en la bitácora. Es lo que
+//     urge —el cliente puede presentar el ticket al rato de comprar— y con dos
+//     días cubre la fecha de El Salvador aunque en UTC ya sea el día siguiente.
+//   · En el MINUTO 0 de cada hora, 7 días y además las `sin_enviar`. Es la red:
+//     atrapa una factura que entra tarde al portal y una que se vuelve elegible
+//     después de haberse descartado.
+//
+// Hasta el 2026-09-22 las dos cosas se hacían cada minuto, y así la corrida
+// leía 360 MB para mandar, casi siempre, cero ventas: re-evaluaba ~440 facturas
+// `sin_enviar` que no cambian y preguntaba por las 4,100 de la semana. Decisión
+// del usuario: una venta tardía sale en ≤1 h en vez de ≤1 min. Medido: 46k → 9k
+// bloques por corrida de minuto.
 const DIAS_ATRAS = 7;
+const DIAS_CADA_MINUTO = 2;
 
 // Filas por sentencia. Un INSERT multi-fila de 500 entra cómodo en el paquete
 // de MySQL y hace que un fallo cueste como mucho 500 facturas.
@@ -96,9 +107,13 @@ Deno.serve(async (req) => {
   try {
     const body   = await req.json().catch(() => ({}));
     const hoy    = new Date();
+    // La corrida completa es la del minuto 0, o una pedida a mano (`completa`,
+    // o cualquier `desde` explícito: un backfill siempre re-evalúa todo).
+    const completa = body?.completa === true || body?.desde != null || hoy.getMinutes() === 0;
     const hasta  = body?.hasta ?? hoy.toISOString().slice(0, 10);
     const desde  = body?.desde ??
-      new Date(hoy.getTime() - DIAS_ATRAS * 86_400_000).toISOString().slice(0, 10);
+      new Date(hoy.getTime() - (completa ? DIAS_ATRAS : DIAS_CADA_MINUTO) * 86_400_000)
+        .toISOString().slice(0, 10);
     const margen = body?.margen ?? 0.02;
     const tope   = body?.tope   ?? 5000;
     // `simular` no escribe una línea y dice qué haría. La primera corrida y
@@ -226,7 +241,7 @@ Deno.serve(async (req) => {
 
     // ── 1. Lo que hay que mandar ────────────────────────────────────────────
     const { data: pendientes, error: e1 } = await supabase.rpc('ventas_para_puntos', {
-      p_desde: desde, p_hasta: hasta, p_margen: margen, p_tope: tope,
+      p_desde: desde, p_hasta: hasta, p_margen: margen, p_tope: tope, p_reevaluar: completa,
     });
     // NUNCA ignorar el error de un query: sin esto la lista queda vacía y la
     // corrida informa «0 enviadas» como si no hubiera nada que hacer.
@@ -316,6 +331,11 @@ Deno.serve(async (req) => {
     // traiga 1 cambio o 100, y un ticket que se presenta en el mostrador no
     // necesita verse en el portal en menos de eso. Los otros nueve minutos la
     // corrida sólo manda ventas nuevas, que es lo que sí urge.
+    //
+    // En tandas de 12,000 y no de 5,000: desde un lote de ~2,000 la función
+    // cruza con UNA lectura de la bitácora (~8k bloques) en vez de buscar fila
+    // por fila (4 bloques cada una), así que el costo es por tanda y no por
+    // fila. 12,000 filas son ~540 kB de JSON.
     let refrescadas = 0;
     const tocaBarrido = simular ? false : (new Date().getMinutes() % 10 === 0 || body?.refrescar === true);
     if (tocaBarrido) {
@@ -325,9 +345,9 @@ Deno.serve(async (req) => {
       const lote = (cobradas ?? []).map((r: any) => ({
         sucursal: r.sucursal, id: String(r.id), aplicado: 1,
       }));
-      for (let i = 0; i < lote.length; i += 5000) {
+      for (let i = 0; i < lote.length; i += 12_000) {
         const { data, error } = await supabase.rpc('puntos_anotar_aplicado', {
-          p_filas: lote.slice(i, i + 5000),
+          p_filas: lote.slice(i, i + 12_000),
         });
         if (error) { fallidas.push(`refrescar ${i}: ${error.message}`); continue; }
         refrescadas += Number(data ?? 0);
@@ -638,7 +658,7 @@ Deno.serve(async (req) => {
     return json({
       ok: fallidas.length === 0,
       simulado: simular,
-      ventana: { desde, hasta },
+      ventana: { desde, hasta, completa },
       candidatas: filas.length,
       enviadas,
       sin_enviar_marcadas: sinEnviar,

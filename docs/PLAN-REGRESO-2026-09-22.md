@@ -283,7 +283,7 @@ Aprobado por el usuario el 22-sep («hagámoslo»).
 | F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ✅ v2.1026.4 · **2.3 ms**, idéntica en 8 cortes simulados (0 a 1,225 filas en vuelo) |
 | F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ✅ v2.1026.6 + v2.1026.7 · **1.46 GB → 670 MB** con alcance total (sala sin cambio), 12/12 idénticas en cada paso |
 | F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ⏸ **preparado** para el 23-sep 06:00–11:59 UTC (tabla caliente, sin syncs): `borradores/pendiente_mh_indice_sin_sello.sql`. Hoy con la cola VACÍA lee 104k bloques y 915 ms para no devolver nada. Probado en staging |
-| F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | 📐 **diseño abajo, espera OK** |
+| F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | ✅ v2.1027.0 · aprobadas las tres piezas; **46,149 → 10,796** bloques por minuto. Falta el índice de anuladas (va con F6, mañana) |
 | F8 | Inicio · faltantes (629 GB/sem) y top productos (197 GB/sem) | — | ✅ medido, **sin cambio**: ver abajo |
 
 Hallazgos que explican F1 y F2, para no redescubrirlos:
@@ -326,6 +326,16 @@ Hallazgos que explican F1 y F2, para no redescubrirlos:
   Integridad: (2) y (3) no cambian resultados; (1) no cambia QUÉ se manda, sólo
   CUÁNDO en los casos tardíos — se verifica corriendo la versión nueva en
   modo `simular` contra la vieja sobre la misma ventana.
+
+  **Aplicado el 22-sep (v2.1027.0)**, con las tres piezas aprobadas:
+  `ventas_para_puntos` 46,149 → 10,796 bloques por minuto (6/6 idénticas con
+  `p_reevaluar = true`), `puntos_marcar_sin_enviar` 20,501 → 12,158, el barrido
+  de «acumulado» 92k → 8k por lote. Y una guarda que el diseño no tenía: una
+  factura sin renglones NO se sella como «sin enviar» —`sync-dte-sales` la
+  escribe en dos sentencias y hay una ventana en la que se ve vacía—, porque con
+  la re-evaluación por hora esa factura habría esperado hasta una hora.
+  Pendiente: el índice parcial de `puntos_ventas_anuladas` (13,113 bloques por
+  minuto), que va mañana con F6.
 - **F8, medido el 22-sep — ninguna de las dos se toca:**
   - `get_faltantes_con_stock_en_otra_sala`: la técnica de F2 (la vista entera
     una vez) la EMPEORA —16–47k bloques y 39–98 ms hoy, 53–60k y 131–183 ms

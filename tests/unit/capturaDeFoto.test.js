@@ -362,7 +362,12 @@ describe('la foto del teléfono no se vuelve a preparar', () => {
     });
 
     it('y eso salta la preparación automática y el editor', () => {
-        expect(field).toMatch(/if \(yaPreparado\) \{ onChange\?\.\(archivo\); return; \}/);
+        // Y la marca SIGUE viaje hasta quien recibe (2a88fdda, 2026-09-03).
+        // Saltearse el editor propio no alcanzaba: tres pantallas apagan el de
+        // acá (`conEditor={false}`) para abrir el suyo, y con un `onChange`
+        // igual al de un archivo recién elegido lo abrían sobre la foto que ya
+        // se había cuadrado en el teléfono.
+        expect(field).toMatch(/if \(yaPreparado\) \{ onChange\?\.\(archivo, \{ yaPreparado: true \}\); return; \}/);
         // Antes que la rama de las imágenes: si quedara después, la prepararía
         // igual y la marca no serviría de nada.
         expect(field.indexOf('if (yaPreparado)'))

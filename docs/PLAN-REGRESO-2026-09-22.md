@@ -255,11 +255,12 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 - **E4 ⬜** `gate:receta`: 47 productos sin principio activo y 137 renglones
   de venta genéricos — deuda de catálogo, se reporta con la lista.
 - **E5 ⬜** Auditoría: «Promociones» y «Protección de datos» en 0%.
-- **E6 ⬜** Pruebas unitarias en rojo en `main`: 16 en 8 archivos
-  (`ajusteAMano` 5, `bitacorasLogica` 4, `bitacoraDeAcciones` 2,
-  `bandejaYCatalogosDeSala`, `capasDeLecturaYMarcado`, `capturaDeFoto`,
-  `decisionDiferencia`, `registroDePermisos`). Una prueba roja tapa a las que
-  vienen detrás (así se escondió el defecto de la foto del 17-sep).
+- **E6 ✅** Pruebas unitarias en rojo en `main`: eran 16 en 8 archivos, las 16
+  desactualizadas A PROPÓSITO (cada una tiene el commit que cambió la regla:
+  e25fc1b3, 1cf21e39, 74176679, 40b39a3f, 72a85ddd, 2a88fdda, 582aea69).
+  Ninguna regresión. Actualizadas conservando lo que cada una vigila, y dos
+  quedaron más estrictas (el cargo de supervisión usa el rango real; las rutas
+  compartidas deben estar declaradas con su motivo). Suite completa: 2,704/2,704.
 
 ---
 

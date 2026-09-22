@@ -58,9 +58,19 @@ describe('la campana', () => {
     });
 
     it('borrar por antigüedad usa un corte, no un borrado sin filtro', () => {
+        // Y desde el 2026-09-04 (72a85ddd) «borrar» ya no es un DELETE: escribe
+        // `deleted_at` y el aviso queda en la papelera hasta la purga de 90
+        // días. El DELETE real no dejaba rastro ni forma de volver a verlo, y
+        // además se llevaba la marca de «ya avisé» de cuatro edge functions,
+        // que volvían a mandar el mismo aviso. La policy de DELETE ya no
+        // existe, así que volver a `.delete()` fallaría — en silencio.
         deleteNotificationsBefore('2026-05-01T00:00:00Z');
-        expect(espia.uso('delete')).toBe(true);
+        expect(espia.uso('delete')).toBe(false);
+        expect(espia.primero('update')[0]).toEqual({ deleted_at: expect.any(String) });
         expect(espia.primero('lte')).toEqual(['created_at', '2026-05-01T00:00:00Z']);
+        // Lo que ya estaba en la papelera no se vuelve a tirar: le pisaría la
+        // fecha y lo subiría al tope como si se acabara de borrar.
+        expect(espia.primero('is')).toEqual(['deleted_at', null]);
     });
 
     it('borrar seleccionadas siempre lleva la lista de ids', () => {

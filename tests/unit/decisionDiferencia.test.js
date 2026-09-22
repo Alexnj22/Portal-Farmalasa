@@ -51,19 +51,28 @@ describe('turnoDe', () => {
     });
 });
 
+// Hasta el 2026-08-28 esto recibía `employees.system_role` y comparaba contra
+// una lista de tres valores. Desde 40b39a3f recibe el RANGO del cargo
+// (`user.rango`), igual que la base: `auth_es_supervision()` pasó a
+// `rango_de_empleado(e.id) >= 3` en la migración 20260828203752. La lista vieja
+// decía `SUPERVISOR` del Gerente General y `ADMIN` de Talento Humano, o sea el
+// organigrama al revés; la regla que se ancla es que cliente y base contesten
+// lo mismo, y hoy lo mismo es el escalón.
 describe('esCargoDeSupervision', () => {
-    it('reconoce los mismos tres cargos que la base', () => {
-        expect(esCargoDeSupervision('SUPERVISOR')).toBe(true);
-        expect(esCargoDeSupervision('ADMIN')).toBe(true);
-        expect(esCargoDeSupervision('SUPERADMIN')).toBe(true);
+    it('reconoce el mismo escalón que la base: supervisión para arriba', () => {
+        expect(esCargoDeSupervision(3)).toBe(true);   // supervisión
+        expect(esCargoDeSupervision(4)).toBe(true);   // dirección
     });
 
     it('y no confunde un alcance con un cargo', () => {
         // Bodega tiene alcance «todas las salas» sobre Pedidos y NO es
-        // supervisión: confundirlos fue el hueco del 2026-08-17.
-        expect(esCargoDeSupervision('EMPLEADO')).toBe(false);
-        expect(esCargoDeSupervision('JEFE')).toBe(false);
+        // supervisión: confundirlos fue el hueco del 2026-08-17. Una jefatura
+        // —rango 2, la de Bodega incluida— se queda debajo de la línea.
+        expect(esCargoDeSupervision(2)).toBe(false);
+        expect(esCargoDeSupervision(1)).toBe(false);
+        expect(esCargoDeSupervision(0)).toBe(false);
         expect(esCargoDeSupervision(undefined)).toBe(false);
+        expect(esCargoDeSupervision(null)).toBe(false);
     });
 });
 

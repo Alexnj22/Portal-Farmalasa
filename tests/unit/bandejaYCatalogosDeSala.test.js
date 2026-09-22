@@ -17,7 +17,7 @@ const espia = crearEspia();
 vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchApprovalRequestsList, fetchEmployeeApprovalRequestsDetail, fetchEmployeeUnavailable,
-        fetchBranchAdmins } = await import('../../src/data/requests');
+        fetchBranchAdmins, RANGO } = await import('../../src/data/requests');
 const { fetchBranchDocuments, fetchActiveKioskDeviceCount, fetchBranchExpensesHistory,
         fetchBranchExpenseRecord } = await import('../../src/data/branches');
 const { fetchScheduleCoverageAtBranch, fetchScheduleCoverageFromBranch } =
@@ -107,14 +107,25 @@ describe('el enrutador de aprobadores', () => {
         expect(espia.uso('from')).toBe(false);
     });
 
-    it('«quién es admin» se decide por `system_role`, no por una columna que no existe', async () => {
+    it('«quién es admin» se decide por el RANGO del cargo, no por una columna de la persona', async () => {
         // Las tres consultas de fallback pedían `employees.is_admin`, que NO
         // existe: el `.eq()` devuelve error, el llamador lo lee como «no hay
         // nadie» y la solicitud se queda SIN APROBADOR.
+        //
+        // El arreglo de agosto las pasó a `system_role IN ('ADMIN','SUPERADMIN')`,
+        // que era UNA sola persona y además contradecía al organigrama. Desde
+        // el 2026-08-28 (40b39a3f) la pregunta es «quién está en el escalón de
+        // dirección», la contesta la base (`empleados_por_rango`) y son tres:
+        // una solicitud ya no se queda sin firma porque esa persona se fue de
+        // vacaciones. Lo que se ancla es que el navegador no vuelva a leer una
+        // columna de la ficha para decidirlo.
         await fetchBranchAdmins(4, 7);
-        const columnas = espia.todos('in').concat(espia.todos('eq')).flat();
-        expect(JSON.stringify(columnas)).not.toContain('is_admin');
-        expect(JSON.stringify(columnas)).toMatch(/system_role|ADMIN/);
+        expect(espia.rpc).toEqual([{
+            nombre: 'empleados_por_rango',
+            args: { p_min: RANGO.DIRECCION, p_max: RANGO.DIRECCION, p_branch_id: 4, p_excluir: 7 },
+        }]);
+        expect(espia.uso('from')).toBe(false);
+        expect(JSON.stringify([espia.pasos, espia.rpc])).not.toMatch(/is_admin|system_role/);
     });
 });
 

@@ -16,6 +16,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
     hoySV, periodoDe, correrDia, correrPeriodo,
     partirFolio, rotularFolio, faltantesDelRenglon, soloLimpieza,
+    CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA,
 } from '../../src/data/bitacoras';
 
 afterEach(() => vi.useRealTimers());
@@ -84,23 +85,39 @@ describe('correr días y meses sin que el huso los mueva', () => {
     });
 });
 
+// Desde el 2026-09-03 (1cf21e39) el libro bajo receta son DOS —antibióticos y
+// «otros bajo receta»— y cada uno lleva su propio correlativo, así que el
+// folio 7 existe dos veces en el mismo año. El folio partido dice de qué libro
+// es: sin la `R` es el de antibióticos, que es el que existía antes y el que
+// sigue siendo el de siempre.
+const A = CLASE_ANTIBIOTICO;
+const R = CLASE_BAJO_RECETA;
+
 describe('el folio — lo que la gente escribe y lo que el libro muestra', () => {
     it('acepta las tres formas en que alguien lo escribe', () => {
-        expect(partirFolio('2026-00007', 2026)).toEqual({ anio: 2026, folio: 7 });
-        expect(partirFolio('2026-7', 2026)).toEqual({ anio: 2026, folio: 7 });
-        expect(partirFolio('7', 2026)).toEqual({ anio: 2026, folio: 7 });
+        expect(partirFolio('2026-00007', 2026)).toEqual({ anio: 2026, folio: 7, clase: A });
+        expect(partirFolio('2026-7', 2026)).toEqual({ anio: 2026, folio: 7, clase: A });
+        expect(partirFolio('7', 2026)).toEqual({ anio: 2026, folio: 7, clase: A });
+    });
+
+    it('la `R` del segundo libro se acepta como la escriba quien la copia', () => {
+        // Con dos correlativos, perder la `R` al partir no da error: busca el
+        // folio 7 del OTRO libro y muestra una dispensación que no es.
+        expect(partirFolio('2026-R-00007', 2026)).toEqual({ anio: 2026, folio: 7, clase: R });
+        expect(partirFolio('2026-r7', 2026)).toEqual({ anio: 2026, folio: 7, clase: R });
+        expect(partirFolio('R7', 2026)).toEqual({ anio: 2026, folio: 7, clase: R });
     });
 
     it('sin año escrito usa el que se le pasa, no el del reloj', () => {
         // Importa: quien busca en enero un folio del año pasado escribe el
         // número a secas. Que el año por defecto sea un parámetro y no
         // `new Date()` adentro es lo que deja resolverlo desde afuera.
-        expect(partirFolio('42', 2025)).toEqual({ anio: 2025, folio: 42 });
+        expect(partirFolio('42', 2025)).toEqual({ anio: 2025, folio: 42, clase: A });
     });
 
     it('tolera espacios y la barra, que es como se escribe en papel', () => {
-        expect(partirFolio('  2026 - 7  ', 2026)).toEqual({ anio: 2026, folio: 7 });
-        expect(partirFolio('2026/7', 2026)).toEqual({ anio: 2026, folio: 7 });
+        expect(partirFolio('  2026 - 7  ', 2026)).toEqual({ anio: 2026, folio: 7, clase: A });
+        expect(partirFolio('2026/7', 2026)).toEqual({ anio: 2026, folio: 7, clase: A });
     });
 
     it('devuelve null ante lo que no es un folio, en vez de inventar uno', () => {
@@ -122,9 +139,10 @@ describe('el folio — lo que la gente escribe y lo que el libro muestra', () =>
         expect(rotularFolio(2026, 123456)).toBe('2026-123456');
     });
 
-    it('rotular y volver a partir devuelve lo mismo', () => {
+    it('rotular y volver a partir devuelve lo mismo — en los dos libros', () => {
         for (const n of [1, 7, 99, 12345]) {
-            expect(partirFolio(rotularFolio(2026, n), 2026)).toEqual({ anio: 2026, folio: n });
+            expect(partirFolio(rotularFolio(2026, n), 2026)).toEqual({ anio: 2026, folio: n, clase: A });
+            expect(partirFolio(rotularFolio(2026, n, R), 2026)).toEqual({ anio: 2026, folio: n, clase: R });
         }
     });
 });

@@ -155,10 +155,29 @@ describe('el registro y el menú hablan de los mismos módulos', () => {
         }
     });
 
-    it('dos módulos no comparten la misma ruta', () => {
+    it('dos módulos no comparten la misma ruta — salvo los declarados', () => {
         // Dos llaves para la misma puerta: al quitar una, la puerta sigue
         // abierta por la otra y nadie entiende por qué.
-        const rutas = Object.values(MODULE_MAP).map(v => v.path);
-        expect(new Set(rutas).size, 'hay rutas repetidas en MODULE_MAP').toBe(rutas.length);
+        //
+        // La excepción existe y es a propósito (582aea69, 2026-09-01): «Mi
+        // caja» y «Cortes» se fundieron en `/caja` —«para mí debe ser una sola
+        // cosa»—, pero siguen siendo dos permisos, porque operar la caja y
+        // mirarla son actos distintos y Contabilidad tiene uno sin el otro. No
+        // son dos llaves de la misma puerta: cada pestaña de la vista cobra el
+        // suyo (`caja_vales` → Hoy, `cortes_caja` → Cortes y Movimientos), y el
+        // menú las funde en una entrada con el `dedupe` por ruta de
+        // `AppLayout`. Una ruta compartida nueva va acá con su motivo; si no
+        // tiene uno, es el defecto que esta prueba caza.
+        const COMPARTIDAS = {
+            '/caja': ['caja_vales', 'cortes_caja'],
+        };
+        const porRuta = {};
+        for (const [k, v] of Object.entries(MODULE_MAP)) (porRuta[v.path] ??= []).push(k);
+        const repetidas = Object.fromEntries(
+            Object.entries(porRuta)
+                .filter(([, ks]) => ks.length > 1)
+                .map(([ruta, ks]) => [ruta, [...ks].sort()]),
+        );
+        expect(repetidas, 'hay rutas repetidas en MODULE_MAP sin declarar').toEqual(COMPARTIDAS);
     });
 });

@@ -4,11 +4,14 @@
 // forma de reconstruir qué pasó cuando alguien pregunta. Dos reglas suyas no se
 // ven desde ningún otro lado:
 //
-//   · **la autoría sale de la SESIÓN**, no de `sb_user` en `localStorage` — ese
-//     lo escribe el navegador y se puede editar. Desde la migración
-//     `20260806000957` la policy de INSERT exige `user_id = auth.uid()`, así
-//     que mandar otra cosa no es sólo incorrecto: **la fila se rechaza** y
-//     `appendAuditLog` se traga el error. Bitácora muda;
+//   · **la autoría NO la elige el navegador.** Ni de `sb_user` en
+//     `localStorage` —que se puede editar— ni de la sesión: desde el
+//     2026-09-01 (74176679) la fila no lleva `user_id` y la firma la resuelve
+//     `registrar_bitacora` con `auth_employee_id()` adentro. Mandar el id de
+//     la sesión fue justo el defecto: la sesión es la CUENTA, `audit_logs`
+//     se firma con la FICHA, y para 46 de 48 personas son ids distintos — la
+//     policy rechazaba la fila, `appendAuditLog` se tragaba el error, y la
+//     bitácora estuvo muda 22 días;
 //   · **la gravedad y el origen se DEDUCEN** de la acción, y los dos están
 //     acotados por un constraint de Postgres: un valor fuera del catálogo
 //     rechazaría la fila entera.
@@ -16,12 +19,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const insertAuditLog = vi.fn(async (fila) => ({ data: { id: 1, ...fila }, error: null }));
-const getSessionUserId = vi.fn(async () => 'uid-de-la-sesion');
 const fetchAuditLogsData = vi.fn(async () => ({ data: [], error: null }));
 
 vi.mock('../../src/data/audit', () => ({
     insertAuditLog: (...a) => insertAuditLog(...a),
-    getSessionUserId: (...a) => getSessionUserId(...a),
     fetchAuditLogs: (...a) => fetchAuditLogsData(...a),
 }));
 
@@ -44,25 +45,26 @@ async function anotar(...args) {
 beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    getSessionUserId.mockResolvedValue('uid-de-la-sesion');
 });
 
 describe('quién firma', () => {
-    it('el `user_id` sale de la sesión, no de `localStorage`', async () => {
+    it('la fila NO lleva `user_id`: la firma la pone la base', async () => {
+        // Cualquier id que se mande desde acá es uno que el navegador eligió.
+        // El de `localStorage` se puede editar; el de la sesión es la cuenta y
+        // no la ficha. Los dos dejaron la bitácora muda por caminos distintos.
         localStorage.setItem('sb_user', JSON.stringify({ id: 'uid-INVENTADO', name: 'Ana' }));
         const fila = await anotar('EDITAR_EMPLEADO', '7');
-        expect(fila.user_id).toBe('uid-de-la-sesion');
+        expect(fila).not.toHaveProperty('user_id');
+        expect(JSON.stringify(fila)).not.toContain('uid-INVENTADO');
     });
 
-    it('sin sesión hidratada cae al de `localStorage`, y si no, a null', async () => {
-        // Es un respaldo declarado: la policy va a rechazar igual, pero la fila
-        // no se arma con `undefined`.
-        getSessionUserId.mockResolvedValue(null);
+    it('de `localStorage` sólo viaja el NOMBRE, y sólo de respaldo', async () => {
+        // `registrar_bitacora` lo usa únicamente si no puede resolver la ficha;
+        // es texto para leer, no una firma que la base crea.
         localStorage.setItem('sb_user', JSON.stringify({ id: 'uid-guardado', name: 'Ana' }));
-        expect((await anotar('X')).user_id).toBe('uid-guardado');
-
-        localStorage.clear();
-        expect((await anotar('X')).user_id).toBeNull();
+        const fila = await anotar('X');
+        expect(fila.user_name).toBe('Ana');
+        expect(fila).not.toHaveProperty('user_id');
     });
 
     it('el NOMBRE sí puede venir de afuera: el kiosco firma por quien marcó', async () => {

@@ -1,5 +1,7 @@
 # Plan — hacer fuertes los cargos y eliminar `system_role` (2026-08-28)
 
+> **Movido a cerrados el 2026-09-22.** Verificado ese día: `employees.system_role` no existe. **Seguimiento:** el apodo `system_role` de `employees_safe` sigue vivo (§12) y se retira cuando nadie corra un paquete anterior al 2026-08-28.
+
 > **Decisión del usuario**, en sus palabras: *«la verdad system role no tiene
 > sentido, para eso está el rol que es el cargo, al cual se le asignan permisos
 > por vistas y cosas. mejor hagamos más fuertes los roles y eliminemos system

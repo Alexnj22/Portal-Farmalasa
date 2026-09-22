@@ -1,5 +1,7 @@
 # Una solicitud, varios productos y varias salas — 2026-08-20
 
+> **Movido a cerrados el 2026-09-22.** Los seis pasos están en producción. **Seguimiento en sala:** la prueba real con una sala (§«Lo que falta probar en sala»).
+
 Hoy pedirle producto a otra sala es **un producto a una sala**. Quien necesita
 tres cosas de Salud 1 abre el modal tres veces; quien necesita la misma caja y
 no sabe quién la tiene, la pide a cuatro salas de a una.

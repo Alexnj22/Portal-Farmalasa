@@ -712,7 +712,7 @@ export const AREAS = [
                 'avisar-bultos-viejos'],
         crons: ['barrer-traslados-recibidos', 'continuar-envios', 'avisar-envios-sin-decidir',
                 'avisar-traslados-por-respaldo-0805-sv', 'avisar-bultos-viejos-daily'],
-        docs: ['docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md', 'docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md'],
+        docs: ['docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md', 'docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md'],
     },
 
     // ═══ COMPRAS Y CONTABILIDAD ═════════════════════════════════════════════

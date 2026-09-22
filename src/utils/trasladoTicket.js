@@ -7,7 +7,7 @@
 // traslado. Ese código es lo que después deja confirmar, al retirar, que no se
 // quedó ninguna bolsa.
 //
-// Plan completo en `docs/PLAN-TICKET-DE-TRASLADO-2026-08-23.md`.
+// Plan completo en `docs/planes-cerrados/PLAN-TICKET-DE-TRASLADO-2026-08-23.md`.
 //
 // ── Por qué es un módulo suelto y no vive en la vista ───────────────────────
 // Lo imprimen DOS caminos que no comparten pantalla: la solicitud (una sala

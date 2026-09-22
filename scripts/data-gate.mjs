@@ -325,7 +325,7 @@ const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'in-
  * que explican por qué se retiró no se acusan a sí mismas.
  */
 const COLUMNAS_RETIRADAS = {
-  system_role: 'employees.system_role se retiró el 2026-08-28: el escalón sale del CARGO (roles.rango). Usá rango_de_empleado()/auth_rango() en la base, `rango` de employees_safe en el portal, o empleados_por_rango() para buscar por escalón. Ver docs/PLAN-ROLES-SIN-SYSTEM-ROLE-2026-08-28.md.',
+  system_role: 'employees.system_role se retiró el 2026-08-28: el escalón sale del CARGO (roles.rango). Usá rango_de_empleado()/auth_rango() en la base, `rango` de employees_safe en el portal, o empleados_por_rango() para buscar por escalón. Ver docs/planes-cerrados/PLAN-ROLES-SIN-SYSTEM-ROLE-2026-08-28.md.',
 };
 /* Los de la sección remota van aparte: no tienen archivo ni ratchet — una
  * función viva de Postgres comparando contra un valor inexistente es un

@@ -1,5 +1,7 @@
 # Ticket de traslado y confirmación por escaneo
 
+> **Movido a cerrados el 2026-09-22.** Construido y en producción. **Seguimiento en sala:** la prueba de papel, la ticketera de Bodega (pendiente de instalar, decisión del usuario del 24-ago) y el primer traslado recorrido con su ticket.
+
 **Fecha:** 2026-08-23 · **Auditado contra producción:** 2026-08-24 · **Estado:** **CONSTRUIDO Y EN PRODUCCIÓN**, sin probar en sala
 
 > **Corrección del 2026-08-24 (tarde).** Este encabezado decía «decidido, sin

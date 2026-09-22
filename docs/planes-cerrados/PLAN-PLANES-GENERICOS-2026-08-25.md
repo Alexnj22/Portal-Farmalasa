@@ -1,5 +1,7 @@
 # Plan — las funciones que nunca ven sus argumentos (2026-08-25)
 
+> **Movido a cerrados el 2026-09-22.** La auditoría cerró: 40 funciones medidas, 40 sanas, 0 migraciones. La vigilancia quedó en la sección E de `npm run gate:perf` contra `scripts/planes-genericos.json`.
+
 Nació del corte de hoy 20:25–20:32 UTC: **161 peticiones caídas** con
 `Timed out acquiring connection from connection pool`, todo el portal a la vez,
 por **una sola función de lectura**. El arreglo está en producción

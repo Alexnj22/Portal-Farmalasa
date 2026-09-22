@@ -194,7 +194,7 @@ requiere paginación. Edge: `trasladar-pedido-erp`, `devolver-pedido-erp`,
 Lotes al confirmar. `tests/unit/decisionDiferencia.test.js` falla hoy: test viejo o
 código roto. Recepción con el celular: `usarAccionDeFila`, `apilada`, hoja de acciones.
 Contexto: `docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md`, `docs/INCIDENTE-RECEPCION-2026-08-14.md`,
-`docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md`.
+`docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md`.
 
 ### L07 · acceso-permisos  (`lotes/acceso.txt` + `lotes/permisos.txt`, 34 archivos)
 Para cada acción sensible (login, contraseña, alta de dispositivo, PIN, carné de papel,

@@ -14,7 +14,9 @@
 **Sigue ABIERTO, y depende del usuario, no del código:** A6 (permisos de sala —
 26 personas sin `overview` no ven su widget), A8 (período de prueba: 2 de 35 con
 `hire_date`), A9 (gráficas del Tablero), el tramo 90-95% de la jefatura, la
-cobertura de horarios, y las Fases 4 y 5 del plan original.
+cobertura de horarios. ~~y las Fases 4 y 5 del plan original~~ — **hechas** (2026-09-22):
+los bonos por producto y laboratorio viven en Promociones, y el pago del bono de
+meta es semestral (`docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md`).
 
 Correcciones del usuario al mockup, ya aplicadas: el vacío de Gastos no explica
 la regla, y **el desglose de la meta es solo administrativo** — vive en Tablero y

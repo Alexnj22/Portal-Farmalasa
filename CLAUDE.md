@@ -339,7 +339,7 @@ tumbara el portal entero:
    [[feedback_una_consulta_lenta_de_lectura_tumba_el_portal_entero]].
 
    **La auditoría de las restantes está CERRADA**
-   (`docs/PLAN-PLANES-GENERICOS-2026-08-25.md`): **40 funciones medidas, 40
+   (`docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md`): **40 funciones medidas, 40
    sanas, 0 migraciones**. `get_conteo_products_count` era la única de las 69, y
    eso enseñó la condición que faltaba: no basta con ser `LANGUAGE sql` + `SET`,
    **hace falta ADEMÁS que el plan bueno dependa de los argumentos**. Si no

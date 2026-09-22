@@ -293,7 +293,7 @@ const PLANES = [
  *
  * Eso fue el corte del 2026-08-25: `get_conteo_products_count` a 2,606 ms
  * contra 56, llenando el pool de PostgREST hasta que TODO el portal devolvía
- * 504. Ver `docs/PLAN-PLANES-GENERICOS-2026-08-25.md`.
+ * 504. Ver `docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md`.
  *
  * Este chequeo NO mide velocidad —de eso se ocupan C y D—: vigila que la
  * SUPERFICIE no crezca sin que nadie la mire. Es la misma forma que
@@ -595,7 +595,7 @@ SELECT clave, plan FROM _pg_p`;
         fallas.push({ clave: `plan-generico-sin-declarar:${fn}`,
           porque: 'Es LANGUAGE sql con SET: su cuerpo se planifica una vez y nunca ve sus argumentos. '
                 + 'Medila contra su cuerpo con literales y declarala en el manifiesto — con su medición '
-                + 'o con `ms: null` si es deuda. Receta: docs/PLAN-PLANES-GENERICOS-2026-08-25.md',
+                + 'o con `ms: null` si es deuda. Receta: docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md',
           detalle: 'está en producción y no figura en el manifiesto' });
       }
       // Una entrada que ya no existe en prod significa que el manifiesto miente

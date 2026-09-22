@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1033.2 — Cuatro planes terminados pasan a cerrados
+
+Roles sin `system_role`, Solicitud a varias salas, Ticket de traslado y Planes
+genéricos estaban terminados y seguían en `docs/`, donde se leen como pendientes.
+Cada uno se verificó antes de moverlo y lleva en la cabecera su seguimiento (las
+pruebas en sala y el apodo `system_role` de la vista). Rutas actualizadas en
+CLAUDE.md, los gates, `auditoria/` y el código. Metas: cierre y gastos NO se
+mueve —le quedan A6, A8, A9 y el tramo 90–95%, que dependen de datos o del
+usuario—; su cabecera deja de listar como pendientes las Fases 4 y 5, que ya están.
+
 ## v2.1033.1 — Los planes de bonos y de promociones pasan a cerrados
 
 `PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md` (las tres fases en producción) y

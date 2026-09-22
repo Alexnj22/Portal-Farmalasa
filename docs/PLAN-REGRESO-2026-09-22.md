@@ -150,7 +150,7 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 
 ## D. Carga y gates en rojo
 
-### D1 ⬜ `gate:perf` — 5 hallazgos
+### D1 ⏸ `gate:perf` — 5 hallazgos (quedan 3)
 
 - `get_product_sales_agg_jsonb` 1,535 MB contra techo 914.
 - `refresh_primera_venta_producto` 388 contra 359.
@@ -160,6 +160,20 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 - **Ojo al medir:** la estadística es desde el 17-sep 19:01 y mezcla llamadas
   de antes y después del arreglo del 17. Resetear sólo esas y remedir antes
   de concluir.
+- **Estado 22-sep:** `get_product_sales_total` y `get_ventas_con_receta` ya no
+  aparecen (A1 + estadística reseteada). Quedan:
+  - `get_product_sales_agg_jsonb` — **reescritura preparada y NO aplicada**
+    (el usuario la dejó para después): `get_product_sales_agg` leía dos veces
+    los renglones del mes en curso (`pres_live` y `last_sale_live`); un CTE
+    `lineas_mes AS MATERIALIZED` los lee una vez. Idéntica en 6/6 casos (md5),
+    −30% en el caso por defecto, −23% en un año. El SQL está en el historial de
+    esta sesión; se rearma sobre la definición viva de
+    `20260918015225_get_product_sales_agg_entra_al_cache_de_planes.sql`.
+    Ojo al fijar el techo: la parte del mes en curso crece con el DÍA del mes
+    (el techo actual se midió el 4-sep, con 4 días de datos).
+  - `refresh_primera_venta_producto` 388 vs 359 MB — rollup diario, deuda
+    declarada; crece con la historia.
+  - `donde-hay-un-producto` 30.5 vs 30 ms — pendiente de mirar.
 
 ### D2 ✅ Las más pesadas: `get_product_drill_summary` / `_lines`
 
@@ -187,14 +201,46 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   lateral re-consulta por HTTP en CADA evento (~6/min por pantalla abierta),
   cuando el evento ya trae la fila — ver D5.
 
+### D5 ✅ La barra lateral re-consultaba en cada evento del sync
+
+- 5,763 peticiones en 12 h el 21-sep. Ahora aplica la fila del evento (v2.1026.1).
+
+### D6 ⏸ `reclamar_impresion`: 7,400 llamadas/h, 189 bloques cada una 🔒
+
+- El agente de cada caja pregunta cada ~3 s y el `UPDATE … estado='IMPRIMIENDO'`
+  recorre toda la historia de la sala (461 filas, 205 bloques) porque ese
+  estado no tiene índice parcial. 1.2 TB tocados en 4.6 días.
+- **Preparado, NO aplicado (el usuario lo dejó para después):**
+  `CREATE INDEX ON cola_impresion (branch_id) WHERE estado = 'IMPRIMIENDO'` —
+  la tabla pesa 2 MB. Medir antes/después con `EXPLAIN` del UPDATE.
+
 ---
 
 ## E. Menores
 
-- **E1 ⬜** «Esa sala no tiene una caja registrada para imprimir» ~27/día:
-  qué sala/equipo y si es configuración o código.
-- **E2 ⬜** `customers_nit_idx` duplicado (4/día) y `clientes_por_revisar.erp_id`
-  nulo (1): quién escribe y si pierde algo.
+- **E1 ✅** «Esa sala no tiene una caja registrada para imprimir» ~27/día: es
+  POR DISEÑO — `encolar_impresion` rechaza y el portal lo toma como «este camino
+  no está» y abre el diálogo de impresión. Ruido en el log, no una falla.
+- **E2 ⏸ (grave, preparado y NO aplicado — el usuario lo dejó para después) 🔒**
+  Sale de la corrida nocturna de fichas (21:30):
+  - **«Por revisar» no guarda NADA desde el 23-ago**: el motivo
+    `sin_numero_erp` manda `erp_id: null` y la tabla lo exige NOT NULL con
+    clave `(erp_id, motivo)`; esa fila tumba el lote de 25 cada noche
+    (`a_revisar_no_guardados` = 25 en todas las corridas). Corrección: aceptar
+    `erp_id` nulo con índice único parcial `(customer_id, motivo) WHERE erp_id
+    IS NULL`, `upsert_clientes_por_revisar` en dos sentencias, y reintento
+    fila por fila en la edge function (como ya hace el espejo).
+  - **`fusionar_cliente_duplicado` sólo mueve `sales_invoices`.** Desde el
+    17-sep falla cada noche con `creditos_de_clientes_customer_id_fkey`; y de
+    las 16 FK a `customers`: créditos/pagos/puntos FRENAN el borrado,
+    `cotizaciones` y **`bitacora_dispensaciones`** quedan en NULL, y
+    **`consentimientos_cliente`**, `dte_datos_pedidos` y otras se BORRAN en
+    cascada. Corrección: mover todas las referencias a la ficha buena antes de
+    borrar; si la huérfana tiene puntos, no fusionar y mandarla a «Por revisar».
+  - Los 3 `customers_nit_idx` son NIT repetidos: el espejo ya reintenta fila
+    por fila y los nombra (no pierde las buenas).
+  - `sincronizar-fichas-clientes` línea ~313 ignora el `error` del `select`
+    (regla de CLAUDE.md).
 - **E3 ⬜** `pedido_traslado_erp_uno_vivo` (5/día): confirmar que es el freno
   haciendo su trabajo y que el llamador lo trata como tal.
 - **E4 ⬜** `gate:receta`: 47 productos sin principio activo y 137 renglones

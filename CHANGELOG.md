@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1026.1 — La barra lateral deja de re-consultar el estado del inventario en cada evento
+
+`SidebarSyncStatus` —los puntos de «Datos» de la barra lateral— escuchaba los
+INSERT de `inventory_sync_log` y, por cada uno, volvía a pedir la lista entera.
+El sync inserta ~6 filas por minuto, así que eran ~6 peticiones por minuto por
+cada pantalla abierta: 5,763 en 12 horas el 21-sep, para mover un punto de
+color. El evento ya trae la fila; ahora se aplica tal cual, con el mismo filtro
+de la consulta (sólo existencias, no vencidos). El intervalo de 90 s queda como
+red por si se pierde un evento.
+
+La tabla NO se saca de la publicación de Realtime, que era lo que proponía el
+informe del incidente del 14-sep: esta pantalla y `useSyncMonitor` se suscriben.
+
 ## v2.1026.0 — Hacienda rechaza un documento que no se corrige solo: ahora se avisa
 
 Del 7 al 22 de septiembre, la CCF 65 de Salud 2 —un crédito fiscal emitido a

@@ -32,15 +32,27 @@ export default function SidebarSyncStatus() {
     setBranches(Object.values(byBranch).sort((a, b) => a.erp_sucursal_id - b.erp_sucursal_id));
   }, []);
 
+  // El evento YA trae la fila nueva: se aplica tal cual en vez de volver a
+  // pedir la lista. El sync de inventario inserta ~6 filas por minuto, así que
+  // re-consultar en cada una eran ~6 peticiones por minuto POR PANTALLA ABIERTA
+  // (5,763 en 12 horas el 21-sep) para mover un punto de color. Mismo filtro
+  // que `fetchInventorySyncLogRecent`: sólo las corridas de existencias, no las
+  // de vencidos. El intervalo de 90 s queda como red por si se pierde un evento.
+  const aplicarEvento = useCallback(({ new: fila }) => {
+    if (!fila?.erp_sucursal_id || fila.is_vencidos) return;
+    setBranches(prev => [...prev.filter(b => b.erp_sucursal_id !== fila.erp_sucursal_id), fila]
+      .sort((a, b) => a.erp_sucursal_id - b.erp_sucursal_id));
+  }, []);
+
   useEffect(() => {
     fetchLatest(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
     const timer = setInterval(fetchLatest, 90_000);
     const channel = supabase
       .channel('sidebar-sync-status')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inventory_sync_log' }, fetchLatest)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inventory_sync_log' }, aplicarEvento)
       .subscribe();
     return () => { clearInterval(timer); supabase.removeChannel(channel); };
-  }, [fetchLatest]);
+  }, [fetchLatest, aplicarEvento]);
 
   const now       = useNowTick();
   const hasErrors = branches.some(b => !b.success);

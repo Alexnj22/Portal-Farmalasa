@@ -279,10 +279,14 @@ Deno.serve(async (req) => {
 
         // ── 1 · Resolver el número, leyendo una factura suya ──────────
         if (!erpId) {
-          const { data: fac } = await admin.from("sales_invoices")
+          const { data: fac, error: eFac } = await admin.from("sales_invoices")
             .select("erp_invoice_id").eq("customer_id", c.customer_id)
             .not("erp_invoice_id", "is", null).order("fecha", { ascending: false })
             .limit(1).maybeSingle();
+          // Un select que falla en silencio deja `fac` vacío, y esta ficha se
+          // iría a «Por revisar» como si no tuviera ninguna factura (regla de
+          // CLAUDE.md: nunca ignorar el error de un query).
+          if (eFac) throw new Error(`buscar factura de la ficha: ${eFac.message}`);
           if (!fac?.erp_invoice_id) {
             // Sin número del ERP y sin una sola factura: no hay documento del
             // cual deducir a qué cliente pertenece, así que no se resuelve
@@ -291,6 +295,8 @@ Deno.serve(async (req) => {
             // y parecía no hacer nada. El silencio se lee igual que el éxito.
             aRevisar.push({
               erp_id: null, name: c.name, motivo: "sin_numero_erp",
+              // La llave de una fila sin número es la ficha del portal.
+              customer_id: c.customer_id,
               detalle: `«${c.name}» no tiene número interno ni ninguna factura ` +
                        `de la cual deducirlo. Es una ficha suelta del portal: ` +
                        `hay que ligarla a mano o darla de baja.`,
@@ -310,12 +316,32 @@ Deno.serve(async (req) => {
           res.numero_resuelto++;
 
           // ¿Ese número ya tiene ficha? Entonces ésta es un duplicado.
-          const { data: dueño } = await admin.from("customers")
+          const { data: dueño, error: eDue } = await admin.from("customers")
             .select("id, name").eq("erp_id", erpId).maybeSingle();
+          // Sin esto, un error acá se lee como «ese número no tiene ficha» y la
+          // corrida seguiría de largo escribiendo sobre el ERP con un vínculo
+          // que nadie comprobó.
+          if (eDue) throw new Error(`buscar dueño del número ${erpId}: ${eDue.message}`);
           if (dueño && dueño.id !== c.customer_id) {
             if (parecidos(c.name, dueño.name)) {
               const { data: r, error } = await admin.rpc("fusionar_cliente_duplicado",
                 { p_huerfana: c.customer_id, p_erp_id: erpId });
+              // Con puntos acumulados no se fusiona: `puntos_cuenta` es una fila
+              // por cliente y sumar dos saldos no lo decide un proceso de noche.
+              // Va a revisión en vez de cortar la corrida.
+              if (error?.message?.includes("TIENE_PUNTOS")) {
+                aRevisar.push({
+                  erp_id: erpId, name: c.name, motivo: "fusion_con_puntos",
+                  customer_id: c.customer_id,
+                  detalle: `«${c.name}» es la misma persona que «${dueño.name}» ` +
+                           `(número interno ${erpId}), pero la ficha suelta tiene ` +
+                           `puntos acumulados: unirlas movería un saldo. Hay que ` +
+                           `resolverlo a mano.`,
+                  datos: { ficha_suelta_id: c.customer_id, ficha_destino_id: dueño.id },
+                });
+                res.a_revisar++;
+                continue;
+              }
               if (error) throw new Error(`fusionar: ${error.message}`);
               res.fusionadas++;
               res.facturas_movidas += (r as { facturas_movidas?: number })?.facturas_movidas ?? 0;
@@ -621,12 +647,25 @@ Deno.serve(async (req) => {
     // La guarda ya está arreglada del lado de la base. Esto es para que, si
     // vuelve a romperse por otro motivo, el número no siga mintiendo: `a_revisar`
     // dice cuántos se detectaron y `a_revisar_no_guardados` cuántos no llegaron.
+    //
+    // Y si el LOTE falla, se reintenta fila por fila. Del 24-ago al 22-sep no
+    // entró una sola fila: el lote llevaba una ficha sin número del ERP, la
+    // tabla la rechazaba (`erp_id` era NOT NULL) y se perdían las 25 —un mes
+    // entero, con `a_revisar_no_guardados = 25` cada noche—. La causa ya está
+    // corregida en la base; el reintento es para que una fila mala vuelva a
+    // costar UNA fila y no el lote, que es la misma red que usa el espejo.
     let aRevisarNoGuardados = 0;
     if (aRevisar.length) {
       const { error } = await admin.rpc("upsert_clientes_por_revisar", { p_filas: aRevisar });
       if (error) {
-        console.error("upsert_clientes_por_revisar:", error.message);
-        aRevisarNoGuardados = aRevisar.length;
+        console.error("upsert_clientes_por_revisar (lote):", error.message);
+        for (const fila of aRevisar) {
+          const { error: e1 } = await admin.rpc("upsert_clientes_por_revisar", { p_filas: [fila] });
+          if (e1) {
+            aRevisarNoGuardados++;
+            console.error(`upsert_clientes_por_revisar (${fila.motivo} · ${fila.name}):`, e1.message);
+          }
+        }
       }
     }
     // Lo corregido se anota SIEMPRE, y antes que nada: es lo que hace de freno

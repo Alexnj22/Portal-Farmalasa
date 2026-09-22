@@ -241,7 +241,7 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 - **E1 ✅** «Esa sala no tiene una caja registrada para imprimir» ~27/día: es
   POR DISEÑO — `encolar_impresion` rechaza y el portal lo toma como «este camino
   no está» y abre el diálogo de impresión. Ruido en el log, no una falla.
-- **E2 ⏸ (grave, preparado y NO aplicado — el usuario lo dejó para después) 🔒**
+- **E2 ✅ (v2.1028.1)** — corregido el 22-sep; el detalle de lo que estaba roto:
   Sale de la corrida nocturna de fichas (21:30):
   - **«Por revisar» no guarda NADA desde el 23-ago**: el motivo
     `sin_numero_erp` manda `erp_id: null` y la tabla lo exige NOT NULL con
@@ -259,8 +259,13 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
     borrar; si la huérfana tiene puntos, no fusionar y mandarla a «Por revisar».
   - Los 3 `customers_nit_idx` son NIT repetidos: el espejo ya reintenta fila
     por fila y los nombra (no pierde las buenas).
-  - `sincronizar-fichas-clientes` línea ~313 ignora el `error` del `select`
-    (regla de CLAUDE.md).
+  - `sincronizar-fichas-clientes` ignoraba el `error` de DOS `select` (el de la
+    factura y el del dueño del número) — corregido.
+  - **Lo aplicado:** `erp_id` nullable + índice único parcial por ficha, upsert
+    en dos sentencias, reintento fila por fila en la edge function, la fusión
+    mueve las 16 referencias (y no fusiona si hay puntos: `fusion_con_puntos`).
+    Probado contra producción con rollback. **Falta ver la corrida de esta noche
+    (21:30 SV)**: que `a_revisar_no_guardados` sea 0 y que las fusiones entren.
 - **E3 ✅** `pedido_traslado_erp_uno_vivo` (5/día): por diseño — el despacho de
   900 productos va en varias corridas y cada una adopta la anterior; la edge
   function trata el 23505 como «retomar», no como error.

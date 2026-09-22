@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1028.1 — Clientes: «Por revisar» vuelve a guardar y la fusión mueve todo
+
+Dos fallas de la corrida nocturna de fichas (21:30), las dos en silencio:
+
+**«Por revisar» no guardaba nada desde el 24-ago.** El motivo `sin_numero_erp`
+existe para fichas que NO tienen número del ERP, pero la columna era `NOT NULL`:
+cada noche el lote de 25 llevaba una de ésas, la tabla lo rechazaba entero y se
+perdían las 25 (`a_revisar_no_guardados = 25` en todas las corridas). Un mes sin
+registrar una sola ficha para revisar. Ahora `erp_id` acepta nulo y esas filas se
+identifican por la ficha del portal (índice único parcial), el upsert va en dos
+sentencias —una por llave— y **si el lote falla se reintenta fila por fila**, que
+es la misma red que ya usaba el espejo.
+
+**Fusionar dos fichas del mismo cliente fallaba desde el 17-sep.** Movía las
+facturas y borraba la ficha, pero de las 16 claves foráneas que apuntan a
+`customers`, los créditos frenan el borrado (por eso el error de cada noche), y
+los consentimientos de protección de datos, los pedidos de dato para DTE y la
+actividad **se borraban en cascada**; la bitácora de dispensaciones y las
+cotizaciones quedaban sin cliente. Ahora se mueve todo lo que tiene historia
+propia, lo que sólo admite una fila por cliente se mueve si la buena no la tiene,
+y la respuesta dice cuánto movió de cada cosa.
+
+**Y si la ficha suelta tiene puntos, no se fusiona**: `puntos_cuenta` es una fila
+por cliente y sumar dos saldos no lo decide un proceso de noche — va a «Por
+revisar» con motivo propio (`fusion_con_puntos`).
+
+Medido el 22-sep sobre las 28 fichas sueltas: 12 con facturas, 2 con créditos,
+1 con pagos, ninguna con puntos ni consentimientos. Las dos correcciones se
+probaron contra producción **con rollback**: el upsert escribe las dos filas y
+en la segunda corrida ninguna; la fusión movió el crédito que la trababa.
+
+Además, dos `select` de la edge function que descartaban su error (regla de
+CLAUDE.md): uno decidía si la ficha tiene factura de la cual deducir su número
+—sin él, iba a «Por revisar» como si no tuviera— y el otro, de quién es ese
+número.
+
 ## v2.1028.0 — Agotados: lo que la sala no tiene y sí vende
 
 Cuando un producto se agota, el cálculo de Min/Max lo lee como «no se vende»:

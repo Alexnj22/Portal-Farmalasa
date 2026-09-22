@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1033.4 — Un producto inactivo ya no entra al pedido
+
+Regla del usuario: «si están ocultos, inactivos, no debe de afectar».
+`get_pedido_preview` unía `products` sin mirar `activo` y el pedido de las seis
+salas traía APLICACION DE INYECCION (inactivo, 4 en Salud 3). Ahora lo deja
+afuera (`20260922224412`): 1,790 → 1,789 renglones, 0 inactivos. Los ocultos ya
+no entraban. Junto con la guarda de borradores de v2.1033.3, un producto oculto
+o inactivo ya no frena el recálculo ni se pide.
+
 ## v2.1033.3 — El MIN·MAX deja de leer mal 10 productos, y el recálculo del 1 ya no se salta salas
 
 `docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md`, opción (A). El MIN·MAX lee las

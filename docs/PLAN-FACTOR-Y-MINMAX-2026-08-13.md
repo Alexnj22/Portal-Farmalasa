@@ -20,6 +20,9 @@
   Salud 5 iban a quedar sin recálculo por un borrador de un producto INACTIVO que
   la pantalla no muestra.
 
+- **Oculto o inactivo no afecta** (regla del usuario): el pedido ya no trae
+  productos inactivos (migración `20260922224412`).
+
 **Queda:** verificar el 1-oct que los números de arriba se publicaron; §8.3
 (factor 0 de las recargas en `get_stock_analysis`) y §9 (que el trigger deje de
 leer el texto) siguen abiertos como decisión aparte.

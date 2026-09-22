@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1026.7 — Ventas › Productos: el mes se lee por rango de factura
+
+Después de v2.1026.6 los renglones del mes en curso se leían una vez, pero
+factura por factura: 13,404 descensos al índice cubridor, ~54k bloques. Los `id`
+de las facturas del mes son casi contiguos (13,433 en su rango contra 13,404 del
+mes), así que `lineas_mes` agrega `invoice_id BETWEEN min AND max` y el mismo
+índice se lee en secuencia. Exacto por construcción: el join con las facturas
+del mes se mantiene; el rango sólo decide por dónde se entra.
+
+Migración `20260922165346_ventas_productos_lee_el_mes_por_rango_de_factura`.
+Seis casos × dos cuentas como usuario: **12/12 idénticas** contra la función
+viva, y lo aplicado es byte a byte lo probado.
+
+- alcance total, mes todas las salas: 999 → **670 MB** (queda bajo su techo de
+  914 en `gate:perf`); búsqueda −74%; un año −20%
+- Salud 1: sin cambio (+1%) — el RLS ya le recortó las facturas a su sala
+
+Medidas en el mismo bloque (F8 del plan) y NO aplicadas: la misma técnica en
+`get_top_productos_mes` sólo ayuda con alcance total y sus llamadas reales son
+de sala; y calcular la vista de existencias entera en
+`get_faltantes_con_stock_en_otra_sala` la empeora 2×.
+
+`scripts/medir-como-usuario.mjs`: con `--solo` sin coincidencias ya no revienta
+por un `ARRAY[]` sin tipo.
+
 ## v2.1026.6 — Ventas › Productos: el mes en curso se lee una vez
 
 `get_product_sales_agg` —la pestaña Productos de Ventas— leía dos veces los

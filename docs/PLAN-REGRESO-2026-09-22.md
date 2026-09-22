@@ -167,14 +167,12 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   - `get_product_sales_agg_jsonb` — ✅ **aplicada en F5** (v2.1026.6, migración
     `20260922164443`): los renglones del mes en curso se leen una vez. 12/12
     idénticas como usuario; −32% en el caso por defecto (187k → 128k bloques),
-    −21% en un año. **Sigue sobre el techo en el caso por defecto** (998 MB
-    contra 914): lo que queda es trabajo real —54k bloques los renglones del mes
-    (13,399 facturas por índice cubridor), 29k la última venta histórica por
-    producto, 28k emparejar presentaciones— y el techo se midió el 4-sep con 4
-    días de mes. Estadística reseteada el 22-sep 16:45 UTC: **mañana mirar el
-    promedio con tráfico real** (las cuentas de sala leen bastante menos) antes
-    de decidir. Si no alcanza, la salida estructural es un rollup del mes en
-    curso, y eso es otra decisión (se resincroniza cada hora).
+    −21% en un año. Quedaba sobre el techo (998 MB contra 914): 54k bloques eran
+    leer los renglones del mes factura por factura. **F5b** (v2.1026.7,
+    `20260922165346`) los lee por RANGO de `invoice_id` —los ids del mes son
+    casi contiguos— y queda en **670 MB**, bajo el techo. 12/12 idénticas otra
+    vez. Estadística reseteada el 22-sep 16:54 UTC: mañana confirmar el promedio
+    con tráfico real en `gate:perf`.
   - `refresh_primera_venta_producto` 388 vs 359 MB — rollup diario, deuda
     declarada; crece con la historia.
   - `donde-hay-un-producto` 30.5 vs 30 ms — ✅ **resuelto en F4** (v2.1026.4):
@@ -283,10 +281,10 @@ Aprobado por el usuario el 22-sep («hagámoslo»).
 | F2 | Aprobar traslado: `v_inventario_disponible` calculada una vez | 810 MB, 255 ms | ✅ v2.1026.3 · **7 MB, 36 ms**, 120/120 idénticas; desempate por sala en `alternativas` |
 | F3 | Cola de impresión: índice parcial `WHERE estado='IMPRIMIENDO'` | 1.2 TB/semana | ✅ v2.1026.5 · **206 → 5 bloques** por llamada; vigilado en `gate:perf` C |
 | F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ✅ v2.1026.4 · **2.3 ms**, idéntica en 8 cortes simulados (0 a 1,225 filas en vuelo) |
-| F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ✅ v2.1026.6 · −32% (1.46 GB → 998 MB), 12/12 idénticas; techo del gate pendiente (ver D1) |
-| F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ⬜ tabla caliente: `CONCURRENTLY` y fuera de horario |
+| F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ✅ v2.1026.6 + v2.1026.7 · **1.46 GB → 670 MB** con alcance total (sala sin cambio), 12/12 idénticas en cada paso |
+| F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ⏸ **preparado** para el 23-sep 06:00–11:59 UTC (tabla caliente, sin syncs): `borradores/pendiente_mh_indice_sin_sello.sql`. Hoy con la cola VACÍA lee 104k bloques y 915 ms para no devolver nada. Probado en staging |
 | F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | ⬜ diseñar antes de tocar |
-| F8 | Inicio · faltantes (629 GB/sem) y top productos (197 GB/sem) | — | ⬜ medir con la técnica de F2 |
+| F8 | Inicio · faltantes (629 GB/sem) y top productos (197 GB/sem) | — | ✅ medido, **sin cambio**: ver abajo |
 
 Hallazgos que explican F1 y F2, para no redescubrirlos:
 
@@ -297,6 +295,22 @@ Hallazgos que explican F1 y F2, para no redescubrirlos:
 - **F2: pedirle a `v_inventario_disponible` una LISTA de productos cuesta 20×
   más que calcularla entera** (10 productos: 52,179 bloques; la vista entera:
   2,681). El planificador rehace el trabajo por producto.
+- **F8, medido el 22-sep — ninguna de las dos se toca:**
+  - `get_faltantes_con_stock_en_otra_sala`: la técnica de F2 (la vista entera
+    una vez) la EMPEORA —16–47k bloques y 39–98 ms hoy, 53–60k y 131–183 ms
+    entera—, idéntica 14/14 pero sin ganancia. Ya usa `= ANY(ARRAY(…))`, que es
+    lo que lleva el filtro al índice. Su promedio histórico (188 MB) mezcla
+    llamadas de antes de F4.
+  - `get_top_productos_mes`: el rango de facturas (F5b) baja 76% con alcance
+    total (55.6k → 13.5k bloques) pero NADA con alcance de sala (13.0k →
+    13.7k), y el tiempo no cambia. Su promedio real (86 MB) es el de las cuentas
+    de sala: la ganancia sería de pocos. Probado idéntico 12/12, no aplicado.
+  - **Lo que sí se generaliza es el rango de `invoice_id`**: los ids de las
+    facturas de un período son casi contiguos (13,433 en el rango del mes contra
+    13,404 del mes), así que `sii.invoice_id BETWEEN min AND max` convierte
+    miles de descensos al índice cubridor en una lectura secuencial de sus
+    hojas. Exacto por construcción (el join se mantiene). Candidatos: toda
+    función que lea renglones de un período con alcance total.
 - Lo más grande de la base no son las pantallas: Realtime decodificando el WAL
   (13.7 TB/semana) y los procesos de cada minuto. Realtime baja sola con cada
   escritura inútil que se elimina (D3).

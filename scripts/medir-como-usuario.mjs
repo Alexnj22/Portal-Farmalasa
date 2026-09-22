@@ -156,7 +156,7 @@ const SQL_REVISION = (nombres) => `
          p.prosrc ~* '\\m(insert\\s+into|update\\s+\\w|delete\\s+from|merge\\s+into|truncate|refresh\\s+materialized)\\M' AS escribe
     FROM pg_proc p
    WHERE p.pronamespace = 'public'::regnamespace
-     AND p.proname = ANY (ARRAY[${nombres.map(n => `'${n}'`).join(',')}])`;
+     AND p.proname = ANY (ARRAY[${nombres.map(n => `'${n}'`).join(',')}]::text[])`;
 
 function sqlDeUnaLlamada(sql) {
   const q = sql.replaceAll('$Q$', '');   // el delimitador no puede aparecer adentro

@@ -3,7 +3,7 @@
   "_medido": "2026-09-01 (las seis primeras) y 2026-09-03 (las cuatro que el gate levantó ese día). Fuente: `npm run portal:lento` y la sección F de `npm run gate:perf`. El 2026-09-04 se agregaron las cinco reconstrucciones diarias de rollup, que el gate levantó al correr después de su ventana nocturna. El 2026-09-04, tras el corte de las 595 GB del gate de eficiencia, se agregaron las tres del detalle de producto que la seccion F levanto al correr con la ventana ya poblada.",
   "_umbral": 25000,
   "_umbral_comment": "25,000 bloques = 195 MB por llamada. Por debajo no se declara nada: un umbral que obliga a declarar medio catálogo produce un manifiesto que nadie lee. La que tumbó el portal leía 1,528,584.",
-  "_como_se_lee": "`bloques` es el TECHO, ~1.3x lo medido — margen para el ruido, no para una regresión. `deuda: true` significa que el número está declarado pero NO auditado: nadie miró todavía si ese costo es el trabajo real o un plan malo. Un techo declarado protege contra que CREZCA; no promete que esté bien.",
+  "_como_se_lee": "`bloques` es el TECHO, ~1.3x lo medido — margen para el ruido, no para una regresión. `deuda: true` significa que el número está declarado pero NO auditado: nadie miró todavía si ese costo es el trabajo real o un plan malo. Un techo declarado protege contra que CREZCA; no promete que esté bien. Las reconstrucciones sobre el historial ENTERO no llevan `bloques` sino `crece_con` (la tabla de la que salen) y `bloques_por_mil_filas`: el techo es ese número por las filas de hoy, así que crecer con la historia pasa y crecer más rápido que ella falla. `bloques_por_mil_filas` también sólo baja.",
   "_cuidado": "La primera versión de este manifiesto tenía tres números inflados —uno de ellos 6x— porque el instrumento contaba los bloques `DO $$` de las PROPIAS mediciones (las de este gate incluidas: la sección D llama cinco veces adentro de un solo statement) como si fueran tráfico del portal. Hoy el SQL los excluye. Si un número acá parece absurdo, sospechar del instrumento antes que de la función.",
   "funciones": {
     "get_faltantes_con_stock_en_otra_sala": {
@@ -56,19 +56,21 @@
       "motivo": "419 MB por llamada (53,624 bloques). Reconstrucción DIARIA de un rollup, 1 llamada al día entre las 00:30 y la 01:45 de El Salvador. Lee mucho porque rehace el agregado sobre el historial entero — eso es el trabajo, no un plan malo — y es justo el perfil contrario al que este gate persigue: el defecto que tumbó el portal el 1-sep era una lectura de 11.7 GB que corría CADA MINUTO en horario de sala. NO auditado: nadie miró todavía el plan. Cron `inventory-daily-snapshot`."
     },
     "refresh_customer_activity": {
-      "bloques": 158000,
+      "crece_con": "sales_invoices",
+      "bloques_por_mil_filas": 422,
       "deuda": true,
-      "motivo": "948 MB por llamada (121,299 bloques). Reconstrucción DIARIA de un rollup, 1 llamada al día entre las 00:30 y la 01:45 de El Salvador. Lee mucho porque rehace el agregado sobre el historial entero — eso es el trabajo, no un plan malo — y es justo el perfil contrario al que este gate persigue: el defecto que tumbó el portal el 1-sep era una lectura de 11.7 GB que corría CADA MINUTO en horario de sala. NO auditado: nadie miró todavía el plan. Cron `refresh-customer-activity-daily`."
+      "motivo": "Reconstrucción DIARIA de la actividad por cliente sobre todas las facturas (cron `refresh-customer-activity-daily`, madrugada). 122,660 bloques con 374,040 facturas = 328 por cada 1,000 (2026-09-22). Pasó a techo proporcional ese día: 422 = el techo fijo que tenía (158,000) repartido entre las filas de hoy, o sea que no se aflojó. NO auditado el plan."
     },
     "refresh_primera_venta_producto": {
-      "bloques": 46000,
-      "deuda": true,
-      "motivo": "279 MB por llamada (35,653 bloques). Reconstrucción DIARIA de un rollup, 1 llamada al día entre las 00:30 y la 01:45 de El Salvador. Lee mucho porque rehace el agregado sobre el historial entero — eso es el trabajo, no un plan malo — y es justo el perfil contrario al que este gate persigue: el defecto que tumbó el portal el 1-sep era una lectura de 11.7 GB que corría CADA MINUTO en horario de sala. NO auditado: nadie miró todavía el plan. Cron `refresh-primera-venta-daily`."
+      "crece_con": "sales_invoice_items",
+      "bloques_por_mil_filas": 101,
+      "motivo": "AUDITADA el 2026-09-22. `REFRESH MATERIALIZED VIEW CONCURRENTLY mv_primera_venta_producto`: la primera venta por producto y sala sobre el historial entero, una vez al día a las 00:55 SV (cron `refresh-primera-venta-daily`). Leer toda la historia ES el trabajo: 49,632 bloques con 642,086 renglones = 77.3 por cada 1,000; techo 1.3x. Con techo fijo cruzó el 22-sep (388 MB contra 359) sin que nada empeorara. NO se pasa a tabla incremental: un `LEAST` al llegar cada factura no sabe mover la fecha hacia ADELANTE cuando se anula la factura que era la primera venta — ahorraría ~390 MB de madrugada a cambio de un dato que se equivoca en silencio."
     },
     "refresh_product_last_sale": {
-      "bloques": 133000,
+      "crece_con": "sales_invoice_items",
+      "bloques_por_mil_filas": 207,
       "deuda": true,
-      "motivo": "798 MB por llamada (102,199 bloques). Reconstrucción DIARIA de un rollup, 1 llamada al día entre las 00:30 y la 01:45 de El Salvador. Lee mucho porque rehace el agregado sobre el historial entero — eso es el trabajo, no un plan malo — y es justo el perfil contrario al que este gate persigue: el defecto que tumbó el portal el 1-sep era una lectura de 11.7 GB que corría CADA MINUTO en horario de sala. NO auditado: nadie miró todavía el plan. Cron `refresh-product-last-sale-daily`."
+      "motivo": "Reconstrucción DIARIA de la última venta por producto y sala sobre el historial entero (cron `refresh-product-last-sale-daily`, madrugada). 116,537 bloques con 642,086 renglones = 181 por cada 1,000 (2026-09-22). Pasó a techo proporcional ese día: 207 = el techo fijo que tenía (133,000) repartido entre las filas de hoy, o sea que no se aflojó. NO auditado el plan; el código ya hace upsert con `IS DISTINCT FROM` y puede BAJAR la fecha (lo que el disparador no sabe hacer)."
     },
     "refresh_product_sales_rollup": {
       "bloques": 118000,

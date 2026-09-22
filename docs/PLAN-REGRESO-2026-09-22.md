@@ -98,6 +98,9 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
   `avisar-rechazos-mh-8am-sv`, una vez por documento con más de 2 días
   rechazado, a quien edita Facturación. El aviso técnico que existía había
   salido 16 días a una sola persona de vacaciones, 0 leídos.
+- **Verificado el 22-sep (tarde):** `dte_rechazos_vigentes` vacía. El CCF 65 de
+  Salud 2 (factura 368299) ya tiene sello válido (actualizado 16:00 UTC), y La
+  Popular no tiene ni un documento sin sello válido en 90 días (0 de 11,130).
 
 ---
 
@@ -152,7 +155,20 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 
 ## D. Carga y gates en rojo
 
-### D1 ⏸ `gate:perf` — 5 hallazgos (quedan 3)
+### D1 ✅ `gate:perf` — 5 hallazgos, cerrados
+
+- **Cierre de `refresh_primera_venta_producto` (22-sep, decisión del usuario):**
+  ni techo más alto ni tabla incremental. La incremental sería INCORRECTA: un
+  `LEAST` no sabe mover la primera venta hacia adelante cuando se anula la
+  factura que lo era. Lo que estaba mal era la regla: una reconstrucción sobre
+  el historial entero crece con él por definición. Las tres que lo son pasaron
+  a techo proporcional (`crece_con` + `bloques_por_mil_filas`): la primera venta
+  101 (medido 77.3), la última venta 207 y la actividad por cliente 422 (el
+  techo fijo que ya tenían, sin aflojar). La ventana fija de 180 días
+  (`refresh_product_sales_rollup`) sigue con techo fijo. `gate:perf` en verde y
+  las dos regresiones fabricadas (ratio corto, ratio faltante) fallan.
+  De paso: `sales_invoice_items` nunca fue analizada (`reltuples` 48,000 filas
+  atrás, `n_live_tup` 7,837) — por eso el gate cuenta exacto.
 
 - `get_product_sales_agg_jsonb` 1,535 MB contra techo 914.
 - `refresh_primera_venta_producto` 388 contra 359.

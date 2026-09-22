@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1030.1 — gate:perf — techo proporcional para las reconstrucciones sobre el historial
+
+Cierra D1 del plan de regreso. `refresh_primera_venta_producto` cruzó su techo
+(388 MB contra 359) sin que nada empeorara: reconstruye la primera venta sobre
+el historial entero una vez por noche, así que su costo **tiene** que crecer con
+la historia. Con un techo fijo que sólo baja, el gate iba a fallar cada pocas
+semanas.
+
+No se pasó a tabla incremental: un `LEAST` al llegar cada factura no sabe mover
+la fecha hacia adelante cuando se anula la factura que era la primera venta.
+
+**Cambio en la sección F:** una entrada puede declarar `crece_con: <tabla>` y
+`bloques_por_mil_filas`. El techo es ese número multiplicado por las filas de hoy (`count(*)`
+exacto: `sales_invoice_items` nunca fue analizada y su estimación iba 48,000
+filas atrás). Crecer al ritmo de la historia pasa; crecer más rápido falla.
+Pasaron a este modo la primera venta (101), la última venta (207) y la
+actividad por cliente (422); las dos últimas conservan su techo de antes,
+repartido entre las filas de hoy. La ventana de 180 días sigue con techo fijo.
+Verificado: gate en verde, y un ratio corto o faltante lo hacen fallar.
+
 ## v2.1030.0 — La contraseña ya no se cambia desde el perfil
 
 Una persona no podía entrar con su carné: «Carné no reconocido». El carné sí se

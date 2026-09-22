@@ -340,7 +340,25 @@ const PLANES = [
  * A diferencia de la sección E, acá una entrada declarada que NO aparece en
  * producción no es un hallazgo. `pg_stat_statements` se borra en cada reinicio
  * de Postgres y las entradas se caen solas cuando la tabla se llena: no haber
- * corrido todavía es lo normal, no una señal de que la función murió. */
+ * corrido todavía es lo normal, no una señal de que la función murió.
+ *
+ * ── Techo proporcional: lo que TIENE que crecer con la historia ──────────────
+ * Una reconstrucción nocturna sobre el historial entero (`refresh_primera_venta_
+ * producto`, `refresh_product_last_sale`, `refresh_customer_activity`) lee por
+ * definición toda la tabla de la que sale. Con un techo fijo que sólo baja, el
+ * gate falla cada pocas semanas sin que nada haya empeorado: pasó el 2026-09-22
+ * con la primera venta (388 MB contra 359), y la salida «pasarla a una tabla
+ * incremental» era PEOR — un `LEAST` al llegar cada factura no sabe mover la
+ * fecha hacia adelante cuando se anula la que era la primera venta.
+ *
+ * Esas entradas declaran `crece_con: <tabla>` y `bloques_por_mil_filas`, y el
+ * techo sale de multiplicarlo por las filas de HOY. Crecer al ritmo de la
+ * historia pasa; crecer más rápido que ella es una regresión de verdad y falla.
+ * El conteo es `count(*)` exacto y no `reltuples`: medido ese día,
+ * `sales_invoice_items` nunca había sido analizada y su estimación iba 48,000
+ * filas atrás — o sea que el techo habría quedado corto justo por estar viejo.
+ * Una ventana fija (`refresh_product_sales_rollup`, 180 días) NO va acá: su
+ * costo no crece con la historia y un techo proporcional la dejaría crecer. */
 const MANIFIESTO_BLOQUES = 'scripts/bloques-por-llamada.json';
 
 const SQL_BLOQUES = `
@@ -604,6 +622,22 @@ SELECT clave, plan FROM _pg_p`;
       const medidasBloques = canal.consultar(SQL_BLOQUES)
         .map(r => ({ fn: r.fn, bloques: Number(r.bloques), llamadas: Number(r.llamadas) }));
       const mb = (b) => `${Math.round(b * 8192 / 1024 / 1024)} MB`;
+      // Filas de hoy de cada tabla que alguna entrada declara en `crece_con`.
+      // El nombre se valida antes de interpolarlo: viene de un archivo del
+      // repo, pero termina dentro de un SQL.
+      const filasDe = {};
+      for (const t of new Set(Object.values(declarado).map(d => d.crece_con).filter(Boolean))) {
+        if (!/^[a-z_][a-z0-9_]*$/.test(t)) {
+          fallas.push({ clave: `bloques-crece-con-invalido:${t}`,
+            porque: '`crece_con` tiene que ser el nombre de una tabla de `public`.', detalle: t });
+          continue;
+        }
+        filasDe[t] = Number(canal.consultar(`SELECT count(*) AS n FROM public.${t}`)[0].n);
+      }
+      const techoDe = (d) => d.crece_con
+        ? (filasDe[d.crece_con] != null
+            ? Math.ceil(d.bloques_por_mil_filas * filasDe[d.crece_con] / 1000) : null)
+        : d.bloques;
       let dentro = 0;
       for (const m of medidasBloques) {
         const d = declarado[m.fn];
@@ -620,10 +654,22 @@ SELECT clave, plan FROM _pg_p`;
           }
           continue;
         }
-        if (m.bloques > d.bloques) {
+        const techo = techoDe(d);
+        if (techo == null || !Number.isFinite(techo)) {
+          fallas.push({ clave: `bloques-sin-techo:${m.fn}`,
+            porque: 'Una entrada sin techo calculable no vigila nada, y un gate que no pudo medir no puede dar verde.',
+            detalle: d.crece_con ? `falta \`bloques_por_mil_filas\` o no se pudo contar ${d.crece_con}`
+                                 : 'falta `bloques`' });
+          continue;
+        }
+        if (m.bloques > techo) {
+          const cuenta = d.crece_con
+            ? ` (${d.bloques_por_mil_filas} por cada 1,000 filas de ${d.crece_con}, que hoy tiene `
+              + `${filasDe[d.crece_con].toLocaleString('es-SV')}) — creció MÁS RÁPIDO que la historia`
+            : '';
           fallas.push({ clave: `bloques-cruzo-techo:${m.fn}`,
             porque: 'Creció lo que lee por llamada. O volvió un barrido, o el planificador cambió de camino.',
-            detalle: `${mb(m.bloques)} contra un techo de ${mb(d.bloques)}` });
+            detalle: `${mb(m.bloques)} contra un techo de ${mb(techo)}${cuenta}` });
         } else dentro++;
       }
       /* Se informan los DOS números por separado y no como una fracción: no son

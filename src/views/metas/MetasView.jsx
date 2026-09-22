@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Target, Gauge, History, CalendarCheck, Coins, Receipt } from 'lucide-react';
+import { Target, Gauge, History, CalendarCheck, Coins, Receipt, CalendarRange } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { useAuth } from '../../context/AuthContext';
@@ -10,6 +10,7 @@ import TabTablero from './TabTablero';
 import TabHistorico from './TabHistorico';
 import TabConfirmacion from './TabConfirmacion';
 import TabBono from './TabBono';
+import TabSemestral from './TabSemestral';
 import TabGastos from './TabGastos';
 import MetaModal from './MetaModal';
 import GastoModal from './GastoModal';
@@ -40,12 +41,15 @@ export default function MetasView() {
     const tabs = useMemo(() => [
         { key: 'tablero',   label: 'Tablero',   icon: Gauge },
         { key: 'bono',      label: 'Bono',      icon: Coins },
+        // El pago semestral mira a TODAS las salas a la vez: sin ese alcance
+        // la base lo rechaza, así que la pestaña no se ofrece.
+        ...(alcanceTodas ? [{ key: 'semestral', label: 'Pago semestral', icon: CalendarRange }] : []),
         ...(canEdit || canApprove ? [{ key: 'confirmacion', label: 'Confirmación', icon: CalendarCheck }] : []),
         // Los gastos por recuperar son una decisión de la empresa, no algo que
         // se consulte: la pestaña solo existe para quien puede cargarlos.
         ...(canEdit ? [{ key: 'gastos', label: 'Gastos', icon: Receipt }] : []),
         { key: 'historico', label: 'Histórico', icon: History },
-    ], [canEdit, canApprove]);
+    ], [canEdit, canApprove, alcanceTodas]);
 
     const rawTab = searchParams.get('tab');
     const activeTab = tabs.some((t) => t.key === rawTab) ? rawTab : 'tablero';
@@ -123,7 +127,7 @@ export default function MetasView() {
             onTabChange={setActiveTab}
             searchValue={search}
             onSearchChange={setSearch}
-            placeholder="Buscar sala..."
+            placeholder={activeTab === 'semestral' ? 'Buscar persona...' : 'Buscar sala...'}
         />
     );
 
@@ -165,6 +169,9 @@ export default function MetasView() {
                         ? Number(user?.branchId ?? user?.branch_id)
                         : SALAS_VENTA[0]}
                 />
+            )}
+            {activeTab === 'semestral' && alcanceTodas && (
+                <TabSemestral canApprove={canApprove} searchTerm={search} />
             )}
             {activeTab === 'confirmacion' && permisosListos && (canEdit || canApprove) && (
                 <TabConfirmacion

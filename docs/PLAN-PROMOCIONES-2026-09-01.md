@@ -1,6 +1,10 @@
 # Plan — Promociones por producto
 
-**Fecha:** 2026-09-01 · **Estado: diseño cerrado con el usuario, cero código.**
+**Fecha:** 2026-09-01 · **Estado (corregido el 2026-09-22): CONSTRUIDO y en uso
+desde el 5-sep** — las cuatro fases, más el bono por laboratorio y la
+liquidación mensual. La cabecera decía «cero código» tres semanas después de
+construirlo. **La liquidación mensual se retira**: no corresponde a cómo se paga
+ningún bono — ver `docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md`.
 
 Es la **Fase 4** de `docs/planes-cerrados/PLAN-METAS-2026-08-03.md` §9a, que quedó
 escrita el 2026-08-04 con las capturas del Excel del usuario y nunca se

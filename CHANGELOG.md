@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1032.0 — El bono de meta se paga por semestre, y Promociones deja la hoja mensual
+
+La pestaña «Liquidación» de Promociones era una hoja MENSUAL que juntaba todos
+los bonos, y ningún bono se paga así. Regla del usuario (22-sep): el bono de
+meta se paga dos veces al año —ene–jun en la 1ª quincena de julio, jul–dic en
+la 1ª de enero— y es la suma del de cada mes; el de producto se paga en la sala
+con una salida de efectivo. Plan: `docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md`.
+
+- **Metas → Pago semestral** (nueva): por persona, el bono de cada mes y la
+  suma. Quien ya no trabaja no se paga ni se niega solo: gerencia decide con
+  motivo, y sin esa decisión el semestre no se aprueba. Aprobar congela la hoja;
+  reabrir exige motivo. Se descarga para la planilla.
+- **La foto del mes**: el bono se reparte entre el personal ACTIVO, así que
+  recalcular enero en julio borraba a quien se fue en marzo. El cierre del día 5
+  ahora guarda el bono de cada persona (`metas_bono_persona`). Julio y agosto se
+  reconstruyeron hoy; agosto coincide al centavo con la hoja del 5-sep
+  ($554.64, 24 personas).
+- `get_bono_meta_sala` pasa a ser un envoltorio de `bono_meta_sala_interno`,
+  que el cierre puede llamar sin sesión. Huella idéntica en las 72 combinaciones
+  sala·mes de 2026.
+- **Promociones** ya no tiene «Liquidación». Las tablas `liquidacion*` siguen en
+  la base hasta retirarlas aparte.
+
+Migraciones `20260922212810_bono_meta_sala_interno` y
+`20260922212927_bono_semestral`.
+
 ## v2.1031.0 — La contraseña sólo cambia con permiso: candado en la base
 
 Quitar el botón de la pantalla (v2.1030.0) no alcanzaba: Supabase acepta

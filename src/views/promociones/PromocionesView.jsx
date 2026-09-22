@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
+    Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Percent,
     CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -18,13 +18,12 @@ import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import {
-    estadoVisible, esLaboratorio, textoBuscable, hoySV, mesesRecientes, mesAnterior,
+    estadoVisible, esLaboratorio, textoBuscable, hoySV,
 } from './promocionesUtils';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';
 import TabExcedentes from './TabExcedentes';
-import TabLiquidacion from './TabLiquidacion';
 import TabDescuentos from './TabDescuentos';
 import DescuentoModal from './DescuentoModal';
 import PromocionModal from './PromocionModal';
@@ -89,7 +88,9 @@ export default function PromocionesView() {
         { key: 'seguimiento', label: 'Seguimiento', icon: Layers },
         { key: 'descuentos',  label: 'Descuentos',  icon: Percent },
         { key: 'excedentes',  label: 'Excedentes',  icon: Scale },
-        { key: 'liquidacion', label: 'Liquidación', icon: Wallet },
+        // La «Liquidación» mensual se retiró el 2026-09-22: ningún bono se paga
+        // por mes. El de meta es semestral (Metas → Pago semestral) y el de
+        // producto se paga en la sala — docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
         { key: 'historico',   label: 'Histórico',   icon: History },
     ]), []);
 
@@ -109,7 +110,6 @@ export default function PromocionesView() {
        mira qué está seleccionado (§17), y sueltos arriba del contenido eran dos
        controles flotando sin caja —reportado con captura en Liquidación—. */
     const [seguida, setSeguida] = useState('');  // la promoción que se sigue
-    const [mesLiq, setMesLiq] = useState('');    // el mes de la liquidación
 
     const [promos, setPromos] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -240,18 +240,12 @@ export default function PromocionesView() {
         })),
         [vivas],
     );
-    const mesesLiquidacion = useMemo(() => mesesRecientes(), []);
 
     /* La primera de la lista, para que Seguimiento abra con algo y no con un
-       desplegable vacío que parece un error. Y el mes ANTERIOR para la
-       liquidación: el mes en curso todavía se mueve, y una hoja que cambia sola
-       entre dos miradas no sirve para pagar. */
+       desplegable vacío que parece un error. */
     useEffect(() => {
         if (!seguida && vivas.length) setSeguida(String(vivas[0].id)); // eslint-disable-line react-hooks/set-state-in-effect -- la lista llega asincrónica; el default no se puede fijar antes de tenerla
     }, [vivas, seguida]);
-    useEffect(() => {
-        if (!mesLiq) setMesLiq(mesAnterior()); // eslint-disable-line react-hooks/set-state-in-effect -- valor inicial derivado, no un efecto sobre datos externos
-    }, [mesLiq]);
 
     /* ── Las tarjetas de la fila de arriba ────────────────────────────────
        Describen LO QUE SE ESTÁ MIRANDO, no la vista entera: se calculan sobre
@@ -375,7 +369,7 @@ export default function PromocionesView() {
        controles quedaban sueltos arriba del contenido —dos cajas flotando sin
        píldora, que es lo que se reportó de Liquidación—. */
     const muestraFiltros = acciones.length > 0 || promos.length > 0
-        || tarjetas.length > 0 || ['seguimiento', 'liquidacion'].includes(tab);
+        || tarjetas.length > 0 || tab === 'seguimiento';
 
     /* Los recortes de la lista sólo tienen sentido donde se lista: en
        Descuentos, Excedentes y Liquidación recortarían algo que no está en
@@ -446,17 +440,6 @@ export default function PromocionesView() {
         }
         if (tab === 'excedentes') {
             return <TabExcedentes puedeAprobar={puedeAprobar} onResumen={setResumenTab} />;
-        }
-        if (tab === 'liquidacion') {
-            return (
-                <TabLiquidacion
-                    puedeEditar={puedeEditar}
-                    puedeAprobar={puedeAprobar}
-                    mes={mesLiq}
-                    onMes={setMesLiq}
-                    onResumen={setResumenTab}
-                />
-            );
         }
         if (tab === 'historico') {
             return <TabHistorico promos={terminadas} busqueda={busqueda} />;
@@ -534,21 +517,6 @@ export default function PromocionesView() {
                                             placeholder="Promoción"
                                             umbral={0}
                                             ancho="240px"
-                                        />
-                                    </FilterBar.Section>
-                                )}
-
-                                {/* El mes de la liquidación, por lo mismo. */}
-                                {tab === 'liquidacion' && (
-                                    <FilterBar.Section label="mes" fija>
-                                        <FilterBar.Opciones
-                                            value={mesLiq}
-                                            onChange={(v) => setMesLiq(v || '')}
-                                            label="Mes"
-                                            options={mesesLiquidacion}
-                                            placeholder="Mes"
-                                            umbral={0}
-                                            ancho="190px"
                                         />
                                     </FilterBar.Section>
                                 )}

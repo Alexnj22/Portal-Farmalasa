@@ -248,3 +248,37 @@ export async function fetchMetaSala(branchId = null) {
     if (error) throw error;
     return data?.[0] ?? null;
 }
+
+// ── El pago semestral del bono ───────────────────────────────────────────────
+// docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md. El bono de meta se paga dos
+// veces al año y es la SUMA del de cada mes. Toda la cuenta vive en la base: los
+// meses cerrados salen de la foto que toma el cierre del día 5, y el que sigue
+// abierto se calcula en vivo y viene marcado `provisional`.
+export async function fetchBonoSemestral(semestre) {
+    const { data, error } = await supabase.rpc('get_bono_semestral', { p_semestre: semestre });
+    if (error) throw error;
+    return data ?? null;
+}
+
+// Quien ya no trabaja: gerencia decide si cobra lo acumulado, con motivo.
+export async function decidirBonoSemestral({ semestre, employeeId, pagar, motivo }) {
+    const { data, error } = await supabase.rpc('decidir_bono_semestral', {
+        p_semestre: semestre,
+        p_employee_id: employeeId,
+        p_pagar: !!pagar,
+        p_motivo: motivo,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
+// Aprobar CONGELA la hoja; reabrir (`aprobar = false`) exige el motivo.
+export async function aprobarBonoSemestral(semestre, aprobar = true, nota = null) {
+    const { data, error } = await supabase.rpc('aprobar_bono_semestral', {
+        p_semestre: semestre,
+        p_aprobar: !!aprobar,
+        p_nota: nota || null,
+    });
+    if (error) throw error;
+    return data ?? null;
+}

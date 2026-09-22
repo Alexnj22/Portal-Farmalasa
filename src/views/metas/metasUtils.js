@@ -94,3 +94,28 @@ export function tramoLabel(tramo, bonoActivo) {
     if (!cfg) return null;
     return bonoActivo ? cfg.label : cfg.sinBono;
 }
+
+// ── Semestres del bono ───────────────────────────────────────────────────────
+// 'AAAA-S1' = enero–junio, se paga en la 1ª quincena de julio.
+// 'AAAA-S2' = julio–diciembre, se paga en la 1ª quincena de enero del año
+// siguiente. Regla del usuario, 2026-09-22.
+export function semestreDe(ym) {
+    const [y, m] = ym.split('-').map(Number);
+    return `${y}-S${m <= 6 ? 1 : 2}`;
+}
+
+export function semestreSumar(sem, n) {
+    const [y, s] = [Number(sem.slice(0, 4)), Number(sem.slice(-1))];
+    const idx = y * 2 + (s - 1) + n;
+    return `${Math.floor(idx / 2)}-S${(idx % 2) + 1}`;
+}
+
+export function semestreLabel(sem) {
+    const y = sem.slice(0, 4);
+    return sem.endsWith('1') ? `Enero–junio ${y}` : `Julio–diciembre ${y}`;
+}
+
+export function semestrePagoLabel(sem) {
+    const y = Number(sem.slice(0, 4));
+    return sem.endsWith('1') ? `1ª quincena de julio ${y}` : `1ª quincena de enero ${y + 1}`;
+}

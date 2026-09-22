@@ -466,10 +466,14 @@ export const AREAS = [
             'src/data/metas.js',
         ],
         tablas: ['metas_config', 'metas_factor_cumplimiento', 'metas_gasto', 'metas_gasto_cuota',
-                 'metas_gasto_sala', 'metas_historial', 'metas_resultado', 'metas_sucursal'],
+                 'metas_gasto_sala', 'metas_historial', 'metas_resultado', 'metas_sucursal',
+                 // El pago semestral del bono (2026-09-22).
+                 'metas_bono_persona', 'bono_semestre', 'bono_semestre_decision',
+                 'bono_semestre_detalle', 'bono_semestre_historial'],
         edge: [],
         crons: ['metas-ciclo-diario'],
-        docs: ['docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md'],
+        docs: ['docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md',
+               'docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md'],
     },
     {
         id: 'promociones',
@@ -480,7 +484,6 @@ export const AREAS = [
         archivos: [
             'src/views/promociones/',
             'src/data/promociones.js',
-            'src/data/liquidacion.js',
             'src/data/descuentos.js',
         ],
         tablas: ['promociones', 'promocion_renglon', 'promocion_renglon_tarifa',

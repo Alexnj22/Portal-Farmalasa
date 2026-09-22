@@ -173,8 +173,21 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
     casi contiguos— y queda en **670 MB**, bajo el techo. 12/12 idénticas otra
     vez. Estadística reseteada el 22-sep 16:54 UTC: mañana confirmar el promedio
     con tráfico real en `gate:perf`.
-  - `refresh_primera_venta_producto` 388 vs 359 MB — rollup diario, deuda
-    declarada; crece con la historia.
+  - `refresh_primera_venta_producto` 388 vs 359 MB — **el único hallazgo de
+    `gate:perf` que queda al cierre del 22-sep**, y es previo a este plan.
+    Rehace `mv_primera_venta_producto` (primera venta por producto y sala) una
+    vez al día sobre el historial entero, así que su costo crece con la historia
+    y va a volver a cruzar cualquier techo. No se le sube el techo —el
+    manifiesto dice que sólo bajan—: la decisión es del usuario entre dejarlo
+    declarado como lo que es (un barrido diario que crece) o pasarlo a una tabla
+    mantenida incrementalmente (`LEAST` sobre la primera venta al llegar cada
+    factura), que es trabajo de diseño aparte.
+  - `get_product_sales_total` — declarada el 22-sep con su medición (55,867
+    bloques con alcance total, 13,248 con alcance de sala). **La técnica del
+    rango de facturas de F5b la EMPEORA** escrita como subconsultas escalares
+    por rama: 55,867 → 375,437 bloques. Si se retoma, hay que copiar la forma
+    que funcionó (CTE materializado con las facturas del período y join contra
+    él), no el predicado suelto.
   - `donde-hay-un-producto` 30.5 vs 30 ms — ✅ **resuelto en F4** (v2.1026.4):
     casi todo era `traslados_en_vuelo()` (28 ms), que abría el jsonb de TODAS
     las solicitudes de traslado de la historia (1,388, crece sola). Prefiltro

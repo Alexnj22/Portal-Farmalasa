@@ -80,7 +80,7 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
   abarca cerró en $0.00: los $2 estaban en el cajón. Declarado en
   `DUPLICADOS_YA_PASADOS` con su motivo; `gate:cortes` en verde.
 
-### A4 ⏸ Hacienda: dos documentos rechazados que el circuito no arregla
+### A4 ✅ Hacienda: dos documentos rechazados que el circuito no arregla
 
 - **Salud 2, CCF 65** (factura 368299, $16.05, **del 7-sep**): crédito fiscal
   a un cliente «Consumidor» sin NRC. El circuito no escribe NRC.
@@ -91,6 +91,13 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
 - **Corregir:** decisión del usuario — anular y reemitir, completar el NRC,
   o redondear antes de transmitir. Y que un rechazo que el circuito NO puede
   arreglar **avise**, en vez de quedar 15 días en silencio.
+- **Decisión del usuario:** los dos documentos los resuelve él. La 62982 ya
+  tiene sello en el origen (reintento del 22-sep 09:40: «ya está validada por
+  MH»); falta que el sello llegue al portal con el próximo repaso.
+- **Aviso (v2.1026.0):** `avisar_rechazos_sin_arreglo()`, cron
+  `avisar-rechazos-mh-8am-sv`, una vez por documento con más de 2 días
+  rechazado, a quien edita Facturación. El aviso técnico que existía había
+  salido 16 días a una sola persona de vacaciones, 0 leídos.
 
 ---
 

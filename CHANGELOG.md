@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1026.0 — Hacienda rechaza un documento que no se corrige solo: ahora se avisa
+
+Del 7 al 22 de septiembre, la CCF 65 de Salud 2 —un crédito fiscal emitido a
+un consumidor sin NRC— fue rechazada por Hacienda todas las noches. El aviso
+que existía (`alertar_barrido_dte`, «el barrido de Hacienda terminó con
+fallas») salió los 16 días a una sola persona del rol técnico, que estaba de
+vacaciones: 16 avisos, 0 leídos. Pendiente MH lo mostraba sólo a quien abriera
+la pestaña.
+
+Ahora `avisar_rechazos_sin_arreglo()` (cron `avisar-rechazos-mh-8am-sv`, 08:05)
+avisa **una vez por documento** a quien edita Facturación y ve Pendiente MH,
+cuando el documento lleva más de 2 días rechazado. Si después de dos noches
+sigue rechazado, el envío automático —que corrige la ficha y reenvía en la
+misma noche— ya no puede: se mide por el resultado, no por una lista de motivos.
+El aviso lleva a `/facturacion?tab=pendiente_mh` con el ícono de Facturación.
+
+La marca vive en su propia tabla (`dte_rechazos_avisados`, RLS, retención de 180
+días) y no en la campana: si fuera la campana, quien la vacía lo recibiría otra
+vez. Hoy le tocaría a 5 personas y por un documento; arranca mañana.
+
 ## v2.1025.4 — Los movimientos de caja dejan de reescribirse en cada repaso
 
 `gate:eficiencia` estaba en rojo: escrituras sin inserción en 1,380/h contra un

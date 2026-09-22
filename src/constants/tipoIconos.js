@@ -72,6 +72,8 @@ export const ICONO_POR_TIPO = {
     // El mismo `Landmark` con el que el circuito de bolsas rotula «Depósitos al
     // banco»: el aviso lleva a esa sección y tiene que verse como ella.
     DEPOSITO_BANCO:   Landmark,
+    // El `FileText` de Facturación: el aviso lleva a Pendiente MH (2026-09-22).
+    DTE_RECHAZO:      FileText,
     SYSTEM:           Info,       // mensaje del portal, no de una persona
 };
 

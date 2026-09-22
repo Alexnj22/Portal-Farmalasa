@@ -176,11 +176,11 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
     (el techo actual se midió el 4-sep, con 4 días de datos).
   - `refresh_primera_venta_producto` 388 vs 359 MB — rollup diario, deuda
     declarada; crece con la historia.
-  - `donde-hay-un-producto` 30.5 vs 30 ms — **causa encontrada, borrador sin
-    aplicar (espera OK)**: casi todo es `traslados_en_vuelo()` (28 ms), que abre
-    el jsonb de TODAS las solicitudes de traslado de la historia (1,383, crece
-    sola). Prefiltro exacto por `updated_at`: 28.2 → 1.7 ms.
-    `docs/PLAN-REGRESO-2026-09-22-borradores/traslados_en_vuelo_prefiltro.sql`.
+  - `donde-hay-un-producto` 30.5 vs 30 ms — ✅ **resuelto en F4** (v2.1026.4):
+    casi todo era `traslados_en_vuelo()` (28 ms), que abría el jsonb de TODAS
+    las solicitudes de traslado de la historia (1,388, crece sola). Prefiltro
+    exacto por `updated_at` (migración `20260922163723`): 32.5 → 2.3 ms, y
+    `donde-hay` como usuario 35 → 9 ms.
 
 ### D2 ✅ Las más pesadas: `get_product_drill_summary` / `_lines`
 
@@ -281,7 +281,7 @@ Aprobado por el usuario el 22-sep («hagámoslo»).
 | F1 | Envíos · historial y vivos: el JSON por lote (`envios_json(ids[])`), RLS intacto | 1,100 ms / 113 ms como usuario | ✅ v2.1026.2 · **38 ms / 33 ms**, 8 huellas idénticas en dos cuentas |
 | F2 | Aprobar traslado: `v_inventario_disponible` calculada una vez | 810 MB, 255 ms | ✅ v2.1026.3 · **7 MB, 36 ms**, 120/120 idénticas; desempate por sala en `alternativas` |
 | F3 | Cola de impresión: índice parcial `WHERE estado='IMPRIMIENDO'` | 1.2 TB/semana | ⬜ |
-| F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ⬜ |
+| F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ✅ v2.1026.4 · **2.3 ms**, idéntica en 8 cortes simulados (0 a 1,225 filas en vuelo) |
 | F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ⬜ |
 | F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ⬜ tabla caliente: `CONCURRENTLY` y fuera de horario |
 | F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | ⬜ diseñar antes de tocar |

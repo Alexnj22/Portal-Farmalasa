@@ -1,23 +1,28 @@
--- BORRADOR — NO APLICADO. Preparado el 2026-09-22 (plan D1, `donde-hay-un-producto`
--- en 30.5 ms contra un techo de 30). Espera el OK del usuario.
+-- F4 · `traslados_en_vuelo()` deja de recorrer la historia entera de traslados.
 --
--- `get_donde_hay` cuesta casi entero lo que cuesta `traslados_en_vuelo()` (28 ms,
--- medido aislado). Su CTE `base` recorre TODAS las solicitudes de traslado
--- aprobadas de la historia —1,383 el 22-sep, y crece con cada traslado— y abre el
--- jsonb de cada una para descubrir que casi ninguna salió después de la última
--- lectura de inventario de su sala. O sea que el techo se va a seguir cruzando
--- solo, por el paso del tiempo.
+-- Cada lectura de `v_inventario_disponible` la llama (dónde hay un producto,
+-- aprobar un traslado, faltantes con stock en otra sala, el buscador global), y
+-- costaba 28–32 ms aunque no hubiera NADA en vuelo: su CTE `base` recorría todas
+-- las solicitudes aprobadas de la historia —1,388 el 22-sep, y crece con cada
+-- traslado— abriendo el jsonb de cada una para descubrir que casi ninguna salió
+-- después de la última lectura de inventario de su sala. `get_donde_hay` ya
+-- cruzaba su techo de 30 ms en `gate:perf` sólo por el paso del tiempo.
 --
--- Prefiltro por `updated_at`, que es exacto por construcción: un traslado vivo
--- cumple `traslado_at > u.at` (la última lectura de su sala), y
--- `approval_requests_updated_at` (BEFORE UPDATE) garantiza
--- `updated_at >= traslado_at` porque el `erp_traslado` se escribe con un UPDATE.
--- Verificado en las 1,383 filas: 0 violan `traslado_at <= updated_at`. Si alguna
--- sala no tiene lectura (u.at NULL), el prefiltro se apaga (-infinity), igual que
--- el `coalesce` de `vivos`.
+-- Prefiltro por `updated_at`, exacto por construcción: un traslado está en vuelo
+-- si `traslado_at > u.at` (la última lectura de SU sala), y `traslado_at <=
+-- updated_at` siempre, porque `erp_traslado` se escribe con un UPDATE y el
+-- trigger `approval_requests_updated_at` sella `updated_at` en ese momento. Así
+-- que lo que no se tocó después de la lectura MÁS VIEJA de las salas no puede
+-- estar en vuelo, y no hace falta abrirle el jsonb. Si alguna sala no tiene
+-- lectura (`u.at` NULL), el prefiltro se apaga (`-infinity`), igual que el
+-- `coalesce` de `vivos`.
 --
--- Medido: 28.2 ms → 1.7 ms, mismo resultado (hoy vacío: no había traslados en
--- vuelo; volver a comparar md5 en un momento con traslados vivos antes de aplicar).
+-- Verificado el 2026-09-22 sobre las 1,388 aprobadas: 0 con `traslado_at >
+-- updated_at` (la más cercana, 18 ms antes) y 0 con origen fuera de
+-- `erp_sucursal_map`. Como a esa hora no había nada en vuelo, la equivalencia se
+-- probó en pg_temp moviendo el margen de 15 s a 1 h, 6 h, 1, 3, 7, 30 y 365
+-- días —de 0 a 1,225 filas en vuelo—: md5 idéntico en los ocho cortes.
+--   caso real (margen 15 s): 32.5 → 2.3 ms
 SET lock_timeout = '5s';
 
 CREATE OR REPLACE FUNCTION public.traslados_en_vuelo()
@@ -51,8 +56,10 @@ AS $function$
         FROM public.approval_requests a
         WHERE a.type = 'INVENTORY_TRANSFER_REQUEST'
           AND a.status = 'APPROVED'
-          -- Prefiltro exacto (ver el encabezado del borrador): sólo lo que se
-          -- tocó después de la lectura más vieja puede estar en vuelo.
+          -- Prefiltro exacto: `traslado_at <= updated_at` siempre, así que lo
+          -- que no se tocó después de la lectura más vieja no puede estar en
+          -- vuelo. Va ANTES de abrir el jsonb (ver el encabezado de la
+          -- migración 2026-09-22).
           AND a.updated_at > (SELECT CASE WHEN bool_or(u.at IS NULL) THEN '-infinity'::timestamptz
                                           ELSE min(u.at) END
                                 FROM ultima u)
@@ -66,6 +73,10 @@ AS $function$
         LEFT JOIN ultima u ON u.suc = b.suc
         WHERE b.traslado_at > coalesce(u.at, '-infinity'::timestamptz)
     )
+    -- La expansión del arreglo va DESPUÉS del filtro y no antes: así sólo se
+    -- abre el `items` de lo que de verdad está en vuelo. Es además lo que el
+    -- plan viejo hacía de hecho (`never executed`), pero por suerte y no por
+    -- construcción — otro plan podía abrirlo primero.
     SELECT v.suc,
            (it->>'erp_product_id')::integer,
            sum(coalesce((it->>'cantidad')::numeric, 0) * coalesce((it->>'factor')::numeric, 1))

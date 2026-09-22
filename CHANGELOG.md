@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1026.4 — Traslados en vuelo: deja de recorrer la historia entera
+
+`traslados_en_vuelo()` la llama toda lectura de `v_inventario_disponible` —dónde
+hay un producto, aprobar un traslado, faltantes con stock en otra sala, el
+buscador global— y costaba ~30 ms aunque no hubiera nada en vuelo: recorría las
+1,388 solicitudes aprobadas de la historia y abría el jsonb de cada una. Crecía
+sola con cada traslado; `donde-hay-un-producto` ya cruzaba su techo de 30 ms en
+`gate:perf` por el mero paso del tiempo.
+
+Migración `20260922163723_traslados_en_vuelo_no_recorre_la_historia`: prefiltro
+por `updated_at`, exacto por construcción — `erp_traslado` se escribe con un
+UPDATE y el trigger sella `updated_at` en ese momento, así que `traslado_at <=
+updated_at` siempre (verificado: 0 de 1,388 lo violan). Lo que no se tocó después
+de la lectura más vieja de las salas no puede estar en vuelo.
+
+- la función: **32.5 → 2.3 ms**
+- `donde-hay` como usuario: 35 → 9 ms; aprobar traslado: 48 → 21 ms (con v2.1026.3)
+- como a esa hora no había nada en vuelo, la equivalencia se probó moviendo el
+  margen de 15 s a un año —de 0 a 1,225 filas en vuelo—: md5 idéntico en los
+  ocho cortes, antes de aplicar y otra vez contra la función viva.
+
 ## v2.1026.3 — Aprobar un traslado: la existencia se calcula una vez
 
 `get_traslado_disponibilidad` —el panel que muestra, al aprobar una solicitud de

@@ -40,6 +40,13 @@
         "RECIBIDA"
       ]
     },
+    "bono_semestre": {
+      "origen": "check",
+      "valores": [
+        "aprobado",
+        "borrador"
+      ]
+    },
     "caja_vales_portal": {
       "origen": "check",
       "valores": [
@@ -99,13 +106,6 @@
         "error",
         "no_llego",
         "por_enviar"
-      ]
-    },
-    "liquidacion": {
-      "origen": "check",
-      "valores": [
-        "aprobada",
-        "borrador"
       ]
     },
     "metas_gasto": {

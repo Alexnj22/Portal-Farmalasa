@@ -27,7 +27,7 @@ Decisiones del mismo día:
 
 ---
 
-## Fase 1 — quitar la hoja mensual · ✅ pantalla (v2.1032.0), ⬜ tablas y borrador de agosto
+## Fase 1 — quitar la hoja mensual · ✅ pantalla (v2.1032.0), tablas y borrador (v2.1032.1, migración `20260922214007`)
 
 - Se quita la pestaña «Liquidación» de `/promociones` (`TabLiquidacion.jsx`,
   `src/data/liquidacion.js`).
@@ -52,7 +52,7 @@ Decisiones del mismo día:
 - Aprobar congela el semestre, igual que hoy la hoja mensual (reabrir exige
   motivo). Exporta el archivo para planilla.
 
-## Fase 3 — «Pagar» el bono de producto en la sala · ⬜ espera la pregunta de abajo
+## Fase 3 — «Pagar» el bono de producto en la sala · ⬜
 
 - Cuando una promoción con bono termina (por fecha o por lote), cada sala ve a
   quién le toca y cuánto.
@@ -63,9 +63,13 @@ Decisiones del mismo día:
   persona·promoción·sala).
 - La salida tiene que entrar en el esperado del corte (`gate:cortes`).
 
-**Abierto:** el bono de producto tiene tres montos (vendedor, administración,
-bodega). El del vendedor se paga en su sala. **¿Dónde cobran administración y
-bodega?** Se pregunta antes de la Fase 3.
+**Los tres montos se pagan en tres lugares** (usuario, 2026-09-22):
+
+| monto | dónde | cómo |
+|---|---|---|
+| vendedor | su sala | «Pagar» → salida de efectivo de esa caja |
+| administración | planilla | se agrega a la planilla, no sale de ninguna caja |
+| bodega | **Salud 3** | «Pagar» → salida de efectivo de la caja de Salud 3 |
 
 ---
 

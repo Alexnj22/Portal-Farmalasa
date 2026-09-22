@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1032.1 — Se retira la hoja mensual de bonos de la base
+
+Con OK del usuario: se borran `liquidacion`, `liquidacion_detalle`,
+`liquidacion_historial` y sus cinco funciones (migración
+`20260922214007_retirar_liquidacion_mensual`). Tenían un solo borrador —agosto
+2026, informativo, nunca aprobado— cuyo bono de meta ya vive como foto en
+`metas_bono_persona`. Nada más las leía. Los retratos de `scripts/db/` quitan la
+tabla y suman las nuevas del pago semestral (`bono_semestre` con su `estado`, y
+las columnas booleanas de la foto y la decisión).
+
 ## v2.1032.0 — El bono de meta se paga por semestre, y Promociones deja la hoja mensual
 
 La pestaña «Liquidación» de Promociones era una hoja MENSUAL que juntaba todos

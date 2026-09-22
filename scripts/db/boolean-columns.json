@@ -57,6 +57,12 @@
       "pide_boleta",
       "pide_receptor"
     ],
+    "bono_semestre_decision": [
+      "pagar"
+    ],
+    "bono_semestre_detalle": [
+      "pagar"
+    ],
     "branches": [
       "conteo_ciclico_activo"
     ],
@@ -179,8 +185,9 @@
       "acumula_puntos",
       "ocultar_en_minmax"
     ],
-    "liquidacion": [
-      "informativa"
+    "metas_bono_persona": [
+      "en_prueba",
+      "es_jefe"
     ],
     "metas_config": [
       "bonificaciones_activas",

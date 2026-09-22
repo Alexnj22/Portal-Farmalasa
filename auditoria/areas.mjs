@@ -478,7 +478,7 @@ export const AREAS = [
     {
         id: 'promociones',
         nombre: 'Promociones',
-        resumen: 'Los dos programas de bonificación de laboratorio. Por PRODUCTO: paga por unidad vendida, con el lote declarado y repartido por sala, su cierre automático y el aviso a la sala que se queda sin producto. Por LABORATORIO: si la sala vende el umbral del mes, cada persona gana el monto de ese nivel; el mes se congela al terminar. La LIQUIDACIÓN mensual, que junta los tres bonos en una hoja por persona y la congela al aprobarla. Y los DESCUENTOS, que son otra cosa: lo que la venta le rebaja al renglón —un porcentaje, o un monto por cada unidad— y que vive en el sistema de la caja, no acá.',
+        resumen: 'Los dos programas de bonificación de laboratorio. Por PRODUCTO: paga por unidad vendida, con el lote declarado y repartido por sala, su cierre automático y el aviso a la sala que se queda sin producto. Por LABORATORIO: si la sala vende el umbral del mes, cada persona gana el monto de ese nivel; el mes se congela al terminar. (La liquidación mensual se retiró el 2026-09-22: el bono de meta se paga por semestre en Metas.) Y los DESCUENTOS, que son otra cosa: lo que la venta le rebaja al renglón —un porcentaje, o un monto por cada unidad— y que vive en el sistema de la caja, no acá.',
         modulos: ['promociones'],
         rutas: ['/promociones'],
         archivos: [
@@ -490,8 +490,7 @@ export const AREAS = [
                  'promocion_reparto', 'promocion_reparto_mov', 'promocion_excedente',
                  'promocion_historial',
                  'promocion_laboratorio', 'promocion_nivel', 'promocion_nivel_umbral',
-                 'promocion_cierre_sala',
-                 'liquidacion', 'liquidacion_detalle', 'liquidacion_historial'],
+                 'promocion_cierre_sala'],
         // El EFECTO de `descuentos-erp` es un descuento en la venta, que es lo que
         // esta pantalla configura — aunque el dato viva en el sistema de la caja.
         edge: ['descuentos-erp'],

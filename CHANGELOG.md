@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1027.1 — Pendiente MH y anuladas de puntos: dos índices parciales
+
+Dos consultas recorrían las 373,856 facturas para encontrar unas pocas filas o
+ninguna, porque su condición no tenía índice:
+
+- **Pendiente MH** (`get_pending_mh_invoices`, la cola de Facturación) buscaba
+  «sin sello válido» —`length(recibido_mh) IS DISTINCT FROM 40`— y con la cola
+  VACÍA leía **812 MB y 915 ms para no devolver nada**. Con
+  `idx_si_sin_sello_valido`: **3 bloques, 0.15 ms**; medida como usuario,
+  818 → 7 MB.
+- **Anuladas de puntos** (`puntos_ventas_anuladas`, cada minuto desde
+  `sync-puntos`) recorría el índice entero para hallar las 1,066 facturas no
+  finalizadas: 13,113 bloques y 67 ms por corrida. Con `idx_si_no_finalizada`:
+  **5,249 bloques, 11 ms**.
+
+Migraciones `20260922171650` y `20260922171724`. Ninguna cambia un resultado: el
+índice lleva el mismo predicado que la consulta.
+
+Se aplicaron en horario de sala en vez de esperar la ventana sin syncs, y el
+motivo está escrito en las dos migraciones: un `CREATE INDEX` toma lock **SHARE**
+—no frena ninguna lectura, sólo escrituras mientras construye— y `lock_timeout`
+convierte un choque en un reintento. El outage del 2026-07-08, que es el que
+originó la regla de la ventana, fue por locks ACCESS EXCLUSIVE (policies y
+ALTER), que sí encolan lecturas. Verificado: las 79 llamadas de edge functions
+de esa ventana, todas en 200.
+
+`get_pending_mh_invoices` sale de `scripts/bloques-por-llamada.json`: quedó muy
+por debajo del umbral de declaración.
+
 ## v2.1027.0 — Puntos: la corrida de cada minuto deja de rehacer la semana
 
 `sync-puntos` corre cada minuto —porque el cliente puede presentar el ticket al

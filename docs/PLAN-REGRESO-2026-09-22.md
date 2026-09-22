@@ -295,8 +295,8 @@ Aprobado por el usuario el 22-sep («hagámoslo»).
 | F3 | Cola de impresión: índice parcial `WHERE estado='IMPRIMIENDO'` | 1.2 TB/semana | ✅ v2.1026.5 · **206 → 5 bloques** por llamada; vigilado en `gate:perf` C |
 | F4 | `traslados_en_vuelo`: prefiltro exacto por `updated_at` | 28 ms en cada lectura de disponibilidad | ✅ v2.1026.4 · **2.3 ms**, idéntica en 8 cortes simulados (0 a 1,225 filas en vuelo) |
 | F5 | Ventas › Productos: los renglones del mes una sola vez | 1.4 GB por llamada | ✅ v2.1026.6 + v2.1026.7 · **1.46 GB → 670 MB** con alcance total (sala sin cambio), 12/12 idénticas en cada paso |
-| F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ⏸ **preparado** para el 23-sep 06:00–11:59 UTC (tabla caliente, sin syncs): `borradores/pendiente_mh_indice_sin_sello.sql`. Hoy con la cola VACÍA lee 104k bloques y 915 ms para no devolver nada. Probado en staging |
-| F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | ✅ v2.1027.0 · aprobadas las tres piezas; **46,149 → 10,796** bloques por minuto. Falta el índice de anuladas (va con F6, mañana) |
+| F6 | Pendiente MH: índice parcial «sin sello válido» en `sales_invoices` | 818 MB por llamada | ✅ v2.1027.1 · **818 → 7 MB, 409 → 6 ms** como usuario (103,906 → 3 bloques). Aplicado el mismo día: `CREATE INDEX` toma lock SHARE, que no frena lecturas — la ventana sin syncs la pedía la regla por el outage del 7-8 jul, que fue por ACCESS EXCLUSIVE |
+| F7 | Puntos cada minuto: sólo lo nuevo + barrido completo cada hora | 4.6 TB/semana | ✅ v2.1027.0 + v2.1027.1 · las tres piezas: **46,149 → 10,796** bloques por minuto, anuladas **13,113 → 5,249**, barrido 92k → 8k por lote |
 | F8 | Inicio · faltantes (629 GB/sem) y top productos (197 GB/sem) | — | ✅ medido, **sin cambio**: ver abajo |
 
 Hallazgos que explican F1 y F2, para no redescubrirlos:
@@ -347,8 +347,9 @@ Hallazgos que explican F1 y F2, para no redescubrirlos:
   factura sin renglones NO se sella como «sin enviar» —`sync-dte-sales` la
   escribe en dos sentencias y hay una ventana en la que se ve vacía—, porque con
   la re-evaluación por hora esa factura habría esperado hasta una hora.
-  Pendiente: el índice parcial de `puntos_ventas_anuladas` (13,113 bloques por
-  minuto), que va mañana con F6.
+  Y la tercera pieza, aplicada el mismo día (v2.1027.1): el índice parcial
+  `idx_si_no_finalizada` deja `puntos_ventas_anuladas` en **5,249 bloques y
+  11 ms** por corrida (13,113 y 67 ms antes).
 - **F8, medido el 22-sep — ninguna de las dos se toca:**
   - `get_faltantes_con_stock_en_otra_sala`: la técnica de F2 (la vista entera
     una vez) la EMPEORA —16–47k bloques y 39–98 ms hoy, 53–60k y 131–183 ms

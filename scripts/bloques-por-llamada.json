@@ -20,11 +20,6 @@
       "deuda": true,
       "motivo": "346 a 892 MB por llamada según con cuántas salas se llame (58,289 de media sobre 5 llamadas; 114,173 en la forma con `p_target_ids`). La vista previa de generar pedido. NO auditado. Lee `mv_product_factor`, que es la vista materializada del factor de presentación."
     },
-    "get_pending_mh_invoices": {
-      "bloques": 130000,
-      "deuda": true,
-      "motivo": "770 MB por llamada (98,558 bloques, 8 llamadas) y **6,308 ms de media, el peor tiempo de la lista**. La cola de «Pendiente MH» de Facturación. NO auditado — y es el que más pinta tiene de ser un plan malo y no trabajo real: busca facturas sin sello sobre `sales_invoices`, que es la tabla más grande de la base."
-    },
     "get_product_drill_lines": {
       "bloques": 58000,
       "motivo": "AUDITADA y CORREGIDA el 2026-09-22, junto con get_product_drill_summary (ver su motivo). Medida como usuario, producto más vendido: un mes 44,554 bloques, un año 14,954 (con el plan propio el año entra por el producto). Techo = 1.3x el mes, que es el caso caro y el default de la vista."

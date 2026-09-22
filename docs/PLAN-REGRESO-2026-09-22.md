@@ -167,7 +167,8 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
     los renglones del mes en curso (`pres_live` y `last_sale_live`); un CTE
     `lineas_mes AS MATERIALIZED` los lee una vez. Idéntica en 6/6 casos (md5),
     −30% en el caso por defecto, −23% en un año. El SQL está en el historial de
-    esta sesión; se rearma sobre la definición viva de
+    `docs/PLAN-REGRESO-2026-09-22-borradores/productos_leer_el_mes_una_vez.sql`;
+    se rearma sobre la definición viva de
     `20260918015225_get_product_sales_agg_entra_al_cache_de_planes.sql`.
     Ojo al fijar el techo: la parte del mes en curso crece con el DÍA del mes
     (el techo actual se midió el 4-sep, con 4 días de datos).
@@ -212,7 +213,8 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   estado no tiene índice parcial. 1.2 TB tocados en 4.6 días.
 - **Preparado, NO aplicado (el usuario lo dejó para después):**
   `CREATE INDEX ON cola_impresion (branch_id) WHERE estado = 'IMPRIMIENDO'` —
-  la tabla pesa 2 MB. Medir antes/después con `EXPLAIN` del UPDATE.
+  la tabla pesa 2 MB. Medir antes/después con `EXPLAIN` del UPDATE. SQL en
+  `docs/PLAN-REGRESO-2026-09-22-borradores/cola_impresion_indice_imprimiendo.sql`.
 
 ---
 

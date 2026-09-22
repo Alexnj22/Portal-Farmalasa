@@ -127,22 +127,24 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
 
 ---
 
-## C. Verificar que lo arreglado del 14 al 17 funciona en producción
+## C. Verificar que lo arreglado del 14 al 17 funciona en producción ✅
 
-| arreglo | cómo se comprueba con datos reales |
+Medido el 22-sep:
+
+| arreglo | resultado |
 |---|---|
-| ráfaga al recibir pedido | lecturas de `pedido_items` por minuto e IP desde el 17 (antes 144–415/min) |
-| índice `puntos_enviados` | `puntos_anotar_aplicado` en `pg_stat_statements`: bloques y peor |
-| `sync-puntos` en horario | sin corridas 00:00–05:59 SV |
-| alarma de reinicio | el aviso del 15-sep llegó (`destinatarios: 1`) |
-| borrado de abono | `ABONO_CREDITO_CHANGE` aprobadas desde el 15 y su saldo en el espejo |
-| aprobar días en bloque | `TIMESHEETS_BULK_APPROVED` desde el 15 y `timesheets.status` |
-| doble toque en caja | ráfagas <1 s desde el 17 = 0 |
-| boleta repetida | intentos frenados (log de `operar-caja`) |
-| lectura de la foto | movimientos con foto desde el 17 y con monto leído |
-| costo de IA | tokens por llamada en el registro de `gemini.ts` |
-| pedidos #121 #133 #174 #178 #180 | estado final de cada uno |
-| «no reenviar» | usos y estado de las líneas |
+| ráfaga al recibir pedido | corregido en código; ya no aparece entre las rutas más pedidas del log |
+| índice `puntos_enviados` | `puntos_anotar_aplicado`: 41 ms de media, peor 1.3 s (antes hasta 97 s) ✅ |
+| `sync-puntos` en horario | `* 12-23,0-5`, 0 corridas de madrugada desde el 15 ✅ |
+| alarma de reinicio | el reinicio del 15-sep 17:47 se avisó (1 destinatario) ✅ |
+| borrado de abono | 3 correcciones aprobadas desde el 15; crédito 2405 en $0.00 ✅. La del 19-sep destapó que el abono NUEVO no se anotaba → corregido (v2.1025.2) y la fila faltante agregada con OK del usuario |
+| aprobar días en bloque | **no se puede verificar**: horarios y marcaciones nunca arrancaron (0 turnos, 0 horarios, 0 marcaciones, `timesheets` vacía). El arranque estaba previsto para el 31-ago |
+| doble toque en caja | 0 ráfagas <1 s en 457 movimientos desde el 17 ✅ |
+| boleta repetida | 0 boletas repetidas desde el 17 ✅ |
+| lectura de la foto | 286 de 286 movimientos con foto quedaron leídos ✅ |
+| costo de IA | 117 llamadas/día, ~117 tokens de pensamiento de promedio (antes ~2,000) ✅ |
+| pedidos #121 #133 #174 #178 #180 | los cinco `completado` ✅ |
+| «no reenviar» | todavía sin uso |
 
 Cualquier fila que no dé lo esperado se vuelve un punto A.
 
@@ -174,7 +176,11 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
     (el techo actual se midió el 4-sep, con 4 días de datos).
   - `refresh_primera_venta_producto` 388 vs 359 MB — rollup diario, deuda
     declarada; crece con la historia.
-  - `donde-hay-un-producto` 30.5 vs 30 ms — pendiente de mirar.
+  - `donde-hay-un-producto` 30.5 vs 30 ms — **causa encontrada, borrador sin
+    aplicar (espera OK)**: casi todo es `traslados_en_vuelo()` (28 ms), que abre
+    el jsonb de TODAS las solicitudes de traslado de la historia (1,383, crece
+    sola). Prefiltro exacto por `updated_at`: 28.2 → 1.7 ms.
+    `docs/PLAN-REGRESO-2026-09-22-borradores/traslados_en_vuelo_prefiltro.sql`.
 
 ### D2 ✅ Las más pesadas: `get_product_drill_summary` / `_lines`
 
@@ -243,8 +249,9 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
     por fila y los nombra (no pierde las buenas).
   - `sincronizar-fichas-clientes` línea ~313 ignora el `error` del `select`
     (regla de CLAUDE.md).
-- **E3 ⬜** `pedido_traslado_erp_uno_vivo` (5/día): confirmar que es el freno
-  haciendo su trabajo y que el llamador lo trata como tal.
+- **E3 ✅** `pedido_traslado_erp_uno_vivo` (5/día): por diseño — el despacho de
+  900 productos va en varias corridas y cada una adopta la anterior; la edge
+  function trata el 23505 como «retomar», no como error.
 - **E4 ⬜** `gate:receta`: 47 productos sin principio activo y 137 renglones
   de venta genéricos — deuda de catálogo, se reporta con la lista.
 - **E5 ⬜** Auditoría: «Promociones» y «Protección de datos» en 0%.

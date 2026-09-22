@@ -269,8 +269,15 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 - **E3 ✅** `pedido_traslado_erp_uno_vivo` (5/día): por diseño — el despacho de
   900 productos va en varias corridas y cada una adopta la anterior; la edge
   function trata el 23505 como «retomar», no como error.
-- **E4 ⬜** `gate:receta`: 47 productos sin principio activo y 137 renglones
-  de venta genéricos — deuda de catálogo, se reporta con la lista.
+- **E4 ✅ (v2.1028.2)** — de los dos avisos, uno era del instrumento:
+  - Los «renglones genéricos» eran **canjes de puntos**: 138 de 138 en facturas
+    con `has_puntos`, y el `erp_product_id = 0` es la marca que usa el propio
+    sync. Debajo el número real es **cero** (ni un id nulo ni uno desconocido).
+    El gate ya los separa.
+  - Los 47 sin principio activo sí son deuda. La herramienta existía (SRS →
+    Enriquecer) pero su cola son 3,676 productos por orden alfabético: ahora
+    pone primero los del libro. **Queda correrla** — es trabajo de mostrador,
+    no de código.
 - **E5 ⬜** Auditoría: «Promociones» y «Protección de datos» en 0%.
 - **E6 ✅** Pruebas unitarias en rojo en `main`: eran 16 en 8 archivos, las 16
   desactualizadas A PROPÓSITO (cada una tiene el commit que cambió la regla:

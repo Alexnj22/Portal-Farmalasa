@@ -122,15 +122,31 @@ SELECT count(*) FILTER (WHERE coalesce(btrim(p.principio_activo), '') = '')::tex
 
 /* E. Ventas que no nombran ningún producto del catálogo. No pueden entrar al
  * libro por construcción —el sync cruza contra `products`—, así que un
- * antibiótico despachado así es invisible para siempre. */
+ * antibiótico despachado así es invisible para siempre.
+ *
+ * ⚠️ El `erp_product_id = 0` NO cuenta, y esa corrección es del 2026-09-22.
+ * Cero no es «un producto que no está en el catálogo»: es el renglón del CANJE
+ * DE PUNTOS, y así lo trata el propio sync (`if (p.id === 0)` marca la factura
+ * con `has_puntos`). Contándolo, el gate avisaba de «138 renglones digitados
+ * como genérico en 6 salas» y los 138 eran canjes — verificado: 138 de 138 en
+ * facturas con `has_puntos`, todos sin descripción y de una unidad. Debajo de
+ * ese ruido el número real era CERO, que es justo lo que el aviso tenía que
+ * poder decir.
+ *
+ * Lo que sí es un hueco: un renglón sin `erp_product_id` o con uno que no
+ * existe en `products`. */
 const SQL_GENERICAS = `
 SELECT count(*)::text AS renglones, count(DISTINCT s.branch_id)::text AS salas,
-       min(s.fecha)::text AS desde, max(s.fecha)::text AS hasta
+       min(s.fecha)::text AS desde, max(s.fecha)::text AS hasta,
+       (SELECT count(*)::text FROM public.sales_invoice_items i2
+          JOIN public.sales_invoices s2 ON s2.id = i2.invoice_id
+         WHERE s2.fecha >= current_date - 90 AND i2.erp_product_id = 0) AS canjes
   FROM public.sales_invoice_items i
   JOIN public.sales_invoices s ON s.id = i.invoice_id
  WHERE s.fecha >= current_date - 90
-   AND (i.erp_product_id IS NULL OR i.erp_product_id = 0
-        OR NOT EXISTS (SELECT 1 FROM public.products p WHERE p.id = i.erp_product_id))`;
+   AND (i.erp_product_id IS NULL
+        OR (i.erp_product_id <> 0
+            AND NOT EXISTS (SELECT 1 FROM public.products p WHERE p.id = i.erp_product_id)))`;
 
 /* F. Toda corrección de clase lleva su motivo escrito: es la respuesta a «¿por
  * qué esta ranitidina no está en el libro de antibióticos?», y un motivo de
@@ -225,7 +241,8 @@ function main() {
                 + 'no nombran ningún producto del catálogo: se digitaron como genérico. El libro cruza '
                 + 'contra `products`, así que un antibiótico despachado así NO entra y no hay forma de notarlo.');
     }
-    console.log(`  sin catálogo:${gen ? ` ${gen.renglones} renglón(es) de venta en 90 días` : ' —'}`);
+    console.log(`  sin catálogo:${gen ? ` ${gen.renglones} renglón(es) de venta en 90 días`
+                                          + ` (aparte: ${gen.canjes} canje(s) de puntos, que no son productos)` : ' —'}`);
   } finally {
     canal.cerrar();
   }

@@ -56,15 +56,47 @@ export function updateProductSinPrincipioActivo(productId, value) {
 
 // ── Enriquecimiento SRS (principios activos por lote) ───────────────────────
 
-export function fetchProductsWithoutPrincipioActivo(batchSize) {
-    return supabase
+/**
+ * La cola del enriquecimiento SRS, con los del LIBRO BAJO RECETA primero.
+ *
+ * Son 3,676 productos sin principio activo y la cola iba por orden alfabético,
+ * así que los 47 que le importan al libro —los antibióticos— quedaban repartidos
+ * entre todos y la deuda no bajaba nunca. Y ahí el principio activo no es un
+ * dato lindo de tener: es lo único que permite comprobar la regla por molécula;
+ * sin él la única defensa es acertarle al nombre comercial, que ya falló una vez
+ * (BACTIVANZ 300 resultó ser cefdinir, no claritromicina).
+ *
+ * Se filtra por `es_antibiotico`, que hoy cubre los 47 exactos (verificado el
+ * 2026-09-22: 47 por la casilla, 0 que entren sólo por `dispensacion_clases`).
+ * Si algún día una clase agrega un producto que la casilla no marca, ése vuelve
+ * a caer en el montón — lo dirá `npm run gate:receta`.
+ */
+export async function fetchProductsWithoutPrincipioActivo(batchSize) {
+    const pendientes = () => supabase
         .from('products')
         .select('id, nombre, laboratorios(nombre)')
         .eq('activo', true)
         .eq('sin_principio_activo', false)
-        .or('principio_activo.is.null,principio_activo.eq.')
-        .limit(batchSize)
-        .order('nombre');
+        .or('principio_activo.is.null,principio_activo.eq.');
+
+    const { data: libro, error } = await pendientes()
+        .eq('es_antibiotico', true)
+        .order('nombre')
+        .limit(batchSize);
+    if (error) return { data: null, error };
+
+    const faltan = batchSize - (libro?.length ?? 0);
+    if (faltan <= 0) return { data: libro, error: null };
+
+    // `not is true` y no `eq false`: la casilla admite nulo, y un `eq false`
+    // dejaría fuera a todos los que nadie clasificó — que son la mayoría.
+    const { data: resto, error: e2 } = await pendientes()
+        .not('es_antibiotico', 'is', true)
+        .order('nombre')
+        .limit(faltan);
+    if (e2) return { data: null, error: e2 };
+
+    return { data: [...(libro ?? []), ...(resto ?? [])], error: null };
 }
 
 // ── Stats de márgen (página recursiva, PostgREST cap-safe) ──────────────────

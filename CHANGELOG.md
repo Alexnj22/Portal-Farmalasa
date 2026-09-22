@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1028.2 — Libro bajo receta: el aviso de «genéricos» eran canjes de puntos
+
+`gate:receta` avisaba de **138 renglones de venta en 6 salas que no nombran
+ningún producto del catálogo**, con la conclusión de que un antibiótico
+despachado así sería invisible para el libro. Al abrirlos: **138 de 138 están en
+facturas marcadas con puntos**, sin descripción y de una unidad. Son **canjes de
+puntos**, y el `erp_product_id = 0` es justamente lo que el sync usa para
+marcarlos (`if (p.id === 0)` pone `has_puntos`).
+
+Debajo de ese ruido el número real es **cero**: ni un renglón sin id ni con un id
+que no exista en el catálogo. El gate ahora los cuenta aparte y por su nombre.
+
+**La otra deuda sí es real y se le abrió camino**: 47 de los 80 productos del
+libro no tienen principio activo cargado, y sin él la regla por molécula sólo se
+puede comprobar acertándole al nombre comercial — que ya falló una vez
+(BACTIVANZ 300 resultó ser cefdinir, no claritromicina). La herramienta para
+cargarlo ya existía (SRS → Enriquecer), pero su cola son **3,676 productos en
+orden alfabético**, así que esos 47 no llegaban nunca. Ahora la cola pone
+primero a los del libro.
+
 ## v2.1028.1 — Clientes: «Por revisar» vuelve a guardar y la fusión mueve todo
 
 Dos fallas de la corrida nocturna de fichas (21:30), las dos en silencio:

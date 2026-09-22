@@ -189,6 +189,16 @@
         "por_decidir"
       ]
     },
+    "promocion_pago": {
+      "origen": "check",
+      "valores": [
+        "anulado",
+        "enviado",
+        "fuera_del_portal",
+        "pagado",
+        "reservado"
+      ]
+    },
     "promocion_renglon": {
       "origen": "check",
       "valores": [

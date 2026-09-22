@@ -485,12 +485,16 @@ export const AREAS = [
             'src/views/promociones/',
             'src/data/promociones.js',
             'src/data/descuentos.js',
+            'src/data/bonosProducto.js',
+            'src/components/caja/BonosPorPagar.jsx',
         ],
         tablas: ['promociones', 'promocion_renglon', 'promocion_renglon_tarifa',
                  'promocion_reparto', 'promocion_reparto_mov', 'promocion_excedente',
                  'promocion_historial',
                  'promocion_laboratorio', 'promocion_nivel', 'promocion_nivel_umbral',
-                 'promocion_cierre_sala'],
+                 'promocion_cierre_sala',
+                 // El pago del bono de producto en la sala (2026-09-22).
+                 'promocion_pago'],
         // El EFECTO de `descuentos-erp` es un descuento en la venta, que es lo que
         // esta pantalla configura — aunque el dato viva en el sistema de la caja.
         edge: ['descuentos-erp'],

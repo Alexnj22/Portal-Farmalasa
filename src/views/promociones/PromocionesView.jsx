@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Percent,
+    Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
     CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -25,6 +25,7 @@ import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';
 import TabExcedentes from './TabExcedentes';
 import TabDescuentos from './TabDescuentos';
+import TabPagos from './TabPagos';
 import DescuentoModal from './DescuentoModal';
 import PromocionModal from './PromocionModal';
 import DuplicarPromocionModal from './DuplicarPromocionModal';
@@ -90,7 +91,9 @@ export default function PromocionesView() {
         { key: 'excedentes',  label: 'Excedentes',  icon: Scale },
         // La «Liquidación» mensual se retiró el 2026-09-22: ningún bono se paga
         // por mes. El de meta es semestral (Metas → Pago semestral) y el de
-        // producto se paga en la sala — docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
+        // producto se paga en la sala; acá sólo se mira cómo va ese pago —
+        // docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
+        { key: 'pagos',       label: 'Pagos',       icon: Wallet },
         { key: 'historico',   label: 'Histórico',   icon: History },
     ]), []);
 
@@ -437,6 +440,9 @@ export default function PromocionesView() {
                     onResumen={setResumenTab}
                 />
             );
+        }
+        if (tab === 'pagos') {
+            return <TabPagos onResumen={setResumenTab} />;
         }
         if (tab === 'excedentes') {
             return <TabExcedentes puedeAprobar={puedeAprobar} onResumen={setResumenTab} />;

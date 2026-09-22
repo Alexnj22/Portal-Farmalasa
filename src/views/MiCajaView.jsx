@@ -52,6 +52,7 @@ const SalidaDeBolsa = lazy(() => import('../components/bolsas/SalidaDeBolsa'));
 /* El abono va diferido por lo mismo: arrastra el buscador del catálogo y la
  * mayoría de las visitas a esta pantalla no apartan nada. */
 const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
+import BonosPorPagar from '../components/caja/BonosPorPagar';
 import { construirComprobanteDeAbono } from '../utils/abonoTicket';
 import { construirComprobanteDeCorte } from '../utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '../utils/movimientoTicket';
@@ -1117,6 +1118,13 @@ export default function MiCajaView({ comoPestana = false }) {
 
                         <PanelDelDia estado={estado} ventas={ventas} veLosMontos={veLosMontos}
                             entregas={entregasDelDia} personas={firmantes} />
+
+                        {/* Los bonos de promoción que esta sala paga (vendedores; y
+                            en Salud 3, bodega). No dibuja nada si no debe ninguno.
+                            El dinero sale por la MISMA salida del cajón que el
+                            botón de arriba. */}
+                        <BonosPorPagar sala={sala} cajaAbierta={estado?.abierta === true}
+                            puedeOperar={puedeOperar} onSalida={anotarSalidaDelCajon} />
 
                         <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas}
                             cobros={cobros}

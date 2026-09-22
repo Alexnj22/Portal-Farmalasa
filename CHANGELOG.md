@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1033.0 — El bono de producto se paga en la sala
+
+Fase 3 de `docs/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md`. Regla del usuario: el
+bono del vendedor se paga en su sala con salida de efectivo y lo paga la
+jefatura; el de bodega sale de la caja de Salud 3; el de administración va a
+planilla (por ahora sólo se muestra el monto).
+
+- **Mi caja → «Bonos de promoción por pagar»**: aparece sólo si la sala debe
+  alguno. La jefatura toca «Pagar», la persona se identifica con carné o
+  usuario, y sale por la MISMA salida del cajón que el resto, con su
+  comprobante.
+- **El candado vive en la base**: `reservar_pago_bono` pone el monto y entrega
+  una clave; el trigger `caja_movimiento_valida_bono` rechaza la salida antes
+  de tocar la caja si el monto, la sala, la jefatura o quien recibe no cuadran.
+  Un bono se paga una sola vez (`promocion_pago.item` único).
+- **Promociones → Pagos**: lo pagado por sala, bodega y lo de administración.
+- «AD» quedó como pagada fuera del portal (34 bonos, $231.00), por decisión del
+  usuario.
+
+Probado con rollback contra producción: jefe de otra sala, monto distinto,
+otra persona, sin jefatura, otra caja y pagar dos veces — los seis rechazados;
+la salida buena pasa a `pagado` cuando la caja la acepta. Migración
+`20260922215532_pago_bono_producto`.
+
 ## v2.1032.1 — Se retira la hoja mensual de bonos de la base
 
 Con OK del usuario: se borran `liquidacion`, `liquidacion_detalle`,

@@ -52,7 +52,23 @@ Decisiones del mismo día:
 - Aprobar congela el semestre, igual que hoy la hoja mensual (reabrir exige
   motivo). Exporta el archivo para planilla.
 
-## Fase 3 — «Pagar» el bono de producto en la sala · ⬜
+## Fase 3 — «Pagar» el bono de producto en la sala · ✅ v2.1033.0 (migración `20260922215532`)
+
+Hecho así: «Mi caja» muestra «Bonos de promoción por pagar» (no dibuja nada si
+la sala no debe ninguno); sólo la **jefatura de la sala** (`Jefe/a de Sala` con
+esa sala en la ficha) ve el botón. `reservar_pago_bono` pone el monto desde el
+servidor y entrega una clave; la salida viaja por `operar-caja` con esa clave y
+el trigger `caja_movimiento_valida_bono` rechaza la fila —antes de tocar la
+caja— si el monto, la sala, la jefatura o quien recibe no cuadran. El vendedor
+cobra en persona (se identifica con carné o usuario). `promocion_pago.item` es
+único: un bono no se paga dos veces. Promociones → **Pagos** muestra lo pagado
+por sala, bodega y el monto de administración «va a planilla».
+
+«AD» (promoción 35) quedó como `fuera_del_portal`: 34 bonos, $231.00, por
+decisión del usuario.
+
+**Pendiente de la sala:** probar el primer pago real cuando termine una
+promoción con bono — el circuito completo sólo se ejerció con rollback.
 
 - Cuando una promoción con bono termina (por fecha o por lote), cada sala ve a
   quién le toca y cuánto.

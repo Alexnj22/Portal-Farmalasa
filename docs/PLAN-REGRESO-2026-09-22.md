@@ -372,6 +372,51 @@ Hallazgos que explican F1 y F2, para no redescubrirlos:
 
 ---
 
+## G · El quiebre de stock se lee como falta de demanda (22-sep)
+
+Salió de una pregunta del usuario sobre la primera venta: si un producto estuvo
+agotado, ¿el cálculo lo sabe? **No lo sabía.** `calculate_stock_params` divide lo
+vendido entre los días de la ventana (180), así que los días sin producto cuentan
+como días sin demanda: el número baja, se pide menos, se vuelve a agotar.
+
+Medido sobre los 21 días de foto diaria (`inventory_daily` arrancó el 1-sep), de
+10,589 pares producto·sala con MIN/MAX:
+
+| | |
+|---|---:|
+| con algún día sin existencia | 2,114 (20%), parejo en las seis salas (18–26%) |
+| los 21 días en cero habiendo vendido en 90 días | 331 (133 en Salud 5) |
+| venden más rápido de lo que dice su número | 1.68× en promedio |
+| venta perdida estimada (21 d) | $8,752 conservador · $19,652 amplio |
+| margen bruto de esa venta | 33.4% |
+| inversión extra si se corrigiera la fórmula | +$17,403 (70% en clase A y B) |
+
+**Fase 1 — hecha (v2.1028.0), sin tocar ningún cálculo:**
+- Pestaña «Agotados» en Min/Max (`get_quiebres_sala`): por sala, qué falta, días
+  en cero, última venta, Min/Max y si ya reingresó. Sólo lo que vendió en 90
+  días.
+- La guarda del auto-aplicar ya no deja bajar solo un producto que estuvo en
+  quiebre **aunque hoy tenga existencia** — 1,304 de los 2,114 quedaban fuera.
+- Índice `(sala, producto, fecha) INCLUDE (unidades)` en la foto diaria + VACUUM:
+  la consulta pasó de 89,716 a 9,141 bloques.
+
+**Fase 2 — diciembre, cuando haya 90 días de foto.** Denominador por días con
+existencia, **piso de 30 días y tope al factor (3×)**, y entrando como borrador
+para revisión. Los topes no son opcionales: sin ellos, un producto con un solo
+día de existencia y una venta grande propone un máximo de **840** contra 33.
+
+**Lo que NO se puede reconstruir hacia atrás, y hay que saberlo:** las compras no
+sirven para saber cuándo se agotó una sala —4,927 de 5,691 recibos entran a
+Bodega—, y los traslados del portal empiezan el 29-jun. La única verdad de
+existencia por día es la foto, y arrancó el 1-sep.
+
+**Aparte del cálculo: Salud 5.** 133 productos que vendieron en 90 días y no
+tuvieron existencia ni un día de los 21, contra 31–54 de las demás salas, y con
+$7,483 de venta en el período contra $23,000 de las otras. Eso es
+reabastecimiento, no fórmula.
+
+---
+
 ## Cierre
 
 Todos los gates de producción en verde (`gate:perf`, `gate:eficiencia`,

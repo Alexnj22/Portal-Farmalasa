@@ -49,7 +49,6 @@ const FormLeadership = React.lazy(() => import('./forms/FormLeadership'));
 const FormAddCustomDocument = React.lazy(() => import('./forms/FormAddCustomDocument'));
 const FormWfmAnalytics = React.lazy(() => import('./forms/FormWfmAnalytics'));
 const FormSetPassword = React.lazy(() => import('./forms/FormSetPassword'));
-const FormChangeOwnPassword = React.lazy(() => import('./forms/FormChangeOwnPassword'));
 const FormEditContact = React.lazy(() => import('./forms/FormEditContact'));
 const FormProveedorDetail = React.lazy(() => import('./forms/FormProveedorDetail'));
 const FormClienteDetail = React.lazy(() => import('./forms/FormClienteDetail'));
@@ -57,7 +56,7 @@ const FormNewPayrollPeriod = React.lazy(() => import('./forms/FormNewPayrollPeri
 const FormEditPayrollEntry = React.lazy(() => import('./forms/FormEditPayrollEntry'));
 
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument", "viewPurchaseDte", "viewSalesDte"]);
-const HIDES_FOOTER = new Set(["viewWfmAnalytics", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact", "viewPurchaseDte", "viewSalesDte", "editProveedor", "editCliente"]);
+const HIDES_FOOTER = new Set(["viewWfmAnalytics", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "editContact", "viewPurchaseDte", "viewSalesDte", "editProveedor", "editCliente"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 
@@ -313,7 +312,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editCustomDocument": return "max-w-md";
             case "viewWfmAnalytics": return "max-w-4xl";
             case "setEmployeePassword": return "max-w-sm";
-            case "changeOwnPassword": return "max-w-sm";
             case "editContact": return "max-w-sm";
             case "newPayrollPeriod": return "max-w-md";
             case "editPayrollEntry": return "max-w-2xl";
@@ -350,7 +348,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editCustomDocument": return "Actualizar Documento";
             case "viewWfmAnalytics": return "Monitor de ventas";
             case "setEmployeePassword": return "Establecer Contraseña";
-            case "changeOwnPassword": return "Cambiar Contraseña";
             case "editContact": return "Editar Perfil";
             case "newPayrollPeriod": return "Nueva Quincena";
             case "editPayrollEntry": return "Editar Entrada";
@@ -369,7 +366,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
         if (type === "setEmployeePassword") return formData?.name?.toUpperCase() || "EMPLEADO";
-        if (type === "changeOwnPassword") return "TU CUENTA";
         if (type === "editContact") return formData?.name?.toUpperCase() || "TU PERFIL";
         if (type === "newPayrollPeriod") return "PERÍODO DE NÓMINA";
         if (type === "editPayrollEntry") return shortEmployeeName(formData?._entry?.employee).toUpperCase();
@@ -1205,7 +1201,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {(type === "addCustomDocument" || type === "editCustomDocument") && <FormAddCustomDocument formData={formData} setFormData={setFormData} type={type} />}
 
                                 {type === "setEmployeePassword" && <FormSetPassword formData={formData} onClose={onClose} />}
-                                {type === "changeOwnPassword" && <FormChangeOwnPassword onClose={onClose} />}
                                 {type === "editContact" && <FormEditContact formData={formData} onClose={onClose} />}
                                 {type === "rehireEmployee" && <FormRehireEmployee formData={formData} setFormData={setFormData} branches={branches} roles={roles} />}
                                 {type === "vacationRecall" && <FormVacationRecall formData={formData} setFormData={setFormData} />}

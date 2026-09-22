@@ -5,7 +5,7 @@ import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
-    User, Phone, HeartPulse, Briefcase, KeyRound,
+    User, Phone, HeartPulse, Briefcase,
     Clock, Pencil, Calendar, ArrowRightLeft, Sparkles, Palmtree,
     MapPin, CreditCard, Coffee, Zap, Award, TrendingUp, SlidersHorizontal, ChevronDown, ChevronUp, X, Stethoscope, FileText,
     FolderOpen
@@ -266,8 +266,12 @@ const EmployeeProfileView = ({ openModal }) => {
             {puedeEditarSuFicha && (
                 <Button icon={Pencil} onClick={() => openModal('editContact', emp)}><span className="hidden sm:inline">Editar</span></Button>
             )}
-            {/* Password button */}
-            <Button tone="warning" icon={KeyRound} title="Cambiar contraseña" iconOnly onClick={() => openModal('changeOwnPassword', {})} />
+            {/* Sin botón de cambiar contraseña, a propósito: la contraseña sólo
+                la restablece alguien con permiso (FormSetPassword). Desde acá
+                se cambiaba la de la cuenta CON LA QUE SE ENTRÓ, y entrando con
+                el carné eso era la del carné, cuya clave tiene que ser su propio
+                código: el carné dejaba de abrir y la contraseña personal seguía
+                igual. Pasó dos veces (8-sep y 22-sep-2026). */}
         </div>
     );
 

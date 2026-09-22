@@ -4,6 +4,7 @@ import Button from '../common/Button';
 import { KeyRound, Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
+import { useStaffStore } from '../../store/staffStore';
 import PortalInput from '../common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
 
@@ -37,6 +38,12 @@ const FormSetPassword = ({ formData, onClose }) => {
                 setError(`${data?.error || 'Error'}${data?.details ? ': ' + data.details : ''}`);
             } else {
                 setDone(true);
+                // Es el ÚNICO camino para cambiar una contraseña (el autoservicio
+                // se quitó el 2026-09-22), así que queda en la bitácora: quién la
+                // restableció y a quién. Nunca la contraseña.
+                useStaffStore.getState().appendAuditLog('CONTRASENA_RESTABLECIDA', formData?.id ? String(formData.id) : null, {
+                    usuario: username,
+                });
                 const { showToast } = useToastStore.getState();
                 showToast?.('Contraseña establecida', `Acceso configurado para ${formData?.name || username}.`, 'success');
                 setTimeout(onClose, 1200);

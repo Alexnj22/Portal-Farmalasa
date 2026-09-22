@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1030.0 — La contraseña ya no se cambia desde el perfil
+
+Una persona no podía entrar con su carné: «Carné no reconocido». El carné sí se
+reconocía; lo que fallaba era la clave. Había entrado con el carné y, desde
+«Mi perfil», usó la llave de «Cambiar contraseña». Ese formulario cambia la
+contraseña de la cuenta **con la que se entró**, y entrando con el carné esa es
+la cuenta del carné, cuya clave tiene que ser su propio código. El carné dejó
+de abrir y la contraseña personal siguió igual.
+
+Revisadas las 70 cuentas de carné contra su código: le había pasado a **dos**
+personas (8-sep y 22-sep). Las dos se restauraron y quedan verificadas contra
+la base.
+
+**Cambio:** la contraseña ya no se cambia por autoservicio. Se quitaron la llave
+del perfil y su formulario. El único camino es el restablecimiento de alguien
+con permiso de editar personal, seguido del cambio obligatorio en el login, y
+ahora queda en la bitácora (`CONTRASENA_RESTABLECIDA`: quién y a quién, nunca
+la contraseña). Antes ningún cambio de contraseña dejaba rastro.
+
 ## v2.1029.0 — Protección de datos: el plazo legal avisa solo
 
 Auditoría del área (E5 del plan de regreso). Lo que apareció y se corrigió:

@@ -116,7 +116,7 @@ export const AREAS = [
             'src/utils/carnePrint.js',
             'src/utils/entregarCarneDePapel.js', 'src/utils/arranqueSesion.js',
             'src/utils/timeClock.audit.js', 'src/utils/timeClock.helpers.js', 'src/utils/timeClock.rules.js',
-            'src/components/forms/FormSetPassword.jsx', 'src/components/forms/FormChangeOwnPassword.jsx',
+            'src/components/forms/FormSetPassword.jsx',
             'src/components/forms/FormDispositivos.jsx',
             'src/utils/attendanceQueue.js',
         ],

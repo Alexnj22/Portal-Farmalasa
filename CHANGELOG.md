@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1026.2 — Envíos: el historial y los vivos se arman por lote
+
+El historial de envíos tardaba **1,100 ms y leía 145 MB** para quien lo abría;
+medido como `postgres`, 13 ms. No era la lectura —son 146 envíos— sino la
+planificación: `envio_json(id)` lleva `SET search_path`, nunca se inlinea, y el
+historial la planificaba cien veces, una por envío, bajo las cinco ramas de la
+policy de `approval_requests`.
+
+Migración `20260922162457_envios_se_arman_por_lote`: `envios_json(ids[])` arma
+el mismo JSON para todos los envíos en una consulta; `envio_json(id)`,
+`get_envios_historial` y `get_envios_vivos` lo usan. Todo sigue INVOKER: el RLS
+decide lo mismo que antes.
+
+- historial: **1,100 → 38 ms**, 145 → 12 MB (alcance total); 64 ms con alcance de sala
+- vivos: 113 → 33 ms
+- mismas huellas antes y después con dos cuentas (alcance total y Salud 1): el
+  historial y los vivos como conjunto, `envio_json` de los últimos cinco y
+  `traslado_por_codigo` exactos. Lo único que cambia es el orden entre envíos
+  con el mismo `updated_at`, que era arbitrario y ahora desempata por `id`.
+
+`get_envios_historial` queda declarada en `scripts/planes-genericos.json`: su
+único parámetro es el tope del `LIMIT`, así que el plan genérico es el mismo.
+
 ## v2.1026.1 — La barra lateral deja de re-consultar el estado del inventario en cada evento
 
 `SidebarSyncStatus` —los puntos de «Datos» de la barra lateral— escuchaba los

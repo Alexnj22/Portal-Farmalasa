@@ -1,7 +1,7 @@
 {
  "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
  "actualizado": "2026-09-22",
- "medidas": 42,
+ "medidas": 43,
  "sin_medir": 24,
  "funciones": {
   "auth_module_scope": {
@@ -159,6 +159,12 @@
    "casos": null,
    "divergencia": null,
    "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "get_envios_historial": {
+   "ms": "38",
+   "casos": "historial de 100 envíos, como usuario de alcance total (64 ms con alcance de sala) · 12 MB",
+   "divergencia": null,
+   "nota": "medida el 2026-09-22 como usuario, que es como la llama el portal (npm run medir:como-usuario). El único parámetro es el tope del LIMIT: no decide por dónde entrar ni el orden de join, así que el genérico es el mismo plan. El costo que tenía (1,100 ms) era planificar envio_json una vez por envío; desde 20260922162457 los arma por lote con envios_json(ids[])"
   },
   "get_faltantes_con_stock_en_otra_sala": {
    "ms": "128–191",

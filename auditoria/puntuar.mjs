@@ -610,8 +610,21 @@ function puntuar(area) {
     //      («ver docs/X» aparece en CLAUDE.md por todos lados). Hoy fallan
     //      cuatro áreas con documentos vivos: inventario, pedidos y compras
     //      tienen dónde leer y ningún cartel que lo diga.
+    // Un `docs:` puede declarar una CARPETA (`bitacoras` declara
+    // `docs/legal/procedimientos/`), y leerla como archivo reventaba el
+    // puntuador entero con EISDIR — o sea que desde ese día NADIE podía
+    // recalcular ningún área, y las dos que se crearon después quedaron en 0%
+    // sin que eso fuera un juicio sobre ellas. Una carpeta cuenta como viva y
+    // «con cuerpo» si adentro hay algún documento que lo tenga.
+    const lineasDe = (rel) => {
+        const abs = path.join(RAIZ, rel);
+        if (!fs.statSync(abs).isDirectory()) return fs.readFileSync(abs, 'utf8').split('\n').length;
+        return fs.readdirSync(abs)
+            .filter(f => fs.statSync(path.join(abs, f)).isFile())
+            .reduce((max, f) => Math.max(max, fs.readFileSync(path.join(abs, f), 'utf8').split('\n').length), 0);
+    };
     const vivos = area.docs.filter(d => fs.existsSync(path.join(RAIZ, d)));
-    const gordos = vivos.filter(d => fs.readFileSync(path.join(RAIZ, d), 'utf8').split('\n').length >= 120);
+    const gordos = vivos.filter(d => lineasDe(d) >= 120);
     const citados = vivos.filter(d => FUENTES_TXT.some(t => t.includes(d.replace(/^docs\//, ''))));
     ev.doc = { pct: tope(55 + (gordos.length ? 25 : 0) + (citados.length ? 15 : 0), 45),
         evidencia: `${vivos.length} documento(s) vivos, ${gordos.length} con cuerpo (≥120 líneas), `

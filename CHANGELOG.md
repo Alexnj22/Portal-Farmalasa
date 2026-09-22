@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1029.0 — Protección de datos: el plazo legal avisa solo
+
+Auditoría del área (E5 del plan de regreso). Lo que apareció y se corrigió:
+
+**El plazo del Art. 20 esperaba a que alguien mirara.** La ley da 20 días
+hábiles para responderle a una persona sobre sus propios datos —40 con
+prórroga—, el portal ya los contaba… y los pintaba en la pantalla. Si nadie
+abría la vista, el plazo se vencía sin que nadie se enterara y no había error
+que lo delatara. Ahora un cron a las 08:10 SV avisa a quien puede resolverla:
+una vez cuando entra en los últimos 3 días hábiles y otra si se pasó, con marca
+propia para no repetirse (no se le pregunta a la campana, que se vacía).
+
+**La cuenta de días hábiles no tenía ni una prueba.** Son 14 casos nuevos:
+saltos de fin de semana, la prórroga, el acuse que nunca llegó, y el vencimiento
+que nunca cae en sábado. Un plazo mal contado no falla: muestra «te quedan 3
+días» el día que ya se venció.
+
+**La vista nunca se había barrido en el teléfono.** `/solicitudes-datos` no
+estaba en la lista del barrido —el informe decía «cero hallazgos» sobre un
+recorrido que no la incluía, igual que pasó con `bolsas` y `caja` en agosto—.
+Agregada y medida: 3 pestañas, 0 hallazgos.
+
+**Y el instrumento de la auditoría estaba roto.** `auditoria/puntuar.mjs`
+reventaba con EISDIR al leer un `docs:` que es una carpeta, así que desde ese
+día NADIE podía recalcular ningún área: las dos creadas después —Promociones y
+Protección de datos— figuraban en 0%, y eso no era un juicio sobre ellas sino un
+registro viejo. Arreglado y recalculado: **Protección de datos 95%, Promociones
+94%, y el promedio del portal pasa de 87% a 94%**.
+
+Lo que la auditoría encontró SANO, para no volver a mirarlo: las tres tablas con
+RLS y policy explícita por permiso de módulo, el folio deny-all (sólo por
+función), la entrega de datos anotada en la bitácora y en el registro de salidas
+(`exportCsv` con su módulo), y el formulario largo guardando borrador. Las cuatro
+FK sin índice son las de auditoría (`*_por`) sobre una tabla de 3 filas, que es
+la excepción que CLAUDE.md ya declara.
+
 ## v2.1028.2 — Libro bajo receta: el aviso de «genéricos» eran canjes de puntos
 
 `gate:receta` avisaba de **138 renglones de venta en 6 salas que no nombran

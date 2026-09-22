@@ -74,6 +74,9 @@ export const ICONO_POR_TIPO = {
     DEPOSITO_BANCO:   Landmark,
     // El `FileText` de Facturación: el aviso lleva a Pendiente MH (2026-09-22).
     DTE_RECHAZO:      FileText,
+    // El plazo legal de una solicitud de datos personales (Art. 20): avisa a los
+    // 3 días hábiles de que venza, y otra vez si se venció.
+    DATOS_PLAZO: FileText,
     SYSTEM:           Info,       // mensaje del portal, no de una persona
 };
 

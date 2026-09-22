@@ -278,7 +278,18 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
     Enriquecer) pero su cola son 3,676 productos por orden alfabético: ahora
     pone primero los del libro. **Queda correrla** — es trabajo de mostrador,
     no de código.
-- **E5 ⬜** Auditoría: «Promociones» y «Protección de datos» en 0%.
+- **E5 ✅ (v2.1029.0)** — el 0% era el REGISTRO, no las áreas: `puntuar.mjs`
+  reventaba con EISDIR al leer un `docs:` que es una carpeta
+  (`docs/legal/procedimientos/`), así que nadie podía recalcular desde ese día y
+  las dos áreas creadas después quedaron sin puntaje. Arreglado y recalculado:
+  **Protección de datos 95%, Promociones 94%, promedio del portal 87% → 94%**.
+  Auditando Protección de datos aparecieron tres huecos reales, los tres
+  corregidos: el plazo del Art. 20 no avisaba solo (ahora cron a las 08:10 SV
+  con marca propia), la cuenta de días hábiles no tenía pruebas (14 casos) y
+  `/solicitudes-datos` no estaba en el barrido móvil (agregada, 0 hallazgos).
+  **Ojo para la próxima:** el puntaje se deriva de `snapshot-produccion.json`,
+  que es del 23-ago — los ejes de servidor (bd, seguridad) miran esa foto, no la
+  de hoy.
 - **E6 ✅** Pruebas unitarias en rojo en `main`: eran 16 en 8 archivos, las 16
   desactualizadas A PROPÓSITO (cada una tiene el commit que cambió la regla:
   e25fc1b3, 1cf21e39, 74176679, 40b39a3f, 72a85ddd, 2a88fdda, 582aea69).

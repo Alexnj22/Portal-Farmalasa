@@ -94,6 +94,11 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
     'cuentas-por-pagar', 'encuesta-admin', 'facturas-sala', 'gestion-stock',
     'impresion', 'inventario', 'mantenimiento', 'objetos-huerfanos',
     'sesiones', 'traslados', 'auditoria-del-sistema',
+    // `solicitudes-datos` entró el 2026-09-22, al auditar el área: la vista de
+    // las solicitudes de datos personales existía desde el 5-sep y NUNCA se
+    // había visitado en el barrido — el informe decía «cero hallazgos» sobre un
+    // recorrido que no la incluía, igual que pasó con `bolsas` y `caja`.
+    'solicitudes-datos',
     // `my-requests` salió de acá: redirige a `requests-personales`, que a su
     // vez redirige a `solicitudes-personales`. Eran dos saltos para medir por
     // tercera vez la misma pantalla.

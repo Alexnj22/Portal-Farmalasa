@@ -92,7 +92,9 @@ export const AREAS = [
         ],
         tablas: ['banner_portal', 'module_locks', 'mv_refresh_state', 'job_watermarks'],
         edge: [],
-        crons: [],
+        // El aviso del plazo (Art. 20), 08:10 SV. SQL puro: no llama a ninguna
+        // función, así que no gasta peticiones del sistema de origen.
+        crons: ['avisar-plazo-datos-8am-sv'],
         docs: ['DESIGN.md', 'CLAUDE.md', 'docs/CHECKLIST-VISTA-NUEVA.md'],
     },
 
@@ -866,7 +868,11 @@ export const AREAS = [
         // se dé en `/mis-puntos`: es la evidencia del Art. 54, la lee el permiso
         // de este módulo, y lo que prueba no son los puntos sino que la persona
         // dijo que sí. La pantalla que pregunta es de otro dueño que la prueba.
-        tablas: ['solicitudes_datos', 'solicitudes_datos_folios', 'consentimientos_cliente'],
+        tablas: ['solicitudes_datos', 'solicitudes_datos_folios', 'consentimientos_cliente',
+                 // La marca de «ya avisé» del plazo legal (2026-09-22). Vive
+                 // acá y no en `plataforma` porque lo que prueba es que el
+                 // plazo del Art. 20 se vigiló, no que el aviso se envió.
+                 'solicitudes_datos_avisos'],
         // La pagina publica no tiene edge function ni cron: es HTML plano
         // servido por una reescritura de `vercel.json`. Que no dependa de nada
         // es justo lo que la hace confiable — un documento que promete estar

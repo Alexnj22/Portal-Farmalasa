@@ -248,9 +248,19 @@ SELECT b.name AS sala, d.fecha::text AS fecha, d.regla, d.detalle,
  *     descuadraría la caja en $12.30. Queda acá como lo que es: la prueba de
  *     que el detector ve algo.
  *
+ *   · `1930, 1931` — Salud 5, 20-sep. Dos «Aplicación de inyección» de $1.00 a
+ *     10.7 s, misma persona. **No es un duplicado: son dos.** Llevan
+ *     `clave_envio` DISTINTA —o sea dos aperturas del diálogo, no el envío
+ *     doble del 17-sep, que repetía la clave a milisegundos— y el corte de las
+ *     12:55, que las abarca, se confirmó con $0.00 de diferencia: los $2
+ *     estaban en el cajón. Revisado el 2026-09-22. No se achica la ventana de
+ *     15 s por este caso: con la clave de envío, un reintento repite la clave,
+ *     así que lo que la ventana todavía tiene que ver es justo lo que nadie
+ *     previó.
+ *
  * Una entrada nueva acá NO se agrega para que el gate calle: sólo para un caso
  * ya resuelto por otra vía, y con su explicación escrita. */
-const DUPLICADOS_YA_PASADOS = new Set(['214, 215']);
+const DUPLICADOS_YA_PASADOS = new Set(['214, 215', '1930, 1931']);
 
 /* Que los dos triggers sigan puestos. Un hallazgo de C dice que el número está
  * viejo; éste dice POR QUÉ, y aparece aunque todavía no haya un número mal. */

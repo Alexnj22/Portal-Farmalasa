@@ -556,7 +556,7 @@ Deno.serve(async (req) => {
             // pasó el ingreso de $454.00 del 22-ago que tapó un sobrante falso.
             const { data: previos, error: errPrev } = await supabase
               .from("cortes_caja_movimientos")
-              .select("erp_movimiento_id, concepto, monto, tipo, fecha, desaparecido_at")
+              .select("erp_movimiento_id, concepto, monto, tipo, fecha, desaparecido_at, visto_at")
               .eq("branch_id", branchId)
               .gte("fecha", fecha1).lte("fecha", fecha2);
             if (errPrev) throw new Error(`leyendo movimientos: ${errPrev.message}`);
@@ -649,9 +649,23 @@ Deno.serve(async (req) => {
             // fecha en que se guardaron y no la última vez que se los confirmó,
             // que es justo lo que hace falta para creerle a un `desaparecido_at`.
             // Va por tandas porque los ids viajan en la URL del `.in()`.
+            //
+            // ⚠️ Sólo si la marca tiene más de REFRESCO_VISTO_MS. Refrescarla
+            // en cada repaso reescribía todas las filas del día cada ~5 minutos:
+            // medido el 2026-09-22, 89,568 escrituras sobre 754 inserciones —la
+            // tabla con más churn de la base (561/h) y la que puso en rojo
+            // `gate:eficiencia`—, o sea exactamente lo que el comentario de
+            // arriba dice que no hay que hacer. La marca la lee una persona
+            // («visto por última vez») y el detector de desaparecidos, y a
+            // ninguno le cambia algo una precisión de media hora.
+            const REFRESCO_VISTO_MS = 30 * 60 * 1000;
+            const umbral = Date.parse(ahora) - REFRESCO_VISTO_MS;
             const sinCambio = movs
-              .filter((m) => antes.has(m.erp_movimiento_id) &&
-                !cambiados.some((c) => c.erp_movimiento_id === m.erp_movimiento_id))
+              .filter((m) => {
+                const p = antes.get(m.erp_movimiento_id);
+                if (!p || cambiados.some((c) => c.erp_movimiento_id === m.erp_movimiento_id)) return false;
+                return !p.visto_at || Date.parse(p.visto_at) < umbral;
+              })
               .map((m) => m.erp_movimiento_id);
             for (let i = 0; i < sinCambio.length; i += 200) {
               const { error } = await supabase.from("cortes_caja_movimientos")

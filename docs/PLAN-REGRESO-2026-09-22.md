@@ -163,15 +163,22 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   DEFINER: un año 683,904 → 73,262 bloques, 12/12 idénticas. Techos bajados en
   `bloques-por-llamada.json` y fuera de `planes-genericos.json`.
 
-### D3 ⬜ `gate:eficiencia` — escrituras sin inserción 1,380/h (tope 1,240)
+### D3 🔎 `gate:eficiencia` — escrituras sin inserción 1,380/h (tope 1,240)
 
 - Ubicar la tabla (`n_tup_upd` vs `n_tup_hot_upd` desde el arranque) y el
   writer que reescribe filas sin cambio. Patrón `IS DISTINCT FROM`.
+- **Corregido (v2.1025.4), falta que la ventana de 6 h del gate lo mida:**
+  `cortes_caja_movimientos` (561/h) — `sync-cortes-caja` refrescaba `visto_at`
+  de todo el día en cada repaso. Ahora sólo si tiene más de 30 min.
 
-### D4 ⬜ Realtime publica `inventory_sync_log` 🔒
+### D4 ✅ Realtime publica `inventory_sync_log` — NO se saca
 
 - Pendiente del informe del incidente. Verificar si alguna pantalla se
   suscribe; si no, sacarla de la publicación (`lock_timeout`).
+- **Verificado: SÍ se suscriben** `SidebarSyncStatus` (INSERT) y `useSyncMonitor`
+  (INSERT con success=false). Sacarla los rompe. Lo que sí sobra: la barra
+  lateral re-consulta por HTTP en CADA evento (~6/min por pantalla abierta),
+  cuando el evento ya trae la fila — ver D5.
 
 ---
 

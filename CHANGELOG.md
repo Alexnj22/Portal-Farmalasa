@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1025.4 — Los movimientos de caja dejan de reescribirse en cada repaso
+
+`gate:eficiencia` estaba en rojo: escrituras sin inserción en 1,380/h contra un
+tope de 1,240. La que más escribía de toda la base era `cortes_caja_movimientos`:
+**89,568 escrituras sobre 754 inserciones** (561/h, 100% HOT).
+
+`sync-cortes-caja` refrescaba `visto_at` en TODOS los movimientos sin cambios
+del día cada vez que repasaba la lista de una sala. Es exactamente el patrón
+que CLAUDE.md prohíbe, y el comentario de tres líneas más arriba lo decía
+(«reescribir las filas del día en cada corte es el churn de WAL que ya costó
+caro en `inventory`»). Ahora la marca se refresca sólo si tiene más de 30
+minutos: la leen una persona («visto por última vez») y el detector de
+desaparecidos, y a ninguno le cambia algo esa precisión.
+
+Desplegada con `--no-verify-jwt` (la llama un cron). En los 20 minutos
+siguientes: 6 inserciones, 0 reescrituras, todas las llamadas en 200.
+
 ## v2.1025.3 — Buscar en Ventas y abrir un producto, rápidos también para el usuario real
 
 **v2.1025.0 no alcanzaba.** Aquella medición se hizo como `postgres`, que se

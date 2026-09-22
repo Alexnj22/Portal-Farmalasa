@@ -124,14 +124,40 @@ Deno.serve(async (req: Request) => {
         return json({ ok: true, conservada: true });
       }
       const effectivePassword = isResetRequest ? tempPassword : password;
+      // ── El permiso va ANTES y en su propia llamada ───────────────────────
+      //
+      // La base rechaza todo cambio de contraseña que llegue sin
+      // `app_metadata.cambio_de_clave` (trigger `guardia_cambio_de_contrasena`).
+      // `temporal` deja pasar esta escritura y después UNA más, la de la
+      // persona en su primer acceso; `definitiva` deja pasar sólo ésta.
+      //
+      // Tiene que ser una llamada aparte: en la misma, Auth escribe la
+      // contraseña ANTES que el app_metadata y el trigger todavía no vería el
+      // permiso.
+      const { error: permErr } = await admin.auth.admin.updateUserById(employee.id, {
+        app_metadata: { cambio_de_clave: isResetRequest ? "temporal" : "definitiva" },
+      });
+      if (permErr) return json({ ok: false, error: "AUTH_UPDATE_ERROR", details: permErr.message });
+
       const { error: updErr } = await admin.auth.admin.updateUserById(employee.id, {
         password: effectivePassword, user_metadata: { username, code: employee.code, must_change_password: isResetRequest },
       });
-      if (updErr) return json({ ok: false, error: "AUTH_UPDATE_ERROR", details: updErr.message });
+      if (updErr) {
+        // Un permiso que queda puesto después de un fallo es un cambio de
+        // contraseña libre para quien tenga la sesión abierta: se retira.
+        const { error: retiroErr } = await admin.auth.admin.updateUserById(employee.id, { app_metadata: { cambio_de_clave: null } });
+        return json({
+          ok: false, error: "AUTH_UPDATE_ERROR",
+          details: retiroErr ? `${updErr.message} · además no se pudo retirar el permiso: ${retiroErr.message}` : updErr.message,
+        });
+      }
     } else {
       const { error: createErr } = await admin.auth.admin.createUser({
         id: employee.id, email, password: tempPassword, email_confirm: true,
         user_metadata: { username, code: employee.code, must_change_password: true },
+        // Crear es un INSERT y el trigger no lo mira; el permiso es para que la
+        // persona pueda elegir la suya en su primer acceso.
+        app_metadata: { cambio_de_clave: "primer_acceso" },
       });
       if (createErr) return json({ ok: false, error: "AUTH_CREATE_ERROR", details: createErr.message });
     }

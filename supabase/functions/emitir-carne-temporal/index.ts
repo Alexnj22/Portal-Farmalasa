@@ -94,11 +94,24 @@ Deno.serve(async (req: Request) => {
     let authUserId: string | null = (existente as string | null) ?? null;
 
     if (authUserId) {
+      // La base rechaza un cambio de contraseña sin permiso previo (trigger
+      // `guardia_cambio_de_contrasena`), y el permiso tiene que ir en una
+      // llamada aparte: en la misma, Auth escribe la contraseña primero.
+      const { error: permErr } = await admin.auth.admin.updateUserById(authUserId, {
+        app_metadata: { cambio_de_clave: "definitiva" },
+      });
+      if (permErr) return await anular(carneId, "AUTH_UPDATE_ERROR", permErr.message, json);
+
       const { error } = await admin.auth.admin.updateUserById(authUserId, {
         password: secreto,
         user_metadata: { code: null, kiosk: true, carne_temporal: true },
       });
-      if (error) return await anular(carneId, "AUTH_UPDATE_ERROR", error.message, json);
+      if (error) {
+        // El permiso no puede quedar puesto: sería un cambio de clave libre.
+        const { error: retiroErr } = await admin.auth.admin.updateUserById(authUserId, { app_metadata: { cambio_de_clave: null } });
+        const detalle = retiroErr ? `${error.message} · además no se pudo retirar el permiso: ${retiroErr.message}` : error.message;
+        return await anular(carneId, "AUTH_UPDATE_ERROR", detalle, json);
+      }
     } else {
       const creado = await admin.auth.admin.createUser({
         email,

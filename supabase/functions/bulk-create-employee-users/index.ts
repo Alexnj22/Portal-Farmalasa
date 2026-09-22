@@ -65,6 +65,9 @@ Deno.serve(async (req: Request) => {
           code: emp.code,
           username: emp.username,
         },
+        // Sin esto, el cambio obligatorio del primer acceso lo rechaza la base
+        // (trigger `guardia_cambio_de_contrasena`).
+        app_metadata: { cambio_de_clave: "primer_acceso" },
       });
 
       if (!error) {

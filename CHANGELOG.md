@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1030.3 — Las funciones que fijan contraseñas piden permiso a la base
+
+Preparación del candado en la base (`guardia_cambio_de_contrasena`): Auth va a
+rechazar todo cambio de contraseña que llegue sin
+`app_metadata.cambio_de_clave`, que la persona no puede escribirse sola.
+
+- `set-employee-password` pide el permiso en una llamada **aparte y antes**
+  (en la misma, Auth escribe la contraseña primero y el candado no lo vería):
+  `temporal` al restablecer (deja pasar además el cambio del primer acceso),
+  `definitiva` al fijar una clave. Si la escritura falla, el permiso se retira.
+- `bulk-create-employee-users` y el alta de `set-employee-password` crean la
+  cuenta con `primer_acceso`.
+- `emitir-carne-temporal` pide `definitiva` antes de fijar el secreto del día.
+
+Probado contra el entorno de pruebas: 16 casos, todos como se esperaba.
+
 ## v2.1030.2 — El restablecimiento de contraseña queda en la bitácora
 
 En v2.1030.0 el registro de `CONTRASENA_RESTABLECIDA` quedó en `FormSetPassword`,

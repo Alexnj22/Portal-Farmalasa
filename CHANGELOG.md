@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1031.0 — La contraseña sólo cambia con permiso: candado en la base
+
+Quitar el botón de la pantalla (v2.1030.0) no alcanzaba: Supabase acepta
+`PUT /auth/v1/user {password}` de cualquier sesión válida. Desde ahora lo
+decide la base: el trigger `guardia_cambio_de_contrasena` sobre `auth.users`
+rechaza todo cambio de contraseña que llegue por Auth sin
+`app_metadata.cambio_de_clave`, que la persona no puede escribirse. El permiso
+se gasta al usarse.
+
+| quién | resultado |
+|---|---|
+| la persona, desde una sesión abierta (normal o de carné) | rechazado |
+| la persona, en su primer acceso tras un restablecimiento | una vez |
+| alguien con permiso de editar personal (restablecer) | permitido |
+| el carné de papel del día y la purga nocturna | permitido |
+
+Orden de despliegue, y por qué: primero las tres funciones que piden el
+permiso (v40, v21, v5, con su `verify_jwt` de siempre), después el permiso de
+primer acceso a las 6 cuentas con temporal pendiente, y recién ahí el trigger.
+Al revés, «Restablecer contraseña» fallaba.
+
+Verificado en producción con una cuenta desechable (borrada al terminar):
+login, cambio sin permiso rechazado (persona y administrador), restablecer,
+primer acceso y segundo cambio rechazado — 7 de 7.
+
 ## v2.1030.3 — Las funciones que fijan contraseñas piden permiso a la base
 
 Preparación del candado en la base (`guardia_cambio_de_contrasena`): Auth va a

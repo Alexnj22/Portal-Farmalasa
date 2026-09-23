@@ -207,7 +207,7 @@ SELECT * FROM (
          (SELECT count(*) = 1 FROM pg_proc p,
            LATERAL regexp_matches(pg_get_functiondef(p.oid),
              'IN \\(SELECT ac\\.erp_product_id FROM all_cands ac\\)', 'g')
-          WHERE p.proname='get_product_sales_agg' AND p.pronamespace='public'::regnamespace),
+          WHERE p.proname='get_product_sales_agg_base' AND p.pronamespace='public'::regnamespace),
          'ese IN aparecía dos veces; en \`last_sale_live\` no descartaba NINGUNA fila y costaba 155 ms de los 535'
   UNION ALL
   -- La protección de verdad del 12x del 2026-08-22.
@@ -225,7 +225,7 @@ SELECT * FROM (
          (SELECT pg_get_functiondef(p.oid) NOT LIKE '%norm_search(sii.descripcion)%'
              AND pg_get_functiondef(p.oid) NOT LIKE '%norm_search(a.descripcion)%'
              AND pg_get_functiondef(p.oid) LIKE '%prods_buscados%'
-          FROM pg_proc p WHERE p.proname='get_product_sales_agg' AND p.pronamespace='public'::regnamespace),
+          FROM pg_proc p WHERE p.proname='get_product_sales_agg_base' AND p.pronamespace='public'::regnamespace),
          'sin esto la búsqueda vuelve a normalizar el texto de 594K líneas de factura: 3,708 ms contra 301 sobre un año'
 ) t ORDER BY clave`;
 

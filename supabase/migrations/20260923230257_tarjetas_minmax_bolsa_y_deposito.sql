@@ -1,0 +1,390 @@
+SET lock_timeout = '5s';
+
+-- Segunda tanda de tarjetas de la campana (usuario, 23-sep): MIN·MAX por
+-- aprobar, bolsa que no cuadró y depósito al banco. Los tres avisos mandan en
+-- el metadata lo que la tarjeta dibuja, y los dos primeros llevan la sala en
+-- el título (el de MIN·MAX pierde además el emoji).
+
+CREATE OR REPLACE FUNCTION public.notificar_solicitud_minmax()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_dest    uuid[];
+    v_suc     text;
+    v_cuerpo  text;
+BEGIN
+    IF NEW.status <> 'pending' THEN RETURN NEW; END IF;
+
+    v_dest := ARRAY(SELECT x FROM unnest(public.get_minmax_approver_ids()) AS x WHERE x IS DISTINCT FROM NEW.requested_by_id);
+    IF v_dest IS NULL OR array_length(v_dest, 1) IS NULL THEN
+        INSERT INTO public.audit_logs (action, target_id, user_name, source, severity, details)
+        VALUES ('MINMAX_SIN_APROBADOR', NEW.id::text, 'Sistema', 'SYSTEM', 'WARNING',
+                jsonb_build_object('producto', NEW.product_name,
+                                   'motivo', 'get_minmax_approver_ids() no devolvió a nadie'));
+        RETURN NEW;
+    END IF;
+
+    SELECT nombre INTO v_suc
+      FROM public.erp_sucursal_map
+     WHERE erp_sucursal_id = NEW.erp_sucursal_id;
+
+    v_cuerpo := coalesce(NEW.requested_by_name, 'Un empleado')
+             || ' propone MIN ' || NEW.requested_min || ' · MAX ' || NEW.requested_max
+             || ' para ' || coalesce(NEW.product_name, 'un producto')
+             || coalesce(' (' || v_suc || ')', '')
+             || '. Hoy está en MIN ' || coalesce(NEW.current_min::text, '—')
+             || ' · MAX ' || coalesce(NEW.current_max::text, '—')
+             || coalesce(' — ' || left(nullif(btrim(NEW.reason), ''), 140), '');
+
+    PERFORM public.notify_employees(
+        -- Título corto con la sala; lo demás lo dibuja la tarjeta (23-sep).
+        v_dest, 'MINMAX_PENDING', 'Ajuste de MIN·MAX' || coalesce(' · ' || v_suc, ''), v_cuerpo,
+        '/requests?solicitud=minmax:' || NEW.id,
+        jsonb_build_object('request_id', NEW.id, 'request_type', 'MINMAX',
+                           'producto', NEW.product_name,
+                           -- Lo que dibuja la tarjeta de la campana.
+                           'sala',      v_suc,
+                           'quien',     NEW.requested_by_name,
+                           'quien_id',  NEW.requested_by_id,
+                           'min_hoy',   NEW.current_min,
+                           'max_hoy',   NEW.current_max,
+                           'min_nuevo', NEW.requested_min,
+                           'max_nuevo', NEW.requested_max,
+                           'motivo',    left(nullif(btrim(NEW.reason), ''), 140)),
+        true, NULL
+    );
+
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.confirmar_conteo(p_ids bigint[])
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_yo       uuid := (SELECT auth_employee_id());
+    v_n        integer := 0;
+    r          record;
+    v_saldo    numeric;
+    v_dif      numeric;
+    b          record;
+    v_hoy      date := (now() AT TIME ZONE 'America/El_Salvador')::date;
+    v_folio    text;
+    v_conteo   public.bolsas_conteos;
+    v_esperado numeric := 0;
+    v_contado  numeric := 0;
+    v_desc     integer := 0;
+    v_quien    text;
+BEGIN
+    IF NOT (SELECT auth_can_edit_any(ARRAY['bolsas_conteo'])) THEN
+        RAISE EXCEPTION 'FORBIDDEN';
+    END IF;
+
+    -- La cabecera se abre ANTES del recorrido porque cada bolsa necesita su id.
+    -- Si al final no se cerró ninguna, el RAISE de abajo tira la transacción
+    -- entera y esta fila no queda: un folio sin bolsas sería una tanda que nunca
+    -- pasó.
+    SELECT 'CNT-' || to_char(v_hoy, 'YYMMDD') || '-' || (count(*) + 1)
+      INTO v_folio
+      FROM public.bolsas_conteos WHERE fecha = v_hoy;
+
+    INSERT INTO public.bolsas_conteos (folio, fecha, cerrado_por)
+    VALUES (v_folio, v_hoy, v_yo)
+    RETURNING * INTO v_conteo;
+
+    FOR r IN SELECT * FROM public.bolsas
+              WHERE id = ANY(p_ids) AND estado = 'RECIBIDA' AND conteo_marcado IS NOT NULL
+              ORDER BY id FOR UPDATE
+    LOOP
+        IF (SELECT auth_module_scope('bolsas_conteo')) IS DISTINCT FROM 'ALL'
+           AND r.branch_id IS DISTINCT FROM (SELECT auth_employee_branch_id()) THEN
+            RAISE EXCEPTION 'FORBIDDEN';
+        END IF;
+
+        v_saldo := public.bolsa_saldo(r.id);
+        v_dif   := round(r.conteo_marcado - v_saldo, 2);
+
+        v_esperado := v_esperado + v_saldo;
+        v_contado  := v_contado  + r.conteo_marcado;
+        IF abs(v_dif) >= 0.01 THEN v_desc := v_desc + 1; END IF;
+
+        UPDATE public.bolsas
+           SET estado      = 'CONTADA',
+               contado     = r.conteo_marcado,
+               contado_por = r.conteo_marcado_por,   -- quien CONTÓ, no quien confirma
+               contado_at  = now(),
+               conteo_id   = v_conteo.id,
+               conteo_marcado = NULL, conteo_marcado_por = NULL, conteo_marcado_at = NULL,
+               -- Una resolución sobre una bolsa que terminó cuadrando explica
+               -- algo que no pasó: se borra, foto incluida.
+               dif_via      = CASE WHEN abs(v_dif) < 0.01 THEN NULL ELSE dif_via      END,
+               dif_causa    = CASE WHEN abs(v_dif) < 0.01 THEN NULL ELSE dif_causa    END,
+               dif_por      = CASE WHEN abs(v_dif) < 0.01 THEN NULL ELSE dif_por      END,
+               dif_at       = CASE WHEN abs(v_dif) < 0.01 THEN NULL ELSE dif_at       END,
+               dif_foto_url = CASE WHEN abs(v_dif) < 0.01 THEN NULL ELSE dif_foto_url END,
+               updated_at  = now()
+         WHERE id = r.id;
+
+        -- La bitácora nombra a quien CONTÓ esta bolsa, que puede no ser quien
+        -- firma la tanda. Sin esto el único nombre del renglón era el del que
+        -- apretó «Confirmar», y así es como el rastro termina diciendo que una
+        -- sola persona hizo todo.
+        SELECT e.name INTO v_quien FROM public.employees e WHERE e.id = r.conteo_marcado_por;
+
+        INSERT INTO public.bolsas_eventos (bolsa_id, accion, estado_antes, estado_despues, monto, employee_id, nota)
+        VALUES (r.id, 'CONTAR', 'RECIBIDA', 'CONTADA', v_dif, v_yo,
+                CASE WHEN abs(v_dif) < 0.01 THEN 'Cuadró.' ELSE 'No cuadró.' END
+                || CASE WHEN v_quien IS NOT NULL THEN ' La contó ' || v_quien || '.' ELSE '' END
+                || ' Conteo confirmado en la tanda ' || v_conteo.folio || '.'
+                || CASE WHEN abs(v_dif) >= 0.01 AND r.dif_at IS NOT NULL
+                        THEN ' La causa ya estaba anotada.' ELSE '' END);
+
+        v_n := v_n + 1;
+    END LOOP;
+
+    IF v_n = 0 THEN
+        RAISE EXCEPTION 'No hay ninguna bolsa marcada para confirmar.';
+    END IF;
+
+    UPDATE public.bolsas_conteos
+       SET cuantas        = v_n,
+           total_esperado = round(v_esperado, 2),
+           total_contado  = round(v_contado, 2),
+           diferencia     = round(v_contado - v_esperado, 2),
+           descuadradas   = v_desc
+     WHERE id = v_conteo.id;
+
+    FOR b IN
+        SELECT s.branch_id,
+               (SELECT name FROM public.branches WHERE id = s.branch_id) AS sala,
+               count(*) AS cuantas,
+               sum(s.dif) AS neto,
+               string_agg(s.folio || ' ' ||
+                          CASE WHEN s.dif < 0 THEN 'faltó ' ELSE 'sobró ' END ||
+                          '$' || to_char(abs(s.dif), 'FM999,999,990.00'),
+                          ', ' ORDER BY s.folio) AS detalle,
+               -- Cada bolsa con su diferencia, para la tarjeta (23-sep).
+               jsonb_agg(jsonb_build_object('folio', s.folio, 'dif', s.dif) ORDER BY s.folio) AS lista
+          FROM (SELECT bo.branch_id, bo.folio,
+                       round(bo.contado - public.bolsa_saldo(bo.id), 2) AS dif
+                  FROM public.bolsas bo
+                 WHERE bo.id = ANY(p_ids) AND bo.estado = 'CONTADA') s
+         WHERE abs(s.dif) >= 0.01
+         GROUP BY s.branch_id
+    LOOP
+        PERFORM public.notify_employees(
+            public.destinatarios_de_modulo(b.branch_id::integer, 'bolsas'),
+            'bolsa_no_cuadra',
+            coalesce(b.sala || ' · ', '')
+              || CASE WHEN b.cuantas = 1 THEN 'Una bolsa no cuadró en el conteo'
+                      ELSE b.cuantas || ' bolsas no cuadraron en el conteo' END,
+            format('%s · %s. Entrá a explicar qué pasó.', coalesce(b.sala, 'Sala'), b.detalle),
+            -- La pestaña donde la sala PUEDE contestar. Antes iba a
+            -- «finalizadas», que es soloAdmin: el aviso llegaba y no había
+            -- adónde. Ver el encabezado de esta migración.
+            '/bolsas?tab=diferencias',
+            jsonb_build_object('branch_id', b.branch_id, 'bolsas', b.cuantas, 'neto', b.neto,
+                               'sala', b.sala, 'lista', b.lista),
+            true,
+            b.branch_id::integer
+        );
+    END LOOP;
+
+    RETURN v_n;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.registrar_deposito_bancario(p_bolsa_ids bigint[], p_monto numeric, p_aporte numeric DEFAULT 0, p_aporte_nota text DEFAULT NULL::text, p_nota text DEFAULT NULL::text, p_llevado_por uuid DEFAULT NULL::uuid, p_banco_id smallint DEFAULT NULL::smallint, p_destino text DEFAULT NULL::text, p_entregado_a uuid DEFAULT NULL::uuid, p_monto_efectivo numeric DEFAULT 0)
+ RETURNS depositos_bancarios
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_yo        uuid := (SELECT auth_employee_id());
+    v_hoy       date := (now() AT TIME ZONE 'America/El_Salvador')::date;
+    v_contado   numeric;
+    v_cuantas   integer;
+    v_aporte    numeric := round(coalesce(p_aporte, 0), 2);
+    v_banco_mto numeric := round(coalesce(p_monto, 0), 2);
+    v_mano_mto  numeric := round(coalesce(p_monto_efectivo, 0), 2);
+    v_remanente numeric;
+    v_destino   text;
+    v_folio     text;
+    v_banco     text;
+    v_a_quien   text;
+    v_dep       public.depositos_bancarios;
+    v_gerentes  uuid[];
+    v_quien     text;
+    v_quien_id  uuid;
+    v_quien_nom text;
+    v_partes    text;
+    v_cola      text;
+    v_titulo    text;
+BEGIN
+    IF NOT (SELECT auth_can_edit_any(ARRAY['bolsas_conteo'])) THEN
+        RAISE EXCEPTION 'FORBIDDEN';
+    END IF;
+
+    PERFORM 1 FROM public.bolsas
+      WHERE id = ANY(p_bolsa_ids) AND estado = 'CONTADA' AND deposito_id IS NULL
+      FOR UPDATE;
+
+    SELECT coalesce(sum(b.contado), 0), count(*)
+      INTO v_contado, v_cuantas
+      FROM public.bolsas b
+     WHERE b.id = ANY(p_bolsa_ids)
+       AND b.estado = 'CONTADA'
+       AND b.deposito_id IS NULL;
+
+    IF v_cuantas = 0 THEN
+        RAISE EXCEPTION 'No hay bolsas contadas y sin cerrar en esa lista.';
+    END IF;
+    IF v_cuantas <> coalesce(array_length(p_bolsa_ids, 1), 0) THEN
+        RAISE EXCEPTION 'Alguna de esas bolsas ya se cerró o dejó de estar contada. Vuelve a abrir la pantalla.';
+    END IF;
+
+    IF v_banco_mto < 0 OR v_mano_mto < 0 THEN
+        RAISE EXCEPTION 'Ninguna parte del reparto puede ser negativa.';
+    END IF;
+    IF v_aporte > 0 AND nullif(btrim(coalesce(p_aporte_nota, '')), '') IS NULL THEN
+        RAISE EXCEPTION 'Si entra dinero de afuera hay que decir de dónde salió.';
+    END IF;
+
+    -- Cada parte exige lo suyo, y sólo si esa parte existe.
+    IF v_banco_mto > 0 THEN
+        SELECT b.nombre INTO v_banco FROM public.bancos b
+         WHERE b.id = p_banco_id AND b.activo;
+        IF v_banco IS NULL THEN
+            RAISE EXCEPTION 'Hay que decir a qué banco va esa parte. Si no ves ese campo, recarga la pantalla.';
+        END IF;
+    END IF;
+
+    IF p_entregado_a IS NOT NULL THEN
+        SELECT e.name INTO v_a_quien
+          FROM public.employees e
+          JOIN public.roles r ON r.id = e.role_id
+         WHERE e.id = p_entregado_a
+           AND e.status = 'ACTIVO'
+           AND r.name = ANY (public.cargos_de_administracion());
+        IF v_a_quien IS NULL THEN
+            RAISE EXCEPTION 'El efectivo en mano sólo se le entrega a administración.';
+        END IF;
+    ELSIF v_mano_mto > 0 THEN
+        RAISE EXCEPTION 'Hay que decir a quién se le entrega el efectivo en mano.';
+    END IF;
+
+    v_remanente := round(v_contado + v_aporte - v_banco_mto - v_mano_mto, 2);
+    IF v_remanente < 0 THEN
+        RAISE EXCEPTION 'No alcanza: hay % y se están repartiendo %. Faltan %.',
+            to_char(v_contado + v_aporte, 'FM999,999,990.00'),
+            to_char(v_banco_mto + v_mano_mto, 'FM999,999,990.00'),
+            to_char(abs(v_remanente), 'FM999,999,990.00');
+    END IF;
+
+    v_destino := CASE
+        WHEN v_banco_mto > 0 AND v_mano_mto > 0 THEN 'MIXTO'
+        WHEN v_banco_mto > 0                    THEN 'BANCO'
+        ELSE 'EFECTIVO'
+    END;
+
+    -- Acá vivía el freno por «no hay Gerente General activo». Se fue: el
+    -- remanente es efectivo del dueño y el portal no lo sigue, así que no puede
+    -- ser el motivo por el que no se registra un depósito.
+
+    SELECT 'DEP-' || to_char(v_hoy, 'YYMMDD') || '-' || (count(*) + 1)
+      INTO v_folio
+      FROM public.depositos_bancarios WHERE fecha = v_hoy;
+
+    INSERT INTO public.depositos_bancarios (
+        folio, fecha, total_contado, aporte, aporte_nota,
+        monto_deposito, monto_efectivo, remanente,
+        nota, cerrado_por, llevado_por, banco_id, destino, entregado_a)
+    VALUES (v_folio, v_hoy, round(v_contado, 2), v_aporte,
+            nullif(btrim(coalesce(p_aporte_nota, '')), ''),
+            v_banco_mto, v_mano_mto, v_remanente,
+            nullif(btrim(coalesce(p_nota, '')), ''), v_yo,
+            CASE WHEN v_banco_mto > 0 THEN p_llevado_por END,
+            CASE WHEN v_banco_mto > 0 THEN p_banco_id END,
+            v_destino, p_entregado_a)
+    RETURNING * INTO v_dep;
+
+    UPDATE public.bolsas SET deposito_id = v_dep.id, updated_at = now()
+     WHERE id = ANY(p_bolsa_ids);
+
+    v_partes := concat_ws(' y ',
+        CASE WHEN v_banco_mto > 0
+             THEN '$' || to_char(v_banco_mto, 'FM999,999,990.00') || ' al banco · ' || v_banco END,
+        CASE WHEN v_mano_mto > 0
+             THEN '$' || to_char(v_mano_mto, 'FM999,999,990.00') || ' en efectivo a ' || v_a_quien END);
+    IF v_partes IS NULL OR v_partes = '' THEN
+        v_partes := CASE WHEN v_a_quien IS NOT NULL
+                         THEN 'sin efectivo que mover · queda con ' || v_a_quien
+                         ELSE 'sin efectivo que mover' END;
+    END IF;
+
+    INSERT INTO public.bolsas_eventos (bolsa_id, accion, estado_antes, estado_despues, monto, employee_id, nota)
+    SELECT b.id, 'DEPOSITAR', 'CONTADA', 'CONTADA', b.contado, v_yo,
+           'Efectivo cerrado · ' || v_dep.folio || ' · ' || v_partes
+      FROM public.bolsas b WHERE b.id = ANY(p_bolsa_ids);
+
+    -- ── El aviso ───────────────────────────────────────────────────────────
+    v_titulo := CASE v_destino
+        WHEN 'BANCO'    THEN 'Depósito al banco · $' || to_char(v_banco_mto, 'FM999,999,990.00')
+        WHEN 'EFECTIVO' THEN 'Efectivo entregado en mano · $' || to_char(v_mano_mto, 'FM999,999,990.00')
+        ELSE 'Efectivo cerrado · $' || to_char(v_banco_mto + v_mano_mto, 'FM999,999,990.00')
+    END;
+
+    v_quien_id := coalesce(CASE WHEN v_banco_mto > 0 THEN p_llevado_por END, v_yo);
+    SELECT e.name INTO v_quien FROM public.employees e WHERE e.id = v_quien_id;
+    v_quien_nom := v_quien;
+    v_quien := CASE WHEN v_banco_mto > 0 AND p_llevado_por IS NOT NULL
+                    THEN 'lo lleva ' || coalesce(v_quien, 'alguien sin nombre en el padrón')
+                    ELSE 'lo cerró ' || coalesce(v_quien, 'alguien sin nombre en el padrón') END;
+
+    -- El remanente se DICE, no se le asigna a nadie: es lo que no salió por el
+    -- circuito, y de ahí en adelante es efectivo del dueño.
+    v_cola := CASE WHEN v_remanente >= 0.01
+                   THEN 'Quedan $' || to_char(v_remanente, 'FM999,999,990.00') || ' sin salir.'
+                   ELSE 'Sin remanente.' END;
+
+    SELECT array_agg(e.id ORDER BY e.name) INTO v_gerentes
+      FROM public.employees e
+      JOIN public.roles r ON r.id = e.role_id
+     WHERE r.name = 'Gerente General' AND e.status = 'ACTIVO';
+
+    IF v_gerentes IS NOT NULL THEN
+        PERFORM public.notify_employees(
+            v_gerentes,
+            'DEPOSITO_BANCO',
+            v_titulo,
+            v_dep.folio || ' · ' || v_partes || ' · ' || v_quien || '. ' || v_cola,
+            '/bolsas?tab=finalizadas',
+            jsonb_build_object(
+                'deposito_id',    v_dep.id,
+                'folio',          v_dep.folio,
+                'destino',        v_destino,
+                'banco',          v_banco,
+                'entregado_a',    v_a_quien,
+                'monto_banco',    v_banco_mto,
+                'monto_efectivo', v_mano_mto,
+                'remanente',      v_dep.remanente,
+                'bolsas',         v_cuantas,
+                -- Lo que dibuja la tarjeta de la campana (23-sep).
+                'quien_id',       v_quien_id,
+                'quien',          v_quien_nom,
+                'quien_lleva',    v_banco_mto > 0 AND p_llevado_por IS NOT NULL),
+            true,
+            NULL
+        );
+    END IF;
+
+    RETURN v_dep;
+END;
+$function$;

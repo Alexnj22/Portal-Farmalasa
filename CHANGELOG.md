@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1038.0 — Tarjetas modernas: MIN·MAX, bolsa que no cuadró y depósito al banco
+
+Segunda tanda de avisos a tarjeta (usuario, 23-sep), con la receta que aprobó
+en la de corte: panel de celdas con rótulo arriba y dato abajo, alineadas, la
+persona en su propio renglón con su cara, y el título que no se repite.
+
+- **MIN·MAX por aprobar**: título «Ajuste de MIN·MAX · Sala» (sin emoji); el
+  producto, «Lo pide» con la cara, **Hoy** y **Propone** («MIN 0 · MAX 1», en
+  azul) y el motivo entre comillas. Aprobar/Rechazar sin cambios.
+- **Bolsa que no cuadró**: título con la sala; una bolsa → celdas BOLSA /
+  FALTÓ o SOBRÓ con el monto; varias → una línea por bolsa y el neto al pie.
+- **Depósito al banco**: «Lo lleva» (o «Lo cerró») con la cara, Banco, Bolsas y
+  Sin salir.
+
+`notificar_solicitud_minmax`, `confirmar_conteo` y `registrar_deposito_bancario`
+mandan en el metadata lo que la tarjeta dibuja (migración
+`20260923230257_tarjetas_minmax_bolsa_y_deposito`). Verificado en pantalla.
+
 ## v2.1037.2 — Inyecciones: arranca el 3-sep y abre para quien tiene el permiso
 
 - La pestaña decía «No tienes permiso» a todos, Gerencia incluida:

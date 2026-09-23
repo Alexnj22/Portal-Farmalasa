@@ -10,6 +10,8 @@ import { InsigniaDeCreditos, CuerpoDeCreditos } from './TarjetaDeCreditos';
 import {
     InsigniaDeCorte, CuerpoDeCorte, RelojDeBitacora, CuerpoDeBitacora,
     InsigniaDeTraslados, CuerpoDeTraslados,
+    InsigniaDeMinmax, CuerpoDeMinmax, InsigniaDeBolsa, CuerpoDeBolsa,
+    InsigniaDeDeposito, CuerpoDeDeposito,
 } from './TarjetasDeOperacion';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
@@ -17,6 +19,7 @@ import { datosDeAperturasDeLaManana } from '../../utils/aperturasDeLaManana';
 import { datosDeCreditosVencidos } from '../../utils/creditosVencidos';
 import {
     datosDeCorteNuevo, datosDeBitacoraPorVencer, datosDeTrasladosPorRespaldo, TRASLADOS_VISIBLES,
+    datosDeMinmaxPendiente, datosDeBolsaNoCuadra, datosDeDeposito,
 } from '../../utils/avisosDeOperacion';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -181,7 +184,10 @@ const TarjetaDeAviso = ({
        respaldo — ver `TarjetasDeOperacion`. */
     const corteNuevo = datosDeCorteNuevo(n);
     const bitacora   = datosDeBitacoraPorVencer(n);
-    const conTarjeta = creditos || corteNuevo || bitacora || traslados;
+    const minmaxPend = datosDeMinmaxPendiente(n);
+    const bolsa      = datosDeBolsaNoCuadra(n);
+    const deposito   = datosDeDeposito(n);
+    const conTarjeta = creditos || corteNuevo || bitacora || traslados || minmaxPend || bolsa || deposito;
 
     const corte = acciones?.corteDe?.(n) ?? null;
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
@@ -225,6 +231,12 @@ const TarjetaDeAviso = ({
                     <RelojDeBitacora datos={bitacora} isDark={isDark} />
                 ) : traslados ? (
                     <InsigniaDeTraslados isDark={isDark} />
+                ) : minmaxPend ? (
+                    <InsigniaDeMinmax isDark={isDark} />
+                ) : bolsa ? (
+                    <InsigniaDeBolsa datos={bolsa} isDark={isDark} />
+                ) : deposito ? (
+                    <InsigniaDeDeposito isDark={isDark} />
                 ) : conAnillo ? (
                     <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                 ) : (
@@ -280,6 +292,17 @@ const TarjetaDeAviso = ({
                     {traslados && (
                         <CuerpoDeTraslados datos={traslados} claseTenue={cx.rowBody} isDark={isDark}
                             buscarEmpleado={buscarEmpleado} expandida={expandida} />
+                    )}
+                    {minmaxPend && (
+                        <CuerpoDeMinmax datos={minmaxPend} claseTenue={cx.rowBody} isDark={isDark}
+                            buscarEmpleado={buscarEmpleado} />
+                    )}
+                    {bolsa && (
+                        <CuerpoDeBolsa datos={bolsa} claseTenue={cx.rowBody} isDark={isDark} />
+                    )}
+                    {deposito && (
+                        <CuerpoDeDeposito datos={deposito} claseTenue={cx.rowBody} isDark={isDark}
+                            buscarEmpleado={buscarEmpleado} />
                     )}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}

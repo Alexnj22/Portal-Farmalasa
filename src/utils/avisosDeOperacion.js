@@ -109,3 +109,49 @@ export function datosDeTrasladosPorRespaldo(n) {
         unidades: num(m.unidades) ?? lista.reduce((s, t) => s + (t.unidades || 0), 0),
     };
 }
+
+/* ── Segunda tanda (23-sep): MIN·MAX, bolsa que no cuadró y depósito ───────
+ * Mismo contrato: `null` si el aviso es anterior a que su metadata trajera lo
+ * que la tarjeta dibuja. */
+
+export function datosDeMinmaxPendiente(n) {
+    if (n?.type !== 'MINMAX_PENDING') return null;
+    const m = n.metadata || {};
+    if (!('min_nuevo' in m) || !('max_nuevo' in m)) return null;
+    return {
+        producto: m.producto ? String(m.producto) : null,
+        quien: m.quien ? String(m.quien) : null,
+        quienId: m.quien_id || null,
+        minHoy: num(m.min_hoy),
+        maxHoy: num(m.max_hoy),
+        minNuevo: num(m.min_nuevo),
+        maxNuevo: num(m.max_nuevo),
+        motivo: m.motivo ? String(m.motivo) : null,
+    };
+}
+
+export function datosDeBolsaNoCuadra(n) {
+    if (n?.type !== 'bolsa_no_cuadra') return null;
+    const m = n.metadata || {};
+    const lista = (Array.isArray(m.lista) ? m.lista : [])
+        .filter((b) => b && b.folio && num(b.dif) != null)
+        .map((b) => ({ folio: String(b.folio), dif: num(b.dif) }));
+    if (!lista.length) return null;
+    return { lista, neto: num(m.neto) ?? lista.reduce((s, b) => s + b.dif, 0) };
+}
+
+export function datosDeDeposito(n) {
+    if (n?.type !== 'DEPOSITO_BANCO') return null;
+    const m = n.metadata || {};
+    if (!('quien' in m)) return null;
+    return {
+        destino: m.destino ? String(m.destino) : 'BANCO',
+        banco: m.banco ? String(m.banco) : null,
+        entregadoA: m.entregado_a ? String(m.entregado_a) : null,
+        bolsas: num(m.bolsas),
+        remanente: num(m.remanente) ?? 0,
+        quien: m.quien ? String(m.quien) : null,
+        quienId: m.quien_id || null,
+        quienLleva: m.quien_lleva === true,
+    };
+}

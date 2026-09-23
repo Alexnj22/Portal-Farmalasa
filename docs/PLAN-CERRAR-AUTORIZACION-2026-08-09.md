@@ -94,8 +94,18 @@ romperlo, dime: esto está mal, debería ser de esta forma»*.
 > todos los cargos con alguna pantalla que lo usa (el único 0 de dependiente era
 > una persona bloqueada); `gate:perf` en verde.
 >
-> **Falta la regla 5 (costos)** y quedan `education_catalog_entries` y
-> `suppliers`/`proveedores`.
+> ✅ **Regla 5 (costos) aplicada el 2026-09-23** en tres pasos: `…211841`
+> (`get_precios_con_costo` + Ventas→Productos, resumen de costo de MIN·MAX y Sin
+> venta envueltas en DEFINER con alcance y costo en NULL sin permiso), v2.1035.6
+> (el Catálogo deja de leer la columna), `…212306` (SELECT por columna, sin
+> `costo`, en `product_precios` y `product_precios_history`). Medido antes/después
+> como usuario: QA y Compras idénticos al centavo; una sala ve lo mismo sin la
+> columna de costo. 0 errores de permiso en el log después del cierre.
+>
+> Quedan: `education_catalog_entries`, `suppliers`/`proveedores`, y otras
+> columnas de costo que la regla 5 no tocó — `sales_invoice_items.costo_unitario`
+> (las salas leen sus líneas de venta), `conteo_inventario_items.costo_unitario`
+> y `promocion_cierre_sala.costo`.
 >
 > **(Nota previa) Reglas 1–5 van sobre tablas calientes**: probar en el entorno de pruebas
 > (necesita ventas sembradas: el branch nuevo no trae facturas), medir el costo

@@ -11,7 +11,7 @@ import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
     ChevronUp, Search, X, Trophy, Star, ChevronLeft,
-    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical
+    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical, Syringe
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ROTULO_PUNTOS, OPCIONES_FILTRO_PUNTOS } from '../data/puntos';
@@ -40,6 +40,7 @@ import {
 import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
+import TabInyecciones from './ventas/TabInyecciones';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -2942,6 +2943,7 @@ const TABS = [
     { key: 'ventas',     label: 'Ventas',     icon: FileText },
     { key: 'vendedores', label: 'Vendedores', icon: Users },
     { key: 'productos',  label: 'Productos',  icon: Package },
+    { key: 'inyecciones', label: 'Inyecciones', icon: Syringe },
 ];
 
 export default function VentasView() {
@@ -2951,7 +2953,7 @@ export default function VentasView() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     // Pestañas filtradas según permisos
-    const VALID_TABS = new Set(['ventas', 'vendedores', 'productos']);
+    const VALID_TABS = new Set(['ventas', 'vendedores', 'productos', 'inyecciones']);
     const allowedTabs = TABS.filter(t => hasPermission(`ventas_tab_${t.key}`));
     const defaultTab  = allowedTabs[0]?.key ?? 'ventas';
     const rawTab      = searchParams.get('tab');
@@ -2985,6 +2987,7 @@ export default function VentasView() {
     const searchPlaceholder =
         activeTab === 'ventas'     ? 'Buscar correlativo, cliente o producto...' :
         activeTab === 'vendedores' ? 'Buscar vendedor...' :
+        activeTab === 'inyecciones' ? 'Buscar cliente, factura o inyección...' :
                                      'Buscar producto...';
 
     // Antes: copia hand-rolled del pill de ViewTabBar (DESIGN.md §32/§23,
@@ -3021,6 +3024,13 @@ export default function VentasView() {
                 <TabProductos filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
                     branchOptions={branchOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} />
+            )}
+            {activeTab === 'inyecciones' && (
+                <TabInyecciones filterBranch={filterBranch} setFilterBranch={setFilterBranch}
+                    monthRange={monthRange} setMonthRange={setMonthRange}
+                    defaultRange={(() => { const r = currentMonthRange(); return `${r.fini}|${r.ffin}`; })()}
+                    branchOptions={branchOptions} branchLocked={getScope('ventas') !== 'ALL'}
+                    searchTerm={debouncedSearch} />
             )}
         </GlassViewLayout>
     );

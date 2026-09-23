@@ -149,6 +149,10 @@ const GRUPOS_CRUDOS = [
                 { key: 'ventas_tab_ventas',     label: 'Ventas',     tipo: 'tab' },
                 { key: 'ventas_tab_vendedores', label: 'Vendedores', tipo: 'tab' },
                 { key: 'ventas_tab_productos',  label: 'Productos',  tipo: 'tab' },
+                // Las ventas con inyección y si se cobró la aplicación. Es de
+                // supervisión: la jefatura de sala NO la ve (decisión del usuario,
+                // 2026-09-23), porque nombra a su propio equipo.
+                { key: 'ventas_tab_inyecciones', label: 'Inyecciones', tipo: 'tab' },
                 { key: 'ventas_ver_cards',      label: 'Ver las tarjetas de resumen', tipo: 'cap' },
                 // El aviso de «esto no es venta de productos». Va como permiso
                 // propio y no montado en `ventas_ver_cards` porque el aviso

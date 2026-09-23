@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1037.0 — Ventas: pestaña Inyecciones — qué ventas cobraron la aplicación
+
+«¿Cuáles de esas ventas de inyección pagaron la aplicación?» (usuario, 23-sep).
+Nueva pestaña **Ventas → Inyecciones**, con todas las salas y filtro por sala:
+cada venta con inyección y, al lado, su cobro de «Aplicación de inyección»
+—hora y quién lo registró—, o «Sin cobro». Arriba, el resumen y el reparto por
+vendedor; abajo, los cobros que no encontraron venta (quien trajo su inyección).
+
+- `get_inyecciones_aplicadas` empareja venta y cobro por HORA, uno a uno: no se
+  nombran entre sí en ningún lado. Mediana medida en Salud 4: 42 segundos.
+- `es_inyectable` decide por el nombre del producto (el catálogo no guarda la
+  forma farmacéutica); excluye bebibles, insulina y jeringas sueltas.
+- Antes del 3-sep la aplicación se anotaba directo en la caja: la pestaña avisa
+  que esas ventas salen «sin cobro».
+- Permiso `ventas_tab_inyecciones`: Administrador, Gerente General, Talento
+  Humano, Supervisión de Ventas y QA. La jefatura de sala no la ve.
+
 ## v2.1036.8 — Tarjeta de corte en dos columnas alineadas
 
 «No se ve bien la estructura, se ve desalineado, usa mejor las columnas»

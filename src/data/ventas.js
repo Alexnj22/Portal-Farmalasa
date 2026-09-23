@@ -51,6 +51,23 @@ export async function fetchVentasSinProducto({ fini, ffin, branchId = null }) {
 }
 
 /*
+ * Las ventas con inyección del período y, para cada una, si se cobró la
+ * aplicación. El emparejamiento —por hora, uno a uno— vive en
+ * `get_inyecciones_aplicadas`, no acá: la venta y el cobro no se nombran entre
+ * sí en ningún lado, y decidir cuál va con cuál en el navegador obligaría a
+ * bajar las dos listas enteras. Devuelve `{ ventas, cobros_sin_venta }`.
+ */
+export async function fetchInyeccionesAplicadas({ fini, ffin, branchId = null }) {
+    const { data, error } = await supabase.rpc('get_inyecciones_aplicadas', {
+        p_branch_id: branchId ? Number(branchId) : null,
+        p_desde: fini,
+        p_hasta: ffin,
+    });
+    if (error) throw error;
+    return data ?? { ventas: [], cobros_sin_venta: [] };
+}
+
+/*
  * La lista de Ventas y sus totales viven en la BASE, no acá. Las dos.
  *
  * Nacieron para el filtro «Receta Médica» y desde el 2026-08-21 sirven también

@@ -128,7 +128,7 @@ export const AREAS = [
                'renombrar-usuario-empleado'],
         crons: ['purgar-carnes-temporales', 'purge-sesiones-vencidas', 'purge-session-activity-daily'],
         docs: ['docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md', 'docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md',
-               'docs/SEGURIDAD-AUTORIZACION-2026-08-04.md', 'docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md'],
+               'docs/SEGURIDAD-AUTORIZACION-2026-08-04.md', 'docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md'],
     },
     {
         id: 'permisos',
@@ -407,10 +407,12 @@ export const AREAS = [
         nombre: 'Ventas',
         resumen: 'Lo vendido: anulaciones en vivo, ranking de vendedores, productos más vendidos, cuadre diario y lo que se cobra sin ser venta de productos.',
         modulos: ['ventas', 'ventas_tab_ventas', 'ventas_tab_vendedores', 'ventas_tab_productos',
+                  'ventas_tab_inyecciones',
                   'ventas_ver_cards', 'ventas_no_producto'],
         rutas: ['/ventas'],
         archivos: [
             'src/views/VentasView.jsx',
+            'src/views/ventas/',
             'src/data/ventas.js',
             'src/components/common/AvisoSinProducto.jsx',
             // La costura con el sistema de puntos. Vive acá y no en Clientes

@@ -598,7 +598,7 @@ export function usePedidosData({ searchTerm = '' }) {
                 fetchBranchInfoForSucursal(sucId).then(({ data: m }) => {
                     if (!m?.branch_id) return;
                     // Informativo: campana sin push
-                    notifyBranch(m.branch_id, { type: 'PEDIDO_TRACKING', title: `Pedido #${numero} en preparación`, body: `Bodega ha iniciado la preparación de tu pedido #${numero}. Te avisaremos cuando salga en camino.`, link: '/pedidos' });
+                    notifyBranch(m.branch_id, { type: 'PEDIDO_TRACKING', title: `Pedido #${numero} en preparación`, body: `Bodega ha iniciado la preparación de tu pedido #${numero}. Te avisaremos cuando salga en camino.`, link: '/pedidos', push: true });
                 }).catch(() => {});
             }
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
@@ -1013,7 +1013,7 @@ export function usePedidosData({ searchTerm = '' }) {
                     const title   = `Cajas de más — ${branchName}`;
                     const message = `${branchName} reporta ${cajasExtra} caja${cajasExtra > 1 ? 's' : ''} extra no esperada${cajasExtra > 1 ? 's' : ''}.${notas.length ? ' ' + notas.join(', ') : ''}`;
                     // Informativo: campana sin push
-                    notifyBranch(b.branch_id, { type: 'PEDIDO_TRACKING', title, body: message, link: '/pedidos' });
+                    notifyBranch(b.branch_id, { type: 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: true });
                 }).catch(() => {});
             }
 
@@ -1118,6 +1118,7 @@ export function usePedidosData({ searchTerm = '' }) {
                     title: `No se reenvía — pedido #${numero}`,
                     body: `Bodega decidió no reenviar lo que no llegó del pedido #${numero}: ${que}.${regresa ? ' Ese producto regresó a bodega.' : ''} Ya no queda pendiente.`,
                     link: '/pedidos',
+                    push: true,
                 });
             }).catch(() => {});
             useToastStore.getState().showToast(

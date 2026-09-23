@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1035.2 — Los avisos que sólo iban a la campana suenan en el teléfono
+
+«Que tengan push» (usuario, 23-sep). Todo aviso que sólo llegaba a la campana
+ahora también suena en el teléfono:
+
+- **Créditos vencidos** (`avisar-creditos-vencidos`, redesplegada con
+  `--no-verify-jwt`).
+- **Cierre de metas** a salas y a gerencia, y **metas por aprobar**.
+- **Diferencias de pedido** (propuesta, contrapropuesta, escalada, acuerdo).
+- **Promociones**: terminada, cierre de mes de laboratorio y lote bajo.
+- **Pedidos**: «en preparación», «llegó completo» y «no se reenvía», que
+  salían sin push.
+
+Las funciones que escriben en `notifications` directo usan el helper nuevo
+`push_de_notificaciones(ids)`, que agrupa por título/cuerpo/enlace y manda un
+envío por grupo. Migración `20260923210103_avisos_de_la_campana_tambien_al_telefono`.
+
 ## v2.1035.1 — El cierre del día y las aperturas llegan al teléfono
 
 «Si no entro no me entero» (usuario, 23-sep). Los dos avisos estaban en la

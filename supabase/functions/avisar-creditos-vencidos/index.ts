@@ -110,6 +110,7 @@ Deno.serve(async (req) => {
         p_body: `${g.sala}: ${money(g.total)} sin cobrar. El más viejo lleva ${g.dias} días.`,
         p_link: `/cuentas-por-cobrar?sala=${branchId}&ver=VENCIDOS`,
         p_metadata: { check_key: checkKey, branch_id: branchId, creditos: g.n, total: g.total, dias: g.dias },
+        p_push: true,
       });
       if (e4) { fallidos.push(`${checkKey}: ${e4.message}`); continue; }
       avisados++;

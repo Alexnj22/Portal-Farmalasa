@@ -1094,7 +1094,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     ? `${branchName} reporta diferencias en la recepción del pedido #${pedido.numero}. Revisa y márcalo como corregido.`
                                     : `${branchName} confirmó la recepción del pedido #${pedido.numero} sin novedades.`;
                                 // Con diferencias = accionable (push); sin novedades = solo campana
-                                notifyBranch(b.branch_id, { type: realHasDiff ? 'PEDIDO_PROBLEMA' : 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: realHasDiff });
+                                notifyBranch(b.branch_id, { type: realHasDiff ? 'PEDIDO_PROBLEMA' : 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: true });
                             }).catch(() => {});
                         } else {
                             // Partial box confirmed — reload items before active so DifSection gets fresh data

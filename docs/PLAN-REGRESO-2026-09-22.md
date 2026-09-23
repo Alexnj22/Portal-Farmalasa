@@ -225,7 +225,7 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   DEFINER: un año 683,904 → 73,262 bloques, 12/12 idénticas. Techos bajados en
   `bloques-por-llamada.json` y fuera de `planes-genericos.json`.
 
-### D3 🔎 `gate:eficiencia` — escrituras sin inserción 1,380/h (tope 1,240) — falta una ventana real
+### D3 ✅ `gate:eficiencia` — escrituras sin inserción 1,380/h (tope 1,240)
 
 - Ubicar la tabla (`n_tup_upd` vs `n_tup_hot_upd` desde el arranque) y el
   writer que reescribe filas sin cambio. Patrón `IS DISTINCT FROM`.
@@ -255,6 +255,13 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   **Falta la primera ventana real de 6 h** (lectura anotada 14:40 UTC → se
   puede juzgar desde las 20:40 UTC, 14:40 SV). Si da verde, D3 se cierra, y
   bajar el tope a lo que mida el resto queda como mejora aparte.
+- **Cerrado el 23-sep (primera ventana real, 6.4 h):** **647/h** contra 1,240,
+  y aparte 919/h de churn declarado, todas las tablas dentro de su techo (el
+  latido de las cajas, 697/h contra un techo de ~720). Lo que más escribe entre
+  lo vigilado: `inventory` 141/h, `session_last_seen` 102/h, `auth.users` 87/h.
+  El gate quedó rojo esa tarde por OTRA cosa: «`cierre-automatico-caja` no
+  corrió en 24 h», un cron creado ese mismo día a las 12:05 SV cuya ventana
+  empieza a las 17:00 SV — falso positivo de un cron con menos de un día de vida.
 
 ### D4 ✅ Realtime publica `inventory_sync_log` — NO se saca
 

@@ -3027,8 +3027,6 @@ export default function VentasView() {
             )}
             {activeTab === 'inyecciones' && (
                 <TabInyecciones filterBranch={filterBranch} setFilterBranch={setFilterBranch}
-                    monthRange={monthRange} setMonthRange={setMonthRange}
-                    defaultRange={(() => { const r = currentMonthRange(); return `${r.fini}|${r.ffin}`; })()}
                     branchOptions={branchOptions} branchLocked={getScope('ventas') !== 'ALL'}
                     searchTerm={debouncedSearch} />
             )}

@@ -41,6 +41,18 @@ const ESTADOS = [
     { value: 'sin',   label: 'Sin cobro' },
 ];
 
+/* El período por defecto arranca el día en que la aplicación empezó a anotarse
+ * en el portal, y no el 1.º del mes: antes de eso toda venta sale «sin cobro»
+ * y el resumen mentiría. Cuando esa fecha quede a más de tres meses —el tope
+ * de la función— se vuelve al mes en curso. */
+function rangoPorDefecto() {
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' });
+    const [y, m] = hoy.split('-').map(Number);
+    const limite = new Date(Date.UTC(y, m - 1, Number(hoy.slice(8)) - 90)).toISOString().slice(0, 10);
+    const desde = DESDE_EL_PORTAL >= limite ? DESDE_EL_PORTAL : `${hoy.slice(0, 7)}-01`;
+    return `${desde}|${hoy}`;
+}
+
 const nombre = (n) => (n ? shortEmployeeName(n) : '—');
 const productosTexto = (v) => (v.productos || []).map((p) => p.descripcion).join(' · ');
 const fechaCorta = (f) => {
@@ -49,9 +61,12 @@ const fechaCorta = (f) => {
 };
 
 export default function TabInyecciones({
-    filterBranch, setFilterBranch, monthRange, setMonthRange, defaultRange,
-    branchOptions, branchLocked, searchTerm,
+    filterBranch, setFilterBranch, branchOptions, branchLocked, searchTerm,
 }) {
+    // Período PROPIO y no el de las otras pestañas de Ventas: ahí el defecto es
+    // el mes en curso, y acá es desde que existe el registro (ver arriba).
+    const defaultRange = useMemo(rangoPorDefecto, []);
+    const [monthRange, setMonthRange] = useState(defaultRange);
     const branches = useStaff((s) => s.branches);
     const [datos, setDatos] = useState(null);
     const [loading, setLoading] = useState(true);

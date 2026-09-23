@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1037.2 — Inyecciones: arranca el 3-sep y abre para quien tiene el permiso
+
+- La pestaña decía «No tienes permiso» a todos, Gerencia incluida:
+  `get_inyecciones_aplicadas` era INVOKER y lee `employees.code`, que no tiene
+  GRANT para `authenticated`. Pasa a DEFINER con la guarda adentro: el permiso
+  `ventas_tab_inyecciones` decide si entra y el alcance de `ventas`, qué sala.
+  Probado como usuario: Gerente General entra; un dependiente recibe FORBIDDEN.
+- El período por defecto es desde el 3-sep (el día en que la aplicación empezó
+  a anotarse en el portal) hasta hoy, y es propio de la pestaña.
+
 ## v2.1037.1 — Tarjeta de corte: quién hizo el corte y la sala en el título
 
 «Dónde está el nombre que diga o haga alusión y se entienda que esa persona es

@@ -63,7 +63,31 @@ romperlo, dime: esto está mal, debería ser de esta forma»*.
 > Actualización de datos, y el recuadro «Datos» del menú sólo se dibuja con uno
 > de esos permisos (decisión del usuario); la campana de al lado sigue para todos.
 >
-> **Fase 1 terminada.** **Siguiente: Fase 2** (tablas calientes, staging y ventana).
+> **Fase 1 terminada.**
+>
+> **Fase 2 — reglas aprobadas por el usuario el 2026-09-23** (mapa de lectores
+> completo en la conversación de ese día; el resumen, acá):
+>
+> | # | datos | regla |
+> |---|---|---|
+> | 1 | `sales_invoice_items` | cada sala sólo la suya: heredar la visibilidad de `sales_invoices` (`EXISTS` sobre la factura, con atajo para alcance ALL) |
+> | 2 | `sales_daily_stats`, `product_sales_*`, `product_last_sale`, `inventory_daily` | por sala / por módulo, igual que las facturas |
+> | 3 | `inventory` | por la UNIÓN de módulos, **sin** recorte por sala: la consulta de inventario, pedir/enviar traslado y faltantes con stock en otra sala miran las otras salas por diseño |
+> | 4 | `product_stock_params` | igual que el inventario (los traslados miran el MIN de la otra sala) |
+> | 5 | `product_precios.costo` | sólo con «ver costos»: quitar el SELECT de la columna y pasar a DEFINER con su chequeo las 6 funciones que la leen; `TabCatalogo` deja de pedirla sin el permiso |
+> | 6 | catálogos de un módulo | a su módulo |
+>
+> **Tanda 3 aplicada el 2026-09-23** (`20260923165044`): regla 6 — encuestas,
+> principios activos, ubicaciones de producto y de laboratorio, categorías,
+> opciones de diferencia, faltas disciplinarias y clases de dispensación, a su
+> módulo (lectura = lectura ∪ escritura del módulo, para no romper un DELETE); y
+> `mv_refresh_state`, `inventory_sync_huella` y `puntos_config` cerradas. Quedan
+> `education_catalog_entries` y `suppliers`/`proveedores` (otras policies los leen).
+>
+> **Reglas 1–5 van sobre tablas calientes**: probar en el entorno de pruebas
+> (necesita ventas sembradas: el branch nuevo no trae facturas), medir el costo
+> de la policy de `sales_invoice_items` como usuario, y aplicar en la ventana
+> 06:00–11:59 UTC.
 >
 > ⚠️ **Lección de medición:** medir con el DDL aplicado DENTRO de una
 > transacción mantiene tomadas las tablas con ACCESS EXCLUSIVE mientras dura; una

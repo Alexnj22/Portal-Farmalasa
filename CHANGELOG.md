@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1036.3 — Avisos: horas de 12 horas y tarjetas verificadas en pantalla
+
+«Necesito que las horas sean 12 horas siempre. No en un lado 12 y en otras
+24» (usuario, 23-sep).
+
+- **`src/utils/hora.js`** (`hora12`, `rango12`) y su gemela en la base
+  **`public.hora_12(time)`**: «1:06 p. m.», el formato que la campana ya usaba,
+  con espacios que no se cortan (el título partía «p.» y «m.» en dos renglones).
+- Ya en 12 horas: el título del aviso de corte, el de la bitácora
+  (`avisar-bitacora-por-vencer`, redesplegada) y las horas y franjas de las
+  tres tarjetas. El resto de los avisos y de las vistas que muestran 24 horas
+  va en su propia tanda.
+- Ajustes vistos en la captura: el corte ya no repite la hora junto a la sala;
+  la bitácora dice la franja una sola vez si es la misma para todas las áreas;
+  los traslados van en el orden en que salieron y el destino va antes que el
+  nombre, que es lo que se recorta.
+
+Migraciones `20260923215603_hora_12_y_el_aviso_de_corte_en_12_horas` y
+`20260923215712_hora_12_con_espacio_que_no_se_corta`.
+
 ## v2.1036.2 — El valorizado del conteo, sólo con permiso
 
 Regla 5 extendida (`docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`). El conteo ya

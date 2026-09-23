@@ -34,6 +34,16 @@ const cors = {
 // tan temprano que se olvide.
 const MINUTOS = 45;
 
+// «HH:MM» → «2:00 p. m.»: 12 horas siempre (usuario, 23-sep). Gemela de
+// `hora12` (src/utils/hora.js) y de `public.hora_12`.
+const hora12 = (hhmm: string) => {
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm ?? ''));
+  if (!m) return String(hhmm ?? '');
+  const h = Number(m[1]);
+  const nb = '\u00a0';   // no se corta entre renglones
+  return `${h % 12 || 12}:${m[2]}${nb}${h < 12 ? `a.${nb}m.` : `p.${nb}m.`}`;
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) =>
@@ -111,7 +121,7 @@ Deno.serve(async (req) => {
       const { error: eA } = await supabase.rpc('notify_employees', {
         p_recipients: destinatarios,
         p_type: 'BITACORA_POR_VENCER',
-        p_title: `La bitácora cierra a las ${p.cierra}`,
+        p_title: `La bitácora cierra a las ${hora12(p.cierra)}`,
         // «Falta 1 registro», no «Faltan 1 registro» (usuario, 23-sep).
         p_body: `${p.pendientes === 1 ? 'Falta' : 'Faltan'} ${cuantos} en ${p.areas}. `
           + `Quedan ${p.minutos} minutos para ${p.pendientes === 1 ? 'anotarlo' : 'anotarlos'} a tiempo.`,

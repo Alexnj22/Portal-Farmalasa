@@ -101,6 +101,8 @@ export function datosDeTrasladosPorRespaldo(n) {
             hora: t.hora || null,
         }));
     if (!lista.length) return null;
+    // En el orden en que salieron.
+    lista.sort((a, b) => (Date.parse(a.hora) || 0) - (Date.parse(b.hora) || 0));
 
     return {
         traslados: lista,

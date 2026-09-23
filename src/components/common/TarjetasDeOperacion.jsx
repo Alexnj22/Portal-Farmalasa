@@ -7,6 +7,7 @@ import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
 import { formatMoney } from '../../utils/formatNumber';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { hora12, rango12 } from '../../utils/hora';
 import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES } from '../../utils/avisosDeOperacion';
 
 /* Tres tarjetas de la campana para avisos de la operación del día: el corte de
@@ -86,9 +87,12 @@ const Panel = ({ datos, claseTenue }) => (
     </div>
 );
 
-const personaDe = (id, nombre, buscarEmpleado) => (id
-    ? (buscarEmpleado?.(id) || { id, name: nombre })
-    : null);
+/* La ficha del store trae la foto firmada; si no está (o el aviso sólo trae el
+ * nombre), la cara sale de las iniciales — nunca se esconde a la persona. */
+const personaDe = (id, nombre, buscarEmpleado) => {
+    if (id) return buscarEmpleado?.(id) || { id, name: nombre };
+    return nombre ? { name: nombre } : null;
+};
 
 /* ── El corte de caja ─────────────────────────────────────────────────────
  * Quién lo hizo, en qué sala y a qué hora; y en el panel, lo contado, lo
@@ -110,7 +114,8 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
     const c = CORTE[datos.estado];
     const tono = tonos(isDark)[c.tono];
     const emp = personaDe(datos.quienId, datos.quien, buscarEmpleado);
-    const contexto = [datos.sala, datos.hora && `corte de las ${datos.hora}`].filter(Boolean).join(' · ');
+    // La hora ya está en el título; acá sólo la sala.
+    const contexto = datos.sala;
 
     const diferencia = datos.estado === 'sin_conteo' ? 'Sin conteo'
         : datos.estado === 'cuadra' ? '$0.00'
@@ -176,6 +181,11 @@ export function CuerpoDeBitacora({ datos, claseTenue, isDark }) {
     const tono = tonoDeBitacora(datos, isDark);
     const { pendientes, detalle, areas } = datos;
     const avance = datos.cerrada ? 0 : Math.max(0, Math.min(datos.quedan / VENTANA_BITACORA_MIN, 1));
+    /* Si todas las áreas comparten la franja —lo normal—, se dice una vez
+       arriba y los renglones quedan con el nombre del área entero. */
+    const franjas = new Set(detalle.map((d) => `${d.desde}|${d.hasta}`));
+    const unaFranja = franjas.size === 1 && detalle[0]?.desde && detalle[0]?.hasta
+        ? rango12(detalle[0].desde, detalle[0].hasta) : null;
 
     return (
         <div className="flex flex-col gap-2 mt-1.5">
@@ -190,6 +200,9 @@ export function CuerpoDeBitacora({ datos, claseTenue, isDark }) {
             <span className="h-1.5 rounded-full bg-border-card overflow-hidden" aria-hidden="true">
                 <span className={`block h-full rounded-full ${tono.barra}`} style={{ width: `${avance * 100}%` }} />
             </span>
+            {unaFranja && (
+                <span className={`text-caption font-semibold tabular-nums ${claseTenue}`}>Franja de {unaFranja}</span>
+            )}
 
             {detalle.length > 0 ? (
                 <ul className="rounded-xl bg-surface-card-hover divide-y divide-border-card">
@@ -200,7 +213,7 @@ export function CuerpoDeBitacora({ datos, claseTenue, isDark }) {
                                 <t.Icono className={`w-3.5 h-3.5 flex-shrink-0 ${tono.texto}`} aria-hidden="true" />
                                 <span className="flex-1 min-w-0 truncate text-caption font-bold">{d.area}</span>
                                 <span className={`flex-shrink-0 text-caption font-semibold tabular-nums ${claseTenue}`}>
-                                    {t.rotulo}{d.desde && d.hasta ? ` · ${d.desde}–${d.hasta}` : ''}
+                                    {t.rotulo}{!unaFranja && d.desde && d.hasta ? ` · ${rango12(d.desde, d.hasta)}` : ''}
                                 </span>
                             </li>
                         );
@@ -225,14 +238,6 @@ export function CuerpoDeBitacora({ datos, claseTenue, isDark }) {
  * renglón por traslado con la cara de quien lo despachó: qué salió, a dónde y
  * a qué hora. Se ven los primeros; el resto se despliega con «Ver los N
  * traslados» — el botón lo pone la tarjeta general. */
-const horaSV = (iso) => {
-    const d = iso ? new Date(iso) : null;
-    if (!d || Number.isNaN(d.getTime())) return null;
-    return d.toLocaleTimeString('es-SV', {
-        hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/El_Salvador',
-    });
-};
-
 export function InsigniaDeTraslados({ isDark }) {
     return <Disco tono={tonos(isDark).naranja} Icono={Truck} />;
 }
@@ -253,7 +258,7 @@ export function CuerpoDeTraslados({ datos, claseTenue, isDark, buscarEmpleado, e
             <ul className="rounded-xl bg-surface-card-hover divide-y divide-border-card">
                 {visibles.map((t, i) => {
                     const emp = personaDe(t.quienId, t.quien, buscarEmpleado);
-                    const hora = horaSV(t.hora);
+                    const hora = hora12(t.hora);
                     return (
                         <li key={t.id ?? i} className="flex items-center gap-2 px-2.5 py-2 min-w-0">
                             {emp ? (
@@ -268,11 +273,14 @@ export function CuerpoDeTraslados({ datos, claseTenue, isDark, buscarEmpleado, e
                                 <p className="text-caption font-bold truncate">
                                     {t.producto ?? 'Traslado'}{t.mas > 0 ? ` y ${t.mas} más` : ''}
                                 </p>
+                                {/* El destino primero: es lo que la sala tiene que
+                                    ir a comprobar. El nombre va último y es lo que
+                                    se recorta — la cara ya dice quién fue. */}
                                 <p className={`text-caption font-semibold truncate flex items-center gap-1 ${claseTenue}`}>
-                                    {emp && <span className="truncate">{shortEmployeeName(emp)}</span>}
-                                    {hora && <span className="tabular-nums flex-shrink-0">· {hora}</span>}
                                     <ArrowRight className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
-                                    <span className="truncate">{t.destino}</span>
+                                    <span className="flex-shrink-0">{t.destino}</span>
+                                    {hora && <span className="tabular-nums flex-shrink-0">· {hora}</span>}
+                                    {emp && <span className="truncate">· {shortEmployeeName(emp)}</span>}
                                 </p>
                             </div>
                             {t.unidades != null && (

@@ -16,7 +16,7 @@ import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
 import { datosDeAperturasDeLaManana } from '../../utils/aperturasDeLaManana';
 import { datosDeCreditosVencidos } from '../../utils/creditosVencidos';
 import {
-    datosDeCorteNuevo, datosDeBitacoraPorVencer, datosDeTrasladosPorRespaldo,
+    datosDeCorteNuevo, datosDeBitacoraPorVencer, datosDeTrasladosPorRespaldo, TRASLADOS_VISIBLES,
 } from '../../utils/avisosDeOperacion';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -144,7 +144,11 @@ const TarjetaDeAviso = ({
     // cuerpo que no entra en tres renglones. El segundo dejaba sin leer justo a
     // los avisos del sistema, que son los que más texto tienen.
     const tieneDetalle = Boolean(n.metadata?.request_id);
-    const expandible   = tieneDetalle || cuerpoCortado;
+    /* Y un tercero: la lista de traslados por respaldo, que muestra los
+       primeros y despliega el resto («que salga ver más», 23-sep). */
+    const traslados      = datosDeTrasladosPorRespaldo(n);
+    const masTraslados   = (traslados?.traslados.length ?? 0) > TRASLADOS_VISIBLES;
+    const expandible   = tieneDetalle || cuerpoCortado || masTraslados;
 
     // Interactiva es la que hace ALGO al tocarla, y desde que el toque es uno
     // solo eso significa «lleva a su pantalla». De eso depende el realce, que es
@@ -177,7 +181,6 @@ const TarjetaDeAviso = ({
        respaldo — ver `TarjetasDeOperacion`. */
     const corteNuevo = datosDeCorteNuevo(n);
     const bitacora   = datosDeBitacoraPorVencer(n);
-    const traslados  = datosDeTrasladosPorRespaldo(n);
     const conTarjeta = creditos || corteNuevo || bitacora || traslados;
 
     const corte = acciones?.corteDe?.(n) ?? null;
@@ -268,14 +271,15 @@ const TarjetaDeAviso = ({
                         <CuerpoDeCreditos datos={creditos} claseTenue={cx.rowBody} isDark={isDark} />
                     )}
                     {corteNuevo && (
-                        <CuerpoDeCorte datos={corteNuevo} claseTenue={cx.rowBody} isDark={isDark} />
+                        <CuerpoDeCorte datos={corteNuevo} claseTenue={cx.rowBody} isDark={isDark}
+                            buscarEmpleado={buscarEmpleado} />
                     )}
                     {bitacora && (
                         <CuerpoDeBitacora datos={bitacora} claseTenue={cx.rowBody} isDark={isDark} />
                     )}
                     {traslados && (
-                        <CuerpoDeTraslados datos={traslados} claseTenue={cx.rowBody}
-                            buscarEmpleado={buscarEmpleado} />
+                        <CuerpoDeTraslados datos={traslados} claseTenue={cx.rowBody} isDark={isDark}
+                            buscarEmpleado={buscarEmpleado} expandida={expandida} />
                     )}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}
@@ -360,7 +364,9 @@ const TarjetaDeAviso = ({
                         {/* El rótulo nombra lo que se despliega. En un aviso del
                             sistema no hay ningún «detalle» que abrir: lo que falta
                             es el resto del mensaje. */}
-                        {tieneDetalle
+                        {masTraslados
+                            ? (expandida ? 'Ocultar traslados' : `Ver los ${traslados.traslados.length} traslados`)
+                            : tieneDetalle
                             ? (expandida ? 'Ocultar detalle'  : 'Ver detalle')
                             : (expandida ? 'Ocultar mensaje'  : 'Ver mensaje completo')}
                     </Button>

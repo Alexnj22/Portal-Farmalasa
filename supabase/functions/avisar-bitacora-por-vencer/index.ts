@@ -132,6 +132,8 @@ Deno.serve(async (req) => {
           limpiezas: p.limpiezas,
           sala: p.branch_name,
           areas: String(p.areas ?? '').split(', ').filter(Boolean),
+          // Qué falta en cada área y en qué franja: un renglón por área en la tarjeta.
+          detalle: Array.isArray(p.detalle) ? p.detalle : [],
         },
         p_push: true,
         p_branch_id: p.branch_id,

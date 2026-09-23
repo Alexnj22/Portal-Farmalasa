@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1036.1 — Tarjetas de corte, bitácora y traslados: persona, panel de datos y ver más
+
+Segunda vuelta (usuario, 23-sep): «no me parece que sean modernos · falta
+quien hizo el corte · los 3 se ven solo puro texto, no se ven estructurados ·
+que salga ver más».
+
+- **Corte de caja**: la cara y el nombre de quien lo hizo, sala y hora, una
+  píldora de estado (Cuadró / Faltante / Sobrante / Sin conteo) y un panel
+  Contado · Ventas · Diferencia. `notificar_corte_de_caja` manda `quien`,
+  `quien_id`, `sala`, `contado` y `ventas`.
+- **Bitácora**: «Quedan N min» con barra que se vacía, píldora de pendientes
+  y un renglón por área con ícono (temperatura o limpieza) y su franja.
+  `bitacora_pendientes_por_vencer` devuelve `detalle` y la función lo manda.
+- **Traslados por respaldo**: panel Traslados · Unidades · Salas y renglones
+  con la cara de quien despachó, producto, hora y destino. Se ven 3 y el
+  resto con «Ver los N traslados».
+
+Migración `20260923214139_tarjetas_de_la_campana_corte_con_quien_y_bitacora_con_detalle`.
+
 ## v2.1036.0 — Tarjetas modernas: corte de caja, bitácora y traslados por respaldo
 
 «Rediseñalas para que sean modernas, vamos de 3 en 3» (usuario, 23-sep).

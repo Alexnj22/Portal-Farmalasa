@@ -36,6 +36,10 @@ export function datosDeCorteNuevo(n) {
         estado,
         tramo,
         hora: m.hora ? String(m.hora) : null,
+        quien: m.quien ? String(m.quien) : null,
+        quienId: m.quien_id || null,
+        contado: num(m.contado),
+        ventas: num(m.ventas),
         // El cuerpo empieza siempre con «Sala — …».
         sala: m.sala ? String(m.sala) : (/^(.+?) — /.exec(String(n.body || ''))?.[1] ?? null),
     };
@@ -68,12 +72,19 @@ export function datosDeBitacoraPorVencer(n, ahora = Date.now()) {
         lecturas: num(m.lecturas),
         limpiezas: num(m.limpiezas),
         areas,
+        detalle: (Array.isArray(m.detalle) ? m.detalle : [])
+            .filter((d) => d && d.area)
+            .map((d) => ({ area: String(d.area), tipo: d.tipo === 'limpieza' ? 'limpieza' : 'lectura',
+                desde: d.desde || null, hasta: d.hasta || null })),
         quedan: Math.max(quedan, 0),
         cerrada: quedan <= 0,
     };
 }
 
 /* ── Los traslados por respaldo ───────────────────────────────────────────── */
+/* Cuántos renglones se ven antes de «Ver los N traslados». */
+export const TRASLADOS_VISIBLES = 3;
+
 export function datosDeTrasladosPorRespaldo(n) {
     if (n?.type !== 'TRASLADO_RESPALDO') return null;
     const m = n.metadata || {};

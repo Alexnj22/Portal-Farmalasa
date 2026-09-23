@@ -1,5 +1,29 @@
 # Plan — cerrar la autorización de la base (2026-08-09)
 
+> ## ✅ CERRADO el 2026-09-23
+>
+> Remedido contra producción ese día: el criterio de salida (§«Cómo se sabe que
+> terminó») pasó de **83** a **26 policies en 22 tablas**, y las 26 están
+> enumeradas y decididas —ya no hay ninguna «residual»—:
+>
+> | grupo | tablas | por qué queda sin `auth_` |
+> |---|---|---|
+> | catálogos que usa todo el portal | `branches`, `roles`, `role_permissions`, `presentaciones`, `laboratorios`, `holidays`, `shifts`, `erp_sucursal_map`, `module_locks`, `products`, `product_precios` | no son datos sensibles; el COSTO de `product_precios` se cerró por columna (regla 5) |
+> | configuración de la pantalla | `banner_portal`, `dashboard_canon`, `security_config` | la lee cualquier sesión para pintarse |
+> | protegidas por su tabla madre (`EXISTS`, hereda su RLS) | `bolsa_faltante`, `bolsas_eventos`, `bolsas_movimientos`, `envio_linea`, `cotizacion_items` (lectura), `employee_branches` | se ve lo que se puede ver de la madre |
+> | propias de cada uno | `push_subscriptions` | por identidad (`auth.email()`), sólo `authenticated` |
+> | cerrada del todo | `puntos_codigo_acceso` | `false`: nadie la lee |
+>
+> D1 (escritura de renglones de cotización) cerrado en `20260923224621`; D3 y
+> D4 antes; D5 ya estaba (`auth_has_module_permission` reconoce `auth_is_su`);
+> D6 en las tandas del 22 y 23-sep más las reglas 1–6 de la Fase 2 y el costo
+> (producto, línea de venta y valorizado del conteo). Cada tanda se midió por
+> cargo antes y después: nadie perdió una pantalla que usara.
+>
+> **Si una tabla nueva aparece en la consulta de abajo, no es «lo que quedó»:
+> es una tabla que nació abierta.** Decidirla con el mismo método o sumarla a
+> esta lista con su motivo.
+
 Cinco defectos encontrados al medir el alcance del bloqueo de personas
 (v2.535.0). No son casos delicados que haya que rodear: son cosas que están mal
 y tienen una forma correcta. El usuario lo pidió así — *«no lo rodees para no

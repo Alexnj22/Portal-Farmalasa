@@ -133,7 +133,7 @@ vacío — y en cuanto hubiera entrado una vez, la función se lo habría escrit
 >
 > **Del §4:** `attendance` y `audit_logs` ya no aceptan cualquier fila —sus
 > policies de INSERT preguntan por `auth_`—. El resto se rastrea en
-> `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`, cuyo contador de policies que no
+> `docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`, cuyo contador de policies que no
 > preguntan nada bajó de 83 a **70**.
 >
 > **Lo que queda de este documento no es trabajo, son dos decisiones:** si la UI

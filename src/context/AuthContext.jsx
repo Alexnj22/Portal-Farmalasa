@@ -247,8 +247,16 @@ export const AuthProvider = ({ children }) => {
      * «SP().catch is not a function» ANTES de pedir nada, y como esto corre en
      * el arranque de la sesión, se lleva puesto el login entero. Pasó en
      * producción el 2026-08-12. */
+    /* Y sólo con sesión: la función es exclusiva de `authenticated`, así que
+     * sin token sale como `anon` y la base la rechaza (42501 en el registro).
+     * Quedaban ~5 al día después del arreglo del 21-sep: una pestaña que
+     * vuelve con la sesión ya vencida en supabase-js pero todavía no borrada
+     * de `LS_USER`. `getSession()` es local —no sale a la red—, y sin sesión
+     * no hay nada heredado que mostrar: el cierre de sesión llega enseguida. */
     const heredadosQuery = roleId
-      ? Promise.resolve(fetchPermisosHeredados()).catch(() => ({ data: [] }))
+      ? supabase.auth.getSession()
+          .then(({ data }) => (data?.session ? fetchPermisosHeredados() : { data: [] }))
+          .catch(() => ({ data: [] }))
       : Promise.resolve({ data: [] });
 
     Promise.all([permsQuery, priceLevelQuery, heredadosQuery])

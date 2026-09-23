@@ -40,7 +40,7 @@
     "get_products_sold_no_minmax_jsonb": {
       "bloques": 385000,
       "deuda": true,
-      "motivo": "2,302 MB por llamada (294,659 bloques, 4 llamadas). La otra pestaña de «Sin venta» — «Sin Min/Max». NO auditado. Comparte forma con `get_stagnant_inventory`: es de esperar que su costo también sea un agregado de renglones de venta sobre el universo entero de la sala, así que la auditoría de una sirve para la otra."
+      "motivo": "La otra pestaña de «Sin venta» — «Sin Min/Max». AUDITADA el 2026-09-23 al cruzar el techo (3,099 MB): buscaba producto, laboratorio y Mín·Máx por cada LÍNEA de venta de seis meses (53,073 búsquedas para 592 productos). Desde 20260923220228 suma primero por producto: 2,294 MB promedio entre una sala y todas (293,671 bloques), la mitad del tiempo, resultado idéntico. Lo que queda es leer las líneas de venta de seis meses a través del RLS — el trabajo de verdad; bajarlo más exige leer del agregado mensual, que no cubre el mes en curso. Sigue como deuda por eso."
     },
     "get_stagnant_inventory_jsonb": {
       "bloques": 570000,

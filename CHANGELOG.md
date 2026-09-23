@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1036.4 — Tres lecturas lentas y un error de permisos al volver a la pestaña
+
+- **Facturación › Observaciones** revisaba las 374,743 facturas de la historia
+  en cada apertura (3.4 s de promedio, 6.9 de máximo) para encontrar ~281. Ahora
+  parte de un índice parcial con las reglas fijas más las facturas con intentos
+  ante Hacienda: 693 → 16 MB por llamada, ~20 ms. Resultado idéntico por cargo.
+- **Cuentas por pagar**: la vista sumaba los pagos dos veces por factura; ahora
+  una vez. 237 → 15 MB, resultado idéntico.
+- **Gestión de stock › Sin Min/Max**: sumaba después de buscar el producto por
+  cada línea de venta; ahora suma primero. La mitad del tiempo, 3,099 → 2,294 MB.
+- **`mis_permisos_heredados` sin sesión** (5 errores 42501 al día): al volver a
+  una pestaña con la sesión vencida, el portal pedía los permisos heredados sin
+  token. Ahora sólo los pide si hay sesión. `gate:perf` en verde.
+
 ## v2.1036.3 — Avisos: horas de 12 horas y tarjetas verificadas en pantalla
 
 «Necesito que las horas sean 12 horas siempre. No en un lado 12 y en otras

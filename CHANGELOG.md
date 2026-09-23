@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1036.6 — Tarjeta de corte limpia: una fila y título neutro
+
+«Siento too much, límpialo, y que se vea mejor» (usuario, 23-sep). El faltante
+se decía cuatro veces: el monto en el título, la píldora «Faltante», el ícono y
+el panel de diferencia. Queda:
+
+- Título neutro: «Corte de caja de las 1:06 p. m.» (`notificar_corte_de_caja`,
+  migración `20260923221710_aviso_de_corte_con_titulo_neutro`). El cuerpo —lo que se lee en el push— sigue diciendo
+  el monto.
+- Una sola fila: la cara, «Nombre · Sala» y la diferencia grande y en color a
+  la derecha («−$0.35», «Cuadró», «+$1.20», «Sin conteo»). Sin píldora ni panel.
+
 ## v2.1036.5 — Tarjeta de corte: sólo la diferencia
 
 «Contado y ventas que no vayan ahí, solo las diferencias» (usuario, 23-sep).

@@ -19,7 +19,7 @@ import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES } from '../../utils/avisosDeOp
  * párrafo por renglones de texto, que sigue siendo texto. Lo que las vuelve
  * tarjetas es la ESTRUCTURA, y las tres usan las mismas tres piezas:
  *
- *  · la PERSONA arriba, con su cara — quien hizo el corte, quien despachó;
+ *  · la PERSONA con su cara — quien hizo el corte, quien despachó;
  *  · un PANEL de datos en columnas — la cifra con su rótulo, no dentro de una
  *    frase;
  *  · y una LISTA de renglones con ícono cuando hay varios, que se despliega
@@ -51,27 +51,6 @@ const Pildora = ({ tono, icon, children }) => (
     <Badge variant={tono.variante} icon={icon}>{children}</Badge>
 );
 
-/** La persona: cara, nombre corto y un renglón de contexto debajo. */
-const Persona = ({ emp, contexto, claseTenue, derecha }) => (
-    <div className="flex items-center gap-2 min-w-0">
-        {emp ? (
-            <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" mostrarChip={false} />
-        ) : (
-            <span aria-hidden="true" className={`w-7 h-7 rounded-full grid place-items-center flex-shrink-0
-                bg-surface-card-hover ${claseTenue}`}>
-                <Store className="w-3.5 h-3.5" />
-            </span>
-        )}
-        <div className="flex-1 min-w-0 leading-tight">
-            {emp && <p className="text-body-sm font-bold truncate">{shortEmployeeName(emp)}</p>}
-            <p className={`text-caption font-semibold truncate ${emp ? claseTenue : 'text-body-sm font-bold'}`}>
-                {contexto}
-            </p>
-        </div>
-        {derecha}
-    </div>
-);
-
 /** El panel de datos: columnas con rótulo arriba y cifra abajo. */
 const Panel = ({ datos, claseTenue }) => (
     <div className="grid rounded-xl bg-surface-card-hover divide-x divide-border-card"
@@ -99,10 +78,10 @@ const personaDe = (id, nombre, buscarEmpleado) => {
  * con color. Confirmar y Descartar los
  * pone la tarjeta general, debajo. */
 const CORTE = {
-    cuadra:     { tono: 'verde',   Icono: Check,        pildora: 'Cuadró' },
-    sobra:      { tono: 'naranja', Icono: TrendingUp,   pildora: 'Sobrante' },
-    falta:      { tono: 'rojo',    Icono: TrendingDown, pildora: 'Faltante' },
-    sin_conteo: { tono: 'naranja', Icono: CircleOff,    pildora: 'Sin conteo' },
+    cuadra:     { tono: 'verde',   Icono: Check },
+    sobra:      { tono: 'naranja', Icono: TrendingUp },
+    falta:      { tono: 'rojo',    Icono: TrendingDown },
+    sin_conteo: { tono: 'naranja', Icono: CircleOff },
 };
 
 export function InsigniaDeCorte({ datos, isDark }) {
@@ -114,24 +93,28 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
     const c = CORTE[datos.estado];
     const tono = tonos(isDark)[c.tono];
     const emp = personaDe(datos.quienId, datos.quien, buscarEmpleado);
-    // La hora ya está en el título; acá sólo la sala.
-    const contexto = datos.sala;
 
+    /* Tercera vuelta (usuario, 23-sep: «siento too much, límpialo»): el
+     * faltante se decía cuatro veces —título, píldora, ícono y panel—. Queda
+     * UNA fila: quién y dónde a la izquierda, la diferencia a la derecha. El
+     * color lo dice el número; el título quedó neutro. */
     const diferencia = datos.estado === 'sin_conteo' ? 'Sin conteo'
-        : datos.estado === 'cuadra' ? '$0.00'
+        : datos.estado === 'cuadra' ? 'Cuadró'
         : `${datos.tramo > 0 ? '+' : '−'}${formatMoney(Math.abs(datos.tramo))}`;
-    // Sólo la diferencia (usuario, 23-sep: «contado y ventas que no vayan
-    // ahí, solo las diferencias»).
-    const panel = [{ etiqueta: 'Diferencia', valor: diferencia, clase: tono.texto }];
 
     return (
-        <div className="flex flex-col gap-2 mt-1.5">
-            <Persona emp={emp} contexto={contexto || 'Corte de caja'} claseTenue={claseTenue}
-                derecha={<Pildora tono={tono} icon={c.Icono}>{c.pildora}</Pildora>} />
-            <Panel datos={panel} claseTenue={claseTenue} />
-            {datos.estado === 'sin_conteo' && (
-                <p className={`text-caption font-bold ${tono.texto}`}>Hay que descartarlo y volver a cortar</p>
+        <div className="flex items-center gap-2 mt-1.5 min-w-0">
+            {emp ? (
+                <AvatarConEstado emp={emp} px={24} radio="rounded-full" marco="" mostrarChip={false} />
+            ) : (
+                <Store className={`w-4 h-4 flex-shrink-0 ${claseTenue}`} aria-hidden="true" />
             )}
+            <span className={`flex-1 min-w-0 truncate text-body-sm font-semibold ${claseTenue}`}>
+                {[emp && shortEmployeeName(emp), datos.sala].filter(Boolean).join(' · ')}
+            </span>
+            <span className={`flex-shrink-0 text-body-lg font-black tracking-tight tabular-nums ${tono.texto}`}>
+                {diferencia}
+            </span>
         </div>
     );
 }

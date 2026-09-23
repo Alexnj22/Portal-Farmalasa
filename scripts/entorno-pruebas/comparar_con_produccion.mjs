@@ -32,7 +32,7 @@
 import { execSync } from 'node:child_process';
 
 const PROD = 'sacecdkdmsdvgqnrsett';
-const PRUEBAS = 'qvctarsqvlhbzgvwbbbt';
+const PRUEBAS = 'wqmsadndftaudblohgws';  // rehecho el 2026-09-23 — `mantener_al_dia.mjs` lo busca por nombre
 
 const CONSULTA = `select
   (select count(*) from supabase_migrations.schema_migrations) as migraciones,

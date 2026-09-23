@@ -458,4 +458,4 @@ SELECT cron.alter_job(
   command => $cmd$
   DELETE FROM public.notifications   WHERE created_at < now() - interval '90 days';
   DELETE FROM public.avisos_emitidos WHERE created_at < now() - interval '400 days';
-$cmd$);
+$cmd$) WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'purge-notifications-daily');  -- idempotente: en un entorno nuevo la tarea no existe (2026-09-23)

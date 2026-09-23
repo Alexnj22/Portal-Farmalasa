@@ -112,8 +112,12 @@ BEGIN
 
     IF v_dias IS NULL THEN
         SELECT max(created_at) INTO v_mas_nuevo FROM public.sales_invoices;
+        -- Un branch recién creado sólo trae la semilla automática (productos,
+        -- existencias, precios, MIN·MAX): no tiene facturas. Sin ventas no hay
+        -- de dónde sacar el desplazamiento, y no es un error — es un branch nuevo.
         IF v_mas_nuevo IS NULL THEN
-            RAISE EXCEPTION 'No hay ventas de referencia para calcular el desplazamiento.';
+            tabla := '(nada)'; resultado := 'sin ventas de referencia: branch recién creado'; filas := 0;
+            RETURN NEXT; RETURN;
         END IF;
         v_dias := GREATEST(0, (current_date - v_mas_nuevo::date));
     END IF;

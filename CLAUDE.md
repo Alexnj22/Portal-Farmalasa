@@ -209,7 +209,7 @@ considerar aplicar entre 06:00–11:59 UTC (crons de sync inactivos: corren
 `12-23,0-5`).
 
 **Probar primero en staging.** Existe un branch de Supabase dedicado para esto:
-**`qvctarsqvlhbzgvwbbbt`** (nombre `staging`, persistente). Para DDL sobre las
+**`wqmsadndftaudblohgws`** (nombre `staging`, persistente, rehecho el 2026-09-23). Para DDL sobre las
 tablas calientes listadas arriba, probarlo ahí primero, confirmar que no rompe
 nada, y sólo entonces aplicar a prod. Ya se usó así para 0B.8 (RPC
 `verify_kiosk_device`) y 0B.2 (secretos de Vault en `cron.job.command`) — ambos
@@ -232,14 +232,37 @@ herramienta que lo mantiene útil.** `execute_sql` prueba igual de bien y no dej
 rastro; si la prueba ensucia el esquema, se limpia a mano o se rehace el branch,
 que es barato cuando no hay que rescatar nada.
 
-⚠️ **El ref cambia cada vez que se rehace el branch.** Ya van tres: el de julio
-(`ewcmerxqjvludtgskuin`) y el de agosto (`cbnjplmnfmfsambavjce`) están borrados —
+⚠️ **El ref cambia cada vez que se rehace el branch.** Ya van cuatro: el de julio
+(`ewcmerxqjvludtgskuin`), el de agosto (`cbnjplmnfmfsambavjce`) y el del 24-ago
+(`qvctarsqvlhbzgvwbbbt`) están borrados —
 si encontrás alguno de esos en un doc, es viejo. El vigente sale de
 `supabase branches list` o del `VITE_SUPABASE_URL` de `.env.staging`. Trae datos
 de muestra, cero PII.
 
-⚠️ **Su esquema NO se mantiene solo al día, y creer que sí ya costó una tanda de
-mediciones.** Acá decía «idéntico al de prod, verificado por huella md5 de
+✅ **Desde el 2026-09-23 se mantiene solo.** `.github/workflows/entorno-pruebas.yml`
+corre `scripts/entorno-pruebas/mantener_al_dia.mjs` todos los días a las 04:30 SV:
+compara la lista de migraciones, hace `push` si le faltan, y si el push falla lo
+**rehace** (quita «permanente», lo borra y lo crea de nuevo). Después apaga los
+crons que llaman a producción, corre las fechas a hoy y los permisos de la cuenta
+de pruebas. Necesita el secreto `SUPABASE_ACCESS_TOKEN` en GitHub. Si lo rehizo,
+el ref cambió: `npm run pruebas:env` reescribe `.env.staging`.
+
+Tres cosas medidas ese día que explican el diseño:
+1. **`reset` no sirve**: reconstruye con la historia PROPIA del branch (quedó en
+   546 de 1,001) y deja vivos los objetos creados a mano.
+2. **Probar con `execute_sql` también ensucia**: deja tablas y policies que la
+   migración real después quiere crear («policy … already exists»). El branch se
+   ensucia por usarlo bien; la limpieza completa es rehacerlo, y es barato.
+3. **El registro de producción no se podía reproducir**: siete migraciones
+   borraban o cambiaban crons que en producción se habían creado a mano
+   (`cron.unschedule('x')` lanza si `x` no existe). Un branch nuevo moría en la
+   332. Se les agregó «sólo si existe» en `supabase_migrations.schema_migrations`
+   (con OK del usuario) y en los archivos locales. **Toda migración nueva que
+   toque un cron lleva esa guarda** — `WHERE EXISTS (SELECT 1 FROM cron.job WHERE
+   jobname = 'x')` — o rompe el próximo branch.
+
+⚠️ **Antes de eso, su esquema NO se mantenía solo al día, y creer que sí ya costó
+una tanda de mediciones.** Acá decía «idéntico al de prod, verificado por huella md5 de
 tablas, funciones, policies e índices». Era cierto en julio, el día que se
 verificó, y nada lo volvió a mirar. Medido el 2026-08-24:
 

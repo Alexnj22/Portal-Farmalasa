@@ -1,0 +1,29 @@
+name: Entorno de pruebas al día
+
+# El branch de pruebas de Supabase no se actualiza solo: el 2026-09-23 tenía 455
+# migraciones de atraso. Esto lo compara con producción todos los días y, si
+# hace falta, lo pone al día — `push` si le faltan migraciones; si el push falla
+# (restos de ensayos hechos a mano) o tiene migraciones propias, lo rehace desde
+# cero. Rehacerlo cambia su dirección: en la máquina, `npm run pruebas:env`
+# reescribe .env.staging. Detalle en `scripts/entorno-pruebas/mantener_al_dia.mjs`.
+#
+# Necesita el secreto SUPABASE_ACCESS_TOKEN: un token personal de Supabase
+# (Account → Access Tokens). Sin él, el job falla en el primer paso y lo dice.
+
+on:
+  schedule:
+    - cron: '30 10 * * *'   # 04:30 SV — los crons de sync están quietos
+  workflow_dispatch:
+
+jobs:
+  al-dia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/entorno-pruebas/mantener_al_dia.mjs --aplicar
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

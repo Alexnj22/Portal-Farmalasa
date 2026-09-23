@@ -9,4 +9,4 @@ SET lock_timeout = '5s';
 SELECT cron.alter_job(
   (SELECT jobid FROM cron.job WHERE jobname = 'sync-puntos-1min'),
   schedule := '* 12-23,0-5 * * *'
-);
+) WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'sync-puntos-1min');  -- idempotente: en un entorno nuevo la tarea no existe (2026-09-23)

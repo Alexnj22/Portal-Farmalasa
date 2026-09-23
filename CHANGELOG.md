@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1035.1 — El cierre del día y las aperturas llegan al teléfono
+
+«Si no entro no me entero» (usuario, 23-sep). Los dos avisos estaban en la
+campana pero no sonaban en el teléfono, y no era una falla: así se habían hecho.
+
+- **Cierre del día** (`avisar_cierre_del_dia`) nunca mandaba push. Ahora lo
+  manda a los mismos destinatarios de la campana (Gerente General y
+  Supervisor/a de Ventas).
+- **Aperturas de la mañana** (`avisar_aperturas_de_la_manana`) mandaba push sólo
+  cuando faltaba una sala. Ahora lo manda siempre, uno por mañana.
+
+Migración `20260923180402_cierre_y_aperturas_tambien_al_telefono`.
+
 ## v2.1035.0 — El día que nadie cerró se cierra solo
 
 Regla del usuario (23-sep): una hora después de la hora de cierre, si la caja

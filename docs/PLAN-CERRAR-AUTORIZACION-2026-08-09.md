@@ -84,7 +84,20 @@ romperlo, dime: esto está mal, debería ser de esta forma»*.
 > `mv_refresh_state`, `inventory_sync_huella` y `puntos_config` cerradas. Quedan
 > `education_catalog_entries` y `suppliers`/`proveedores` (otras policies los leen).
 >
-> **Reglas 1–5 van sobre tablas calientes**: probar en el entorno de pruebas
+> **Reglas 1–4 aplicadas el 2026-09-23, de día y sin caída** (decisión del
+> usuario: «si se puede hacer ahora mejor, sólo que no se caiga el sistema»):
+> `20260923165357` detalle de ventas, `…165548` estadísticas, `…165800`
+> inventario, `…165839` MIN·MAX. Método: una tabla por vez, `lock_timeout` de
+> 2 s, sin consultas largas antes, y después 5xx por minuto (0 en todos) y
+> medición como usuario. Jefe/a de Sala: 0 líneas de venta de otra sala (antes
+> todas), ranking de productos igual (10 filas, 83 ms); inventario visible para
+> todos los cargos con alguna pantalla que lo usa (el único 0 de dependiente era
+> una persona bloqueada); `gate:perf` en verde.
+>
+> **Falta la regla 5 (costos)** y quedan `education_catalog_entries` y
+> `suppliers`/`proveedores`.
+>
+> **(Nota previa) Reglas 1–5 van sobre tablas calientes**: probar en el entorno de pruebas
 > (necesita ventas sembradas: el branch nuevo no trae facturas), medir el costo
 > de la policy de `sales_invoice_items` como usuario, y aplicar en la ventana
 > 06:00–11:59 UTC.

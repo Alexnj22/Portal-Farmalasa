@@ -98,9 +98,11 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
      * faltante se decía cuatro veces —título, píldora, ícono y panel—. Queda
      * UNA fila: quién y dónde a la izquierda, la diferencia a la derecha. El
      * color lo dice el número; el título quedó neutro. */
-    const diferencia = datos.estado === 'sin_conteo' ? 'Sin conteo'
-        : datos.estado === 'cuadra' ? 'Cuadró'
+    // El número solo no decía qué era (usuario, 23-sep: «no dice faltante ni
+    // sobrante»): arriba del monto va la palabra, chica y del mismo color.
+    const diferencia = datos.estado === 'cuadra' ? '$0.00'
         : `${datos.tramo > 0 ? '+' : '−'}${formatMoney(Math.abs(datos.tramo))}`;
+    const rotulo = { cuadra: 'Cuadró', sobra: 'Sobrante', falta: 'Faltante', sin_conteo: 'Sin conteo' }[datos.estado];
 
     return (
         <div className="flex items-center gap-2 mt-1.5 min-w-0">
@@ -112,8 +114,12 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
             <span className={`flex-1 min-w-0 truncate text-body-sm font-semibold ${claseTenue}`}>
                 {[emp && shortEmployeeName(emp), datos.sala].filter(Boolean).join(' · ')}
             </span>
-            <span className={`flex-shrink-0 text-body-lg font-black tracking-tight tabular-nums ${tono.texto}`}>
-                {diferencia}
+            <span className={`flex-shrink-0 flex flex-col items-end leading-none ${tono.texto}`}>
+                <span className="text-caption font-black uppercase tracking-widest">{rotulo}</span>
+                {/* Sin conteo no hay cifra que mostrar: la palabra alcanza. */}
+                {datos.estado !== 'sin_conteo' && (
+                    <span className="text-body-lg font-black tracking-tight tabular-nums mt-1">{diferencia}</span>
+                )}
             </span>
         </div>
     );

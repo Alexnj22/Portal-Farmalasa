@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1036.7 — Tarjeta de corte: dice si es faltante o sobrante
+
+«No dice faltante ni sobrante, mejora eso» (usuario, 23-sep). Arriba del monto
+va la palabra, chica y del mismo color: FALTANTE −$0.35, SOBRANTE +$1.20,
+CUADRÓ $0.00. Sin conteo lleva sólo la palabra, sin cifra. Verificado en
+pantalla con los cuatro casos.
+
 ## v2.1036.6 — Tarjeta de corte limpia: una fila y título neutro
 
 «Siento too much, límpialo, y que se vea mejor» (usuario, 23-sep). El faltante

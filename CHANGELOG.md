@@ -23,7 +23,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1035.3 — Créditos vencidos: push a jefatura y resumen por sala a supervisión
 
-_(pendiente de redactar)_
+Pedido del usuario (23-sep): «que el push de créditos vencidos le llegue al
+jefe y subjefe. Y a Supervisor cuántos hay por sucursal y el monto.»
+
+- **Jefe/a y Subjefe/a de Sala** reciben el aviso de su sala con push (antes
+  sólo Jefe/a, y el push iba también a quien vendió).
+- **Quien vendió** lo sigue recibiendo en la campana, sin push.
+- **Supervisor/a de Ventas** recibe UN aviso diario con push: total de
+  créditos vencidos y monto, y por sala «Salud 1: 7 ($120.00) · …».
+
+`avisar-creditos-vencidos` redesplegada con `--no-verify-jwt` (v4).
 
 ## v2.1035.2 — Los avisos que sólo iban a la campana suenan en el teléfono
 

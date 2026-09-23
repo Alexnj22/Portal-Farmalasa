@@ -102,10 +102,20 @@ romperlo, dime: esto está mal, debería ser de esta forma»*.
 > como usuario: QA y Compras idénticos al centavo; una sala ve lo mismo sin la
 > columna de costo. 0 errores de permiso en el log después del cierre.
 >
-> Quedan: `education_catalog_entries`, `suppliers`/`proveedores`, y otras
-> columnas de costo que la regla 5 no tocó — `sales_invoice_items.costo_unitario`
-> (las salas leen sus líneas de venta), `conteo_inventario_items.costo_unitario`
-> y `promocion_cierre_sala.costo`.
+> ✅ **Cerrado el resto el mismo 2026-09-23:**
+> - `…213806`: `education_catalog_entries` (Personal/Expediente),
+>   `proveedores` (Laboratorios, MIN·MAX) y `suppliers` (Laboratorios, Compras,
+>   Proveedores, Facturas de compra, Promociones). Medido por cargo: sólo quedan
+>   en 0 los que no tienen ninguna de esas pantallas.
+> - `…214234`: `sales_invoice_items.costo_unitario/costo_origen/costo_ambiguo`
+>   por columna. Nada del navegador lo leía.
+> - `…214627` + v2.1036.2 + `…215032`: el valorizado del conteo con su propio
+>   permiso, «Ver el valorizado» (`conteo_inventario_ver_montos`), también en la
+>   base. El costo por renglón vive además en `conteo_inventario_costos` (RLS =
+>   el permiso, lo mantiene un disparador) y el faltante/sobrante sale por
+>   `get_conteos_valor`. QA idéntico y en el mismo tiempo; una sala, sin montos.
+> - `promocion_cierre_sala.costo` NO es un costo de producto: es lo que cuesta
+>   el bono (monto × personas), y ya sólo lo lee Promociones. Nada que cerrar.
 >
 > **(Nota previa) Reglas 1–5 van sobre tablas calientes**: probar en el entorno de pruebas
 > (necesita ventas sembradas: el branch nuevo no trae facturas), medir el costo

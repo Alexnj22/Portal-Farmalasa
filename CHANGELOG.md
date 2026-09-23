@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1036.0 — Tarjetas modernas: corte de caja, bitácora y traslados por respaldo
+
+«Rediseñalas para que sean modernas, vamos de 3 en 3» (usuario, 23-sep).
+Primera tanda, en `TarjetasDeOperacion.jsx` + `utils/avisosDeOperacion.js`:
+
+- **Corte de caja nuevo**: disco de color según cuadró / sobra / falta / sin
+  conteo, «Cuadró al centavo» o «Sobran $X», la sala y qué hay que hacer. El
+  faltante no repite el monto: ya está en el título. Usa el `tramo` que el
+  aviso ya traía, sin cambios en la base.
+- **Bitácora por vencer**: reloj con los minutos que quedan, calculado al
+  dibujar (un aviso leído tarde dice «Ya cerró»), y chips de temperaturas,
+  limpiezas y áreas. El cuerpo dice «Falta 1 registro» y no «Faltan 1».
+  `avisar-bitacora-por-vencer` manda `minutos`, `lecturas`, `limpiezas`,
+  `sala` y `areas` (redesplegada).
+- **Traslados por respaldo**: un renglón por traslado con hora, quién, qué,
+  a dónde y cuántas unidades. El cuerpo deja de listar destinos repetidos y se
+  arreglan las tildes («Salió», «despachó»). Migración
+  `20260923213255_traslados_por_respaldo_con_detalle_para_la_tarjeta`.
+
 ## v2.1035.6 — El costo de los productos, sólo con el permiso de verlo
 
 Regla 5 de la Fase 2 de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`, paso 1

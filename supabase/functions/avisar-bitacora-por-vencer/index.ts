@@ -112,7 +112,9 @@ Deno.serve(async (req) => {
         p_recipients: destinatarios,
         p_type: 'BITACORA_POR_VENCER',
         p_title: `La bitácora cierra a las ${p.cierra}`,
-        p_body: `Faltan ${cuantos} en ${p.areas}. Quedan ${p.minutos} minutos para anotarlos a tiempo.`,
+        // «Falta 1 registro», no «Faltan 1 registro» (usuario, 23-sep).
+        p_body: `${p.pendientes === 1 ? 'Falta' : 'Faltan'} ${cuantos} en ${p.areas}. `
+          + `Quedan ${p.minutos} minutos para ${p.pendientes === 1 ? 'anotarlo' : 'anotarlos'} a tiempo.`,
         // Abre la VUELTA, no la grilla: el aviso existe para ahorrar el paso
         // de ir a buscar qué falta.
         p_link: '/bitacoras?ronda=1',
@@ -122,6 +124,14 @@ Deno.serve(async (req) => {
           fecha: p.fecha,
           cierra: p.cierra,
           pendientes: p.pendientes,
+          // Lo que dibuja la tarjeta de la campana: el reloj hasta el cierre
+          // (sale de `fecha` + `cierra`, así que sigue siendo cierto al leerlo
+          // tarde) y qué hay que anotar dónde.
+          minutos: p.minutos,
+          lecturas: p.lecturas,
+          limpiezas: p.limpiezas,
+          sala: p.branch_name,
+          areas: String(p.areas ?? '').split(', ').filter(Boolean),
         },
         p_push: true,
         p_branch_id: p.branch_id,

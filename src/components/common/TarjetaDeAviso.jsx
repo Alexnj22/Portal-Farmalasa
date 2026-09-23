@@ -7,10 +7,17 @@ import { AnilloDeMeta, CuerpoDeCierreDeMeta, CuerpoDeCierreDeEmpresa, CuerpoDeCi
 import { AnilloDeFaltante, CuerpoDeFaltanteDeCaja } from './TarjetaDeFaltante';
 import { AnilloDeAperturas, CuerpoDeAperturas } from './TarjetaDeAperturas';
 import { InsigniaDeCreditos, CuerpoDeCreditos } from './TarjetaDeCreditos';
+import {
+    InsigniaDeCorte, CuerpoDeCorte, RelojDeBitacora, CuerpoDeBitacora,
+    InsigniaDeTraslados, CuerpoDeTraslados,
+} from './TarjetasDeOperacion';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
 import { datosDeAperturasDeLaManana } from '../../utils/aperturasDeLaManana';
 import { datosDeCreditosVencidos } from '../../utils/creditosVencidos';
+import {
+    datosDeCorteNuevo, datosDeBitacoraPorVencer, datosDeTrasladosPorRespaldo,
+} from '../../utils/avisosDeOperacion';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import {
@@ -166,6 +173,12 @@ const TarjetaDeAviso = ({
     const aperturas = datosDeAperturasDeLaManana(n);
     /* Créditos que se pasaron del mes: el de una sala o el resumen de todas. */
     const creditos = datosDeCreditosVencidos(n);
+    /* El corte por confirmar, la bitácora por cerrarse y los traslados por
+       respaldo — ver `TarjetasDeOperacion`. */
+    const corteNuevo = datosDeCorteNuevo(n);
+    const bitacora   = datosDeBitacoraPorVencer(n);
+    const traslados  = datosDeTrasladosPorRespaldo(n);
+    const conTarjeta = creditos || corteNuevo || bitacora || traslados;
 
     const corte = acciones?.corteDe?.(n) ?? null;
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
@@ -203,6 +216,12 @@ const TarjetaDeAviso = ({
                     <AnilloDeAperturas datos={aperturas} isDark={isDark} />
                 ) : creditos ? (
                     <InsigniaDeCreditos datos={creditos} isDark={isDark} />
+                ) : corteNuevo ? (
+                    <InsigniaDeCorte datos={corteNuevo} isDark={isDark} />
+                ) : bitacora ? (
+                    <RelojDeBitacora datos={bitacora} isDark={isDark} />
+                ) : traslados ? (
+                    <InsigniaDeTraslados isDark={isDark} />
                 ) : conAnillo ? (
                     <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                 ) : (
@@ -222,7 +241,7 @@ const TarjetaDeAviso = ({
                         diría en palabras lo mismo que está arriba en números.
                         Sin montos el `body` ya viene escrito en porcentaje y se
                         deja tal cual. */}
-                    {((!conAnillo && !faltante && !aperturas && !creditos) || (cierre && cierre.venta == null)) && n.body && (
+                    {((!conAnillo && !faltante && !aperturas && !conTarjeta) || (cierre && cierre.venta == null)) && n.body && (
                         <CuerpoDeAviso
                             id={n.id}
                             texto={n.body}
@@ -247,6 +266,16 @@ const TarjetaDeAviso = ({
                     )}
                     {creditos && (
                         <CuerpoDeCreditos datos={creditos} claseTenue={cx.rowBody} isDark={isDark} />
+                    )}
+                    {corteNuevo && (
+                        <CuerpoDeCorte datos={corteNuevo} claseTenue={cx.rowBody} isDark={isDark} />
+                    )}
+                    {bitacora && (
+                        <CuerpoDeBitacora datos={bitacora} claseTenue={cx.rowBody} isDark={isDark} />
+                    )}
+                    {traslados && (
+                        <CuerpoDeTraslados datos={traslados} claseTenue={cx.rowBody}
+                            buscarEmpleado={buscarEmpleado} />
                     )}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}

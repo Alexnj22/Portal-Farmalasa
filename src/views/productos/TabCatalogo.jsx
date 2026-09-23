@@ -1552,7 +1552,7 @@ export default function TabCatalogo({
         const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
 
         const fetchPage = async (from) => {
-            const { data, error } = await fetchProductPreciosMarginPage(PRICE_SELECT, from, PAGE);
+            const { data, error } = await fetchProductPreciosMarginPage(PRICE_SELECT, from);
             if (cancelled) return;
             if (error || !data) {
                 setMarginStats({ perdidaIds, bajoIds });
@@ -1656,7 +1656,7 @@ export default function TabCatalogo({
 
             if (rows.length > 0) {
                 const ids = rows.map(r => r.id);
-                const [{ data: pc, error: pcErr }, { data: prc, error: prcErr }, { data: pp, error: ppErr }] = await fetchProductChangeAndMarginData(ids, PRICE_SELECT);
+                const [{ data: pc, error: pcErr }, { data: prc, error: prcErr }, { data: pp, error: ppErr }] = await fetchProductChangeAndMarginData(ids);
                 if (pcErr) throw pcErr;
                 if (prcErr) throw prcErr;
                 if (ppErr) throw ppErr;

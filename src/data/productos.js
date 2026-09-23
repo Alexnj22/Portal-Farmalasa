@@ -101,12 +101,21 @@ export async function fetchProductsWithoutPrincipioActivo(batchSize) {
 
 // ── Stats de márgen (página recursiva, PostgREST cap-safe) ──────────────────
 
-export function fetchProductPreciosMarginPage(priceSelect, from, pageSize) {
-    return supabase.from('product_precios')
-        .select(`product_id, costo, ${priceSelect}`)
-        .eq('activo', true)
-        .gt('costo', 0)
-        .range(from, from + pageSize - 1);
+// El costo NO se lee de la tabla: desde la regla 5 (docs/PLAN-CERRAR-AUTORIZACION)
+// la columna sólo la entrega `get_precios_con_costo`, que mira el permiso de
+// costos y devuelve `[]` sin él. Es un único JSON (Patrón C): la primera página
+// trae todo y las siguientes vienen vacías, así el bucle del llamador termina.
+async function preciosConCosto(productIds, soloActivos = true) {
+    const { data, error } = await supabase.rpc('get_precios_con_costo', {
+        p_product_ids: productIds, p_solo_activos: soloActivos,
+    });
+    return { data: error ? null : (data || []), error };
+}
+
+export async function fetchProductPreciosMarginPage(_priceSelect, from) {
+    if (from > 0) return { data: [], error: null };
+    const { data, error } = await preciosConCosto(null);
+    return { data: data && data.filter(r => Number(r.costo) > 0), error };
 }
 
 // ── Contadores de productos (activos/inactivos/nuevos del mes) ─────────────
@@ -161,11 +170,11 @@ export function fetchProductsList({
 
 // ── Datos derivados (changelog + margen) para un lote de IDs visibles ──────
 
-export function fetchProductChangeAndMarginData(ids, priceSelect) {
+export function fetchProductChangeAndMarginData(ids) {
     return Promise.all([
         supabase.from('product_precios_changelog').select('product_id').in('product_id', ids),
         supabase.from('products_changelog').select('product_id, campo, valor_anterior').in('product_id', ids),
-        supabase.from('product_precios').select(`product_id, costo, ${priceSelect}`).in('product_id', ids).eq('activo', true).gt('costo', 0),
+        preciosConCosto(ids).then(r => ({ ...r, data: r.data && r.data.filter(p => Number(p.costo) > 0) })),
     ]);
 }
 
@@ -173,7 +182,9 @@ export function fetchProductChangeAndMarginData(ids, priceSelect) {
 
 export function fetchProductDetail(productId, priceSelect, canSeeCosts) {
     return Promise.all([
-        supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${priceSelect}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
+        canSeeCosts
+            ? preciosConCosto([productId], false)
+            : supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, ${priceSelect}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
         supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
         supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
         supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),

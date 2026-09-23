@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1035.6 — El costo de los productos, sólo con el permiso de verlo
+
+Regla 5 de la Fase 2 de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`, paso 1
+y 2 de 3. El costo de `product_precios` se podía leer desde el navegador con
+cualquier sesión; ahora lo entregan sólo funciones que miran el permiso de
+costos (`productos_ver_costos` o `minmax_ver_costos`).
+
+- `get_precios_con_costo` (nueva): lo que el Catálogo le pedía a la tabla, con
+  el costo; sin permiso devuelve `[]`. El Catálogo la usa para los márgenes y
+  el detalle, y sin permiso pide las presentaciones sin costo.
+- Ventas → Productos, el resumen de costo de MIN·MAX y Sin venta pasan a
+  funciones con el alcance escrito adentro. Medido antes/después como usuario:
+  QA y Compras idénticos al centavo; una sala ve lo mismo que antes (su sala),
+  **sin la columna de costo**.
+- Falta el paso 3: quitarle a `authenticated` el SELECT de la columna. Va
+  cuando este frontend esté publicado.
+
 ## v2.1035.5 — Créditos vencidos: la tarjeta no repite el título
 
 «Quita la 2ª línea de texto, se repite como el título» (usuario, 23-sep). La

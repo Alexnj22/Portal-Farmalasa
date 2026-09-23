@@ -104,23 +104,37 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
         : `${datos.tramo > 0 ? '+' : '−'}${formatMoney(Math.abs(datos.tramo))}`;
     const rotulo = { cuadra: 'Cuadró', sobra: 'Sobrante', falta: 'Faltante', sin_conteo: 'Sin conteo' }[datos.estado];
 
+    /* Cuarta vuelta (23-sep: «se ve desalineado, usa mejor las columnas y
+     * estructura»): dos columnas de DOS renglones cada una, en un panel, así
+     * los renglones se alinean entre sí — quién/dónde a la izquierda, qué
+     * pasó/cuánto a la derecha, separados por una línea. La columna derecha
+     * tiene ancho FIJO: con `auto` la línea caía en otro sitio en cada tarjeta
+     * según la palabra («Cuadró» contra «Sin conteo»). */
     return (
-        <div className="flex items-center gap-2 mt-1.5 min-w-0">
-            {emp ? (
-                <AvatarConEstado emp={emp} px={24} radio="rounded-full" marco="" mostrarChip={false} />
-            ) : (
-                <Store className={`w-4 h-4 flex-shrink-0 ${claseTenue}`} aria-hidden="true" />
-            )}
-            <span className={`flex-1 min-w-0 truncate text-body-sm font-semibold ${claseTenue}`}>
-                {[emp && shortEmployeeName(emp), datos.sala].filter(Boolean).join(' · ')}
-            </span>
-            <span className={`flex-shrink-0 flex flex-col items-end leading-none ${tono.texto}`}>
-                <span className="text-caption font-black uppercase tracking-widest">{rotulo}</span>
-                {/* Sin conteo no hay cifra que mostrar: la palabra alcanza. */}
-                {datos.estado !== 'sin_conteo' && (
-                    <span className="text-body-lg font-black tracking-tight tabular-nums mt-1">{diferencia}</span>
+        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_6.5rem] items-stretch rounded-xl
+            bg-surface-card-hover divide-x divide-border-card">
+            <div className="flex items-center gap-2 px-2.5 py-2 min-w-0">
+                {emp ? (
+                    <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" mostrarChip={false} />
+                ) : (
+                    <span aria-hidden="true" className={`w-7 h-7 rounded-full grid place-items-center flex-shrink-0
+                        bg-surface-card ${claseTenue}`}>
+                        <Store className="w-4 h-4" />
+                    </span>
                 )}
-            </span>
+                <div className="min-w-0 leading-tight">
+                    <p className="text-body-sm font-bold truncate">{emp ? shortEmployeeName(emp) : datos.sala}</p>
+                    {emp && datos.sala && (
+                        <p className={`text-caption font-semibold truncate mt-0.5 ${claseTenue}`}>{datos.sala}</p>
+                    )}
+                </div>
+            </div>
+            <div className={`flex flex-col justify-center items-end px-2.5 py-2 leading-tight ${tono.texto}`}>
+                <span className="text-caption font-black uppercase tracking-wide">{rotulo}</span>
+                {datos.estado !== 'sin_conteo' && (
+                    <span className="text-body-lg font-black tracking-tight tabular-nums mt-0.5">{diferencia}</span>
+                )}
+            </div>
         </div>
     );
 }

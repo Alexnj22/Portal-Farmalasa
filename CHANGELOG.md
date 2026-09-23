@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1036.8 — Tarjeta de corte en dos columnas alineadas
+
+«No se ve bien la estructura, se ve desalineado, usa mejor las columnas»
+(usuario, 23-sep). La tarjeta pasa a un panel de dos columnas de dos renglones
+cada una: la cara con el nombre y la sala a la izquierda; la palabra
+(FALTANTE / SOBRANTE / CUADRÓ / SIN CONTEO) y el monto a la derecha, separados
+por una línea. La columna derecha tiene ancho fijo, así la línea cae en el
+mismo sitio en todas las tarjetas. Verificado en pantalla con los cuatro casos.
+
 ## v2.1036.7 — Tarjeta de corte: dice si es faltante o sobrante
 
 «No dice faltante ni sobrante, mejora eso» (usuario, 23-sep). Arriba del monto

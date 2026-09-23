@@ -394,7 +394,9 @@ export const createConteoInventarioSlice = (set, get) => ({
             timeline_title: 'Conteo de inventario finalizado',
             dimension: 'OPERATIVE',
             branch_id: detalle?.branch_id,
-            new_value: `${data.total_diferencias} diferencia(s) — faltante ${formatMoney(data.valor_faltante)} · sobrante ${formatMoney(data.valor_sobrante)}${trato}`,
+            // Los montos vienen null sin «Ver el valorizado»: la base no los
+            // entrega, y la bitácora no los inventa en $0.00.
+            new_value: `${data.total_diferencias} diferencia(s)${data.valor_faltante != null ? ` — faltante ${formatMoney(data.valor_faltante)} · sobrante ${formatMoney(data.valor_sobrante)}` : ''}${trato}`,
         });
 
         return data;

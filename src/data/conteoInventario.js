@@ -13,15 +13,44 @@ import { filtroProductoOCodigo } from '../utils/searchUtils';
 // decenas al año, muy lejos del tope de 1000 de PostgREST. El límite va
 // explícito para que el día que se acerque sea un cambio deliberado y no un
 // truncado silencioso (CLAUDE.md, regla del cap de 1000).
-export function fetchConteosInventario() {
-    return supabase.from('conteos_inventario')
-        .select('*, branches(name)')
-        .order('created_at', { ascending: false })
-        .limit(1000);
+//
+// Las columnas van enumeradas y SIN `valor_faltante`/`valor_sobrante`: desde el
+// 2026-09-23 la base no las entrega por la tabla (son el valorizado del conteo,
+// y sólo lo ve quien tiene «Ver el valorizado»). Se piden aparte a
+// `get_conteos_valor`, que sin el permiso devuelve `[]` y deja los dos en null.
+// Una columna nueva de `conteos_inventario` hay que agregarla acá Y al GRANT de
+// la tabla (20260923…_conteo_valorizado_solo_con_permiso_paso2).
+const CONTEO_COLS = 'id, created_at, branch_id, created_by, scope_type, scope_filter, incluye_vencidos, '
+    + 'status, finalizado_por, finalizado_at, aprobado_por, aprobado_at, nota_aprobacion, '
+    + 'total_items, total_contados, total_diferencias, notas, total_pendientes, '
+    + 'pendientes_como_cero, ajuste_erp_aplicado, ajuste_erp_por, ajuste_erp_at, '
+    + 'ajuste_erp_nota, total_recontados, modo, fuente_sistema, branches(name)';
+
+async function conValor(res) {
+    if (res.error || !res.data) return res;
+    const filas = Array.isArray(res.data) ? res.data : [res.data];
+    const { data: valores, error } = filas.length
+        ? await supabase.rpc('get_conteos_valor', { p_ids: filas.map(c => c.id) })
+        : { data: [] };
+    if (error) console.error('[conteo] valorizado', error);
+    const porId = new Map((valores || []).map(v => [v.id, v]));
+    const conMontos = filas.map(c => ({
+        ...c,
+        valor_faltante: porId.get(c.id)?.valor_faltante ?? null,
+        valor_sobrante: porId.get(c.id)?.valor_sobrante ?? null,
+    }));
+    return { ...res, data: Array.isArray(res.data) ? conMontos : conMontos[0] };
 }
 
-export function fetchConteoDetalle(conteoId) {
-    return supabase.from('conteos_inventario').select('*, branches(name)').eq('id', conteoId).single();
+export async function fetchConteosInventario() {
+    return conValor(await supabase.from('conteos_inventario')
+        .select(CONTEO_COLS)
+        .order('created_at', { ascending: false })
+        .limit(1000));
+}
+
+export async function fetchConteoDetalle(conteoId) {
+    return conValor(await supabase.from('conteos_inventario').select(CONTEO_COLS).eq('id', conteoId).single());
 }
 
 // ── ConteoDetailView.jsx / AddManualItemForm ────────────────────────────────

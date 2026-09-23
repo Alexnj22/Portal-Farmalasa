@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1036.2 — El valorizado del conteo, sólo con permiso
+
+Regla 5 extendida (`docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`). El conteo ya
+tenía su permiso «Ver el valorizado», pero sólo lo miraba la pantalla: la base
+mandaba igual el costo de cada renglón y el faltante/sobrante del conteo.
+
+- El costo de cada renglón vive también en `conteo_inventario_costos`, que sin
+  el permiso no devuelve filas; las lecturas del conteo lo toman de ahí. Medido
+  como usuario: QA idéntico en las cuatro lecturas y en el mismo tiempo; una
+  sala ve lo mismo sin costos.
+- El faltante/sobrante sale por `get_conteos_valor`; la lista y el detalle ya no
+  piden la ficha con `*`.
+- La hoja de resultados impresa no pone «Faltante/Sobrante» sin el permiso (antes
+  los imprimía para cualquiera), y la bitácora al finalizar no inventa $0.00.
+- Además, en la base: el costo de cada línea de venta y la lectura de
+  capacitaciones y proveedores quedaron cerrados a quien los usa.
+
 ## v2.1036.1 — Tarjetas de corte, bitácora y traslados: persona, panel de datos y ver más
 
 Segunda vuelta (usuario, 23-sep): «no me parece que sean modernos · falta

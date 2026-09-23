@@ -40,7 +40,7 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
   funciones que llama el portal como `authenticated`, nunca sólo como
   `postgres`.**
 
-### A2 🔎 Llamadas que llegan sin sesión (`permission denied` diario)
+### A2 ✅ Llamadas que llegan sin sesión (`permission denied` diario)
 
 - **Medido (21-sep):** `soltar_push_del_equipo` 302, `mis_permisos_heredados`
   97, `employees` 25, `bolsas` 18, `get_cortes_por_embolsar` 16,
@@ -70,6 +70,14 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
   en el resto del día — muy probablemente pestañas con la versión vieja, que no
   se recargan solas. `mis_permisos_heredados` 97 → 16. Falta ver una tarde
   entera de hoy para confirmar el residuo.
+- **Cerrado con el día hábil del 23-sep (06:00–18:00 SV):** `soltar_push_del_equipo`
+  **0** (302 el 21-sep) y `mis_permisos_heredados` **1** (97). Lo que queda son ~50
+  al día, el ruido que ya estaba anotado: vistas que recargan cuando la sesión ya
+  se cerró sola (bolsas y conteos, las metas del Inicio, y Solicitudes: el listado
+  de `approval_requests` falla por `employees` porque su policy la consulta, y
+  `requests.js` busca aprobadores por sala). Todas llegan como `anon` en el mismo
+  segundo, y `employees` venía igual antes (25, 38, 18): no lo produjeron las
+  tandas de permisos del 22 y el 23.
 
 ### A3 ✅ Movimiento de caja duplicado DESPUÉS de los frenos del 17-sep
 

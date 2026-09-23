@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1035.5 — Créditos vencidos: la tarjeta no repite el título
+
+«Quita la 2ª línea de texto, se repite como el título» (usuario, 23-sep). La
+tarjeta ya no dibuja «$X sin cobrar · N créditos»: cuántos y cuánto van sólo
+en el título. Para que el aviso de una sala no pierda el monto, su título pasa
+a «Salud 1: 7 créditos vencidos · $120.00» (`avisar-creditos-vencidos`, v6).
+
 ## v2.1035.4 — Créditos vencidos: tarjeta moderna en la campana
 
 «Las notificaciones se deben ver modernas, como las de metas» (usuario,

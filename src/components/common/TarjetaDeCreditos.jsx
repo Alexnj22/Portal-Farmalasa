@@ -10,7 +10,7 @@ import { DIAS_EN_ROJO } from '../../utils/creditosVencidos';
  * viejo lleva 94 días.»— y el resumen de supervisión, seis salas en un párrafo.
  *
  * ── La pregunta que la tarjeta contesta sin leer ───────────────────────────
- * **¿Cuánto se debe y dónde?** El monto va grande y primero. En el resumen,
+ * **¿Cuánto se debe y dónde?** El monto va en el título. En el resumen,
  * cada sala lleva una barra contra la que más debe: así la sala a la que hay
  * que llamar primero salta sin comparar cifras.
  *
@@ -35,18 +35,14 @@ export function InsigniaDeCreditos({ datos, isDark }) {
 }
 
 export function CuerpoDeCreditos({ datos, claseTenue, isDark }) {
-    const { resumen, total, creditos, dias, salas, tope } = datos;
+    const { resumen, dias, salas, tope } = datos;
     const tono = tonoDeDias(dias, isDark);
 
     return (
         <div className="flex flex-col gap-2 mt-1">
-            <div className="flex items-baseline gap-2 flex-wrap tabular-nums">
-                <span className="text-body-lg font-black tracking-tight">{formatMoney(total)}</span>
-                <span className={`text-body-sm font-semibold ${claseTenue}`}>
-                    sin cobrar · {creditos === 1 ? '1 crédito' : `${creditos} créditos`}
-                </span>
-            </div>
-
+            {/* Cuántos y cuánto van en el TÍTULO del aviso; repetirlos acá
+                decía lo mismo dos veces (usuario, 23-sep: «se repite como el
+                título»). */}
             {dias != null && (
                 <p className={`text-caption font-bold ${tono.texto}`}>
                     El más viejo lleva {dias} días

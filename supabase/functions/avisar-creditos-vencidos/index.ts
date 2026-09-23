@@ -109,7 +109,8 @@ Deno.serve(async (req) => {
 
       const aviso = {
         p_type: 'CREDITO_VENCIDO',
-        p_title: g.n === 1 ? 'Un crédito se pasó del mes' : `${g.n} créditos se pasaron del mes`,
+        // Cuántos y cuánto en el título: la tarjeta de la campana no los repite.
+        p_title: `${g.sala}: ${g.n === 1 ? '1 crédito vencido' : `${g.n} créditos vencidos`} · ${money(g.total)}`,
         p_body: `${g.sala}: ${money(g.total)} sin cobrar. El más viejo lleva ${g.dias} días.`,
         p_link: `/cuentas-por-cobrar?sala=${branchId}&ver=VENCIDOS`,
         p_metadata: { check_key: checkKey, branch_id: branchId, sala: g.sala, creditos: g.n, total: g.total, dias: g.dias },

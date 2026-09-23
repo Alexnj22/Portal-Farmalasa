@@ -225,7 +225,7 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   DEFINER: un año 683,904 → 73,262 bloques, 12/12 idénticas. Techos bajados en
   `bloques-por-llamada.json` y fuera de `planes-genericos.json`.
 
-### D3 🔎 `gate:eficiencia` — escrituras sin inserción 1,380/h (tope 1,240)
+### D3 🔎 `gate:eficiencia` — escrituras sin inserción 1,380/h (tope 1,240) — falta una ventana real
 
 - Ubicar la tabla (`n_tup_upd` vs `n_tup_hot_upd` desde el arranque) y el
   writer que reescribe filas sin cambio. Patrón `IS DISTINCT FROM`.
@@ -242,6 +242,19 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   su motivo y bajar el tope a lo que quede. Para eso hace falta que la lectura
   guarde el desglose POR TABLA — hoy guarda sólo el total y no puede decir de
   quién es una subida. ⏸ trabajo del gate, no del portal.
+- **Hecho el 23-sep (gate):** la lectura guarda el desglose POR TABLA y el
+  desglose que se imprime es el de la ventana juzgada, no el de siete días.
+  Seis tablas declaradas en `CHURN_INTENCIONAL`, cada una con un techo
+  estructural en vez de un número medido: el latido de las cajas (120 por caja
+  por hora), el reloj de repaso de cortes (20 por sala por hora) y los cuatro
+  recálculos nocturnos (como mucho una reescritura completa por día). Salen del
+  tope; el resto se juzga contra 1,240. Probado con una ventana fabricada de 7 h:
+  el latido desbocado y una tabla vigilada reescribiéndose fallan con su motivo,
+  el rollup dentro de su techo pasa. Con los números desde el arranque, lo
+  vigilado ronda ~280/h sin cortes.
+  **Falta la primera ventana real de 6 h** (lectura anotada 14:40 UTC → se
+  puede juzgar desde las 20:40 UTC, 14:40 SV). Si da verde, D3 se cierra, y
+  bajar el tope a lo que mida el resto queda como mejora aparte.
 
 ### D4 ✅ Realtime publica `inventory_sync_log` — NO se saca
 

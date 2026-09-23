@@ -60,6 +60,58 @@ const ESTADO_FILE = 'scripts/.eficiencia-gate-estado.json';
 const SOLO_LOCAL = process.argv.includes('--hook');
 const REGENERAR = process.argv.includes('--update-baseline');
 
+/* ── Churn INTENCIONAL (sección B0) ───────────────────────────────────────────
+ *
+ * Tablas que escriben seguido A PROPÓSITO. No entran al tope de escrituras sin
+ * inserción —que existe para cazar una tabla que se reescribe sola— pero
+ * tampoco quedan libres: cada una tiene un techo ESTRUCTURAL, derivado de lo
+ * que hace y del tamaño de la tabla, no de una medición que haya que ir
+ * subiendo. Pendiente escrito en este gate desde el 2026-09-02 y cerrado el
+ * 2026-09-23, cuando el total dio 2,104/h y dos tercios eran estas tablas.
+ *
+ * Dos formas de techo:
+ *   · `porFilaHora`: un latido o un reloj por fila (N escrituras por hora cada una).
+ *   · `reescriturasDia`: un recálculo que como mucho reescribe la tabla entera
+ *     esa cantidad de veces al día. Todos usan `IS DISTINCT FROM`, así que en un
+ *     día normal tocan una fracción; reescribirla entera más de una vez al día
+ *     es exactamente la regresión que hay que ver.
+ *
+ * Agregar una tabla acá es una DECISIÓN: exige el motivo escrito y un techo que
+ * salga de su mecánica. Nunca para que el tope calle. */
+const CHURN_INTENCIONAL = [
+  { tabla: 'public.impresion_dispositivos', porFilaHora: 120,
+    motivo: 'el latido de cada caja de impresión. `reclamar_impresion` lo escribe como mucho '
+          + 'una vez cada 30 s por caja (migración 20260820154318), y la pantalla necesita un latido '
+          + 'de menos de 2 min para decir si la caja responde.' },
+  { tabla: 'public.cortes_caja_vistazos', porFilaHora: 20,
+    motivo: 'el reloj de repaso de movimientos de `sync-cortes-caja`: una fila por sala, se '
+          + 'escribe al mirar (cada 5 min, más cada corte nuevo). 12/h por sala es lo normal.' },
+  { tabla: 'public.product_stock_params', reescriturasDia: 1,
+    motivo: 'el recálculo de MIN·MAX (`calculate_stock_params` y su publicación): escribe sólo '
+          + 'lo que cambió.' },
+  { tabla: 'public.product_sales_rollup', reescriturasDia: 1,
+    motivo: 'el rollup de ventas de la madrugada (`refresh_product_sales_rollup`), con '
+          + '`IS DISTINCT FROM`.' },
+  { tabla: 'public.product_last_sale', reescriturasDia: 1,
+    motivo: 'la última venta por producto y sala: el disparador y la reconstrucción diaria '
+          + '(`refresh_product_last_sale`), con `IS DISTINCT FROM`.' },
+  { tabla: 'public.customer_activity', reescriturasDia: 1,
+    motivo: 'la actividad por cliente de la madrugada (`refresh_customer_activity`), con '
+          + '`IS DISTINCT FROM`.' },
+].map(d => ({ ...d, techoTexto: d.porFilaHora
+  ? `${d.porFilaHora} por fila por hora`
+  : `${d.reescriturasDia} reescritura completa por día` }));
+
+/** Cuántas escrituras le caben a una tabla declarada en una ventana de `horas`.
+ *  Los recálculos diarios se cuentan por días EMPEZADOS: una ventana de 6 h
+ *  puede contener entera la corrida de la madrugada. */
+function techoDeclarado(d, filas, horas) {
+  const f = Math.max(Number(filas) || 0, 1);
+  return d.porFilaHora
+    ? Math.ceil(d.porFilaHora * f * horas)
+    : Math.ceil(d.reescriturasDia * f * Math.max(1, Math.ceil(horas / 24)));
+}
+
 /* ── El manifiesto ────────────────────────────────────────────────────────────
  *
  * Un cron por fila, con lo que cuesta CADA corrida en peticiones al sistema de
@@ -835,14 +887,17 @@ if (!SOLO_LOCAL) {
      * antes, después de un arreglo la tasa BAJA de a poco en vez de saltar. Lo
      * que se ve enseguida es la medición directa (dos lecturas separadas por un
      * minuto); esto es la vista larga. */
+    // Sin `LIMIT`: el total se arma tabla por tabla y entre dos lecturas, así
+    // que una tabla que entra o sale del top no puede mover el número. Con el
+    // esquema en la clave, porque `auth.users` también aparece acá.
     const churn = canal.consultar(`
-      SELECT relname AS tabla, n_tup_ins AS ins, n_tup_upd AS upd,
+      SELECT schemaname || '.' || relname AS tabla, n_tup_ins AS ins, n_tup_upd AS upd,
              coalesce(round(100.0 * n_tup_hot_upd / nullif(n_tup_upd,0)), 100) AS pct_hot,
              n_live_tup AS filas,
              round(extract(epoch FROM (now() - pg_postmaster_start_time()))/3600) AS horas
         FROM pg_stat_user_tables
        WHERE n_tup_upd > 500 AND n_tup_upd > n_tup_ins * 3
-       ORDER BY n_tup_upd DESC LIMIT 20`);
+       ORDER BY n_tup_upd DESC`);
     /* La tasa se mide entre DOS LECTURAS de este gate, no dividiendo el
      * acumulado por el tiempo encendido.
      *
@@ -859,6 +914,12 @@ if (!SOLO_LOCAL) {
      * comparar: se vuelve a anotar y se dice. */
     const VENTANA_MINIMA_H = 6;
     const crudo = churn.reduce((n, t) => n + Math.max(0, Number(t.upd) - Number(t.ins)), 0);
+    // La misma cuenta, POR TABLA. Guardar sólo el total dejaba al gate sin poder
+    // decir de quién era una subida: el 2026-09-23 marcó 2,104/h y el desglose
+    // que imprimía era el acumulado de siete días, no la ventana juzgada.
+    const porTabla = Object.fromEntries(churn.map(t =>
+      [t.tabla, Math.max(0, Number(t.upd) - Number(t.ins))]));
+    const filasDe = Object.fromEntries(churn.map(t => [t.tabla, Number(t.filas)]));
     const prev = existsSync(ESTADO_FILE)
       ? JSON.parse(readFileSync(ESTADO_FILE, 'utf8'))
       : null;
@@ -866,8 +927,14 @@ if (!SOLO_LOCAL) {
       ? (Date.now() - Date.parse(prev.medidoEn)) / 3_600_000
       : 0;
     let inutilesHora = null;
+    let ventanaPorTabla = null;
     if (!prev || crudo < Number(prev.crudo ?? 0)) {
       console.log(`\n  escrituras sin inserción: ${gris('primera lectura (o el servidor reinició) — se anota y se compara en la próxima')}`);
+    } else if (!prev.porTabla) {
+      // La lectura anterior es del formato viejo (sólo el total): sin el
+      // desglose no se puede separar lo declarado de lo vigilado. Se trata como
+      // primera lectura y se juzga en la próxima — nunca como verde.
+      console.log(`\n  escrituras sin inserción: ${gris('la lectura anterior no trae el desglose por tabla — se anota la nueva y se juzga en la próxima')}`);
     } else if (horasDesde < VENTANA_MINIMA_H) {
       /* SEIS HORAS, y el número no es una corazonada — es el tamaño que hace
        * falta para que un golpe diario no mande.
@@ -895,19 +962,40 @@ if (!SOLO_LOCAL) {
        *
        * Que difiera el veredicto NO es que dé verde sin medir: la lectura
        * anterior no se pisa (ver abajo), así que la ventana CRECE hasta que
-       * alcanza. Lo que sigue pendiente, y es la corrección de fondo: declarar
-       * el churn INTENCIONAL con su motivo —el rollup diario y el latido de las
-       * 6 cajas de `impresion_dispositivos`, que juntos son el 68% del total y
-       * ninguno de los dos es «una tabla que se reescribe sola»— y bajar el
-       * tope a lo que quede. Eso exige medir el resto sobre una ventana larga,
-       * y un número así no se inventa en una sesión. */
+       * alcanza. La corrección de fondo —declarar el churn INTENCIONAL con su
+       * motivo y sacarlo del tope— está hecha desde el 2026-09-23: ver
+       * `CHURN_INTENCIONAL`. Lo que queda pendiente es BAJAR el tope a lo que
+       * mide el resto, y eso exige una ventana larga medida con el desglose
+       * nuevo — un número así no se inventa en una sesión. */
       console.log(`\n  escrituras sin inserción: ${gris(`pasaron ${Math.round(horasDesde * 60)} min desde la lectura anterior — hacen falta ${VENTANA_MINIMA_H * 60} para que la tasa signifique algo`)}`);
     } else {
-      inutilesHora = Math.round((crudo - Number(prev.crudo)) / horasDesde);
+      /* Por tabla y en la ventana. Lo DECLARADO (`CHURN_INTENCIONAL`) no entra
+       * al tope: se juzga contra su propio techo estructural. Así el tope mide
+       * lo que dice medir —una tabla que se reescribe sola— y no el latido de
+       * las cajas o el recálculo de la madrugada, que eran el 68% del total y
+       * decidían el veredicto según a qué hora había corrido el gate. */
+      ventanaPorTabla = Object.entries(porTabla).map(([tabla, n]) => {
+        const delta = Math.max(0, n - Number(prev.porTabla[tabla] ?? 0));
+        return { tabla, delta, porHora: delta / horasDesde, filas: filasDe[tabla] ?? 0,
+                 declarada: CHURN_INTENCIONAL.find(d => d.tabla === tabla) ?? null };
+      }).sort((a, b) => b.delta - a.delta);
+      const vigilado = ventanaPorTabla.filter(t => !t.declarada)
+        .reduce((n, t) => n + t.delta, 0);
+      inutilesHora = Math.round(vigilado / horasDesde);
       medido.escriturasInutilesHora = inutilesHora;
+      const declaradoHora = Math.round(ventanaPorTabla.filter(t => t.declarada)
+        .reduce((n, t) => n + t.delta, 0) / horasDesde);
       console.log(`\n  escrituras sin inserción por hora: ${inutilesHora.toLocaleString('es')} `
                 + `(tope ${Number(baseline.escriturasInutilesHora).toLocaleString('es')}) `
-                + gris(`· medido contra la lectura de hace ${horasDesde.toFixed(1)} h`));
+                + gris(`· medido contra la lectura de hace ${horasDesde.toFixed(1)} h · `
+                     + `aparte, ${declaradoHora.toLocaleString('es')}/h de churn declarado`));
+      for (const t of ventanaPorTabla.filter(t => t.declarada)) {
+        const techo = techoDeclarado(t.declarada, t.filas, horasDesde);
+        if (t.delta > techo)
+          fallos.push(`${t.tabla} escribió ${t.delta.toLocaleString('es')} veces en ${horasDesde.toFixed(1)} h `
+                    + `contra un techo de ${techo.toLocaleString('es')} (${t.declarada.techoTexto}). `
+                    + `Está declarada como intencional, pero declarar no es un permiso para crecer: ${t.declarada.motivo}`);
+      }
     }
     /* La lectura anterior se pisa SÓLO si esta corrida logró juzgar.
      *
@@ -920,8 +1008,10 @@ if (!SOLO_LOCAL) {
      *
      * Conservándola, la ventana CRECE hasta que alcanza para juzgar y recién
      * ahí se reinicia. El gate converge en vez de volver a empezar. */
-    if (inutilesHora !== null || !prev || crudo < Number(prev.crudo ?? 0))
-      estadoNuevo = { crudo, medidoEn: new Date().toISOString() };
+    // `!prev.porTabla`: una lectura del formato viejo no sirve para juzgar
+    // nunca, así que conservarla dejaría al gate esperando para siempre.
+    if (inutilesHora !== null || !prev || !prev.porTabla || crudo < Number(prev.crudo ?? 0))
+      estadoNuevo = { crudo, porTabla, medidoEn: new Date().toISOString() };
     else
       console.log(gris('      (no se pisa la lectura anterior: la ventana sigue creciendo '
                      + 'hasta que alcance para juzgar)'));
@@ -929,10 +1019,21 @@ if (!SOLO_LOCAL) {
     // El desglose por tabla va con la vista LARGA —el acumulado desde que
     // arrancó el servidor— porque sirve para reconocer al culpable, no para
     // juzgar. Quien juzga es la tasa entre lecturas de arriba.
-    console.log(gris('      (desglose desde que arrancó el servidor, para ubicar de dónde sale)'));
-    for (const t of churn.slice(0, 6))
-      console.log(gris(`      ${String(Math.round(t.upd / horas)).padStart(6)}/h sobre ${String(t.filas).padStart(6)} filas `
-                + `· ${String(t.ins).padStart(5)} inserciones · ${String(t.pct_hot).padStart(3)}% HOT  ${t.tabla}`));
+    //
+    // Cuando hubo ventana, el desglose es EL DE LA VENTANA: es el que explica
+    // el número juzgado. El acumulado desde el arranque mezclaba siete días y
+    // seguía acusando a una tabla ya arreglada.
+    if (ventanaPorTabla) {
+      console.log(gris(`      (desglose de la ventana de ${horasDesde.toFixed(1)} h)`));
+      for (const t of ventanaPorTabla.slice(0, 8))
+        console.log(gris(`      ${String(Math.round(t.porHora)).padStart(6)}/h sobre ${String(t.filas).padStart(6)} filas  `
+                  + `${t.tabla}${t.declarada ? `  · declarada, techo ${techoDeclarado(t.declarada, t.filas, horasDesde).toLocaleString('es')} en la ventana` : ''}`));
+    } else {
+      console.log(gris('      (desglose desde que arrancó el servidor, para ubicar de dónde sale)'));
+      for (const t of churn.slice(0, 6))
+        console.log(gris(`      ${String(Math.round(t.upd / horas)).padStart(6)}/h sobre ${String(t.filas).padStart(6)} filas `
+                  + `· ${String(t.ins).padStart(5)} inserciones · ${String(t.pct_hot).padStart(3)}% HOT  ${t.tabla}`));
+    }
     if (inutilesHora !== null && inutilesHora > baseline.escriturasInutilesHora)
       fallos.push(`las escrituras sin inserción subieron a ${inutilesHora}/h contra ${baseline.escriturasInutilesHora}/h. `
                 + 'Una tabla que se reescribe sola no da error nunca: gasta WAL, ensucia los índices y '

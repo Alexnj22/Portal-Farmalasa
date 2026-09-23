@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1034.3 — gate:eficiencia — el churn intencional se declara y la lectura guarda el desglose por tabla
+
+D3 del plan de regreso. El 23-sep el gate marcó 2,104 escrituras sin inserción
+por hora contra un tope de 1,240, y no podía decir de quién eran: guardaba sólo
+el total, y el desglose que imprimía era el acumulado de siete días, que seguía
+acusando a `cortes_caja_movimientos`, ya arreglada.
+
+- La lectura guarda el conteo **por tabla**, y el desglose impreso es el de la
+  ventana juzgada.
+- `CHURN_INTENCIONAL` declara seis tablas que escriben seguido a propósito,
+  cada una con motivo y un techo **estructural**: el latido de las cajas de
+  impresión (120 por caja por hora), el reloj de repaso de cortes (20 por sala
+  por hora) y los cuatro recálculos nocturnos (como mucho una reescritura
+  completa por día). Salen del tope, pero si pasan su techo, fallan.
+- Una lectura del formato viejo se reemplaza y se juzga en la próxima: nunca da
+  verde por no haber podido medir.
+
+Probado con una ventana fabricada de 7 h: el latido desbocado y una tabla
+vigilada reescribiéndose fallan con su motivo, y el rollup dentro de su techo
+pasa. La primera ventana real se puede juzgar desde las 14:40 SV del 23-sep.
+
 ## v2.1034.2 — Ventas recorta por sala, y el estado de sincronización es de quien opera el inventario
 
 Tanda 2 de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md` (`20260923143952`).

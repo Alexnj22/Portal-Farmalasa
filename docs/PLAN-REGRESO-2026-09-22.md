@@ -65,6 +65,11 @@ Estado: ⬜ pendiente · 🔎 verificando · 🔧 corrigiendo · ✅ cerrado · 
   vistas que recargan al volver a la pestaña (bolsas, conteos,
   `get_cortes_por_embolsar`) también salen con 401 cuando esa vuelta cierra la
   sesión — ~50/día, sin daño.
+- **Medido el 23-sep (08:30 SV):** `soltar_push_del_equipo` 302 → **61** en 24 h,
+  y 44 de esas 61 son de las 3 h antes del despliegue (15:00 UTC); después, 17
+  en el resto del día — muy probablemente pestañas con la versión vieja, que no
+  se recargan solas. `mis_permisos_heredados` 97 → 16. Falta ver una tarde
+  entera de hoy para confirmar el residuo.
 
 ### A3 ✅ Movimiento de caja duplicado DESPUÉS de los frenos del 17-sep
 
@@ -187,7 +192,8 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
     leer los renglones del mes factura por factura. **F5b** (v2.1026.7,
     `20260922165346`) los lee por RANGO de `invoice_id` —los ids del mes son
     casi contiguos— y queda en **670 MB**, bajo el techo. 12/12 idénticas otra
-    vez. Estadística reseteada el 22-sep 16:54 UTC: mañana confirmar el promedio
+    vez. Estadística reseteada el 22-sep 16:54 UTC. ✅ **Confirmado el 23-sep:
+    263 MB** de promedio sobre 25 llamadas reales (techo 914). Antes: confirmar el promedio
     con tráfico real en `gate:perf`.
   - `refresh_primera_venta_producto` 388 vs 359 MB — **el único hallazgo de
     `gate:perf` que queda al cierre del 22-sep**, y es previo a este plan.
@@ -226,6 +232,16 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 - **Corregido (v2.1025.4), falta que la ventana de 6 h del gate lo mida:**
   `cortes_caja_movimientos` (561/h) — `sync-cortes-caja` refrescaba `visto_at`
   de todo el día en cada repaso. Ahora sólo si tiene más de 30 min.
+- **Medido el 23-sep:** el arreglo de cortes funciona (marcas de 4 a 15 min
+  de edad, no de 5). Pero el gate sigue en rojo, **2,104/h** sobre 24 h, y ya
+  no es por cortes: la ventana larga mete entero el latido de las 6 cajas de
+  impresión (hasta 720/h, acotado a uno cada 30 s por diseño; la pantalla
+  necesita un latido de menos de 2 min) y los recálculos nocturnos
+  (`product_stock_params` 5% HOT, `product_sales_rollup`, `product_last_sale`).
+  El gate lo tiene escrito como pendiente: declarar ese churn INTENCIONAL con
+  su motivo y bajar el tope a lo que quede. Para eso hace falta que la lectura
+  guarde el desglose POR TABLA — hoy guarda sólo el total y no puede decir de
+  quién es una subida. ⏸ trabajo del gate, no del portal.
 
 ### D4 ✅ Realtime publica `inventory_sync_log` — NO se saca
 
@@ -257,7 +273,7 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 - **E1 ✅** «Esa sala no tiene una caja registrada para imprimir» ~27/día: es
   POR DISEÑO — `encolar_impresion` rechaza y el portal lo toma como «este camino
   no está» y abre el diálogo de impresión. Ruido en el log, no una falla.
-- **E2 ✅ (v2.1028.1)** — corregido el 22-sep; el detalle de lo que estaba roto:
+- **E2 🔎 (v2.1028.1 + 20260923143322)** — la mitad de «Por revisar» seguía rota; ver abajo:
   Sale de la corrida nocturna de fichas (21:30):
   - **«Por revisar» no guarda NADA desde el 23-ago**: el motivo
     `sin_numero_erp` manda `erp_id: null` y la tabla lo exige NOT NULL con
@@ -280,7 +296,13 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
   - **Lo aplicado:** `erp_id` nullable + índice único parcial por ficha, upsert
     en dos sentencias, reintento fila por fila en la edge function, la fusión
     mueve las 16 referencias (y no fusiona si hay puntos: `fusion_con_puntos`).
-    Probado contra producción con rollback. **Falta ver la corrida de esta noche
+    Probado contra producción con rollback. **Corrida del 22-sep (21:30 SV), medida el 23:** las fusiones entran
+    (4, 0 fallidas), pero `a_revisar_no_guardados` siguió en **26 de 26**: el
+    vaciado de la temporal era un `DELETE` sin `WHERE` y `safeupdate` lo
+    rechaza bajo el API («DELETE requires a WHERE clause»). La prueba «con
+    rollback» se hizo como `postgres`, donde `safeupdate` no está — la misma
+    lección de A1. Corregido con `TRUNCATE` (`20260923143322`).
+    **Falta ver la corrida de esta noche
     (21:30 SV)**: que `a_revisar_no_guardados` sea 0 y que las fusiones entren.
 - **E3 ✅** `pedido_traslado_erp_uno_vivo` (5/día): por diseño — el despacho de
   900 productos va en varias corridas y cada una adopta la anterior; la edge

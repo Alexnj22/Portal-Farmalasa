@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1034.1 — «Por revisar» vuelve a guardar: el vaciado de la temporal chocaba con safeupdate
+
+La corrida de fichas del 22-sep ya fusionaba bien (4, 0 fallidas), pero
+`a_revisar_no_guardados` siguió en 26 de 26. `upsert_clientes_por_revisar`
+vaciaba su tabla temporal con un `DELETE` sin `WHERE`, y bajo el API la
+extensión `safeupdate` lo rechaza: «DELETE requires a WHERE clause». La
+corrección de ayer se había probado con `execute_sql` como `postgres`, donde
+`safeupdate` no está cargada, así que la prueba no podía verlo.
+
+Ahora vacía con `TRUNCATE`, y el resto del cuerpo es idéntico al que estaba
+vivo (md5 comprobado antes de aplicar). Migración `20260923143322`. Falta
+confirmarlo con la corrida de esta noche (21:30 SV).
+
+El plan de regreso queda con las mediciones del 23-sep: F5 confirmado
+(263 MB contra un techo de 914), los avisos de sesión cerrada bajaron de 302
+a 61, y `gate:eficiencia` sigue en rojo por el churn intencional (latido de
+cajas y recálculos nocturnos) que el gate todavía no sabe separar.
+
 ## v2.1034.0 — Cada cargo lee sólo las tablas de sus pantallas (tanda 1)
 
 Regla del usuario: «cada uno debe tener acceso solo a lo suyo, sin nada más»,

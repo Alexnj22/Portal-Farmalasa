@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1035.0 — El día que nadie cerró se cierra solo
+
+Regla del usuario (23-sep): una hora después de la hora de cierre, si la caja
+sigue abierta y hay un corte cerca del cierre, el portal emite el corte Z. A la
+mañana siguiente se le avisa a la sala —y a supervisión— que no lo hizo.
+
+Revisado antes en el propio sistema de la caja: no trae ningún cierre
+automático. Lo único que hace solo es un corte **C** a las 21:00 sobre la caja
+que siga abierta, y un C no es el cierre del día. Desde el 1-ago hubo dos días
+sin Z en las seis salas, los dos de Salud 5 (13-sep y 15-sep).
+
+- **Un solo juez**, `caja_cierre_automatico_decidir`: ya pasó una hora del
+  cierre, la caja de hoy está abierta, no hay Z, hay un corte C no descartado
+  desde una hora antes del cierre, y después de ese corte no entró efectivo sin
+  contar. Lo consultan el cron y `hacer-corte-caja` justo antes de emitir.
+- **`cierre-automatico-caja`** (nueva, cada 10 min de 17:00 a 23:50 SV) decide
+  en la base y sólo llama a `hacer-corte-caja` —el mismo camino que el botón
+  de la sala, con su freno de «un solo Z»— para la sala que cumple.
+- En el modo automático no frena «hay un corte sin confirmar»: el C de las
+  21:00 nace pendiente y a esa hora no queda nadie que lo firme.
+- **`caja_cierres_automaticos`** guarda qué pasó cada noche: cerrado (con el
+  número del Z) o no cerrado (y por qué).
+- **Aviso de las 7:00** (`avisar_dias_sin_cierre`, tipo `DIA_SIN_CIERRE`): «el
+  portal cerró el día solo» o «el día quedó sin cierre, avisen a supervisión».
+- `sala_hora_de_cierre` y `caja_falta_contra_corte` salen de adentro de
+  `sala_ya_cerro` y `caja_falta_por_contar`, que ahora les preguntan. Mismas
+  respuestas: 0 diferencias en 16,128 instantes y en 240 sala-días.
+
+Probado contra producción sin emitir nada: la sonda recorre cron → función →
+`hacer-corte-caja` → sistema de la caja → juez; sin el secreto las tres puertas
+contestan 401; y el aviso, dentro de un bloque que se deshace, arma los dos
+textos y no se repite en una segunda corrida.
+
 ## v2.1034.3 — gate:eficiencia — el churn intencional se declara y la lectura guarda el desglose por tabla
 
 D3 del plan de regreso. El 23-sep el gate marcó 2,104 escrituras sin inserción

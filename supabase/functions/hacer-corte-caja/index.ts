@@ -515,18 +515,40 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const quien = await requireActiveEmployeeUser(req, supabase);
-    if (!quien) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
-    const permiso = await permisoDeModulo(supabase, quien.id, "caja_vales", "can_edit");
-    if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
-    if (!permiso.puede) return json({ ok: false, error: "No tienes permiso para hacer el corte desde el portal." }, 403);
-    // El ALCANCE, que hasta el 31-ago no se miraba: `sala` viene del navegador y
-    // era lo único que decidía a qué caja se le hacía el corte. Quien tuviera el
-    // permiso podía cortar la caja de cualquiera de las siete salas, y un corte
-    // no se deshace. El módulo `caja_vales` no ofrecía alcance en la pantalla de
-    // permisos, así que tampoco había forma de acotarlo.
-    if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
-      return json({ ok: false, error: "Solo puedes hacer el corte de tu propia sala." }, 403);
+    /* ── EL CIERRE QUE HACE EL PORTAL SOLO (2026-09-23) ────────────────────
+     *
+     * Regla del usuario: una hora después de la hora de cierre, si la caja
+     * sigue abierta y hay un corte cerca del cierre, el portal emite el Z. Lo
+     * pide `cierre-automatico-caja` desde el cron, así que acá no hay una
+     * persona con sesión: entra con la llave de servicio (para pasar la puerta
+     * de la función) y con el secreto de invocación en su propia cabecera, que
+     * es lo que de verdad lo autoriza.
+     *
+     * Sólo emite **Z**: un corte C sin nadie que cuente sería inventar un
+     * conteo. Y quién puede hacerlo no lo decide quien llama: más abajo se le
+     * vuelve a preguntar al juez de la base, el mismo que usó el cron. */
+    const automatico = body.automatico === true;
+    let quien: Awaited<ReturnType<typeof requireActiveEmployeeUser>> = null;
+    if (automatico) {
+      const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
+      if (!secreto || req.headers.get("x-cierre-automatico") !== secreto) {
+        return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+      }
+      if (!esZ) return json({ ok: false, error: "El cierre automático sólo emite el corte Z." }, 400);
+    } else {
+      quien = await requireActiveEmployeeUser(req, supabase);
+      if (!quien) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+      const permiso = await permisoDeModulo(supabase, quien.id, "caja_vales", "can_edit");
+      if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
+      if (!permiso.puede) return json({ ok: false, error: "No tienes permiso para hacer el corte desde el portal." }, 403);
+      // El ALCANCE, que hasta el 31-ago no se miraba: `sala` viene del navegador y
+      // era lo único que decidía a qué caja se le hacía el corte. Quien tuviera el
+      // permiso podía cortar la caja de cualquiera de las siete salas, y un corte
+      // no se deshace. El módulo `caja_vales` no ofrecía alcance en la pantalla de
+      // permisos, así que tampoco había forma de acotarlo.
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+        return json({ ok: false, error: "Solo puedes hacer el corte de tu propia sala." }, 403);
+      }
     }
 
     const entrada = getErpBranchMap().find((e) => e.branchId === sala);
@@ -652,8 +674,36 @@ Deno.serve(async (req) => {
      * El día es el que la caja tiene ABIERTO, no el del reloj: una caja que
      * cruzó la medianoche sigue en su día. Misma lectura que `operar-caja`.
      *
-     * `simular` no escribe ni corta nada, así que no se frena: es una sonda. */
-    if (!simular) {
+     * `simular` no escribe ni corta nada, así que no se frena: es una sonda.
+     *
+     * ── En el cierre automático, estos dos frenos los reemplaza el JUEZ ────
+     * `caja_cierre_automatico_decidir` es el mismo que consultó el cron, y se
+     * le vuelve a preguntar acá porque entre la decisión y este punto pudo
+     * entrar una venta. Decide con la regla del usuario:
+     *
+     *   · «corte sin resolver» NO frena: el corte de las 21:00 que hace el
+     *     sistema de la caja solo nace pendiente, y a esa hora no queda nadie
+     *     que lo firme. Frenar por eso sería no cerrar nunca justo el día que
+     *     hace falta.
+     *   · «efectivo sin contar» se mide contra el corte cercano al cierre,
+     *     confirmado o no, que es el que la regla nombra. Si después de ese
+     *     corte entró plata, no se cierra.
+     *
+     * Va también con `simular`: es de sólo lectura, y es justo lo que una
+     * prueba del camino automático tiene que poder ver. */
+    if (automatico) {
+      const { data: juez, error: errJuez } = await supabase
+        .rpc("caja_cierre_automatico_decidir", { p_branch_id: sala });
+      // Un error no se lee como «procede»: un Z de más no se deshace.
+      if (errJuez) throw new Error(`consultando el cierre automático: ${errJuez.message}`);
+      if (juez?.procede !== true) {
+        return json({
+          ok: false, no_procede: true, motivo: juez?.motivo ?? null, decision: juez ?? null,
+          error: `El cierre automático no procede (${juez?.motivo ?? "sin respuesta"}).`,
+        }, 409);
+      }
+    }
+    if (!simular && !automatico) {
       const { data: apViva, error: errAp } = await supabase
         .from("cortes_caja_aperturas")
         .select("abierta_el")
@@ -966,7 +1016,9 @@ Deno.serve(async (req) => {
         const { data: creado, error } = await supabase.from("caja_vales_portal")
           .insert({
             branch_id: sala, fecha: mias[0].dia_abierto, monto: 0,
-            corte_id_al_abrir: corteAlAbrir, anotado_por: quien.id,
+            // `quien` existe siempre acá: el cierre automático sólo emite Z, y
+            // el Z no escribe vale (ver arriba).
+            corte_id_al_abrir: corteAlAbrir, anotado_por: quien!.id,
           })
           .select("id, erp_movimiento_id").single();
         if (error) throw new Error(`abriendo el vale: ${error.message}`);
@@ -1453,7 +1505,10 @@ Deno.serve(async (req) => {
      * No se lanza si falla: el corte YA está hecho y su respuesta es lo que
      * alguien está esperando frente a la caja. Queda en el log — y lo que se
      * pierde es la atribución, no el corte. */
-    if (ok && idCorte && !simular) {
+    /* El Z que el portal hace SOLO no tiene quién: no se inventa una persona.
+     * Su rastro es la fila de `caja_cierres_automaticos`, con el número del Z,
+     * que escribe `cierre-automatico-caja` con esta misma respuesta. */
+    if (ok && idCorte && !simular && quien) {
       const { error: errQuien } = await supabase.from("caja_cortes_del_portal").insert({
         branch_id: sala, erp_corte_id: Number(idCorte), hecho_por: quien.id, tipo,
       });

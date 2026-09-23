@@ -522,6 +522,7 @@ export const AREAS = [
         tablas: ['cortes_caja', 'cortes_caja_diferencia_personas', 'cortes_caja_diferencias',
                  'cortes_caja_eventos', 'cortes_caja_movimientos',
                  'cortes_caja_movimientos_historial', 'cortes_caja_aperturas',
+                 'caja_cierres_automaticos',
                  'cortes_caja_vistazos',
                  'caja_vales_portal', 'caja_aperturas_del_portal', 'caja_movimientos_portal',
                  'caja_tipos_movimiento', 'abonos_de_cliente', 'creditos_abonos_portal',
@@ -533,10 +534,12 @@ export const AREAS = [
         // `creditos-erp` va acá y no en Facturación: abonar a un crédito mete
         // EFECTIVO al cajón, y ese dinero cuenta para el corte del mismo día.
         edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja', 'hacer-corte-caja', 'operar-caja',
+               'cierre-automatico-caja',
                'creditos-erp', 'sync-creditos', 'avisar-creditos-vencidos', 'leer-pago-de-credito'],
         crons: ['cortes-caja-30s', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv',
                 'aperturas-caja-30min', 'aperturas-manana-antes-de-las-7',
                 'aperturas-manana-hasta-la-hora-tope',
+                'cierre-automatico-caja', 'dias-sin-cierre-0700-sv',
                 'creditos-cada-10min', 'creditos-barrido-completo', 'creditos-vencidos-0800-sv'],
         docs: ['docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md', 'docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md',
                'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],

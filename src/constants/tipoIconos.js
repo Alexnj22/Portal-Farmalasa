@@ -69,6 +69,8 @@ export const ICONO_POR_TIPO = {
     // mismo trabajo visto dos veces, no dos asuntos.
     CORTE_NUEVO:      Wallet,
     CORTE_PENDIENTE:  Wallet,
+    // El día que nadie cerró: el mismo trabajo de caja, visto a la mañana.
+    DIA_SIN_CIERRE:   Wallet,
     // El mismo `Landmark` con el que el circuito de bolsas rotula «Depósitos al
     // banco»: el aviso lleva a esa sección y tiene que verse como ella.
     DEPOSITO_BANCO:   Landmark,

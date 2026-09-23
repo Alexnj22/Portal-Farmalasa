@@ -878,6 +878,23 @@ cerrados que se llevaron efectivo sin contar. Su `YA_PASADOS` lleva los dos
 históricos **con su monto escrito**; una entrada nueva ahí es sólo para un día
 cerrado que no se puede reparar, nunca para que el gate calle.
 
+### El día que NADIE cerró lo cierra el portal (2026-09-23)
+
+Una hora después de la hora de cierre, si la caja sigue abierta y hay un corte
+C no descartado desde una hora antes del cierre, `cierre-automatico-caja` (cron
+cada 10 min, 17:00–23:50 SV) emite el Z por `hacer-corte-caja` en modo
+`automatico`. El juez es **`caja_cierre_automatico_decidir`**, uno solo: lo
+consulta el cron y lo vuelve a consultar `hacer-corte-caja` justo antes de
+emitir. A las 7:00, `avisar_dias_sin_cierre` le avisa a la sala y a supervisión.
+
+**El sistema de la caja NO lo hace** (revisado en su configuración el 23-sep):
+lo único automático es un corte **C** a las 21:00:00 sobre la caja abierta.
+Ese C nace PENDIENTE y nadie lo firma, y por eso en el modo automático **no
+frena «corte sin resolver»**: frenaría justo el día que hace falta cerrar.
+«Efectivo sin contar» sí frena, medido contra ese corte cercano al cierre
+(`caja_falta_contra_corte`) aunque no esté confirmado. Al tocar cualquiera de
+los tres frenos de arriba, mirar también la rama `automatico`.
+
 ---
 
 ## MIN·MAX: ABC/XYZ son SOLO clasificación (decisión, no bug)

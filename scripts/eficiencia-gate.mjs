@@ -416,6 +416,28 @@ const CRONS = [
           + 'que hacer.',
   },
   {
+    job: 'cierre-automatico-caja', slug: 'cierre-automatico-caja', cadencia: '*/10 23,0-5 * * *',
+    corridasDia: 42, sistema: 0,
+    motivo: 'El día que nadie cerró se cierra solo (2026-09-23): una hora después de la hora de '
+          + 'cierre, si la caja sigue abierta y hay un corte cerca del cierre, emite el Z. Cada 10 '
+          + 'minutos entre las 17:00 y las 23:50 SV. `sistema: 0` es cierto en la noche normal y '
+          + 'no siempre: la decisión se toma ENTERA en la base (`caja_cierre_automatico_salas`), '
+          + 'así que una sala que ya hizo su Z o que todavía está en horario no le cuesta ni una '
+          + 'petición al sistema de la caja. Sólo una sala que cumple la regla —medido desde el '
+          + '1-ago: dos días en siete semanas— llama a `hacer-corte-caja`, que es el mismo camino '
+          + 'que el botón de la sala: login, sesión de la sala, el listado para comprobar que no '
+          + 'haya Z, el panel de la apertura y el formulario del Z (~8 peticiones), una vez por '
+          + 'sala y por día porque después el juez contesta «ya tiene Z».',
+  },
+  {
+    job: 'dias-sin-cierre-0700-sv', slug: null, cadencia: '0 13 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'SQL puro: `avisar_dias_sin_cierre` le avisa a la sala y a supervisión, a las 7:00 SV, '
+          + 'que el día anterior nadie hizo el cierre — si el portal lo cerró solo o si quedó sin '
+          + 'cierre y por qué. No toca el sistema de origen. Se declara porque un cron de SQL puro '
+          + 'es invisible al barrido de `functions/v1/`.',
+  },
+  {
     job: 'cierre-del-dia-hora-tope', slug: null, cadencia: '50 5 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: no llama a ninguna función ni toca el sistema de origen. Es la RED del '

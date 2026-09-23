@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1036.5 — Tarjeta de corte: sólo la diferencia
+
+«Contado y ventas que no vayan ahí, solo las diferencias» (usuario, 23-sep).
+El panel de la tarjeta de corte de caja queda con la diferencia sola; la
+persona, la sala y la píldora de estado no cambian.
+
 ## v2.1036.4 — Tres lecturas lentas y un error de permisos al volver a la pestaña
 
 - **Facturación › Observaciones** revisaba las 374,743 facturas de la historia

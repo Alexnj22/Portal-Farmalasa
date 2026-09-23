@@ -95,8 +95,8 @@ const personaDe = (id, nombre, buscarEmpleado) => {
 };
 
 /* ── El corte de caja ─────────────────────────────────────────────────────
- * Quién lo hizo, en qué sala y a qué hora; y en el panel, lo contado, lo
- * vendido y la diferencia de ESTE corte, con color. Confirmar y Descartar los
+ * Quién lo hizo y en qué sala; y en el panel, la diferencia de ESTE corte,
+ * con color. Confirmar y Descartar los
  * pone la tarjeta general, debajo. */
 const CORTE = {
     cuadra:     { tono: 'verde',   Icono: Check,        pildora: 'Cuadró' },
@@ -120,11 +120,9 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
     const diferencia = datos.estado === 'sin_conteo' ? 'Sin conteo'
         : datos.estado === 'cuadra' ? '$0.00'
         : `${datos.tramo > 0 ? '+' : '−'}${formatMoney(Math.abs(datos.tramo))}`;
-    const panel = [
-        datos.contado != null && { etiqueta: 'Contado', valor: formatMoney(datos.contado) },
-        datos.ventas != null && { etiqueta: 'Ventas', valor: formatMoney(datos.ventas) },
-        { etiqueta: 'Diferencia', valor: diferencia, clase: tono.texto },
-    ].filter(Boolean);
+    // Sólo la diferencia (usuario, 23-sep: «contado y ventas que no vayan
+    // ahí, solo las diferencias»).
+    const panel = [{ etiqueta: 'Diferencia', valor: diferencia, clase: tono.texto }];
 
     return (
         <div className="flex flex-col gap-2 mt-1.5">

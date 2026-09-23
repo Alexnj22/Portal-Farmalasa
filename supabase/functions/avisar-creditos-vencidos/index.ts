@@ -12,6 +12,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // puede estar de vacaciones, haberse ido, o simplemente no hacerlo: un aviso
 // que llega sólo a quien ya lo sabe no cierra ningún circuito.
 //
+// ── Quién recibe el push (usuario, 23-sep) ─────────────────────────────────
+// «Que el push de créditos vencidos le llegue al jefe y subjefe. Y a
+// Supervisor cuántos hay por sucursal y el monto.» Así que son TRES avisos:
+//  · jefe/a y subjefe/a de la sala → el de su sala, con push.
+//  · quien vendió (si no es jefatura) → el mismo, sólo en la campana.
+//  · Supervisor/a de Ventas → UNO solo con todas las salas, con push.
+//
 // ── Uno por SALA, no uno por crédito ───────────────────────────────────────
 // Son 34 créditos vencidos hoy repartidos en cinco salas. Treinta y cuatro
 // avisos es ruido que se aprende a ignorar en una semana; cinco que dicen
@@ -56,14 +63,15 @@ Deno.serve(async (req) => {
     // vendió, en silencio y por meses.
     const salas = [...new Set(filas.map((f) => f.branch_id).filter(Boolean))];
     const { data: jefes, error: e2 } = await supabase
-      .from('employees').select('id, branch_id, role_id')
+      .from('employees').select('id, branch_id, role_id, secondary_role_id')
       .in('branch_id', salas).eq('status', 'ACTIVO');
     if (e2) throw new Error(`employees: ${e2.message}`);
 
-    const JEFE_DE_SALA = 19;
+    const JEFATURA = new Set([19, 20]);   // Jefe/a de Sala, Subjefe/a de Sala
+    const SUPERVISOR_DE_VENTAS = 13;
     const porSala = new Map<number, string[]>();
     for (const j of jefes ?? []) {
-      if (j.role_id !== JEFE_DE_SALA) continue;
+      if (!JEFATURA.has(j.role_id) && !JEFATURA.has(j.secondary_role_id)) continue;
       const arr = porSala.get(j.branch_id) ?? [];
       arr.push(String(j.id));
       porSala.set(j.branch_id, arr);
@@ -82,7 +90,8 @@ Deno.serve(async (req) => {
     }
 
     const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
-    const claves = [...grupos.keys()].map((b) => `credito_vencido:${b}:${hoy}`);
+    const claveResumen = `credito_vencido_resumen:${hoy}`;
+    const claves = [...[...grupos.keys()].map((b) => `credito_vencido:${b}:${hoy}`), claveResumen];
     const { data: yaAvisados, error: e3 } = await supabase
       .from('notifications').select('metadata').in('metadata->>check_key', claves);
     if (e3) throw new Error(`notifications: ${e3.message}`);
@@ -94,26 +103,61 @@ Deno.serve(async (req) => {
       const checkKey = `credito_vencido:${branchId}:${hoy}`;
       if (yaEstan.has(checkKey)) continue;
 
-      const destinatarios = [...new Set([
-        ...g.vendedores,
-        ...(porSala.get(branchId) ?? []),
-      ])].filter(Boolean);
-      if (!destinatarios.length) continue;
+      const jefatura = new Set(porSala.get(branchId) ?? []);
+      const vendedores = [...g.vendedores].filter((id) => !jefatura.has(id));
+      if (!jefatura.size && !vendedores.length) continue;
 
-      // Un fallo en UNA sala no puede tumbar la corrida. Y como la clave lleva
-      // el día adentro, lo que quede sin avisar hoy NO se reintenta mañana: se
-      // anota y se sigue.
-      const { error: e4 } = await supabase.rpc('notify_employees', {
-        p_recipients: destinatarios,
+      const aviso = {
         p_type: 'CREDITO_VENCIDO',
         p_title: g.n === 1 ? 'Un crédito se pasó del mes' : `${g.n} créditos se pasaron del mes`,
         p_body: `${g.sala}: ${money(g.total)} sin cobrar. El más viejo lleva ${g.dias} días.`,
         p_link: `/cuentas-por-cobrar?sala=${branchId}&ver=VENCIDOS`,
         p_metadata: { check_key: checkKey, branch_id: branchId, creditos: g.n, total: g.total, dias: g.dias },
-        p_push: true,
-      });
-      if (e4) { fallidos.push(`${checkKey}: ${e4.message}`); continue; }
+      };
+
+      // Un fallo en UNA sala no puede tumbar la corrida. Y como la clave lleva
+      // el día adentro, lo que quede sin avisar hoy NO se reintenta mañana: se
+      // anota y se sigue.
+      let fallo = '';
+      if (jefatura.size) {
+        const { error } = await supabase.rpc('notify_employees', { ...aviso, p_recipients: [...jefatura], p_push: true });
+        if (error) fallo = error.message;
+      }
+      if (vendedores.length) {
+        const { error } = await supabase.rpc('notify_employees', { ...aviso, p_recipients: vendedores, p_push: false });
+        if (error) fallo = fallo || error.message;
+      }
+      if (fallo) { fallidos.push(`${checkKey}: ${fallo}`); continue; }
       avisados++;
+    }
+
+    // ── El resumen de supervisión: cuántos y cuánto, por sala ──────────────
+    if (!yaEstan.has(claveResumen)) {
+      const { data: sups, error: e5 } = await supabase
+        .from('employees').select('id')
+        .eq('status', 'ACTIVO')
+        .or(`role_id.eq.${SUPERVISOR_DE_VENTAS},secondary_role_id.eq.${SUPERVISOR_DE_VENTAS}`);
+      if (e5) {
+        fallidos.push(`${claveResumen}: employees: ${e5.message}`);
+      } else if ((sups ?? []).length) {
+        const orden = [...grupos.values()].sort((a, b) => b.total - a.total);
+        const n = orden.reduce((s, g) => s + g.n, 0);
+        const total = orden.reduce((s, g) => s + g.total, 0);
+        const { error: e6 } = await supabase.rpc('notify_employees', {
+          p_recipients: (sups ?? []).map((x) => String(x.id)),
+          p_type: 'CREDITO_VENCIDO',
+          p_title: `${n === 1 ? 'Un crédito vencido' : `${n} créditos vencidos`} · ${money(total)}`,
+          p_body: orden.map((g) => `${g.sala}: ${g.n} (${money(g.total)})`).join(' · '),
+          p_link: '/cuentas-por-cobrar?ver=VENCIDOS',
+          p_metadata: {
+            check_key: claveResumen, creditos: n, total,
+            salas: orden.map((g) => ({ sala: g.sala, creditos: g.n, total: g.total })),
+          },
+          p_push: true,
+        });
+        if (e6) fallidos.push(`${claveResumen}: ${e6.message}`);
+        else avisados++;
+      }
     }
 
     // `ok: false` cuando algo quedó sin avisar, y con el detalle: una corrida

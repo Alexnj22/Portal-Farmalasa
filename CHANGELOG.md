@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1035.3 — Créditos vencidos: push a jefatura y resumen por sala a supervisión
+
+_(pendiente de redactar)_
+
 ## v2.1035.2 — Los avisos que sólo iban a la campana suenan en el teléfono
 
 «Que tengan push» (usuario, 23-sep). Todo aviso que sólo llegaba a la campana

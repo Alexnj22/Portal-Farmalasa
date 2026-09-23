@@ -122,11 +122,19 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
                         <Store className="w-4 h-4" />
                     </span>
                 )}
+                {/* El rótulo arriba, como en la columna de la derecha: sin él
+                    la cara no decía qué hizo esa persona (usuario, 23-sep). Es
+                    quien HIZO el corte; confirmarlo es el paso que falta. */}
                 <div className="min-w-0 leading-tight">
-                    <p className="text-body-sm font-bold truncate">{emp ? shortEmployeeName(emp) : datos.sala}</p>
-                    {emp && datos.sala && (
-                        <p className={`text-caption font-semibold truncate mt-0.5 ${claseTenue}`}>{datos.sala}</p>
-                    )}
+                    <p className={`text-caption font-black uppercase tracking-wide truncate ${claseTenue}`}>
+                        Hizo el corte
+                    </p>
+                    <p className="text-body-sm font-bold truncate mt-0.5">
+                        {/* La sala va en el título del aviso; acá sólo quién. */}
+                        {/* Sin ficha ligada el portal no sabe quién fue: se dice así,
+                            como en la tarjeta de aperturas, y no se inventa un nombre. */}
+                        {emp ? shortEmployeeName(emp) : 'Desde la caja'}
+                    </p>
                 </div>
             </div>
             <div className={`flex flex-col justify-center items-end px-2.5 py-2 leading-tight ${tono.texto}`}>

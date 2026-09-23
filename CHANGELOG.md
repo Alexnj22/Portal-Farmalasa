@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1037.1 — Tarjeta de corte: quién hizo el corte y la sala en el título
+
+«Dónde está el nombre que diga o haga alusión y se entienda que esa persona es
+quien confirmó el corte» (usuario, 23-sep). La persona de la tarjeta es quien
+HIZO el corte —el aviso sale mientras el corte espera confirmación—, así que:
+
+- La columna izquierda lleva el rótulo «HIZO EL CORTE» sobre el nombre, igual
+  que la derecha lleva FALTANTE/SOBRANTE sobre el monto. Sin ficha ligada dice
+  «Desde la caja» en vez de inventar un nombre.
+- La sala pasa al título, que no entraba junto al nombre:
+  «Salud 4 · Corte de las 1:06 p. m.» (`notificar_corte_de_caja`, migración
+  `20260923225514_aviso_de_corte_con_la_sala_en_el_titulo`).
+
 ## v2.1037.0 — Ventas: pestaña Inyecciones — qué ventas cobraron la aplicación
 
 «¿Cuáles de esas ventas de inyección pagaron la aplicación?» (usuario, 23-sep).

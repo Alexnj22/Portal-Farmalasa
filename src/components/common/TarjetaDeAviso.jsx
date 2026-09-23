@@ -6,9 +6,11 @@ import NotificacionDetalle from './NotificacionDetalle';
 import { AnilloDeMeta, CuerpoDeCierreDeMeta, CuerpoDeCierreDeEmpresa, CuerpoDeCierreDelDia } from './CierreDeMeta';
 import { AnilloDeFaltante, CuerpoDeFaltanteDeCaja } from './TarjetaDeFaltante';
 import { AnilloDeAperturas, CuerpoDeAperturas } from './TarjetaDeAperturas';
+import { InsigniaDeCreditos, CuerpoDeCreditos } from './TarjetaDeCreditos';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
 import { datosDeAperturasDeLaManana } from '../../utils/aperturasDeLaManana';
+import { datosDeCreditosVencidos } from '../../utils/creditosVencidos';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import {
@@ -162,6 +164,8 @@ const TarjetaDeAviso = ({
        la escala de cumplimiento — están todas o falta alguna, no hay franja
        naranja entre las dos. */
     const aperturas = datosDeAperturasDeLaManana(n);
+    /* Créditos que se pasaron del mes: el de una sala o el resumen de todas. */
+    const creditos = datosDeCreditosVencidos(n);
 
     const corte = acciones?.corteDe?.(n) ?? null;
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
@@ -197,6 +201,8 @@ const TarjetaDeAviso = ({
                     <AnilloDeFaltante datos={faltante} isDark={isDark} />
                 ) : aperturas ? (
                     <AnilloDeAperturas datos={aperturas} isDark={isDark} />
+                ) : creditos ? (
+                    <InsigniaDeCreditos datos={creditos} isDark={isDark} />
                 ) : conAnillo ? (
                     <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                 ) : (
@@ -216,7 +222,7 @@ const TarjetaDeAviso = ({
                         diría en palabras lo mismo que está arriba en números.
                         Sin montos el `body` ya viene escrito en porcentaje y se
                         deja tal cual. */}
-                    {((!conAnillo && !faltante && !aperturas) || (cierre && cierre.venta == null)) && n.body && (
+                    {((!conAnillo && !faltante && !aperturas && !creditos) || (cierre && cierre.venta == null)) && n.body && (
                         <CuerpoDeAviso
                             id={n.id}
                             texto={n.body}
@@ -238,6 +244,9 @@ const TarjetaDeAviso = ({
                     {aperturas && (
                         <CuerpoDeAperturas datos={aperturas} claseTenue={cx.rowBody}
                             isDark={isDark} buscarEmpleado={buscarEmpleado} />
+                    )}
+                    {creditos && (
+                        <CuerpoDeCreditos datos={creditos} claseTenue={cx.rowBody} isDark={isDark} />
                     )}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}

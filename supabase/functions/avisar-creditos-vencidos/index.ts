@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
         p_title: g.n === 1 ? 'Un crédito se pasó del mes' : `${g.n} créditos se pasaron del mes`,
         p_body: `${g.sala}: ${money(g.total)} sin cobrar. El más viejo lleva ${g.dias} días.`,
         p_link: `/cuentas-por-cobrar?sala=${branchId}&ver=VENCIDOS`,
-        p_metadata: { check_key: checkKey, branch_id: branchId, creditos: g.n, total: g.total, dias: g.dias },
+        p_metadata: { check_key: checkKey, branch_id: branchId, sala: g.sala, creditos: g.n, total: g.total, dias: g.dias },
       };
 
       // Un fallo en UNA sala no puede tumbar la corrida. Y como la clave lleva
@@ -151,7 +151,8 @@ Deno.serve(async (req) => {
           p_link: '/cuentas-por-cobrar?ver=VENCIDOS',
           p_metadata: {
             check_key: claveResumen, creditos: n, total,
-            salas: orden.map((g) => ({ sala: g.sala, creditos: g.n, total: g.total })),
+            salas: [...grupos].sort((a, b) => b[1].total - a[1].total)
+              .map(([b, g]) => ({ branch_id: b, sala: g.sala, creditos: g.n, total: g.total, dias: g.dias })),
           },
           p_push: true,
         });

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1035.4 — Créditos vencidos: tarjeta moderna en la campana
+
+«Las notificaciones se deben ver modernas, como las de metas» (usuario,
+23-sep). El aviso de créditos vencidos deja de ser una frase:
+
+- Monto grande primero, cuántos créditos, y cuántos días lleva el más viejo.
+- En el resumen de supervisión, una fila por sala con barra contra la que más
+  debe, cantidad y monto.
+- El color sale de la antigüedad: naranja pasado el plazo, rojo desde 60 días.
+
+`TarjetaDeCreditos.jsx` + `utils/creditosVencidos.js`, conectados en
+`TarjetaDeAviso`. `avisar-creditos-vencidos` manda ahora `sala`, `branch_id` y
+`dias` por sala en el metadata (redesplegada, v5).
+
 ## v2.1035.3 — Créditos vencidos: push a jefatura y resumen por sala a supervisión
 
 Pedido del usuario (23-sep): «que el push de créditos vencidos le llegue al

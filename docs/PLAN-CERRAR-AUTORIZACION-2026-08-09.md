@@ -54,10 +54,16 @@ romperlo, dime: esto está mal, debería ser de esta forma»*.
 > real, **ningún cargo perdió filas a medias**, y los 89 casos que pasaron a 0
 > son cargos sin permiso para esa pantalla (cruzado contra `role_permissions`).
 >
-> **Siguiente:** el recorte por SALA de las que la pantalla ya recorta
-> (`sales_invoice_changelog`, `ventas_monthly_stats` con su fila `-1`,
-> `product_stock_params_history`, `metas_sucursal`); `inventory_sync_log`
-> (decidir qué hace el indicador de sincronización del menú); y la Fase 2.
+> **Tanda 2 aplicada el 2026-09-23** (`20260923143952`, v2.1034.1). Recorte por
+> SALA en `sales_invoice_changelog` y `ventas_monthly_stats`: `ventas` es el único
+> módulo de la tanda 1 con cargos de alcance de sala; minmax, metas, inventario y
+> sync_health sólo los tienen cargos ALL, así que ahí no había nada que recortar.
+> Jefe/a de Sala pasa de 14,154 a 972 filas de cambios de factura (su sala), que
+> es lo que su pantalla ya pedía. `inventory_sync_log` pasa a Inventario o
+> Actualización de datos, y el recuadro «Datos» del menú sólo se dibuja con uno
+> de esos permisos (decisión del usuario); la campana de al lado sigue para todos.
+>
+> **Fase 1 terminada.** **Siguiente: Fase 2** (tablas calientes, staging y ventana).
 >
 > ⚠️ **Lección de medición:** medir con el DDL aplicado DENTRO de una
 > transacción mantiene tomadas las tablas con ACCESS EXCLUSIVE mientras dura; una

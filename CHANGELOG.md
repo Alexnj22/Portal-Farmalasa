@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1034.2 — Ventas recorta por sala, y el estado de sincronización es de quien opera el inventario
+
+Tanda 2 de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md` (`20260923143952`).
+
+- Los cambios de facturas y las ventas por vendedor: los cargos de sala leen
+  sólo su sala, que es lo que su pantalla ya les mostraba. Quien ve todas las
+  salas no cambia.
+- El registro de sincronización de existencias pasa a Inventario o Actualización
+  de datos, y el recuadro «Datos» del menú (los puntos por sala) sólo aparece con
+  uno de esos permisos. La campana de notificaciones, al lado, sigue para todos.
+
+Simulado por cargo antes de aplicar, sin tomar las tablas. Con esto termina la
+Fase 1; sigue la Fase 2 (tablas grandes, con ventana y staging).
+
 ## v2.1034.1 — «Por revisar» vuelve a guardar: el vaciado de la temporal chocaba con safeupdate
 
 La corrida de fichas del 22-sep ya fusionaba bien (4, 0 fallidas), pero

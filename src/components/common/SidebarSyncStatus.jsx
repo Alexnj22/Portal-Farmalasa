@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { fetchInventorySyncLogRecent } from '../../data/inventory';
 import { usePushSubscription } from '../../hooks/usePushSubscription';
 import { useNowTick } from '../../hooks/useNowTick';
+import { useAuth } from '../../context/AuthContext';
 
 const WARN_MINS  = 8;
 const STALE_MINS = 15;
@@ -18,6 +19,13 @@ function dotClass(minsAgo, hasError) {
 
 export default function SidebarSyncStatus() {
   const [branches, setBranches] = useState([]);
+  // El estado de la sincronización es de quien opera el inventario o mira la
+  // salud de los datos. Desde el 2026-09-22 `inventory_sync_log` sólo la leen
+  // esos dos módulos (regla del usuario: «cada uno solo lo suyo»), así que para
+  // los demás el recuadro no se pide ni se dibuja — vacío se leería como «los
+  // datos no se actualizan». La campana de al lado es de todos y no cambia.
+  const { hasPermission } = useAuth();
+  const veDatos = hasPermission('inventario', 'can_view') || hasPermission('sync_health', 'can_view');
   const { permission, subscribed, subscribe, isSupported } = usePushSubscription();
 
   const fetchLatest = useCallback(async () => {
@@ -45,6 +53,7 @@ export default function SidebarSyncStatus() {
   }, []);
 
   useEffect(() => {
+    if (!veDatos) return undefined;
     fetchLatest(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
     const timer = setInterval(fetchLatest, 90_000);
     const channel = supabase
@@ -52,7 +61,7 @@ export default function SidebarSyncStatus() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inventory_sync_log' }, aplicarEvento)
       .subscribe();
     return () => { clearInterval(timer); supabase.removeChannel(channel); };
-  }, [fetchLatest, aplicarEvento]);
+  }, [fetchLatest, aplicarEvento, veDatos]);
 
   const now       = useNowTick();
   const hasErrors = branches.some(b => !b.success);
@@ -75,9 +84,10 @@ export default function SidebarSyncStatus() {
   const timeAgoCls = 'text-[rgb(var(--sidebar-ink)/0.25)]';
 
   return (
-    <div className="grid grid-cols-2 gap-1.5">
+    <div className={`grid ${veDatos ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5`}>
 
       {/* ── Left: sync status ─────────────────────────────────────────────── */}
+      {veDatos && (
       <div className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 border ${cardCls}`}>
         {/* Label row */}
         <div className="flex items-center gap-1 mb-0.5">
@@ -114,6 +124,7 @@ export default function SidebarSyncStatus() {
           </span>
         )}
       </div>
+      )}
 
       {/* ── Right: notification bell ──────────────────────────────────────── */}
       {!isSupported ? (

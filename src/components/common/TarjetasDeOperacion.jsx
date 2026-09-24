@@ -4,6 +4,7 @@ import {
     ArrowRight, Truck, Store, Clock, SlidersHorizontal, ShoppingBag, Landmark,
     FileWarning, ReceiptText, ClipboardCheck, Package, PackageCheck, PackageX,
     FileX, CreditCard, UserRound, Users, Wallet, HandCoins, ArrowLeftRight, PackagePlus, Trash2, CalendarDays,
+    Undo2, Scale,
 } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
@@ -997,6 +998,267 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado, e
                         <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Por qué lo pide</p>
                         <p className="text-body-sm font-semibold break-words mt-0.5">{enOracion(datos.motivo)}</p>
                     </div>
+                )}
+            </Grilla>
+        </div>
+    );
+}
+
+/* ── Séptima tanda (usuario, 24-sep) ──────────────────────────────────────
+ * Las respuestas: a un traslado que pedí, a un envío que mandé, a una
+ * solicitud mía, y el paso en que va una diferencia de un pedido. Las cuatro
+ * con las mismas piezas: quién respondió con su cara, qué producto o qué
+ * venta, y el porqué cuando lo hay. */
+
+/* Un bloque de texto a todo el ancho, con su rótulo. */
+const Bloque = ({ rotulo, children, claseTenue, claseRotulo = '' }) => (
+    <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
+        <p className={`text-caption font-black uppercase tracking-wide ${claseRotulo || claseTenue}`}>{rotulo}</p>
+        <div className="text-body-sm font-semibold break-words mt-0.5">{children}</div>
+    </div>
+);
+
+const RESPUESTA = {
+    ENVIA:    { tono: 'verde',   Icono: PackageCheck, persona: 'Lo envía' },
+    PARTE:    { tono: 'naranja', Icono: Package,      persona: 'Lo envía' },
+    NO:       { tono: 'rojo',    Icono: PackageX,     persona: 'Lo revisó' },
+    RECIBIDO: { tono: 'verde',   Icono: PackageCheck, persona: 'Lo recibió' },
+    DEVUELVE: { tono: 'naranja', Icono: Undo2,        persona: 'Lo recibió' },
+};
+const deRespuesta = (e) => RESPUESTA[e] ?? RESPUESTA.ENVIA;
+
+export function InsigniaDeRespuesta({ datos, isDark }) {
+    const r = deRespuesta(datos.estado);
+    return <Disco tono={tonos(isDark)[r.tono]} Icono={r.Icono} />;
+}
+
+export function CuerpoDeRespuesta({ datos, claseTenue, isDark, buscarEmpleado }) {
+    const t = tonos(isDark);
+    const r = deRespuesta(datos.estado);
+    const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
+    const esEnvio = datos.tipo === 'envio';
+    /* Cuánto sale de cada producto, en su color: entero en verde, una parte en
+     * naranja, nada en rojo. En un rechazo, lo que se había pedido. */
+    const pildora = (p) => {
+        if (datos.estado === 'NO') return p.pedida != null ? <Pildora tono={t.gris}>Pediste {unidades(p.pedida)}</Pildora> : null;
+        if (p.enviada === 0) return <Pildora tono={t.rojo}>No va</Pildora>;
+        if (p.enviada != null && p.pedida != null && p.enviada < p.pedida) {
+            return <Pildora tono={t.naranja}>Van {unidades(p.enviada)} de {unidades(p.pedida)}</Pildora>;
+        }
+        return p.enviada != null ? <Pildora tono={t.verde}>Van {unidades(p.enviada)}</Pildora> : null;
+    };
+    return (
+        <div className="@container">
+            <Grilla columnas="1fr">
+                <CeldaPersona emp={emp} rotulo={r.persona} respaldo={datos.quien ?? datos.origen ?? datos.sala ?? '—'} claseTenue={claseTenue} />
+
+                {!esEnvio && datos.productos.length > 0 && (
+                    <ul className="bg-surface-card-hover divide-y divide-border-card">
+                        {datos.productos.map((p, i) => (
+                            <li key={`${p.nombre}-${i}`} className="px-2.5 py-2">
+                                <p className="text-body-sm font-black break-words leading-snug">{p.nombre}</p>
+                                {pildora(p) && <div className="mt-1 text-caption">{pildora(p)}</div>}
+                            </li>
+                        ))}
+                        {datos.mas > 0 && (
+                            <li className={`px-2.5 py-1.5 text-caption font-semibold ${claseTenue}`}>
+                                y {datos.mas === 1 ? '1 producto más' : `${datos.mas} productos más`}
+                            </li>
+                        )}
+                    </ul>
+                )}
+
+                {esEnvio && (
+                    <div className="bg-surface-card-hover px-2.5 py-2 flex flex-wrap gap-x-4 gap-y-1 text-body-sm">
+                        {datos.aceptados != null && (
+                            <span className="whitespace-nowrap"><span className={`font-semibold ${claseTenue}`}>Se quedó con</span>{' '}
+                                <b className={`font-black ${t.verde.texto}`}>{datos.aceptados}</b></span>
+                        )}
+                        {datos.devueltos.length > 0 && (
+                            <span className="whitespace-nowrap"><span className={`font-semibold ${claseTenue}`}>Devuelve</span>{' '}
+                                <b className={`font-black ${t.naranja.texto}`}>{datos.devueltos.length}</b></span>
+                        )}
+                        {datos.noLlegaron > 0 && (
+                            <span className="whitespace-nowrap"><span className={`font-semibold ${claseTenue}`}>No llegaron</span>{' '}
+                                <b className={`font-black ${t.rojo.texto}`}>{datos.noLlegaron}</b></span>
+                        )}
+                    </div>
+                )}
+                {esEnvio && datos.devueltos.length > 0 && (
+                    <ul className="bg-surface-card-hover divide-y divide-border-card">
+                        {datos.devueltos.map((p, i) => (
+                            <li key={`${p.nombre}-${i}`} className="px-2.5 py-2">
+                                <p className="text-body-sm font-black break-words leading-snug">{p.nombre}</p>
+                                {p.motivo && <p className={`text-caption font-semibold mt-0.5 ${claseTenue}`}>{enOracion(p.motivo)}</p>}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+                {esEnvio && datos.noLlegaron > 0 && (
+                    <Bloque rotulo="Ojo" claseTenue={claseTenue} claseRotulo={t.rojo.texto}>
+                        {datos.noLlegaron === 1 ? 'Un producto no llegó en la caja.' : `${datos.noLlegaron} productos no llegaron en la caja.`}
+                        {' '}Revisa si quedó en tu sala.
+                    </Bloque>
+                )}
+
+                {(datos.motivo || datos.nota) && (
+                    <Bloque rotulo={datos.estado === 'NO' ? 'Por qué no' : 'Por qué no va todo'} claseTenue={claseTenue}>
+                        {[datos.motivo, datos.nota].filter(Boolean).map(enOracion)
+                            .map((t) => (/[.!?]$/.test(t) ? t : `${t}.`)).join(' ')}
+                    </Bloque>
+                )}
+                {datos.alternativa && (
+                    <Bloque rotulo="Dónde más hay" claseTenue={claseTenue} claseRotulo={t.azul.texto}>
+                        {/* Sin `enOracion`: bajaría a minúscula las salas («salud 3»). */}
+                        {datos.alternativa.replace(/^sí hay en /i, '').replace(/^./, (c) => c.toUpperCase())}
+                    </Bloque>
+                )}
+            </Grilla>
+        </div>
+    );
+}
+
+/* ── Lo que decidieron sobre mi solicitud ─────────────────────────────── */
+export function InsigniaDeDecision({ datos, isDark }) {
+    const t = tonos(isDark);
+    return <Disco tono={datos.aprobada ? t.verde : t.rojo} Icono={datos.aprobada ? Check : CircleOff} />;
+}
+
+export function CuerpoDeDecision({ datos, claseTenue, isDark, buscarEmpleado }) {
+    const t = tonos(isDark);
+    const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
+    const rango = rangoDeFechas(datos.desde, datos.hasta);
+    const pares = [
+        [
+            datos.fecha && { k: 'fecha', rotulo: 'Fecha', valor: fechaCorta(datos.fecha) },
+            datos.monto != null && { k: 'monto', rotulo: 'Monto', valor: formatMoney(datos.monto) },
+            datos.doc && { k: 'doc', rotulo: 'Documento', valor: datos.doc },
+        ],
+        [
+            datos.antes && { k: 'antes', rotulo: 'Era', valor: conMayuscula(datos.antes) },
+            datos.despues && { k: 'despues', rotulo: datos.antes ? 'Pasa a' : 'Nuevo', valor: conMayuscula(datos.despues),
+                clase: datos.aprobada ? t.verde.texto : '' },
+        ],
+    ];
+    return (
+        <div className="@container">
+            <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
+                <CeldaPersona emp={emp} rotulo={datos.aprobada ? 'La aprobó' : 'La rechazó'}
+                    respaldo={datos.quien ?? '—'} claseTenue={claseTenue} />
+
+                {datos.producto && (
+                    <Bloque rotulo="Producto" claseTenue={claseTenue}>
+                        <span className="font-black">{datos.producto}</span>
+                        {datos.sala && <span className={`font-semibold ${claseTenue}`}> · {datos.sala}</span>}
+                    </Bloque>
+                )}
+                {(datos.min != null || datos.max != null) && (
+                    <Bloque rotulo={datos.aprobada ? 'Queda en' : 'Pediste'} claseTenue={claseTenue}
+                        claseRotulo={datos.aprobada ? t.verde.texto : ''}>
+                        <span className="font-black tabular-nums">MIN {datos.min ?? '—'} · MAX {datos.max ?? '—'}</span>
+                    </Bloque>
+                )}
+
+                {pares.flatMap((grupo) => {
+                    const celdas = grupo.filter(Boolean);
+                    return celdas.map((c, i) => {
+                        const sola = i === celdas.length - 1 && i % 2 === 0;
+                        return (
+                            <Celda key={c.k} rotulo={c.rotulo} clase={c.clase} claseTenue={claseTenue}
+                                derecha={!sola && i % 2 === 1} apilable sola={sola}>
+                                {c.valor}
+                            </Celda>
+                        );
+                    });
+                })}
+
+                {rango && <Bloque rotulo="Fechas" claseTenue={claseTenue}>{rango}</Bloque>}
+
+                {datos.productos.length > 0 && (
+                    <ul className="bg-surface-card-hover divide-y divide-border-card" style={{ gridColumn: '1 / -1' }}>
+                        {datos.productos.map((p, i) => (
+                            <li key={`${p.nombre}-${i}`} className="flex items-center justify-between gap-3 px-2.5 py-1.5">
+                                <span className="text-caption font-bold break-words min-w-0">{p.nombre}</span>
+                                {p.cantidad != null && (
+                                    <span className="flex-shrink-0 text-body-sm font-black tabular-nums">×{unidades(p.cantidad)}</span>
+                                )}
+                            </li>
+                        ))}
+                        {datos.mas > 0 && (
+                            <li className={`px-2.5 py-1.5 text-caption font-semibold ${claseTenue}`}>
+                                y {datos.mas === 1 ? '1 producto más' : `${datos.mas} productos más`}
+                            </li>
+                        )}
+                    </ul>
+                )}
+
+                {datos.nota && (
+                    <Bloque rotulo={datos.aprobada ? 'Nota' : 'Por qué'} claseTenue={claseTenue}
+                        claseRotulo={datos.aprobada ? '' : t.rojo.texto}>
+                        {enOracion(datos.nota)}
+                    </Bloque>
+                )}
+                {datos.instruccion && (
+                    <Bloque rotulo="Falta hacer" claseTenue={claseTenue} claseRotulo={t.naranja.texto}>
+                        {datos.instruccion}
+                    </Bloque>
+                )}
+            </Grilla>
+        </div>
+    );
+}
+
+/* ── Una diferencia de un pedido ──────────────────────────────────────────
+ * El producto manda; debajo qué pasó y en cuánto, la salida que se propone o
+ * que quedó, y quién movió el paso. */
+const DIFERENCIA = {
+    propuesta:       { tono: 'azul',    persona: 'La propone',  salida: 'Propone' },
+    contrapropuesta: { tono: 'naranja', persona: 'La propone',  salida: 'Bodega propone' },
+    escalada:        { tono: 'rojo',    persona: 'La rechazó',  salida: 'Se había propuesto' },
+    acordada:        { tono: 'verde',   persona: 'La aceptó',   salida: 'Quedó en' },
+    confirmada:      { tono: 'verde',   persona: 'La cerró',    salida: 'Quedó en' },
+};
+const deDiferencia = (e) => DIFERENCIA[e] ?? DIFERENCIA.propuesta;
+
+export function InsigniaDeDiferencia({ datos, isDark }) {
+    const d = deDiferencia(datos.estado);
+    const tono = tonos(isDark)[d.tono];
+    return <Disco tono={tono} Icono={datos.estado === 'confirmada' ? Check : Scale} />;
+}
+
+export function CuerpoDeDiferencia({ datos, claseTenue, isDark, buscarEmpleado }) {
+    const t = tonos(isDark);
+    const d = deDiferencia(datos.estado);
+    const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
+    const cantidades = datos.recibida != null && datos.enviada != null;
+    return (
+        <div className="@container">
+            <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
+                {datos.producto && (
+                    <div className="bg-surface-card-hover px-2.5 py-2 min-w-0" style={{ gridColumn: '1 / -1' }}>
+                        <p className="text-body-sm font-black break-words leading-snug">{datos.producto}</p>
+                    </div>
+                )}
+                {datos.que && (
+                    <Celda rotulo="Qué pasó" claseTenue={claseTenue} apilable sola={!cantidades}>{datos.que}</Celda>
+                )}
+                {cantidades && (
+                    <Celda rotulo="Llegaron" claseTenue={claseTenue} derecha={!!datos.que} apilable sola={!datos.que}>
+                        {unidades(datos.recibida)} de {unidades(datos.enviada)}
+                    </Celda>
+                )}
+                {datos.salida && (
+                    <Bloque rotulo={d.salida} claseTenue={claseTenue} claseRotulo={t[d.tono].texto}>
+                        <span className="font-black">{datos.salida}</span>
+                    </Bloque>
+                )}
+                {(emp || datos.quien) && (
+                    <CeldaPersona emp={emp} rotulo={d.persona} respaldo={datos.quien ?? '—'} claseTenue={claseTenue} />
+                )}
+                {datos.nota && (
+                    <Bloque rotulo={datos.estado === 'escalada' ? 'Por qué no' : 'Nota'} claseTenue={claseTenue}>
+                        {enOracion(datos.nota)}
+                    </Bloque>
                 )}
             </Grilla>
         </div>

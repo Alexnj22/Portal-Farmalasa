@@ -593,13 +593,51 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
  * Va en el aviso y no sólo en la pantalla del detalle: quien pidió la anulación
  * es una sala, y lo que abre es el aviso.
  */
+/* Lo que dibuja la tarjeta de la campana (24-sep): la solicitud en datos —la
+ * factura, qué cambia, los productos, las fechas— y la nota de quien decidió.
+ * Quién decidió NO va acá: lo firma `avisar_a_empleados` con la sesión de quien
+ * llama, así que no se puede escribir a mano. */
+const DOC_DE = { CCF: 'Crédito fiscal', COF: 'Consumidor final' };
+const numero = (v) => (v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+const decisionParaLaTarjeta = (requestType, typeLabel, status, m, approverNote, instruccion) => {
+    const items = Array.isArray(m.items) ? m.items : [];
+    const cambio = {
+        PAYMENT_CHANGE_REQUEST: [m.current_pago, m.new_pago],
+        VENDOR_CHANGE_REQUEST:  [m.current_vendor_name, m.new_vendor_name],
+        CLIENT_CHANGE_REQUEST:  [m.current_cliente, m.new_client_name],
+    }[requestType] ?? [null, null];
+    const d = {
+        tipo: requestType,
+        etiqueta: typeLabel,
+        estado: status,
+        sala: m.branch_name || null,
+        fecha: m.fecha || null,
+        monto: numero(m.total ?? m.monto),
+        doc: DOC_DE[m.tipo_documento] || null,
+        antes: cambio[0] || null,
+        despues: cambio[1] || null,
+        productos: items.slice(0, 3).map(it => ({
+            nombre: it.descripcion || it.nombre || 'Producto',
+            cantidad: numero(it.cantidad),
+        })),
+        mas: Math.max(items.length - 3, 0) || null,
+        desde: m.startDate || m.date || null,
+        hasta: m.endDate || null,
+        nota: approverNote || null,
+        instruccion: instruccion || null,
+    };
+    return Object.fromEntries(Object.entries(d).filter(([, v]) => v !== null && !(Array.isArray(v) && v.length === 0)));
+};
+
 const notifyEmployee = async (employeeId, approverId, requestType, status, approverNote, reqMetadata = {}, instruccion = null) => {
     const typeLabel = REQUEST_TYPES[requestType]?.label || requestType;
     const isApproved = status === 'APPROVED';
     const cola = instruccion ? ` ${instruccion}` : '';
     await notifyEmployees([String(employeeId)], {
         type: 'REQUEST_DECIDED',
-        title: isApproved ? `${typeLabel} aprobada` : `${typeLabel} rechazada`,
+        // El estado va después del rótulo y no concordando con él: «Abono por
+        // aprobar aprobada» o «Descarte de inventario aprobada» no se leen.
+        title: `${typeLabel} · ${isApproved ? 'Aprobada' : 'Rechazada'}`,
         body: isApproved
             ? `Tu solicitud de ${typeLabel} fue aprobada.${approverNote ? ` Nota: "${approverNote}"` : ''}${cola}`
             : `Tu solicitud de ${typeLabel} fue rechazada.${approverNote ? ` Motivo: "${approverNote}"` : ''}`,
@@ -630,6 +668,7 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
             amount: reqMetadata.amount || null,
             // Constancia
             certificateType: reqMetadata.certificateType || null,
+            decision: decisionParaLaTarjeta(requestType, typeLabel, status, reqMetadata || {}, approverNote, instruccion),
         },
     });
 };

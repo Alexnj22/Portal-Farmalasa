@@ -305,3 +305,86 @@ export function datosDeSolicitud(n) {
         motivo: s.motivo ? String(s.motivo) : null,
     };
 }
+
+/* ── Séptima tanda (24-sep): respuestas, decisiones y diferencias ─────────
+ * Los tres devuelven null si el aviso no trae su bloque: un aviso viejo sigue
+ * saliendo como texto. */
+
+/** La respuesta a un traslado pedido, o a un envío (`REQUEST_RESOLVED`). */
+export function datosDeRespuesta(n) {
+    if (n?.type !== 'REQUEST_RESOLVED') return null;
+    const r = n.metadata?.respuesta;
+    if (!r || !r.tipo || !r.estado) return null;
+    const lista = (v) => (Array.isArray(v) ? v : []).filter((p) => p && p.nombre);
+    return {
+        tipo: String(r.tipo),
+        estado: String(r.estado),
+        quien: r.quien ? String(r.quien) : null,
+        quienId: r.quien_id || null,
+        quienFoto: r.quien_foto || null,
+        origen: r.origen ? String(r.origen) : null,
+        sala: r.sala ? String(r.sala) : null,
+        productos: lista(r.productos).map((p) => ({
+            nombre: String(p.nombre), pedida: num(p.pedida), enviada: num(p.enviada),
+        })),
+        mas: num(r.mas) ?? 0,
+        motivo: r.motivo ? String(r.motivo) : null,
+        nota: r.nota ? String(r.nota) : null,
+        alternativa: r.alternativa ? String(r.alternativa) : null,
+        aceptados: num(r.aceptados),
+        devueltos: lista(r.devueltos).map((p) => ({ nombre: String(p.nombre), motivo: p.motivo ? String(p.motivo) : null })),
+        noLlegaron: num(r.no_llegaron),
+    };
+}
+
+/** Lo que decidieron sobre MI solicitud (`REQUEST_DECIDED`, `MINMAX_DECIDED`). */
+export function datosDeDecision(n) {
+    if (n?.type !== 'REQUEST_DECIDED' && n?.type !== 'MINMAX_DECIDED') return null;
+    const d = n.metadata?.decision;
+    if (!d || !d.estado) return null;
+    return {
+        tipo: d.tipo ? String(d.tipo) : null,
+        etiqueta: d.etiqueta ? String(d.etiqueta) : null,
+        aprobada: d.estado === 'APPROVED',
+        quien: d.quien ? String(d.quien) : null,
+        quienId: d.quien_id || null,
+        quienFoto: d.quien_foto || null,
+        sala: d.sala ? String(d.sala) : null,
+        fecha: d.fecha || null,
+        monto: num(d.monto),
+        doc: d.doc ? String(d.doc) : null,
+        antes: d.antes != null ? String(d.antes) : null,
+        despues: d.despues != null ? String(d.despues) : null,
+        producto: d.producto ? String(d.producto) : null,
+        min: num(d.min),
+        max: num(d.max),
+        productos: (Array.isArray(d.productos) ? d.productos : []).filter((p) => p && p.nombre)
+            .map((p) => ({ nombre: String(p.nombre), cantidad: num(p.cantidad) })),
+        mas: num(d.mas) ?? 0,
+        desde: d.desde || null,
+        hasta: d.hasta || null,
+        nota: d.nota ? String(d.nota) : null,
+        instruccion: d.instruccion ? String(d.instruccion) : null,
+    };
+}
+
+/** Una diferencia de un pedido, en el paso en que está (`PEDIDO_DIFERENCIA`). */
+export function datosDeDiferencia(n) {
+    if (n?.type !== 'PEDIDO_DIFERENCIA') return null;
+    const d = n.metadata?.diferencia;
+    if (!d || !d.estado) return null;
+    return {
+        producto: d.producto ? String(d.producto) : null,
+        sala: d.sala ? String(d.sala) : null,
+        estado: String(d.estado),
+        que: d.que ? String(d.que) : null,
+        enviada: num(d.enviada),
+        recibida: num(d.recibida),
+        problema: num(d.problema),
+        salida: d.salida ? String(d.salida) : null,
+        nota: d.nota ? String(d.nota) : null,
+        quien: d.quien ? String(d.quien) : null,
+        quienId: d.quien_id || null,
+        quienFoto: d.quien_foto || null,
+    };
+}

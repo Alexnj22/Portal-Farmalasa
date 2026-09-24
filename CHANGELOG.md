@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1048.0 — Tarjetas: respuesta a un traslado, decisión y diferencia de pedido
+
+Séptima tanda de tarjetas de la campana (usuario, 24-sep: «continuemos»):
+
+- **Respuesta a un traslado** (`REQUEST_RESOLVED`, el aviso más frecuente:
+  ~1,800 al mes). Título con la sala que responde y sin emoji: «Bodega te lo
+  envía», «Salud 2 te envía una parte», «Salud 2 no te lo puede enviar». La
+  tarjeta dice quién respondió con su cara y cada producto con cuánto va
+  («Van 2 de 3», «No va»), por qué no va todo y dónde más hay.
+- **Respuesta a un envío**: «Bodega recibió tu envío / te devuelve producto»,
+  con cuántos se quedó, cuáles devuelve y por qué, y cuántos no llegaron.
+- **Solicitud decidida** (`REQUEST_DECIDED`, `MINMAX_DECIDED`): título
+  «Anulación de factura · Aprobada» —el rótulo ya no concuerda mal («Abono por
+  aprobar aprobada»)—; quién la aprobó o rechazó con su cara, la venta o el
+  producto, la nota o el motivo, y lo que falta hacer. El nombre y la foto de
+  quien decidió los agrega `avisar_a_empleados` con la sesión: no se pueden
+  escribir desde el navegador.
+- **Diferencia de pedido**: el producto, qué pasó y cuántos llegaron, la salida
+  propuesta o acordada y quién movió el paso. Sin número de pedido.
+
+Migración `20260924180010`.
+
 ## v2.1047.1 — Traslado: «Hay 52 en Salud 3»
 
 La existencia del traslado se lee «Hay 52 en Salud 3» y no «Hay en Salud 3

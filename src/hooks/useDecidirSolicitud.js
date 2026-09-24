@@ -86,7 +86,7 @@ export function useDecidirSolicitud({ onAplicado } = {}) {
             if (fila.requested_by_id) {
                 notifyEmployees([String(fila.requested_by_id)], {
                     type: 'MINMAX_DECIDED',
-                    title: aprobo ? '✅ Ajuste Min/Max aprobado' : '❌ Ajuste Min/Max rechazado',
+                    title: `Ajuste de MIN·MAX · ${aprobo ? 'Aprobado' : 'Rechazado'}`,
                     body: aprobo
                         ? `Tu propuesta para ${fila.product_name} (${ERP_NAMES[fila.erp_sucursal_id] ?? fila.erp_sucursal_id}) fue aplicada: MIN ${fila.requested_min} · MAX ${fila.requested_max}.`
                         : `Tu propuesta para ${fila.product_name} fue rechazada.${nota ? ' Motivo: ' + nota : ''}`,
@@ -98,6 +98,17 @@ export function useDecidirSolicitud({ onAplicado } = {}) {
                         erp_sucursal_id: fila.erp_sucursal_id,
                         requested_min: fila.requested_min, requested_max: fila.requested_max,
                         note: nota || null,
+                        // La tarjeta de la campana (24-sep). Quién decidió lo
+                        // agrega `avisar_a_empleados` con la sesión.
+                        decision: {
+                            tipo: 'MINMAX',
+                            etiqueta: 'Ajuste de MIN·MAX',
+                            estado: aprobo ? 'APPROVED' : 'REJECTED',
+                            producto: fila.product_name,
+                            sala: ERP_NAMES[fila.erp_sucursal_id] ?? null,
+                            min: fila.requested_min, max: fila.requested_max,
+                            ...(nota ? { nota } : {}),
+                        },
                     },
                 }).catch(e => console.error('notify MINMAX:', e?.message ?? e));
             }

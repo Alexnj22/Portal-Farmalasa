@@ -15,6 +15,8 @@ import {
     InsigniaDeAlertaDeVentas, CuerpoDeAlertaDeVentas, InsigniaDeFacturaDeSala, CuerpoDeFacturaDeSala,
     InsigniaDeCortesPendientes, CuerpoDeCortesPendientes, InsigniaDePedido, CuerpoDePedido,
     InsigniaDeSolicitud, CuerpoDeSolicitud, PRODUCTOS_VISIBLES,
+    InsigniaDeRespuesta, CuerpoDeRespuesta, InsigniaDeDecision, CuerpoDeDecision,
+    InsigniaDeDiferencia, CuerpoDeDiferencia,
 } from './TarjetasDeOperacion';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
@@ -24,6 +26,7 @@ import {
     datosDeCorteNuevo, datosDeBitacoraPorVencer, datosDeTrasladosPorRespaldo, TRASLADOS_VISIBLES,
     datosDeMinmaxPendiente, datosDeBolsaNoCuadra, datosDeDeposito,
     datosDeAlertaDeVentas, datosDeFacturaDeSala, datosDeCortesPendientes, datosDePedido, datosDeSolicitud,
+    datosDeRespuesta, datosDeDecision, datosDeDiferencia,
 } from '../../utils/avisosDeOperacion';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -202,8 +205,14 @@ const TarjetaDeAviso = ({
     const cortesPend = datosDeCortesPendientes(n);
     const pedidoAv   = datosDePedido(n);
     const solicitud  = datosDeSolicitud(n);
+    const respuesta  = datosDeRespuesta(n);
+    const decision   = datosDeDecision(n);
+    const diferencia = datosDeDiferencia(n);
+    // Las tarjetas que ya muestran a la persona con su cara: la fila general
+    // de «quién y qué sala» la repetiría.
+    const conPersona = solicitud || respuesta || decision || diferencia;
     const conTarjeta = creditos || corteNuevo || bitacora || traslados || minmaxPend || bolsa || deposito
-        || alertaCcf || factSala || cortesPend || pedidoAv || solicitud;
+        || alertaCcf || factSala || cortesPend || pedidoAv || solicitud || respuesta || decision || diferencia;
 
     const corte = acciones?.corteDe?.(n) ?? null;
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
@@ -263,6 +272,12 @@ const TarjetaDeAviso = ({
                     <InsigniaDePedido datos={pedidoAv} isDark={isDark} />
                 ) : solicitud ? (
                     <InsigniaDeSolicitud datos={solicitud} isDark={isDark} />
+                ) : respuesta ? (
+                    <InsigniaDeRespuesta datos={respuesta} isDark={isDark} />
+                ) : decision ? (
+                    <InsigniaDeDecision datos={decision} isDark={isDark} />
+                ) : diferencia ? (
+                    <InsigniaDeDiferencia datos={diferencia} isDark={isDark} />
                 ) : conAnillo ? (
                     <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                 ) : (
@@ -350,6 +365,18 @@ const TarjetaDeAviso = ({
                         <CuerpoDeSolicitud datos={solicitud} claseTenue={cx.rowBody} isDark={isDark}
                             buscarEmpleado={buscarEmpleado} expandida={expandida} />
                     )}
+                    {respuesta && (
+                        <CuerpoDeRespuesta datos={respuesta} claseTenue={cx.rowBody} isDark={isDark}
+                            buscarEmpleado={buscarEmpleado} />
+                    )}
+                    {decision && (
+                        <CuerpoDeDecision datos={decision} claseTenue={cx.rowBody} isDark={isDark}
+                            buscarEmpleado={buscarEmpleado} />
+                    )}
+                    {diferencia && (
+                        <CuerpoDeDiferencia datos={diferencia} claseTenue={cx.rowBody} isDark={isDark}
+                            buscarEmpleado={buscarEmpleado} />
+                    )}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}
                             isDark={isDark} buscarEmpleado={buscarEmpleado} />
@@ -362,7 +389,7 @@ const TarjetaDeAviso = ({
                         aparecía en ninguna parte. Acá van como dato, con la cara
                         adelante —que es lo que de verdad se reconoce— y sin
                         costar una consulta: las dos salen de la fila. */}
-                    {(quien || sucursal) && !solicitud && (
+                    {(quien || sucursal) && !conPersona && (
                         <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
                             {quien && (
                                 <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />

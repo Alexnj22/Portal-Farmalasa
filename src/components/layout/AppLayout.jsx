@@ -128,12 +128,14 @@ const MENU_GROUPS = [
     { key: 'promociones', label: 'Promociones', icon: Gift, modules: ['promociones'] },
     { key: 'producto',     label: 'Producto',      icon: Package,       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a sucursales', icon: ClipboardList, modules: ['pedidos'] },
-    // `gestion_stock` e `inventario` van PRIMERO y no al final de la lista
+    // `inventario` y `gestion_stock` van PRIMERO y no al final de la lista
     // (pedido del usuario, 2026-08-08): las dos eran pestañas de Productos y
-    // son las dos preguntas con las que alguien entra a este grupo —qué se
-    // vende sin parámetros, y qué existencia hay hoy—. Min/Max y el Conteo son
-    // lo que se hace *después* de haberlas mirado.
-    { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['gestion_stock', 'inventario', 'minmax', 'ventas_perdidas', 'conteo_inventario'] },
+    // son las dos preguntas con las que alguien entra a este grupo —qué
+    // existencia hay hoy, y qué hacer con la que no se mueve—. Min/Max y el
+    // Conteo son lo que se hace *después* de haberlas mirado. Inventario
+    // arriba de Gestión de stock (usuario, 2026-09-24): es la que da nombre al
+    // grupo y la que más se abre.
+    { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['inventario', 'gestion_stock', 'minmax', 'ventas_perdidas', 'conteo_inventario'] },
     // Bitácoras va en grupo PROPIO (pedido del usuario, 2026-08-17) y no dentro
     // de Inventario. No es una pregunta sobre la existencia: es el expediente
     // que la Superintendencia de Regulación Sanitaria pide ver en una

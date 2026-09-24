@@ -1229,7 +1229,12 @@ thead.sticky,
   --shimmer-sweep:        rgba(255,255,255,0.14);
   --shimmer-sweep-strong: rgba(255,255,255,0.28);
 
-  --surface-tab-active: rgba(255,255,255,0.14); /* fix blindspot §22: ya no pill blanco puro sobre glass oscuro */
+  /* fix blindspot §22: ya no pill blanco puro sobre glass oscuro. Y tampoco
+     blanco al 14% (usuario, 2026-09-24: «el activo se ve blanco, se pierde el
+     modo oscuro»): sobre el vidrio azul noche se leía como una píldora gris
+     clara. Es el `--brand-text` de este tema (#60A5FA) al 18%: la pestaña
+     activa se lee azul y oscura, del mismo color que el resto de la marca. */
+  --surface-tab-active: rgba(96,165,250,0.18);
 
   --card-shadow:        inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.50);
   --card-shadow-hover:  inset 0 1px 0 rgba(255,255,255,0.10), 0 16px 40px rgba(0,0,0,0.65);

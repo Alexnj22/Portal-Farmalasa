@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.1 — Menú: Inventario antes que Gestión de stock; pestaña activa azul en Liquid oscuro
+
+- **Menú:** en el grupo Inventario, «Inventario» va primero y «Gestión de
+  stock» después (usuario, 2026-09-24).
+- **Pestaña activa en Liquid oscuro:** `--surface-tab-active` pasa de blanco al
+  14% a `--brand-text` al 18% (`rgba(96,165,250,0.18)`). «El activo se ve
+  blanco, se pierde el modo oscuro»: sobre el vidrio azul noche se leía como
+  una píldora gris clara. Sólo cambia ese tema; el token lo usan las pestañas
+  de todas las vistas y sus hovers.
+
 ## v2.1060.0 — Envíos: a Bodega sólo completo según la regla de despacho; aviso de poco a otra sala
 
 Pedido del usuario: «a Bodega no se pueden enviar productos en unidades

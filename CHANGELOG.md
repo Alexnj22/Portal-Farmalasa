@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1051.1 — Resumen de promociones con todas las salas y barras
+
+Resumen diario de promociones, segunda vuelta (usuario, 24-sep: «mejora
+este»): cada sala en su celda, **todas y siempre en el mismo orden** —también
+las que van en cero—, con una barra de lo que vendió frente a la sala que más
+vendió; «quedan 6 días» en vez de la fecha (en naranja desde 3 días). Tres
+columnas en escritorio y dos en un teléfono de 320 px. Migración
+`20260924210913`.
+
 ## v2.1051.0 — Promociones: resumen diario para supervisión
 
 Promociones (usuario, 24-sep: «¿cuál es la diferencia? como supervisor quiero

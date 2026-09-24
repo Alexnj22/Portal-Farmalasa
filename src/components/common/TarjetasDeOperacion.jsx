@@ -1496,6 +1496,17 @@ export function InsigniaDePromo({ datos, isDark }) {
     return <Disco tono={t.gris} Icono={Tag} />;
 }
 
+/* Cuántos días le quedan a una fecha «AAAA-MM-DD», contados en fechas del
+ * calendario y no en horas: hoy es 0. */
+const diasHasta = (iso) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ''));
+    if (!m) return null;
+    const hoy = new Date();
+    const a = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    const b = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return Math.round((b - a) / 86400000);
+};
+
 const nombreDelMes = (ym) => {
     const m = /^(\d{4})-(\d{2})/.exec(String(ym ?? ''));
     return m ? `${['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][Number(m[2]) - 1]} ${m[1]}` : null;
@@ -1508,11 +1519,17 @@ export function CuerpoDePromo({ datos, claseTenue, isDark }) {
      * promoción, con lo vendido y cuánto va cada sala. La sala y su cifra van
      * separadas por «:» para que dos números no se lean como uno. */
     if (datos.tipo === 'resumen') {
+        /* Segunda vuelta (24-sep: «mejora este»): cada sala en su celda, en
+         * el mismo orden en todas las promociones y con las que van en cero,
+         * con una barra de lo que vendió frente a la sala que más vendió. Así
+         * se compara de un vistazo, que es para lo que es el resumen. */
         return (
             <Grilla columnas="1fr">
-                <ul className="bg-surface-card-hover divide-y divide-border-card">
-                    {datos.promociones.map((pr) => (
-                        <li key={pr.nombre} className="px-2.5 py-2 min-w-0">
+                {datos.promociones.map((pr) => {
+                    const tope = Math.max(1, ...pr.salas.map((x) => x.vendido));
+                    const dias = diasHasta(pr.fin);
+                    return (
+                        <div key={pr.nombre} className="bg-surface-card-hover px-2.5 py-2 min-w-0">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                     <p className="text-body-sm font-black break-words leading-snug">{pr.nombre}</p>
@@ -1520,33 +1537,45 @@ export function CuerpoDePromo({ datos, claseTenue, isDark }) {
                                         {pr.productos != null && (
                                             <span className="whitespace-nowrap">{pr.productos === 1 ? '1 producto' : `${pr.productos} productos`}</span>
                                         )}
-                                        {pr.fin && <span className="whitespace-nowrap">termina el {fechaCorta(pr.fin)}</span>}
+                                        {dias != null && (
+                                            <span className={`whitespace-nowrap ${dias <= 3 ? t.naranja.texto : ''}`}>
+                                                {dias <= 0 ? 'termina hoy' : dias === 1 ? 'queda 1 día' : `quedan ${dias} días`}
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
                                 <p className="flex-shrink-0 text-right leading-tight">
-                                    <b className="block text-body-sm font-black tabular-nums">{unidades(pr.vendido)}</b>
+                                    <b className="block text-title font-black tabular-nums">{unidades(pr.vendido)}</b>
                                     <span className={`text-caption font-semibold ${claseTenue}`}>vendidas</span>
                                 </p>
                             </div>
                             {pr.salas.length > 0 && (
-                                <p className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-caption">
+                                /* 4.5rem: dos columnas desde ~150 px de ancho, o sea
+                                   también en un teléfono de 320 px; con 5.5 caía a
+                                   una sola y la tarjeta se volvía larguísima. */
+                                <div className="mt-2 grid gap-x-2.5 gap-y-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))' }}>
                                     {pr.salas.map((sa) => (
-                                        <span key={sa.sala} className="whitespace-nowrap">
-                                            <span className={`font-semibold ${claseTenue}`}>{sa.sala}:</span>{' '}
-                                            <b className="font-black tabular-nums">{unidades(sa.vendido)}</b>
-                                        </span>
+                                        <div key={sa.sala} className="min-w-0">
+                                            <div className="flex items-baseline justify-between gap-1 text-caption">
+                                                <span className={`font-semibold break-words min-w-0 ${claseTenue}`}>{sa.sala}</span>
+                                                <b className={`font-black tabular-nums ${sa.vendido === 0 ? claseTenue : ''}`}>{unidades(sa.vendido)}</b>
+                                            </div>
+                                            <div className="mt-1 h-1 rounded-full bg-border-card overflow-hidden" data-medida="dato">
+                                                <div className={`h-full ${t.azul.barra}`} style={{ width: `${Math.round(sa.vendido / tope * 100)}%` }} />
+                                            </div>
+                                        </div>
                                     ))}
-                                </p>
+                                </div>
                             )}
-                            {pr.porAgotarse.map((b, i) => (
-                                <p key={i} className="text-caption mt-1">
+                            {pr.porAgotarse.map((bj, i) => (
+                                <p key={i} className="text-caption mt-2">
                                     <span className={`font-black uppercase tracking-wide ${t.naranja.texto}`}>Por agotarse</span>{' '}
-                                    <span className="font-semibold">{b.producto} — {b.sala}: {unidades(b.vendido)} de {unidades(b.asignado)}</span>
+                                    <span className="font-semibold">{bj.producto} — {bj.sala}: {unidades(bj.vendido)} de {unidades(bj.asignado)}</span>
                                 </p>
                             ))}
-                        </li>
-                    ))}
-                </ul>
+                        </div>
+                    );
+                })}
             </Grilla>
         );
     }

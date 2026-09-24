@@ -569,10 +569,12 @@ export function CuerpoDeDeposito({ datos, claseTenue, isDark, buscarEmpleado }) 
                     </p>
                 )}
             </div>
-            {/* Las columnas se APILAN cuando la tarjeta no alcanza para dos: en
-                un teléfono angosto «Conteo del» se cortaba por el ancho de «Quedó
-                en efectivo» (usuario, 24-sep: «responsive sin cortar»). */}
-            <Grilla columnas="repeat(auto-fit, minmax(8.5rem, 1fr))">
+            {/* Dos columnas cuando entran y APILADAS cuando no (usuario, 24-sep:
+                «responsive sin cortar» y, al ver que en escritorio también se
+                apilaban, «se debe adaptar según el tamaño, no siempre»). 7.5rem
+                por columna: dos entran desde ~240 px de panel —escritorio y un
+                teléfono de 390— y se apilan a 320. */}
+            <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
                 <CeldaPersona emp={emp} rotulo={datos.quienLleva ? 'Lo lleva' : 'Lo cerró'}
                     respaldo="Sin nombre" claseTenue={claseTenue} />
                 <Celda rotulo="Conteo del" claseTenue={claseTenue}>

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1040.4 — Depósito: dos columnas cuando entran, apiladas cuando no
+
+«En escritorio se ve así; se debe adaptar según el tamaño, no siempre»
+(usuario, 24-sep). El mínimo por columna de la tarjeta de depósito era 8.5rem,
+así que también en escritorio (panel de ~262 px) se apilaba. Con 7.5rem hay dos
+columnas desde ~240 px —escritorio y teléfono de 390— y se apilan a 320.
+Medido en los tres anchos con el detector de recortes: 0.
+
 ## v2.1040.3 — Créditos borrados en la caja pasan a Anulado
 
 «Valida un crédito del 24/08 de $10.46» (usuario, 24-sep). El portal lo daba

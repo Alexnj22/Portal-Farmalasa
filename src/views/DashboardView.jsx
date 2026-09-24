@@ -24,7 +24,7 @@ const AcomodarModal = lazy(() => import('./dashboard/AcomodarModal'));
 import {
   Users, UserCheck, ClipboardList, Building2, TrendingUp,
   CalendarDays, Megaphone, ChevronRight, ChevronLeft,
-  Settings2, Activity, Flame,
+  Settings2, Settings, Activity, Flame,
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
   FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
@@ -79,6 +79,8 @@ import { SALAS_VENTA } from './metas/metasUtils';
 import { MODULE_MAP } from '../constants/moduleMap';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
+import FilterBar from '../components/common/FilterBar';
+import { useLayoutCompacto } from '../hooks/useLayoutCompacto';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { getTodayAttendanceStatus } from '../utils/helpers';
 import SegmentedControl from '../components/common/SegmentedControl';
@@ -1083,6 +1085,9 @@ const DashboardView = ({ openModal }) => {
 
   // ── Mobile detection ────────────────────────────────────────────────────────
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
+  // Con qué se apunta (dedo o mouse), no el ancho: decide si «Personalizar» va
+  // en la barra flotante. Es el mismo corte que usa `FilterBar`, a propósito.
+  const compacto = useLayoutCompacto();
   // El TELÉFONO es otra cosa que «no es escritorio». Con `isMobile` a secas, una
   // tableta de 900px y un iPhone de 390 compartían la rejilla de 2 columnas: en
   // la tableta cada widget mide 440px y está bien, en el teléfono mide 180 y el
@@ -3637,6 +3642,12 @@ const DashboardView = ({ openModal }) => {
   };
 
   // ── filtersContent ─────────────────────────────────────────────────────────
+  // En táctil «Personalizar» vive en la barra flotante (§17.3) y no en el
+  // encabezado — pedido del usuario, 2026-09-24. En el encabezado le quitaba
+  // ancho al título: a 412px el «Inicio» salía cortado en «In». Y en la barra
+  // queda al alcance del pulgar, que es donde viven las acciones de toda vista
+  // en el teléfono.
+  const abrirPersonalizar = () => (editorEnModal ? setAcomodarAbierto(true) : setShowConfig(v => !v));
   const filtersContent = (
     <div className="flex items-center gap-2">
       <ViewTabBar
@@ -3646,6 +3657,7 @@ const DashboardView = ({ openModal }) => {
         showSearch={false}
       />
 
+      {!compacto && <>
       {/* Divider */}
       <div className="w-px h-5 bg-divider" />
 
@@ -3672,10 +3684,11 @@ const DashboardView = ({ openModal }) => {
         tone={showConfig && !editorEnModal ? 'brand' : null}
         icon={Settings2}
         className={showConfig && !editorEnModal ? '[&_svg]:rotate-[60deg] [&_svg]:transition-transform [&_svg]:duration-[var(--dur-slow)]' : '[&_svg]:transition-transform [&_svg]:duration-[var(--dur-slow)]'}
-        onClick={() => (editorEnModal ? setAcomodarAbierto(true) : setShowConfig(v => !v))}
+        onClick={abrirPersonalizar}
       >
         Personalizar
       </Button>
+      </>}
     </div>
   );
 
@@ -3683,6 +3696,25 @@ const DashboardView = ({ openModal }) => {
   return (
     <GlassViewLayout icon={LayoutDashboard} title="Inicio" filtersContent={filtersContent} transparentBody={true}>
       <div className="pb-0 px-2">
+
+        {/* En táctil `FilterBar` ES la barra flotante: sin secciones, pinta
+            sólo la acción. Secundaria a propósito —no el botón grande de
+            crear—, y `activo` la marca mientras el panel está abierto, que es
+            lo que en escritorio hace el engranaje girado. El `aria-label`
+            dice «Personalizar» aunque el botón vaya sin rótulo. */}
+        {compacto && (
+          <FilterBar acciones={[{
+            key: 'personalizar',
+            // El engranaje y no los dos deslizadores del escritorio: con un solo
+            // botón la barra no dibuja rótulo (§17.3), y los deslizadores son
+            // casi el ícono de «Filtros» de las demás vistas. Sin texto al lado,
+            // se leería como filtrar el tablero.
+            icon: Settings,
+            label: 'Personalizar',
+            activo: showConfig && !editorEnModal,
+            onClick: abrirPersonalizar,
+          }]} />
+        )}
 
         {/* Config panel — configura SIEMPRE la pestaña abierta.
             El `mb-5` no es cosmético: sin él el panel apoyaba contra la primera

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.8 — Inicio en el teléfono: el título completo y Personalizar en la barra flotante
+
+Pedido del usuario, 2026-09-24: el título salía cortado como «In», y
+«Personalizar» tenía que ir en la barra flotante.
+
+- **En táctil «Personalizar» va en la barra flotante** (§17.3): un
+  `FilterBar` sin secciones con la acción, que es lo que ya hace cualquier
+  vista con acciones en el teléfono. Resaltado mientras el panel está abierto;
+  el mismo botón lo cierra. En el encabezado le quitaba ancho al título.
+- **El título «Inicio» sale completo** en iPhone SE, iPhone 13 y Pixel 7
+  (medido: `scrollWidth` = `clientWidth`).
+- En la barra va con el **engranaje** y no con los dos deslizadores del
+  escritorio: con un solo botón la barra no dibuja rótulo, y los deslizadores
+  son casi el ícono de «Filtros» de las demás vistas.
+- Escritorio sin cambios: el corte es `useLayoutCompacto`, el mismo de
+  `FilterBar`.
+
 ## v2.1060.7 — Inicio en el teléfono: un solo scroll y tarjetas completas
 
 Reporte del usuario: «el scroll es raro y no funciona bien» en los widgets

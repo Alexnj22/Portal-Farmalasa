@@ -159,7 +159,72 @@ Hay dos salidas y es una decisión del usuario:
 2. **Llevarla a la base** (trigger o dentro de la RPC), donde ningún cliente la
    puede olvidar. Es lo más sólido y lo más caro.
 
-### E. Áreas auditadas
+### E. Lo mismo escrito muchas veces (medido el mismo día, a pedido del usuario)
+
+**E1 — funciones utilitarias copiadas en cada pantalla.** Mismo nombre y
+mismo trabajo, en archivos distintos:
+
+| familia | copias | ejemplos |
+|---|---:|---|
+| mostrar una fecha | 44 | `fmtFecha` (16), `fmtDate` (14), `fechaCorta`, `fechaLarga`, `formatDate` |
+| «hoy en El Salvador» | 20 | `hoySV` (9), `hoyISO`, `svToday`, `svNow` |
+| calendario | 24 | `rangoDelMes`, `mesActual`, `correrMes`, `correrDia`, `etiquetaMes` |
+| días transcurridos | 14 | `diasDesde`, `diasHasta`, `haceCuanto` |
+| montos y porcentajes | ~20 | `fmtMoney`, `fmtPct`, `pct` + dinero armado a mano en 14 archivos |
+| cargar pdfmake | 5 | `getPdfMake` |
+| texto | 12 | `sinTildes`, `soloDigitos`, `safeParse` |
+| piezas de pantalla | 16 | `Dato` (7), `Cargando` (5), `Cifra` (4) |
+
+**No hay un canónico de fechas**: `utils/` tiene `hora.js` y no tiene
+`fecha.js`. `hoySV` está en 9 archivos: ocho restan 6 horas a mano y uno usa
+la zona `America/El_Salvador`. Hoy dan lo mismo (El Salvador no cambia de
+hora); el día que se corrija una copia, las otras ocho no se enteran.
+
+**E2 — «qué es una venta» se contesta TRES veces en la base.** Las consultas
+de ventas del navegador están bien centralizadas (todas en `src/data`, 7
+archivos). La repetición está en la base: **~50 funciones leen
+`sales_invoices`**, y cada una escribe su propio filtro de qué factura cuenta:
+
+| criterio escrito | funciones | quiénes |
+|---|---:|---|
+| `estado NOT IN ('NULA','DTE INVALIDADO EN MH')` | ~33 | metas y bonos, estadísticas de Ventas, MIN·MAX, promociones, vendedores, los agregados (`refresh_sales_daily_stats`, `refresh_product_sales_*`) |
+| `estado = 'FINALIZADA'` | 5 | caja (`caja_estado`, `caja_efectivo_piezas`), formas de pago, fuera del libro, actividad de clientes |
+| `estado = 'FINALIZADA' AND length(recibido_mh) = 40` | 8 | libros de IVA, cortes Z, período fiscal, `resumen_ventas_diario` |
+| además excluye `'ANULADA'` (un valor que no existe en la tabla) | 1 | `get_inyecciones_aplicadas` |
+
+Medido sobre toda la tabla: hoy existen **sólo tres estados** (`FINALIZADA`
+374,276 · `DTE INVALIDADO EN MH` 1,060 · `NULA` 9). Así que **las dos primeras
+formas dan el mismo número hoy**, y no hay ningún total mal en pantalla. Pero
+son dos reglas distintas que coinciden por casualidad: el día que el origen
+mande un estado nuevo (una contingencia, una anulación con otro nombre), ~33
+funciones lo van a contar como venta y otras 5 no. Nadie va a ver un error, van
+a ver **metas y caja con totales distintos sobre el mismo día**.
+
+La tercera forma sí es una diferencia legítima: una venta **fiscal** exige
+sello (hoy hay 5 facturas finalizadas sin sello en 2026, $45.80). El problema
+no es que existan dos definiciones, es que **no tienen nombre** y cada función
+la reescribe.
+
+**La salida:** dos definiciones con nombre, escritas una vez en la base.
+- `venta_valida(estado)` → la operativa (lo que se vendió)
+- `venta_fiscal(estado, recibido_mh)` → la que entra al libro
+
+Se pueden hacer como funciones `IMMUTABLE` de SQL (se inlinean y no cambian el
+plan de ninguna consulta) o como una vista `ventas_validas` con
+`security_invoker`. Las ~46 funciones pasan a usarlas **de a una familia por
+vez**, midiendo que cada total dé lo mismo antes y después, y con un gate que
+falle si una función nueva escribe el filtro a mano. Es trabajo en la base: se
+prueba en el branch de pruebas con `execute_sql`, y cada `CREATE OR REPLACE`
+de una función caliente se aplica con `lock_timeout` según la regla del repo.
+
+**E3 — totales sumados en el navegador: 28 archivos** hacen un `reduce` sobre
+`total`/`monto`. La mayoría suma una lista que ya trajo (el pie de una tabla) y
+está bien. Los que valen la pena mirar son los que calculan un total **que
+también existe en la base**: `DashboardView`, `VentasView`, `metas/TabTablero`,
+`MiCajaView`. Si el navegador suma una cosa y la base otra, dos pantallas
+muestran dos cifras distintas. Queda para revisar uno por uno en F3.
+
+### F. Áreas auditadas
 
 Los archivos a tocar caen en **24 áreas**; `plataforma` concentra 38 de ellos.
 **Hoy no hay ningún área congelada** (todas entre 92 y 95%, ninguna con sello
@@ -175,6 +240,8 @@ Cada fase se cierra y se commitea sola. Ninguna cambia lo que se ve.
 | **F0** | **`gate:nucleo`**: falla si la lógica gana un uso de navegador nuevo. Baseline = los 55 de hoy, **sólo baja** | chico | sin esto, cada semana aparecen archivos nuevos que habrá que volver a limpiar |
 | **F1** | los **cinco adaptadores**; `supabaseClient` pasa a fábrica. Empezar por `AuthContext` y `systemSlice` (129 usos entre los dos) | mediano | es lo que más reduce la cuenta del gate |
 | **F2** | dependencias al revés (4 archivos) e íconos por nombre (13 archivos) | chico | desbloquea mover carpetas enteras después |
+| **U1** | **canónicos que faltan** (`utils/fecha.js`, dinero en `formatNumber.js`, un cargador de pdfmake), con pruebas unitarias, y reemplazar las copias de §E1 de a una familia por vez. Gate que prohíba volver a definir una copia local | mediano | es lo más visible de unificar, y todo va al núcleo |
+| **U2** | **`venta_valida` / `venta_fiscal` en la base** y migrar las ~46 funciones de §E2, midiendo cada total antes y después | mediano, en la base | es la regla más usada del portal y hoy tiene tres redacciones |
 | **F3** | sacar de las pantallas las 58 consultas y los 25 archivos de lógica; `usePedidosData` y `useMinMaxData` pasan a hooks del núcleo | grande | cada pantalla nativa va a necesitar exactamente esos hooks |
 | **F4** | las reglas de D2 y la decisión de D3: **con el usuario, regla por regla** | por decidir | no es mecánico: puede mover lógica a la base |
 | **F5** | tipos: `// @ts-check` + `tsc --checkJs` en el núcleo y `supabase gen types` como contrato | mediano | más barato que renombrar a `.ts`; si una columna cambia, el teléfono no compila en vez de mostrar un cero |

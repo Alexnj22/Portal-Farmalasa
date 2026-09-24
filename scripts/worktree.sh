@@ -56,6 +56,14 @@ if [ -f "$RAIZ/.env" ]; then
   echo "  · .env copiado"
 fi
 
+# Lo mismo con `.env.staging`: sin él, `npm run dev:staging` no tiene a qué
+# conectarse y la sesión que abrió un árbol aparte PARA no tocar producción
+# termina probando contra producción con `npm run dev`.
+if [ -f "$RAIZ/.env.staging" ]; then
+  cp "$RAIZ/.env.staging" "$DESTINO/.env.staging"
+  echo "  · .env.staging copiado"
+fi
+
 PUERTO=$(( 4173 + ( $(echo -n "$NOMBRE" | cksum | cut -d' ' -f1) % 3 ) + 1 ))
 
 cat <<FIN

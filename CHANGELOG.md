@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1056.1 — Núcleo portable F1: adaptadores de plataforma y systemSlice sin navegador
+
+Sin cambios visibles. Primer paso de F1 del plan
+`docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md` (preparar la lógica para una app
+nativa). Probado en el entorno de pruebas (`dev.farmasalud.lat`) antes de
+llegar acá.
+
+- **`src/plataforma/`**: `almacen.js` (localStorage/sessionStorage),
+  `eventos.js` (avisos entre partes del portal) y `navegacion.js`. En la web
+  son pasamanos exactos —mismas claves, mismos eventos sobre `window`, y los
+  errores del navegador se siguen propagando—; la app nativa tendrá un gemelo
+  `.native.js` de cada uno.
+- **`systemSlice` ya no nombra al navegador**: sus 53 usos pasan por los
+  adaptadores. `gate:nucleo` baja de 359 a 306.
+- `tests/unit/plataforma.test.js` ancla que el aviso le siga llegando a quien
+  escucha en `window` con el mismo `detail`, y que las claves no cambien.
+
 ## v2.1056.0 — Gestión de stock: pestañas, productos parados por destino y carga bajo demanda
 
 Pedido del usuario: «que sea mucho más intuitiva… en funciones, visual y

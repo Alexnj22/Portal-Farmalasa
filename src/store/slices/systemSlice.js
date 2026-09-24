@@ -26,17 +26,20 @@ import {
     fetchBranchesBasic,
 } from '../../data/system';
 import { hora12 } from '../../utils/hora';
+import * as almacen from '../../plataforma/almacen';
+import { emitir } from '../../plataforma/eventos';
+import { irA } from '../../plataforma/navegacion';
 
 export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
-    shifts: safeJsonParse(localStorage.getItem(CACHE_KEYS.SHIFTS), []) || [],
-    roles: safeJsonParse(localStorage.getItem(CACHE_KEYS.ROLES), []) || [],
+    shifts: safeJsonParse(almacen.leer(CACHE_KEYS.SHIFTS), []) || [],
+    roles: safeJsonParse(almacen.leer(CACHE_KEYS.ROLES), []) || [],
     // Arranca en `false` a propósito: antes del boot no se sabe si el historial
     // que hay es completo, y la falla segura es preguntar de más, no afirmar de
     // más. Lo pone `fetchBoot`.
     historialCompleto: false,
-    announcements: safeJsonParse(localStorage.getItem(CACHE_KEYS.ANNOUNCEMENTS), []) || [],
-    holidays: safeJsonParse(localStorage.getItem(CACHE_KEYS.HOLIDAYS), []) || [],
+    announcements: safeJsonParse(almacen.leer(CACHE_KEYS.ANNOUNCEMENTS), []) || [],
+    holidays: safeJsonParse(almacen.leer(CACHE_KEYS.HOLIDAYS), []) || [],
     isBootSyncing: false,
     bootStatus: 'idle',
     // Bloque 6.B — status independiente del grupo de datos de empleado
@@ -130,7 +133,7 @@ export const createSystemSlice = (set, get) => ({
                         // Holidays
                         if (holidaysData) {
                             set({ holidays: holidaysData });
-                            localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(holidaysData));
+                            almacen.guardar(CACHE_KEYS.HOLIDAYS, JSON.stringify(holidaysData));
                         }
 
                         // Branches
@@ -143,13 +146,13 @@ export const createSystemSlice = (set, get) => ({
                                 type: b.type || 'FARMACIA',
                             }));
                             set({ branches: mappedBranches });
-                            localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(mappedBranches));
+                            almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(mappedBranches));
                         }
 
                         // Roles
                         if (rolesData) {
                             set({ roles: rolesData });
-                            localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(rolesData));
+                            almacen.guardar(CACHE_KEYS.ROLES, JSON.stringify(rolesData));
                         }
 
                         // Shifts
@@ -163,7 +166,7 @@ export const createSystemSlice = (set, get) => ({
                                 is_active: s.is_active,
                             }));
                             set({ shifts: mappedShifts });
-                            localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
+                            almacen.guardar(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
                         }
 
                         // Announcements
@@ -184,7 +187,7 @@ export const createSystemSlice = (set, get) => ({
                                 metadata: a.metadata || null,
                             }));
                             set({ announcements: mappedAnns });
-                            localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnns));
+                            almacen.guardar(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnns));
                         }
                     } catch (e) {
                         console.error("🔥 Error cargando datos livianos en fetchBoot:", e.message || e);
@@ -217,7 +220,7 @@ export const createSystemSlice = (set, get) => ({
                         // la empresa entera en cada login sin importar su rol. Falla ABIERTO (carga
                         // todo) ante cualquier error de red o rol sin id, para no ocultarle datos a
                         // un admin por un hipo de conexión.
-                        const storedUser = safeJsonParse(localStorage.getItem('sb_user'));
+                        const storedUser = safeJsonParse(almacen.leer('sb_user'));
                         const myId = storedUser?.id ?? null;
                         const myBranchId = storedUser?.branchId ?? null;
                         const myRoleId = storedUser?.roleId ?? (Number.isInteger(storedUser?.role) ? storedUser.role : null);
@@ -246,7 +249,7 @@ export const createSystemSlice = (set, get) => ({
                         let canSeeAllDocs    = true;
                         let permResueltoDelCache = false;
                         try {
-                            const cachedPerms = safeJsonParse(localStorage.getItem('sb_role_perms'));
+                            const cachedPerms = safeJsonParse(almacen.leer('sb_role_perms'));
                             if (cachedPerms && typeof cachedPerms === 'object' && 'staff_list' in cachedPerms) {
                                 canSeeAllStaff   = !!cachedPerms.staff_list?.can_view;
                                 canSeeAllHistory = !!cachedPerms.staff_detail?.can_view || !!cachedPerms.schedules?.can_view;
@@ -494,7 +497,7 @@ export const createSystemSlice = (set, get) => ({
                 await Promise.all([lightGroupPromise, employeeGroupPromise]);
 
                 const bootedAt = new Date().toISOString();
-                localStorage.setItem(CACHE_KEYS.AT, bootedAt);
+                almacen.guardar(CACHE_KEYS.AT, bootedAt);
 
                 set({
                     bootStatus: 'ready',
@@ -540,7 +543,7 @@ export const createSystemSlice = (set, get) => ({
                             // la lista de avisos, y heredó la notificación del sistema
                             // operativo que salía de allá.
                             try {
-                                const u = JSON.parse(localStorage.getItem('sb_user') || '{}');
+                                const u = JSON.parse(almacen.leer('sb_user') || '{}');
                                 if (announcementAppliesToUser(a, u, get().roles)) {
                                     const urgente = a.priority === 'URGENT';
                                     const titulo  = urgente ? 'Aviso urgente' : (a.title || 'Nuevo aviso');
@@ -552,7 +555,7 @@ export const createSystemSlice = (set, get) => ({
                                         `Farmalasa · ${titulo}`,
                                         a.message || a.title || 'Tienes un aviso nuevo',
                                         `announcement-${a.id}`,
-                                        () => { window.location.href = '/mis-avisos'; },
+                                        () => { irA('/mis-avisos'); },
                                     );
                                 }
                             } catch { /* ignore */ }
@@ -868,7 +871,7 @@ export const createSystemSlice = (set, get) => ({
 
             // Refrescamos vistas globalmente (skip si se llama desde editEmployeeEvent)
             if (!options.skipRefresh) {
-                window.dispatchEvent(new CustomEvent('force-history-refresh'));
+                emitir('force-history-refresh');
             }
 
             // 5. Actualizamos el estado en Zustand (Memoria RAM)
@@ -990,7 +993,7 @@ export const createSystemSlice = (set, get) => ({
                 return { employees: next };
             });
 
-            window.dispatchEvent(new CustomEvent('employee-event-updated', { detail: { employeeId: existing.employee_id } }));
+            emitir('employee-event-updated', { employeeId: existing.employee_id });
             return true;
         } catch (err) {
             console.error('Error cancelando evento:', err);
@@ -1040,7 +1043,7 @@ export const createSystemSlice = (set, get) => ({
                 )
             }));
 
-            window.dispatchEvent(new CustomEvent('employee-event-updated', { detail: { employeeId } }));
+            emitir('employee-event-updated', { employeeId });
             return newId;
         } catch (err) {
             console.error('Error editando evento:', err);
@@ -1054,10 +1057,10 @@ export const createSystemSlice = (set, get) => ({
     addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope = 'BRANCH', maxLimit = 99) => {
         const { data, error } = await insertRole({ name, parent_role_id: parentRoleId, secondary_parent_role_id: secondaryParentRoleId, scope, max_limit: maxLimit });
         if (error) throw error;
-        window.dispatchEvent(new CustomEvent('force-history-refresh'));
+        emitir('force-history-refresh');
         set((state) => {
             const next = [...state.roles, data];
-            localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
+            almacen.guardar(CACHE_KEYS.ROLES, JSON.stringify(next));
             return { roles: next };
         });
         return data;
@@ -1071,10 +1074,10 @@ export const createSystemSlice = (set, get) => ({
             dimension: 'HR',
             new_value: 'Configuración actualizada',
         });
-        window.dispatchEvent(new CustomEvent('force-history-refresh'));
+        emitir('force-history-refresh');
         set((state) => {
             const next = state.roles.map(r => String(r.id) === String(roleId) ? data : r);
-            localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
+            almacen.guardar(CACHE_KEYS.ROLES, JSON.stringify(next));
             return { roles: next };
         });
         return data;
@@ -1099,11 +1102,11 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'Eliminado del sistema'
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             set((state) => {
                 const next = state.roles.filter(r => r.id !== roleId);
-                localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.ROLES, JSON.stringify(next));
                 return { roles: next };
             });
             return true;
@@ -1115,7 +1118,7 @@ export const createSystemSlice = (set, get) => ({
 
     createAnnouncement: async (announcementData) => {
         try {
-            const storedUser = safeJsonParse(localStorage.getItem("sb_user"));
+            const storedUser = safeJsonParse(almacen.leer("sb_user"));
             const payload = {
                 title: announcementData.title,
                 message: announcementData.message,
@@ -1135,7 +1138,7 @@ export const createSystemSlice = (set, get) => ({
                 new_value: `Prioridad: ${data.priority}`
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             // Do NOT manually push to store here — the 'announcements-live' Realtime
             // channel receives the INSERT and adds it. Doing both causes a duplicate
@@ -1175,7 +1178,7 @@ export const createSystemSlice = (set, get) => ({
                 ...auditDetails
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             set((state) => {
                 const next = state.announcements.map((ann) =>
@@ -1194,7 +1197,7 @@ export const createSystemSlice = (set, get) => ({
                         }
                         : ann
                 );
-                localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
                 return { announcements: next };
             });
 
@@ -1215,11 +1218,11 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'Eliminado permanentemente'
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             set((state) => {
                 const next = state.announcements.filter(a => String(a.id) !== String(id));
-                localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
                 return { announcements: next };
             });
             return true;
@@ -1239,11 +1242,11 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'Movido al archivo'
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             set((state) => {
                 const next = state.announcements.map(a => String(a.id) === String(id) ? { ...a, isArchived: true } : a);
-                localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
                 return { announcements: next };
             });
             return true;
@@ -1270,7 +1273,7 @@ export const createSystemSlice = (set, get) => ({
 
             set((state) => {
                 const next = state.announcements.map(a => String(a.id) === String(announcementId) ? { ...a, readBy: updatedReadBy } : a);
-                localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
                 return { announcements: next };
             });
             return true;
@@ -1301,7 +1304,7 @@ export const createSystemSlice = (set, get) => ({
                 new_value: `${hora12(data.start_time)} a ${hora12(data.end_time)}`
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             const newShift = {
                 id: data.id, branchId: data.branch_id, name: data.name,
@@ -1310,7 +1313,7 @@ export const createSystemSlice = (set, get) => ({
             };
             set((state) => {
                 const next = [...state.shifts, newShift];
-                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.SHIFTS, JSON.stringify(next));
                 return { shifts: next };
             });
             return newShift;
@@ -1330,11 +1333,11 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'Eliminado permanentemente'
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             set((state) => {
                 const next = state.shifts.filter(s => String(s.id) !== String(id));
-                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.SHIFTS, JSON.stringify(next));
                 return { shifts: next };
             });
             return true;
@@ -1361,7 +1364,7 @@ export const createSystemSlice = (set, get) => ({
                 new_value: `${hora12(data.start_time)} a ${hora12(data.end_time)}`,
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             set((state) => {
                 const next = state.shifts.map(s => String(s.id) === String(id) ? {
@@ -1374,7 +1377,7 @@ export const createSystemSlice = (set, get) => ({
                     lunch_minutes: data.lunch_minutes,
                     is_active: data.is_active
                 } : s);
-                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.SHIFTS, JSON.stringify(next));
                 return { shifts: next };
             });
             return data;
@@ -1394,11 +1397,11 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'Fuera del catálogo',
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             set((state) => {
                 const next = state.shifts.map(s => String(s.id) === String(id) ? { ...s, is_active: false } : s);
-                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.SHIFTS, JSON.stringify(next));
                 return { shifts: next };
             });
             return true;
@@ -1418,11 +1421,11 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'De vuelta en el catálogo',
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             set((state) => {
                 const next = state.shifts.map(s => String(s.id) === String(id) ? { ...s, is_active: true } : s);
-                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
+                almacen.guardar(CACHE_KEYS.SHIFTS, JSON.stringify(next));
                 return { shifts: next };
             });
             return true;
@@ -1443,7 +1446,7 @@ export const createSystemSlice = (set, get) => ({
         });
         set(state => {
             const next = [...state.holidays, data].sort((a, b) => a.holiday_date.localeCompare(b.holiday_date));
-            localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(next));
+            almacen.guardar(CACHE_KEYS.HOLIDAYS, JSON.stringify(next));
             return { holidays: next };
         });
         return data;
@@ -1460,7 +1463,7 @@ export const createSystemSlice = (set, get) => ({
         });
         set(state => {
             const next = state.holidays.filter(h => String(h.id) !== String(id));
-            localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(next));
+            almacen.guardar(CACHE_KEYS.HOLIDAYS, JSON.stringify(next));
             return { holidays: next };
         });
     },
@@ -1545,10 +1548,10 @@ export const createSystemSlice = (set, get) => ({
             const { data: bData } = await fetchBranchesBasic();
             if (bData) {
                 set({ branches: bData });
-                localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(bData));
+                almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(bData));
             }
 
-            const kioskConfigStr = localStorage.getItem('kiosk_config');
+            const kioskConfigStr = almacen.leer('kiosk_config');
             if (!kioskConfigStr) return false;
 
             const config = JSON.parse(kioskConfigStr);
@@ -1583,7 +1586,7 @@ export const createSystemSlice = (set, get) => ({
                 // 🚨 CARGAMOS LOS ASUETOS PARA EL KIOSCO TAMBIÉN
                 if (data.holidays) {
                     set({ holidays: data.holidays });
-                    localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(data.holidays));
+                    almacen.guardar(CACHE_KEYS.HOLIDAYS, JSON.stringify(data.holidays));
                 }
 
                 const mappedShifts = (data.shifts || []).map(s => ({
@@ -1656,14 +1659,14 @@ export const createSystemSlice = (set, get) => ({
                     attendanceLoaded: false,
                 });
 
-                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
-                localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnnouncements));
+                almacen.guardar(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
+                almacen.guardar(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnnouncements));
                 const safeKioskEmployees = mappedEmployees.map(emp => {
                     const safeEmp = { ...emp };
                     SENSITIVE_FIELDS.forEach(f => delete safeEmp[f]);
                     return safeEmp;
                 });
-                localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(safeKioskEmployees));
+                almacen.guardar(CACHE_KEYS.EMPLOYEES, JSON.stringify(safeKioskEmployees));
 
                 // Auditoría 2026-07-29 (S1-ter): acá se guardaban los PIN de los
                 // supervisores EN CLARO en el disco de cada tablet, para que la
@@ -1675,10 +1678,10 @@ export const createSystemSlice = (set, get) => ({
                 // el caso offline lo cubre la ventana de gracia de
                 // utils/kioskGrace.js, que solo guarda ids y fechas — nunca
                 // material de la credencial.
-                localStorage.removeItem('kiosk_supervisor_pins');
+                almacen.borrar('kiosk_supervisor_pins');
 
                 if (data.branches) {
-                    localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(data.branches));
+                    almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(data.branches));
                 }
 
                 // Los marcajes de ayer y hoy, para que el kiosco sepa en qué
@@ -1719,7 +1722,7 @@ export const createSystemSlice = (set, get) => ({
                 file_url: url 
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             set((state) => {
                 const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {

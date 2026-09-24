@@ -1,6 +1,6 @@
 {
-  "total": 359,
-  "archivos": 64,
+  "total": 306,
+  "archivos": 63,
   "porArchivo": {
     "src/constants/moduleMap.js": {
       "pantalla": 1
@@ -104,9 +104,6 @@
     },
     "src/store/slices/requestsSlice.js": {
       "navegador": 7
-    },
-    "src/store/slices/systemSlice.js": {
-      "navegador": 53
     },
     "src/store/slices/vacationPlanSlice.js": {
       "env": 1

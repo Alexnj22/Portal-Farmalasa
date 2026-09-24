@@ -301,7 +301,7 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
 - **E1 ✅** «Esa sala no tiene una caja registrada para imprimir» ~27/día: es
   POR DISEÑO — `encolar_impresion` rechaza y el portal lo toma como «este camino
   no está» y abre el diálogo de impresión. Ruido en el log, no una falla.
-- **E2 🔎 (v2.1028.1 + 20260923143322)** — la mitad de «Por revisar» seguía rota; ver abajo:
+- **E2 ✅ (v2.1028.1 + 20260923143322)** — cerrado con la corrida del 23-sep; el detalle:
   Sale de la corrida nocturna de fichas (21:30):
   - **«Por revisar» no guarda NADA desde el 23-ago**: el motivo
     `sin_numero_erp` manda `erp_id: null` y la tabla lo exige NOT NULL con
@@ -330,8 +330,11 @@ Cualquier fila que no dé lo esperado se vuelve un punto A.
     rechaza bajo el API («DELETE requires a WHERE clause»). La prueba «con
     rollback» se hizo como `postgres`, donde `safeupdate` no está — la misma
     lección de A1. Corregido con `TRUNCATE` (`20260923143322`).
-    **Falta ver la corrida de esta noche
-    (21:30 SV)**: que `a_revisar_no_guardados` sea 0 y que las fusiones entren.
+    **Corrida del 23-sep (21:30 SV):** `a_revisar_no_guardados` **0** (26 la
+    noche anterior), 2 fusiones, 0 fallidas. Entraron 25 filas: 16 sin número
+    del ERP (la clave nueva por ficha), 6 con número inexistente y 3 que el ERP
+    rechaza por duplicadas. La 26.ª es una fila sin ficha, que la función
+    descarta a propósito.
 - **E3 ✅** `pedido_traslado_erp_uno_vivo` (5/día): por diseño — el despacho de
   900 productos va en varias corridas y cada una adopta la anterior; la edge
   function trata el 23505 como «retomar», no como error.
@@ -507,6 +510,13 @@ reabastecimiento, no fórmula.
 ---
 
 ## Cierre
+
+**Estado al 24-sep:** los puntos A–F están todos en ✅; G fase 2 queda para
+diciembre, por diseño. Gates de producción: `gate:eficiencia`, `gate:cortes`,
+`gate:receta`, `gate:auditoria` y `gate:migrations --remote` en verde.
+`gate:perf` tiene **un** hallazgo que no es de este plan:
+`get_inyecciones_aplicadas` (324 MB por llamada, sin declarar), de la pestaña
+Inyecciones creada el 23-sep por la noche (v2.1037.0).
 
 Todos los gates de producción en verde (`gate:perf`, `gate:eficiencia`,
 `gate:cortes`, `gate:receta`, `gate:auditoria`, `gate:migrations --remote`), el

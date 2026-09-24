@@ -125,7 +125,7 @@ export async function fetchCreditos({ sala = null, soloConSaldo = true } = {}) {
              * pantalla tenga que cargar aparte. Medido: 36 kB contra 29, y una
              * sola vuelta. */
             .select('id, branch_id, credito:credito_erp, documento:numero_doc, fecha, '
-                  + 'cliente, total, abonado, saldo, ultimo_abono_el, '
+                  + 'cliente, total, abonado, saldo, ultimo_abono_el, anulado_el, '
                   + 'customer_id, vendedor_id, vendedor:employees(name)')
             .order('fecha', { ascending: true });
         if (sala) q = q.eq('branch_id', Number(sala));

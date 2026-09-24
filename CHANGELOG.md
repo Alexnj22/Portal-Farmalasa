@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1040.3 — Créditos borrados en la caja pasan a Anulado
+
+«Valida un crédito del 24/08 de $10.46» (usuario, 24-sep). El portal lo daba
+PENDIENTE con saldo $10.46 (MAPFRE, Salud 5, crédito 2383); en el sistema de
+la caja ya no existía — hueco entre el 2382 y el 2384. La caja no anula un
+crédito: lo borra, y el usuario lo hace cuando la venta fue un error. El
+espejo (`sync_creditos_batch`) sólo insertaba y actualizaba, así que un
+crédito borrado quedaba con su saldo para siempre. Eran 4: $79.96 de deuda
+que nadie debía, y el de MAPFRE ya pasado del plazo, camino al aviso de cobro.
+
+- **Barrido diario (`modo: completo`)**: por cada sala que se pudo leer, los
+  créditos que la caja ya no muestra pasan a `estado='ANULADO'`, `saldo=0` y
+  `anulado_el` = el día en que se vio. No se borra la fila: queda el rastro.
+  Todo lo que cobra o avisa filtra por saldo, así que sale de la cartera sin
+  tocar a ningún lector.
+- **Freno** en `anular_creditos_ausentes`: si en una sala «faltan» más de
+  max(10, 5%), lanza y no anula nada — eso es una lectura rota, no borrados.
+  Una sala que no se pudo leer no entra.
+- Si un anulado reaparece, el upsert le trae estado y saldo reales y limpia
+  `anulado_el`.
+- Cuentas por cobrar (vista «Todos»): la tarjeta dice **Anulado** en vez de
+  los días, y sin la barra de pagado — con saldo 0 se leía «pagado».
+
+Verificado: corrida completa a mano → 2,519 leídos, 4 anulados (2383, 2447,
+2459, 2540), 125 con saldo en el portal = 125 pendientes en la caja.
+
 ## v2.1040.2 — Tarjetas de la campana sin textos cortados en el teléfono
 
 «La columna de conteo se corta en móvil por el ancho de la columna siguiente.

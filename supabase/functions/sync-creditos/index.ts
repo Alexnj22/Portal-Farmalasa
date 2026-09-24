@@ -91,6 +91,10 @@ Deno.serve(async (req) => {
 
     const filas: Record<string, unknown>[] = [];
     const porSala: Record<string, number> = {};
+    /** Los ids que el origen mostró, por sala — sólo de las salas que se
+     *  pudieron leer. Una sala que falló NO entra: sin su lista, todo lo suyo
+     *  parecería borrado. */
+    const vistosPorSala = new Map<number, string[]>();
     const fallidas: string[] = [];
 
     for (const { branchId, erpId } of mapa) {
@@ -98,6 +102,7 @@ Deno.serve(async (req) => {
         const leidos = await creditosDeLaSala(cookie, erpId, desde, hasta);
         for (const c of leidos) filas.push({ ...c, branch_id: branchId });
         porSala[String(branchId)] = leidos.length;
+        vistosPorSala.set(branchId, leidos.map((c) => c.credito));
       } catch (e) {
         /* Una sala que no responde NO tumba la corrida: las otras cinco entran
          * igual. Pero se anota y la respuesta sale en rojo — un 200 sobre
@@ -132,13 +137,32 @@ Deno.serve(async (req) => {
       cambiadas  += Number(r?.cambiadas  ?? 0);
     }
 
-    await anotarCorrida(procesadas, cambiadas, fallidas.length === 0,
+    /* ── Los que el origen BORRÓ ──────────────────────────────────────────
+     * El sistema de la caja no anula un crédito: lo borra —el usuario lo hace
+     * cuando la venta fue un error—. Sin esto el espejo lo conservaba con su
+     * saldo para siempre (24-sep: 4 créditos, $79.96 que nadie debía, uno ya
+     * pasado del plazo y camino al aviso de cobro).
+     *
+     * Sólo en la tanda COMPLETA: es la única que ve toda la cartera. En `hoy`
+     * cualquier crédito de otro día «falta» por construcción. La función se
+     * frena sola si faltan demasiados: eso es una lectura rota, no borrados. */
+    let anulados = 0;
+    if (modo === "completo") {
+      for (const [branchId, vistos] of vistosPorSala) {
+        const { data, error } = await supabase.rpc("anular_creditos_ausentes",
+          { p_branch_id: branchId, p_vistos: vistos, p_desde: desde, p_hasta: hasta });
+        if (error) { fallidas.push(`sala ${branchId} (anulados): ${error.message}`); continue; }
+        anulados += Number(data ?? 0);
+      }
+    }
+
+    await anotarCorrida(procesadas, cambiadas + anulados, fallidas.length === 0,
                         fallidas.length ? fallidas.join(" · ") : null);
 
     return responder({
       ok: fallidas.length === 0,
       modo, desde, hasta,
-      procesadas, cambiadas, porSala,
+      procesadas, cambiadas, anulados, porSala,
       fallidas: fallidas.length ? fallidas : undefined,
     }, fallidas.length ? 500 : 200);
   } catch (e) {

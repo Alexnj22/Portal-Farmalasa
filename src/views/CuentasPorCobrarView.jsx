@@ -512,11 +512,21 @@ export default function CuentasPorCobrarView() {
                                             —relleno, con icono— y no sólo de
                                             color, porque el mismo rojo repetido
                                             se aprende a ignorar en una semana. */}
-                                        <Badge {...severidadDeDias(c.dias, c.saldo)} size="sm"
-                                            icon={severidadDeDias(c.dias, c.saldo).grave ? AlertTriangle : undefined}
-                                            title={tituloDeDias(c.dias, c.saldo)}>
-                                            {c.dias} d
-                                        </Badge>
+                                        {/* Un crédito que la caja BORRÓ (venta
+                                            hecha por error) queda con saldo 0:
+                                            sin esta marca se leería «pagado». */}
+                                        {c.anulado_el ? (
+                                            <Badge variant="neutral" size="sm"
+                                                title={`Se anuló el ${fechaCorta(c.anulado_el)}: no es una deuda`}>
+                                                Anulado
+                                            </Badge>
+                                        ) : (
+                                            <Badge {...severidadDeDias(c.dias, c.saldo)} size="sm"
+                                                icon={severidadDeDias(c.dias, c.saldo).grave ? AlertTriangle : undefined}
+                                                title={tituloDeDias(c.dias, c.saldo)}>
+                                                {c.dias} d
+                                            </Badge>
+                                        )}
                                     </div>
 
                                     {/* 2 · CUÁNTO, con la barra de cuánto lleva
@@ -542,12 +552,14 @@ export default function CuentasPorCobrarView() {
                                                 de {formatMoney(c.total)}
                                             </span>
                                         </div>
-                                        <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden"
-                                            data-medida="dato" role="img"
-                                            aria-label={`Lleva ${pagadoPct(c)}% pagado`}>
-                                            <span className="block h-full rounded-full bg-success transition-[width]"
-                                                style={{ width: `${pagadoPct(c)}%` }} />
-                                        </div>
+                                        {!c.anulado_el && (
+                                            <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden"
+                                                data-medida="dato" role="img"
+                                                aria-label={`Lleva ${pagadoPct(c)}% pagado`}>
+                                                <span className="block h-full rounded-full bg-success transition-[width]"
+                                                    style={{ width: `${pagadoPct(c)}%` }} />
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* 3 · QUIÉN VENDIÓ y CUÁNDO, en un renglón.

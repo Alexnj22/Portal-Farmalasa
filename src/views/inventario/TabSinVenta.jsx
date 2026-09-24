@@ -794,6 +794,11 @@ export default function TabGestionStock({ searchTerm = '' }) {
                             origenErp: selectedErp,
                             destino: envio.destino,
                             motivo: 'Baja rotación',
+                            // El «por qué» es obligatorio en el envío y es el mismo para
+                            // todos: se deja escrito, y la sala lo puede cambiar.
+                            nota: Number(envio.destino) === ERP_BODEGA
+                                ? `Seis meses sin venderse en ${ERP_NAMES[selectedErp]}, y ninguna sala vendió 3 o más.`
+                                : `Seis meses sin venderse en ${ERP_NAMES[selectedErp]}; en ${ERP_NAMES[envio.destino]} sí se vende.`,
                             productos: envio.productos,
                         }}
                         onClose={() => setEnvio(null)}

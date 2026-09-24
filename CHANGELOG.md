@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1053.1 — Productos sin venta: sólo mercadería y el porqué del envío ya escrito
+
+Corregido al probar la pantalla con la cuenta de pruebas:
+
+- **«COMISIONES POR SERVICIO DE CORRESPONSAL» salía como producto parado.** Es
+  un cobro, no mercadería, y ninguna columna del producto lo dice. Queda fuera
+  todo lo que no tiene presentación activa: sin ella tampoco se puede trasladar
+  (migración 20260924213108). Era el único caso en las seis salas.
+- **«Por qué se lo mandas» es obligatorio y llegaba vacío** en el envío armado.
+  Ahora viene escrito —«Seis meses sin venderse en La Popular; en Salud 3 sí se
+  vende»— y la sala lo puede cambiar.
+
 ## v2.1053.0 — Tarjetas de metas por aprobar y reinicio; CCF/COF en todos lados
 
 Última tanda de tarjetas de la campana, y dos arreglos (usuario, 24-sep):

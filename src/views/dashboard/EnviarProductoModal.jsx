@@ -89,7 +89,7 @@ const fmtVence = (d) => d
 
 /**
  * `precarga` —opcional— llega del aviso de productos sin venta: la sala de
- * origen, el destino, el motivo y los productos. El envío se abre ARMADO pero
+ * origen, el destino, el motivo, el «por qué» ya escrito y los productos. El envío se abre ARMADO pero
  * no sale solo: queda en «En el envío» para que la sala cambie cantidades,
  * quite lo que no quiera mandar, o cambie el destino y el motivo, y recién
  * entonces apriete «Transferir».
@@ -238,6 +238,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                 setSinArmar(fuera);
                 setDestino(String(precarga.destino ?? ''));
                 setMotivo(precarga.motivo ?? '');
+                setNota(precarga.nota ?? '');
                 setPestana('lista');
             })
             .catch(e => { if (!cancelado) setError(e?.message ?? 'No se pudo armar el envío sugerido.'); })

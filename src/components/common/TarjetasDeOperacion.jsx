@@ -4,7 +4,7 @@ import {
     ArrowRight, Truck, Store, Clock, SlidersHorizontal, ShoppingBag, Landmark,
     FileWarning, ReceiptText, ClipboardCheck, Package, PackageCheck, PackageX,
     FileX, CreditCard, UserRound, Users, Wallet, HandCoins, ArrowLeftRight, PackagePlus, Trash2, CalendarDays,
-    Undo2, Scale, X,
+    Undo2, Scale, X, Tag,
 } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
@@ -1380,5 +1380,191 @@ export function AccionesDeDiferencia({ datos }) {
                 </Button>
             )}
         </div>
+    );
+}
+
+/* ── Octava tanda (usuario, 24-sep): conteo, Hacienda y promociones ─────── */
+
+/* Una cifra con su rótulo pegado, que baja entera si no cabe. */
+const Cifra = ({ rotulo, valor, clase = '', claseTenue }) => (
+    <span className="whitespace-nowrap">
+        <b className={`font-black tabular-nums ${clase}`}>{valor}</b>{' '}
+        <span className={`font-semibold ${claseTenue}`}>{rotulo}</span>
+    </span>
+);
+
+/* El conteo cíclico del mes: cuántos productos y de qué clase. */
+const CLASE_DE_CONTEO = { A: 'de clase A', B: 'de clase B', C: 'de clase C', BAJO_RECETA: 'bajo receta' };
+
+export function InsigniaDeConteo({ isDark }) {
+    return <Disco tono={tonos(isDark).azul} Icono={ClipboardCheck} />;
+}
+
+export function CuerpoDeConteo({ datos, claseTenue }) {
+    return (
+        <Grilla columnas="1fr">
+            <div className="bg-surface-card-hover px-2.5 py-2">
+                <p className="text-body-sm"><Cifra rotulo="productos por contar" valor={datos.productos} claseTenue={claseTenue} /></p>
+                {datos.grupos.length > 0 && (
+                    <p className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-caption">
+                        {datos.grupos.map((g) => (
+                            <Cifra key={g.clave} rotulo={CLASE_DE_CONTEO[g.clave] ?? g.clave.toLowerCase()} valor={g.n} claseTenue={claseTenue} />
+                        ))}
+                    </p>
+                )}
+            </div>
+            <Bloque rotulo="Cómo se cuenta" claseTenue={claseTenue}>
+                A ciegas: anota lo que ves en el estante, sin mirar lo que dice el sistema.
+            </Bloque>
+        </Grilla>
+    );
+}
+
+/* El envío nocturno a Hacienda: cuáles facturas no entraron y por qué. */
+export function InsigniaDeHacienda({ isDark }) {
+    return <Disco tono={tonos(isDark).rojo} Icono={FileWarning} />;
+}
+
+export function CuerpoDeHacienda({ datos, claseTenue, isDark }) {
+    const t = tonos(isDark);
+    if (!datos.corrio) {
+        return (
+            <Grilla columnas="1fr">
+                <Bloque rotulo="Qué pasó" claseTenue={claseTenue} claseRotulo={t.rojo.texto}>
+                    El envío automático de las {hora12('22:30')} no dejó registro.
+                    {datos.esperando != null && (datos.esperando === 0
+                        ? ' Ahora no hay ninguna factura esperando.'
+                        : ` ${datos.esperando === 1 ? 'Hay 1 factura esperando' : `Hay ${datos.esperando} facturas esperando`} y no se van a mandar hasta que vuelva a correr.`)}
+                </Bloque>
+            </Grilla>
+        );
+    }
+    return (
+        <Grilla columnas="1fr">
+            <div className="bg-surface-card-hover px-2.5 py-2 flex flex-wrap gap-x-4 gap-y-1 text-body-sm">
+                <Cifra rotulo="no entraron" valor={datos.fallidas} clase={t.rojo.texto} claseTenue={claseTenue} />
+                {datos.resueltas > 0 && <Cifra rotulo="sí entraron" valor={datos.resueltas} clase={t.verde.texto} claseTenue={claseTenue} />}
+                {datos.restantes > 0 && <Cifra rotulo="en cola" valor={datos.restantes} claseTenue={claseTenue} />}
+            </div>
+            {datos.facturas.length > 0 && (
+                <ul className="bg-surface-card-hover divide-y divide-border-card">
+                    {datos.facturas.map((f, i) => (
+                        <li key={i} className="px-2.5 py-2 min-w-0">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-body-sm font-black break-words leading-snug">{f.cliente ?? 'Sin nombre'}</p>
+                                    {/* Piezas que no se parten, sin «·»: al envolver
+                                        el punto quedaba colgando. */}
+                                    <p className={`flex flex-wrap gap-x-2 text-caption font-semibold mt-0.5 ${claseTenue}`}>
+                                        {[f.sala, f.doc, fechaCorta(f.fecha)].filter(Boolean).map((x) => (
+                                            <span key={x} className="whitespace-nowrap">{x}</span>
+                                        ))}
+                                    </p>
+                                </div>
+                                {f.monto != null && (
+                                    <span className="flex-shrink-0 text-body-sm font-black tabular-nums">{formatMoney(f.monto)}</span>
+                                )}
+                            </div>
+                            {f.motivo && (
+                                <p className="text-caption mt-1">
+                                    <span className={`font-black uppercase tracking-wide ${t.rojo.texto}`}>Hacienda dice</span>{' '}
+                                    <span className="font-semibold">{f.motivo}</span>
+                                </p>
+                            )}
+                        </li>
+                    ))}
+                    {datos.fallidas > datos.facturas.length && (
+                        <li className={`px-2.5 py-1.5 text-caption font-semibold ${claseTenue}`}>
+                            y {datos.fallidas - datos.facturas.length} más
+                        </li>
+                    )}
+                </ul>
+            )}
+            <Bloque rotulo="Qué sigue" claseTenue={claseTenue} claseRotulo={t.naranja.texto}>
+                Las que no se arreglan solas quedan en Facturación, en Observaciones.
+            </Bloque>
+        </Grilla>
+    );
+}
+
+/* Una promoción: terminó, se le acaba el lote a una sala, o cerró su mes. */
+export function InsigniaDePromo({ datos, isDark }) {
+    const t = tonos(isDark);
+    if (datos.tipo === 'lote') return <Disco tono={t.naranja} Icono={Package} />;
+    if (datos.tipo === 'mes') return <Disco tono={t.azul} Icono={CalendarDays} />;
+    return <Disco tono={t.gris} Icono={Tag} />;
+}
+
+const nombreDelMes = (ym) => {
+    const m = /^(\d{4})-(\d{2})/.exec(String(ym ?? ''));
+    return m ? `${['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][Number(m[2]) - 1]} ${m[1]}` : null;
+};
+
+export function CuerpoDePromo({ datos, claseTenue, isDark }) {
+    const t = tonos(isDark);
+    if (datos.tipo === 'lote') {
+        const pct = datos.asignado ? Math.min(100, Math.round((datos.vendido ?? 0) / datos.asignado * 100)) : null;
+        const agotado = datos.asignado != null && (datos.vendido ?? 0) >= datos.asignado;
+        return (
+            <Grilla columnas="1fr">
+                <div className="bg-surface-card-hover px-2.5 py-2 min-w-0">
+                    <p className="text-body-sm font-black break-words leading-snug">{datos.producto}</p>
+                    {datos.nombre && <p className={`text-caption font-semibold mt-0.5 ${claseTenue}`}>{datos.nombre}</p>}
+                </div>
+                {pct != null && (
+                    <div className="bg-surface-card-hover px-2.5 py-2">
+                        <p className="text-body-sm">
+                            <b className={`font-black tabular-nums ${agotado ? t.rojo.texto : t.naranja.texto}`}>{datos.vendido ?? 0}</b>{' '}
+                            <span className={`font-semibold ${claseTenue}`}>
+                                de {datos.asignado} vendidas{datos.sala ? ` en ${datos.sala}` : ''}
+                            </span>
+                        </p>
+                        <div className="mt-1.5 h-1.5 rounded-full bg-border-card overflow-hidden" data-medida="dato">
+                            <div className={`h-full ${agotado ? t.rojo.barra : t.naranja.barra}`} style={{ width: `${pct}%` }} />
+                        </div>
+                    </div>
+                )}
+                <Bloque rotulo="Todavía hay en" claseTenue={claseTenue} claseRotulo={t.azul.texto}>
+                    {/* Los avisos anteriores traen «Salud 1 12»: se lee como un
+                        solo número, así que la cantidad va entre paréntesis. */}
+                    {datos.donde ? datos.donde.replace(/([^\s(]) (\d+)(?=\s*·|$)/g, '$1 ($2)') : 'Ya no queda en ninguna otra sala.'}
+                </Bloque>
+            </Grilla>
+        );
+    }
+    if (datos.tipo === 'mes') {
+        return (
+            <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
+                <Celda rotulo="Mes" claseTenue={claseTenue} apilable sola={datos.costo == null}>
+                    {conMayuscula(nombreDelMes(datos.mes) ?? datos.mes ?? '—')}
+                </Celda>
+                {datos.costo != null && (
+                    <Celda rotulo="Costo" claseTenue={claseTenue} derecha apilable>{formatMoney(datos.costo)}</Celda>
+                )}
+                {datos.salas.length > 0 && (
+                    <ul className="bg-surface-card-hover divide-y divide-border-card" style={{ gridColumn: '1 / -1' }}>
+                        {datos.salas.map((s) => (
+                            <li key={s.sala} className="flex items-center justify-between gap-3 px-2.5 py-1.5">
+                                <span className="text-body-sm font-bold break-words min-w-0">{s.sala}</span>
+                                <span className="flex-shrink-0 text-caption">
+                                    {s.nivel && <span className={`font-semibold ${claseTenue}`}>Nivel {s.nivel}</span>}
+                                    {s.costo != null && <b className="font-black tabular-nums ml-2">{formatMoney(s.costo)}</b>}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </Grilla>
+        );
+    }
+    return (
+        <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
+            <Celda rotulo="Cómo terminó" claseTenue={claseTenue} apilable sola={!datos.fin}>
+                {datos.motivo ?? 'Cerró su último producto'}
+            </Celda>
+            {datos.fin && (
+                <Celda rotulo="Último día" claseTenue={claseTenue} derecha apilable>{fechaCorta(datos.fin)}</Celda>
+            )}
+        </Grilla>
     );
 }

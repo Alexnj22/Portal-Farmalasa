@@ -407,3 +407,91 @@ export const diferenciaMeToca = (d) => Boolean(d?.itemId) && (
     (d.estado === 'propuesta'       && (d.lado === 'bodega' || d.lado === 'supervision'))
     || (d.estado === 'contrapropuesta' && (d.lado === 'sala' || d.lado === 'supervision'))
     || (d.estado === 'escalada'        && d.lado === 'supervision'));
+
+/* ── Octava tanda (24-sep): conteo cíclico, Hacienda y promociones ──────── */
+
+/** El conteo cíclico del mes, listo para contarse (`CONTEO_CICLICO`). */
+export function datosDeConteo(n) {
+    if (n?.type !== 'CONTEO_CICLICO') return null;
+    const m = n.metadata || {};
+    const comp = m.composicion && typeof m.composicion === 'object' ? m.composicion : null;
+    if (!comp) return null;
+    const ORDEN = ['A', 'B', 'C', 'BAJO_RECETA'];
+    const lugar = (k) => (ORDEN.includes(k) ? ORDEN.indexOf(k) : ORDEN.length);
+    const grupos = Object.entries(comp)
+        .map(([k, v]) => ({ clave: k, n: num(v) ?? 0 }))
+        .filter((g) => g.n > 0)
+        .sort((a, b) => lugar(a.clave) - lugar(b.clave));
+    return {
+        sala: m.sala ? String(m.sala) : null,
+        productos: num(m.productos) ?? grupos.reduce((s, g) => s + g.n, 0),
+        grupos,
+    };
+}
+
+/* Lo que dice Hacienda, en palabras del portal. El original trae la ruta del
+ * campo en el JSON («#/receptor/nrc») y a veces viene en inglés. */
+const CAMPO_DE_HACIENDA = {
+    nrc: 'NRC', nit: 'NIT', numDocumento: 'Documento', tipoDocumento: 'Tipo de documento',
+    telefono: 'Teléfono', correo: 'Correo', direccion: 'Dirección', nombre: 'Nombre',
+    departamento: 'Departamento', municipio: 'Municipio', distrito: 'Distrito', codActividad: 'Actividad',
+    subTotal: 'Subtotal', montoTotalOperacion: 'Total', totalPagar: 'Total a pagar',
+};
+const DE_QUIEN = { receptor: 'del cliente', emisor: 'de la sala', resumen: 'en los totales', cuerpoDocumento: 'en los productos' };
+export function motivoDeHacienda(texto) {
+    const t = String(texto ?? '').trim();
+    if (!t) return null;
+    if (/multiple of 0\.01/i.test(t)) return 'Un monto tiene más de dos decimales.';
+    const m = /#\/(\w+)(?:\/\d+)?\/(\w+)\s*:?\s*(.*)$/.exec(t);
+    if (!m) return t.replace(/^Campo\s+/i, '');
+    const campo = CAMPO_DE_HACIENDA[m[2]] ?? m[2];
+    const quien = DE_QUIEN[m[1]] ? ` ${DE_QUIEN[m[1]]}` : '';
+    const resto = m[3].replace(/\s+/g, ' ').trim();
+    return `${campo}${quien}${resto ? `: ${resto}` : ''}${/[.!?]$/.test(resto) ? '' : '.'}`;
+}
+
+/** El envío nocturno a Hacienda que no salió bien (`SYSTEM` de regularizar-dte). */
+export function datosDeHacienda(n) {
+    if (n?.type !== 'SYSTEM') return null;
+    const h = n.metadata?.hacienda;
+    if (!h) return null;
+    return {
+        corrio: h.corrio !== false,
+        fallidas: num(h.fallidas) ?? 0,
+        resueltas: num(h.resueltas) ?? 0,
+        restantes: num(h.restantes) ?? 0,
+        esperando: num(h.esperando),
+        facturas: (Array.isArray(h.facturas) ? h.facturas : []).filter(Boolean).map((f) => ({
+            sala: f.sala ? String(f.sala) : null,
+            doc: f.doc ? String(f.doc) : null,
+            fecha: f.fecha || null,
+            cliente: f.cliente ? String(f.cliente) : null,
+            monto: num(f.monto),
+            motivo: motivoDeHacienda(f.motivo),
+        })),
+    };
+}
+
+/** Una promoción: terminó, se acaba el lote de una sala, o cerró su mes. */
+export function datosDePromo(n) {
+    if (n?.type !== 'PROMO_CERRADA' && n?.type !== 'PROMO_LOTE_BAJO') return null;
+    const p = n.metadata?.promo;
+    if (!p || !p.tipo) return null;
+    return {
+        tipo: String(p.tipo),
+        nombre: p.nombre ? String(p.nombre) : null,
+        motivo: p.motivo ? String(p.motivo) : null,
+        fin: p.fin || null,
+        producto: p.producto ? String(p.producto) : null,
+        sala: p.sala ? String(p.sala) : null,
+        vendido: num(p.vendido),
+        asignado: num(p.asignado),
+        donde: p.donde ? String(p.donde) : null,
+        mes: p.mes ? String(p.mes) : null,
+        costo: num(p.costo),
+        salas: (Array.isArray(p.salas) ? p.salas : []).filter((s) => s && s.sala).map((s) => ({
+            sala: String(s.sala), nivel: s.nivel != null ? String(s.nivel) : null,
+            venta: num(s.venta), costo: num(s.costo),
+        })),
+    };
+}

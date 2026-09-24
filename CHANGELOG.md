@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1050.0 — Tarjetas: conteo cíclico, Hacienda y promociones
+
+Octava tanda de tarjetas de la campana (usuario, 24-sep: «sigamos con las que
+faltan»):
+
+- **Conteo cíclico**: «Salud 4 · Conteo cíclico de septiembre»; cuántos
+  productos y de qué clase (A, B, C, bajo receta) y cómo se cuenta.
+- **Envío a Hacienda** (antes «⚠️ El barrido de Hacienda terminó con fallas»):
+  «2 facturas no entraron a Hacienda anoche», cuántas no entraron, cuántas sí y
+  cuántas quedan en cola, y cada factura con su sala, documento, fecha, cliente
+  y monto, y lo que dijo Hacienda en palabras del portal («NRC del cliente: no
+  cumple el tamaño mínimo permitido», «Un monto tiene más de dos decimales»).
+  La hora del envío va en 12 horas.
+- **Promociones**: terminó (cómo y cuándo), se acaba el lote de una sala
+  (barra de lo vendido y dónde más queda, «Salud 1 (12)» y no «Salud 1 12»), y
+  cerró el mes de laboratorio (costo y nivel de cada sala). «Podés/llevás»
+  pasan al tú del portal.
+
+Migración `20260924203936`.
+
 ## v2.1049.0 — Tarjetas: diferencia explicada y con respuesta, envío claro, venta de la decisión
 
 Correcciones del usuario a la séptima tanda (24-sep):

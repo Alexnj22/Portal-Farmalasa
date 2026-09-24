@@ -17,6 +17,7 @@ import {
     InsigniaDeSolicitud, CuerpoDeSolicitud, PRODUCTOS_VISIBLES,
     InsigniaDeRespuesta, CuerpoDeRespuesta, InsigniaDeDecision, CuerpoDeDecision,
     InsigniaDeDiferencia, CuerpoDeDiferencia, AccionesDeDiferencia,
+    InsigniaDeConteo, CuerpoDeConteo, InsigniaDeHacienda, CuerpoDeHacienda, InsigniaDePromo, CuerpoDePromo,
 } from './TarjetasDeOperacion';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
@@ -27,6 +28,7 @@ import {
     datosDeMinmaxPendiente, datosDeBolsaNoCuadra, datosDeDeposito,
     datosDeAlertaDeVentas, datosDeFacturaDeSala, datosDeCortesPendientes, datosDePedido, datosDeSolicitud,
     datosDeRespuesta, datosDeDecision, datosDeDiferencia, diferenciaMeToca,
+    datosDeConteo, datosDeHacienda, datosDePromo,
 } from '../../utils/avisosDeOperacion';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -208,11 +210,15 @@ const TarjetaDeAviso = ({
     const respuesta  = datosDeRespuesta(n);
     const decision   = datosDeDecision(n);
     const diferencia = datosDeDiferencia(n);
+    const conteo     = datosDeConteo(n);
+    const hacienda   = datosDeHacienda(n);
+    const promo      = datosDePromo(n);
     // Las tarjetas que ya muestran a la persona con su cara: la fila general
     // de «quién y qué sala» la repetiría.
     const conPersona = solicitud || respuesta || decision || diferencia;
     const conTarjeta = creditos || corteNuevo || bitacora || traslados || minmaxPend || bolsa || deposito
-        || alertaCcf || factSala || cortesPend || pedidoAv || solicitud || respuesta || decision || diferencia;
+        || alertaCcf || factSala || cortesPend || pedidoAv || solicitud || respuesta || decision || diferencia
+        || conteo || hacienda || promo;
 
     const corte = acciones?.corteDe?.(n) ?? null;
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
@@ -278,6 +284,12 @@ const TarjetaDeAviso = ({
                     <InsigniaDeDecision datos={decision} isDark={isDark} />
                 ) : diferencia ? (
                     <InsigniaDeDiferencia datos={diferencia} isDark={isDark} />
+                ) : conteo ? (
+                    <InsigniaDeConteo isDark={isDark} />
+                ) : hacienda ? (
+                    <InsigniaDeHacienda isDark={isDark} />
+                ) : promo ? (
+                    <InsigniaDePromo datos={promo} isDark={isDark} />
                 ) : conAnillo ? (
                     <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                 ) : (
@@ -377,6 +389,9 @@ const TarjetaDeAviso = ({
                         <CuerpoDeDiferencia datos={diferencia} claseTenue={cx.rowBody} isDark={isDark}
                             buscarEmpleado={buscarEmpleado} />
                     )}
+                    {conteo && <CuerpoDeConteo datos={conteo} claseTenue={cx.rowBody} />}
+                    {hacienda && <CuerpoDeHacienda datos={hacienda} claseTenue={cx.rowBody} isDark={isDark} />}
+                    {promo && <CuerpoDePromo datos={promo} claseTenue={cx.rowBody} isDark={isDark} />}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}
                             isDark={isDark} buscarEmpleado={buscarEmpleado} />

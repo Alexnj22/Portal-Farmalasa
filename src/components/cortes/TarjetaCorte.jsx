@@ -8,6 +8,7 @@ import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '../../utils/clickable';
 import { contraste, diferenciaDelCorte, noContoEfectivo, seConfirmaDeUnClic, severidad } from '../../utils/cortesDiagnostico';
 import { conSigno, formatMoney } from '../../utils/formatNumber';
+import { hora12, fechaHora12 } from '../../utils/hora';
 
 /**
  * Un corte de caja, en tarjeta.
@@ -45,14 +46,7 @@ const SEVERIDAD_BADGE = {
     falta: { variant: 'danger',  label: 'Faltante' },
 };
 
-const hhmm = (hora) => String(hora || '').slice(0, 5);
-
-const selloDeTiempo = (iso) => (iso
-    ? new Date(iso).toLocaleString('es-SV', {
-        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-        hour12: true, timeZone: 'America/El_Salvador',
-    })
-    : '');
+const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
 
 // Las iniciales de respaldo las resuelve `AvatarConEstado` con
 // `shortEmployeeName` — y el NOMBRE de al lado sale del mismo canónico.
@@ -199,7 +193,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
     return (
         <div
             data-surface="card"
-            {...clickable(abrir, { label: `Revisar el corte de las ${hhmm(corte.hora)}${sala ? ` de ${sala}` : ''}` })}
+            {...clickable(abrir, { label: `Revisar el corte de las ${hora12(corte.hora)}${sala ? ` de ${sala}` : ''}` })}
             className={`group flex flex-col ${compacta ? 'gap-1.5 p-2' : 'gap-2 p-3'}`}
         >
             <div className="flex items-start justify-between gap-2">
@@ -208,7 +202,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                         {sala && (
                             <span className="text-label font-bold text-content truncate">{sala}</span>
                         )}
-                        <span className="text-caption text-content-2 font-semibold tabular-nums">{hhmm(corte.hora)}</span>
+                        <span className="text-caption text-content-2 font-semibold tabular-nums">{hora12(corte.hora)}</span>
                     </div>
                     {/* QUIÉN cortó, y sólo desde el portal.
                         `empleado_texto` es el nombre de la CUENTA con la que la
@@ -278,7 +272,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 <div className={`text-micro text-right -mt-1 ${arrastre > 0 ? 'text-warning-text' : 'text-danger-text'}`}>
                     {conSigno(arrastre)} de {arrastre > 0 ? 'sobrante' : 'faltante'} viene{' '}
                     {corte.aportes?.length === 1
-                        ? `del corte de las ${hhmm(corte.aportes[0].hora)}`
+                        ? `del corte de las ${hora12(corte.aportes[0].hora)}`
                         : `de ${corte.aportes?.length || 0} cortes anteriores`}
                 </div>
             )}

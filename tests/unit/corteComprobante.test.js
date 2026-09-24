@@ -160,8 +160,8 @@ describe('el comprobante del ingreso o vale acumulado', () => {
         // Una sala corta tres veces el mismo día: sin la hora, la línea no
         // identifica cuál de los tres.
         const texto = cuerpo(asiento());
-        expect(texto).toContain('12:40');
-        expect(texto).toContain('19:02');
+        expect(texto).toContain('12:40pm');
+        expect(texto).toContain('7:02pm');
         expect(texto).toContain('14/08');
     });
 
@@ -184,7 +184,7 @@ describe('el comprobante del ingreso o vale acumulado', () => {
         // Las mismas posiciones que ancla `ticketPrint.test.js`: 36, 44 y 52.
         const linea = cuerpo(asiento()).split('\n').find((l) => l.includes('Cobro de credito'));
         expect(linea.indexOf('14/08') + '14/08'.length).toBe(36);
-        expect(linea.indexOf('12:40') + '12:40'.length).toBe(44);
+        expect(linea.indexOf('12:40pm') + '12:40pm'.length).toBe(44);
         expect(linea.indexOf('$1.25') + '$1.25'.length).toBe(52);
     });
 

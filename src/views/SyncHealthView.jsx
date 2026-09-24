@@ -9,6 +9,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { fetchSyncHealthRecent, SYNC_HEALTH_DOMAINS } from '../data/syncHealth';
 import { ERP_NAMES } from '../constants/erp';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { hora12 } from '../utils/hora';
 
 const DOMAIN_LABELS = {
     products: 'Productos',
@@ -122,7 +123,7 @@ const SyncHealthView = () => {
                                 <DataCell>
                                     <div className="text-label font-bold text-content-2">{dt.toLocaleDateString('es-SV')}</div>
                                     <div className="text-caption text-content-3 flex items-center gap-1 mt-0.5">
-                                        <Clock size={9} /> {dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}
+                                        <Clock size={9} /> {hora12(dt)}
                                     </div>
                                 </DataCell>
                                 <DataCell>

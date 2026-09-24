@@ -6,6 +6,7 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import TimePicker12 from '../../components/common/TimePicker12';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { hora12, fechaHora12 } from '../../utils/hora';
 
 function fmtEntradaParts(iso) {
     if (!iso) return { date: '', time: '' };
@@ -22,7 +23,7 @@ function fmtDisplay(iso) {
     const d   = new Date(iso);
     const hoy = new Date();
     const man = new Date(hoy); man.setDate(hoy.getDate() + 1);
-    const time = d.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const time = hora12(d);
     if (d.toDateString() === hoy.toDateString()) return `Hoy ${time}`;
     if (d.toDateString() === man.toDateString()) return `Mañana ${time}`;
     return d.toLocaleDateString('es-SV', { weekday: 'short', day: 'numeric', month: 'short' }) + ` ${time}`;
@@ -96,7 +97,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                                                 {fmtDisplay(h.programada_at) ?? '—'}
                                             </p>
                                             <p className="text-caption text-content-3">
-                                                {nombre} · {h.registrado_at ? new Date(h.registrado_at).toLocaleString('es-SV', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}
+                                                {nombre} · {h.registrado_at ? fechaHora12(h.registrado_at, { day: '2-digit', month: 'short' }) : ''}
                                             </p>
                                         </div>
                                     </div>

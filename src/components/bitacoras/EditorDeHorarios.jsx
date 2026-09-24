@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Sparkles, Thermometer } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
+import { rango12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los horarios de un área — cuándo se toma la temperatura y cuándo se limpia.
@@ -121,7 +122,7 @@ export default function EditorDeHorarios({ tipo, filas, onCambiar, rango }) {
                         </span>
                         {soloLectura ? (
                             <span className="text-body-sm font-bold text-content-2 tabular-nums">
-                                {hhmm(f.desde)} – {hhmm(f.hasta)}
+                                {rango12(f.desde, f.hasta)}
                             </span>
                         ) : (
                             <>

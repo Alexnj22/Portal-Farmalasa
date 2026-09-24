@@ -31,6 +31,7 @@ import { signPhotosDeep } from '../utils/storageFiles';
 import FileField from '../components/common/FileField';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { formatMoney } from '../utils/formatNumber';
+import { hora12, fechaHora12 } from '../utils/hora';
 import {
     regularizarDte,
     fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices, countConfirmedMhInvoices,
@@ -946,7 +947,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                                             {r.comment && <p className="text-body-sm text-content-3 mb-1">"{r.comment}"</p>}
                                             <p className="text-label text-content-3">
                                                 <span className="font-semibold text-content-2">{r.resolved_by || '—'}</span>
-                                                {r.resolved_at && <> · {new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+                                                {r.resolved_at && <> · {fechaHora12(r.resolved_at, { month: 'short', day: '2-digit' })}</>}
                                             </p>
                                         </div>
                                     </div>
@@ -1044,7 +1045,7 @@ const TarjetaPendienteMH = memo(({
                         {TIPO_PAGO_LABELS[r.tipo_pago] || r.tipo_pago}
                     </Badge>
                 )}
-                {r.hora && <span className="text-micro font-bold text-content-3">{String(r.hora).slice(0, 5)}</span>}
+                {r.hora && <span className="text-micro font-bold text-content-3">{hora12(r.hora)}</span>}
             </div>
 
             {/* Acciones */}
@@ -1577,7 +1578,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                 {resolvedBy
                                                     ? <span className="font-semibold text-content-2">{resolvedBy}</span>
                                                     : 'Marcado como recibido'}
-                                                {r.resolution?.resolved_at && <> · {new Date(r.resolution.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+                                                {r.resolution?.resolved_at && <> · {fechaHora12(r.resolution.resolved_at, { month: 'short', day: '2-digit' })}</>}
                                                 {!r.resolution && <> · {r.fecha}</>}
                                             </p>
                                         </div>
@@ -2009,7 +2010,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                                             {r.comment && <p className="text-body-sm text-content-3 mb-1">"{r.comment}"</p>}
                                             <p className="text-label text-content-3">
                                                 <span className="font-semibold text-content-2">{r.resolved_by || '—'}</span>
-                                                {r.resolved_at && <> · {new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+                                                {r.resolved_at && <> · {fechaHora12(r.resolved_at, { month: 'short', day: '2-digit' })}</>}
                                             </p>
                                         </div>
                                     </div>
@@ -2403,7 +2404,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                 {confirmedPageRows.map((r, ci) => {
                                     const inv = r.invoice;
                                     const tipoPago = r.tipo_pago?.toLowerCase() || '';
-                                    const dt = r.confirmed_at ? new Date(r.confirmed_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+                                    const dt = r.confirmed_at ? fechaHora12(r.confirmed_at, { month: 'short', day: '2-digit' }) : '—';
                                     return (
                                         <DataRow key={r.id} index={ci}>
                                             <DataCell>
@@ -2952,7 +2953,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                 {resolvedBy
                                                     ? <span className="font-semibold text-content-2">{resolvedBy}</span>
                                                     : 'Solventada'}
-                                                {r.resolution?.resolved_at && <> · {new Date(r.resolution.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+                                                {r.resolution?.resolved_at && <> · {fechaHora12(r.resolution.resolved_at, { month: 'short', day: '2-digit' })}</>}
                                             </p>
                                         </div>
                                     </div>

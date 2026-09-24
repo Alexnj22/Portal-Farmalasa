@@ -1,5 +1,5 @@
 import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { hora12 } from './hora';
+import { hora12, horasEnTexto } from './hora';
 
 /* Cómo se LEE una notificación: severidad, tono, verbo y antigüedad.
  *
@@ -33,8 +33,9 @@ export const SEVERIDAD = [
 export const severidadDelTitulo = (titulo = '') =>
     SEVERIDAD.find(s => s.re.test(titulo.trim())) || null;
 
+// Y las horas en 12: los títulos guardados antes del 23-sep dicen «de las 22:05».
 export const tituloSinEmoji = (titulo = '') =>
-    titulo.replace(/^\s*(?:🚨|❌|⛔|⚠️|⚠|✅|✔️)\s*/u, '');
+    horasEnTexto(titulo.replace(/^\s*(?:🚨|❌|⛔|⚠️|⚠|✅|✔️)\s*/u, ''));
 
 export const tintForType = (type = '', metadata = {}, isDark = false) => {
     if (isDark) {

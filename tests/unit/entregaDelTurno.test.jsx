@@ -82,7 +82,7 @@ describe('EntregaDelTurno', () => {
         const texto = container.textContent;
         expect(texto).toContain('La caja pasó por 3 manos hoy');
         expect(texto).toContain('Glenda Anaya');
-        expect(texto).toContain('última entrega de las 21:00');
+        expect(texto).toContain('última entrega de las 9:00\u00a0p.\u00a0m.');
     });
 
     it('la cadena mete a cada persona UNA vez, no dos', () => {

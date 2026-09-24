@@ -9,6 +9,7 @@ import { formatMoney } from '../../utils/formatNumber';
 // El rango de días vive en `etapas` porque también lo arma el motor para el
 // rótulo de la ranura de la píldora, y este archivo se carga en diferido.
 import { rangoDeDias } from '../../views/bolsas/etapas';
+import { hora12, fechaHora12 } from '../../utils/hora';
 
 /**
  * El archivo de las TANDAS de conteo.
@@ -40,11 +41,7 @@ import { rangoDeDias } from '../../views/bolsas/etapas';
 const fechaLarga = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
     day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
 }) : '');
-const selloDeTiempo = (iso) => (iso ? new Date(iso).toLocaleString('es-SV', {
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-    hour12: true, timeZone: 'America/El_Salvador',
-}) : '');
-const hhmm = (h) => String(h || '').slice(0, 5);
+const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
 // Las iniciales de respaldo se fueron con el avatar suelto: hoy las resuelve
 // `AvatarConEstado` con `shortEmployeeName`, el mismo respaldo del resto
 // del portal.
@@ -327,7 +324,7 @@ function BolsasDeLaSala({ bolsas }) {
                         </DataCell>
                         <DataCell>
                             <span className="text-caption text-content-2 tabular-nums whitespace-nowrap">
-                                {fechaLarga(b.fecha)} · {hhmm(b.hora)}
+                                {fechaLarga(b.fecha)} · {hora12(b.hora)}
                             </span>
                         </DataCell>
                         <DataCell align="right" hideBelow="md">

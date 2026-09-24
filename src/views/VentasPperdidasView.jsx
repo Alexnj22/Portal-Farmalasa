@@ -7,6 +7,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { exportCsv } from '../utils/csvExport';
+import { fechaHora12 } from '../utils/hora';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
@@ -178,10 +179,7 @@ export default function VentasPperdidasView() {
                             const reporterObj = empMap[r.reportado_por]        || null;
                             const reporter    = reporterObj?.name              || null;
                             const reporterPic = reporterObj?.photo             || null;
-                            const fecha    = new Date(r.created_at).toLocaleDateString('es-SV', {
-                                day: '2-digit', month: 'short', year: '2-digit',
-                                hour: '2-digit', minute: '2-digit',
-                            });
+                            const fecha    = fechaHora12(r.created_at, { day: '2-digit', month: 'short', year: '2-digit' });
 
                             return (
                                 <div

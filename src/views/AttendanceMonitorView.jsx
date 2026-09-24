@@ -36,6 +36,7 @@ import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from "../components/common/LiquidSelect";
 import FilterBar from "../components/common/FilterBar";
 import { toLocalISODate } from "../utils/timeClock.helpers";
+import { hora12 } from "../utils/hora";
 import { useAuth } from '../context/AuthContext';
 
 const EMPTY_ARRAY = [];
@@ -148,15 +149,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   ], [branches]);
 
   // --- HELPERS DE TIEMPO ---
-  const formatTime12h = (time24) => {
-    if (!time24) return "";
-    let [hours, minutes] = String(time24).split(":");
-    hours = parseInt(hours, 10);
-    const ampm = hours >= 12 ? "p.m." : "a.m.";
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    return `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
-  };
+  const formatTime12h = (time24) => hora12(time24 ? String(time24) : "");
 
   const buildDateFromTime = (timeStr, baseDate) => {
     if (!timeStr) return null;
@@ -202,10 +195,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     const lastPunch = punches.length > 0 ? punches[punches.length - 1] : null;
 
     if (lastPunch) {
-      lastActionTime = new Date(lastPunch.timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      lastActionTime = hora12(lastPunch.timestamp);
 
       const lastType = lastPunch.type;
 
@@ -546,7 +536,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         <div className="mt-2 pt-2 border-t border-divider flex flex-wrap gap-1.5">
           {punches.slice(-3).reverse().map((p, idx) => {
             const Icon = punchIcon(p.type);
-            const t = new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            const t = hora12(p.timestamp);
             const isLatest = idx === 0;
             return (
               <div

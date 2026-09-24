@@ -16,16 +16,10 @@ import { CORTE_TELEFONO } from '../../../components/common/usarExpediente';
 import { clickable } from '../../../utils/clickable';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 import { rotuloCampo } from '../../../utils/rotuloDeCampo';
+import { hora12 } from '../../../utils/hora';
 
-// Helper para convertir 24h string ("16:00") a 12h string ("4:00 pm")
-const formatTime12hStr = (time24) => {
-    if (!time24) return '';
-    const [h, m] = time24.split(':');
-    let hour = parseInt(h, 10);
-    const ampm = hour >= 12 ? 'pm' : 'am';
-    hour = hour % 12 || 12;
-    return `${hour}:${m} ${ampm}`;
-};
+// «16:00» → «4:00 p. m.», del canónico.
+const formatTime12hStr = (time24) => hora12(time24);
 
 const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, filterBranch, onClose, onSave, anchorRect, coverageMeta }) => {
     const branches = useStaffStore(s => s.branches);

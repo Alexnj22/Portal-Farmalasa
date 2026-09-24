@@ -27,6 +27,7 @@ import { smartFilter } from '../utils/searchUtils';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
+import { hora12 } from '../utils/hora';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -51,15 +52,9 @@ const diasDeVacacion = (inicio, fin, horaInicio, horaFin) => {
     return Math.max(0, enteros);
 };
 
-/* «12:00» → «12:00 md». La hora sola no dice si el día se trabajó antes o
- * después, así que en la lista viaja pegada a su fecha. */
-const fmtHora = (t) => {
-    if (!t) return '';
-    const [h, m] = t.split(':').map(Number);
-    const suf = h === 12 && m === 0 ? 'md' : h === 0 && m === 0 ? 'mn' : h < 12 ? 'am' : 'pm';
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${String(m).padStart(2, '0')} ${suf}`;
-};
+/* «12:00» → «12:00 p. m.» (el canónico del portal). La hora sola no dice si
+ * el día se trabajó antes o después, así que en la lista viaja pegada a su fecha. */
+const fmtHora = (t) => hora12(t);
 
 const STATUS_META = {
     DRAFT:            { label: 'Borrador',      bg: 'bg-surface-card-hover',   text: 'text-content-3',   border: 'border-divider',   bar: 'bg-content-3', variante: 'neutral'   },
@@ -1091,7 +1086,7 @@ const VacationPlanView = () => {
                                                             </DataCell>
                                                             <DataCell hideBelow="2xl" className="text-content-3 font-medium">{p.branch?.name || '—'}</DataCell>
                                                             <DataCell className="text-content-2 font-medium whitespace-nowrap">
-                                                                {fmtShort(p.start_date)}{p.start_time ? ` ${fmtHora(p.start_time.slice(0, 5))}` : ''} → {fmtShort(p.end_date)}{p.end_time ? ` ${fmtHora(p.end_time.slice(0, 5))}` : ''}
+                                                                {fmtShort(p.start_date)}{p.start_time ? ` ${fmtHora(p.start_time)}` : ''} → {fmtShort(p.end_date)}{p.end_time ? ` ${fmtHora(p.end_time)}` : ''}
                                                             </DataCell>
                                                             <DataCell hideBelow="2xl" className="font-black text-content-2">{p.days}</DataCell>
                                                             <DataCell hideBelow="2xl">

@@ -1,5 +1,6 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C) — shared by the main tab and
 // its extracted sub-components, kept here so neither side duplicates it.
+import { hora12 } from '../../../utils/hora';
 
 export function fmtMin(min) {
     if (min == null || isNaN(min) || min < 0) return null;
@@ -21,23 +22,21 @@ export function fmtEntrega(iso) {
     const d   = new Date(iso);
     const hoy = new Date();
     const man = new Date(hoy); man.setDate(hoy.getDate() + 1);
-    const time = d.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const time = hora12(d);
     if (d.toDateString() === hoy.toDateString()) return `Hoy ${time}`;
     if (d.toDateString() === man.toDateString()) return `Mañana ${time}`;
     return d.toLocaleDateString('es-SV', { weekday: 'short', day: 'numeric', month: 'short' }) + ` ${time}`;
 }
 
-// La hora de un momento. `es-SV` devuelve «10:22 a. m.» —con espacio dentro de
-// la abreviatura— y eso son ~62px; se junta a «10:22 a.m.».
+// La hora de un momento, del canónico (`hora12`): «10:22 a. m.», con espacios
+// que no se cortan.
 //
 // Vivía dentro de `LifecycleTimeline`. Se mudó acá cuando el carril de pasos de
 // una diferencia necesitó la misma hora: dos copias del mismo formato son dos
 // horas que pueden verse distintas en la misma tarjeta.
 export function fmtHM(iso) {
     if (!iso) return '';
-    return new Date(iso)
-        .toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true })
-        .replace(/\s*([ap])\.\s*m\./i, ' $1.m.');
+    return hora12(iso);
 }
 
 // El día de un momento, corto: «2 sep». Va arriba de la hora en el carril de

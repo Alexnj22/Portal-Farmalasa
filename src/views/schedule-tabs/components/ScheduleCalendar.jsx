@@ -15,6 +15,7 @@ import {
     HORAS_SEMANA_DIURNA, HORAS_JORNADA_DIURNA, DESCANSOS_POR_SEMANA, HORAS_ENTRE_JORNADAS,
 } from '../../../utils/scheduleHelpers';
 import { clickable } from '../../../utils/clickable';
+import { hora12 } from '../../../utils/hora';
 
 // ============================================================================
 // 🛠️ ICONOS CUSTOM
@@ -38,19 +39,9 @@ const IconLactation = ({ className, size = 12 }) => (
     </svg>
 );
 
-const formatMins12h = (mins) => {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    const ampm = h >= 12 ? 'pm' : 'am';
-    const h12 = h % 12 || 12;
-    return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
-};
+const formatMins12h = (mins) => hora12(`${Math.floor(mins / 60) % 24}:${String(mins % 60).padStart(2, '0')}`);
 
-const formatHourCompact = (h) => {
-    const period = h >= 12 ? 'pm' : 'am';
-    const hour12 = h % 12 || 12;
-    return `${hour12}${period}`;
-};
+const formatHourCompact = (h) => hora12(`${h % 24}:00`);
 
 const formatNames = (setOfNames) => {
     const arr = Array.from(setOfNames);
@@ -465,11 +456,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
 // ============================================================================
 // 🔀 FILA DE EMPLEADO DE COBERTURA (OTRA SUCURSAL)
 // ============================================================================
-const fmt12h = (t) => {
-    if (!t) return '';
-    const [h, m] = t.split(':').map(Number);
-    return `${h % 12 || 12}:${m.toString().padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}`;
-};
+const fmt12h = (t) => hora12(t);
 
 const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByDow, calendarDates, shifts, onEditCell, onRemove }) => {
     const shortName = shortEmployeeName(emp);

@@ -40,6 +40,7 @@ import {
 import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
+import { hora12 } from '../utils/hora';
 import TabInyecciones from './ventas/TabInyecciones';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -999,7 +1000,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                             >
                                 <DataCell>
                                     <p className={`text-body-sm font-bold text-content-2 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
-                                    {r.hora && <p className="text-caption text-content-3">{r.hora?.slice(0, 5)}</p>}
+                                    {r.hora && <p className="text-caption text-content-3">{hora12(r.hora)}</p>}
                                     {isCancelled
                                         ? <span className="text-micro font-black uppercase tracking-widest text-danger-text">ANULADA</span>
                                         : r.recibido_mh === null && <span className="text-micro font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}

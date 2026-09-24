@@ -5,6 +5,7 @@ import IdentidadDeQuienRetira from '../bolsas/IdentidadDeQuienRetira';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
+import { hora12 } from '../../utils/hora';
 
 /**
  * «¿Quién recibe la caja?» — el paso que convierte confirmar un corte en una
@@ -68,7 +69,7 @@ export default function EntregaDeCaja({
 
     const olvidar = useCallback(() => { setPersona(null); setVale(null); }, []);
 
-    const hora = String(corte?.hora || '').slice(0, 5);
+    const hora = hora12(corte?.hora);
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-md"

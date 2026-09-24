@@ -17,6 +17,7 @@ import { getSignedFileUrl } from '../../utils/storageFiles';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
+import { hora12, fechaHora12 } from '../../utils/hora';
 
 /**
  * Todo lo que le pasó a una bolsa, y las dos correcciones que existen.
@@ -51,10 +52,7 @@ import { useToastStore } from '../../store/toastStore';
  * y que acá faltaba.
  */
 
-const selloDeTiempo = (iso) => (iso ? new Date(iso).toLocaleString('es-SV', {
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-    hour12: true, timeZone: 'America/El_Salvador',
-}) : '');
+const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
 
 /** dd/mm/aaaa: la fecha del corte llega como `2026-08-15` y así se leía en
  *  pantalla. Se arma a mano y no con `Date` para que el huso no la corra un día. */
@@ -224,7 +222,7 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                     <div className="min-w-0">
                         <h3 className="text-body font-bold text-content">{bolsa.folio}</h3>
                         <p className="text-caption text-content-3 truncate">
-                            {sala} · corte del {fechaCorta(bolsa.fecha)} {String(bolsa.hora).slice(0, 5)}
+                            {sala} · corte del {fechaCorta(bolsa.fecha)} {hora12(bolsa.hora)}
                         </p>
                     </div>
                 </LiquidModal.Header>

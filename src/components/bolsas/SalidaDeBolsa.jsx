@@ -20,6 +20,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
+import { hora12 } from '../../utils/hora';
 
 /* El editor de la foto se baja al elegir el archivo, no al abrir el formulario:
  * arrastra el canónico de recorte, y la mayoría de las salidas del día no piden
@@ -91,7 +92,6 @@ const EditorDeDocumento = lazy(() => import('../common/EditorDeDocumento'));
  * carné era pedir algo que no existe.
  */
 
-const hhmm = (hora) => String(hora || '').slice(0, 5);
 // El mediodía en UTC y no la fecha pelada: `2026-08-15` interpretado como
 // medianoche se corre un día para atrás con el huso de la sala.
 const fechaCorta = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
@@ -1220,7 +1220,7 @@ export default function SalidaDeBolsa({
                         <span className="text-label text-content truncate">
                             {r.folio}
                             <span className="text-caption text-content-3">
-                                {b ? ` · corte del ${fechaCorta(b.fecha)} ${hhmm(b.hora)}` : ''}
+                                {b ? ` · corte del ${fechaCorta(b.fecha)} ${hora12(b.hora)}` : ''}
                                 {' '}· quedan {formatMoney((b?.saldo || 0) - r.monto)}
                             </span>
                         </span>

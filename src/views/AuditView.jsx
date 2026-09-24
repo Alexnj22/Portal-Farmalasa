@@ -17,6 +17,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { smartFilter } from '../utils/searchUtils';
 import Badge from '../components/common/Badge';
+import { hora12, hora12ConSegundos } from '../utils/hora';
 
 const ACTION_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -61,7 +62,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                     {logDate.toLocaleDateString()}
                 </div>
                 <div className="text-micro md:text-caption font-bold text-content-3 mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 font-mono">
-                    <span className="flex items-center gap-1"><Clock size={10} className="md:w-3 md:h-3" /> {logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                    <span className="flex items-center gap-1"><Clock size={10} className="md:w-3 md:h-3" /> {hora12(logDate)}</span>
                     <span className="hidden md:inline mx-1 text-content-3/50">|</span>
                     {/* 🚨 MEJORA: Muestra si fue Kiosco o Panel */}
                     <span className="flex items-center gap-1">
@@ -226,7 +227,7 @@ const AuditView = ({ openModal }) => {
                 const dateObj = new Date(log.created_at);
                 return [
                     escape(dateObj.toLocaleDateString()),
-                    escape(dateObj.toLocaleTimeString()),
+                    escape(hora12ConSegundos(dateObj)),
                     escape(log.user_name),
                     escape(log.action),
                     escape(log.severity),

@@ -9,7 +9,7 @@
 // `docs/IMPRESION-EN-TICKETERA-2026-08-13.md`.
 
 import { describe, it, expect } from 'vitest';
-import { COLUMNAS, soloAscii, recortar, fechaCorta, hhmm, selloDeTiempo, selloCorto, juntarSiEntra }
+import { COLUMNAS, soloAscii, recortar, fechaCorta, horaDeColumna, selloDeTiempo, selloCorto, juntarSiEntra }
     from '../../src/utils/ticketCampos';
 
 describe('el rollo es ASCII y nada más', () => {
@@ -76,9 +76,11 @@ describe('las fechas y las horas', () => {
     });
 
     it('la hora del corte va sin segundos', () => {
-        expect(hhmm('19:01:41')).toBe('19:01');
-        expect(hhmm('07:00:00')).toBe('07:00');
-        expect(hhmm(null)).toBe('');
+        expect(horaDeColumna('19:01:41')).toBe('7:01pm');
+        expect(horaDeColumna('07:00:00')).toBe('7:00am');
+        // 12:05pm son 7: entra en la columna de 8 sin que `aDerecha` le corte la hora.
+        expect(horaDeColumna('12:05:00')).toBe('12:05pm');
+        expect(horaDeColumna(null)).toBe('');
     });
 });
 
@@ -87,7 +89,7 @@ describe('el sello de tiempo', () => {
 
     it('se escribe en hora de la sala, no en la de quien imprime', () => {
         expect(selloDeTiempo(iso)).toContain('14/08/2026');
-        expect(selloDeTiempo(iso)).toMatch(/07:12/);
+        expect(selloDeTiempo(iso)).toMatch(/7:12 p\.m\./);
     });
 
     it('sale en ASCII', () => {
@@ -103,8 +105,8 @@ describe('el sello de tiempo', () => {
         expect(corto.length).toBeLessThan(selloDeTiempo(iso).length);
     });
 
-    it('el corto suelta el siglo, la coma y los puntos de p.m.', () => {
-        expect(selloCorto(iso)).toBe('14/08/26 07:12 pm');
+    it('el corto suelta el siglo y la coma', () => {
+        expect(selloCorto(iso)).toBe('14/08/26 7:12 p.m.');
     });
 
     it('sin instante, los dos quedan vacíos', () => {

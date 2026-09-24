@@ -10,6 +10,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { unlockModule } from '../../data/moduleLocks';
 import { MODULE_MAP, moduleKeyForPath } from '../../constants/moduleMap';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { hora12 } from '../../utils/hora';
 
 /**
  * El aviso de "este módulo está en mantenimiento", en el ENCABEZADO.
@@ -51,10 +52,7 @@ function useLockDeLaRuta(moduleKeyProp) {
     };
 }
 
-const hora = (iso) => {
-    try { return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: false }); }
-    catch { return ''; }
-};
+const hora = (iso) => hora12(iso);
 
 // ── La ficha, junto al título ────────────────────────────────────────────────
 export const ModuleLockChip = memo(({ moduleKey }) => {

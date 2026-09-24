@@ -15,6 +15,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import { useToastStore } from '../../store/toastStore';
+import { hora12, fechaHora12 } from '../../utils/hora';
 
 /**
  * El archivo de los depósitos al banco.
@@ -38,11 +39,7 @@ import { useToastStore } from '../../store/toastStore';
 const fechaLarga = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
     day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
 }) : '');
-const selloDeTiempo = (iso) => (iso ? new Date(iso).toLocaleString('es-SV', {
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-    hour12: true, timeZone: 'America/El_Salvador',
-}) : '');
-const hhmm = (h) => String(h || '').slice(0, 5);
+const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
 
 const COLUMNAS = [
     { key: 'folio', label: 'Depósito' },
@@ -253,7 +250,7 @@ function Detalle({ deposito, nombreSala, onClose, onCambio }) {
                                 <span className="min-w-0">
                                     <span className="text-label font-bold text-content">{b.folio}</span>
                                     <span className="text-caption text-content-3">
-                                        {' '}{nombreSala?.[b.branch_id] || ''} · {fechaLarga(b.fecha)} · {hhmm(b.hora)}
+                                        {' '}{nombreSala?.[b.branch_id] || ''} · {fechaLarga(b.fecha)} · {hora12(b.hora)}
                                     </span>
                                 </span>
                                 <span className="text-label font-bold tabular-nums text-content shrink-0">

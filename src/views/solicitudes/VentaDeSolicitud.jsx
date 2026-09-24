@@ -6,6 +6,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { fetchInvoiceById, fetchInvoiceItemsForInvoice } from '../../data/ventas';
 import { tieneSelloMh } from '../../data/facturacion';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { hora12 } from '../../utils/hora';
 import { CaraPersona } from './PersonasSolicitud';
 
 /* La venta entera, adentro de la solicitud que pide tocarla.
@@ -38,17 +39,9 @@ const ESTADOS_ANULADA = ['NULA', 'DTE INVALIDADO EN MH'];
 const fmtFecha = (iso) => !iso ? '—'
     : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
 
-// `hora` es un `time` de Postgres («13:09:10»), no un instante: se formatea a
-// mano. Pasarlo por `new Date()` le pegaría la zona horaria del navegador y
-// correría la hora de la venta.
-const fmtHoraVenta = (hhmmss) => {
-    const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmmss ?? ''));
-    if (!m) return '';
-    const h = Number(m[1]);
-    const ampm = h < 12 ? 'a. m.' : 'p. m.';
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${m[2]} ${ampm}`;
-};
+// `hora` es un `time` de Postgres («13:09:10»), no un instante: `hora12` lo
+// toma como hora de reloj, sin zona, así que no corre la hora de la venta.
+const fmtHoraVenta = (hhmmss) => hora12(hhmmss);
 
 const fmtVence = (iso) => !iso ? null
     : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short', year: 'numeric' });

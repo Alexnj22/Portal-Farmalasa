@@ -15,6 +15,7 @@ import {
     CLASE_ANTIBIOTICO, ESTADO_RENGLON, faltantesDelRenglon, rotularLibro,
 } from '../../data/bitacoras';
 import { exportCsv } from '../../utils/csvExport';
+import { hora12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El libro foliado de dispensación bajo receta.
@@ -115,7 +116,7 @@ export default function TabBajoReceta({
         const filas = [...renglones]
             .sort((a, b) => a.folio - b.folio)
             .map(r => [
-                r.folio_txt, r.fecha, r.hora ? String(r.hora).slice(0, 5) : '',
+                r.folio_txt, r.fecha, hora12(r.hora),
                 r.producto_nombre, r.laboratorio || '', r.lote || '', r.vence || '',
                 r.cantidad, r.prescrito ?? '', r.paciente || '', r.medico || '',
                 r.numero_junta || '', r.receta_correlativo || '',
@@ -231,7 +232,7 @@ export default function TabBajoReceta({
                             <DataCell>
                                 <p className="text-body-sm text-content-2 tabular-nums whitespace-nowrap">{fmtFecha(r.fecha)}</p>
                                 <p className="text-caption text-content-3 truncate">
-                                    {r.hora ? String(r.hora).slice(0, 5) : ''}
+                                    {hora12(r.hora)}
                                     {r.vendedor ? ` · ${r.vendedor}` : ''}
                                 </p>
                             </DataCell>

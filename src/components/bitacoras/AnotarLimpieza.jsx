@@ -7,6 +7,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import { ListaDePuntos } from './PuntosDeLimpieza';
 import { anularLimpieza, corregirLimpieza, registrarLimpieza } from '../../data/bitacoras';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { rango12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Registrar, corregir o quitar una limpieza.
@@ -25,7 +26,6 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 // la bitácora de auditoría con quién lo hizo.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const hhmm = (t) => String(t || '').slice(0, 5);
 
 export default function AnotarLimpieza({ area, turno, fecha, registro, modo = 'registrar', onCerrar }) {
     const corrigiendo = modo === 'corregir';
@@ -92,7 +92,7 @@ export default function AnotarLimpieza({ area, turno, fecha, registro, modo = 'r
                 <div className="min-w-0">
                     <h3 className="text-body font-bold text-content">{titulo}</h3>
                     <p className="text-caption text-content-3 truncate">
-                        {area.nombre} · {turno.label} ({hhmm(turno.desde)}–{hhmm(turno.hasta)})
+                        {area.nombre} · {turno.label} ({rango12(turno.desde, turno.hasta)})
                     </p>
                 </div>
             </LiquidModal.Header>

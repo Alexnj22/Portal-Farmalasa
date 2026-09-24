@@ -12,6 +12,7 @@ import PuntosDeLimpieza from '../../components/bitacoras/PuntosDeLimpieza';
 import { LoadingState } from '../../components/common/StateViews';
 import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, areaNueva, crearArea, fetchAreas, guardarArea, rangoDeLaSucursal, rotularRango, soloLimpieza } from '../../data/bitacoras';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { hora12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuración de las áreas.
@@ -40,12 +41,8 @@ const ICONO = {
     vitrinas: LayoutPanelTop, servicio_sanitario: Toilet,
 };
 
-/** «07:00» → «7:00 AM», para decir el horario en el texto de ayuda. */
-const rotularHora12 = (hm) => {
-    const [h, m] = String(hm || '').split(':').map(Number);
-    if (Number.isNaN(h)) return '';
-    return `${h % 12 === 0 ? 12 : h % 12}:${String(m || 0).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
-};
+/** «07:00» → «7:00 a. m.», para decir el horario en el texto de ayuda. */
+const rotularHora12 = (hm) => hora12(hm);
 
 /**
  * Un año después de una fecha, sin que el huso la mueva.

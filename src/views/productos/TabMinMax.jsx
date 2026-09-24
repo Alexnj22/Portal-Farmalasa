@@ -49,6 +49,7 @@ import { upsertStockParams } from '../../data/stockParams';
 import { useMinMaxData, estadoAjuste } from './tabminmax/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
+import { hora12 } from '../../utils/hora';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import ModalShell from '../../components/common/ModalShell';
@@ -1697,7 +1698,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const meta = MINMAX_HISTORY_ACTION_META[log.action] || { label: log.action, variante: 'neutral' };
                                 const dt = new Date(log.created_at);
                                 const dateStr = dt.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
-                                const timeStr = dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                const timeStr = hora12(dt);
                                 const fmt = v => v == null ? '—' : v;
                                 return (
                                     <div key={log.id} data-surface="card" className="flex items-start gap-3 px-3.5 py-3">

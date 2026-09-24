@@ -1,4 +1,5 @@
 import { Palmtree, HeartPulse, FileText, CalendarOff, Building2 } from 'lucide-react';
+import { hora12 } from './hora';
 
 /* La semana se mudó a `utils/semana.js` (2026-08-21) para que Solicitudes y
  * Traslados puedan pedirla sin arrastrar este archivo entero —que trae íconos y
@@ -32,27 +33,16 @@ export const formatDateLocal = (dateStr) => {
     return `${d}/${m}/${y}`;
 };
 
+// Las tres de abajo son nombres viejos: la hora se escribe en `utils/hora.js`
+// (regla del 23-sep, «12 horas siempre»), y éstas sólo le pasan el valor.
 export const minsToTimeStr = (mins) => {
-    let h = Math.floor(mins / 60);
-    const m = mins % 60;
-    let ampm = h >= 12 ? 'pm' : 'am';
-    h = h % 12 || 12;
-    return `${h}:${String(m).padStart(2, '0')} ${ampm}`;
+    const t = ((Math.round(mins) % 1440) + 1440) % 1440;
+    return hora12(`${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`);
 };
 
-export const formatTime12h = (time24) => {
-    if (!time24) return '';
-    let [h, m] = time24.split(':').map(Number);
-    const ampm = h >= 12 ? 'pm' : 'am';
-    h = h % 12 || 12;
-    return `${h}:${String(m).padStart(2, '0')} ${ampm}`;
-};
+export const formatTime12h = (time24) => (time24 ? hora12(String(time24)) : '');
 
-export const formatHourAMPM = (hour) => {
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const h = hour % 12 || 12;
-    return `${h}:00 ${ampm}`;
-};
+export const formatHourAMPM = (hour) => hora12(`${((hour % 24) + 24) % 24}:00`);
 
 export const DAY_NAMES = { 1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb', 0: 'Dom' };
 

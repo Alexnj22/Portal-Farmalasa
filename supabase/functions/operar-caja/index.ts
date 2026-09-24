@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
+import { hora12 } from "../_shared/hora.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los actos de caja que faltaban en el portal: ABRIR, anotar un INGRESO o una
@@ -1529,7 +1530,7 @@ Deno.serve(async (req) => {
       const sinResolver = (cortesDelDia ?? []).filter(
         (c) => c.tipo === "C" && c.estado === "PENDIENTE");
       if (sinResolver.length) {
-        const horas = sinResolver.map((c) => String(c.hora ?? "").slice(0, 5))
+        const horas = sinResolver.map((c) => hora12(c.hora))
           .filter(Boolean).join(", ");
         return json({
           ok: false, corte_sin_resolver: true,

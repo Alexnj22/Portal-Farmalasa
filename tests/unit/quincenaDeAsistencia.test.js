@@ -97,25 +97,25 @@ describe('el lunes de la semana', () => {
 
 describe('las horas', () => {
     it('una hora ISO se lee en El Salvador y en 12 horas', () => {
-        expect(fmtTimeCSTStr('2026-08-24T14:05:00Z')).toBe('08:05 AM');
-        expect(fmtTimeCSTStr('2026-08-24T18:30:00Z')).toBe('12:30 PM');
-        expect(fmtTimeCSTStr('2026-08-25T02:00:00Z')).toBe('08:00 PM');
+        expect(fmtTimeCSTStr('2026-08-24T14:05:00Z')).toBe('8:05\u00a0a.\u00a0m.');
+        expect(fmtTimeCSTStr('2026-08-24T18:30:00Z')).toBe('12:30\u00a0p.\u00a0m.');
+        expect(fmtTimeCSTStr('2026-08-25T02:00:00Z')).toBe('8:00\u00a0p.\u00a0m.');
     });
 
     it('las doce se escriben 12, nunca 00', () => {
         // `h % 12` da 0 al mediodía y a medianoche; el `|| 12` es lo que lo
         // arregla, y es una sola barra de distancia entre «12:30 PM» y «00:30».
-        expect(fmtTimeCSTStr('2026-08-24T18:00:00Z')).toBe('12:00 PM');
-        expect(fmtTimeCSTStr('2026-08-24T06:00:00Z')).toBe('12:00 AM');
-        expect(formatTime12h('12:00')).toBe('12:00 PM');
-        expect(formatTime12h('00:30')).toBe('12:30 AM');
+        expect(fmtTimeCSTStr('2026-08-24T18:00:00Z')).toBe('12:00\u00a0p.\u00a0m.');
+        expect(fmtTimeCSTStr('2026-08-24T06:00:00Z')).toBe('12:00\u00a0a.\u00a0m.');
+        expect(formatTime12h('12:00')).toBe('12:00\u00a0p.\u00a0m.');
+        expect(formatTime12h('00:30')).toBe('12:30\u00a0a.\u00a0m.');
     });
 
     it('un horario `HH:MM` NO lleva huso: ya es hora de pared', () => {
         // Restarle seis horas al horario del turno lo correría: «08:00» es las
         // ocho de la mañana en la sala, no un instante UTC.
-        expect(formatTime12h('08:00')).toBe('08:00 AM');
-        expect(formatTime12h('17:45')).toBe('05:45 PM');
+        expect(formatTime12h('08:00')).toBe('8:00\u00a0a.\u00a0m.');
+        expect(formatTime12h('17:45')).toBe('5:45\u00a0p.\u00a0m.');
     });
 
     it('lo vacío y lo roto sale como «–», no como «NaN»', () => {

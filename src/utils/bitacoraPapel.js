@@ -240,7 +240,15 @@ const abreSemana = (f) => (f ? new Date(`${f}T12:00:00Z`).getUTCDay() === 0 : fa
 
 const pct = (h, e) => (e > 0 ? `${Math.round((h / e) * 100)}%` : '—');
 
-const hhmm = (h) => esc(String(h ?? '').slice(0, 5));
+// La hora de la franja, en 12 horas como todo el portal (24-sep). Gemela de
+// `hora12` en `./hora.js`, escrita acá porque este archivo no importa nada a
+// propósito: `scripts/maqueta-bitacoras.mjs` lo carga con node a secas.
+const horaFranja = (h) => {
+    const m = /^(\d{1,2}):(\d{2})/.exec(String(h ?? ''));
+    if (!m) return esc(String(h ?? ''));
+    const n = Number(m[1]);
+    return `${n % 12 || 12}:${m[2]}&nbsp;${n < 12 ? 'a.&nbsp;m.' : 'p.&nbsp;m.'}`;
+};
 
 const rangoDe = (area) => (area.temp_min != null && area.temp_max != null
     ? `${Number(area.temp_min)} a ${Number(area.temp_max)} °C`
@@ -340,7 +348,7 @@ export function hojaDeArea(mes, area, logo, hoja = null) {
 
     const grupo = franjas.map(f =>
         `<th colspan="${sub}" class="sep">${esc(f.label)}<span class="hora hora">${
-            hhmm(f.desde)} a ${hhmm(f.hasta)}</span></th>`).join('');
+            horaFranja(f.desde)} a ${horaFranja(f.hasta)}</span></th>`).join('');
 
     const subCabeza = franjas.map(() =>
         `<th class="sep">T °C</th>${conH ? '<th>H %</th>' : ''}<th>Anotó</th>`).join('');
@@ -425,7 +433,7 @@ export function hojaDeLimpieza(mes, area, logo, hoja = null) {
         .concat(turnos.map(() => `<col style="width:${porTurno}%"/>`));
 
     const cabeza = turnos.map(t =>
-        `<th class="sep">${esc(t.label)}<span class="hora">${hhmm(t.desde)} a ${hhmm(t.hasta)}</span></th>`).join('');
+        `<th class="sep">${esc(t.label)}<span class="hora">${horaFranja(t.desde)} a ${horaFranja(t.hasta)}</span></th>`).join('');
 
     const filas = (area.dias || []).map((d) => {
         const celdas = turnos.map((t) => {

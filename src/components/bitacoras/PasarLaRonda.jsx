@@ -9,6 +9,7 @@ import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import { ListaDePuntos } from './PuntosDeLimpieza';
 import { fueraDeRango, registrarRonda, rotularRango } from '../../data/bitacoras';
+import { rango12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Pasar la ronda — la vuelta entera en una pantalla.
@@ -46,7 +47,6 @@ const ICONO_AREA = {
     servicio_sanitario: Toilet,
 };
 
-const hhmm = (t) => String(t || '').slice(0, 5);
 
 /** Un renglón de temperatura dentro del momento. */
 function RenglonLectura({ item, valor, onCambio, errorServidor }) {
@@ -320,7 +320,7 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
                         <header className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                             <h4 className="text-body-sm font-black text-content">{m.label}</h4>
                             <span className="text-label text-content-3 tabular-nums">
-                                {hhmm(m.desde)}–{hhmm(m.hasta)}
+                                {rango12(m.desde, m.hasta)}
                             </span>
                             {m.estado === 'vencida' && (
                                 <Badge variant="warning" size="sm" uppercase={false} icon={Clock}>

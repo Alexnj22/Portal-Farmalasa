@@ -34,6 +34,7 @@ import {
 import useBorrador from '../../hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { hora12 } from '../../utils/hora';
 
 const CATEGORIAS = [
     'Consumidor', 'Contribuyente', 'Gran Contribuyente',
@@ -74,8 +75,7 @@ const edadDe = (iso) => {
 
 const fmtDateTime = (d) => {
     if (!d) return '—';
-    const dt = new Date(d);
-    return `${fmtDate(d)} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+    return `${fmtDate(d)} ${hora12(new Date(d))}`;
 };
 
 function SectionHeader({ icon: Icon, children }) {

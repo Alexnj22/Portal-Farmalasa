@@ -9,6 +9,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { openStoredFile } from '../../utils/storageFiles';
 import CompletarRenglon from './CompletarRenglon';
 import { ESTADO_RENGLON, fetchFolio } from '../../data/bitacoras';
+import { hora12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Un folio, abierto.
@@ -131,7 +132,7 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
                 {vencidoAlVender && <Badge variant="danger" size="md" uppercase={false}>Lote vencido al dispensar</Badge>}
                 <span className="text-body-sm text-content-3">
                     {detalle.sucursal} · {fmtFecha(detalle.fecha)}
-                    {detalle.hora ? ` · ${String(detalle.hora).slice(0, 5)}` : ''}
+                    {detalle.hora ? ` · ${hora12(detalle.hora)}` : ''}
                 </span>
             </div>
 

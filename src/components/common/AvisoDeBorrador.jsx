@@ -2,6 +2,7 @@ import React from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import Notice from './Notice';
 import Button from './Button';
+import { hora12 } from '../../utils/hora';
 
 /**
  * «Tenés cambios sin guardar. ¿Los recuperás?»
@@ -85,6 +86,6 @@ function describirCuando(ts) {
 
     const d = new Date(ts);
     const hoy = new Date().toDateString() === d.toDateString();
-    const hora = d.toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const hora = hora12(d);
     return hoy ? `hoy a las ${hora}` : `ayer a las ${hora}`;
 }

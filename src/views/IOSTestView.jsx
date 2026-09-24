@@ -10,6 +10,7 @@ import {
     leerRotaciones, limpiarRotaciones, remontarAlGirar, fijarRemontarAlGirar,
 } from '../utils/cajaNegra';
 import { APP_VERSION } from '../version';
+import { hora12ConSegundos } from '../utils/hora';
 
 const Card = ({ title, children, accent }) => (
     <div data-surface="card" className={`p-4 ${accent || 'border-border-card'}`}>
@@ -172,7 +173,7 @@ const IOSTestView = () => {
                                             {e.msg || e.src || e.url || e.estado || e.version || '—'}
                                         </p>
                                         <p className="text-micro text-content-3">
-                                            {e.t?.slice(11, 19)} · {e.ruta}
+                                            {hora12ConSegundos(e.t)} · {e.ruta}
                                             {e.recargando === true  && ' · recargó'}
                                             {e.recargando === false && ' · NO recargó (dentro de los 30s)'}
                                         </p>
@@ -197,7 +198,7 @@ const IOSTestView = () => {
                         <Button variant="secondary" size="sm" icon={copiado ? Check : ClipboardCopy}
                             onClick={async () => {
                                 const texto = leerCajaNegra().map(e =>
-                                    `${e.t?.slice(11, 19) ?? '—'}  ${String(e.tipo).padEnd(20)} ${e.ruta ?? ''}\n`
+                                    `${hora12ConSegundos(e.t) || '—'}  ${String(e.tipo).padEnd(20)} ${e.ruta ?? ''}\n`
                                     + `           ${e.tag ? `<${String(e.tag).toLowerCase()}> ` : ''}${e.msg || e.src || e.url || e.estado || e.version || ''}`,
                                 ).join('\n');
                                 try {
@@ -234,7 +235,7 @@ const IOSTestView = () => {
                                         <div className="flex items-center gap-2 mb-1.5">
                                             <Badge size="sm" variant={v.tono}>{v.titulo}</Badge>
                                             <span className="text-micro text-content-3">
-                                                {r.t?.slice(11, 19)} · a {r.hacia} · {r.ruta}
+                                                {hora12ConSegundos(r.t)} · a {r.hacia} · {r.ruta}
                                             </span>
                                         </div>
                                         <p className="text-caption text-content-2 leading-snug mb-2">{v.dice}</p>
@@ -343,7 +344,7 @@ const IOSTestView = () => {
                         <Button variant="secondary" size="sm" icon={copiadoRot ? Check : ClipboardCopy}
                             onClick={async () => {
                                 const texto = leerRotaciones().map(r =>
-                                    `${r.t?.slice(11, 19)} → ${r.hacia} · ${r.ruta}\n`
+                                    `${hora12ConSegundos(r.t)} → ${r.hacia} · ${r.ruta}\n`
                                     + `  safari: ${r.viewportEn ?? 'nunca'} ms · portal: `
                                     + `${r.vistaEstableEn != null && r.viewportEn != null ? `+${r.vistaEstableEn - r.viewportEn}` : '—'} ms · `
                                     + `peor trabón: ${r.peorSalto} ms (lectura ${r.peorLectura ?? '—'} ms · `

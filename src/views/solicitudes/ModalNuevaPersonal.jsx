@@ -22,6 +22,7 @@ import { REQUEST_TYPES } from '../../store/slices/requestsSlice';
 import { fetchEmployeeEventsByTypes } from '../../data/employeeSelfService';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rango12 } from '../../utils/hora';
 
 /**
  * El formulario de una solicitud personal, en un modal.
@@ -595,7 +596,7 @@ export default function ModalNuevaPersonal({
                             <div data-surface="card" className="p-3">
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Turno ese día</p>
                                 <p className="text-body-sm font-black text-content-2">
-                                    {turnoPropio ? `${turnoPropio.start} – ${turnoPropio.end}` : '—'}
+                                    {turnoPropio ? rango12(turnoPropio.start, turnoPropio.end) : '—'}
                                 </p>
                                 {!turnoPropio && <p className="text-micro text-content-3 mt-0.5">Sin turno asignado</p>}
                             </div>
@@ -604,7 +605,7 @@ export default function ModalNuevaPersonal({
                                     Turno de {companero ? shortEmployeeName(companero) : 'compañero'}
                                 </p>
                                 <p className="text-body-sm font-black text-chart-9-text">
-                                    {turnoCompanero ? `${turnoCompanero.start} – ${turnoCompanero.end}` : '—'}
+                                    {turnoCompanero ? rango12(turnoCompanero.start, turnoCompanero.end) : '—'}
                                 </p>
                                 {!turnoCompanero && <p className="text-micro text-chart-9 mt-0.5">Sin turno asignado</p>}
                             </div>

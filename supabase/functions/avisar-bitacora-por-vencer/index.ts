@@ -22,6 +22,7 @@
 // que es la única que puede resolverlo. Avisarle a supervisión sería contarle a
 // quien no tiene el termómetro en la mano.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { hora12 } from '../_shared/hora.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -33,16 +34,6 @@ const cors = {
 // de cerrarse — tiempo suficiente para caminar la sala sin que el aviso llegue
 // tan temprano que se olvide.
 const MINUTOS = 45;
-
-// «HH:MM» → «2:00 p. m.»: 12 horas siempre (usuario, 23-sep). Gemela de
-// `hora12` (src/utils/hora.js) y de `public.hora_12`.
-const hora12 = (hhmm: string) => {
-  const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm ?? ''));
-  if (!m) return String(hhmm ?? '');
-  const h = Number(m[1]);
-  const nb = '\u00a0';   // no se corta entre renglones
-  return `${h % 12 || 12}:${m[2]}${nb}${h < 12 ? `a.${nb}m.` : `p.${nb}m.`}`;
-};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });

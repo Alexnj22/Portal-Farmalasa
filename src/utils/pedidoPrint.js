@@ -5,6 +5,7 @@
 
 import { fetchErpSucursalAddressMap } from '../data/pedidos';
 import { ERP_NAMES, SUCURSALES, ERP_CODIGOS } from '../constants/erp';
+import { hora12Papel } from './hora';
 
 // pdfmake se carga BAJO DEMANDA. Estático costaba 809 kB gzip en el chunk de
 // PedidosView (vfs_fonts son las fuentes embebidas en base64): se bajaban al
@@ -121,10 +122,7 @@ function fmtFechaLarga(date) {
     return date.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 function fmtFechaHora(date) {
-    return date.toLocaleDateString('es-SV', {
-        day: '2-digit', month: 'long', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-    });
+    return `${fmtFechaLarga(date)}, ${hora12Papel(date)}`;
 }
 function dateSuffix() {
     const d = new Date();

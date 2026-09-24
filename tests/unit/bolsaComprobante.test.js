@@ -201,7 +201,7 @@ describe('la etiqueta de una bolsa', () => {
         const t = etiqueta({ cheques });
         const texto = cuerpo(t);
         expect(texto).toContain('Cheques:');
-        expect(texto).toContain('15:09');
+        expect(texto).toContain('3:09 p.m.');
         expect(texto).toContain('IGLESIA TABERNACULO');
         expect(texto).toContain('$352.50');
     });
@@ -236,7 +236,7 @@ describe('la etiqueta de una bolsa', () => {
         const dos = [...cheques, { hora: '18:40:00', cliente: 'ALCALDIA', total: 40 }];
         const texto = cuerpo(etiqueta({ cheques: dos }));
         expect(texto).toContain('Cheques:');
-        expect(texto).toContain('18:40 ALCALDIA');
+        expect(texto).toContain('6:40 p.m. ALCALDIA');
         expect(texto).toContain('$40.00');
     });
 
@@ -244,9 +244,9 @@ describe('la etiqueta de una bolsa', () => {
         // El numero de etiqueta y la hora en que se imprimio van en el MISMO
         // renglon: son un solo dato —cual de las dos manda— y en dos gastaban
         // papel.
-        expect(pie(etiqueta({ version: 1 }))).toContain('ETIQUETA #1 - 14/08/26 07:12 pm');
+        expect(pie(etiqueta({ version: 1 }))).toContain('ETIQUETA #1 - 14/08/26 7:12 p.m.');
         expect(pie(etiqueta({ version: 3 })))
-            .toContain('ETIQUETA #3 - ANULA LA ANTERIOR - 14/08/26 07:12 pm');
+            .toContain('ETIQUETA #3 - ANULA LA ANTERIOR - 14/08/26 7:12 p.m.');
     });
 
     it('el monto de partida sale en la resta, no entre los datos de arriba', () => {
@@ -288,12 +288,12 @@ describe('el vale de una salida', () => {
         expect(vale().totales).toEqual([['SALE DE LA BOLSA', '$200.00', true]]);
         // Lo que queda ya no es un total: es la ultima columna de la tabla, que
         // es el unico lugar donde entra bolsa por bolsa.
-        expect(vale().items.filas).toEqual([['S3-260814-2 14/08', '19:01', '200.00', '516.92']]);
+        expect(vale().items.filas).toEqual([['S3-260814-2 14/08 7:01pm', '', '200.00', '516.92']]);
     });
 
     it('nombra sus bolsas con el corte: el folio solo no las distingue sobre la mesa', () => {
         expect(cuerpo(vale())).toContain('S3-260814-2 14/08');
-        expect(cuerpo(vale())).toContain('19:01');
+        expect(cuerpo(vale())).toContain('7:01pm');
     });
 
     it('no dice donde se guarda ni pide firma', () => {
@@ -336,10 +336,10 @@ describe('el vale de una salida', () => {
         });
         expect(t.items.filas).toHaveLength(4);
         expect(t.items.filas.map((f) => [f[0], f[2], f[3]])).toEqual([
-            ['LP-1144 26/08', '370.00', '3.85'],
-            ['LP-1147 26/08', '560.00', '3.07'],
-            ['LP-1149 26/08', '210.00', '1.91'],
-            ['LP-1159 27/08', '860.00', '81.40'],
+            ['LP-1144 26/08 1:06pm', '370.00', '3.85'],
+            ['LP-1147 26/08 4:01pm', '560.00', '3.07'],
+            ['LP-1149 26/08 7:01pm', '210.00', '1.91'],
+            ['LP-1159 27/08 2:22pm', '860.00', '81.40'],
         ]);
         // El destacado es el total de la operacion, y dice de cuantas bolsas
         // salio: un solo numero sin eso se lee como el saldo de una bolsa.

@@ -49,6 +49,7 @@ import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { hora12, fechaHora12 } from '../../utils/hora';
 
 const PAGE_SIZE_INICIAL = 25;
 
@@ -161,12 +162,12 @@ const fmtDate = (iso) => {
 };
 const fmtDateTime = (iso) => {
     if (!iso) return '—';
-    return new Date(iso).toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return fechaHora12(iso, { day: '2-digit', month: '2-digit', year: '2-digit' });
 };
 // Solo la hora: en la línea de autoría la fecha es siempre la del conteo en
 // curso, así que repetirla en cada lote gasta ancho sin decir nada. La fecha
 // completa sigue en el `title` y en el historial.
-const fmtHora = (iso) => (iso ? new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' }) : '—');
+const fmtHora = (iso) => (iso ? hora12(iso) : '—');
 const difClass = (dif) => (dif == null ? 'text-content-3' : dif === 0 ? 'text-success' : dif < 0 ? 'text-danger' : 'text-chart-1-text');
 const difLabel = (dif) => (dif == null ? '—' : dif > 0 ? `+${dif}` : String(dif));
 

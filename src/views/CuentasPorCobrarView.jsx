@@ -36,6 +36,7 @@ import { formatMoney } from '../utils/formatNumber';
 import { fechaCorta } from '../utils/ticketCampos';
 import { tokenMatch } from '../utils/searchUtils';
 import { shortEmployeeName } from '../utils/nameUtils';
+import { hora12 } from '../utils/hora';
 
 /**
  * CUENTAS POR COBRAR — quién debe, desde cuándo, y cobrarle.
@@ -877,7 +878,7 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
                                                         {a.documento ? <span className="text-content-3 font-normal"> ({a.documento})</span> : null}
                                                     </span>
                                                     <span className="block text-micro text-content-3 truncate">
-                                                        {fechaCorta(a.fecha)}{a.hora ? `, ${a.hora}` : ''}
+                                                        {fechaCorta(a.fecha)}{a.hora ? `, ${hora12(a.hora) || a.hora}` : ''}
                                                         {' · '}
                                                         {/* Un abono cobrado en la caja no tiene
                                                             nombre y no se le inventa uno: allá

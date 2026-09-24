@@ -1,6 +1,7 @@
 import React from 'react';
 import { DoorOpen } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
+import { hora12 } from '../../utils/hora';
 
 /* «Así abrió la mañana», dentro de la campana.
  *
@@ -84,7 +85,7 @@ export function CuerpoDeAperturas({ datos, claseTenue, isDark, buscarEmpleado })
                 </span>
                 {ultima && (
                     <span className={`text-body-sm font-semibold ${conRetraso ? naranja : claseTenue}`}>
-                        la última, {ultima.sala} a las {ultima.hora}
+                        la última, {ultima.sala} a las {hora12(ultima.hora)}
                     </span>
                 )}
             </div>
@@ -92,7 +93,7 @@ export function CuerpoDeAperturas({ datos, claseTenue, isDark, buscarEmpleado })
             {/* Lo que falta. Dos listas y dos tonos: ver el encabezado. */}
             {noAbrieron.length > 0 && (
                 <p className={`text-caption font-bold ${rojo}`}>
-                    {horaAviso ? `A las ${horaAviso} todavía no ` : 'Todavía no '}
+                    {horaAviso ? `A las ${hora12(horaAviso) || horaAviso} todavía no ` : 'Todavía no '}
                     {noAbrieron.length === 1 ? 'abría ' : 'abrían '}
                     {noAbrieron.join(', ')}
                 </p>
@@ -117,9 +118,9 @@ export function CuerpoDeAperturas({ datos, claseTenue, isDark, buscarEmpleado })
                         return (
                             <li key={s.branchId ?? `${s.sala}-${i}`}
                                 className="flex items-center gap-2 min-w-0 rounded-md px-1.5 py-1">
-                                <span className={`flex-shrink-0 w-11 tabular-nums text-caption font-black
+                                <span className={`flex-shrink-0 min-w-11 whitespace-nowrap tabular-nums text-caption font-black
                                     ${s.tarde ? naranja : verde}`}>
-                                    {s.hora}
+                                    {hora12(s.hora)}
                                 </span>
                                 {emp ? (
                                     <span className="flex-shrink-0">

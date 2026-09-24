@@ -24,6 +24,7 @@ import {
 } from '../../data/pedidos';
 import { avisarSalidaALasSalas } from '../../utils/avisoSalidaPedido';
 import { metaDePedido } from '../../utils/avisosDeOperacion';
+import { hora12 } from '../../utils/hora';
 
 const STATUS_BADGE = {
   pendiente:  { label: 'Pendiente',  variante: 'warning' },
@@ -36,13 +37,11 @@ function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
 }
-// `es-SV` separa la abreviatura («03:08 p. m.»). Se junta, igual que en la
-// línea de tiempo del pedido, para que la hora se lea como una sola pieza.
+// La hora sale del canónico: sus espacios no se cortan, así que se lee como
+// una sola pieza sin juntar la abreviatura a mano.
 function fmtTime(iso) {
   if (!iso) return null;
-  return new Date(iso)
-    .toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })
-    .replace(/\s*([ap])\.\s*m\./i, ' $1.m.');
+  return hora12(iso);
 }
 
 // ── Individual ruta card ────────────────────────────────────────────────────

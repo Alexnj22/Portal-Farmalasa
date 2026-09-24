@@ -2,6 +2,7 @@ import React, { memo, useState } from 'react';
 import { Landmark, ChevronDown } from 'lucide-react';
 import Notice from './Notice';
 import { formatMoney } from '../../utils/formatNumber';
+import { hora12 } from '../../utils/hora';
 
 /**
  * «De este total, tanto no es venta de productos».
@@ -107,7 +108,7 @@ const AvisoSinProducto = memo(({ datos, contexto = 'Este período', compact = fa
                                 {d.motivo && <span className="font-semibold text-content-3"> · {d.motivo}</span>}
                             </span>
                             <span className="shrink-0 text-content-3 font-semibold tabular-nums">
-                                {d.fecha}{d.hora ? ` ${d.hora}` : ''}
+                                {d.fecha}{d.hora ? ` ${hora12(d.hora) || d.hora}` : ''}
                             </span>
                             <span className="shrink-0 font-extrabold tabular-nums text-content-1">
                                 {formatMoney(Number(d.total))}

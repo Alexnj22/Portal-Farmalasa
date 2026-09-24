@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { saldoDeBolsa } from '../../utils/bolsasReparto';
+import { hora12 } from '../../utils/hora';
 
 /* El formulario se baja al apretar su botón, no al entrar al Inicio: arrastra el
  * canónico de archivo y el selector de personas, y la baldosa se ve entera sin
@@ -69,7 +70,6 @@ const diasDesde = (fecha) => Math.max(0, Math.round(
     (Date.parse(`${hoySV()}T12:00:00Z`) - Date.parse(`${fecha}T12:00:00Z`)) / 86_400_000,
 ));
 
-const hhmm = (hora) => String(hora || '').slice(0, 5);
 const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
@@ -289,7 +289,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                                         </span>
                                     )}
                                     <span className="text-caption text-content-2 font-semibold tabular-nums">
-                                        {rotularDia(c.fecha)} · {hhmm(c.hora)}
+                                        {rotularDia(c.fecha)} · {hora12(c.hora)}
                                     </span>
                                 </div>
                                 <div className="text-caption text-content-3 truncate">
@@ -344,7 +344,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                                         )}
                                     </div>
                                     <div className="text-caption text-content-3 truncate tabular-nums">
-                                        Corte del {rotularDia(b.fecha)} · {hhmm(b.hora)}
+                                        Corte del {rotularDia(b.fecha)} · {hora12(b.hora)}
                                     </div>
                                 </div>
                                 {verMontos && (

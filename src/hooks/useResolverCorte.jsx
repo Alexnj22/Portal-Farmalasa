@@ -7,6 +7,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
+import { hora12 } from '../utils/hora';
 
 // El día de caja en hora de El Salvador. Se usa para no ofrecer el cierre del
 // día al confirmar un corte VIEJO: `sala_ya_cerro` mira el reloj de ahora, así
@@ -113,7 +114,7 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
         });
         showToast?.(
             estado === 'CONFIRMADO' ? 'Corte confirmado' : 'Corte descartado',
-            `${sala} · ${String(corte.hora || '').slice(0, 5)}`.trim(), 'success',
+            `${sala} · ${hora12(corte.hora)}`.trim(), 'success',
         );
 
         // ── LOS DOS PAPELES DEL ACTO SALEN ACÁ, no en la pantalla ──────────
@@ -421,7 +422,7 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
             {cerrando && (
                 <CerrarElDiaAhora
                     sala={nombreSala[cerrando.branch_id] || ''}
-                    hora={String(cerrando.hora || '').slice(0, 5)}
+                    hora={hora12(cerrando.hora)}
                     ocupado={cerrandoOcupado}
                     error={errorDelCierre}
                     onCerrar={async () => {

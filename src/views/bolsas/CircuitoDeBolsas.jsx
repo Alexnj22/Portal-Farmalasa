@@ -34,6 +34,7 @@ import { rangoDeDias } from './etapas';
 import { useToastStore } from '../../store/toastStore';
 import { saldoDeBolsa } from '../../utils/bolsasReparto';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { hora12, fechaHora12 } from '../../utils/hora';
 
 /* El detalle se baja al ABRIR una bolsa, no al entrar a la pestaña: arrastra el
  * motor de impresion y el visor de archivos firmados, y la lista se ve entera
@@ -138,14 +139,10 @@ const EditorDeDocumento = lazy(() => import('../../components/common/EditorDeDoc
  * que hace falta para moverlas— y ni una cifra.
  */
 
-const hhmm = (hora) => String(hora || '').slice(0, 5);
 const fechaCorta = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
     day: 'numeric', month: 'short', timeZone: 'UTC',
 }) : '');
-const selloDeTiempo = (iso) => (iso ? new Date(iso).toLocaleString('es-SV', {
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-    hour12: true, timeZone: 'America/El_Salvador',
-}) : '');
+const selloDeTiempo = (iso) => (iso ? fechaHora12(iso, { day: '2-digit', month: 'short' }) : '');
 // Las iniciales de respaldo las resuelve `AvatarConEstado` con
 // `shortEmployeeName`, el mismo respaldo del resto del portal.
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
@@ -350,7 +347,7 @@ function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionad
                     <div className="text-body-lg font-black text-content truncate">{bolsa.folio}</div>
                     <div className="text-caption text-content-3 truncate tabular-nums">
                         {sala ? `${sala} · ` : ''}
-                        Corte del {fechaCorta(bolsa.fecha)} · {hhmm(bolsa.hora)}
+                        Corte del {fechaCorta(bolsa.fecha)} · {hora12(bolsa.hora)}
                         {bolsa.caja ? ` · ${bolsa.caja}` : ''}
                     </div>
                 </div>

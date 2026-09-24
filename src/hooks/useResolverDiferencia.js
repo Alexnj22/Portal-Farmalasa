@@ -8,6 +8,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
+import { hora12 } from '../utils/hora';
 
 /**
  * Resolver la diferencia de un corte, imprimir su comprobante y anularla.
@@ -77,7 +78,7 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
         });
         showToast?.(
             via === 'REPONE' ? 'Faltante resuelto' : via === 'RETIRA' ? 'Sobrante resuelto' : 'Diferencia justificada',
-            `${sala} · ${String(corte.hora || '').slice(0, 5)}`.trim(), 'success',
+            `${sala} · ${hora12(corte.hora)}`.trim(), 'success',
         );
 
         // Justificar no mueve dinero: no hay entrega que respaldar, así que no

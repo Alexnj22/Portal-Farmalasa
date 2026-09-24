@@ -38,6 +38,7 @@ import { XCircle, ShieldAlert } from 'lucide-react';
 
 import { mensajeAmigable } from '../utils/errorMessages';
 import { requiereCodigoSu } from '../utils/kioskAutorizacion';
+import { hora12, hora12ConSegundos } from '../utils/hora';
 const EMPTY_ARRAY = [];
 // Pausa entre teclas que corta el buffer de escaneo — un lector físico
 // entrega el carné entero en milisegundos; una pausa mayor casi siempre
@@ -888,7 +889,7 @@ const submitEarlyExit = useCallback((e) => {
                             : `Entrada con hora real — ${earlyPendingData?.earlyMins || 0} min antes del turno`,
                         color: pendingVerification ? 'orange' : 'purple',
                         icon: ShieldAlert,
-                        time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                        time: hora12ConSegundos(time),
                         shiftName: authPrompt.customConfig?.config?.shift?.name || 'General',
                         announcement: null,
                         warning: '',
@@ -1117,8 +1118,7 @@ const submitEarlyExit = useCallback((e) => {
                 : 999;
 
             if (minutosDesdeUltimo < 3) {
-                const lastTimeStr = new Date(ultimoMismoTipo.timestamp)
-                    .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const lastTimeStr = hora12(ultimoMismoTipo.timestamp);
 
                 anotarEnBitacora('MARCAJE_DUPLICADO_BLOQUEADO', employee.id, {
                     empleado: employee.name,
@@ -1165,7 +1165,7 @@ const submitEarlyExit = useCallback((e) => {
                 subtext: `Tu hora de entrada es a las ${format12hNoSeconds(adjustedTime)}`,
                 color: 'blue',
                 icon: ShieldAlert,
-                time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                time: hora12ConSegundos(time),
                 shiftName: customConfig?.config?.shift?.name || 'General',
                 announcement: null,
                 warning: yesterdayOpen ? '⚠️ Nota: parece que faltó registrar una salida el día anterior.' : '',

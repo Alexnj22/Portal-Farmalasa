@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
+import { hora12 } from "../_shared/hora.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El corte de caja, hecho desde el portal — con el conteo A CIEGAS.
@@ -724,7 +725,7 @@ Deno.serve(async (req) => {
 
       if (sinResolver?.length) {
         const horas = sinResolver.map((c: { hora: string | null }) =>
-          String(c.hora ?? "").slice(0, 5)).filter(Boolean).join(", ");
+          hora12(c.hora)).filter(Boolean).join(", ");
         const cuales = sinResolver.length === 1
           ? `El corte de las ${horas} no está confirmado ni descartado.`
           : `Hay ${sinResolver.length} cortes sin resolver (${horas}).`;
@@ -785,7 +786,7 @@ Deno.serve(async (req) => {
         }
         if (pendiente >= 0.01) {
           const desde = falta?.hay_corte && falta?.desde
-            ? `Desde el corte de las ${falta.desde} entraron`
+            ? `Desde el corte de las ${hora12(falta.desde)} entraron`
             : "Hoy entraron";
           return json({
             ok: false, sin_contar: true, falta: pendiente, desde: falta?.desde ?? null,

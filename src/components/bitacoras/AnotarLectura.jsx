@@ -6,6 +6,7 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import { corregirLectura, registrarLectura, rotularRango } from '../../data/bitacoras';
+import { rango12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Anotar —o corregir— una lectura.
@@ -23,7 +24,6 @@ import { corregirLectura, registrarLectura, rotularRango } from '../../data/bita
 // como el de papel foliado.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const hhmm = (t) => String(t || '').slice(0, 5);
 
 export default function AnotarLectura({ area, franja, lectura, fecha, valores, onCerrar }) {
     const corrigiendo = Boolean(lectura);
@@ -81,7 +81,7 @@ export default function AnotarLectura({ area, franja, lectura, fecha, valores, o
                         {corrigiendo ? 'Corregir la lectura' : 'Anotar la lectura'}
                     </h3>
                     <p className="text-caption text-content-3 truncate">
-                        {area.nombre} · {franja.label} ({hhmm(franja.desde)}–{hhmm(franja.hasta)}) · {rotularRango(area)}
+                        {area.nombre} · {franja.label} ({rango12(franja.desde, franja.hasta)}) · {rotularRango(area)}
                     </p>
                 </div>
             </LiquidModal.Header>

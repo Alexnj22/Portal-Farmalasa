@@ -1,3 +1,4 @@
+import { hora12 } from '../../utils/hora';
 // ── La quincena y las horas de la auditoría de asistencia ────────────────────
 //
 // Extraídas de `AttendanceAuditView.jsx` (1,497 líneas) por el mismo motivo que
@@ -32,19 +33,13 @@ export function getMondayOfCurrentWeek(ahora = Date.now()) {
 /** Una hora ISO, en 12 horas y hora de El Salvador. `–` si no hay. */
 export function fmtTimeCSTStr(isoStr) {
     if (!isoStr) return '–';
-    const d = new Date(new Date(isoStr).getTime() - SV);
-    if (Number.isNaN(d.getTime())) return '–';
-    const h = d.getUTCHours(), m = String(d.getUTCMinutes()).padStart(2, '0');
-    return `${String(h % 12 || 12).padStart(2, '0')}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
+    return hora12(isoStr) || '–';
 }
 
 /** Un `HH:MM` de horario, en 12 horas. No lleva huso: ya es hora de pared. */
 export function formatTime12h(t) {
     if (!t) return '–';
-    let [h, m] = String(t).split(':');
-    h = parseInt(h, 10);
-    if (Number.isNaN(h)) return '–';
-    return `${String(h % 12 || 12).padStart(2, '0')}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
+    return hora12(String(t)) || '–';
 }
 
 // ── De dónde vino cada marcación ────────────────────────────────────────────

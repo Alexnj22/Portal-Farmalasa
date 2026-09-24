@@ -63,6 +63,7 @@ import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { getSignedFileUrl } from '../utils/storageFiles';
 import { saldoDeBolsa } from '../utils/bolsasReparto';
+import { hora12 } from '../utils/hora';
 
 /**
  * Mi caja — el turno de esta sala, ahora.
@@ -994,7 +995,7 @@ export default function MiCajaView({ comoPestana = false }) {
                             Sin fila del portal no se inventa un nombre. */}
                         <StatCard icon={Scale} label="Último corte"
                             value={!sala || !puedeVerCortes ? '—'
-                                : ultimoCorte ? String(ultimoCorte.hora).slice(0, 5) : 'Sin cortar'}
+                                : ultimoCorte ? hora12(ultimoCorte.hora) : 'Sin cortar'}
                             sub={ultimoCorte
                                 ? (corto(ultimoCorte.hizo?.name) || 'se hizo desde la caja')
                                 : !puedeVerCortes ? 'sin permiso para verlos' : undefined}
@@ -1417,12 +1418,7 @@ const fechaLegible = (f) => (f
 /* La hora de un movimiento, en el huso de la SALA y no en el del navegador.
  * `registrado_at` es un instante con zona; leído en local, alguien mirando desde
  * otro huso vería la remesa de las 12:59 a otra hora y no tendría cómo saberlo. */
-const horaLegible = (cuando) => (cuando
-    ? new Date(cuando).toLocaleTimeString('es-SV', {
-        hour: '2-digit', minute: '2-digit', hour12: false,
-        timeZone: 'America/El_Salvador',
-    })
-    : '');
+const horaLegible = (cuando) => (cuando ? hora12(cuando) : '');
 
 /* Para buscar: sin tildes y en minúsculas de los dos lados. Quien escribe
  * «aplicacion» tiene que encontrar «Aplicación», y el papel imprime todo en
@@ -1954,8 +1950,8 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                             {!g.corte
                                 ? 'Sin cortar todavía'
                                 : g.corte.tipo === 'Z'
-                                    ? `Después del cierre del día · ${g.corte.hora}`
-                                    : `Ya contados en el corte de las ${g.corte.hora}`}
+                                    ? `Después del cierre del día · ${hora12(g.corte.hora)}`
+                                    : `Ya contados en el corte de las ${hora12(g.corte.hora)}`}
                             {/* Y a quién se le entregó la caja al confirmarlo,
                                 que es el otro nombre del mismo acto: un corte
                                 confirmado es una bolsa. Acá cabe el nombre COMPLETO —la
@@ -2745,7 +2741,7 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
                 {firmables.length === 0 ? (
                     <p className="text-body-sm text-content-2">
                         {cuantos === 1
-                            ? `El corte de las ${String(sinResolver[0].hora || '').slice(0, 5)} quedó sin resolver.`
+                            ? `El corte de las ${hora12(sinResolver[0].hora)} quedó sin resolver.`
                             : `Quedaron ${cuantos} cortes sin resolver.`}{' '}
                         Alguien con acceso a <b>Cortes</b> tiene que confirmarlo o descartarlo.
                     </p>
@@ -2753,7 +2749,7 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
                     <div key={c.id} className="rounded-xl ring-1 ring-border-card bg-surface-card-hover p-3 space-y-2">
                         <div className="flex items-baseline justify-between gap-3">
                             <span className="text-body-sm font-bold text-content">
-                                Corte de las {String(c.hora || '').slice(0, 5)}
+                                Corte de las {hora12(c.hora)}
                             </span>
                             <span className="text-body-sm tabular-nums text-content-2">
                                 {formatMoney(c.total_declarado)}
@@ -2965,7 +2961,7 @@ function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, f
      * Nombra la HORA porque es lo único que permite ir a buscarlo: «hay un
      * corte pendiente» sobre un día de seis cortes no dice cuál. */
     if (sinResolver.length > 0) {
-        const horas = sinResolver.map((c) => String(c.hora || '').slice(0, 5))
+        const horas = sinResolver.map((c) => hora12(c.hora))
             .filter(Boolean).join(', ');
         return (
             <Marco abierto onClose={onClose}
@@ -3042,7 +3038,7 @@ function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, f
                 bajada={noSePudoMedir
                     ? 'No se pudo comprobar si quedó dinero sin contar.'
                     : (falta?.desde
-                        ? `Desde el corte de las ${falta.desde} entraron ${formatMoney(pendiente)} que nadie ha contado.`
+                        ? `Desde el corte de las ${hora12(falta.desde)} entraron ${formatMoney(pendiente)} que nadie ha contado.`
                         : `Hoy entraron ${formatMoney(pendiente)} que nadie ha contado.`)}
                 pie={noSePudoMedir ? undefined : <>
                     <Button variant="ghost" onClick={onClose}>Cancelar</Button>

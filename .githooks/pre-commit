@@ -158,6 +158,16 @@ if git diff --cached --name-only | grep -qE '^src/.*\.jsx$'; then
   node scripts/nombre-gate.mjs --hook || exit 1
 fi
 
+# hora-gate: toda hora que ve una persona sale en 12 horas y de `utils/hora.js`.
+# Regla del usuario del 23-sep, repetida el 24-sep («en todo el portal 12 horas,
+# no 24 … y verifica la regla»): el primer día se escribió el canónico y sólo se
+# pasaron los avisos; el resto siguió con cinco formatos, y el peor era el que
+# dependía del idioma del navegador — 12 horas para quien probó, 24 para quien
+# usa. Bloqueante en CERO; lo que es DATO y no texto va en EXCEPCIONES.
+if git diff --cached --name-only | grep -qE '^(src|supabase/functions)/'; then
+  node scripts/hora-gate.mjs --hook || exit 1
+fi
+
 # permissions-gate: solo si el commit toca el registro de permisos o código que
 # los consulta. Cruza lo declarado en Permisos contra lo que el código realmente
 # gatea (por sus cinco caminos: literal, plantilla, variable, indirecta y guard

@@ -1,3 +1,4 @@
+import { hora12Papel } from './hora';
 // Los campos de texto que comparten todos los documentos que van al rollo.
 //
 // Vivían dentro de `corteComprobante.js`, que era el único que imprimía. Con el
@@ -42,35 +43,36 @@ export const fechaCorta = (fecha) => {
     return `${d}/${m}/${a}`;
 };
 
-/** La hora del corte, sin segundos: `19:01:41` → `19:01`. */
-export const hhmm = (hora) => String(hora || '').slice(0, 5);
+/**
+ * La hora de una COLUMNA del rollo: `19:01:41` → `7:01pm`. En 12 horas como
+ * todo el portal, pero sin los puntos ni el espacio de `p.m.`: las columnas de
+ * importes miden 8 y `aDerecha` corta por la IZQUIERDA, así que «12:05 p.m.»
+ * (10) saldría « p.m.» — sin la hora. `12:05pm` son 7 y entra siempre.
+ */
+export const horaDeColumna = (hora) => hora12Papel(hora).replace(/ ([ap])\.m\.$/, '$1m');
 
 /** Cuándo se firmó, en hora de la sala. */
 export const selloDeTiempo = (iso) => (iso
-    ? soloAscii(new Date(iso).toLocaleString('es-SV', {
+    ? soloAscii(`${new Date(iso).toLocaleDateString('es-SV', {
         day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: true,
         timeZone: 'America/El_Salvador',
-    }))
+    })}, ${hora12Papel(iso)}`)
     : '');
 
 /**
- * El mismo sello, en el ancho de media columna: `14/08/26 07:12 pm`.
+ * El mismo sello, en el ancho de media columna: `14/08/26 7:12 p.m.`.
  *
- * `selloDeTiempo` mide 23 caracteres —`14/08/2026, 07:12 p. m.`— y media columna
+ * `selloDeTiempo` mide 21 caracteres —`14/08/2026, 7:12 p.m.`— y media columna
  * del rollo son 27: con el rótulo delante no entra ni uno, así que un ticket
  * lleno de sellos largos no puede armar dos columnas y sale al doble de largo.
- * Lo que se suelta son dos dígitos del año, la coma y dos puntos de `p. m.`:
- * nada que alguien lea distinto sobre el mostrador.
+ * Lo que se suelta son dos dígitos del año y la coma: nada que alguien lea
+ * distinto sobre el mostrador.
  */
 export const selloCorto = (iso) => (iso
-    ? soloAscii(new Date(iso).toLocaleString('es-SV', {
+    ? soloAscii(`${new Date(iso).toLocaleDateString('es-SV', {
         day: '2-digit', month: '2-digit', year: '2-digit',
-        hour: '2-digit', minute: '2-digit', hour12: true,
         timeZone: 'America/El_Salvador',
-    }))
-        .replace(',', '')
-        .replace(/([ap])\.\s*m\.?/i, '$1m')
+    })} ${hora12Papel(iso)}`)
     : '');
 
 /**

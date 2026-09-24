@@ -11,6 +11,7 @@ import {
   CircleCheck
 } from 'lucide-react';
 import { claveDeDia } from './scheduleHelpers';
+import { hora12, hora12ConSegundos } from './hora';
 
 // -----------------------------------------------------------------------------
 // 🧾 TimeClock • Auditoría (Modo Pro)
@@ -158,10 +159,7 @@ export const buildLateOutAdjustedMetadata = ({
   return {
     adjustedTimestamp: shiftEndDate.toISOString(),
     actualPunchTime: now.toISOString(),
-    note: `Marcaje real a las ${now.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    })}. Ajustado a fin de turno para planilla.`,
+    note: `Marcaje real a las ${hora12(now)}. Ajustado a fin de turno para planilla.`,
   };
 };
 
@@ -328,11 +326,7 @@ export const buildFeedbackState = ({
   ...theme,
   // 🚨 Inyectamos el componente React real en lugar de pasar un string vacío
   icon: ICON_MAP[theme?.iconKey] || CheckCircle2, 
-  time: now.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }),
+  time: hora12ConSegundos(now),
   shiftName,
   announcement,
   warning: warning || '',

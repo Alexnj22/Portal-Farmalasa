@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1045.0 — Horas en 12 horas en todo el portal
+
+Pedido del usuario (24-sep): «necesito que en todo el portal se trabaje en 12
+horas y no en 24. corrígelo, y verifica la regla». La regla existía desde el
+23-sep (`src/utils/hora.js`) pero sólo se había aplicado a los avisos.
+
+- **Pantallas**: 80+ sitios pasan por `hora12` / `fechaHora12` / `rango12` /
+  `hora12ConSegundos`. Varios forzaban 24 h (`hour12: false`) y otros usaban el
+  idioma del NAVEGADOR (`toLocaleTimeString([])`): 12 h para quien probó, 24 h
+  en una computadora en «español». Los helpers viejos de 12 h («pm», «p.m.»,
+  «PM») delegan al canónico: una sola forma, «1:06 p. m.».
+- **Papel**: `hora12Papel` (ASCII) y `horaDeColumna` («7:01pm», 7 caracteres:
+  las columnas de 8 cortan por la izquierda). En el vale de salida la hora pasa
+  a la columna de la bolsa porque la suya mide 5.
+- **Base**: 6 funciones escribían `HH24:MI` dentro de avisos y errores
+  (aperturas, día sin cierre, faltante de ayer, reinicio de la base, dos
+  errores de corte sin resolver) → `hora_12`. Edge: `hacer-corte-caja`,
+  `operar-caja` con `_shared/hora.ts`.
+- **Historial**: 4,424 títulos de avisos guardados antes del 23-sep se pintan
+  en 12 h con `horasEnTexto` (sin reescribir la base).
+- **Verificación**: `npm run gate:hora` (pre-commit, bloqueante en cero; 4
+  regresiones fabricadas las caza) y `tests/e2e/horas-12.spec.js`, que recorre
+  57 rutas y sus pestañas con el navegador en `es-ES` (idioma de 24 h) y barre
+  el DOM pintado: 0 hallazgos del portal.
+
 ## v2.1044.1 — Traslados: inventario y ventas con su rótulo
 
 En la tarjeta de traslado, cada producto separa dos bloques con rótulo:

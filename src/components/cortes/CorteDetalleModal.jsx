@@ -23,6 +23,7 @@ import {
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useResolverCorte from '../../hooks/useResolverCorte';
+import { hora12, fechaHora12 } from '../../utils/hora';
 
 /**
  * El detalle de un corte de caja, y el único sitio donde se confirma o descarta.
@@ -61,8 +62,6 @@ const MOTIVOS_REABRIR = ['Se firmó por error', 'El corte se rehizo', 'Apareció
 
 const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
 
-const hhmm = (hora) => String(hora || '').slice(0, 5);
-
 const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
 
 // Se capitaliza acá y NO con `capitalize` de CSS: la clase toca cada palabra,
@@ -78,12 +77,7 @@ const fechaLarga = (fecha) => {
 };
 
 /** Cuándo se firmó la decisión, en hora de la sala. */
-const selloDeTiempo = (iso) => (iso
-    ? new Date(iso).toLocaleString('es-SV', {
-        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-        hour12: true, timeZone: 'America/El_Salvador',
-    })
-    : '');
+const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
 
 // Las iniciales de respaldo las resuelve `AvatarConEstado` con
 // `shortEmployeeName`, el mismo respaldo del resto del portal.
@@ -346,7 +340,7 @@ export default function CorteDetalleModal({
             onClose={ocupadoId ? undefined : onClose}
             maxWidth="max-w-2xl"
             className="h-fit"
-            ariaLabel={`Corte de las ${hhmm(visible?.hora)}`}
+            ariaLabel={`Corte de las ${hora12(visible?.hora)}`}
         >
             <LiquidModal.Header>
                 {/* La insignia va en el ENCABEZADO y no sólo al pie: es lo
@@ -355,7 +349,7 @@ export default function CorteDetalleModal({
                     esquina donde el diálogo pinta su botón de cerrar. */}
                 <div className="min-w-0 pr-8">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-body font-bold text-content">Corte de las {hhmm(visible?.hora)}</h3>
+                        <h3 className="text-body font-bold text-content">Corte de las {hora12(visible?.hora)}</h3>
                         {!pendiente && visible && (
                             visible.estado === 'CONFIRMADO'
                                 ? <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>
@@ -818,7 +812,7 @@ export default function CorteDetalleModal({
                                             <li key={a.id} className="flex items-baseline justify-between gap-3">
                                                 <span className="min-w-0 flex items-baseline gap-2">
                                                     <span className="text-caption tabular-nums text-content-3 shrink-0">
-                                                        {hhmm(a.hora)}
+                                                        {hora12(a.hora)}
                                                     </span>
                                                     <span className="text-caption text-content truncate">{a.cliente}</span>
                                                 </span>

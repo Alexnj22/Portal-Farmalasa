@@ -5,13 +5,15 @@
 // `react-refresh/only-export-components`, y con razón — un archivo que exporta
 // las dos cosas se recarga entero en cada tecla).
 
+import { hora12 } from '../../utils/hora';
+
 export const fmtCuando = (iso) => {
     if (!iso) return '';
     const d = new Date(iso);
     const hoy = new Date();
     const mismoDia = d.toDateString() === hoy.toDateString();
     return mismoDia
-        ? d.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })
+        ? hora12(d)
         : d.toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
 };
 

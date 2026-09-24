@@ -14,6 +14,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { fechaHora12 } from '../../utils/hora';
 
 /**
  * Sistema › Mantenimiento — la franja de aviso que se ve en el tope de todas
@@ -30,13 +31,7 @@ import { rotuloCampo } from '../../utils/rotuloDeCampo';
  * estaba queda intacto para la próxima vez.
  */
 
-const hora = (iso) => {
-    try {
-        return new Date(iso).toLocaleString('es-SV', {
-            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
-        });
-    } catch { return ''; }
-};
+const hora = (iso) => fechaHora12(iso);
 
 export default function AvisoDelPortal() {
     const { banner, recargar } = useBannerPortal();

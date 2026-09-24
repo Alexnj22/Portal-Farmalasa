@@ -5,6 +5,7 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
+import { hora12 } from '../../utils/hora';
 
 /**
  * Quién abrió cada caja, desde cuándo y con cuánto — arriba de los cortes.
@@ -44,13 +45,9 @@ import { useAuth } from '../../context/AuthContext';
  * apagado no es un cero.
  */
 
-const hhmm = (t) => (t ? String(t).slice(0, 5) : '—');
+const horaReloj = (t) => hora12(t) || '—';
 
-const horaDe = (iso) => (iso
-    ? new Date(iso).toLocaleTimeString('es-SV', {
-        hour: '2-digit', minute: '2-digit', timeZone: 'America/El_Salvador',
-    })
-    : '—');
+const horaDe = (iso) => hora12(iso) || '—';
 
 /** «06:55:49» y una marcación → cuántos minutos antes (o después) se marcó. */
 function minutosAntes(abiertaA, marcaIso) {
@@ -111,7 +108,7 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMo
                 <span className="text-body-sm font-bold text-content truncate">{sala}</span>
                 <Badge variant={abierta ? 'success' : 'neutral'} size="sm"
                     icon={abierta ? Clock : DoorOpen}>
-                    {abierta ? `abierta · ${hhmm(apertura.abierta_a)}` : `cerró · ${horaDe(apertura.cerrada_at)}`}
+                    {abierta ? `abierta · ${horaReloj(apertura.abierta_a)}` : `cerró · ${horaDe(apertura.cerrada_at)}`}
                 </Badge>
             </div>
 

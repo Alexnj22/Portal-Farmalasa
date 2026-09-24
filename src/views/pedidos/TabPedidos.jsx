@@ -39,6 +39,7 @@ import { esCargoDeSupervision } from '../../utils/decisionDiferencia';
 import { dialogoDiferido } from '../../utils/dialogoDiferido';
 import { electrolitFueraDeEspeciales } from '../../utils/cajasEspeciales';
 import { metaDePedido } from '../../utils/avisosDeOperacion';
+import { hora12 } from '../../utils/hora';
 
 /* Los once diálogos se bajan al ABRIRLOS, no al entrar a la pestaña: abrir
  * Pedidos descargaba RecepcionModal (1,959 líneas), CrearRutaModal (812),
@@ -855,7 +856,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const isConductorRuta = !!(user?.id && ruta.conductor_id && String(user.id) === String(ruta.conductor_id));
                             const pct = total > 0 ? Math.round((entregadas / total) * 100) : 0;
                             const isCompletada = ruta.status === 'completada';
-                            const fmtT = (iso) => iso ? new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
+                            const fmtT = (iso) => iso ? hora12(iso) : null;
                             const conductorEmp = ruta.conductor_id ? empMap.get(ruta.conductor_id) : null;
                             // El grupo de ruta ES una tarjeta, así que va por su
                             // `data-surface` y no copiando su color (§5.0.1). Estaba escrito

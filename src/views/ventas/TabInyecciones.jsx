@@ -16,6 +16,7 @@ import { smartFilter } from '../../utils/searchUtils';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { hora12 } from '../../utils/hora';
 
 /*
  * «¿A quién se le cobró la aplicación?» — las ventas con inyección del período
@@ -140,9 +141,9 @@ export default function TabInyecciones({
             ['FECHA', 'HORA', 'SUCURSAL', 'FACTURA', 'CLIENTE', 'PRODUCTOS', 'UNIDADES', 'TOTAL',
              'VENDEDOR', 'APLICACION COBRADA', 'HORA DEL COBRO', 'MONTO DEL COBRO', 'COBRO REGISTRADO POR'],
             filtradas.map((v) => [
-                v.fecha, v.hora, nombreSala(v.branch_id), v.correlativo, v.cliente, productosTexto(v),
+                v.fecha, hora12(v.hora), nombreSala(v.branch_id), v.correlativo, v.cliente, productosTexto(v),
                 v.unidades, v.total, nombre(v.vendedor_nombre),
-                v.cobro ? 'SI' : 'NO', v.cobro?.hora || '', v.cobro?.monto ?? '',
+                v.cobro ? 'SI' : 'NO', hora12(v.cobro?.hora), v.cobro?.monto ?? '',
                 v.cobro ? nombre(v.cobro.registrado_nombre) : '',
             ]),
             `inyecciones_${fini}_${ffin}.csv`,
@@ -270,7 +271,7 @@ export default function TabInyecciones({
                 {pagina.map((v, i) => (
                     <DataRow key={v.id} index={i}>
                         <DataCell className="text-body-sm whitespace-nowrap">
-                            <p className="font-semibold">{fechaCorta(v.fecha)} · {v.hora}</p>
+                            <p className="font-semibold">{fechaCorta(v.fecha)} · {hora12(v.hora)}</p>
                             {!filterBranch && <p className="text-caption text-content-3">{nombreSala(v.branch_id)}</p>}
                         </DataCell>
                         <DataCell hideBelow="md" className="text-body-sm font-mono">{String(v.correlativo || '').replace(/^0+/, '')}</DataCell>
@@ -288,7 +289,7 @@ export default function TabInyecciones({
                                 <div>
                                     <Badge variant="success" size="sm" dot>Cobrada {formatMoney(v.cobro.monto)}</Badge>
                                     <p className="text-caption text-content-3 mt-1">
-                                        {v.cobro.hora} · {nombre(v.cobro.registrado_nombre)}
+                                        {hora12(v.cobro.hora)} · {nombre(v.cobro.registrado_nombre)}
                                     </p>
                                 </div>
                             ) : (
@@ -329,7 +330,7 @@ export default function TabInyecciones({
                         {sueltos.map((c, i) => (
                             <DataRow key={c.id} index={i}>
                                 <DataCell className="text-body-sm whitespace-nowrap">
-                                    <p className="font-semibold">{fechaCorta(c.fecha)} · {c.hora}</p>
+                                    <p className="font-semibold">{fechaCorta(c.fecha)} · {hora12(c.hora)}</p>
                                     {!filterBranch && <p className="text-caption text-content-3">{nombreSala(c.branch_id)}</p>}
                                 </DataCell>
                                 <DataCell className="text-body-sm">{c.concepto}</DataCell>

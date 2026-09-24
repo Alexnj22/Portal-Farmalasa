@@ -12,6 +12,7 @@ import AnotarLimpieza from '../../components/bitacoras/AnotarLimpieza';
 import MatrizDelDia from '../../components/bitacoras/MatrizDelDia';
 import PasarLaRonda from '../../components/bitacoras/PasarLaRonda';
 import { bloquesDeLaRonda } from '../../data/bitacoras';
+import { rango12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La captura del día.
@@ -41,8 +42,6 @@ import { bloquesDeLaRonda } from '../../data/bitacoras';
 // ítem 6.1.14 del RTS pide que el registro sea CONTEMPORÁNEO.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const hhmm = (t) => String(t || '').slice(0, 5);
-
 /** Una banda por momento, para el teléfono: qué falta y qué ya está. */
 function BandaDelMomento({ momento, areas, onRonda, puedeAnotar, cerrado }) {
     const bloques = [];
@@ -67,7 +66,7 @@ function BandaDelMomento({ momento, areas, onRonda, puedeAnotar, cerrado }) {
             <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <h3 className="text-body-sm font-black text-content">{momento.label}</h3>
                 <span className="text-label text-content-3 tabular-nums">
-                    {hhmm(momento.desde)}–{hhmm(momento.hasta)}
+                    {rango12(momento.desde, momento.hasta)}
                 </span>
                 <span className="flex-1" />
                 <Badge size="sm" uppercase={false}

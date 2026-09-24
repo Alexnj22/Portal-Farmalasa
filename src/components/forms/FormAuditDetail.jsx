@@ -4,6 +4,7 @@ import {
     User, Activity, MonitorSmartphone, CalendarClock, 
     ShieldAlert, CheckCircle2, AlertTriangle, Code2
 } from 'lucide-react';
+import { fechaHora12 } from '../../utils/hora';
 
 const FormAuditDetail = ({ data }) => {
     if (!data) return null;
@@ -79,7 +80,7 @@ const FormAuditDetail = ({ data }) => {
                         </div>
                         <div className="min-w-0 pt-0.5">
                             <p className="text-micro font-black text-content-2 uppercase tracking-widest leading-none mb-1.5">Registro Temporal</p>
-                            <p className="text-body-lg font-bold text-content-2">{logDate.toLocaleString()}</p>
+                            <p className="text-body-lg font-bold text-content-2">{fechaHora12(logDate, { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
                         </div>
                     </div>
 

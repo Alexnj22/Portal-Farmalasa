@@ -48,3 +48,64 @@ export function rango12(desde, hasta) {
     const corte = (t) => t.indexOf(NB);
     return a.slice(corte(a)) === b.slice(corte(b)) ? `${a.slice(0, corte(a))} – ${b}` : `${a} – ${b}`;
 }
+
+/**
+ * «1:06:42 p. m.» — con segundos. Sólo para un reloj que corre a la vista (el
+ * kiosco) o una marcación donde el segundo es el dato.
+ */
+export function hora12ConSegundos(valor) {
+    if (valor == null || valor === '') return '';
+    const d = valor instanceof Date ? valor : new Date(valor);
+    if (Number.isNaN(d.getTime())) return '';
+    const partes = new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: false, timeZone: ZONA,
+    }).formatToParts(d);
+    const v = (t) => partes.find((p) => p.type === t)?.value ?? '00';
+    const h = Number(v('hour')) % 24;
+    const [corta, sufijo] = hora12(`${h}:${v('minute')}`).split(NB + (h < 12 ? 'a' : 'p'));
+    return `${corta}:${v('second')}${NB}${h < 12 ? 'a' : 'p'}${sufijo}`;
+}
+
+/**
+ * Fecha y hora juntas: «24 sep, 1:06 p. m.». La fecha sale con las opciones
+ * de `Intl` que se le pasen (por defecto día y mes corto) en la hora de El
+ * Salvador; la hora, siempre de `hora12`. Nunca pasarle `hour` en `opciones`.
+ */
+export function fechaHora12(valor, opciones = { day: '2-digit', month: 'short' }) {
+    if (valor == null || valor === '') return '';
+    const d = valor instanceof Date ? valor : new Date(valor);
+    if (Number.isNaN(d.getTime())) return '';
+    // «24-sept» es como `es-SV` junta el día y el mes en letras; en pantalla se
+    // lee «24 sept».
+    const fecha = d.toLocaleDateString('es-SV', { ...opciones, timeZone: ZONA })
+        .replace(/^(\d{1,2})-(\p{L})/u, '$1 $2').replace(/\.$/, '');
+    return `${fecha}, ${hora12(d)}`;
+}
+
+/**
+ * La misma hora para el PAPEL: sólo ASCII (la ticketera no lee UTF-8, y el
+ * espacio que no se corta es UTF-8) → «1:06 p.m.».
+ */
+export function hora12Papel(valor) {
+    return hora12(valor).replace(/\u00a0/g, ' ').replace('a. m.', 'a.m.').replace('p. m.', 'p.m.');
+}
+
+/**
+ * Un texto YA ESCRITO con horas de 24 («Corte de caja de las 22:05») → en 12.
+ * Existe por el historial: la base escribió los avisos en 24 horas hasta el
+ * 23-sep y esos títulos quedaron guardados así (4,424 medidos el 24-sep). Sólo
+ * toca una hora que viene detrás de «la»/«las», que es como la escribe la base,
+ * y nunca una que ya trae «a. m.»/«p. m.»: un monto o un folio no se tocan.
+ */
+export function horasEnTexto(texto) {
+    if (!texto) return texto;
+    return String(texto).replace(
+        /(\blas?\s+)(\d{1,2}:\d{2})(?::\d{2})?(?![\d:])(?!\s*[ap]\.?\s?m)/gi,
+        (todo, antes, hhmm, i, entero) => {
+            const h = hora12(hhmm);
+            if (!h) return todo;
+            // «… las 07:06.» no puede quedar «a. m..»: el punto del sufijo cierra la frase.
+            return antes + (entero[i + todo.length] === '.' ? h.slice(0, -1) : h);
+        },
+    );
+}

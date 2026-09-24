@@ -8,6 +8,7 @@ import { loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
 import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import { hora12 } from '../../utils/hora';
 
 // Capacitor geolocation nativa — solo disponible en app nativa (Android/iOS)
 const isNative = !!(window.Capacitor?.isNativePlatform?.());
@@ -27,7 +28,7 @@ const BgGeo = registerPlugin('BackgroundGeolocation');
 
 function fmtTime(iso) {
   if (!iso) return null;
-  return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return hora12(iso);
 }
 
 export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {

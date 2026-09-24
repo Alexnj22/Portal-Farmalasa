@@ -13,6 +13,7 @@ import { usePaginaEnUrl } from '../../hooks/usePaginaEnUrl';
 import { emparejarCobrosConMovimientos } from '../../utils/cortesDiagnostico';
 import { cobroEnEfectivo } from '../../data/creditos';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { hora12, fechaHora12 } from '../../utils/hora';
 
 /**
  * Los movimientos de caja de un período: verlos y buscarlos TODOS.
@@ -97,20 +98,11 @@ const fechaLarga = (f) => (f
     })
     : '—');
 
-const cuando = (iso) => (iso
-    ? new Date(iso).toLocaleString('es-SV', {
-        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-        timeZone: 'America/El_Salvador',
-    })
-    : '—');
+const cuando = (iso) => fechaHora12(iso) || '—';
 
-const horaDe = (iso) => (iso
-    ? new Date(iso).toLocaleTimeString('es-SV', {
-        hour: '2-digit', minute: '2-digit', timeZone: 'America/El_Salvador',
-    })
-    : null);
+const horaDe = (iso) => hora12(iso) || null;
 
-const hhmm = (t) => (t ? String(t).slice(0, 5) : '—');
+const horaReloj = (t) => hora12(t) || '—';
 
 /** El día de El Salvador de una marca de tiempo, para comparar contra `fecha`. */
 const diaSV = (iso) => (iso
@@ -606,11 +598,11 @@ function LineaDeCorte({ corte }) {
     const cuadra = !Number.isFinite(dif) || Math.abs(dif) < 0.005;
     return (
         <div className="flex items-center gap-2 py-1" role="separator"
-            aria-label={`Corte de las ${hhmm(corte.hora)}`}>
+            aria-label={`Corte de las ${horaReloj(corte.hora)}`}>
             <span className="h-px flex-1 bg-brand/25" aria-hidden="true" />
             <span className="shrink-0">
                 <Badge variant={cuadra ? 'info' : dif > 0 ? 'warning' : 'danger'} size="sm" icon={Scale}>
-                    Corte {hhmm(corte.hora)} · {formatMoney(corte.total_declarado)}
+                    Corte {horaReloj(corte.hora)} · {formatMoney(corte.total_declarado)}
                     {!cuadra && ` · ${dif > 0 ? '+' : '−'}${formatMoney(Math.abs(dif))}`}
                 </Badge>
             </span>

@@ -30,7 +30,8 @@
 
 import { EMPRESA } from '../constants/empresa';
 import { formatMoney } from './formatNumber';
-import { soloAscii, recortar, fechaCorta, hhmm, selloCorto, juntarSiEntra } from './ticketCampos';
+import { soloAscii, recortar, fechaCorta, horaDeColumna, selloCorto, juntarSiEntra } from './ticketCampos';
+import { hora12Papel } from './hora';
 
 /** El ancho del primer campo de la tabla de cuatro columnas del rollo. */
 const ANCHO_MOTIVO = 28;
@@ -154,7 +155,7 @@ export function construirEtiquetaDeBolsa({
         datos: [
             ['Bolsa', recortar(bolsa?.folio || '', 24)],
             ['Sala', recortar(sala || '', 34)],
-            ['Corte', `${fechaCorta(bolsa?.fecha)} ${hhmm(bolsa?.hora)}`],
+            ['Corte', `${fechaCorta(bolsa?.fecha)} ${hora12Papel(bolsa?.hora)}`],
             ['Caja', recortar(bolsa?.caja || '', 34)],
             ['Guardo', recortar(cerradaPor || 'Sin registrar', 34)],
             ['Cerrada', selloCorto(bolsa?.cerrada_at)],
@@ -187,7 +188,7 @@ export function construirEtiquetaDeBolsa({
         bloques: conCheque ? [{
             titulo: 'Cheques:',
             filas: cheques.map((c) => [
-                recortar(`${hhmm(c.hora)} ${c.cliente || 'Sin cliente'}`, 44),
+                recortar(`${hora12Papel(c.hora)} ${c.cliente || 'Sin cliente'}`, 44),
                 formatMoney(Math.abs(Number(c.total ?? 0))),
             ]),
         }] : undefined,
@@ -205,7 +206,7 @@ export function construirEtiquetaDeBolsa({
             filas: salidas.map((s) => [
                 recortar(s.motivo || 'Sin motivo', ANCHO_MOTIVO),
                 fechaCorta(s.fecha).slice(0, 5),
-                hhmm(s.hora),
+                horaDeColumna(s.hora),
                 importeDeColumna(s.monto),
             ]),
         } : undefined,
@@ -341,14 +342,17 @@ export function construirValeDeSalida({
          * mano nunca dijo. */
         items: {
             columnas: [
+                // La hora va con la bolsa y no en su columna: la segunda mide 5
+                // y «7:12pm» no entra (regla de 12 horas, 24-sep). La columna
+                // queda sin rótulo para no mover los importes de su lugar.
                 { label: 'DE QUE BOLSA' },
-                { label: 'HORA', alinear: 'der' },
+                { label: '', alinear: 'der' },
                 { label: 'SALIO', alinear: 'der' },
                 { label: 'QUEDA', alinear: 'der' },
             ],
             filas: vivas.map((l) => [
-                recortar(`${l.bolsa_folio || ''} ${fechaCorta(l.bolsa_fecha).slice(0, 5)}`.trim(), ANCHO_MOTIVO),
-                hhmm(l.bolsa_hora),
+                recortar(`${l.bolsa_folio || ''} ${fechaCorta(l.bolsa_fecha).slice(0, 5)} ${horaDeColumna(l.bolsa_hora)}`.trim(), ANCHO_MOTIVO),
+                '',
                 importeDeColumna(l.monto),
                 importeDeColumna(l.saldo_despues),
             ]),

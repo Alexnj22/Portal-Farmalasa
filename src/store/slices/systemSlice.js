@@ -25,6 +25,7 @@ import {
     insertShift, deleteShiftRow, updateShiftRow, setShiftActive, insertHoliday, deleteHolidayRow,
     fetchBranchesBasic,
 } from '../../data/system';
+import { hora12 } from '../../utils/hora';
 
 export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
@@ -1297,7 +1298,7 @@ export const createSystemSlice = (set, get) => ({
                 timeline_title: `Nuevo Turno Creado: ${data.name}`,
                 dimension: 'OPERATIVE',
                 branch_id: data.branch_id,
-                new_value: `${data.start_time.substring(0, 5)} a ${data.end_time.substring(0, 5)}`
+                new_value: `${hora12(data.start_time)} a ${hora12(data.end_time)}`
             });
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
@@ -1356,8 +1357,8 @@ export const createSystemSlice = (set, get) => ({
                 timeline_title: `Turno editado: ${data.name}`,
                 dimension: 'OPERATIVE',
                 branch_id: data.branch_id,
-                old_value: antes ? `${antes.start} a ${antes.end}` : null,
-                new_value: `${String(data.start_time).substring(0, 5)} a ${String(data.end_time).substring(0, 5)}`,
+                old_value: antes ? `${hora12(antes.start)} a ${hora12(antes.end)}` : null,
+                new_value: `${hora12(data.start_time)} a ${hora12(data.end_time)}`,
             });
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));

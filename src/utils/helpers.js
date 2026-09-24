@@ -1,4 +1,5 @@
 import { claveDeDia, resolverTurnoDelDia } from './turnoDelDia';
+import { hora12 } from './hora';
 
 // --- FECHAS Y TIEMPO (CORREGIDO UTC vs LOCAL) ---
 
@@ -42,15 +43,8 @@ export const formatPhoneMask = (v) => {
 
 export const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
-export const formatTime12h = (time24) => {
-    if (!time24) return '';
-    const [hours, minutes] = time24.split(':');
-    let h = parseInt(hours, 10);
-    const ampm = h >= 12 ? 'p.m.' : 'a.m.'; // Ajustado a minúsculas estilo Apple/Google
-    h = h % 12;
-    h = h ? h : 12;
-    return `${h}:${minutes} ${ampm}`;
-};
+// Nombre viejo: la hora se escribe en `utils/hora.js` («12 horas siempre»).
+export const formatTime12h = (time24) => (time24 ? hora12(String(time24)) : '');
 
 
 export const minsToTime = (totalMins) => {

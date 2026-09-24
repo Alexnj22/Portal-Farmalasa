@@ -13,6 +13,7 @@ import EarlyExitForm from '../components/timeclock/EarlyExitForm';
 import KioskConfigModal from '../components/timeclock/KioskConfigModal';
 import IdleScanPanel from '../components/timeclock/IdleScanPanel';
 import SelfDeclareShiftPanel from '../components/timeclock/SelfDeclareShiftPanel';
+import { hora12ConSegundos } from '../utils/hora';
 
 const TimeClockView = ({ setView }) => {
   const { logout } = useAuth();
@@ -129,7 +130,7 @@ const TimeClockView = ({ setView }) => {
   ]);
 
   const now = time || new Date();
-  const timeStr  = now.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const timeStr  = hora12ConSegundos(now);
   const dateStr  = now.toLocaleDateString('es-SV',  { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (

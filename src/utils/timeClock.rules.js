@@ -6,6 +6,7 @@ import {
   getTodayPunches,
 } from './timeClock.helpers';
 import { getTodayScheduleConfig } from '../utils/helpers';
+import { hora12 } from './hora';
 
 const OPEN_PUNCH_TYPES = ['IN', 'IN_LUNCH', 'IN_LACTATION', 'IN_RETURN'];
 
@@ -166,7 +167,7 @@ export const buildFinalPunchPresentation = ({
       const minutesToAdd = isGluedToLunch ? 120 : 60;
       const expectedReturn = new Date(now.getTime() + minutesToAdd * 60000);
       presentation.message = 'Buen provecho';
-      presentation.subtext = `Regreso esperado: ${expectedReturn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      presentation.subtext = `Regreso esperado: ${hora12(expectedReturn)}`;
       presentation.color = isGluedToLunch ? 'pink' : 'orange';
       presentation.iconKey = isGluedToLunch ? 'baby' : 'utensils';
       presentation.isLactationAction = isGluedToLunch;
@@ -193,7 +194,7 @@ export const buildFinalPunchPresentation = ({
     case 'OUT_LACTATION': {
       const expectedReturn = new Date(now.getTime() + 60 * 60000);
       presentation.message = 'Hora de lactancia';
-      presentation.subtext = `Regreso esperado: ${expectedReturn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      presentation.subtext = `Regreso esperado: ${hora12(expectedReturn)}`;
       presentation.color = 'pink';
       presentation.iconKey = 'baby';
       presentation.isLactationAction = true;
@@ -232,7 +233,7 @@ case 'OUT': {
       } else {
         presentation.message = rawType === 'OUT_LATE' ? 'Horas extra autorizadas' : 'Salida registrada';
         presentation.subtext = presentation.metadata?.adjustedTimestamp
-          ? `Hora planilla: ${new Date(presentation.metadata.adjustedTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Nos vemos ${nextDayText}`
+          ? `Hora planilla: ${hora12(presentation.metadata.adjustedTimestamp)}. Nos vemos ${nextDayText}`
           : `Buen descanso, nos vemos ${nextDayText}`;
         presentation.color = rawType === 'OUT_LATE' ? 'purple' : 'slate';
         presentation.iconKey = 'logout';

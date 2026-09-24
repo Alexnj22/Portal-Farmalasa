@@ -4,6 +4,7 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import { cadenaDeEntregas } from '../../utils/cortesDiagnostico';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { hora12 } from '../../utils/hora';
 
 /**
  * POR QUÉ MANOS PASÓ LA CAJA HOY — con las caras, y en el panel del día.
@@ -117,7 +118,7 @@ export default function EntregaDelTurno({ entregas, personas }) {
             </div>
 
             <span className="text-caption text-content-3 tabular-nums shrink-0">
-                {cuantas > 1 ? 'última entrega' : 'corte'} de las {ultimo.hora}
+                {cuantas > 1 ? 'última entrega' : 'corte'} de las {hora12(ultimo.hora)}
             </span>
         </div>
     );

@@ -19,6 +19,7 @@ import { fetchLockableModules, lockModule, unlockModule } from '../data/moduleLo
 import { fetchTrasladoSwitch, setTrasladoSwitch } from '../data/trasladoSwitch';
 import AvisoDelPortal from '../components/mantenimiento/AvisoDelPortal';
 import { mensajeAmigable } from '../utils/errorMessages';
+import { hora12 } from '../utils/hora';
 
 /**
  * Sistema › Mantenimiento — poner un módulo en solo lectura para el resto.
@@ -103,10 +104,7 @@ const SIN_NOMBRE = {
 
 const rotulo = (accion) => INTERRUPTOR[accion] ?? SIN_NOMBRE;
 
-const hora = (iso) => {
-    try { return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: false }); }
-    catch { return ''; }
-};
+const hora = (iso) => hora12(iso);
 
 function restante(expiresAt) {
     const ms = new Date(expiresAt) - Date.now();

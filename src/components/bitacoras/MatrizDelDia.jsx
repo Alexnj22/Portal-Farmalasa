@@ -6,6 +6,7 @@ import PortalInput from '../common/PortalInput';
 import Firma from './Firma';
 import { ResumenDePuntos } from './PuntosDeLimpieza';
 import { fueraDeRango, registrarLectura, registrarLimpieza, rotularRango, soloLimpieza } from '../../data/bitacoras';
+import { hora12, rango12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La matriz del día — áreas en las filas, momentos en las columnas.
@@ -39,13 +40,11 @@ const ICONO_AREA = {
     servicio_sanitario: Toilet,
 };
 
-const hhmm = (t) => String(t || '').slice(0, 5);
 
 const horaDe = (iso) => {
     if (!iso) return '';
     // En hora de El Salvador, que es la del horario contra el que se compara.
-    const d = new Date(new Date(iso).getTime() - 6 * 3600_000);
-    return d.toISOString().slice(11, 16);
+    return hora12(iso);
 };
 
 const num = (v) => (v === null || v === undefined ? null : Number(v));
@@ -118,7 +117,7 @@ function Celda({ area, franja, fecha, puedeAnotar, cerrado, onRecargar, onCorreg
         return (
             <td className="px-3 py-2 text-content-3">
                 {franja.estado === 'proxima' ? (
-                    <span className="text-label tabular-nums">desde {hhmm(franja.desde)}</span>
+                    <span className="text-label tabular-nums">desde {hora12(franja.desde)}</span>
                 ) : (
                     <span className="text-label">—</span>
                 )}
@@ -223,7 +222,7 @@ function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetall
                                 </span>
                             ) : (!puedeAnotar || cerrado || t.estado === 'proxima') ? (
                                 <span className="text-micro text-content-3 tabular-nums">
-                                    {t.estado === 'proxima' ? `desde ${hhmm(t.desde)}` : '—'}
+                                    {t.estado === 'proxima' ? `desde ${hora12(t.desde)}` : '—'}
                                 </span>
                             ) : (
                                 <span className="flex">
@@ -331,7 +330,7 @@ export default function MatrizDelDia({
                                 <th key={m.clave} className={`px-3 pb-2 ${m.ahora ? 'bg-warning/10' : ''}`}>
                                     <span className="block text-body-sm font-black text-content">{m.label}</span>
                                     <span className="block text-micro text-content-3 tabular-nums">
-                                        {hhmm(m.desde)}–{hhmm(m.hasta)}
+                                        {rango12(m.desde, m.hasta)}
                                     </span>
                                 </th>
                             ))}

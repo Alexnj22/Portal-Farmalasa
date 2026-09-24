@@ -13,6 +13,7 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
+import { hora12 } from '../../utils/hora';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { supabase } from '../../supabaseClient'; 
 
@@ -227,7 +228,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
         const rows = printHistory.map(item => {
             const dateObj = new Date(item.sortDate);
             const dStr = dateObj.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const tStr = (dateObj.getHours() === 0 && dateObj.getMinutes() === 0) ? 'N/A' : dateObj.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const tStr = (dateObj.getHours() === 0 && dateObj.getMinutes() === 0) ? 'N/A' : hora12(dateObj);
             const action = getActionLabel(item);
             let desc = item.name || 'Registro del Sistema';
             const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
@@ -524,7 +525,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                                                             const dateObj = new Date(item.sortDate);
                                                                             const dateStr = dateObj.toLocaleDateString('es-SV', { day: '2-digit', month: 'short' }).toUpperCase();
-                                                                            const timeStr = dateObj.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                                                            const timeStr = hora12(dateObj);
 
                                                                             let itemTitle = item.name || 'Configuración Modificada';
                                                                             let oldVal = null;
@@ -565,7 +566,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 mb-3 md:mb-0 z-content ${isLeftDesktop ? 'md:text-right md:pr-12' : 'md:text-left md:pl-12'}`}>
                                                                                         <div className="inline-flex items-center gap-2">
                                                                                             <span className="text-body-lg font-black text-content-2 drop-shadow-sm">{dateStr}</span>
-                                                                                            {timeStr !== '12:00 a. m.' && <Badge uppercase={false}>{timeStr}</Badge>}
+                                                                                            {timeStr !== hora12('00:00') && <Badge uppercase={false}>{timeStr}</Badge>}
                                                                                         </div>
                                                                                     </div>
 

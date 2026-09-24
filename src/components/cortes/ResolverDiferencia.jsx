@@ -12,6 +12,7 @@ import { repartirEnPartes, severidad } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useResolverDiferencia from '../../hooks/useResolverDiferencia';
+import { fechaHora12 } from '../../utils/hora';
 
 /**
  * Qué se hizo con el faltante o el sobrante de un corte.
@@ -46,12 +47,7 @@ const VIA_LARGO = {
 const centavos = (n) => Math.round(Number(n || 0) * 100);
 const aMonto = (c) => Math.round(c) / 100;
 
-const selloDeTiempo = (iso) => (iso
-    ? new Date(iso).toLocaleString('es-SV', {
-        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-        hour12: true, timeZone: 'America/El_Salvador',
-    })
-    : '');
+const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
 
 export default function ResolverDiferencia({
     corte,

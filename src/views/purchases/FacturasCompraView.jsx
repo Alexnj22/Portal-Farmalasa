@@ -34,6 +34,7 @@ import { clickable } from '../../utils/clickable';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { fechaHora12 } from '../../utils/hora';
 
 const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
@@ -88,7 +89,7 @@ const fmtDateTime = (d) => {
     if (!d) return '—';
     const dt = new Date(d);
     if (isNaN(dt.getTime())) return '—';
-    return dt.toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return fechaHora12(dt, { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 // ── ActionButton — ícono arriba + subtítulo chico abajo, mismo patrón para

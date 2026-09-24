@@ -1,4 +1,5 @@
 import { QUIEN_RESUELVE } from '../../constants/solicitudModulos';
+import { hora12 } from '../../utils/hora';
 
 // Cómo se lee una solicitud que MUEVE PRODUCTO: carga, descarte y traslado.
 //
@@ -134,8 +135,7 @@ export const fmtDateFull = (iso) => !iso ? '—'
  * «11 ago 2026» en las dos las hacía indistinguibles. La base la guarda desde
  * siempre (`created_at` es timestamptz); nadie la mostraba.
  */
-export const fmtHora = (iso) => !iso ? ''
-    : new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true });
+export const fmtHora = (iso) => !iso ? '' : hora12(iso);
 
 export const fmtFechaHora = (iso) => !iso ? '—' : `${fmtDateFull(iso)}, ${fmtHora(iso)}`;
 

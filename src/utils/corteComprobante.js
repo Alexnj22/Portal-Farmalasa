@@ -25,7 +25,8 @@
 
 import { EMPRESA } from '../constants/empresa';
 import { formatMoney } from './formatNumber';
-import { COLUMNAS, soloAscii, recortar, fechaCorta, hhmm, selloDeTiempo } from './ticketCampos';
+import { COLUMNAS, soloAscii, recortar, fechaCorta, horaDeColumna, selloDeTiempo } from './ticketCampos';
+import { hora12Papel } from './hora';
 
 // Nacieron acá, cuando este era el unico documento que iba al rollo. Viven en
 // `ticketCampos` desde que hay un segundo (las bolsas de efectivo); se
@@ -95,7 +96,7 @@ export function construirComprobanteDeAsiento({
             filas: filas.map((d) => [
                 recortar(d.causa || 'Sin motivo', 28),
                 fechaCorta(d.fecha).slice(0, 5),
-                hhmm(d.hora),
+                horaDeColumna(d.hora),
                 formatMoney(Math.abs(Number(d.monto ?? 0))),
             ]),
         },
@@ -133,7 +134,7 @@ export function construirComprobante({ corte, sala, diferencia, personas = [], r
     // con una sola fecha no se puede anexar al corte que corresponde.
     const datos = [
         ['Sala', recortar(sala || '', 34)],
-        ['Corte del', `${fechaCorta(corte?.fecha)}  ${hhmm(corte?.hora)}`],
+        ['Corte del', `${fechaCorta(corte?.fecha)}  ${hora12Papel(corte?.hora)}`],
         // Los DOS nombres, con el rótulo que los distingue — el mismo que usa
         // el papel del corte. `empleado_texto` es la cuenta con la que la sala
         // corta: en tres salas no es una persona («MI CAJA LA POPULAR») y en

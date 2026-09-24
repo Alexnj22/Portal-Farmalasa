@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1051.0 — Promociones: resumen diario para supervisión
+
+Promociones (usuario, 24-sep: «¿cuál es la diferencia? como supervisor quiero
+un reporte de todos, no sólo de una sucursal, y 1 al día»):
+
+- El aviso «Te quedan 4 — producto» queda **sólo para la sala**, que es quien
+  pide el traslado. Supervisión ya no recibe uno por sala.
+- Supervisión recibe **un resumen al día** (`PROMO_RESUMEN`, 7:30 a. m.): una
+  fila por promoción activa, con cuántos productos tiene, cuándo termina, lo
+  vendido y lo vendido en cada sala («Salud 4: 15»), y los lotes de sala por
+  agotarse. Sin promociones activas no sale.
+
+Migración `20260924205714`.
+
 ## v2.1050.0 — Tarjetas: conteo cíclico, Hacienda y promociones
 
 Octava tanda de tarjetas de la campana (usuario, 24-sep: «sigamos con las que

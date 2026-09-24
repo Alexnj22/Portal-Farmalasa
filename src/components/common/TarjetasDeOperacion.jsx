@@ -1491,6 +1491,7 @@ export function CuerpoDeHacienda({ datos, claseTenue, isDark }) {
 export function InsigniaDePromo({ datos, isDark }) {
     const t = tonos(isDark);
     if (datos.tipo === 'lote') return <Disco tono={t.naranja} Icono={Package} />;
+    if (datos.tipo === 'resumen') return <Disco tono={t.azul} Icono={Tag} />;
     if (datos.tipo === 'mes') return <Disco tono={t.azul} Icono={CalendarDays} />;
     return <Disco tono={t.gris} Icono={Tag} />;
 }
@@ -1502,6 +1503,53 @@ const nombreDelMes = (ym) => {
 
 export function CuerpoDePromo({ datos, claseTenue, isDark }) {
     const t = tonos(isDark);
+    /* El resumen del día para supervisión (usuario, 24-sep: «quiero un
+     * reporte de todos, no sólo de una sucursal, y 1 al día»): una fila por
+     * promoción, con lo vendido y cuánto va cada sala. La sala y su cifra van
+     * separadas por «:» para que dos números no se lean como uno. */
+    if (datos.tipo === 'resumen') {
+        return (
+            <Grilla columnas="1fr">
+                <ul className="bg-surface-card-hover divide-y divide-border-card">
+                    {datos.promociones.map((pr) => (
+                        <li key={pr.nombre} className="px-2.5 py-2 min-w-0">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-body-sm font-black break-words leading-snug">{pr.nombre}</p>
+                                    <p className={`flex flex-wrap gap-x-2 text-caption font-semibold mt-0.5 ${claseTenue}`}>
+                                        {pr.productos != null && (
+                                            <span className="whitespace-nowrap">{pr.productos === 1 ? '1 producto' : `${pr.productos} productos`}</span>
+                                        )}
+                                        {pr.fin && <span className="whitespace-nowrap">termina el {fechaCorta(pr.fin)}</span>}
+                                    </p>
+                                </div>
+                                <p className="flex-shrink-0 text-right leading-tight">
+                                    <b className="block text-body-sm font-black tabular-nums">{unidades(pr.vendido)}</b>
+                                    <span className={`text-caption font-semibold ${claseTenue}`}>vendidas</span>
+                                </p>
+                            </div>
+                            {pr.salas.length > 0 && (
+                                <p className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-caption">
+                                    {pr.salas.map((sa) => (
+                                        <span key={sa.sala} className="whitespace-nowrap">
+                                            <span className={`font-semibold ${claseTenue}`}>{sa.sala}:</span>{' '}
+                                            <b className="font-black tabular-nums">{unidades(sa.vendido)}</b>
+                                        </span>
+                                    ))}
+                                </p>
+                            )}
+                            {pr.porAgotarse.map((b, i) => (
+                                <p key={i} className="text-caption mt-1">
+                                    <span className={`font-black uppercase tracking-wide ${t.naranja.texto}`}>Por agotarse</span>{' '}
+                                    <span className="font-semibold">{b.producto} — {b.sala}: {unidades(b.vendido)} de {unidades(b.asignado)}</span>
+                                </p>
+                            ))}
+                        </li>
+                    ))}
+                </ul>
+            </Grilla>
+        );
+    }
     if (datos.tipo === 'lote') {
         const pct = datos.asignado ? Math.min(100, Math.round((datos.vendido ?? 0) / datos.asignado * 100)) : null;
         const agotado = datos.asignado != null && (datos.vendido ?? 0) >= datos.asignado;

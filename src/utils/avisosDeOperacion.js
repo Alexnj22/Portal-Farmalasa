@@ -474,7 +474,7 @@ export function datosDeHacienda(n) {
 
 /** Una promoción: terminó, se acaba el lote de una sala, o cerró su mes. */
 export function datosDePromo(n) {
-    if (n?.type !== 'PROMO_CERRADA' && n?.type !== 'PROMO_LOTE_BAJO') return null;
+    if (n?.type !== 'PROMO_CERRADA' && n?.type !== 'PROMO_LOTE_BAJO' && n?.type !== 'PROMO_RESUMEN') return null;
     const p = n.metadata?.promo;
     if (!p || !p.tipo) return null;
     return {
@@ -492,6 +492,17 @@ export function datosDePromo(n) {
         salas: (Array.isArray(p.salas) ? p.salas : []).filter((s) => s && s.sala).map((s) => ({
             sala: String(s.sala), nivel: s.nivel != null ? String(s.nivel) : null,
             venta: num(s.venta), costo: num(s.costo),
+        })),
+        // El resumen del día para supervisión: una fila por promoción.
+        promociones: (Array.isArray(p.productos) ? p.productos : []).filter((x) => x && x.nombre).map((x) => ({
+            nombre: String(x.nombre),
+            productos: num(x.productos),
+            fin: x.fin || null,
+            vendido: num(x.vendido) ?? 0,
+            salas: (Array.isArray(x.salas) ? x.salas : []).filter((s) => s && s.sala)
+                .map((s) => ({ sala: String(s.sala), vendido: num(s.vendido) ?? 0 })),
+            porAgotarse: (Array.isArray(x.por_agotarse) ? x.por_agotarse : []).filter((b) => b && b.producto)
+                .map((b) => ({ producto: String(b.producto), sala: String(b.sala ?? ''), vendido: num(b.vendido) ?? 0, asignado: num(b.asignado) })),
         })),
     };
 }

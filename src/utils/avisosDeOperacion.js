@@ -143,7 +143,7 @@ export function datosDeBolsaNoCuadra(n) {
     const m = n.metadata || {};
     const lista = (Array.isArray(m.lista) ? m.lista : [])
         .filter((b) => b && b.folio && num(b.dif) != null)
-        .map((b) => ({ folio: String(b.folio), dif: num(b.dif), fecha: b.fecha || null }));
+        .map((b) => ({ folio: String(b.folio), dif: num(b.dif), fecha: b.fecha || null, hora: b.hora || null }));
     if (!lista.length) return null;
     return {
         lista,

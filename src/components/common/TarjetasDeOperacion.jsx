@@ -403,81 +403,69 @@ export function InsigniaDeMinmax({ isDark }) {
     return <Disco tono={tonos(isDark).azul} Icono={SlidersHorizontal} />;
 }
 
-function VentasPorMes({ meses, mesCurso, existencia, claseTenue, azul }) {
-    const tope = Math.max(1, ...meses.map((m) => m.unidades));
+/* «Pedí la venta total de los 6 meses, y la del último mes; no la de cada mes»
+ * (usuario, 24-sep). Dos cifras lado a lado, y debajo lo que va del mes y lo
+ * que hay en la sala. El último mes es el último CERRADO y lleva su nombre. */
+function Ventas({ meses, mesCurso, existencia, claseTenue, azul }) {
     const total = meses.reduce((s, m) => s + m.unidades, 0);
+    const ultimo = meses[meses.length - 1];
+    const nombre = ultimo ? MESES[Number(ultimo.ym.slice(5, 7)) - 1] : null;
     return (
-        <div className="bg-surface-card-hover px-2.5 py-2" style={{ gridColumn: '1 / -1' }}>
-            <div className="flex items-baseline justify-between gap-2">
-                <span className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
-                    Vendido · últimos 6 meses
-                </span>
-                <span className="text-body-sm font-black tabular-nums">{unidades(total)} u.</span>
-            </div>
-            <div className="mt-2 grid grid-cols-6 gap-1.5 items-end h-16" aria-hidden="true">
-                {meses.map((m, i) => {
-                    const ultimo = i === meses.length - 1;
-                    return (
-                        <div key={m.ym} className="flex flex-col items-center justify-end h-full min-w-0">
-                            <span className={`text-caption tabular-nums font-bold ${ultimo ? azul.texto : claseTenue}`}>
-                                {unidades(m.unidades)}
-                            </span>
-                            <span className={`w-full rounded-t-sm mt-0.5 ${ultimo ? azul.barra : 'bg-border-card'}`}
-                                style={{ height: `${Math.max(3, (m.unidades / tope) * 36)}px` }} />
-                        </div>
-                    );
-                })}
-            </div>
-            <div className="mt-1 grid grid-cols-6 gap-1.5">
-                {meses.map((m, i) => (
-                    <span key={m.ym} className={`text-center text-caption font-semibold uppercase
-                        ${i === meses.length - 1 ? azul.texto : claseTenue}`}>
-                        {MESES[Number(m.ym.slice(5, 7)) - 1]}
-                    </span>
-                ))}
-            </div>
+        <>
+            <Celda rotulo="En 6 meses" claseTenue={claseTenue}>{unidades(total)} u.</Celda>
+            <Celda rotulo="Último mes" clase={azul.texto} derecha>
+                {unidades(ultimo?.unidades ?? 0)} u.{nombre && <span className="font-semibold"> · {nombre}</span>}
+            </Celda>
             {(mesCurso != null || existencia != null) && (
-                <p className={`mt-1.5 text-caption font-semibold ${claseTenue}`}>
-                    {mesCurso != null && <>Este mes van <b className="font-black">{unidades(mesCurso)} u.</b></>}
-                    {mesCurso != null && existencia != null && ' · '}
-                    {existencia != null && <>Hay <b className="font-black">{unidades(existencia)} u.</b> en la sala</>}
-                </p>
+                <div className="bg-surface-card-hover px-2.5 py-1.5" style={{ gridColumn: '1 / -1' }}>
+                    <p className={`text-caption font-semibold ${claseTenue}`}>
+                        {mesCurso != null && <>Este mes van <b className="font-black">{unidades(mesCurso)} u.</b></>}
+                        {mesCurso != null && existencia != null && ' · '}
+                        {existencia != null && <>Hay <b className="font-black">{unidades(existencia)} u.</b> en la sala</>}
+                    </p>
+                </div>
             )}
-            <span className="sr-only">
-                {meses.map((m) => `${MESES[Number(m.ym.slice(5, 7)) - 1]}: ${unidades(m.unidades)}`).join(', ')}
-            </span>
-        </div>
+        </>
     );
 }
+
+/* El motivo se escribe como sale del teclado —a veces TODO EN MAYÚSCULAS—:
+ * se muestra en oración, con la primera en mayúscula. */
+const enOracion = (t) => {
+    const s = String(t ?? '').trim().toLowerCase();
+    return s ? s[0].toUpperCase() + s.slice(1) : s;
+};
 
 export function CuerpoDeMinmax({ datos, claseTenue, isDark, buscarEmpleado }) {
     const azul = tonos(isDark).azul;
     const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
     return (
-        <div className="mt-1">
+        <Grilla columnas="minmax(0,1fr) minmax(0,1fr)">
+            {/* El producto DENTRO del panel y grande: es de lo que se trata la
+                solicitud (usuario, 24-sep: «intégralo en el cuerpo para que se
+                note más»). */}
             {datos.producto && (
-                <p className="text-body-sm font-bold line-clamp-2">{datos.producto}</p>
+                <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
+                    <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Producto</p>
+                    <p className={`text-body font-black line-clamp-2 mt-0.5 ${azul.texto}`}>{datos.producto}</p>
+                </div>
             )}
-            <Grilla columnas="minmax(0,1fr) minmax(0,1fr)">
-                <CeldaPersona emp={emp} rotulo="Lo pide" respaldo="Sin nombre" claseTenue={claseTenue} />
-                {datos.ventasMeses.length > 0 && (
-                    <VentasPorMes meses={datos.ventasMeses} mesCurso={datos.ventasMesCurso}
-                        existencia={datos.existencia} claseTenue={claseTenue} azul={azul} />
-                )}
-                <Celda rotulo="Hoy" claseTenue={claseTenue}>{minmax(datos.minHoy, datos.maxHoy)}</Celda>
-                <Celda rotulo="Propone" clase={azul.texto} derecha>{minmax(datos.minNuevo, datos.maxNuevo)}</Celda>
-                {datos.motivo && (
-                    <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
-                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
-                            Por qué lo pide
-                        </p>
-                        <p className="text-body-sm font-semibold mt-0.5 line-clamp-3 first-letter:uppercase lowercase">
-                            {datos.motivo}
-                        </p>
-                    </div>
-                )}
-            </Grilla>
-        </div>
+            <CeldaPersona emp={emp} rotulo="Lo pide" respaldo="Sin nombre" claseTenue={claseTenue} />
+            {datos.ventasMeses.length > 0 && (
+                <Ventas meses={datos.ventasMeses} mesCurso={datos.ventasMesCurso}
+                    existencia={datos.existencia} claseTenue={claseTenue} azul={azul} />
+            )}
+            <Celda rotulo="Hoy" claseTenue={claseTenue}>{minmax(datos.minHoy, datos.maxHoy)}</Celda>
+            <Celda rotulo="Propone" clase={azul.texto} derecha>{minmax(datos.minNuevo, datos.maxNuevo)}</Celda>
+            {datos.motivo && (
+                <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
+                    <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                        Por qué lo pide
+                    </p>
+                    <p className="text-body-sm font-semibold mt-0.5 line-clamp-3">{enOracion(datos.motivo)}</p>
+                </div>
+            )}
+        </Grilla>
     );
 }
 
@@ -503,13 +491,24 @@ export function CuerpoDeBolsa({ datos, claseTenue, isDark, buscarEmpleado }) {
     const neto = difDeBolsa(datos.neto, isDark);
     const varias = datos.lista.length > 1;
     return (
-        <Grilla columnas="minmax(0,1fr) 7rem">
+        <Grilla columnas="minmax(0,1fr) auto">
             {datos.lista.map((b) => {
                 const d = difDeBolsa(b.dif, isDark);
                 const fecha = fechaCorta(b.fecha);
                 return (
                     <React.Fragment key={b.folio}>
-                        <Celda rotulo={fecha ? `Bolsa del ${fecha}` : 'Bolsa'} claseTenue={claseTenue}>{b.folio}</Celda>
+                        {/* Tres renglones: qué bolsa, y de qué día y qué corte es
+                            (24-sep: «pon la hora del corte de esa bolsa»). En uno
+                            solo no entraba en el teléfono. */}
+                        <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-tight">
+                            <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Bolsa del corte</p>
+                            <p className="text-body-sm font-bold tabular-nums truncate mt-0.5">{b.folio}</p>
+                            {(fecha || b.hora) && (
+                                <p className={`text-caption font-semibold truncate mt-0.5 ${claseTenue}`}>
+                                    {[fecha, b.hora && hora12(b.hora)].filter(Boolean).join(' · ')}
+                                </p>
+                            )}
+                        </div>
                         <Celda rotulo={d.rotulo} clase={d.clase} derecha>{d.valor}</Celda>
                     </React.Fragment>
                 );

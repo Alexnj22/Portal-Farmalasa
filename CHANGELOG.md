@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1040.1 — MIN·MAX con ventas totales y producto destacado; bolsa con la hora de su corte
+
+Usuario, 24-sep: «pedí la venta total de los 6 meses, y la venta del último
+mes, no de cada mes · integra el producto en el cuerpo para que se note más ·
+solo pon la hora del corte de esa bolsa».
+
+- **MIN·MAX**: las barras por mes se van. Quedan dos cifras —«En 6 meses» y
+  «Último mes · ago»—, más lo que va del mes y la existencia. El producto pasa
+  a la primera celda del panel, grande y en azul. El motivo se muestra en
+  oración aunque se haya escrito en mayúsculas.
+- **Bolsa que no cuadró**: «Bolsa del corte», el folio y «22 sep · 10:00 p. m.»
+  (`confirmar_conteo` manda la `hora` de la bolsa; migración
+  `20260924150509_bolsa_no_cuadra_con_la_hora_del_corte`).
+- Verificado en pantalla en teléfono y escritorio, sin textos cortados.
+
 ## v2.1040.0 — Inyecciones 4× más liviana, y los renglones de venta se vacuuman
 
 `gate:perf` levantó `get_inyecciones_aplicadas` —la pestaña Inyecciones de

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1047.1 — Traslado: «Hay 52 en Salud 3»
+
+La existencia del traslado se lee «Hay 52 en Salud 3» y no «Hay en Salud 3
+52»: con el número de la sala pegado al de la existencia se podía leer «353»
+(usuario, 24-sep).
+
 ## v2.1047.0 — Traslados sin ventas; anulación desplegada sin repetir la tarjeta
 
 Dos correcciones del usuario (24-sep):

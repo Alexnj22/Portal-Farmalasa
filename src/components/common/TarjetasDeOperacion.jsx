@@ -872,7 +872,7 @@ export function InsigniaDeSolicitud({ datos, isDark }) {
 
 /* Los productos de un traslado (usuario, 24-sep). El NOMBRE manda —es lo que
  * se pide—; debajo, cuántas pide y cuántas tiene la sala a la que se lo piden:
- * «[Pide 24]  Hay 52». Las ventas se quitaron: «solo deja lo que solicitan, el
+ * «[Pide 24]  Hay 52 en Salud 3». Las ventas se quitaron: «solo deja lo que solicitan, el
  * producto, cantidad y cuánto en inventario». Se ven tres; el resto con «Ver
  * los N productos», porque se aprueba desde aquí y hay que verlos todos antes. */
 export const PRODUCTOS_VISIBLES = 3;
@@ -891,9 +891,13 @@ function ProductosDeTraslado({ productos, mas, sala, claseTenue, azul, expandida
                                 <Pildora tono={azul}>Pide {unidades(p.cantidad)}</Pildora>
                             )}
                             {p.existencia != null && (
+                                /* «Hay 52 en Salud 3» y no «Hay en Salud 3 52»: con el
+                                   número de la sala pegado al de la existencia se
+                                   leía «353» (usuario, 24-sep). */
                                 <span className="whitespace-nowrap">
-                                    <span className={`font-semibold ${claseTenue}`}>{sala ? `Hay en ${sala}` : 'Hay'}</span>{' '}
+                                    <span className={`font-semibold ${claseTenue}`}>Hay</span>{' '}
                                     <b className="font-black tabular-nums">{unidades(p.existencia)}</b>
+                                    {sala && <span className={`font-semibold ${claseTenue}`}> en {sala}</span>}
                                 </span>
                             )}
                         </div>

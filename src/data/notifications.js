@@ -162,3 +162,19 @@ export function restoreNotificationsByIds(ids) {
         .update({ deleted_at: null })
         .in('id', ids).not('deleted_at', 'is', null);
 }
+
+/* La URL guardada de la foto de una persona, para la tarjeta de un aviso
+ * cuando esa persona no está en la lista del navegador (acotada por
+ * permisos). Una promesa por id: la misma cara en diez avisos es una consulta.
+ * Devuelve `null` si no hay foto o si falla — la tarjeta cae a las iniciales. */
+const fotosPorId = new Map();
+export function fetchFotoDeEmpleado(id) {
+    if (!id) return Promise.resolve(null);
+    const clave = String(id);
+    if (!fotosPorId.has(clave)) {
+        fotosPorId.set(clave, supabase.rpc('foto_de_empleado', { p_id: clave })
+            .then(({ data, error }) => (error ? null : (data || null)))
+            .catch(() => null));
+    }
+    return fotosPorId.get(clave);
+}

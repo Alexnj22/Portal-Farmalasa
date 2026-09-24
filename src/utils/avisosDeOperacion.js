@@ -222,3 +222,37 @@ export function datosDeCortesPendientes(n) {
     if (!lista.length) return null;
     return { lista };
 }
+
+/* ── Pedidos (24-sep): seguimiento, llegada del conductor y problemas ─────
+ * Los avisos de pedido los escribe el NAVEGADOR (`notifyBranch`), no la base,
+ * así que el metadata se arma acá con una sola forma para los seis sitios que
+ * avisan. `etapa` ubica el aviso en el recorrido del pedido. */
+export const ETAPAS_DE_PEDIDO = ['preparacion', 'en_camino', 'llego', 'recibido'];
+
+export function metaDePedido({ numeros = [], sala = null, etapa, cajas = null, conductor = null,
+    conductorId = null, detalle = null } = {}) {
+    return {
+        pedido: {
+            numeros: (numeros ?? []).filter((x) => x != null).map(String),
+            sala, etapa, cajas, conductor, conductor_id: conductorId, detalle,
+        },
+    };
+}
+
+export function datosDePedido(n) {
+    if (!['PEDIDO_TRACKING', 'PEDIDO_LLEGADA', 'PEDIDO_PROBLEMA', 'PEDIDO_REENVIO'].includes(n?.type)) return null;
+    const p = n.metadata?.pedido;
+    if (!p || !p.etapa) return null;
+    return {
+        numeros: Array.isArray(p.numeros) ? p.numeros.map(String) : [],
+        // Si el título ya nombra todos los números, la tarjeta no los repite.
+        numerosEnTitulo: Array.isArray(p.numeros) && p.numeros.length > 0
+            && p.numeros.every((x) => String(n.title || '').includes(`#${x}`)),
+        sala: p.sala ? String(p.sala) : null,
+        etapa: String(p.etapa),
+        cajas: num(p.cajas),
+        conductor: p.conductor ? String(p.conductor) : null,
+        conductorId: p.conductor_id || null,
+        detalle: p.detalle ? String(p.detalle) : null,
+    };
+}

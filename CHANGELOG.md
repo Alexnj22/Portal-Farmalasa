@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1042.0 — Tarjetas de pedidos: recorrido en pasos, conductor con su cara y la novedad
+
+Quinta tanda de tarjetas de la campana (usuario, 24-sep: «sigamos con los que
+faltan»): los avisos de pedido — seguimiento, llegada del conductor y problemas.
+
+- Cuatro barras (Preparación · En camino · Llegó · Recibido) y una línea con el
+  paso actual; con novedad, el último paso va en rojo. Los nombres de los cuatro
+  pasos debajo de las barras se partían a 320 px y se quitaron.
+- Número de pedido (sólo si el título no lo dice ya) y cajas; quien lo lleva o
+  quien llegó, con su cara; y «Qué pasó» en rojo cuando hay problema.
+- Los avisos de pedido los escribe el navegador: los seis sitios que avisan
+  (`usePedidosData`, `TabPedidos`, `TabRutas`, `CrearRutaModal`,
+  `avisoSalidaPedido`) mandan ahora `metadata.pedido` con una sola forma,
+  `metaDePedido()`.
+- **La cara se resuelve aunque la persona no esté en la lista del navegador**:
+  si el aviso no trae la foto, la tarjeta se la pide a la base
+  (`foto_de_empleado`, ahora ejecutable por `authenticated`; migración
+  `20260924155054_foto_de_empleado_para_la_campana`) y la firma. Vale para todas
+  las tarjetas, también para avisos viejos.
+- El detector de recortes de las capturas ahora caza también la palabra
+  partida entre renglones (se le fabricó: 3 hallazgos). Las 15 tarjetas de
+  todas las tandas: 0 en 390, 360, 320 px y escritorio.
+
 ## v2.1041.0 — Tarjetas: alerta de CCF, factura de sala y cortes sin confirmar
 
 Cuarta tanda de tarjetas de la campana (usuario, 24-sep: «sigamos»).

@@ -23,6 +23,7 @@ import {
     fetchRutasConParadas, fetchBranchNamesForSucursales, fetchPedidoNumerosByIds,
 } from '../../data/pedidos';
 import { avisarSalidaALasSalas } from '../../utils/avisoSalidaPedido';
+import { metaDePedido } from '../../utils/avisosDeOperacion';
 
 const STATUS_BADGE = {
   pendiente:  { label: 'Pendiente',  variante: 'warning' },
@@ -64,7 +65,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
       const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
-      await avisarSalidaALasSalas(paradas, ruta.conductor_nombre);
+      await avisarSalidaALasSalas(paradas, ruta.conductor_nombre, ruta.conductor_id);
       onRefresh();
     } catch (e) {
       // `mensajeAmigable` ya manda el error crudo a la consola.
@@ -89,6 +90,8 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           body: `${ruta.conductor_nombre} acaba de llegar. Confirma la recepción de tu pedido.`,
           link: '/pedidos',
           push: true,
+          metadata: metaDePedido({ numeros: stop.numeros ?? [], etapa: 'llego',
+            conductor: ruta.conductor_nombre ?? null, conductorId: ruta.conductor_id ?? null }),
         });
       }
       onRefresh();

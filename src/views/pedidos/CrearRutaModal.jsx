@@ -21,6 +21,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { metaDePedido } from '../../utils/avisosDeOperacion';
 function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
@@ -457,6 +458,8 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
             body: `Tu pedido ${numeros} salió de bodega${cajasStr} con ${conductorCorto}.`,
             link: '/pedidos',
             push: true,
+            metadata: metaDePedido({ numeros: stop.items.map(i => i.numero), etapa: 'en_camino',
+              cajas: totalCajas || null, conductor: conductorCorto, conductorId: user?.id ?? null }),
           });
         }
       }

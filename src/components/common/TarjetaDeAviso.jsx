@@ -13,7 +13,7 @@ import {
     InsigniaDeMinmax, CuerpoDeMinmax, InsigniaDeBolsa, CuerpoDeBolsa,
     InsigniaDeDeposito, CuerpoDeDeposito,
     InsigniaDeAlertaDeVentas, CuerpoDeAlertaDeVentas, InsigniaDeFacturaDeSala, CuerpoDeFacturaDeSala,
-    InsigniaDeCortesPendientes, CuerpoDeCortesPendientes,
+    InsigniaDeCortesPendientes, CuerpoDeCortesPendientes, InsigniaDePedido, CuerpoDePedido,
 } from './TarjetasDeOperacion';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
@@ -22,7 +22,7 @@ import { datosDeCreditosVencidos } from '../../utils/creditosVencidos';
 import {
     datosDeCorteNuevo, datosDeBitacoraPorVencer, datosDeTrasladosPorRespaldo, TRASLADOS_VISIBLES,
     datosDeMinmaxPendiente, datosDeBolsaNoCuadra, datosDeDeposito,
-    datosDeAlertaDeVentas, datosDeFacturaDeSala, datosDeCortesPendientes,
+    datosDeAlertaDeVentas, datosDeFacturaDeSala, datosDeCortesPendientes, datosDePedido,
 } from '../../utils/avisosDeOperacion';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -193,8 +193,9 @@ const TarjetaDeAviso = ({
     const alertaCcf  = datosDeAlertaDeVentas(n);
     const factSala   = datosDeFacturaDeSala(n);
     const cortesPend = datosDeCortesPendientes(n);
+    const pedidoAv   = datosDePedido(n);
     const conTarjeta = creditos || corteNuevo || bitacora || traslados || minmaxPend || bolsa || deposito
-        || alertaCcf || factSala || cortesPend;
+        || alertaCcf || factSala || cortesPend || pedidoAv;
 
     const corte = acciones?.corteDe?.(n) ?? null;
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
@@ -250,6 +251,8 @@ const TarjetaDeAviso = ({
                     <InsigniaDeFacturaDeSala isDark={isDark} />
                 ) : cortesPend ? (
                     <InsigniaDeCortesPendientes isDark={isDark} />
+                ) : pedidoAv ? (
+                    <InsigniaDePedido datos={pedidoAv} isDark={isDark} />
                 ) : conAnillo ? (
                     <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                 ) : (
@@ -327,6 +330,10 @@ const TarjetaDeAviso = ({
                     )}
                     {cortesPend && (
                         <CuerpoDeCortesPendientes datos={cortesPend} claseTenue={cx.rowBody} isDark={isDark}
+                            buscarEmpleado={buscarEmpleado} />
+                    )}
+                    {pedidoAv && (
+                        <CuerpoDePedido datos={pedidoAv} claseTenue={cx.rowBody} isDark={isDark}
                             buscarEmpleado={buscarEmpleado} />
                     )}
                     {empresa && (

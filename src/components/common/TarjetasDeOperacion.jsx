@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
     Check, TrendingDown, TrendingUp, CircleOff, Thermometer, SprayCan,
     ArrowRight, Truck, Store, Clock, SlidersHorizontal, ShoppingBag, Landmark,
-    FileWarning, ReceiptText, ClipboardCheck,
+    FileWarning, ReceiptText, ClipboardCheck, Package, PackageCheck, PackageX,
 } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
@@ -10,7 +10,8 @@ import { formatMoney } from '../../utils/formatNumber';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { hora12, rango12 } from '../../utils/hora';
 import { getSignedFileUrl } from '../../utils/storageFiles';
-import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES } from '../../utils/avisosDeOperacion';
+import { fetchFotoDeEmpleado } from '../../data/notifications';
+import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES, ETAPAS_DE_PEDIDO } from '../../utils/avisosDeOperacion';
 
 /* Tres tarjetas de la campana para avisos de la operación del día: el corte de
  * caja, la bitácora por cerrarse y los traslados despachados por respaldo.
@@ -86,9 +87,23 @@ function useFotoFirmada(url, hace_falta) {
     return hace_falta && url ? firmada : null;
 }
 
+/* Si el aviso no trajo la foto (el conductor de un pedido, un aviso viejo) y
+ * la persona no está en la lista, se le pregunta a la base por su id. */
+function useFotoGuardada(id, foto, hace_falta) {
+    const [leida, setLeida] = useState(null);
+    useEffect(() => {
+        if (!hace_falta || foto || !id) return undefined;
+        let vivo = true;
+        fetchFotoDeEmpleado(id).then((u) => { if (vivo) setLeida(u); });
+        return () => { vivo = false; };
+    }, [id, foto, hace_falta]);
+    return foto || (hace_falta ? leida : null);
+}
+
 function usePersona(id, nombre, foto, buscarEmpleado) {
     const ficha = id ? (buscarEmpleado?.(id) || null) : null;
-    const firmada = useFotoFirmada(foto, !ficha?.photo);
+    const guardada = useFotoGuardada(id, foto, !ficha?.photo);
+    const firmada = useFotoFirmada(guardada, !ficha?.photo);
     if (ficha) return firmada ? { ...ficha, photo: firmada } : ficha;
     if (!id && !nombre) return null;
     return { ...(id ? { id } : {}), name: nombre, ...(firmada ? { photo: firmada } : {}) };
@@ -737,5 +752,86 @@ export function CuerpoDeCortesPendientes({ datos, claseTenue, isDark, buscarEmpl
                     buscarEmpleado={buscarEmpleado} />
             ))}
         </ul>
+    );
+}
+
+/* ── Pedidos (24-sep): seguimiento, llegada del conductor y problemas ─────
+ * Un recorrido de cuatro pasos —Preparación · En camino · Llegó · Recibido—
+ * con el paso actual marcado: la pregunta que la sala se hace con un pedido es
+ * «¿dónde va?», y una línea de pasos la contesta sin leer. Debajo, el número y
+ * las cajas, quién lo lleva con su cara, y la novedad si la hubo (en rojo, y el
+ * último paso también). Antes todos eran un párrafo. */
+const PASOS_DE_PEDIDO = ['Preparación', 'En camino', 'Llegó', 'Recibido'];
+
+export function InsigniaDePedido({ datos, isDark }) {
+    const t = tonos(isDark);
+    if (datos.etapa === 'problema') return <Disco tono={t.rojo} Icono={PackageX} />;
+    if (datos.etapa === 'recibido') return <Disco tono={t.verde} Icono={PackageCheck} />;
+    if (datos.etapa === 'en_camino' || datos.etapa === 'llego') return <Disco tono={t.azul} Icono={Truck} />;
+    return <Disco tono={t.azul} Icono={Package} />;
+}
+
+function PasosDePedido({ etapa, claseTenue, isDark }) {
+    const t = tonos(isDark);
+    const problema = etapa === 'problema';
+    const actual = problema ? 3 : Math.max(0, ETAPAS_DE_PEDIDO.indexOf(etapa));
+    const tonoActual = problema ? t.rojo : t.azul;
+    /* Las barras dicen el avance y UNA línea dice el paso: con los cuatro
+     * nombres debajo de las barras, a 320 px se partían a media palabra
+     * («Prepar/ación») y en escritorio quedaban pegados. */
+    return (
+        <div className="mt-2">
+            <div className="grid grid-cols-4 gap-1" aria-hidden="true">
+                {PASOS_DE_PEDIDO.map((paso, i) => (
+                    <span key={paso} className={`h-1.5 rounded-full
+                        ${i <= actual ? (problema && i === 3 ? t.rojo.barra : t.azul.barra) : 'bg-border-card'}`} />
+                ))}
+            </div>
+            <p className="mt-1 text-caption font-bold">
+                <span className={claseTenue}>Paso {actual + 1} de 4 · </span>
+                <span className={tonoActual.texto}>{problema ? 'Con novedad' : PASOS_DE_PEDIDO[actual]}</span>
+            </p>
+        </div>
+    );
+}
+
+export function CuerpoDePedido({ datos, claseTenue, isDark, buscarEmpleado }) {
+    const t = tonos(isDark);
+    const conConductor = (datos.etapa === 'en_camino' || datos.etapa === 'llego') && (datos.conductor || datos.conductorId);
+    const emp = usePersona(datos.conductorId, datos.conductor, null, buscarEmpleado);
+    // El número va en la celda sólo si el título no lo dice ya.
+    const numeros = datos.numerosEnTitulo ? '' : datos.numeros.map((x) => `#${x}`).join(', ');
+    return (
+        <div>
+            <PasosDePedido etapa={datos.etapa} claseTenue={claseTenue} isDark={isDark} />
+            {(numeros || datos.cajas != null || conConductor || datos.detalle) && (
+                <div className="@container">
+                    <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
+                        {numeros && (
+                            <Celda rotulo={datos.numeros.length > 1 ? 'Pedidos' : 'Pedido'} claseTenue={claseTenue} apilable>
+                                {numeros}
+                            </Celda>
+                        )}
+                        {datos.cajas != null && (
+                            <Celda rotulo="Cajas" claseTenue={claseTenue} derecha apilable>{datos.cajas}</Celda>
+                        )}
+                        {conConductor && (
+                            <CeldaPersona emp={emp} rotulo={datos.etapa === 'llego' ? 'Llegó' : 'Lo lleva'}
+                                respaldo={datos.conductor ?? 'Sin nombre'} claseTenue={claseTenue} />
+                        )}
+                        {datos.detalle && (
+                            <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
+                                <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                                    {datos.etapa === 'problema' ? 'Qué pasó' : 'Nota'}
+                                </p>
+                                <p className={`text-body-sm font-bold break-words mt-0.5 ${datos.etapa === 'problema' ? t.rojo.texto : ''}`}>
+                                    {datos.detalle}
+                                </p>
+                            </div>
+                        )}
+                    </Grilla>
+                </div>
+            )}
+        </div>
     );
 }

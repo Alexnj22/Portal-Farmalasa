@@ -37,6 +37,7 @@ import { registerPlugin } from '@capacitor/core';
 import { mensajeAmigable } from '../../../utils/errorMessages';
 import { cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '../../../utils/cajasEspeciales';
 import { fetchEmployeesPublicByIds } from '../../../data/employees';
+import { metaDePedido } from '../../../utils/avisosDeOperacion';
 const ERP_ORDER = [5, 1, 2, 3, 4, 7];
 
 // Cuánto se esperan los avisos de Realtime antes de recargar. Un UPDATE sobre
@@ -598,7 +599,8 @@ export function usePedidosData({ searchTerm = '' }) {
                 fetchBranchInfoForSucursal(sucId).then(({ data: m }) => {
                     if (!m?.branch_id) return;
                     // Informativo: campana sin push
-                    notifyBranch(m.branch_id, { type: 'PEDIDO_TRACKING', title: `Pedido #${numero} en preparación`, body: `Bodega ha iniciado la preparación de tu pedido #${numero}. Te avisaremos cuando salga en camino.`, link: '/pedidos', push: true });
+                    notifyBranch(m.branch_id, { type: 'PEDIDO_TRACKING', title: `Pedido #${numero} en preparación`, body: `Bodega ha iniciado la preparación de tu pedido #${numero}. Te avisaremos cuando salga en camino.`, link: '/pedidos', push: true,
+                        metadata: metaDePedido({ numeros: [numero], sala: m.nombre, etapa: 'preparacion' }) });
                 }).catch(() => {});
             }
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
@@ -990,7 +992,9 @@ export function usePedidosData({ searchTerm = '' }) {
                     const title   = `Problema en llegada — ${branchName}`;
                     const message = `${branchName} reporta: ${parts.join(' y ')}.${nota ? ' ' + nota : ''}`;
                     // Accionable para bodega (requiere reenvío) → con push
-                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true });
+                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true,
+                        metadata: metaDePedido({ sala: branchName, etapa: 'problema',
+                            detalle: `${parts.join(' y ')}.${nota ? ' ' + nota : ''}` }) });
                 }).catch(() => {});
             }
 
@@ -1001,7 +1005,9 @@ export function usePedidosData({ searchTerm = '' }) {
                     const cnt = electrolitFaltantes;
                     const title   = `Electrolit faltante — ${branchName}`;
                     const message = `${branchName} reporta ${cnt} caja${cnt > 1 ? 's' : ''} de Electrolit que no llegaron.`;
-                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true });
+                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true,
+                        metadata: metaDePedido({ sala: branchName, etapa: 'problema',
+                            detalle: `${cnt} caja${cnt > 1 ? 's' : ''} de Electrolit no llegaron.` }) });
                 }).catch(() => {});
             }
 
@@ -1013,7 +1019,9 @@ export function usePedidosData({ searchTerm = '' }) {
                     const title   = `Cajas de más — ${branchName}`;
                     const message = `${branchName} reporta ${cajasExtra} caja${cajasExtra > 1 ? 's' : ''} extra no esperada${cajasExtra > 1 ? 's' : ''}.${notas.length ? ' ' + notas.join(', ') : ''}`;
                     // Informativo: campana sin push
-                    notifyBranch(b.branch_id, { type: 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: true });
+                    notifyBranch(b.branch_id, { type: 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: true,
+                        metadata: metaDePedido({ sala: branchName, etapa: 'recibido',
+                            detalle: `${cajasExtra} caja${cajasExtra > 1 ? 's' : ''} de más.${notas.length ? ' ' + notas.join(', ') : ''}` }) });
                 }).catch(() => {});
             }
 
@@ -1032,7 +1040,9 @@ export function usePedidosData({ searchTerm = '' }) {
                     const detalle  = faltanE.map(l => (nombreDe.get(l) ? `${l} (${nombreDe.get(l)})` : l)).join(', ');
                     const title   = `Caja especial faltante — ${branchName}`;
                     const message = `${branchName} reporta caja${faltanE.length > 1 ? 's' : ''} especial${faltanE.length > 1 ? 'es' : ''} no recibida${faltanE.length > 1 ? 's' : ''}: ${detalle}.`;
-                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true });
+                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true,
+                        metadata: metaDePedido({ sala: branchName, etapa: 'problema',
+                            detalle: `No llegó: ${detalle}.` }) });
                 }).catch(() => {});
             }
 

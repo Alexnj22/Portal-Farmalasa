@@ -38,6 +38,7 @@ import { clickable } from '../../utils/clickable';
 import { esCargoDeSupervision } from '../../utils/decisionDiferencia';
 import { dialogoDiferido } from '../../utils/dialogoDiferido';
 import { electrolitFueraDeEspeciales } from '../../utils/cajasEspeciales';
+import { metaDePedido } from '../../utils/avisosDeOperacion';
 
 /* Los once diálogos se bajan al ABRIRLOS, no al entrar a la pestaña: abrir
  * Pedidos descargaba RecepcionModal (1,959 líneas), CrearRutaModal (812),
@@ -1067,6 +1068,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     title: `Problemas en pedido #${pedido.numero} — ${branchName}`,
                                     body: `${branchName} corrigió lo contado del pedido #${pedido.numero}. Revisa la diferencia y contesta.`,
                                     link: '/pedidos', push: true,
+                                    metadata: metaDePedido({ numeros: [pedido.numero], sala: branchName, etapa: 'problema',
+                                        detalle: 'Corrigió lo contado. Revisa la diferencia y contesta.' }),
                                 });
                             }).catch(() => {});
                         }
@@ -1094,7 +1097,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     ? `${branchName} reporta diferencias en la recepción del pedido #${pedido.numero}. Revisa y márcalo como corregido.`
                                     : `${branchName} confirmó la recepción del pedido #${pedido.numero} sin novedades.`;
                                 // Con diferencias = accionable (push); sin novedades = solo campana
-                                notifyBranch(b.branch_id, { type: realHasDiff ? 'PEDIDO_PROBLEMA' : 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: true });
+                                notifyBranch(b.branch_id, { type: realHasDiff ? 'PEDIDO_PROBLEMA' : 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: true,
+                                    metadata: metaDePedido({ numeros: [pedido.numero], sala: branchName,
+                                        etapa: realHasDiff ? 'problema' : 'recibido',
+                                        detalle: realHasDiff ? 'Reporta diferencias en la recepción. Revisa y márcalo como corregido.' : null }) });
                             }).catch(() => {});
                         } else {
                             // Partial box confirmed — reload items before active so DifSection gets fresh data

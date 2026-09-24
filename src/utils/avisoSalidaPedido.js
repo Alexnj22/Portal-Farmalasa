@@ -1,5 +1,6 @@
 import { notifyBranch } from './notify';
 import { fetchBranchIdsForSucursales } from '../data/pedidos';
+import { metaDePedido } from './avisosDeOperacion';
 
 /**
  * Avisar a cada sala que su pedido salió de bodega.
@@ -28,8 +29,9 @@ import { fetchBranchIdsForSucursales } from '../data/pedidos';
  *                         `erp_sucursal_id` y, si la pantalla los tiene,
  *                         `numeros` (los números de pedido de esa parada).
  * @param {string} conductorNombre  Para que la sala sepa a quién esperar.
+ * @param {string} [conductorId]    Para que la tarjeta ponga su cara.
  */
-export async function avisarSalidaALasSalas(paradas, conductorNombre) {
+export async function avisarSalidaALasSalas(paradas, conductorNombre, conductorId = null) {
     try {
         const sucIds = [...new Set((paradas ?? []).map(p => p.erp_sucursal_id).filter(Boolean))];
         if (!sucIds.length) return;
@@ -51,6 +53,8 @@ export async function avisarSalidaALasSalas(paradas, conductorNombre) {
                 body:  `Salió de bodega${conductorNombre ? ` con ${conductorNombre}` : ''}.`,
                 link:  '/pedidos',
                 push:  true,
+                metadata: metaDePedido({ numeros: parada.numeros ?? [], etapa: 'en_camino',
+                    conductor: conductorNombre ?? null, conductorId }),
             });
         }
     } catch (e) {

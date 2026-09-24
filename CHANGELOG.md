@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1044.0 — Solicitudes: fecha, pago, cliente y existencia con ventas en traslados
+
+Correcciones del usuario sobre la tarjeta de solicitudes (24-sep):
+
+- **Anulación y cambios de factura**: la tarjeta dice la fecha de la factura,
+  el tipo de documento (Consumidor final / Crédito fiscal), el tipo de pago y
+  el cliente. El número de factura deja de mostrarse. El cliente y el pago se
+  leen de `sales_invoices` cuando la solicitud no los trae.
+- **Traslados**: cada producto dice cuántas hay en la sala a la que se lo
+  piden, lo que vendió en los últimos 6 meses cerrados y en el último mes.
+- `ventas_por_mes_de_producto(erp_product_id, branch_id)`: una sola respuesta
+  para las ventas por mes, que usan este aviso y el de MIN·MAX (antes la
+  consulta vivía escrita adentro del trigger de MIN·MAX).
+- Las cifras del traslado van en un `BEGIN … EXCEPTION`: si fallan, la
+  solicitud y su aviso salen igual.
+
+Migración `20260924164249`.
+
 ## v2.1043.0 — Tarjetas de solicitudes pendientes
 
 Sexta tanda (usuario, 24-sep: «sigamos con las solicitudes»): las solicitudes

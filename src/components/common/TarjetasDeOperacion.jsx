@@ -845,7 +845,7 @@ export function CuerpoDePedido({ datos, claseTenue, isDark, buscarEmpleado }) {
 
 /* ── Solicitudes pendientes (24-sep) ──────────────────────────────────────
  * Una sola tarjeta para todos los tipos, con las mismas piezas: quién la pide
- * (con su cara), el documento con su número legible y el monto, qué cambia
+ * (con su cara), la factura —fecha, monto, documento, pago y cliente—, qué cambia
  * —antes y después—, los productos y el motivo. Cada tipo usa las que tiene.
  * Aprobar, Rechazar y Ver detalle los pone la tarjeta general, debajo. */
 const TIPO_DE_SOLICITUD = {
@@ -870,6 +870,32 @@ export function InsigniaDeSolicitud({ datos, isDark }) {
     return <Disco tono={tonos(isDark)[t.tono]} Icono={t.Icono} />;
 }
 
+/* De cada producto de un traslado: cuántas hay y cuánto vendió la sala a la que
+ * se lo piden —la que decide si puede soltarlo— (usuario, 24-sep: «no dice
+ * cuántas tengo en inventario; agrega el total de ventas de los últimos 6
+ * meses y del último mes»). Cada cifra con su rótulo es una pieza que no se
+ * parte: si no caben las tres, baja la que sobra. */
+function CifrasDelProducto({ p, sala, claseTenue, azul }) {
+    const total = p.ventasMeses.reduce((s, m) => s + m.unidades, 0);
+    const ultimo = p.ventasMeses[p.ventasMeses.length - 1];
+    const cifras = [
+        p.existencia != null && { k: 'hay', rotulo: sala ? `Hay en ${sala}` : 'Hay', valor: p.existencia },
+        ultimo && { k: 'seis', rotulo: 'En 6 meses', valor: total },
+        ultimo && { k: 'ultimo', rotulo: `Último mes · ${MESES[Number(ultimo.ym.slice(5, 7)) - 1]}`, valor: ultimo.unidades, clase: azul.texto },
+    ].filter(Boolean);
+    if (cifras.length === 0) return null;
+    return (
+        <p className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-caption">
+            {cifras.map((c) => (
+                <span key={c.k} className="whitespace-nowrap">
+                    <span className={`font-semibold ${claseTenue}`}>{c.rotulo}</span>{' '}
+                    <b className={`font-black tabular-nums ${c.clase ?? ''}`}>{unidades(c.valor)}&nbsp;u.</b>
+                </span>
+            ))}
+        </p>
+    );
+}
+
 export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado }) {
     const azul = tonos(isDark).azul;
     const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
@@ -880,47 +906,40 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado })
                 <CeldaPersona emp={emp} rotulo="Lo pide" respaldo={datos.quien ?? 'Sin nombre'} claseTenue={claseTenue} />
 
                 {(() => {
-                    /* Las celdas van de a PARES; la que queda sin pareja ocupa
-                     * la fila entera. */
+                    /* Las celdas van de a PARES y la que queda sin pareja ocupa
+                     * la fila entera; el cliente —nombre largo— va siempre en
+                     * la suya. El número de la factura no se muestra: «no es
+                     * relevante en esa vista» (usuario, 24-sep). */
                     const abono = datos.tipo === 'ABONO_APROBACION';
-                    const conMonto = datos.monto != null && (datos.numero || abono);
-                    // El abono empareja el monto con cuántos créditos cubre; el
-                    // cliente —nombre largo— va en su propia fila.
-                    const conCreditos = abono && datos.creditos != null;
-                    const par1 = [datos.numero || conCreditos, conMonto].filter(Boolean).length === 2;
-                    return (
-                        <>
-                            {datos.numero && (
-                                <Celda rotulo={datos.doc ?? 'Documento'} claseTenue={claseTenue} apilable sola={!par1}>
-                                    N.º {datos.numero}
+                    const deFactura = !!(datos.doc || datos.fecha);
+                    const nuevoRotulo = datos.antes ? 'Pasa a'
+                        : (datos.tipo === 'VENDOR_CHANGE_REQUEST' ? 'Nuevo vendedor' : 'Nuevo');
+                    const grupos = [
+                        [
+                            datos.fecha && { k: 'fecha', rotulo: 'Fecha', valor: fechaCorta(datos.fecha) },
+                            datos.monto != null && (deFactura || abono) && { k: 'monto', rotulo: 'Monto', valor: formatMoney(datos.monto) },
+                            datos.doc && { k: 'doc', rotulo: 'Documento', valor: datos.doc },
+                            datos.pago && { k: 'pago', rotulo: 'Pago', valor: conMayuscula(datos.pago) },
+                            abono && datos.creditos != null && { k: 'creditos', rotulo: 'Créditos', valor: datos.creditos },
+                        ],
+                        [datos.cliente && (deFactura || abono) && { k: 'cliente', rotulo: 'Cliente', valor: datos.cliente, fila: true }],
+                        [
+                            datos.antes && { k: 'antes', rotulo: 'Hoy', valor: conMayuscula(datos.antes) },
+                            datos.despues && { k: 'despues', rotulo: nuevoRotulo, valor: conMayuscula(datos.despues), clase: azul.texto },
+                        ],
+                    ];
+                    return grupos.flatMap((grupo) => {
+                        const celdas = grupo.filter(Boolean);
+                        return celdas.map((c, i) => {
+                            const sola = c.fila || (i === celdas.length - 1 && i % 2 === 0);
+                            return (
+                                <Celda key={c.k} rotulo={c.rotulo} clase={c.clase} claseTenue={claseTenue}
+                                    derecha={!sola && i % 2 === 1} apilable={!c.fila} sola={sola}>
+                                    {c.valor}
                                 </Celda>
-                            )}
-                            {conMonto && (
-                                <Celda rotulo="Monto" claseTenue={claseTenue} derecha={par1 && !abono} apilable sola={!par1}>
-                                    {formatMoney(datos.monto)}
-                                </Celda>
-                            )}
-                            {conCreditos && (
-                                <Celda rotulo="Créditos" claseTenue={claseTenue} derecha apilable sola={!par1}>
-                                    {datos.creditos}
-                                </Celda>
-                            )}
-                            {abono && datos.cliente && (
-                                <Celda rotulo="Cliente" claseTenue={claseTenue} sola>{datos.cliente}</Celda>
-                            )}
-                            {datos.antes && (
-                                <Celda rotulo="Hoy" claseTenue={claseTenue} apilable sola={!datos.despues}>
-                                    {conMayuscula(datos.antes)}
-                                </Celda>
-                            )}
-                            {datos.despues && (
-                                <Celda rotulo={datos.antes ? 'Pasa a' : (datos.tipo === 'VENDOR_CHANGE_REQUEST' ? 'Nuevo vendedor' : 'Nuevo')} clase={azul.texto}
-                                    derecha={!!datos.antes} apilable sola={!datos.antes}>
-                                    {conMayuscula(datos.despues)}
-                                </Celda>
-                            )}
-                        </>
-                    );
+                            );
+                        });
+                    });
                 })()}
 
                 {rango && (
@@ -933,11 +952,14 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado })
                 {datos.productos.length > 0 && (
                     <ul className="bg-surface-card-hover divide-y divide-border-card" style={{ gridColumn: '1 / -1' }}>
                         {datos.productos.map((p, i) => (
-                            <li key={`${p.nombre}-${i}`} className="flex items-center justify-between gap-3 px-2.5 py-1.5">
-                                <span className="text-caption font-bold break-words min-w-0">{p.nombre}</span>
-                                {p.cantidad != null && (
-                                    <span className="flex-shrink-0 text-body-sm font-black tabular-nums">×{unidades(p.cantidad)}</span>
-                                )}
+                            <li key={`${p.nombre}-${i}`} className="px-2.5 py-1.5">
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-caption font-bold break-words min-w-0">{p.nombre}</span>
+                                    {p.cantidad != null && (
+                                        <span className="flex-shrink-0 text-body-sm font-black tabular-nums">×{unidades(p.cantidad)}</span>
+                                    )}
+                                </div>
+                                <CifrasDelProducto p={p} sala={datos.origen} claseTenue={claseTenue} azul={azul} />
                             </li>
                         ))}
                         {datos.mas > 0 && (

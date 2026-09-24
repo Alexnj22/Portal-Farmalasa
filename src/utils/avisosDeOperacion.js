@@ -125,9 +125,7 @@ export function datosDeMinmaxPendiente(n) {
         quien: m.quien ? String(m.quien) : null,
         quienId: m.quien_id || null,
         quienFoto: m.quien_foto || null,
-        ventasMeses: (Array.isArray(m.ventas_meses) ? m.ventas_meses : [])
-            .filter((v) => v && /^\d{4}-\d{2}$/.test(String(v.ym)))
-            .map((v) => ({ ym: String(v.ym), unidades: num(v.unidades) ?? 0 })),
+        ventasMeses: leerMeses(m.ventas_meses),
         ventasMesCurso: num(m.ventas_mes_curso),
         existencia: num(m.existencia),
         minHoy: num(m.min_hoy),
@@ -260,6 +258,14 @@ export function datosDePedido(n) {
 /* ── Solicitudes pendientes (24-sep) ──────────────────────────────────────
  * `metadata.solicitud` lo arma `notificar_solicitud_creada` con la misma forma
  * para todos los tipos. Un aviso anterior no lo trae y queda como texto. */
+/* Las ventas mes a mes que manda `ventas_por_mes_de_producto`: MIN·MAX y los
+ * productos de un traslado las leen igual. */
+function leerMeses(v) {
+    return (Array.isArray(v) ? v : [])
+        .filter((x) => x && /^\d{4}-\d{2}$/.test(String(x.ym)))
+        .map((x) => ({ ym: String(x.ym), unidades: num(x.unidades) ?? 0 }));
+}
+
 export function datosDeSolicitud(n) {
     if (n?.type !== 'REQUEST_PENDING') return null;
     const s = n.metadata?.solicitud;
@@ -273,14 +279,25 @@ export function datosDeSolicitud(n) {
         sala: s.sala ? String(s.sala) : null,
         origen: s.origen ? String(s.origen) : null,
         doc: s.doc ? String(s.doc) : null,
-        numero: s.numero ? String(s.numero) : null,
+        // El número de la factura viaja en el metadata pero no se muestra: «no
+        // es relevante en esa vista» (usuario, 24-sep). Sí la fecha, el pago y
+        // el cliente.
+        fecha: s.fecha || null,
+        pago: s.pago ? String(s.pago) : null,
         monto: num(s.monto),
         antes: s.antes != null ? String(s.antes) : null,
         despues: s.despues != null ? String(s.despues) : null,
         cliente: s.cliente ? String(s.cliente) : null,
         productos: (Array.isArray(s.productos) ? s.productos : [])
             .filter((p) => p && p.nombre)
-            .map((p) => ({ nombre: String(p.nombre), cantidad: num(p.cantidad) })),
+            .map((p) => ({
+                nombre: String(p.nombre),
+                cantidad: num(p.cantidad),
+                // En un traslado: cuántas hay y cuánto vendió la sala a la que
+                // se lo piden.
+                existencia: num(p.existencia),
+                ventasMeses: leerMeses(p.ventas_meses),
+            })),
         mas: num(s.mas) ?? 0,
         unidades: num(s.unidades),
         subtipo: s.subtipo ? String(s.subtipo) : null,

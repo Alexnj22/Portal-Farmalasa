@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1043.0 — Tarjetas de solicitudes pendientes
+
+Sexta tanda (usuario, 24-sep: «sigamos con las solicitudes»): las solicitudes
+pendientes —unas 250 al día— pasan a tarjeta.
+
+- `notificar_solicitud_creada` manda `metadata.solicitud` con la misma forma
+  para todos los tipos: quién la pide (con su foto), sala, documento con número
+  legible («Factura N.º 74092» y no «0000074092_COF»), monto, qué cambia
+  (Hoy → Pasa a), productos (3 y «y N más»), fechas y motivo. El título lleva la
+  sala delante y ya no lleva emoji («Salud 4 · Anulación de factura», «Salud 2
+  te pide un traslado»). El texto del push no cambia. Migración
+  `20260924161850_solicitudes_pendientes_con_datos_para_la_tarjeta`; los casts
+  de montos van protegidos para que un valor raro no tumbe la solicitud.
+- Una tarjeta con ícono y color por tipo (anulación y descarte en rojo, caja y
+  abonos en naranja, cargas y abonos por confirmar en verde). Las celdas van de
+  a pares y la que queda sola ocupa la fila. Aprobar, Rechazar y Ver detalle no
+  cambian.
+- Verificado en pantalla con los ocho tipos más comunes, en escritorio, 390 y
+  320 px: 0 recortes, 0 palabras partidas, 0 huecos.
+
 ## v2.1042.1 — Pedidos sin celda sola: cajas en la línea del paso y sin repetir el número
 
 «Eso no entiendo, ¿por qué se ve así?» y «no sé qué tan útil es poner el

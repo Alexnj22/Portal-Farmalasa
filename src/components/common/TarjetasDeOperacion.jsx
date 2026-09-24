@@ -3,6 +3,7 @@ import {
     Check, TrendingDown, TrendingUp, CircleOff, Thermometer, SprayCan,
     ArrowRight, Truck, Store, Clock, SlidersHorizontal, ShoppingBag, Landmark,
     FileWarning, ReceiptText, ClipboardCheck, Package, PackageCheck, PackageX,
+    FileX, CreditCard, UserRound, Users, Wallet, HandCoins, ArrowLeftRight, PackagePlus, Trash2, CalendarDays,
 } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
@@ -386,8 +387,11 @@ const Grilla = ({ columnas, children }) => (
  * del ancho del panel —container query, `@container` en el padre—, no de la
  * pantalla: la misma tarjeta vive en la campana y en el historial. 15.1rem son
  * las dos columnas de 7.5rem más la línea entre ellas. */
-const Celda = ({ rotulo, children, clase = '', claseTenue, derecha = false, apilable = false }) => (
-    <div className={`bg-surface-card-hover px-2.5 py-2 min-w-0 leading-tight flex flex-col justify-center
+const Celda = ({ rotulo, children, clase = '', claseTenue, derecha = false, apilable = false, sola = false }) => (
+    /* `sola`: ocupa toda la fila. Una celda sin pareja en una grilla de dos
+     * columnas deja media fila vacía (24-sep). */
+    <div style={sola ? { gridColumn: '1 / -1' } : undefined}
+        className={`bg-surface-card-hover px-2.5 py-2 min-w-0 leading-tight flex flex-col justify-center
         ${apilable
             ? `items-center text-center ${derecha
                 ? '@min-[15.1rem]:items-end @min-[15.1rem]:text-right'
@@ -835,6 +839,122 @@ export function CuerpoDePedido({ datos, claseTenue, isDark, buscarEmpleado }) {
                     </Grilla>
                 </div>
             )}
+        </div>
+    );
+}
+
+/* ── Solicitudes pendientes (24-sep) ──────────────────────────────────────
+ * Una sola tarjeta para todos los tipos, con las mismas piezas: quién la pide
+ * (con su cara), el documento con su número legible y el monto, qué cambia
+ * —antes y después—, los productos y el motivo. Cada tipo usa las que tiene.
+ * Aprobar, Rechazar y Ver detalle los pone la tarjeta general, debajo. */
+const TIPO_DE_SOLICITUD = {
+    ANNULMENT_REQUEST:          { tono: 'rojo',    Icono: FileX },
+    PAYMENT_CHANGE_REQUEST:     { tono: 'azul',    Icono: CreditCard },
+    VENDOR_CHANGE_REQUEST:      { tono: 'azul',    Icono: UserRound },
+    CLIENT_CHANGE_REQUEST:      { tono: 'azul',    Icono: Users },
+    CAJA_MOVIMIENTO_CHANGE:     { tono: 'naranja', Icono: Wallet },
+    ABONO_CREDITO_CHANGE:       { tono: 'naranja', Icono: HandCoins },
+    ABONO_APROBACION:           { tono: 'verde',   Icono: HandCoins },
+    INVENTORY_TRANSFER_REQUEST: { tono: 'azul',    Icono: ArrowLeftRight },
+    INVENTORY_LOAD_REQUEST:     { tono: 'verde',   Icono: PackagePlus },
+    INVENTORY_DISCARD_REQUEST:  { tono: 'rojo',    Icono: Trash2 },
+};
+const tipoDeSolicitud = (tipo) => TIPO_DE_SOLICITUD[tipo] ?? { tono: 'azul', Icono: CalendarDays };
+
+/* «efectivo» → «Efectivo»: las formas de pago vienen en minúsculas. */
+const conMayuscula = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
+
+export function InsigniaDeSolicitud({ datos, isDark }) {
+    const t = tipoDeSolicitud(datos.tipo);
+    return <Disco tono={tonos(isDark)[t.tono]} Icono={t.Icono} />;
+}
+
+export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado }) {
+    const azul = tonos(isDark).azul;
+    const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
+    const rango = rangoDeFechas(datos.desde, datos.hasta);
+    return (
+        <div className="@container">
+            <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
+                <CeldaPersona emp={emp} rotulo="Lo pide" respaldo={datos.quien ?? 'Sin nombre'} claseTenue={claseTenue} />
+
+                {(() => {
+                    /* Las celdas van de a PARES; la que queda sin pareja ocupa
+                     * la fila entera. */
+                    const abono = datos.tipo === 'ABONO_APROBACION';
+                    const conMonto = datos.monto != null && (datos.numero || abono);
+                    // El abono empareja el monto con cuántos créditos cubre; el
+                    // cliente —nombre largo— va en su propia fila.
+                    const conCreditos = abono && datos.creditos != null;
+                    const par1 = [datos.numero || conCreditos, conMonto].filter(Boolean).length === 2;
+                    return (
+                        <>
+                            {datos.numero && (
+                                <Celda rotulo={datos.doc ?? 'Documento'} claseTenue={claseTenue} apilable sola={!par1}>
+                                    N.º {datos.numero}
+                                </Celda>
+                            )}
+                            {conMonto && (
+                                <Celda rotulo="Monto" claseTenue={claseTenue} derecha={par1 && !abono} apilable sola={!par1}>
+                                    {formatMoney(datos.monto)}
+                                </Celda>
+                            )}
+                            {conCreditos && (
+                                <Celda rotulo="Créditos" claseTenue={claseTenue} derecha apilable sola={!par1}>
+                                    {datos.creditos}
+                                </Celda>
+                            )}
+                            {abono && datos.cliente && (
+                                <Celda rotulo="Cliente" claseTenue={claseTenue} sola>{datos.cliente}</Celda>
+                            )}
+                            {datos.antes && (
+                                <Celda rotulo="Hoy" claseTenue={claseTenue} apilable sola={!datos.despues}>
+                                    {conMayuscula(datos.antes)}
+                                </Celda>
+                            )}
+                            {datos.despues && (
+                                <Celda rotulo={datos.antes ? 'Pasa a' : (datos.tipo === 'VENDOR_CHANGE_REQUEST' ? 'Nuevo vendedor' : 'Nuevo')} clase={azul.texto}
+                                    derecha={!!datos.antes} apilable sola={!datos.antes}>
+                                    {conMayuscula(datos.despues)}
+                                </Celda>
+                            )}
+                        </>
+                    );
+                })()}
+
+                {rango && (
+                    <div className="bg-surface-card-hover px-2.5 py-2 min-w-0" style={{ gridColumn: '1 / -1' }}>
+                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Fechas</p>
+                        <p className="text-body-sm font-bold mt-0.5">{rango}</p>
+                    </div>
+                )}
+
+                {datos.productos.length > 0 && (
+                    <ul className="bg-surface-card-hover divide-y divide-border-card" style={{ gridColumn: '1 / -1' }}>
+                        {datos.productos.map((p, i) => (
+                            <li key={`${p.nombre}-${i}`} className="flex items-center justify-between gap-3 px-2.5 py-1.5">
+                                <span className="text-caption font-bold break-words min-w-0">{p.nombre}</span>
+                                {p.cantidad != null && (
+                                    <span className="flex-shrink-0 text-body-sm font-black tabular-nums">×{unidades(p.cantidad)}</span>
+                                )}
+                            </li>
+                        ))}
+                        {datos.mas > 0 && (
+                            <li className={`px-2.5 py-1.5 text-caption font-semibold ${claseTenue}`}>
+                                y {datos.mas === 1 ? '1 producto más' : `${datos.mas} productos más`}
+                            </li>
+                        )}
+                    </ul>
+                )}
+
+                {datos.motivo && (
+                    <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
+                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Por qué lo pide</p>
+                        <p className="text-body-sm font-semibold break-words mt-0.5">{enOracion(datos.motivo)}</p>
+                    </div>
+                )}
+            </Grilla>
         </div>
     );
 }

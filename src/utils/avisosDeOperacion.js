@@ -256,3 +256,37 @@ export function datosDePedido(n) {
         detalle: p.detalle ? String(p.detalle) : null,
     };
 }
+
+/* ── Solicitudes pendientes (24-sep) ──────────────────────────────────────
+ * `metadata.solicitud` lo arma `notificar_solicitud_creada` con la misma forma
+ * para todos los tipos. Un aviso anterior no lo trae y queda como texto. */
+export function datosDeSolicitud(n) {
+    if (n?.type !== 'REQUEST_PENDING') return null;
+    const s = n.metadata?.solicitud;
+    if (!s || !s.tipo) return null;
+    return {
+        tipo: String(s.tipo),
+        etiqueta: s.etiqueta ? String(s.etiqueta) : null,
+        quien: s.quien ? String(s.quien) : null,
+        quienId: s.quien_id || null,
+        quienFoto: s.quien_foto || null,
+        sala: s.sala ? String(s.sala) : null,
+        origen: s.origen ? String(s.origen) : null,
+        doc: s.doc ? String(s.doc) : null,
+        numero: s.numero ? String(s.numero) : null,
+        monto: num(s.monto),
+        antes: s.antes != null ? String(s.antes) : null,
+        despues: s.despues != null ? String(s.despues) : null,
+        cliente: s.cliente ? String(s.cliente) : null,
+        productos: (Array.isArray(s.productos) ? s.productos : [])
+            .filter((p) => p && p.nombre)
+            .map((p) => ({ nombre: String(p.nombre), cantidad: num(p.cantidad) })),
+        mas: num(s.mas) ?? 0,
+        unidades: num(s.unidades),
+        subtipo: s.subtipo ? String(s.subtipo) : null,
+        creditos: num(s.creditos),
+        desde: s.desde || null,
+        hasta: s.hasta || null,
+        motivo: s.motivo ? String(s.motivo) : null,
+    };
+}

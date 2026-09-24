@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1040.5 — Depósito: apilado y centrado en pantallas angostas
+
+«En angosto, que queden en 2 filas pero centradas» (usuario, 24-sep). Las celdas
+«Conteo del» y «Quedó en efectivo» se centran cuando la grilla se apila y
+vuelven a izquierda/derecha cuando hay lugar para dos columnas. El corte sale
+del ancho del PANEL (container query de Tailwind, `@container` +
+`@min-[15.1rem]:`), no de la pantalla. Verificado en escritorio, 390 y 320 px.
+
 ## v2.1040.4 — Depósito: dos columnas cuando entran, apiladas cuando no
 
 «En escritorio se ve así; se debe adaptar según el tamaño, no siempre»

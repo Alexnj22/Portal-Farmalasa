@@ -360,9 +360,19 @@ const Grilla = ({ columnas, children }) => (
 /* Nada se recorta con «…»: el texto que no entra baja de renglón (usuario,
  * 24-sep: «responsive sin cortar»). Un dato cortado en el teléfono es un dato
  * que no se ve, y ninguna prueba lo marca. */
-const Celda = ({ rotulo, children, clase = '', claseTenue, derecha = false }) => (
+/* `apilable`: la celda vive en una grilla que se apila cuando no entra. Apilada
+ * va CENTRADA (usuario, 24-sep: «en angosto, que queden en 2 filas pero
+ * centradas»); con espacio para dos columnas vuelve a su lado. El corte sale
+ * del ancho del panel —container query, `@container` en el padre—, no de la
+ * pantalla: la misma tarjeta vive en la campana y en el historial. 15.1rem son
+ * las dos columnas de 7.5rem más la línea entre ellas. */
+const Celda = ({ rotulo, children, clase = '', claseTenue, derecha = false, apilable = false }) => (
     <div className={`bg-surface-card-hover px-2.5 py-2 min-w-0 leading-tight flex flex-col justify-center
-        ${derecha ? 'items-end text-right' : ''} ${clase}`}>
+        ${apilable
+            ? `items-center text-center ${derecha
+                ? '@min-[15.1rem]:items-end @min-[15.1rem]:text-right'
+                : '@min-[15.1rem]:items-start @min-[15.1rem]:text-left'}`
+            : (derecha ? 'items-end text-right' : '')} ${clase}`}>
         <span className={`text-caption font-black uppercase tracking-wide break-words max-w-full
             ${clase ? '' : claseTenue}`}>{rotulo}</span>
         <span className="text-body-sm font-bold tabular-nums break-words max-w-full mt-0.5">{children}</span>
@@ -574,16 +584,19 @@ export function CuerpoDeDeposito({ datos, claseTenue, isDark, buscarEmpleado }) 
                 apilaban, «se debe adaptar según el tamaño, no siempre»). 7.5rem
                 por columna: dos entran desde ~240 px de panel —escritorio y un
                 teléfono de 390— y se apilan a 320. */}
+            <div className="@container">
             <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
                 <CeldaPersona emp={emp} rotulo={datos.quienLleva ? 'Lo lleva' : 'Lo cerró'}
                     respaldo="Sin nombre" claseTenue={claseTenue} />
-                <Celda rotulo="Conteo del" claseTenue={claseTenue}>
+                <Celda rotulo="Conteo del" claseTenue={claseTenue} apilable>
                     {rango ?? '—'}
                 </Celda>
-                <Celda rotulo="Quedó en efectivo" clase={datos.remanente >= 0.01 ? t.naranja.texto : t.verde.texto} derecha>
+                <Celda rotulo="Quedó en efectivo" clase={datos.remanente >= 0.01 ? t.naranja.texto : t.verde.texto}
+                    derecha apilable>
                     {datos.remanente >= 0.01 ? formatMoney(datos.remanente) : 'Nada'}
                 </Celda>
             </Grilla>
+            </div>
         </div>
     );
 }

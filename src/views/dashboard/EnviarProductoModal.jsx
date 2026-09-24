@@ -128,6 +128,9 @@ export default function EnviarProductoModal({ onClose, onListo }) {
     // distingue de cuál sale el producto.
     const [origenClave, setOrigenClave] = useState(null);
     const [presentaciones, setPresentaciones] = useState([]);
+    // `null` = todavía no se preguntó. Separa «cargando» de «el producto no
+    // tiene presentación», que son dos avisos distintos.
+    const [presCargadas, setPresCargadas] = useState(null);
     const [presIdx, setPresIdx] = useState('0');
     const [cantidad, setCantidad] = useState('1');
 
@@ -248,16 +251,34 @@ export default function EnviarProductoModal({ onClose, onListo }) {
     // Las presentaciones del producto elegido. Viajan por SIGNIFICADO —tipo +
     // factor—, nunca por su id: el portal y el sistema de origen las numeran
     // distinto y sólo la etiqueta es estable entre los dos.
+    //
+    // Un producto recién dado de alta puede tener existencia antes que
+    // presentación: la existencia llega en el minuto y la presentación con el
+    // catálogo (RAN CV 500 MG, 2026-09-24). Mientras falte, se vuelve a
+    // preguntar cada 20 s — sin eso la sala tendría que cerrar y reabrir.
     useEffect(() => {
-        if (!elegido?.erp_product_id) { setPresentaciones([]); return; }
+        if (!elegido?.erp_product_id) { setPresentaciones([]); setPresCargadas(null); return; }
+        const id = elegido.erp_product_id;
         let cancelado = false;
+        let reintento = null;
         setPresentaciones([]);
+        setPresCargadas(null);
         setPresIdx('0');
-        fetchPresentaciones([elegido.erp_product_id]).then(r => {
+        const pedir = () => fetchPresentaciones([id]).then(r => {
             if (cancelado) return;
-            setPresentaciones(r.porProducto.get(elegido.erp_product_id) ?? []);
-        }).catch(() => {});
-        return () => { cancelado = true; };
+            if (r.error) console.error('[EnviarProductoModal] presentaciones:', r.error.message);
+            const lista = r.porProducto.get(id) ?? [];
+            setPresentaciones(lista);
+            setPresCargadas(true);
+            if (lista.length === 0) reintento = setTimeout(pedir, 20_000);
+        }).catch(err => {
+            if (cancelado) return;
+            console.error('[EnviarProductoModal] presentaciones:', err);
+            setPresCargadas(true);
+            reintento = setTimeout(pedir, 20_000);
+        });
+        pedir();
+        return () => { cancelado = true; clearTimeout(reintento); };
     }, [elegido?.erp_product_id]);
 
     /* De qué estante sale el producto en curso. Se elige solo —el de operación
@@ -311,6 +332,9 @@ export default function EnviarProductoModal({ onClose, onListo }) {
             ? `Un envío admite hasta ${TOPE_RENGLONES_ENVIO} productos. Manda éste y arma otro con el resto.`
         : !elegido ? 'Elige un producto.'
         : !origen ? 'Elige de qué sala sale.'
+        : presCargadas === null ? 'Buscando las presentaciones…'
+        : presentaciones.length === 0
+            ? 'Este producto es nuevo y todavía no tiene presentación. Se completa sola en unos minutos; puedes dejar esta ventana abierta.'
         : !pres ? 'Elige la presentación.'
         : unidadesPedidas <= 0 ? 'Pon la cantidad.'
         : unidadesPedidas > (origen.unidades ?? 0)

@@ -26,6 +26,47 @@ async function huellaDelInventario(productIds: number[], filas: { sync_key: stri
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Un producto NUEVO pide el catálogo en el acto, sin esperar la corrida de
+ * `sync-products` (cada 10 min).
+ *
+ * Este sync sólo sabe el id y el nombre de un producto: `insert_missing_products`
+ * deja una fila mínima. Las presentaciones con su factor, los precios, el
+ * laboratorio y el control de lote llegan con el catálogo. Mientras tanto el
+ * producto tiene existencia y no tiene presentación, y el envío a otra sala no
+ * se puede armar — reportado el 2026-09-24 con RAN CV 500 MG: alta 10:55,
+ * presentación 11:00:13.
+ *
+ * Se dispara sólo cuando `insert_missing_products` insertó algo, o sea unas
+ * pocas veces al día, y NO se espera: el inventario de la sala no puede
+ * quedarse detrás de una descarga del catálogo. El freno por isolate evita que
+ * los dos caminos (ventas e inventario) de una misma corrida pidan dos veces.
+ */
+let catalogoPedidoAt = 0;
+function pedirCatalogoPorProductosNuevos(nuevos: number, origen: string) {
+  if (nuevos <= 0) return;
+  if (Date.now() - catalogoPedidoAt < 60_000) return;
+  catalogoPedidoAt = Date.now();
+
+  const pedido = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/sync-products`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
+    },
+    body: '{}',
+    signal: AbortSignal.timeout(90_000),
+  })
+    .then(async (r) => {
+      if (!r.ok) console.error(`[catalogo-por-nuevos] ${origen}: sync-products respondió ${r.status}: ${(await r.text()).slice(0, 300)}`);
+      else console.log(`[catalogo-por-nuevos] ${origen}: ${nuevos} producto(s) nuevo(s), catálogo al día.`);
+    })
+    .catch((e) => console.error(`[catalogo-por-nuevos] ${origen}: ${e?.message ?? e}`));
+
+  // deno-lint-ignore no-explicit-any
+  (globalThis as any).EdgeRuntime?.waitUntil?.(pedido);
+}
+
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 2000): Promise<T> {
   let lastErr: any;
   for (let i = 0; i < attempts; i++) {
@@ -382,9 +423,10 @@ async function syncBranch(
   // existieran — 26.5% del CPU de la base (65 ms × 127K llamadas). El RPC filtra
   // con un anti-join primero: 84 ms → 6 ms medidos.
   if (productMap.size > 0) {
-    const { error: prodErr } = await supabase
+    const { data: nuevos, error: prodErr } = await supabase
       .rpc('insert_missing_products', { p_rows: [...productMap.values()] });
     if (prodErr) throw new Error(`insert_missing_products (ventas): ${prodErr.message}`);
+    pedirCatalogoPorProductosNuevos(Number(nuevos) || 0, `ventas ${erpId}`);
   }
 
   const customerIdMap = new Map<string, number>();
@@ -679,9 +721,10 @@ async function syncInventoryBranch(
     return { items: productos.length, rows: 0, sinCambios: true };
 
   if (productUpserts.length > 0) {
-    const { error: prodErr } = await supabase
+    const { data: nuevos, error: prodErr } = await supabase
       .rpc('insert_missing_products', { p_rows: productUpserts });
     if (prodErr) throw new Error(`insert_missing_products (inventario): ${prodErr.message}`);
+    pedirCatalogoPorProductosNuevos(Number(nuevos) || 0, `inventario ${erpId}/${isVencidos}`);
   }
 
   const { data: result, error: rpcErr } = await supabase.rpc('sync_inventory_batch', {

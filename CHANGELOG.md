@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1046.1 — Un producto nuevo trae su presentación en el minuto
+
+Reportado el 24-sep con RAN CV 500 MG: «Enviar a otra sala» no ofrecía
+presentación. El producto se dio de alta a las 10:55 con su existencia (sync de
+cada minuto, que sólo sabe id y nombre) y su presentación llegó con el catálogo
+a las 11:00:13 (`sync-products`, cada 10 min).
+
+- `sync-dte-sales`: cuando `insert_missing_products` da de alta algo, pide el
+  catálogo en el acto (`sync-products` en segundo plano, freno de 60 s por
+  isolate). Unas pocas veces al día; el hueco baja de ≤10 min a ~1 min.
+  Desplegada con `--no-verify-jwt`.
+- `EnviarProductoModal`: distingue «buscando», «producto nuevo sin
+  presentación todavía» (antes decía «Elige la presentación.» sobre una lista
+  vacía) y reintenta solo cada 20 s mientras falte. El error de la consulta ya
+  no se traga.
+
 ## v2.1046.0 — Traslados: producto al frente y Ver los N productos
 
 Tarjeta de traslado, tercera vuelta (usuario, 24-sep, opción A y «Ver los N»):

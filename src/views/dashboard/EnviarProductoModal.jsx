@@ -11,7 +11,8 @@ import { EmptyState } from '../../components/common/StateViews';
 import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
-import { buscarInventarioGlobalV2, fetchExistenciasDeProductos } from '../../data/inventory';
+import { buscarInventarioGlobalV2, fetchExistenciasDeProductos, fetchUnidadDeDespacho } from '../../data/inventory';
+import { renglonCompleto, nombreDeDespacho } from '../../utils/unidadDeDespacho';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
 import { crearEnvio, despacharEnvio, envioNecesitaFoto, ERP_BODEGA, MAX_FOTOS_ENVIO, MOTIVOS_ENVIO, motivosEnvioPorDireccion, subirEvidenciaEnvio, TOPE_RENGLONES_ENVIO } from '../../data/envios';
 import { lotesEnUnidades, repartirPedido, sumaUnidades } from '../../utils/unidadesInventario';
@@ -159,6 +160,8 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
     const [resultado, setResultado] = useState(null);
     const [precargando, setPrecargando] = useState(Boolean(precarga));
     const [sinArmar, setSinArmar] = useState([]);
+    // La unidad de despacho de lo que hay en el envío, para el freno de abajo.
+    const [despacho, setDespacho] = useState(() => new Map());
 
     /* ── El borrador ──────────────────────────────────────────────────────
      * La sesión de sala se cierra sola a los cinco minutos y esto es un
@@ -210,10 +213,19 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                     const fs = porProducto.get(id) ?? [];
                     const total = sumaUnidades(fs);
                     const lista = pres.porProducto.get(id) ?? [];
-                    const pr = lista[0];   // la más chica: ver `fetchPresentaciones`
-                    const cant = pr ? Math.floor(total / Number(pr.factor)) : 0;
+                    /* Si quien arma el envío dijo en qué presentación va —a
+                     * Bodega, la de despacho del producto—, ésa manda; si no,
+                     * la más chica con todo lo que hay. */
+                    const pedida = p.presentacion
+                        ? lista.find(x => x.tipo === p.presentacion.tipo && Number(x.factor) === Number(p.presentacion.factor))
+                        : null;
+                    const pr = p.presentacion ? pedida : lista[0];   // la más chica: ver `fetchPresentaciones`
+                    const cant = !pr ? 0
+                        : p.presentacion ? Math.min(Number(p.presentacion.cantidad) || 0, Math.floor(total / Number(pr.factor)))
+                        : Math.floor(total / Number(pr.factor));
                     if (!total || !pr || cant <= 0) {
-                        fuera.push({ descripcion: p.descripcion, motivo: !total ? 'ya no hay existencia' : 'no tiene presentación' });
+                        fuera.push({ descripcion: p.descripcion, motivo: !total ? 'ya no hay existencia'
+                            : p.presentacion && !pedida ? `no tiene la presentación ${p.presentacion.tipo}` : 'no tiene presentación' });
                         continue;
                     }
                     const unidades = cant * Number(pr.factor);
@@ -631,6 +643,28 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         [renglones, miErp],
     );
 
+    /* ── A Bodega por baja rotación, sólo completo ─────────────────────────
+     * «A Bodega no se pueden enviar productos en unidades; sólo se pueden
+     * regresar según las reglas» (usuario, 2026-09-24). La regla es la de
+     * despacho del producto (`unidad_de_despacho`): lo que baja a la sala en
+     * una caja de 12 vuelve en cajas de 12. Sólo para «Baja rotación»: una
+     * avería o algo por vencer vuelve como esté, que es justo lo que Bodega
+     * necesita ver. */
+    const freno = Number(destino) === ERP_BODEGA && motivo === 'Baja rotación';
+    const idsDelEnvio = useMemo(() => [...new Set(renglones.map(r => Number(r.erp_product_id)))].sort().join(','), [renglones]);
+    useEffect(() => {
+        if (!freno || !idsDelEnvio) return;
+        let vivo = true;
+        fetchUnidadDeDespacho(idsDelEnvio.split(',').map(Number))
+            .then(m => { if (vivo) setDespacho(m); })
+            .catch(e => { if (vivo) setError(e?.message ?? 'No se pudo leer cómo se despacha.'); });
+        return () => { vivo = false; };
+    }, [freno, idsDelEnvio]);
+    const sueltosABodega = freno
+        ? renglones.filter(r => despacho.has(Number(r.erp_product_id)) && !renglonCompleto(r, despacho.get(Number(r.erp_product_id))))
+        : [];
+    const reglasPendientes = freno && renglones.some(r => !despacho.has(Number(r.erp_product_id)));
+
     /* Qué le falta al envío para poder salir. Se dice en UNA frase y no con el
      * botón apagado a secas: un botón que no se puede apretar y no dice por qué
      * es un callejón sin salida. */
@@ -643,6 +677,10 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         // instrucción.
         : sinMotivoPosible ? 'Separa lo que sale de Bodega de lo que sale de una sala.'
         : !motivo ? 'Elige el motivo.'
+        : reglasPendientes ? 'Revisando cómo se devuelve cada producto…'
+        : sueltosABodega.length > 0
+            ? `A Bodega se devuelve completo: ${sueltosABodega[0].descripcion} va en ${nombreDeDespacho(despacho.get(Number(sueltosABodega[0].erp_product_id)))}`
+              + (sueltosABodega.length > 1 ? ` (y ${sueltosABodega.length - 1} más).` : '.')
         // La foto es lo único que le queda a Bodega para decidir si se le
         // reclama al proveedor: el daño viaja con la caja y no se puede volver
         // a mirar. La base la exige igual, así que pedirla acá sólo adelanta el

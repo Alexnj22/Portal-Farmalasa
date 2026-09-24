@@ -248,3 +248,18 @@ export async function fetchExistenciasDeProductos(erpSucursalId, productIds) {
     if (filas === null) throw new Error('No se pudo leer la existencia de la sala.');
     return filas;
 }
+
+/**
+ * La unidad de despacho de estos productos (`unidad_de_despacho`), como mapa
+ * id → { tipo, etiqueta, factor, multiplo, unidades }. Una fila por producto,
+ * así que acotar la entrada acota la respuesta.
+ */
+export async function fetchUnidadDeDespacho(productIds) {
+    const ids = [...new Set((productIds ?? []).map(Number).filter(Boolean))];
+    if (!ids.length) return new Map();
+    const { data, error } = await supabase.rpc('unidad_de_despacho', { p_ids: ids });
+    if (error) throw new Error(`No se pudo leer cómo se despacha: ${error.message}`);
+    return new Map((data ?? []).map(u => [Number(u.erp_product_id), {
+        tipo: u.tipo, etiqueta: u.etiqueta, factor: Number(u.factor), multiplo: Number(u.multiplo), unidades: Number(u.unidades),
+    }]));
+}

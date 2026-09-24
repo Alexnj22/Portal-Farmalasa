@@ -16,6 +16,8 @@ import { smartFilter } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import { exportCsv } from '../../utils/csvExport';
 import { porQueDesde } from '../../utils/productosParados';
+import { fetchUnidadDeDespacho } from '../../data/inventory';
+import { nombreDeDespacho, paraBodega, esPocoParaMandar } from '../../utils/unidadDeDespacho';
 import { ERP_NAMES, ERP_ORDER, ERP_BODEGA, MI_ERP_POR_BRANCH, SUC_VARIANTE } from './salasDeStock';
 
 const EnviarProductoModal = lazy(() => import('../dashboard/EnviarProductoModal'));
@@ -38,6 +40,32 @@ const COLUMNAS = [
     { key: 'vendido',    label: 'Se vende en (6 meses)', hideBelow: 'md' },
     { key: 'minmax',     label: 'Min / Max', align: 'center', hideBelow: 'lg' },
 ];
+
+/* Lo que la regla de despacho dice de esta fila. A Bodega: cuántas
+ * presentaciones completas vuelven y qué queda suelto (o que no vuelve nada).
+ * A otra sala: sólo avisa si no llega ni a una presentación — «2 de una caja de
+ * 100 no vale la pena, pero que avise para estar enterado» (usuario, 24-sep). */
+function NotaDeDespacho({ existencia, u, aBodega }) {
+    if (!u || Number(u.unidades) <= 1) return null;
+    const nombre = nombreDeDespacho(u);
+    if (aBodega) {
+        const b = paraBodega(existencia, u);
+        if (b.completos === 0) {
+            return <span className="block text-micro font-semibold text-danger-text leading-snug">No vuelve: no completa {nombre}</span>;
+        }
+        return (
+            <span className="block text-micro text-content-3 leading-snug">
+                {b.quedan > 0 ? `vuelven ${b.viajan} de ${Number(existencia)} (en ${nombre})` : `vuelven en ${nombre}`}
+            </span>
+        );
+    }
+    if (!esPocoParaMandar(existencia, u)) return null;
+    return (
+        <span className="block text-micro font-semibold text-warning-text leading-snug">
+            Poco: {Number(existencia)} de {nombre}
+        </span>
+    );
+}
 
 /* Dónde se vende. La sala destino primero y resaltada —es la razón del
  * grupo—; las demás detrás, en gris, como contexto. */
@@ -82,6 +110,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
     const [abiertos, setAbiertos] = useState(() => new Set());
     const [envio, setEnvio] = useState(null);        // { destino, productos }
     const [avisoEnvio, setAvisoEnvio] = useState(null);
+    const [despacho, setDespacho] = useState(() => new Map());   // id → unidad de despacho
     const pedido = useRef(0);
 
     /* La consulta devuelve un resultado y el estado se escribe DESPUÉS, en el
@@ -92,9 +121,16 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
         const id = ++pedido.current;
         return supabase.rpc('productos_parados_de_sala', { p_erp_sucursal_id: sala }).then(({ data, error: e }) => {
             if (id !== pedido.current) return;
-            if (e) setError(e.message);
-            else setFilas(Array.isArray(data) ? data : []);
+            if (e) { setError(e.message); setCargando(false); return; }
+            const rows = Array.isArray(data) ? data : [];
+            setFilas(rows);
             setCargando(false);
+            /* Cómo se despacha cada uno: decide qué puede volver a Bodega y
+             * cuándo avisar que lo que va a otra sala es poco. Si falla, la
+             * lista se ve igual y el envío a Bodega frena en el formulario. */
+            fetchUnidadDeDespacho(rows.map(r => r.erp_product_id))
+                .then(m => { if (id === pedido.current) setDespacho(m); })
+                .catch(() => {});
         });
     }, [sala]);
     const cargar = useCallback(() => { setError(null); setCargando(true); pedir(); }, [pedir]);
@@ -199,12 +235,27 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
         });
     }, [grupos, sala, filtro, searchTerm]);
 
+    /* A Bodega sólo lo que completa su unidad de despacho, y en esa
+     * presentación; lo suelto se queda en la sala (usuario, 24-sep). A otra
+     * sala, todo, en la presentación más chica. */
+    const devolvibles = (g) => g.filas
+        .map(r => ({ r, b: paraBodega(r.existencia, despacho.get(Number(r.erp_product_id))) }))
+        .filter(x => x.b.completos > 0);
     const armar = (g) => {
         setAvisoEnvio(null);
-        setEnvio({
-            destino: g.destino,
-            productos: g.filas.slice(0, POR_ENVIO).map(r => ({ erp_product_id: r.erp_product_id, descripcion: r.producto })),
-        });
+        const productos = g.destino === ERP_BODEGA
+            ? devolvibles(g).slice(0, POR_ENVIO).map(({ r, b }) => {
+                const u = despacho.get(Number(r.erp_product_id));
+                // Si se despacha de a 1 no hay regla que cumplir: va todo, en la
+                // presentación más chica. El «UNIDAD» de la base es un rótulo, no
+                // el nombre de una presentación real (CARBIMEN no la tiene).
+                return Number(u?.unidades) > 1
+                    ? { erp_product_id: r.erp_product_id, descripcion: r.producto,
+                        presentacion: { tipo: u.tipo, factor: u.factor, cantidad: b.cantidad } }
+                    : { erp_product_id: r.erp_product_id, descripcion: r.producto };
+            })
+            : g.filas.slice(0, POR_ENVIO).map(r => ({ erp_product_id: r.erp_product_id, descripcion: r.producto }));
+        setEnvio({ destino: g.destino, productos });
     };
 
     const alternar = (destino) => setAbiertos(prev => {
@@ -317,14 +368,20 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
                                 <p className="text-label text-content-3 leading-snug">
                                     {g.filas.length} {g.filas.length === 1 ? 'producto' : 'productos'} · {unidades(g.unidades)}
                                     {veCostos && ` · ${formatMoney(g.costo)}`}
-                                    {esBodega && ' · ninguna sala vendió 3 o más en 6 meses'}
+                                    {esBodega && ' · ninguna sala vendió 3 o más en 6 meses · se devuelve por presentación completa'}
                                 </p>
                             </div>
-                            {puedeArmar && (
-                                <Button icon={Send} variant={esBodega ? 'secondary' : 'primary'} onClick={() => armar(g)}>
-                                    Armar envío{g.filas.length > POR_ENVIO ? ` · ${POR_ENVIO} de ${g.filas.length}` : ''}
-                                </Button>
-                            )}
+                            {puedeArmar && (() => {
+                                const n = esBodega ? devolvibles(g).length : g.filas.length;
+                                return (
+                                    <Button icon={Send} variant={esBodega ? 'secondary' : 'primary'}
+                                        disabled={n === 0 || (esBodega && despacho.size === 0)}
+                                        title={esBodega && n === 0 ? 'Ninguno completa su presentación de despacho' : undefined}
+                                        onClick={() => armar(g)}>
+                                        Armar envío{n > POR_ENVIO ? ` · ${POR_ENVIO} de ${n}` : esBodega && n < g.filas.length ? ` · ${n}` : ''}
+                                    </Button>
+                                );
+                            })()}
                         </header>
 
                         <DataTable columns={COLUMNAS} minWidth="720px">
@@ -337,6 +394,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
                                     <DataCell align="right">
                                         <span className="text-body font-bold text-content-2 tabular-nums">{Number(r.existencia).toLocaleString('es-SV')}</span>
                                         <span className="text-caption text-content-3 ml-1">und.</span>
+                                        <NotaDeDespacho existencia={r.existencia} u={despacho.get(Number(r.erp_product_id))} aBodega={esBodega} />
                                     </DataCell>
                                     <DataCell align="right" hideBelow="sm">
                                         {r.costo != null

@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.0 — Envíos: a Bodega sólo completo según la regla de despacho; aviso de poco a otra sala
+
+Pedido del usuario: «a Bodega no se pueden enviar productos en unidades
+(verifica las reglas del producto, sólo se pueden regresar según las reglas);
+y a las sucursales, que tenga un aviso: si son 2 unidades en una caja x 100 no
+vale la pena, pero que avise para estar enterado».
+
+- **`unidad_de_despacho(ids)`** — en qué presentación y de a cuántas unidades
+  viaja cada producto. Es `unit_base` de `get_pedido_preview` para un producto
+  suelto: regla de despacho (presentación × múltiplo; las 851 reglas de hoy son
+  de este tipo), si no la presentación más chica mayor a 1, y si no de a 1.
+- **Envío a Bodega por «Baja rotación»: sólo completo.** El formulario frena
+  cualquier renglón que no sea múltiplo de la unidad de despacho —o que vaya en
+  una presentación más chica— con «A Bodega se devuelve completo: X va en
+  CAJA X 100». Avería, próximo a vencer y demás motivos no cambian: vuelven como
+  estén, que es lo que Bodega necesita ver. Freno en el formulario, no en la
+  base (`validar_envio_producto` no lo cobra).
+- **Productos sin venta → A Bodega:** «Armar envío» carga sólo lo que completa
+  su presentación, ya en esa presentación; cada fila dice «vuelven 24 de 30
+  (en CAJA de 12)» o «No vuelve: no completa CAJA X 100». Medido en las seis
+  salas: de 130 productos para Bodega, 6 no completan y 1 deja sueltas.
+- **A otra sala:** se manda suelto, con aviso «Poco: 2 de CAJA X 5» cuando no
+  llega ni a una presentación de despacho (25 de 302 hoy).
+- Arreglado en el camino: un producto que se despacha de a 1 recibía la
+  presentación «UNIDAD», que es un rótulo de la base y no el nombre de una
+  presentación real («CARBIMEN … no tiene la presentación UNIDAD»).
+
 ## v2.1059.0 — Resumen diario de promociones configurable por promoción
 
 Cada promoción decide si manda el resumen de las 7:30 a. m. y a quién

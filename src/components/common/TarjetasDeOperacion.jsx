@@ -268,12 +268,16 @@ export function CuerpoDeBitacora({ datos, claseTenue, isDark }) {
                     {detalle.map((d, i) => {
                         const t = TIPO_BITACORA[d.tipo] ?? TIPO_BITACORA.lectura;
                         return (
+                            // El tipo va DEBAJO del área y no a su derecha: a 320 px
+                            // el nombre del área se partía («Refrigera/dor»).
                             <li key={`${d.area}-${d.tipo}-${i}`} className="flex items-center gap-2 px-2.5 py-1.5 min-w-0">
                                 <t.Icono className={`w-3.5 h-3.5 flex-shrink-0 ${tono.texto}`} aria-hidden="true" />
-                                <span className="flex-1 min-w-0 break-words text-caption font-bold">{d.area}</span>
-                                <span className={`flex-shrink-0 text-caption font-semibold tabular-nums ${claseTenue}`}>
-                                    {t.rotulo}{!unaFranja && d.desde && d.hasta ? ` · ${rango12(d.desde, d.hasta)}` : ''}
-                                </span>
+                                <div className="flex-1 min-w-0 leading-tight">
+                                    <p className="text-caption font-bold break-words">{d.area}</p>
+                                    <p className={`text-caption font-semibold tabular-nums ${claseTenue}`}>
+                                        {t.rotulo}{!unaFranja && d.desde && d.hasta ? ` · ${rango12(d.desde, d.hasta)}` : ''}
+                                    </p>
+                                </div>
                             </li>
                         );
                     })}
@@ -771,7 +775,7 @@ export function InsigniaDePedido({ datos, isDark }) {
     return <Disco tono={t.azul} Icono={Package} />;
 }
 
-function PasosDePedido({ etapa, claseTenue, isDark }) {
+function PasosDePedido({ etapa, cajas, claseTenue, isDark }) {
     const t = tonos(isDark);
     const problema = etapa === 'problema';
     const actual = problema ? 3 : Math.max(0, ETAPAS_DE_PEDIDO.indexOf(etapa));
@@ -790,6 +794,9 @@ function PasosDePedido({ etapa, claseTenue, isDark }) {
             <p className="mt-1 text-caption font-bold">
                 <span className={claseTenue}>Paso {actual + 1} de 4 · </span>
                 <span className={tonoActual.texto}>{problema ? 'Con novedad' : PASOS_DE_PEDIDO[actual]}</span>
+                {/* Las cajas van en la línea del paso: sola en una grilla de dos
+                    columnas dejaba media fila vacía (24-sep). */}
+                {cajas != null && <span className={claseTenue}> · {cajas === 1 ? '1 caja' : `${cajas} cajas`}</span>}
             </p>
         </div>
     );
@@ -799,22 +806,18 @@ export function CuerpoDePedido({ datos, claseTenue, isDark, buscarEmpleado }) {
     const t = tonos(isDark);
     const conConductor = (datos.etapa === 'en_camino' || datos.etapa === 'llego') && (datos.conductor || datos.conductorId);
     const emp = usePersona(datos.conductorId, datos.conductor, null, buscarEmpleado);
-    // El número va en la celda sólo si el título no lo dice ya.
-    const numeros = datos.numerosEnTitulo ? '' : datos.numeros.map((x) => `#${x}`).join(', ');
+    /* El número de pedido NO va en la tarjeta (usuario, 24-sep: «no sé qué
+     * tan útil es poner el número de pedido, ¿qué aporta?»): donde importa ya
+     * está en el título, y repetido adentro no dice nada nuevo. */
     return (
         <div>
-            <PasosDePedido etapa={datos.etapa} claseTenue={claseTenue} isDark={isDark} />
-            {(numeros || datos.cajas != null || conConductor || datos.detalle) && (
-                <div className="@container">
-                    <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
-                        {numeros && (
-                            <Celda rotulo={datos.numeros.length > 1 ? 'Pedidos' : 'Pedido'} claseTenue={claseTenue} apilable>
-                                {numeros}
-                            </Celda>
-                        )}
-                        {datos.cajas != null && (
-                            <Celda rotulo="Cajas" claseTenue={claseTenue} derecha apilable>{datos.cajas}</Celda>
-                        )}
+            <PasosDePedido etapa={datos.etapa} cajas={datos.cajas} claseTenue={claseTenue} isDark={isDark} />
+            {(conConductor || datos.detalle) && (
+                <div>
+                    {/* Una sola columna: cada dato ocupa su fila entera, así
+                        ninguna combinación deja una celda sola con un hueco al
+                        lado. */}
+                    <Grilla columnas="minmax(0, 1fr)">
                         {conConductor && (
                             <CeldaPersona emp={emp} rotulo={datos.etapa === 'llego' ? 'Llegó' : 'Lo lleva'}
                                 respaldo={datos.conductor ?? 'Sin nombre'} claseTenue={claseTenue} />

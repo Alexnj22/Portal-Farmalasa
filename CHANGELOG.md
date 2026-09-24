@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1042.1 — Pedidos sin celda sola: cajas en la línea del paso y sin repetir el número
+
+«Eso no entiendo, ¿por qué se ve así?» y «no sé qué tan útil es poner el
+número de pedido, ¿qué aporta?» (usuario, 24-sep). Al ocultar el número —que ya
+iba en el título— «Cajas» quedó sola en una grilla de dos columnas, con media
+fila vacía.
+
+- Las cajas pasan a la línea del paso: «Paso 2 de 4 · En camino · 5 cajas».
+- El número de pedido sale de la tarjeta; queda sólo en el título.
+- Bitácora: el tipo (Temperatura / Limpieza) baja debajo del área; a 320 px el
+  nombre del área se partía («Refrigera/dor»).
+- El detector de las capturas caza ahora también grillas con HUECO (se le
+  fabricó con la versión anterior: 2 hallazgos). Las 18 tarjetas: 0 en 390, 360,
+  320 px y escritorio.
+
 ## v2.1042.0 — Tarjetas de pedidos: recorrido en pasos, conductor con su cara y la novedad
 
 Quinta tanda de tarjetas de la campana (usuario, 24-sep: «sigamos con los que

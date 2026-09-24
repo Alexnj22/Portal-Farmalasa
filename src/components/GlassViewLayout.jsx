@@ -180,9 +180,18 @@ const GlassViewLayout = ({
         <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto lg:h-full w-full font-sans relative">
 
             {/* ── Scroll container ── */}
+            {/* `overflow-x-clip` en el teléfono y `hidden` sólo desde `lg`. No es
+                estética: `overflow-x: hidden` con el eje Y en `visible` obliga al
+                navegador a pasar el Y a `auto` (así lo manda la especificación),
+                o sea que este div se volvía un SEGUNDO scroller metido dentro de
+                la página, que en el teléfono es la que scrollea. Medido en el
+                Inicio (2026-09-24): le sobraban 34px, y según dónde empezara el
+                dedo el gesto movía uno u otro — «el scroll es raro». `clip`
+                recorta igual y no crea scroll. En escritorio éste SÍ es el
+                scroller (`lg:overflow-y-auto`), y ahí no cambia nada. */}
             <div
                 ref={scrollContainerRef}
-                className={`lg:absolute lg:inset-0 lg:w-full lg:h-full pb-[max(2.5rem,calc(var(--alto-barra-flotante,0px)+0.75rem))] lg:flex lg:flex-col [&::-webkit-scrollbar]:hidden overflow-x-hidden ${
+                className={`lg:absolute lg:inset-0 lg:w-full lg:h-full pb-[max(2.5rem,calc(var(--alto-barra-flotante,0px)+0.75rem))] lg:flex lg:flex-col [&::-webkit-scrollbar]:hidden overflow-x-clip lg:overflow-x-hidden ${
                     fixedScrollMode ? 'lg:overflow-hidden lg:overscroll-contain scroll-smooth' : 'lg:overflow-y-auto lg:overscroll-contain scroll-smooth'
                 }`}
                 onScroll={handleInternalScroll}

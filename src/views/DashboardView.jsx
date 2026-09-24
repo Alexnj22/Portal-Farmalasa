@@ -1619,10 +1619,25 @@ const DashboardView = ({ openModal }) => {
       const cellH = (isMobileRef.current ? ROW_H_MOVIL : ROW_H) + GAP_PX;
       const relX  = mouseX - rect.left;
       const relY  = mouseY - rect.top;
+      // En el teléfono las filas crecen con el contenido, así que dividir por
+      // un alto fijo cae en la fila equivocada más abajo (ver la memoria del
+      // paso de una retícula elástica). Se leen las pistas reales; pasada la
+      // última, se sigue con el paso base. En escritorio las pistas miden todas
+      // ROW_H y el resultado es el mismo de antes.
+      const filaEn = (y) => {
+        const pistas = getComputedStyle(gridRef.current).gridTemplateRows
+          .split(' ').map(parseFloat).filter(n => !Number.isNaN(n));
+        let desde = 0;
+        for (let i = 0; i < pistas.length; i++) {
+          if (y < desde + pistas[i] + GAP_PX) return i;
+          desde += pistas[i] + GAP_PX;
+        }
+        return pistas.length + Math.floor((y - desde) / cellH);
+      };
       const eCols = Math.min(activeSizesRef.current[id]?.cols ?? getWidgetSize(id).minCols, gc);
       const eRows = activeSizesRef.current[id]?.rows ?? getWidgetSize(id).minRows;
       const col   = Math.max(1, Math.min(gc - eCols + 1, Math.floor(relX / cellW) + 1));
-      const row   = Math.max(1, Math.floor(relY / cellH) + 1);
+      const row   = Math.max(1, filaEn(relY) + 1);
       // Collision check — skip self
       const layout = activeLayoutRef.current;
       const sizes  = activeSizesRef.current;
@@ -3870,8 +3885,16 @@ const DashboardView = ({ openModal }) => {
           /* Marca la rejilla para la regla táctil de §scroll del tablero
              (index.css): en un dedo las baldosas encadenan como en el iPhone. */
           data-rejilla-widgets=""
+          /* En el teléfono la fila tiene PISO y no techo: mide lo de siempre y
+             crece con el contenido. Con techo, una baldosa de media pantalla
+             cortaba lo suyo (medido 2026-09-24: «Bolsas de efectivo» escondía
+             117px, el monto incluido) y lo que quedaba se leía por un scroll
+             interno de 16px. Una app nativa no mete una lista con scroll dentro
+             de otra: la tarjeta muestra lo suyo entero y la página es la única
+             que scrollea. Ver §scroll del tablero en index.css. */
+          data-rejilla-movil={isMobile ? '' : undefined}
           className={`grid gap-4 relative ${isMobile ? 'grid-cols-2' : 'grid-cols-4 min-w-[700px]'}`}
-          style={{ gridAutoRows: `${isMobile ? ROW_H_MOVIL : ROW_H}px` }}
+          style={{ gridAutoRows: isMobile ? `minmax(${ROW_H_MOVIL}px, auto)` : `${ROW_H}px` }}
         >
           {buildWidgetList()}
 

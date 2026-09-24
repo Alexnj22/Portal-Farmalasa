@@ -21,12 +21,30 @@ const E2E_USER = process.env.E2E_USER;
 const E2E_PASSWORD = process.env.E2E_PASSWORD;
 const GRID_COLS = 4;
 
+// La pantalla de entrada mueve el foco sola (escucha del lector de carné):
+// escribir apenas carga termina con los dos campos pegados dentro del de
+// usuario, y la prueba fallaba «al azar» sin haber llegado al tablero. Mismo
+// arreglo que `inactividad.spec.js`: dejarla asentarse y CONFIRMAR lo escrito.
 async function entrar(page) {
     await page.goto('/login');
-    await page.locator('#username').fill(E2E_USER);
-    await page.locator('#password').fill(E2E_PASSWORD);
+    await page.waitForTimeout(2000);
+    for (let intento = 0; intento < 4; intento++) {
+        await page.locator('#username').fill('');
+        await page.locator('#username').fill(E2E_USER);
+        await page.waitForTimeout(400);
+        await page.locator('#password').fill('');
+        await page.locator('#password').fill(E2E_PASSWORD);
+        await page.waitForTimeout(400);
+        if (await page.locator('#username').inputValue() === E2E_USER
+            && await page.locator('#password').inputValue() === E2E_PASSWORD) break;
+    }
     await page.locator('#password').press('Enter');
     await expect(page).not.toHaveURL(/\/login$/, { timeout: 20_000 });
+    // El navegador de las pruebas tiene los avisos bloqueados, así que el
+    // portal abre «Los avisos están bloqueados» y el diálogo tapa las pestañas.
+    // No es parte de lo que se mide acá: se cierra si aparece.
+    const entendido = page.getByRole('button', { name: 'Entendido' });
+    await entendido.first().click({ timeout: 6_000 }).catch(() => {});
 }
 
 // Fabrica un acomodo propio CON UN AGUJERO y marca la pestaña como acomodada:
@@ -205,14 +223,24 @@ test.describe('Tablero General — acomodo automático', () => {
         const hayTendencia = () => page.locator('[data-widget-id="trend"]').count();
         expect(await hayTendencia(), 'no se arrancó en General').toBeGreaterThan(0);
 
-        await page.getByRole('button', { name: /^Operación$/i }).click();
+        await page.getByRole('tab', { name: /^Operación$/i }).click();
         await page.waitForTimeout(1_500);
         expect(await hayTendencia(), 'el clic no cambió de pestaña: la prueba no probaría nada').toBe(0);
 
+        // Recargar NO vuelve a General: desde el 2026-08-20 la pestaña activa
+        // vive en la dirección (`usePestanaEnUrl`, CLAUDE.md), justamente para
+        // que F5 no saque a nadie de donde estaba. Esta prueba es anterior a esa
+        // regla y la contradecía; lo que sigue valiendo es que ENTRAR al Inicio
+        // —sin pestaña en la dirección— abre General.
         await page.reload();
         await page.waitForSelector('[data-widget-id]', { timeout: 20_000 });
         await page.waitForTimeout(1_500);
-        expect(await hayTendencia(), 'la recarga no volvió a General').toBeGreaterThan(0);
+        expect(await hayTendencia(), 'la recarga perdió la pestaña de la dirección').toBe(0);
+
+        await page.goto('/');
+        await page.waitForSelector('[data-widget-id]', { timeout: 20_000 });
+        await page.waitForTimeout(1_500);
+        expect(await hayTendencia(), 'entrar al Inicio no abrió General').toBeGreaterThan(0);
     });
 
     // El reinicio de General de una sola pasada: quien llega con un acomodo

@@ -3471,6 +3471,30 @@ html, body, #root {
   pointer-events: none;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   §scroll del tablero · EN EL TELÉFONO HAY UN SOLO SCROLL — 2026-09-24
+
+   Cuarto reporte de la misma zona: «el scroll es raro y no funciona bien».
+   Medido con gestos táctiles (Chrome, Pixel 7) había DOS causas, y ninguna era
+   el encadenamiento de arriba:
+
+   1. Un segundo scroller envolviendo la vista entera (`GlassViewLayout`,
+      `overflow-x: hidden` que pasaba el eje Y a `auto`): según dónde
+      empezara el dedo, el gesto movía la página o ese contenedor.
+   2. Baldosas de alto fijo que cortaban su contenido y lo ofrecían por una
+      ranura con scroll propio — 16px de lista a la vista con 117px escondidos.
+
+   Lo nativo es que la tarjeta muestre lo suyo entero y la página sea lo
+   único que se mueve. La retícula del teléfono crece con el contenido
+   (`minmax` en `DashboardView`) y acá las listas dejan de ser scrollers.
+   Las cuatro reglas de arriba siguen valiendo para el escritorio, donde la
+   baldosa sí tiene alto fijo y la rueda sí distingue un gesto de otro. */
+[data-rejilla-movil] .overscroll-contain {
+  overflow-y: visible;
+  height: auto;
+  max-height: none;
+}
+
 html, body {
   scrollbar-width: none;
   -ms-overflow-style: none;

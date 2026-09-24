@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.7 — Inicio en el teléfono: un solo scroll y tarjetas completas
+
+Reporte del usuario: «el scroll es raro y no funciona bien» en los widgets
+del Inicio. Medido con gestos táctiles reales (Chrome Pixel 7 y WebKit
+iPhone 13), había dos causas:
+
+- **Un segundo scroll escondido en TODAS las vistas del teléfono.**
+  `GlassViewLayout` llevaba `overflow-x-hidden` sin prefijo, y `overflow-x:
+  hidden` obliga al eje Y a `auto`: el contenedor de la vista se volvía un
+  scroller metido dentro de la página. Según dónde empezara el dedo, el gesto
+  movía uno u otro — desde la franja de arriba del Inicio no movía nada. Ahora
+  es `overflow-x-clip` en el teléfono (recorta igual, no crea scroll) y
+  `hidden` desde `lg`, donde ese contenedor sí es el que scrollea. De paso, la
+  barra de acciones de Proveedores (`sticky bottom-4`) vuelve a flotar como
+  estaba pensada.
+- **Tarjetas de alto fijo que cortaban su contenido.** En el teléfono la fila
+  de la retícula mide lo de siempre como MÍNIMO y crece con el contenido; las
+  listas de las tarjetas dejan de tener scroll propio. «Bolsas de efectivo»
+  escondía 117px, el monto incluido. El arrastre de «Personalizar» lee las
+  filas reales en vez de dividir por un alto fijo.
+- Escritorio idéntico: mismas filas y mismas cajas, medido antes y después.
+- `tests/e2e/tablero-scroll-movil.spec.js` afirma la propiedad —ningún
+  scroller envolviendo la vista, ninguna tarjeta cortada ni con scroll propio—
+  y se comprobó que falla con el defecto puesto. De paso se pusieron al día
+  dos pruebas de `tablero-orden-general` que fallaban por otras razones: el
+  inicio de sesión sin esperar a la pantalla, y una expectativa anterior a la
+  regla de la pestaña en la dirección.
+
 ## v2.1060.6 — Seguimiento de promociones: gráfica por sala y vendedores por sucursal
 
 - **Por sala, en barras:** la tarjeta de cada producto en Seguimiento muestra

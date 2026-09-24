@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1039.0 — Tarjetas: foto que siempre aparece, ventas en MIN·MAX, fechas en bolsas y depósito
+
+Tercera vuelta de las tarjetas de la campana (usuario, 24-sep).
+
+- **La foto de la persona aparece siempre.** La lista de empleados del
+  navegador está acotada por permisos y quien no estaba en ella salía con la
+  inicial. Ahora el aviso trae la foto guardada (`quien_foto`,
+  `foto_de_empleado()`) y la tarjeta la firma si hace falta (`usePersona`).
+  Vale para corte, traslados, MIN·MAX, bolsa y depósito.
+- **MIN·MAX**: ventas del producto en la sala mes a mes —6 meses cerrados, en
+  unidades, con el último resaltado—, lo que va del mes, la existencia, y el
+  motivo en su propia celda «Por qué lo pide». Aprobar/Rechazar ya estaban en
+  los avisos reales (verificado con una solicitud real en el entorno de
+  pruebas); la muestra anterior no los traía porque no apuntaba a ninguna.
+- **Bolsa que no cuadró**: la fecha de cada bolsa y quién confirmó el conteo,
+  con su cara.
+- **Depósito**: el monto grande en el cuerpo (sale del título, que queda con el
+  folio), «Conteo del 15 – 22 sep» en vez de «Bolsas», y «Quedó en efectivo».
+- Verificado en pantalla en escritorio y en teléfono (390 px).
+
+Migración `20260924145212_tarjetas_foto_ventas_fechas_y_quien_confirmo`.
+
 ## v2.1038.0 — Tarjetas modernas: MIN·MAX, bolsa que no cuadró y depósito al banco
 
 Segunda tanda de avisos a tarjeta (usuario, 23-sep), con la receta que aprobó

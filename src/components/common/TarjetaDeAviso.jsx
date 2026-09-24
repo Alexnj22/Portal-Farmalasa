@@ -298,7 +298,8 @@ const TarjetaDeAviso = ({
                             buscarEmpleado={buscarEmpleado} />
                     )}
                     {bolsa && (
-                        <CuerpoDeBolsa datos={bolsa} claseTenue={cx.rowBody} isDark={isDark} />
+                        <CuerpoDeBolsa datos={bolsa} claseTenue={cx.rowBody} isDark={isDark}
+                            buscarEmpleado={buscarEmpleado} />
                     )}
                     {deposito && (
                         <CuerpoDeDeposito datos={deposito} claseTenue={cx.rowBody} isDark={isDark}

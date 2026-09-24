@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Check, TrendingDown, TrendingUp, CircleOff, Thermometer, SprayCan,
     ArrowRight, Truck, Store, Clock, SlidersHorizontal, ShoppingBag, Landmark,
@@ -8,6 +8,7 @@ import Badge from './Badge';
 import { formatMoney } from '../../utils/formatNumber';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { hora12, rango12 } from '../../utils/hora';
+import { getSignedFileUrl } from '../../utils/storageFiles';
 import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES } from '../../utils/avisosDeOperacion';
 
 /* Tres tarjetas de la campana para avisos de la operación del día: el corte de
@@ -67,11 +68,44 @@ const Panel = ({ datos, claseTenue }) => (
     </div>
 );
 
-/* La ficha del store trae la foto firmada; si no está (o el aviso sólo trae el
- * nombre), la cara sale de las iniciales — nunca se esconde a la persona. */
-const personaDe = (id, nombre, buscarEmpleado) => {
-    if (id) return buscarEmpleado?.(id) || { id, name: nombre };
-    return nombre ? { name: nombre } : null;
+/* La persona de un aviso, con su cara.
+ *
+ * La ficha del store trae la foto ya firmada, pero esa lista está ACOTADA por
+ * permisos: quien no estaba en ella salía con la inicial (usuario, 24-sep: «no
+ * me da la foto del empleado»). Por eso el aviso trae la URL guardada
+ * (`quien_foto`) y, si hace falta, se firma acá. `getSignedFileUrl` guarda las
+ * firmas en caché, así que la misma cara en diez avisos es una sola firma. */
+function useFotoFirmada(url, hace_falta) {
+    const [firmada, setFirmada] = useState(null);
+    useEffect(() => {
+        if (!hace_falta || !url) return undefined;
+        let vivo = true;
+        getSignedFileUrl(url, 43200).then((u) => { if (vivo) setFirmada(u || null); }).catch(() => {});
+        return () => { vivo = false; };
+    }, [url, hace_falta]);
+    return hace_falta && url ? firmada : null;
+}
+
+function usePersona(id, nombre, foto, buscarEmpleado) {
+    const ficha = id ? (buscarEmpleado?.(id) || null) : null;
+    const firmada = useFotoFirmada(foto, !ficha?.photo);
+    if (ficha) return firmada ? { ...ficha, photo: firmada } : ficha;
+    if (!id && !nombre) return null;
+    return { ...(id ? { id } : {}), name: nombre, ...(firmada ? { photo: firmada } : {}) };
+}
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+/** «2026-09-22» → «22 sep». */
+const fechaCorta = (iso) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ''));
+    return m ? `${Number(m[3])} ${MESES[Number(m[2]) - 1]}` : null;
+};
+/** «15 – 22 sep», o «28 ago – 3 sep» si cruza de mes. */
+const rangoDeFechas = (desde, hasta) => {
+    const a = fechaCorta(desde);
+    const b = fechaCorta(hasta);
+    if (!a || !b || a === b) return a || b;
+    return a.split(' ')[1] === b.split(' ')[1] ? `${a.split(' ')[0]} – ${b}` : `${a} – ${b}`;
 };
 
 /* ── El corte de caja ─────────────────────────────────────────────────────
@@ -93,7 +127,7 @@ export function InsigniaDeCorte({ datos, isDark }) {
 export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
     const c = CORTE[datos.estado];
     const tono = tonos(isDark)[c.tono];
-    const emp = personaDe(datos.quienId, datos.quien, buscarEmpleado);
+    const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
 
     /* Tercera vuelta (usuario, 23-sep: «siento too much, límpialo»): el
      * faltante se decía cuatro veces —título, píldora, ícono y panel—. Queda
@@ -252,6 +286,42 @@ export function InsigniaDeTraslados({ isDark }) {
     return <Disco tono={tonos(isDark).naranja} Icono={Truck} />;
 }
 
+/* Un renglón de traslado es su propio componente: la cara se firma con un
+ * hook, y los hooks no pueden vivir dentro de un `map`. */
+function FilaDeTraslado({ t, claseTenue, naranja, buscarEmpleado }) {
+    const emp = usePersona(t.quienId, t.quien, t.quienFoto, buscarEmpleado);
+    const hora = hora12(t.hora);
+    return (
+        <li className="flex items-center gap-2 px-2.5 py-2 min-w-0">
+            {emp ? (
+                <AvatarConEstado emp={emp} px={24} radio="rounded-full" marco="" mostrarChip={false} />
+            ) : (
+                <span aria-hidden="true" className={`w-6 h-6 rounded-full grid place-items-center flex-shrink-0
+                    ${naranja.disco} ${naranja.texto}`}>
+                    <Truck className="w-3 h-3" />
+                </span>
+            )}
+            <div className="flex-1 min-w-0 leading-tight">
+                <p className="text-caption font-bold truncate">
+                    {t.producto ?? 'Traslado'}{t.mas > 0 ? ` y ${t.mas} más` : ''}
+                </p>
+                {/* El destino primero: es lo que la sala tiene que ir a
+                    comprobar. El nombre va último y es lo que se recorta — la
+                    cara ya dice quién fue. */}
+                <p className={`text-caption font-semibold truncate flex items-center gap-1 ${claseTenue}`}>
+                    <ArrowRight className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                    <span className="flex-shrink-0">{t.destino}</span>
+                    {hora && <span className="tabular-nums flex-shrink-0">· {hora}</span>}
+                    {emp && <span className="truncate">· {shortEmployeeName(emp)}</span>}
+                </p>
+            </div>
+            {t.unidades != null && (
+                <Pildora tono={naranja}>×{t.unidades}</Pildora>
+            )}
+        </li>
+    );
+}
+
 export function CuerpoDeTraslados({ datos, claseTenue, isDark, buscarEmpleado, expandida }) {
     const { traslados, unidades } = datos;
     const visibles = expandida ? traslados : traslados.slice(0, TRASLADOS_VISIBLES);
@@ -266,39 +336,10 @@ export function CuerpoDeTraslados({ datos, claseTenue, isDark, buscarEmpleado, e
                 { etiqueta: salas === 1 ? 'Sala' : 'Salas', valor: salas },
             ]} />
             <ul className="rounded-xl bg-surface-card-hover divide-y divide-border-card">
-                {visibles.map((t, i) => {
-                    const emp = personaDe(t.quienId, t.quien, buscarEmpleado);
-                    const hora = hora12(t.hora);
-                    return (
-                        <li key={t.id ?? i} className="flex items-center gap-2 px-2.5 py-2 min-w-0">
-                            {emp ? (
-                                <AvatarConEstado emp={emp} px={24} radio="rounded-full" marco="" mostrarChip={false} />
-                            ) : (
-                                <span aria-hidden="true" className={`w-6 h-6 rounded-full grid place-items-center flex-shrink-0
-                                    ${naranja.disco} ${naranja.texto}`}>
-                                    <Truck className="w-3 h-3" />
-                                </span>
-                            )}
-                            <div className="flex-1 min-w-0 leading-tight">
-                                <p className="text-caption font-bold truncate">
-                                    {t.producto ?? 'Traslado'}{t.mas > 0 ? ` y ${t.mas} más` : ''}
-                                </p>
-                                {/* El destino primero: es lo que la sala tiene que
-                                    ir a comprobar. El nombre va último y es lo que
-                                    se recorta — la cara ya dice quién fue. */}
-                                <p className={`text-caption font-semibold truncate flex items-center gap-1 ${claseTenue}`}>
-                                    <ArrowRight className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
-                                    <span className="flex-shrink-0">{t.destino}</span>
-                                    {hora && <span className="tabular-nums flex-shrink-0">· {hora}</span>}
-                                    {emp && <span className="truncate">· {shortEmployeeName(emp)}</span>}
-                                </p>
-                            </div>
-                            {t.unidades != null && (
-                                <Pildora tono={naranja}>×{t.unidades}</Pildora>
-                            )}
-                        </li>
-                    );
-                })}
+                {visibles.map((t, i) => (
+                    <FilaDeTraslado key={t.id ?? i} t={t} claseTenue={claseTenue} naranja={naranja}
+                        buscarEmpleado={buscarEmpleado} />
+                ))}
             </ul>
         </div>
     );
@@ -346,20 +387,72 @@ const CeldaPersona = ({ emp, rotulo, respaldo, claseTenue }) => (
 );
 
 /* ── MIN·MAX por aprobar ──────────────────────────────────────────────────
- * El producto arriba; en el panel quién lo pide, cómo está hoy y qué propone
- * —lo propuesto en azul, que es lo que se decide—; y el motivo debajo, entre
- * comillas. Aprobar y Rechazar los pone la tarjeta general. */
+ * Tercera vuelta (usuario, 24-sep): «necesito ver las ventas de los últimos 6
+ * meses, y del último mes» y «la nota/motivo, se debe entender mejor qué es
+ * eso». Arriba el producto y quién lo pide; después las ventas de la sala mes a
+ * mes —barras, con el último mes cerrado resaltado—; Hoy contra Propone; y el
+ * motivo en su propia celda, con su rótulo. Aprobar y Rechazar los pone la
+ * tarjeta general, debajo. */
 const minmax = (min, max) => (min == null && max == null
     ? 'Sin definir'
     : `MIN ${min ?? '—'} · MAX ${max ?? '—'}`);
+
+const unidades = (n) => (n == null ? '—' : Number(n).toLocaleString('es-SV', { maximumFractionDigits: 2 }));
 
 export function InsigniaDeMinmax({ isDark }) {
     return <Disco tono={tonos(isDark).azul} Icono={SlidersHorizontal} />;
 }
 
+function VentasPorMes({ meses, mesCurso, existencia, claseTenue, azul }) {
+    const tope = Math.max(1, ...meses.map((m) => m.unidades));
+    const total = meses.reduce((s, m) => s + m.unidades, 0);
+    return (
+        <div className="bg-surface-card-hover px-2.5 py-2" style={{ gridColumn: '1 / -1' }}>
+            <div className="flex items-baseline justify-between gap-2">
+                <span className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                    Vendido · últimos 6 meses
+                </span>
+                <span className="text-body-sm font-black tabular-nums">{unidades(total)} u.</span>
+            </div>
+            <div className="mt-2 grid grid-cols-6 gap-1.5 items-end h-16" aria-hidden="true">
+                {meses.map((m, i) => {
+                    const ultimo = i === meses.length - 1;
+                    return (
+                        <div key={m.ym} className="flex flex-col items-center justify-end h-full min-w-0">
+                            <span className={`text-caption tabular-nums font-bold ${ultimo ? azul.texto : claseTenue}`}>
+                                {unidades(m.unidades)}
+                            </span>
+                            <span className={`w-full rounded-t-sm mt-0.5 ${ultimo ? azul.barra : 'bg-border-card'}`}
+                                style={{ height: `${Math.max(3, (m.unidades / tope) * 36)}px` }} />
+                        </div>
+                    );
+                })}
+            </div>
+            <div className="mt-1 grid grid-cols-6 gap-1.5">
+                {meses.map((m, i) => (
+                    <span key={m.ym} className={`text-center text-caption font-semibold uppercase
+                        ${i === meses.length - 1 ? azul.texto : claseTenue}`}>
+                        {MESES[Number(m.ym.slice(5, 7)) - 1]}
+                    </span>
+                ))}
+            </div>
+            {(mesCurso != null || existencia != null) && (
+                <p className={`mt-1.5 text-caption font-semibold ${claseTenue}`}>
+                    {mesCurso != null && <>Este mes van <b className="font-black">{unidades(mesCurso)} u.</b></>}
+                    {mesCurso != null && existencia != null && ' · '}
+                    {existencia != null && <>Hay <b className="font-black">{unidades(existencia)} u.</b> en la sala</>}
+                </p>
+            )}
+            <span className="sr-only">
+                {meses.map((m) => `${MESES[Number(m.ym.slice(5, 7)) - 1]}: ${unidades(m.unidades)}`).join(', ')}
+            </span>
+        </div>
+    );
+}
+
 export function CuerpoDeMinmax({ datos, claseTenue, isDark, buscarEmpleado }) {
     const azul = tonos(isDark).azul;
-    const emp = personaDe(datos.quienId, datos.quien, buscarEmpleado);
+    const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
     return (
         <div className="mt-1">
             {datos.producto && (
@@ -367,21 +460,32 @@ export function CuerpoDeMinmax({ datos, claseTenue, isDark, buscarEmpleado }) {
             )}
             <Grilla columnas="minmax(0,1fr) minmax(0,1fr)">
                 <CeldaPersona emp={emp} rotulo="Lo pide" respaldo="Sin nombre" claseTenue={claseTenue} />
+                {datos.ventasMeses.length > 0 && (
+                    <VentasPorMes meses={datos.ventasMeses} mesCurso={datos.ventasMesCurso}
+                        existencia={datos.existencia} claseTenue={claseTenue} azul={azul} />
+                )}
                 <Celda rotulo="Hoy" claseTenue={claseTenue}>{minmax(datos.minHoy, datos.maxHoy)}</Celda>
                 <Celda rotulo="Propone" clase={azul.texto} derecha>{minmax(datos.minNuevo, datos.maxNuevo)}</Celda>
+                {datos.motivo && (
+                    <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
+                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                            Por qué lo pide
+                        </p>
+                        <p className="text-body-sm font-semibold mt-0.5 line-clamp-3 first-letter:uppercase lowercase">
+                            {datos.motivo}
+                        </p>
+                    </div>
+                )}
             </Grilla>
-            {datos.motivo && (
-                <p className={`mt-1.5 text-caption font-semibold italic line-clamp-2 ${claseTenue}`}>
-                    «{datos.motivo}»
-                </p>
-            )}
         </div>
     );
 }
 
 /* ── Bolsa que no cuadró ──────────────────────────────────────────────────
- * Un renglón por bolsa: el folio a la izquierda y, a la derecha, FALTÓ o SOBRÓ
- * con el monto en su color. Con varias bolsas, un renglón más con el neto. */
+ * Cada bolsa con su fecha y su diferencia (FALTÓ en rojo, SOBRÓ en naranja);
+ * con varias, el neto al pie; y abajo quién confirmó el conteo, con su cara
+ * (usuario, 24-sep: «que ponga de qué fecha es la bolsa, y quién la
+ * confirmó»). */
 const difDeBolsa = (dif, isDark) => {
     const t = tonos(isDark);
     return dif < 0
@@ -394,65 +498,88 @@ export function InsigniaDeBolsa({ datos, isDark }) {
     return <Disco tono={datos.neto < 0 ? t.rojo : t.naranja} Icono={ShoppingBag} />;
 }
 
-export function CuerpoDeBolsa({ datos, claseTenue, isDark }) {
-    if (datos.lista.length === 1) {
-        const b = datos.lista[0];
-        const d = difDeBolsa(b.dif, isDark);
-        return (
-            <Grilla columnas="minmax(0,1fr) 7rem">
-                <Celda rotulo="Bolsa" claseTenue={claseTenue}>{b.folio}</Celda>
-                <Celda rotulo={d.rotulo} clase={d.clase} derecha>{d.valor}</Celda>
-            </Grilla>
-        );
-    }
-    /* Varias bolsas: una línea por bolsa —folio y monto con su signo y su
-     * color— y el neto al pie. Repetir «BOLSA / FALTÓ» en cada renglón era
-     * ruido (23-sep). */
+export function CuerpoDeBolsa({ datos, claseTenue, isDark, buscarEmpleado }) {
+    const quien = usePersona(datos.confirmoId, datos.confirmo, datos.confirmoFoto, buscarEmpleado);
     const neto = difDeBolsa(datos.neto, isDark);
+    const varias = datos.lista.length > 1;
     return (
-        <ul className="mt-2 rounded-xl bg-surface-card-hover divide-y divide-border-card">
+        <Grilla columnas="minmax(0,1fr) 7rem">
             {datos.lista.map((b) => {
                 const d = difDeBolsa(b.dif, isDark);
+                const fecha = fechaCorta(b.fecha);
                 return (
-                    <li key={b.folio} className="flex items-center justify-between gap-2 px-2.5 py-1.5">
-                        <span className="text-body-sm font-bold tabular-nums">{b.folio}</span>
-                        <span className={`text-body-sm font-black tabular-nums ${d.clase}`}>{d.valor}</span>
-                    </li>
+                    <React.Fragment key={b.folio}>
+                        <Celda rotulo={fecha ? `Bolsa del ${fecha}` : 'Bolsa'} claseTenue={claseTenue}>{b.folio}</Celda>
+                        <Celda rotulo={d.rotulo} clase={d.clase} derecha>{d.valor}</Celda>
+                    </React.Fragment>
                 );
             })}
-            <li className="flex items-center justify-between gap-2 px-2.5 py-2">
-                <span className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
-                    {neto.rotulo} en total
-                </span>
-                <span className={`text-body-lg font-black tabular-nums ${neto.clase}`}>{neto.valor}</span>
-            </li>
-        </ul>
+            {varias && (
+                <>
+                    <Celda rotulo="En total" claseTenue={claseTenue}>
+                        {datos.lista.length} bolsas
+                    </Celda>
+                    <Celda rotulo={neto.rotulo} clase={neto.clase} derecha>{neto.valor}</Celda>
+                </>
+            )}
+            {(quien || datos.confirmo) && (
+                <CeldaPersona emp={quien} rotulo="Confirmó el conteo" respaldo={datos.confirmo ?? 'Sin nombre'}
+                    claseTenue={claseTenue} />
+            )}
+        </Grilla>
     );
 }
 
 /* ── Depósito al banco ────────────────────────────────────────────────────
- * El monto ya está en el título. El panel dice quién lo lleva (o quién lo
- * cerró), a qué banco o a quién en mano, cuántas bolsas y cuánto no salió. */
+ * Tercera vuelta (usuario, 24-sep): el monto va GRANDE en el cuerpo y no en el
+ * título; «Bolsas: 50» no decía nada —ahora es de qué fecha a qué fecha son
+ * las bolsas—; y «Sin salir» pasa a «Quedó en efectivo». La persona con su
+ * cara en su propio renglón; en el teléfono todo va en dos columnas. */
 export function InsigniaDeDeposito({ isDark }) {
     return <Disco tono={tonos(isDark).verde} Icono={Landmark} />;
 }
 
 export function CuerpoDeDeposito({ datos, claseTenue, isDark, buscarEmpleado }) {
     const t = tonos(isDark);
-    const emp = personaDe(datos.quienId, datos.quien, buscarEmpleado);
-    const destino = datos.destino === 'EFECTIVO'
-        ? { rotulo: 'En mano a', valor: datos.entregadoA ?? '—' }
-        // «Banco Davivienda» bajo el rótulo BANCO decía «banco» dos veces.
-        : { rotulo: 'Banco', valor: (datos.banco ?? '—').replace(/^Banco\s+/i, '') };
+    const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
+    const banco = (datos.banco ?? '').replace(/^Banco\s+/i, '');
+    const rango = rangoDeFechas(datos.desde, datos.hasta);
     return (
-        <Grilla columnas="minmax(0,1.3fr) minmax(0,0.8fr) minmax(0,1fr)">
-            <CeldaPersona emp={emp} rotulo={datos.quienLleva ? 'Lo lleva' : 'Lo cerró'}
-                respaldo="Sin nombre" claseTenue={claseTenue} />
-            <Celda rotulo={destino.rotulo} claseTenue={claseTenue}>{destino.valor}</Celda>
-            <Celda rotulo="Bolsas" claseTenue={claseTenue}>{datos.bolsas ?? '—'}</Celda>
-            <Celda rotulo="Sin salir" clase={datos.remanente >= 0.01 ? t.naranja.texto : t.verde.texto} derecha>
-                {datos.remanente >= 0.01 ? formatMoney(datos.remanente) : 'Nada'}
-            </Celda>
-        </Grilla>
+        <div className="mt-1">
+            <div className="flex flex-col gap-0.5">
+                {datos.montoBanco > 0 && (
+                    <p className="flex items-baseline gap-2 flex-wrap">
+                        <span className={`text-title-sm font-black tracking-tight tabular-nums ${t.verde.texto}`}>
+                            {formatMoney(datos.montoBanco)}
+                        </span>
+                        <span className={`text-body-sm font-semibold ${claseTenue}`}>
+                            al banco{banco ? ` · ${banco}` : ''}
+                        </span>
+                    </p>
+                )}
+                {datos.montoEfectivo > 0 && (
+                    <p className="flex items-baseline gap-2 flex-wrap">
+                        <span className={`text-title-sm font-black tracking-tight tabular-nums ${t.verde.texto}`}>
+                            {formatMoney(datos.montoEfectivo)}
+                        </span>
+                        <span className={`text-body-sm font-semibold ${claseTenue}`}>
+                            en mano{datos.entregadoA ? ` a ${datos.entregadoA}` : ''}
+                        </span>
+                    </p>
+                )}
+            </div>
+            {/* La derecha mide lo que su rótulo: «Quedó en efectivo» no cabía en
+                media tarjeta del teléfono. */}
+            <Grilla columnas="minmax(0,1fr) auto">
+                <CeldaPersona emp={emp} rotulo={datos.quienLleva ? 'Lo lleva' : 'Lo cerró'}
+                    respaldo="Sin nombre" claseTenue={claseTenue} />
+                <Celda rotulo="Conteo del" claseTenue={claseTenue}>
+                    {rango ?? '—'}
+                </Celda>
+                <Celda rotulo="Quedó en efectivo" clase={datos.remanente >= 0.01 ? t.naranja.texto : t.verde.texto} derecha>
+                    {datos.remanente >= 0.01 ? formatMoney(datos.remanente) : 'Nada'}
+                </Celda>
+            </Grilla>
+        </div>
     );
 }

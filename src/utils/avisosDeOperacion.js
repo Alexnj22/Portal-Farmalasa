@@ -38,6 +38,7 @@ export function datosDeCorteNuevo(n) {
         hora: m.hora ? String(m.hora) : null,
         quien: m.quien ? String(m.quien) : null,
         quienId: m.quien_id || null,
+        quienFoto: m.quien_foto || null,
         contado: num(m.contado),
         ventas: num(m.ventas),
         // El cuerpo empieza siempre con «Sala — …».
@@ -98,6 +99,7 @@ export function datosDeTrasladosPorRespaldo(n) {
             unidades: num(t.unidades),
             quien: t.quien ? String(t.quien) : null,
             quienId: t.quien_id || null,
+            quienFoto: t.quien_foto || null,
             hora: t.hora || null,
         }));
     if (!lista.length) return null;
@@ -122,6 +124,12 @@ export function datosDeMinmaxPendiente(n) {
         producto: m.producto ? String(m.producto) : null,
         quien: m.quien ? String(m.quien) : null,
         quienId: m.quien_id || null,
+        quienFoto: m.quien_foto || null,
+        ventasMeses: (Array.isArray(m.ventas_meses) ? m.ventas_meses : [])
+            .filter((v) => v && /^\d{4}-\d{2}$/.test(String(v.ym)))
+            .map((v) => ({ ym: String(v.ym), unidades: num(v.unidades) ?? 0 })),
+        ventasMesCurso: num(m.ventas_mes_curso),
+        existencia: num(m.existencia),
         minHoy: num(m.min_hoy),
         maxHoy: num(m.max_hoy),
         minNuevo: num(m.min_nuevo),
@@ -135,9 +143,15 @@ export function datosDeBolsaNoCuadra(n) {
     const m = n.metadata || {};
     const lista = (Array.isArray(m.lista) ? m.lista : [])
         .filter((b) => b && b.folio && num(b.dif) != null)
-        .map((b) => ({ folio: String(b.folio), dif: num(b.dif) }));
+        .map((b) => ({ folio: String(b.folio), dif: num(b.dif), fecha: b.fecha || null }));
     if (!lista.length) return null;
-    return { lista, neto: num(m.neto) ?? lista.reduce((s, b) => s + b.dif, 0) };
+    return {
+        lista,
+        neto: num(m.neto) ?? lista.reduce((s, b) => s + b.dif, 0),
+        confirmo: m.confirmo ? String(m.confirmo) : null,
+        confirmoId: m.confirmo_id || null,
+        confirmoFoto: m.confirmo_foto || null,
+    };
 }
 
 export function datosDeDeposito(n) {
@@ -153,5 +167,10 @@ export function datosDeDeposito(n) {
         quien: m.quien ? String(m.quien) : null,
         quienId: m.quien_id || null,
         quienLleva: m.quien_lleva === true,
+        quienFoto: m.quien_foto || null,
+        montoBanco: num(m.monto_banco) ?? 0,
+        montoEfectivo: num(m.monto_efectivo) ?? 0,
+        desde: m.desde || null,
+        hasta: m.hasta || null,
     };
 }

@@ -501,7 +501,7 @@ const BloqueRecibido = ({ req, recibido, despachado, employeesById }) => {
 };
 
 /* ─── El bloque que depende del tipo ──────────────────────────────────────── */
-export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cantidades, employeesById }) => {
+export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cantidades, employeesById, enCampana = false }) => {
     const t = req.type;
 
     /* Los tres que mueven producto de verdad. */
@@ -794,8 +794,8 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
     if (t === 'ANNULMENT_REQUEST' && meta.correlativo) {
         return (
             <div className="space-y-2">
-                <LaVenta meta={meta} employeesById={employeesById} />
-                {meta.reason && (
+                <LaVenta meta={meta} employeesById={employeesById} compacta={enCampana} />
+                {meta.reason && !enCampana && (
                     <Caja>
                         <Rotulo>Motivo de anulación</Rotulo>
                         <p className="text-label font-bold text-content-2">{meta.reason}</p>
@@ -809,8 +809,8 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
     if (t === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo) {
         return (
             <div className="space-y-2">
-                <LaVenta meta={meta} employeesById={employeesById} />
-                <div className="grid grid-cols-2 gap-2">
+                <LaVenta meta={meta} employeesById={employeesById} compacta={enCampana} />
+                {!enCampana && <div className="grid grid-cols-2 gap-2">
                     <Caja>
                         <Rotulo>Pago actual</Rotulo>
                         <p className="text-body-sm font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
@@ -819,7 +819,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         <Rotulo>Cambiar a</Rotulo>
                         <p className="text-body-sm font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
                     </Caja>
-                </div>
+                </div>}
                 <IdVenta meta={meta} />
             </div>
         );
@@ -828,7 +828,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
     if (t === 'VENDOR_CHANGE_REQUEST' && meta.correlativo) {
         return (
             <div className="space-y-2">
-                <LaVenta meta={meta} employeesById={employeesById} />
+                <LaVenta meta={meta} employeesById={employeesById} compacta={enCampana} />
                 <div className="grid grid-cols-2 gap-2">
                     <Caja>
                         <Rotulo>Atendió</Rotulo>
@@ -848,7 +848,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
     if (t === 'CLIENT_CHANGE_REQUEST' && meta.correlativo) {
         return (
             <div className="space-y-2">
-                <LaVenta meta={meta} employeesById={employeesById} />
+                <LaVenta meta={meta} employeesById={employeesById} compacta={enCampana} />
                 <div className="grid grid-cols-2 gap-2">
                     <Caja>
                         <Rotulo>Cliente actual</Rotulo>
@@ -1079,7 +1079,11 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
  * `seleccion`/`onToggle` sólo se pasan cuando se está DECIDIENDO por línea; sin
  * ellos el detalle es de lectura y las líneas se ven sin casillas.
  */
-export default function DetalleSolicitud({ req, employeesById, seleccion, onToggle, onCantidad, cantidades }) {
+/* `enCampana` (24-sep): desplegada dentro de la campana, la tarjeta de arriba
+ * ya dice quién la pide, la venta —fecha, monto, documento, pago, cliente— y
+ * el motivo. Acá se muestra sólo lo que falta: quién atendió, Hacienda, el
+ * estado y los productos. En la bandeja y en el historial no cambia nada. */
+export default function DetalleSolicitud({ req, employeesById, seleccion, onToggle, onCantidad, cantidades, enCampana = false }) {
     const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
     const isRejected = req.status === 'REJECTED';
     const motivoRechazo = motivoDeRechazo(req);
@@ -1089,10 +1093,11 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
     return (
         <div className="space-y-2.5 text-left">
             {/* Quién y cuándo, antes que el qué. */}
-            <BloquePersonas req={req} empleadosPorId={employeesById} />
+            {!enCampana && <BloquePersonas req={req} empleadosPorId={employeesById} />}
 
             <BloquePorTipo req={req} meta={meta} seleccion={seleccion} onToggle={onToggle}
-                onCantidad={onCantidad} cantidades={cantidades} employeesById={employeesById} />
+                onCantidad={onCantidad} cantidades={cantidades} employeesById={employeesById}
+                enCampana={enCampana} />
 
             <BloqueAplicado req={req} aplicado={meta.erp_aplicado ?? meta.erp_traslado}
                 employeesById={employeesById} />
@@ -1100,7 +1105,7 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
             <BloqueRecibido req={req} recibido={meta.erp_recibido} despachado={meta.erp_traslado}
                 employeesById={employeesById} />
 
-            {req.note && (
+            {req.note && !enCampana && (
                 <div>
                     <Rotulo>Motivo de quien la envió</Rotulo>
                     <p data-surface="card" className="text-body-sm text-content-2 p-3 leading-relaxed">{req.note}</p>

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1047.0 — Traslados sin ventas; anulación desplegada sin repetir la tarjeta
+
+Dos correcciones del usuario (24-sep):
+
+- **Traslados sin ventas**: «solo deja lo que solicitan, el producto, cantidad
+  y cuánto en inventario». Cada producto: el nombre, «[Pide 24]» y «Hay en
+  Salud 3 52». El aviso deja de calcular las ventas (migración
+  `20260924172801`); `ventas_por_mes_de_producto` sigue para MIN·MAX.
+- **Solicitud desplegada en la campana, compacta**: «hay mucho al desplegar».
+  Al abrir «Ver detalle» se repetía debajo lo que la tarjeta ya dice —quién la
+  pide y quién la tiene pendiente, la cabecera de la venta (número, fecha,
+  monto, documento), cliente, forma de pago y motivo—. Con `enCampana`,
+  `DetalleSolicitud` omite esos bloques y `LaVenta` (`compacta`) deja sólo
+  quién atendió, Hacienda, el estado y qué se vendió. En la bandeja de
+  solicitudes y en el historial no cambia nada.
+
 ## v2.1046.1 — Un producto nuevo trae su presentación en el minuto
 
 Reportado el 24-sep con RAN CV 500 MG: «Enviar a otra sala» no ofrecía

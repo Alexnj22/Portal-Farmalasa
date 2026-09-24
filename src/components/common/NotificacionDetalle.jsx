@@ -141,7 +141,11 @@ export default function NotificacionDetalle({ notif }) {
          * sigue deslizando, que es lo que un teléfono espera. */
         <div className="pr-0.5">
             <Suspense fallback={<div className="py-1"><SkeletonText lines={4} /></div>}>
-                <DetalleSolicitud req={req} employeesById={employeesById} />
+                {/* `enCampana`: la tarjeta de arriba ya dice quién la pide, la
+                    fecha, el monto, el documento, el pago, el cliente y el
+                    motivo. Desplegada, repetía todo eso otra vez (usuario,
+                    24-sep: «hay mucho al desplegar, compacta lo de arriba»). */}
+                <DetalleSolicitud req={req} employeesById={employeesById} enCampana />
             </Suspense>
         </div>
     );

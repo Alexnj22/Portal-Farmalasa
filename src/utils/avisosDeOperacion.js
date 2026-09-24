@@ -293,10 +293,8 @@ export function datosDeSolicitud(n) {
             .map((p) => ({
                 nombre: String(p.nombre),
                 cantidad: num(p.cantidad),
-                // En un traslado: cuántas hay y cuánto vendió la sala a la que
-                // se lo piden.
+                // En un traslado: cuántas tiene la sala a la que se lo piden.
                 existencia: num(p.existencia),
-                ventasMeses: leerMeses(p.ventas_meses),
             })),
         mas: num(s.mas) ?? 0,
         unidades: num(s.unidades),

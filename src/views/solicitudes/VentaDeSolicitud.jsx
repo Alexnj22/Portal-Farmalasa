@@ -81,7 +81,11 @@ const Linea = ({ it, n, resta }) => {
     );
 };
 
-const LaVenta = memo(({ meta, employeesById }) => {
+/* `compacta` (24-sep): dentro de la campana, la tarjeta ya dice la fecha, el
+ * monto, el documento, el pago y el cliente. Sin la cabecera ni esa fila queda
+ * lo que la tarjeta no tiene: quién atendió, Hacienda, el estado y qué se
+ * vendió. */
+const LaVenta = memo(({ meta, employeesById, compacta = false }) => {
     const invoiceId = meta?.invoice_id ?? null;
     const [venta, setVenta]   = useState(null);
     const [lineas, setLineas] = useState(null);
@@ -168,7 +172,7 @@ const LaVenta = memo(({ meta, employeesById }) => {
 
             <div data-surface="card" className="overflow-hidden">
                 {/* Cabecera: qué venta y por cuánto */}
-                <div className="px-3 py-2.5 flex items-start gap-2 border-b border-divider">
+                {!compacta && <div className="px-3 py-2.5 flex items-start gap-2 border-b border-divider">
                     <Receipt size={14} className="text-content-2 shrink-0 mt-0.5" strokeWidth={2} />
                     <div className="flex-1 min-w-0">
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">La venta</p>
@@ -184,16 +188,20 @@ const LaVenta = memo(({ meta, employeesById }) => {
                             <Badge variant={tipoDoc === 'CCF' ? 'danger' : 'neutral'} size="sm" className="mt-1">{tipoDoc}</Badge>
                         )}
                     </div>
-                </div>
+                </div>}
 
                 {/* A quién, quién y cómo */}
-                <div className="px-3 py-2.5 grid grid-cols-2 gap-x-3 gap-y-2.5 border-b border-divider">
-                    <Dato rotulo="Cliente" className="col-span-2">
-                        <span className="break-words">{venta?.cliente || meta?.current_cliente || 'Consumidor final'}</span>
-                    </Dato>
-                    <Dato rotulo="Forma de pago">
-                        <span className="capitalize">{pago || '—'}</span>
-                    </Dato>
+                <div className={`px-3 py-2.5 grid gap-x-3 gap-y-2.5 border-b border-divider ${compacta ? 'grid-cols-[repeat(auto-fit,minmax(6rem,1fr))]' : 'grid-cols-2'}`}>
+                    {!compacta && (
+                        <>
+                            <Dato rotulo="Cliente" className="col-span-2">
+                                <span className="break-words">{venta?.cliente || meta?.current_cliente || 'Consumidor final'}</span>
+                            </Dato>
+                            <Dato rotulo="Forma de pago">
+                                <span className="capitalize">{pago || '—'}</span>
+                            </Dato>
+                        </>
+                    )}
                     <Dato rotulo="Atendió">
                         {vendedor ? (
                             <span className="flex items-center gap-1.5 min-w-0">

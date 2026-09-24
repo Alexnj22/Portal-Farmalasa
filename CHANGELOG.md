@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1056.0 — Gestión de stock: pestañas, productos parados por destino y carga bajo demanda
+
+Pedido del usuario: «que sea mucho más intuitiva… en funciones, visual y
+eficiencia». La vista se rehízo alrededor de la pregunta que la abre —«¿qué
+hago con esto?»— en vez de alrededor de la tabla.
+
+- **Dos pestañas de la vista, en la dirección** (`?tab=parados|sin_minmax`):
+  «Productos parados» y «Vendidos sin Min/Max». Eran un segmentado dentro de
+  la tabla y **las dos listas se cargaban siempre**; ahora cada una se pide al
+  abrirse. La de Min/Max cuesta ~180 ms y 86,000 bloques por sala, y se pedía
+  sólo para poner un número en el segmentado.
+- **La sala en la dirección** (`?sala=`) y compartida por las dos pestañas; sin
+  ella, la de quien entra.
+- **Productos parados, agrupados por destino.** Un bloque por sala destino
+  («A Salud 3 · 5 productos · 13 unidades · $112.90») con su «Armar envío», y
+  Bodega al final. La columna «Sugerencia» desapareció: era el agrupado
+  repetido en cada fila. La sala destino se resalta en «Se vende en».
+- **El resumen es una línea**, no un carril de tarjetas que se cortaba
+  («Stock reten…»). Explica en una frase cómo se cuentan los seis meses y
+  adónde va cada producto.
+- **Vendidos sin Min/Max**: el filtro es un desplegable con el conteo de cada
+  sugerencia; la sugerencia dice directo «Min 7 · Max 14»; se fue el botón de
+  copiar el nombre.
+- `TabSinVenta.jsx` se partió en `TabParados.jsx` y `TabSinMinMax.jsx`; las
+  salas viven en `salasDeStock.js`. Su excepción de `carril-pildora` en
+  `design-gate` se fue con el archivo.
+
 ## v2.1055.0 — Tarjeta del envío de producto; el envío no se aprueba desde la campana
 
 - **Envío de producto** (el aviso más frecuente del portal, ~90 al día, que

@@ -93,7 +93,7 @@ export function fetchStockParamsUpdates(erpSucursalId, sinceIso, sinceProductId 
         .limit(1000);
 }
 
-// ── TabSinVenta.jsx (3 sitios — productos descartados de las sugerencias) ────
+// ── TabSinMinMax.jsx (productos descartados de las sugerencias) ─────────────
 
 export function fetchMinMaxIgnored(erpSucursalId) {
     return supabase.from('minmax_ignored').select('erp_product_id').eq('erp_sucursal_id', erpSucursalId);

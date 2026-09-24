@@ -80,6 +80,7 @@ export const AREAS = [
         rutas: ['(todas)'],
         archivos: [
             'src/App.jsx', 'src/main.jsx', 'src/supabaseClient.js', 'src/entorno.js', 'src/version.js',
+            'src/plataforma/',   // adaptadores del núcleo portable (docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md)
             'src/components/common/', 'src/components/layout/', 'src/components/GlassViewLayout.jsx',
             'src/components/MotionProvider.jsx', 'src/components/UnifiedModal.jsx',
             'src/constants/moduleMap.js', 'src/constants/routeImporters.js', 'src/constants/menuSearchKeywords.js',

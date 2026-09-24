@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1046.0 — Traslados: producto al frente y Ver los N productos
+
+Tarjeta de traslado, tercera vuelta (usuario, 24-sep, opción A y «Ver los N»):
+
+- Cada producto: el **nombre** en grande y debajo una línea
+  «[Pide 24] Hay 52 · 6 meses 228 · ago 25», con el rótulo pegado a cada cifra
+  y bajando entera si no cabe. Encima, una vez: «Inventario y ventas de <sala>».
+- **Todos los productos**: se aprueba desde la tarjeta, así que se ven 3 y el
+  resto con **«Ver los N productos»** ahí mismo (en esos avisos el botón
+  despliega la lista en vez del detalle de la solicitud).
+- El aviso trae hasta **15** productos con sus cifras, no 3 (~34 ms por
+  producto; en 60 días el traslado más largo tuvo 8). Migración
+  `20260924171645`.
+
 ## v2.1045.1 — Traslados: lista compacta con el producto al frente
 
 Tarjeta de traslado compacta (usuario, 24-sep: «el nombre del producto debe

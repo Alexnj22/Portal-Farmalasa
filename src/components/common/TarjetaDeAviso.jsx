@@ -14,7 +14,7 @@ import {
     InsigniaDeDeposito, CuerpoDeDeposito,
     InsigniaDeAlertaDeVentas, CuerpoDeAlertaDeVentas, InsigniaDeFacturaDeSala, CuerpoDeFacturaDeSala,
     InsigniaDeCortesPendientes, CuerpoDeCortesPendientes, InsigniaDePedido, CuerpoDePedido,
-    InsigniaDeSolicitud, CuerpoDeSolicitud,
+    InsigniaDeSolicitud, CuerpoDeSolicitud, PRODUCTOS_VISIBLES,
 } from './TarjetasDeOperacion';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
@@ -155,7 +155,13 @@ const TarjetaDeAviso = ({
        primeros y despliega el resto («que salga ver más», 23-sep). */
     const traslados      = datosDeTrasladosPorRespaldo(n);
     const masTraslados   = (traslados?.traslados.length ?? 0) > TRASLADOS_VISIBLES;
-    const expandible   = tieneDetalle || cuerpoCortado || masTraslados;
+    /* Y un cuarto: un traslado con más productos de los que se ven. Se aprueba
+       desde la tarjeta, así que lo que se despliega es la lista entera de
+       productos —ahí mismo— en vez del detalle de la solicitud (24-sep). */
+    const productosDeTraslado = n.metadata?.solicitud?.tipo === 'INVENTORY_TRANSFER_REQUEST'
+        ? (n.metadata.solicitud.productos?.length ?? 0) : 0;
+    const masProductos = productosDeTraslado > PRODUCTOS_VISIBLES;
+    const expandible   = tieneDetalle || cuerpoCortado || masTraslados || masProductos;
 
     // Interactiva es la que hace ALGO al tocarla, y desde que el toque es uno
     // solo eso significa «lleva a su pantalla». De eso depende el realce, que es
@@ -342,7 +348,7 @@ const TarjetaDeAviso = ({
                     )}
                     {solicitud && (
                         <CuerpoDeSolicitud datos={solicitud} claseTenue={cx.rowBody} isDark={isDark}
-                            buscarEmpleado={buscarEmpleado} />
+                            buscarEmpleado={buscarEmpleado} expandida={expandida} />
                     )}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}
@@ -429,6 +435,8 @@ const TarjetaDeAviso = ({
                             es el resto del mensaje. */}
                         {masTraslados
                             ? (expandida ? 'Ocultar traslados' : `Ver los ${traslados.traslados.length} traslados`)
+                            : masProductos
+                            ? (expandida ? 'Ocultar productos' : `Ver los ${productosDeTraslado} productos`)
                             : tieneDetalle
                             ? (expandida ? 'Ocultar detalle'  : 'Ver detalle')
                             : (expandida ? 'Ocultar mensaje'  : 'Ver mensaje completo')}
@@ -450,7 +458,7 @@ const TarjetaDeAviso = ({
                 propuesto, las fotos de evidencia y el motivo escrito. Se monta
                 SOLO al abrirla — el contenido pesa y no tiene por qué viajar por
                 cada fila de la lista. */}
-            {expandida && tieneDetalle && (
+            {expandida && tieneDetalle && !masProductos && (
                 <div className={`relative px-3.5 pb-3 pt-2 border-t ${cx.headerBorder}`}>
                     <NotificacionDetalle notif={n} />
                 </div>

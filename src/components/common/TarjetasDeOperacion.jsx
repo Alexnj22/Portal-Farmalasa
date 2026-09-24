@@ -870,40 +870,58 @@ export function InsigniaDeSolicitud({ datos, isDark }) {
     return <Disco tono={tonos(isDark)[t.tono]} Icono={t.Icono} />;
 }
 
-/* De cada producto de un traslado: cuántas hay y cuánto vendió la sala a la que
- * se lo piden —la que decide si puede soltarlo— (usuario, 24-sep: «no dice
- * cuántas tengo en inventario; agrega el total de ventas de los últimos 6
- * meses y del último mes»). Cada cifra con su rótulo es una pieza que no se
- * parte: si no caben las tres, baja la que sobra. */
-function CifrasDelProducto({ p, sala, claseTenue, azul }) {
-    /* Dos bloques con su rótulo —INVENTARIO y VENTAS— y no cifras sueltas en
-     * una línea: «no sé cuál es venta y cuál es inventario» (usuario, 24-sep).
-     * Cada bloque es una pieza: si no caben lado a lado, el segundo baja
-     * entero. */
-    const total = p.ventasMeses.reduce((s, m) => s + m.unidades, 0);
-    const ultimo = p.ventasMeses[p.ventasMeses.length - 1];
-    if (p.existencia == null && !ultimo) return null;
-    const rotulo = `text-caption font-black uppercase tracking-wide ${claseTenue}`;
+/* Los productos de un traslado (usuario, 24-sep): el NOMBRE manda —es lo que
+ * se pide—, con cuántas pide al lado; debajo, en columnas, lo que tiene la sala
+ * a la que se lo piden y lo que vendió. Los rótulos van UNA vez arriba y no en
+ * cada producto, así que tres productos siguen siendo una tarjeta compacta.
+ * «No sé cuál es venta y cuál es inventario» se resuelve con el rótulo de la
+ * columna, no repitiéndolo. */
+function ProductosDeTraslado({ productos, mas, sala, claseTenue, azul }) {
+    const conMeses = productos.find((p) => p.ventasMeses.length > 0);
+    const ultimoYm = conMeses?.ventasMeses[conMeses.ventasMeses.length - 1]?.ym;
+    const mes = ultimoYm ? MESES[Number(ultimoYm.slice(5, 7)) - 1] : null;
+    const columnas = 'grid grid-cols-3 gap-2 text-center';
+    const cifra = (n) => (n == null ? '—' : unidades(n));
     return (
-        <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-1.5">
-            {p.existencia != null && (
-                <div>
-                    <p className={rotulo}>Inventario{sala ? ` · ${sala}` : ''}</p>
-                    <p className="text-body-sm font-black tabular-nums">{unidades(p.existencia)}&nbsp;u.</p>
+        <div className="bg-surface-card-hover" style={{ gridColumn: '1 / -1' }}>
+            <div className="px-2.5 pt-2 pb-1.5 border-b border-border-card">
+                <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                    {sala ? `En ${sala}` : 'En la sala'}
+                </p>
+                <div className={`${columnas} mt-1 text-caption font-semibold leading-tight ${claseTenue}`}>
+                    <span>Inventario</span>
+                    <span>Venta 6 meses</span>
+                    <span>Venta {mes ?? 'último mes'}</span>
                 </div>
-            )}
-            {ultimo && (
-                <div>
-                    <p className={rotulo}>Ventas</p>
-                    <p className="text-body-sm tabular-nums">
-                        <span className="whitespace-nowrap"><b className="font-black">{unidades(total)}&nbsp;u.</b>{' '}
-                            <span className={`text-caption font-semibold ${claseTenue}`}>en 6 meses</span></span>
-                        <span className={claseTenue}> · </span>
-                        <span className="whitespace-nowrap"><b className={`font-black ${azul.texto}`}>{unidades(ultimo.unidades)}&nbsp;u.</b>{' '}
-                            <span className={`text-caption font-semibold ${claseTenue}`}>en {MESES[Number(ultimo.ym.slice(5, 7)) - 1]}</span></span>
-                    </p>
-                </div>
-            )}
+            </div>
+            <ul className="divide-y divide-border-card">
+                {productos.map((p, i) => {
+                    const total = p.ventasMeses.reduce((acc, m) => acc + m.unidades, 0);
+                    const ultimo = p.ventasMeses[p.ventasMeses.length - 1];
+                    return (
+                        <li key={`${p.nombre}-${i}`} className="px-2.5 py-2">
+                            <div className="flex items-start justify-between gap-3">
+                                <span className="text-body-sm font-black break-words min-w-0 leading-snug">{p.nombre}</span>
+                                {p.cantidad != null && (
+                                    <span className={`flex-shrink-0 text-body-sm font-black tabular-nums whitespace-nowrap ${azul.texto}`}>
+                                        Pide {unidades(p.cantidad)}
+                                    </span>
+                                )}
+                            </div>
+                            <div className={`${columnas} mt-1 text-caption font-bold tabular-nums`}>
+                                <span>{cifra(p.existencia)}</span>
+                                <span>{ultimo ? cifra(total) : '—'}</span>
+                                <span>{ultimo ? cifra(ultimo.unidades) : '—'}</span>
+                            </div>
+                        </li>
+                    );
+                })}
+                {mas > 0 && (
+                    <li className={`px-2.5 py-1.5 text-caption font-semibold ${claseTenue}`}>
+                        y {mas === 1 ? '1 producto más' : `${mas} productos más`}
+                    </li>
+                )}
+            </ul>
         </div>
     );
 }
@@ -961,17 +979,17 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado })
                     </div>
                 )}
 
-                {datos.productos.length > 0 && (
+                {datos.productos.some((p) => p.existencia != null || p.ventasMeses.length > 0) ? (
+                    <ProductosDeTraslado productos={datos.productos} mas={datos.mas} sala={datos.origen}
+                        claseTenue={claseTenue} azul={azul} />
+                ) : datos.productos.length > 0 && (
                     <ul className="bg-surface-card-hover divide-y divide-border-card" style={{ gridColumn: '1 / -1' }}>
                         {datos.productos.map((p, i) => (
-                            <li key={`${p.nombre}-${i}`} className="px-2.5 py-1.5">
-                                <div className="flex items-center justify-between gap-3">
-                                    <span className="text-caption font-bold break-words min-w-0">{p.nombre}</span>
-                                    {p.cantidad != null && (
-                                        <span className="flex-shrink-0 text-body-sm font-black tabular-nums">×{unidades(p.cantidad)}</span>
-                                    )}
-                                </div>
-                                <CifrasDelProducto p={p} sala={datos.origen} claseTenue={claseTenue} azul={azul} />
+                            <li key={`${p.nombre}-${i}`} className="flex items-center justify-between gap-3 px-2.5 py-1.5">
+                                <span className="text-caption font-bold break-words min-w-0">{p.nombre}</span>
+                                {p.cantidad != null && (
+                                    <span className="flex-shrink-0 text-body-sm font-black tabular-nums">×{unidades(p.cantidad)}</span>
+                                )}
                             </li>
                         ))}
                         {datos.mas > 0 && (

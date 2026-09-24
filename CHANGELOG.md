@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1045.1 — Traslados: lista compacta con el producto al frente
+
+Tarjeta de traslado compacta (usuario, 24-sep: «el nombre del producto debe
+ser lo principal… ¿qué pasa si son varios productos?»). El nombre va en grande
+con «Pide N» al lado; debajo, tres cifras en columnas —Inventario, Venta 6
+meses, Venta <mes>— con los rótulos UNA vez arriba («En Salud 4») y no en cada
+producto. Las solicitudes sin cifras (descartes, avisos viejos) siguen con la
+lista simple.
+
 ## v2.1045.0 — Horas en 12 horas en todo el portal
 
 Pedido del usuario (24-sep): «necesito que en todo el portal se trabaje en 12

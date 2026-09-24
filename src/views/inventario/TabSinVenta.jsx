@@ -6,6 +6,8 @@ import { supabase } from '../../supabaseClient';
 import { fetchMinMaxIgnored, upsertMinMaxIgnored, deleteMinMaxIgnored } from '../../data/stockParams';
 import { insertMinMaxChangeRequest } from '../../data/minmaxRequests';
 import { useAuth } from '../../context/AuthContext';
+import { useSearchParams } from 'react-router-dom';
+import { porQueDesde } from '../../utils/productosParados';
 import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
     ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
@@ -114,22 +116,6 @@ const adaptarParado = (r) => ({
     sold_in:       (r.vendido_en || []).map(v => ({ esid: v.esid, units: v.unidades })),
 });
 
-/**
- * Desde cuándo corren los seis meses, y por qué esa fecha. No es siempre la
- * última venta: si el producto entró después a la sala —traslado, pedido,
- * envío, compra— o la empresa lo volvió a comprar tras meses sin tenerlo, el
- * reloj arranca ahí. Decirlo evita la pregunta «¿cómo que parado, si llegó en
- * abril?».
- */
-function porQueDesde(row) {
-    if (!row.desde) return 'sin venta ni entrada registrada';
-    if (row.desde === row.ultima_venta) return 'última venta';
-    if (row.desde === row.ultima_entrada) {
-        return { traslado: 'llegó por traslado', pedido: 'llegó en pedido', envio: 'llegó en un envío', compra: 'se compró' }[row.entrada_via] || 'llegó';
-    }
-    if (row.desde === row.reingreso) return 'reingreso a la empresa';
-    return '';
-}
 
 // units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
 // Los umbrales están calibrados para eso: 2 cajas/mes es demanda retail real.
@@ -342,7 +328,19 @@ export default function TabGestionStock({ searchTerm = '' }) {
     const [mode,        setMode]        = useState('stock_ret');
     const [envio,       setEnvio]       = useState(null);   // { destino, productos }
     const [avisoEnvio,  setAvisoEnvio]  = useState(null);
-    const [selectedErp, setSelectedErp] = useState(5); // null = todas las sucursales
+    /* La sala vive en la dirección (`?sala=`): el aviso de productos sin venta
+     * lleva acá con la sala del jefe ya elegida, y una recarga no la pierde. */
+    const [searchParams, setSearchParams] = useSearchParams();
+    const salaDeLaUrl = Number(searchParams.get('sala'));
+    // Sin sala en la dirección, la propia (un jefe de sala abre la suya); si
+    // no tiene una que venda —Bodega, administración—, La Popular como antes.
+    const salaPropia = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id];
+    const [selectedErp, setSelectedErpState] = useState(
+        ERP_NAMES[salaDeLaUrl] ? salaDeLaUrl : (salaPropia && salaPropia !== 6 ? salaPropia : 5));
+    const setSelectedErp = useCallback((erp) => {
+        setSelectedErpState(erp);
+        setSearchParams(prev => { const p = new URLSearchParams(prev); p.set('sala', String(erp)); return p; }, { replace: true });
+    }, [setSearchParams]);
     const [filterMode,  setFilterMode]  = useState('todos');
 
     // One data store per view — keyed so switching back doesn't re-fetch

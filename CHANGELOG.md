@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1054.0 — Aviso semanal de productos sin venta al jefe de sala
+
+La tarjeta del aviso de productos sin venta, y la función que lo manda. **El
+cron todavía NO está encendido**: primero se mandaron muestras al usuario para
+ver cómo se ven.
+
+- **`avisar_productos_sin_venta(p_muestra_a)`** — un aviso por sala al Jefe/a de
+  Sala, con la lista de `productos_parados_de_sala` (el mismo juez de «Stock
+  retenido»). Sólo lo nuevo: `productos_sin_venta_avisados` anota cada producto
+  la primera vez; lo que deja de estar parado sale del registro y puede volver a
+  avisarse. Con `p_muestra_a` manda las seis salas a esa persona, completas, sin
+  anotar nada y sin avisar a ningún jefe.
+- **Tarjeta `PRODUCTOS_SIN_VENTA`** en la campana: cuántos y cuánto cuestan, a
+  dónde mandarlos (con barra por destino) y los tres más caros con el porqué de
+  su fecha. Lleva a Gestión de stock con la sala ya elegida.
+- **Gestión de stock** guarda la sala en la dirección (`?sala=`) y, sin ella,
+  abre la sala de quien entra.
+- `porQueDesde` pasa a `src/utils/productosParados.js`: la tarjeta y la
+  pestaña lo dicen igual.
+
 ## v2.1053.1 — Productos sin venta: sólo mercadería y el porqué del envío ya escrito
 
 Corregido al probar la pantalla con la cuenta de pruebas:

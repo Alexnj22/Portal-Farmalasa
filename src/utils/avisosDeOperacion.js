@@ -543,3 +543,36 @@ export function datosDeReinicio(n) {
     const t = n.metadata?.arranco_at;
     return t ? { arranco: String(t) } : null;
 }
+
+/* ── Productos sin venta (24-sep) ─────────────────────────────────────────
+ * El aviso semanal al jefe de sala: cuántos productos llevan seis meses sin
+ * venderse, a dónde mandarlos y los más caros. Lo arma
+ * `avisar_productos_sin_venta` con el mismo juez de «Stock retenido». */
+export function datosDeProductosSinVenta(n) {
+    if (n?.type !== 'PRODUCTOS_SIN_VENTA') return null;
+    const p = n.metadata?.parados;
+    if (!p || !Array.isArray(p.destinos)) return null;
+    return {
+        sala: p.sala ? String(p.sala) : null,
+        erp: num(p.erp),
+        productos: num(p.productos) ?? 0,
+        costo: num(p.costo),
+        enLaLista: num(p.en_la_lista),
+        muestra: Boolean(p.muestra),
+        destinos: p.destinos.filter((d) => d && d.sala)
+            .map((d) => ({ sala: String(d.sala), erp: num(d.erp), productos: num(d.productos) ?? 0, costo: num(d.costo) })),
+        ejemplos: (Array.isArray(p.ejemplos) ? p.ejemplos : []).filter((e) => e && e.producto)
+            .map((e) => ({
+                producto: String(e.producto),
+                existencia: num(e.existencia),
+                costo: num(e.costo),
+                destino: e.destino ? String(e.destino) : null,
+                desde: e.desde || null,
+                dias: num(e.dias),
+                ultima_venta: e.ultima_venta || null,
+                ultima_entrada: e.ultima_entrada || null,
+                entrada_via: e.entrada_via || null,
+                reingreso: e.reingreso || null,
+            })),
+    };
+}

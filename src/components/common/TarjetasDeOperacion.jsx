@@ -4,7 +4,7 @@ import {
     ArrowRight, Truck, Store, Clock, SlidersHorizontal, ShoppingBag, Landmark,
     FileWarning, ReceiptText, ClipboardCheck, Package, PackageCheck, PackageX,
     FileX, CreditCard, UserRound, Users, Wallet, HandCoins, ArrowLeftRight, PackagePlus, Trash2, CalendarDays,
-    Undo2, Scale, X, Tag, Target, RotateCcw,
+    Undo2, Scale, X, Tag, Target, RotateCcw, Archive,
 } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
@@ -19,6 +19,7 @@ import { useToastStore } from '../../store/toastStore';
 import Button from './Button';
 import PortalInput from './PortalInput';
 import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES, ETAPAS_DE_PEDIDO } from '../../utils/avisosDeOperacion';
+import { porQueDesde } from '../../utils/productosParados';
 
 /* Tres tarjetas de la campana para avisos de la operación del día: el corte de
  * caja, la bitácora por cerrarse y los traslados despachados por respaldo.
@@ -1716,6 +1717,73 @@ export function CuerpoDeReinicio({ datos, claseTenue }) {
             )}
             <Bloque rotulo="Qué significa" claseTenue={claseTenue}>
                 Si poco antes el portal estuvo lento o no dejaba entrar, fue esto. No hay que hacer nada: ya está funcionando.
+            </Bloque>
+        </Grilla>
+    );
+}
+
+/* ── Productos sin venta (24-sep) ───────────────────────────────────────── */
+
+export function InsigniaDeProductosSinVenta({ isDark }) {
+    return <Disco tono={tonos(isDark).naranja} Icono={Archive} />;
+}
+
+/* Cuántos, cuánto cuestan y a dónde va cada grupo; después los tres más caros
+ * con el porqué de su fecha. Armar el envío se hace en Gestión de stock: la
+ * tarjeta lleva ahí con la sala ya elegida. */
+export function CuerpoDeProductosSinVenta({ datos, claseTenue, isDark }) {
+    const t = tonos(isDark);
+    const tope = Math.max(1, ...datos.destinos.map((d) => d.productos));
+    return (
+        <Grilla columnas="1fr">
+            <Panel claseTenue={claseTenue} datos={[
+                { etiqueta: datos.productos === 1 ? 'producto' : 'productos', valor: datos.productos },
+                ...(datos.costo != null ? [{ etiqueta: 'en costo', valor: formatMoney(datos.costo), clase: t.naranja.texto }] : []),
+            ]} />
+            <div className="bg-surface-card-hover px-2.5 py-2 min-w-0">
+                <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>A dónde mandarlos</p>
+                <ul className="mt-1.5 flex flex-col gap-2">
+                    {datos.destinos.map((d) => (
+                        <li key={d.sala} className="min-w-0">
+                            <div className="flex items-baseline justify-between gap-3 text-body-sm">
+                                <span className="inline-flex items-center gap-1.5 font-bold min-w-0 break-words">
+                                    {d.erp === 6
+                                        ? <Archive className={`w-3.5 h-3.5 flex-shrink-0 ${claseTenue}`} aria-hidden="true" />
+                                        : <Truck className={`w-3.5 h-3.5 flex-shrink-0 ${t.azul.texto}`} aria-hidden="true" />}
+                                    {d.sala}
+                                </span>
+                                <span className="flex-shrink-0 text-caption">
+                                    <b className="font-black tabular-nums">{d.productos}</b>
+                                    {d.costo != null && <span className={`font-semibold tabular-nums ml-1.5 ${claseTenue}`}>{formatMoney(d.costo)}</span>}
+                                </span>
+                            </div>
+                            <div className="mt-1 h-1 rounded-full bg-border-card overflow-hidden" data-medida="dato">
+                                <div className={`h-full ${d.erp === 6 ? t.gris.barra : t.azul.barra}`}
+                                    style={{ width: `${Math.round(d.productos / tope * 100)}%` }} />
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+            {datos.ejemplos.length > 0 && (
+                <ul className="bg-surface-card-hover divide-y divide-border-card">
+                    {datos.ejemplos.map((e) => (
+                        <li key={e.producto} className="px-2.5 py-1.5 min-w-0">
+                            <div className="flex items-baseline justify-between gap-3">
+                                <span className="text-body-sm font-bold break-words min-w-0">{e.producto}</span>
+                                {e.costo != null && <b className="flex-shrink-0 text-caption font-black tabular-nums">{formatMoney(e.costo)}</b>}
+                            </div>
+                            <p className={`text-caption font-semibold mt-0.5 ${claseTenue}`}>
+                                {unidades(e.existencia)} {Number(e.existencia) === 1 ? 'unidad' : 'unidades'}
+                                {e.desde && ` · desde el ${fechaCorta(e.desde)} (${porQueDesde(e)})`}
+                                {e.destino && <> · <span className={t.azul.texto}>→ {e.destino}</span></>}
+                            </p>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <Bloque rotulo="Qué sigue" claseTenue={claseTenue} claseRotulo={t.naranja.texto}>
+                Abre Gestión de stock y aprieta «Armar envío» en cada destino: el envío sale cargado y lo puedes cambiar antes de transferir.
             </Bloque>
         </Grilla>
     );

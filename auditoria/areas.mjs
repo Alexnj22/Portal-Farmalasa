@@ -638,7 +638,7 @@ export const AREAS = [
         ],
         tablas: ['inventory', 'inventory_sync_huella', 'inventory_sync_log',
                  'conteos_inventario', 'conteo_inventario_items', 'conteo_inventario_item_history',
-                 'ventas_perdidas', 'traslados_erp_linea'],
+                 'ventas_perdidas', 'traslados_erp_linea', 'productos_sin_venta_avisados'],
         edge: ['aplicar-movimiento-inventario', 'analyze-history', 'leer-traslados-erp'],
         crons: ['refresh-inv-mv-2min', 'crear-conteos-ciclicos-mensual', 'vacuum-inventory-hourly',
                 'leer-traslados-erp'],

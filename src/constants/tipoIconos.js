@@ -2,7 +2,7 @@ import {
     Palmtree, FileText, RefreshCw, Coffee, DollarSign, FileCheck, Stethoscope,
     Ban, CreditCard, UserCog, Contact, CalendarClock, CalendarX2,
     Package, BarChart2, ClipboardList, Info, Bell,
-    PackagePlus, Trash2, ArrowLeftRight, Wallet, Target, Landmark,
+    PackagePlus, Trash2, ArrowLeftRight, Wallet, Target, Landmark, Archive,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -79,6 +79,9 @@ export const ICONO_POR_TIPO = {
     // El plazo legal de una solicitud de datos personales (Art. 20): avisa a los
     // 3 días hábiles de que venza, y otra vez si se venció.
     DATOS_PLAZO: FileText,
+    // Productos sin venta: el `Archive` de «Stock retenido» en Gestión de stock,
+    // que es adonde lleva el aviso.
+    PRODUCTOS_SIN_VENTA: Archive,
     SYSTEM:           Info,       // mensaje del portal, no de una persona
 };
 

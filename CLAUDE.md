@@ -1492,6 +1492,15 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   baja**. «Diferida» significa *no puede fallar por llegar temprano*, no *está
   bien escrita*. **Al mover un hook o un `useMemo`, comprobar que todo lo que
   lee ya esté declarado.**
+- **`npm run gate:nucleo` — la lógica no conoce al navegador.** Corre en el
+  pre-commit cuando el commit toca `src/{data,utils,store,hooks,context,constants}`.
+  Cuenta `window`/`document.`/`navigator.`/`localStorage`/`import.meta.env` y los
+  imports de pantallas o íconos en esa lógica, y **falla si algo sube**. Es la
+  preparación para una app nativa: la lógica tiene que poder correr fuera del
+  navegador para reutilizarse tal cual. El baseline es la deuda del 2026-09-24
+  (359 usos en 64 archivos) y **sólo baja**. Si hace falta el navegador, se
+  pide por el adaptador de la plataforma; si hace falta un ícono, la lógica
+  devuelve su NOMBRE. Plan y fases en `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
   crudos, elementos nativos del navegador), correr `npm run gate:design`.**
   Debe pasar en verde — las excepciones legítimas viven en

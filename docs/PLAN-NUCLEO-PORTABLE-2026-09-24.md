@@ -1,7 +1,22 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado: MEDICIÓN HECHA, nada tocado.** Todo lo de abajo sale de leer el
-repo el 2026-09-24; ningún archivo de `src/` cambió.
+**Estado:** medición hecha · **F0 hecha** (rama `sesion/nucleo`). Ningún
+archivo de `src/` cambió todavía.
+
+### Bitácora
+
+- **F0 — `npm run gate:nucleo`** (2026-09-24). Baseline **359 usos en 64
+  archivos** (`scripts/nucleo-baseline.json`): 331 de navegador, 11 de
+  `import.meta.env`, 17 de pantalla. Son más que los «55 archivos» de la
+  medición de abajo porque ésa no contaba los íconos (`lucide-react`,
+  `framer-motion`): 9 archivos más, todos reales. Verificado de tres formas:
+  (1) cruzado contra el tokenizador de `espree` en los 258 archivos, **0
+  diferencias**; (2) una regresión fabricada en `semana.js` —`window`,
+  `localStorage`, `import.meta.env` e import de un componente— falla en las
+  tres categorías; (3) la misma palabra dentro de un comentario o de un texto
+  NO cuenta. La primera versión se desfasaba en las plantillas anidadas de
+  `bitacoraPapel.js` y acusaba a un comentario; la segunda contaba `'window'`
+  dentro de una cadena. Las dos se corrigieron antes de fijar el baseline.
 
 ## Para qué
 
@@ -238,7 +253,7 @@ Cada fase se cierra y se commitea sola. Ninguna cambia lo que se ve.
 | fase | qué | tamaño | por qué en este orden |
 |---|---|---|---|
 | **F0** | **`gate:nucleo`**: falla si la lógica gana un uso de navegador nuevo. Baseline = los 55 de hoy, **sólo baja** | chico | sin esto, cada semana aparecen archivos nuevos que habrá que volver a limpiar |
-| **F1** | los **cinco adaptadores**; `supabaseClient` pasa a fábrica. Empezar por `AuthContext` y `systemSlice` (129 usos entre los dos) | mediano | es lo que más reduce la cuenta del gate |
+| **F1** | los **cinco adaptadores**, como módulos con variante por plataforma (`almacen.js` para la web y `almacen.native.js` para el teléfono: Metro elige solo por la extensión, así que los 96 archivos que importan `supabaseClient` no cambian); `supabaseClient` pasa a fábrica. Empezar por `AuthContext` y `systemSlice` (129 usos entre los dos) | mediano | es lo que más reduce la cuenta del gate |
 | **F2** | dependencias al revés (4 archivos) e íconos por nombre (13 archivos) | chico | desbloquea mover carpetas enteras después |
 | **U1** | **canónicos que faltan** (`utils/fecha.js`, dinero en `formatNumber.js`, un cargador de pdfmake), con pruebas unitarias, y reemplazar las copias de §E1 de a una familia por vez. Gate que prohíba volver a definir una copia local | mediano | es lo más visible de unificar, y todo va al núcleo |
 | **U2** | **`venta_valida` / `venta_fiscal` en la base** y migrar las ~46 funciones de §E2, midiendo cada total antes y después | mediano, en la base | es la regla más usada del portal y hoy tiene tres redacciones |

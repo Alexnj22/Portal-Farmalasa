@@ -1,0 +1,204 @@
+{
+  "total": 359,
+  "archivos": 64,
+  "porArchivo": {
+    "src/constants/moduleMap.js": {
+      "pantalla": 1
+    },
+    "src/constants/permissionModules.js": {
+      "pantalla": 1
+    },
+    "src/constants/tipoIconos.js": {
+      "pantalla": 1
+    },
+    "src/context/AuthContext.jsx": {
+      "pantalla": 1,
+      "navegador": 67,
+      "env": 2
+    },
+    "src/context/ThemeContext.jsx": {
+      "navegador": 7
+    },
+    "src/data/bitacoras.js": {
+      "env": 1
+    },
+    "src/data/capturaDeFoto.js": {
+      "navegador": 1
+    },
+    "src/data/capturaDesdeElTelefono.js": {
+      "navegador": 1
+    },
+    "src/data/constants.js": {
+      "pantalla": 1
+    },
+    "src/data/facturasCompra.js": {
+      "navegador": 3
+    },
+    "src/data/kiosco.js": {
+      "navegador": 1
+    },
+    "src/data/librosIva.js": {
+      "navegador": 1
+    },
+    "src/data/recorteSugerido.js": {
+      "navegador": 1
+    },
+    "src/hooks/useAnclaje.js": {
+      "navegador": 9
+    },
+    "src/hooks/useCapturaDeCarne.js": {
+      "navegador": 4
+    },
+    "src/hooks/useCoarsePointer.js": {
+      "navegador": 4
+    },
+    "src/hooks/useKioskDevice.js": {
+      "navegador": 3
+    },
+    "src/hooks/useMediaQuery.js": {
+      "navegador": 2
+    },
+    "src/hooks/useMontadoParaSalida.js": {
+      "pantalla": 1
+    },
+    "src/hooks/useMotionConfig.js": {
+      "pantalla": 1
+    },
+    "src/hooks/useNotificationsChannel.js": {
+      "navegador": 1
+    },
+    "src/hooks/usePaginaEnUrl.js": {
+      "pantalla": 2
+    },
+    "src/hooks/usePestanaEnUrl.js": {
+      "pantalla": 1
+    },
+    "src/hooks/usePushSubscription.js": {
+      "env": 1,
+      "navegador": 13
+    },
+    "src/hooks/useRecargarAlVolver.js": {
+      "navegador": 3
+    },
+    "src/hooks/useRefrescoEnVivo.js": {
+      "navegador": 3
+    },
+    "src/hooks/useResolverCorte.jsx": {
+      "pantalla": 2
+    },
+    "src/hooks/useSearchToggle.js": {
+      "navegador": 4
+    },
+    "src/hooks/useTimeClockEngine.js": {
+      "pantalla": 1,
+      "navegador": 19
+    },
+    "src/store/slices/auditSlice.js": {
+      "navegador": 4
+    },
+    "src/store/slices/branchSlice.js": {
+      "navegador": 2
+    },
+    "src/store/slices/employeeSlice.js": {
+      "navegador": 7
+    },
+    "src/store/slices/requestsSlice.js": {
+      "navegador": 7
+    },
+    "src/store/slices/systemSlice.js": {
+      "navegador": 53
+    },
+    "src/store/slices/vacationPlanSlice.js": {
+      "env": 1
+    },
+    "src/store/utils.js": {
+      "navegador": 1
+    },
+    "src/utils/attendanceQueue.js": {
+      "navegador": 2
+    },
+    "src/utils/browserNotif.js": {
+      "navegador": 3
+    },
+    "src/utils/cajaNegra.js": {
+      "navegador": 42
+    },
+    "src/utils/capaFlotante.js": {
+      "navegador": 1
+    },
+    "src/utils/carnePrint.js": {
+      "navegador": 2
+    },
+    "src/utils/componerDocumento.js": {
+      "navegador": 1
+    },
+    "src/utils/csvExport.js": {
+      "navegador": 1
+    },
+    "src/utils/detectarPapel.js": {
+      "navegador": 1
+    },
+    "src/utils/documentoDeBienvenida.js": {
+      "navegador": 3
+    },
+    "src/utils/documentosDelExpediente.js": {
+      "pantalla": 1
+    },
+    "src/utils/draftUtils.js": {
+      "navegador": 4
+    },
+    "src/utils/fotoParaLeer.js": {
+      "navegador": 1
+    },
+    "src/utils/helpers.js": {
+      "navegador": 4
+    },
+    "src/utils/kioskGrace.js": {
+      "navegador": 3
+    },
+    "src/utils/kioskSound.js": {
+      "navegador": 1
+    },
+    "src/utils/notificacionTexto.js": {
+      "pantalla": 1
+    },
+    "src/utils/perspectiva.js": {
+      "navegador": 1
+    },
+    "src/utils/pushEquipo.js": {
+      "navegador": 3,
+      "env": 2
+    },
+    "src/utils/routeOptimizer.js": {
+      "navegador": 9,
+      "env": 4
+    },
+    "src/utils/scheduleHelpers.js": {
+      "pantalla": 1
+    },
+    "src/utils/scrollEncadenado.js": {
+      "navegador": 3
+    },
+    "src/utils/storageFiles.js": {
+      "navegador": 6
+    },
+    "src/utils/temaPorDispositivo.js": {
+      "navegador": 1
+    },
+    "src/utils/ticketPrint.js": {
+      "navegador": 6
+    },
+    "src/utils/timeClock.audit.js": {
+      "pantalla": 1
+    },
+    "src/utils/tratamientoDeFoto.js": {
+      "navegador": 1
+    },
+    "src/utils/ventanaDeImpresion.js": {
+      "navegador": 4
+    },
+    "src/utils/versionNueva.js": {
+      "navegador": 7
+    }
+  }
+}

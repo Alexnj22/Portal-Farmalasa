@@ -168,6 +168,15 @@ if git diff --cached --name-only | grep -qE '^(src|supabase/functions)/'; then
   node scripts/hora-gate.mjs --hook || exit 1
 fi
 
+# nucleo-gate: la lógica (`data`, `utils`, `store`, `hooks`, `context`,
+# `constants`) no gana usos de `window`/`localStorage`/`import.meta.env` ni
+# importa pantallas o íconos. Es la preparación para una app nativa
+# (docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md): el baseline es la deuda del
+# 2026-09-24 y SÓLO BAJA. Local y en milisegundos, así que va en el hook.
+if git diff --cached --name-only | grep -qE '^src/(data|utils|store|hooks|context|constants)/|^scripts/nucleo-'; then
+  node scripts/nucleo-gate.mjs --hook || exit 1
+fi
+
 # permissions-gate: solo si el commit toca el registro de permisos o código que
 # los consulta. Cruza lo declarado en Permisos contra lo que el código realmente
 # gatea (por sus cinco caminos: literal, plantilla, variable, indirecta y guard

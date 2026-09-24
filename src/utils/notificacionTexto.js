@@ -74,10 +74,20 @@ export const ACTION_LABEL = {
  * quedado colgado, así que su etiqueta no puede ser fija: es el verbo que
  * promete lo que pasa al tocar la fila, y prometer «los cortes» sobre uno solo
  * es la misma clase de mentira chica que un botón que no hace lo que dice. */
-export const etiquetaDeAccion = (n) =>
-    n.type === 'CORTE_PENDIENTE'
-        ? (n.metadata?.cuantas === 1 ? 'Resolver el corte' : 'Resolver los cortes')
-        : ACTION_LABEL[n.type];
+export const etiquetaDeAccion = (n) => {
+    if (n.type === 'CORTE_PENDIENTE') {
+        return n.metadata?.cuantas === 1 ? 'Resolver el corte' : 'Resolver los cortes';
+    }
+    // Un envío no es una solicitud que se aprueba: se revisa la caja y se
+    // acepta o devuelve cada producto (usuario, 24-sep).
+    if (n.type === 'REQUEST_PENDING' && n.metadata?.request_type === 'INVENTORY_TRANSFER_PUSH') {
+        return 'Revisar envío';
+    }
+    if (n.type === 'REQUEST_PENDING' && n.metadata?.request_type === 'INVENTORY_TRANSFER_REQUEST') {
+        return 'Revisar traslado';
+    }
+    return ACTION_LABEL[n.type];
+};
 
 /* En qué terminó una solicitud que ya se decidió: una decidida no se «revisa»,
    y el verbo tiene que decir cómo quedó en vez de invitar a algo que ya pasó. */

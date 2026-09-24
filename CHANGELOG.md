@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1057.1 — Revisar envío / traslado; push corto de aperturas, respaldo y depósito
+
+- El botón de la tarjeta dice **«Revisar envío»** en un envío y **«Revisar
+  traslado»** en un traslado, en vez de «Revisar solicitud».
+- **Push corto** también para aperturas («Abrieron entre las 6:36 a. m. y las
+  7:06 a. m.» o «No abrió: Salud 3»), traslados por respaldo («9 traslados, 13
+  unidades · Salud 1, Salud 3») y depósito («$23,805.00 al banco · Banco
+  Davivienda · lo lleva Celina Escobar»).
+- `texto_de_push` ya no escribe «Personal» cuando falta el nombre:
+  `nombre_corto_de_empleado` devuelve eso con los tres argumentos vacíos. Sin
+  nombre, esa parte no va.
+
+Migración `20260924221114`. Se borraron las 46 notificaciones de muestra de
+este día (`metadata.prueba`).
+
 ## v2.1057.0 — Push al teléfono con una línea corta
 
 El push al teléfono dice lo esencial en una línea (usuario, 24-sep: «me

@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1052.0 — Productos sin venta: reloj de entrada a la sala, destino y envío armado
+
+Pedido del usuario: saber qué producto lleva seis meses sin venderse en una sala
+y hay existencia, y mandarlo a donde sí se vende —o a Bodega si no se vende en
+ninguna—.
+
+**El reloj no es la última venta.** Los seis meses se cuentan desde la fecha más
+reciente entre la última venta en la sala, la última vez que el producto ENTRÓ
+a la sala (traslado, pedido, envío o compra directa) y el último reingreso a la
+empresa (primera compra, o una compra tras ≥120 días sin comprarlo). Sin eso, un
+producto que Bodega volvió a comprar y mandó el mes pasado se leía como «medio
+año parado». Medido: la lista de las seis salas bajó de 867 (regla vieja) a 435.
+
+- **`traslados_erp_linea`** — cada traslado del sistema de origen, renglón por
+  renglón: fecha, sala de destino y producto. Carga inicial del 24-mar a hoy
+  (10,214 traslados, 60,437 renglones, 100% ligados a su producto) y después
+  **`leer-traslados-erp`** cada hora (cron `leer-traslados-erp`), que sigue los
+  números correlativos desde el último anotado. El destino se liga por dirección
+  EXACTA: la de Salud 3 está contenida en la de Bodega.
+- **`productos_parados_de_sala(erp)`** — el juez, uno solo para la pestaña y el
+  aviso. Destino: la sala que más vendió en seis meses si vendió ≥3; si no,
+  Bodega. El vencimiento NO decide (la fecha hoy no es confiable). Excluye lo que
+  ya está en un envío pendiente. 687 ms / 33k bloques en la sala más grande (con
+  el piso de ids de factura; sin él, 8.5 s / 535k).
+- **Gestión de stock → Stock retenido** usa ese juez: columna «Sin venta desde»
+  con el porqué de la fecha, filtros «A otra sala» / «A Bodega» / «Con Min/Max»,
+  y un botón **Armar envío** por destino que abre «Enviar a otra sala» ya
+  cargado (hasta 20 productos, todo lo que hay, en la presentación más chica) y
+  EDITABLE antes de transferir.
+- Al transferir, los productos que tenían MIN·MAX en la sala que los manda
+  generan **una solicitud de MIN·MAX a 0** —no un cambio directo: lo aprueba
+  quien aprueba hoy—.
+
+Pendiente, a propósito: el aviso semanal al jefe de sala. Se enciende después de
+revisar esta lista con el usuario.
+
 ## v2.1051.1 — Resumen de promociones con todas las salas y barras
 
 Resumen diario de promociones, segunda vuelta (usuario, 24-sep: «mejora

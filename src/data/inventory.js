@@ -220,3 +220,31 @@ export async function fetchFaltantesConStockEnOtraSala(erpSucursalId, limite = 4
     });
     return { filas: data ?? [], error };
 }
+
+/**
+ * La existencia de ESTOS productos en UNA sala, lote por lote y sin el área de
+ * vencidos. Es lo que necesita un envío armado de antemano —el aviso de
+ * productos sin venta— para repartir cada renglón en sus lotes igual que si la
+ * sala lo hubiera buscado a mano.
+ *
+ * `fetchAllRows` y no un `.in()` a secas: `erp_product_id` se repite en
+ * `inventory` (un producto tiene varios lotes), así que acotar la entrada no
+ * acota la respuesta. Ver la regla de las 1000 filas en CLAUDE.md.
+ */
+export async function fetchExistenciasDeProductos(erpSucursalId, productIds) {
+    const ids = [...new Set((productIds ?? []).map(Number).filter(Boolean))];
+    if (!ids.length) return [];
+    const filas = await fetchAllRows(() => supabase
+        .from('inventory')
+        .select('id, erp_sucursal_id, erp_product_id, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad, is_vencidos')
+        .eq('erp_sucursal_id', erpSucursalId)
+        .eq('is_vencidos', false)
+        .gt('cantidad', 0)
+        .in('erp_product_id', ids)
+        .order('id'));
+    // `fetchAllRows` devuelve null si la primera página falla. Acá eso NO puede
+    // volverse `[]`: se leería como «no hay existencia» y el envío saldría
+    // vacío sin decir por qué.
+    if (filas === null) throw new Error('No se pudo leer la existencia de la sala.');
+    return filas;
+}

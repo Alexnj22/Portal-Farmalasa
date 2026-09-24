@@ -361,6 +361,13 @@ const CRONS = [
           + 'un traslado a mano en el sistema— deja el producto YA en la sala, no hay nada trabado.',
   },
   {
+    job: 'leer-traslados-erp', slug: 'leer-traslados-erp', cadencia: '20 12-23,0-3 * * *',
+    corridasDia: 16, sistema: 50,
+    motivo: 'Un ingreso, dos cambios de sala y dos páginas para la tabla de direcciones, más una '
+          + 'lectura por traslado nuevo (~350 al día, ~22 por hora) y 25 de cierre sobre números que '
+          + 'todavía no existen. Cada hora y no más seguido: alimenta un reloj de seis meses.',
+  },
+  {
     job: 'continuar-traslados-pedido', slug: 'trasladar-pedido-erp', cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
     motivo: 'Cada minuto, pero sin corrida en curso contesta NADA_QUE_CONTINUAR mirando SOLO la '

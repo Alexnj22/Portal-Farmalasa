@@ -11,7 +11,7 @@ import { EmptyState } from '../../components/common/StateViews';
 import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
-import { buscarInventarioGlobalV2 } from '../../data/inventory';
+import { buscarInventarioGlobalV2, fetchExistenciasDeProductos } from '../../data/inventory';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
 import { crearEnvio, despacharEnvio, envioNecesitaFoto, ERP_BODEGA, MAX_FOTOS_ENVIO, MOTIVOS_ENVIO, motivosEnvioPorDireccion, subirEvidenciaEnvio, TOPE_RENGLONES_ENVIO } from '../../data/envios';
 import { lotesEnUnidades, repartirPedido, sumaUnidades } from '../../utils/unidadesInventario';
@@ -87,13 +87,25 @@ const fmtVence = (d) => d
     ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short', year: '2-digit' })
     : 'sin fecha';
 
-export default function EnviarProductoModal({ onClose, onListo }) {
+/**
+ * `precarga` —opcional— llega del aviso de productos sin venta: la sala de
+ * origen, el destino, el motivo y los productos. El envío se abre ARMADO pero
+ * no sale solo: queda en «En el envío» para que la sala cambie cantidades,
+ * quite lo que no quiera mandar, o cambie el destino y el motivo, y recién
+ * entonces apriete «Transferir».
+ */
+export default function EnviarProductoModal({ onClose, onListo, precarga = null }) {
     const { user, getScope } = useAuth();
     const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
     const miErp    = MI_ERP_POR_BRANCH[miBranch] ?? null;
-    const claveBorrador = `envio_${miBranch ?? 'sin_sala'}`;
+    /* Un envío sugerido guarda su borrador aparte: si compartiera la clave con
+     * el envío a mano, abrir la sugerencia pisaría lo que la sala venía
+     * armando —o al revés, el borrador viejo taparía la sugerencia—. */
+    const claveBorrador = precarga
+        ? `envio_sugerido_${miBranch ?? 'sin_sala'}`
+        : `envio_${miBranch ?? 'sin_sala'}`;
 
     /* ── Quién puede mandar desde una sala que no es la suya ──────────────
      *
@@ -145,6 +157,8 @@ export default function EnviarProductoModal({ onClose, onListo }) {
     const [subiendo, setSubiendo] = useState(false);
     const [error, setError] = useState('');
     const [resultado, setResultado] = useState(null);
+    const [precargando, setPrecargando] = useState(Boolean(precarga));
+    const [sinArmar, setSinArmar] = useState([]);
 
     /* ── El borrador ──────────────────────────────────────────────────────
      * La sesión de sala se cierra sola a los cinco minutos y esto es un
@@ -153,6 +167,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * rastro. Se guarda lo que se ESCRIBIÓ —renglones, sala, motivo—, nunca el
      * resultado: un envío que ya salió no se recompone. */
     useEffect(() => {
+        if (precarga) return;   // la sugerencia manda; ver el efecto de abajo
         const d = loadDraft(claveBorrador);
         if (!d) return;
         if (Array.isArray(d.renglones) && d.renglones.length) {
@@ -165,11 +180,77 @@ export default function EnviarProductoModal({ onClose, onListo }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al abrir
     }, []);
 
+    /* ── El envío sugerido ─────────────────────────────────────────────────
+     * Cada producto sale en su presentación más chica y con TODO lo que hay:
+     * si no se vende en esta sala, no hay motivo para dejar una parte. Los
+     * lotes se reparten con el mismo `repartirPedido` que usa la sala a mano.
+     * Lo que no se puede armar —ya no hay existencia, o el producto no tiene
+     * presentación— se dice arriba de la lista, con su nombre: un renglón que
+     * desaparece sin aviso se lee como «ya lo mandé». */
     useEffect(() => {
-        if (resultado) return;
+        if (!precarga) return;
+        let cancelado = false;
+        const origenErp = Number(precarga.origenErp);
+        const productos = (precarga.productos ?? []).slice(0, TOPE_RENGLONES_ENVIO);
+        const ids = productos.map(p => Number(p.erp_product_id));
+        Promise.all([fetchExistenciasDeProductos(origenErp, ids), fetchPresentaciones(ids)])
+            .then(([filas, pres]) => {
+                if (cancelado) return;
+                if (pres.error) throw pres.error;
+                const porProducto = new Map();
+                for (const f of filas) {
+                    const id = Number(f.erp_product_id);
+                    if (!porProducto.has(id)) porProducto.set(id, []);
+                    porProducto.get(id).push(f);
+                }
+                const listos = [];
+                const fuera = [];
+                for (const p of productos) {
+                    const id = Number(p.erp_product_id);
+                    const fs = porProducto.get(id) ?? [];
+                    const total = sumaUnidades(fs);
+                    const lista = pres.porProducto.get(id) ?? [];
+                    const pr = lista[0];   // la más chica: ver `fetchPresentaciones`
+                    const cant = pr ? Math.floor(total / Number(pr.factor)) : 0;
+                    if (!total || !pr || cant <= 0) {
+                        fuera.push({ descripcion: p.descripcion, motivo: !total ? 'ya no hay existencia' : 'no tiene presentación' });
+                        continue;
+                    }
+                    const unidades = cant * Number(pr.factor);
+                    const rep = repartirPedido(lotesEnUnidades(fs), unidades);
+                    listos.push({
+                        erp_product_id: id,
+                        descripcion: fs[0]?.descripcion ?? p.descripcion,
+                        origen_erp: origenErp,
+                        origen_vencidos: false,
+                        origen_clave: claveOrigen(origenErp, false),
+                        origen_nombre: nombreEstante(origenErp, false),
+                        presentacion_tipo: pr.tipo,
+                        factor: Number(pr.factor),
+                        cantidad: cant,
+                        unidades,
+                        lotes: rep.reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma })),
+                        existencia: total,
+                        presentaciones: lista,
+                    });
+                }
+                setRenglones(listos);
+                setSinArmar(fuera);
+                setDestino(String(precarga.destino ?? ''));
+                setMotivo(precarga.motivo ?? '');
+                setPestana('lista');
+            })
+            .catch(e => { if (!cancelado) setError(e?.message ?? 'No se pudo armar el envío sugerido.'); })
+            .finally(() => { if (!cancelado) setPrecargando(false); });
+        return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al abrir
+    }, []);
+
+    useEffect(() => {
+        if (resultado || precargando) return;
         if (!renglones.length && !destino && !motivo && !nota) return;
         saveDraft(claveBorrador, { renglones, destino, motivo, nota });
-    }, [renglones, destino, motivo, nota, claveBorrador, resultado]);
+    }, [renglones, destino, motivo, nota, claveBorrador, resultado, precargando]);
 
     /* ── El buscador ──────────────────────────────────────────────────────
      * Sale de la misma búsqueda que la consulta de inventario y se recorta a MI
@@ -755,8 +836,17 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                 fallos,
                 aviso: avisos.length ? avisos.join(' · ') : null,
             });
+            /* Qué salió de verdad, por producto. El despacho contesta por nombre
+             * (`hechas[].producto`), así que se cruza con los renglones por la
+             * descripción. Quien abrió un envío sugerido lo necesita para
+             * pedir que esos productos salgan del MIN·MAX de la sala. */
+            const salieron = new Set(salidas.flatMap(x => x?.hechas ?? [])
+                .filter(h => h?.id_traslado)
+                .map(h => String(h.producto ?? '').replace(/\s+/g, ' ').trim().toUpperCase()));
+            const enviados = renglones.filter(r =>
+                salieron.has(String(r.descripcion ?? '').replace(/\s+/g, ' ').trim().toUpperCase()));
             setRenglones([]);
-            onListo?.();
+            onListo?.({ enviados, destino: erpDestino, motivo });
         } catch (e) {
             const msg = String(e?.message ?? '');
             setError(
@@ -1049,7 +1139,20 @@ export default function EnviarProductoModal({ onClose, onListo }) {
 
                 {pestana === 'lista' && (
                     <div className="flex flex-col gap-3">
-                        {renglones.length === 0 ? (
+                        {precargando && (
+                            <p className="flex items-center gap-2 text-label text-content-3 font-medium py-8 justify-center">
+                                <Loader2 size={14} className="animate-spin" /> Armando el envío…
+                            </p>
+                        )}
+                        {sinArmar.length > 0 && (
+                            <div className="rounded-xl bg-warning/10 border border-warning/30 px-3 py-2 text-label text-warning-text leading-snug">
+                                <span className="font-semibold">
+                                    {sinArmar.length === 1 ? 'Un producto no entró' : `${sinArmar.length} productos no entraron`}:
+                                </span>{' '}
+                                {sinArmar.map(x => `${x.descripcion} (${x.motivo})`).join(' · ')}
+                            </div>
+                        )}
+                        {precargando ? null : renglones.length === 0 ? (
                             <p className="text-label text-content-3 font-medium py-8 text-center leading-snug">
                                 Todavía no agregaste nada.<br />
                                 <span className="text-micro">

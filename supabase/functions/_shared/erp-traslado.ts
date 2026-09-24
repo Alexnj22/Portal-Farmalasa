@@ -998,6 +998,41 @@ export function textoDeTraslado(html: string): string {
   return norm(String(html ?? "").replace(/<[^>]+>/g, " "));
 }
 
+export type RenglonDeTraslado = {
+  descripcion: string;
+  presentacion: string;
+  unidad: string;
+  cantidad: string;
+};
+
+/**
+ * Los renglones de esa misma pantalla, uno por uno, y su destino.
+ *
+ * Lo usa `leer-traslados-erp` para saber CUÁNDO entró cada producto a cada
+ * sala. La página no trae el id del producto —sólo descripción, presentación,
+ * unidad y cantidad— así que la liga con el catálogo se hace por nombre en la
+ * base (`registrar_traslados_erp`).
+ *
+ * Un número de traslado que no existe devuelve la misma página con la tabla
+ * vacía: `renglones` sale `[]`, que es lo que el recorrido lee como «acá se
+ * terminan los traslados». Dos renglones idénticos son dos renglones (el 29932
+ * lleva el mismo DOLO APRANAX dos veces): se conservan los dos.
+ */
+export function renglonesDeTraslado(html: string): { renglones: RenglonDeTraslado[]; destino: string | null } {
+  const limpio = (s: string) => s
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ").trim();
+  const h = String(html ?? "");
+  const renglones = [...h.matchAll(
+    /<tr>\s*<td>([^<]*)<\/td>\s*<td>([^<]*)<\/td>\s*<td[^>]*>([^<]*)<\/td>\s*<td[^>]*>([^<]*)<\/td>\s*<\/tr>/g,
+  )].map((m) => ({
+    descripcion: limpio(m[1]), presentacion: limpio(m[2]), unidad: limpio(m[3]), cantidad: limpio(m[4]),
+  })).filter((r) => r.descripcion);
+  const destino = h.match(/<strong>\s*Destino:\s*<\/strong>([^<]*)</)?.[1];
+  return { renglones, destino: destino ? norm(limpio(destino)) : null };
+}
+
 /**
  * Después de un «no» del sistema: ¿salió igual?
  *

@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import CarrilCards from '../../components/common/CarrilCards';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { supabase } from '../../supabaseClient';
 import { fetchMinMaxIgnored, upsertMinMaxIgnored, deleteMinMaxIgnored } from '../../data/stockParams';
+import { insertMinMaxChangeRequest } from '../../data/minmaxRequests';
+import { useAuth } from '../../context/AuthContext';
 import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
     ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
     TrendingUp, CheckCircle2, CircleDashed, PlusCircle, Minus, ShoppingBag,
-    EyeOff, Eye, Calendar, Download,
+    EyeOff, Eye, Calendar, Download, Send,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -17,7 +19,6 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { smartFilter } from '../../utils/searchUtils';
-import { useNowTick } from '../../hooks/useNowTick';
 import { formatMoney, formatMoneyCorto } from '../../utils/formatNumber';
 import { exportCsv } from '../../utils/csvExport';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -29,6 +30,11 @@ const ERP_NAMES = {
     4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
+const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
+/** Lo que admite un envío (`TOPE_RENGLONES_ENVIO`): lo que sobra va en el siguiente. */
+const POR_ENVIO = 20;
+
+const EnviarProductoModal = lazy(() => import('../dashboard/EnviarProductoModal'));
 
 // Era la paleta SOFT de `Badge` copiada clase por clase. Ahora es solo el
 // NOMBRE de la variante y el canónico pone el color: una sucursal nueva se
@@ -53,9 +59,12 @@ const MODES = [
     {
         key:    'stock_ret',
         label:  'Stock retenido',
-        sub:    'stock físico sin venta 6m',
+        sub:    'existencia sin venta 6m',
         Icon:   Archive,
-        rpc:    'get_stagnant_inventory',
+        // El juez del aviso semanal: el mismo, para que la lista y el aviso no
+        // puedan contestar distinto. Devuelve `json` directo (sin `_jsonb`).
+        rpc:    'productos_parados_de_sala',
+        directo: true,
         tono: 'brand',
         numColor:   'text-content-2',
         iconColor:  'text-content-3',
@@ -66,30 +75,60 @@ const MODES = [
 
 const fmtMoney = (n) => formatMoneyCorto(n ?? 0);
 
+const ERP_BODEGA = 6;
+
+/**
+ * Adónde mandar lo que está parado. La decisión la toma la base
+ * (`productos_parados_de_sala`) y acá sólo se dice: la sala que más vendió en
+ * seis meses si vendió al menos 3, y si ninguna llega, Bodega.
+ *
+ * El vencimiento NO entra: la fecha hoy no es confiable (usuario, 2026-09-24),
+ * y decidir con ella mandaría a Bodega lo que se vende en otra sala.
+ */
 function getSuggestion(row) {
-    const stock  = Number(row.current_stock);
-    if (!stock) {
-        if (row.in_minmax)
-            return { label: 'Sin existencias', detail: 'Tiene Min/Max asignado pero sin stock físico — reabastecer', icon: AlertCircle, variante: 'chart-3' };
-        return null;
+    if (Number(row.destino) === ERP_BODEGA) {
+        return {
+            label: '→ Bodega',
+            detail: (row.sold_in || []).length
+                ? 'Ninguna sala vendió 3 o más en 6 meses'
+                : 'No se vendió en ninguna sala en 6 meses',
+            icon: Archive, variante: 'neutral',
+        };
     }
-    const soldIn = row.sold_in || [];
-    let daysToExpiry = null;
-    if (row.fecha_vencimiento_min)
-        daysToExpiry = Math.floor((new Date(row.fecha_vencimiento_min) - new Date()) / 86_400_000);
-    if (daysToExpiry !== null && daysToExpiry < 0)
-        return { label: `Vencido hace ${Math.abs(daysToExpiry)}d`, detail: 'Producto vencido — dar de baja o liquidar', icon: AlertCircle, variante: 'danger' };
-    if (daysToExpiry !== null && daysToExpiry <= 30)
-        return { label: `Vence en ${daysToExpiry}d`, detail: 'No transferir — gestionar baja o liquidación', icon: AlertCircle, variante: 'danger' };
-    const urgentExpiry = daysToExpiry !== null && daysToExpiry <= 90;
-    if (soldIn.length === 0)
-        return { label: 'Sin demanda', detail: urgentExpiry ? 'Liquidar antes de vencer' : 'Enviar a Bodega o dar de baja', icon: Archive, variante: urgentExpiry ? 'warning' : 'neutral' };
-    const best = soldIn[0], bestUnits = Number(best.units), bestName = ERP_NAMES[best.esid] || `Suc.${best.esid}`;
-    if (bestUnits < 5)
-        return { label: 'Baja demanda', detail: `Máx. ${bestUnits} und/6m en ${bestName} — enviar a Bodega`, icon: Archive, variante: urgentExpiry ? 'warning' : 'neutral' };
-    if (bestUnits < 20)
-        return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · traslado posible${urgentExpiry ? ' (urgente)' : ''}`, icon: Truck, variante: urgentExpiry ? 'warning' : 'chart-1' };
-    return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, variante: urgentExpiry ? 'warning' : 'success' };
+    const nombre = ERP_NAMES[row.destino] || `Suc.${row.destino}`;
+    const uds = Number(row.destino_unidades) || 0;
+    return {
+        label: `→ ${nombre}`,
+        detail: `${uds} ${uds === 1 ? 'unidad vendida' : 'unidades vendidas'} allá en 6 meses`,
+        icon: Truck, variante: 'chart-1',
+    };
+}
+
+/** Lo que devuelve la base, con los nombres que la tabla ya usaba. */
+const adaptarParado = (r) => ({
+    ...r,
+    product_name:  r.producto,
+    current_stock: r.existencia,
+    cost_value:    r.costo,
+    in_minmax:     r.en_minmax,
+    sold_in:       (r.vendido_en || []).map(v => ({ esid: v.esid, units: v.unidades })),
+});
+
+/**
+ * Desde cuándo corren los seis meses, y por qué esa fecha. No es siempre la
+ * última venta: si el producto entró después a la sala —traslado, pedido,
+ * envío, compra— o la empresa lo volvió a comprar tras meses sin tenerlo, el
+ * reloj arranca ahí. Decirlo evita la pregunta «¿cómo que parado, si llegó en
+ * abril?».
+ */
+function porQueDesde(row) {
+    if (!row.desde) return 'sin venta ni entrada registrada';
+    if (row.desde === row.ultima_venta) return 'última venta';
+    if (row.desde === row.ultima_entrada) {
+        return { traslado: 'llegó por traslado', pedido: 'llegó en pedido', envio: 'llegó en un envío', compra: 'se compró' }[row.entrada_via] || 'llegó';
+    }
+    if (row.desde === row.reingreso) return 'reingreso a la empresa';
+    return '';
 }
 
 // units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
@@ -158,25 +197,17 @@ function getSinMinMaxSugg(row) {
 // alimentaba era el 32% del JSON de Bodega (611 de 1,899 kB), así que se fue
 // también del RPC. Si algún día se quiere el desglose, vuelve con su columna.
 function UltimaVentaCell({ row }) {
-    const now = useNowTick();
-    const fecha = row.ultima_venta;
-
+    const fecha = row.desde;
     if (!fecha) {
-        return (
-            <div>
-                <span className="text-caption text-content-3 italic">Nunca vendido</span>
-            </div>
-        );
+        return <span className="text-caption text-content-3 italic">Sin venta ni entrada registrada</span>;
     }
-
-    const days  = Math.floor((now - new Date(fecha)) / 86_400_000);
-    const color = days > 365 ? 'text-danger' : days > 180 ? 'text-chart-4-text' : 'text-content-2';
-    const label = new Date(fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
-
+    const dias  = Number(row.dias) || 0;
+    const color = dias > 365 ? 'text-danger' : 'text-chart-4-text';
+    const label = new Date(`${fecha}T12:00:00`).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
     return (
         <div>
             <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
-            <span className="block text-micro text-content-3">hace {days}d</span>
+            <span className="block text-micro text-content-3">{porQueDesde(row)} · hace {dias}d</span>
         </div>
     );
 }
@@ -261,24 +292,24 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
 
 function StockRetFilters({ data, filterMode, onFilter, loading }) {
     const counts = useMemo(() => ({
-        con_minmax:      data.filter(r => r.in_minmax).length,
-        sin_stock_minmax: data.filter(r => r.in_minmax && Number(r.current_stock) === 0).length,
-        sin_minmax:      data.filter(r => !r.in_minmax).length,
+        a_sala:     data.filter(r => Number(r.destino) !== ERP_BODEGA).length,
+        a_bodega:   data.filter(r => Number(r.destino) === ERP_BODEGA).length,
+        con_minmax: data.filter(r => r.in_minmax).length,
     }), [data]);
 
     const CARDS = [
+        { id: 'a_sala', Icon: Truck, label: 'A otra sala',
+          tono: 'brand',
+          iconBgActive: 'bg-chart-1/10', iconColor: 'text-chart-1-text',
+          numColor: n => n > 0 ? 'text-chart-1-text' : 'text-content-3' },
+        { id: 'a_bodega', Icon: Archive, label: 'A Bodega',
+          tono: 'brand',
+          iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-2',
+          numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
         { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max',
           tono: 'success',
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
-        { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max',
-          tono: 'brand',
-          iconBgActive: 'bg-chart-3/10', iconColor: 'text-chart-3-text',
-          numColor: n => n > 0 ? 'text-chart-3-text' : 'text-content-3' },
-        { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max',
-          tono: 'danger',
-          iconBgActive: 'bg-danger/10', iconColor: 'text-danger',
-          numColor: n => n > 0 ? 'text-danger' : 'text-content-3' },
     ];
 
     return (
@@ -307,7 +338,10 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function TabGestionStock({ searchTerm = '' }) {
+    const { user, getScope } = useAuth();
     const [mode,        setMode]        = useState('stock_ret');
+    const [envio,       setEnvio]       = useState(null);   // { destino, productos }
+    const [avisoEnvio,  setAvisoEnvio]  = useState(null);
     const [selectedErp, setSelectedErp] = useState(5); // null = todas las sucursales
     const [filterMode,  setFilterMode]  = useState('todos');
 
@@ -365,15 +399,15 @@ export default function TabGestionStock({ searchTerm = '' }) {
         if (dataRefs.current[m].length === 0) setLoadingMap(prev => ({ ...prev, [m]: true }));
         else setRefreshingMap(prev => ({ ...prev, [m]: true }));
 
-        const rpcName = MODES.find(mx => mx.key === m).rpc;
+        const mx = MODES.find(x => x.key === m);
         try {
             // Una sola llamada JSONB (Patrón C): el paginado .range() anterior
             // re-ejecutaba el RPC completo por cada página, en serie.
             const { data: rows, error: e } = await supabase
-                .rpc(`${rpcName}_jsonb`, { p_erp_sucursal_id: erpId });
+                .rpc(mx.directo ? mx.rpc : `${mx.rpc}_jsonb`, { p_erp_sucursal_id: erpId });
             if (e) throw e;
             if (rid !== loadRefs.current[m]) return;
-            const all = rows || [];
+            const all = m === 'stock_ret' ? (rows || []).map(adaptarParado) : (rows || []);
             dataRefs.current[m] = all;
             setter([...all]);
         } catch (e) {
@@ -443,9 +477,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 }
             }
         } else if (mode === 'stock_ret') {
-            if      (filterMode === 'con_minmax')       rows = rows.filter(r => r.in_minmax);
-            else if (filterMode === 'sin_stock_minmax') rows = rows.filter(r => r.in_minmax && Number(r.current_stock) === 0);
-            else if (filterMode === 'sin_minmax')       rows = rows.filter(r => !r.in_minmax);
+            if      (filterMode === 'con_minmax') rows = rows.filter(r => r.in_minmax);
+            else if (filterMode === 'a_sala')     rows = rows.filter(r => Number(r.destino) !== ERP_BODEGA);
+            else if (filterMode === 'a_bodega')   rows = rows.filter(r => Number(r.destino) === ERP_BODEGA);
         }
 
         if (searchTerm) {
@@ -459,8 +493,8 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 return sortDir === 'asc' ? cmp : -cmp;
             }
             if (sortField === 'ultima_venta') {
-                const av = a.ultima_venta || '0000-00-00';
-                const bv = b.ultima_venta || '0000-00-00';
+                const av = (mode === 'stock_ret' ? a.desde : a.ultima_venta) || '0000-00-00';
+                const bv = (mode === 'stock_ret' ? b.desde : b.ultima_venta) || '0000-00-00';
                 const cmp = av.localeCompare(bv);
                 return sortDir === 'asc' ? cmp : -cmp;
             }
@@ -522,9 +556,8 @@ export default function TabGestionStock({ searchTerm = '' }) {
             archivo = `sin_minmax_${slug}_${hoy}.csv`;
         } else {
             headers = ['Sucursal', 'Producto', 'Laboratorio', 'Stock aquí', 'Costo retenido',
-                       'Min/Max', 'Min', 'Max', 'Vencimiento', 'Sugerencia', 'Detalle',
-                       'Última venta', 'Días sin venta', 'Vendido en (6m)'];
-            const ahora = Date.now();
+                       'Min/Max', 'Min', 'Max', 'Enviar a', 'Detalle',
+                       'Cuenta desde', 'Por qué esa fecha', 'Días', 'Vendido en (6m)'];
             rows = filtered.map(r => {
                 const sug    = getSuggestion(r);
                 const soldIn = r.sold_in || [];
@@ -537,11 +570,11 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     r.in_minmax ? 'Con Min/Max' : 'Sin Min/Max',
                     r.in_minmax && r.min_qty != null ? Number(r.min_qty) : '',
                     r.in_minmax && r.max_qty != null ? Number(r.max_qty) : '',
-                    dia(r.fecha_vencimiento_min),
-                    sug?.label  || '',
+                    ERP_NAMES[r.destino] || '',
                     sug?.detail || '',
-                    dia(r.ultima_venta),
-                    r.ultima_venta ? Math.floor((ahora - new Date(r.ultima_venta)) / 86_400_000) : '',
+                    dia(r.desde ? `${r.desde}T12:00:00` : null),
+                    porQueDesde(r),
+                    r.dias ?? '',
                     soldIn.map(s => `${ERP_NAMES[s.esid] || `Suc.${s.esid}`}: ${Number(s.units).toLocaleString()}`).join(', '),
                 ];
             });
@@ -554,6 +587,73 @@ export default function TabGestionStock({ searchTerm = '' }) {
             busqueda: searchTerm || null, count: rows.length,
         });
     }, [filtered, mode, selectedErp, ignoredSet, filterMode, searchTerm]);
+
+    /* ── Armar el envío ────────────────────────────────────────────────────
+     * Un botón por destino, con lo que se ve en pantalla (filtro y búsqueda ya
+     * aplicados) y lo más caro primero. Un envío admite 20 productos: si hay
+     * más, el botón arma los primeros 20 y después de mandarlos quedan los
+     * siguientes — la lista se recarga y ya no incluye lo que salió. */
+    const miErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;
+    const puedeArmar = mode === 'stock_ret' && selectedErp !== ERP_BODEGA
+        && (getScope('traslados') === 'ALL' || Number(miErp) === Number(selectedErp));
+    const porDestino = useMemo(() => {
+        if (mode !== 'stock_ret') return [];
+        const m = new Map();
+        for (const r of filtered) {
+            const d = Number(r.destino);
+            if (!m.has(d)) m.set(d, []);
+            m.get(d).push(r);
+        }
+        return [...m.entries()]
+            .map(([destino, filas]) => ({
+                destino,
+                filas: [...filas].sort((a, b) => Number(b.cost_value || 0) - Number(a.cost_value || 0)),
+            }))
+            .sort((a, b) => b.filas.length - a.filas.length);
+    }, [filtered, mode]);
+
+    /* Lo que salió deja de estar en el MIN·MAX de esta sala — pero por
+     * SOLICITUD, no directo: un cambio de MIN·MAX lo aprueba otra persona, y
+     * eso no cambia porque lo haya disparado un envío (usuario, 2026-09-24).
+     * Sólo para los que tenían MIN·MAX: pedir 0/0 donde ya no hay nada es ruido
+     * en la bandeja de quien aprueba. */
+    const alEnviar = useCallback(async ({ enviados = [], destino } = {}) => {
+        const porId = new Map(stockRet.map(r => [Number(r.erp_product_id), r]));
+        const conMinMax = enviados
+            .map(e => porId.get(Number(e.erp_product_id)))
+            .filter(r => r?.in_minmax);
+        const sala = ERP_NAMES[destino] || 'otra sala';
+        const fallidas = [];
+        for (const r of conMinMax) {
+            const { error } = await insertMinMaxChangeRequest({
+                erp_product_id:       Number(r.erp_product_id),
+                erp_sucursal_id:      Number(selectedErp),
+                product_name:         r.product_name,
+                current_min:          r.min_qty ?? null,
+                current_max:          r.max_qty ?? null,
+                current_sales_6m:     0,
+                current_ultima_venta: r.ultima_venta ?? null,
+                current_existencia:   Number(r.current_stock) || 0,
+                requested_min:        0,
+                requested_max:        0,
+                reason: `Se envió a ${sala} por baja rotación: sin venta en esta sala desde `
+                      + `${r.desde ?? 'hace más de 6 meses'} (${porQueDesde(r)}).`,
+                requested_by:      user?.email ?? '',
+                requested_by_id:   user?.id ?? null,
+                requested_by_name: user?.name ?? null,
+            });
+            if (error) fallidas.push(r.product_name);
+        }
+        setAvisoEnvio(conMinMax.length === 0 ? null
+            : fallidas.length
+                ? `El envío salió, pero no se pudo pedir el cambio de Min/Max de: ${fallidas.join(', ')}. Pídelo a mano.`
+                : `Se pidió quitar el Min/Max de ${conMinMax.length} ${conMinMax.length === 1 ? 'producto' : 'productos'}; lo aprueba quien aprueba los ajustes de Min/Max.`);
+        useStaff.getState().appendAuditLog('ENVIO_SUGERIDO_SIN_VENTA', null, {
+            sucursal: ERP_NAMES[selectedErp], destino: sala,
+            enviados: enviados.length, minmax_pedidos: conMinMax.length - fallidas.length,
+        });
+        loadMode(selectedErp, 'stock_ret');
+    }, [stockRet, selectedErp, user, loadMode]);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const pageRows   = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -660,6 +760,48 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 </div>
             )}
 
+            {/* ── Armar el envío por destino ── */}
+            {puedeArmar && !activeLoading && porDestino.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <span className="text-label text-content-3 font-semibold">Armar envío</span>
+                    <div className="flex flex-wrap gap-2">
+                        {porDestino.map(g => (
+                            <Button key={g.destino} variant="secondary" size="sm"
+                                icon={Number(g.destino) === ERP_BODEGA ? Archive : Send}
+                                onClick={() => {
+                                    setAvisoEnvio(null);
+                                    setEnvio({
+                                        destino: g.destino,
+                                        productos: g.filas.slice(0, POR_ENVIO).map(r => ({
+                                            erp_product_id: r.erp_product_id, descripcion: r.product_name,
+                                        })),
+                                    });
+                                }}
+                            >
+                                {ERP_NAMES[g.destino] || `Suc.${g.destino}`} · {g.filas.length > POR_ENVIO ? `${POR_ENVIO} de ${g.filas.length}` : g.filas.length}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {avisoEnvio && (
+                <p className="text-label text-content-2 font-medium leading-snug px-1">{avisoEnvio}</p>
+            )}
+            {envio && (
+                <Suspense fallback={null}>
+                    <EnviarProductoModal
+                        precarga={{
+                            origenErp: selectedErp,
+                            destino: envio.destino,
+                            motivo: 'Baja rotación',
+                            productos: envio.productos,
+                        }}
+                        onClose={() => setEnvio(null)}
+                        onListo={alEnviar}
+                    />
+                </Suspense>
+            )}
+
             {/* ── Table ── */}
             {(() => {
                 const SIN_GESTION_COLS = [
@@ -678,7 +820,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     { key: 'cost_value',    label: 'Costo retenido', sortable: true, align: 'right',  hideBelow: 'sm' },
                     { key: 'minmax',        label: 'Min/Max',        align: 'center', hideBelow: 'md' },
                     { key: 'sugerencia',    label: 'Sugerencia',     hideBelow: 'md' },
-                    { key: 'ultima_venta',  label: 'Última venta',   sortable: true, hideBelow: 'md' },
+                    { key: 'ultima_venta',  label: 'Sin venta desde', sortable: true, hideBelow: 'md' },
                     { key: 'sold_in',       label: 'Vendido en (6m)' },
                 ];
                 const columns = mode === 'sin_gestion' ? SIN_GESTION_COLS : STOCK_RET_COLS;
@@ -802,13 +944,6 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
                                             </Button>
-                                            {row.fecha_vencimiento_min && (() => {
-                                                const exp = new Date(row.fecha_vencimiento_min);
-                                                const expired = exp < new Date();
-                                                return <span className={`text-micro mt-0.5 block font-semibold ${expired ? 'text-danger' : 'text-content-3'}`}>
-                                                    {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
-                                                </span>;
-                                            })()}
                                         </DataCell>
                                         <DataCell hideBelow="md" className="text-body-sm text-content-3">{row.laboratorio || '—'}</DataCell>
                                         <DataCell align="right" hideBelow="sm">

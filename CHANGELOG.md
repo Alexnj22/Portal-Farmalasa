@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1044.1 — Traslados: inventario y ventas con su rótulo
+
+En la tarjeta de traslado, cada producto separa dos bloques con rótulo:
+**INVENTARIO · <sala>** y **VENTAS** («3 u. en 6 meses · 1 u. en ago»). Antes
+iban cifras sueltas en una línea y no se distinguía cuál era cuál (usuario,
+24-sep: «no sé cuál es venta y cuál es inventario»).
+
 ## v2.1044.0 — Solicitudes: fecha, pago, cliente y existencia con ventas en traslados
 
 Correcciones del usuario sobre la tarjeta de solicitudes (24-sep):

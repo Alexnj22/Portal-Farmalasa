@@ -876,23 +876,35 @@ export function InsigniaDeSolicitud({ datos, isDark }) {
  * meses y del último mes»). Cada cifra con su rótulo es una pieza que no se
  * parte: si no caben las tres, baja la que sobra. */
 function CifrasDelProducto({ p, sala, claseTenue, azul }) {
+    /* Dos bloques con su rótulo —INVENTARIO y VENTAS— y no cifras sueltas en
+     * una línea: «no sé cuál es venta y cuál es inventario» (usuario, 24-sep).
+     * Cada bloque es una pieza: si no caben lado a lado, el segundo baja
+     * entero. */
     const total = p.ventasMeses.reduce((s, m) => s + m.unidades, 0);
     const ultimo = p.ventasMeses[p.ventasMeses.length - 1];
-    const cifras = [
-        p.existencia != null && { k: 'hay', rotulo: sala ? `Hay en ${sala}` : 'Hay', valor: p.existencia },
-        ultimo && { k: 'seis', rotulo: 'En 6 meses', valor: total },
-        ultimo && { k: 'ultimo', rotulo: `Último mes · ${MESES[Number(ultimo.ym.slice(5, 7)) - 1]}`, valor: ultimo.unidades, clase: azul.texto },
-    ].filter(Boolean);
-    if (cifras.length === 0) return null;
+    if (p.existencia == null && !ultimo) return null;
+    const rotulo = `text-caption font-black uppercase tracking-wide ${claseTenue}`;
     return (
-        <p className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-caption">
-            {cifras.map((c) => (
-                <span key={c.k} className="whitespace-nowrap">
-                    <span className={`font-semibold ${claseTenue}`}>{c.rotulo}</span>{' '}
-                    <b className={`font-black tabular-nums ${c.clase ?? ''}`}>{unidades(c.valor)}&nbsp;u.</b>
-                </span>
-            ))}
-        </p>
+        <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-1.5">
+            {p.existencia != null && (
+                <div>
+                    <p className={rotulo}>Inventario{sala ? ` · ${sala}` : ''}</p>
+                    <p className="text-body-sm font-black tabular-nums">{unidades(p.existencia)}&nbsp;u.</p>
+                </div>
+            )}
+            {ultimo && (
+                <div>
+                    <p className={rotulo}>Ventas</p>
+                    <p className="text-body-sm tabular-nums">
+                        <span className="whitespace-nowrap"><b className="font-black">{unidades(total)}&nbsp;u.</b>{' '}
+                            <span className={`text-caption font-semibold ${claseTenue}`}>en 6 meses</span></span>
+                        <span className={claseTenue}> · </span>
+                        <span className="whitespace-nowrap"><b className={`font-black ${azul.texto}`}>{unidades(ultimo.unidades)}&nbsp;u.</b>{' '}
+                            <span className={`text-caption font-semibold ${claseTenue}`}>en {MESES[Number(ultimo.ym.slice(5, 7)) - 1]}</span></span>
+                    </p>
+                </div>
+            )}
+        </div>
     );
 }
 

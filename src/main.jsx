@@ -2,7 +2,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { anotar, entorno, iniciarPulso, iniciarSondaRotacion, recogerPulso } from "./utils/cajaNegra";
+import { anotar, entorno, iniciarPulso, iniciarSondaRotacion, recogerPulso } from "./plataforma/cajaNegra";
 import { APP_VERSION } from "./version";
 import { marcarVersionNueva } from "./utils/versionNueva";
 
@@ -21,7 +21,7 @@ window.addEventListener('unhandledrejection', (event) => {
 
 // ── La caja negra ─────────────────────────────────────────────────────────
 // Se engancha ACÁ arriba, antes de que React monte, porque lo que hay que
-// atrapar puede pasar durante el arranque. Ver `utils/cajaNegra.js` para por
+// atrapar puede pasar durante el arranque. Ver `plataforma/cajaNegra.js` para por
 // qué existe: hay un fallo que sólo ocurre en el iPhone del usuario, la página
 // se RECARGA (así que la consola se pierde) y el emulador no lo reproduce.
 // El orden importa para poder leerlo: primero se levanta el cuerpo de la sesión

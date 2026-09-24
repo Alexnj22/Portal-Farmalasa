@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1060.1 — Menú: Inventario antes que Gestión de stock; pestaña activa azul en Liquid oscuro
+## v2.1060.2 — Menú: Inventario antes que Gestión de stock; pestaña activa azul en Liquid oscuro
 
 - **Menú:** en el grupo Inventario, «Inventario» va primero y «Gestión de
   stock» después (usuario, 2026-09-24).
@@ -30,6 +30,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
   blanco, se pierde el modo oscuro»: sobre el vidrio azul noche se leía como
   una píldora gris clara. Sólo cambia ese tema; el token lo usan las pestañas
   de todas las vistas y sus hovers.
+## v2.1060.1 — Núcleo portable F1: la caja negra y el push, a la capa del navegador
+
+Sin cambios visibles. Tercer paso de F1 del plan
+`docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+
+- **`cajaNegra` y `usePushSubscription` se mudan a `src/plataforma/`.** No son
+  lógica del negocio sino herramientas del navegador —el registro de fallos
+  mide el DOM y el scroll; el push es Web Push—, y una app nativa tendría las
+  suyas. Hacerles adaptadores habría sido disfrazarlas de portables. El
+  contenido no cambia; sólo la carpeta y sus 12 referencias (incluidos el mapa
+  de áreas y el baseline de `gate:tdz`). `gate:nucleo` 237 → 181.
+- Antes de decidir se midió si el pulso de la caja negra costaba algo en un
+  teléfono de gama media (CPU ×4): 0 ms de mediana con la pantalla quieta. No
+  había nada que optimizar ahí.
+- Probado en `dev.farmasalud.lat` contra la base de pruebas.
 
 ## v2.1060.0 — Envíos: a Bodega sólo completo según la regla de despacho; aviso de poco a otra sala
 

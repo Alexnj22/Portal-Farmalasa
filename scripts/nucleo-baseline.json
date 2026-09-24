@@ -1,6 +1,6 @@
 {
-  "total": 237,
-  "archivos": 63,
+  "total": 181,
+  "archivos": 61,
   "porArchivo": {
     "src/constants/moduleMap.js": {
       "pantalla": 1
@@ -71,10 +71,6 @@
     "src/hooks/usePestanaEnUrl.js": {
       "pantalla": 1
     },
-    "src/hooks/usePushSubscription.js": {
-      "env": 1,
-      "navegador": 13
-    },
     "src/hooks/useRecargarAlVolver.js": {
       "navegador": 3
     },
@@ -114,9 +110,6 @@
     },
     "src/utils/browserNotif.js": {
       "navegador": 3
-    },
-    "src/utils/cajaNegra.js": {
-      "navegador": 42
     },
     "src/utils/capaFlotante.js": {
       "navegador": 1

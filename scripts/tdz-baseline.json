@@ -2,7 +2,7 @@
   "total": 62,
   "porArchivo": {
     "src/context/AuthContext.jsx": 6,
-    "src/utils/cajaNegra.js": 2,
+    "src/plataforma/cajaNegra.js": 2,
     "src/utils/ticketPrint.js": 1,
     "src/utils/timeClock.rules.js": 1,
     "src/utils/timeClock.helpers.js": 2,

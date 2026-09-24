@@ -15,7 +15,7 @@ import { render, screen, act } from '@testing-library/react';
 const estado = { permission: 'default', subscribed: false, isSupported: true, necesitaInstalar: false, ligado: true };
 const subscribe = vi.fn();
 
-vi.mock('../../src/hooks/usePushSubscription', () => ({
+vi.mock('../../src/plataforma/usePushSubscription', () => ({
     usePushSubscription: () => ({ ...estado, subscribe }),
     esIOS: () => false,
     esApp: () => false,

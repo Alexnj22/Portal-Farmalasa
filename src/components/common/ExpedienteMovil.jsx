@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import ModalShell from './ModalShell';
 import HojaMovil from './HojaMovil';
-import { anotar } from '../../utils/cajaNegra';
+import { anotar } from '../../plataforma/cajaNegra';
 
 
 /**

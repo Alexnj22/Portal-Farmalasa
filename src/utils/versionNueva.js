@@ -1,4 +1,4 @@
-import { anotar } from './cajaNegra';
+import { anotar } from '../plataforma/cajaNegra';
 
 /**
  * «Hay una versión nueva» — el aviso que reemplazó a la recarga sola.

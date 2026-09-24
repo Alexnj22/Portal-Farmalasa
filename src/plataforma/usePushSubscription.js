@@ -4,7 +4,7 @@ import { reclamarPushSubscription, soltarPushSubscription } from '../data/pushSu
 import { reclamarPushDelEquipo } from '../utils/pushEquipo';
 import { useToastStore } from '../store/toastStore';
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+import { VAPID_PUBLIC_KEY } from './config';
 
 // ── En iPhone los avisos EXISTEN sólo con la app agregada a inicio ────────────
 //

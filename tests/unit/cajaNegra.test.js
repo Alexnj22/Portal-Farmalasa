@@ -11,7 +11,7 @@
 //   · un registro ilegible se lee como vacío en vez de romper la lectura.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { anotar, leerCajaNegra, limpiarCajaNegra } from '../../src/utils/cajaNegra';
+import { anotar, leerCajaNegra, limpiarCajaNegra } from '../../src/plataforma/cajaNegra';
 
 const CLAVE = 'portal_caja_negra';
 

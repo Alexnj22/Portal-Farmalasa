@@ -49,7 +49,7 @@ import Contador from '../common/Contador';
 import { MODULE_MAP } from '../../constants/moduleMap';
 import { prefetchRuta } from '../../constants/routeImporters';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import { remontarAlGirar, contarRenderShell } from '../../utils/cajaNegra';
+import { remontarAlGirar, contarRenderShell } from '../../plataforma/cajaNegra';
 import { useHayDialogo } from '../common/dialogosAbiertos';
 
 // MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).

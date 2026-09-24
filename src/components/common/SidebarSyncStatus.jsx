@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Bell, BellOff, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchInventorySyncLogRecent } from '../../data/inventory';
-import { usePushSubscription } from '../../hooks/usePushSubscription';
+import { usePushSubscription } from '../../plataforma/usePushSubscription';
 import { useNowTick } from '../../hooks/useNowTick';
 import { useAuth } from '../../context/AuthContext';
 

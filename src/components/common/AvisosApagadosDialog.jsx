@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { BellOff, Share, Lock, Users } from 'lucide-react';
 import Button from './Button';
 import ModalShell from './ModalShell';
-import { usePushSubscription, esIOS, esApp } from '../../hooks/usePushSubscription';
+import { usePushSubscription, esIOS, esApp } from '../../plataforma/usePushSubscription';
 
 // ── Por qué esto dejó de ser una franja abajo (2026-08-26) ───────────────────
 //

@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
-import { anotar } from '../../utils/cajaNegra';
+import { anotar } from '../../plataforma/cajaNegra';
 import { marcarVersionNueva } from '../../utils/versionNueva';
 
 /**

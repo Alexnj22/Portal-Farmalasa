@@ -7,7 +7,7 @@ import { esAppInstalada } from '../plataforma/dispositivo';
 import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
 import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
-import { anotar } from '../utils/cajaNegra';
+import { anotar } from '../plataforma/cajaNegra';
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";

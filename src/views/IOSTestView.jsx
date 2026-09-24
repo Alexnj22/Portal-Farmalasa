@@ -8,7 +8,7 @@ import Switch from '../components/common/Switch';
 import {
     leerCajaNegra, limpiarCajaNegra, entorno,
     leerRotaciones, limpiarRotaciones, remontarAlGirar, fijarRemontarAlGirar,
-} from '../utils/cajaNegra';
+} from '../plataforma/cajaNegra';
 import { APP_VERSION } from '../version';
 import { hora12ConSegundos } from '../utils/hora';
 

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1057.0 — Push al teléfono con una línea corta
+
+El push al teléfono dice lo esencial en una línea (usuario, 24-sep: «me
+parece»), armada desde el mismo metadata que dibuja la tarjeta:
+«AGUA CRISTAL ×24 y 2 más · Monica Estrada», «Faltaron $4.60 · Kevin
+Zamora», «COF $9.95 · MORENA CONSUELO…», «MIN 4 · MAX 6 → MIN 2 · MAX 3 ·
+producto». Nombres cortos por `nombre_corto_de_empleado` y documento como
+CCF/COF.
+
+`texto_de_push(tipo, cuerpo, metadata)` vive una sola vez y la usan los tres
+caminos generales (`notify_employees`, `notify_branch`,
+`push_de_notificaciones`) y los cuatro disparadores de solicitudes, traslados
+y envíos. Sin datos, o si algo falla, sale el cuerpo de siempre: un push nunca
+queda vacío. Migraciones `20260924220028` y `20260924220249`.
+
 ## v2.1056.0 — Gestión de stock: pestañas, productos parados por destino y carga bajo demanda
 
 Pedido del usuario: «que sea mucho más intuitiva… en funciones, visual y

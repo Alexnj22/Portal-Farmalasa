@@ -95,7 +95,9 @@ describe('el dinero del anexo lleva centavos siempre', () => {
 
 describe('tipos de DTE', () => {
     it('los códigos del Ministerio, con su nombre', () => {
-        expect(dteTypeLabel('03')).toBe('Crédito Fiscal (CCF)');
+        // «CCF» y «COF», cortos (usuario, 2026-09-24).
+        expect(dteTypeLabel('03')).toBe('CCF');
+        expect(dteTypeLabel('01')).toBe('COF');
         expect(dteTypeLabel('14')).toBe('Factura Sujeto Excluido');
         // La lista exacta, no un conteo: un conteo pasa igual si alguien
         // cambia un código por otro. Faltan 02, 10, 12 y 13 del catálogo de

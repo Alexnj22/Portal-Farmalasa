@@ -1,8 +1,10 @@
 // Catálogo de tipos de DTE (Ministerio de Hacienda El Salvador). Tipo
 // desconocido → mostrar el código crudo, nunca ocultar la fila.
+// «COF» y «CCF» y no el nombre largo: «más corto y se entiende; en todos
+// lados» (usuario, 2026-09-24).
 export const DTE_TYPE_LABELS = {
-    '01': 'Factura',
-    '03': 'Crédito Fiscal (CCF)',
+    '01': 'COF',
+    '03': 'CCF',
     '04': 'Nota de Remisión',
     '05': 'Nota de Crédito',
     '06': 'Nota de Débito',

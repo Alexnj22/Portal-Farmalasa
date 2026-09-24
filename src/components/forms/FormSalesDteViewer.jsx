@@ -101,7 +101,7 @@ const FormSalesDteViewer = ({ formData }) => {
                                 {dte?.receptor?.nombre || document?.cliente || 'Documento'}
                             </h3>
                             <p className="text-caption font-bold text-content-2 uppercase tracking-widest mt-0.5">
-                                {esCCF ? 'Crédito fiscal' : 'Factura de consumidor'}
+                                {esCCF ? 'CCF' : 'COF'}
                                 {' · '}{ident.numeroControl || document?.numero_control || codigo}
                             </p>
                         </div>

@@ -266,6 +266,17 @@ function leerMeses(v) {
         .map((x) => ({ ym: String(x.ym), unidades: num(x.unidades) ?? 0 }));
 }
 
+/* El documento se nombra «CCF» o «COF», no «Crédito fiscal» / «Consumidor
+ * final»: «más corto y se entiende; en todos lados» (usuario, 24-sep). Los
+ * avisos que ya se mandaron traen el nombre largo, así que se traduce al leer. */
+export function docCorto(v) {
+    if (v == null || v === '') return null;
+    const t = String(v).trim();
+    if (/^cr[ée]dito fiscal$/i.test(t) || t.toUpperCase() === 'CCF') return 'CCF';
+    if (/^consumidor final$/i.test(t) || t.toUpperCase() === 'COF' || /^factura$/i.test(t)) return 'COF';
+    return t;
+}
+
 export function datosDeSolicitud(n) {
     if (n?.type !== 'REQUEST_PENDING') return null;
     const s = n.metadata?.solicitud;
@@ -278,7 +289,7 @@ export function datosDeSolicitud(n) {
         quienFoto: s.quien_foto || null,
         sala: s.sala ? String(s.sala) : null,
         origen: s.origen ? String(s.origen) : null,
-        doc: s.doc ? String(s.doc) : null,
+        doc: docCorto(s.doc),
         // El número de la factura viaja en el metadata pero no se muestra: «no
         // es relevante en esa vista» (usuario, 24-sep). Sí la fecha, el pago y
         // el cliente.
@@ -353,7 +364,7 @@ export function datosDeDecision(n) {
         fecha: d.fecha || null,
         hora: d.hora || null,
         monto: num(d.monto),
-        doc: d.doc ? String(d.doc) : null,
+        doc: docCorto(d.doc),
         pago: d.pago ? String(d.pago) : null,
         cliente: d.cliente ? String(d.cliente) : null,
         antes: d.antes != null ? String(d.antes) : null,
@@ -463,7 +474,7 @@ export function datosDeHacienda(n) {
         esperando: num(h.esperando),
         facturas: (Array.isArray(h.facturas) ? h.facturas : []).filter(Boolean).map((f) => ({
             sala: f.sala ? String(f.sala) : null,
-            doc: f.doc ? String(f.doc) : null,
+            doc: docCorto(f.doc),
             fecha: f.fecha || null,
             cliente: f.cliente ? String(f.cliente) : null,
             monto: num(f.monto),
@@ -505,4 +516,30 @@ export function datosDePromo(n) {
                 .map((b) => ({ producto: String(b.producto), sala: String(b.sala ?? ''), vendido: num(b.vendido) ?? 0, asignado: num(b.asignado) })),
         })),
     };
+}
+
+/* ── Novena tanda (24-sep): metas por aprobar y reinicio de la base ────── */
+
+/** Las metas del mes confirmadas por supervisión, esperando a gerencia. */
+export function datosDeMetasPorAprobar(n) {
+    if (n?.type !== 'METAS_POR_APROBAR') return null;
+    const m = n.metadata?.metas;
+    if (!m || !Array.isArray(m.salas)) return null;
+    return {
+        mes: m.mes ? String(m.mes) : null,
+        total: num(m.total),
+        anterior: num(m.anterior),
+        salas: m.salas.filter((s) => s && s.sala)
+            .map((s) => ({ sala: String(s.sala), meta: num(s.meta), anterior: num(s.anterior) })),
+        quien: m.quien ? String(m.quien) : null,
+        quienId: m.quien_id || null,
+        quienFoto: m.quien_foto || null,
+    };
+}
+
+/** La base de datos se reinició: cuándo volvió a arrancar. */
+export function datosDeReinicio(n) {
+    if (n?.type !== 'SISTEMA_REINICIO') return null;
+    const t = n.metadata?.arranco_at;
+    return t ? { arranco: String(t) } : null;
 }

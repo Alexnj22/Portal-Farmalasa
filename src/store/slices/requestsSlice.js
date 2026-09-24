@@ -597,7 +597,8 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
  * factura, qué cambia, los productos, las fechas— y la nota de quien decidió.
  * Quién decidió NO va acá: lo firma `avisar_a_empleados` con la sesión de quien
  * llama, así que no se puede escribir a mano. */
-const DOC_DE = { CCF: 'Crédito fiscal', COF: 'Consumidor final' };
+// «CCF» y «COF» y no el nombre largo: «más corto y se entiende» (usuario, 24-sep).
+const DOC_DE = { CCF: 'CCF', COF: 'COF' };
 const numero = (v) => (v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 const decisionParaLaTarjeta = (requestType, typeLabel, status, m, approverNote, instruccion) => {
     const items = Array.isArray(m.items) ? m.items : [];

@@ -4,13 +4,13 @@ import {
     ArrowRight, Truck, Store, Clock, SlidersHorizontal, ShoppingBag, Landmark,
     FileWarning, ReceiptText, ClipboardCheck, Package, PackageCheck, PackageX,
     FileX, CreditCard, UserRound, Users, Wallet, HandCoins, ArrowLeftRight, PackagePlus, Trash2, CalendarDays,
-    Undo2, Scale, X, Tag,
+    Undo2, Scale, X, Tag, Target, RotateCcw,
 } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
 import { formatMoney } from '../../utils/formatNumber';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import { hora12, rango12 } from '../../utils/hora';
+import { hora12, rango12, fechaHora12 } from '../../utils/hora';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import { fetchFotoDeEmpleado } from '../../data/notifications';
 import { decidirDiferencia } from '../../data/diferencias';
@@ -377,9 +377,13 @@ export function CuerpoDeTraslados({ datos, claseTenue, isDark, buscarEmpleado, e
  * aviso no se repite adentro. La grilla usa `gap-px` sobre el color del borde:
  * así las líneas entre celdas salen solas en 2 o en 3 columnas. */
 
+/* Una sola columna es `minmax(0, 1fr)` y no `1fr`: con `1fr` la columna crece
+ * hasta el ancho mínimo de su contenido, y una pieza que no se parte (un monto,
+ * un rótulo) la ensanchaba más allá de la tarjeta — la grilla recorta lo que
+ * sobra y el dato quedaba cortado sin que nada lo avisara (24-sep). */
 const Grilla = ({ columnas, children }) => (
     <div className="mt-2 grid gap-px rounded-xl overflow-hidden bg-border-card"
-        style={{ gridTemplateColumns: columnas }}>
+        style={{ gridTemplateColumns: columnas === '1fr' ? 'minmax(0, 1fr)' : columnas }}>
         {children}
     </div>
 );
@@ -656,7 +660,7 @@ export function CuerpoDeAlertaDeVentas({ datos, claseTenue, isDark, buscarEmplea
                     </>
                 ) : (
                     <>
-                        <Celda rotulo="Crédito fiscal" claseTenue={claseTenue} apilable>N.º {datos.numero}</Celda>
+                        <Celda rotulo="CCF" claseTenue={claseTenue} apilable>N.º {datos.numero}</Celda>
                         <Celda rotulo="Monto" clase={tono.texto} derecha apilable>
                             {datos.total != null ? formatMoney(datos.total) : '—'}
                         </Celda>
@@ -1457,7 +1461,7 @@ export function CuerpoDeHacienda({ datos, claseTenue, isDark }) {
                                         el punto quedaba colgando. */}
                                     <p className={`flex flex-wrap gap-x-2 text-caption font-semibold mt-0.5 ${claseTenue}`}>
                                         {[f.sala, f.doc, fechaCorta(f.fecha)].filter(Boolean).map((x) => (
-                                            <span key={x} className="whitespace-nowrap">{x}</span>
+                                            <span key={x}>{x}</span>
                                         ))}
                                     </p>
                                 </div>
@@ -1642,6 +1646,77 @@ export function CuerpoDePromo({ datos, claseTenue, isDark }) {
             {datos.fin && (
                 <Celda rotulo="Último día" claseTenue={claseTenue} derecha apilable>{fechaCorta(datos.fin)}</Celda>
             )}
+        </Grilla>
+    );
+}
+
+/* ── Novena tanda (usuario, 24-sep): metas por aprobar y reinicio ───────── */
+
+/* «−3.4%» / «+2.1%»: cuánto cambia contra el mes anterior. */
+const cambio = (hoy, antes) => {
+    if (hoy == null || !antes) return null;
+    const pct = (hoy - antes) / antes * 100;
+    return `${pct > 0 ? '+' : pct < 0 ? '−' : ''}${Math.abs(pct).toLocaleString('es-SV', { maximumFractionDigits: 1 })}%`;
+};
+
+export function InsigniaDeMetasPorAprobar({ isDark }) {
+    return <Disco tono={tonos(isDark).azul} Icono={Target} />;
+}
+
+/* La meta de cada sala contra la del mes anterior, el total y quién las
+ * confirmó. Aprobarlas se hace en Metas: la tarjeta lleva ahí. */
+export function CuerpoDeMetasPorAprobar({ datos, claseTenue, buscarEmpleado }) {
+    const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
+    const totalCambio = cambio(datos.total, datos.anterior);
+    return (
+        <Grilla columnas="1fr">
+            {(emp || datos.quien) && (
+                <CeldaPersona emp={emp} rotulo="Las confirmó" respaldo={datos.quien ?? '—'} claseTenue={claseTenue} />
+            )}
+            {/* Apilado y no lado a lado: a 320 px el cambio se salía por la
+                derecha y la grilla lo recortaba sin que se notara. */}
+            <div className="bg-surface-card-hover px-2.5 py-2 min-w-0">
+                <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Meta de la empresa</p>
+                <p className="text-title font-black tabular-nums mt-0.5">{formatMoney(datos.total)}</p>
+                {totalCambio && (
+                    <p className={`text-caption font-semibold mt-0.5 ${claseTenue}`}>
+                        <b className="font-black tabular-nums text-text-primary">{totalCambio}</b> contra el mes anterior
+                    </p>
+                )}
+            </div>
+            <ul className="bg-surface-card-hover divide-y divide-border-card">
+                {datos.salas.map((s) => (
+                    <li key={s.sala} className="flex items-center justify-between gap-3 px-2.5 py-1.5">
+                        <span className="text-body-sm font-bold break-words min-w-0">{s.sala}</span>
+                        <span className="flex-shrink-0 text-right leading-tight">
+                            <b className="block text-body-sm font-black tabular-nums">{formatMoney(s.meta)}</b>
+                            {cambio(s.meta, s.anterior) && (
+                                <span className={`text-caption font-semibold tabular-nums ${claseTenue}`}>{cambio(s.meta, s.anterior)}</span>
+                            )}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+        </Grilla>
+    );
+}
+
+export function InsigniaDeReinicio({ isDark }) {
+    return <Disco tono={tonos(isDark).naranja} Icono={RotateCcw} />;
+}
+
+/* Cuándo volvió a arrancar, y qué significa para quien lo lee. */
+export function CuerpoDeReinicio({ datos, claseTenue }) {
+    // `fechaHora12` es el canónico: fecha y hora de El Salvador, en 12 horas.
+    const cuando = fechaHora12(datos.arranco, { day: 'numeric', month: 'short' });
+    return (
+        <Grilla columnas="1fr">
+            {cuando && (
+                <Celda rotulo="Volvió a arrancar" claseTenue={claseTenue}>{cuando}</Celda>
+            )}
+            <Bloque rotulo="Qué significa" claseTenue={claseTenue}>
+                Si poco antes el portal estuvo lento o no dejaba entrar, fue esto. No hay que hacer nada: ya está funcionando.
+            </Bloque>
         </Grilla>
     );
 }

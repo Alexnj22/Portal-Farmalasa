@@ -57,8 +57,8 @@ const PAY_OPTS = [
 ];
 
 const DOC_OPTS = [
-    { value: 'COF', label: 'COF — Consumidor Final' },
-    { value: 'CCF', label: 'CCF — Crédito Fiscal'   },
+    { value: 'COF', label: 'COF' },
+    { value: 'CCF', label: 'CCF' },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -920,7 +920,7 @@ export default function CotizacionesView() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         {[
                             { icon: User,       label: 'Cliente',       val: cot.customer_name, sub: cot.customer_nit ? `NIT: ${cot.customer_nit}` : '' },
-                            { icon: FileText,   label: 'Documento',     val: isCCF ? 'Crédito Fiscal (CCF)' : 'Consumidor Final (COF)' },
+                            { icon: FileText,   label: 'Documento',     val: isCCF ? 'CCF' : 'COF' },
                             { icon: CreditCard, label: 'Forma de pago', val: { EFECTIVO:'Efectivo', TARJETA:'Tarjeta', TRANSFERENCIA:'Transferencia', CHEQUE:'Cheque' }[cot.payment_type] },
                             { icon: Building2,  label: 'Sucursal',      val: branchName || `Suc. ${cot.branch_id}`, sub: fmtD(cot.fecha) },
                         ].map(c => (

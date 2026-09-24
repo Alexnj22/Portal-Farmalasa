@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1053.0 — Tarjetas de metas por aprobar y reinicio; CCF/COF en todos lados
+
+Última tanda de tarjetas de la campana, y dos arreglos (usuario, 24-sep):
+
+- **Metas por aprobar**: «Metas de Septiembre 2026 por aprobar», con quién las
+  confirmó, la meta de la empresa y su cambio contra el mes anterior, y la
+  meta de cada sala con el suyo. `metas_notificar_rol` gana una variante con
+  `metadata` (la de cuatro argumentos la llama con '{}').
+- **Reinicio de la base**: cuándo volvió a arrancar, en 12 horas, y qué
+  significa.
+- **CCF / COF en todos lados** («más corto y se entiende»): en las tarjetas de
+  la campana (los avisos viejos se traducen al leer), en el catálogo de tipos
+  de DTE, el visor de la venta y Cotizaciones. «Crédito fiscal» como IMPUESTO
+  (libros de IVA, resumen fiscal, cierre) no cambia: no es el documento.
+- **Nada recortado dentro de una tarjeta**: una grilla de una columna era
+  `1fr` y crecía con una pieza que no se parte; la tarjeta de Hacienda perdía
+  el monto a 320 px. Ahora es `minmax(0, 1fr)`. El detector del barrido no lo
+  veía porque sólo medía contra el borde de la tarjeta: ahora también contra el
+  contenedor que recorta (se le fabricó la regresión: 23 hallazgos).
+
+Migración `20260924212047`.
+
 ## v2.1052.0 — Productos sin venta: reloj de entrada a la sala, destino y envío armado
 
 Pedido del usuario: saber qué producto lleva seis meses sin venderse en una sala

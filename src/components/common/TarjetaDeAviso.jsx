@@ -18,6 +18,7 @@ import {
     InsigniaDeRespuesta, CuerpoDeRespuesta, InsigniaDeDecision, CuerpoDeDecision,
     InsigniaDeDiferencia, CuerpoDeDiferencia, AccionesDeDiferencia,
     InsigniaDeConteo, CuerpoDeConteo, InsigniaDeHacienda, CuerpoDeHacienda, InsigniaDePromo, CuerpoDePromo,
+    InsigniaDeMetasPorAprobar, CuerpoDeMetasPorAprobar, InsigniaDeReinicio, CuerpoDeReinicio,
 } from './TarjetasDeOperacion';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
@@ -28,7 +29,7 @@ import {
     datosDeMinmaxPendiente, datosDeBolsaNoCuadra, datosDeDeposito,
     datosDeAlertaDeVentas, datosDeFacturaDeSala, datosDeCortesPendientes, datosDePedido, datosDeSolicitud,
     datosDeRespuesta, datosDeDecision, datosDeDiferencia, diferenciaMeToca,
-    datosDeConteo, datosDeHacienda, datosDePromo,
+    datosDeConteo, datosDeHacienda, datosDePromo, datosDeMetasPorAprobar, datosDeReinicio,
 } from '../../utils/avisosDeOperacion';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -213,12 +214,14 @@ const TarjetaDeAviso = ({
     const conteo     = datosDeConteo(n);
     const hacienda   = datosDeHacienda(n);
     const promo      = datosDePromo(n);
+    const metasAprob = datosDeMetasPorAprobar(n);
+    const reinicio   = datosDeReinicio(n);
     // Las tarjetas que ya muestran a la persona con su cara: la fila general
     // de «quién y qué sala» la repetiría.
     const conPersona = solicitud || respuesta || decision || diferencia;
     const conTarjeta = creditos || corteNuevo || bitacora || traslados || minmaxPend || bolsa || deposito
         || alertaCcf || factSala || cortesPend || pedidoAv || solicitud || respuesta || decision || diferencia
-        || conteo || hacienda || promo;
+        || conteo || hacienda || promo || metasAprob || reinicio;
 
     const corte = acciones?.corteDe?.(n) ?? null;
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
@@ -290,6 +293,10 @@ const TarjetaDeAviso = ({
                     <InsigniaDeHacienda isDark={isDark} />
                 ) : promo ? (
                     <InsigniaDePromo datos={promo} isDark={isDark} />
+                ) : metasAprob ? (
+                    <InsigniaDeMetasPorAprobar isDark={isDark} />
+                ) : reinicio ? (
+                    <InsigniaDeReinicio isDark={isDark} />
                 ) : conAnillo ? (
                     <AnilloDeMeta pct={conAnillo.pct} isDark={isDark} />
                 ) : (
@@ -392,6 +399,10 @@ const TarjetaDeAviso = ({
                     {conteo && <CuerpoDeConteo datos={conteo} claseTenue={cx.rowBody} />}
                     {hacienda && <CuerpoDeHacienda datos={hacienda} claseTenue={cx.rowBody} isDark={isDark} />}
                     {promo && <CuerpoDePromo datos={promo} claseTenue={cx.rowBody} isDark={isDark} />}
+                    {metasAprob && (
+                        <CuerpoDeMetasPorAprobar datos={metasAprob} claseTenue={cx.rowBody} buscarEmpleado={buscarEmpleado} />
+                    )}
+                    {reinicio && <CuerpoDeReinicio datos={reinicio} claseTenue={cx.rowBody} />}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}
                             isDark={isDark} buscarEmpleado={buscarEmpleado} />

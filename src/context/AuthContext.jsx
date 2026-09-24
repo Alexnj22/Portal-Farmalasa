@@ -1,5 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase, AUTH_STORAGE_KEY } from "../supabaseClient";
+import * as almacen from '../plataforma/almacen';
+import { visibilidad, escucharVisibilidad, soltarVisibilidad, escucharActividad, soltarActividad, escucharSalida, soltarSalida } from '../plataforma/cicloDeVida';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../plataforma/config';
+import { esAppInstalada } from '../plataforma/dispositivo';
 import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
 import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
@@ -123,10 +127,7 @@ const REVALIDATE_MS         = 60 * 1000;
 // pantalla de inicio y el navegador en cada plataforma móvil, que varía.
 const detectarClaseDispositivo = () => {
   try {
-    const instalada = window.matchMedia('(display-mode: standalone)').matches
-      || window.navigator.standalone === true;
-    const nativo = !!(window.Capacitor?.isNativePlatform?.());
-    return (instalada || nativo) ? 'app' : 'navegador';
+    return esAppInstalada() ? 'app' : 'navegador';
   } catch { return 'navegador'; }
 };
 
@@ -134,8 +135,8 @@ const detectarClaseDispositivo = () => {
 // hace que la segunda ventana no pueda contradecir a la primera.
 const fijarClaseDispositivo = () => {
   try {
-    if (!localStorage.getItem(LS_DEVICE)) {
-      localStorage.setItem(LS_DEVICE, detectarClaseDispositivo());
+    if (!almacen.leer(LS_DEVICE)) {
+      almacen.guardar(LS_DEVICE, detectarClaseDispositivo());
     }
   } catch { /* localStorage no disponible */ }
 };
@@ -170,7 +171,7 @@ export const AuthProvider = ({ children }) => {
   //
   // Se siembra del caché para que la primera pintada ya sepa la respuesta.
   const [isSU, setIsSU] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(LS_SU) || 'false'); } catch { return false; }
+    try { return JSON.parse(almacen.leer(LS_SU) || 'false'); } catch { return false; }
   });
   // Candados de mantenimiento: { [module_key]: { locked_by_id, locked_by_name, reason, locked_at, expires_at } }
   const [moduleLocks, setModuleLocks] = useState({});
@@ -185,7 +186,7 @@ export const AuthProvider = ({ children }) => {
   // con el latido de `touch_session` y con la validación de sesión.
   const hayAlguienDentro = () => {
     if (userRef.current) return true;
-    try { return !!localStorage.getItem(LS_USER); } catch { return false; }
+    try { return !!almacen.leer(LS_USER); } catch { return false; }
   };
 
   const idleIntervalRef  = useRef(null);
@@ -297,16 +298,16 @@ export const AuthProvider = ({ children }) => {
         setUser(prev => {
           if (!prev || prev.isSU === isSU) return prev;
           const updated = { ...prev, isSU };
-          try { localStorage.setItem(LS_USER, JSON.stringify(updated)); } catch { /* ignore */ }
+          try { almacen.guardar(LS_USER, JSON.stringify(updated)); } catch { /* ignore */ }
           return updated;
         });
         setPermsLoading(false);
         setPermsError(false);
         permsIntentosRef.current = 0;
         try {
-          localStorage.setItem(LS_PERMS, JSON.stringify(map));
-          localStorage.setItem(LS_PRICE, JSON.stringify(price));
-          localStorage.setItem(LS_SU, JSON.stringify(isSU));
+          almacen.guardar(LS_PERMS, JSON.stringify(map));
+          almacen.guardar(LS_PRICE, JSON.stringify(price));
+          almacen.guardar(LS_SU, JSON.stringify(isSU));
         } catch { /* storage lleno — ignorar */ }
       })
       .catch(() => { alFallar(); });
@@ -407,16 +408,16 @@ export const AuthProvider = ({ children }) => {
     // (`clearAuthCache`): esperando un tick y preguntándole a ése, el orden de
     // los oyentes deja de importar.
     const onVisible = () => {
-      if (document.visibilityState !== 'visible') return;
+      if (visibilidad() !== 'visible') return;
       setTimeout(() => {
         if (!userRef.current) return;
-        try { if (!localStorage.getItem(LS_USER)) return; } catch { /* sin localStorage: se sigue */ }
+        try { if (!almacen.leer(LS_USER)) return; } catch { /* sin localStorage: se sigue */ }
         refreshPermissions();
         revalidarSesion();
       }, 0);
     };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+    escucharVisibilidad(onVisible);
+    return () => soltarVisibilidad(onVisible);
   }, [refreshPermissions, revalidarSesion]);
 
   // Realtime: refresca permisos en el instante que el admin cambia role_permissions
@@ -454,7 +455,7 @@ export const AuthProvider = ({ children }) => {
   // enterado.
   const leerLimiteDelToken = () => {
     try {
-      const guardada = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+      const guardada = JSON.parse(almacen.leer(AUTH_STORAGE_KEY) || 'null');
       const token = guardada?.access_token;
       if (!token) return null;
       const cuerpo = token.split('.')[1];
@@ -469,7 +470,7 @@ export const AuthProvider = ({ children }) => {
     // La clase la fijó la ventana desde la que se inició sesión y vale para
     // todas las de esta sesión. Sin clase —sesión anterior a este cambio— manda
     // el camino estricto, que es el que no regala tiempo.
-    if (localStorage.getItem(LS_DEVICE) === 'app') return IDLE_APP_MS;
+    if (almacen.leer(LS_DEVICE) === 'app') return IDLE_APP_MS;
 
     // Lo que dijo el servidor, si lo dijo.
     const delToken = leerLimiteDelToken();
@@ -483,10 +484,10 @@ export const AuthProvider = ({ children }) => {
     // El caché primero: `u.isSU` lo pierde cualquier refresco que rearme el
     // usuario, y sin esto un superadministrador terminaba con el tiempo de
     // inactividad corto sin que nadie lo hubiera decidido.
-    try { if (JSON.parse(localStorage.getItem(LS_SU) || 'false')) return IDLE_ADMIN_MS; } catch { /* sigue */ }
+    try { if (JSON.parse(almacen.leer(LS_SU) || 'false')) return IDLE_ADMIN_MS; } catch { /* sigue */ }
     if (u?.isSU) return IDLE_ADMIN_MS;
     try {
-      const cached = localStorage.getItem(LS_PERMS);
+      const cached = almacen.leer(LS_PERMS);
       if (cached) {
         const perms = JSON.parse(cached);
         const mgmt = ['staff_list','schedules','monitor','requests','time_audit','permissions','announcements'];
@@ -500,7 +501,7 @@ export const AuthProvider = ({ children }) => {
     const now = Date.now();
     if (!force && now - lastWriteRef.current < ACTIVITY_THROTTLE_MS) return;
     lastWriteRef.current = now;
-    localStorage.setItem(LS_LAST, String(now));
+    almacen.guardar(LS_LAST, String(now));
     // El sello se movió: los dos instantes que dependen de él se recalculan.
     // Va acá y no en `onActivity` a propósito — así se re-arma cuando de verdad
     // se escribió, no en cada mousemove que el throttle descarta.
@@ -529,12 +530,12 @@ export const AuthProvider = ({ children }) => {
   const ultimoLatidoRef = useRef(0);
   const latirSesion = useCallback((hayUsuario = false) => {
     if (!hayUsuario && !userRef.current) return;
-    if (document.visibilityState === 'hidden') return;
+    if (visibilidad() === 'hidden') return;
     const ahora = Date.now();
     if (ahora - ultimoLatidoRef.current < HEARTBEAT_MS) return;
     ultimoLatidoRef.current = ahora;
     let clase = 'navegador';
-    try { clase = localStorage.getItem(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
+    try { clase = almacen.leer(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
     // Sin `await` y sin reintento: si un latido se pierde, el próximo lo cubre.
     // Lo que NO puede hacer es romper la interacción que lo disparó.
     supabase.rpc('touch_session', { p_device_class: clase }).then(() => {}, () => {});
@@ -579,8 +580,8 @@ export const AuthProvider = ({ children }) => {
   // ya no puede guardar nada.
   const onVisibilityChange = useCallback(() => {
     if (!userRef.current) return;
-    if (document.visibilityState !== 'visible') return;
-    const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
+    if (visibilidad() !== 'visible') return;
+    const last = parseInt(almacen.leer(LS_LAST) || '0', 10);
     if (last && Date.now() - last >= getIdleLimitMs(userRef.current)) {
       doLogoutRef.current?.();
       return;
@@ -597,22 +598,18 @@ export const AuthProvider = ({ children }) => {
     ponerAviso(null);   // que no quede el cartel colgado sobre la pantalla de entrada
     limpiarTemporizadores();
     if (idleIntervalRef.current) { clearInterval(idleIntervalRef.current); idleIntervalRef.current = null; }
-    window.removeEventListener('mousemove',   onActivity, true);
-    window.removeEventListener('keydown',     onActivity, true);
-    window.removeEventListener('wheel',       onActivity, true);
-    window.removeEventListener('click',       onActivity, true);
-    window.removeEventListener('touchstart',  onActivity, true);
-    document.removeEventListener('visibilitychange', onVisibilityChange, true);
+    soltarActividad(onActivity);
+    soltarVisibilidad(onVisibilityChange, true);
   };
 
-  const clearErpCache  = () => ERP_CACHE_KEYS.forEach(k => localStorage.removeItem(k));
+  const clearErpCache  = () => ERP_CACHE_KEYS.forEach(k => almacen.borrar(k));
   const clearAuthCache = () => {
-    localStorage.removeItem(LS_USER);
-    localStorage.removeItem(LS_LAST);
-    localStorage.removeItem(LS_PERMS);
-    localStorage.removeItem(LS_PRICE);
-    localStorage.removeItem(LS_SU);
-    localStorage.removeItem(LS_DEVICE);
+    almacen.borrar(LS_USER);
+    almacen.borrar(LS_LAST);
+    almacen.borrar(LS_PERMS);
+    almacen.borrar(LS_PRICE);
+    almacen.borrar(LS_SU);
+    almacen.borrar(LS_DEVICE);
     clearSignedUrlCache();
   };
 
@@ -632,7 +629,7 @@ export const AuthProvider = ({ children }) => {
     // en el mostrador el caso normal no es que alguien apriete «salir», es que
     // se levante y la sesión venza sola.
     let claseDispositivo = 'navegador';
-    try { claseDispositivo = localStorage.getItem(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
+    try { claseDispositivo = almacen.leer(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
     soltarPushDelEquipoSiEsCompartido(claseDispositivo);
 
     clearAuthCache();
@@ -663,7 +660,7 @@ export const AuthProvider = ({ children }) => {
     withTimeout(supabase.auth.signOut({ scope: 'local' }), 3000, 'signOut timeout')
       .catch(() => {})
       .finally(() => {
-        try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch { /* localStorage no disponible */ }
+        try { almacen.borrar(AUTH_STORAGE_KEY); } catch { /* localStorage no disponible */ }
       });
   };
   doLogoutRef.current = doLogout;
@@ -679,12 +676,12 @@ export const AuthProvider = ({ children }) => {
     if (!user?.id) return undefined;
     const alIrseLaPagina = () => {
       let clase = 'navegador';
-      try { clase = localStorage.getItem(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
+      try { clase = almacen.leer(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
       soltarPushAlCerrarLaPagina(clase);
     };
     // `pagehide` y no `beforeunload`: éste no dispara en varios casos de móvil.
-    window.addEventListener('pagehide', alIrseLaPagina);
-    return () => window.removeEventListener('pagehide', alIrseLaPagina);
+    escucharSalida(alIrseLaPagina);
+    return () => soltarSalida(alIrseLaPagina);
   }, [user?.id]);
 
   // `hayCache` = «esta pregunta se hace teniendo un usuario guardado».
@@ -695,7 +692,7 @@ export const AuthProvider = ({ children }) => {
   // `doLogout`. Sin usuario en caché se mantiene el comportamiento de antes: no
   // hay con qué decidir y no se echa a nadie.
   const isExpiredByIdle = (u, hayCache = false) => {
-    const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
+    const last = parseInt(almacen.leer(LS_LAST) || '0', 10);
     if (!last) return hayCache;
     if (last > Date.now()) return false;
     if (Date.now() - last < 5000) return false;
@@ -729,21 +726,21 @@ export const AuthProvider = ({ children }) => {
   const programarVencimiento = () => {
     limpiarTemporizadores();
     if (!idleIntervalRef.current) return;   // sin vigilante no hay nada que programar
-    const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
+    const last = parseInt(almacen.leer(LS_LAST) || '0', 10);
     if (!last) return;
     const vence = last + getIdleLimitMs(userRef.current);
 
     programarEn(avisoTimeoutRef, vence - AVISO_INACTIVIDAD_MS, () => {
-      if (document.visibilityState === 'hidden') return;
+      if (visibilidad() === 'hidden') return;
       ponerAviso(vence);
     });
 
     programarEn(cierreTimeoutRef, vence, () => {
-      if (document.visibilityState === 'hidden') return;
+      if (visibilidad() === 'hidden') return;
       // El sello pudo moverse entre que se armó esto y que llegó —la escritura
       // tiene 2 s de throttle, y otra pestaña escribe sin avisar—, así que se
       // decide con el valor de AHORA y no con el que se calculó al armar.
-      const sello = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
+      const sello = parseInt(almacen.leer(LS_LAST) || '0', 10);
       if (sello && Date.now() < sello + getIdleLimitMs(userRef.current)) { programarVencimiento(); return; }
       doLogoutRef.current?.();
     });
@@ -755,24 +752,20 @@ export const AuthProvider = ({ children }) => {
   const startIdleWatcher = (u) => {
     stopIdleWatcher();
     fijarClaseDispositivo();
-    if (!localStorage.getItem(LS_LAST)) writeLastActivity(true);
+    if (!almacen.leer(LS_LAST)) writeLastActivity(true);
     // Primer latido al arrancar: sin esto la sesión no tendría fila del lado del
     // servidor hasta que alguien mueva el mouse, y el hook la vería «recién
     // nacida» todo ese rato.
     latirSesion(!!(u || userRef.current));
 
-    window.addEventListener('mousemove',  onActivity, true);
-    window.addEventListener('keydown',    onActivity, true);
-    window.addEventListener('wheel',      onActivity, true);
-    window.addEventListener('click',      onActivity, true);
-    window.addEventListener('touchstart', onActivity, true);
-    document.addEventListener('visibilitychange', onVisibilityChange, true);
+    escucharActividad(onActivity);
+    escucharVisibilidad(onVisibilityChange, true);
 
     idleIntervalRef.current = setInterval(() => {
       // Skip while app is backgrounded — prevents iOS from firing stale checks
       // on resume before visibilitychange can refresh the activity timestamp.
-      if (document.visibilityState === 'hidden') return;
-      const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
+      if (visibilidad() === 'hidden') return;
+      const last = parseInt(almacen.leer(LS_LAST) || '0', 10);
       if (!last) return;
       // Re-read limit each tick so it reflects permissions loaded after login.
       const vence = last + getIdleLimitMs(userRef.current);
@@ -794,7 +787,7 @@ export const AuthProvider = ({ children }) => {
   // ✅ Boot: cache local instantáneo
   // -------------------------
   useEffect(() => {
-    const cached = localStorage.getItem(LS_USER);
+    const cached = almacen.leer(LS_USER);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
@@ -805,11 +798,11 @@ export const AuthProvider = ({ children }) => {
           // Load cached perms instantly — avoids the network round-trip that
           // previously blocked the UI with permsLoading=true on every page load.
           // refreshPermissions() will update them silently in the background.
-          const cachedPerms = localStorage.getItem(LS_PERMS);
+          const cachedPerms = almacen.leer(LS_PERMS);
           if (cachedPerms) {
             try {
               setRolePerms(JSON.parse(cachedPerms));
-              const cachedPrice = localStorage.getItem(LS_PRICE);
+              const cachedPrice = almacen.leer(LS_PRICE);
               setMaxPriceLevel(cachedPrice ? JSON.parse(cachedPrice) : null);
               // permsLoading stays false — cached perms are ready immediately
             } catch {
@@ -824,7 +817,7 @@ export const AuthProvider = ({ children }) => {
           // pintada decide con `isSU` en falso y se corrige sola al llegar la
           // red — que es el parpadeo de botones que se veía en Metas.
           try {
-            const su = localStorage.getItem(LS_SU);
+            const su = almacen.leer(LS_SU);
             if (su != null) parsed.isSU = JSON.parse(su);
           } catch { /* caché corrupto — manda el del usuario */ }
           setUser(parsed);
@@ -836,7 +829,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(prev => {
                   if (!prev) return prev;
                   const updated = { ...prev, photo: signed };
-                  try { localStorage.setItem(LS_USER, JSON.stringify(updated)); } catch { /* ignore */ }
+                  try { almacen.guardar(LS_USER, JSON.stringify(updated)); } catch { /* ignore */ }
                   return updated;
                 });
               }
@@ -918,10 +911,10 @@ export const AuthProvider = ({ children }) => {
         if (!token) return;
 
         const resp = await withTimeout(
-          fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/user`, {
+          fetch(`${SUPABASE_URL}/auth/v1/user`, {
             headers: {
               Authorization: `Bearer ${token}`,
-              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+              apikey: SUPABASE_ANON_KEY,
             },
           }),
           5000,
@@ -958,7 +951,7 @@ export const AuthProvider = ({ children }) => {
           // —«el token siguió guardado tras cerrar la sesión»— y no la pantalla,
           // que ya se veía bien. Y no hay nada que revocar del lado del
           // servidor: un 403 significa que esa sesión ya no existe allá.
-          try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch { /* sin localStorage */ }
+          try { almacen.borrar(AUTH_STORAGE_KEY); } catch { /* sin localStorage */ }
         }
       } catch {
         // Timeout o red inestable → se confía en el caché local.
@@ -1009,7 +1002,7 @@ export const AuthProvider = ({ children }) => {
           if (isExpiredByIdle(u)) { doLogout(); return; }
 
           setUser(u);
-          localStorage.setItem(LS_USER, JSON.stringify(u));
+          almacen.guardar(LS_USER, JSON.stringify(u));
           startIdleWatcher(u);
           // NO se llama a refreshPermissions acá: el efecto de abajo
           // ([user?.id, user?.roleId, user?.secondaryRoleId]) ya cubre los dos
@@ -1143,7 +1136,7 @@ export const AuthProvider = ({ children }) => {
 
       const u = await withSignedPhoto(ensured.user);
       clearErpCache();
-      localStorage.setItem(LS_USER, JSON.stringify(u));
+      almacen.guardar(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
       setPermsLoading(true);
       setUser(u);
@@ -1231,7 +1224,7 @@ export const AuthProvider = ({ children }) => {
 
       skipAuthListener.current = false;
       clearErpCache();
-      localStorage.setItem(LS_USER, JSON.stringify(u));
+      almacen.guardar(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
       setPermsLoading(true);
       setUser(u);
@@ -1246,7 +1239,7 @@ export const AuthProvider = ({ children }) => {
   const completeLogin = async (u) => {
     const su = await withSignedPhoto(u);
     clearErpCache();
-    localStorage.setItem(LS_USER, JSON.stringify(su));
+    almacen.guardar(LS_USER, JSON.stringify(su));
     writeLastActivity(true);
     setPermsLoading(true);
     setUser(su);
@@ -1257,7 +1250,7 @@ export const AuthProvider = ({ children }) => {
     const su = await withSignedPhoto(u);
     skipAuthListener.current = false;
     clearErpCache();
-    localStorage.setItem(LS_USER, JSON.stringify(su));
+    almacen.guardar(LS_USER, JSON.stringify(su));
     writeLastActivity(true);
     setPermsLoading(true);
     setUser(su);

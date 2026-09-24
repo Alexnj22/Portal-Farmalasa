@@ -1,5 +1,5 @@
 {
-  "total": 306,
+  "total": 237,
   "archivos": 63,
   "porArchivo": {
     "src/constants/moduleMap.js": {
@@ -12,9 +12,7 @@
       "pantalla": 1
     },
     "src/context/AuthContext.jsx": {
-      "pantalla": 1,
-      "navegador": 67,
-      "env": 2
+      "pantalla": 1
     },
     "src/context/ThemeContext.jsx": {
       "navegador": 7

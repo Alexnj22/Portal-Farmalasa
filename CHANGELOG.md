@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1058.1 — Núcleo portable F1: la sesión (AuthContext) sin navegador
+
+Sin cambios visibles. Segundo paso de F1 del plan
+`docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+
+- **Tres adaptadores más en `src/plataforma/`**: `cicloDeVida.js` (¿la app
+  está a la vista?, ¿alguien la usa?, ¿se cierra la página?), `config.js` (lo
+  que antes era `import.meta.env`) y `dispositivo.js` (¿PWA instalada o build
+  nativo?). En la web hacen lo mismo que antes, llamada por llamada.
+- **`AuthContext` ya no nombra al navegador**: sus 70 usos pasan por los
+  adaptadores. Queda uno a propósito —importa el cartel de inactividad, que es
+  una pantalla— y se resuelve en F2. `gate:nucleo` 306 → 237.
+- Probado en `dev.farmasalud.lat` y con `tests/e2e/inactividad.spec.js`
+  contra la base de pruebas con un límite de 5 minutos: la sesión se cierra
+  cuando el contador llega a cero y moverse con el cartel puesto la salva.
+- Cuatro pruebas nuevas anclan que el vigilante de inactividad suelte
+  exactamente los oyentes que puso: si no, el de una sesión cerrada seguiría
+  vivo y cerraría la siguiente.
+
 ## v2.1058.0 — Gestión de stock: tarjetas, «Productos sin venta» y Min/Max desde la lista
 
 Tres pedidos del usuario sobre la versión anterior:

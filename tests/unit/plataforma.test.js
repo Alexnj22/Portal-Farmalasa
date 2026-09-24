@@ -66,3 +66,43 @@ describe('eventos', () => {
         expect(visto).toHaveBeenCalledWith({ a: 1 });
     });
 });
+
+// El cierre por inactividad engancha los oyentes en un lugar y los suelta en
+// otro, con la identidad de la función como llave. Si `soltar` no quitara
+// exactamente lo que `escuchar` puso —mismo tipo, misma fase de captura—, el
+// vigilante de una sesión cerrada seguiría vivo y cerraría la siguiente.
+describe('cicloDeVida', async () => {
+    const cv = await import('../../src/plataforma/cicloDeVida');
+
+    it('la actividad son los cinco eventos de siempre, en captura, y se sueltan todos', () => {
+        const fn = vi.fn();
+        cv.escucharActividad(fn);
+        for (const t of ['mousemove', 'keydown', 'wheel', 'click', 'touchstart']) window.dispatchEvent(new Event(t));
+        expect(fn).toHaveBeenCalledTimes(5);
+        cv.soltarActividad(fn);
+        for (const t of ['mousemove', 'keydown', 'wheel', 'click', 'touchstart']) window.dispatchEvent(new Event(t));
+        expect(fn).toHaveBeenCalledTimes(5);
+    });
+
+    it('visibilidad: soltar con la misma captura quita el oyente', () => {
+        const fn = vi.fn();
+        cv.escucharVisibilidad(fn, true);
+        document.dispatchEvent(new Event('visibilitychange'));
+        cv.soltarVisibilidad(fn, true);
+        document.dispatchEvent(new Event('visibilitychange'));
+        expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('visibilidad() es el texto del navegador, no un booleano', () => {
+        expect(cv.visibilidad()).toBe(document.visibilityState);
+    });
+
+    it('salida es pagehide', () => {
+        const fn = vi.fn();
+        cv.escucharSalida(fn);
+        window.dispatchEvent(new Event('pagehide'));
+        cv.soltarSalida(fn);
+        window.dispatchEvent(new Event('pagehide'));
+        expect(fn).toHaveBeenCalledTimes(1);
+    });
+});

@@ -4,7 +4,7 @@ import {
     ArrowRight, Truck, Store, Clock, SlidersHorizontal, ShoppingBag, Landmark,
     FileWarning, ReceiptText, ClipboardCheck, Package, PackageCheck, PackageX,
     FileX, CreditCard, UserRound, Users, Wallet, HandCoins, ArrowLeftRight, PackagePlus, Trash2, CalendarDays,
-    Undo2, Scale,
+    Undo2, Scale, X,
 } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
@@ -13,6 +13,11 @@ import { shortEmployeeName } from '../../utils/nameUtils';
 import { hora12, rango12 } from '../../utils/hora';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import { fetchFotoDeEmpleado } from '../../data/notifications';
+import { decidirDiferencia } from '../../data/diferencias';
+import { mensajeAmigable } from '../../utils/errorMessages';
+import { useToastStore } from '../../store/toastStore';
+import Button from './Button';
+import PortalInput from './PortalInput';
 import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES, ETAPAS_DE_PEDIDO } from '../../utils/avisosDeOperacion';
 
 /* Tres tarjetas de la campana para avisos de la operación del día: el corte de
@@ -1041,11 +1046,14 @@ export function CuerpoDeRespuesta({ datos, claseTenue, isDark, buscarEmpleado })
      * naranja, nada en rojo. En un rechazo, lo que se había pedido. */
     const pildora = (p) => {
         if (datos.estado === 'NO') return p.pedida != null ? <Pildora tono={t.gris}>Pediste {unidades(p.pedida)}</Pildora> : null;
-        if (p.enviada === 0) return <Pildora tono={t.rojo}>No va</Pildora>;
+        /* «Se envía(n)» y no «Van»: «no lo siento acorde al lenguaje del
+         * portal» (usuario, 24-sep). */
+        const se = (n) => (n === 1 ? 'Se envía' : 'Se envían');
+        if (p.enviada === 0) return <Pildora tono={t.rojo}>No se envía</Pildora>;
         if (p.enviada != null && p.pedida != null && p.enviada < p.pedida) {
-            return <Pildora tono={t.naranja}>Van {unidades(p.enviada)} de {unidades(p.pedida)}</Pildora>;
+            return <Pildora tono={t.naranja}>{se(p.enviada)} {unidades(p.enviada)} de {unidades(p.pedida)}</Pildora>;
         }
-        return p.enviada != null ? <Pildora tono={t.verde}>Van {unidades(p.enviada)}</Pildora> : null;
+        return p.enviada != null ? <Pildora tono={t.verde}>{se(p.enviada)} {unidades(p.enviada)}</Pildora> : null;
     };
     return (
         <div className="@container">
@@ -1068,36 +1076,40 @@ export function CuerpoDeRespuesta({ datos, claseTenue, isDark, buscarEmpleado })
                     </ul>
                 )}
 
+                {/* El envío, dicho de corrido (usuario, 24-sep: «explica más,
+                    no entiendo de qué es»): es un envío que ESTA sala mandó, y
+                    la otra se quedó con una parte y devuelve el resto. */}
                 {esEnvio && (
-                    <div className="bg-surface-card-hover px-2.5 py-2 flex flex-wrap gap-x-4 gap-y-1 text-body-sm">
-                        {datos.aceptados != null && (
-                            <span className="whitespace-nowrap"><span className={`font-semibold ${claseTenue}`}>Se quedó con</span>{' '}
-                                <b className={`font-black ${t.verde.texto}`}>{datos.aceptados}</b></span>
-                        )}
-                        {datos.devueltos.length > 0 && (
-                            <span className="whitespace-nowrap"><span className={`font-semibold ${claseTenue}`}>Devuelve</span>{' '}
-                                <b className={`font-black ${t.naranja.texto}`}>{datos.devueltos.length}</b></span>
-                        )}
+                    <Bloque rotulo={`Tu envío a ${datos.sala ?? 'la otra sala'}`} claseTenue={claseTenue}>
+                        {[
+                            datos.aceptados > 0 && `Se quedó con ${datos.aceptados === 1 ? 'un producto' : `${datos.aceptados} productos`}`,
+                            datos.devueltos.length > 0 && `te devuelve ${datos.devueltos.length === 1 ? 'uno' : datos.devueltos.length}`,
+                        ].filter(Boolean).join(' y ').replace(/^t/, 'T')}.
                         {datos.noLlegaron > 0 && (
-                            <span className="whitespace-nowrap"><span className={`font-semibold ${claseTenue}`}>No llegaron</span>{' '}
-                                <b className={`font-black ${t.rojo.texto}`}>{datos.noLlegaron}</b></span>
+                            <span className={t.rojo.texto}>
+                                {' '}{datos.noLlegaron === 1 ? 'Un producto no llegó' : `${datos.noLlegaron} productos no llegaron`} en la caja: revisa si quedó en tu sala.
+                            </span>
                         )}
-                    </div>
+                    </Bloque>
                 )}
                 {esEnvio && datos.devueltos.length > 0 && (
                     <ul className="bg-surface-card-hover divide-y divide-border-card">
                         {datos.devueltos.map((p, i) => (
                             <li key={`${p.nombre}-${i}`} className="px-2.5 py-2">
                                 <p className="text-body-sm font-black break-words leading-snug">{p.nombre}</p>
-                                {p.motivo && <p className={`text-caption font-semibold mt-0.5 ${claseTenue}`}>{enOracion(p.motivo)}</p>}
+                                {p.motivo && (
+                                    <p className="text-caption mt-0.5">
+                                        <span className={`font-black uppercase tracking-wide ${claseTenue}`}>Por qué lo devuelve</span>{' '}
+                                        <span className="font-semibold">{enOracion(p.motivo)}</span>
+                                    </p>
+                                )}
                             </li>
                         ))}
                     </ul>
                 )}
-                {esEnvio && datos.noLlegaron > 0 && (
-                    <Bloque rotulo="Ojo" claseTenue={claseTenue} claseRotulo={t.rojo.texto}>
-                        {datos.noLlegaron === 1 ? 'Un producto no llegó en la caja.' : `${datos.noLlegaron} productos no llegaron en la caja.`}
-                        {' '}Revisa si quedó en tu sala.
+                {esEnvio && datos.estado === 'DEVUELVE' && (
+                    <Bloque rotulo="Qué sigue" claseTenue={claseTenue} claseRotulo={t.naranja.texto}>
+                        Confirma en Envíos cuando la caja esté de vuelta en tu sala.
                     </Bloque>
                 )}
 
@@ -1130,10 +1142,18 @@ export function CuerpoDeDecision({ datos, claseTenue, isDark, buscarEmpleado }) 
     const rango = rangoDeFechas(datos.desde, datos.hasta);
     const pares = [
         [
-            datos.fecha && { k: 'fecha', rotulo: 'Fecha', valor: fechaCorta(datos.fecha) },
+            datos.fecha && { k: 'fecha', rotulo: 'Fecha',
+                // Dos piezas que no se parten, separadas por un espacio: con «·»
+                // el punto quedaba colgando al envolver.
+                valor: <><span className="whitespace-nowrap">{fechaCorta(datos.fecha)}</span>
+                    {datos.hora && <>{' '}<span className="whitespace-nowrap">{hora12(datos.hora)}</span></>}</> },
             datos.monto != null && { k: 'monto', rotulo: 'Monto', valor: formatMoney(datos.monto) },
             datos.doc && { k: 'doc', rotulo: 'Documento', valor: datos.doc },
+            datos.pago && { k: 'pago', rotulo: 'Pago', valor: conMayuscula(datos.pago) },
         ],
+        // El cliente en su propia fila: es un nombre largo (24-sep: «tipo de
+        // pago y cliente»).
+        [datos.cliente && { k: 'cliente', rotulo: 'Cliente', valor: datos.cliente, fila: true }],
         [
             datos.antes && { k: 'antes', rotulo: 'Era', valor: conMayuscula(datos.antes) },
             datos.despues && { k: 'despues', rotulo: datos.antes ? 'Pasa a' : 'Nuevo', valor: conMayuscula(datos.despues),
@@ -1162,10 +1182,10 @@ export function CuerpoDeDecision({ datos, claseTenue, isDark, buscarEmpleado }) 
                 {pares.flatMap((grupo) => {
                     const celdas = grupo.filter(Boolean);
                     return celdas.map((c, i) => {
-                        const sola = i === celdas.length - 1 && i % 2 === 0;
+                        const sola = c.fila || (i === celdas.length - 1 && i % 2 === 0);
                         return (
                             <Celda key={c.k} rotulo={c.rotulo} clase={c.clase} claseTenue={claseTenue}
-                                derecha={!sola && i % 2 === 1} apilable sola={sola}>
+                                derecha={!sola && i % 2 === 1} apilable={!c.fila} sola={sola}>
                                 {c.valor}
                             </Celda>
                         );
@@ -1226,11 +1246,21 @@ export function InsigniaDeDiferencia({ datos, isDark }) {
     return <Disco tono={tono} Icono={datos.estado === 'confirmada' ? Check : Scale} />;
 }
 
+/* «Faltaron 2», «Sobró 1»: qué pasó y cuánto, en una sola cifra. */
+const queCantidad = (d) => {
+    const n = d.problema ?? (d.enviada != null && d.recibida != null ? Math.abs(d.enviada - d.recibida) : null);
+    if (!n) return d.que;
+    if (d.que === 'Faltó')  return n === 1 ? 'Faltó 1' : `Faltaron ${unidades(n)}`;
+    if (d.que === 'Sobró')  return n === 1 ? 'Sobró 1' : `Sobraron ${unidades(n)}`;
+    return d.que;
+};
+
 export function CuerpoDeDiferencia({ datos, claseTenue, isDark, buscarEmpleado }) {
     const t = tonos(isDark);
     const d = deDiferencia(datos.estado);
     const emp = usePersona(datos.quienId, datos.quien, datos.quienFoto, buscarEmpleado);
     const cantidades = datos.recibida != null && datos.enviada != null;
+    const que = queCantidad(datos);
     return (
         <div className="@container">
             <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
@@ -1239,17 +1269,25 @@ export function CuerpoDeDiferencia({ datos, claseTenue, isDark, buscarEmpleado }
                         <p className="text-body-sm font-black break-words leading-snug">{datos.producto}</p>
                     </div>
                 )}
-                {datos.que && (
-                    <Celda rotulo="Qué pasó" claseTenue={claseTenue} apilable sola={!cantidades}>{datos.que}</Celda>
+                {que && (
+                    <Celda rotulo="Qué pasó" claseTenue={claseTenue} apilable sola={!cantidades}>{que}</Celda>
                 )}
                 {cantidades && (
-                    <Celda rotulo="Llegaron" claseTenue={claseTenue} derecha={!!datos.que} apilable sola={!datos.que}>
+                    <Celda rotulo="Llegaron" claseTenue={claseTenue} derecha={!!que} apilable sola={!que}>
                         {unidades(datos.recibida)} de {unidades(datos.enviada)}
                     </Celda>
                 )}
+                {/* La salida, si se arregla con un traslado o en físico, y qué
+                    significa para quien lee — la misma explicación que Pedidos
+                    (24-sep: «¿se refiere al sistema? deja claros esos
+                    mensajes»). */}
                 {datos.salida && (
                     <Bloque rotulo={d.salida} claseTenue={claseTenue} claseRotulo={t[d.tono].texto}>
                         <span className="font-black">{datos.salida}</span>
+                        {datos.corto && <span className="ml-1.5 inline-block align-middle"><Pildora tono={t.gris}>{datos.corto}</Pildora></span>}
+                        {datos.ayuda && datos.estado !== 'confirmada' && (
+                            <p className={`text-caption font-semibold mt-1 ${claseTenue}`}>{datos.ayuda}</p>
+                        )}
                     </Bloque>
                 )}
                 {(emp || datos.quien) && (
@@ -1261,6 +1299,86 @@ export function CuerpoDeDiferencia({ datos, claseTenue, isDark, buscarEmpleado }
                     </Bloque>
                 )}
             </Grilla>
+        </div>
+    );
+}
+
+/* ── Contestar la diferencia desde la campana (usuario, 24-sep) ────────────
+ * Los mismos turnos que `DecisionDiferencia` en Pedidos: bodega contesta una
+ * propuesta (acepta o propone la otra), la sala contesta una contrapropuesta
+ * (acepta o rechaza con motivo), supervisión decide una escalada. Sólo se
+ * pintan para quien tiene el turno; la base igual lo vuelve a comprobar. */
+export function AccionesDeDiferencia({ datos }) {
+    const [ocupado, setOcupado] = useState(false);
+    const [hecho, setHecho] = useState(null);
+    const [rechazando, setRechazando] = useState(false);
+    const [motivo, setMotivo] = useState('');
+    const laOtra = datos.opciones.find((o) => o.valor !== datos.valor);
+
+    const decidir = async (e, accion, tipo = null, nota = null) => {
+        e?.stopPropagation?.();
+        setOcupado(true);
+        const { error } = await decidirDiferencia({ itemId: datos.itemId, accion, tipo, nota });
+        setOcupado(false);
+        if (error) {
+            useToastStore.getState().showToast('No se pudo', mensajeAmigable(error, 'No se pudo guardar la respuesta.'), 'error');
+            return;
+        }
+        setHecho(accion);
+    };
+
+    if (hecho) {
+        return (
+            <p className="text-caption font-bold text-success-text px-0.5">
+                {hecho === 'aceptar' ? 'Aceptaste la salida.' : hecho === 'rechazar' ? 'La mandaste a supervisión.' : 'Listo: se avisó a la otra parte.'}
+            </p>
+        );
+    }
+    const alto = (e) => e.stopPropagation();
+
+    if (datos.estado === 'escalada') {
+        return (
+            <div className="flex flex-wrap items-stretch gap-2" onClick={alto}>
+                {datos.opciones.map((o) => (
+                    <Button key={o.valor} size="xs" variant="secondary" className="flex-1 min-w-0" disabled={ocupado}
+                        onClick={(e) => decidir(e, 'supervisar', o.valor)}>
+                        {o.corto}
+                    </Button>
+                ))}
+            </div>
+        );
+    }
+    if (rechazando) {
+        return (
+            <div className="flex gap-2" onClick={alto}>
+                <PortalInput aria-label="Por qué no" className="flex-1" tono="danger" compact autoFocus
+                    value={motivo} onChange={(e) => setMotivo(e.target.value)}
+                    placeholder="Por qué no… (lo lee supervisión)" />
+                <Button size="xs" tone="danger" soft loading={ocupado} disabled={!motivo.trim()}
+                    onClick={(e) => decidir(e, 'rechazar', null, motivo.trim())}>Rechazar</Button>
+                <Button size="xs" variant="ghost" icon={X} iconOnly title="Cancelar"
+                    onClick={(e) => { e.stopPropagation(); setRechazando(false); }} />
+            </div>
+        );
+    }
+    return (
+        <div className="flex items-stretch gap-2" onClick={alto}>
+            <Button size="xs" tone="success" soft icon={Check} className="flex-1 min-w-0" loading={ocupado}
+                onClick={(e) => decidir(e, 'aceptar')}>
+                Aceptar
+            </Button>
+            {datos.estado === 'propuesta' && laOtra && (
+                <Button size="xs" variant="secondary" icon={ArrowLeftRight} className="flex-1 min-w-0" disabled={ocupado}
+                    onClick={(e) => decidir(e, 'contraproponer', laOtra.valor)}>
+                    Proponer {laOtra.corto.toLowerCase()}
+                </Button>
+            )}
+            {datos.estado === 'contrapropuesta' && (
+                <Button size="xs" tone="danger" soft icon={X} className="flex-1 min-w-0" disabled={ocupado}
+                    onClick={(e) => { e.stopPropagation(); setRechazando(true); }}>
+                    Rechazar
+                </Button>
+            )}
         </div>
     );
 }

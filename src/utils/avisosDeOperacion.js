@@ -351,8 +351,11 @@ export function datosDeDecision(n) {
         quienFoto: d.quien_foto || null,
         sala: d.sala ? String(d.sala) : null,
         fecha: d.fecha || null,
+        hora: d.hora || null,
         monto: num(d.monto),
         doc: d.doc ? String(d.doc) : null,
+        pago: d.pago ? String(d.pago) : null,
+        cliente: d.cliente ? String(d.cliente) : null,
         antes: d.antes != null ? String(d.antes) : null,
         despues: d.despues != null ? String(d.despues) : null,
         producto: d.producto ? String(d.producto) : null,
@@ -382,9 +385,25 @@ export function datosDeDiferencia(n) {
         recibida: num(d.recibida),
         problema: num(d.problema),
         salida: d.salida ? String(d.salida) : null,
+        // Si se arregla con un traslado o en físico, y qué significa para el
+        // lado de quien lee (24-sep: «¿se refiere al sistema?»).
+        corto: d.corto ? String(d.corto) : null,
+        ayuda: d.ayuda ? String(d.ayuda) : null,
+        valor: d.valor ? String(d.valor) : null,
+        opciones: (Array.isArray(d.opciones) ? d.opciones : []).filter((o) => o && o.valor)
+            .map((o) => ({ valor: String(o.valor), rotulo: String(o.rotulo ?? o.valor), corto: String(o.corto ?? o.rotulo ?? o.valor) })),
+        itemId: d.item_id ?? null,
+        lado: d.lado ? String(d.lado) : null,
         nota: d.nota ? String(d.nota) : null,
         quien: d.quien ? String(d.quien) : null,
         quienId: d.quien_id || null,
         quienFoto: d.quien_foto || null,
     };
 }
+
+/** ¿Me toca contestar esta diferencia? Los mismos turnos que `turnoDe` en
+ *  `utils/decisionDiferencia.js`; la base lo vuelve a comprobar. */
+export const diferenciaMeToca = (d) => Boolean(d?.itemId) && (
+    (d.estado === 'propuesta'       && (d.lado === 'bodega' || d.lado === 'supervision'))
+    || (d.estado === 'contrapropuesta' && (d.lado === 'sala' || d.lado === 'supervision'))
+    || (d.estado === 'escalada'        && d.lado === 'supervision'));

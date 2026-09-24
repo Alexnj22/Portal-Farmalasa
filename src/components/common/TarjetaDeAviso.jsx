@@ -16,7 +16,7 @@ import {
     InsigniaDeCortesPendientes, CuerpoDeCortesPendientes, InsigniaDePedido, CuerpoDePedido,
     InsigniaDeSolicitud, CuerpoDeSolicitud, PRODUCTOS_VISIBLES,
     InsigniaDeRespuesta, CuerpoDeRespuesta, InsigniaDeDecision, CuerpoDeDecision,
-    InsigniaDeDiferencia, CuerpoDeDiferencia,
+    InsigniaDeDiferencia, CuerpoDeDiferencia, AccionesDeDiferencia,
 } from './TarjetasDeOperacion';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
 import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
@@ -26,7 +26,7 @@ import {
     datosDeCorteNuevo, datosDeBitacoraPorVencer, datosDeTrasladosPorRespaldo, TRASLADOS_VISIBLES,
     datosDeMinmaxPendiente, datosDeBolsaNoCuadra, datosDeDeposito,
     datosDeAlertaDeVentas, datosDeFacturaDeSala, datosDeCortesPendientes, datosDePedido, datosDeSolicitud,
-    datosDeRespuesta, datosDeDecision, datosDeDiferencia,
+    datosDeRespuesta, datosDeDecision, datosDeDiferencia, diferenciaMeToca,
 } from '../../utils/avisosDeOperacion';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -497,6 +497,13 @@ const TarjetaDeAviso = ({
                 canónico, porque exige motivo — y ahí arriba se ve lo que se
                 rechaza. La regla no está duplicada: las dos llaman a
                 `useDecidirSolicitud`, la misma que usa la bandeja. */}
+            {/* Contestar una diferencia de pedido acá mismo, si me toca. */}
+            {diferencia && diferenciaMeToca(diferencia) && (
+                <div className={`relative px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
+                    <AccionesDeDiferencia datos={diferencia} />
+                </div>
+            )}
+
             {decidible && (
                 <div className={`relative flex items-stretch gap-2 px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
                     {/* `soft` y no relleno sólido: es el caso que nombra

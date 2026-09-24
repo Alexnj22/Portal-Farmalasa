@@ -613,6 +613,9 @@ const decisionParaLaTarjeta = (requestType, typeLabel, status, m, approverNote, 
         sala: m.branch_name || null,
         fecha: m.fecha || null,
         monto: numero(m.total ?? m.monto),
+        // Con el id de la venta, `avisar_a_empleados` agrega el cliente, la
+        // forma de pago y la hora (24-sep: «no sé cuál es»).
+        invoice_id: m.invoice_id || null,
         doc: DOC_DE[m.tipo_documento] || null,
         antes: cambio[0] || null,
         despues: cambio[1] || null,

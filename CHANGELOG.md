@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1049.0 — Tarjetas: diferencia explicada y con respuesta, envío claro, venta de la decisión
+
+Correcciones del usuario a la séptima tanda (24-sep):
+
+- **Diferencia de pedido**: «¿se refiere al sistema? deja claros esos
+  mensajes». La salida lleva si se arregla «Con un traslado» o «En físico» y la
+  explicación escrita para el lado de quien lee —la misma de Pedidos
+  (`ayuda_sala`/`ayuda_bodega`)—. «Qué pasó» dice la cantidad («Faltaron 2»).
+  Y **se contesta desde la campana** a quien le toca: bodega acepta o propone
+  la otra, la sala acepta o rechaza con motivo, supervisión elige en una
+  escalada — por `decidir_diferencia_pedido`, la misma de Pedidos.
+- **Decisión de una venta**: cliente, forma de pago y hora, leídos de la venta
+  por `avisar_a_empleados` («no sé cuál es»).
+- **Traslado**: «Se envía 1 / Se envían 2 de 3 / No se envía» en vez de «Van».
+- **Envío devuelto**: «Bodega te devuelve un producto de tu envío»; la tarjeta
+  lo dice de corrido («Tu envío a Bodega: se quedó con 2 productos y te
+  devuelve uno»), por qué lo devuelve y qué sigue.
+
+Migración `20260924181412`.
+
 ## v2.1048.0 — Tarjetas: respuesta a un traslado, decisión y diferencia de pedido
 
 Séptima tanda de tarjetas de la campana (usuario, 24-sep: «continuemos»):

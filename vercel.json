@@ -3,6 +3,7 @@
     { "source": "/api/oss-proxy/:path*", "destination": "/api/oss-proxy" },
     { "source": "/reglamento-puntos", "destination": "/reglamento-puntos.html" },
     { "source": "/privacidad", "destination": "/privacidad.html" },
+    { "source": "/assets/:path*", "destination": "/api/asset-perdido" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
   "headers": [

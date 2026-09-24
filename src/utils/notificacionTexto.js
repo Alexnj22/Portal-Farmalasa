@@ -1,4 +1,5 @@
 import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { hora12 } from './hora';
 
 /* Cómo se LEE una notificación: severidad, tono, verbo y antigüedad.
  *
@@ -110,7 +111,10 @@ const MISMO_DIA = (a, b) =>
 export const cuandoLlego = (iso) => {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '';
-    const hora = d.toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit' });
+    // La hora canónica —12 horas, con espacios que no se cortan—: con la del
+    // navegador, «9:16 a.» quedaba en un renglón y «m.» en el otro en el
+    // teléfono (24-sep).
+    const hora = hora12(d);
     if (MISMO_DIA(d, new Date())) return hora;
     return `${d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' })}, ${hora}`;
 };

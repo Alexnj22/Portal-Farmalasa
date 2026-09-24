@@ -55,7 +55,7 @@ export function CuerpoDeCreditos({ datos, claseTenue, isDark }) {
                         const t = tonoDeDias(s.dias, isDark);
                         return (
                             <li key={s.branchId ?? s.sala} className="flex items-center gap-2 min-w-0">
-                                <span className={`text-caption font-semibold truncate w-24 flex-shrink-0 ${claseTenue}`}>
+                                <span className={`text-caption font-semibold break-words w-24 flex-shrink-0 ${claseTenue}`}>
                                     {s.sala}
                                 </span>
                                 <span className="flex-1 h-1.5 rounded-full bg-border-card overflow-hidden">

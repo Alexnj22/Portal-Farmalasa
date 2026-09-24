@@ -53,17 +53,16 @@ const Pildora = ({ tono, icon, children }) => (
     <Badge variant={tono.variante} icon={icon}>{children}</Badge>
 );
 
-/** El panel de datos: columnas con rótulo arriba y cifra abajo. */
+/** Las cifras de resumen en una línea que se envuelve: «3 traslados · 6
+ *  unidades · 2 salas». En columnas fijas, a 320 px el rótulo se partía a la
+ *  mitad de la palabra («TRASL/ADOS»); así cada cifra baja entera. */
 const Panel = ({ datos, claseTenue }) => (
-    <div className="grid rounded-xl bg-surface-card-hover divide-x divide-border-card"
-        style={{ gridTemplateColumns: `repeat(${datos.length}, minmax(0, 1fr))` }}>
+    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-xl bg-surface-card-hover px-2.5 py-2">
         {datos.map((d) => (
-            <div key={d.etiqueta} className="px-2.5 py-2 min-w-0">
-                <p className={`text-caption font-semibold uppercase tracking-wide truncate ${claseTenue}`}>
-                    {d.etiqueta}
-                </p>
-                <p className={`text-body-sm font-black tabular-nums truncate ${d.clase ?? ''}`}>{d.valor}</p>
-            </div>
+            <span key={d.etiqueta} className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+                <span className={`text-body font-black tabular-nums ${d.clase ?? ''}`}>{d.valor}</span>
+                <span className={`text-caption font-semibold ${claseTenue}`}>{d.etiqueta}</span>
+            </span>
         ))}
     </div>
 );
@@ -161,10 +160,10 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
                     la cara no decía qué hizo esa persona (usuario, 23-sep). Es
                     quien HIZO el corte; confirmarlo es el paso que falta. */}
                 <div className="min-w-0 leading-tight">
-                    <p className={`text-caption font-black uppercase tracking-wide truncate ${claseTenue}`}>
+                    <p className={`text-caption font-black uppercase tracking-wide break-words ${claseTenue}`}>
                         Hizo el corte
                     </p>
-                    <p className="text-body-sm font-bold truncate mt-0.5">
+                    <p className="text-body-sm font-bold break-words mt-0.5">
                         {/* La sala va en el título del aviso; acá sólo quién. */}
                         {/* Sin ficha ligada el portal no sabe quién fue: se dice así,
                             como en la tarjeta de aperturas, y no se inventa un nombre. */}
@@ -255,7 +254,7 @@ export function CuerpoDeBitacora({ datos, claseTenue, isDark }) {
                         return (
                             <li key={`${d.area}-${d.tipo}-${i}`} className="flex items-center gap-2 px-2.5 py-1.5 min-w-0">
                                 <t.Icono className={`w-3.5 h-3.5 flex-shrink-0 ${tono.texto}`} aria-hidden="true" />
-                                <span className="flex-1 min-w-0 truncate text-caption font-bold">{d.area}</span>
+                                <span className="flex-1 min-w-0 break-words text-caption font-bold">{d.area}</span>
                                 <span className={`flex-shrink-0 text-caption font-semibold tabular-nums ${claseTenue}`}>
                                     {t.rotulo}{!unaFranja && d.desde && d.hasta ? ` · ${rango12(d.desde, d.hasta)}` : ''}
                                 </span>
@@ -268,7 +267,7 @@ export function CuerpoDeBitacora({ datos, claseTenue, isDark }) {
                     {areas.map((a) => (
                         <li key={a} className="flex items-center gap-2 px-2.5 py-1.5 min-w-0">
                             <Clock className={`w-3.5 h-3.5 flex-shrink-0 ${tono.texto}`} aria-hidden="true" />
-                            <span className="flex-1 min-w-0 truncate text-caption font-bold">{a}</span>
+                            <span className="flex-1 min-w-0 break-words text-caption font-bold">{a}</span>
                         </li>
                     ))}
                 </ul>
@@ -302,17 +301,17 @@ function FilaDeTraslado({ t, claseTenue, naranja, buscarEmpleado }) {
                 </span>
             )}
             <div className="flex-1 min-w-0 leading-tight">
-                <p className="text-caption font-bold truncate">
+                <p className="text-caption font-bold break-words">
                     {t.producto ?? 'Traslado'}{t.mas > 0 ? ` y ${t.mas} más` : ''}
                 </p>
                 {/* El destino primero: es lo que la sala tiene que ir a
                     comprobar. El nombre va último y es lo que se recorta — la
                     cara ya dice quién fue. */}
-                <p className={`text-caption font-semibold truncate flex items-center gap-1 ${claseTenue}`}>
+                <p className={`text-caption font-semibold flex flex-wrap items-center gap-1 ${claseTenue}`}>
                     <ArrowRight className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
                     <span className="flex-shrink-0">{t.destino}</span>
                     {hora && <span className="tabular-nums flex-shrink-0">· {hora}</span>}
-                    {emp && <span className="truncate">· {shortEmployeeName(emp)}</span>}
+                    {emp && <span className="break-words">· {shortEmployeeName(emp)}</span>}
                 </p>
             </div>
             {t.unidades != null && (
@@ -331,9 +330,9 @@ export function CuerpoDeTraslados({ datos, claseTenue, isDark, buscarEmpleado, e
     return (
         <div className="flex flex-col gap-2 mt-1.5">
             <Panel claseTenue={claseTenue} datos={[
-                { etiqueta: 'Traslados', valor: traslados.length },
-                { etiqueta: 'Unidades', valor: unidades },
-                { etiqueta: salas === 1 ? 'Sala' : 'Salas', valor: salas },
+                { etiqueta: traslados.length === 1 ? 'traslado' : 'traslados', valor: traslados.length },
+                { etiqueta: unidades === 1 ? 'unidad' : 'unidades', valor: unidades },
+                { etiqueta: salas === 1 ? 'sala' : 'salas', valor: salas },
             ]} />
             <ul className="rounded-xl bg-surface-card-hover divide-y divide-border-card">
                 {visibles.map((t, i) => (
@@ -358,12 +357,15 @@ const Grilla = ({ columnas, children }) => (
     </div>
 );
 
+/* Nada se recorta con «…»: el texto que no entra baja de renglón (usuario,
+ * 24-sep: «responsive sin cortar»). Un dato cortado en el teléfono es un dato
+ * que no se ve, y ninguna prueba lo marca. */
 const Celda = ({ rotulo, children, clase = '', claseTenue, derecha = false }) => (
     <div className={`bg-surface-card-hover px-2.5 py-2 min-w-0 leading-tight flex flex-col justify-center
         ${derecha ? 'items-end text-right' : ''} ${clase}`}>
-        <span className={`text-caption font-black uppercase tracking-wide truncate max-w-full
+        <span className={`text-caption font-black uppercase tracking-wide break-words max-w-full
             ${clase ? '' : claseTenue}`}>{rotulo}</span>
-        <span className="text-body-sm font-bold tabular-nums truncate max-w-full mt-0.5">{children}</span>
+        <span className="text-body-sm font-bold tabular-nums break-words max-w-full mt-0.5">{children}</span>
     </div>
 );
 
@@ -380,8 +382,8 @@ const CeldaPersona = ({ emp, rotulo, respaldo, claseTenue }) => (
             </span>
         )}
         <div className="min-w-0 leading-tight">
-            <p className={`text-caption font-black uppercase tracking-wide truncate ${claseTenue}`}>{rotulo}</p>
-            <p className="text-body-sm font-bold truncate mt-0.5">{emp ? shortEmployeeName(emp) : respaldo}</p>
+            <p className={`text-caption font-black uppercase tracking-wide break-words ${claseTenue}`}>{rotulo}</p>
+            <p className="text-body-sm font-bold break-words mt-0.5">{emp ? shortEmployeeName(emp) : respaldo}</p>
         </div>
     </div>
 );
@@ -447,7 +449,7 @@ export function CuerpoDeMinmax({ datos, claseTenue, isDark, buscarEmpleado }) {
             {datos.producto && (
                 <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
                     <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Producto</p>
-                    <p className={`text-body font-black line-clamp-2 mt-0.5 ${azul.texto}`}>{datos.producto}</p>
+                    <p className={`text-body font-black break-words mt-0.5 ${azul.texto}`}>{datos.producto}</p>
                 </div>
             )}
             <CeldaPersona emp={emp} rotulo="Lo pide" respaldo="Sin nombre" claseTenue={claseTenue} />
@@ -462,7 +464,7 @@ export function CuerpoDeMinmax({ datos, claseTenue, isDark, buscarEmpleado }) {
                     <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
                         Por qué lo pide
                     </p>
-                    <p className="text-body-sm font-semibold mt-0.5 line-clamp-3">{enOracion(datos.motivo)}</p>
+                    <p className="text-body-sm font-semibold mt-0.5 break-words">{enOracion(datos.motivo)}</p>
                 </div>
             )}
         </Grilla>
@@ -502,9 +504,9 @@ export function CuerpoDeBolsa({ datos, claseTenue, isDark, buscarEmpleado }) {
                             solo no entraba en el teléfono. */}
                         <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-tight">
                             <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Bolsa del corte</p>
-                            <p className="text-body-sm font-bold tabular-nums truncate mt-0.5">{b.folio}</p>
+                            <p className="text-body-sm font-bold tabular-nums break-words mt-0.5">{b.folio}</p>
                             {(fecha || b.hora) && (
-                                <p className={`text-caption font-semibold truncate mt-0.5 ${claseTenue}`}>
+                                <p className={`text-caption font-semibold break-words mt-0.5 ${claseTenue}`}>
                                     {[fecha, b.hora && hora12(b.hora)].filter(Boolean).join(' · ')}
                                 </p>
                             )}
@@ -567,9 +569,10 @@ export function CuerpoDeDeposito({ datos, claseTenue, isDark, buscarEmpleado }) 
                     </p>
                 )}
             </div>
-            {/* La derecha mide lo que su rótulo: «Quedó en efectivo» no cabía en
-                media tarjeta del teléfono. */}
-            <Grilla columnas="minmax(0,1fr) auto">
+            {/* Las columnas se APILAN cuando la tarjeta no alcanza para dos: en
+                un teléfono angosto «Conteo del» se cortaba por el ancho de «Quedó
+                en efectivo» (usuario, 24-sep: «responsive sin cortar»). */}
+            <Grilla columnas="repeat(auto-fit, minmax(8.5rem, 1fr))">
                 <CeldaPersona emp={emp} rotulo={datos.quienLleva ? 'Lo lleva' : 'Lo cerró'}
                     respaldo="Sin nombre" claseTenue={claseTenue} />
                 <Celda rotulo="Conteo del" claseTenue={claseTenue}>

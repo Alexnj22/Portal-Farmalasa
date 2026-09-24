@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1040.2 — Tarjetas de la campana sin textos cortados en el teléfono
+
+«La columna de conteo se corta en móvil por el ancho de la columna siguiente.
+Debe evaluar eso siempre el portal: responsive sin cortar» (usuario, 24-sep).
+
+- Las celdas de las tarjetas dejan de recortar con «…» (`truncate`,
+  `line-clamp`): el texto baja de renglón. También el nombre de la sala en la
+  de créditos vencidos.
+- Depósito: las columnas se apilan cuando la tarjeta no alcanza para dos.
+- Traslados: el resumen pasa de tres columnas —que a 320 px partían la palabra
+  («TRASL/ADOS»)— a cifras en una línea que se envuelve.
+- La hora de cada aviso (`cuandoLlego`) usa `hora12`: con la del navegador,
+  «9:16 a.» quedaba en un renglón y «m.» en el otro.
+
+Medido a 390, 360 y 320 px con un detector de recortes por tarjeta (elipsis,
+line-clamp y desbordes), al que antes se le fabricó la regresión: 8 hallazgos
+con el recorte puesto, 0 sin él.
+
 ## v2.1040.1 — MIN·MAX con ventas totales y producto destacado; bolsa con la hora de su corte
 
 Usuario, 24-sep: «pedí la venta total de los 6 meses, y la venta del último

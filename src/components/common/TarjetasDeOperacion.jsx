@@ -868,6 +868,7 @@ const TIPO_DE_SOLICITUD = {
     ABONO_CREDITO_CHANGE:       { tono: 'naranja', Icono: HandCoins },
     ABONO_APROBACION:           { tono: 'verde',   Icono: HandCoins },
     INVENTORY_TRANSFER_REQUEST: { tono: 'azul',    Icono: ArrowLeftRight },
+    INVENTORY_TRANSFER_PUSH:    { tono: 'azul',    Icono: PackageCheck },
     INVENTORY_LOAD_REQUEST:     { tono: 'verde',   Icono: PackagePlus },
     INVENTORY_DISCARD_REQUEST:  { tono: 'rojo',    Icono: Trash2 },
 };
@@ -936,7 +937,8 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado, e
     return (
         <div className="@container">
             <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
-                <CeldaPersona emp={emp} rotulo="Lo pide" respaldo={datos.quien ?? 'Sin nombre'} claseTenue={claseTenue} />
+                <CeldaPersona emp={emp} rotulo={datos.tipo === 'INVENTORY_TRANSFER_PUSH' ? 'Lo envía' : 'Lo pide'}
+                    respaldo={datos.quien ?? 'Sin nombre'} claseTenue={claseTenue} />
 
                 {(() => {
                     /* Las celdas van de a PARES y la que queda sin pareja ocupa
@@ -986,8 +988,10 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado, e
                     <ProductosDeTraslado productos={datos.productos} mas={datos.mas} sala={datos.origen}
                         claseTenue={claseTenue} azul={azul} expandida={expandida} />
                 ) : datos.productos.length > 0 && (
+                    /* Tres a la vista y el resto con «Ver los N productos»,
+                       igual que un traslado (un envío trae hasta 15). */
                     <ul className="bg-surface-card-hover divide-y divide-border-card" style={{ gridColumn: '1 / -1' }}>
-                        {datos.productos.map((p, i) => (
+                        {(expandida ? datos.productos : datos.productos.slice(0, PRODUCTOS_VISIBLES)).map((p, i) => (
                             <li key={`${p.nombre}-${i}`} className="flex items-center justify-between gap-3 px-2.5 py-1.5">
                                 <span className="text-caption font-bold break-words min-w-0">{p.nombre}</span>
                                 {p.cantidad != null && (
@@ -995,7 +999,12 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado, e
                                 )}
                             </li>
                         ))}
-                        {datos.mas > 0 && (
+                        {!expandida && datos.productos.length > PRODUCTOS_VISIBLES && (
+                            <li className={`px-2.5 py-1.5 text-caption font-semibold ${claseTenue}`}>
+                                y {datos.productos.length - PRODUCTOS_VISIBLES === 1 ? '1 producto más' : `${datos.productos.length - PRODUCTOS_VISIBLES} productos más`}
+                            </li>
+                        )}
+                        {datos.mas > 0 && (expandida || datos.productos.length <= PRODUCTOS_VISIBLES) && (
                             <li className={`px-2.5 py-1.5 text-caption font-semibold ${claseTenue}`}>
                                 y {datos.mas === 1 ? '1 producto más' : `${datos.mas} productos más`}
                             </li>
@@ -1005,7 +1014,9 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado, e
 
                 {datos.motivo && (
                     <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
-                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Por qué lo pide</p>
+                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                            {datos.tipo === 'INVENTORY_TRANSFER_PUSH' ? 'Por qué lo envía' : 'Por qué lo pide'}
+                        </p>
                         <p className="text-body-sm font-semibold break-words mt-0.5">{enOracion(datos.motivo)}</p>
                     </div>
                 )}

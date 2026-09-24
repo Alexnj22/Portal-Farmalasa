@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1055.0 — Tarjeta del envío de producto; el envío no se aprueba desde la campana
+
+- **Envío de producto** (el aviso más frecuente del portal, ~90 al día, que
+  seguía como texto con «📦 Te enviaron producto»): «Salud 5 te envía
+  producto», con quién lo envía y su cara, cada producto con sus unidades
+  —tres a la vista y «Ver los N productos»— y «Por qué lo envía». Migración
+  `20260924214312`.
+- **Un envío ya no se aprueba desde la campana.** No tiene módulo en
+  `MODULO_QUE_DECIDE`, así que caía en `requests` y a quien pudiera aprobar
+  solicitudes le aparecía «Aprobar»: lo habría marcado aprobado sin pasar por
+  los renglones. Se acepta o devuelve producto por producto en Traslados →
+  Envíos, igual que un traslado se confirma en Traslados.
+
 ## v2.1054.0 — Aviso semanal de productos sin venta al jefe de sala
 
 La tarjeta del aviso de productos sin venta, y la función que lo manda. **El

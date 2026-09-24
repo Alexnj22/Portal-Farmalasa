@@ -69,12 +69,17 @@ export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo 
        APROBADO **sin mover nada** y lo haría desaparecer de las tres pestañas de
        Traslados. */
     const esTraslado = (n) => n.metadata?.request_type === 'INVENTORY_TRANSFER_REQUEST';
+    /* Un ENVÍO tampoco (24-sep): se acepta o devuelve producto por producto en
+       Traslados → Envíos. No tiene módulo en `MODULO_QUE_DECIDE`, así que caía
+       en `requests` y a quien pudiera aprobar solicitudes la campana le
+       ofrecía «Aprobar» — que lo marcaría aprobado sin tocar un solo renglón. */
+    const esEnvio = (n) => n.metadata?.request_type === 'INVENTORY_TRANSFER_PUSH';
 
     /* `resuelta` la escribe el trigger `marcar_notificacion_solicitud_resuelta`
        en el momento en que la solicitud deja de estar PENDING. Sin eso, el aviso
        seguiría ofreciendo Aprobar/Rechazar sobre algo ya decidido. */
     const puedeDecidir = useCallback((n) => {
-        if (esTraslado(n)) return false;
+        if (esTraslado(n) || esEnvio(n)) return false;
         const modulo = moduloDelAviso(n);
         return !!modulo && hasPermission(modulo, 'can_approve')
             && !!n.metadata?.request_id && !n.metadata?.resuelta;

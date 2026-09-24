@@ -165,7 +165,8 @@ const TarjetaDeAviso = ({
     /* Y un cuarto: un traslado con más productos de los que se ven. Se aprueba
        desde la tarjeta, así que lo que se despliega es la lista entera de
        productos —ahí mismo— en vez del detalle de la solicitud (24-sep). */
-    const productosDeTraslado = n.metadata?.solicitud?.tipo === 'INVENTORY_TRANSFER_REQUEST'
+    // Y el envío, que también trae su lista entera (24-sep).
+    const productosDeTraslado = ['INVENTORY_TRANSFER_REQUEST', 'INVENTORY_TRANSFER_PUSH'].includes(n.metadata?.solicitud?.tipo)
         ? (n.metadata.solicitud.productos?.length ?? 0) : 0;
     const masProductos = productosDeTraslado > PRODUCTOS_VISIBLES;
     const expandible   = tieneDetalle || cuerpoCortado || masTraslados || masProductos;

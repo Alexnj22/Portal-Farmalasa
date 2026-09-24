@@ -103,6 +103,24 @@ export async function duplicarPromocion({ id, nombre, branchId = null }) {
     return data ?? null;
 }
 
+/** A quién le llega el resumen diario de la promoción (7:30 a. m.):
+ *  `{ supervision, salas }`. */
+export async function fetchResumenDePromocion(id) {
+    const { data, error } = await supabase.rpc('resumen_de_promocion', { p_id: Number(id) });
+    if (error) throw error;
+    return data ?? { supervision: false, salas: false };
+}
+
+/** Enciende, apaga o cambia a quién le llega el resumen diario. Queda en el
+ *  historial de la promoción. */
+export async function ajustarResumenPromocion(id, { supervision, salas }) {
+    const { data, error } = await supabase.rpc('ajustar_resumen_promocion', {
+        p_id: Number(id), p_supervision: !!supervision, p_salas: !!salas,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
 /** Enciende o devuelve a borrador. Una finalizada no se reabre. */
 export async function activarPromocion(id, activar = true) {
     const { data, error } = await supabase.rpc('activar_promocion', {

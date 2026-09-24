@@ -3,6 +3,7 @@ import { AlertTriangle, Check, Trash2, CalendarPlus, DollarSign, Percent } from 
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -13,7 +14,7 @@ import {
     fetchPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
     fetchLaboratoriosConProductos, agregarRenglonesAPromocion,
     editarRenglon, editarTarifaRenglon, extenderRenglon,
-    quitarRenglon, borrarPromocion,
+    quitarRenglon, borrarPromocion, fetchResumenDePromocion, ajustarResumenPromocion,
 } from '../../data/promociones';
 import { guardarDescuento, sincronizarProductosDelDescuento } from '../../data/descuentos';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -338,6 +339,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                 )}
                             </Notice>
                         )}
+
+                        <ResumenDiario promocionId={promocionId} />
 
                         <Notice variant="info" compact>
                             Corregir el <span className="font-semibold">lote</span>, la{' '}
@@ -770,3 +773,63 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
     );
 }
 
+/* ── El resumen diario de la promoción (usuario, 24-sep) ───────────────────
+ * «¿Podría activar en la promoción si lleva o no notificación, y si sólo llega
+ * a supervisión o a la sucursal?». Se guarda al elegir —es un solo dato y no
+ * tiene nada que confirmar— y queda en el historial de la promoción.
+ * Supervisión recibe todas las salas; cada sala, sólo lo suyo. */
+const OPCIONES_RESUMEN = [
+    { value: 'no',          label: 'No' },
+    { value: 'supervision', label: 'Supervisión' },
+    { value: 'salas',       label: 'Salas' },
+    { value: 'ambos',       label: 'Las dos' },
+];
+const EXPLICACION_RESUMEN = {
+    no:          'Esta promoción no manda resumen.',
+    supervision: 'Supervisión recibe cada día cómo va la promoción en todas las salas.',
+    salas:       'La jefatura de cada sala recibe cada día cuánto lleva vendido su sala.',
+    ambos:       'Supervisión lo recibe con todas las salas, y cada sala con lo suyo.',
+};
+const aOpcion = (r) => (r?.supervision && r?.salas ? 'ambos' : r?.supervision ? 'supervision' : r?.salas ? 'salas' : 'no');
+
+function ResumenDiario({ promocionId }) {
+    const [valor, setValor] = useState(null);
+    const [guardando, setGuardando] = useState(false);
+    const [fallo, setFallo] = useState(null);
+
+    useEffect(() => {
+        let vivo = true;
+        fetchResumenDePromocion(promocionId)
+            .then((r) => { if (vivo) setValor(aOpcion(r)); })
+            .catch((e) => { if (vivo) setFallo(mensajeAmigable(e, 'No se pudo leer el resumen diario.')); });
+        return () => { vivo = false; };
+    }, [promocionId]);
+
+    const cambiar = async (nuevo) => {
+        const antes = valor;
+        setValor(nuevo);
+        setGuardando(true);
+        setFallo(null);
+        try {
+            await ajustarResumenPromocion(promocionId, {
+                supervision: nuevo === 'supervision' || nuevo === 'ambos',
+                salas: nuevo === 'salas' || nuevo === 'ambos',
+            });
+        } catch (e) {
+            setValor(antes);
+            setFallo(mensajeAmigable(e, 'No se pudo guardar el resumen diario.'));
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    if (valor == null && !fallo) return null;
+    return (
+        <Campo rotulo="Resumen diario (7:30 a. m.)">
+            <SegmentedControl size="sm" label="Resumen diario" value={valor ?? 'no'}
+                onChange={cambiar} disabled={guardando} options={OPCIONES_RESUMEN} />
+            {valor && <p className="text-caption text-content-3 mt-1.5">{EXPLICACION_RESUMEN[valor]}</p>}
+            {fallo && <p className="text-caption text-danger-text mt-1.5">{fallo}</p>}
+        </Campo>
+    );
+}

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1059.0 — Resumen diario de promociones configurable por promoción
+
+Cada promoción decide si manda el resumen de las 7:30 a. m. y a quién
+(Editar → «Resumen diario»): **No**, **Supervisión** (todas las salas, una
+fila por promoción), **Salas** (la jefatura de cada sala recibe sólo lo suyo:
+cuánto lleva vendido y su lote por agotarse) o **Las dos**.
+
+- Columnas `promociones.resumen_supervision` / `resumen_salas`, por defecto
+  apagadas: las promociones que ya existían quedan **sin resumen** hasta que
+  alguien lo encienda (decisión del usuario).
+- `resumen_de_promocion` / `ajustar_resumen_promocion` (este último exige
+  editar en Promociones y deja el cambio en el historial).
+- `promociones_ciclo_diario`: el paso 4b filtra por `resumen_supervision` y el
+  nuevo 4c arma un resumen por sala.
+- Migración `20260924222951`.
+
 ## v2.1058.1 — Núcleo portable F1: la sesión (AuthContext) sin navegador
 
 Sin cambios visibles. Segundo paso de F1 del plan

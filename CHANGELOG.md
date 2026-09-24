@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.6 — Seguimiento de promociones: gráfica por sala y vendedores por sucursal
+
+- **Por sala, en barras:** la tarjeta de cada producto en Seguimiento muestra
+  una barra por sala. Con cupo, lo vendido contra su cupo; sin cupo, contra la
+  sala que más vendió, con su parte del total. Se fue el «/ 0» que decía un
+  cupo inexistente.
+- **Quién vendió, por sucursal:** una tarjeta por sala con sus unidades, cuántas
+  personas vendieron y lo que se habría ganado; adentro, cada persona con su
+  barra. Los nombres salen cortos (primer nombre + primer apellido).
+- El nombre del producto va en su propia línea: en el teléfono se partía letra
+  por letra.
+- Resumen diario (Editar): textos más cortos para que no se corten.
+
 ## v2.1060.5 — Pestaña activa «azul noche» en Liquid oscuro
 
 El azul sólido de v2.1060.3 no gustó: «pierde el liquid glass y ese azul es

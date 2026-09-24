@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    Layers, Search, AlertTriangle, Download, Package, FileText, Users, DollarSign,
+    Layers, Search, AlertTriangle, Download, Package, FileText, Users, DollarSign, Store,
 } from 'lucide-react';
-import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
@@ -132,42 +132,20 @@ export default function TabSeguimiento({ promos, busqueda, elegida, onResumen })
                             )}
                         </div>
 
-                        <DataTable
-                            columns={[
-                                { key: 'nombre',     label: 'Vendedor' },
-                                { key: 'sala',       label: 'Sala', hideBelow: 'md' },
-                                { key: 'unidades',   label: 'Unidades', align: 'right' },
-                                { key: 'documentos', label: 'Documentos', align: 'right', hideBelow: 'lg' },
-                                { key: 'bono',       label: 'Se habría ganado', align: 'right' },
-                            ]}
-                            minWidth="320px"
-                            /* La fila no lleva a ningún lado: es el detalle
-                               final. Sin `usarAccionDeFila` el canónico abre su
-                               hoja genérica, que acá es exactamente lo correcto. */
-                            empty={{ icon: Layers, message: 'Sin ventas todavía',
-                                     subtext: 'Nadie ha vendido productos de esta promoción en su vigencia.' }}
-                        >
-                            {vendedores.map((v, i) => (
-                                <DataRow key={`${v.cod_vendedor}-${i}`} index={i}>
-                                    <DataCell>
-                                        <span className="font-medium text-content">{v.nombre}</span>
-                                        {v.sin_dueno && (
-                                            <Badge variant="warning" size="sm" className="ml-2">Sin dueño</Badge>
-                                        )}
-                                    </DataCell>
-                                    <DataCell hideBelow="md">
-                                        <span className="text-caption text-content-3">{v.sala || '—'}</span>
-                                    </DataCell>
-                                    <DataCell align="right">{fmtUnidades(v.unidades)}</DataCell>
-                                    <DataCell align="right" hideBelow="lg">{fmtUnidades(v.documentos)}</DataCell>
-                                    <DataCell align="right">
-                                        <span className={v.sin_dueno ? 'text-content-3' : 'text-brand font-semibold'}>
-                                            {fmtMoneda(v.bono)}
-                                        </span>
-                                    </DataCell>
-                                </DataRow>
-                            ))}
-                        </DataTable>
+                        {vendedores.length === 0 ? (
+                            <EmptyState icon={Layers} title="Sin ventas todavía"
+                                subtitle="Nadie ha vendido productos de esta promoción en su vigencia." />
+                        ) : (
+                            /* Por sucursal (usuario, 24-sep: «separa en secciones
+                               por sucursal»): lo que se compara es cómo va cada
+                               sala, y en una lista plana ordenada por nombre la
+                               sala era una columna más que había que ir leyendo. */
+                            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                {porSala(vendedores).map((g) => (
+                                    <SeccionSala key={g.sala} g={g} conBono={renglones.some((r) => r.tiene_bono)} />
+                                ))}
+                            </div>
+                        )}
 
                         {sinDueno?.unidades > 0 && (
                             <Notice variant="warning" icon={AlertTriangle} compact>
@@ -192,10 +170,12 @@ function TarjetaRenglon({ r }) {
             data-surface="card"
             className="rounded-card border border-border-card bg-surface-card shadow-card p-4 space-y-3"
         >
-            <div className="flex items-start gap-2 flex-wrap">
-                <h4 className="text-body font-semibold text-content flex-1 min-w-0 truncate">
-                    {r.producto}
-                </h4>
+            {/* El nombre va solo en su línea: compartiéndola con las etiquetas,
+                en el teléfono le quedaba ancho cero y se partía letra por letra. */}
+            <h4 className="text-body font-semibold text-content break-words">
+                {r.producto}
+            </h4>
+            <div className="flex items-center gap-2 flex-wrap -mt-1">
                 <Badge variant={r.factor_unidades == null ? 'neutral' : 'info'} size="sm">
                     {rotuloPresentacion(r.factor_unidades)}
                 </Badge>
@@ -251,21 +231,7 @@ function TarjetaRenglon({ r }) {
             )}
 
             {Array.isArray(r.reparto) && r.reparto.length > 0 && (
-                <ul className="space-y-1 pt-1 border-t border-border-muted">
-                    {r.reparto.map((s) => (
-                        <li key={s.branch_id} className="flex items-baseline gap-2 text-caption tabular-nums">
-                            <span className="text-content-2 flex-1 truncate">{s.sala}</span>
-                            <span className="text-content">{fmtUnidades(s.vendido)}</span>
-                            <span className="text-content-3">/ {fmtUnidades(s.asignado_vigente)}</span>
-                            {s.asignado_vigente !== s.asignado_original && (
-                                <Badge variant="info" size="sm">
-                                    {s.asignado_vigente > s.asignado_original ? '+' : ''}
-                                    {s.asignado_vigente - s.asignado_original}
-                                </Badge>
-                            )}
-                        </li>
-                    ))}
-                </ul>
+                <BarrasPorSala reparto={r.reparto} />
             )}
         </div>
     );
@@ -281,5 +247,120 @@ function Mini({ rotulo, valor, destacado }) {
                 {valor}
             </span>
         </div>
+    );
+}
+
+/* Cuánto vendió cada sala, en barras (usuario, 24-sep: «agrega una gráfica, más
+ * visual»). Con cupo, la barra es lo vendido contra SU cupo; sin cupo no hay
+ * techo contra el cual medir, y la barra es contra la sala que más vendió — el
+ * «/ 0» de antes decía un cupo que no existe. */
+function BarrasPorSala({ reparto }) {
+    const conCupo = reparto.some((s) => Number(s.asignado_vigente) > 0);
+    const mayor = Math.max(1, ...reparto.map((s) => Number(s.vendido) || 0));
+    const total = reparto.reduce((a, s) => a + (Number(s.vendido) || 0), 0);
+    return (
+        <div className="pt-3 border-t border-border-muted space-y-2">
+            <p className="text-micro uppercase tracking-wide text-content-3 font-semibold">
+                {conCupo ? 'Por sala, contra su cupo' : 'Por sala'}
+            </p>
+            <ul className="space-y-2">
+                {reparto.map((s) => {
+                    const v = Number(s.vendido) || 0;
+                    const cupo = Number(s.asignado_vigente) || 0;
+                    const pct = conCupo
+                        ? (cupo > 0 ? Math.min(100, (v / cupo) * 100) : 0)
+                        : (v / mayor) * 100;
+                    const tono = conCupo && cupo > 0 && v >= cupo ? 'bg-success'
+                        : conCupo && cupo > 0 && v >= cupo * 0.8 ? 'bg-warning' : 'bg-brand';
+                    return (
+                        <li key={s.branch_id} className={`grid ${conCupo ? 'grid-cols-[5.5rem_minmax(0,1fr)_7rem]' : 'grid-cols-[5.5rem_minmax(0,1fr)_4.5rem]'}
+                            items-center gap-2.5 text-caption tabular-nums`}>
+                            <span className="text-content-2 break-words">{s.sala}</span>
+                            <span className="h-2.5 rounded-full bg-surface-card-hover overflow-hidden" data-medida="dato">
+                                <span className={`block h-full rounded-full ${tono}`} style={{ width: `${Math.max(pct, v > 0 ? 3 : 0)}%` }} />
+                            </span>
+                            <span className="text-right">
+                                <span className="text-content font-semibold">{fmtUnidades(v)}</span>
+                                {conCupo && cupo > 0 && <span className="text-content-3"> de {fmtUnidades(cupo)}</span>}
+                                {!conCupo && total > 0 && (
+                                    <span className="text-content-3"> · {Math.round((v / total) * 100)}%</span>
+                                )}
+                                {s.asignado_vigente !== s.asignado_original && (
+                                    <Badge variant="info" size="sm" className="ml-1.5">
+                                        {s.asignado_vigente > s.asignado_original ? '+' : ''}
+                                        {s.asignado_vigente - s.asignado_original}
+                                    </Badge>
+                                )}
+                            </span>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+}
+
+/* Los vendedores, agrupados por sala y ordenados por nombre de sala —el mismo
+ * orden que el resto del portal—; adentro, quien más vendió primero. */
+function porSala(vendedores) {
+    const mapa = new Map();
+    for (const v of vendedores) {
+        const sala = v.sala || 'Sin sala';
+        if (!mapa.has(sala)) mapa.set(sala, { sala, gente: [], unidades: 0, bono: 0 });
+        const g = mapa.get(sala);
+        g.gente.push(v);
+        g.unidades += Number(v.unidades) || 0;
+        g.bono += v.sin_dueno ? 0 : Number(v.bono) || 0;
+    }
+    return [...mapa.values()]
+        .map((g) => ({ ...g, gente: g.gente.sort((a, b) => (b.unidades || 0) - (a.unidades || 0)) }))
+        .sort((a, b) => a.sala.localeCompare(b.sala, 'es', { numeric: true }));
+}
+
+function SeccionSala({ g, conBono }) {
+    const mayor = Math.max(1, ...g.gente.map((v) => Number(v.unidades) || 0));
+    return (
+        <section data-surface="card"
+            className="rounded-card border border-border-card bg-surface-card shadow-card p-4 space-y-3">
+            <header className="flex items-center gap-2.5">
+                <span className="shrink-0 grid place-items-center size-9 rounded-full bg-brand/10 text-brand-text">
+                    <Store size={16} aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h4 className="text-body font-semibold text-content break-words">{g.sala}</h4>
+                    <p className="text-caption text-content-3 tabular-nums">
+                        {fmtUnidades(g.unidades)} {g.unidades === 1 ? 'unidad' : 'unidades'}
+                        {' · '}{g.gente.length} {g.gente.length === 1 ? 'persona' : 'personas'}
+                    </p>
+                </div>
+                {conBono && (
+                    <span className="shrink-0 text-body font-semibold text-brand tabular-nums">{fmtMoneda(g.bono)}</span>
+                )}
+            </header>
+            <ul className="space-y-2 pt-3 border-t border-border-muted">
+                {g.gente.map((v, i) => {
+                    const u = Number(v.unidades) || 0;
+                    return (
+                        <li key={`${v.cod_vendedor}-${i}`} className="space-y-1">
+                            <div className="flex items-baseline gap-2 text-caption tabular-nums">
+                                <span className="text-content font-medium flex-1 min-w-0 break-words">
+                                    {shortEmployeeName(v.nombre)}
+                                    {v.sin_dueno && <Badge variant="warning" size="sm" className="ml-2">Sin dueño</Badge>}
+                                </span>
+                                <span className="text-content font-semibold">{fmtUnidades(u)}</span>
+                                {conBono && (
+                                    <span className={`w-16 text-right ${v.sin_dueno ? 'text-content-3' : 'text-brand'}`}>
+                                        {fmtMoneda(v.bono)}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="block h-1.5 rounded-full bg-surface-card-hover overflow-hidden" data-medida="dato">
+                                <span className="block h-full rounded-full bg-brand/70" style={{ width: `${(u / mayor) * 100}%` }} />
+                            </span>
+                        </li>
+                    );
+                })}
+            </ul>
+        </section>
     );
 }

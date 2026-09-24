@@ -784,8 +784,8 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
  * queda un estado sin ninguna marcada, que se leería como «no cargó». */
 const OPCIONES_RESUMEN = [
     { key: 'no',          icon: BellOff,     rotulo: 'Sin avisar',  detalle: 'No manda resumen.' },
-    { key: 'supervision', icon: ShieldCheck, rotulo: 'Supervisión', detalle: 'Cómo va en todas las salas.' },
-    { key: 'salas',       icon: Store,       rotulo: 'Salas',       detalle: 'Cada sala ve sólo lo suyo.' },
+    { key: 'supervision', icon: ShieldCheck, rotulo: 'Supervisión', detalle: 'Todas las salas.' },
+    { key: 'salas',       icon: Store,       rotulo: 'Salas',       detalle: 'Cada una, lo suyo.' },
 ];
 
 function ResumenDiario({ promocionId }) {
@@ -837,7 +837,7 @@ function ResumenDiario({ promocionId }) {
                             aria-pressed={si}
                             disabled={guardando || valor == null}
                             onClick={() => tocar(key)}
-                            className={`relative flex items-start gap-2.5 min-w-0 text-left rounded-card border p-3
+                            className={`relative flex items-center gap-2.5 min-w-0 h-auto text-left rounded-card border px-4 py-3.5
                                 min-h-[var(--tap-min)]
                                 transition-[background-color,border-color,transform] duration-[var(--dur-base)]
                                 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed

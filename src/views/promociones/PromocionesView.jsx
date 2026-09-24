@@ -460,6 +460,7 @@ export default function PromocionesView() {
                 onEditar={setEditando}
                 onVerMatriz={setMatriz}
                 onDuplicar={setDuplicando}
+                onSeguir={(id) => { setSeguida(String(id)); setTab('seguimiento'); }}
             />
         );
     };

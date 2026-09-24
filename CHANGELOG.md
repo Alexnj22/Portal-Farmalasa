@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.4 — Resumen diario con selección múltiple y la tarjeta lleva al seguimiento
+
+- **Resumen diario:** tres opciones con ícono y explicación —Sin avisar,
+  Supervisión, Salas—. Supervisión y Salas se eligen juntas o por separado;
+  «Sin avisar» excluye a las otras, y quitar la última vuelve a él.
+- **La tarjeta de una promoción lleva a su Seguimiento** al tocarla («Ver
+  seguimiento ›»). Los botones de adentro no la disparan.
+- El aviso de Editar dice en palabras llanas qué se recalcula (lote,
+  presentación, reparto) y qué rige desde hoy (cuánto se paga por unidad).
+- Tarjeta: el nombre y «Volver a borrador» ya no salen cortados.
+
+## v2.1060.3 — Pestaña activa azul sólido en Liquid oscuro
+
+«Siempre lo veo blanco el activo»: con el tinte azul al 18% de v2.1060.2 la
+píldora seguía leyéndose clara, porque el borde y el texto blancos sobre un
+fondo traslúcido hacían lo que el fondo ya no hacía.
+
+- La pestaña activa de `ViewTabBar` tiene tokens propios, `--tab-activa-fondo`
+  y `--tab-activa-texto`. En Liquid oscuro valen `--brand` y blanco —el mismo
+  azul sólido del segmentado activo de la misma pantalla—; en los demás temas
+  valen lo de siempre (`--surface-tab-active` y `--text-primary`).
+- `--surface-tab-active` (18%) queda para el realce al pasar el puntero, que
+  es para lo que se usa en las pestañas inactivas.
+
 ## v2.1060.2 — Menú: Inventario antes que Gestión de stock; pestaña activa azul en Liquid oscuro
 
 - **Menú:** en el grupo Inventario, «Inventario» va primero y «Gestión de

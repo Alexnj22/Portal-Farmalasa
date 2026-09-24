@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Trash2, CalendarPlus, DollarSign, Percent } from 'lucide-react';
+import { AlertTriangle, Check, Trash2, CalendarPlus, DollarSign, Percent, BellOff, ShieldCheck, Store } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
-import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -343,11 +342,12 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                         <ResumenDiario promocionId={promocionId} />
 
                         <Notice variant="info" compact>
-                            Corregir el <span className="font-semibold">lote</span>, la{' '}
+                            Si corriges el <span className="font-semibold">lote</span>, la{' '}
                             <span className="font-semibold">presentación</span> o el{' '}
-                            <span className="font-semibold">reparto</span> vuelve a contar las ventas
-                            con el dato bueno. Cambiar los <span className="font-semibold">montos</span>{' '}
-                            no reescribe lo ya ganado: rige desde el día del cambio.
+                            <span className="font-semibold">reparto entre salas</span>, lo vendido se
+                            vuelve a contar desde el inicio con el dato corregido. Si cambias{' '}
+                            <span className="font-semibold">cuánto se paga por unidad</span>, lo ya
+                            ganado no cambia: el monto nuevo cuenta desde hoy.
                         </Notice>
 
                         {(promo.renglones ?? []).map((r) => (
@@ -777,44 +777,44 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
  * «¿Podría activar en la promoción si lleva o no notificación, y si sólo llega
  * a supervisión o a la sucursal?». Se guarda al elegir —es un solo dato y no
  * tiene nada que confirmar— y queda en el historial de la promoción.
- * Supervisión recibe todas las salas; cada sala, sólo lo suyo. */
+ *
+ * Supervisión y Salas se eligen JUNTAS o por separado; «Sin avisar» es la única
+ * que excluye a las otras (usuario, 24-sep: «que sean seleccionables múltiples,
+ * menos el sin avisar»). Quitar la última elegida vuelve a «Sin avisar»: nunca
+ * queda un estado sin ninguna marcada, que se leería como «no cargó». */
 const OPCIONES_RESUMEN = [
-    { value: 'no',          label: 'No' },
-    { value: 'supervision', label: 'Supervisión' },
-    { value: 'salas',       label: 'Salas' },
-    { value: 'ambos',       label: 'Las dos' },
+    { key: 'no',          icon: BellOff,     rotulo: 'Sin avisar',  detalle: 'No manda resumen.' },
+    { key: 'supervision', icon: ShieldCheck, rotulo: 'Supervisión', detalle: 'Cómo va en todas las salas.' },
+    { key: 'salas',       icon: Store,       rotulo: 'Salas',       detalle: 'Cada sala ve sólo lo suyo.' },
 ];
-const EXPLICACION_RESUMEN = {
-    no:          'Esta promoción no manda resumen.',
-    supervision: 'Supervisión recibe cada día cómo va la promoción en todas las salas.',
-    salas:       'La jefatura de cada sala recibe cada día cuánto lleva vendido su sala.',
-    ambos:       'Supervisión lo recibe con todas las salas, y cada sala con lo suyo.',
-};
-const aOpcion = (r) => (r?.supervision && r?.salas ? 'ambos' : r?.supervision ? 'supervision' : r?.salas ? 'salas' : 'no');
 
 function ResumenDiario({ promocionId }) {
-    const [valor, setValor] = useState(null);
+    const [valor, setValor] = useState(null);   // { supervision, salas }
     const [guardando, setGuardando] = useState(false);
     const [fallo, setFallo] = useState(null);
 
     useEffect(() => {
         let vivo = true;
         fetchResumenDePromocion(promocionId)
-            .then((r) => { if (vivo) setValor(aOpcion(r)); })
+            .then((r) => { if (vivo) setValor({ supervision: !!r?.supervision, salas: !!r?.salas }); })
             .catch((e) => { if (vivo) setFallo(mensajeAmigable(e, 'No se pudo leer el resumen diario.')); });
         return () => { vivo = false; };
     }, [promocionId]);
 
-    const cambiar = async (nuevo) => {
+    const elegida = (key) => (key === 'no'
+        ? !valor?.supervision && !valor?.salas
+        : !!valor?.[key]);
+
+    const tocar = async (key) => {
         const antes = valor;
+        const nuevo = key === 'no'
+            ? { supervision: false, salas: false }
+            : { ...valor, [key]: !valor?.[key] };
         setValor(nuevo);
         setGuardando(true);
         setFallo(null);
         try {
-            await ajustarResumenPromocion(promocionId, {
-                supervision: nuevo === 'supervision' || nuevo === 'ambos',
-                salas: nuevo === 'salas' || nuevo === 'ambos',
-            });
+            await ajustarResumenPromocion(promocionId, nuevo);
         } catch (e) {
             setValor(antes);
             setFallo(mensajeAmigable(e, 'No se pudo guardar el resumen diario.'));
@@ -825,10 +825,45 @@ function ResumenDiario({ promocionId }) {
 
     if (valor == null && !fallo) return null;
     return (
-        <Campo rotulo="Resumen diario (7:30 a. m.)">
-            <SegmentedControl size="sm" label="Resumen diario" value={valor ?? 'no'}
-                onChange={cambiar} disabled={guardando} options={OPCIONES_RESUMEN} />
-            {valor && <p className="text-caption text-content-3 mt-1.5">{EXPLICACION_RESUMEN[valor]}</p>}
+        <Campo rotulo="Resumen diario · 7:30 a. m.">
+            <div role="group" aria-label="A quién le llega el resumen diario"
+                className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2">
+                {OPCIONES_RESUMEN.map(({ key, icon: Icono, rotulo, detalle }) => {
+                    const si = elegida(key);
+                    return (
+                        <button
+                            key={key}
+                            type="button"
+                            aria-pressed={si}
+                            disabled={guardando || valor == null}
+                            onClick={() => tocar(key)}
+                            className={`relative flex items-start gap-2.5 min-w-0 text-left rounded-card border p-3
+                                min-h-[var(--tap-min)]
+                                transition-[background-color,border-color,transform] duration-[var(--dur-base)]
+                                active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed
+                                ${si
+                                    ? 'border-brand bg-brand/10'
+                                    : 'border-border-card bg-surface-card-hover hover:border-brand/40'}`}
+                        >
+                            <span className={`shrink-0 grid place-items-center size-8 rounded-full
+                                ${si ? 'bg-brand text-white' : 'bg-surface-card text-content-3'}`}>
+                                <Icono size={16} aria-hidden />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className={`block text-body font-semibold ${si ? 'text-content' : 'text-content-2'}`}>
+                                    {rotulo}
+                                </span>
+                                <span className="block text-caption text-content-3">{detalle}</span>
+                            </span>
+                            <span aria-hidden className={`shrink-0 grid place-items-center size-5 border
+                                ${key === 'no' ? 'rounded-full' : 'rounded-md'}
+                                ${si ? 'bg-brand border-brand text-white' : 'border-border-card'}`}>
+                                {si && <Check size={13} strokeWidth={3} />}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
             {fallo && <p className="text-caption text-danger-text mt-1.5">{fallo}</p>}
         </Campo>
     );

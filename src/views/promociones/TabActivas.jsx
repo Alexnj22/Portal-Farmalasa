@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy, Percent } from 'lucide-react';
+import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy, Percent, ChevronRight } from 'lucide-react';
+import { clickable } from '../../utils/clickable';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
@@ -19,7 +20,7 @@ import {
  * leer de un vistazo — cuánto queda del lote.
  */
 export default function TabActivas({
-    promos, busqueda, puedeEditar, onCambio, onNueva, onEditar, onVerMatriz, onDuplicar,
+    promos, busqueda, puedeEditar, onCambio, onNueva, onEditar, onVerMatriz, onDuplicar, onSeguir,
 }) {
     if (!promos.length) {
         // Buscar sin resultados NO es un vacío: uno se arregla borrando el
@@ -55,13 +56,14 @@ export default function TabActivas({
                     onEditar={() => onEditar?.({ id: p.id, tipo: p.tipo || 'producto' })}
                     onVerMatriz={() => onVerMatriz?.(p.id)}
                     onDuplicar={() => onDuplicar?.(p)}
+                    onSeguir={onSeguir ? () => onSeguir(p.id) : undefined}
                 />
             ))}
         </div>
     );
 }
 
-function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz, onDuplicar }) {
+function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz, onDuplicar, onSeguir }) {
     const [ocupado, setOcupado] = useState(false);
     const [fallo, setFallo] = useState(null);
 
@@ -84,13 +86,18 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
     };
 
     return (
+        /* Tocar la tarjeta lleva a su Seguimiento (usuario, 24-sep: «si doy clic
+           a la card no me lleva a ver el seguimiento»). Los botones de adentro
+           cortan el clic para no hacer las dos cosas a la vez. */
         <div
             data-surface="card"
-            className="rounded-card border border-border-card bg-surface-card shadow-card p-4 flex flex-col gap-3"
+            {...clickable(onSeguir, { label: `Ver el seguimiento de ${promo.nombre}` })}
+            className={`rounded-card border border-border-card bg-surface-card shadow-card p-4 flex flex-col gap-3
+                ${onSeguir ? 'cursor-pointer hover:border-brand/40 active:scale-[0.99] transition-[border-color,transform] duration-[var(--dur-base)]' : ''}`}
         >
             <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
-                    <h3 className="text-body-lg font-semibold text-content truncate">{promo.nombre}</h3>
+                    <h3 className="text-body-lg font-semibold text-content break-words">{promo.nombre}</h3>
                     <p className="text-caption text-content-3 tabular-nums mt-0.5">
                         {/* La de laboratorio se nombra por su MES, no por un par
                             de fechas: «agosto 2026» es la unidad en la que se
@@ -148,13 +155,23 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                 mirar un número deja afuera justo a quien lo consulta. */}
             {esLab && (
                 <Button variant="secondary" size="sm" icon={BarChart3}
-                    onClick={onVerMatriz}>
+                    onClick={(e) => { e.stopPropagation(); onVerMatriz?.(); }}>
                     Ver cómo va cada sala
                 </Button>
             )}
 
+            {/* El ojo: la tarjeta se toca, y eso tiene que verse ANTES de tocar. */}
+            {onSeguir && (
+                <p className="flex items-center justify-end gap-0.5 text-caption font-semibold text-brand-text">
+                    Ver seguimiento <ChevronRight size={14} aria-hidden />
+                </p>
+            )}
+
             {puedeEditar && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                    {/* Envuelve en vez de recortar: en tres columnas la tarjeta
+                        mide ~290 px y «Volver a borrador» no cabía junto a
+                        «Editar» — salía cortado y sin ícono. */}
                     {promo.estado !== 'finalizada' && (
                         <Button
                             variant="secondary"
@@ -162,13 +179,13 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                             icon={promo.estado === 'activa' ? PauseCircle : Power}
                             loading={ocupado}
                             onClick={alternar}
-                            className="flex-1"
+                            className="flex-1 basis-[10rem]"
                         >
                             {promo.estado === 'activa' ? 'Volver a borrador' : 'Activar'}
                         </Button>
                     )}
                     <Button variant="secondary" size="sm" icon={Pencil}
-                        onClick={onEditar} className="flex-1">
+                        onClick={onEditar} className="flex-1 basis-[7rem]">
                         Editar
                     </Button>
                     {/* Duplicar: para cuando las condiciones son distintas por

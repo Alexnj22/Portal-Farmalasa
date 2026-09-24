@@ -802,6 +802,12 @@ thead.sticky,
      hoy es bg-white opaco liso, regardless of theme (bug de dark mode
      documentado en DESIGN.md §22, corregido de paso al migrar el componente). */
   --surface-tab-active: #ffffff;
+  /* La pestaña ACTIVA tiene sus propios tokens desde el 2026-09-24: el mismo
+     `--surface-tab-active` pinta también el realce al pasar el puntero, y en
+     Liquid oscuro las dos cosas tenían que separarse (ver ese tema). En los
+     demás temas valen lo de siempre. */
+  --tab-activa-fondo: var(--surface-tab-active);
+  --tab-activa-texto: var(--text-primary);
 
   /* Paleta dataviz categórica — ya eran los colores más usados hoy en ese rol
      (MetasView.jsx). Extendida a 8 en T7 (AUDITORIA-TEMA-2026-07.md, gate
@@ -1235,6 +1241,13 @@ thead.sticky,
      clara. Es el `--brand-text` de este tema (#60A5FA) al 18%: la pestaña
      activa se lee azul y oscura, del mismo color que el resto de la marca. */
   --surface-tab-active: rgba(96,165,250,0.18);
+  /* Y la activa, azul de marca sólido con texto blanco —igual que el
+     segmentado activo de la misma pantalla—. Con el tinte al 18% la píldora
+     seguía leyéndose clara (usuario, 24-sep: «siempre lo veo blanco el
+     activo»): el borde y el texto blancos sobre un fondo traslúcido hacían lo
+     que el fondo ya no hacía. El 18% queda para el realce al pasar. */
+  --tab-activa-fondo: var(--brand);
+  --tab-activa-texto: #ffffff;
 
   --card-shadow:        inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.50);
   --card-shadow-hover:  inset 0 1px 0 rgba(255,255,255,0.10), 0 16px 40px rgba(0,0,0,0.65);
@@ -2472,6 +2485,8 @@ thead.sticky,
   --color-content-tooltip-2:  var(--tooltip-text-2);
   --color-surface-tab-track:  var(--surface-tab-track);
   --color-surface-tab-active: var(--surface-tab-active);
+  --color-tab-activa-fondo:   var(--tab-activa-fondo);
+  --color-tab-activa-texto:   var(--tab-activa-texto);
 
   /* Bordes */
   --color-border-card:   var(--border-card);

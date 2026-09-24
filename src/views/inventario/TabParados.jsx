@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
-import { Archive, Truck, Send, Download, PackageCheck } from 'lucide-react';
+import { Archive, Truck, Send, Download, PackageCheck, Package, Boxes, DollarSign } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
+import CarrilCards from '../../components/common/CarrilCards';
+import StatCard from '../../components/common/StatCard';
 import FilterBar from '../../components/common/FilterBar';
 import { EmptyState } from '../../components/common/StateViews';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -58,7 +60,7 @@ function VendidoEn({ fila, destino }) {
 }
 
 /**
- * Productos parados — lo que lleva seis meses sin venderse en una sala, ya
+ * Productos sin venta — lo que lleva seis meses sin venderse en una sala, ya
  * agrupado por ADÓNDE mandarlo.
  *
  * El agrupado es la decisión de diseño: la pregunta de quien abre esta
@@ -76,6 +78,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [filtro, setFiltro] = useState('todos');   // 'todos' | 'minmax'
+    const [haciaDonde, setHaciaDonde] = useState(null); // null | 'sala' | 'bodega' (las tarjetas)
     const [abiertos, setAbiertos] = useState(() => new Set());
     const [envio, setEnvio] = useState(null);        // { destino, productos }
     const [avisoEnvio, setAvisoEnvio] = useState(null);
@@ -100,9 +103,11 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
 
     const visibles = useMemo(() => {
         let rows = filtro === 'minmax' ? filas.filter(r => r.en_minmax) : filas;
+        if (haciaDonde === 'sala')   rows = rows.filter(r => Number(r.destino) !== ERP_BODEGA);
+        if (haciaDonde === 'bodega') rows = rows.filter(r => Number(r.destino) === ERP_BODEGA);
         if (searchTerm) rows = smartFilter(searchTerm, rows, r => [r.producto, r.laboratorio]).results;
         return rows;
-    }, [filas, filtro, searchTerm]);
+    }, [filas, filtro, haciaDonde, searchTerm]);
 
     /* Un grupo por destino: las salas primero, de la que más productos recibe a
      * la que menos, y Bodega al final — es el destino de «ninguna lo quiere». */
@@ -128,6 +133,8 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
         unidades: visibles.reduce((s, r) => s + Number(r.existencia || 0), 0),
         costo: visibles.reduce((s, r) => s + Number(r.costo || 0), 0),
         conMinmax: filas.filter(r => r.en_minmax).length,
+        aSala: filas.filter(r => Number(r.destino) !== ERP_BODEGA).length,
+        aBodega: filas.filter(r => Number(r.destino) === ERP_BODEGA).length,
     }), [visibles, filas]);
     const veCostos = filas.some(r => r.costo != null);
 
@@ -210,59 +217,58 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
 
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-5">
-            <div className="flex items-start gap-3 flex-wrap">
-                {/* El resumen en una línea que se envuelve, no en tarjetas: son
-                    tres cifras de contexto, no métricas que se comparan. */}
-                <div className="flex-1 min-w-[16rem]">
-                    <p className="text-body text-content-2 leading-snug">
-                        {cargando && filas.length === 0 ? (
-                            <span className="text-content-3">Buscando lo que no se vende en {nombreSala}…</span>
-                        ) : (
-                            <>
-                                <b className="text-content font-black tabular-nums">{totales.productos.toLocaleString('es-SV')}</b>{' '}
-                                {totales.productos === 1 ? 'producto parado' : 'productos parados'} en {nombreSala}
-                                <span className="text-content-3"> · </span>
-                                <b className="text-content font-black tabular-nums">{totales.unidades.toLocaleString('es-SV')}</b> unidades
-                                {veCostos && (
-                                    <>
-                                        <span className="text-content-3"> · </span>
-                                        <b className="text-warning-text font-black tabular-nums">{formatMoney(totales.costo)}</b> en costo
-                                    </>
-                                )}
-                            </>
-                        )}
-                    </p>
-                    <p className="text-label text-content-3 mt-1 leading-snug max-w-[70ch]">
-                        Seis meses sin venderse aquí, contando desde la última venta o desde que llegó a la sala.
-                        Van a la sala que más los vendió (3 o más en 6 meses); si ninguna, a Bodega.
-                    </p>
-                </div>
+            {/* §17.0 — el carril y la píldora en UNA fila. Las dos últimas
+                tarjetas filtran: son las dos respuestas a «¿adónde va?». */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de productos sin venta">
+                    <StatCard icon={Package} iconBg="bg-warning/10" iconCls="text-warning-text"
+                        label="Sin venta" value={totales.productos.toLocaleString('es-SV')}
+                        sub="productos · 6 meses" loading={cargando && filas.length === 0} />
+                    <StatCard icon={Boxes} label="Unidades" value={totales.unidades.toLocaleString('es-SV')}
+                        sub="en existencia" loading={cargando && filas.length === 0} />
+                    {veCostos && (
+                        <StatCard icon={DollarSign} iconBg="bg-chart-4/10" iconCls="text-chart-4-text"
+                            label="Costo detenido" value={formatMoney(totales.costo)} valueCls="text-chart-4-text"
+                            sub="lo que vale lo que no se mueve" loading={cargando && filas.length === 0} />
+                    )}
+                    <StatCard icon={Truck} iconBg="bg-brand/10" iconCls="text-brand-text"
+                        label="A otra sala" value={totales.aSala.toLocaleString('es-SV')}
+                        sub="allá sí se venden" tono="brand"
+                        active={haciaDonde === 'sala'} onClick={() => setHaciaDonde(v => (v === 'sala' ? null : 'sala'))}
+                        loading={cargando && filas.length === 0} />
+                    <StatCard icon={Archive} label="A Bodega" value={totales.aBodega.toLocaleString('es-SV')}
+                        sub="no se venden en ninguna"
+                        active={haciaDonde === 'bodega'} onClick={() => setHaciaDonde(v => (v === 'bodega' ? null : 'bodega'))}
+                        loading={cargando && filas.length === 0} />
+                </CarrilCards>
 
-                <FilterBar
-                    acciones={[{
-                        key: 'descargar', icon: Download, label: 'Descargar', rotulo: 'Descarga', soloIcono: true,
-                        disabled: cargando || visibles.length === 0, onClick: exportar,
-                    }]}
-                >
-                    <FilterBar.Section label="mostrar">
-                        <FilterBar.Opciones
-                            label="Qué productos se ven"
-                            value={filtro}
-                            onChange={setFiltro}
-                            options={[
-                                { value: 'todos', label: 'Todos' },
-                                { value: 'minmax', label: `Con Min/Max · ${totales.conMinmax}` },
-                            ]}
-                        />
-                    </FilterBar.Section>
-                    <FilterBar.Section label="sucursal">
-                        <FilterBar.Sucursal
-                            value={String(sala)}
-                            onChange={v => onSala(Number(v))}
-                            options={ERP_ORDER.filter(id => id !== ERP_BODEGA).map(id => ({ value: String(id), label: ERP_NAMES[id] }))}
-                        />
-                    </FilterBar.Section>
-                </FilterBar>
+                <div className="flex justify-end min-w-0">
+                    <FilterBar
+                        acciones={[{
+                            key: 'descargar', icon: Download, label: 'Descargar', rotulo: 'Descarga', soloIcono: true,
+                            disabled: cargando || visibles.length === 0, onClick: exportar,
+                        }]}
+                    >
+                        <FilterBar.Section label="mostrar">
+                            <FilterBar.Opciones
+                                label="Qué productos se ven"
+                                value={filtro}
+                                onChange={setFiltro}
+                                options={[
+                                    { value: 'todos', label: 'Todos' },
+                                    { value: 'minmax', label: `Con Min/Max · ${totales.conMinmax}` },
+                                ]}
+                            />
+                        </FilterBar.Section>
+                        <FilterBar.Section label="sucursal">
+                            <FilterBar.Sucursal
+                                value={String(sala)}
+                                onChange={v => onSala(Number(v))}
+                                options={ERP_ORDER.filter(id => id !== ERP_BODEGA).map(id => ({ value: String(id), label: ERP_NAMES[id] }))}
+                            />
+                        </FilterBar.Section>
+                    </FilterBar>
+                </div>
             </div>
 
             {error && (
@@ -284,8 +290,8 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
             {!cargando && !error && grupos.length === 0 && (
                 <EmptyState
                     icon={PackageCheck}
-                    title={searchTerm || filtro !== 'todos' ? 'Nada con ese filtro' : `Nada parado en ${nombreSala}`}
-                    subtitle={searchTerm || filtro !== 'todos'
+                    title={searchTerm || filtro !== 'todos' || haciaDonde ? 'Nada con ese filtro' : `Todo se vende en ${nombreSala}`}
+                    subtitle={searchTerm || filtro !== 'todos' || haciaDonde
                         ? 'Prueba quitando la búsqueda o mostrando todos.'
                         : 'Todo lo que hay en existencia se vendió en los últimos 6 meses, o llegó hace menos.'}
                 />

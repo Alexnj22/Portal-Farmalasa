@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1058.0 — Gestión de stock: tarjetas, «Productos sin venta» y Min/Max desde la lista
+
+Tres pedidos del usuario sobre la versión anterior:
+
+- **El resumen vuelve a ser el canónico** («no es canónico, mejor haz cards»):
+  `CarrilCards` + `StatCard` en la misma fila que la píldora (§17.0), en las
+  dos pestañas. En «Productos sin venta», «A otra sala» y «A Bodega» filtran;
+  en «Vendidos sin Min/Max», «Agregar Min/Max» y «Evaluar».
+- **«Productos parados» pasa a «Productos sin venta»** («¿qué es?»), el mismo
+  nombre que el aviso de la campana.
+- **Pedir o aplicar el Min/Max desde la lista.** «Pedir» crea la solicitud de
+  siempre (`dash_minmax_req`); «Aplicar» —sólo para quien aprueba
+  `requests_minmax` con alcance sobre esa sala— la crea y la aprueba en el acto
+  con `approve_minmax_request`, la misma RPC de la bandeja
+  (`solicitarMinMax`). El número se edita en la fila antes de confirmar.
+
+Corregido en el camino:
+
+- **«7 de 6 meses».** La ventana de seis meses toca siete meses de calendario;
+  se tope en 6.
+- **La columna de acciones se recortaba a 1280 px** y dejaba «Aplicar» pegado
+  a «No volver a sugerir»: los meses con venta pasan a la línea del producto,
+  el botón dice sólo «Aplicar»/«Pedir» y los dos van separados. Medido: la
+  tabla ocupa 894 de 894 px, también con el editor abierto.
+
 ## v2.1057.1 — Revisar envío / traslado; push corto de aperturas, respaldo y depósito
 
 - El botón de la tarjeta dice **«Revisar envío»** en un envío y **«Revisar

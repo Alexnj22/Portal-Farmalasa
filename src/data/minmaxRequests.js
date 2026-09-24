@@ -230,3 +230,30 @@ export async function fetchSolicitudesDeProducto(erpProductId, erpSucursalId) {
     });
     return { data: data ?? [], error };
 }
+
+/**
+ * Pedir un ajuste de Min/Max y, si quien lo pide puede aprobar, aplicarlo en
+ * el mismo gesto (Gestión de stock → «Vendidos sin Min/Max», 2026-09-24).
+ *
+ * No es una segunda forma de escribir Min/Max: es la solicitud de siempre
+ * (`minmax_change_requests`) más `decidirMinMax`, la MISMA RPC que usa la
+ * bandeja. Así el ajuste queda con su solicitud, su autor, su nota y el sello
+ * que frena al recálculo del mes, igual que si se hubiera aprobado desde allá.
+ *
+ * El `.select('id')` va SÓLO cuando se va a aprobar: el RETURNING pasa por la
+ * policy de SELECT, y para quien no puede ver la bandeja haría fallar un INSERT
+ * que sí entró (memoria «escribir la bitácora exigía poder leerla»).
+ *
+ * Devuelve `{ ok, aplicado, error }`. `aplicado: false` con `ok: true` es
+ * «quedó pedida»: el pedido entró aunque la aprobación haya fallado.
+ */
+export async function solicitarMinMax(payload, { aplicar = false } = {}) {
+    if (!aplicar) {
+        const { error } = await supabase.from('minmax_change_requests').insert(payload);
+        return { ok: !error, aplicado: false, error: error?.message ?? null };
+    }
+    const { data, error } = await supabase.from('minmax_change_requests').insert(payload).select('id').single();
+    if (error) return { ok: false, aplicado: false, error: error.message };
+    const r = await decidirMinMax(data.id, true, 'Aplicado desde Gestión de stock');
+    return { ok: true, aplicado: r.ok, error: r.ok ? null : r.error };
+}

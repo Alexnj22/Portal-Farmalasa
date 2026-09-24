@@ -12,7 +12,7 @@ import { ERP_NAMES, ERP_BODEGA, MI_ERP_POR_BRANCH } from './inventario/salasDeSt
 /**
  * Gestión de stock — dos preguntas sobre la existencia de una sala:
  *
- *  · **Productos parados**: lo que lleva seis meses sin venderse, agrupado por
+ *  · **Productos sin venta**: lo que lleva seis meses sin venderse, agrupado por
  *    adónde mandarlo, con el envío a un clic. Es lo que abre el aviso semanal.
  *  · **Vendidos sin Min/Max**: lo que sí se vende y el pedido no repone solo.
  *
@@ -25,7 +25,7 @@ import { ERP_NAMES, ERP_BODEGA, MI_ERP_POR_BRANCH } from './inventario/salasDeSt
  * vende al público, así que ahí «sin venta» no dice nada y se abre La Popular.
  */
 const PESTANAS = [
-    { key: 'parados',    label: 'Productos parados',    icon: Archive },
+    { key: 'parados',    label: 'Productos sin venta',  icon: Archive },
     { key: 'sin_minmax', label: 'Vendidos sin Min/Max', icon: ListPlus },
 ];
 

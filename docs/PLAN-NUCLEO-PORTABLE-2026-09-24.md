@@ -1,7 +1,6 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado:** medición hecha · **F0 hecha** (rama `sesion/nucleo`). Ningún
-archivo de `src/` cambió todavía.
+**Estado:** F0 hecha · **F1 en curso** (2 de ~6 pasos; 359 → 237).
 
 ### Bitácora
 
@@ -17,6 +16,21 @@ archivo de `src/` cambió todavía.
   NO cuenta. La primera versión se desfasaba en las plantillas anidadas de
   `bitacoraPapel.js` y acusaba a un comentario; la segunda contaba `'window'`
   dentro de una cadena. Las dos se corrigieron antes de fijar el baseline.
+- **Entorno de pruebas en línea** (2026-09-24): `dev.farmasalud.lat` sigue a la
+  rama `sesion/nucleo` y compila con las variables *Preview* de Vercel, que
+  apuntan a la base de pruebas (`wqmsadndftaudblohgws`). Verificado leyendo el
+  bundle publicado. Cada paso se prueba ahí antes de ir a `main`.
+- **F1 paso 1 — v2.1056.1**: `src/plataforma/{almacen,eventos,navegacion}.js`
+  y `systemSlice` sin navegador. 359 → 306.
+- **F1 paso 2 — v2.1058.1**: `cicloDeVida`, `config`, `dispositivo` y
+  `AuthContext` sin navegador (queda su import de `AvisoDeInactividad`, que va
+  con F2). 306 → 237. El cierre por inactividad se verificó con
+  `tests/e2e/inactividad.spec.js` contra la base de pruebas con el límite en 5
+  minutos (el mínimo que acepta `roles_idle_limit_min_check`), y se devolvió a
+  720.
+- **Pendiente de F1**: los 61 archivos restantes (237 usos). Los que siguen en
+  peso: `cajaNegra` (42), `useTimeClockEngine` (20), `usePushSubscription` (14),
+  `routeOptimizer` (13).
 
 ## Para qué
 

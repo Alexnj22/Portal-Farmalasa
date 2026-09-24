@@ -211,8 +211,8 @@ export default function ViewTabBar({
   const hayPestanas = tabs.length > 1;
 
   // Tokens propios de la pestaña activa (`--tab-activa-*`): en Liquid oscuro
-  // es azul de marca sólido, en los demás temas lo de siempre. Ver index.css.
-  const activeTabCls = 'bg-tab-activa-fondo text-tab-activa-texto border-tab-activa-fondo shadow-md scale-[1.02]';
+  // es vidrio azul noche, en los demás temas lo de siempre. Ver index.css.
+  const activeTabCls = 'bg-tab-activa-fondo text-tab-activa-texto border-tab-activa-borde shadow-md scale-[1.02]';
   const inactiveTabCls = 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:translate-y-[var(--lift-hover)] hover:shadow-md hover:border-surface-tab-active';
   const dividerCls   = 'bg-divider';
   const inputCls     = 'text-content-2 placeholder:text-content-3';

@@ -807,6 +807,7 @@ thead.sticky,
      Liquid oscuro las dos cosas tenían que separarse (ver ese tema). En los
      demás temas valen lo de siempre. */
   --tab-activa-fondo: var(--surface-tab-active);
+  --tab-activa-borde: var(--surface-tab-active);
   --tab-activa-texto: var(--text-primary);
 
   /* Paleta dataviz categórica — ya eran los colores más usados hoy en ese rol
@@ -1241,12 +1242,17 @@ thead.sticky,
      clara. Es el `--brand-text` de este tema (#60A5FA) al 18%: la pestaña
      activa se lee azul y oscura, del mismo color que el resto de la marca. */
   --surface-tab-active: rgba(96,165,250,0.18);
-  /* Y la activa, azul de marca sólido con texto blanco —igual que el
-     segmentado activo de la misma pantalla—. Con el tinte al 18% la píldora
-     seguía leyéndose clara (usuario, 24-sep: «siempre lo veo blanco el
-     activo»): el borde y el texto blancos sobre un fondo traslúcido hacían lo
-     que el fondo ya no hacía. El 18% queda para el realce al pasar. */
-  --tab-activa-fondo: var(--brand);
+  /* Y la activa, «azul noche»: vidrio azul marino profundo, borde azul suave
+     y texto blanco. Elegida por el usuario el 2026-09-24 entre tres versiones
+     medidas en pantalla, después de descartar dos:
+       · el tinte al 18% («siempre lo veo blanco el activo»): el borde y el
+         texto claros sobre un fondo traslúcido la hacían leerse clara;
+       · el azul de marca sólido («pierde el liquid glass y ese azul es muy
+         claro»): dejaba de ser vidrio.
+     Sigue siendo traslúcida a propósito: es la condición del tema. El 18% de
+     `--surface-tab-active` queda para el realce al pasar el puntero. */
+  --tab-activa-fondo: rgba(0,38,92,0.55);
+  --tab-activa-borde: rgba(96,165,250,0.35);
   --tab-activa-texto: #ffffff;
 
   --card-shadow:        inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.50);
@@ -2486,6 +2492,7 @@ thead.sticky,
   --color-surface-tab-track:  var(--surface-tab-track);
   --color-surface-tab-active: var(--surface-tab-active);
   --color-tab-activa-fondo:   var(--tab-activa-fondo);
+  --color-tab-activa-borde:   var(--tab-activa-borde);
   --color-tab-activa-texto:   var(--tab-activa-texto);
 
   /* Bordes */

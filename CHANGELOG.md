@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.5 — Pestaña activa «azul noche» en Liquid oscuro
+
+El azul sólido de v2.1060.3 no gustó: «pierde el liquid glass y ese azul es
+muy claro». Se midieron tres versiones traslúcidas sobre la pantalla real y el
+usuario eligió la A:
+
+- `--tab-activa-fondo: rgba(0,38,92,0.55)` (azul marino profundo),
+  `--tab-activa-borde: rgba(96,165,250,0.35)` (token nuevo), texto blanco.
+  Sigue siendo vidrio. Los demás temas no cambian.
+- Verificado leyendo el estilo computado de la pestaña activa en el portal:
+  coincide con la muestra elegida.
+
 ## v2.1060.4 — Resumen diario con selección múltiple y la tarjeta lleva al seguimiento
 
 - **Resumen diario:** tres opciones con ícono y explicación —Sin avisar,

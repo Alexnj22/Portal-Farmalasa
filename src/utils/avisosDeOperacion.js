@@ -174,3 +174,51 @@ export function datosDeDeposito(n) {
         hasta: m.hasta || null,
     };
 }
+
+/* ── Tercera tanda (24-sep): alerta de CCF, factura de sala y cortes sin
+ * confirmar ─────────────────────────────────────────────────────────────── */
+
+export function datosDeAlertaDeVentas(n) {
+    if (n?.type !== 'SALES_ALERT') return null;
+    const m = n.metadata || {};
+    if (!m.numero) return null;
+    return {
+        tipo: String(m.tipo || m.alert_type || ''),
+        numero: String(m.numero),
+        seguidas: num(m.seguidas),
+        problemas: Array.isArray(m.problemas) ? m.problemas.map(String) : [],
+        cliente: m.cliente ? String(m.cliente) : null,
+        total: num(m.total),
+        hora: m.hora || null,
+        fecha: m.fecha || null,
+        vendedor: m.vendedor ? String(m.vendedor) : null,
+        vendedorId: m.vendedor_id || null,
+        vendedorFoto: m.vendedor_foto || null,
+        urgente: m.urgent === true,
+    };
+}
+
+export function datosDeFacturaDeSala(n) {
+    if (n?.type !== 'FACTURA_SALA') return null;
+    const m = n.metadata || {};
+    const lista = (Array.isArray(m.lista) ? m.lista : [])
+        .filter((f) => f && f.etiqueta)
+        .map((f) => ({ etiqueta: String(f.etiqueta), monto: num(f.monto), fecha: f.fecha || null }));
+    if (!lista.length) return null;
+    return { lista, total: num(m.total) ?? lista.reduce((s, f) => s + (f.monto || 0), 0) };
+}
+
+export function datosDeCortesPendientes(n) {
+    if (n?.type !== 'CORTE_PENDIENTE') return null;
+    const m = n.metadata || {};
+    const lista = (Array.isArray(m.lista) ? m.lista : [])
+        .filter((c) => c && c.id)
+        .map((c) => ({
+            id: c.id, fecha: c.fecha || null, hora: c.hora || null,
+            quien: c.quien ? String(c.quien) : null, quienId: c.quien_id || null, quienFoto: c.quien_foto || null,
+            tramo: 'tramo' in c ? num(c.tramo) : null,
+            sinConteo: c.tramo === null || c.tramo === undefined,
+        }));
+    if (!lista.length) return null;
+    return { lista };
+}

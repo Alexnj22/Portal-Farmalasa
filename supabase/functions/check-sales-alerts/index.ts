@@ -5,6 +5,11 @@ import { checkCronSecret, getCorsHeaders } from '../_shared/security.ts';
 // Solo Supervisor/a de Ventas recibe alertas DTE
 const SUPERVISOR_ROLE_IDS = [13];
 
+// «0000000042_CCF» → «42»: el número como lo conoce la sala. El correlativo
+// crudo, con ceros y sufijo, es un código interno (usuario, 23-sep).
+const numeroLegible = (correlativo: string) =>
+  String(correlativo ?? '').replace(/_.*$/, '').replace(/^0+(?=\d)/, '');
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -58,30 +63,40 @@ serve(async (req) => {
       title:     string;
       message:   string;
       urgent:    boolean;
+      // Lo que dibuja la tarjeta de la campana (24-sep).
+      extra:     Record<string, unknown>;
+      correlativo: string;
     }> = [];
 
     for (const row of (consecAlerts ?? [])) {
+      // «MH» es jerga: la sala dice «Hacienda» (24-sep). Y sin emoji — la
+      // tarjeta ya tiene su color.
       allAlerts.push({
         alertType: 'consecutive_mh',
         alertKey:  row.first_correlativo,
         branchId:  row.branch_id,
-        title:     'Ventas pendientes MH consecutivas',
-        message:   `${row.branch_name}: ${row.run_len} ventas seguidas sin confirmación del MH — posible error de transmisión`,
+        title:     `${row.branch_name} · ${row.run_len} ventas seguidas sin sello de Hacienda`,
+        message:   `Desde la N.º ${numeroLegible(row.first_correlativo)}, ${row.run_len} ventas seguidas no tienen el sello de Hacienda. Puede ser un problema de envío.`,
         urgent:    false,
+        extra:     { tipo: 'consecutive_mh', sala: row.branch_name, seguidas: Number(row.run_len),
+                     numero: numeroLegible(row.first_correlativo) },
+        correlativo: row.first_correlativo,
       });
     }
 
     for (const row of (ccfAlerts ?? [])) {
-      const que = row.tipo === 'ccf_null'       ? 'ANULADA sin completar ante Hacienda'
-                : row.tipo === 'ccf_observacion' ? 'con una observación'
-                :                                  'pendiente de recibir MH';
+      const que = row.tipo === 'ccf_null'       ? 'anulado sin completar ante Hacienda'
+                : row.tipo === 'ccf_observacion' ? 'con una observación de Hacienda'
+                :                                  'sin sello de Hacienda';
       allAlerts.push({
         alertType: row.tipo,
         alertKey:  row.correlativo,
         branchId:  row.branch_id,
-        title:     '🚨 Alerta urgente — CCF',
-        message:   `${row.branch_name}: CCF ${row.correlativo} está ${que}`,
+        title:     `${row.branch_name} · CCF ${que}`,
+        message:   `El CCF N.º ${numeroLegible(row.correlativo)} está ${que}.`,
         urgent:    true,
+        extra:     { tipo: row.tipo, sala: row.branch_name, numero: numeroLegible(row.correlativo), problema: que },
+        correlativo: row.correlativo,
       });
     }
 
@@ -112,11 +127,14 @@ serve(async (req) => {
             alertType: 'ccf_repaso',
             alertKey:  row.alert_key,
             branchId:  row.branch_id,
-            title: m === 'fin_de_mes'
-              ? '📅 Último día del mes — CCF sin corregir'
-              : '🌙 Cierre del día — CCF sin corregir',
-            message: `${row.branch_name}: CCF ${row.correlativo} del ${row.fecha} — ${(row.problemas ?? []).join(' · ')}`,
+            title: `${row.branch_name} · ${m === 'fin_de_mes'
+              ? 'Último día del mes: CCF sin corregir'
+              : 'Cierre del día: CCF sin corregir'}`,
+            message: `El CCF N.º ${numeroLegible(row.correlativo)} del ${row.fecha} sigue con: ${(row.problemas ?? []).join(' · ')}.`,
             urgent: m === 'fin_de_mes',
+            extra: { tipo: m === 'fin_de_mes' ? 'fin_de_mes' : 'cierre_dia', sala: row.branch_name,
+                     numero: numeroLegible(row.correlativo), problemas: row.problemas ?? [] },
+            correlativo: row.correlativo,
           });
         }
       }
@@ -126,6 +144,46 @@ serve(async (req) => {
       return new Response(JSON.stringify({ ok: true, alerts: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // ── La factura detrás de cada alerta: cliente, monto, hora y vendedor ──
+    // Una consulta para todas. Si falla, las alertas salen igual con lo que
+    // ya traen: un aviso incompleto es mejor que ninguno.
+    const facturas = new Map<string, Record<string, unknown>>();
+    try {
+      // Una consulta por alerta, con `.eq` y `limit(1)`: el correlativo se
+      // repite entre salas y entre tipos de documento, así que un `.in()` sobre
+      // él no acotaría la salida (regla de las 1000 filas, `gate:data`). Son
+      // pocas alertas por corrida.
+      const pares = [...new Map(allAlerts.filter((a) => a.correlativo)
+        .map((a) => [`${a.branchId}|${a.correlativo}`, a])).values()];
+      const leidas = await Promise.all(pares.map((a) => supabase
+        .from('sales_invoices')
+        .select('branch_id, correlativo, fecha, hora, cliente, total, cod_vendedor')
+        .eq('branch_id', a.branchId).eq('correlativo', a.correlativo)
+        .order('fecha', { ascending: false }).limit(1)));
+      const malo = leidas.find((r) => r.error);
+      if (malo?.error) throw malo.error;
+      const fs = leidas.flatMap((r) => r.data ?? []);
+      const cods = [...new Set((fs ?? []).map((f) => f.cod_vendedor).filter(Boolean))];
+      const { data: vs, error: eV } = cods.length
+        ? await supabase.from('employees').select('id, name, code, photo_url').in('code', cods)
+        : { data: [], error: null };
+      if (eV) throw eV;
+      const vendedor = new Map((vs ?? []).map((v) => [String(v.code), v]));
+      for (const f of (fs ?? [])) {
+        const clave = `${f.branch_id}|${f.correlativo}`;
+        const previo = facturas.get(clave);
+        if (previo && String(previo.fecha) >= String(f.fecha)) continue;
+        const v = vendedor.get(String(f.cod_vendedor));
+        facturas.set(clave, {
+          fecha: f.fecha, hora: f.hora ? String(f.hora).slice(0, 5) : null,
+          cliente: f.cliente ?? null, total: f.total ?? null,
+          vendedor: v?.name ?? null, vendedor_id: v?.id ?? null, vendedor_foto: v?.photo_url ?? null,
+        });
+      }
+    } catch (e) {
+      console.error('detalle de facturas:', e instanceof Error ? e.message : e);
     }
 
     let sent = 0;
@@ -147,7 +205,11 @@ serve(async (req) => {
         p_title: alert.title,
         p_body: alert.message,
         p_link: '/facturacion',
-        p_metadata: { alert_type: alert.alertType, alert_key: alert.alertKey, urgent: alert.urgent },
+        p_metadata: {
+          alert_type: alert.alertType, alert_key: alert.alertKey, urgent: alert.urgent,
+          ...alert.extra,
+          ...(facturas.get(`${alert.branchId}|${alert.correlativo}`) ?? {}),
+        },
         p_push: true,
         p_branch_id: alert.branchId,
       });

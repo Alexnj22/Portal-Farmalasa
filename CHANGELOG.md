@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1041.0 — Tarjetas: alerta de CCF, factura de sala y cortes sin confirmar
+
+Cuarta tanda de tarjetas de la campana (usuario, 24-sep: «sigamos»).
+
+- **Alerta de CCF** (`check-sales-alerts`, redesplegada): título con la sala y
+  el problema en palabras —«La Popular · CCF sin sello de Hacienda»—, sin
+  emoji y sin «MH». La tarjeta muestra el número legible («N.º 42» y no
+  «0000000042_CCF»), monto, cliente con la hora, qué tiene (en el repaso de la
+  noche) y quién la vendió, con su cara. Las ventas seguidas sin sello dicen
+  cuántas y desde qué número.
+- **Factura de sala**: título con la sala; una fila por factura con su fecha y
+  monto, y el total. El cuerpo del push agrupa las iguales («2 × Recarga
+  Movistar · $199.98») en vez de repetir la línea.
+- **Cortes sin confirmar**: título con la sala; una fila por corte con quién lo
+  hizo, día y hora (12 h) y FALTANTE/SOBRANTE/CUADRÓ/SIN CONTEO con el monto.
+
+`avisar_cortes_pendientes` y `avisar_facturas_de_sala` mandan la lista en el
+metadata (migración `20260924153914_tarjetas_cortes_pendientes_y_facturas_de_sala`). Verificado en pantalla en escritorio, 390 y
+320 px con el detector de recortes: 0.
+
 ## v2.1040.5 — Depósito: apilado y centrado en pantallas angostas
 
 «En angosto, que queden en 2 filas pero centradas» (usuario, 24-sep). Las celdas

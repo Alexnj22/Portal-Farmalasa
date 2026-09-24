@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
     Check, TrendingDown, TrendingUp, CircleOff, Thermometer, SprayCan,
     ArrowRight, Truck, Store, Clock, SlidersHorizontal, ShoppingBag, Landmark,
+    FileWarning, ReceiptText, ClipboardCheck,
 } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
@@ -598,5 +599,143 @@ export function CuerpoDeDeposito({ datos, claseTenue, isDark, buscarEmpleado }) 
             </Grilla>
             </div>
         </div>
+    );
+}
+
+/* ── Tercera tanda (24-sep): alerta de CCF, factura de sala y cortes sin
+ * confirmar ─────────────────────────────────────────────────────────────── */
+
+/* La alerta de CCF. El título dice la sala y qué le pasa; la tarjeta dice DE
+ * QUÉ factura se trata —número, cliente, monto, hora— y quién la vendió, con su
+ * cara. Antes decía «CCF 0000000042_CCF está pendiente de recibir MH». */
+export function InsigniaDeAlertaDeVentas({ datos, isDark }) {
+    const t = tonos(isDark);
+    return <Disco tono={datos.tipo === 'consecutive_mh' ? t.naranja : t.rojo} Icono={FileWarning} />;
+}
+
+export function CuerpoDeAlertaDeVentas({ datos, claseTenue, isDark, buscarEmpleado }) {
+    const t = tonos(isDark);
+    const emp = usePersona(datos.vendedorId, datos.vendedor, datos.vendedorFoto, buscarEmpleado);
+    const tono = datos.tipo === 'consecutive_mh' ? t.naranja : t.rojo;
+    return (
+        <div className="@container">
+            <Grilla columnas="repeat(auto-fit, minmax(7.5rem, 1fr))">
+                {datos.tipo === 'consecutive_mh' ? (
+                    <>
+                        <Celda rotulo="Ventas seguidas" clase={tono.texto} apilable>{datos.seguidas ?? '—'}</Celda>
+                        <Celda rotulo="Desde la" claseTenue={claseTenue} derecha apilable>N.º {datos.numero}</Celda>
+                    </>
+                ) : (
+                    <>
+                        <Celda rotulo="Crédito fiscal" claseTenue={claseTenue} apilable>N.º {datos.numero}</Celda>
+                        <Celda rotulo="Monto" clase={tono.texto} derecha apilable>
+                            {datos.total != null ? formatMoney(datos.total) : '—'}
+                        </Celda>
+                    </>
+                )}
+                {datos.cliente && (
+                    <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
+                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                            Cliente{datos.hora ? ` · ${hora12(datos.hora)}` : ''}
+                        </p>
+                        <p className="text-body-sm font-bold break-words mt-0.5">{datos.cliente}</p>
+                    </div>
+                )}
+                {datos.problemas.length > 0 && (
+                    <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
+                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Qué tiene</p>
+                        <p className={`text-body-sm font-bold break-words mt-0.5 ${tono.texto}`}>
+                            {datos.problemas.join(' · ')}
+                        </p>
+                    </div>
+                )}
+                {emp && <CeldaPersona emp={emp} rotulo="La vendió" respaldo="Sin nombre" claseTenue={claseTenue} />}
+            </Grilla>
+        </div>
+    );
+}
+
+/* Factura de sala: una fila por factura —qué, de qué fecha y cuánto— y el
+ * total al pie. Antes el cuerpo repetía «Recarga Movistar · $99.99» por cada
+ * una. */
+export function InsigniaDeFacturaDeSala({ isDark }) {
+    return <Disco tono={tonos(isDark).azul} Icono={ReceiptText} />;
+}
+
+export function CuerpoDeFacturaDeSala({ datos, claseTenue }) {
+    const varias = datos.lista.length > 1;
+    return (
+        <ul className="mt-2 rounded-xl bg-surface-card-hover divide-y divide-border-card">
+            {datos.lista.map((f, i) => (
+                <li key={`${f.etiqueta}-${i}`} className="flex items-center justify-between gap-3 px-2.5 py-2">
+                    <div className="min-w-0 leading-tight">
+                        <p className="text-body-sm font-bold break-words">{f.etiqueta}</p>
+                        {f.fecha && <p className={`text-caption font-semibold mt-0.5 ${claseTenue}`}>{fechaCorta(f.fecha)}</p>}
+                    </div>
+                    <span className="flex-shrink-0 text-body-sm font-black tabular-nums">
+                        {f.monto != null ? formatMoney(f.monto) : '—'}
+                    </span>
+                </li>
+            ))}
+            {varias && (
+                <li className="flex items-center justify-between gap-3 px-2.5 py-2">
+                    <span className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>En total</span>
+                    <span className="text-body font-black tabular-nums">{formatMoney(datos.total)}</span>
+                </li>
+            )}
+        </ul>
+    );
+}
+
+/* Cortes sin confirmar: un renglón por corte con quién lo hizo, de qué día y
+ * a qué hora, y cómo quedó (FALTANTE / SOBRANTE / CUADRÓ / SIN CONTEO), igual
+ * que la tarjeta del corte. Antes decía «2 del 05/09». */
+const estadoDeTramo = (c) => (c.sinConteo ? 'sin_conteo'
+    : c.tramo <= -0.01 ? 'falta' : c.tramo >= 0.01 ? 'sobra' : 'cuadra');
+const ROTULO_DE_CORTE = { cuadra: 'Cuadró', sobra: 'Sobrante', falta: 'Faltante', sin_conteo: 'Sin conteo' };
+
+function FilaDeCortePendiente({ c, claseTenue, isDark, buscarEmpleado }) {
+    const emp = usePersona(c.quienId, c.quien, c.quienFoto, buscarEmpleado);
+    const estado = estadoDeTramo(c);
+    const tono = tonos(isDark)[CORTE[estado].tono];
+    const cuando = [fechaCorta(c.fecha), hora12(c.hora)].filter(Boolean).join(' · ');
+    return (
+        <li className="flex items-center gap-2 px-2.5 py-2 min-w-0">
+            {emp ? (
+                <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" mostrarChip={false} />
+            ) : (
+                <span aria-hidden="true" className={`w-7 h-7 rounded-full grid place-items-center flex-shrink-0
+                    bg-surface-card ${claseTenue}`}>
+                    <Store className="w-3.5 h-3.5" />
+                </span>
+            )}
+            <div className="flex-1 min-w-0 leading-tight">
+                <p className="text-body-sm font-bold break-words">{emp ? shortEmployeeName(emp) : 'Desde la caja'}</p>
+                <p className={`text-caption font-semibold mt-0.5 ${claseTenue}`}>{cuando}</p>
+            </div>
+            <div className={`flex-shrink-0 flex flex-col items-end leading-tight ${tono.texto}`}>
+                <span className="text-caption font-black uppercase tracking-wide">{ROTULO_DE_CORTE[estado]}</span>
+                {estado !== 'sin_conteo' && (
+                    <span className="text-body-sm font-black tabular-nums mt-0.5">
+                        {estado === 'cuadra' ? '$0.00' : `${c.tramo > 0 ? '+' : '−'}${formatMoney(Math.abs(c.tramo))}`}
+                    </span>
+                )}
+            </div>
+        </li>
+    );
+}
+
+export function InsigniaDeCortesPendientes({ isDark }) {
+    return <Disco tono={tonos(isDark).naranja} Icono={ClipboardCheck} />;
+}
+
+export function CuerpoDeCortesPendientes({ datos, claseTenue, isDark, buscarEmpleado }) {
+    return (
+        <ul className="mt-2 rounded-xl bg-surface-card-hover divide-y divide-border-card">
+            {datos.lista.map((c) => (
+                <FilaDeCortePendiente key={c.id} c={c} claseTenue={claseTenue} isDark={isDark}
+                    buscarEmpleado={buscarEmpleado} />
+            ))}
+        </ul>
     );
 }

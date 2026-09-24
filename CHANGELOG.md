@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1040.0 — Inyecciones 4× más liviana, y los renglones de venta se vacuuman
+
+`gate:perf` levantó `get_inyecciones_aplicadas` —la pestaña Inyecciones de
+Ventas, del 23-sep— sin declarar: 324 MB por llamada. Medida como usuario, con
+92 días y todas las salas leía **308,174 bloques (2.4 GB) y tardaba 2.5 s**, el
+tamaño de lectura que llena el pool del portal.
+
+**La función** (`20260924145940`). Buscaba las inyecciones con una búsqueda en
+el índice por cada factura del período (~64,000) y la expresión regular renglón
+por renglón (~114,000). Ahora lee los renglones por rango de `invoice_id`,
+evalúa la expresión una vez por descripción distinta (~3,200) y los pasos
+siguientes filtran con esa lista. Contenido idéntico en seis casos. Único cambio
+visible: dos ventas del mismo minuto desempatan por `id`, en vez de salir en el
+orden que eligiera el plan.
+
+**`sales_invoice_items` no se vacuumaba nunca** (`20260924150021`). Con ~1,200
+renglones al día, el autovacuum por inserciones no se dispara en meses: las
+páginas nuevas no quedaban visibles y todo índice cubridor sobre los renglones
+iba también al heap — en esta función, 73,668 lecturas de más. Cron
+`vacuum-sales-invoice-items` a los :20, como el de `sales_invoices`, vigilado en
+la sección B de `gate:perf`. Explica también que la tabla nunca estuviera
+analizada.
+
+| caso (como usuario) | antes | ahora |
+|---|---:|---:|
+| 92 días, todas | 308,174 · 2.5 s | 72,742 · 0.5 s |
+| por defecto, todas | 74,996 · ~0.8 s | 18,397 · 0.15 s |
+| 92 días, Salud 4 | 61,476 · 450 ms | 16,252 · 220 ms |
+| por defecto, Salud 1 | 17,025 · 149 ms | 10,336 · 100 ms |
+
+Declarada en `bloques-por-llamada.json` con techo 1.3× el caso de 92 días. Con
+esto el plan de regreso queda cerrado y pasa a `docs/planes-cerrados/`.
+
 ## v2.1039.0 — Tarjetas: foto que siempre aparece, ventas en MIN·MAX, fechas en bolsas y depósito
 
 Tercera vuelta de las tarjetas de la campana (usuario, 24-sep).

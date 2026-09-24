@@ -65,7 +65,7 @@ export default function TabInyecciones({
 }) {
     // Período PROPIO y no el de las otras pestañas de Ventas: ahí el defecto es
     // el mes en curso, y acá es desde que existe el registro (ver arriba).
-    const defaultRange = useMemo(rangoPorDefecto, []);
+    const defaultRange = useMemo(() => rangoPorDefecto(), []);
     const [monthRange, setMonthRange] = useState(defaultRange);
     const branches = useStaff((s) => s.branches);
     const [datos, setDatos] = useState(null);

@@ -10,6 +10,10 @@
       "bloques": 90000,
       "motivo": "CORREGIDA el 2026-09-02 (migraciones 20260902022747 y 20260902023011). Antes leía 467 MB por llamada; ahora 110 a 213 MB en seis salas y 518 en Bodega, que tiene 2,604 productos con mínimo y 594 faltantes contra ~100 de las demás. El techo lo fija Bodega, que es el caso real más caro. Verificado idéntica en las 7 salas (85/63/72/60/57/200/33 filas, md5 igual). Lo que le queda: resolver el factor de presentación de los ~1,717 renglones de la sala propia, que son la mitad de lo que lee. Para la pregunta que hace —«¿tengo alguna unidad?»— el factor es un multiplicador positivo y sólo cambia la respuesta cuando hay un traslado en vuelo; ahí hay otro tanto, pero cambia la semántica."
     },
+    "get_inyecciones_aplicadas": {
+      "bloques": 95000,
+      "motivo": "AUDITADA y CORREGIDA el 2026-09-24 (migraciones 20260924145940 y 20260924150021). La pestaña Inyecciones de Ventas: nació el 23-sep sin declarar y el gate la levantó en 324 MB por llamada. Medida como usuario, 92 días y todas las salas —el caso más caro que la función admite— leía 308,174 bloques y tardaba 2.5 s: una búsqueda en el índice por cada factura del período y la expresión de `es_inyectable` renglón por renglón. Ahora lee los renglones por rango de `invoice_id`, evalúa la expresión una vez por descripción distinta y los pasos siguientes filtran con `= ANY` de esas descripciones; con `sales_invoice_items` vacuumada (cron nuevo `vacuum-sales-invoice-items`), 72,742 bloques y 0.5 s. El período por defecto, 18,397. Contenido idéntico en seis casos. Techo = 1.3x el caso de 92 días. Lo que queda es trabajo real: dos pasadas por las ~6,900 facturas con inyección para armar la respuesta."
+    },
     "get_pedido_generar_dashboard": {
       "bloques": 43000,
       "deuda": true,

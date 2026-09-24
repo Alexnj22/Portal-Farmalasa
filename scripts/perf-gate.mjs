@@ -140,6 +140,14 @@ SELECT * FROM (
          EXISTS (SELECT 1 FROM cron.job WHERE jobname='vacuum-sales-invoices' AND active),
          'sin él vuelven los heap fetches y toda consulta de ventas se encarece'
   UNION ALL
+  -- El hermano que faltaba (2026-09-24): los renglones recibían ~1,200 filas al
+  -- día y el autovacuum no se disparaba nunca. Sin mapa de visibilidad, el índice
+  -- cubridor iba al heap en cada lectura del período: 73,668 lecturas de más en
+  -- una sola llamada de la pestaña Inyecciones.
+  SELECT 'cron-vacuum-renglones',
+         EXISTS (SELECT 1 FROM cron.job WHERE jobname='vacuum-sales-invoice-items' AND active),
+         'sin él los renglones de venta no quedan visibles y el índice cubridor vuelve a leer el heap'
+  UNION ALL
   SELECT 'patrones-materializados',
          (SELECT position('MATERIALIZED' in pg_get_functiondef(oid)) > 0
           FROM pg_proc WHERE proname='buscar_inventario_global_v2' AND pronamespace='public'::regnamespace),

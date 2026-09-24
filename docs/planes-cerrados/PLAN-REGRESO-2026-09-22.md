@@ -518,6 +518,17 @@ diciembre, por diseño. Gates de producción: `gate:eficiencia`, `gate:cortes`,
 `get_inyecciones_aplicadas` (324 MB por llamada, sin declarar), de la pestaña
 Inyecciones creada el 23-sep por la noche (v2.1037.0).
 
+**Cerrado el 24-sep.** `get_inyecciones_aplicadas` auditada y corregida
+(`20260924145940`): lee los renglones por rango de facturas y evalúa la
+expresión de inyectable una vez por descripción; contenido idéntico en seis
+casos. La auditoría destapó además que **`sales_invoice_items` no se vacuumaba
+nunca** —el autovacuum por inserciones no llega a dispararse con ~1,200
+renglones al día—, y eso hacía que todo índice cubridor sobre los renglones
+fuera al heap: cron `vacuum-sales-invoice-items` (`20260924150021`), vigilado
+en la sección B de `gate:perf`. Con las dos cosas, 92 días y todas las salas
+pasó de 308,174 bloques y 2.5 s a 72,742 y 0.5 s. Los seis gates de producción
+en verde.
+
 Todos los gates de producción en verde (`gate:perf`, `gate:eficiencia`,
 `gate:cortes`, `gate:receta`, `gate:auditoria`, `gate:migrations --remote`), el
 log de un día hábil completo sin 5xx ni `permission denied` repetidos, y este

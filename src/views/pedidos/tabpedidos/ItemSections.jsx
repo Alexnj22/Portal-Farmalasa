@@ -358,17 +358,25 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
         // Sin permiso no hay fila que llenar: no se pide el dato. Que la consulta
         // corriera igual era la mitad del hallazgo — el MIN·MAX llegaba al
         // navegador aunque el campo estuviera deshabilitado.
-        if (!canEditMinMax) { setPspMap({}); setEditMap({}); return; }
+        //
+        // Sin permiso o sin renglones en revisión no se VACÍAN los mapas: sólo
+        // los leen los renglones de revisión, y ésos no se pintan en ninguno de
+        // los dos casos (ver `renderMinMaxRow`). Vaciarlos era un setState
+        // síncrono en el efecto y no cambiaba nada en pantalla.
+        if (!canEditMinMax) return;
         const items = allItems.filter(i => i.revision_minmax);
-        if (items.length === 0) { setPspMap({}); setEditMap({}); return; }
+        if (items.length === 0) return;
         const productIds  = [...new Set(items.map(r => r.erp_product_id))];
         const sucursalIds = [...new Set(items.map(r => r.erp_sucursal_id))];
+        // Si la lista cambia con la consulta en vuelo, la respuesta vieja no
+        // pisa a la nueva: llega tarde y se descarta.
+        let vigente = true;
         (async () => {
             // `data: null` es el fallo: la consulta pagina y `fetchAllRows` ya
             // dejó el motivo en consola. No devuelve `error` porque un fallo a
             // media paginación no es un error de una sola consulta.
             const { data } = await fetchStockParamsForRevision(productIds, sucursalIds);
-            if (!data) return;
+            if (!data || !vigente) return;
             const map = {};
             for (const psp of data) map[`${psp.erp_product_id}_${psp.erp_sucursal_id}`] = psp;
             const em = {};
@@ -384,6 +392,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
             setEditMap(em);
             setOrigMap({ ...em });
         })();
+        return () => { vigente = false; };
     }, [revisionKey, canEditMinMax]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Must be defined BEFORE any early return — hooks cannot be called conditionally

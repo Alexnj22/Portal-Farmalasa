@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1062.1 — Pedidos: la revisión de Mín·Máx no vacía estado en el efecto y descarta respuestas viejas
+
+`ItemSections.jsx` era el único archivo con `react-hooks/set-state-in-effect`
+sin resolver. El efecto que trae el MIN·MAX de los renglones en revisión
+vaciaba sus mapas con un `setState` síncrono cuando no había permiso o no había
+renglones. No hacía falta: esos mapas sólo los leen los renglones de revisión, y
+en los dos casos no se pintan.
+
+De paso, el efecto no tenía limpieza. Si la lista de renglones cambiaba con la
+consulta en vuelo, la respuesta vieja podía llegar después y pisar a la nueva.
+Ahora se descarta.
+
 ## v2.1062.0 — El abono a un faltante entra a la caja como ingreso
 
 Decidido por el usuario el 2026-09-25. Un abono mete efectivo al cajón; si

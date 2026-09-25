@@ -16,7 +16,8 @@
 // nadie tenía que hacer.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { hoySV, periodoDe, correrDia, correrPeriodo, pendientesDelDia, rotularRango, soloLimpieza, TIPO_AREA }
+import { hoySV } from '../../src/utils/fecha';
+import { periodoDe, correrDia, correrPeriodo, pendientesDelDia, rotularRango, soloLimpieza, TIPO_AREA }
     from '../../src/data/bitacoras';
 
 describe('hoy en El Salvador', () => {

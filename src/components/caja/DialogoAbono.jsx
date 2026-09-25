@@ -11,6 +11,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { DIAS_DE_RESERVA, POLITICA_DE_RESERVA, vencimientoDeReserva } from '../../utils/abonoTicket';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { hoySV } from '../../utils/fecha';
 
 /**
  * El abono de un cliente para apartar un producto.
@@ -121,7 +122,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
      * Y es la hora de EL SALVADOR (−6), no la del equipo: el plazo lo cuenta el
      * día de la sala. */
     const [vence] = useState(() => vencimientoDeReserva(
-        new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10),
+        hoySV(),
     ));
 
     /* Se guarda con cada tecla, no al cerrar: la sesión no se cierra por un

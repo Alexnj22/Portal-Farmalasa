@@ -8,12 +8,12 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { hora12 } from '../../utils/hora';
+import { hoySV } from '../../utils/fecha';
 
 // El día de caja en hora de El Salvador. Se usa para no ofrecer el cierre del
 // día al confirmar un corte VIEJO: `sala_ya_cerro` mira el reloj de ahora, así
 // que firmar el de anteayer a las 21:00 contestaría que sí — y lo que se
 // cerraría es el día de HOY, que no tiene nada que ver.
-const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
 /**
  * Confirmar o descartar un corte — la ÚNICA escritura, para las cuatro

@@ -28,6 +28,7 @@ import TablePagination from '../components/common/TablePagination';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { EmptyState } from '../components/common/StateViews';
 import { rotuloCampo } from '../utils/rotuloDeCampo';
+import { fechaTexto } from '../utils/fecha';
 
 // Las pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección. El
@@ -149,11 +150,11 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
         <div className="flex flex-col items-end">
           {isScheduled ? (
             <p className="text-label text-chart-3-text font-bold tracking-widest uppercase flex items-center gap-1.5">
-              <CalendarClock size={12} /> Para: {new Date(ann.scheduledFor).toLocaleDateString()}
+              <CalendarClock size={12} /> Para: {fechaTexto(ann.scheduledFor)}
             </p>
           ) : (
             <p className="text-label text-content-3 font-bold tracking-widest uppercase flex items-center gap-1.5">
-              <Clock size={12} /> {new Date(ann.date).toLocaleDateString()}
+              <Clock size={12} /> {fechaTexto(ann.date)}
             </p>
           )}
         </div>
@@ -395,7 +396,7 @@ const AnnouncementsView = ({ openModal }) => {
         });
         useToastStore.getState().showToast(
           finalScheduledFor ? 'Aviso Programado' : 'Aviso enviado',
-          finalScheduledFor ? `Se mostrará a partir del ${new Date(finalScheduledFor).toLocaleDateString()}.` : 'El aviso ya está en las pantallas de tu equipo. 🚀',
+          finalScheduledFor ? `Se mostrará a partir del ${fechaTexto(finalScheduledFor)}.` : 'El aviso ya está en las pantallas de tu equipo. 🚀',
           'success'
         );
         if (finalScheduledFor && new Date(finalScheduledFor) > new Date()) {

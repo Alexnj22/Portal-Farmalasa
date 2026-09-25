@@ -21,6 +21,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { hora12 } from '../../utils/hora';
+import { fechaTexto } from '../../utils/fecha';
 
 /* El editor de la foto se baja al elegir el archivo, no al abrir el formulario:
  * arrastra el canónico de recorte, y la mayoría de las salidas del día no piden
@@ -94,9 +95,8 @@ const EditorDeDocumento = lazy(() => import('../common/EditorDeDocumento'));
 
 // El mediodía en UTC y no la fecha pelada: `2026-08-15` interpretado como
 // medianoche se corre un día para atrás con el huso de la sala.
-const fechaCorta = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-    day: 'numeric', month: 'short', timeZone: 'UTC',
-}) : '');
+const fechaCorta = (f) => (f ? fechaTexto(f, {
+    day: 'numeric', month: 'short' }) : '');
 
 /**
  * «el monto», «el monto y el número», «el monto, el número y la remesadora».

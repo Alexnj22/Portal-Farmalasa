@@ -17,14 +17,11 @@
 // copias, que es exactamente lo que un libro fiscal no puede permitirse.
 
 import { formatearNit, formatearNrc } from '../../utils/nitUtils';
+import { fechaNumerica } from '../../utils/fecha';
 
 // DD/MM/YYYY: el formato del libro. Se parte la cadena en vez de construir un
 // Date — `new Date('2026-06-01')` es UTC y en El Salvador (−6) retrocede un día.
-export const fmtFecha = (iso) => {
-    if (!iso) return '';
-    const [y, m, d] = String(iso).slice(0, 10).split('-');
-    return `${d}/${m}/${y}`;
-};
+export const fmtFecha = (iso) => fechaNumerica(iso, { vacio: '' });
 
 // El CSV lleva el número pelado: sin símbolo, sin separador de miles y con
 // punto decimal, que es lo que Excel en es-SV interpreta como número. Un

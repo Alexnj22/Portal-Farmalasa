@@ -32,6 +32,7 @@ import ListRow from '../../components/common/ListRow';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 const REASONS = [
   'Devolución del cliente',
@@ -57,19 +58,14 @@ const AV = {
   10: 'w-10 h-10',
 };
 
-function svToday() {
-  // `en-CA` da `YYYY-MM-DD`: es el idiom para LEER la fecha de una zona, no
-  // formato para el usuario — el mismo que ya usa `useTimeClockEngine.js`.
-  // Antes esto era `toLocaleString('en-US')` reparseado con `new Date()`, que
-  // funcionaba de casualidad (con `es-SV` da Invalid Date). Solo se usan las
-  // partes de fecha del resultado, nunca la hora.
-  const [a, m, d] = new Date()
-    .toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' })
-    .split('-').map(Number);
+function hoyComoFechaLocal() {
+  // El día de la sala como fecha local a medianoche: `isSameDay` la compara
+  // contra fechas locales. Sólo se usan sus partes de fecha, nunca la hora.
+  const [a, m, d] = hoySV().split('-').map(Number);
   return new Date(a, m - 1, d);
 }
 function isSameDay(dateStr) {
-  const today = svToday();
+  const today = hoyComoFechaLocal();
   const d = new Date(dateStr + 'T00:00:00');
   return today.getFullYear() === d.getFullYear() &&
     today.getMonth() === d.getMonth() &&
@@ -132,7 +128,7 @@ const MOTIVO_SIN_ANULAR = {
    porque el mismo día 3 el usuario está mirando cierres del mes anterior y un
    calendario que apaga esos días se lee como que el portal los perdió. */
 function ventanaDelFiltro() {
-  const hoy = svToday();
+  const hoy = hoyComoFechaLocal();
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const primeroDelMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
   const haceSiete = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 7);
@@ -156,7 +152,7 @@ function esAnulada(inv) {
 function fmtCurrency(n) { return formatMoney(n ?? 0); }
 function fmtDate(d) {
   if (!d) return '';
-  return new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
+  return fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function DocBadge({ tipo }) {
@@ -990,7 +986,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
      del mes no mostraba nada. */
   const ambito = useMemo(() => {
     if (dateFilter) return { fecha: dateFilter };
-    const now  = svToday();
+    const now  = hoyComoFechaLocal();
     const y    = now.getFullYear();
     const m    = String(now.getMonth() + 1).padStart(2, '0');
     const last = String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0');

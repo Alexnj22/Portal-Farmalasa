@@ -51,6 +51,7 @@ import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import { consultarMisPuntos } from '../data/misPuntos';
 import { EMPRESA } from '../constants/empresa';
+import { fechaNumerica } from '../utils/fecha';
 
 /**
  * La forma del código de acceso: siete caracteres de un alfabeto sin parecidos
@@ -100,11 +101,7 @@ function faltaResponder(c) {
 /** Cuántos movimientos se ven sin pedir más. El resto entra con un toque. */
 const MOVIMIENTOS_A_LA_VISTA = 6;
 
-const fmtFecha = (d) => {
-    if (!d) return '';
-    const [a, m, dd] = String(d).slice(0, 10).split('-');
-    return a && m && dd ? `${dd}/${m}/${a}` : '';
-};
+const fmtFecha = (d) => fechaNumerica(d, { vacio: '' });
 
 /**
  * Cuántos días faltan para una fecha AAAA-MM-DD.

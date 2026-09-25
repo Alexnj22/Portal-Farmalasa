@@ -6,7 +6,8 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
-import { fetchBitacoraDia, hoySV, pendientesDelDia } from '../../data/bitacoras';
+import { fetchBitacoraDia, pendientesDelDia } from '../../data/bitacoras';
+import { hoySV } from '../../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las bitácoras en el Inicio.

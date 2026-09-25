@@ -16,6 +16,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import { useToastStore } from '../../store/toastStore';
 import { hora12, fechaHora12 } from '../../utils/hora';
+import { fechaTexto } from '../../utils/fecha';
 
 /**
  * El archivo de los depósitos al banco.
@@ -36,9 +37,8 @@ import { hora12, fechaHora12 } from '../../utils/hora';
  * responde ninguna de las tres preguntas de arriba. Distinto de la lista de
  * bolsas, donde el folio y el día alcanzan para moverlas físicamente.
  */
-const fechaLarga = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
-}) : '');
+const fechaLarga = (f) => (f ? fechaTexto(f, {
+    day: 'numeric', month: 'short', year: 'numeric' }) : '');
 const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
 
 const COLUMNAS = [
@@ -66,8 +66,7 @@ const COLUMNAS = [
  * «17 ago» y no «17 ago → 17 ago», que sería decir dos veces lo mismo. */
 const rangoDeDias = (d) => {
     if (!d?.dia_desde) return '—';
-    const corto = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV',
-        { day: 'numeric', month: 'short' });
+    const corto = (f) => fechaTexto(f, { day: 'numeric', month: 'short' });
     return d.dia_desde === d.dia_hasta ? corto(d.dia_desde) : `${corto(d.dia_desde)} → ${corto(d.dia_hasta)}`;
 };
 

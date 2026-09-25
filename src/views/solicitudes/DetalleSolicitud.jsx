@@ -19,6 +19,7 @@ import { CaraPersona, ChipPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { ajusteSinCambio, fmtUltimaVenta } from '../../utils/minmaxSolicitud';
+import { fechaTexto } from '../../utils/fecha';
 
 // El detalle de una solicitud, en UN solo lugar.
 //
@@ -41,7 +42,7 @@ import { ajusteSinCambio, fmtUltimaVenta } from '../../utils/minmaxSolicitud';
 // 2026-08-17, cuando el código dejó de poder leerse desde el navegador; sin el
 // único `if` que la consultaba era una lista que no decidía nada.
 
-const fmtDate = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
+const fmtDate = (iso) => !iso ? '—' : fechaTexto(iso, { day: '2-digit', month: 'short' });
 // `fmtDateFull` vivía acá y lo usaba el recuadro de la factura que reemplazó
 // `LaVenta`, que trae su propio formato con hora.
 
@@ -658,7 +659,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         <ArrowLeftRight size={12} className="text-chart-3-text flex-shrink-0" strokeWidth={2} />
                         <div className="flex flex-wrap items-center gap-2">
                             {meta.targetEmployeeName && <span className="text-body-sm font-bold text-chart-3-text">↔ {meta.targetEmployeeName}</span>}
-                            {meta.date && <span className="text-label text-chart-3-text">{new Date(meta.date+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'long', day: '2-digit', month: 'long' })}</span>}
+                            {meta.date && <span className="text-label text-chart-3-text">{fechaTexto(meta.date, { weekday: 'long', day: '2-digit', month: 'long' })}</span>}
                         </div>
                     </div>
                 )}
@@ -729,7 +730,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                 <p className="text-caption font-black uppercase tracking-widest text-success-text mb-2">Días de Permiso</p>
                 <div className="flex flex-wrap gap-1.5">
                     {meta.permissionDates.map(d => (
-                        <Badge key={d} variant="success" uppercase={false}>{new Date(d+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}</Badge>
+                        <Badge key={d} variant="success" uppercase={false}>{fechaTexto(d, { weekday: 'short', day: '2-digit', month: 'short' })}</Badge>
                     ))}
                 </div>
             </div>
@@ -752,7 +753,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                     </p>
                     {meta.date && (
                         <p className="text-caption text-content-2">
-                            {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-SV', { weekday: 'long', day: '2-digit', month: 'long' })}
+                            {fechaTexto(meta.date, { weekday: 'long', day: '2-digit', month: 'long' })}
                         </p>
                     )}
                 </div>

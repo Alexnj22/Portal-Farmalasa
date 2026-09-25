@@ -3,6 +3,7 @@ import { aBase64Reducido } from '../plataforma/fotoParaLeer';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { repartoDeUnaSalida } from '../utils/cortesDiagnostico';
+import { hoySV } from '../utils/fecha';
 
 // Bolsas de efectivo — el dinero que la sala guarda al confirmar un corte, hasta
 // que administración lo cuenta.
@@ -1276,7 +1277,7 @@ export async function fetchMovimientosDelPortal(sala, dia = null) {
     // El día de la CAJA, no el del reloj. A las once de la noche con la caja sin
     // cerrar el reloj ya cambió de día y la caja no: filtrando por el reloj, lo
     // anotado en esa hora desaparece de la pantalla justo cuando todavía cuenta.
-    const cual = dia || new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+    const cual = dia || hoySV();
     /* `registrado_por` y `foto_url` van en el select desde el 2026-09-02.
      * Estaban en la tabla y no viajaban, así que la lista del día pintaba cada
      * movimiento sin hora, sin autor y sin comprobante — reportado sobre la

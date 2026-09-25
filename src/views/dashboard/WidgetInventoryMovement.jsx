@@ -22,6 +22,7 @@ import {
     buscarConExistencia, buscarEnCatalogo, fetchPresentaciones, fetchLotesDeProducto,
     fetchPerecederos, insertMovimientoInventario, fetchSucursalEnConteo,
 } from '../../data/inventoryMovements';
+import { fechaNumerica, hoySV } from '../../utils/fecha';
 
 // Widget «Ajuste de Inventario».
 //
@@ -158,15 +159,11 @@ function findTargetEmployee(employees) {
   return employees.find(e => Number(e.rango ?? 0) >= 4);
 }
 
-const fmtFecha = (d) => {
-    if (!d) return null;
-    const [a, m, dd] = String(d).split('-');
-    return `${dd}/${m}/${a.slice(2)}`;
-};
+const fmtFecha = (d) => fechaNumerica(d, { anio: 'corto', vacio: null });
 
 function diasHasta(fecha) {
     if (!fecha) return null;
-    const hoy = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const hoy = hoySV();
     return Math.round((new Date(fecha) - new Date(hoy)) / 86400000);
 }
 

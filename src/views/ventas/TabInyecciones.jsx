@@ -17,6 +17,7 @@ import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { hora12 } from '../../utils/hora';
+import { fechaNumerica, hoySV } from '../../utils/fecha';
 
 /*
  * «¿A quién se le cobró la aplicación?» — las ventas con inyección del período
@@ -47,7 +48,7 @@ const ESTADOS = [
  * y el resumen mentiría. Cuando esa fecha quede a más de tres meses —el tope
  * de la función— se vuelve al mes en curso. */
 function rangoPorDefecto() {
-    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' });
+    const hoy = hoySV();
     const [y, m] = hoy.split('-').map(Number);
     const limite = new Date(Date.UTC(y, m - 1, Number(hoy.slice(8)) - 90)).toISOString().slice(0, 10);
     const desde = DESDE_EL_PORTAL >= limite ? DESDE_EL_PORTAL : `${hoy.slice(0, 7)}-01`;
@@ -56,10 +57,7 @@ function rangoPorDefecto() {
 
 const nombre = (n) => (n ? shortEmployeeName(n) : '—');
 const productosTexto = (v) => (v.productos || []).map((p) => p.descripcion).join(' · ');
-const fechaCorta = (f) => {
-    const [, m, d] = String(f).split('-');
-    return `${d}/${m}`;
-};
+const fechaCorta = (f) => fechaNumerica(f, { anio: false });
 
 export default function TabInyecciones({
     filterBranch, setFilterBranch, branchOptions, branchLocked, searchTerm,

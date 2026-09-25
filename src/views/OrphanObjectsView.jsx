@@ -9,6 +9,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { fetchOrphanObjects, updateOrphanObjectStatus } from '../data/orphanObjects';
 import Badge from '../components/common/Badge';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
+import { fechaTexto } from '../utils/fecha';
 
 const STATUS_LABELS = {
     candidate: 'Candidato',
@@ -113,7 +114,7 @@ const OrphanObjectsView = () => {
                                 </DataCell>
                                 <DataCell hideBelow="md">
                                     <span className="inline-flex items-center gap-1 text-caption text-content-3">
-                                        <Clock size={9} /> {new Date(row.detected_at).toLocaleDateString('es-SV')}
+                                        <Clock size={9} /> {fechaTexto(row.detected_at)}
                                     </span>
                                 </DataCell>
                                 <DataCell>

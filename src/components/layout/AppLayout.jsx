@@ -51,6 +51,7 @@ import { prefetchRuta } from '../../constants/routeImporters';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { remontarAlGirar, contarRenderShell } from '../../plataforma/cajaNegra';
 import { useHayDialogo } from '../common/dialogosAbiertos';
+import { hoySV } from '../../utils/fecha';
 
 // MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
 
@@ -218,7 +219,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     useEffect(() => {
         if (!myBirthday || !user?.id) return;
-        const todayKey = new Date().toLocaleDateString('en-CA');
+        const todayKey = hoySV();
         const flagKey = `birthday_toast_${user.id}_${todayKey}`;
         if (localStorage.getItem(flagKey)) return;
         localStorage.setItem(flagKey, '1');

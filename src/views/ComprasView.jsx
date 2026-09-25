@@ -20,6 +20,7 @@ import { formatMoney, formatQty } from '../utils/formatNumber';
 import { useAuth } from '../context/AuthContext';
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../components/common/usarExpediente';
+import { fechaNumerica } from '../utils/fecha';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -59,11 +60,7 @@ const PRODUCTO_COLS = [
 
 const fmt$ = (n) => formatMoney(n || 0);
 const fmtNum = (n) => formatQty(n || 0, { decimalesMax: 2 });
-const fmtDate = (d) => {
-    if (!d) return '—';
-    const [y, m, day] = d.split('-');
-    return `${day}/${m}/${y}`;
-};
+const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
 
 function defaultRange() {
     const end   = new Date();

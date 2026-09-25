@@ -5,6 +5,7 @@
 // componente de 400 líneas.
 
 import { conSigno, formatMoney } from './formatNumber';
+import { diaSV } from './fecha';
 
 const CENTAVO = 0.005;
 const redondear = (n) => Math.round(n * 100) / 100;
@@ -137,7 +138,7 @@ export function conTramo(cortesDeLaSala) {
 /** El día de El Salvador de un instante. La fecha de un movimiento es la de la
  *  SALA, no la del reloj de quien mira. */
 const diaDeSala = (iso) => (iso
-    ? new Date(new Date(iso).getTime() - 6 * 3600_000).toISOString().slice(0, 10)
+    ? diaSV(iso)
     : null);
 
 /** El concepto con el que el sistema de la caja anota un cobro de crédito. Es

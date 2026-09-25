@@ -22,9 +22,10 @@ import { formatTime12h } from '../../utils/helpers';
 import SearchInput from '../../components/common/SearchInput';
 import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 const formatDate = (d) => d
-    ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
 
 // Tokenizado T7 — mismo criterio que RequestsView.jsx (comparten el mismo
@@ -185,7 +186,7 @@ const EmployeeProfileView = ({ openModal }) => {
     }, [timeline, filterFrom, filterTo, filterType, searchQuery, timelineLimit]);
 
     const nextVacation = useMemo(() => {
-        const today = new Date().toISOString().split('T')[0];
+        const today = hoySV();
         return myVacPlans.find(vp => vp.end_date >= today && (vp.status === 'PLANNED' || vp.status === 'CONFIRMED')) || null;
     }, [myVacPlans]);
 
@@ -320,7 +321,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div className="min-w-0">
                                 <p className="text-micro font-black text-success uppercase tracking-widest">Próximas vacaciones</p>
                                 <p className="text-body-sm font-black text-success-text truncate">
-                                    {new Date(nextVacation.start_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    {fechaTexto(nextVacation.start_date, { day: '2-digit', month: 'short', year: 'numeric' })}
                                     {nextVacation.status === 'CONFIRMED' && <span className="ml-1.5 text-success font-bold">· Confirmadas</span>}
                                 </p>
                             </div>
@@ -365,8 +366,8 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div className="space-y-2">
                                 {myVacPlans.map(vp => {
                                     const s = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;
-                                    const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
-                                    const isUpcoming = vp.end_date >= new Date().toISOString().split('T')[0];
+                                    const fmt = (d) => fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' });
+                                    const isUpcoming = vp.end_date >= hoySV();
                                     // Un solo ternario para las dos cosas, porque dependen de la MISMA
                                     // condición: cuando la vacación ya pasó el elemento es
                                     // `data-surface="card"` y el canónico lo levanta con `--lift-card`;

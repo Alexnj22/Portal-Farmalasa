@@ -35,6 +35,7 @@ import useBorrador from '../../hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { hora12 } from '../../utils/hora';
+import { fechaNumerica, fechaTexto } from '../../utils/fecha';
 
 const CATEGORIAS = [
     'Consumidor', 'Contribuyente', 'Gran Contribuyente',
@@ -51,11 +52,7 @@ const CAMPOS = [
 
 const ETIQUETA_CAMPO = ETIQUETAS;
 
-const fmtDate = (d) => {
-    if (!d) return '—';
-    const [y, m, day] = String(d).slice(0, 10).split('-');
-    return y && m && day ? `${day}/${m}/${y}` : '—';
-};
+const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
 /**
  * Los años cumplidos.
  *
@@ -358,7 +355,7 @@ function CodigoDeAcceso({ customerId, nombre, puedeEditar }) {
 
             {estado?.tiene && !legible && (
                 <p className="text-xs text-content-3">
-                    Emitido el {new Date(estado.emitido_at).toLocaleDateString('es-SV')}
+                    Emitido el {fechaTexto(estado.emitido_at)}
                     {estado.veces_emitido > 1 && ` · ${estado.veces_emitido} veces`}
                 </p>
             )}

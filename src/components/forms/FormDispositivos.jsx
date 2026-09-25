@@ -4,6 +4,7 @@ import Button from '../common/Button';
 import { SkeletonText } from '../common/StateViews';
 import { Laptop, AlertCircle, Loader2, Unplug, PowerOff, Activity } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { fechaTexto } from '../../utils/fecha';
 
 const FormDispositivos = ({ formData }) => {
     const [kiosks, setKiosks] = useState([]);
@@ -102,7 +103,7 @@ const FormDispositivos = ({ formData }) => {
                                                         {kiosk.device_name}
                                                     </p>
                                                     <p className="text-micro font-bold tracking-widest uppercase text-content-3 mt-0.5 truncate">
-                                                        {isConfirming ? 'Confirmar desconexión' : `Vinculado: ${new Date(kiosk.created_at).toLocaleDateString()}`}
+                                                        {isConfirming ? 'Confirmar desconexión' : `Vinculado: ${fechaTexto(kiosk.created_at)}`}
                                                     </p>
                                                 </div>
                                             </div>

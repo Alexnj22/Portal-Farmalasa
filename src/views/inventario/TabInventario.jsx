@@ -24,6 +24,7 @@ import { fetchLaboratoriosBasic } from '../../data/laboratorios';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { hoySV } from '../../utils/fecha';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
@@ -294,7 +295,7 @@ export default function TabInventario({ searchTerm = '' }) {
             setTotal(data?.length ? Number(data[0].total) : 0);
             setSonParecidos(!!parecidos?.aproximado && !!data?.length);
 
-            const today = new Date().toISOString().split('T')[0];
+            const today = hoySV();
             const { count: ec } = await fetchExpiredInventoryCount(erpId, today);
             if (rid !== loadRef.current) return;
             setExpiredTotal(ec ?? 0);

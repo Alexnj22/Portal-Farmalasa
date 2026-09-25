@@ -44,6 +44,7 @@ import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { hora12 } from '../utils/hora';
 import TabInyecciones from './ventas/TabInyecciones';
+import { fechaTexto, horaSV, hoySV, relojSV } from '../utils/fecha';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -79,11 +80,11 @@ function fmtQty(n) {
 
 function fmtDate(dateStr) {
     if (!dateStr) return null;
-    return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
+    return fechaTexto(dateStr, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function currentMonthRange() {
-    const now = new Date(Date.now() - 6 * 3600_000);
+    const now = relojSV();
     const y = now.getFullYear();
     const m = now.getMonth() + 1;
     const d = now.getDate();
@@ -135,11 +136,8 @@ function dailyPct(curTotal, curDays, prevTotal, prevDays) {
 
 // Returns "HH:MM:00" in CST if ffin is today, null for past ranges (no cutoff needed)
 function currentHoraCorte(ffin) {
-    const nowSV   = new Date(Date.now() - 6 * 3600_000);
-    const pad     = n => String(n).padStart(2, '0');
-    const todaySV = `${nowSV.getUTCFullYear()}-${pad(nowSV.getUTCMonth() + 1)}-${pad(nowSV.getUTCDate())}`;
-    if (ffin !== todaySV) return null;
-    return `${pad(nowSV.getUTCHours())}:${pad(nowSV.getUTCMinutes())}:00`;
+    if (ffin !== hoySV()) return null;
+    return horaSV().replace(/:\d\d$/, ':00');   // el corte va al minuto: los segundos en cero
 }
 
 function FilterControls({
@@ -1333,7 +1331,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                         const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
                         return (
                             <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${cross.length > 0 ? cardCross : cardNormal}`}>
-                                <p className="mb-0.5 text-content-3">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
+                                <p className="mb-0.5 text-content-3">{fechaTexto(d.fecha + 'T12:00', { day: '2-digit', month: 'short' })}</p>
                                 <p className="font-black text-content">{fmt(d.total)}</p>
                                 <p className="text-content-3">{d.count} fact.</p>
                                 {cross.map(b => (
@@ -2425,7 +2423,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                     const barPct = (m.neto / maxTrend) * 100;
                                                     const prev   = drillMonthly[i - 1];
                                                     const change = prev && prev.neto > 0 ? ((m.neto - prev.neto) / prev.neto) * 100 : null;
-                                                    const monthLabel = new Date(m.month + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short' });
+                                                    const monthLabel = fechaTexto(m.month, { month: 'short' });
                                                     const isLatest = i === drillMonthly.length - 1;
                                                     const isUp = change !== null && change >= 0;
                                                     return (
@@ -2630,7 +2628,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                         <p className="font-black text-warning-text mb-0.5">Precio cambió</p>
                                                                                         {line.tierChangedAt && (
                                                                                             <p className="text-content-tooltip-2">
-                                                                                                {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                                                {fechaTexto(line.tierChangedAt, { day: '2-digit', month: 'short', year: 'numeric' })}
                                                                                             </p>
                                                                                         )}
                                                                                         <p className="mt-1">Al vender: <strong className="text-content-tooltip">{line.tier.label}</strong></p>
@@ -2878,7 +2876,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                         <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1">Mostrar de nuevo</p>
                                                         <p className="text-label text-content-2">
                                                             Oculto por <span className="font-bold text-content">{shortEmployeeName(r.oculto_por)}</span>
-                                                            {r.oculto_at && ` el ${new Date(r.oculto_at).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                                                            {r.oculto_at && ` el ${fechaTexto(r.oculto_at, { day: 'numeric', month: 'short', year: 'numeric' })}`}
                                                         </p>
                                                       </div>
                                                     : 'Ocultar producto (para todos)'

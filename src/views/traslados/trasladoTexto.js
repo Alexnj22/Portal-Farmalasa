@@ -6,6 +6,7 @@
 // las dos cosas se recarga entero en cada tecla).
 
 import { hora12 } from '../../utils/hora';
+import { fechaTexto } from '../../utils/fecha';
 
 export const fmtCuando = (iso) => {
     if (!iso) return '';
@@ -26,7 +27,7 @@ export const fmtFechaLarga = (iso) => {
     if (!iso) return '';
     const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
     if (!y || !m || !d) return '';
-    return new Date(y, m - 1, d).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' });
+    return fechaTexto(new Date(y, m - 1, d), { day: '2-digit', month: 'short', year: '2-digit' });
 };
 
 /** Lo que se pide, en una línea legible. */

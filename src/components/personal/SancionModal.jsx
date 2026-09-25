@@ -32,11 +32,7 @@ import { EVENT_TYPES } from '../../data/constants';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
-
-const hoyISO = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+import { hoySV } from '../../utils/fecha';
 
 const fmtFecha = (iso) => {
     if (!iso) return '';
@@ -54,7 +50,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
     const [faltas, setFaltas]         = useState([]);
     const [falta, setFalta]           = useState('');
     const [peldano, setPeldano]       = useState(null);
-    const [fecha, setFecha]           = useState(hoyISO);
+    const [fecha, setFecha]           = useState(hoySV);
     const [dias, setDias]             = useState('');
     const [autorizacion, setAutoriz]  = useState('');
     const [nota, setNota]             = useState('');
@@ -69,7 +65,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
         const b = loadDraft(claveBorrador);
         if (b) {
             setFalta(b.falta || '');
-            setFecha(b.fecha || hoyISO());
+            setFecha(b.fecha || hoySV());
             setDias(b.dias || '');
             setAutoriz(b.autorizacion || '');
             setNota(b.nota || '');

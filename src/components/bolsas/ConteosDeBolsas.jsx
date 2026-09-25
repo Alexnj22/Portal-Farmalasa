@@ -10,6 +10,7 @@ import { formatMoney } from '../../utils/formatNumber';
 // rótulo de la ranura de la píldora, y este archivo se carga en diferido.
 import { rangoDeDias } from '../../views/bolsas/etapas';
 import { hora12, fechaHora12 } from '../../utils/hora';
+import { fechaTexto } from '../../utils/fecha';
 
 /**
  * El archivo de las TANDAS de conteo.
@@ -38,9 +39,8 @@ import { hora12, fechaHora12 } from '../../utils/hora';
  * cifras no contesta ninguna de las preguntas por las que existe. Quien la
  * dibuja es `CircuitoDeBolsas`, dentro de esa misma guarda.
  */
-const fechaLarga = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
-}) : '');
+const fechaLarga = (f) => (f ? fechaTexto(f, {
+    day: 'numeric', month: 'short', year: 'numeric' }) : '');
 const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
 // Las iniciales de respaldo se fueron con el avatar suelto: hoy las resuelve
 // `AvatarConEstado` con `shortEmployeeName`, el mismo respaldo del resto

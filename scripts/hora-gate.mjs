@@ -31,6 +31,26 @@
  *   hhmm-crudo     una hora de la base cortada a «HH:MM» y pintada
  *   hh24           `HH24` en una edge function (texto que sale a una persona)
  *
+ * Y fuera de `fecha.js` no se calcula el DÍA de la sala (2026-09-25, U1 de
+ * `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`). Había veinte copias de «hoy»
+ * con cuatro reglas, y cuatro usaban UTC: después de las 6 pm decían mañana.
+ *   hoy-utc        `new Date().toISOString()` cortado a fecha — es el día de
+ *                  Greenwich, no el de la sala: usar `hoySV()`
+ *   desfase-a-mano restar las 6 horas a mano — usar `diaSV`/`relojSV`
+ *   zona-a-mano    `timeZone: 'America/El_Salvador'` o `'en-CA'` para sacar
+ *                  el día — usar `hoySV()`/`diaSV()`
+ *   copia-de-hoy   una función propia `hoySV`/`hoyISO`/`svToday`/`svNow`
+ *   (sólo en `src/`: las funciones del servidor tienen su propia copia y
+ *   todavía no un canónico compartido)
+ *
+ * Y MOSTRAR una fecha sale de `fechaTexto`/`fechaNumerica` (2026-09-25):
+ *   fecha-a-mano   `toLocaleDateString(` o `${d}/${m}/${y}` fuera de `fecha.js`.
+ *                  Leer `'2026-03-01'` con `new Date()` lo corre al 28 de
+ *                  febrero en la sala; el canónico distingue un día de un
+ *                  instante. Es un TRINQUETE: `scripts/fecha-baseline.json`
+ *                  guarda la cuenta por archivo del día que se escribió y sólo
+ *                  baja (`--fijar-fechas` la reescribe si bajó).
+ *
  * Bloqueante en CERO. Lo legítimo va en EXCEPCIONES **con su motivo**: una hora
  * que es un DATO y no un texto (el `value` de un `<input type="time">`, una
  * clave de comparación, el cuerpo de una petición) no es una hora que alguien lee.
@@ -50,7 +70,7 @@ const soloIndexado = process.argv.includes('--hook');
 const listarTodo   = process.argv.includes('--listar');
 
 /* El canónico. Es el único que puede formatear una hora. */
-const CANONICOS = new Set(['src/utils/hora.js']);
+const CANONICOS = new Set(['src/utils/hora.js', 'src/utils/fecha.js']);
 
 /* ── Excepciones: archivo → { categoria: [motivo, cuenta] } ─────────────────
  * La cuenta importa: una excepción por archivo a secas se traga el defecto
@@ -59,12 +79,21 @@ const EXCEPCIONES = {
     'src/utils/bolsaComprobante.js': {
         'hora-a-mano': ['`enHoraDeLaSala` devuelve {fecha, hora:"HH:MM"} como DATO (clave de la salida, anclado en su prueba); lo que se imprime pasa por `horaDeColumna`', 1],
         'h12-falso':   ['el mismo `enHoraDeLaSala`: necesita el reloj de 24 h para que la hora-dato compare y ordene', 1],
+        'zona-a-mano': ['el mismo `enHoraDeLaSala`: saca fecha Y hora de una sola lectura con la zona; partirlo en dos lecturas no ganaría nada', 2],
+    },
+    'src/utils/ticketCampos.js': {
+        'zona-a-mano': ['`selloDeTiempo`/`selloCorto` FORMATEAN la fecha para el papel (dd/mm/aaaa) en la zona de la sala: es presentación, no el cálculo del día', 2],
     },
     'src/views/BranchesView.jsx': {
         'time-string': ['`currentTime.timeStr` es la clave con la que `isBranchOpenNow` compara contra `weekly_hours` (HH:MM); no se pinta', 2],
         'hhmm-crudo':  ['el mismo `timeStr`: dato de comparación, no texto', 1],
     },
 };
+
+/* El trinquete de `fecha-a-mano`: cuenta por archivo que no puede subir. */
+const RUTA_BASE_FECHAS = join(RAIZ, 'scripts/fecha-baseline.json');
+const BASE_FECHAS = (() => { try { return JSON.parse(readFileSync(RUTA_BASE_FECHAS, 'utf8')); } catch { return {}; } })();
+const cuentaFechas = {};
 
 const RE_FECHA = /date|fecha|_at\b|At\b|\bdt\b|\bd\b|\bts\b|time|hora|stamp|momento|cuando|when|inicio|fin\b|created|updated/i;
 
@@ -120,6 +149,16 @@ function reglas(texto, ruta) {
             if (enPlantilla || enJsx || helper) { add(i, 'hhmm-crudo', 'hora de la base pintada como HH:MM — usar hora12()'); break; }
         }
         if (/const\s+hhmm\s*=/.test(codigo) && !/(slice|substring)\(/.test(codigo)) add(i, 'hhmm-crudo', 'helper hhmm propio — usar hora12()');
+        if (!esFuncion && !/^\s*\/\//.test(l)) {
+            const n = (codigo.match(/toLocaleDateString\(|\$\{d(d|ay)?\}\/\$\{m\}/g) || []).length;
+            if (n) cuentaFechas[ruta] = (cuentaFechas[ruta] || 0) + n;
+        }
+        if (!esFuncion) {
+            if (/new Date\(\)\s*\.toISOString\(\)\s*\.\s*(slice\(\s*0\s*,\s*10\s*\)|split\(\s*['"]T['"]\s*\))/.test(codigo)) add(i, 'hoy-utc', 'hoy en UTC: después de las 6 pm dice mañana — usar hoySV()');
+            if (/\b6\s*\*\s*(3600_?000|60\s*\*\s*60\s*\*\s*1000|3600\b)/.test(codigo)) add(i, 'desfase-a-mano', 'desfase de El Salvador escrito a mano — usar diaSV()/relojSV() de utils/fecha');
+            if (/America\/El_Salvador|['"]en-CA['"]/.test(codigo)) add(i, 'zona-a-mano', 'día de la sala sacado con la zona a mano — usar hoySV()/diaSV()');
+            if (/(const|let|function)\s+(hoySV|hoyISO|svToday|svNow|todaySV)\b/.test(codigo)) add(i, 'copia-de-hoy', 'copia propia de «hoy» — importar de utils/fecha');
+        }
         if (/getHours\(\)/.test(codigo) && /padStart\(2/.test(codigo) && /:\$\{|\+ ?':' ?\+/.test(codigo)) add(i, 'hhmm-crudo', 'HH:MM armado a mano');
     });
     return hallazgos;
@@ -160,6 +199,25 @@ for (const ruta of archivos) {
         else malos.push(...lista);
     }
     if (malos.length) { porArchivo.push([ruta, malos]); total += malos.length; }
+}
+
+// El trinquete de fechas: se mide sobre todo `src/` aunque el archivo no
+// tenga otros hallazgos (por eso va después del bucle, con `cuentaFechas`).
+const fijar = process.argv.includes('--fijar-fechas');
+for (const [ruta, n] of Object.entries(cuentaFechas)) {
+    const tope = BASE_FECHAS[ruta] ?? 0;
+    if (n > tope && !fijar) {
+        console.log(`${ruta}  [fecha-a-mano] ${n} fecha(s) formateada(s) a mano, la base permite ${tope} — usar fechaTexto()/fechaNumerica() de utils/fecha`);
+        total++;
+    }
+}
+if (fijar) {
+    const nueva = Object.fromEntries(Object.entries(cuentaFechas)
+        // Sin base todavía se toma la foto entera; con base, un archivo nuevo no entra: sólo baja.
+        .filter(([r, n]) => n <= (BASE_FECHAS[r] ?? (Object.keys(BASE_FECHAS).length ? 0 : Infinity))).sort());
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(RUTA_BASE_FECHAS, JSON.stringify(nueva, null, 2) + '\n');
+    console.log(`fecha-baseline: ${Object.values(nueva).reduce((a, b) => a + b, 0)} en ${Object.keys(nueva).length} archivo(s).`);
 }
 
 for (const [ruta, lista] of porArchivo) {

@@ -5,6 +5,7 @@ import { LazyInput, Switch, FileUploader, clampInt, formatPhoneMask } from './Br
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { fechaTexto } from '../../utils/fecha';
 
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;
@@ -147,7 +148,7 @@ const BranchTabInmueble = ({
                             <div className="md:col-span-2 flex items-center gap-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl">
                                 <AlertCircle size={18} className="text-warning shrink-0" />
                                 <p className="text-label font-black uppercase tracking-widest text-warning-text">
-                                    Vencimiento calculado del contrato: <span className="text-warning-text bg-surface-card px-3 py-1 rounded-lg shadow-sm ml-2">{new Date(rentContract.endDate).toLocaleDateString()}</span>
+                                    Vencimiento calculado del contrato: <span className="text-warning-text bg-surface-card px-3 py-1 rounded-lg shadow-sm ml-2">{fechaTexto(rentContract.endDate)}</span>
                                 </p>
                             </div>
                         )}

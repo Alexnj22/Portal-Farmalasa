@@ -7,8 +7,9 @@
 // escribe a otra persona.
 
 import { describe, it, expect } from 'vitest';
-import { granularidadDePeriodo, correrPeriodo, periodoDeHoy, periodoAlcanzaHoy, svToday, pad }
+import { granularidadDePeriodo, correrPeriodo, periodoDeHoy, periodoAlcanzaHoy, pad }
     from '../../src/utils/periodo';
+import { hoySV as svToday } from '../../src/utils/fecha';
 import { shortEmployeeName, employeeInitials } from '../../src/utils/nameUtils';
 import { calcAge, MINOR_AGE } from '../../src/utils/ageUtils';
 

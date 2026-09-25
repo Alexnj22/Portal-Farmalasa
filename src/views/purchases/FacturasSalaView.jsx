@@ -15,6 +15,7 @@ import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/Tabl
 import { fetchFacturasSalaPanel, soltarFactura, resumenRenglones } from '../../data/facturasSala';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
+import { fechaNumerica, fechaTexto } from '../../utils/fecha';
 
 // Vista «Facturas de Sala».
 //
@@ -62,17 +63,11 @@ const PERIODOS = [
 // entero sin aparecer ya no es demora del portal.
 const DIAS_ALERTA = 3;
 
-const fmtFecha = (iso) => {
-    if (!iso) return '—';
-    // Partir la cadena a mano: `new Date('2026-08-01')` la lee como UTC
-    // medianoche y en El Salvador (-6) retrocede un día.
-    const [a, m, d] = iso.split('-');
-    return `${d}/${m}/${a.slice(2)}`;
-};
+const fmtFecha = (iso) => fechaNumerica(iso, { anio: 'corto', vacio: '—' });
 
 const fmtCuando = (iso) => {
     if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
+    return fechaTexto(iso, { day: '2-digit', month: 'short' });
 };
 
 /** El estado de una fila, que es lo que ordenan las tarjetas y el filtro. */

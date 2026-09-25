@@ -29,6 +29,7 @@ import { hora12 } from '../../utils/hora';
 import * as almacen from '../../plataforma/almacen';
 import { emitir } from '../../plataforma/eventos';
 import { irA } from '../../plataforma/navegacion';
+import { hoySV, lunesDe } from '../../utils/fecha';
 
 export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
@@ -202,13 +203,8 @@ export const createSystemSlice = (set, get) => ({
                 // reales (DUI/ISSS/AFP/banco/kiosk_pin), sin esperar al grupo liviano.
                 const employeeGroupPromise = (async () => {
                     try {
-                        // Calcular lunes local sin mutar Date y sin problemas de DST
-                        const now = new Date();
-                        const dow = now.getDay();
-                        const monday = new Date(now);
-                        monday.setDate(now.getDate() - dow + (dow === 0 ? -6 : 1));
-                        monday.setHours(0, 0, 0, 0);
-                        const weekStartDate = monday.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+                        // El lunes de la semana de la SALA, no del reloj del equipo.
+                        const weekStartDate = lunesDe(hoySV());
 
                         // Alcance de datos de empleados: con permiso staff_list.can_view (RRHH/admin)
                         // se carga la empresa completa (comportamiento sin cambios). Sin ese permiso
@@ -599,7 +595,7 @@ export const createSystemSlice = (set, get) => ({
             const isPermission = eventData.type === 'PERMIT';
             const primaryDate = isPermission && eventData.permissionDates?.length > 0
                 ? eventData.permissionDates[0] // Primer día como fecha principal del registro
-                : (eventData.date || new Date().toISOString().split('T')[0]);
+                : (eventData.date || hoySV());
 
             // 2. Resolver nombre de sucursal destino (SUPPORT / TRANSFER)
             const needsBranchName = eventData.type === 'SUPPORT' || eventData.type === 'TRANSFER';
@@ -678,7 +674,7 @@ export const createSystemSlice = (set, get) => ({
             // Fecha efectiva futura → el evento queda SCHEDULED y lo aplica el cron
             // diario (edge function apply-scheduled-employee-events, 5:00 a.m.) en la
             // fecha indicada. Las validaciones sí corren ahora para feedback inmediato.
-            const todayLocal = new Date().toLocaleDateString('en-CA');
+            const todayLocal = hoySV();
             const isScheduled = primaryDate > todayLocal;
 
             if (eventData.type === 'TERMINATION') {
@@ -1555,12 +1551,7 @@ export const createSystemSlice = (set, get) => ({
             if (!kioskConfigStr) return false;
 
             const config = JSON.parse(kioskConfigStr);
-            const now = new Date();
-            const dow = now.getDay();
-            const monday = new Date(now);
-            monday.setDate(now.getDate() - dow + (dow === 0 ? -6 : 1));
-            monday.setHours(0, 0, 0, 0);
-            const weekStartDate = monday.toLocaleDateString('en-CA');
+            const weekStartDate = lunesDe(hoySV());
 
             const { data, error } = await supabase.rpc('get_kiosk_boot_payload', {
                 p_device_id: config.deviceId,

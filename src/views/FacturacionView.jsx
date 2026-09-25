@@ -51,6 +51,7 @@ import { useToastStore } from '../store/toastStore';
 // igual — `audit_logs` quedó con acciones que nunca ocurrieron). La policy ya
 // existe; esto es la otra mitad: que un fallo se VEA.
 import { mensajeAmigable } from '../utils/errorMessages';
+import { relojSV } from '../utils/fecha';
 function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
     useToastStore.getState().showToast(
@@ -232,20 +233,19 @@ const TIPO_PAGO_THEME = {
 };
 
 // SV time
-function svNow() { return new Date(Date.now() - 6 * 3600_000); }
 
 // Días cumplidos desde una fecha `YYYY-MM-DD`, contra medianoche de hoy en SV.
 // Va a nivel de módulo porque lo usan dos pestañas y además entra en un
 // `useMemo`: como función local se recrearía en cada render.
 function diasDesde(fechaStr) {
-    const today = svNow();
+    const today = relojSV();
     const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     return Math.round((todayMidnight - new Date(`${fechaStr}T00:00:00`)) / 86400000);
 }
 
 function monthOptions() {
     const opts = [];
-    const now = svNow();
+    const now = relojSV();
     for (let i = 0; i < 12; i++) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const y = d.getFullYear(); const m = d.getMonth() + 1;
@@ -645,7 +645,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
-    const now         = svNow();
+    const now         = relojSV();
     const todayStr    = now.toISOString().slice(0, 10);
     const currentMonthStr = now.toISOString().slice(0, 7); // YYYY-MM
 
@@ -684,7 +684,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
     };
 
     const daysAgoLabel = (fechaStr) => {
-        const today = svNow();
+        const today = relojSV();
         const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const fechaMidnight = new Date(`${fechaStr}T00:00:00`);
         const diff = Math.round((todayMidnight - fechaMidnight) / 86400000);
@@ -1121,7 +1121,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     const [collapsedBranches, setCollapsedBranches] = useState({});
     const { visitedIds, toggleVisited, clearVisited } = useVisitados();
 
-    const now      = svNow();
+    const now      = relojSV();
     const todayStr = now.toISOString().slice(0, 10);
     const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
 
@@ -1142,7 +1142,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         return `hace ${diff}d`;
     };
 
-    const currentMonthStr = svNow().toISOString().slice(0, 7);
+    const currentMonthStr = relojSV().toISOString().slice(0, 7);
 
     const resolvedMatchesTerm = useCallback((r, s) =>
         tokenMatch(s, String(r.erp_invoice_id || ''), r.correlativo, r.cliente),
@@ -1175,7 +1175,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         if (pollingRef2.current) return;
         pollingRef2.current = true;
         setLoading(true);
-        const n = svNow();
+        const n = relojSV();
         const y = n.getFullYear(), m = String(n.getMonth() + 1).padStart(2, '0');
         const fini = `${y}-${m}-01`;
         const ffin = `${y}-${m}-${new Date(y, n.getMonth() + 1, 0).getDate()}`;
@@ -1677,7 +1677,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
         [gapResolutions, gaps]
     );
 
-    const currentMonthStr = svNow().toISOString().slice(0, 7);
+    const currentMonthStr = relojSV().toISOString().slice(0, 7);
     const resolvedGapsThisMonth = useMemo(() =>
         resolvedGaps.filter(r => (r.resolved_at || '').startsWith(currentMonthStr)),
         [resolvedGaps, currentMonthStr]
@@ -3002,7 +3002,7 @@ export default function FacturacionView() {
     // Sube acá para poder ocupar su ranura; el orden de §17 lo pone después de
     // sucursal (ámbito → tiempo).
     const mesPorDefecto = useMemo(() => {
-        const now = svNow();
+        const now = relojSV();
         const y = now.getFullYear(); const m = String(now.getMonth() + 1).padStart(2, '0');
         const last = new Date(y, now.getMonth() + 1, 0).getDate();
         return `${y}-${m}-01|${y}-${m}-${last}`;

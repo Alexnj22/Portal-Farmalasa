@@ -29,6 +29,7 @@ import { useAuth } from '../../context/AuthContext';
 import ExpedienteMovil from '../../components/common/ExpedienteMovil';
 import { useExpedienteMovil, CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import useMediaQuery from '../../plataforma/useMediaQuery';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
@@ -839,7 +840,7 @@ export default function TabReglas({ searchTerm = '' }) {
     // Computed
     const rulesCount = Object.keys(rulesMap).length;
     const sinRegla   = Math.max(0, allCount - rulesCount);
-    const mesActual  = useMemo(() => new Date().toLocaleDateString('es-SV', { month: 'long' }), []);
+    const mesActual  = useMemo(() => fechaTexto(hoySV(), { month: 'long' }), []);
 
     // Sort client-side para columnas computed (estado/despacho) — opera sobre la página actual
     const sortedProducts = useMemo(() => {

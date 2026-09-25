@@ -47,6 +47,7 @@ import ModalShell from '../components/common/ModalShell';
 
 import { rotuloCampo } from '../utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion } from '../plataforma/ventanaDeImpresion';
+import { fechaTexto, hoySV } from '../utils/fecha';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -213,8 +214,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             if (ev.type === 'PERMIT' && meta.permissionDates?.length > 0) {
                 meta.permissionDates.forEach(d => addDay(d, 'PERMIT', ev, 0));
             } else {
-                const start = new Date((ev.date || new Date().toISOString().split('T')[0]) + 'T12:00:00');
-                const end   = new Date((meta.endDate || ev.date || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+                const start = new Date((ev.date || hoySV()) + 'T12:00:00');
+                const end   = new Date((meta.endDate || ev.date || hoySV()) + 'T12:00:00');
                 const cur   = new Date(start);
                 let dayIndex = 0;
                 while (cur <= end) {
@@ -859,7 +860,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                 {/* PESTAÑA 3: AUSENCIAS (Permisos + Incapacidades) */}
                                 {currentTab === 'permissions' && (() => {
-                                    const todayStr = new Date().toISOString().split('T')[0];
+                                    const todayStr = hoySV();
                                     return (
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)] space-y-5">
 
@@ -1219,7 +1220,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 </div>
                                                                 {req.note && <p className="text-body-sm text-content-2 line-clamp-2">{req.note}</p>}
                                                                 {req.approver_note && <p className="text-label text-content-3 mt-1 italic">Nota: {req.approver_note}</p>}
-                                                                <p className="text-caption text-content-3 mt-1">{new Date(req.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                                                <p className="text-caption text-content-3 mt-1">{fechaTexto(req.created_at, { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                                             </div>
                                                         </div>
                                                     );

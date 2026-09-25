@@ -11,6 +11,7 @@ import { timeToMins } from '../../utils/scheduleHelpers';
 import { useAuth } from '../../context/AuthContext';
 import { AiThinkingState } from '../common/StateViews';
 import { formatMoney } from '../../utils/formatNumber';
+import { hoySV } from '../../utils/fecha';
 
 // El dibujo arrastra `recharts` (95 kB gzip): 95 de los 119 kB que pesaba este
 // modal. Leer el encabezado de `GraficaAfluencia.jsx` antes de tocarlo.
@@ -157,7 +158,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
         if (validSalesData.length === 0) return [];
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = hoySV();
 
         // Staffing-based color thresholds (10 min/tx → 6 tx/hr per employee)
         // Days view uses peak hourly avg → consistent with hours view
@@ -264,7 +265,7 @@ const FormWfmAnalytics = ({ branches }) => {
             
             let dateLabel = "Promedio Histórico";
             if (timeRange === '0') {
-                dateLabel = `Datos de Hoy (${new Date().toISOString().split('T')[0]})`;
+                dateLabel = `Datos de Hoy (${hoySV()})`;
             } else if (data.uniqueDates?.length === 1 || data.tooltipDate) {
                 const d = data.uniqueDates?.[0] || data.tooltipDate;
                 dateLabel = `Fecha: ${d}`;

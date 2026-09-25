@@ -23,6 +23,7 @@ import {
     nombreDeDocumento, grupoDeCategoria, iconoDeCategoria,
     tinteDeCategoria, descripcionDelArchivo,
 } from '../../components/common/catalogos/documentos';
+import { fechaTexto } from '../../utils/fecha';
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
 //
@@ -64,7 +65,7 @@ const CERT_LABELS = {
 };
 
 const fmtDate = (d) => d
-    ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' })
     : null;
 
 const parseMeta = (m) =>
@@ -168,7 +169,7 @@ const DocCard = ({ doc, alAbrir }) => {
     }
     datos.push({
         rotulo: delExpediente ? 'Guardado' : 'Solicitado',
-        valor: new Date(doc.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }),
+        valor: fechaTexto(doc.created_at, { day: '2-digit', month: 'short', year: 'numeric' }),
     });
     if (doc.meta?.issueDate) datos.push({ rotulo: 'Emitido', valor: fmtDate(doc.meta.issueDate) });
     if (doc.meta?.expiryDate) {

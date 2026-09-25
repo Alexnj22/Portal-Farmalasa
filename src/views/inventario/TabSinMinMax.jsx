@@ -18,6 +18,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { exportCsv } from '../../utils/csvExport';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { ERP_NAMES, ERP_ORDER } from './salasDeStock';
+import { hoySV } from '../../utils/fecha';
 
 // units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
 // Los umbrales están calibrados para eso: 2 cajas/mes es demanda retail real.
@@ -254,7 +255,7 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
                 ign ? 'Descartado' : FILTROS.find(f => f.value === s.level)?.label, ign ? 'Descartado a mano' : s.reason,
                 s.minSug ?? '', s.maxSug ?? ''];
         });
-        const hoy = new Date().toISOString().slice(0, 10);
+        const hoy = hoySV();
         exportCsv(headers, rows, `sin_minmax_${suc.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${hoy}.csv`, 'inventario_sin_venta');
         useStaff.getState().appendAuditLog('EXPORT_SIN_VENTA', null, {
             vista: 'sin_minmax', sucursal: suc, filtro, busqueda: searchTerm || null, count: rows.length,

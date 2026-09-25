@@ -1,16 +1,17 @@
+import { relojSV } from '../../utils/fecha';
 // Utilidades compartidas de Metas: meses en 'YYYY-MM' contados en el DÍA DE
 // NEGOCIO de El Salvador (UTC-6 fijo, la misma convención -6h del resto del
 // portal) — con la fecha UTC, desde las 18:00 el portal ya estaría "mañana".
 
 export function ymHoySV() {
-    const d = new Date(Date.now() - 6 * 3600_000);
+    const d = relojSV();
     return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
 // Día del mes en el mismo huso que `ymHoySV`. Lo usa Confirmación para no
 // mostrar el mes siguiente antes de que el portal lo proponga.
 export function diaHoySV() {
-    return new Date(Date.now() - 6 * 3600_000).getUTCDate();
+    return relojSV().getUTCDate();
 }
 
 export function ymSumar(ym, meses) {

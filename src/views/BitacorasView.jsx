@@ -17,8 +17,9 @@ import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import {
     CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA, LIBROS,
-    correrDia, fetchBitacoraDia, fetchLibro, hoySV, pendientesDelDia, periodoDe,
+    correrDia, fetchBitacoraDia, fetchLibro, pendientesDelDia, periodoDe,
 } from '../data/bitacoras';
+import { fechaTexto, hoySV } from '../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Bitácoras — los registros que exige la Superintendencia de Regulación
@@ -60,9 +61,8 @@ const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
     if (fecha === correrDia(hoy, -1)) return 'Ayer';
-    const txt = new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
-        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
-    });
+    const txt = fechaTexto(fecha, {
+        weekday: 'long', day: 'numeric', month: 'long' });
     return txt.charAt(0).toUpperCase() + txt.slice(1);
 };
 

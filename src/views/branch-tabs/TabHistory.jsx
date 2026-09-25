@@ -16,6 +16,7 @@ import { smartFilter } from '../../utils/searchUtils';
 import { hora12 } from '../../utils/hora';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { supabase } from '../../supabaseClient'; 
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS (Colores e Iconos dinámicos)
@@ -192,7 +193,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
         
         try {
             const compressedHistory = printHistory.map(item => {
-                const date = new Date(item.sortDate).toLocaleDateString('es-SV');
+                const date = fechaTexto(item.sortDate);
                 const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
                 return {
                     fecha: date,
@@ -250,7 +251,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
             <div id="print-report-container" className="hidden print:block w-full bg-surface-card text-content font-sans p-6 md:p-10 max-w-[1200px] mx-auto">
                 <div className="border-b-[3px] border-slate-900 pb-3 mb-4 flex justify-between items-end">
                     <div><h1 className="text-2xl font-black uppercase tracking-tighter text-content leading-none mb-1">Historial Operativo</h1><h2 className="text-sm font-bold text-content-2 uppercase tracking-widest leading-none">Sucursal: <span className="text-brand-text">{liveBranch?.name || 'No especificada'}</span></h2></div>
-                    <div className="text-right"><p className="text-micro font-bold text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-content leading-none">{new Date().toLocaleDateString('es-SV')}</p></div>
+                    <div className="text-right"><p className="text-micro font-bold text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-content leading-none">{fechaTexto(hoySV())}</p></div>
                 </div>
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse">

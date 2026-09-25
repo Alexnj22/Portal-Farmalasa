@@ -27,6 +27,7 @@ import { shortEmployeeName } from '../utils/nameUtils';
 import { registrarEgreso } from '../data/egreso';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { descargarArchivo } from '../plataforma/descargas';
+import { fechaTexto } from '../utils/fecha';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -68,7 +69,7 @@ function periodLabel(start, end) {
     const m = cap(s.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' }));
     if (s.getDate() === 1)  return `Primera Quincena de ${m}`;
     if (s.getDate() === 16) return `Segunda Quincena de ${m}`;
-    return `${s.toLocaleDateString('es-SV')} — ${new Date(end + 'T12:00:00').toLocaleDateString('es-SV')}`;
+    return `${s.toLocaleDateString('es-SV')} — ${fechaTexto(end)}`;
 }
 
 // ─── Print helpers ────────────────────────────────────────────────────────────
@@ -101,7 +102,7 @@ function buildBoletaHTML(entry, period, branches) {
     const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
     const daily  = round2((emp.base_salary || 0) / 30);
     const hourly = round2(daily / 8);
-    const fd = (d) => d ? new Date(d+'T12:00:00').toLocaleDateString('es-SV',{day:'2-digit',month:'long',year:'numeric'}).toUpperCase() : '—';
+    const fd = (d) => d ? fechaTexto(d, {day:'2-digit',month:'long',year:'numeric'}).toUpperCase() : '—';
     return `
 <div class="grid2">
   <div><span class="lbl">PATRONO:</span> JOSE RUTILIO ALEMAN VASQUEZ</div>
@@ -583,7 +584,7 @@ const PayrollView = ({ openModal }) => {
                                                 selected={active}
                                                 onClick={() => setActivePeriod(p)}
                                                 title={p.name}
-                                                subtitle={p.pay_date ? `Pago: ${new Date(p.pay_date + 'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}
+                                                subtitle={p.pay_date ? `Pago: ${fechaTexto(p.pay_date)}` : 'Sin fecha de pago'}
                                                 trailing={<Badge variant={meta.variante} size="sm">{meta.label}</Badge>}
                                             />
                                         );

@@ -23,6 +23,7 @@ import { fetchEmployeeEventsByTypes } from '../../data/employeeSelfService';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { rango12 } from '../../utils/hora';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 /**
  * El formulario de una solicitud personal, en un modal.
@@ -79,10 +80,10 @@ const CERT_TYPES = [
 ];
 
 const fmtCorto = (d) => d
-    ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })
+    ? fechaTexto(d, { day: '2-digit', month: 'short' })
     : '';
 const fmtLargo = (d) => d
-    ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' })
     : '';
 
 /** Días de un rango, contando los dos extremos. */
@@ -224,7 +225,7 @@ export default function ModalNuevaPersonal({
 
     // Incapacidades aprobadas todavía vigentes (no se bloquean días ya pasados).
     const incapacidades = useMemo(() => {
-        const hoy = new Date().toISOString().split('T')[0];
+        const hoy = hoySV();
         return suyas
             .filter(r => r.type === 'DISABILITY' && r.status === 'APPROVED')
             .map(r => {
@@ -539,7 +540,7 @@ export default function ModalNuevaPersonal({
                         <div className="flex flex-wrap gap-2">
                             {dias.map(d => (
                                 <Badge key={d} variant="chart-3" uppercase={false}>
-                                    {new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
+                                    {fechaTexto(d, { day: '2-digit', month: 'short' })}
                                     <Button variant="ghost" icon={XCircle} iconOnly
                                         aria-label={`Quitar ${fmtCorto(d)}`}
                                         onClick={() => quitarDiaPermiso(d)} />
@@ -696,7 +697,7 @@ export default function ModalNuevaPersonal({
                     {finIncapacidad && (
                         <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border bg-danger/10 border-danger/30 text-danger-text w-fit text-caption font-black uppercase tracking-widest">
                             <Stethoscope size={11} className="text-danger flex-shrink-0" strokeWidth={2.5} />
-                            <span>Hasta {new Date(finIncapacidad + 'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}</span>
+                            <span>Hasta {fechaTexto(finIncapacidad, { weekday: 'short', day: '2-digit', month: 'short' })}</span>
                         </div>
                     )}
 

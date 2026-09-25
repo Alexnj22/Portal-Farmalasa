@@ -14,6 +14,7 @@ import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../..
 import { fetchInventoryByProductIds } from '../../data/inventory';
 import { lotesEnUnidades, repartirPedido } from '../../utils/unidadesInventario';
 import { opcionesDePresentacion } from '../../utils/presentacion';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 // Pedirle un producto a otra sala.
 //
@@ -75,13 +76,13 @@ const claveOrigen = (d) => (
 );
 
 const fmtVence = (d) => d
-    ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short', year: '2-digit' })
+    ? fechaTexto(d, { month: 'short', year: '2-digit' })
     : '';
 
 /** Días hasta una fecha, en hora de El Salvador. Negativo = ya venció. */
 function diasHasta(d) {
     if (!d) return null;
-    const hoy = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const hoy = hoySV();
     return Math.round((new Date(d + 'T12:00:00') - new Date(hoy + 'T12:00:00')) / 86400000);
 }
 

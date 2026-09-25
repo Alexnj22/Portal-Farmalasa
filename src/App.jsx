@@ -34,6 +34,7 @@ const CapturaDeFotoView = lazy(() => import("./views/CapturaDeFotoView"));
 const MisPuntosView = lazy(() => import("./views/MisPuntosView"));
 import LiquidToast from './components/common/LiquidToast';
 import { LoadingState } from './components/common/StateViews';
+import { hoySV } from './utils/fecha';
 
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
 // empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.
@@ -387,7 +388,7 @@ function MainApp() {
 
     const defaultNewBranchForm = () => ({
         branchName: "", address: "", phone: "", cell: "",
-        openingDate: new Date().toISOString().split("T")[0],
+        openingDate: hoySV(),
         propertyType: "OWNED", rent: null, branchSchedule: emptyWeekSchedule(),
     });
 
@@ -423,7 +424,7 @@ function MainApp() {
             setFormData(ed);
         } else if (type === "newEmployee") {
             setFormData({
-                hire_date: new Date().toISOString().split("T")[0],
+                hire_date: hoySV(),
                 // Código del carné: SOLO números (regla de negocio + trigger de BD) —
                 // el prefijo "EMP" que traía antes garantizaba que el código por
                 // defecto SIEMPRE fallara la validación al guardar. El botón de
@@ -437,7 +438,7 @@ function MainApp() {
         } else if (type === "rehireEmployee") {
             setFormData({
                 ...(data || {}),
-                rehire_hire_date: new Date().toISOString().split("T")[0],
+                rehire_hire_date: hoySV(),
                 rehire_contract_type: 'INDEFINIDO',
                 rehire_weekly_hours: '44',
             });
@@ -473,7 +474,7 @@ function MainApp() {
                 _reason:               '',
             });
         } else {
-            setFormData(data || { branchId: 1, hireDate: new Date().toISOString().split("T")[0] });
+            setFormData(data || { branchId: 1, hireDate: hoySV() });
         }
 
         setTargetEventId(eventId);

@@ -7,10 +7,8 @@ import PeriodStepper from '../../components/common/PeriodStepper';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
-import {
-    cerrarMes, correrPeriodo, fetchCierres, fetchLibroPendientes, fetchMesImpreso,
-    fetchResumenMes, hoySV, periodoDe, reabrirMes,
-} from '../../data/bitacoras';
+import { cerrarMes, correrPeriodo, fetchCierres, fetchLibroPendientes, fetchMesImpreso, fetchResumenMes, periodoDe, reabrirMes } from '../../data/bitacoras';
+import { hoySV } from '../../utils/fecha';
 import { registrarEgreso } from '../../data/egreso';
 import { imprimirMesDeBitacoras } from '../../utils/bitacoraPrint';
 import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';

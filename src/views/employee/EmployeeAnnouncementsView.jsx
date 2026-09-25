@@ -15,6 +15,7 @@ import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { clickable } from '../../utils/clickable';
 import { formatMoney } from '../../utils/formatNumber';
 import { EmptyState } from '../../components/common/StateViews';
+import { fechaTexto } from '../../utils/fecha';
 
 const TABS = [
     { key: 'UNREAD', label: 'Sin leer' },
@@ -26,7 +27,7 @@ const REQUEST_DETAIL_ICONS = {
     ADVANCE: DollarSign, CERTIFICATE: FileCheck, DISABILITY: Stethoscope,
 };
 
-const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' }) : null;
+const fmtDate = (d) => d ? fechaTexto(d, { weekday: 'short', day: '2-digit', month: 'short' }) : null;
 
 const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     const isRead = (ann.readBy || []).some(r =>
@@ -167,11 +168,11 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
             <div className="flex items-center justify-between pt-1 border-t border-divider">
                 <p className="text-caption font-bold text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                     <Clock size={11} />
-                    {new Date(ann.date).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {fechaTexto(ann.date, { day: '2-digit', month: 'short', year: 'numeric' })}
                     {ann.editedAt && (
                         <span className="text-warning flex items-center gap-1">
                             · <Pencil size={9} strokeWidth={2.5} />
-                            editado {new Date(ann.editedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
+                            editado {fechaTexto(ann.editedAt, { day: '2-digit', month: 'short' })}
                         </span>
                     )}
                 </p>
@@ -442,7 +443,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 {badgeEl}
                                 <span className="ml-auto text-caption font-bold text-content-3 flex items-center gap-1 flex-shrink-0">
                                     <Clock size={10} strokeWidth={2}/>
-                                    {new Date(current.date).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    {fechaTexto(current.date, { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </span>
                             </div>
 

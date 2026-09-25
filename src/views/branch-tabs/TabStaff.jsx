@@ -18,6 +18,7 @@ import { calculateMinimumStaff } from '../../utils/staffHelpers';
 import { supabase } from '../../supabaseClient';
 import { fetchBranchHourlySalesAll } from '../../data/schedules';
 import { clickable } from '../../utils/clickable';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS
@@ -56,7 +57,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     const CardIcon = theme.icon;
     const [copiedField, setCopiedField] = useState(null);
 
-    const formatDate = (date) => date ? new Date(date).toLocaleDateString('es-SV', { month: 'short', year: 'numeric' }).toUpperCase() : 'N/A';
+    const formatDate = (date) => date ? fechaTexto(date, { month: 'short', year: 'numeric' }).toUpperCase() : 'N/A';
     const hireDate = employee?.hireDate || employee?.hire_date;
 
     const handleAction = (e, action, value, field) => {
@@ -209,7 +210,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
         setProgress(0);
         setLog('Preparando los meses a recargar…');
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = hoySV();
         const chunksToSync = generateChunks("2025-01-01", todayStr, 30);
         let successCount = 0;
 

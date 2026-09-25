@@ -5,6 +5,7 @@ import { getSignedFileUrl } from '../utils/storageFiles';
 
 import { registrarEgreso } from './egreso';
 import { descargarArchivo } from '../plataforma/descargas';
+import { hoySV } from '../utils/fecha';
 // supabase-js lanza FunctionsHttpError con .message genérico
 // ("Edge Function returned a non-2xx status code") — el mensaje real que arma
 // la función (ej. "Máximo 300 documentos...") solo está en error.context
@@ -121,7 +122,7 @@ function getZip() {
 }
 
 export function nombreZipFacturas() {
-    return `facturas-compra-${new Date().toISOString().slice(0, 10)}.zip`;
+    return `facturas-compra-${hoySV()}.zip`;
 }
 
 // ZIP con JSON+PDF de un solo documento — liviano, se arma en el navegador

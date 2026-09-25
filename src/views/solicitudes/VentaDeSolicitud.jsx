@@ -8,6 +8,7 @@ import { tieneSelloMh } from '../../data/facturacion';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { hora12 } from '../../utils/hora';
 import { CaraPersona } from './PersonasSolicitud';
+import { fechaTexto } from '../../utils/fecha';
 
 /* La venta entera, adentro de la solicitud que pide tocarla.
  *
@@ -37,14 +38,14 @@ import { CaraPersona } from './PersonasSolicitud';
 const ESTADOS_ANULADA = ['NULA', 'DTE INVALIDADO EN MH'];
 
 const fmtFecha = (iso) => !iso ? '—'
-    : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
+    : fechaTexto(iso, { day: '2-digit', month: 'short', year: 'numeric' });
 
 // `hora` es un `time` de Postgres («13:09:10»), no un instante: `hora12` lo
 // toma como hora de reloj, sin zona, así que no corre la hora de la venta.
 const fmtHoraVenta = (hhmmss) => hora12(hhmmss);
 
 const fmtVence = (iso) => !iso ? null
-    : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short', year: 'numeric' });
+    : fechaTexto(iso, { month: 'short', year: 'numeric' });
 
 /** Un dato con su rótulo, en la rejilla de la cabecera. */
 const Dato = ({ rotulo, children, className = '' }) => (

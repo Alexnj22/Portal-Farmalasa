@@ -24,6 +24,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useResolverCorte from './useResolverCorte';
 import { hora12, fechaHora12 } from '../../utils/hora';
+import { fechaTexto } from '../../utils/fecha';
 
 /**
  * El detalle de un corte de caja, y el único sitio donde se confirma o descarta.
@@ -70,9 +71,8 @@ const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
 // mayúsculas.
 const fechaLarga = (fecha) => {
     if (!fecha) return '';
-    const t = new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
-        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
-    });
+    const t = fechaTexto(fecha, {
+        weekday: 'long', day: 'numeric', month: 'long' });
     return t.charAt(0).toUpperCase() + t.slice(1);
 };
 

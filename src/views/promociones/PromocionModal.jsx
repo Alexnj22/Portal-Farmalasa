@@ -25,10 +25,8 @@ import { useAuth } from '../../context/AuthContext';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import Campo from './Campo';
-import {
-    hoySV, fmtUnidades, rotuloPresentacion,
-    descuentoDesdeLaPromocion, problemasDelDescuento,
-} from './promocionesUtils';
+import { fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento } from './promocionesUtils';
+import { hoySV } from '../../utils/fecha';
 
 const CLAVE_BORRADOR = 'promocion_nueva';
 

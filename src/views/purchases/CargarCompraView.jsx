@@ -26,6 +26,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { useAuth } from '../../context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
+import { fechaNumerica } from '../../utils/fecha';
 
 // Vista «Cargar compra».
 //
@@ -82,11 +83,7 @@ const PERIODOS = [
 /** «1 renglón» / «3 renglones» — el «(es)» de las plantillas se lee a máquina. */
 const plural = (n, uno, muchos) => `${n} ${Number(n) === 1 ? uno : muchos}`;
 
-const fmtFecha = (iso) => {
-    if (!iso) return '—';
-    const [a, m, d] = String(iso).split('-');
-    return `${d}/${m}/${a.slice(2)}`;
-};
+const fmtFecha = (iso) => fechaNumerica(iso, { anio: 'corto', vacio: '—' });
 
 /* ─── Elegir el producto a mano ────────────────────────────────────────────── */
 function BuscadorProducto({ onElegir, onCancelar }) {

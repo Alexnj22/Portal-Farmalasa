@@ -16,6 +16,7 @@ import {
 } from '../../data/bitacoras';
 import { exportCsv } from '../../utils/csvExport';
 import { hora12 } from '../../utils/hora';
+import { fechaTexto } from '../../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El libro foliado de dispensación bajo receta.
@@ -34,7 +35,7 @@ import { hora12 } from '../../utils/hora';
 const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
 
 const fmtFecha = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', timeZone: 'UTC' })
+    ? fechaTexto(f, { day: '2-digit', month: 'short' })
     : '—');
 
 // El ancla del teléfono es el FOLIO, no un monto: acá no hay dinero, y el

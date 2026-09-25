@@ -44,6 +44,7 @@ import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, is
          isPendingPunch, getCurrentQuincenaStart, getQuincenaEnd, prevQuincena, nextQuincena }
     from './asistencia/quincena';
 import { descargarArchivo } from '../plataforma/descargas';
+import { fechaTexto } from '../utils/fecha';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
@@ -232,7 +233,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   if (!isOpen || !emp || !dateStr) return null;
 
   const dow    = new Date(dateStr + 'T12:00:00Z').getUTCDay();
-  const fmtDia = `${DAY_NAMES_FULL[dow]} ${new Date(dateStr + 'T12:00:00Z').getUTCDate()} de ${new Date(dateStr + 'T12:00:00Z').toLocaleDateString('es-SV', { month: 'long' })}`;
+  const fmtDia = `${DAY_NAMES_FULL[dow]} ${new Date(dateStr + 'T12:00:00Z').getUTCDate()} de ${fechaTexto(dateStr, { month: 'long' })}`;
 
   const shiftStart = shift?.start_time?.substring(0,5) || shift?.start;
   const shiftEnd   = shift?.end_time?.substring(0,5)   || shift?.end;
@@ -1279,7 +1280,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                 const isEditing = editingExId === req.id;
                 const isBusy    = processingExId === req.id;
                 const fmtDate = meta.date
-                  ? new Date(meta.date + 'T12:00:00Z').toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long' })
+                  ? fechaTexto(meta.date, { weekday: 'long', day: 'numeric', month: 'long' })
                   : '—';
                 return (
                   <div key={req.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">

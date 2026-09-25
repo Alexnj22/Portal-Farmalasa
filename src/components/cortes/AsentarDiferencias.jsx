@@ -14,12 +14,12 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
 
 // «31 ago» y no «2026-08-31»: la fecha se lee, no se procesa.
-const fechaCorta = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-    day: 'numeric', month: 'short', timeZone: 'UTC',
-});
+const fechaCorta = (f) => fechaTexto(f, {
+    day: 'numeric', month: 'short' });
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
+import { fechaTexto } from '../../utils/fecha';
 
 /**
  * Marcar como registradas las diferencias que ya se anotaron en el sistema.

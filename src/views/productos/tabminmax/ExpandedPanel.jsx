@@ -16,6 +16,7 @@ import StockBar from './StockBar';
 import AbcXyzBadge from './AbcXyzBadge';
 import { fetchStockParamsHistory, fetchProductCostHistory } from '../../../data/stockParams';
 import { formatMoney } from '../../../utils/formatNumber';
+import { fechaTexto } from '../../../utils/fecha';
 
 // 7B.2 — regla (g) de Bodega: la cuenta regresiva es sobre la política en
 // meses, NO el mes de vencimiento — el envío llega ~1 mes después de
@@ -347,7 +348,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                 <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-danger' : 'text-chart-4-text'}`}>{daysLeft}d</span>
                                                 <span className="text-content-3 font-mono text-micro shrink-0">{lot.lote || '—'}</span>
                                                 <span className="text-content-2 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString()} und</span>
-                                                <span className="text-content-3 text-micro">{new Date(lot.fecha_vencimiento).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                                <span className="text-content-3 text-micro">{fechaTexto(lot.fecha_vencimiento, { day: '2-digit', month: 'short', year: '2-digit' })}</span>
                                             </div>
                                             {sendDeadline && (
                                                 <span className={`text-micro pl-11 font-semibold ${pastDeadline ? 'text-danger' : 'text-content-3'}`}>
@@ -384,7 +385,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                 {purchaseData.map((p, i) => (
                                                     <div key={i} className="flex items-center gap-2 text-caption">
                                                         <span className="text-micro text-content-3 shrink-0 w-14 tabular-nums">
-                                                            {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                            {fechaTexto(p.fecha, { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="font-bold text-content-2 tabular-nums shrink-0">
                                                             {Number(p.cantidad).toLocaleString()} und
@@ -410,7 +411,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                 {saleData.map((s, i) => (
                                                     <div key={i} className="flex items-center gap-2 text-caption">
                                                         <span className="text-micro text-content-3 shrink-0 w-14 tabular-nums">
-                                                            {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                            {fechaTexto(s.fecha, { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="text-micro font-bold text-content-3 shrink-0 bg-surface-card-hover/80 rounded px-1">
                                                             {(ERP_NAMES[s.erp_sucursal_id] ?? `S${s.erp_sucursal_id}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
@@ -484,7 +485,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                 {purchaseData.map((p, i) => (
                                                     <div key={i} className="flex items-center gap-2 text-caption">
                                                         <span className="text-micro text-content-3 shrink-0 w-14 tabular-nums">
-                                                            {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                            {fechaTexto(p.fecha, { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="font-bold text-content-2 tabular-nums shrink-0">
                                                             {Number(p.cantidad).toLocaleString()} und
@@ -510,7 +511,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                 {saleData.map((s, i) => (
                                                     <div key={i} className="flex items-center gap-2 text-caption">
                                                         <span className="text-micro text-content-3 shrink-0 w-14 tabular-nums">
-                                                            {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                            {fechaTexto(s.fecha, { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="font-bold text-success-text tabular-nums shrink-0">
                                                             {Number(s.cantidad).toLocaleString()} und
@@ -574,7 +575,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                             {historyData.map((h, i) => (
                                                 <div key={i} className="flex items-center gap-3 text-caption text-content-3">
                                                     <span className="text-micro text-content-3 shrink-0 w-14 tabular-nums">
-                                                        {new Date(h.captured_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
+                                                        {fechaTexto(h.captured_at, { day: '2-digit', month: 'short' })}
                                                     </span>
                                                     <span className="font-bold text-chart-4-text">{(h.min_units ?? 0).toLocaleString()}</span>
                                                     <span className="text-content-3">→</span>

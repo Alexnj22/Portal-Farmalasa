@@ -31,6 +31,7 @@ import { getSignedFileUrl } from '../../utils/storageFiles';
 
 import { registrarEgreso } from '../../data/egreso';
 import { descargarArchivo } from '../../plataforma/descargas';
+import { relojSV } from '../../utils/fecha';
 // ─────────────────────────────────────────────────────────────────────────────
 // Los siete libros y anexos de IVA del ERP, generados desde el portal:
 // ventas desde `sales_invoices`, compras desde `purchase_receipts`.
@@ -105,7 +106,7 @@ const TABS = [
 // en que se cierra el anterior. Detectado al replicar este filtro en Facturas
 // de Compra (2026-08-01).
 const mesActual = () => {
-    const sv = new Date(Date.now() - 6 * 3600_000);
+    const sv = relojSV();
     return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 

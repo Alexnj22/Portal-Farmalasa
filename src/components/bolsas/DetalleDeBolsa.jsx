@@ -18,6 +18,7 @@ import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { hora12, fechaHora12 } from '../../utils/hora';
+import { fechaNumerica } from '../../utils/fecha';
 
 /**
  * Todo lo que le pasó a una bolsa, y las dos correcciones que existen.
@@ -56,11 +57,7 @@ const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
 
 /** dd/mm/aaaa: la fecha del corte llega como `2026-08-15` y así se leía en
  *  pantalla. Se arma a mano y no con `Date` para que el huso no la corra un día. */
-const fechaCorta = (f) => {
-    if (!f) return '';
-    const [a, m, d] = String(f).split('-');
-    return `${d}/${m}/${a}`;
-};
+const fechaCorta = (f) => fechaNumerica(f, { vacio: '' });
 
 const COMO = { CARNE: 'carné escaneado', CLAVE: 'usuario y contraseña' };
 

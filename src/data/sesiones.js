@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
+import { fechaTexto } from '../utils/fecha';
 
 // SesionesView.jsx (F4 de docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md).
 //
@@ -213,7 +214,7 @@ export function describirBloqueo(hasta) {
     const t = Date.parse(hasta);
     if (!Number.isFinite(t)) return 'Bloqueado';
     if (t <= Date.now()) return null;   // ya venció: se liberó solo
-    return `Bloqueado hasta el ${new Date(t).toLocaleDateString('es-SV')}`;
+    return `Bloqueado hasta el ${fechaTexto(t)}`;
 }
 
 export function estaBloqueado(hasta) {

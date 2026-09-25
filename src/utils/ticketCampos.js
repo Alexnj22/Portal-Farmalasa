@@ -1,4 +1,5 @@
 import { hora12Papel } from './hora';
+import { fechaNumerica, fechaTexto } from './fecha';
 // Los campos de texto que comparten todos los documentos que van al rollo.
 //
 // Vivían dentro de `corteComprobante.js`, que era el único que imprimía. Con el
@@ -37,11 +38,7 @@ export const recortar = (s, max) => {
 };
 
 /** dd/mm/aaaa de una fecha `YYYY-MM-DD`, sin que el huso la corra un día. */
-export const fechaCorta = (fecha) => {
-    if (!fecha) return '';
-    const [a, m, d] = String(fecha).split('-');
-    return `${d}/${m}/${a}`;
-};
+export const fechaCorta = (fecha) => fechaNumerica(fecha, { vacio: '' });
 
 /**
  * La hora de una COLUMNA del rollo: `19:01:41` → `7:01pm`. En 12 horas como
@@ -53,10 +50,8 @@ export const horaDeColumna = (hora) => hora12Papel(hora).replace(/ ([ap])\.m\.$/
 
 /** Cuándo se firmó, en hora de la sala. */
 export const selloDeTiempo = (iso) => (iso
-    ? soloAscii(`${new Date(iso).toLocaleDateString('es-SV', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        timeZone: 'America/El_Salvador',
-    })}, ${hora12Papel(iso)}`)
+    ? soloAscii(`${fechaTexto(iso, {
+        day: '2-digit', month: '2-digit', year: 'numeric' })}, ${hora12Papel(iso)}`)
     : '');
 
 /**
@@ -69,10 +64,8 @@ export const selloDeTiempo = (iso) => (iso
  * distinto sobre el mostrador.
  */
 export const selloCorto = (iso) => (iso
-    ? soloAscii(`${new Date(iso).toLocaleDateString('es-SV', {
-        day: '2-digit', month: '2-digit', year: '2-digit',
-        timeZone: 'America/El_Salvador',
-    })} ${hora12Papel(iso)}`)
+    ? soloAscii(`${fechaTexto(iso, {
+        day: '2-digit', month: '2-digit', year: '2-digit' })} ${hora12Papel(iso)}`)
     : '');
 
 /**

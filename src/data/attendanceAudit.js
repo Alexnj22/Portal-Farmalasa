@@ -11,6 +11,7 @@
 // nunca se ejecutan.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { diaSV } from '../utils/fecha';
 
 // ── La hora de El Salvador, y los minutos de tardanza ───────────────────────
 //
@@ -37,7 +38,7 @@ export function buildCSTDate(dateStr, timeStr) {
 /** El día `YYYY-MM-DD` de El Salvador para un instante cualquiera. */
 export function getCSTDateStr(isoOrDate) {
     const d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
-    return new Date(d.getTime() - 6 * 3600000).toISOString().slice(0, 10);
+    return diaSV(d);
 }
 
 /**

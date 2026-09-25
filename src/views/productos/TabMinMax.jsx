@@ -57,6 +57,7 @@ import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 
 import { registrarEgreso } from '../../data/egreso';
 import { descargarArchivo } from '../../plataforma/descargas';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
@@ -244,7 +245,7 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {},
 
     // BOM + semicolon-separated + CRLF for Excel compatibility (Spanish locale)
     const blob = new Blob(['﻿' + [h.join(SEP), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-    descargarArchivo(blob, `minmax_${name}_${new Date().toISOString().slice(0,10)}.csv`);
+    descargarArchivo(blob, `minmax_${name}_${hoySV()}.csv`);
     // Esta función es una SOMBRA del `exportCsv` canónico —mismo nombre, otra
     // firma— así que no hereda su registro de egreso y hay que anotarlo acá.
     registrarEgreso('minmax', { formato: 'csv', filas: sorted.length, detalle: { sucursal: sucursalName, bodega: isBodega } });
@@ -943,7 +944,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         const cfg = est ? AJUSTE_CFGS.find(a => a.key === est) : null;
                                                         const motivo = row._manual_motivo ? MOTIVO_AJUSTE[row._manual_motivo]?.label : null;
                                                         const cuando = row._manual_at
-                                                            ? new Date(row._manual_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                            ? fechaTexto(row._manual_at, { day: '2-digit', month: 'short', year: 'numeric' })
                                                             : null;
                                                         const detalle = [
                                                             cfg?.ayuda,
@@ -1028,7 +1029,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                     ? `${Number(row.units_sold_6m).toLocaleString()} uds. 6m`
                                                                     : 'Sin ventas'
                                                             }
-                                                            {row.last_sale_date && <span className="text-warning-text/70 ml-0.5">· {isBodega && row.last_sale_sucursal_id ? `${ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} ` : ''}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>}
+                                                            {row.last_sale_date && <span className="text-warning-text/70 ml-0.5">· {isBodega && row.last_sale_sucursal_id ? `${ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} ` : ''}{fechaTexto(row.last_sale_date, { day: '2-digit', month: 'short', year: '2-digit' })}</span>}
                                                         </span>
                                                     )}
                                                     {!dead && !noHistory && !isSparse && (
@@ -1042,7 +1043,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             {Number(row.units_sold_6m) > 0 && <><span className="text-content-3 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString()} vend.</>}
                                                             <span className="text-content-3 mx-0.5">·</span>
                                                             {row.last_sale_date
-                                                                ? <span className="font-semibold text-content-2">{isBodega && row.last_sale_sucursal_id ? <span className="font-normal text-content-3">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                                                ? <span className="font-semibold text-content-2">{isBodega && row.last_sale_sucursal_id ? <span className="font-normal text-content-3">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{fechaTexto(row.last_sale_date, { day: '2-digit', month: 'short', year: '2-digit' })}</span>
                                                                 : <span className="text-content-3 italic">sin venta</span>
                                                             }
                                                         </span>
@@ -1050,7 +1051,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     {(dead || noHistory) && (
                                                         <span className="text-caption font-semibold text-content-3">
                                                             {row.last_sale_date
-                                                                ? <><span className="text-content-3">Últ.</span> {isBodega && row.last_sale_sucursal_id ? <span className="text-content-3">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</>
+                                                                ? <><span className="text-content-3">Últ.</span> {isBodega && row.last_sale_sucursal_id ? <span className="text-content-3">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{fechaTexto(row.last_sale_date, { day: '2-digit', month: 'short', year: '2-digit' })}</>
                                                                 : <span className="text-content-3 italic">sin ventas</span>
                                                             }
                                                         </span>
@@ -1605,8 +1606,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const origen = historyRow._ajuste_solicitud_id
                                     ? historySolicitudes.find(s => s.id === historyRow._ajuste_solicitud_id)
                                     : null;
-                                const fecha = new Date(historyRow._manual_at)
-                                    .toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
+                                const fecha = fechaTexto(historyRow._manual_at, { day: '2-digit', month: 'short', year: 'numeric' });
                                 const motivoAjuste = historyRow._manual_motivo
                                     ? (MOTIVO_AJUSTE[historyRow._manual_motivo]?.label ?? historyRow._manual_motivo)
                                     : null;
@@ -1866,7 +1866,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         nombre y a veces una cuenta — no es `employees.name`. */}
                                     {publishConfirm.ajustePor ? ` — el último, ${publishConfirm.ajustePor}` : ''}
                                     {publishConfirm.ajusteAt
-                                        ? ` el ${new Date(publishConfirm.ajusteAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                                        ? ` el ${fechaTexto(publishConfirm.ajusteAt, { day: '2-digit', month: 'short', year: 'numeric' })}`
                                         : ''}.
                                 </p>
                                 <SegmentedControl

@@ -13,6 +13,7 @@ import { LoadingState } from '../../components/common/StateViews';
 import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, areaNueva, crearArea, fetchAreas, guardarArea, rangoDeLaSucursal, rotularRango, soloLimpieza } from '../../data/bitacoras';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { hora12 } from '../../utils/hora';
+import { hoySV } from '../../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuración de las áreas.
@@ -108,7 +109,7 @@ function Area({ area, puedeEditar, onGuardado }) {
         onGuardado?.();
     }, [area.id, area.nombre, activa, instrumento, calibrado, calibradoEl, puntos, onGuardado]);
 
-    const vencida = area.calibrado_hasta && area.calibrado_hasta < new Date().toISOString().slice(0, 10);
+    const vencida = area.calibrado_hasta && area.calibrado_hasta < hoySV();
 
     return (
         <section data-surface="card" data-tono={sucio ? 'warning' : undefined} className="p-4 space-y-3">

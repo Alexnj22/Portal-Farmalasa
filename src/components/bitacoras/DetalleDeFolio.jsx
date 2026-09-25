@@ -10,6 +10,7 @@ import { openStoredFile } from '../../utils/storageFiles';
 import CompletarRenglon from './CompletarRenglon';
 import { ESTADO_RENGLON, fetchFolio } from '../../data/bitacoras';
 import { hora12 } from '../../utils/hora';
+import { fechaTexto } from '../../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Un folio, abierto.
@@ -26,7 +27,7 @@ import { hora12 } from '../../utils/hora';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const fmtFecha = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    ? fechaTexto(f, { day: '2-digit', month: 'long', year: 'numeric' })
     : '—');
 
 const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));

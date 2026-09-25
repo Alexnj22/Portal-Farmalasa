@@ -33,6 +33,7 @@ import { exportCsv } from '../../utils/csvExport';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { duiValido, telefonoValido, correoValido } from '../../utils/clienteValidacion';
+import { fechaTexto } from '../../utils/fecha';
 
 const paraInput = (iso) => {
     if (!iso) return '';
@@ -304,8 +305,7 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                             </h2>
                         </div>
                         <p className="text-caption text-content-3 mt-1">
-                            Impresa el {new Date(solicitud.impresa_at).toLocaleDateString('es-SV',
-                                { day: 'numeric', month: 'long', year: 'numeric' })}
+                            Impresa el {fechaTexto(solicitud.impresa_at, { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
                     </div>
                     {plazo && (
@@ -549,7 +549,7 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                 <div className="flex flex-wrap items-center justify-between gap-3 w-full">
                     <p className="text-caption text-content-3 min-w-0 flex-1">
                         {resuelta
-                            ? `Resuelta el ${new Date(solicitud.resuelta_at).toLocaleDateString('es-SV')}`
+                            ? `Resuelta el ${fechaTexto(solicitud.resuelta_at)}`
                             : faltaParaRecibir.length
                                 ? `Falta ${faltaParaRecibir.join(', ')}.`
                                 : 'Listo para registrar.'}

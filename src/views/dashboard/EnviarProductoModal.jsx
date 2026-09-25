@@ -21,6 +21,7 @@ import { opcionesDePresentacion } from '../../utils/presentacion';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import { clickable } from '../../utils/clickable';
 import { imprimirTicketDeTraslado } from '../../utils/imprimirTraslado';
+import { fechaTexto } from '../../utils/fecha';
 
 // Mandarle producto a otra sala sin que te lo pidan.
 //
@@ -86,7 +87,7 @@ const nombreEstante = (erp, vencidos) =>
     `${NOMBRE_SALA[erp] ?? `Sucursal ${erp}`}${vencidos ? ' · Área de Vencidos' : ''}`;
 
 const fmtVence = (d) => d
-    ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short', year: '2-digit' })
+    ? fechaTexto(d, { month: 'short', year: '2-digit' })
     : 'sin fecha';
 
 /**

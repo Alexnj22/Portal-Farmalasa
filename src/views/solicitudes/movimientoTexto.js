@@ -1,5 +1,6 @@
 import { QUIEN_RESUELVE } from '../../constants/solicitudModulos';
 import { hora12 } from '../../utils/hora';
+import { fechaTexto } from '../../utils/fecha';
 
 // Cómo se lee una solicitud que MUEVE PRODUCTO: carga, descarte y traslado.
 //
@@ -123,10 +124,10 @@ export function textoBuscableMovimiento(req) {
 // componentes Y funciones rompe el fast refresh de Vite, que es la misma razón
 // por la que este archivo existe.
 export const fmtDiaMes = (iso) => !iso ? '—'
-    : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
+    : fechaTexto(iso, { day: '2-digit', month: 'short' });
 
 export const fmtDateFull = (iso) => !iso ? '—'
-    : new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
+    : fechaTexto(iso, { day: '2-digit', month: 'short', year: 'numeric' });
 
 /* ── La hora ──────────────────────────────────────────────────────────────
  *

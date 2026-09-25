@@ -10,6 +10,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
 import { saldoDeBolsa } from '../../utils/bolsasReparto';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 /**
  * Entregar el efectivo de la sala a quien lo recolecta.
@@ -85,10 +86,8 @@ import { saldoDeBolsa } from '../../utils/bolsasReparto';
  *
  * Las dos pantallas del circuito lo dicen igual a propósito: dos formas de
  * nombrar el mismo día obligan a traducir entre una y otra. */
-const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
-const fechaDelDia = (fecha) => new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
-    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
-});
+const fechaDelDia = (fecha) => fechaTexto(fecha, {
+    weekday: 'long', day: 'numeric', month: 'long' });
 const esHoy = (fecha) => fecha === hoySV();
 const rotularDia = (fecha) => (esHoy(fecha) ? 'Hoy' : fechaDelDia(fecha));
 const subrotuloDia = (fecha) => (esHoy(fecha) ? fechaDelDia(fecha) : null);

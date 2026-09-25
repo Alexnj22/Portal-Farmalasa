@@ -8,7 +8,8 @@ import Notice from '../../components/common/Notice';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { correrDia, faltantesDelRenglon, fetchLibro, hoySV } from '../../data/bitacoras';
+import { correrDia, faltantesDelRenglon, fetchLibro } from '../../data/bitacoras';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 /* El formulario se baja al apretar «Completar», no al entrar al Inicio: arrastra
  * el canónico de archivo, el desplegable y el buscador de médico, y la baldosa
@@ -50,7 +51,7 @@ const DIAS_ATRAS  = 400;
 const MAX_FILAS   = 6;
 
 const fmtFecha = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', timeZone: 'UTC' })
+    ? fechaTexto(f, { day: '2-digit', month: 'short' })
     : '—');
 
 const diasDesde = (f) => Math.max(0, Math.round(

@@ -7,6 +7,7 @@ import Button from './Button';
 import { createPortal } from 'react-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { granularidadDePeriodo } from '../../utils/periodo';
+import { ahoraSV, hoySV } from '../../utils/fecha';
 
 const MONTHS_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MONTHS_SH   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -14,29 +15,20 @@ const DAYS_SH     = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 
 const pad = n => String(n).padStart(2, '0');
 
-function svNow() {
-    const sv = new Date(Date.now() - 6 * 3600_000);
-    return { y: sv.getUTCFullYear(), m: sv.getUTCMonth(), d: sv.getUTCDate() };
-}
-
-function svToday() {
-    const { y, m, d } = svNow();
-    return `${y}-${pad(m + 1)}-${pad(d)}`;
-}
 
 const mStart = (y, m) => `${y}-${pad(m + 1)}-01`;
 const mEnd   = (y, m) => `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
 const mKey   = (y, m) => y * 12 + m;
 
 function daysAgo(n) {
-    const { y, m, d } = svNow();
+    const { y, m, d } = ahoraSV();
     const dt = new Date(Date.UTC(y, m, d - n));
     return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
 }
 
 function buildPresets() {
-    const { y, m } = svNow();
-    const today = svToday();
+    const { y, m } = ahoraSV();
+    const today = hoySV();
     const pM = m === 0 ? 11 : m - 1;
     const pY = m === 0 ? y - 1 : y;
     const m3 = ((m - 2) % 12 + 12) % 12;
@@ -82,7 +74,7 @@ function labelFromRange(s, e) {
     const dm = (d) => d.slice(8, 10) + '/' + d.slice(5, 7);
     const yy = (d) => d.slice(2, 4);
     if (sy !== ey) return `${dm(s)}/${yy(s)} → ${dm(e)}/${yy(e)}`;
-    return sy === String(svNow().y)
+    return sy === String(ahoraSV().y)
         ? `${dm(s)} → ${dm(e)}`
         : `${dm(s)} → ${dm(e)}/${yy(e)}`;
 }
@@ -93,7 +85,7 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
     const firstDay    = new Date(year, month, 1).getDay();
     const offset      = (firstDay + 6) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const todayStr    = svToday();
+    const todayStr    = hoySV();
     const toStr       = d => `${year}-${pad(month + 1)}-${pad(d)}`;
 
     const previewEnd   = hoverDate && startDate && !endDate
@@ -201,7 +193,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
     const triggerRef = useRef(null);
     const popRef     = useRef(null);
 
-    const { y: curY, m: curM } = svNow();
+    const { y: curY, m: curM } = ahoraSV();
 
     const secondMonth = viewMonth === 11 ? 0  : viewMonth + 1;
     const secondYear  = viewMonth === 11 ? viewYear + 1 : viewYear;

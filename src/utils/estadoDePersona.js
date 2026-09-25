@@ -1,3 +1,4 @@
+import { hoySV } from './fecha';
 // ── ¿Esta persona está, y si no, hasta cuándo? ──────────────────────────────
 //
 // `getEffectiveStatus` (utils/helpers.js) devuelve el RÓTULO y nada más, y ese
@@ -82,11 +83,6 @@ const ROTULO_FIJO = {
     SUSPENDIDO: { texto: 'Suspendido', variante: 'danger'  },
 };
 
-const hoyISO = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
 // Cinco, igual que `v_aviso` en `get_estados_de_personas`. Los dos números son
 // el mismo y por eso los dos llevan nombre.
 const AVISO_DIAS = 5;
@@ -162,7 +158,7 @@ export function estadoDePersona(emp) {
     const fijo = ROTULO_FIJO[String(emp?.status || '').toUpperCase()];
     if (fijo) return { clave: String(emp.status).toUpperCase(), ...fijo, hasta: null };
 
-    const t = hoyISO();
+    const t = hoySV();
     const tope = sumarDias(t, AVISO_DIAS);
     const fin = (h) => h.metadata?.endDate ?? h.endDate;
     // Misma ventana y mismo orden que `get_estados_de_personas`: lo que ya

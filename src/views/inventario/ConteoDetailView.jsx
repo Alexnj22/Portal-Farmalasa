@@ -51,6 +51,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { hora12, fechaHora12 } from '../../utils/hora';
+import { fechaNumerica } from '../../utils/fecha';
 
 const PAGE_SIZE_INICIAL = 25;
 
@@ -156,11 +157,7 @@ const columnas = (verSistema, simple = false) => [
 // la lista blanca del servidor siga siendo la de los nombres que él entiende.
 const ORDEN_SERVIDOR = { estado: 'progreso' };
 
-const fmtDate = (iso) => {
-    if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
-};
+const fmtDate = (iso) => fechaNumerica(iso, { vacio: '—' });
 const fmtDateTime = (iso) => {
     if (!iso) return '—';
     return fechaHora12(iso, { day: '2-digit', month: '2-digit', year: '2-digit' });

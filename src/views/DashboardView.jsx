@@ -102,6 +102,7 @@ import {
     catalogoDePestana, pestanasVisibles, ordenDeLaPestana, widgetsSinUbicar,
     hospedaBaldosasDeSucursal,
 } from '../constants/dashboardTabs';
+import { fechaTexto } from '../utils/fecha';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
@@ -2788,7 +2789,7 @@ const DashboardView = ({ openModal }) => {
                 return (
                   <div key={r.id} className="flex items-center gap-3 px-5 py-3">
                     <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${cfg.bg} ${cfg.border}`}><UserX size={13} className={cfg.text}/></div>
-                    <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{nombreDeTipo(r.type)}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}`}</p></div>
+                    <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{nombreDeTipo(r.type)}{end&&` · hasta ${fechaTexto(end, {day:'2-digit',month:'short'})}`}</p></div>
                     <Badge variant={cfg.variante} size="sm">{nombreCorto(r.type)}</Badge>
                   </div>
                 );
@@ -2836,7 +2837,7 @@ const DashboardView = ({ openModal }) => {
                   subtitle={nombreDeTipo(r.type)}
                   onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
-                  trailing={<span className="text-caption text-content-3">{new Date(r.created_at).toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}</span>} />
+                  trailing={<span className="text-caption text-content-3">{fechaTexto(r.created_at, {day:'2-digit',month:'short'})}</span>} />
               ))}
           </div>
         </WidgetCard>
@@ -2978,7 +2979,7 @@ const DashboardView = ({ openModal }) => {
                   iconClass={a.priority==='URGENT'?'text-danger-text':'text-chart-1-text'}
                   iconBoxClass={a.priority==='URGENT'?'bg-danger/10 border-danger/30':'bg-chart-1/10 border-chart-1/30'}
                   title={a.title}
-                  subtitle={new Date(a.date).toLocaleDateString('es-SV',{day:'2-digit',month:'short',year:'numeric'})}
+                  subtitle={fechaTexto(a.date, {day:'2-digit',month:'short',year:'numeric'})}
                   onClick={puedeAbrir('/avisos')?()=>navigate('/avisos'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
                   trailing={a.priority==='URGENT'&&<Badge variant="danger" size="sm" uppercase={false}>URGENTE</Badge>} />
@@ -3045,7 +3046,7 @@ const DashboardView = ({ openModal }) => {
             ) : (
               <div className="space-y-1.5">
                 {displayBirthdays.map((e,i)=>{
-                  const dayLabel=`${e.day} ${new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day).toLocaleDateString('es-SV',{month:'short'})}`;
+                  const dayLabel=`${e.day} ${fechaTexto(new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day), {month:'short'})}`;
                   const cardCls = e.isToday
                     ? 'bg-brand/5 border-brand/20 shadow-[var(--shadow-glow-brand)]'
                     : e.isTomorrow
@@ -3140,7 +3141,7 @@ const DashboardView = ({ openModal }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-label font-semibold text-content truncate">{c.customer_name || '—'}</p>
-                    <p className="text-micro text-content-3">{c.numero} · {new Date(c.fecha+'T12:00:00').toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}</p>
+                    <p className="text-micro text-content-3">{c.numero} · {fechaTexto(c.fecha, {day:'2-digit',month:'short'})}</p>
                   </div>
                   <span className="text-label font-black text-content-2 shrink-0">{fmt(c.total)}</span>
                 </div>

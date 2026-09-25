@@ -16,6 +16,7 @@ import { exportCsv } from './csvExport';
 import { soloPersonalEnPlanilla } from './tipoDeFicha';
 import { getEffectiveStatus } from './helpers';
 import { SIN_ASIGNAR } from '../data/constants';
+import { hoySV } from './fecha';
 
 // ── Las columnas, y cuáles pueden no estar ─────────────────────────────────
 //
@@ -61,6 +62,6 @@ export function exportarDirectorio(personas, nombreDeSucursal, llaves = {}) {
     const filas = soloPersonalEnPlanilla(personas)
         .map(emp => columnas.map(c => c.valor(emp, ctx)));
 
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = hoySV();
     exportCsv(columnas.map(c => c.titulo), filas, `Directorio_Personal_${hoy}.csv`, 'personal');
 }

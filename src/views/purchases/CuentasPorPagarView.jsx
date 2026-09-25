@@ -26,6 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { fechaNumerica, hoySV } from '../../utils/fecha';
 
 // Vista «Cuentas por pagar».
 //
@@ -89,18 +90,7 @@ const PERIODOS = [
     { value: '2026-06-01', label: 'Desde junio 2026'    },
 ];
 
-const hoyISO = () => {
-    // La fecha local, partida a mano: `toISOString()` es UTC y en El Salvador
-    // (-6) devuelve el día siguiente después de las 18:00.
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-const fmtFecha = (iso) => {
-    if (!iso) return '—';
-    const [a, m, d] = String(iso).split('-');
-    return `${d}/${m}/${a.slice(2)}`;
-};
+const fmtFecha = (iso) => fechaNumerica(iso, { anio: 'corto', vacio: '—' });
 
 /* ─── El panel de un proveedor: sus facturas y el pago ─────────────────────── */
 function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
@@ -112,7 +102,7 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
     const [montos, setMontos]     = useState({});
     const [forma, setForma]       = useState(fila.forma_pago || 'cheque');
     const [referencia, setRef]    = useState('');
-    const [fecha, setFecha]       = useState(hoyISO());
+    const [fecha, setFecha]       = useState(hoySV());
     const [dias, setDias]         = useState(fila.dias_credito ?? '');
     const [limite, setLimite]     = useState(fila.limite_credito ?? '');
 

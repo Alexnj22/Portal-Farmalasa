@@ -22,6 +22,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { formatMoney } from '../utils/formatNumber';
 import { fetchCustomersPage, fetchCustomersStats } from '../data/customers';
 import { EL_SALVADOR_GEO, municipiosDe } from '../data/elSalvadorGeo';
+import { fechaNumerica } from '../utils/fecha';
 
 const CATEGORIAS = [
     'Consumidor', 'Contribuyente', 'Gran Contribuyente',
@@ -62,11 +63,7 @@ const COLS = [
     { key: 'ultima',   label: 'Última compra',  align: 'left',  hideBelow: '2xl', sortable: true },
 ];
 
-const fmtDate = (d) => {
-    if (!d) return '—';
-    const [y, m, day] = String(d).slice(0, 10).split('-');
-    return y && m && day ? `${day}/${m}/${y}` : '—';
-};
+const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
 
 // ── Celdas ───────────────────────────────────────────────────────────────────
 

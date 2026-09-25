@@ -19,6 +19,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } from '../../data/libroComprasCompleto';
+import { fechaNumerica, relojSV } from '../../utils/fecha';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Libro de compras COMPLETO — vista propia, no una pestaña de Libros IVA.
@@ -53,7 +54,7 @@ const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const mesActual = () => {
-    const sv = new Date(Date.now() - 6 * 3600_000);
+    const sv = relojSV();
     return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 const etiquetaMes = (mes) => {
@@ -73,11 +74,7 @@ const correrMes = (mes, delta) => {
 
 // DD/MM/YYYY. Se parte la cadena en vez de construir un Date: `new Date('2026-06-01')`
 // es UTC y en El Salvador (−6) retrocede un día.
-const fmtFecha = (iso) => {
-    if (!iso) return '';
-    const [y, m, d] = String(iso).slice(0, 10).split('-');
-    return `${d}/${m}/${y}`;
-};
+const fmtFecha = (iso) => fechaNumerica(iso, { vacio: '' });
 
 // El dinero va SIEMPRE con dos decimales. Sin esto el CSV escribía el número
 // crudo de JavaScript: `5` en vez de `5.00`, y en la fila de totales

@@ -13,6 +13,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { EMPRESA } from '../constants/empresa';
+import { fechaTexto, hoySV } from './fecha';
 
 const esc = (v) => String(v ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -45,8 +46,7 @@ const fila = (rotulo, valor) => (valor === null || valor === undefined || valor 
  * @returns {string} documento HTML completo
  */
 export function papelDeRespuesta({ solicitud, cliente, empleado, resumen, donde }) {
-    const hoy = new Date().toLocaleDateString('es-SV',
-        { day: 'numeric', month: 'long', year: 'numeric' });
+    const hoy = fechaTexto(hoySV(), { day: 'numeric', month: 'long', year: 'numeric' });
 
     const bloques = [];
 

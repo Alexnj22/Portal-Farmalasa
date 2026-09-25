@@ -15,6 +15,7 @@ import {
     fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidas, updateVentaPerdidaStatus,
 } from '../data/ventasPerdidas';
 import { useToastStore } from '../store/toastStore';
+import { hoySV } from '../utils/fecha';
 
 const TABS = [
     { key: 'pendiente', label: 'Pendiente' },
@@ -95,7 +96,7 @@ export default function VentasPperdidasView() {
             branchMap[r.branch_id] || '',
             empMap[r.reportado_por]?.name || '',
         ]);
-        exportCsv(headers, csvRows, `ventas_perdidas_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`, 'ventas_perdidas');
+        exportCsv(headers, csvRows, `ventas_perdidas_${activeTab}_${hoySV()}.csv`, 'ventas_perdidas');
         useStaff.getState().appendAuditLog('EXPORT_VENTAS_PERDIDAS', null, { count: rows.length, tab: activeTab });
     };
 

@@ -16,6 +16,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchCortesZ, fetchCorteZDias } from '../../data/corteZ';
 import { descargarCorteZPdf, direccionDe, etiquetaPeriodo } from '../../utils/corteZPrint';
 import { EMPRESA } from '../../constants/empresa';
+import { relojSV } from '../../utils/fecha';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CORTE Z — el Gran Z mensual de cada sucursal.
@@ -44,7 +45,7 @@ import { EMPRESA } from '../../constants/empresa';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mesActual = () => {
-    const sv = new Date(Date.now() - 6 * 3600_000);
+    const sv = relojSV();
     return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 

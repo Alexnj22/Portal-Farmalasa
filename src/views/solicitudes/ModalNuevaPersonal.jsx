@@ -23,6 +23,7 @@ import { fetchEmployeeEventsByTypes } from '../../data/employeeSelfService';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { rango12 } from '../../utils/hora';
+import { hoySV } from '../../utils/fecha';
 
 /**
  * El formulario de una solicitud personal, en un modal.
@@ -224,7 +225,7 @@ export default function ModalNuevaPersonal({
 
     // Incapacidades aprobadas todavía vigentes (no se bloquean días ya pasados).
     const incapacidades = useMemo(() => {
-        const hoy = new Date().toISOString().split('T')[0];
+        const hoy = hoySV();
         return suyas
             .filter(r => r.type === 'DISABILITY' && r.status === 'APPROVED')
             .map(r => {

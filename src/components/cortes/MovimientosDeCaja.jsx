@@ -14,6 +14,7 @@ import { emparejarCobrosConMovimientos } from '../../utils/cortesDiagnostico';
 import { cobroEnEfectivo } from '../../data/creditos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { hora12, fechaHora12 } from '../../utils/hora';
+import { diaSV, relojSV } from '../../utils/fecha';
 
 /**
  * Los movimientos de caja de un período: verlos y buscarlos TODOS.
@@ -105,9 +106,7 @@ const horaDe = (iso) => hora12(iso) || null;
 const horaReloj = (t) => hora12(t) || '—';
 
 /** El día de El Salvador de una marca de tiempo, para comparar contra `fecha`. */
-const diaSV = (iso) => (iso
-    ? new Date(new Date(iso).getTime() - 6 * 3600_000).toISOString().slice(0, 10)
-    : null);
+const diaDe = (iso) => (iso ? diaSV(iso) : null);
 
 /* El último desempate del orden. Los renglones de la caja se desempatan por
  * `erp_movimiento_id`, que es un NÚMERO —comparado como texto, «9» quedaría
@@ -122,7 +121,7 @@ const desempatar = (a, b) => {
 /** Minutos desde medianoche, en hora de sala. Para ordenar y comparar. */
 const minutosDeIso = (iso) => {
     if (!iso) return null;
-    const d = new Date(new Date(iso).getTime() - 6 * 3600_000);
+    const d = relojSV(iso);
     return d.getUTCHours() * 60 + d.getUTCMinutes();
 };
 const minutosDeHora = (t) => {
@@ -251,12 +250,12 @@ export default function MovimientosDeCaja({
         })),
         ...sueltos.map((cb) => ({
             kind: 'cobro', clave: `c${cb.id}`, cb,
-            fecha: diaSV(cb.created_at), branchId: cb.branch_id, orden: cb.created_at,
+            fecha: diaDe(cb.created_at), branchId: cb.branch_id, orden: cb.created_at,
             desempate: cb.id,
         })),
         ...sueltasDeBolsa.map((op) => ({
             kind: 'bolsa', clave: `b${op.id}`, op,
-            fecha: diaSV(op.registrado_at), branchId: op.branch_id, orden: op.registrado_at,
+            fecha: diaDe(op.registrado_at), branchId: op.branch_id, orden: op.registrado_at,
             desempate: op.id,
         })),
     ]).sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
@@ -369,7 +368,7 @@ export default function MovimientosDeCaja({
                             }
                             return {
                                 tipoFila: 'mov', it,
-                                minuto: diaSV(it.mv.created_at) === it.mv.fecha
+                                minuto: diaDe(it.mv.created_at) === it.mv.fecha
                                     ? minutosDeIso(it.mv.created_at) : null,
                             };
                         });

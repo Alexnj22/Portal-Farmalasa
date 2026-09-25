@@ -35,12 +35,13 @@ import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchResumenFiscal } from '../../data/resumenFiscal';
+import { relojSV } from '../../utils/fecha';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const mesActual = () => {
-    const sv = new Date(Date.now() - 6 * 3600_000);
+    const sv = relojSV();
     return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 const etiquetaMes = (mes) => {

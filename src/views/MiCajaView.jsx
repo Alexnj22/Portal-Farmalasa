@@ -65,6 +65,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
 import { getSignedFileUrl } from '../utils/storageFiles';
 import { saldoDeBolsa } from '../utils/bolsasReparto';
 import { hora12 } from '../utils/hora';
+import { hoySV } from '../utils/fecha';
 
 /**
  * Mi caja — el turno de esta sala, ahora.
@@ -417,7 +418,7 @@ export default function MiCajaView({ comoPestana = false }) {
         if (token !== cargaRef.current) return;
         const vivo = e.error ? null : e;
         setNoSePudo(e.error ? mensajeAmigable(e.error) : null);
-        const dia = vivo?.dia || new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+        const dia = vivo?.dia || hoySV();
         const [v, abiertas, movs, porPago, salidas, cobrados, delDia] = await Promise.all([
             fetchValesPendientes(),
             fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'CONTADA'] }),

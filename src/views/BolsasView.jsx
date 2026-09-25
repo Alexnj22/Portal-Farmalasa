@@ -13,6 +13,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import CircuitoDeBolsas from './bolsas/CircuitoDeBolsas';
 import { ETAPAS } from './bolsas/etapas';
+import { hoySV, sumarDias } from '../utils/fecha';
 
 /**
  * Bolsas de efectivo — el dinero que la sala guarda al confirmar un corte,
@@ -64,7 +65,6 @@ const VACIO = [];
 // Hora de El Salvador (UTC−6, sin horario de verano). La fecha de una bolsa es
 // la del corte de su sala: con la fecha local del equipo, un navegador en otro
 // huso mostraría el día equivocado sin avisar.
-const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
 /* El default del período: 30 días. No es «Hoy» —el default de Cortes— y eso lo
  * pidió el usuario el 2026-08-20: «no tiene sentido que el filtro de fecha sea
@@ -75,9 +75,8 @@ const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 1
  * Es una función y no una constante porque la vista puede quedar abierta
  * cruzando la medianoche. */
 const ULTIMOS_30 = () => {
-    const finMs = Date.now() - 6 * 3600_000;
-    const ini = new Date(finMs - 29 * 86_400_000).toISOString().slice(0, 10);
-    return `${ini}|${new Date(finMs).toISOString().slice(0, 10)}`;
+    const fin = hoySV();
+    return `${sumarDias(fin, -29)}|${fin}`;
 };
 
 const BolsasView = () => {

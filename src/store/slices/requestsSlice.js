@@ -21,6 +21,7 @@ import { signStorageUrls } from '../../utils/storageFiles';
 import { formatMoney } from '../../utils/formatNumber';
 import { claveDeDia } from '../../utils/scheduleHelpers';
 import { emitir } from '../../plataforma/eventos';
+import { hoySV } from '../../utils/fecha';
 
 // ============================================================================
 // 📋 SOLICITUDES — Employee-initiated requests requiring admin approval
@@ -1424,7 +1425,7 @@ export const createRequestsSlice = (set, get) => ({
             if (registerEmployeeEvent && !REQUEST_TYPES_QUE_SE_APLICAN.has(req.type)) {
                 await registerEmployeeEvent(req.employee.id, {
                     type: req.type,
-                    date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
+                    date: meta.startDate || meta.date || hoySV(),
                     endDate: meta.endDate,
                     note: req.note,
                     approvedBy: approverId,
@@ -1433,7 +1434,7 @@ export const createRequestsSlice = (set, get) => ({
                 }).catch(console.error);
 
                 if (req.type === 'SHIFT_CHANGE' && meta.targetEmployeeId) {
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = hoySV();
                     await registerEmployeeEvent(meta.targetEmployeeId, {
                         type: 'SHIFT_CHANGE',
                         date: meta.date || today,

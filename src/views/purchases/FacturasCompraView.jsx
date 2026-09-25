@@ -35,6 +35,7 @@ import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fechaHora12 } from '../../utils/hora';
+import { relojSV } from '../../utils/fecha';
 
 const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
@@ -136,7 +137,7 @@ const pad = (n) => String(n).padStart(2, '0');
 // DOS veces en una máquina que ya está en SV (UTC−6): el 1 de mes antes de las
 // 06:00 devolvía el mes anterior, o sea el libro equivocado.
 function mesActual() {
-    const sv = new Date(Date.now() - 6 * 3600_000);
+    const sv = relojSV();
     return `${sv.getUTCFullYear()}-${pad(sv.getUTCMonth() + 1)}`;
 }
 

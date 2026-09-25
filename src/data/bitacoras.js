@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { SUPABASE_URL } from '../plataforma/config';
+import { hoySV } from '../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Bitácoras — capa de datos.
@@ -26,7 +27,7 @@ import { SUPABASE_URL } from '../plataforma/config';
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Hoy en El Salvador (UTC−6, sin horario de verano). */
-export const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+export { hoySV };
 
 /** El período `YYYY-MM` de una fecha. */
 export const periodoDe = (fecha) => String(fecha || hoySV()).slice(0, 7);

@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1073.1 — U1: un solo «hoy» — el día de El Salvador sale de utils/fecha
+
+Arregla **el día equivocado después de las 6 pm** en 33 lugares, y deja una
+sola respuesta a «¿qué día es hoy en la sala?».
+
+- **El defecto.** «Hoy» estaba escrito unas **60 veces con cuatro reglas**.
+  **33** usaban `toISOString()`, que es la hora de Greenwich: de 6 pm a
+  medianoche decían que ya era **mañana**. Lo que eso tocaba:
+  - la fecha de **baja** que se propone al dar de baja a alguien, y la de
+    **ingreso** al crear o recontratar un empleado;
+  - la fecha de apertura de una sucursal nueva y la de una novedad;
+  - «¿el permiso o la incapacidad siguen vigentes?» al pedir uno nuevo, y
+    «¿la calibración ya venció?» en bitácoras;
+  - los nombres de los CSV (inventario, Mín·Máx, directorio, auditoría,
+    ventas perdidas, cotizaciones, facturas de compra).
+  Otros ocho usaban la hora del EQUIPO: acertaban sólo si la computadora
+  estaba en hora de El Salvador.
+- **El canónico: `src/utils/fecha.js`** — `hoySV`, `diaSV(instante)`,
+  `ahoraSV`, `horaSV`, `relojSV`, `sumarDias`, `diasEntre`, `lunesDe`. Usa el
+  desplazamiento fijo (−6, el país no tiene horario de verano) y no la base de
+  zonas horarias, que el motor de una app nativa no siempre trae.
+  `tests/unit/fecha.test.js` lo compara contra la zona `America/El_Salvador`
+  **hora por hora de 2024 a 2027: 0 diferencias**.
+- **61 archivos** pasan a usarlo; las copias con nombre propio (`hoySV` ×9,
+  `hoyISO` ×4, `svToday`/`svNow` ×3) desaparecen. El lunes de la semana del
+  kiosco y del arranque sale de `lunesDe(hoySV())` en vez del reloj del equipo.
+- **`gate:hora` ahora vigila también el día**: `hoy-utc`, `desfase-a-mano`,
+  `zona-a-mano` y `copia-de-hoy`, bloqueantes en cero. Probado fabricándole
+  las cuatro regresiones. Dos excepciones con motivo: los sellos del papel
+  del ticket, que formatean fecha para imprimir.
+- Verificado: 2,877 pruebas, lint sin errores nuevos archivo por archivo, y 28
+  vistas recorridas contra la base de pruebas sin un error de página.
+- Queda fuera, a propósito: las funciones del servidor (tienen su propia
+  copia de la resta y no comparten código con el navegador todavía).
+
 ## v2.1073.0 — Puntos: la vista del programa
 
 Nueva vista **Puntos** (`/puntos`, grupo Comercial, módulo `puntos` para

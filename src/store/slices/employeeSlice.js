@@ -20,6 +20,7 @@ import { claveDeDia } from '../../utils/scheduleHelpers';
 import * as almacen from '../../plataforma/almacen';
 import { emitir } from '../../plataforma/eventos';
 import { comprimirFotoDeEmpleado } from '../../plataforma/imagenes';
+import { hoySV } from '../../utils/fecha';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -1584,7 +1585,7 @@ export const createEmployeeSlice = (set, get) => ({
             e.userFacing = true;
             throw e;
         }
-        const fechaBaja = exitDate || new Date().toISOString().split('T')[0];
+        const fechaBaja = exitDate || hoySV();
         const eventId = await get().registerEmployeeEvent(id, {
             type: 'TERMINATION',
             date: fechaBaja,

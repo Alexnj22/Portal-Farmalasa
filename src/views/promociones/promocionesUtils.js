@@ -1,4 +1,5 @@
 import { formatMoney, formatQty } from '../../utils/formatNumber';
+import { hoySV } from '../../utils/fecha';
 
 /**
  * Promociones — lo que comparten las pestañas.
@@ -7,12 +8,7 @@ import { formatMoney, formatQty } from '../../utils/formatNumber';
  * en dos sitios termina dando dos respuestas: es la lección de `turnoDelDia`.
  */
 
-/** Hoy en El Salvador. A las 9 pm no dice que ya es mañana. */
-export const hoySV = () =>
-    new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'America/El_Salvador',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-    }).format(new Date());
+export { hoySV } from '../../utils/fecha';
 
 // El formateador del portal, no `toLocaleString` a mano: un locale escrito en
 // cada archivo es cómo dos pantallas terminan mostrando el mismo número con

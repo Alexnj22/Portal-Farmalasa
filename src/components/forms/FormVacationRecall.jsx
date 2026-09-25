@@ -7,6 +7,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { formatDate } from '../../utils/helpers';
 import PortalTextarea from '../common/PortalTextarea';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { hoySV } from '../../utils/fecha';
 
 const FormVacationRecall = ({ formData, setFormData }) => {
     const { shifts } = useStaffStore();
@@ -15,7 +16,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
 
     // Detectar el rango de vacaciones activo desde el historial
     const activeVacation = useMemo(() => {
-        const today = new Date().toISOString().split('T')[0];
+        const today = hoySV();
         return (emp?.history || []).find(h =>
             h.type === 'VACATION' &&
             h.date <= today &&

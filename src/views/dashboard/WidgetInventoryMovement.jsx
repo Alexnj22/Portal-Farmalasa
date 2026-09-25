@@ -22,6 +22,7 @@ import {
     buscarConExistencia, buscarEnCatalogo, fetchPresentaciones, fetchLotesDeProducto,
     fetchPerecederos, insertMovimientoInventario, fetchSucursalEnConteo,
 } from '../../data/inventoryMovements';
+import { hoySV } from '../../utils/fecha';
 
 // Widget «Ajuste de Inventario».
 //
@@ -166,7 +167,7 @@ const fmtFecha = (d) => {
 
 function diasHasta(fecha) {
     if (!fecha) return null;
-    const hoy = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const hoy = hoySV();
     return Math.round((new Date(fecha) - new Date(hoy)) / 86400000);
 }
 

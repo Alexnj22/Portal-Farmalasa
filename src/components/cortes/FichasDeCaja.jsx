@@ -6,6 +6,7 @@ import Notice from '../common/Notice';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import { hora12 } from '../../utils/hora';
+import { diaSV, relojSV } from '../../utils/fecha';
 
 /**
  * Quién abrió cada caja, desde cuándo y con cuánto — arriba de los cortes.
@@ -55,7 +56,7 @@ function minutosAntes(abiertaA, marcaIso) {
     const marca = new Date(marcaIso);
     const [h, m] = String(abiertaA).split(':').map(Number);
     // La marcación se compara en hora de sala, que es la del `abierta_a`.
-    const enSala = new Date(marca.getTime() - 6 * 3600_000);
+    const enSala = relojSV(marca);
     const minutosMarca = enSala.getUTCHours() * 60 + enSala.getUTCMinutes();
     return (h * 60 + m) - minutosMarca;
 }
@@ -283,8 +284,7 @@ export default function FichasDeCaja({
     const porPersona = useMemo(() => {
         const pp = new Map();
         for (const e of entradas) {
-            const dia = new Date(new Date(e.timestamp).getTime() - 6 * 3600_000)
-                .toISOString().slice(0, 10);
+            const dia = diaSV(e.timestamp);
             const clave = `${e.employee_id}:${dia}`;
             if (!pp.has(clave)) pp.set(clave, e.timestamp);
         }

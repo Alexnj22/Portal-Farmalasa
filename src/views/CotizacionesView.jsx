@@ -31,6 +31,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
 import { rotuloCampo } from '../utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { useToastStore } from '../store/toastStore';
+import { hoySV } from '../utils/fecha';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -64,7 +65,6 @@ const DOC_OPTS = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
 const fmtD   = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-const todayStr = () => new Date().toISOString().split('T')[0];
 
 const desglose = (precioConIva, cantidad = 1) => {
     const unitSinIva = precioConIva / (1 + IVA_RATE);
@@ -358,7 +358,7 @@ export default function CotizacionesView() {
     const [anulando,      setAnulando]      = useState(false);
 
     // Formulario
-    const [fecha,            setFecha]            = useState(todayStr());
+    const [fecha,            setFecha]            = useState(hoySV());
     const [customerId,       setCustomerId]       = useState('');
     const [docType,          setDocType]          = useState('COF');
     const [paymentType,      setPaymentType]      = useState('EFECTIVO');
@@ -568,7 +568,7 @@ export default function CotizacionesView() {
     }, [creando, recuperado]);
 
     const resetForm = () => {
-        setFecha(todayStr()); setCustomerId(''); setDocType('COF');
+        setFecha(hoySV()); setCustomerId(''); setDocType('COF');
         setPaymentType('EFECTIVO'); setAppliesRetention(false);
         setNotes(''); setItems([]); setAddProdId(''); setSaveError('');
         setEditingId(null);

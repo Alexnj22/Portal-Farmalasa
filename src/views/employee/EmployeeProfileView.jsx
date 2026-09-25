@@ -22,6 +22,7 @@ import { formatTime12h } from '../../utils/helpers';
 import SearchInput from '../../components/common/SearchInput';
 import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import { hoySV } from '../../utils/fecha';
 
 const formatDate = (d) => d
     ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -185,7 +186,7 @@ const EmployeeProfileView = ({ openModal }) => {
     }, [timeline, filterFrom, filterTo, filterType, searchQuery, timelineLimit]);
 
     const nextVacation = useMemo(() => {
-        const today = new Date().toISOString().split('T')[0];
+        const today = hoySV();
         return myVacPlans.find(vp => vp.end_date >= today && (vp.status === 'PLANNED' || vp.status === 'CONFIRMED')) || null;
     }, [myVacPlans]);
 
@@ -366,7 +367,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 {myVacPlans.map(vp => {
                                     const s = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;
                                     const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
-                                    const isUpcoming = vp.end_date >= new Date().toISOString().split('T')[0];
+                                    const isUpcoming = vp.end_date >= hoySV();
                                     // Un solo ternario para las dos cosas, porque dependen de la MISMA
                                     // condición: cuando la vacación ya pasó el elemento es
                                     // `data-surface="card"` y el canónico lo levanta con `--lift-card`;

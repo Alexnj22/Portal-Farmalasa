@@ -242,6 +242,7 @@ import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { hoySV } from '../../utils/fecha';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -829,9 +830,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 code: String(Math.floor(1000 + Math.random() * 9000)),
                 branch_id: prev?.branchId || prev?.branch_id || '', 
                 role_id: '', secondary_role_id: '', 
-                hire_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0], 
+                hire_date: prev?.hireDate || prev?.hire_date || hoySV(), 
                 kiosk_pin: '', photoPreview: null, file: null,
-                contract_type: 'INDEFINIDO', contract_start_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0],
+                contract_type: 'INDEFINIDO', contract_start_date: prev?.hireDate || prev?.hire_date || hoySV(),
                 contract_end_date: '', contract_temporal_legal_basis: '', contract_temporal_reason: '', weekly_contracted_hours: '44', base_salary: '',
                 afp_number: '', isss_number: '', afp_institution: '', bank_name: '', account_number: '', account_type: 'AHORRO',
                 forma_estipulacion_salario: '', medio_pago: '', lugar_pago: '',
@@ -1571,7 +1572,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             && !!patch.url && !!base.url && patch.url !== base.url;
 
         const traza = {
-            reemplazado_el: new Date().toISOString().split('T')[0],
+            reemplazado_el: hoySV(),
             por: quienCarga?.name || '',
             // El archivo anterior sólo donde hace falta enseñarlo. Ver arriba.
             ...(CON_ARCHIVO_ANTERIOR.has(category)
@@ -3573,7 +3574,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         icon={RefreshCw}
                                                         onClick={() => setFormData(prev => ({
                                                             ...prev,
-                                                            ...promoverADefinitiva(prev, a.id, a.campo, new Date().toISOString().split('T')[0]),
+                                                            ...promoverADefinitiva(prev, a.id, a.campo, hoySV()),
                                                         }))}>
                                                         Ya se graduó
                                                     </Button>

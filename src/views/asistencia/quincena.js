@@ -1,4 +1,5 @@
 import { hora12 } from '../../utils/hora';
+import { relojSV } from '../../utils/fecha';
 // ── La quincena y las horas de la auditoría de asistencia ────────────────────
 //
 // Extraídas de `AttendanceAuditView.jsx` (1,497 líneas) por el mismo motivo que
@@ -15,10 +16,9 @@ import { hora12 } from '../../utils/hora';
 // UTC, y una fecha local a las 02:00 SV ya es el día siguiente allá. Restar el
 // huso a mano es lo que hace que las dos den lo mismo.
 
-const SV = 6 * 3600000;
 
 /** Ahora, corrido a la hora de El Salvador para poder leerlo con `getUTC*`. */
-const ahoraSV = (t = Date.now()) => new Date(t - SV);
+const ahoraSV = (t = Date.now()) => relojSV(t);
 
 /** El lunes de la semana en curso, en `YYYY-MM-DD`. */
 export function getMondayOfCurrentWeek(ahora = Date.now()) {

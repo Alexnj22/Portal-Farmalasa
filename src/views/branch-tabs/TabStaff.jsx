@@ -18,6 +18,7 @@ import { calculateMinimumStaff } from '../../utils/staffHelpers';
 import { supabase } from '../../supabaseClient';
 import { fetchBranchHourlySalesAll } from '../../data/schedules';
 import { clickable } from '../../utils/clickable';
+import { hoySV } from '../../utils/fecha';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS
@@ -209,7 +210,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
         setProgress(0);
         setLog('Preparando los meses a recargar…');
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = hoySV();
         const chunksToSync = generateChunks("2025-01-01", todayStr, 30);
         let successCount = 0;
 

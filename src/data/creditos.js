@@ -9,6 +9,7 @@ import { fetchAllRows } from '../utils/supabaseUtils';
  * 63 kB de `data/bolsas` en el chunk de arranque, porque `requestsSlice` importa
  * este archivo. Ver la cabecera de `fotoParaLeer`. */
 import { aBase64Reducido } from '../plataforma/fotoParaLeer';
+import { diaSV } from '../utils/fecha';
 
 /**
  * Los créditos de los clientes — verlos y abonarles.
@@ -406,7 +407,7 @@ export const cobroEnEfectivo = (a) =>
 export function edadDelCredito(fecha, saldo = null, hoy = new Date()) {
     if (!fecha) return { dias: null, vencido: false };
     const d = new Date(`${fecha}T12:00:00Z`);
-    const ahora = new Date(`${new Date(hoy.getTime() - 6 * 3600_000).toISOString().slice(0, 10)}T12:00:00Z`);
+    const ahora = new Date(`${diaSV(hoy)}T12:00:00Z`);
     const dias = Math.round((ahora - d) / 86_400_000);
     /* Vencido exige SALDO. Un crédito de hace dos años que ya se pagó tiene
      * 700 días y no debe nada: pintarlo de ámbar diría que hay algo que ir a

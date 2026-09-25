@@ -39,6 +39,7 @@ import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '.
 import { papelDeSolicitudDeDatos } from '../generated/formularioDatos';
 import { fetchSolicitudes, crearSolicitud, plazoDe, DERECHOS, ESTADOS } from '../data/solicitudesDatos';
 import SolicitudModal from './datos/SolicitudModal';
+import { hoySV } from '../utils/fecha';
 
 const PESTANAS = [
     { key: 'tramite',   label: 'En trámite', icon: Clock },
@@ -64,7 +65,6 @@ const ESTADO_OPCIONES = [
 
 const ROTULO = Object.fromEntries(DERECHOS.map((d) => [d.clave, d.rotulo]));
 
-const hoyISO = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' });
 const fecha = (iso) => iso
     ? new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })
     : '—';
@@ -203,7 +203,7 @@ export default function SolicitudesDatosView() {
                         <FilterBar.Section active={!!periodo} onClear={() => setPeriodo('')} label="fecha">
                             <PeriodStepper unit="día" onPrev={() => {}} onNext={() => {}}
                                 prevDisabled nextDisabled>
-                                <PeriodPicker value={periodo || `${hoyISO()}|${hoyISO()}`}
+                                <PeriodPicker value={periodo || `${hoySV()}|${hoySV()}`}
                                     onChange={setPeriodo} placeholder="Período…" />
                             </PeriodStepper>
                         </FilterBar.Section>

@@ -19,6 +19,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } from '../../data/libroComprasCompleto';
+import { relojSV } from '../../utils/fecha';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Libro de compras COMPLETO — vista propia, no una pestaña de Libros IVA.
@@ -53,7 +54,7 @@ const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const mesActual = () => {
-    const sv = new Date(Date.now() - 6 * 3600_000);
+    const sv = relojSV();
     return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 const etiquetaMes = (mes) => {

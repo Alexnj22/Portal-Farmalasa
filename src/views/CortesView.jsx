@@ -69,6 +69,7 @@ import {
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { formatMoney } from '../utils/formatNumber';
 import { tokenMatch } from '../utils/searchUtils';
+import { hoySV } from '../utils/fecha';
 
 // ── Bolsas de efectivo salió de acá el 2026-08-24 ───────────────────────────
 //
@@ -137,7 +138,6 @@ const VACIO = [];
 // Hora de El Salvador (UTC−6, sin horario de verano). Se calcula así y no con
 // la fecha local del equipo porque la fecha del corte es la de la sala: un
 // navegador en otro huso mostraría el día equivocado sin avisar.
-const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
 const correrDia = (fecha, dias) => {
     const d = new Date(`${fecha}T12:00:00Z`);

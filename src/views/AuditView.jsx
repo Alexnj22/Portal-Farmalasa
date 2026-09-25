@@ -18,6 +18,7 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { smartFilter } from '../utils/searchUtils';
 import Badge from '../components/common/Badge';
 import { hora12, hora12ConSegundos } from '../utils/hora';
+import { hoySV } from '../utils/fecha';
 
 const ACTION_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -243,7 +244,7 @@ const AuditView = ({ openModal }) => {
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `auditoria_completa_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute("download", `auditoria_completa_${hoySV()}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

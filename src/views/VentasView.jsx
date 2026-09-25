@@ -43,6 +43,7 @@ import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { hora12 } from '../utils/hora';
 import TabInyecciones from './ventas/TabInyecciones';
+import { horaSV, hoySV, relojSV } from '../utils/fecha';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -82,7 +83,7 @@ function fmtDate(dateStr) {
 }
 
 function currentMonthRange() {
-    const now = new Date(Date.now() - 6 * 3600_000);
+    const now = relojSV();
     const y = now.getFullYear();
     const m = now.getMonth() + 1;
     const d = now.getDate();
@@ -134,11 +135,8 @@ function dailyPct(curTotal, curDays, prevTotal, prevDays) {
 
 // Returns "HH:MM:00" in CST if ffin is today, null for past ranges (no cutoff needed)
 function currentHoraCorte(ffin) {
-    const nowSV   = new Date(Date.now() - 6 * 3600_000);
-    const pad     = n => String(n).padStart(2, '0');
-    const todaySV = `${nowSV.getUTCFullYear()}-${pad(nowSV.getUTCMonth() + 1)}-${pad(nowSV.getUTCDate())}`;
-    if (ffin !== todaySV) return null;
-    return `${pad(nowSV.getUTCHours())}:${pad(nowSV.getUTCMinutes())}:00`;
+    if (ffin !== hoySV()) return null;
+    return horaSV().replace(/:\d\d$/, ':00');   // el corte va al minuto: los segundos en cero
 }
 
 function FilterControls({

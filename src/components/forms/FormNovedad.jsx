@@ -23,6 +23,7 @@ import PortalInput from '../common/PortalInput';
 import { formatMoney } from '../../utils/formatNumber';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion } from '../../plataforma/ventanaDeImpresion';
+import { hoySV } from '../../utils/fecha';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -160,7 +161,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             setFormData(prev => ({
                 ...prev,
                 newKioskPin: pin,
-                date: prev.date || new Date().toISOString().split('T')[0]
+                date: prev.date || hoySV()
             }));
         };
         generatePin();
@@ -358,7 +359,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {/* 🗓️ ACCIÓN PROGRAMADA — tipos que aplican cambios al expediente con fecha futura */}
             {['PROMOTION', 'TRANSFER', 'SALARY', 'CODE_CHANGE', 'TERMINATION'].includes(type) &&
-             formData?.date && formData.date > new Date().toLocaleDateString('en-CA') && (
+             formData?.date && formData.date > hoySV() && (
                 <div className="bg-chart-3/10 border border-chart-3/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <CalendarClock className="text-chart-3-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>

@@ -1,3 +1,4 @@
+import { ahoraSV, hoySV } from './fecha';
 // El período de una vista: el formato `inicio|fin` y cómo se corre.
 //
 // ── Por qué vive fuera de `PeriodPicker` ───────────────────────────────────
@@ -14,18 +15,6 @@
 // avisar.
 
 export const pad = (n) => String(n).padStart(2, '0');
-
-/** Hoy en El Salvador, descompuesto. */
-export function svNow() {
-    const sv = new Date(Date.now() - 6 * 3600_000);
-    return { y: sv.getUTCFullYear(), m: sv.getUTCMonth(), d: sv.getUTCDate() };
-}
-
-/** Hoy en El Salvador, como `YYYY-MM-DD`. */
-export function svToday() {
-    const { y, m, d } = svNow();
-    return `${y}-${pad(m + 1)}-${pad(d)}`;
-}
 
 const parseISO = (s) => { const [y, m, d] = s.split('-').map(Number); return { y, m: m - 1, d }; };
 const isoDe = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -92,14 +81,14 @@ export function correrPeriodo(value, dir) {
 /** El período que contiene a HOY, con la misma forma que el que se le pasa. */
 export function periodoDeHoy(value) {
     const g = granularidadDePeriodo(value);
-    const { y, m } = svNow();
+    const { y, m } = ahoraSV();
     if (g.paso === 'mes' && g.n === 1) return `${isoDe(y, m, 1)}|${isoDe(y, m, ultimoDiaDe(y, m))}`;
     if (g.paso === 'anio') return `${y}-01-01|${y}-12-31`;
-    return `${svToday()}|${svToday()}`;
+    return `${hoySV()}|${hoySV()}`;
 }
 
 /** `true` si el período ya llega a hoy — o sea, no hay «siguiente» que mirar. */
 export function periodoAlcanzaHoy(value) {
     const fin = String(value || '').split('|')[1];
-    return !!fin && fin >= svToday();
+    return !!fin && fin >= hoySV();
 }

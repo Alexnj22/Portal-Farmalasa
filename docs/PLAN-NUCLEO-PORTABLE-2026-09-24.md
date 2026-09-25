@@ -44,6 +44,11 @@
   componente. 440 comparaciones viejo/nuevo idénticas.
 - **F1 cerrada — v2.1064.4**: el aviso de inactividad sale de `AuthContext`.
   **`gate:nucleo` en 0.**
+- **U1 paso 1 — «hoy» (v2.1065.1)**: `utils/fecha.js`. Eran ~60 sitios, no
+  20: 33 usaban UTC y daban mañana después de las 6 pm (fecha de baja y de
+  ingreso por defecto, vigencia de permisos, calibraciones, nombres de CSV).
+  `gate:hora` vigila el día con cuatro categorías nuevas. Sigue: mostrar una
+  fecha (44 copias de `fmtFecha`/`fmtDate`), después calendario y dinero.
 
 ## Para qué
 

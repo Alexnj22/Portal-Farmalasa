@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { insertApprovalRequestSilent } from './requests';
 import { buscarProductos, buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
+import { hoySV, relojSV, sumarDias } from '../utils/fecha';
 
 // Datos del widget de cargas y descartes de inventario.
 //
@@ -27,7 +28,7 @@ export const TOPE_LISTA = 400;
  * plazo. Devuelve `{ filas, hayMas }`.
  */
 export async function fetchLotesPorVencer({ erpSucursalId, dias = 0 }) {
-    const corte = new Date(Date.now() - 6 * 60 * 60 * 1000);   // fecha de El Salvador
+    const corte = relojSV();   // fecha de El Salvador
     corte.setDate(corte.getDate() + Number(dias || 0));
     const hasta = corte.toISOString().slice(0, 10);
 
@@ -258,9 +259,7 @@ export async function contarPorVencer({ erpSucursalId }) {
     // El día se corre a UTC-6 antes de recortarlo, como ya hacía el conteo de
     // vencidas: sin eso, entre las 18:00 y la medianoche local la fecha de
     // corte es la de mañana y los lotes que vencen hoy se cuentan como vencidos.
-    const dia = (offset = 0) =>
-        new Date(Date.now() - 6 * 60 * 60 * 1000 + offset * 86400000)
-            .toISOString().slice(0, 10);
+    const dia = (offset = 0) => sumarDias(hoySV(), offset);
     const hoy = dia(0), en7 = dia(7), en30 = dia(30);
 
     // La fila de `inventory` es un LOTE, no un producto: el mismo producto

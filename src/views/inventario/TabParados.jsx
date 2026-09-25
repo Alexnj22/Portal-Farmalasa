@@ -19,6 +19,7 @@ import { porQueDesde } from '../../utils/productosParados';
 import { fetchUnidadDeDespacho } from '../../data/inventory';
 import { nombreDeDespacho, paraBodega, esPocoParaMandar } from '../../utils/unidadDeDespacho';
 import { ERP_NAMES, ERP_ORDER, ERP_BODEGA, MI_ERP_POR_BRANCH, SUC_VARIANTE } from './salasDeStock';
+import { hoySV } from '../../utils/fecha';
 
 const EnviarProductoModal = lazy(() => import('../dashboard/EnviarProductoModal'));
 
@@ -228,7 +229,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
             r.en_minmax && r.min_qty != null ? Number(r.min_qty) : '',
             r.en_minmax && r.max_qty != null ? Number(r.max_qty) : '',
         ]));
-        const hoy = new Date().toISOString().slice(0, 10);
+        const hoy = hoySV();
         exportCsv(headers, rows, `productos_parados_${suc.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${hoy}.csv`, 'inventario_sin_venta');
         useStaff.getState().appendAuditLog('EXPORT_SIN_VENTA', null, {
             vista: 'parados', sucursal: suc, filtro, busqueda: searchTerm || null, count: rows.length,

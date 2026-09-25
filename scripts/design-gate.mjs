@@ -313,10 +313,12 @@ const EXCEPTIONS = {
   // Mapas/canvas/PDF — colores hex directos por naturaleza de la tecnología
   'src/views/CotizacionesView.jsx': ['color', 'hex'],
   'src/views/pedidos/CrearRutaModal.jsx': ['color', 'white', 'hex', 'inline-color'], // marcadores Leaflet (L.divIcon HTML)
-  // La boleta y la planilla son documentos legales que se imprimen, y la línea
-  // 461 arma el archivo de banco (CSV): un separador de miles ahí rompe la
-  // carga. La pantalla de la vista SÍ pasa por `formatMoney` (el helper `fmt`).
-  'src/views/PayrollView.jsx': ['color', 'formato-cifra', 'hex'],
+  // La boleta y la planilla se imprimen con estilos propios (color, hex). Su
+  // dinero pasa por `formatMoney` desde el 2026-09-25, con separador de miles
+  // como el resto del portal (pedido del usuario). El archivo del BANCO sigue
+  // con `toFixed(2)` sin `$` ni separador: ahí un separador rompe la carga, y
+  // la regla no lo toca porque no lleva `$`.
+  'src/views/PayrollView.jsx': ['color', 'hex'],
   // Tooltips flotantes dark (DESIGN.md §6 — no siguen el tema activo por diseño)
   'src/components/forms/FormEditPayrollEntry.jsx': ['color'],
   'src/components/common/SidebarSyncStatus.jsx': ['color', 'white'],

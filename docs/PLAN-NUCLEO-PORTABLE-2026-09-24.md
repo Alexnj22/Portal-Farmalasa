@@ -56,10 +56,10 @@
 - **U1 paso 3 — calendario (v2.1074.3)**: meses, días y semanas. Las cinco vistas
   de libros repetían cuatro funciones; Facturación contaba un día de menos de
   00:00 a 06:00. `gate:hora` suma `calendario-a-mano`. Sigue: dinero.
-- **U1 paso 4 — dinero (v2.1074.6)**: `formato-cifra` ahora ve cualquier `$${…}`
+- **U1 paso 4 — dinero (v2.1075.1)**: `formato-cifra` ahora ve cualquier `$${…}`
   que no sea `formatMoney` (el salario de la ficha salía crudo). **U1
-  cerrada.** Queda a decidir: la boleta y la planilla impresas sin separador
-  de miles.
+  cerrada.** La boleta y la planilla impresas pasaron también a llevar
+  separador de miles (v2.1075.2, pedido del usuario); el archivo del banco no.
 
 ## Para qué
 

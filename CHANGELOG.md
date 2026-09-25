@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.2 — Boleta y planilla impresas: los montos con separador de miles
+
+A pedido del usuario (todavía no se usan en sala): los 34 montos de la
+boleta de pago y de la planilla impresas pasan por `formatMoney` —`$1,234.50`
+y no `$1234.50`—, igual que el resto del portal. El sueldo por hora conserva
+sus cuatro decimales.
+
+El **archivo del banco NO cambia**: sigue saliendo con `toFixed(2)`, sin `$`
+ni separador, porque ahí una coma de miles rompe la carga. `PayrollView` deja
+de estar exceptuado de `formato-cifra`; el archivo del banco no lo dispara
+porque no lleva `$`.
+
 ## v2.1075.1 — U1: el dinero — los montos sueltos pasan por formatMoney
 
 Cierra U1. El dinero ya tenía canónico (`formatMoney`, desde julio) y un

@@ -112,12 +112,12 @@ function buildBoletaHTML(entry, period, branches) {
   <div><span class="lbl">SUCURSAL:</span> ${esc(branch?.name||'—')}</div>
   <div><span class="lbl">FECHA DE INGRESO:</span> ${fd(emp.hire_date||emp.hireDate)}</div>
   <div><span class="lbl">PERÍODO:</span> ${periodLabel(period.start_date,period.end_date).toUpperCase()}</div>
-  <div><span class="lbl">SUELDO DIARIO:</span> $${daily.toFixed(2)}</div>
+  <div><span class="lbl">SUELDO DIARIO:</span> ${formatMoney(daily)}</div>
   <div><span class="lbl">FECHA DE PAGO:</span> ${period.pay_date?fd(period.pay_date):'—'}</div>
   <div><span class="lbl">CUENTA ELECTRÓNICA:</span> ${esc(emp.account_number||'—')}</div>
-  <div><span class="lbl">SUELDO BASE MENSUAL:</span> $${parseFloat(emp.base_salary||0).toFixed(2)}</div>
+  <div><span class="lbl">SUELDO BASE MENSUAL:</span> ${formatMoney(parseFloat(emp.base_salary||0))}</div>
   <div><span class="lbl">TIPO DE JORNADA:</span> TIEMPO COMPLETO</div>
-  <div><span class="lbl">SUELDO POR HORA:</span> $${hourly.toFixed(4)}</div>
+  <div><span class="lbl">SUELDO POR HORA:</span> ${formatMoney(hourly, { decimales: 4 })}</div>
   <div><span class="lbl">FORMA DE PAGO:</span> ${emp.bank_name ? 'DEPÓSITO EN ' + esc(emp.bank_name.toUpperCase()) : 'EFECTIVO / NO ESPECIFICADO'}</div>
 </div>
 <hr/>
@@ -126,42 +126,42 @@ function buildBoletaHTML(entry, period, branches) {
     <div class="sec">INGRESOS SUJETOS A RETENCIÓN</div>
     <table>
       <tr><td>DÍAS TRABAJADOS:</td><td class="right">${round2(entry.days_worked)}</td></tr>
-      <tr><td>SALARIO ORDINARIO: ${round2(entry.days_worked)} X $${daily.toFixed(2)} =</td><td class="right">$${round2(entry.ordinary_salary).toFixed(2)} +</td></tr>
-      <tr class="tot"><td>SUBTOTAL:</td><td class="right">A $${round2(entry.subtotal_a).toFixed(2)} +</td></tr>
+      <tr><td>SALARIO ORDINARIO: ${round2(entry.days_worked)} X ${formatMoney(daily)} =</td><td class="right">${formatMoney(round2(entry.ordinary_salary))} +</td></tr>
+      <tr class="tot"><td>SUBTOTAL:</td><td class="right">A ${formatMoney(round2(entry.subtotal_a))} +</td></tr>
     </table><br/>
     <div class="sec">OTROS INGRESOS NO SUJETOS A RETENCIONES</div>
     <table>
-      <tr><td>HORAS NOCT. ORDINARIAS (25%):</td><td class="right">$${round2(entry.night_hours_ordinary*hourly*0.25).toFixed(2)} +</td></tr>
-      <tr><td>HORAS NOCT. EXTRAORDINARIAS (50%):</td><td class="right">$${round2(entry.night_hours_extra*hourly*0.50).toFixed(2)} +</td></tr>
-      <tr><td>HORAS EXTRA DIURNAS:</td><td class="right">$${round2(entry.extra_hours_diurnal*hourly*2).toFixed(2)} +</td></tr>
-      <tr><td>HORAS EXTRA NOCTURNAS (×2.25):</td><td class="right">$${round2(entry.extra_hours_nocturnal*hourly*2.25).toFixed(2)} +</td></tr>
-      <tr><td>RECARGO DE ASUETOS:</td><td class="right">$${round2(entry.holiday_surcharge).toFixed(2)} +</td></tr>
-      <tr><td>BONIFICACIONES:</td><td class="right">$${round2(entry.bonifications).toFixed(2)} +</td></tr>
-      <tr><td>BONO VACACIONAL (30%):</td><td class="right">$${round2(entry.vacation_bonus).toFixed(2)} +</td></tr>
-      <tr><td>VIÁTICOS:</td><td class="right">$${round2(entry.viaticos||0).toFixed(2)} +</td></tr>
-      <tr class="tot"><td>SUBTOTAL:</td><td class="right">B $${round2(entry.subtotal_b).toFixed(2)}</td></tr>
+      <tr><td>HORAS NOCT. ORDINARIAS (25%):</td><td class="right">${formatMoney(round2(entry.night_hours_ordinary*hourly*0.25))} +</td></tr>
+      <tr><td>HORAS NOCT. EXTRAORDINARIAS (50%):</td><td class="right">${formatMoney(round2(entry.night_hours_extra*hourly*0.50))} +</td></tr>
+      <tr><td>HORAS EXTRA DIURNAS:</td><td class="right">${formatMoney(round2(entry.extra_hours_diurnal*hourly*2))} +</td></tr>
+      <tr><td>HORAS EXTRA NOCTURNAS (×2.25):</td><td class="right">${formatMoney(round2(entry.extra_hours_nocturnal*hourly*2.25))} +</td></tr>
+      <tr><td>RECARGO DE ASUETOS:</td><td class="right">${formatMoney(round2(entry.holiday_surcharge))} +</td></tr>
+      <tr><td>BONIFICACIONES:</td><td class="right">${formatMoney(round2(entry.bonifications))} +</td></tr>
+      <tr><td>BONO VACACIONAL (30%):</td><td class="right">${formatMoney(round2(entry.vacation_bonus))} +</td></tr>
+      <tr><td>VIÁTICOS:</td><td class="right">${formatMoney(round2(entry.viaticos||0))} +</td></tr>
+      <tr class="tot"><td>SUBTOTAL:</td><td class="right">B ${formatMoney(round2(entry.subtotal_b))}</td></tr>
     </table>
   </div>
   <div>
     <div class="sec">RETENCIONES</div>
     <table>
-      <tr><td>ISSS: $${round2(entry.ordinary_salary).toFixed(2)} X 3% =</td><td class="right">$${round2(entry.isss_deduction).toFixed(2)} -</td></tr>
-      <tr><td>AFP: $${round2(entry.ordinary_salary).toFixed(2)} X 7.25% =</td><td class="right">$${round2(entry.afp_deduction).toFixed(2)} -</td></tr>
-      <tr><td>RENTA:</td><td class="right">$${round2(entry.renta_deduction).toFixed(2)} -</td></tr>
+      <tr><td>ISSS: ${formatMoney(round2(entry.ordinary_salary))} X 3% =</td><td class="right">${formatMoney(round2(entry.isss_deduction))} -</td></tr>
+      <tr><td>AFP: ${formatMoney(round2(entry.ordinary_salary))} X 7.25% =</td><td class="right">${formatMoney(round2(entry.afp_deduction))} -</td></tr>
+      <tr><td>RENTA:</td><td class="right">${formatMoney(round2(entry.renta_deduction))} -</td></tr>
     </table><br/>
     <div class="sec">OTROS DESCUENTOS</div>
     <table>
-      <tr><td>ORDEN DE DESCUENTO:</td><td class="right">$${round2(entry.order_discount).toFixed(2)} -</td></tr>
-      <tr><td>OTROS DESCUENTOS:</td><td class="right">$${round2(entry.other_discounts).toFixed(2)} -</td></tr>
-      <tr><td>ADELANTO SALARIAL:</td><td class="right">$${round2(entry.salary_advance).toFixed(2)} -</td></tr>
+      <tr><td>ORDEN DE DESCUENTO:</td><td class="right">${formatMoney(round2(entry.order_discount))} -</td></tr>
+      <tr><td>OTROS DESCUENTOS:</td><td class="right">${formatMoney(round2(entry.other_discounts))} -</td></tr>
+      <tr><td>ADELANTO SALARIAL:</td><td class="right">${formatMoney(round2(entry.salary_advance))} -</td></tr>
       <tr style="height:12px"><td></td><td></td></tr>
-      <tr class="tot"><td>TOTAL RETENCIONES Y DESCUENTOS:</td><td class="right">C $${round2(entry.total_deductions).toFixed(2)} -</td></tr>
+      <tr class="tot"><td>TOTAL RETENCIONES Y DESCUENTOS:</td><td class="right">C ${formatMoney(round2(entry.total_deductions))} -</td></tr>
     </table>
   </div>
 </div>
 <hr/>
 <div style="font-weight:bold;font-size:12px;text-align:center;margin:6px 0">
-  LÍQUIDO A RECIBIR (A −C) + B: $${round2(entry.net_pay).toFixed(2)}
+  LÍQUIDO A RECIBIR (A −C) + B: ${formatMoney(round2(entry.net_pay))}
 </div>
 <div style="text-align:center;font-size:10px">CANTIDAD EN LETRAS: ${amountInWords(entry.net_pay)}</div>
 <hr/>
@@ -212,13 +212,13 @@ function planillaTableRows(entries, branches) {
         return `<tr>
           <td>${emp.name||'—'}</td><td>${branch?.name||'Otras áreas'}</td>
           <td class="right">${round2(e.days_worked)}</td>
-          <td class="right">$${round2(e.ordinary_salary).toFixed(2)}</td>
-          <td class="right">$${round2(e.subtotal_b).toFixed(2)}</td>
-          <td class="right">$${round2(e.isss_deduction).toFixed(2)}</td>
-          <td class="right">$${round2(e.afp_deduction).toFixed(2)}</td>
-          <td class="right">$${round2(e.renta_deduction).toFixed(2)}</td>
-          <td class="right">$${round2(e.total_deductions).toFixed(2)}</td>
-          <td class="right"><b>$${round2(e.net_pay).toFixed(2)}</b></td>
+          <td class="right">${formatMoney(round2(e.ordinary_salary))}</td>
+          <td class="right">${formatMoney(round2(e.subtotal_b))}</td>
+          <td class="right">${formatMoney(round2(e.isss_deduction))}</td>
+          <td class="right">${formatMoney(round2(e.afp_deduction))}</td>
+          <td class="right">${formatMoney(round2(e.renta_deduction))}</td>
+          <td class="right">${formatMoney(round2(e.total_deductions))}</td>
+          <td class="right"><b>${formatMoney(round2(e.net_pay))}</b></td>
         </tr>`;
     }).join('');
 }
@@ -232,7 +232,7 @@ function printGlobalPlanilla(entries, period, branches) {
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>${PLANILLA_CSS}</style></head><body>
 <h2>PLANILLA DE PAGO — FARMACIA LA SALUD</h2><h3>${periodLabel(period.start_date,period.end_date).toUpperCase()}</h3>
 <table><thead>${planillaHeaderRow()}</thead><tbody>${planillaTableRows(entries,branches)}</tbody>
-<tfoot><tr class="total"><td colspan="9" class="right">TOTAL A PAGAR:</td><td class="right">$${totalNet.toFixed(2)}</td></tr></tfoot></table>
+<tfoot><tr class="total"><td colspan="9" class="right">TOTAL A PAGAR:</td><td class="right">${formatMoney(totalNet)}</td></tr></tfoot></table>
 <br/><div style="font-size:10px">Total en letras: ${amountInWords(totalNet)}</div>
 </body></html>`;
     openPrintWindow(html, 1100, 700);
@@ -246,7 +246,7 @@ function printBranchPlanilla(branchEntries, branch, period, branches) {
 <h3>${periodLabel(period.start_date,period.end_date).toUpperCase()}</h3>
 <h4>${title.toUpperCase()}</h4>
 <table><thead>${planillaHeaderRow()}</thead><tbody>${planillaTableRows(branchEntries,branches)}</tbody>
-<tfoot><tr class="total"><td colspan="9" class="right">TOTAL ${title.toUpperCase()}:</td><td class="right">$${totalNet.toFixed(2)}</td></tr></tfoot></table>
+<tfoot><tr class="total"><td colspan="9" class="right">TOTAL ${title.toUpperCase()}:</td><td class="right">${formatMoney(totalNet)}</td></tr></tfoot></table>
 <br/><div style="font-size:10px">Total en letras: ${amountInWords(totalNet)}</div>
 </body></html>`;
     openPrintWindow(html, 1100, 700);

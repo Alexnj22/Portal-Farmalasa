@@ -4,16 +4,27 @@
 // cada token hace OR sobre search_name/nit/dui/phone/erp_id.
 import { supabase } from '../supabaseClient';
 
-export function searchCustomersByTokens(tokens) {
-    let req = supabase.from('customers')
-        .select('id, name, nit, dui, phone, erp_id')
-        .order('name')
-        .limit(30);
-    for (const tok of tokens) {
-        const like = `%${tok}%`;
-        req = req.or(`search_name.ilike.${like},nit.ilike.${like},dui.ilike.${like},phone.ilike.${like},erp_id.ilike.${like}`);
-    }
-    return req;
+/**
+ * Buscar clientes con la regla del portal (`busqueda_clientes` en la base:
+ * nombre, NIT, DUI, NRC, teléfonos, correo y código, con respaldo aproximado).
+ * Devuelve `{ data, error, aproximado }` con las filas en orden de relevancia.
+ * docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
+ *
+ * Reemplaza a `searchCustomersByTokens` (un `.or()` de `ilike` por palabra) y a
+ * `searchCustomersByName` de cotizaciones (la frase entera, sin quitar tildes).
+ */
+export async function buscarClientes(texto, { select = 'id, name, nit, dui, phone, erp_id', limite = 30 } = {}) {
+    const q = String(texto ?? '').trim();
+    if (!q) return { data: [], error: null, aproximado: false };
+    const { data: r, error } = await supabase.rpc('buscar_clientes_ids', { p_q: q, p_limite: limite });
+    if (error) return { data: null, error, aproximado: false };
+    const ids = (r?.ids ?? []).map(Number);
+    if (!ids.length) return { data: [], error: null, aproximado: false };
+    const { data, error: e2 } = await supabase.from('customers').select(select).in('id', ids);
+    if (e2) return { data: null, error: e2, aproximado: false };
+    const pos = new Map(ids.map((id, i) => [id, i]));
+    const filas = [...(data ?? [])].sort((a, b) => pos.get(Number(a.id)) - pos.get(Number(b.id)));
+    return { data: filas, error: null, aproximado: !!r?.aproximado };
 }
 
 // ── Módulo de Clientes ───────────────────────────────────────────────────────
@@ -45,7 +56,7 @@ export async function fetchCustomersPage({
         p_offset:       (page - 1) * pageSize,
     });
     if (error) throw error;
-    return { total: data?.total ?? 0, rows: data?.rows ?? [] };
+    return { total: data?.total ?? 0, rows: data?.rows ?? [], aproximado: !!data?.aproximado };
 }
 
 export async function fetchCustomersStats() {

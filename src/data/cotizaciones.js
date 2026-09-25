@@ -4,6 +4,7 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { buscarProductos } from './busquedaProductos';
+import { buscarClientes } from './customers';
 
 // Paginado con fetchAllRows — antes era un while-loop manual con el mismo
 // patrón 1000-en-1000 ya presente en otros archivos de este bloque.
@@ -22,12 +23,10 @@ export function searchProductsActive(term) {
     return buscarProductos(term, { select: 'id, nombre', limite: 20 });
 }
 
+// Con la regla del portal (antes: `ilike` de la frase entera, sin quitar
+// tildes). Devuelve `{ data, error, aproximado }`.
 export function searchCustomersByName(term) {
-    return supabase.from('customers')
-        .select('id, name, nit')
-        .ilike('name', `%${term}%`)
-        .order('name')
-        .limit(60);
+    return buscarClientes(term, { select: 'id, name, nit', limite: 60 });
 }
 
 export function fetchCotizacionesList(scopeBranchId) {

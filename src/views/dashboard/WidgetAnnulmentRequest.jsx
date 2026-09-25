@@ -16,7 +16,7 @@ import SearchInput from '../../components/common/SearchInput';
 import { useStaffStore } from '../../store/staffStore';
 import { HerramientasModal, PieModal } from './LanzadorSolicitud';
 import { useAuth } from '../../context/AuthContext';
-import { normSearch } from '../../utils/searchUtils';
+import { tokenMatch } from '../../utils/searchUtils';
 import { clickable } from '../../utils/clickable';
 import { formatMoney } from '../../utils/formatNumber';
 import { insertApprovalRequestSilent } from '../../data/requests';
@@ -24,7 +24,8 @@ import {
   fetchInvoiceItemsForInvoice, fetchBranchInvoicesRecent,
   searchBranchInvoices, WIDGET_INVOICE_PAGE,
 } from '../../data/facturacion';
-import { searchCustomersByTokens } from '../../data/customers';
+import { buscarClientes } from '../../data/customers';
+import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { salaConCajaAbierta } from '../../data/cortes';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import ListRow from '../../components/common/ListRow';
@@ -799,6 +800,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog }) {
   const [query,       setQuery]       = useState('');
   const [results,     setResults]     = useState([]);
+  const [clientesParecidos, setClientesParecidos] = useState(false);
   const [searching,   setSearching]   = useState(false);
   const [newClient,   setNewClient]   = useState(null);
   const [comment,     setComment]     = useState('');
@@ -818,11 +820,9 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     setSearching(true);
     const t = setTimeout(async () => {
       try {
-        const tokens = q.split(/\s+/).filter(Boolean).slice(0, 5)
-          .map(tok => tok.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[,%()]/g, ''))
-          .filter(Boolean);
-        const { data } = await searchCustomersByTokens(tokens);
+        const { data, aproximado } = await buscarClientes(q);
         setResults(data || []);
+        setClientesParecidos(!!aproximado);
       } catch { setResults([]); }
       setSearching(false);
     }, 300);
@@ -921,6 +921,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           {!newClient && query.trim().length >= 2 && !searching && results.length === 0 && (
             <p className="text-label text-content-3 text-center py-2">Sin coincidencias en el listado de clientes</p>
           )}
+          {!newClient && results.length > 0 && clientesParecidos && <AvisoParecidos texto={query} />}
           {!newClient && results.length > 0 && (
             <div className="space-y-1 max-h-[180px] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {results.map(c => (
@@ -967,6 +968,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
   const [view,        setView]        = useState('list');
   const [prevView,    setPrevView]    = useState('list');
   const [invoices,    setInvoices]    = useState([]);
+  const [facturasParecidas, setFacturasParecidas] = useState(false);
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
   const [dateFilter,  setDateFilter]  = useState('');
@@ -1001,7 +1003,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
   const vendorIndex = useMemo(
     () => (employees || [])
       .filter(e => e.code)
-      .map(e => ({ code: String(e.code), norm: normSearch(e.name || '') })),
+      .map(e => ({ code: String(e.code), name: e.name || '' })),
     [employees],
   );
 
@@ -1057,22 +1059,10 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
     return () => { vivo = false; };
   }, [invoices, employees]);
 
-  const buildTokens = useCallback((q) => (
-    q.split(/\s+/).filter(Boolean).slice(0, 5)
-      .map((bruto) => {
-        // Se saca lo que rompería la sintaxis de `or=` de PostgREST (la coma
-        // separa ramas, los paréntesis agrupan). El guion bajo se CONSERVA:
-        // los correlativos lo llevan ("0000080360_COF").
-        const texto = bruto.normalize('NFD').replace(/[̀-ͯ]/g, '')
-          .replace(/[,()"']/g, '').trim();
-        if (!texto) return null;
-        const norm = normSearch(texto);
-        const codigos = norm
-          ? vendorIndex.filter(v => v.norm.includes(norm)).map(v => v.code).slice(0, 25)
-          : [];
-        return { texto, codigos };
-      })
-      .filter(Boolean)
+  /* Los vendedores cuyo NOMBRE coincide con lo escrito, con la regla del
+     portal: viajan como códigos (la factura guarda el código). */
+  const codigosDeVendedor = useCallback((q) => (
+    vendorIndex.filter(v => tokenMatch(q, v.name)).map(v => v.code).slice(0, 25)
   ), [vendorIndex]);
 
   /* El conteo del ámbito se quitó junto con la leyenda «últimas 150 de 787»:
@@ -1088,16 +1078,17 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
     setLoading(true);
     let cancelado = false;
     const t = setTimeout(async () => {
-      const { data, error } = buscando
-        ? await searchBranchInvoices(activeBranchId, ambito, buildTokens(q))
+      const { data, error, aproximado } = buscando
+        ? await searchBranchInvoices(activeBranchId, ambito, q, codigosDeVendedor(q))
         : await fetchBranchInvoicesRecent(activeBranchId, ambito);
       if (cancelado) return;
       if (error) console.error('WidgetAnnulmentRequest:', error.message);
       setInvoices(data || []);
+      setFacturasParecidas(!!aproximado);
       setLoading(false);
     }, buscando ? 300 : 0);
     return () => { cancelado = true; clearTimeout(t); };
-  }, [activeBranchId, ambito, search, buildTokens, reloadKey]);
+  }, [activeBranchId, ambito, search, codigosDeVendedor, reloadKey]);
 
   /* La caja de ESTA sala. Se vuelve a preguntar al cambiar de sala y en cada
      recarga del widget (`reloadKey`), que es lo que corre después de enviar una
@@ -1217,6 +1208,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
 
         {/* Un tope alcanzado se avisa. Callarlo es lo que hacía el `.limit(500)`:
             una lista recortada se lee como "esto es todo lo que hay". */}
+        {!loading && buscando && facturasParecidas && invoices.length > 0 && <AvisoParecidos texto={search} className="mb-1.5" />}
         {!loading && buscando && enTope && (
           <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/30 text-caption text-warning-text font-semibold">
             <Search size={10} strokeWidth={2.5} className="shrink-0" />

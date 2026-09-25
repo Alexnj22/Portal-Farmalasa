@@ -337,38 +337,30 @@ export function countBranchInvoices(branchId, ambito) {
 }
 
 /**
- * Búsqueda server-side sobre TODO el ámbito.
+ * Búsqueda server-side sobre TODO el ámbito, con la regla del portal
+ * (`buscar_facturas_sala_ids`: cliente, correlativo, total y código de
+ * vendedor, sin tildes de los dos lados). docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
  *
- * `tokens` son `{ texto, codigos }`: cada palabra escrita debe coincidir (AND
- * de tokens — encadenar `.or()` los combina con AND, igual que en
- * `searchCustomersByTokens`), y dentro de cada token se busca en cliente,
- * correlativo y código de vendedor.
+ * Antes era un `.or()` de `ilike` por palabra con el texto sin tildes contra la
+ * columna con tildes: «jose» no encontraba «JOSÉ».
  *
  * `codigos` existe porque `sales_invoices` guarda el CÓDIGO del vendedor, no su
- * nombre: escribir "marta" no puede matchear una columna que dice "150". El
- * nombre se resuelve contra los empleados que el store ya tiene cargados y al
- * servidor viajan códigos. Sin esto se perdería la búsqueda por vendedor, que
- * es de las más usadas del widget.
+ * nombre, y `employees.code` no se lee desde la base con la sesión del usuario.
+ * El nombre se resuelve contra los empleados que el store ya tiene cargados y
+ * al servidor viajan códigos. Devuelve `{ data, error, aproximado }`.
  */
-export function searchBranchInvoices(branchId, ambito, tokens, limit = WIDGET_INVOICE_PAGE) {
-    let q = aplicarAmbito(enSucursal(branchId), ambito);
-
-    for (const { texto, codigos } of tokens) {
-        const like = `%${texto}%`;
-        const ramas = [
-            `cliente.ilike.${like}`,
-            `correlativo.ilike.${like}`,
-            `cod_vendedor.ilike.${like}`,
-        ];
-        // `total` es numeric: ilike no aplica. Si el token es un número se
-        // compara por igualdad, que además es lo que uno quiere al escribir
-        // "8.55" — no algo parecido.
-        if (/^\d+(?:\.\d+)?$/.test(texto)) ramas.push(`total.eq.${texto}`);
-        if (codigos.length) ramas.push(`cod_vendedor.in.(${codigos.join(',')})`);
-        q = q.or(ramas.join(','));
-    }
-
-    return masRecientesPrimero(q, limit);
+export async function searchBranchInvoices(branchId, ambito, texto, codigos = [], limit = WIDGET_INVOICE_PAGE) {
+    const desde = ambito.fecha ?? ambito.from;
+    const hasta = ambito.fecha ?? ambito.to;
+    const { data: r, error } = await supabase.rpc('buscar_facturas_sala_ids', {
+        p_branch_id: Number(branchId), p_desde: desde, p_hasta: hasta,
+        p_q: texto, p_codigos: codigos.length ? codigos : null, p_limite: limit,
+    });
+    if (error) return { data: null, error, aproximado: false };
+    const ids = r?.ids ?? [];
+    if (!ids.length) return { data: [], error: null, aproximado: false };
+    const res = await masRecientesPrimero(enSucursal(branchId).in('id', ids), limit);
+    return { ...res, aproximado: !!r?.aproximado };
 }
 
 export function fetchInvoiceResolutionsHistorial(columns) {

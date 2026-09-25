@@ -12,6 +12,7 @@ import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
 import Badge from '../components/common/Badge';
 import Notice from '../components/common/Notice';
+import AvisoParecidos from '../components/common/AvisoParecidos';
 import LiquidSelect from '../components/common/LiquidSelect';
 import TablePagination from '../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
@@ -189,6 +190,7 @@ export default function ClientesView({ openModal }) {
 
     const [rows, setRows] = useState([]);
     const [total, setTotal] = useState(0);
+    const [sonParecidos, setSonParecidos] = useState(false);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -212,7 +214,7 @@ export default function ClientesView({ openModal }) {
         setLoading(true);
         setError('');
         try {
-            const { total: n, rows: r } = await fetchCustomersPage({
+            const { total: n, rows: r, aproximado } = await fetchCustomersPage({
                 search: searchAplicado,
                 categoria, departamento, municipio, ficha, erp,
                 actividad: soloPorCompletar ? 'con' : null,
@@ -223,6 +225,7 @@ export default function ClientesView({ openModal }) {
             if (mio !== pedidoRef.current) return;
             setRows(r);
             setTotal(n);
+            setSonParecidos(aproximado);
         } catch (e) {
             if (mio !== pedidoRef.current) return;
             console.error('ClientesView.jsx: ', e);
@@ -476,6 +479,7 @@ export default function ClientesView({ openModal }) {
 
 
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+                {!error && sonParecidos && rows.length > 0 && <AvisoParecidos texto={searchAplicado} />}
 
                 <DataTable
                     columns={cols}

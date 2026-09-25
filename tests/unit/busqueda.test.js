@@ -49,10 +49,11 @@ describe('orden por relevancia', () => {
 
     it('los niveles del puntaje', () => {
         expect(puntaje('7501234567890', '7501234567890')).toBe(100);
-        expect(puntaje('sal', 'SAL ANDREWS')).toBe(90);
+        expect(puntaje('sal', 'SAL ANDREWS')).toBe(95);
+        expect(puntaje('sal', 'SALBUTAMOL 4MG')).toBe(85);
         expect(puntaje('and sal', 'SAL ANDREWS')).toBe(80);
         expect(puntaje('asal', 'NASAL ASALI')).toBe(80);
-        expect(puntaje('nasal', 'SPRAY NASAL')).toBe(80);
+        expect(puntaje('nasal', 'SPRAY NASAL')).toBe(90);
         expect(puntaje('pray nas', 'SPRAY NASAL')).toBe(70);
         expect(puntaje('asal', 'SPRAY NASAL')).toBe(60);
         expect(puntaje('xyz', 'SPRAY NASAL')).toBe(0);

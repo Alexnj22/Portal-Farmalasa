@@ -109,10 +109,13 @@ describe('las cotizaciones', () => {
         expect(llamada.args.p_limite).toBe(20);
     });
 
-    it('el de clientes tiene su propio tope, y ordena por nombre', () => {
-        searchCustomersByName('perez');
-        expect(espia.primero('limit')).toEqual([60]);
-        expect(espia.primero('order')).toEqual(['name']);
+    it('el de clientes tiene su propio tope, y ordena por relevancia', async () => {
+        // Desde v2.1070.0, la búsqueda de clientes del portal (`buscar_clientes_ids`):
+        // el orden ya no es alfabético sino el de la búsqueda.
+        await searchCustomersByName('perez');
+        const llamada = espia.rpc.find(r => r.nombre === 'buscar_clientes_ids');
+        expect(llamada.args.p_limite).toBe(60);
+        expect(espia.uso('order')).toBe(false);
     });
 
     it('la lista se acota al alcance de la sala cuando lo hay', async () => {

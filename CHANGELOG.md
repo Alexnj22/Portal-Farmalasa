@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1070.0 — Búsqueda: clientes y facturas de la sala con la regla del portal
+
+Clientes y las facturas del widget de anulación pasan a la regla del portal.
+
+- **Clientes** (`20260925191213`): `customers` gana columnas normalizadas
+  (`nombre_busq`, `nombre_comp`, `ids_busq`, `ids_comp`) con índice de
+  trigramas, y la búsqueda se hace una sola vez en `busqueda_clientes`. La usan
+  /clientes, el widget de anulación y cotizaciones. Antes eran tres reglas:
+  - /clientes usaba un `translate` que no quitaba la puntuación;
+  - anulación usaba un `.or()` de `ilike`;
+  - cotizaciones buscaba la frase entera sin quitar tildes.
+
+  /clientes ordena por parecido: «maria» trae primero a las María. Hay búsqueda
+  aproximada con aviso («mariia» encuentra 197).
+- **El NIT o el teléfono se encuentran escritos seguidos**
+  (`20260925190541`): «06141503851023» encuentra «0614-150385-102-3». Igual en
+  los dos gemelos, con 5 casos nuevos.
+- **Palabra entera pesa más que comienzo de palabra** (`20260925191409`, y lo
+  mismo en JS). «s.a.» traía 2,113 fichas y las S.A. DE C.V. quedaban debajo
+  de SABINA. Los niveles quedan así: 100 exacto, 95 el nombre empieza con lo
+  escrito en palabras enteras, 90 todas las palabras enteras, 85 el nombre
+  empieza a mitad de palabra, 80, 70, 60.
+- **Facturas del widget de anulación** (`20260925191726`,
+  `20260925191803`): `buscar_facturas_sala_ids`, INVOKER, sobre cliente,
+  correlativo, total y vendedor. «jose» no encontraba «JOSÉ» porque el
+  navegador quitaba las tildes del texto y la columna las tiene (1,089 de
+  61,781 facturas de 90 días). El vendedor se sigue resolviendo a códigos en el
+  navegador, porque `employees.code` no se lee con la sesión del usuario (de él
+  sale el PIN del kiosco).
+- Medido como QA: clientes tarda entre 36 y 352 ms y facturas de la sala entre
+  80 y 190 ms.
+
 ## v2.1069.0 — Búsqueda: Ventas con la regla del portal
 
 Ventas pasa a la regla del portal (`20260925185838`).

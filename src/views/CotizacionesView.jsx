@@ -339,6 +339,7 @@ export default function CotizacionesView() {
     const [productResults,   setProductResults]   = useState([]);
     const [productSearching, setProductSearching] = useState(false);
     const [productosParecidos, setProductosParecidos] = useState(false);
+    const [clientesParecidos, setClientesParecidos] = useState(false);
 
     // Búsqueda de clientes (server-side — 22 k+ registros)
     const [customerResults,   setCustomerResults]   = useState([]);
@@ -440,8 +441,9 @@ export default function CotizacionesView() {
     const searchCustomers = useCallback(async (term) => {
         if (!term || !term.trim()) { setCustomerResults([]); return; }
         setCustomerSearching(true);
-        const { data, error } = await searchCustomersByName(term.trim());
+        const { data, error, aproximado } = await searchCustomersByName(term.trim());
         if (error) console.error('searchCustomers failed:', error.message);
+        setClientesParecidos(!!aproximado);
         setCustomerResults(data || []);
         setCustomerSearching(false);
     }, []);
@@ -755,6 +757,7 @@ export default function CotizacionesView() {
                                 onChange={handleCustomerChange}
                                 onSearchChange={searchCustomers}
                                 serverSearch
+                                parecidos={clientesParecidos}
                                 isLoading={customerSearching}
                                 options={customerOptions} placeholder="Consumidor Final" icon={User} compact />
                         </div>

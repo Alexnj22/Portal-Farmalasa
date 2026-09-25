@@ -141,20 +141,26 @@ function prepararCampos(campos) {
 }
 
 /** ¿La palabra `p` de la consulta coincide? Devuelve 0 (no), 1 (dentro de una
- *  palabra) o 2 (al inicio de una palabra) — el 2 sube el puntaje. */
+ *  palabra), 2 (al inicio de una palabra) o 3 (la palabra entera). */
 function coincidePalabra({ t, tipo, junto }, h) {
     if (tipo === 'numero') {
-        if (h.palabras.includes(t)) return 2;
+        if (h.palabras.includes(t)) return 3;
         // Un entero encuentra un monto con decimales: «138» → «138.97».
         if (!t.includes('.') && h.palabras.some(w => w.startsWith(t + '.'))) return 1;
-        if (t.length >= MIN_DIGITOS_DENTRO && !t.includes('.') && h.palabras.some(w => w.length >= LARGO_IDENTIFICADOR && SOLO_DIGITOS.test(w) && w.includes(t))) return 1;
+        // Un identificador se busca también SIN su puntuación: un NIT o un
+        // teléfono se guardan con guiones («0614-150385-102-3») y se escriben
+        // seguidos («06141503851023»). La forma de rescate los junta.
+        const esIdentificador = (w) => w.length >= LARGO_IDENTIFICADOR && SOLO_DIGITOS.test(w) && w.includes(t);
+        if (t.length >= MIN_DIGITOS_DENTRO && !t.includes('.')
+            && (h.palabras.some(esIdentificador) || h.compactas.some(esIdentificador))) return 1;
         return 0;
     }
     if (tipo === 'mixto') {
-        if (h.conBordes.includes(` ${t} `)) return 2;
+        if (h.conBordes.includes(` ${t} `)) return 3;
         if (h.compactas.some(w => w.startsWith(junto))) return 1;
         return 0;
     }
+    if (h.palabras.includes(t)) return 3;
     if (h.palabras.some(w => w.startsWith(t))) return 2;
     if (tipo === 'corta') return 0;
     if (h.palabras.some(w => w.includes(t))) return 1;
@@ -176,7 +182,9 @@ export function coincide(consulta, ...campos) {
 /**
  * Puntaje de relevancia, 0 si no coincide:
  *   100  un campo ES lo escrito (un código de barras exacto, un nombre entero)
- *    90  el PRIMER campo (el nombre) empieza con lo escrito
+ *    95  el PRIMER campo (el nombre) empieza con lo escrito, en palabras enteras
+ *    90  todas las palabras son palabras ENTERAS del texto
+ *    85  el nombre empieza con lo escrito a mitad de palabra (SALBUTAMOL ← «sal»)
  *    80  todas las palabras coinciden al inicio de una palabra
  *    70  lo escrito aparece seguido y en el mismo orden
  *    60  todas coinciden, en cualquier parte
@@ -189,15 +197,19 @@ export function puntaje(consulta, ...campos) {
     if (niveles.some(n => n === 0)) return 0;
     const q = ps.map(p => p.t).join(' ');
     if (h.textos.some(t => t === q)) return 100;
-    // Si lo escrito termina en número, el campo tiene que empezar con ese
-    // número COMPLETO: «500» no es el comienzo de un código `5001234…`.
-    const terminaEnNumero = /\d$/.test(q);
     // «Empieza con» cuenta sólo en el PRIMER campo, el que nombra la cosa. Si
     // valiera en cualquiera, un producto cuyo LABORATORIO empieza con «sal»
     // empataba con SAL ANDREWS y ganaba por abecedario (medido en Mín·Máx).
     const principal = normalizar(campos[0] ?? '');
-    if (principal.startsWith(terminaEnNumero ? q + ' ' : q)) return 90;
-    if (niveles.every(n => n === 2)) return 80;
+    if (principal === q || principal.startsWith(q + ' ')) return 95;
+    // Palabra ENTERA pesa más que comienzo de palabra: «s.a.» (= «sa») trae a
+    // las «S.A. DE C.V.» antes que a SABINA. Medido en clientes: la misma
+    // búsqueda traía 2,113 fichas y las 9 que se buscaban no iban arriba.
+    if (niveles.every(n => n === 3)) return 90;
+    // Lo escrito termina a mitad de palabra: SALBUTAMOL para «sal». Si termina
+    // en número, el número tiene que estar completo (el 95 ya lo cubrió).
+    if (!/\d$/.test(q) && principal.startsWith(q)) return 85;
+    if (niveles.every(n => n >= 2)) return 80;
     // Con una sola palabra «seguido y en orden» es lo mismo que «contenida».
     if (ps.length > 1 && h.texto.includes(q)) return 70;
     return 60;

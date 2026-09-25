@@ -297,6 +297,33 @@
       "consulta": "13",
       "texto": "$138.97",
       "esperado": false
+    },
+    {
+      "consulta": "06141503851023",
+      "texto": "0614-150385-102-3",
+      "esperado": true,
+      "por": "un NIT escrito seguido encuentra el guardado con guiones"
+    },
+    {
+      "consulta": "70123456",
+      "texto": "7012-3456",
+      "esperado": true,
+      "por": "teléfono"
+    },
+    {
+      "consulta": "0614-150385",
+      "texto": "0614-150385-102-3",
+      "esperado": true
+    },
+    {
+      "consulta": "150385",
+      "texto": "0614-150385-102-3",
+      "esperado": true
+    },
+    {
+      "consulta": "12.50",
+      "texto": "$12.50",
+      "esperado": true
     }
   ],
   "orden": [
@@ -405,7 +432,7 @@
         "SAL ANDREWS SOBRE",
         "ANDREWS"
       ],
-      "esperado": 90
+      "esperado": 95
     },
     {
       "consulta": "sal",
@@ -430,14 +457,15 @@
       "campos": [
         "LOSARTAN 100 MG X 30 TAB MK"
       ],
-      "esperado": 90
+      "esperado": 95
     },
     {
       "consulta": "100 losartan",
       "campos": [
         "LOSARTAN 100 MG X 30 TAB MK"
       ],
-      "esperado": 80
+      "esperado": 90,
+      "por": "las dos son palabras enteras"
     },
     {
       "consulta": "tan 100",
@@ -452,6 +480,22 @@
         "LOSARTAN 100 MG X 30 TAB MK"
       ],
       "esperado": 60
+    },
+    {
+      "consulta": "s.a.",
+      "campos": [
+        "A Y P DE EL SALVADOR , S.A. DE C.V."
+      ],
+      "esperado": 90,
+      "por": "«sa» es una palabra entera"
+    },
+    {
+      "consulta": "s.a.",
+      "campos": [
+        "SABINA ESTER BORJA MARTINEZ"
+      ],
+      "esperado": 85,
+      "por": "«sa» es sólo el comienzo de SABINA"
     }
   ]
 }

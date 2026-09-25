@@ -337,6 +337,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     // restringe a quien decide sobre todas las salas, y acá se oculta la opción
     // en vez de dejar que la elija y le rebote.
     const puedeYaNoRota = getScope('minmax') === 'ALL';
+    // Los parámetros del cálculo y los laboratorios ocultos no son de ninguna
+    // sala: cambiarlos mueve el MIN·MAX de las siete. La base los exige con
+    // alcance total (`stock_config_update`, `laboratorios_update`); acá el botón
+    // se apaga para que no se abra un panel cuyo «Guardar» no escribiría nada.
+    const puedeGlobal = canManage && getScope('minmax') === 'ALL';
 
     const {
         selectedErp, setSelectedErp,
@@ -540,12 +545,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         }] : []),
         {
             key: 'config', icon: Settings2, label: 'Configurar parámetros', rotulo: 'Ajustes', soloIcono: true,
-            disabled: !canManage, activo: configOpen,
+            disabled: !puedeGlobal, activo: configOpen,
             onClick: () => setConfigOpen(o => !o),
         },
         {
             key: 'labs', icon: FlaskConical, label: 'Laboratorios ocultos', rotulo: 'Ocultos', soloIcono: true,
-            disabled: !canManage, activo: labsOpen,
+            disabled: !puedeGlobal, activo: labsOpen,
             onClick: () => setLabsOpen(o => !o),
         },
     ];

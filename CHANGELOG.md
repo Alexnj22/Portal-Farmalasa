@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.13 — Los parámetros de Mín·Máx y los laboratorios ocultos exigen alcance sobre todas las salas
+
+Sigue a v2.1061.10, que acotó a Compras a Bodega. El alcance de sala cubría las
+filas de cada sala, pero no lo que es de todas:
+
+- **Parámetros del cálculo (⚙) y laboratorios ocultos:** cambian el Mín·Máx de
+  las siete salas. Ahora exigen Mín·Máx con alcance total, en la base
+  (`stock_config_update`, `laboratorios_update`) y en la pantalla, donde los dos
+  botones se apagan.
+- **Publicar, descartar borradores, retirar un producto de todas las salas y
+  «ya no rota»** aceptaban Pedidos con alcance total como si fuera Mín·Máx.
+  Ya no cuenta.
+- **Calcular** no miraba el alcance: se podía recalcular el borrador de otra
+  sala. Ahora frena igual que publicar.
+
+Verificado con las dos sesiones: Compras recibe 0 filas en parámetros y
+laboratorios y un rechazo al publicar o calcular otra sala, y publica Bodega. El
+Supervisor sigue pudiendo cambiar los parámetros.
+
 ## v2.1061.12 — Núcleo portable F1: tanda B, lo propio de la web se muda a su capa
 
 Sin cambios visibles. Plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.

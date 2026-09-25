@@ -5,7 +5,7 @@
 // hora, durante años. Si algún día no coincide, es que el país cambió de
 // horario y hay que cambiar el canónico — que es justo lo que esta prueba avisa.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { hoySV, diaSV, ahoraSV, horaSV, relojSV, sumarDias, diasEntre, lunesDe, diaDe, fechaTexto, fechaNumerica } from '../../src/utils/fecha';
+import { hoySV, diaSV, ahoraSV, horaSV, relojSV, sumarDias, diasEntre, lunesDe, diaDe, fechaTexto, fechaNumerica, correrMes, rangoDelMes, ultimoDiaDelMes, etiquetaMes, mesSV, diasDesde, diasHasta } from '../../src/utils/fecha';
 
 const porZona = (instante) => {
     const partes = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
@@ -102,5 +102,30 @@ describe('mostrar una fecha', () => {
         expect(fechaNumerica(undefined, { vacio: null })).toBe(null);
         expect(fechaNumerica('no es fecha', { vacio: '—' })).toBe('—');
         expect(diaDe('2026-13-45T99')).toBe(null);
+    });
+});
+
+describe('meses', () => {
+    it('correrMes cruza el año en los dos sentidos', () => {
+        expect(correrMes('2026-01', -1)).toBe('2025-12');
+        expect(correrMes('2026-12', 1)).toBe('2027-01');
+        expect(correrMes('2026-09-25', -13)).toBe('2025-08');
+    });
+    it('rangoDelMes conoce los bisiestos', () => {
+        expect(rangoDelMes('2024-02')).toEqual(['2024-02-01', '2024-02-29']);
+        expect(rangoDelMes('2025-02')).toEqual(['2025-02-01', '2025-02-28']);
+        expect(ultimoDiaDelMes('2026-09-25')).toBe('2026-09-30');
+    });
+    it('etiquetaMes y el mes de la sala', () => {
+        expect(etiquetaMes('2026-09')).toBe('Septiembre 2026');
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-10-01T05:30:00Z'));   // 23:30 del 30-sep en la sala
+        expect(mesSV()).toBe('2026-09');
+    });
+    it('días desde y hasta hoy en la sala', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-09-26T04:00:00Z'));   // 22:00 del 25
+        expect(diasDesde('2026-09-20')).toBe(5);
+        expect(diasHasta('2026-10-01')).toBe(6);
     });
 });

@@ -51,7 +51,7 @@ import { useToastStore } from '../store/toastStore';
 // igual — `audit_logs` quedó con acciones que nunca ocurrieron). La policy ya
 // existe; esto es la otra mitad: que un fallo se VEA.
 import { mensajeAmigable } from '../utils/errorMessages';
-import { relojSV } from '../utils/fecha';
+import { diasEntre, hoySV, relojSV } from '../utils/fecha';
 function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
     useToastStore.getState().showToast(
@@ -238,9 +238,9 @@ const TIPO_PAGO_THEME = {
 // Va a nivel de módulo porque lo usan dos pestañas y además entra en un
 // `useMemo`: como función local se recrearía en cada render.
 function diasDesde(fechaStr) {
-    const today = relojSV();
-    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    return Math.round((todayMidnight - new Date(`${fechaStr}T00:00:00`)) / 86400000);
+    // Antes restaba las 6 horas y después leía la hora LOCAL, que las restaba
+    // otra vez: entre la medianoche y las 6 am contaba un día de menos.
+    return diasEntre(fechaStr, hoySV());
 }
 
 function monthOptions() {
@@ -314,8 +314,6 @@ function useSortable(defaultKey, defaultDir = 'asc') {
     }, [sortKey, sortDir]);
     return { sortKey, sortDir, toggle, sortFn };
 }
-
-
 
 // Acá vivía un `Pagination` escrito a mano. No era solo divergencia estética:
 // pintaba TODOS los números con `variant="primary"` sin compararlos nunca contra
@@ -2058,8 +2056,6 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
     const { sortKey: pSortKey, sortDir: pSortDir, toggle: pToggle, sortFn: pSortFn } = useSortable('fecha', 'desc');
     const [pendingSize, setPendingSize] = useState(25);
     const [confirmedSize, setConfirmedSize] = useState(25);
-
-
 
     const loadData = useCallback(async () => {
         setLoading(true);

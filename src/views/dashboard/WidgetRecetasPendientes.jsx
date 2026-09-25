@@ -8,8 +8,8 @@ import Notice from '../../components/common/Notice';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { correrDia, faltantesDelRenglon, fetchLibro } from '../../data/bitacoras';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { faltantesDelRenglon, fetchLibro } from '../../data/bitacoras';
+import { diasEntre, fechaTexto, hoySV, sumarDias } from '../../utils/fecha';
 
 /* El formulario se baja al apretar «Completar», no al entrar al Inicio: arrastra
  * el canónico de archivo, el desplegable y el buscador de médico, y la baldosa
@@ -54,8 +54,7 @@ const fmtFecha = (f) => (f
     ? fechaTexto(f, { day: '2-digit', month: 'short' })
     : '—');
 
-const diasDesde = (f) => Math.max(0, Math.round(
-    (Date.parse(`${hoySV()}T12:00:00Z`) - Date.parse(`${f}T12:00:00Z`)) / 86_400_000));
+const diasDesde = (f) => Math.max(0, diasEntre(f, hoySV()));
 
 export default function WidgetRecetasPendientes() {
     const { user, hasPermission } = useAuth();
@@ -77,7 +76,7 @@ export default function WidgetRecetasPendientes() {
         if (!miSala || !dispensa) { setCargando(false); return; }
         const hoy = hoySV();
         const { renglones } = await fetchLibro(miSala, {
-            desde: correrDia(hoy, -DIAS_ATRAS), hasta: hoy, estado: 'pendiente',
+            desde: sumarDias(hoy, -DIAS_ATRAS), hasta: hoy, estado: 'pendiente',
         });
         // Los más viejos primero: son los que se están por olvidar.
         setFilas([...renglones].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))));

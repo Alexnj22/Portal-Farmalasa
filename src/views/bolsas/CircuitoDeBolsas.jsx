@@ -35,7 +35,7 @@ import { useToastStore } from '../../store/toastStore';
 import { saldoDeBolsa } from '../../utils/bolsasReparto';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { hora12, fechaHora12 } from '../../utils/hora';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { diasEntre, fechaTexto, hoySV } from '../../utils/fecha';
 
 /* El detalle se baja al ABRIR una bolsa, no al entrar a la pestaña: arrastra el
  * motor de impresion y el visor de archivos firmados, y la lista se ve entera
@@ -147,9 +147,7 @@ const selloDeTiempo = (iso) => (iso ? fechaHora12(iso, { day: '2-digit', month: 
 // `shortEmployeeName`, el mismo respaldo del resto del portal.
 const fechaLarga = (f) => (f ? fechaTexto(f, {
     day: 'numeric', month: 'long' }) : '');
-const diasDesde = (f) => Math.max(0, Math.round(
-    (Date.parse(`${hoySV()}T12:00:00Z`) - Date.parse(`${f}T12:00:00Z`)) / 86_400_000,
-));
+const diasDesde = (f) => Math.max(0, diasEntre(f, hoySV()));
 
 const DIAS_DE_ALARMA = 4;
 

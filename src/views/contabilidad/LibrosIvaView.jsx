@@ -31,7 +31,7 @@ import { getSignedFileUrl } from '../../utils/storageFiles';
 
 import { registrarEgreso } from '../../data/egreso';
 import { descargarArchivo } from '../../plataforma/descargas';
-import { relojSV } from '../../utils/fecha';
+import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '../../utils/fecha';
 // ─────────────────────────────────────────────────────────────────────────────
 // Los siete libros y anexos de IVA del ERP, generados desde el portal:
 // ventas desde `sales_invoices`, compras desde `purchase_receipts`.
@@ -99,38 +99,9 @@ const TABS = [
     { key: 'notas',         label: 'N. crédito'     },
 ];
 
-// Hora SV: se corre el instante 6h y se leen las partes en **UTC**. Leerlas en
-// local sobre el instante ya corrido las desplaza DOS veces en una máquina que
-// ya está en SV (UTC−6) — así, el 1 de mes antes de las 06:00 esto devolvía el
-// mes ANTERIOR, o sea que el libro abría en el período equivocado justo el día
-// en que se cierra el anterior. Detectado al replicar este filtro en Facturas
-// de Compra (2026-08-01).
-const mesActual = () => {
-    const sv = relojSV();
-    return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
-};
-
-// Del 'YYYY-MM' al par de fechas que piden los RPC. `new Date(y, m, 0)` es el
-// último día del mes anterior a `m`, o sea el último del mes que se pide.
-const rangoDelMes = (mes) => {
-    const [y, m] = mes.split('-').map(Number);
-    const fin = new Date(y, m, 0).getDate();
-    return [`${mes}-01`, `${mes}-${String(fin).padStart(2, '0')}`];
-};
-
-const correrMes = (mes, delta) => {
-    const [y, m] = mes.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-};
-
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-const etiquetaMes = (mes) => {
-    const [y, m] = mes.split('-').map(Number);
-    return `${MESES[m - 1]} ${y}`;
-};
-
+// El mes —el de hoy, su rango, correrlo y su nombre— sale de `utils/fecha`.
+// La copia que vivía acá leía la hora dos veces corrida y, el día 1 antes de
+// las 6 am, abría el libro del mes ANTERIOR (corregido el 2026-08-01).
 
 // ── Formato de los archivos que se replican ──────────────────────────────────
 //
@@ -853,7 +824,7 @@ export default function LibrosIvaView({ openModal }) {
         : (allowedTabs[0]?.key ?? 'consumidor');
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
-    const [mes, setMes] = useState(mesActual);
+    const [mes, setMes] = useState(mesSV);
     const [filterBranch, setFilterBranch] = useState(
         getScope('libros_iva') !== 'ALL' ? String(user?.branchId || '') : ''
     );
@@ -1151,8 +1122,8 @@ export default function LibrosIvaView({ openModal }) {
 
     const barraFiltros = (
         <FilterBar
-            onClear={() => { setFilterBranch(''); setMes(mesActual()); }}
-            activeCount={[filterBranch, mes !== mesActual()].filter(Boolean).length}
+            onClear={() => { setFilterBranch(''); setMes(mesSV()); }}
+            activeCount={[filterBranch, mes !== mesSV()].filter(Boolean).length}
             acciones={!canDownload ? [] : [{
                 key: 'exportar',
                 icon: Download,
@@ -1187,15 +1158,15 @@ export default function LibrosIvaView({ openModal }) {
                         onChange={val => setFilterBranch(val || '')} options={branchOptions} />
                 </FilterBar.Section>
             )}
-            <FilterBar.Section active={mes !== mesActual()} onClear={() => setMes(mesActual())} label="período">
+            <FilterBar.Section active={mes !== mesSV()} onClear={() => setMes(mesSV())} label="período">
                 <PeriodStepper
                     unit="mes"
                     label={etiquetaMes(mes)}
                     onPrev={() => setMes(m => correrMes(m, -1))}
                     onNext={() => setMes(m => correrMes(m, 1))}
-                    nextDisabled={mes >= mesActual()}
-                    onReset={() => setMes(mesActual())}
-                    isCurrent={mes === mesActual()}
+                    nextDisabled={mes >= mesSV()}
+                    onReset={() => setMes(mesSV())}
+                    isCurrent={mes === mesSV()}
                     resetLabel="Ir al mes actual"
                 />
             </FilterBar.Section>

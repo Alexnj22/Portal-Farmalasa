@@ -1,5 +1,6 @@
 import { formatMoney } from './formatNumber';
 import { EMPRESA } from '../constants/empresa';
+import { NOMBRES_DE_MES } from './fecha';
 
 // PDF del Corte Z — uno o todas las sucursales en un solo archivo.
 //
@@ -43,11 +44,9 @@ function getPdfMake() {
 // pantalla es exactamente la diferencia que nadie encuentra.
 const dinero = (n) => formatMoney(Number(n) || 0);
 
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 export const etiquetaPeriodo = (periodo) => {
     const [y, m] = String(periodo).slice(0, 7).split('-').map(Number);
-    return `${MESES[m - 1]} ${y}`;
+    return `${NOMBRES_DE_MES[m - 1]} ${y}`;
 };
 
 // Una sección del ticket → filas de la tabla. Se emiten las cinco líneas aunque

@@ -1,5 +1,5 @@
 import { formatMoney, formatQty } from '../../utils/formatNumber';
-import { hoySV } from '../../utils/fecha';
+import { correrMes, hoySV, mesSV } from '../../utils/fecha';
 
 /**
  * Promociones — lo que comparten las pestañas.
@@ -140,9 +140,7 @@ export function mesesRecientes(cuantos = 13) {
  * cambia de orden, que es exactamente lo que pasó.
  */
 export function mesAnterior() {
-    const [y, m] = hoySV().split('-').map(Number);
-    const d = new Date(y, m - 2, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return correrMes(mesSV(), -1);
 }
 
 /** El resumen de una promoción de laboratorio para la tarjeta. */

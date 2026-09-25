@@ -20,6 +20,7 @@ import Button from './Button';
 import PortalInput from './PortalInput';
 import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES, ETAPAS_DE_PEDIDO } from '../../utils/avisosDeOperacion';
 import { porQueDesde } from '../../utils/productosParados';
+import { diasEntre, hoySV } from '../../utils/fecha';
 
 /* Tres tarjetas de la campana para avisos de la operación del día: el corte de
  * caja, la bitácora por cerrarse y los traslados despachados por respaldo.
@@ -1515,12 +1516,8 @@ export function InsigniaDePromo({ datos, isDark }) {
 /* Cuántos días le quedan a una fecha «AAAA-MM-DD», contados en fechas del
  * calendario y no en horas: hoy es 0. */
 const diasHasta = (iso) => {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ''));
-    if (!m) return null;
-    const hoy = new Date();
-    const a = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-    const b = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    return Math.round((b - a) / 86400000);
+    const m = /^(\d{4}-\d{2}-\d{2})/.exec(String(iso ?? ''));
+    return m ? diasEntre(hoySV(), m[1]) : null;
 };
 
 const nombreDelMes = (ym) => {

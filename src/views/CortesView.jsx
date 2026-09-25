@@ -69,7 +69,7 @@ import {
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { formatMoney } from '../utils/formatNumber';
 import { tokenMatch } from '../utils/searchUtils';
-import { fechaTexto, hoySV } from '../utils/fecha';
+import { fechaTexto, hoySV, sumarDias } from '../utils/fecha';
 
 // ── Bolsas de efectivo salió de acá el 2026-08-24 ───────────────────────────
 //
@@ -135,20 +135,10 @@ const PESTANAS = [
 
 const VACIO = [];
 
-// Hora de El Salvador (UTC−6, sin horario de verano). Se calcula así y no con
-// la fecha local del equipo porque la fecha del corte es la de la sala: un
-// navegador en otro huso mostraría el día equivocado sin avisar.
-
-const correrDia = (fecha, dias) => {
-    const d = new Date(`${fecha}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + dias);
-    return d.toISOString().slice(0, 10);
-};
-
 const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
-    if (fecha === correrDia(hoy, -1)) return 'Ayer';
+    if (fecha === sumarDias(hoy, -1)) return 'Ayer';
     return fechaTexto(fecha, {
         weekday: 'long', day: 'numeric', month: 'long' });
 };
@@ -1097,7 +1087,7 @@ const CortesView = () => {
                             title={periodoIntacto ? 'Sin cortes hoy' : 'Sin cortes en estas fechas'}
                             subtitle="La vista arranca en el día de hoy. Amplía las fechas para ver más atrás."
                             action={<Button variant="secondary" icon={CalendarDays}
-                                onClick={() => verPeriodo(`${correrDia(hoySV(), -6)}|${hoySV()}`)}>
+                                onClick={() => verPeriodo(`${sumarDias(hoySV(), -6)}|${hoySV()}`)}>
                                 Ver los últimos 7 días
                             </Button>}
                         />

@@ -21,7 +21,7 @@ import { signStorageUrls } from '../../utils/storageFiles';
 import { formatMoney } from '../../utils/formatNumber';
 import { claveDeDia } from '../../utils/scheduleHelpers';
 import { emitir } from '../../plataforma/eventos';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV, lunesDe } from '../../utils/fecha';
 
 // ============================================================================
 // 📋 SOLICITUDES — Employee-initiated requests requiring admin approval
@@ -681,13 +681,6 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
 
 // ── Helpers de Incapacidad ──────────────────────────────────────────────────
 
-/** Devuelve la fecha de inicio de semana (lunes) en formato YYYY-MM-DD para una fecha dada */
-const getMondayISO = (dateStr) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
-    d.setDate(d.getDate() + diff);
-    return d.toISOString().split('T')[0];
-};
 
 /**
  * Marca cada día de [startDate, endDate] como LIBRE/Incapacidad en employee_rosters.
@@ -701,7 +694,7 @@ const markDisabilityDaysInRoster = async (employeeId, startDate, endDate) => {
         // Agrupar días por semana → { weekStart: [dayId, ...] }
         const weekMap = {};
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            const weekKey = getMondayISO(d.toISOString().split('T')[0]);
+            const weekKey = lunesDe(d.toISOString().split('T')[0]);
             // Domingo = "0", que es la clave que existe en la tabla. Decía 7, y
             // como esa clave no la lee nadie, una incapacidad que caía domingo
             // dejaba ese día con su turno intacto: la persona seguía figurando
@@ -731,7 +724,7 @@ const markVacationDaysInRoster = async (employeeId, startDate, endDate) => {
         const end   = new Date(endDate   + 'T00:00:00');
         const weekMap = {};
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            const weekKey  = getMondayISO(d.toISOString().split('T')[0]);
+            const weekKey  = lunesDe(d.toISOString().split('T')[0]);
             const dayId    = claveDeDia(d); // domingo = "0" (ver `claveDeDia`)
             if (!weekMap[weekKey]) weekMap[weekKey] = [];
             weekMap[weekKey].push(dayId);
@@ -774,7 +767,7 @@ const checkAndAlertCoverage = async (employeeId, branchId, startDate, endDate, a
         // Semanas afectadas
         const weekStarts = new Set();
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            weekStarts.add(getMondayISO(d.toISOString().split('T')[0]));
+            weekStarts.add(lunesDe(d.toISOString().split('T')[0]));
         }
 
         let minCoverage = branchEmpIds.length;

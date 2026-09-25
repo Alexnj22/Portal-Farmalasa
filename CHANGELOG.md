@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1074.3 — U1: el calendario — meses, días y semanas salen de utils/fecha
+
+Arregla un conteo de días que daba **uno de menos entre la medianoche y las 6
+am**, y deja las cuentas de calendario en un solo sitio.
+
+- **El defecto** (Facturación, «días desde»): restaba las 6 horas de El
+  Salvador y después leía la hora LOCAL, que las restaba otra vez. Medido
+  contra el canónico: distinto en el **25% de las horas del día** —justo de
+  00:00 a 06:00— y siempre por un día de menos.
+- **Al canónico** (`utils/fecha.js`): `mesSV`, `correrMes`, `rangoDelMes`,
+  `ultimoDiaDelMes`, `etiquetaMes`, `NOMBRES_DE_MES`, `diasDesde`,
+  `diasHasta`. Salen las copias de:
+  - las cinco vistas de libros y compras (Libros IVA, Corte Z, Resumen
+    fiscal, Libro de compras completo, Facturas de compra), que repetían las
+    mismas cuatro funciones de mes;
+  - `correrDia` ×4, «días desde» ×3, «días hasta» ×5, `getMondayISO` ×2, el
+    mes anterior de promociones y el nombre del mes de bitácoras;
+  - seis listas de nombres de mes escritas a mano.
+- **Comparado viejo contra nuevo** en hora de El Salvador: **198,360 de
+  210,550 iguales**; toda la diferencia es la de Facturación de arriba. La
+  página pública de puntos ahora cuenta los días con el hoy de la sala y no
+  con el del teléfono del cliente.
+- **`gate:hora` suma `calendario-a-mano`**: una función propia de mes o de
+  semana, o una lista propia de nombres de mes, falla.
+- Verificado: 2,904 pruebas, lint sin errores nuevos, la compilación, y 19
+  vistas recorridas contra la base de pruebas; los cinco libros abren en el
+  mes de hoy.
+
 ## v2.1074.2 — Búsqueda medida como usuario: Ventas y personas sin barrer tablas
 
 Se midieron las 48 búsquedas del servidor como las usa la gente —con permisos de usuario, de alcance total y de sala— y con cuatro clases de término: uno que existe, uno mal escrito, un número y uno que no existe en ningún lado. Dos no estaban bien:

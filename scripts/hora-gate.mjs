@@ -40,6 +40,11 @@
  *   zona-a-mano    `timeZone: 'America/El_Salvador'` o `'en-CA'` para sacar
  *                  el día — usar `hoySV()`/`diaSV()`
  *   copia-de-hoy   una función propia `hoySV`/`hoyISO`/`svToday`/`svNow`
+ *   calendario-a-mano  una función propia de mes o de semana (`correrMes`,
+ *                  `rangoDelMes`, `etiquetaMes`, `correrDia`…) o una lista
+ *                  propia de nombres de mes — estaban copiadas en cinco
+ *                  vistas; la de Facturación contaba un día de menos antes de
+ *                  las 6 am
  *   (sólo en `src/`: las funciones del servidor tienen su propia copia y
  *   todavía no un canónico compartido)
  *
@@ -158,6 +163,8 @@ function reglas(texto, ruta) {
             if (/\b6\s*\*\s*(3600_?000|60\s*\*\s*60\s*\*\s*1000|3600\b)/.test(codigo)) add(i, 'desfase-a-mano', 'desfase de El Salvador escrito a mano — usar diaSV()/relojSV() de utils/fecha');
             if (/America\/El_Salvador|['"]en-CA['"]/.test(codigo)) add(i, 'zona-a-mano', 'día de la sala sacado con la zona a mano — usar hoySV()/diaSV()');
             if (/(const|let|function)\s+(hoySV|hoyISO|svToday|svNow|todaySV)\b/.test(codigo)) add(i, 'copia-de-hoy', 'copia propia de «hoy» — importar de utils/fecha');
+            if (/^\s*(export\s+)?(const|let|function)\s+(mesActual|rangoDelMes|correrMes|etiquetaMes|correrDia|getMondayISO|ultimoDiaDelMes|daysBetween)\b/.test(codigo)
+                || /const\s+(MESES|MONTHS)\s*=\s*\[\s*['"]Enero/.test(codigo)) add(i, 'calendario-a-mano', 'cuenta de calendario propia — importar de utils/fecha');
         }
         if (/getHours\(\)/.test(codigo) && /padStart\(2/.test(codigo) && /:\$\{|\+ ?':' ?\+/.test(codigo)) add(i, 'hhmm-crudo', 'HH:MM armado a mano');
     });

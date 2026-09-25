@@ -13,7 +13,7 @@ import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { saldoDeBolsa } from '../../utils/bolsasReparto';
 import { hora12 } from '../../utils/hora';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { diasEntre, fechaTexto, hoySV, sumarDias } from '../../utils/fecha';
 
 /* El formulario se baja al apretar su botón, no al entrar al Inicio: arrastra el
  * canónico de archivo y el selector de personas, y la baldosa se ve entera sin
@@ -61,19 +61,12 @@ const REFRESCO_MS = 60 * 1000;
 const POR_EMBOLSAR_DIAS = 2;
 const DIAS_DE_ALARMA = 4;
 
-const correrDia = (fecha, dias) => {
-    const d = new Date(`${fecha}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + dias);
-    return d.toISOString().slice(0, 10);
-};
-const diasDesde = (fecha) => Math.max(0, Math.round(
-    (Date.parse(`${hoySV()}T12:00:00Z`) - Date.parse(`${fecha}T12:00:00Z`)) / 86_400_000,
-));
+const diasDesde = (fecha) => Math.max(0, diasEntre(fecha, hoySV()));
 
 const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
-    if (fecha === correrDia(hoy, -1)) return 'Ayer';
+    if (fecha === sumarDias(hoy, -1)) return 'Ayer';
     return fechaTexto(fecha, {
         day: 'numeric', month: 'short' });
 };
@@ -119,7 +112,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
             // Sin filtro de fecha: una bolsa abierta lo sigue estando hasta que
             // se entrega, y justamente las viejas son las que hay que ver.
             fetchBolsas({ estados: ['ABIERTA'] }),
-            fetchCortesPorEmbolsar({ desde: correrDia(hasta, -(POR_EMBOLSAR_DIAS - 1)), hasta }),
+            fetchCortesPorEmbolsar({ desde: sumarDias(hasta, -(POR_EMBOLSAR_DIAS - 1)), hasta }),
         ]);
         if (!abiertas) { setError('No se pudieron cargar las bolsas'); setCargando(false); return; }
         setError(null);

@@ -1,4 +1,4 @@
-import { hoySV } from './fecha';
+import { diasEntre, hoySV, sumarDias } from './fecha';
 // ── ¿Esta persona está, y si no, hasta cuándo? ──────────────────────────────
 //
 // `getEffectiveStatus` (utils/helpers.js) devuelve el RÓTULO y nada más, y ese
@@ -87,15 +87,9 @@ const ROTULO_FIJO = {
 // el mismo y por eso los dos llevan nombre.
 const AVISO_DIAS = 5;
 
-// Mediodía a propósito en las dos: restar fechas ISO a medianoche se corre un
-// día con el cambio de horario, y este número decide si el chip dice «−3».
-const sumarDias = (iso, n) => {
-    const d = new Date(`${iso}T12:00:00`);
-    d.setDate(d.getDate() + n);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-const diasHasta = (desde, hasta) => Math.max(0, Math.round(
-    (new Date(`${hasta}T12:00:00`) - new Date(`${desde}T12:00:00`)) / 86400000));
+// Días de calendario, sin pasar por el huso del equipo (`utils/fecha`): este
+// número decide si el chip dice «−3».
+const diasHasta = (desde, hasta) => Math.max(0, diasEntre(desde, hasta));
 
 // «Vuelve el 2 de septiembre», no «2026-09-02». La fecha cruda obliga a contar
 // días con los dedos; lo que se necesita saber es si la persona está mañana.

@@ -17,9 +17,9 @@ import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import {
     CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA, LIBROS,
-    correrDia, fetchBitacoraDia, fetchLibro, pendientesDelDia, periodoDe,
+    fetchBitacoraDia, fetchLibro, pendientesDelDia, periodoDe,
 } from '../data/bitacoras';
-import { fechaTexto, hoySV } from '../utils/fecha';
+import { fechaTexto, hoySV, sumarDias, ultimoDiaDelMes } from '../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Bitácoras — los registros que exige la Superintendencia de Regulación
@@ -52,15 +52,11 @@ const METRICAS = [
 ];
 
 const primerDiaDelMes = (fecha) => `${String(fecha).slice(0, 7)}-01`;
-const ultimoDiaDelMes = (fecha) => {
-    const [a, m] = String(fecha).split('-').map(Number);
-    return new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
-};
 
 const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
-    if (fecha === correrDia(hoy, -1)) return 'Ayer';
+    if (fecha === sumarDias(hoy, -1)) return 'Ayer';
     const txt = fechaTexto(fecha, {
         weekday: 'long', day: 'numeric', month: 'long' });
     return txt.charAt(0).toUpperCase() + txt.slice(1);
@@ -285,8 +281,8 @@ export default function BitacorasView() {
                             <FilterBar.Section active={!esHoy} onClear={() => setFecha(hoySV())} label="fecha">
                                 <PeriodStepper
                                     unit="día"
-                                    onPrev={() => setFecha(f => correrDia(f, -1))}
-                                    onNext={() => setFecha(f => correrDia(f, 1))}
+                                    onPrev={() => setFecha(f => sumarDias(f, -1))}
+                                    onNext={() => setFecha(f => sumarDias(f, 1))}
                                     nextDisabled={esHoy}
                                 >
                                     <span className="text-body-sm font-bold text-content-2">

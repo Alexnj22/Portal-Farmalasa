@@ -35,29 +35,7 @@ import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchResumenFiscal } from '../../data/resumenFiscal';
-import { relojSV } from '../../utils/fecha';
-
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-const mesActual = () => {
-    const sv = relojSV();
-    return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
-};
-const etiquetaMes = (mes) => {
-    const [y, m] = mes.split('-').map(Number);
-    return `${MESES[m - 1]} ${y}`;
-};
-const rangoDelMes = (mes) => {
-    const [y, m] = mes.split('-').map(Number);
-    const fin = new Date(y, m, 0).getDate();
-    return [`${mes}-01`, `${mes}-${String(fin).padStart(2, '0')}`];
-};
-const correrMes = (mes, delta) => {
-    const [y, m] = mes.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-};
+import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '../../utils/fecha';
 
 const pct = (t) => `${(Number(t || 0) * 100).toFixed(2).replace(/\.?0+$/, '')}%`;
 
@@ -83,7 +61,7 @@ export default function ResumenFiscalView() {
     const { getScope } = useAuth();
     const branches = useStaffStore(s => s.branches);
 
-    const [mes, setMes]           = useState(mesActual());
+    const [mes, setMes]           = useState(mesSV());
     const [filterBranch, setFB]   = useState('');
     const [datos, setDatos]       = useState(null);
     const [loading, setLoading]   = useState(true);
@@ -125,23 +103,23 @@ export default function ResumenFiscalView() {
 
     const barraFiltros = (
         <FilterBar
-            onClear={() => { setFB(''); setMes(mesActual()); }}
-            activeCount={[filterBranch, mes !== mesActual()].filter(Boolean).length}>
+            onClear={() => { setFB(''); setMes(mesSV()); }}
+            activeCount={[filterBranch, mes !== mesSV()].filter(Boolean).length}>
             {puedeElegirSucursal && branchOptions.length > 0 && (
                 <FilterBar.Section active={!!filterBranch} onClear={() => setFB('')} label="sucursal">
                     <FilterBar.Sucursal value={filterBranch}
                         onChange={val => setFB(val || '')} options={branchOptions} />
                 </FilterBar.Section>
             )}
-            <FilterBar.Section active={mes !== mesActual()} onClear={() => setMes(mesActual())} label="período">
+            <FilterBar.Section active={mes !== mesSV()} onClear={() => setMes(mesSV())} label="período">
                 <PeriodStepper
                     unit="mes"
                     label={etiquetaMes(mes)}
                     onPrev={() => setMes(m => correrMes(m, -1))}
                     onNext={() => setMes(m => correrMes(m, 1))}
-                    nextDisabled={mes >= mesActual()}
-                    onReset={() => setMes(mesActual())}
-                    isCurrent={mes === mesActual()}
+                    nextDisabled={mes >= mesSV()}
+                    onReset={() => setMes(mesSV())}
+                    isCurrent={mes === mesSV()}
                     resetLabel="Ir al mes actual"
                 />
             </FilterBar.Section>

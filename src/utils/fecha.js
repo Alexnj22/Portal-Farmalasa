@@ -85,6 +85,44 @@ export function diasEntre(desde, hasta) {
     return Math.round((b - a) / 86_400_000);
 }
 
+/** Cuántos días pasaron desde un día hasta hoy en la sala (negativo si es futuro). */
+export const diasDesde = (dia) => diasEntre(dia, hoySV());
+
+/** Cuántos días faltan de hoy en la sala hasta un día (negativo si ya pasó). */
+export const diasHasta = (dia) => diasEntre(hoySV(), dia);
+
+// ── Meses ────────────────────────────────────────────────────────────────────
+// Un mes se escribe `YYYY-MM`. Las cuatro funciones de abajo estaban copiadas
+// en las cinco vistas de libros y compras, cada una con su lista de nombres.
+
+export const NOMBRES_DE_MES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+/** El mes de hoy en la sala, `YYYY-MM`. */
+export const mesSV = () => hoySV().slice(0, 7);
+
+/** Corre un mes (`YYYY-MM`, o un día del que se toma el mes) n meses. */
+export function correrMes(mes, n) {
+    const [y, m] = String(mes).slice(0, 7).split('-').map(Number);
+    const t = new Date(Date.UTC(y, m - 1 + n, 1));
+    return `${t.getUTCFullYear()}-${dos(t.getUTCMonth() + 1)}`;
+}
+
+/** El último día de un mes, `YYYY-MM-DD`. */
+export function ultimoDiaDelMes(mes) {
+    const [y, m] = String(mes).slice(0, 7).split('-').map(Number);
+    return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+}
+
+/** `[primer día, último día]` de un mes. */
+export const rangoDelMes = (mes) => [`${String(mes).slice(0, 7)}-01`, ultimoDiaDelMes(mes)];
+
+/** «Septiembre 2026». */
+export function etiquetaMes(mes) {
+    const [y, m] = String(mes).slice(0, 7).split('-').map(Number);
+    return `${NOMBRES_DE_MES[m - 1]} ${y}`;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Mostrar una fecha.
 // ─────────────────────────────────────────────────────────────────────────────

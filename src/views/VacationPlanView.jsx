@@ -28,16 +28,16 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
 import { hora12 } from '../utils/hora';
-import { fechaTexto } from '../utils/fecha';
+import { diasEntre, fechaTexto } from '../utils/fecha';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtShort = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short' }) : '—';
-const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000) + 1;
+const diasDelRango = (a, b) => diasEntre(a, b) + 1;
 
 /* ── Un extremo con hora NO es un día de vacación ──────────────────────────
  *
- * `daysBetween` cuenta el rango entero. Del 5 al 21 de septiembre son 17, y el
+ * `diasDelRango` cuenta el rango entero. Del 5 al 21 de septiembre son 17, y el
  * saldo del año son 15 — o sea que asentar unas vacaciones que empiezan el
  * sábado al mediodía y terminan el 21 a las 8 pasaba el tope por dos días que
  * la persona SÍ trabaja.
@@ -49,7 +49,7 @@ const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a
  */
 const diasDeVacacion = (inicio, fin, horaInicio, horaFin) => {
     if (!inicio || !fin || fin < inicio) return 0;
-    const enteros = daysBetween(inicio, fin) - (horaInicio ? 1 : 0) - (horaFin ? 1 : 0);
+    const enteros = diasDelRango(inicio, fin) - (horaInicio ? 1 : 0) - (horaFin ? 1 : 0);
     return Math.max(0, enteros);
 };
 

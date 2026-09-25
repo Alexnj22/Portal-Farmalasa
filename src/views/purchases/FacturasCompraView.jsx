@@ -35,7 +35,7 @@ import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fechaHora12 } from '../../utils/hora';
-import { fechaNumerica, relojSV } from '../../utils/fecha';
+import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '../../utils/fecha';
 
 const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
@@ -124,41 +124,15 @@ function ActionButton({ icon: Icon, label, onClick, title, color = 'slate', disa
 // El estado sigue siendo "start|end": es el contrato de los fetch y del
 // enlace `?desde=&hasta=` que llega desde Proveedores, y no había motivo para
 // romperlo por cambiar el control.
-const pad = (n) => String(n).padStart(2, '0');
 
-// La hora de El Salvador se obtiene corriendo el instante 6h y leyendo las
-// partes en UTC. Leerlas en local sobre el instante ya corrido las desplaza
-// DOS veces en una máquina que ya está en SV (UTC−6): el 1 de mes antes de las
-// 06:00 devolvía el mes anterior, o sea el libro equivocado.
-function mesActual() {
-    const sv = relojSV();
-    return `${sv.getUTCFullYear()}-${pad(sv.getUTCMonth() + 1)}`;
-}
-
-// 'YYYY-MM' → "primer día|último día". `new Date(y, m, 0)` es el último día del
-// mes anterior a `m`, o sea el último del mes que se pide.
-function rangoDelMes(mes) {
-    const [y, m] = mes.split('-').map(Number);
-    return `${mes}-01|${mes}-${pad(new Date(y, m, 0).getDate())}`;
-}
+// El mes —el de hoy, correrlo y su nombre— sale de `utils/fecha`.
+/** El mes como período de `PeriodPicker` (`inicio|fin`). */
+const periodoDelMes = (mes) => rangoDelMes(mes).join('|');
 
 const mesDeRango = (rango) => String(rango || '').slice(0, 7);
 
-function correrMes(mes, delta) {
-    const [y, m] = mes.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-}
-
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-function etiquetaMes(mes) {
-    const [y, m] = mes.split('-').map(Number);
-    return `${MESES[m - 1]} ${y}`;
-}
-
 function defaultDateRange() {
-    return rangoDelMes(mesActual());
+    return periodoDelMes(mesSV());
 }
 
 // Fase 4 §5 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): si el término buscado
@@ -1012,11 +986,11 @@ function TabDocumentos({
                         <PeriodStepper
                             unit="mes"
                             label={etiquetaMes(mesDeRango(dateRange))}
-                            onPrev={() => setDateRange(r => rangoDelMes(correrMes(mesDeRango(r), -1)))}
-                            onNext={() => setDateRange(r => rangoDelMes(correrMes(mesDeRango(r), 1)))}
-                            nextDisabled={mesDeRango(dateRange) >= mesActual()}
+                            onPrev={() => setDateRange(r => periodoDelMes(correrMes(mesDeRango(r), -1)))}
+                            onNext={() => setDateRange(r => periodoDelMes(correrMes(mesDeRango(r), 1)))}
+                            nextDisabled={mesDeRango(dateRange) >= mesSV()}
                             onReset={() => setDateRange(defaultDateRange())}
-                            isCurrent={mesDeRango(dateRange) === mesActual()}
+                            isCurrent={mesDeRango(dateRange) === mesSV()}
                             resetLabel="Ir al mes actual"
                         />
                     </FilterBar.Section>
@@ -1482,7 +1456,7 @@ export default function FacturasCompraView({ openModal }) {
     const [dateRange, setDateRange] = useState(() => {
         const desde = searchParams.get('desde');
         const hasta = searchParams.get('hasta');
-        return desde && hasta ? rangoDelMes(mesDeRango(desde)) : defaultDateRange();
+        return desde && hasta ? periodoDelMes(mesDeRango(desde)) : defaultDateRange();
     });
     const [dateStart, dateEnd] = dateRange.split('|');
     const [proveedores, setProveedores] = useState([]);

@@ -31,12 +31,6 @@ import { hoySV } from '../utils/fecha';
 /** El período `YYYY-MM` de una fecha. */
 export const periodoDe = (fecha) => String(fecha || hoySV()).slice(0, 7);
 
-/** Correr un día sin que el huso local lo mueva. */
-export const correrDia = (fecha, dias) => {
-    const d = new Date(`${fecha}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + dias);
-    return d.toISOString().slice(0, 10);
-};
 
 /** Correr un período `YYYY-MM`. */
 export const correrPeriodo = (periodo, meses) => {

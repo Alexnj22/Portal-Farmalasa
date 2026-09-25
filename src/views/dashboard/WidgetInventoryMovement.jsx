@@ -22,7 +22,7 @@ import {
     buscarConExistencia, buscarEnCatalogo, fetchPresentaciones, fetchLotesDeProducto,
     fetchPerecederos, insertMovimientoInventario, fetchSucursalEnConteo,
 } from '../../data/inventoryMovements';
-import { fechaNumerica, hoySV } from '../../utils/fecha';
+import { diasEntre, fechaNumerica, hoySV } from '../../utils/fecha';
 
 // Widget «Ajuste de Inventario».
 //
@@ -163,8 +163,7 @@ const fmtFecha = (d) => fechaNumerica(d, { anio: 'corto', vacio: null });
 
 function diasHasta(fecha) {
     if (!fecha) return null;
-    const hoy = hoySV();
-    return Math.round((new Date(fecha) - new Date(hoy)) / 86400000);
+    return diasEntre(hoySV(), fecha);
 }
 
 const LOTE_NUEVO = '__nuevo__';

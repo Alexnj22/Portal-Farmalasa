@@ -242,7 +242,7 @@ import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { NOMBRES_DE_MES, fechaTexto, hoySV } from '../../utils/fecha';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -585,8 +585,7 @@ const LEVELS_WITH_STUDY_TOGGLE = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR', 'U
 // no una profesión aparte.
 const LEVELS_WITH_PROFESSION = ['UNIVERSITARIO'];
 
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-const MONTH_OPTIONS = MESES.map((m, i) => ({ value: String(i + 1).padStart(2, '0'), label: m }));
+const MONTH_OPTIONS = NOMBRES_DE_MES.map((m, i) => ({ value: String(i + 1).padStart(2, '0'), label: m }));
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 12 }, (_, i) => CURRENT_YEAR + 1 - i).map(y => ({ value: String(y), label: String(y) }));
 
@@ -1155,7 +1154,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const totalMonths = (m - 1) + Math.round(Number(durationYears) * 12);
         const endYear = y + Math.floor(totalMonths / 12);
         const endMonth = ((totalMonths % 12) + 12) % 12;
-        return { date: new Date(endYear, endMonth, 1), label: `${MESES[endMonth]} ${endYear}` };
+        return { date: new Date(endYear, endMonth, 1), label: `${NOMBRES_DE_MES[endMonth]} ${endYear}` };
     };
 
     const estimatedStudyEndDate = useMemo(

@@ -53,6 +53,9 @@
   apertura de 5 de 7 sucursales, el vencimiento de lotes. Quedan 47 sobre
   objetos `Date` bajo trinquete (`scripts/fecha-baseline.json`). Sigue:
   calendario (`rangoDelMes`, `correrMes`…) y dinero.
+- **U1 paso 3 — calendario (v2.1074.3)**: meses, días y semanas. Las cinco vistas
+  de libros repetían cuatro funciones; Facturación contaba un día de menos de
+  00:00 a 06:00. `gate:hora` suma `calendario-a-mano`. Sigue: dinero.
 
 ## Para qué
 

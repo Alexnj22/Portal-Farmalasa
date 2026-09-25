@@ -8,8 +8,8 @@ import { createPortal } from 'react-dom';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { CalendarDays, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore';
+import { NOMBRES_DE_MES } from '../../utils/fecha';
 
-const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DAYS_SHORT = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 
 const formatDisplay = (dateStr) => {
@@ -50,7 +50,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                     <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={onPrev} />
                 ) : <div className="w-7" />}
                 <p className="text-body-sm font-black uppercase tracking-widest text-content-2">
-                    {MONTHS[month]} {year}
+                    {NOMBRES_DE_MES[month]} {year}
                 </p>
                 {onNext ? (
                     <Button variant="secondary" icon={ChevronRight} iconOnly onClick={onNext} />

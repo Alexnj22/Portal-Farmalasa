@@ -16,7 +16,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchCortesZ, fetchCorteZDias } from '../../data/corteZ';
 import { descargarCorteZPdf, direccionDe, etiquetaPeriodo } from '../../utils/corteZPrint';
 import { EMPRESA } from '../../constants/empresa';
-import { relojSV } from '../../utils/fecha';
+import { correrMes, mesSV, rangoDelMes } from '../../utils/fecha';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CORTE Z — el Gran Z mensual de cada sucursal.
@@ -43,23 +43,6 @@ import { relojSV } from '../../utils/fecha';
 //   · El origen puede omitir una venta sellada: Salud 1 julio, $9.00.
 // Por eso el cotejo se muestra SIEMPRE, cuadre o no.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const mesActual = () => {
-    const sv = relojSV();
-    return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
-};
-
-const rangoDelMes = (mes) => {
-    const [y, m] = mes.split('-').map(Number);
-    const fin = new Date(y, m, 0).getDate();
-    return [`${mes}-01`, `${mes}-${String(fin).padStart(2, '0')}`];
-};
-
-const correrMes = (mes, delta) => {
-    const [y, m] = mes.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-};
 
 // Medio centavo: por debajo de eso es ruido de coma flotante, no una diferencia.
 const CUADRA = 0.005;
@@ -546,7 +529,7 @@ export default function CorteZView() {
     const canVerMontos = hasPermission('corte_z_ver_montos');
 
 
-    const [mes, setMes] = useState(mesActual);
+    const [mes, setMes] = useState(mesSV);
     const [filterBranch, setFilterBranch] = useState(
         getScope('corte_z') !== 'ALL' ? String(user?.branchId || '') : '');
     const [filas, setFilas] = useState([]);
@@ -636,8 +619,8 @@ export default function CorteZView() {
 
     const barraFiltros = (
         <FilterBar
-            onClear={() => { setFilterBranch(''); setMes(mesActual()); }}
-            activeCount={[filterBranch, mes !== mesActual()].filter(Boolean).length}
+            onClear={() => { setFilterBranch(''); setMes(mesSV()); }}
+            activeCount={[filterBranch, mes !== mesSV()].filter(Boolean).length}
             acciones={!canDownload ? [] : [{
                 key: 'pdf-todas',
                 icon: Archive,
@@ -655,15 +638,15 @@ export default function CorteZView() {
                         onChange={val => setFilterBranch(val || '')} options={branchOptions} />
                 </FilterBar.Section>
             )}
-            <FilterBar.Section active={mes !== mesActual()} onClear={() => setMes(mesActual())} label="período">
+            <FilterBar.Section active={mes !== mesSV()} onClear={() => setMes(mesSV())} label="período">
                 <PeriodStepper
                     unit="mes"
                     label={etiquetaPeriodo(desde)}
                     onPrev={() => setMes(m => correrMes(m, -1))}
                     onNext={() => setMes(m => correrMes(m, 1))}
-                    nextDisabled={mes >= mesActual()}
-                    onReset={() => setMes(mesActual())}
-                    isCurrent={mes === mesActual()}
+                    nextDisabled={mes >= mesSV()}
+                    onReset={() => setMes(mesSV())}
+                    isCurrent={mes === mesSV()}
                     resetLabel="Ir al mes actual"
                 />
             </FilterBar.Section>
@@ -734,7 +717,7 @@ export default function CorteZView() {
                             Sin Corte Z de {etiquetaPeriodo(desde)}
                         </p>
                         <p className="text-caption text-content-3 max-w-md mx-auto">
-                            {mes >= mesActual()
+                            {mes >= mesSV()
                                 ? 'El mes en curso todavía no se cierra. El Corte Z se trae el día 1 del mes siguiente, cuando el período ya no cambia.'
                                 : 'Este período no se ha traído todavía. No es un mes sin ventas: es que nadie lo procesó.'}
                         </p>

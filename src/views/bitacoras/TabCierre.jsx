@@ -8,7 +8,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { cerrarMes, correrPeriodo, fetchCierres, fetchLibroPendientes, fetchMesImpreso, fetchResumenMes, periodoDe, reabrirMes } from '../../data/bitacoras';
-import { hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 import { registrarEgreso } from '../../data/egreso';
 import { imprimirMesDeBitacoras } from '../../utils/bitacoraPrint';
 import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
@@ -30,9 +30,7 @@ import { logoComoDataUrl, LOGO_DE_LA_EMPRESA } from '../../utils/marcaDeLaSala';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const nombreMes = (p) => {
-    const [a, m] = String(p).split('-').map(Number);
-    const txt = new Date(Date.UTC(a, m - 1, 1))
-        .toLocaleDateString('es-SV', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const txt = fechaTexto(`${String(p).slice(0, 7)}-01`, { month: 'long', year: 'numeric' });
     // Sólo la PRIMERA letra. La clase `capitalize` de CSS pone mayúscula en cada
     // palabra y dejaba «Julio De 2026».
     return txt.charAt(0).toUpperCase() + txt.slice(1);

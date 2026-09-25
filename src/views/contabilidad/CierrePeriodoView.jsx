@@ -15,6 +15,7 @@ import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchPeriodosFiscales, cerrarPeriodoFiscal, reabrirPeriodoFiscal } from '../../data/cierrePeriodo';
+import { etiquetaMes, NOMBRES_DE_MES } from '../../utils/fecha';
 
 /**
  * Cierre de período fiscal — la cadena del remanente.
@@ -41,14 +42,8 @@ import { fetchPeriodosFiscales, cerrarPeriodoFiscal, reabrirPeriodoFiscal } from
  * escrita dos veces, y el día que una cambie la otra seguiría opinando.
  */
 
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-const etiquetaMes = (iso) => {
-    const [y, m] = String(iso).slice(0, 10).split('-').map(Number);
-    return `${MESES[m - 1]} ${y}`;
-};
-const mesCorto = (iso) => MESES[Number(String(iso).slice(5, 7)) - 1];
+const mesCorto = (iso) => NOMBRES_DE_MES[Number(String(iso).slice(5, 7)) - 1];
 
 // El saldo del período con el libro elegido. Es la MISMA fórmula que
 // `cerrar_periodo_fiscal`, y por eso lo que se congela sale del servidor: acá

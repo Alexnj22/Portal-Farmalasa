@@ -840,7 +840,7 @@ export default function TabReglas({ searchTerm = '' }) {
     // Computed
     const rulesCount = Object.keys(rulesMap).length;
     const sinRegla   = Math.max(0, allCount - rulesCount);
-    const mesActual  = useMemo(() => fechaTexto(hoySV(), { month: 'long' }), []);
+    const nombreDelMes  = useMemo(() => fechaTexto(hoySV(), { month: 'long' }), []);
 
     // Sort client-side para columnas computed (estado/despacho) — opera sobre la página actual
     const sortedProducts = useMemo(() => {
@@ -907,7 +907,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         onClick={() => setFilterRule(f => f === 'sin' ? '' : 'sin')}
                     />
 
-                    <StatCard label="Nuevos" sub={`agregados en ${mesActual}`} value={thisMonthCount}
+                    <StatCard label="Nuevos" sub={`agregados en ${nombreDelMes}`} value={thisMonthCount}
                         icon={Sparkles} iconBg={soloNuevos ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
                         valueCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
                         tono="success" active={soloNuevos}

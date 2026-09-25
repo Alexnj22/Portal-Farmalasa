@@ -51,7 +51,7 @@ import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import { consultarMisPuntos } from '../data/misPuntos';
 import { EMPRESA } from '../constants/empresa';
-import { fechaNumerica } from '../utils/fecha';
+import { diaDe, diasEntre, fechaNumerica, hoySV } from '../utils/fecha';
 
 /**
  * La forma del código de acceso: siete caracteres de un alfabeto sin parecidos
@@ -111,12 +111,10 @@ const fmtFecha = (d) => fechaNumerica(d, { vacio: '' });
  * vencimiento adelantado. Misma trampa que documenta `_shared/puntosLotes.ts`.
  */
 const diasHasta = (fecha) => {
-    const [a, m, d] = String(fecha).slice(0, 10).split('-').map(Number);
-    if (!a || !m || !d) return null;
-    const hoy = new Date();
-    const destino = Date.UTC(a, m - 1, d, 12);
-    const desde = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 12);
-    return Math.round((destino - desde) / 86400000);
+    // El hoy de la SALA: la página la abre el cliente desde su teléfono, que
+    // puede estar en otra zona horaria.
+    const dia = diaDe(fecha);
+    return dia ? diasEntre(hoySV(), dia) : null;
 };
 
 /**

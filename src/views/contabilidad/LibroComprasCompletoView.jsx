@@ -19,7 +19,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } from '../../data/libroComprasCompleto';
-import { fechaNumerica, relojSV } from '../../utils/fecha';
+import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '../../utils/fecha';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Libro de compras COMPLETO — vista propia, no una pestaña de Libros IVA.
@@ -49,28 +49,6 @@ import { fechaNumerica, relojSV } from '../../utils/fecha';
 // `TablePagination` sin `totalPages`) y reventó con React #130 al abrirla. Si
 // hay que cambiar algo acá, mirar primero cómo lo hace la de al lado.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-const mesActual = () => {
-    const sv = relojSV();
-    return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
-};
-const etiquetaMes = (mes) => {
-    const [y, m] = mes.split('-').map(Number);
-    return `${MESES[m - 1]} ${y}`;
-};
-const rangoDelMes = (mes) => {
-    const [y, m] = mes.split('-').map(Number);
-    const fin = new Date(y, m, 0).getDate();
-    return [`${mes}-01`, `${mes}-${String(fin).padStart(2, '0')}`];
-};
-const correrMes = (mes, delta) => {
-    const [y, m] = mes.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-};
 
 // DD/MM/YYYY. Se parte la cadena en vez de construir un Date: `new Date('2026-06-01')`
 // es UTC y en El Salvador (−6) retrocede un día.
@@ -140,7 +118,7 @@ export default function LibroComprasCompletoView({ openModal }) {
     const branches = useStaffStore((s) => s.branches);
 
     const [activeTab, setActiveTab]   = usePestanaEnUrl(TABS, 'todos');
-    const [mes, setMes]               = useState(mesActual());
+    const [mes, setMes]               = useState(mesSV());
     const [filterBranch, setFB]       = useState('');
     const [filas, setFilas]           = useState([]);
     const [loading, setLoading]       = useState(true);
@@ -386,8 +364,8 @@ export default function LibroComprasCompletoView({ openModal }) {
 
     const barraFiltros = (
         <FilterBar
-            onClear={() => { setFB(''); setMes(mesActual()); }}
-            activeCount={[filterBranch, mes !== mesActual()].filter(Boolean).length}
+            onClear={() => { setFB(''); setMes(mesSV()); }}
+            activeCount={[filterBranch, mes !== mesSV()].filter(Boolean).length}
             acciones={!canDownload ? [] : [{
                 key: 'exportar',
                 icon: Download,
@@ -408,15 +386,15 @@ export default function LibroComprasCompletoView({ openModal }) {
                         onChange={val => setFB(val || '')} options={branchOptions} />
                 </FilterBar.Section>
             )}
-            <FilterBar.Section active={mes !== mesActual()} onClear={() => setMes(mesActual())} label="período">
+            <FilterBar.Section active={mes !== mesSV()} onClear={() => setMes(mesSV())} label="período">
                 <PeriodStepper
                     unit="mes"
                     label={etiquetaMes(mes)}
                     onPrev={() => setMes(m => correrMes(m, -1))}
                     onNext={() => setMes(m => correrMes(m, 1))}
-                    nextDisabled={mes >= mesActual()}
-                    onReset={() => setMes(mesActual())}
-                    isCurrent={mes === mesActual()}
+                    nextDisabled={mes >= mesSV()}
+                    onReset={() => setMes(mesSV())}
+                    isCurrent={mes === mesSV()}
                     resetLabel="Ir al mes actual"
                 />
             </FilterBar.Section>

@@ -20,7 +20,7 @@ import { claveDeDia } from '../../utils/scheduleHelpers';
 import * as almacen from '../../plataforma/almacen';
 import { emitir } from '../../plataforma/eventos';
 import { comprimirFotoDeEmpleado } from '../../plataforma/imagenes';
-import { hoySV } from '../../utils/fecha';
+import { hoySV, lunesDe } from '../../utils/fecha';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -1503,13 +1503,7 @@ export const createEmployeeSlice = (set, get) => ({
         const { date, shift_id, reason, approved_by } = recallData;
 
         // 1. Reactivar ese día en employee_rosters (quitar LIBRE, asignar turno)
-        const getMondayISO = (dateStr) => {
-            const d = new Date(dateStr + 'T00:00:00');
-            const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
-            d.setDate(d.getDate() + diff);
-            return d.toISOString().split('T')[0];
-        };
-        const weekStart = getMondayISO(date);
+        const weekStart = lunesDe(date);
         // Domingo = "0" (ver `claveDeDia`). Con 7 el día reactivado quedaba en
         // una clave que ni la pantalla de horarios ni la planilla leen.
         const dayId   = claveDeDia(new Date(date + 'T00:00:00'));

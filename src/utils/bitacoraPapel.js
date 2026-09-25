@@ -213,8 +213,7 @@ const fecha = (f) => (f
     : '');
 
 const nombreMes = (p) => {
-    const [a, m] = String(p).split('-').map(Number);
-    const t = new Date(Date.UTC(a, m - 1, 1)).toLocaleDateString('es-SV', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const t = fechaTexto(`${String(p).slice(0, 7)}-01`, { month: 'long', year: 'numeric' });
     return t.charAt(0).toUpperCase() + t.slice(1);
 };
 

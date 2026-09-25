@@ -9,7 +9,7 @@ import { conTramoPorSalaYDia, resumenDeCortes } from '../../utils/cortesDiagnost
 import { useAuth } from '../../context/AuthContext';
 import useResolverCorte from '../../components/cortes/useResolverCorte';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV, sumarDias } from '../../utils/fecha';
 
 /* El detalle del corte se baja al abrir uno, no al entrar al Inicio.
  *
@@ -47,16 +47,11 @@ const REFRESCO_MS = 60 * 1000;
 const REFRESCO_MES_MS = 10 * 60 * 1000;
 const DIAS_PENDIENTES = 7;
 
-const correrDia = (fecha, dias) => {
-    const d = new Date(`${fecha}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + dias);
-    return d.toISOString().slice(0, 10);
-};
 
 const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
-    if (fecha === correrDia(hoy, -1)) return 'Ayer';
+    if (fecha === sumarDias(hoy, -1)) return 'Ayer';
     return fechaTexto(fecha, {
         day: 'numeric', month: 'short' });
 };
@@ -107,7 +102,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
 
     const cargarLista = useCallback(async () => {
         const hasta = hoySV();
-        const data = await fetchCortes({ desde: correrDia(hasta, -(DIAS_PENDIENTES - 1)), hasta });
+        const data = await fetchCortes({ desde: sumarDias(hasta, -(DIAS_PENDIENTES - 1)), hasta });
         if (!data) { setError('No se pudieron cargar los cortes'); setCargando(false); return; }
         setError(null);
         setFilas(data);

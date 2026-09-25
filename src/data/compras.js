@@ -26,9 +26,13 @@ export function fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinPro
     if (dateEnd)   q = q.lte('fecha', dateEnd);
     if (sinProveedor) q = q.is('supplier_id', null);
     else if (supplierId) q = q.eq('supplier_id', supplierId);
-    if (searchTerm) {
-        const term = searchTerm.trim();
-        q = q.or(`proveedor.ilike.%${term}%`);
+    // Cada palabra por separado y en cualquier orden, como el resto del portal.
+    // Antes era un `.or()` con el texto crudo adentro: una coma en lo escrito
+    // partía el filtro en dos ramas sin dar error. `.ilike()` por palabra no
+    // pasa por la sintaxis de `or=`, y los comodines de LIKE se escapan.
+    for (const palabra of String(searchTerm || '').trim().split(/\s+/).filter(Boolean)) {
+        const lit = palabra.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+        q = q.ilike('proveedor', `%${lit}%`);
     }
     return q;
 }

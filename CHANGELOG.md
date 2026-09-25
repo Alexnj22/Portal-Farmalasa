@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1064.2 — Compras: la búsqueda de proveedor ya no se parte con una coma
+
+`src/data/compras.js` metía el texto del buscador crudo dentro de un
+`.or()` de PostgREST. Una coma en lo escrito partía el filtro en dos ramas sin
+dar error. Ahora filtra con un `.ilike()` por palabra, en cualquier orden, y
+escapa los comodines. Es el punto (2) de F0 en
+`docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md`, que además registra el avance
+del plan.
+
 ## v2.1064.1 — Puntos: el arranque del 1-oct queda programado
 
 Dos crones de una sola vez en producción (migración `20260925175856`):

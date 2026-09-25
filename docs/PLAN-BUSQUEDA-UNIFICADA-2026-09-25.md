@@ -264,6 +264,21 @@ escrito a mano, y RPC con `p_search` que no usen la regla. Baseline que
 | **F5 · gate** | `gate:busqueda` con su baseline, al pre-commit. | nulo | F2–F4 |
 | ~~F6 · sinónimos~~ | **Descartada** (decisión 4, §8). | — | — |
 
+### Avance
+
+| fase | estado |
+|---|---|
+| F1 · la regla (JS) | ✅ v2.1064.0: `src/utils/busqueda.js` y 77 casos en `tests/casos-busqueda.json`, medida contra los 4,397 productos. Falta el gemelo SQL. |
+| F2 · navegador | ✅ v2.1064.0: `smartFilter`/`tokenMatch` (≈52 buscadores), `LiquidSelect`, `SelectorTactil` y los 17 filtros D. Los catálogos marcados con `orden: 'relevancia'`: menú, sucursales, mantenimiento, permisos y laboratorios de Mín·Máx. |
+| F0 · defectos sueltos | 🟡 (2) `compras.js` ya no arma el `.or()` con el texto crudo (v2.1064.1). Falta el debounce de ComprasView, que va con el hook compartido de F5. Los demás puntos de F0 están en la base. |
+| F3 / F4 | ⏳ `products` y `customers` son tablas calientes: el DDL va entre 06:00 y 11:59 UTC y se prueba antes en el branch. |
+
+Lo que midió F1 y no estaba previsto en §4: `25,000` / `2,500 UI` usan la coma
+como **separador de miles** (29 productos), así que no es un decimal. Además,
+juntar todas las palabras en la forma de rescate hacía que «sal» encontrara
+`4 PUNTOS ALUMINIO` (puntoSALuminio). La forma de rescate ahora sólo borra la
+puntuación y conserva los espacios.
+
 F0 se puede hacer ya. Lo demás arranca por F1, porque **sin los casos de prueba
 no hay forma de saber si la regla nueva es mejor**. Sólo se sabría que es
 distinta.

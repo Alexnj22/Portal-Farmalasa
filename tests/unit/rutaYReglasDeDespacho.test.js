@@ -304,12 +304,12 @@ describe('las reglas de despacho', () => {
         ]);
     });
 
-    it('un término de una sola letra no filtra: son 5.212 productos', () => {
-        fetchProductsWithLabPage({ ...base, term: 'a' });
-        expect(espia.uso('or')).toBe(false);
+    it('un término de una sola letra no filtra: son 5.212 productos', async () => {
+        await fetchProductsWithLabPage({ ...base, term: 'a' });
+        expect(espia.rpc).toHaveLength(0);
         espia.limpiar();
-        fetchProductsWithLabPage({ ...base, term: 'am' });
-        expect(espia.uso('or')).toBe(true);
+        await fetchProductsWithLabPage({ ...base, term: 'am' });
+        expect(espia.rpc.map(r => r.nombre)).toEqual(['buscar_productos_ids']);
     });
 });
 
@@ -326,19 +326,22 @@ describe('la recepción en la sala', () => {
     it('el buscador de productos EXCLUYE lo que ya está en la lista', async () => {
         // Sin eso, agregar un producto dos veces es un clic, y el conteo de la
         // recepción queda duplicado.
-        searchAvailableProducts('amox', [7, 9]);
+        espia.responderRpc('buscar_productos_ids', { ids: [1, 7, 9], aproximado: false });
+        await searchAvailableProducts('amox', [7, 9]);
         expect(espia.todos('not')).toContainEqual(['id', 'in', '(7,9)']);
     });
 
-    it('sin nada que excluir no agrega el filtro', () => {
-        searchAvailableProducts('amox', []);
+    it('sin nada que excluir no agrega el filtro', async () => {
+        espia.responderRpc('buscar_productos_ids', { ids: [1], aproximado: false });
+        await searchAvailableProducts('amox', []);
         expect(espia.uso('not')).toBe(false);
     });
 
-    it('el buscador trae pocas opciones: es un desplegable, no una lista', () => {
-        searchAvailableProducts('amox', []);
-        expect(espia.primero('limit')).toEqual([10]);
-        expect(espia.primero('order')).toEqual(['nombre']);
+    it('el buscador trae pocas opciones: es un desplegable, no una lista', async () => {
+        // Diez, más los que ya están en la lista (se descartan después). El
+        // orden ya no es alfabético: es el de la búsqueda, lo más parecido arriba.
+        await searchAvailableProducts('amox', [7, 9]);
+        expect(espia.rpc[0].args.p_limite).toBe(12);
     });
 
     it('«cómo se despachó la última vez» sólo mira renglones que lo DICEN', () => {

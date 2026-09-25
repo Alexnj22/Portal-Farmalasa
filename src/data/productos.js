@@ -4,7 +4,7 @@
 // componentes de foto separados; el fetch de detalle expandido en
 // prefetchRow y toggleRow) y quedan en una sola función acá.
 import { supabase } from '../supabaseClient';
-import { filtroProductoOCodigo } from '../utils/searchUtils';
+import { buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 
 // ── Principios activos ──────────────────────────────────────────────────────
 
@@ -141,23 +141,62 @@ export function fetchChangelogPage(table, isProd, startOfMonthIso, from, pageSiz
 
 // ── Lista principal de productos (tabla paginada del catálogo) ─────────────
 
-export function fetchProductsList({
+const CATALOGO_SELECT = 'id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, foto_url, devolutivo, laboratorios(nombre)';
+
+/*
+ * Con búsqueda, el texto lo resuelve `buscar_productos_ids` (la regla del
+ * portal: el nombre, el principio activo y el laboratorio, que la tabla
+ * muestra, y el código de barras). Es un catálogo: con el orden por defecto,
+ * lo más parecido va primero (plan §8.1); si el usuario eligió otra columna,
+ * manda esa columna.
+ */
+export async function fetchProductsList({
     search, page, pageSize, filterActivo, laboratorioId, categoria,
     filterNuevos, effectiveBids, sortField, sortDir,
 }) {
+    const filtrar = (qb) => {
+        if (filterActivo === 'activos') qb = qb.eq('activo', true);
+        if (laboratorioId) qb = qb.eq('laboratorio_id', laboratorioId);
+        if (categoria) qb = qb.eq('tipo_medicamento', categoria);
+        if (filterNuevos) qb = qb.gte('created_at', filterNuevos);
+        if (effectiveBids !== null) qb = qb.in('id', effectiveBids);
+        return qb;
+    };
+
+    let idsBuscados = null;
+    let aproximado = false;
+    if (search) {
+        const { ids, aproximado: sonParecidos, error } = await buscarIdsDeProducto(search, {
+            limite: 1000, conPrincipioActivo: true, conLaboratorio: true,
+            soloActivos: filterActivo === 'activos',
+        });
+        if (error) return { data: null, count: 0, error };
+        if (!ids.length) return { data: [], count: 0, error: null };
+        idsBuscados = ids;
+        aproximado = sonParecidos;
+
+        // Orden por defecto + búsqueda = relevancia. Primero los ids que pasan
+        // los filtros (sólo el id: pocos bytes), después la página en ese orden.
+        if (sortField === 'nombre' && sortDir === 'asc') {
+            const { data: quedan, error: e1 } = await filtrar(
+                supabase.from('products').select('id').in('id', ids));
+            if (e1) return { data: null, count: 0, error: e1 };
+            const orden = enElOrdenDe(quedan, ids).map(r => r.id);
+            const pagina = orden.slice((page - 1) * pageSize, page * pageSize);
+            if (!pagina.length) return { data: [], count: orden.length, error: null, aproximado };
+            const { data, error: e2 } = await supabase.from('products')
+                .select(CATALOGO_SELECT).in('id', pagina);
+            if (e2) return { data: null, count: 0, error: e2 };
+            return { data: enElOrdenDe(data, pagina), count: orden.length, error: null, aproximado };
+        }
+    }
+
     let qb = supabase
         .from('products')
-        .select('id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, foto_url, devolutivo, laboratorios(nombre)', { count: 'exact' })
+        .select(CATALOGO_SELECT, { count: 'exact' })
         .range((page - 1) * pageSize, page * pageSize - 1);
-
-    if (search) {
-        qb = qb.or(filtroProductoOCodigo(search, { conPrincipioActivo: true }));
-    }
-    if (filterActivo === 'activos') qb = qb.eq('activo', true);
-    if (laboratorioId) qb = qb.eq('laboratorio_id', laboratorioId);
-    if (categoria) qb = qb.eq('tipo_medicamento', categoria);
-    if (filterNuevos) qb = qb.gte('created_at', filterNuevos);
-    if (effectiveBids !== null) qb = qb.in('id', effectiveBids);
+    if (idsBuscados) qb = qb.in('id', idsBuscados);
+    qb = filtrar(qb);
 
     if (sortField === 'nombre')        qb = qb.order('nombre', { ascending: sortDir === 'asc' });
     else if (sortField === 'activo')   qb = qb.order('activo', { ascending: sortDir === 'asc' }).order('nombre');
@@ -165,7 +204,7 @@ export function fetchProductsList({
     else if (sortField === 'lab')      qb = qb.order('nombre', { referencedTable: 'laboratorios', ascending: sortDir === 'asc', nullsFirst: false }).order('nombre');
     else                               qb = qb.order('nombre');
 
-    return qb;
+    return { ...(await qb), aproximado };
 }
 
 // ── Datos derivados (changelog + margen) para un lote de IDs visibles ──────

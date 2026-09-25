@@ -18,6 +18,7 @@ import TablePagination                   from '../../components/common/TablePagi
 import FilterBar    from '../../components/common/FilterBar';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import Notice       from '../../components/common/Notice';
+import AvisoParecidos from '../../components/common/AvisoParecidos';
 import {
     fetchProductPresentacionesForDispatch, fetchLaboratorios, fetchAllDispatchRules,
     fetchActiveProductsCount, fetchNewProductsThisMonth, fetchProductsWithLabPage,
@@ -579,6 +580,7 @@ export default function TabReglas({ searchTerm = '' }) {
     const [loadingRules,    setLoadingRules]    = useState(true);
     const [products,        setProducts]        = useState([]);
     const [totalCount,      setTotalCount]      = useState(0);
+    const [sonParecidos,    setSonParecidos]    = useState(false);
     const [loadingProducts, setLoadingProducts] = useState(true);
     // Una consulta que falla no puede verse como una lista vacía. El buscador
     // de esta pantalla estuvo once días devolviendo 400 —la vista no exponía
@@ -698,7 +700,7 @@ export default function TabReglas({ searchTerm = '' }) {
         try {
             const dbSk = (o.sortKey === 'estado' || o.sortKey === 'despacho') ? 'laboratorio_nombre' : o.sortKey;
 
-            const { data, count, error } = await fetchProductsWithLabPage({
+            const { data, count, error, aproximado } = await fetchProductsWithLabPage({
                 offset: (o.page - 1) * o.pageSize,
                 pageSize: o.pageSize,
                 hiddenLabs: o.hiddenLabs,
@@ -714,6 +716,7 @@ export default function TabReglas({ searchTerm = '' }) {
             if (error) throw error;
             setProducts(data || []);
             setTotalCount(count ?? 0);
+            setSonParecidos(!!aproximado);
         } catch (err) {
             console.error('[loadProducts]', err?.message ?? err);
             setErrorProductos(mensajeAmigable(err));
@@ -862,6 +865,8 @@ export default function TabReglas({ searchTerm = '' }) {
 
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
+
+            {sonParecidos && <AvisoParecidos texto={searchTerm} />}
 
             {!canEditReglas && (
                 <Notice variant="neutral" icon={ShieldAlert}>

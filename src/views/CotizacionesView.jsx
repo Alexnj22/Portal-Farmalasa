@@ -338,6 +338,7 @@ export default function CotizacionesView() {
     // Búsqueda de productos (server-side — PostgREST limita a 1000 filas)
     const [productResults,   setProductResults]   = useState([]);
     const [productSearching, setProductSearching] = useState(false);
+    const [productosParecidos, setProductosParecidos] = useState(false);
 
     // Búsqueda de clientes (server-side — 22 k+ registros)
     const [customerResults,   setCustomerResults]   = useState([]);
@@ -428,9 +429,10 @@ export default function CotizacionesView() {
     const searchProducts = useCallback(async (term) => {
         if (!term || !term.trim()) { setProductResults([]); return; }
         setProductSearching(true);
-        const { data, error } = await searchProductsActive(term.trim());
+        const { data, error, aproximado } = await searchProductsActive(term.trim());
         if (error) console.error('searchProducts failed:', error.message);
         setProductResults(data || []);
+        setProductosParecidos(!!aproximado);
         setProductSearching(false);
     }, []);
 
@@ -833,6 +835,7 @@ export default function CotizacionesView() {
                                 options={productOptions}
                                 onSearchChange={searchProducts}
                                 serverSearch
+                                parecidos={productosParecidos}
                                 isLoading={productSearching}
                                 placeholder="Buscar y agregar producto..." icon={Package} compact clearable={false} />
                         </div>

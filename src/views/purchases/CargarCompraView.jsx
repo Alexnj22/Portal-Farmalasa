@@ -14,6 +14,7 @@ import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalInput from '../../components/common/PortalInput';
+import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
@@ -91,12 +92,13 @@ const fmtFecha = (iso) => {
 function BuscadorProducto({ onElegir, onCancelar }) {
     const [q, setQ] = useState('');
     const [res, setRes] = useState([]);
+    const [sonParecidos, setSonParecidos] = useState(false);
 
     useEffect(() => {
         let vivo = true;
         const t = setTimeout(async () => {
-            const { filas } = await buscarProductos(q);
-            if (vivo) setRes(filas);
+            const { filas, aproximado } = await buscarProductos(q);
+            if (vivo) { setRes(filas); setSonParecidos(!!aproximado); }
         }, 250);
         return () => { vivo = false; clearTimeout(t); };
     }, [q]);
@@ -105,6 +107,7 @@ function BuscadorProducto({ onElegir, onCancelar }) {
         <div className="mt-2 space-y-2">
             <PortalInput value={q} onChange={e => setQ(e.target.value)} tono="brand"
                 placeholder="Buscar el producto por nombre…" aria-label="Buscar producto" />
+            {sonParecidos && res.length > 0 && <AvisoParecidos texto={q} />}
             <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
                 {res.map(p => (
                     <button key={p.id} type="button" onClick={() => onElegir(p)}

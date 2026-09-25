@@ -15,6 +15,9 @@
 export function crearEspia() {
     const pasos = [];
     const rpc = [];
+    // Lo que devuelve un `rpc` cuando la prueba lo necesita (`responderRpc`).
+    // Sin respuesta declarada, devuelve `[]` como el resto.
+    const respuestasRpc = {};
 
     const nodo = {
         // Se resuelve como una promesa para que `await consulta` funcione.
@@ -32,7 +35,11 @@ export function crearEspia() {
 
     const supabase = {
         from: (tabla) => { pasos.push({ metodo: 'from', args: [tabla] }); return nodo; },
-        rpc: (nombre, args) => { rpc.push({ nombre, args }); return nodo; },
+        rpc: (nombre, args) => {
+            rpc.push({ nombre, args });
+            if (!(nombre in respuestasRpc)) return nodo;
+            return { ...nodo, then: (resolver) => Promise.resolve({ data: respuestasRpc[nombre], error: null }).then(resolver) };
+        },
     };
 
     return {
@@ -40,6 +47,7 @@ export function crearEspia() {
         pasos,
         rpc,
         limpiar: () => { pasos.length = 0; rpc.length = 0; },
+        responderRpc: (nombre, data) => { respuestasRpc[nombre] = data; },
         /** Los argumentos de la primera llamada a `metodo`, o `undefined`. */
         primero: (metodo) => pasos.find(p => p.metodo === metodo)?.args,
         /** Todas las llamadas a `metodo`. */

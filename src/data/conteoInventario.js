@@ -7,7 +7,7 @@
 // agregar_item_conteo, que costea server-side con el mismo criterio que el
 // snapshot.
 import { supabase } from '../supabaseClient';
-import { filtroProductoOCodigo } from '../utils/searchUtils';
+import { buscarProductos } from './busquedaProductos';
 
 // Un conteo por sucursal cada vez que se audita: la tabla crece del orden de
 // decenas al año, muy lejos del tope de 1000 de PostgREST. El límite va
@@ -56,16 +56,16 @@ export async function fetchConteoDetalle(conteoId) {
 // ── ConteoDetailView.jsx / AddManualItemForm ────────────────────────────────
 
 export function searchActiveProductsForConteo(term) {
-    return supabase.from('products')
+    return buscarProductos(term, {
         // `codigo_barras` viaja desde el 2026-08-25: el alta manual lo pinta en
         // la tarjeta del producto elegido. Cuando el escaneo eligió solo, esa
         // línea es la única oportunidad de ver que eligió BIEN — comparar el
         // código de la pantalla contra el de la caja que se tiene en la mano.
-        .select('id, nombre, codigo_barras, laboratorios(nombre)')
-        .eq('activo', true)
-        .or(filtroProductoOCodigo(term))
-        .order('nombre')
-        .limit(30);
+        select: 'id, nombre, codigo_barras, laboratorios(nombre)',
+        limite: 30,
+        // El laboratorio se pinta junto al nombre: se busca lo que se ve.
+        conLaboratorio: true,
+    });
 }
 
 export function fetchProductPresentacionesForConteo(productId) {

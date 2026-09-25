@@ -3,7 +3,7 @@
 // supabase.from().
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
-import { filtroProductoOCodigo } from '../utils/searchUtils';
+import { buscarIdsDeProducto } from './busquedaProductos';
 
 // keepIdPresentacion: la regla ya configurada puede apuntar a una presentación
 // que desde entonces se marcó activo=false en el catálogo — igual debe listarse
@@ -51,7 +51,7 @@ export function fetchNewProductsThisMonth(startOfMonthIso) {
 // `ruleFilter`, o sea excluyente con «con regla»/«sin regla» — y «los nuevos que
 // todavía no tienen regla» es justamente la pregunta para la que existe esta
 // pantalla, así que era la combinación imposible de pedir.
-export function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, sortKey, ascending, term, ruleFilter, ruleIds, soloNuevos, newIds, labId }) {
+export async function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, sortKey, ascending, term, ruleFilter, ruleIds, soloNuevos, newIds, labId }) {
     let q = supabase
         .from('products_with_lab')
         .select('id, nombre, es_antibiotico, laboratorio_nombre, laboratorio_id', { count: 'exact' })
@@ -68,7 +68,16 @@ export function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, sortKey
     q = q.order(sortKey, { ascending });
     if (sortKey !== 'nombre') q = q.order('nombre', { ascending: true });
 
-    if (term.length >= 2) q = q.or(filtroProductoOCodigo(term));
+    // La búsqueda con la regla del portal. El orden de la tabla lo sigue
+    // mandando la columna elegida (por defecto el laboratorio: es una lista de
+    // trabajo agrupada), no la relevancia. El laboratorio se ve, así que se busca.
+    let aproximado = false;
+    if (term.length >= 2) {
+        const r = await buscarIdsDeProducto(term, { limite: 1000, conLaboratorio: true });
+        if (r.error) return { data: null, count: 0, error: r.error };
+        q = q.in('id', r.ids.length ? r.ids : [0]);
+        aproximado = r.aproximado;
+    }
 
     if (ruleFilter === 'con') {
         q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);
@@ -81,7 +90,7 @@ export function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, sortKey
         q = arr.length > 0 ? q.in('id', arr) : q.in('id', [0]);
     }
 
-    return q;
+    return { ...(await q), aproximado };
 }
 
 export function deleteDispatchRule(id) {

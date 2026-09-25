@@ -4,6 +4,7 @@ import {
     ClipboardList, PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
 } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
+import AvisoParecidos from '../../components/common/AvisoParecidos';
 import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -290,6 +291,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const [busqueda, setBusqueda] = useState('');
 
     const [candidatos, setCandidatos] = useState([]);
+    const [sonParecidos, setSonParecidos] = useState(false);
     const [cargando,   setCargando]   = useState(false);
 
     const [lineas, setLineas] = useState([]);
@@ -416,6 +418,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
         const t = setTimeout(() => {
             buscar({ erpSucursalId, texto: q }).then(r => {
                 if (cancelado) return;
+                setSonParecidos(!!r.aproximado);
                 // Un producto por fila: el lote se elige después, y verlo
                 // repetido en el buscador confunde.
                 const vistos = new Set();
@@ -1176,6 +1179,8 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                         </p>
                     </div>
                 )}
+
+                {!cargando && sonParecidos && candidatos.length > 0 && <AvisoParecidos texto={busqueda} />}
 
                 {!cargando && candidatos.map(f => {
                     const dias = diasHasta(f.fecha_vencimiento);

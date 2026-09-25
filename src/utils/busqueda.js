@@ -90,6 +90,7 @@ export function compactar(texto = '') {
 // ── La consulta ─────────────────────────────────────────────────────────────
 
 const ES_NUMERO = /^\d+(?:\.\d+)?$/;
+const SOLO_DIGITOS = /^\d+$/;
 /** Un número de 6+ dígitos es un identificador (correlativo, NIT, código),
  *  no una cantidad: ahí «80360» sí debe encontrar «0000080360». Y lo que se
  *  busca adentro tiene que tener 4+ dígitos, igual que `es_busqueda_de_codigo`:
@@ -146,7 +147,7 @@ function coincidePalabra({ t, tipo, junto }, h) {
         if (h.palabras.includes(t)) return 2;
         // Un entero encuentra un monto con decimales: «138» → «138.97».
         if (!t.includes('.') && h.palabras.some(w => w.startsWith(t + '.'))) return 1;
-        if (t.length >= MIN_DIGITOS_DENTRO && h.palabras.some(w => w.length >= LARGO_IDENTIFICADOR && ES_NUMERO.test(w) && w.includes(t))) return 1;
+        if (t.length >= MIN_DIGITOS_DENTRO && !t.includes('.') && h.palabras.some(w => w.length >= LARGO_IDENTIFICADOR && SOLO_DIGITOS.test(w) && w.includes(t))) return 1;
         return 0;
     }
     if (tipo === 'mixto') {

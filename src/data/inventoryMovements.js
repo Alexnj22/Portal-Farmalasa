@@ -1,6 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { insertApprovalRequestSilent } from './requests';
-import { filtroProductoOCodigo } from '../utils/searchUtils';
+import { buscarProductos, buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 
 // Datos del widget de cargas y descartes de inventario.
 //
@@ -67,13 +67,9 @@ export async function buscarEnCatalogo({ erpSucursalId, texto }) {
     const q = String(texto ?? '').trim();
     if (q.length < 2) return { filas: [], error: null };
 
-    const { data, error } = await supabase
-        .from('products')
-        .select('id, nombre, regulado, perecedero')
-        .eq('activo', true)
-        .or(filtroProductoOCodigo(q))
-        .order('nombre')
-        .range(0, 60);
+    const { data, error, aproximado } = await buscarProductos(q, {
+        select: 'id, nombre, regulado, perecedero', limite: 61,
+    });
 
     if (error) return { filas: [], error };
     const productos = data ?? [];
@@ -112,6 +108,7 @@ export async function buscarEnCatalogo({ erpSucursalId, texto }) {
             perecedero: p.perecedero,
         })),
         error: null,
+        aproximado,
     };
 }
 
@@ -120,17 +117,24 @@ export async function buscarConExistencia({ erpSucursalId, texto }) {
     const q = String(texto ?? '').trim();
     if (q.length < 2) return { filas: [], error: null };
 
+    // Con la regla del portal y no con `ilike` de la frase entera, que no
+    // quitaba tildes, exigía el orden de las palabras y no leía el código de
+    // barras (la CARGA sí lo leía: el mismo widget buscaba distinto según el
+    // sentido). El texto se busca en `products`: la descripción del inventario
+    // ES el nombre del producto (medido en 24,226 de 24,226 filas).
+    const { ids, aproximado, error: errIds } = await buscarIdsDeProducto(q, { limite: 200, soloActivos: false });
+    if (errIds) return { filas: [], error: errIds };
+    if (!ids.length) return { filas: [], error: null };
     const { data, error } = await supabase
         .from('inventory')
         .select('erp_product_id, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad')
         .eq('erp_sucursal_id', Number(erpSucursalId))
         .eq('is_vencidos', false)
         .gt('cantidad', 0)
-        .ilike('descripcion', `%${q}%`)
-        .order('descripcion')
-        .range(0, 60);
+        .in('erp_product_id', ids)
+        .range(0, 999);
 
-    return { filas: data ?? [], error };
+    return { filas: enElOrdenDe(data, ids, 'erp_product_id').slice(0, 61), error, aproximado };
 }
 
 /**

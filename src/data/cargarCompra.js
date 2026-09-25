@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { buscarProductos as buscarPorRegla } from './busquedaProductos';
 
 // Cargar compra desde el documento — la capa de datos.
 //
@@ -118,13 +119,9 @@ export async function apartarRenglon(id, deshacer = false) {
 export async function buscarProductos(texto, limite = 12) {
     const q = String(texto ?? '').trim();
     if (q.length < 3) return { filas: [], error: null };
-    const { data, error } = await supabase
-        .from('products')
-        .select('id, nombre, codigo_barras')
-        .ilike('nombre', `%${q}%`)
-        .eq('activo', true)
-        .order('nombre')
-        .limit(limite);
+    const { data, error, aproximado } = await buscarPorRegla(q, {
+        select: 'id, nombre, codigo_barras', limite,
+    });
     if (error) return { filas: [], error };
-    return { filas: data ?? [], error: null };
+    return { filas: data ?? [], error: null, aproximado };
 }

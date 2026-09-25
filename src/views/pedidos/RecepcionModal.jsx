@@ -686,6 +686,7 @@ export default function RecepcionModal({
     const [extraError, setExtraError] = useState(null);
     const [extraSearch,  setExtraSearch]  = useState('');
     const [extraResults, setExtraResults] = useState([]);
+    const [extrasParecidos, setExtrasParecidos] = useState(false);
     const [extraBusy,    setExtraBusy]    = useState(false);
     const [prevScreen,   setPrevScreen]   = useState(null);
 
@@ -963,9 +964,10 @@ export default function RecepcionModal({
         const existingIds = [...rows.map(r => r.erp_product_id), ...extras.map(e => e.erp_product_id)];
         const t = setTimeout(async () => {
             setExtraBusy(true);
-            const { data, error } = await searchAvailableProducts(extraSearch.trim(), existingIds);
+            const { data, error, aproximado } = await searchAvailableProducts(extraSearch.trim(), existingIds);
             if (error) console.error('extras search failed:', error.message);
             setExtraResults((data || []).slice(0, 8));
+            setExtrasParecidos(!!aproximado);
             setExtraBusy(false);
         }, 300);
         return () => clearTimeout(t);
@@ -2115,6 +2117,11 @@ export default function RecepcionModal({
                                 patrón es el mismo del buscador de «Enviar
                                 producto»: fila de tarjeta, texto a la izquierda y
                                 el `+` como pista, no como protagonista. */}
+                            {extrasParecidos && (
+                                <p className="px-3 pt-2 pb-1 text-caption font-bold text-content-3">
+                                    Parecidos a &ldquo;{extraSearch.trim()}&rdquo;
+                                </p>
+                            )}
                             <div className="divide-y divide-divider max-h-72 overflow-y-auto">
                                 {extraResults.map(prod => (
                                     <button

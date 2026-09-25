@@ -101,9 +101,12 @@ describe('el diccionario que hace que el trabajo baje solo', () => {
 describe('las cotizaciones', () => {
     it('el buscador de productos sólo ofrece los ACTIVOS', async () => {
         // Cotizar uno dado de baja produce un precio que no se puede facturar.
-        searchProductsActive('amox');
-        expect(espia.todos('eq')).toContainEqual(['activo', true]);
-        expect(espia.primero('limit')).toEqual([20]);
+        // Desde v2.1065.0 lo resuelve la búsqueda única del portal.
+        await searchProductsActive('amox');
+        const [llamada] = espia.rpc;
+        expect(llamada.nombre).toBe('buscar_productos_ids');
+        expect(llamada.args.p_solo_activos).toBe(true);
+        expect(llamada.args.p_limite).toBe(20);
     });
 
     it('el de clientes tiene su propio tope, y ordena por nombre', () => {

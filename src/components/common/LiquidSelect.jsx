@@ -31,6 +31,9 @@ const LiquidSelect = ({
     maxOptions = 100,
     // Server-side search: parent handles filtering, just display options as-is
     serverSearch = false,
+    // Con `serverSearch` la búsqueda es de la base: si lo que devolvió es
+    // APROXIMADO (`buscar_productos_ids`), el padre lo dice acá y el menú avisa.
+    parecidos = false,
     // Called (debounced 300ms) when user types — use to run server queries
     onSearchChange = null,
     // Show loading spinner inside dropdown
@@ -293,7 +296,7 @@ const LiquidSelect = ({
         const exactas = (lista) => ({ lista, aproximado: false });
         if (serverSearch) {
             // Parent controls data — show everything except separator and empty-value (handled by clearable button)
-            return exactas(options.filter(opt => !opt.isSeparator && opt.value !== ''));
+            return { lista: options.filter(opt => !opt.isSeparator && opt.value !== ''), aproximado: !!parecidos && !!searchTerm.trim() };
         }
         // Large lists: require typing before showing anything
         if (isLargeList && !searchTerm) return exactas([]);
@@ -309,7 +312,7 @@ const LiquidSelect = ({
             { orden: 'relevancia' },
         );
         return { lista: resultados.slice(0, maxOptions), aproximado };
-    }, [options, searchTerm, isLargeList, maxOptions, serverSearch]);
+    }, [options, searchTerm, isLargeList, maxOptions, serverSearch, parecidos]);
 
     // Navigable (non-separator, non-disabled) options — used for keyboard nav
     const selectableOptions = useMemo(() =>
@@ -829,6 +832,7 @@ const LiquidSelect = ({
                     placeholder="Buscar..."
 
                     serverSearch={serverSearch}
+                    parecidos={parecidos}
                     onSearchChange={onSearchChange}
                     isLoading={isLoading}
                     clearable={clearable}

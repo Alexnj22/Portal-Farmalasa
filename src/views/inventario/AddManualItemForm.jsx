@@ -74,6 +74,7 @@ const FALLO = 'fallo';
 export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = false }) {
     const { showToast } = useToastStore();
     const [results, setResults] = useState([]);
+    const [sonParecidos, setSonParecidos] = useState(false);
     const [selected, setSelected] = useState(null);
     const [presentacionOpts, setPresentacionOpts] = useState([]);
     const [presentacion, setPresentacion] = useState('');
@@ -95,10 +96,11 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
     // en el estante aparece también el B. El duplicado real es
     // (producto, presentación, lote), y ahora lo rechaza agregar_item_conteo.
     const handleSearch = async (q) => {
-        if (!q || q.trim().length < 2) { setResults([]); return; }
-        const { data, error } = await searchActiveProductsForConteo(q.trim());
+        if (!q || q.trim().length < 2) { setResults([]); setSonParecidos(false); return; }
+        const { data, error, aproximado } = await searchActiveProductsForConteo(q.trim());
         if (error) console.error('handleSearch: product search failed:', error.message);
         setResults(data || []);
+        setSonParecidos(!!aproximado);
     };
 
     // Elegir un producto y traer con qué se cuenta. Recibe la FILA y no un id:
@@ -258,6 +260,7 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                                 ariaLabel="Buscar el producto por nombre o por código"
                                 icon={Search}
                                 serverSearch
+                                parecidos={sonParecidos}
                                 onSearchChange={handleSearch}
                             />
                         </div>

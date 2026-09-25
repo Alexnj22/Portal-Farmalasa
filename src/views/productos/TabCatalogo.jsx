@@ -38,6 +38,7 @@ import {
     fetchChangelogPage, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
 } from '../../data/productos';
 import PortalInput from '../../components/common/PortalInput';
+import AvisoParecidos from '../../components/common/AvisoParecidos';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
@@ -1497,6 +1498,7 @@ export default function TabCatalogo({
 
     const [products, setProducts]     = useState([]);
     const [total, setTotal]           = useState(0);
+    const [sonParecidos, setSonParecidos] = useState(false);
     const [loading, setLoading]       = useState(false);
     const [loadError, setLoadError]   = useState(null);
     const loadRef = useRef(0);
@@ -1644,7 +1646,7 @@ export default function TabCatalogo({
                 return;
             }
 
-            const { data, count, error } = await fetchProductsList({
+            const { data, count, error, aproximado } = await fetchProductsList({
                 search: term, page: pg, pageSize: ps, filterActivo: fa, laboratorioId: lab, categoria: cat,
                 filterNuevos: fNuevosIso, effectiveBids, sortField: sField, sortDir: sDir,
             });
@@ -1653,6 +1655,7 @@ export default function TabCatalogo({
             const rows = data || [];
             setProducts(rows);
             setTotal(count || 0);
+            setSonParecidos(!!aproximado);
 
             if (rows.length > 0) {
                 const ids = rows.map(r => r.id);
@@ -1891,6 +1894,7 @@ export default function TabCatalogo({
             </div>
 
             {/* ── Table ── */}
+            {sonParecidos && !loadError && <AvisoParecidos texto={searchTerm} className="mb-3" />}
             {loadError ? (
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger-text" />

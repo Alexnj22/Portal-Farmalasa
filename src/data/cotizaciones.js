@@ -3,7 +3,7 @@
 // data/system.js: fetchBranchesBasic, mismo query exacto).
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
-import { filtroProductoOCodigo } from '../utils/searchUtils';
+import { buscarProductos } from './busquedaProductos';
 
 // Paginado con fetchAllRows — antes era un while-loop manual con el mismo
 // patrón 1000-en-1000 ya presente en otros archivos de este bloque.
@@ -19,12 +19,7 @@ export function fetchAllProductPreciosForCotizaciones() {
 }
 
 export function searchProductsActive(term) {
-    return supabase.from('products')
-        .select('id, nombre')
-        .eq('activo', true)
-        .or(filtroProductoOCodigo(term))
-        .order('nombre')
-        .limit(20);
+    return buscarProductos(term, { select: 'id, nombre', limite: 20 });
 }
 
 export function searchCustomersByName(term) {

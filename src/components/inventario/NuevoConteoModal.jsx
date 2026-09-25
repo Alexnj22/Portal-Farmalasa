@@ -92,6 +92,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const [laboratorioId, setLaboratorioId] = useState('');
     const [laboratorios, setLaboratorios] = useState([]);
     const [manualResults, setManualResults] = useState([]);
+    const [sonParecidos, setSonParecidos] = useState(false);
     const [manualSelected, setManualSelected] = useState([]);
     const [saving, setSaving] = useState(false);
     const [tamano, setTamano] = useState(String(TAMANO_DEFAULT));
@@ -149,9 +150,10 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const laboratorioOpts = laboratorios.map((l) => ({ value: String(l.id), label: l.nombre }));
 
     const handleManualSearch = async (q) => {
-        if (!q || q.trim().length < 2) { setManualResults([]); return; }
-        const { data, error } = await searchActiveProductsForConteo(q.trim());
+        if (!q || q.trim().length < 2) { setManualResults([]); setSonParecidos(false); return; }
+        const { data, error, aproximado } = await searchActiveProductsForConteo(q.trim());
         if (error) console.error('NuevoConteoModal: search products failed:', error.message);
+        setSonParecidos(!!aproximado);
         setManualResults((data || []).filter((p) => !manualSelected.some((s) => s.id === p.id)));
     };
 
@@ -315,7 +317,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                 <LiquidSelect value={null} onChange={(val) => {
                                     const found = manualResults.find((p) => String(p.id) === val);
                                     if (found) { setManualSelected((prev) => [...prev, found]); setManualResults((prev) => prev.filter((p) => p.id !== found.id)); }
-                                }} options={manualResults.map((p) => ({ value: String(p.id), label: `${p.nombre}${p.laboratorios?.nombre ? ` · ${p.laboratorios.nombre}` : ''}` }))} placeholder="Buscar producto..." serverSearch onSearchChange={handleManualSearch} icon={Search} />
+                                }} options={manualResults.map((p) => ({ value: String(p.id), label: `${p.nombre}${p.laboratorios?.nombre ? ` · ${p.laboratorios.nombre}` : ''}` }))} placeholder="Buscar producto..." serverSearch parecidos={sonParecidos} onSearchChange={handleManualSearch} icon={Search} />
                                 {manualSelected.length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-2">
                                         {manualSelected.map((p) => (

@@ -89,6 +89,7 @@ export const AREAS = [
             'src/store/slices/systemSlice.js',
             'src/hooks/', 'src/utils/',
             'src/data/constants.js', 'src/data/system.js',
+            'src/data/busquedaProductos.js',   // la búsqueda de producto de TODO el portal (PLAN-BUSQUEDA-UNIFICADA)
             'public/', 'vite.config.js', 'index.html',
         ],
         tablas: ['banner_portal', 'module_locks', 'mv_refresh_state', 'job_watermarks'],

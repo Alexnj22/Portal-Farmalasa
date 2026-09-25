@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1065.0 — Búsqueda de producto: una sola función en la base
+
+F3 de `docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md`: la regla de búsqueda ahora
+vive también en la base, y todos los buscadores de producto usan una sola
+función.
+
+- **El gemelo SQL** (`20260925181147`): `norm_busqueda`, `busqueda_palabras`,
+  `busqueda_puntaje` y `busqueda_parecido`. `npm run busqueda:gemelos` lo
+  enfrenta al de JS en tres pruebas: los 77 casos, los **33,808 nombres
+  reales** (productos, clientes y proveedores) y 26 búsquedas completas contra
+  el catálogo, orden incluido. Resultado: 0 diferencias.
+- **`products` gana columnas generadas** (`nombre_busq`, `pactivo_busq`, sus
+  formas compactas y `busq_todo`, con índice de trigramas) y la función única
+  **`buscar_productos_ids`** (`20260925181538`). Devuelve los ids ordenados
+  por relevancia y cae a la búsqueda aproximada si no hay coincidencia exacta.
+  Se optimizó en `20260925182005`, sin consultas internas: «5» bajó de 401 ms
+  a 25, «tab» a 30. La aproximada tarda ~90 ms.
+- **Pasan a la función única**: catálogo, reglas de despacho, recepción,
+  conteo (alta manual y nuevo conteo), cotizaciones, carga y descarga de
+  inventario, y el buscador de cargar compra. La descarga de inventario y
+  cargar compra usaban `ilike` de la frase entera: no quitaban tildes, el
+  orden de las palabras importaba y no leían el código de barras.
+- **«Se busca lo que se ve»**: el catálogo busca también por principio activo y
+  laboratorio porque los muestra, y el conteo y las reglas por laboratorio.
+- **El catálogo ordena por parecido** cuando nadie eligió otra columna. Las
+  reglas de despacho conservan su orden por laboratorio.
+- **`AvisoParecidos`** es el aviso canónico de la búsqueda aproximada; lo
+  muestran el catálogo, las reglas, cargar compra y el widget de inventario.
+  `LiquidSelect` y `SelectorTactil` aceptan `parecidos` para avisarlo en modo
+  servidor, y recepción lo avisa en su lista.
+- Cuatro pruebas verificaban la forma vieja de la consulta (`.or`, `.limit`,
+  `.eq('activo')`) y se reescribieron sobre el contrato nuevo. El espía de
+  Supabase aprendió a responder un `rpc`.
+
 ## v2.1064.5 — Puntos: las cuentas que no pasan solas quedan aparte, y se asignan a mano
 
 Decisión del usuario sobre las 709 cuentas de la base vieja que no se pueden

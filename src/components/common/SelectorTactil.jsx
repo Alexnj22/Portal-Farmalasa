@@ -64,6 +64,7 @@ const SelectorTactil = memo(({
     // muestra lo que llegó y avisa lo que se tecleó (mismo contrato que
     // `LiquidSelect`).
     serverSearch = false,
+    parecidos = false,
     onSearchChange,
     isLoading = false,
     clearable = true,
@@ -97,10 +98,10 @@ const SelectorTactil = memo(({
     // agrupa por letra y el riel salta a la letra, así que reordenar por
     // parecido rompería los grupos. Lo aproximado sí se avisa.
     const { grupos, sonParecidos } = useMemo(() => {
-        if (serverSearch || !q.trim()) return { grupos: agruparPorLetra(options), sonParecidos: false };
+        if (serverSearch || !q.trim()) return { grupos: agruparPorLetra(options), sonParecidos: serverSearch && !!parecidos && !!q.trim() };
         const { resultados, aproximado } = filtrar(q, options, (o) => [o.label], { orden: 'original' });
         return { grupos: agruparPorLetra(resultados), sonParecidos: aproximado };
-    }, [options, q, serverSearch]);
+    }, [options, q, serverSearch, parecidos]);
 
     const letras = grupos.map((g) => g.letra);
     const totalVisible = grupos.reduce((n, g) => n + g.items.length, 0);

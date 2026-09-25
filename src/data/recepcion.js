@@ -5,7 +5,7 @@
 // data/pedidos.js (Bloque 6.A) — mismo query exacto, no se duplica.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
-import { filtroProductoOCodigo } from '../utils/searchUtils';
+import { buscarProductos } from './busquedaProductos';
 
 export function fetchProductPreciosOpts(productId) {
     return supabase.from('product_precios')
@@ -28,11 +28,14 @@ export function fetchProductPreciosOptsForProducts(productIds) {
 // sigue viendo en la tarjeta del pedido, que lo trae por su cuenta
 // (`fetchApoyoForPedidos` → `apoyoMap` en `usePedidosData`, bucket `recepcion`).
 
-export function searchAvailableProducts(term, excludeIds) {
-    let q = supabase.from('products').select('id, nombre')
-        .eq('activo', true).or(filtroProductoOCodigo(term)).order('nombre').limit(10);
-    if (excludeIds.length > 0) q = q.not('id', 'in', `(${excludeIds.join(',')})`);
-    return q;
+export async function searchAvailableProducts(term, excludeIds) {
+    // Se piden de más por los que ya están en el pedido, que se descartan acá.
+    const r = await buscarProductos(term, {
+        select: 'id, nombre',
+        limite: 10 + excludeIds.length,
+        armar: (q) => excludeIds.length > 0 ? q.not('id', 'in', `(${excludeIds.join(',')})`) : q,
+    });
+    return { ...r, data: r.data?.slice(0, 10) ?? r.data };
 }
 
 export function fetchLastDispatchInfo(productId) {

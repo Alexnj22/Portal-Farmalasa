@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.3 — Diferencias: tarjetas con lo recuperado, barra y caras de los responsables
+
+Pedido del usuario sobre /caja → Diferencias: tarjetas más informativas.
+
+- Cada día muestra el monto grande, un **anillo con el % recuperado** (abonado +
+  causa encontrada) y una **barra apilada** con su leyenda: abonado, con causa,
+  por cobrar, por confirmar y sin resolver — sólo los tramos con monto.
+- Los cortes del día van como línea de tiempo con un punto del color de su estado.
+- Al pie, las **caras de los responsables** (hasta 4 y «+N») y cuánto se debe.
+- La ficha del día repite el anillo y la barra arriba.
+- Al asignar responsables, cada persona sale con su foto (atenuada si no está
+  marcada); en «Responsables», foto y barra de lo abonado por persona.
+- Lógica pura nueva en `diferenciasDeCaja.js` (`desgloseDelDia`,
+  `responsablesDelDia`) con pruebas: el desglose suma exacto al centavo y no
+  pinta 100% hasta que está completo.
 ## v2.1075.2 — Boleta y planilla impresas: los montos con separador de miles
 
 A pedido del usuario (todavía no se usan en sala): los 34 montos de la

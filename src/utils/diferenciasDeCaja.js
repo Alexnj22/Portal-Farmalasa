@@ -249,3 +249,63 @@ export function diaEnMes(dia, mes) {
 export function mesesDeLosDias(dias) {
     return [...new Set((dias || []).map((d) => String(d.fecha).slice(0, 7)))].sort().reverse();
 }
+
+/**
+ * En qué quedó el dinero de un día, por tramos, para la barra de la tarjeta.
+ * Pidió el usuario el 2026-09-25 «que se vea cuánto se ha abonado» sin abrir
+ * la ficha.
+ *
+ * Faltante (`falta`): lo que ya volvió —`abonado`, y `explicado` cuando se
+ * encontró la causa— contra lo que no: `porCobrar` (responsables con saldo),
+ * `sinResolver` y `porConfirmar`. Sobrante (`sobra`): `explicado` (con causa o
+ * retirado), `acumulado` y `porConfirmar`.
+ *
+ * Suma exacto al total al centavo: los tramos salen de los mismos cortes que
+ * `conEstados` y nada se reparte dos veces. `pct` es lo cubierto sobre el
+ * total, redondeado hacia abajo — un 99.6% no se pinta como 100.
+ */
+export function desgloseDelDia(dia, signo = 'falta') {
+    const t = { abonado: 0, explicado: 0, porCobrar: 0, sinResolver: 0, porConfirmar: 0, acumulado: 0 };
+    for (const c of dia?.cortes || []) {
+        const m = Math.abs(centavos(c.tramo));
+        const dif = c.diferencia;
+        if (!dif) {
+            if (c.estado === 'PENDIENTE') t.porConfirmar += m;
+            else if (signo === 'sobra') t.acumulado += m;
+            else t.sinResolver += m;
+        } else if (dif.via === 'REPONE') {
+            const saldo = Math.min(m, centavos(saldoDeDiferencia(dif)));
+            t.porCobrar += saldo;
+            t.abonado += m - saldo;
+        } else {
+            t.explicado += m;
+        }
+    }
+    const total = Object.values(t).reduce((a, b) => a + b, 0);
+    const cubierto = t.abonado + t.explicado;
+    const out = { total: total / 100, cubierto: cubierto / 100, pct: total > 0 ? Math.floor((cubierto * 100) / total) : 0 };
+    for (const k of Object.keys(t)) out[k] = t[k] / 100;
+    return out;
+}
+
+/**
+ * Quiénes responden por los faltantes del día, una vez cada uno aunque estén en
+ * varios cortes, con lo que les tocó, lo que abonaron y lo que deben.
+ */
+export function responsablesDelDia(dia) {
+    const porId = new Map();
+    for (const c of dia?.cortes || []) {
+        if (c.diferencia?.via !== 'REPONE') continue;
+        for (const p of c.diferencia.personas || []) {
+            const k = String(p.persona_id);
+            const prev = porId.get(k) || { persona_id: p.persona_id, nombre: p.nombre, monto: 0, abonado: 0, saldo: 0 };
+            prev.monto += centavos(p.monto);
+            prev.abonado += centavos(p.abonado);
+            prev.saldo += centavos(p.saldo);
+            porId.set(k, prev);
+        }
+    }
+    return [...porId.values()]
+        .map((p) => ({ ...p, monto: p.monto / 100, abonado: p.abonado / 100, saldo: p.saldo / 100 }))
+        .sort((a, b) => b.saldo - a.saldo || String(a.nombre).localeCompare(String(b.nombre)));
+}

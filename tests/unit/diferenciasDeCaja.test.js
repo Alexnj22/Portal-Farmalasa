@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     conEstados, diaEnFiltro, diaEnMes, estadoDeCorte, mesesDeLosDias, ordenarDias, peorEstado,
     pendientesDeRegistrar, porSigno, resumenDeDias,
-    saldoDeDiferencia,
+    saldoDeDiferencia, desgloseDelDia, responsablesDelDia,
 } from '../../src/utils/diferenciasDeCaja';
 
 // El caso real que originó la pestaña: Salud 2, 24-sep, faltante de −$20.25 en
@@ -182,5 +182,40 @@ describe('diaEnMes y ordenarDias', () => {
     });
     it('los meses, del más reciente al más viejo', () => {
         expect(mesesDeLosDias([viejo, reciente, sobra])).toEqual(['2026-09', '2026-08']);
+    });
+});
+
+describe('desgloseDelDia', () => {
+    const dia = { cortes: [
+        { tramo: -10, estado: 'CONFIRMADO', diferencia: { via: 'REPONE', asignado: 10, abonado: 3.25 } },
+        { tramo: -5, estado: 'CONFIRMADO', diferencia: { via: 'JUSTIFICA' } },
+        { tramo: -2, estado: 'CONFIRMADO', diferencia: null },
+        { tramo: -1, estado: 'PENDIENTE', diferencia: null },
+    ] };
+    it('reparte el faltante sin perder un centavo', () => {
+        const d = desgloseDelDia(dia, 'falta');
+        expect(d).toMatchObject({ total: 18, abonado: 3.25, porCobrar: 6.75, explicado: 5, sinResolver: 2, porConfirmar: 1 });
+        expect(d.cubierto).toBe(8.25);
+        expect(d.pct).toBe(45);
+    });
+    it('un sobrante sin causa se acumula, no queda sin resolver', () => {
+        const d = desgloseDelDia({ cortes: [{ tramo: 4, estado: 'CONFIRMADO', diferencia: null }] }, 'sobra');
+        expect(d).toMatchObject({ acumulado: 4, sinResolver: 0, pct: 0 });
+    });
+    it('no pinta 100 hasta que está completo', () => {
+        const d = desgloseDelDia({ cortes: [{ tramo: -100, diferencia: { via: 'REPONE', asignado: 100, abonado: 99.99 } }] });
+        expect(d.pct).toBe(99);
+    });
+});
+
+describe('responsablesDelDia', () => {
+    it('une a la misma persona de varios cortes, los que deben primero', () => {
+        const r = responsablesDelDia({ cortes: [
+            { diferencia: { via: 'REPONE', personas: [{ persona_id: 1, nombre: 'A', monto: 2, abonado: 2, saldo: 0 }, { persona_id: 2, nombre: 'B', monto: 3, abonado: 0, saldo: 3 }] } },
+            { diferencia: { via: 'REPONE', personas: [{ persona_id: 1, nombre: 'A', monto: 1.1, abonado: 0, saldo: 1.1 }] } },
+            { diferencia: { via: 'JUSTIFICA', personas: [{ persona_id: 9 }] } },
+        ] });
+        expect(r.map((p) => p.persona_id)).toEqual([2, 1]);
+        expect(r[1]).toMatchObject({ monto: 3.1, abonado: 2, saldo: 1.1 });
     });
 });

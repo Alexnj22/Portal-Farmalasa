@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronRight, HandCoins, Search, ShieldCheck } from 'lucide-react';
+import { ChevronRight, HandCoins, Search, ShieldCheck, Users } from 'lucide-react';
+import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
@@ -11,6 +12,8 @@ import { clickable } from '../../utils/clickable';
 import { formatMoney } from '../../utils/formatNumber';
 import { hora12 } from '../../utils/hora';
 import { fechaTexto } from '../../utils/fecha';
+import { desgloseDelDia, responsablesDelDia } from '../../utils/diferenciasDeCaja';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 /**
  * La pestaña «Diferencias» de /caja: qué días tuvieron diferencia, cómo quedó
@@ -54,11 +57,115 @@ const conSigno = (n) => {
 // El monto del día en el signo que se está mirando. Nunca el neto: faltantes
 // y sobrantes no se restan entre sí (ver LA REGLA en `diferenciasDeCaja.js`).
 const montoDelDia = (d, signo) => (signo === 'sobra' ? Number(d.sobrante || 0) : Math.abs(Number(d.faltante || 0)));
-const tituloDelDia = (d, signo) => (signo === 'sobra'
-    ? `Sobraron ${formatMoney(montoDelDia(d, signo))}`
-    : `Faltaron ${formatMoney(montoDelDia(d, signo))}`);
-
 const clave = (d) => `${d.branch_id}|${d.fecha}`;
+
+/* Los tramos de la barra, en el orden en que se leen: primero lo que ya
+ * volvió, después lo que falta. Las clases van LITERALES para que Tailwind las
+ * vea (ver la nota de `AvatarConEstado`). */
+const TRAMOS = {
+    falta: [
+        { k: 'abonado',      label: 'Abonado',      barra: 'bg-success',  punto: 'bg-success' },
+        { k: 'explicado',    label: 'Con causa',    barra: 'bg-chart-1',  punto: 'bg-chart-1' },
+        { k: 'porCobrar',    label: 'Por cobrar',   barra: 'bg-warning',  punto: 'bg-warning' },
+        { k: 'porConfirmar', label: 'Por confirmar', barra: 'bg-chart-8', punto: 'bg-chart-8' },
+        { k: 'sinResolver',  label: 'Sin resolver', barra: 'bg-danger',   punto: 'bg-danger' },
+    ],
+    sobra: [
+        { k: 'explicado',    label: 'Con causa',    barra: 'bg-chart-1',  punto: 'bg-chart-1' },
+        { k: 'acumulado',    label: 'Acumulado',    barra: 'bg-warning',  punto: 'bg-warning' },
+        { k: 'porConfirmar', label: 'Por confirmar', barra: 'bg-chart-8', punto: 'bg-chart-8' },
+    ],
+};
+
+const PUNTO_ESTADO = {
+    sin_resolver: 'bg-danger', por_confirmar: 'bg-chart-8', con_saldo: 'bg-warning',
+    por_registrar: 'bg-chart-1', acumulado: 'bg-warning', resuelto: 'bg-success',
+};
+
+/** El anillo de lo recuperado: el ancho del arco ES el dato. */
+function AnilloRecuperado({ pct, px = 60 }) {
+    const r = 24;
+    const largo = 2 * Math.PI * r;
+    const color = pct >= 100 ? 'text-success-text' : pct > 0 ? 'text-warning-text' : 'text-danger-text';
+    return (
+        <div className="relative shrink-0" style={{ width: px, height: px }} data-medida="dato"
+             role="img" aria-label={`${pct}% recuperado`}>
+            <svg viewBox="0 0 60 60" className="w-full h-full -rotate-90" aria-hidden="true">
+                <circle cx="30" cy="30" r={r} fill="none" strokeWidth="6" className="stroke-border-card" />
+                <circle
+                    cx="30" cy="30" r={r} fill="none" strokeWidth="6" strokeLinecap="round"
+                    stroke="currentColor" className={`${color} transition-[stroke-dashoffset] duration-[var(--dur-lento)]`}
+                    strokeDasharray={largo} strokeDashoffset={largo * (1 - Math.min(100, pct) / 100)}
+                />
+            </svg>
+            <span className={`absolute inset-0 grid place-items-center text-caption font-black tabular-nums ${color}`}>
+                {pct}%
+            </span>
+        </div>
+    );
+}
+
+/** La barra apilada del día y su leyenda. Sólo los tramos que tienen algo. */
+function BarraDelDia({ desglose, signo }) {
+    const tramos = TRAMOS[signo === 'sobra' ? 'sobra' : 'falta'].filter((t) => desglose[t.k] > 0);
+    if (!desglose.total) return null;
+    return (
+        <div className="space-y-1.5">
+            <div className="flex h-2 rounded-full overflow-hidden bg-border-card gap-px" data-medida="dato">
+                {tramos.map((t) => (
+                    <div key={t.k} className={`h-full ${t.barra} transition-[width] duration-[var(--dur-lento)]`}
+                         style={{ width: `${(desglose[t.k] / desglose.total) * 100}%` }} />
+                ))}
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-caption">
+                {tramos.map((t) => (
+                    <span key={t.k} className="inline-flex items-center gap-1.5 text-content-2">
+                        <span className={`w-2 h-2 rounded-full ${t.punto}`} aria-hidden="true" />
+                        {t.label}
+                        <span className="font-bold tabular-nums text-content">{formatMoney(desglose[t.k])}</span>
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/** Las caras de quienes responden, encimadas, con cuánto debe el grupo. */
+function CarasResponsables({ personas }) {
+    if (!personas.length) {
+        return (
+            <span className="inline-flex items-center gap-1.5 text-caption text-content-3">
+                <Users className="w-3.5 h-3.5" aria-hidden="true" />
+                Sin responsables asignados
+            </span>
+        );
+    }
+    const visibles = personas.slice(0, 4);
+    const resto = personas.length - visibles.length;
+    const nombres = personas.slice(0, 2).map((p) => shortEmployeeName(p.nombre)).join(', ');
+    return (
+        <div className="flex items-center gap-2 min-w-0">
+            <div className="flex -space-x-2 shrink-0">
+                {visibles.map((p) => (
+                    <AvatarConEstado
+                        key={p.persona_id}
+                        emp={{ id: p.persona_id, name: p.nombre }}
+                        px={28} radio="rounded-full" mostrarChip={false}
+                        marco="border-2 border-surface"
+                    />
+                ))}
+                {resto > 0 && (
+                    <span className="w-7 h-7 rounded-full border-2 border-surface bg-border-card grid place-items-center text-micro font-black text-content-2">
+                        +{resto}
+                    </span>
+                )}
+            </div>
+            <span className="text-caption text-content-2 truncate">
+                {nombres}{personas.length > 2 ? ` y ${personas.length - 2} más` : ''}
+            </span>
+        </div>
+    );
+}
 
 export default function DiasConDiferencia({
     dias = [],
@@ -131,11 +238,13 @@ export default function DiasConDiferencia({
                 {ordenados.map((d) => {
                     const e = ESTADO[d.estadoDif] || ESTADO.resuelto;
                     const sala = nombreSala[d.branch_id] || `Sucursal ${d.branch_id}`;
+                    const desglose = desgloseDelDia(d, signo);
+                    const personas = signo === 'sobra' ? [] : responsablesDelDia(d);
                     return (
                         <div
                             key={clave(d)}
                             data-surface="card"
-                            className="p-3 space-y-2 cursor-pointer active:scale-[0.97] transition-transform min-h-[var(--tap-min)]"
+                            className="p-4 space-y-3 cursor-pointer active:scale-[0.97] transition-transform min-h-[var(--tap-min)]"
                             {...clickable(() => setAbierto(clave(d)), { label: `Abrir ${sala} del ${rotularFecha(d.fecha)}` })}
                         >
                             <div className="flex items-start justify-between gap-2">
@@ -146,26 +255,55 @@ export default function DiasConDiferencia({
                                 <Badge variant={e.variant} size="sm" dot>{e.label}</Badge>
                             </div>
 
-                            <div className={`text-body font-bold tabular-nums ${signo === 'sobra' ? 'text-warning-text' : 'text-danger-text'}`}>
-                                {tituloDelDia(d, signo)}
-                            </div>
-
-                            <div className="space-y-0.5">
-                                {d.cortes.map((c) => (
-                                    <div key={c.id} className="flex items-baseline justify-between gap-2 text-caption">
-                                        <span className="text-content-2">Corte de las {hora12(c.hora)}</span>
-                                        <span className={`tabular-nums font-bold ${colorDe(c.tramo)}`}>{conSigno(c.tramo)}</span>
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                    <div className="text-caption font-black uppercase tracking-widest text-content-3">
+                                        {signo === 'sobra' ? 'Sobraron' : 'Faltaron'}
                                     </div>
-                                ))}
+                                    <div className={`text-title font-bold tabular-nums leading-tight ${signo === 'sobra' ? 'text-warning-text' : 'text-danger-text'}`}>
+                                        {formatMoney(montoDelDia(d, signo))}
+                                    </div>
+                                    {signo !== 'sobra' && (
+                                        <div className="text-caption text-content-2 tabular-nums">
+                                            Recuperado {formatMoney(desglose.cubierto)}
+                                        </div>
+                                    )}
+                                </div>
+                                {signo !== 'sobra' && <AnilloRecuperado pct={desglose.pct} />}
                             </div>
 
-                            <div className="flex items-center justify-between gap-2 text-caption">
-                                <span className="text-content-3">
-                                    {d.saldo > 0
-                                        ? `Por cobrar ${formatMoney(d.saldo)}`
-                                        : `${d.cortes.length} de ${d.cortes_del_dia} ${Number(d.cortes_del_dia) === 1 ? 'corte' : 'cortes'} del día`}
-                                </span>
-                                <ChevronRight className="w-4 h-4 text-content-3" aria-hidden="true" />
+                            <BarraDelDia desglose={desglose} signo={signo} />
+
+                            <ol className="space-y-1 border-t border-border-card pt-2">
+                                {d.cortes.map((c) => {
+                                    const ec = ESTADO[c.estadoDif] || ESTADO.resuelto;
+                                    return (
+                                        <li key={c.id} className="flex items-center gap-2 text-caption">
+                                            <span className={`w-2 h-2 rounded-full shrink-0 ${PUNTO_ESTADO[c.estadoDif] || 'bg-success'}`} aria-hidden="true" />
+                                            <span className="text-content-2 shrink-0">{hora12(c.hora)}</span>
+                                            <span className="text-content-3 truncate flex-1">{ec.label}</span>
+                                            <span className={`tabular-nums font-bold ${colorDe(c.tramo)}`}>{conSigno(c.tramo)}</span>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+
+                            <div className="flex items-center justify-between gap-2 border-t border-border-card pt-2">
+                                {signo === 'sobra' ? (
+                                    <span className="text-caption text-content-3">
+                                        {d.cortes.length} de {d.cortes_del_dia} {Number(d.cortes_del_dia) === 1 ? 'corte' : 'cortes'} del día
+                                    </span>
+                                ) : (
+                                    <CarasResponsables personas={personas} />
+                                )}
+                                <div className="flex items-center gap-1 shrink-0">
+                                    {d.saldo > 0 && (
+                                        <span className="text-caption font-bold tabular-nums text-warning-text">
+                                            Debe {formatMoney(d.saldo)}
+                                        </span>
+                                    )}
+                                    <ChevronRight className="w-4 h-4 text-content-3" aria-hidden="true" />
+                                </div>
                             </div>
                         </div>
                     );
@@ -196,9 +334,13 @@ export default function DiasConDiferencia({
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3">
                                     {signo === 'sobra' ? 'Sobrante del día' : 'Faltante del día'}
                                 </span>
-                                <div className={`text-title font-bold tabular-nums ${signo === 'sobra' ? 'text-warning-text' : 'text-danger-text'}`}>
-                                    {formatMoney(montoDelDia(visible, signo))}
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className={`text-title font-bold tabular-nums ${signo === 'sobra' ? 'text-warning-text' : 'text-danger-text'}`}>
+                                        {formatMoney(montoDelDia(visible, signo))}
+                                    </div>
+                                    {signo !== 'sobra' && <AnilloRecuperado pct={desgloseDelDia(visible, signo).pct} px={52} />}
                                 </div>
+                                <BarraDelDia desglose={desgloseDelDia(visible, signo)} signo={signo} />
                                 <p className="text-caption text-content-2">
                                     {signo === 'sobra'
                                         ? 'Queda en el acumulado de la sala para el inventario. Si tiene causa, explícalo con su comprobante y sale del acumulado.'

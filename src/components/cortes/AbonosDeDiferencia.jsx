@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Ban, HandCoins, Printer, Wallet } from 'lucide-react';
+import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Notice from '../common/Notice';
@@ -131,7 +132,12 @@ export default function AbonosDeDiferencia({
                     const malMonto = centavos(monto) <= 0 || centavos(monto) > centavos(queda);
                     return (
                         <div key={p.persona_id} className="flex items-center gap-2 flex-wrap">
-                            <div className="min-w-0 flex-1">
+                            <AvatarConEstado
+                                emp={{ id: p.persona_id, name: p.nombre }} px={36}
+                                radio="rounded-full" mostrarChip={false}
+                                marco={pagado ? 'border-2 border-success' : 'border border-border-card'}
+                            />
+                            <div className="min-w-0 flex-1 space-y-1">
                                 <div className="text-label font-bold text-content truncate">
                                     {shortEmployeeName(p.nombre)}
                                 </div>
@@ -139,6 +145,12 @@ export default function AbonosDeDiferencia({
                                     Le toca {formatMoney(p.monto)}
                                     {Number(p.abonado) > 0 && ` · abonó ${formatMoney(p.abonado)}`}
                                 </div>
+                                {Number(p.monto) > 0 && (
+                                    <div className="h-1 rounded-full bg-border-card overflow-hidden max-w-40" data-medida="dato">
+                                        <div className="h-full bg-success"
+                                             style={{ width: `${Math.min(100, (Number(p.abonado || 0) / Number(p.monto)) * 100)}%` }} />
+                                    </div>
+                                )}
                             </div>
                             {pagado ? (
                                 <Badge variant="success" size="sm">Pagado</Badge>

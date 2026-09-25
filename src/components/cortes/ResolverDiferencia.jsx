@@ -3,6 +3,7 @@ import { Ban, HandCoins, Image as ImageIcon, Printer, ShieldCheck } from 'lucide
 import AbonosDeDiferencia from './AbonosDeDiferencia';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
+import AvatarConEstado from '../common/AvatarConEstado';
 import Checkbox from '../common/Checkbox';
 import FileField from '../common/FileField';
 import Notice from '../common/Notice';
@@ -468,6 +469,11 @@ export default function ResolverDiferencia({
                         const marcada = marcadas.has(c.id);
                         return (
                             <div key={c.id} className="flex items-center gap-2">
+                                <AvatarConEstado
+                                    emp={c} px={36} radio="rounded-full" mostrarChip={false}
+                                    className={`transition-opacity ${marcada ? '' : 'opacity-50'}`}
+                                    marco={marcada ? 'border-2 border-danger' : 'border border-border-card'}
+                                />
                                 <div className="min-w-0 flex-1">
                                     <Checkbox
                                         name={`aporta-${c.id}`}

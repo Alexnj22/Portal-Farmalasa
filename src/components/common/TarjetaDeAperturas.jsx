@@ -134,12 +134,15 @@ export function CuerpoDeAperturas({ datos, claseTenue, isDark, buscarEmpleado })
                                         <DoorOpen className="w-3 h-3" />
                                     </span>
                                 )}
-                                <span className="flex-1 min-w-0 truncate text-caption font-semibold">
-                                    {s.sala}
-                                </span>
-                                <span className={`flex-shrink-0 max-w-[45%] truncate text-caption ${claseTenue}
-                                    ${s.quien ? '' : 'italic'}`}>
-                                    {s.quien || 'desde la caja'}
+                                {/* Sala arriba y persona abajo, en la misma columna.
+                                    En una sola línea, a 320 px la sala desaparecía
+                                    entera y el nombre salía con «…» (usuario,
+                                    25-sep: «en móvil sale cortado»). */}
+                                <span className="flex-1 min-w-0 flex flex-col leading-tight">
+                                    <span className="text-caption font-semibold break-words">{s.sala}</span>
+                                    <span className={`text-caption break-words ${claseTenue} ${s.quien ? '' : 'italic'}`}>
+                                        {s.quien || 'desde la caja'}
+                                    </span>
                                 </span>
                             </li>
                         );

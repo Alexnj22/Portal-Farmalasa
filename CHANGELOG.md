@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.9 — Aviso de aperturas sin cortes en el teléfono
+
+En la campana, cada renglón de «Así abrió la mañana» pone la sala arriba y
+quién abrió debajo. En una sola línea, a 320 px el nombre de la sala
+desaparecía entero y el de la persona salía con «…».
+
 ## v2.1060.8 — Inicio en el teléfono: el título completo y Personalizar en la barra flotante
 
 Pedido del usuario, 2026-09-24: el título salía cortado como «In», y

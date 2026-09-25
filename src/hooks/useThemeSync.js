@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../plataforma/ThemeContext';
 import { fetchUserTheme, upsertUserTheme } from '../data/dashboard';
 import { COLUMNA_TEMA } from '../plataforma/temaPorDispositivo';
 

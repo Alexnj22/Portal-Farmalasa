@@ -3,7 +3,7 @@ import ListRow from './ListRow';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Moon, Sun, Layers, Monitor, ChevronDown } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../plataforma/ThemeContext';
 import useCapaFlotante from '../../plataforma/capaFlotante';
 
 const STYLE_META = {

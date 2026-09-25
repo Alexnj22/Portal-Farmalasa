@@ -373,7 +373,7 @@ const EXCEPTIONS = {
   // por eso nunca aparecieron. Son hex por naturaleza de la tecnología,
   // exactamente la categoría "Mapas/canvas/PDF" que ya existe arriba.
   'src/utils/pedidoPrint.js': ['hex'],            // pdfmake: docDefinition, no CSS
-  'src/utils/documentoDeBienvenida.js': ['hex'],  // idem: es un PDF, no hay tokens de tema en un papel
+  'src/plataforma/documentoDeBienvenida.js': ['hex'],  // idem: es un PDF, no hay tokens de tema en un papel
   'src/utils/constanciaDeSancion.js': ['hex'],    // idem: la constancia del Art. 83 se imprime y se firma
   // El QR tiene que ser negro puro sobre blanco puro: es lo que lee un lector, y
   // un token de tema lo dejaría claro sobre claro en oscuro — ilegible para
@@ -385,7 +385,7 @@ const EXCEPTIONS = {
   'src/utils/conteoInventarioPrint.js': ['hex', 'formato-cifra'],
   // <meta name="theme-color"> necesita un color SÓLIDO; --bg-page es un
   // gradiente, así que no se puede derivar del token con getComputedStyle.
-  'src/context/ThemeContext.jsx': ['hex'],
+  'src/plataforma/ThemeContext.jsx': ['hex'],
   // ── Agregadas en D2.1 (2026-07-26) al tokenizar la escala tipográfica ──
   // Piezas únicas fuera de la rampa, no una escala: emoji decorativos de
   // fondo (120/80px, opacity .07 — decoración, no texto) y un numeral hero

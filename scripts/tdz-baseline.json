@@ -6,7 +6,7 @@
     "src/utils/ticketPrint.js": 1,
     "src/utils/timeClock.rules.js": 1,
     "src/utils/timeClock.helpers.js": 2,
-    "src/utils/documentoDeBienvenida.js": 4,
+    "src/plataforma/documentoDeBienvenida.js": 4,
     "src/utils/conteoInventarioPrint.js": 2,
     "src/utils/turnoDelDia.js": 3,
     "src/components/forms/FormClienteDetail.jsx": 1,

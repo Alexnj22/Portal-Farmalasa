@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1062.5 — Núcleo portable: el tema y el documento de bienvenida a la capa de la web
+
+Sin cambios visibles. Plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+
+- `ThemeContext` (aplica el tema sobre la página) y `documentoDeBienvenida`
+  (arma el PDF recortando la foto en un lienzo) se mudan a `src/plataforma/`:
+  son de la web de punta a punta. Contenido sin cambios; imports, excepciones
+  de `gate:design`, baselines, pruebas y documentación actualizados.
+- Verificado el tema contra `main` con preferencia clara y oscura del sistema:
+  idéntico (el login sigue la preferencia; adentro manda el tema guardado de
+  la cuenta). Peso por vista sin cambios. `gate:nucleo` 18 → 8.
+
 ## v2.1062.4 — Ticketera: lo del navegador a su capa, el ticket se queda en el núcleo
 
 Sin cambios visibles. Tanda B2 del plan

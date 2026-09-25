@@ -25,7 +25,7 @@
  * logo, y no tokens del modo claro/oscuro. Es el mismo criterio del ticket.
  */
 import { EMPRESA } from '../constants/empresa';
-import { MARCA } from './documentoDeBienvenida';
+import { MARCA } from '../plataforma/documentoDeBienvenida';
 
 // pdfmake por `await import()` — la regla de librerías pesadas de CLAUDE.md.
 // Este archivo ya viaja diferido dentro del modal de sanción, pero la librería

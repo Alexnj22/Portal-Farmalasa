@@ -22,7 +22,7 @@ const html = leer('index.html');
 const modulo = leer('src/plataforma/temaPorDispositivo.js');
 // La OTRA mitad del espejo: el script inline resuelve lo mismo que
 // `resolveInitialTheme`, que es quien lee las claves del lado de React.
-const contexto = leer('src/context/ThemeContext.jsx');
+const contexto = leer('src/plataforma/ThemeContext.jsx');
 
 describe('el script inline de index.html espeja temaPorDispositivo.js', () => {
     it('usa la misma consulta para decidir si es un teléfono', () => {

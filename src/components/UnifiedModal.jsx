@@ -495,7 +495,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                          * contraseña en pantalla: es la única copia que queda, y
                          * callarla sería perderla por haber desmarcado una
                          * casilla. */
-                        const { descargarDocumentoDeBienvenida } = await import('../utils/documentoDeBienvenida');
+                        const { descargarDocumentoDeBienvenida } = await import('../plataforma/documentoDeBienvenida');
                         const doc = quiereDocumento ? await descargarDocumentoDeBienvenida({
                             nombre: `${finalData.first_names || ''} ${finalData.last_names || ''}`.trim(),
                             cargo: roles?.find(r => String(r.id) === String(finalData.role_id))?.name || '',

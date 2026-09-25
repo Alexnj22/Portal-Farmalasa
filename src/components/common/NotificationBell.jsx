@@ -6,7 +6,7 @@ import {
     Bell, BellRing, Check, Megaphone, ChevronRight, Trash2, X, Undo2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../plataforma/ThemeContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { PIDE_DECISION } from '../../utils/notificacionTexto';

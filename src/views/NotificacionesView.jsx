@@ -11,7 +11,7 @@ import TablePagination from '../components/common/TablePagination';
 import TarjetaDeAviso from '../components/common/TarjetaDeAviso';
 import { paletaDeAviso } from '../components/common/paletaDeAviso';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../plataforma/ThemeContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';

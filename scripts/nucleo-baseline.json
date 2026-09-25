@@ -1,6 +1,6 @@
 {
-  "total": 18,
-  "archivos": 10,
+  "total": 8,
+  "archivos": 8,
   "porArchivo": {
     "src/constants/moduleMap.js": {
       "pantalla": 1
@@ -14,14 +14,8 @@
     "src/context/AuthContext.jsx": {
       "pantalla": 1
     },
-    "src/context/ThemeContext.jsx": {
-      "navegador": 7
-    },
     "src/data/constants.js": {
       "pantalla": 1
-    },
-    "src/utils/documentoDeBienvenida.js": {
-      "navegador": 3
     },
     "src/utils/documentosDelExpediente.js": {
       "pantalla": 1

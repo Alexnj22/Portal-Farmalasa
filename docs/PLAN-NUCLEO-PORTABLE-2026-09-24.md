@@ -86,7 +86,7 @@ Contando **uso real** (sin comentarios): `window`, `document`,
 | `utils/routeOptimizer.js` | 17 | Google Maps por `window` + env |
 | `hooks/usePushSubscription.js` | 13 | Web Push (`navigator.serviceWorker`) |
 | `utils/ticketPrint.js` | 9 | ventana de impresión + ajustes locales |
-| `plataforma/useAnclaje.js`, `context/ThemeContext.jsx` | 9 c/u | `window`/`document` |
+| `plataforma/useAnclaje.js`, `plataforma/ThemeContext.jsx` | 9 c/u | `window`/`document` |
 | 46 archivos más | 1–8 | la mayoría, almacenamiento o `document` para un PDF/foto |
 
 Por tipo, lo que hay detrás son **cinco adaptadores**, no 55 arreglos:

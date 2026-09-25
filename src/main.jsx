@@ -76,7 +76,7 @@ window.addEventListener('vite:preloadError', (event) => {
 
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
-import { ThemeProvider } from "./context/ThemeContext";
+import { ThemeProvider } from "./plataforma/ThemeContext";
 import MotionProvider from "./components/MotionProvider";
 
 // Register service worker for Web Push

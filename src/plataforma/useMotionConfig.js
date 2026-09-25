@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useReducedMotion } from 'framer-motion';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from './ThemeContext';
 
 /**
  * useMotionConfig — un solo lugar donde se decide cuánto se mueve la interfaz.

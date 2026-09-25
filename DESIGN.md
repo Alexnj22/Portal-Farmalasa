@@ -98,7 +98,7 @@ seleccionable vía `ThemeToggle`, montado permanentemente en el sidebar
 **Decisión tomada (2026-07-24, T7.5)**: Liquid Glass sobrevive como tema
 seleccionable — no se retira. Ver `AUDITORIA-TEMA-2026-07.md` §11.
 
-**ThemeContext** (`src/context/ThemeContext.jsx`) persists choice to `localStorage` under key `portal-theme`.
+**ThemeContext** (`src/plataforma/ThemeContext.jsx`) persists choice to `localStorage` under key `portal-theme`.
 Exposes `{ theme, setTheme, cycleTheme, isDark, isSolid, isLiquid, themes }`. `cycleTheme` (rotates
 liquid → dark → solid → solid-dark → liquid) still exists but `ThemeToggle` no longer calls it —
 see below.

@@ -37,7 +37,7 @@
  */
 
 import { EMPRESA } from '../constants/empresa';
-import { comoSeLlamaLaSede } from './marcaDeLaSala';
+import { comoSeLlamaLaSede } from '../utils/marcaDeLaSala';
 
 // pdfmake y jsbarcode van por `await import()`: son las dos librerías pesadas de
 // la regla de CLAUDE.md, y este archivo lo importa el alta de personal, que casi
@@ -965,7 +965,7 @@ export async function descargarDocumentoDeBienvenida(datos) {
          *
          * `logoDeLaSala` se queda exportado: sigue siendo la regla correcta
          * para lo que sí habla de una sala. */
-        const { LOGO_DE_LA_EMPRESA, logoComoDataUrl } = await import('./marcaDeLaSala');
+        const { LOGO_DE_LA_EMPRESA, logoComoDataUrl } = await import('../utils/marcaDeLaSala');
         const [pdfMake, barrasPng, iconoPng, logoPng] = await Promise.all([
             getPdfMake(),
             barrasComoPng(datos?.valorDelCarne),

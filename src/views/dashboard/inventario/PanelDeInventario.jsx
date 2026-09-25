@@ -60,6 +60,7 @@ import { useComposicionTraslado } from '../../../store/composicionTraslado';
  * la vista. Del otro lado ya se abría así. */
 const PedirTrasladoModal = lazy(() => import('../PedirTrasladoModal'));
 import { ERP_BRANCH_MAP, BRANCH_ORDER, MI_ERP_POR_BRANCH } from './salas';
+import { fechaTexto } from '../../../utils/fecha';
 
 // Desde cuántas letras se sale a preguntar. Con una sola, el buscador pedía
 // 16,722 filas —lo que empareja con «a»— y el navegador se quedaba pintando.
@@ -124,7 +125,7 @@ function daysUntil(d) {
 const DIAS_PRONTO_A_VENCER = 180;
 
 const fmtVenceCorto = (d) => d
-  ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })
+  ? fechaTexto(d, { day: '2-digit', month: 'short', year: '2-digit' })
   : 'sin fecha';
 
 /**
@@ -240,7 +241,7 @@ function ExpiryBadge({ date }) {
       size="sm" uppercase={false} className="shrink-0 whitespace-nowrap">
       {isExpired
         ? '⚠ Vencido'
-        : new Date(date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+        : fechaTexto(date, { day: '2-digit', month: 'short', year: '2-digit' })}
     </Badge>
   );
 }

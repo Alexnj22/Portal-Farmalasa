@@ -7,6 +7,7 @@ import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useToastStore } from '../../store/toastStore';
 import { fetchDatosPedidos, responderDatoPedido } from '../../data/datosPedidos';
+import { fechaTexto } from '../../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Lo que el portal le PIDE a la sala para poder terminar un documento.
@@ -39,7 +40,7 @@ import { fetchDatosPedidos, responderDatoPedido } from '../../data/datosPedidos'
 const REFRESCO_MS = 5 * 60 * 1000;
 
 const fmtFecha = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', timeZone: 'UTC' })
+    ? fechaTexto(f, { day: '2-digit', month: 'short' })
     : '—');
 
 function Pedido({ p, onListo }) {

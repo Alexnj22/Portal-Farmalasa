@@ -22,6 +22,7 @@ import PanelDeducibilidad from './PanelDeducibilidad';
 import FilterBar from '../../components/common/FilterBar';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { fechaNumerica } from '../../utils/fecha';
 
 const SIN_CATEGORIA = '__sin_categoria__';
 
@@ -75,13 +76,7 @@ const BASE_COLS = [
     { key: 'ultima',     label: 'Última compra', align: 'left', hideBelow: 'lg', sortable: true },
 ];
 
-const fmtDate = (d) => {
-    if (!d) return '—';
-    const s = String(d).slice(0, 10);
-    const [y, m, day] = s.split('-');
-    if (!y || !m || !day) return '—';
-    return `${day}/${m}/${y}`;
-};
+const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
 
 // ── CategoriaCell / MatchErpCell — solo lectura; editar vive en el modal
 // detalle (FormProveedorDetail), a pedido del usuario 2026-07-18. ───────────

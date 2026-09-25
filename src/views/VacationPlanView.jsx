@@ -28,10 +28,11 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
 import { hora12 } from '../utils/hora';
+import { fechaTexto } from '../utils/fecha';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-const fmtShort = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' }) : '—';
+const fmtDate  = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtShort = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short' }) : '—';
 const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000) + 1;
 
 /* ── Un extremo con hora NO es un día de vacación ──────────────────────────
@@ -200,7 +201,7 @@ const EligibilityBanner = ({ info }) => {
 const GanttChart = ({ plans, year }) => {
     const months = Array.from({ length: 12 }, (_, i) => ({
         idx:   i,
-        label: new Date(year, i, 1).toLocaleDateString('es-SV', { month: 'short' }),
+        label: fechaTexto(new Date(year, i, 1), { month: 'short' }),
         days:  new Date(year, i + 1, 0).getDate(),
     }));
 

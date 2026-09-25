@@ -62,6 +62,7 @@
 // que la maqueta lo sigue cargando con node; la extensión va explícita porque
 // node ESM no la adivina y Vite la acepta igual.
 import { shortEmployeeName } from './nameUtils.js';
+import { fechaTexto } from './fecha';
 
 // ── El código del formulario ──────────────────────────────────────────────
 // Se lo asignó el usuario al portal (2026-09-03): «el cod. asignale uno tú, si
@@ -208,7 +209,7 @@ const esc = (v) => String(v ?? '')
 const num = (v) => (v === null || v === undefined ? '' : String(Number(v)));
 
 const fecha = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })
+    ? fechaTexto(f, { day: '2-digit', month: '2-digit', year: 'numeric' })
     : '');
 
 const nombreMes = (p) => {
@@ -231,7 +232,7 @@ const quienAnoto = (r) => shortEmployeeName({
 });
 
 const diaSemana = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { weekday: 'short', timeZone: 'UTC' })
+    ? fechaTexto(f, { weekday: 'short' })
         .replace(/\./g, '').slice(0, 3)
     : '');
 
@@ -311,7 +312,7 @@ function firmas(cierre) {
             <div class="rol">Regente farmacéutico</div>
             <div class="que">Nombre, firma y sello</div>
             ${cerrado ? `<div class="dicho">Dado por finalizado por ${esc(cierre.firmado_por || '')} el ${
-        new Date(cierre.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        fechaTexto(cierre.created_at, { day: '2-digit', month: '2-digit', year: 'numeric' })
     }</div>` : ''}
         </div></div>
     </div>`;

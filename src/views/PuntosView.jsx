@@ -41,6 +41,7 @@ import {
     fetchResumenDePuntos, fetchAvisosDePuntos, fetchCuentasPorAsignar, QUE_HACER_POR_MOTIVO,
 } from '../data/puntos';
 import AsignarCuentaModal from './puntos/AsignarCuentaModal';
+import { fechaTexto } from '../utils/fecha';
 
 const PESTANAS = [
     { key: 'resumen',     label: 'Resumen',             icon: Gauge },
@@ -51,14 +52,11 @@ const PESTANAS = [
 // 100 puntos = US$1.00 (cláusula 4 del reglamento).
 const dolares = (puntos) => formatMoney((Number(puntos) || 0) / 100);
 const pts = (n) => formatQty(Number(n) || 0);
-const fechaCorta = (iso) => iso
-    ? new Date(`${String(iso).slice(0, 10)}T12:00:00`).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })
-    : '—';
+const fechaCorta = (iso) => fechaTexto(iso, { day: 'numeric', month: 'short', year: 'numeric' }, '—');
 // «octubre de 2027» → «Octubre de 2027»: sólo la primera letra. Con la clase
 // `capitalize` salía «Octubre De 2027».
 const mesLargo = (iso) => {
-    const t = new Date(`${String(iso).slice(0, 10)}T12:00:00`)
-        .toLocaleDateString('es-SV', { month: 'long', year: 'numeric' });
+    const t = fechaTexto(iso, { month: 'long', year: 'numeric' });
     return t.charAt(0).toUpperCase() + t.slice(1);
 };
 

@@ -35,7 +35,7 @@ import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fechaHora12 } from '../../utils/hora';
-import { relojSV } from '../../utils/fecha';
+import { fechaNumerica, relojSV } from '../../utils/fecha';
 
 const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
@@ -79,13 +79,7 @@ const REVIEW_COLS = [
 
 const fmt$ = (n) => formatMoney(n || 0);
 const fmtMB = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-const fmtDate = (d) => {
-    if (!d) return '—';
-    const s = String(d).slice(0, 10);
-    const [y, m, day] = s.split('-');
-    if (!y || !m || !day) return '—';
-    return `${day}/${m}/${y}`;
-};
+const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
 const fmtDateTime = (d) => {
     if (!d) return '—';
     const dt = new Date(d);

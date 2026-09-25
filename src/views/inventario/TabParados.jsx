@@ -19,7 +19,7 @@ import { porQueDesde } from '../../utils/productosParados';
 import { fetchUnidadDeDespacho } from '../../data/inventory';
 import { nombreDeDespacho, paraBodega, esPocoParaMandar } from '../../utils/unidadDeDespacho';
 import { ERP_NAMES, ERP_ORDER, ERP_BODEGA, MI_ERP_POR_BRANCH, SUC_VARIANTE } from './salasDeStock';
-import { hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 const EnviarProductoModal = lazy(() => import('../dashboard/EnviarProductoModal'));
 
@@ -29,7 +29,7 @@ const POR_ENVIO = 20;
 const VISIBLES = 8;
 
 const fechaLarga = (iso) => iso
-    ? new Date(`${iso}T12:00:00`).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })
+    ? fechaTexto(iso, { day: 'numeric', month: 'short', year: 'numeric' })
     : null;
 const unidades = (n) => `${Number(n || 0).toLocaleString('es-SV')} ${Number(n) === 1 ? 'unidad' : 'unidades'}`;
 
@@ -218,7 +218,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
 
     const exportar = useCallback(() => {
         const suc = ERP_NAMES[sala] || `Suc.${sala}`;
-        const dia = (f) => f ? new Date(`${f}T12:00:00`).toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+        const dia = (f) => f ? fechaTexto(f, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
         const headers = ['Sucursal', 'Enviar a', 'Producto', 'Laboratorio', 'Unidades', 'Costo',
                          'Cuenta desde', 'Por qué esa fecha', 'Días', 'Vendidas allá (6m)', 'Min', 'Max'];
         const rows = grupos.flatMap(g => g.filas.map(r => [

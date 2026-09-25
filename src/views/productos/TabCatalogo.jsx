@@ -42,6 +42,7 @@ import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 
 const PRICE_FIELDS = [
@@ -189,7 +190,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 a mano. `StatCard` ya la tenía, con la × al estar activa incluida. */}
             <StatCard
                 icon={Sparkles} iconBg={nuevosIconBg} iconCls="text-success-text"
-                label="Nuevos"                 sub={`agregados en ${new Date().toLocaleDateString('es-SV', { month: 'long' })}`}
+                label="Nuevos"                 sub={`agregados en ${fechaTexto(hoySV(), { month: 'long' })}`}
                 value={productStatsLoading ? '–' : (productStats?.nuevos ?? 0).toLocaleString()}
                 valueCls="text-success-text"
                 tono="brand" active={filterNuevos}
@@ -743,7 +744,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true, comoPanel = fal
             </span>
         </div>
     );
-    const fmtDate   = d => d ? new Date(d).toLocaleDateString('es-SV', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+    const fmtDate   = d => d ? fechaTexto(d, { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
     const fmtCost   = v => v != null && parseFloat(v) > 0 ? `$${parseFloat(v).toFixed(4)}` : '—';
 
     return (
@@ -823,7 +824,7 @@ function PriceHistorySection({ history, allowedPriceFields, comoPanel = false })
     if (deduped.length === 0)
         return <p className="text-label text-content-3 italic">Sin historial de precios registrado.</p>;
 
-    const fmtDate = d => d ? new Date(d).toLocaleDateString('es-SV', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+    const fmtDate = d => d ? fechaTexto(d, { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
     const visible = showAll ? deduped : deduped.slice(0, 8);
     // Fecha y presentación son el encabezado del bloque; los siete niveles, la
     // misma escalera que la sección de precios. Como tabla son nueve columnas y
@@ -1302,7 +1303,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                                                             {fmtP(ch.anterior)}
                                                                         </span>
                                                                         <span className="text-micro text-content-3">
-                                                                            {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
+                                                                            {fechaTexto(ch.detected_at, { month: 'short', day: 'numeric' })}
                                                                         </span>
                                                                     </div>
                                                                 )}
@@ -1359,7 +1360,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     {displayLog1.map((c, i) => (
                                         <div key={i} className="flex items-center gap-2 text-label flex-wrap">
                                             <span className={`font-mono text-caption shrink-0 px-1.5 py-0.5 rounded border ${xk.changelogDate}`}>
-                                                {new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
+                                                {fechaTexto(c.detected_at, { month: 'short', day: 'numeric' })}
                                             </span>
                                             <span className={`font-semibold ${xk.changelogField}`}>{c.campo}</span>
                                             <span className={`line-through text-caption ${xk.changelogOld}`}>{c.valor_anterior || '—'}</span>

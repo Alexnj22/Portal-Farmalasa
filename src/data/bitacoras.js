@@ -27,7 +27,6 @@ import { hoySV } from '../utils/fecha';
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Hoy en El Salvador (UTC−6, sin horario de verano). */
-export { hoySV };
 
 /** El período `YYYY-MM` de una fecha. */
 export const periodoDe = (fecha) => String(fecha || hoySV()).slice(0, 7);

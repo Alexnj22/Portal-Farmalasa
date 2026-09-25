@@ -13,7 +13,7 @@ import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { saldoDeBolsa } from '../../utils/bolsasReparto';
 import { hora12 } from '../../utils/hora';
-import { hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 /* El formulario se baja al apretar su botón, no al entrar al Inicio: arrastra el
  * canónico de archivo y el selector de personas, y la baldosa se ve entera sin
@@ -74,9 +74,8 @@ const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
     if (fecha === correrDia(hoy, -1)) return 'Ayer';
-    return new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
-        day: 'numeric', month: 'short', timeZone: 'UTC',
-    });
+    return fechaTexto(fecha, {
+        day: 'numeric', month: 'short' });
 };
 
 export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null }) {

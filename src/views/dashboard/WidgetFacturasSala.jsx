@@ -14,6 +14,7 @@ import {
 } from '../../data/facturasSala';
 import { downloadPurchaseDtePackage } from '../../data/facturasCompra';
 import { formatMoney } from '../../utils/formatNumber';
+import { fechaNumerica } from '../../utils/fecha';
 
 // Widget «Facturas de mi Sala».
 //
@@ -52,14 +53,7 @@ import { formatMoney } from '../../utils/formatNumber';
 // «Facturas de Sala» en Compras, que sí tiene su propio período.
 const DIAS_VISIBLES = 30;
 
-const fmtFecha = (iso) => {
-    if (!iso) return '';
-    // `iso` es un `date` de Postgres (YYYY-MM-DD). Partirlo a mano y no con
-    // `new Date(iso)`: eso lo lee como UTC medianoche y en El Salvador (-6)
-    // retrocede un día — la factura del 1 se muestra como del 31.
-    const [a, m, d] = iso.split('-');
-    return `${d}/${m}/${a.slice(2)}`;
-};
+const fmtFecha = (iso) => fechaNumerica(iso, { anio: 'corto', vacio: '' });
 
 // La misma trampa que esquiva `fmtFecha`, y la franja de antigüedad caía en
 // ella: `new Date('2026-08-10').getTime()` es medianoche UTC —las 18:00 del día

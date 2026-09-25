@@ -21,6 +21,7 @@ import {
     buscarMedicosLocalPorNombre, completarRenglon, consultarConsejo, fetchRecetasRecientes,
     guardarMedicoDelConsejo, subirFotoDeReceta,
 } from '../../data/bitacoras';
+import { fechaTexto } from '../../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Completar un renglón del libro.
@@ -109,14 +110,14 @@ const Seccion = ({ n, titulo, listo, children }) => (
 const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
 
 const fmtFecha = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', timeZone: 'UTC' })
+    ? fechaTexto(f, { day: '2-digit', month: 'short' })
     : '—');
 
 // El vencimiento SIEMPRE con año: «vence 01-ene» no dice nada — puede ser de
 // hace tres años o del que viene, y es justo el dato con el que se decide si un
 // lote se pudo dispensar.
 const fmtVence = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' })
+    ? fechaTexto(f, { day: '2-digit', month: 'short', year: 'numeric' })
     : '—');
 
 export default function CompletarRenglon({ renglon, branchId, onCerrar }) {

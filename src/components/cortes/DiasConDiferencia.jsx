@@ -10,6 +10,7 @@ import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
 import { clickable } from '../../utils/clickable';
 import { formatMoney } from '../../utils/formatNumber';
 import { hora12 } from '../../utils/hora';
+import { fechaTexto } from '../../utils/fecha';
 
 /**
  * La pestaña «Diferencias» de /caja: qué días tuvieron diferencia, cómo quedó
@@ -40,9 +41,8 @@ const ESTADO = {
 
 // La fecha de un corte es la de la sala: se lee a mediodía UTC para que ningún
 // huso la corra de día.
-const rotularFecha = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-    weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
-});
+const rotularFecha = (f) => fechaTexto(f, {
+    weekday: 'short', day: 'numeric', month: 'short' });
 
 const colorDe = (n) => (Number(n) < 0 ? 'text-danger-text' : Number(n) > 0 ? 'text-warning-text' : 'text-success-text');
 

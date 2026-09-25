@@ -5,7 +5,7 @@
 // hora, durante años. Si algún día no coincide, es que el país cambió de
 // horario y hay que cambiar el canónico — que es justo lo que esta prueba avisa.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { hoySV, diaSV, ahoraSV, horaSV, relojSV, sumarDias, diasEntre, lunesDe } from '../../src/utils/fecha';
+import { hoySV, diaSV, ahoraSV, horaSV, relojSV, sumarDias, diasEntre, lunesDe, diaDe, fechaTexto, fechaNumerica } from '../../src/utils/fecha';
 
 const porZona = (instante) => {
     const partes = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
@@ -76,3 +76,31 @@ describe('aritmética de calendario', () => {
 });
 
 afterEach(() => { vi.useRealTimers(); });
+
+describe('mostrar una fecha', () => {
+    it('un día de calendario se muestra tal cual — no retrocede al día anterior', () => {
+        expect(fechaTexto('2026-03-01', { month: 'long', year: 'numeric' })).toBe('marzo de 2026');
+        expect(fechaTexto('2024-01-01', { day: '2-digit', month: 'short', year: '2-digit' })).toMatch(/^01 ene/);
+        expect(fechaNumerica('2026-03-01')).toBe('01/03/2026');
+    });
+
+    it('un instante se muestra con el día que era en la sala', () => {
+        expect(fechaNumerica('2026-09-26T01:30:00Z')).toBe('25/09/2026');   // 19:30 del 25
+        expect(fechaNumerica('2026-09-26T06:00:00Z')).toBe('26/09/2026');   // medianoche del 26
+        expect(fechaNumerica(new Date('2026-09-26T01:30:00Z'))).toBe('25/09/2026');
+    });
+
+    it('las tres formas numéricas', () => {
+        expect(fechaNumerica('2026-09-05')).toBe('05/09/2026');
+        expect(fechaNumerica('2026-09-05', { anio: 'corto' })).toBe('05/09/26');
+        expect(fechaNumerica('2026-09-05', { anio: false })).toBe('05/09');
+    });
+
+    it('sin fecha devuelve lo que pida quien la muestra', () => {
+        expect(fechaTexto(null)).toBe('');
+        expect(fechaTexto('', {}, '—')).toBe('—');
+        expect(fechaNumerica(undefined, { vacio: null })).toBe(null);
+        expect(fechaNumerica('no es fecha', { vacio: '—' })).toBe('—');
+        expect(diaDe('2026-13-45T99')).toBe(null);
+    });
+});

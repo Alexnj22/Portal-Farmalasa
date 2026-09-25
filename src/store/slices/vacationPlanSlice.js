@@ -8,6 +8,7 @@ import {
 } from '../../data/vacationPlans';
 import { resolverApprovalRequest, updateApprovalRequest } from '../../data/requests';
 import { SUPABASE_URL } from '../../plataforma/config';
+import { fechaTexto } from '../../utils/fecha';
 
 export const createVacationPlanSlice = (set, get) => ({
     vacationPlans: [],
@@ -340,7 +341,7 @@ export const createVacationPlanSlice = (set, get) => ({
                 const plan = get().vacationPlans.find(vp => vp.id === planId);
                 if (plan?.employee_id) {
                     const fmtDate = (d) => d
-                        ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })
+                        ? fechaTexto(d, { day: '2-digit', month: 'long', year: 'numeric' })
                         : '—';
                     await notifyEmployees([String(plan.employee_id)], {
                         type: 'REQUEST_DECIDED',

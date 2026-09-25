@@ -8,7 +8,6 @@ import { hoySV } from '../../utils/fecha';
  * en dos sitios termina dando dos respuestas: es la lección de `turnoDelDia`.
  */
 
-export { hoySV } from '../../utils/fecha';
 
 // El formateador del portal, no `toLocaleString` a mano: un locale escrito en
 // cada archivo es cómo dos pantallas terminan mostrando el mismo número con

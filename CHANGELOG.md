@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1073.2 — U1: mostrar una fecha — un día de calendario ya no retrocede
+
+Arregla fechas que salían **un día —o un mes— antes**, y deja un solo lugar
+que decide cómo se muestra una fecha.
+
+- **El defecto.** `new Date('2026-03-01')` lee un día de calendario como
+  medianoche de Greenwich, que en El Salvador todavía es el 28 de febrero. Las
+  pantallas que lo sabían escribían `+ 'T12:00:00'` a mano; las que no, no.
+  Lo que se veía mal, medido contra columnas `date` de la base:
+  - **Sucursales**: el mes de apertura de las que abrieron un día 1 —cinco de
+    siete— salía con el mes anterior («mayo de 2010» por junio de 2010).
+    Verificado en pantalla contra la base de pruebas.
+  - el **vencimiento de un lote** en el panel de Mín·Máx, un día antes;
+  - el mes de ingreso en la ficha de personal de una sucursal;
+  - el fin del contrato de alquiler de una sucursal.
+- **El canónico**, en `utils/fecha.js`: `fechaTexto(valor, opciones)` y
+  `fechaNumerica(valor, { anio, vacio })`. Distinguen solos un DÍA
+  (`2026-03-01`, se muestra tal cual) de un INSTANTE (se muestra con el día
+  que era en la sala, no en el reloj de quien mira).
+- **133 fechas en 74 archivos** pasan a `fechaTexto`, y las **20 copias** que
+  armaban `dd/mm/aaaa` a mano delegan en `fechaNumerica`. Comparado viejo
+  contra nuevo en hora de El Salvador, sitio por sitio: **68,652 de 74,457
+  iguales**; la diferencia es TODA de tres pantallas que no pedían idioma y
+  mostraban la fecha en el del navegador (ahora, siempre en español).
+- La vista del programa de puntos (nueva) usa también el canónico.
+- `hoySV` ya no se reexporta desde bitácoras ni promociones: se importa del
+  canónico.
+- **`gate:hora` suma `fecha-a-mano`**, un trinquete: quedan 47 fechas
+  formateadas sobre objetos `Date` en 35 archivos
+  (`scripts/fecha-baseline.json`), que piden revisarlas una por una. La
+  cuenta sólo baja; probado que un archivo nuevo no entra ni con `--fijar-fechas`.
+- Verificado: 2,881 pruebas (el canónico también con el equipo en UTC), lint
+  sin errores nuevos, la compilación, y 43 vistas recorridas contra la base de
+  pruebas sin un error de página.
+
 ## v2.1073.1 — U1: un solo «hoy» — el día de El Salvador sale de utils/fecha
 
 Arregla **el día equivocado después de las 6 pm** en 33 lugares, y deja una

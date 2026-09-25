@@ -18,9 +18,8 @@ import { fetchDescuentos } from '../../data/descuentos';
 import { useStaffStore } from '../../store/staffStore';
 import { SALAS_VENTA } from '../metas/metasUtils';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import {
-    estadoVisible, esLaboratorio, textoBuscable, hoySV,
-} from './promocionesUtils';
+import { estadoVisible, esLaboratorio, textoBuscable } from './promocionesUtils';
+import { hoySV } from '../../utils/fecha';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';

@@ -242,7 +242,7 @@ import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -4093,7 +4093,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <LockedField label="Área de Trabajo" value={selectedBranch?.name || formData.branch_id} />
                                         <LockedField label="Cargo Principal" value={roles?.find(r => String(r.id) === String(formData.role_id))?.name || formData.role} />
                                         <LockedField label="Cargo Secundario" value={roles?.find(r => String(r.id) === String(formData.secondary_role_id))?.name || formData.secondary_role || 'Sin cargo secundario'} />
-                                        <LockedField label="Fecha de inicio de labores" value={formData.hire_date ? new Date(formData.hire_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
+                                        <LockedField label="Fecha de inicio de labores" value={formData.hire_date ? fechaTexto(formData.hire_date, { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
                                     </>
                                 ) : (
                                     <>
@@ -4228,7 +4228,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {isEditMode ? (
                                     <>
                                         <LockedField label="Tipo de contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
-                                        <LockedField label="Fecha de contratación" value={formData.contract_start_date ? new Date(formData.contract_start_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
+                                        <LockedField label="Fecha de contratación" value={formData.contract_start_date ? fechaTexto(formData.contract_start_date, { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
                                     </>
                                 ) : (
                                     <>
@@ -4565,13 +4565,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                         {mtps.remitido ? (
                                             <Notice variant="success" icon={CheckCircle2}>
-                                                Remitido el {new Date(mtps.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}.
+                                                Remitido el {fechaTexto(mtps.fecha, { day: '2-digit', month: 'long', year: 'numeric' })}.
                                             </Notice>
                                         ) : (
                                             <Notice variant={mtps.vencido ? 'danger' : 'warning'} icon={AlertTriangle}>
                                                 {mtps.vencido
                                                     ? `El plazo venció hace ${Math.abs(mtps.diasRestantes)} día${Math.abs(mtps.diasRestantes) === 1 ? '' : 's'}. Se remite igual: no haberlo hecho a tiempo no invalida el contrato.`
-                                                    : `Quedan ${mtps.diasRestantes} día${mtps.diasRestantes === 1 ? '' : 's'} para remitir el tercer ejemplar (hasta el ${new Date(mtps.limite + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long' })}).`}
+                                                    : `Quedan ${mtps.diasRestantes} día${mtps.diasRestantes === 1 ? '' : 's'} para remitir el tercer ejemplar (hasta el ${fechaTexto(mtps.limite, { day: '2-digit', month: 'long' })}).`}
                                             </Notice>
                                         )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 items-start">

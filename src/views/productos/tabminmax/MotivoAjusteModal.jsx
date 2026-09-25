@@ -7,6 +7,7 @@ import Button from '../../../components/common/Button';
 import PortalInput from '../../../components/common/PortalInput';
 import PortalTextarea from '../../../components/common/PortalTextarea';
 import { MOTIVO_AJUSTE, ERP_NAMES } from './constants';
+import { fechaTexto } from '../../../utils/fecha';
 
 /**
  * Por qué este MIN·MAX está puesto a mano.
@@ -126,7 +127,7 @@ export default function MotivoAjusteModal({ open, row, puedeYaNoRota, guardando,
                     {row._manual_por && (
                         <p className="text-body-sm text-content-3">
                             Lo ajustó {row._manual_por}
-                            {row._manual_at ? ` el ${new Date(row._manual_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}.
+                            {row._manual_at ? ` el ${fechaTexto(row._manual_at, { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}.
                         </p>
                     )}
                 </div>

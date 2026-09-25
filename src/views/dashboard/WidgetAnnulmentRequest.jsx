@@ -32,7 +32,7 @@ import ListRow from '../../components/common/ListRow';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 const REASONS = [
   'Devolución del cliente',
@@ -152,7 +152,7 @@ function esAnulada(inv) {
 function fmtCurrency(n) { return formatMoney(n ?? 0); }
 function fmtDate(d) {
   if (!d) return '';
-  return new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
+  return fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function DocBadge({ tipo }) {

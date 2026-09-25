@@ -7,6 +7,7 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { fechaTexto } from '../../utils/fecha';
 
 const CONTRACT_TYPE_OPTIONS = [
     { value: 'INDEFINIDO',   label: 'Indefinido (Fijo)' },
@@ -41,7 +42,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
     const roleOpts = (roles || []).map(r => ({ value: String(r.id), label: r.name }));
 
     const lastExit = formData.contract_end_date
-        ? new Date(formData.contract_end_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })
+        ? fechaTexto(formData.contract_end_date, { day: '2-digit', month: 'long', year: 'numeric' })
         : 'No registrada';
 
     const handleContractChange = (v) => {

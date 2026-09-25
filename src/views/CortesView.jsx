@@ -69,7 +69,7 @@ import {
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { formatMoney } from '../utils/formatNumber';
 import { tokenMatch } from '../utils/searchUtils';
-import { hoySV } from '../utils/fecha';
+import { fechaTexto, hoySV } from '../utils/fecha';
 
 // ── Bolsas de efectivo salió de acá el 2026-08-24 ───────────────────────────
 //
@@ -149,9 +149,8 @@ const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
     if (fecha === correrDia(hoy, -1)) return 'Ayer';
-    return new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
-        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
-    });
+    return fechaTexto(fecha, {
+        weekday: 'long', day: 'numeric', month: 'long' });
 };
 
 // ── Los estados NO son pestañas: son filtros (§16.9) ────────────────────────
@@ -253,9 +252,8 @@ const METRICAS_DIF = {
 };
 
 // «sept 2026». La fecha se arma a mediodía UTC para que ningún huso la mueva.
-const rotuloDeMes = (mes) => new Date(`${mes}-15T12:00:00Z`).toLocaleDateString('es-SV', {
-    month: 'long', year: 'numeric', timeZone: 'UTC',
-});
+const rotuloDeMes = (mes) => fechaTexto(`${mes}-15T12:00:00Z`, {
+    month: 'long', year: 'numeric' });
 
 const CortesView = () => {
     const branches = useStaff((s) => s.branches) || VACIO;

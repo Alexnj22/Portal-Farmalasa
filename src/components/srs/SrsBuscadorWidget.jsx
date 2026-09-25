@@ -6,6 +6,7 @@ import Badge from '../common/Badge';
 import SearchInput from '../common/SearchInput';
 import { clickable } from '../../utils/clickable';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { fechaTexto } from '../../utils/fecha';
 
 // Direct fetch wrapper using supabase session token
 async function srsFetch(q, page = 1) {
@@ -157,9 +158,8 @@ function SrsResultCard({ product: p, onSelect }) {
     let fechaStr = '';
     try {
         if (p.FECHA_INSCRIPCION) {
-            fechaStr = new Date(p.FECHA_INSCRIPCION).toLocaleDateString('es-SV', {
-                year: 'numeric', month: 'short', day: 'numeric',
-            });
+            fechaStr = fechaTexto(p.FECHA_INSCRIPCION, {
+                year: 'numeric', month: 'short', day: 'numeric' });
         }
     } catch { /* invalid date — skip */ }
 

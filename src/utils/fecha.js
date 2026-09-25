@@ -84,3 +84,55 @@ export function diasEntre(desde, hasta) {
     const b = Date.parse(`${String(hasta).slice(0, 10)}T00:00:00Z`);
     return Math.round((b - a) / 86_400_000);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mostrar una fecha.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Una fecha llega de dos formas y son cosas distintas:
+//
+//   · un DÍA de calendario — una columna `date` de Postgres: `2026-03-01`
+//   · un INSTANTE — un `timestamptz`, un `Date`, un número de milisegundos
+//
+// El defecto que esto cierra (2026-09-25): `new Date('2026-03-01')` lee el día
+// como medianoche de GREENWICH, que en El Salvador todavía es el 28 de
+// febrero. Así el vencimiento de un lote salía un día antes en Mín·Máx, y la
+// fecha de ingreso de alguien que entró un día 1 salía en el mes anterior. Las
+// pantallas que lo sabían escribían `+ 'T12:00:00'` a mano; las que no, no.
+//
+// Acá se decide UNA vez: un día se muestra tal cual es, y un instante se
+// muestra con el día que era EN LA SALA —no en el reloj de quien mira—.
+
+const SOLO_DIA = /^\d{4}-\d{2}-\d{2}$/;
+
+/** El día de calendario (`YYYY-MM-DD`) de una fecha o un instante; `null` si no es una fecha. */
+export function diaDe(valor) {
+    if (valor == null || valor === '') return null;
+    if (typeof valor === 'string' && SOLO_DIA.test(valor)) return valor;
+    const t = new Date(valor).getTime();
+    return Number.isNaN(t) ? null : diaSV(t);
+}
+
+/**
+ * Una fecha en texto, en español de El Salvador. `opciones` son las de
+ * `Intl.DateTimeFormat` para la FECHA (día, mes, año, día de la semana);
+ * la hora se pide a `hora.js`. Sin fecha válida devuelve `vacio`.
+ */
+export function fechaTexto(valor, opciones = {}, vacio = '') {
+    const dia = diaDe(valor);
+    if (!dia) return vacio;
+    return new Date(`${dia}T12:00:00Z`).toLocaleDateString('es-SV', { ...opciones, timeZone: 'UTC' });
+}
+
+/**
+ * `25/09/2026`, o `25/09/26` con `anio: 'corto'`, o `25/09` con `anio: false`.
+ * Es la forma de las tablas y del papel: se arma con dígitos y no depende del
+ * idioma del navegador.
+ */
+export function fechaNumerica(valor, { anio = 'completo', vacio = '' } = {}) {
+    const dia = diaDe(valor);
+    if (!dia) return vacio;
+    const [a, m, d] = dia.split('-');
+    if (anio === false) return `${d}/${m}`;
+    return `${d}/${m}/${anio === 'corto' ? a.slice(2) : a}`;
+}

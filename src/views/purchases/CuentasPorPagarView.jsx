@@ -26,7 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { hoySV } from '../../utils/fecha';
+import { fechaNumerica, hoySV } from '../../utils/fecha';
 
 // Vista «Cuentas por pagar».
 //
@@ -90,11 +90,7 @@ const PERIODOS = [
     { value: '2026-06-01', label: 'Desde junio 2026'    },
 ];
 
-const fmtFecha = (iso) => {
-    if (!iso) return '—';
-    const [a, m, d] = String(iso).split('-');
-    return `${d}/${m}/${a.slice(2)}`;
-};
+const fmtFecha = (iso) => fechaNumerica(iso, { anio: 'corto', vacio: '—' });
 
 /* ─── El panel de un proveedor: sus facturas y el pago ─────────────────────── */
 function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {

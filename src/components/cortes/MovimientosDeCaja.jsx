@@ -14,7 +14,7 @@ import { emparejarCobrosConMovimientos } from '../../utils/cortesDiagnostico';
 import { cobroEnEfectivo } from '../../data/creditos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { hora12, fechaHora12 } from '../../utils/hora';
-import { diaSV, relojSV } from '../../utils/fecha';
+import { diaSV, fechaTexto, relojSV } from '../../utils/fecha';
 
 /**
  * Los movimientos de caja de un período: verlos y buscarlos TODOS.
@@ -94,9 +94,8 @@ import { diaSV, relojSV } from '../../utils/fecha';
  */
 
 const fechaLarga = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
-    })
+    ? fechaTexto(f, {
+        weekday: 'long', day: 'numeric', month: 'long' })
     : '—');
 
 const cuando = (iso) => fechaHora12(iso) || '—';

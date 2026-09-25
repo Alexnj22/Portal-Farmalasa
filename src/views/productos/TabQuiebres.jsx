@@ -11,6 +11,7 @@ import { fetchQuiebresSala } from '../../data/stockParams';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
 import { tokenMatch } from '../../utils/searchUtils';
 import { formatQty } from '../../utils/formatNumber';
+import { fechaTexto } from '../../utils/fecha';
 
 /**
  * Agotados — lo que la sala no tiene y sí vende.
@@ -98,7 +99,7 @@ export default function TabQuiebres({ searchTerm = '', lockedErpId = null }) {
 
     if (resp === null) return <div className="py-24 px-4"><SkeletonText lines={6} /></div>;
 
-    const fecha = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
+    const fecha = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
 
     return (
         <div className="p-4 md:p-5 space-y-5">

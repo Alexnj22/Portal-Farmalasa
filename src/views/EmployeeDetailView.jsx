@@ -47,7 +47,7 @@ import ModalShell from '../components/common/ModalShell';
 
 import { rotuloCampo } from '../utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion } from '../plataforma/ventanaDeImpresion';
-import { hoySV } from '../utils/fecha';
+import { fechaTexto, hoySV } from '../utils/fecha';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -1220,7 +1220,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 </div>
                                                                 {req.note && <p className="text-body-sm text-content-2 line-clamp-2">{req.note}</p>}
                                                                 {req.approver_note && <p className="text-label text-content-3 mt-1 italic">Nota: {req.approver_note}</p>}
-                                                                <p className="text-caption text-content-3 mt-1">{new Date(req.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                                                <p className="text-caption text-content-3 mt-1">{fechaTexto(req.created_at, { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                                             </div>
                                                         </div>
                                                     );

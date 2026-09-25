@@ -35,7 +35,7 @@ import { useToastStore } from '../../store/toastStore';
 import { saldoDeBolsa } from '../../utils/bolsasReparto';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { hora12, fechaHora12 } from '../../utils/hora';
-import { hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 /* El detalle se baja al ABRIR una bolsa, no al entrar a la pestaña: arrastra el
  * motor de impresion y el visor de archivos firmados, y la lista se ve entera
@@ -140,15 +140,13 @@ const EditorDeDocumento = lazy(() => import('../../components/common/EditorDeDoc
  * que hace falta para moverlas— y ni una cifra.
  */
 
-const fechaCorta = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-    day: 'numeric', month: 'short', timeZone: 'UTC',
-}) : '');
+const fechaCorta = (f) => (f ? fechaTexto(f, {
+    day: 'numeric', month: 'short' }) : '');
 const selloDeTiempo = (iso) => (iso ? fechaHora12(iso, { day: '2-digit', month: 'short' }) : '');
 // Las iniciales de respaldo las resuelve `AvatarConEstado` con
 // `shortEmployeeName`, el mismo respaldo del resto del portal.
-const fechaLarga = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-    day: 'numeric', month: 'long', timeZone: 'UTC',
-}) : '');
+const fechaLarga = (f) => (f ? fechaTexto(f, {
+    day: 'numeric', month: 'long' }) : '');
 const diasDesde = (f) => Math.max(0, Math.round(
     (Date.parse(`${hoySV()}T12:00:00Z`) - Date.parse(`${f}T12:00:00Z`)) / 86_400_000,
 ));

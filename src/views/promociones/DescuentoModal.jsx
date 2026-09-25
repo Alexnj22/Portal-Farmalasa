@@ -18,7 +18,8 @@ import {
 } from '../../data/descuentos';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
-import { hoySV, ordenarPorPerdida, precioConDescuento } from './promocionesUtils';
+import { ordenarPorPerdida, precioConDescuento } from './promocionesUtils';
+import { hoySV } from '../../utils/fecha';
 import Campo from './Campo';
 
 /**

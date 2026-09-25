@@ -5,6 +5,7 @@ import { Eye, FolderOpen } from 'lucide-react';
 import { openStoredFile } from '../../utils/storageFiles';
 import { getExpiryBadge, getExpiringDocuments } from '../../utils/documentExpiry';
 import { nombreDeDocumento, iconoDeCategoria, tinteDeCategoria } from './catalogos/documentos';
+import { fechaTexto } from '../../utils/fecha';
 
 
 const DocumentRow = ({ doc }) => {
@@ -22,7 +23,7 @@ const DocumentRow = ({ doc }) => {
                 <p className="text-body-sm font-bold text-content truncate">{nombreDeDocumento(doc)}</p>
                 {doc.expiry_date && (
                     <p className="text-caption text-content-3 font-medium mt-0.5">
-                        Vence {new Date(doc.expiry_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        Vence {fechaTexto(doc.expiry_date, { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                 )}
             </div>

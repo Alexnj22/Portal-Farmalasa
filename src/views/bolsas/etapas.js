@@ -1,4 +1,5 @@
 import { Banknote, Package, Scale, Send, ShieldCheck } from 'lucide-react';
+import { fechaTexto } from '../../utils/fecha';
 
 /* ── Las cuatro etapas, en el orden en que pasan las cosas ──────────────────
  *
@@ -57,7 +58,6 @@ export const ETAPAS = [
  */
 export const rangoDeDias = (desde, hasta) => {
     if (!desde) return '—';
-    const corto = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV',
-        { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const corto = (f) => fechaTexto(f, { day: 'numeric', month: 'short' });
     return desde === hasta ? corto(desde) : `${corto(desde)} → ${corto(hasta)}`;
 };

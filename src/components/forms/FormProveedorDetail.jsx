@@ -17,6 +17,7 @@ import {
 import useBorrador from '../../hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { fechaNumerica } from '../../utils/fecha';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
@@ -75,13 +76,7 @@ const REGIMEN_HINT = {
 // de la misma lista escrita a mano es la forma más barata de que se
 // desincronicen.
 
-const fmtDate = (d) => {
-    if (!d) return '—';
-    const s = String(d).slice(0, 10);
-    const [y, m, day] = s.split('-');
-    if (!y || !m || !day) return '—';
-    return `${day}/${m}/${y}`;
-};
+const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
 
 function FiscalRow({ icon: Icon, label, value }) {
     if (!value) return null;

@@ -31,7 +31,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
 import { rotuloCampo } from '../utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { useToastStore } from '../store/toastStore';
-import { hoySV } from '../utils/fecha';
+import { fechaTexto, hoySV } from '../utils/fecha';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -64,7 +64,7 @@ const DOC_OPTS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
-const fmtD   = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+const fmtD   = (d) => d ? fechaTexto(d, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 
 const desglose = (precioConIva, cantidad = 1) => {
     const unitSinIva = precioConIva / (1 + IVA_RATE);

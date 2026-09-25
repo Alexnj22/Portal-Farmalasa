@@ -34,6 +34,7 @@ import { alcanceDeRecepcion, construirCajasEspeciales } from '../../utils/cajasE
 import { estadoDeHojas, hojasContables, hojasContadas } from '../../utils/hojasRecepcion';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { lotesAsignadosToDispatch } from '../../utils/pedidoPrint';
+import { fechaTexto } from '../../utils/fecha';
 
 // `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
 // único uso en todo el repo (el chip de las tarjetas de pedido es
@@ -76,7 +77,7 @@ function fmtVence(iso) {
     if (!iso) return null;
     const [y, m] = String(iso).slice(0, 10).split('-').map(Number);
     if (!y || !m) return null;
-    return new Date(y, m - 1, 1).toLocaleDateString('es-SV', { month: 'short', year: '2-digit' });
+    return fechaTexto(new Date(y, m - 1, 1), { month: 'short', year: '2-digit' });
 }
 
 function LotesDelRenglon({ row }) {

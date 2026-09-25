@@ -21,7 +21,7 @@ import { signStorageUrls } from '../../utils/storageFiles';
 import { formatMoney } from '../../utils/formatNumber';
 import { claveDeDia } from '../../utils/scheduleHelpers';
 import { emitir } from '../../plataforma/eventos';
-import { hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 // ============================================================================
 // 📋 SOLICITUDES — Employee-initiated requests requiring admin approval
@@ -817,7 +817,7 @@ const _sendCoverageAlert = async (branchId, startDate, endDate, approverId, empl
         const thId = await resolveNextApprover(3, branchId, null);
         if (!thId) return;
 
-        const fmtD = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
+        const fmtD = (d) => fechaTexto(d, { day: '2-digit', month: 'short' });
 
         await notifyEmployees([String(thId)], {
             type: 'SYSTEM',

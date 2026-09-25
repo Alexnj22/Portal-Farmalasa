@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
+import { fechaTexto } from '../../utils/fecha';
 
 const InputLabel = ({ children }) => (
     <p className="text-caption font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
@@ -12,7 +13,7 @@ function periodLabel(start, end) {
     const m = cap(s.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' }));
     if (s.getDate() === 1)  return `Primera Quincena de ${m}`;
     if (s.getDate() === 16) return `Segunda Quincena de ${m}`;
-    return `${s.toLocaleDateString('es-SV')} — ${new Date(end + 'T12:00:00').toLocaleDateString('es-SV')}`;
+    return `${s.toLocaleDateString('es-SV')} — ${fechaTexto(end)}`;
 }
 
 const FormNewPayrollPeriod = ({ formData = {}, setFormData }) => {

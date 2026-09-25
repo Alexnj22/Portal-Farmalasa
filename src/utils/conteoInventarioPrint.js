@@ -4,6 +4,7 @@
 // lógica específica de despacho/factor que no aplica a un conteo físico.
 
 import { exportCsv } from './csvExport';
+import { fechaNumerica } from './fecha';
 
 // pdfmake bajo demanda — mismo motivo que en pedidoPrint.js: estático metía
 // 809 kB gzip de fuentes embebidas en el chunk de ConteoDetailView, y esta
@@ -29,11 +30,7 @@ function getPdfMake() {
 
 const PAGE_MARGINS = [24, 22, 24, 44];
 
-function fmtFecha(iso) {
-    if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
-}
+const fmtFecha = (iso) => fechaNumerica(iso, { vacio: '—' });
 function fmtFechaLarga(date) {
     return date.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
 }

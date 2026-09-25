@@ -65,7 +65,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
 import { getSignedFileUrl } from '../utils/storageFiles';
 import { saldoDeBolsa } from '../utils/bolsasReparto';
 import { hora12 } from '../utils/hora';
-import { hoySV } from '../utils/fecha';
+import { fechaTexto, hoySV } from '../utils/fecha';
 
 /**
  * Mi caja — el turno de esta sala, ahora.
@@ -1412,9 +1412,8 @@ export default function MiCajaView({ comoPestana = false }) {
  * bitácoras.
  */
 const fechaLegible = (f) => (f
-    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
-        weekday: 'short', day: '2-digit', month: 'short', timeZone: 'UTC',
-    })
+    ? fechaTexto(f, {
+        weekday: 'short', day: '2-digit', month: 'short' })
     : '');
 
 /* La hora de un movimiento, en el huso de la SALA y no en el del navegador.

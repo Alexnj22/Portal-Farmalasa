@@ -1,5 +1,6 @@
 import { claveDeDia, resolverTurnoDelDia } from './turnoDelDia';
 import { hora12 } from './hora';
+import { fechaNumerica } from './fecha';
 
 // --- FECHAS Y TIEMPO (CORREGIDO UTC vs LOCAL) ---
 
@@ -14,11 +15,7 @@ export const toLocalISO = (date) => {
 
 
 
-export const formatDate = (ds) => {
-    if (!ds) return '';
-    const [y, m, d] = ds.split('-');
-    return `${d}/${m}/${y}`;
-};
+export const formatDate = (ds) => fechaNumerica(ds, { vacio: '' });
 
 // --- STRINGS Y FORMATOS ---
 

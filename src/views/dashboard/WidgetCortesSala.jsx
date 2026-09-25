@@ -9,7 +9,7 @@ import { conTramoPorSalaYDia, resumenDeCortes } from '../../utils/cortesDiagnost
 import { useAuth } from '../../context/AuthContext';
 import useResolverCorte from '../../components/cortes/useResolverCorte';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '../../utils/fecha';
 
 /* El detalle del corte se baja al abrir uno, no al entrar al Inicio.
  *
@@ -57,9 +57,8 @@ const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
     if (fecha === correrDia(hoy, -1)) return 'Ayer';
-    return new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
-        day: 'numeric', month: 'short', timeZone: 'UTC',
-    });
+    return fechaTexto(fecha, {
+        day: 'numeric', month: 'short' });
 };
 
 // Las tres del mes. Son `StatCard` dentro de `CarrilCards` —el canónico de la

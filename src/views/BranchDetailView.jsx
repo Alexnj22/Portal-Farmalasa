@@ -18,6 +18,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { useAuth } from '../context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
+import { fechaTexto } from '../utils/fecha';
 
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
@@ -397,7 +398,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             </div>
                             <span className="text-micro md:text-caption font-bold text-content-2 uppercase tracking-widest">
                                 {(liveBranch?.openingDate || liveBranch?.opening_date)
-                                    ? `Inaugurada en ${new Date(liveBranch.openingDate || liveBranch.opening_date).toLocaleDateString('es-SV', { month: 'long', year: 'numeric' })}`
+                                    ? `Inaugurada en ${fechaTexto(liveBranch.openingDate || liveBranch.opening_date, { month: 'long', year: 'numeric' })}`
                                     : 'Fecha de inauguración pendiente'}
                             </span>
                         </div>

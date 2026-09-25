@@ -39,7 +39,7 @@ import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '.
 import { papelDeSolicitudDeDatos } from '../generated/formularioDatos';
 import { fetchSolicitudes, crearSolicitud, plazoDe, DERECHOS, ESTADOS } from '../data/solicitudesDatos';
 import SolicitudModal from './datos/SolicitudModal';
-import { hoySV } from '../utils/fecha';
+import { fechaTexto, hoySV } from '../utils/fecha';
 
 const PESTANAS = [
     { key: 'tramite',   label: 'En trámite', icon: Clock },
@@ -66,7 +66,7 @@ const ESTADO_OPCIONES = [
 const ROTULO = Object.fromEntries(DERECHOS.map((d) => [d.clave, d.rotulo]));
 
 const fecha = (iso) => iso
-    ? new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })
+    ? fechaTexto(iso, { day: 'numeric', month: 'short', year: 'numeric' })
     : '—';
 
 export default function SolicitudesDatosView() {

@@ -17,7 +17,7 @@ import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { hora12 } from '../../utils/hora';
-import { hoySV } from '../../utils/fecha';
+import { fechaNumerica, hoySV } from '../../utils/fecha';
 
 /*
  * «¿A quién se le cobró la aplicación?» — las ventas con inyección del período
@@ -57,10 +57,7 @@ function rangoPorDefecto() {
 
 const nombre = (n) => (n ? shortEmployeeName(n) : '—');
 const productosTexto = (v) => (v.productos || []).map((p) => p.descripcion).join(' · ');
-const fechaCorta = (f) => {
-    const [, m, d] = String(f).split('-');
-    return `${d}/${m}`;
-};
+const fechaCorta = (f) => fechaNumerica(f, { anio: false });
 
 export default function TabInyecciones({
     filterBranch, setFilterBranch, branchOptions, branchLocked, searchTerm,

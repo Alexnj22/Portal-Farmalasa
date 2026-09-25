@@ -17,6 +17,7 @@ import { clickable } from '../../../utils/clickable';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 import { rotuloCampo } from '../../../utils/rotuloDeCampo';
 import { hora12 } from '../../../utils/hora';
+import { fechaTexto } from '../../../utils/fecha';
 
 // «16:00» → «4:00 p. m.», del canónico.
 const formatTime12hStr = (time24) => hora12(time24);
@@ -285,7 +286,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
             <div className="min-w-0">
                 <p className="text-body font-black text-content truncate leading-tight" title={employee?.name}>{shortEmployeeName(employee)}</p>
                 <p className="text-caption font-black text-brand-text uppercase tracking-widest leading-none mt-0.5 capitalize">
-                    {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' })}{' '}
+                    {fechaTexto(dateStr, { weekday: 'long' })}{' '}
                     <span className="text-content-3 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
                 </p>
             </div>
@@ -452,7 +453,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
             >
                 <HojaMovil
                     titulo={shortEmployeeName(employee)}
-                    subtitulo={`${new Date(dateStr + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' })} ${new Date(dateStr + 'T00:00:00').getDate()}`}
+                    subtitulo={`${fechaTexto(dateStr, { weekday: 'long' })} ${new Date(dateStr + 'T00:00:00').getDate()}`}
                     icono={Clock}
                 >
                     {avisoDeCobertura}

@@ -21,6 +21,7 @@ import {
 } from '../../../utils/scheduleHelpers';
 import { clickable } from '../../../utils/clickable';
 import { hora12 } from '../../../utils/hora';
+import { fechaTexto } from '../../../utils/fecha';
 
 // ============================================================================
 // 🛠️ ICONOS CUSTOM
@@ -653,7 +654,7 @@ const ScheduleCalendar = memo(({
         const salida = [];
         calendarDates.forEach(date => {
             const dNum = new Date(date + 'T00:00:00').getDay();
-            const dia = new Date(date + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' });
+            const dia = fechaTexto(date, { weekday: 'long' });
             (coverageByDay[dNum]?.avisos || []).forEach(a => salida.push({ ...a, dia }));
         });
         return salida;
@@ -776,7 +777,7 @@ const ScheduleCalendar = memo(({
                                             </div>
 
                                             <div className={`text-micro uppercase font-black tracking-wider mb-0.5 ${dayTextColor}`}>
-                                                {new Date(date + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' })}
+                                                {fechaTexto(date, { weekday: 'long' })}
                                             </div>
                                             <div className={`text-title font-black leading-none ${headerTextColor}`}>
                                                 {new Date(date + 'T00:00:00').getDate()}

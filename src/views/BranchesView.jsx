@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext';
 
 import { supabase } from '../supabaseClient';
 import { smartFilter } from '../utils/searchUtils';
+import { fechaTexto } from '../utils/fecha';
 
 const FILTER_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -452,7 +453,7 @@ const BranchCard = memo(({
                                 )}
                                 <p className="text-caption text-content-2 font-bold uppercase tracking-widest flex items-center gap-1">
                                     {branch.openingDate || branch.opening_date
-                                        ? `${new Date(branch.openingDate || branch.opening_date).toLocaleDateString('es-SV', { month: 'long', year: 'numeric' })}`
+                                        ? `${fechaTexto(branch.openingDate || branch.opening_date, { month: 'long', year: 'numeric' })}`
                                         : 'Pendiente de apertura'}
                                 </p>
                             </div>

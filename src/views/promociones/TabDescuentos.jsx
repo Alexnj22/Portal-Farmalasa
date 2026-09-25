@@ -10,7 +10,8 @@ import { EmptyState } from '../../components/common/StateViews';
 import { borrarDescuento } from '../../data/descuentos';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
-import { fmtVigencia, hoySV } from './promocionesUtils';
+import { fmtVigencia } from './promocionesUtils';
+import { hoySV } from '../../utils/fecha';
 
 /** Vigente, programado o terminado — sale de las fechas, que es lo único que hay. */
 function estado(d) {

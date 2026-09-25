@@ -44,11 +44,15 @@
   componente. 440 comparaciones viejo/nuevo idénticas.
 - **F1 cerrada — v2.1064.4**: el aviso de inactividad sale de `AuthContext`.
   **`gate:nucleo` en 0.**
-- **U1 paso 1 — «hoy» (v2.1065.1)**: `utils/fecha.js`. Eran ~60 sitios, no
+- **U1 paso 1 — «hoy» (v2.1073.1)**: `utils/fecha.js`. Eran ~60 sitios, no
   20: 33 usaban UTC y daban mañana después de las 6 pm (fecha de baja y de
   ingreso por defecto, vigencia de permisos, calibraciones, nombres de CSV).
-  `gate:hora` vigila el día con cuatro categorías nuevas. Sigue: mostrar una
-  fecha (44 copias de `fmtFecha`/`fmtDate`), después calendario y dinero.
+  `gate:hora` vigila el día con cuatro categorías nuevas.
+- **U1 paso 2 — mostrar una fecha (v2.1073.2)**: `fechaTexto`/`fechaNumerica`.
+  133 fechas y 20 copias. Un día leído con `new Date()` retrocedía: el mes de
+  apertura de 5 de 7 sucursales, el vencimiento de lotes. Quedan 47 sobre
+  objetos `Date` bajo trinquete (`scripts/fecha-baseline.json`). Sigue:
+  calendario (`rangoDelMes`, `correrMes`…) y dinero.
 
 ## Para qué
 

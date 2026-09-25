@@ -6,20 +6,36 @@
  * −$20.25 terminaba en una tarjeta que decía $0.00, y lo que faltaba hacer no
  * estaba escrito en ninguna parte.
  *
- * Un solo sitio decide los estados, y en orden de URGENCIA — el del día es el
- * peor de sus cortes:
+ * ── LA REGLA (usuario, 2026-09-25) ─────────────────────────────────────────
+ * «El positivo no se resuelve, se acumula (luego al hacer inventario ocuparé
+ * ese valor). Las diferencias negativas al no encontrar causa se pagan, así
+ * que no se deben mezclar. Si en el corte AM sobró $5, en el corte PM lo
+ * esperado debe tener sumados esos $5.»
  *
- *   sin_resolver   el corte está confirmado con diferencia y nadie dijo nada
- *   por_confirmar  el corte con diferencia todavía no se confirmó
- *   con_saldo      hay responsables y todavía deben algo
- *   por_registrar  el dinero ya se movió (retiro o abonos) y falta anotarlo
- *                  en el sistema
- *   resuelto       nada pendiente
+ *   · Cada corte se mide contra el último CONFIRMADO del día con su diferencia
+ *     adentro —eso es `corte_tramo`—, así que un sobrante confirmado sube el
+ *     esperado del siguiente, y si esa plata desaparece, el siguiente es un
+ *     FALTANTE de verdad. Nunca se compensan entre sí.
+ *   · Un SOBRANTE se acumula por sala. Si tiene causa, se explica con
+ *     comprobante y sale del acumulado; el registro queda.
+ *   · Un FALTANTE se paga (responsables y abonos) o se explica con causa y
+ *     comprobante. Al centavo: no hay tolerancia.
+ *
+ * Estados, en orden de URGENCIA — el del día es el peor de sus cortes:
+ *
+ *   sin_resolver   faltante confirmado sin causa ni responsables
+ *   por_confirmar  el corte todavía no se confirmó
+ *   con_saldo      faltante con responsables que todavía deben algo
+ *   por_registrar  dinero que ya se movió (abono o un retiro viejo) sin su
+ *                  ingreso o vale en el sistema
+ *   acumulado      sobrante sin causa: queda en el acumulado de la sala
+ *   resuelto       nada pendiente (faltante saldado o explicado, sobrante
+ *                  explicado)
  *
  * Es lógica pura, sin navegador: la prueban `tests/unit/diferenciasDeCaja.test.js`.
  */
 
-export const ESTADOS_DIFERENCIA = ['sin_resolver', 'por_confirmar', 'con_saldo', 'por_registrar', 'resuelto'];
+export const ESTADOS_DIFERENCIA = ['sin_resolver', 'por_confirmar', 'con_saldo', 'por_registrar', 'acumulado', 'resuelto'];
 
 const rango = (e) => {
     const i = ESTADOS_DIFERENCIA.indexOf(e);
@@ -40,7 +56,10 @@ export function saldoDeDiferencia(dif) {
  */
 export function estadoDeCorte(corte) {
     const dif = corte?.diferencia;
-    if (!dif) return corte?.estado === 'PENDIENTE' ? 'por_confirmar' : 'sin_resolver';
+    if (!dif) {
+        if (corte?.estado === 'PENDIENTE') return 'por_confirmar';
+        return centavos(corte?.tramo) > 0 ? 'acumulado' : 'sin_resolver';
+    }
     if (dif.via === 'REPONE') {
         if (saldoDeDiferencia(dif) > 0) return 'con_saldo';
         return Number(dif.abonos_sin_asentar) > 0 ? 'por_registrar' : 'resuelto';
@@ -87,24 +106,34 @@ export function conEstados(dias) {
     });
 }
 
-/** Cuántos días hay en cada estado y cuánto falta cobrar en total. */
+/** Cuántos días hay en cada estado, cuánto falta cobrar y cuánto sobrante hay acumulado. */
 export function resumenDeDias(dias) {
-    const r = { sin_resolver: 0, por_confirmar: 0, con_saldo: 0, por_registrar: 0, resuelto: 0, saldo: 0 };
+    const r = {
+        sin_resolver: 0, por_confirmar: 0, con_saldo: 0, por_registrar: 0, acumulado: 0, resuelto: 0,
+        saldo: 0, montoAcumulado: 0,
+    };
     for (const d of dias || []) {
-        const e = d.estadoDif === 'compensado' ? 'resuelto' : d.estadoDif;
-        r[e] = (r[e] || 0) + 1;
+        r[d.estadoDif] = (r[d.estadoDif] || 0) + 1;
         r.saldo += centavos(d.saldo);
+        // Lo acumulado es la suma de los sobrantes CONFIRMADOS sin causa. Uno
+        // por confirmar todavía puede descartarse; uno explicado ya salió.
+        for (const c of d.cortes || []) {
+            if (c.estadoDif === 'acumulado') r.montoAcumulado += centavos(c.tramo);
+        }
     }
     r.saldo /= 100;
+    r.montoAcumulado /= 100;
     return r;
 }
 
-/** ¿El día entra en el filtro? `PENDIENTES` = lo que no está resuelto ni compensado. */
+/**
+ * ¿El día entra en el filtro? `PENDIENTES` = lo que alguien tiene que hacer.
+ * Un sobrante acumulado no es trabajo pendiente: se ve con `TODOS` o con
+ * `acumulado`.
+ */
 export function diaEnFiltro(dia, filtro) {
     if (!filtro || filtro === 'TODOS') return true;
-    const cerrado = dia.estadoDif === 'resuelto' || dia.estadoDif === 'compensado';
-    if (filtro === 'PENDIENTES') return !cerrado;
-    if (filtro === 'resuelto') return cerrado;
+    if (filtro === 'PENDIENTES') return dia.estadoDif !== 'resuelto' && dia.estadoDif !== 'acumulado';
     return dia.estadoDif === filtro;
 }
 
@@ -166,53 +195,23 @@ export function pendientesDeRegistrar(resoluciones, { sala = '' } = {}) {
 }
 
 /**
- * Los días clasificados por cómo CERRARON, no por sus cortes sueltos.
+ * Los días recortados a UN signo: `falta` deja sólo los cortes con faltante y
+ * `sobra` sólo los de sobrante, y el estado y los totales del día se recalculan
+ * sobre los que quedan. No hay «todos»: faltantes y sobrantes no se mezclan
+ * (ver LA REGLA arriba).
  *
- * Pedido del usuario (2026-09-25): «separar las negativas y las positivas, por
- * defecto las negativas». La primera versión recortaba por corte, y mostró el
- * error de fondo — La Popular del 24-sep: «Faltó $0.20 · Sobró $0.20», y el
- * usuario preguntó «¿esos que sobran y faltan lo mismo?». No faltó nada: el
- * sobrante de mediodía ya no estaba en el conteo de la noche, así que ese
- * corte midió −$0.20 contra el anterior y el día cerró EXACTO. Contar ese
- * tramo como faltante pendiente le pedía a alguien reponer dinero que nunca
- * faltó.
- *
- * Por eso:
- *   · un día con `neto` en cero (y sin cortes por confirmar) está
- *     `compensado`: no es trabajo pendiente;
- *   · un día con neto negativo es de FALTANTE, y su estado sale sólo de los
- *     cortes con faltante; con neto positivo, al revés. Los cortes del otro
- *     signo se compensaron dentro del día y se marcan así;
- *   · un corte todavía sin confirmar cuenta siempre: puede mover el neto.
- *
- * `faltanteDia` y `sobranteDia` son los dos lados del día entero, para la
- * tarjeta.
+ * Reemplaza a una versión del mismo día que clasificaba el día por su neto y
+ * daba por «compensado» un +$0.20 seguido de un −$0.20. Con la regla del
+ * usuario eso es un sobrante de $0.20 que se acumula y un faltante de $0.20
+ * que se paga: el segundo corte debía tener los $0.20 y no los tenía.
  */
-export function porSigno(dias, signo = 'todos') {
-    return (dias || []).map((d) => {
-        const neto = centavos(d.neto);
-        const lado = Math.sign(neto);
-        const porConfirmar = (d.cortes || []).some((c) => c.estado === 'PENDIENTE');
-        const compensado = neto === 0 && !porConfirmar;
-        const cortes = (d.cortes || []).map((c) => {
-            const cuenta = c.estado === 'PENDIENTE' || (lado !== 0 && Math.sign(centavos(c.tramo)) === lado);
-            // Una resolución ya dada se respeta aunque el corte se haya
-            // compensado: alguien decidió algo y eso no se borra de la vista.
-            return cuenta || c.diferencia ? c : { ...c, estadoDif: 'compensado' };
-        });
-        const cuentan = cortes.filter((c) => c.estadoDif !== 'compensado');
-        return {
+export function porSigno(dias, signo = 'falta') {
+    const quiere = signo === 'sobra' ? 1 : -1;
+    const quedan = (dias || [])
+        .map((d) => ({
             ...d,
-            cortes,
-            compensado,
-            estadoDif: compensado ? 'compensado' : peorEstado(cuentan.map((c) => c.estadoDif)),
-            faltanteDia: d.faltanteDia ?? d.faltante,
-            sobranteDia: d.sobranteDia ?? d.sobrante,
-        };
-    }).filter((d) => {
-        if (signo !== 'falta' && signo !== 'sobra') return true;
-        const quiere = signo === 'falta' ? -1 : 1;
-        return Math.sign(centavos(d.neto)) === quiere
-            || d.cortes.some((c) => c.estado === 'PENDIENTE' && Math.sign(centavos(c.tramo)) === quiere);
-    });
+            cortes: (d.cortes || []).filter((c) => Math.sign(centavos(c.tramo)) === quiere),
+        }))
+        .filter((d) => d.cortes.length);
+    return conEstados(quedan);
 }

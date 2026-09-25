@@ -216,29 +216,39 @@ const METRICAS = [
     { clave: 'faltante',   filtro: 'diferencia', valor: 'falta',     icon: TrendingDown, label: 'Faltante',      iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
 ];
 
-// Faltantes o sobrantes (usuario, 2026-09-25): «debe poderse separar las
-// negativas y las positivas; por defecto las negativas». Un faltante es lo que
-// se cobra o se explica; un sobrante casi siempre es un ingreso sin anotar.
+// Faltantes o sobrantes, y NUNCA juntos (usuario, 2026-09-25): «el positivo
+// no se resuelve, se acumula; las diferencias negativas al no encontrar causa
+// se pagan, así que no se deben mezclar». Por eso no hay «Todos».
 const SIGNOS_DIF = [
     { value: 'falta', label: 'Faltantes' },
     { value: 'sobra', label: 'Sobrantes' },
-    { value: 'todos', label: 'Todos' },
 ];
 
-// Cuatro números del carril de «Diferencias», y son ELLOS el filtro de estado:
-// tocar uno recorta a ese estado y volver a tocarlo vuelve a «pendientes». Es
-// el mismo patrón que Movimientos (la tarjeta encendida se ve en la fila). Hubo
+// El recorte con que abre cada tipo. Los faltantes abren en lo PENDIENTE; los
+// sobrantes no tienen pendiente —se acumulan—, así que abren en todo.
+const FILTRO_INICIAL = { falta: 'PENDIENTES', sobra: 'TODOS' };
+
+// Los números del carril de «Diferencias», y son ELLOS el filtro de estado:
+// tocar uno recorta a ese estado y volver a tocarlo vuelve al inicial. Es el
+// mismo patrón que Movimientos (la tarjeta encendida se ve en la fila). Hubo
 // además un select con seis estados que decía lo mismo dos veces; el usuario
 // preguntó si todos eran útiles, y no lo eran.
 //
 // Rótulo y `sub` CORTOS: la tarjeta mide ~230 px y los largos se cortaban con
 // «…» — «Deben los responsabl…», «Nadie dijo la causa ni qui…».
-const METRICAS_DIF = [
-    { clave: 'sin_resolver',  icon: AlertTriangle, label: 'Sin resolver', sub: 'Días sin causa',     iconBg: 'bg-danger/10',  iconCls: 'text-danger-text', valueCls: 'text-danger-text' },
-    { clave: 'con_saldo',     icon: HandCoins,     label: 'Por cobrar',   sub: 'A responsables',     iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text', dinero: 'saldo' },
-    { clave: 'por_registrar', icon: Landmark,      label: 'Por anotar',   sub: 'En el sistema',      iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
-    { clave: 'resuelto',      icon: ShieldCheck,   label: 'Resueltos',    sub: 'O compensados',      iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
-];
+const METRICAS_DIF = {
+    falta: [
+        { clave: 'sin_resolver',  icon: AlertTriangle, label: 'Sin resolver', sub: 'Días sin causa',  iconBg: 'bg-danger/10',  iconCls: 'text-danger-text', valueCls: 'text-danger-text' },
+        { clave: 'con_saldo',     icon: HandCoins,     label: 'Por cobrar',   sub: 'A responsables',  iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text', dinero: 'saldo' },
+        { clave: 'por_registrar', icon: Landmark,      label: 'Por anotar',   sub: 'En el sistema',   iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
+        { clave: 'resuelto',      icon: ShieldCheck,   label: 'Resueltos',    sub: 'Pagados o con causa', iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+    ],
+    sobra: [
+        { clave: 'acumulado',     icon: TrendingUp,    label: 'Acumulado',     sub: 'Para el inventario', iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text', dinero: 'montoAcumulado' },
+        { clave: 'por_confirmar', icon: Clock,         label: 'Por confirmar', sub: 'Aún no suman',       iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
+        { clave: 'resuelto',      icon: ShieldCheck,   label: 'Con causa',     sub: 'Salieron del acumulado', iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+    ],
+};
 
 const CortesView = () => {
     const branches = useStaff((s) => s.branches) || VACIO;
@@ -805,13 +815,13 @@ const CortesView = () => {
                                 ? 'Resumen de los días con diferencia'
                                 : 'Resumen de los cortes del período'}>
                         {enDiferencias
-                            ? METRICAS_DIF.map((m) => (
+                            ? METRICAS_DIF[signoDif].map((m) => (
                                 <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
                                     label={m.label} sub={m.sub}
                                     value={m.dinero ? formatMoney(resumenDif[m.dinero]) : resumenDif[m.clave]}
                                     valueCls={m.valueCls}
                                     active={filtroDif === m.clave}
-                                    onClick={() => setFiltroDif((v) => (v === m.clave ? 'PENDIENTES' : m.clave))}
+                                    onClick={() => setFiltroDif((v) => (v === m.clave ? FILTRO_INICIAL[signoDif] : m.clave))}
                                     loading={cargandoDif} />
                             ))
                             : enMovimientos
@@ -868,10 +878,10 @@ const CortesView = () => {
                             {/* Select y no segmentado (usuario): `umbral={2}`
                                 lo fuerza aunque sean tres opciones. */}
                             {enDiferencias ? (
-                                <FilterBar.Section active={signoDif !== 'falta'} onClear={() => setSignoDif('falta')} label="tipo">
+                                <FilterBar.Section active={signoDif !== 'falta'} onClear={() => { setSignoDif('falta'); setFiltroDif('PENDIENTES'); }} label="tipo">
                                     <FilterBar.Opciones
                                         label="Tipo" icon={Scale}
-                                        value={signoDif} onChange={(v) => setSignoDif(v || 'falta')}
+                                        value={signoDif} onChange={(v) => { setSignoDif(v || 'falta'); setFiltroDif(FILTRO_INICIAL[v || 'falta']); }}
                                         options={SIGNOS_DIF} umbral={2} ancho="150px"
                                     />
                                 </FilterBar.Section>

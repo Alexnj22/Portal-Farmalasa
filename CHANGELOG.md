@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.7 — Diferencias: el sobrante se acumula, el faltante se paga, y no se mezclan
+
+La regla, definida por el usuario el 2026-09-25:
+
+> «El positivo no se resuelve, se acumula (luego al hacer inventario ocuparé
+> ese valor). Las diferencias negativas al no encontrar causa se pagan, así que
+> no se deben mezclar. Si en el corte AM sobró $5, en el corte PM lo esperado
+> debe tener sumados esos $5.»
+
+Y sobre los casos de borde: un sobrante con causa necesita comprobante y sale
+del acumulado (queda el historial); lo ya resuelto queda como historial; los
+faltantes se cobran al centavo, sin tolerancia.
+
+- **Se revierte el «Se compensó» de v2.1061.2.** Un +$0.20 seguido de un
+  −$0.20 no es un día cuadrado: el segundo corte debía tener los $0.20 y no los
+  tenía. Es un faltante que se paga y un sobrante que se acumula. `corte_tramo`
+  ya medía así —cada corte contra el último confirmado, con su diferencia
+  adentro—; lo que estaba mal era la pantalla.
+- **Faltantes y sobrantes nunca juntos.** El tipo es Faltantes o Sobrantes (se
+  quitó «Todos»), el recorte es por corte, y ninguna tarjeta muestra el neto
+  del día.
+- **Sobrantes:** estado **Acumulado**, que no es pendiente. Carril: *Acumulado*
+  (en dinero, para el inventario) · *Por confirmar* · *Con causa*. Lo único que
+  se ofrece es «Tiene causa: explicarlo», con comprobante; ya no «se retira el
+  sobrante».
+- **Faltantes:** como antes — causa con comprobante, o responsables y abonos.
+
 ## v2.1061.6 — El aviso de faltante va sólo a la sala que despachó
 
 El aviso del momento («Faltó un producto en un traslado») iba a la sala de

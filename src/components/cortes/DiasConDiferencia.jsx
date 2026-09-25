@@ -32,15 +32,13 @@ const ESTADO = {
     por_confirmar: { label: 'Falta confirmar el corte', variant: 'warning' },
     con_saldo:     { label: 'Por cobrar', variant: 'warning' },
     por_registrar: { label: 'Por anotar', variant: 'info' },
+    // Un sobrante sin causa no es trabajo pendiente: queda en el acumulado de
+    // la sala para el inventario (usuario, 2026-09-25).
+    acumulado:     { label: 'Acumulado', variant: 'info' },
     resuelto:      { label: 'Resuelto', variant: 'success' },
-    // Lo que sobró en un corte ya no estaba en el siguiente y el día cerró
-    // exacto: no faltó dinero (ver `porSigno`).
-    compensado:    { label: 'Se compensó', variant: 'success' },
 };
 
-const ORDEN = ['sin_resolver', 'por_confirmar', 'con_saldo', 'por_registrar', 'resuelto', 'compensado'];
-
-const COMPENSADO_TEXTO = 'Lo que sobró en un corte ya no estaba en el siguiente: el día cerró exacto y no hay nada que cobrar.';
+const ORDEN = ['sin_resolver', 'por_confirmar', 'con_saldo', 'por_registrar', 'acumulado', 'resuelto'];
 
 // La fecha de un corte es la de la sala: se lee a mediodía UTC para que ningún
 // huso la corra de día.
@@ -55,11 +53,12 @@ const conSigno = (n) => {
     return v > 0 ? `+${formatMoney(v)}` : formatMoney(v);
 };
 
-function comoQuedo(neto) {
-    const v = Number(neto || 0);
-    if (Math.abs(v) < 0.005) return 'El día cerró cuadrado';
-    return v < 0 ? `El día cerró con ${formatMoney(Math.abs(v))} de faltante` : `El día cerró con ${formatMoney(v)} de sobrante`;
-}
+// El monto del día en el signo que se está mirando. Nunca el neto: faltantes
+// y sobrantes no se restan entre sí (ver LA REGLA en `diferenciasDeCaja.js`).
+const montoDelDia = (d, signo) => (signo === 'sobra' ? Number(d.sobrante || 0) : Math.abs(Number(d.faltante || 0)));
+const tituloDelDia = (d, signo) => (signo === 'sobra'
+    ? `Sobraron ${formatMoney(montoDelDia(d, signo))}`
+    : `Faltaron ${formatMoney(montoDelDia(d, signo))}`);
 
 const clave = (d) => `${d.branch_id}|${d.fecha}`;
 
@@ -112,11 +111,13 @@ export default function DiasConDiferencia({
                 />
             );
         }
-        return filtroActivo === 'PENDIENTES' ? (
+        return filtroActivo === 'PENDIENTES' || filtroActivo === 'TODOS' ? (
             <EmptyState
                 compact icon={ShieldCheck} iconClass="text-success-text"
-                title={signo === 'falta' ? 'Sin faltantes pendientes' : signo === 'sobra' ? 'Sin sobrantes pendientes' : 'Sin pendientes'}
-                subtitle="Todas tienen su causa, o están saldadas y anotadas en el sistema."
+                title={signo === 'sobra' ? 'Sin sobrantes' : 'Sin faltantes pendientes'}
+                subtitle={signo === 'sobra'
+                    ? 'Ningún corte quedó arriba de lo esperado.'
+                    : 'Todos tienen su causa, o están pagados y anotados en el sistema.'}
                 action={onVerTodos && <Button variant="secondary" onClick={onVerTodos}>Ver todos los días</Button>}
             />
         ) : (
@@ -146,32 +147,9 @@ export default function DiasConDiferencia({
                                 <Badge variant={e.variant} size="sm" dot>{e.label}</Badge>
                             </div>
 
-                            <div className={`text-body font-bold tabular-nums ${colorDe(d.neto)}`}>
-                                {comoQuedo(d.neto)}
+                            <div className={`text-body font-bold tabular-nums ${signo === 'sobra' ? 'text-warning-text' : 'text-danger-text'}`}>
+                                {tituloDelDia(d, signo)}
                             </div>
-
-                            {/* Los dos lados del día, siempre (usuario, 2026-09-25:
-                                «que diga cuánto es el positivo y cuál el
-                                negativo»). Son del día ENTERO aunque el filtro
-                                muestre sólo una mitad de sus cortes. */}
-                            <div className="grid grid-cols-2 gap-2">
-                                <div data-surface="card" className="px-2 py-1.5">
-                                    <div className="text-micro font-black uppercase tracking-widest text-content-3">Faltó</div>
-                                    <div className={`text-label font-bold tabular-nums ${Number(d.faltanteDia) < 0 ? 'text-danger-text' : 'text-content-3'}`}>
-                                        {formatMoney(Math.abs(Number(d.faltanteDia || 0)))}
-                                    </div>
-                                </div>
-                                <div data-surface="card" className="px-2 py-1.5">
-                                    <div className="text-micro font-black uppercase tracking-widest text-content-3">Sobró</div>
-                                    <div className={`text-label font-bold tabular-nums ${Number(d.sobranteDia) > 0 ? 'text-warning-text' : 'text-content-3'}`}>
-                                        {formatMoney(Number(d.sobranteDia || 0))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {d.compensado && (
-                                <p className="text-caption text-content-2">{COMPENSADO_TEXTO}</p>
-                            )}
 
                             <div className="space-y-0.5">
                                 {d.cortes.map((c) => (
@@ -184,7 +162,9 @@ export default function DiasConDiferencia({
 
                             <div className="flex items-center justify-between gap-2 text-caption">
                                 <span className="text-content-3">
-                                    {d.saldo > 0 ? `Por cobrar ${formatMoney(d.saldo)}` : `${d.cortes_del_dia} ${Number(d.cortes_del_dia) === 1 ? 'corte' : 'cortes'} en el día`}
+                                    {d.saldo > 0
+                                        ? `Por cobrar ${formatMoney(d.saldo)}`
+                                        : `${d.cortes.length} de ${d.cortes_del_dia} ${Number(d.cortes_del_dia) === 1 ? 'corte' : 'cortes'} del día`}
                                 </span>
                                 <ChevronRight className="w-4 h-4 text-content-3" aria-hidden="true" />
                             </div>
@@ -211,22 +191,19 @@ export default function DiasConDiferencia({
                         </LiquidModal.Header>
 
                         <LiquidModal.Body className="space-y-4">
-                            {/* Lo primero: cómo quedó. Es la pregunta del usuario,
-                                y la cifra que la contesta no estaba en ninguna
-                                tarjeta — cada corte mostraba sólo su tramo. */}
+                            {/* Lo primero: cuánto, en el signo que se mira. Nunca el
+                                neto del día: un sobrante no paga un faltante. */}
                             <div data-surface="card" className="p-3 space-y-1">
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3">
-                                    Cómo quedó el día
+                                    {signo === 'sobra' ? 'Sobrante del día' : 'Faltante del día'}
                                 </span>
-                                <div className={`text-title font-bold tabular-nums ${colorDe(visible.neto)}`}>
-                                    {conSigno(visible.neto)}
+                                <div className={`text-title font-bold tabular-nums ${signo === 'sobra' ? 'text-warning-text' : 'text-danger-text'}`}>
+                                    {formatMoney(montoDelDia(visible, signo))}
                                 </div>
                                 <p className="text-caption text-content-2">
-                                    {visible.compensado
-                                        ? COMPENSADO_TEXTO
-                                        : visible.cortes.length === 1
-                                            ? 'Un corte no cuadró y así quedó el día.'
-                                            : 'Se resuelven sólo los cortes que dejaron el día así; los demás se compensaron.'}
+                                    {signo === 'sobra'
+                                        ? 'Queda en el acumulado de la sala para el inventario. Si tiene causa, explícalo con su comprobante y sale del acumulado.'
+                                        : 'Cada corte se paga o se explica con su comprobante. El sobrante de otro corte no lo compensa.'}
                                 </p>
                             </div>
 
@@ -257,11 +234,6 @@ export default function DiasConDiferencia({
                                             </Notice>
                                         )}
 
-                                        {c.estadoDif === 'compensado' && !c.diferencia ? (
-                                            <p className="text-caption text-content-3 px-1">
-                                                Se compensó con otro corte del día: no hace falta resolverlo.
-                                            </p>
-                                        ) : (
                                         <ResolverDiferencia
                                             corte={corte}
                                             nombreSala={nombreSala}
@@ -271,9 +243,8 @@ export default function DiasConDiferencia({
                                             origen="diferencias"
                                             onCambio={onCambio}
                                         />
-                                        )}
 
-                                        {!puedeResolver && !c.diferencia && c.estadoDif !== 'compensado' && (
+                                        {!puedeResolver && !c.diferencia && Number(c.tramo) < 0 && (
                                             <p className="text-caption text-content-3 px-1">
                                                 Sin resolver. Quien opera la caja de la sala lo resuelve desde aquí.
                                             </p>

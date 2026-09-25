@@ -345,38 +345,52 @@ export default function ResolverDiferencia({
     if (sev === 'ok' || !puedeResolver || corte?.estado === 'DESCARTADO') return null;
 
     // ── Todavía sin resolver ────────────────────────────────────────────────
+    // Un SOBRANTE no se resuelve: se acumula en la sala para el inventario
+    // (usuario, 2026-09-25). Lo único que se puede hacer con él es explicarlo
+    // con comprobante, y así sale del acumulado. Ya no existe «se retira».
     if (!abriendo) {
+        if (!falta) {
+            return (
+                <div className="space-y-1.5">
+                    <p className="text-caption text-content-3">
+                        Queda en el acumulado de la sala. Si tiene causa, explícalo y sale del acumulado.
+                    </p>
+                    <Button variant="ghost" size="sm" icon={ShieldCheck} className="w-full"
+                        onClick={() => { setVia('JUSTIFICA'); setAbriendo(true); }}>
+                        Tiene causa: explicarlo
+                    </Button>
+                </div>
+            );
+        }
         return (
             <Button variant="secondary" icon={HandCoins} onClick={() => setAbriendo(true)} className="w-full">
-                {falta
-                    ? `Resolver el faltante de ${formatMoney(Math.abs(tramo))}`
-                    : `Resolver el sobrante de ${formatMoney(Math.abs(tramo))}`}
+                {`Resolver el faltante de ${formatMoney(Math.abs(tramo))}`}
             </Button>
         );
     }
 
-    const opciones = falta
-        ? [{ value: 'JUSTIFICA', label: 'Se encontró la causa' }, { value: 'REPONE', label: 'No se encontró' }]
-        : [{ value: 'JUSTIFICA', label: 'Se encontró la causa' }, { value: 'RETIRA', label: 'Se retira el sobrante' }];
+    const opciones = [{ value: 'JUSTIFICA', label: 'Se encontró la causa' }, { value: 'REPONE', label: 'No se encontró' }];
     const faltaComprobante = via === 'JUSTIFICA' && !evidenciaRef.trim() && !foto;
 
     return (
         <div data-surface="card" className="p-3 space-y-3">
             <div className="flex items-baseline justify-between gap-3 flex-wrap">
                 <span className="text-caption font-black uppercase tracking-widest text-content-3">
-                    {falta ? 'Resolver el faltante' : 'Resolver el sobrante'}
+                    {falta ? 'Resolver el faltante' : 'Explicar el sobrante'}
                 </span>
                 <span className="text-body font-bold tabular-nums text-content">
                     {formatMoney(Math.abs(tramo))}
                 </span>
             </div>
 
-            <SegmentedControl
-                label="Qué se hizo"
-                value={via}
-                onChange={setVia}
-                options={opciones}
-            />
+            {falta && (
+                <SegmentedControl
+                    label="Qué se hizo"
+                    value={via}
+                    onChange={setVia}
+                    options={opciones}
+                />
+            )}
 
             {via && (
                 <PortalTextarea

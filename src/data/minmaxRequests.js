@@ -139,8 +139,11 @@ export async function buscarProductosMinMax(termino, limite = 20) {
     const { data, error } = await supabase.rpc('buscar_productos_minmax', {
         p_search: termino, p_limit: limite,
     });
-    if (error) { console.error('buscarProductosMinMax:', error.message); return { filas: [], error }; }
-    return { filas: data ?? [], error: null };
+    if (error) { console.error('buscarProductosMinMax:', error.message); return { filas: [], error, aproximado: false }; }
+    const filas = data ?? [];
+    // Desde v2.1065.0 usa la regla del portal (`busqueda_productos`): cada fila
+    // dice si es aproximada, y el buscador lo tiene que avisar.
+    return { filas, error: null, aproximado: filas.some(f => f.aproximado) };
 }
 
 export function fetchActiveProductsCount() {

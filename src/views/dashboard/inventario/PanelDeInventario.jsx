@@ -18,6 +18,7 @@
 // sala pedirle, y un `lazy()` para esto.
 
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import AvisoParecidos from '../../../components/common/AvisoParecidos';
 import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
 import { EmptyState } from '../../../components/common/StateViews';
@@ -617,6 +618,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
   // la consulta trae a lo sumo `MAX_PRODUCTOS_BUSQUEDA`, y este número es el que
   // permite decirlo en pantalla en vez de callarlo.
   const [totalProductos, setTotalProductos] = useState(0);
+  const [sonParecidos, setSonParecidos] = useState(false);
   const debounceRef                     = useRef(null);
 
   // La sucursal de quien mira. El widget consulta TODAS las salas, pero
@@ -731,8 +733,9 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
       // una consulta lenta —la base contesta en 261 ms—, es un navegador que se
       // queda pintando. Ahora vienen a lo sumo 60 productos y el total real
       // aparte, para poder decir cuántos quedaron afuera.
-      const { filas: data, total } = await buscarInventarioGlobalV2(q, MAX_PRODUCTOS_BUSQUEDA);
+      const { filas: data, total, aproximado } = await buscarInventarioGlobalV2(q, MAX_PRODUCTOS_BUSQUEDA);
       setTotalProductos(total);
+      setSonParecidos(aproximado);
 
       const paMap = new Map();
       const photoMap = {};
@@ -1083,6 +1086,8 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
             </p>
           </div>
         )}
+
+        {!loading && hasResults && sonParecidos && <AvisoParecidos texto={query} className="mb-2" />}
 
         {/* El tope, dicho. Sin esta línea la pantalla afirmaría que hay 60
             productos cuando hay 138, que es peor que tardar. */}

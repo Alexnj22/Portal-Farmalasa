@@ -176,7 +176,7 @@ export function coincide(consulta, ...campos) {
 /**
  * Puntaje de relevancia, 0 si no coincide:
  *   100  un campo ES lo escrito (un código de barras exacto, un nombre entero)
- *    90  un campo EMPIEZA con lo escrito
+ *    90  el PRIMER campo (el nombre) empieza con lo escrito
  *    80  todas las palabras coinciden al inicio de una palabra
  *    70  lo escrito aparece seguido y en el mismo orden
  *    60  todas coinciden, en cualquier parte
@@ -192,7 +192,11 @@ export function puntaje(consulta, ...campos) {
     // Si lo escrito termina en número, el campo tiene que empezar con ese
     // número COMPLETO: «500» no es el comienzo de un código `5001234…`.
     const terminaEnNumero = /\d$/.test(q);
-    if (h.textos.some(t => t.startsWith(terminaEnNumero ? q + ' ' : q))) return 90;
+    // «Empieza con» cuenta sólo en el PRIMER campo, el que nombra la cosa. Si
+    // valiera en cualquiera, un producto cuyo LABORATORIO empieza con «sal»
+    // empataba con SAL ANDREWS y ganaba por abecedario (medido en Mín·Máx).
+    const principal = normalizar(campos[0] ?? '');
+    if (principal.startsWith(terminaEnNumero ? q + ' ' : q)) return 90;
     if (niveles.every(n => n === 2)) return 80;
     // Con una sola palabra «seguido y en orden» es lo mismo que «contenida».
     if (ps.length > 1 && h.texto.includes(q)) return 70;

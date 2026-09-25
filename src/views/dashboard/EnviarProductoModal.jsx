@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { AlertTriangle, Check, Loader2, Pencil, Send, Trash2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
@@ -136,6 +137,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
     const [termino, setTermino] = useState('');
     const [buscando, setBuscando] = useState(false);
     const [resultados, setResultados] = useState(null);
+    const [sonParecidos, setSonParecidos] = useState(false);
     const [elegido, setElegido] = useState(null);
     // La CLAVE del estante, nunca el id de sala: Bodega tiene dos y el 6 no
     // distingue de cuál sale el producto.
@@ -284,8 +286,9 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         let cancelado = false;
         setBuscando(true);
         const t = setTimeout(() => {
-            buscarInventarioGlobalV2(q).then(({ filas }) => {
+            buscarInventarioGlobalV2(q).then(({ filas, aproximado }) => {
                 if (cancelado) return;
+                setSonParecidos(aproximado);
                 /* Un producto, sus salas. Antes esto se recortaba a la sala
                  * propia y el resultado era un solo número; con alcance sobre
                  * todas, el mismo producto está en varias y de cuál sale es
@@ -1033,6 +1036,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 {!buscando && resultados?.length === 0 && (
                                     <EmptyState linea title="Tu sala no tiene ese producto" />
                                 )}
+                                {!buscando && resultados?.length > 0 && sonParecidos && <AvisoParecidos texto={termino} />}
                                 {!buscando && resultados?.length > 0 && (
                                     <div className="flex flex-col gap-1.5">
                                         {resultados.map(p => (

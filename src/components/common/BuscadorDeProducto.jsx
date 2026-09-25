@@ -4,6 +4,7 @@ import SearchInput from './SearchInput';
 import ListRow from './ListRow';
 import { SkeletonText } from './StateViews';
 import { buscarProductosMinMax } from '../../data/minmaxRequests';
+import AvisoParecidos from './AvisoParecidos';
 
 // Elegir un producto del catálogo, para un formulario que empieza por ahí.
 //
@@ -62,6 +63,7 @@ export default function BuscadorDeProducto({
     const [search,  setSearch]  = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [sonParecidos, setSonParecidos] = useState(false);
 
     useEffect(() => {
         const q = search.trim();
@@ -69,9 +71,10 @@ export default function BuscadorDeProducto({
         let cancelado = false;
         setLoading(true);
         const t = setTimeout(async () => {
-            const { filas } = await buscarProductosMinMax(q, 20);
+            const { filas, aproximado } = await buscarProductosMinMax(q, 20);
             if (cancelado) return;
             setResults(filas);
+            setSonParecidos(aproximado);
             setLoading(false);
         }, 150);
         return () => { cancelado = true; clearTimeout(t); };
@@ -104,6 +107,8 @@ export default function BuscadorDeProducto({
                         </p>
                     </div>
                 )}
+
+                {!loading && sonParecidos && results.length > 0 && <AvisoParecidos texto={search} />}
 
                 {!loading && results.map(p => (
                     <ListRow

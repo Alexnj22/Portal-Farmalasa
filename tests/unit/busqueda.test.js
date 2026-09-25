@@ -59,6 +59,12 @@ describe('orden por relevancia', () => {
     });
 });
 
+describe('puntaje con varios campos', () => {
+    it.each(casos.puntaje)('«$consulta» en $campos → $esperado', ({ consulta, campos, esperado }) => {
+        expect(puntaje(consulta, ...campos)).toBe(esperado);
+    });
+});
+
 describe('aproximada', () => {
     it.each(casos.aproximada)('«$consulta» ≈ «$texto» → $esperado', ({ consulta, texto, esperado }) => {
         expect(parecido(consulta, texto) >= UMBRAL_APROXIMADA).toBe(esperado);

@@ -397,5 +397,61 @@
       "esperado": false,
       "por": "sin sinónimos (decisión 4 del usuario)"
     }
+  ],
+  "puntaje": [
+    {
+      "consulta": "sal",
+      "campos": [
+        "SAL ANDREWS SOBRE",
+        "ANDREWS"
+      ],
+      "esperado": 90
+    },
+    {
+      "consulta": "sal",
+      "campos": [
+        "ALBUGENOL SOLUCION X 10 ML",
+        "SALTER PHARMA"
+      ],
+      "esperado": 80,
+      "por": "que el laboratorio empiece con «sal» no es que el producto se llame así (medido en Mín·Máx)"
+    },
+    {
+      "consulta": "7501234567890",
+      "campos": [
+        "GRAVOL",
+        "7501234567890"
+      ],
+      "esperado": 100,
+      "por": "el código exacto en cualquier campo"
+    },
+    {
+      "consulta": "losartan 100",
+      "campos": [
+        "LOSARTAN 100 MG X 30 TAB MK"
+      ],
+      "esperado": 90
+    },
+    {
+      "consulta": "100 losartan",
+      "campos": [
+        "LOSARTAN 100 MG X 30 TAB MK"
+      ],
+      "esperado": 80
+    },
+    {
+      "consulta": "tan 100",
+      "campos": [
+        "LOSARTAN 100 MG X 30 TAB MK"
+      ],
+      "esperado": 70
+    },
+    {
+      "consulta": "100 tan",
+      "campos": [
+        "LOSARTAN 100 MG X 30 TAB MK"
+      ],
+      "esperado": 60
+    }
   ]
 }

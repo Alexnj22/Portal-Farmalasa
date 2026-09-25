@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1066.0 — Búsqueda: Mín·Máx, promociones y existencias con la regla del portal
+
+Continúa F4 de `docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md`: tres búsquedas de
+producto que vivían dentro de otras funciones, cada una con su propia regla,
+pasan a la regla del portal (`20260925183338`).
+
+- **`busqueda_productos`** (id, puntaje, aproximado) es la búsqueda UNA vez,
+  como conjunto, y ahora es la base de `buscar_productos_ids` también: queda
+  una sola copia de la regla en la base.
+- **Mín·Máx** y los otros tres que usan `BuscadorDeProducto` (abono, descuento
+  y promoción): antes no encontraban «amoxisilina» (`word_similarity` 0.60
+  contra un umbral de 0.65). Ahora avisan cuando el resultado es aproximado.
+- **Promociones**: buscaba la FRASE entera; «amox 500» no encontraba
+  AMOXICILINA 500.
+- **Existencias** (`buscar_inventario_global_v2`): el nombre se buscaba en
+  cualquier orden, pero el principio activo solo en el orden escrito, y no había
+  búsqueda aproximada. Además deja de ser `LANGUAGE sql` + `SET` (la trampa 4:
+  nacía con plan genérico). Lo más parecido va primero, en existencias y en
+  enviar producto, con aviso.
+- **«Empieza con» cuenta solo en el nombre** (`20260925183442`, y lo mismo en
+  JS): buscando «sal» en Mín·Máx, un producto cuyo *laboratorio* empieza con
+  «sal» empataba con SAL ANDREWS y le ganaba por orden alfabético. Hay 7 casos
+  nuevos de puntaje, y `npm run busqueda:gemelos` sigue en 0 diferencias.
+- Se borran `buscarInventarioGlobal` (v1) y `searchInventory`: nadie los
+  llamaba.
+
 ## v2.1065.0 — Búsqueda de producto: una sola función en la base
 
 F3 de `docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md`: la regla de búsqueda ahora

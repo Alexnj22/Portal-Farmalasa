@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { Check, FlaskConical, Plus, Search } from 'lucide-react';
 import SearchInput from '../../components/common/SearchInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -52,6 +53,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
     const [texto, setTexto] = useState('');
     const [lab, setLab] = useState('');
     const [filas, setFilas] = useState([]);
+    const [sonParecidos, setSonParecidos] = useState(false);
     const [total, setTotal] = useState(0);
     const [cargando, setCargando] = useState(false);
     const [marcados, setMarcados] = useState(() => new Set());
@@ -79,6 +81,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                     if (!vivo) return;
                     setFilas(r.productos || []);
                     setTotal(r.total || 0);
+                    setSonParecidos(!!r.aproximado);
                 })
                 .catch(() => { if (vivo) { setFilas([]); setTotal(0); } })
                 .finally(() => { if (vivo) setCargando(false); });
@@ -182,6 +185,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                                 : `Marcar los ${disponibles.length}`}
                             disabled={disponibles.length === 0}
                         />
+                        {sonParecidos && <AvisoParecidos texto={consulta} className="w-full" />}
                         {/* Cuántos hay de verdad contra cuántos se muestran. El RPC
                             devuelve hasta 400 y el total sin tope, así que una lista
                             cortada lo DICE en vez de parecer completa. */}

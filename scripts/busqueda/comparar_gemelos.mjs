@@ -34,6 +34,7 @@ try {
         n: casos.normalizar.map(x => [x.entrada, x.salida]),
         c: casos.coincide.filter(x => x.consulta.trim()).map(x => [x.consulta, x.texto, x.esperado]),
         a: casos.aproximada.map(x => [x.consulta, x.texto, x.esperado]),
+        p: casos.puntaje.map(x => [x.consulta, x.campos, x.esperado]),
     });
     const ev = (q, t) => `public.busqueda_puntaje(public.busqueda_palabras(${q}), ARRAY[public.norm_busqueda(${t})], ARRAY[public.compactar_busqueda(${t})])`;
     const pa = (q, t) => `public.busqueda_parecido(public.busqueda_palabras(${q}), ARRAY[public.norm_busqueda(${t})], ARRAY[public.compactar_busqueda(${t})])`;
@@ -42,7 +43,12 @@ try {
         UNION ALL SELECT 'coincide', (e->>0)||' / '||(e->>1) FROM j, jsonb_array_elements(j->'c') e WHERE (${ev('e->>0', 'e->>1')} > 0) <> (e->>2)::boolean
         UNION ALL SELECT 'prefiltro', (e->>0)||' / '||(e->>1) FROM j, jsonb_array_elements(j->'c') e
             WHERE (e->>2)::boolean AND NOT ((public.norm_busqueda(e->>1)||' '||public.compactar_busqueda(e->>1)) ~ ALL (public.busqueda_prefiltro(public.busqueda_palabras(e->>0))))
-        UNION ALL SELECT 'aproximada', (e->>0)||' / '||(e->>1) FROM j, jsonb_array_elements(j->'a') e WHERE (${pa('e->>0', 'e->>1')} >= 0.75) <> (e->>2)::boolean`);
+        UNION ALL SELECT 'aproximada', (e->>0)||' / '||(e->>1) FROM j, jsonb_array_elements(j->'a') e WHERE (${pa('e->>0', 'e->>1')} >= 0.75) <> (e->>2)::boolean
+        UNION ALL SELECT 'puntaje', (e->>0)||' / '||(e->>1) FROM j, jsonb_array_elements(j->'p') e
+            WHERE public.busqueda_puntaje(public.busqueda_palabras(e->>0),
+                    ARRAY(SELECT public.norm_busqueda(c) FROM jsonb_array_elements_text(e->1) WITH ORDINALITY x(c, k) ORDER BY k),
+                    ARRAY(SELECT public.compactar_busqueda(c) FROM jsonb_array_elements_text(e->1) WITH ORDINALITY x(c, k) ORDER BY k))
+                  <> (e->>2)::int`);
     console.log(`1 · casos en SQL: ${malos.length} distinto(s)`);
     for (const m of malos) console.log(`    ✗ ${m.k}: ${m.caso}`);
     fallas += malos.length;

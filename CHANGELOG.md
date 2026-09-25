@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.6 — El aviso de faltante va sólo a la sala que despachó
+
+El aviso del momento («Faltó un producto en un traslado») iba a la sala de
+origen **y** a toda supervisión (rango ≥ 3 con permiso de traslados). Decisión
+del usuario: supervisión se entera sólo por el recordatorio, cuando el faltante
+lleva 1 o 3 días sin resolver. El aviso inicial queda para quien puede actuar,
+que es la sala que despachó.
+
 ## v2.1061.5 — El aviso de faltante habla de traslado y de la sala de quien firma
 
 «No se entiende qué es»: el aviso decía *«Merlyn Lemus (Salud 5) abrió la bolsa

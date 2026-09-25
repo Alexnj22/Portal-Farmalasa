@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Ban, HandCoins, Printer, Wallet } from 'lucide-react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
+import FirmaConFoto from './FirmaConFoto';
 import Button from '../common/Button';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
@@ -35,6 +36,20 @@ import { shortEmployeeName } from '../../utils/nameUtils';
  */
 
 const centavos = (n) => Math.round(Number(n || 0) * 100);
+
+/** Los pasos firmados de un abono. Recibir y anotar por la misma persona es UN paso. */
+function firmasDelAbono(a) {
+    const out = [];
+    const mismo = a.asentado_at && (
+        (a.registrado_por && a.registrado_por === a.asentado_por)
+        || (!a.registrado_por && a.registrado_nombre && a.registrado_nombre === a.asentado_nombre));
+    if (a.registrado_nombre) {
+        out.push({ accion: mismo ? 'Recibió y anotó' : 'Recibió', id: a.registrado_por, nombre: a.registrado_nombre });
+    }
+    if (a.asentado_at && !mismo) out.push({ accion: 'Anotó', id: a.asentado_por, nombre: a.asentado_nombre });
+    if (a.anulada_at) out.push({ accion: 'Anuló', id: a.anulada_por, nombre: a.anulada_nombre });
+    return out;
+}
 
 export default function AbonosDeDiferencia({
     corte,
@@ -133,7 +148,7 @@ export default function AbonosDeDiferencia({
                     return (
                         <div key={p.persona_id} className="flex items-center gap-2 flex-wrap">
                             <AvatarConEstado
-                                emp={{ id: p.persona_id, name: p.nombre }} px={36}
+                                emp={{ id: p.employee_id, name: p.nombre }} px={36}
                                 radio="rounded-full" mostrarChip={false}
                                 marco={pagado ? 'border-2 border-success' : 'border border-border-card'}
                             />
@@ -209,19 +224,32 @@ export default function AbonosDeDiferencia({
                     {abonos.map((a) => (
                         <div key={a.id} className="space-y-2">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <div className="min-w-0 flex-1">
-                                    <span className={`text-label font-bold tabular-nums ${a.anulada_at ? 'text-content-3 line-through' : 'text-content'}`}>
-                                        {formatMoney(a.monto)}
-                                    </span>
-                                    <span className="text-caption text-content-2"> · {shortEmployeeName(a.nombre)}</span>
-                                    <span className="block text-caption text-content-3">
-                                        {fechaHora12(a.registrado_at)}
-                                        {/* Quién hizo cada paso (usuario: «todo movimiento
-                                            debe decir quién lo hizo»). */}
-                                        {a.registrado_nombre && ` · recibió ${shortEmployeeName(a.registrado_nombre)}`}
-                                        {a.asentado_at && ` · anotó ${a.asentado_nombre ? shortEmployeeName(a.asentado_nombre) : 'sin nombre'}`}
-                                        {a.anulada_at && ` · anuló ${a.anulada_nombre ? shortEmployeeName(a.anulada_nombre) : 'sin nombre'}: ${a.anulada_motivo}`}
-                                    </span>
+                                <AvatarConEstado
+                                    emp={{ id: a.employee_id, name: a.nombre }} px={32}
+                                    radio="rounded-full" mostrarChip={false}
+                                    className={a.anulada_at ? 'opacity-50' : ''}
+                                />
+                                <div className="min-w-0 flex-1 space-y-1">
+                                    <div>
+                                        <span className={`text-label font-bold tabular-nums ${a.anulada_at ? 'text-content-3 line-through' : 'text-content'}`}>
+                                            {formatMoney(a.monto)}
+                                        </span>
+                                        <span className="text-caption text-content-2"> · {shortEmployeeName(a.nombre)}</span>
+                                        <span className="text-caption text-content-3"> · {fechaHora12(a.registrado_at)}</span>
+                                    </div>
+                                    {/* Quién hizo cada paso (usuario: «todo movimiento debe
+                                        decir quién lo hizo»), con su foto. Recibir y anotar
+                                        los hace la misma persona casi siempre —el portal
+                                        hace el ingreso al abonar—, así que se dice UNA vez;
+                                        sólo si fueron dos personas salen las dos. */}
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption">
+                                        {firmasDelAbono(a).map((f) => (
+                                            <FirmaConFoto key={f.accion} id={f.id} nombre={f.nombre} accion={f.accion} />
+                                        ))}
+                                    </div>
+                                    {a.anulada_at && a.anulada_motivo && (
+                                        <div className="text-caption text-content-3">Motivo: {a.anulada_motivo}</div>
+                                    )}
                                 </div>
                                 {/* El portal hace el ingreso al abonar. Si la caja no lo
                                     aceptó, el abono quedó guardado sin entrar: acá

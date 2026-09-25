@@ -5,6 +5,7 @@ import Badge from '../common/Badge';
 import Button from '../common/Button';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Checkbox from '../common/Checkbox';
+import FirmaConFoto from './FirmaConFoto';
 import FileField from '../common/FileField';
 import Notice from '../common/Notice';
 import PhotoLightbox from '../common/PhotoLightbox';
@@ -288,13 +289,21 @@ export default function ResolverDiferencia({
                 )}
 
                 {diferencia.via === 'RETIRA' && (personasResueltas || []).length > 0 && (
-                    <div className="text-caption text-content-3">
-                        {personasResueltas.map((p) => `${shortEmployeeName(p.nombre)} ${formatMoney(Math.abs(Number(p.monto)))}`).join(' · ')}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption">
+                        {personasResueltas.map((p) => (
+                            <span key={p.persona_id ?? p.employee_id} className="inline-flex items-center gap-1">
+                                <FirmaConFoto id={p.employee_id} nombre={p.nombre} />
+                                <span className="tabular-nums text-content-3">{formatMoney(Math.abs(Number(p.monto)))}</span>
+                            </span>
+                        ))}
                     </div>
                 )}
 
-                <div className="text-caption text-content-3">
-                    {diferencia.registrado_nombre ? shortEmployeeName(diferencia.registrado_nombre) : 'Sin registrar quién'} · {selloDeTiempo(diferencia.registrado_at)}
+                <div className="flex flex-wrap items-center gap-x-1.5 text-caption text-content-3">
+                    {diferencia.registrado_nombre
+                        ? <FirmaConFoto id={diferencia.registrado_por} nombre={diferencia.registrado_nombre} accion="Resolvió" />
+                        : 'Sin registrar quién'}
+                    <span>· {selloDeTiempo(diferencia.registrado_at)}</span>
                     {diferencia.via === 'RETIRA' && (diferencia.impreso_at ? ' · comprobante impreso' : ' · sin imprimir')}
                 </div>
 

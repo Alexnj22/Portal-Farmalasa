@@ -148,8 +148,8 @@ function CarasResponsables({ personas }) {
             <div className="flex -space-x-2 shrink-0">
                 {visibles.map((p) => (
                     <AvatarConEstado
-                        key={p.persona_id}
-                        emp={{ id: p.persona_id, name: p.nombre }}
+                        key={p.employee_id}
+                        emp={{ id: p.employee_id, name: p.nombre }}
                         px={28} radio="rounded-full" mostrarChip={false}
                         marco="border-2 border-surface"
                     />

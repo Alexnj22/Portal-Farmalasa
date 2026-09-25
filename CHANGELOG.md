@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.4 — Diferencias: las fotos salen, y recibir y anotar se firma una vez
+
+Reporte del usuario: las tarjetas y la ficha de Diferencias mostraban iniciales
+en vez de fotos.
+
+- **La causa**: el avatar buscaba la foto con `persona_id`, que es el id de la
+  fila de asignación y no el de la ficha. Ahora usa `employee_id`, y
+  `responsablesDelDia` agrupa por ficha (una persona en dos cortes tiene dos
+  `persona_id`).
+- **Siempre la foto junto al nombre** (`FirmaConFoto`): responsables, quién
+  pagó cada abono, quién resolvió la diferencia, quién recibió, anotó o anuló.
+  Migración `diferencias_traen_el_id_de_quien_firma_para_la_foto`:
+  `get_cortes_diferencias` devuelve también `registrado_por`/`asentado_por`, y
+  sus abonos `registrado_por`/`asentado_por`/`anulada_por`.
+- **«Recibió · anotó» se unifica**: el portal hace el ingreso al abonar, así que
+  casi siempre es la misma persona y sale una sola vez —«Recibió y anotó»—.
+  Si fueron dos personas, salen las dos.
+
 ## v2.1075.3 — Diferencias: tarjetas con lo recuperado, barra y caras de los responsables
 
 Pedido del usuario sobre /caja → Diferencias: tarjetas más informativas.

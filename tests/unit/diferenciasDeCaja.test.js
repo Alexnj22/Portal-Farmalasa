@@ -211,11 +211,11 @@ describe('desgloseDelDia', () => {
 describe('responsablesDelDia', () => {
     it('une a la misma persona de varios cortes, los que deben primero', () => {
         const r = responsablesDelDia({ cortes: [
-            { diferencia: { via: 'REPONE', personas: [{ persona_id: 1, nombre: 'A', monto: 2, abonado: 2, saldo: 0 }, { persona_id: 2, nombre: 'B', monto: 3, abonado: 0, saldo: 3 }] } },
-            { diferencia: { via: 'REPONE', personas: [{ persona_id: 1, nombre: 'A', monto: 1.1, abonado: 0, saldo: 1.1 }] } },
+            { diferencia: { via: 'REPONE', personas: [{ persona_id: 10, employee_id: 'a', nombre: 'A', monto: 2, abonado: 2, saldo: 0 }, { persona_id: 11, employee_id: 'b', nombre: 'B', monto: 3, abonado: 0, saldo: 3 }] } },
+            { diferencia: { via: 'REPONE', personas: [{ persona_id: 12, employee_id: 'a', nombre: 'A', monto: 1.1, abonado: 0, saldo: 1.1 }] } },
             { diferencia: { via: 'JUSTIFICA', personas: [{ persona_id: 9 }] } },
         ] });
-        expect(r.map((p) => p.persona_id)).toEqual([2, 1]);
+        expect(r.map((p) => p.employee_id)).toEqual(['b', 'a']);
         expect(r[1]).toMatchObject({ monto: 3.1, abonado: 2, saldo: 1.1 });
     });
 });

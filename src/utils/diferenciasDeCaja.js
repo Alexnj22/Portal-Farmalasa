@@ -296,9 +296,11 @@ export function responsablesDelDia(dia) {
     const porId = new Map();
     for (const c of dia?.cortes || []) {
         if (c.diferencia?.via !== 'REPONE') continue;
+        // Por la FICHA (`employee_id`): `persona_id` es el id de la fila de
+        // asignación, distinto en cada corte aunque sea la misma persona.
         for (const p of c.diferencia.personas || []) {
-            const k = String(p.persona_id);
-            const prev = porId.get(k) || { persona_id: p.persona_id, nombre: p.nombre, monto: 0, abonado: 0, saldo: 0 };
+            const k = String(p.employee_id ?? p.persona_id);
+            const prev = porId.get(k) || { employee_id: p.employee_id ?? null, nombre: p.nombre, monto: 0, abonado: 0, saldo: 0 };
             prev.monto += centavos(p.monto);
             prev.abonado += centavos(p.abonado);
             prev.saldo += centavos(p.saldo);

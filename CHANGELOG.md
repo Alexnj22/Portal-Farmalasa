@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1073.5 — Puntos: vuelve el rótulo Acumulados
+
+En la vista «Puntos», «Ganados» vuelve a decir «Acumulados» (pedido del usuario).
+
 ## v2.1073.4 — Puntos: la vista muestra el sistema actual antes del arranque, y pagina en la dirección
 
 - **La vista «Puntos» ya no sale en cero antes del 1-oct.** El resumen leía sólo

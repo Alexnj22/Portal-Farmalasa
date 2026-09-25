@@ -322,7 +322,7 @@ function Resumen({ resumen, cargando, avisos, porAsignar, irA }) {
                     sub={`${dolares(resumen?.libro?.puntos)} · ${pts(resumen?.libro?.cuentas_con_saldo)} clientes`}
                     loading={cargando} />
                 <StatCard icon={TrendingUp} iconBg="bg-success/10" iconCls="text-success-text"
-                    label="Ganados hoy" value={pts(hoy.acumulado)}
+                    label="Acumulados hoy" value={pts(hoy.acumulado)}
                     sub={`${pts(hoy.ventas)} ventas · mes ${pts(mes.acumulado)}`}
                     loading={cargando} />
                 <StatCard icon={Gift} iconBg="bg-warning/10" iconCls="text-warning-text"
@@ -346,7 +346,7 @@ function Resumen({ resumen, cargando, avisos, porAsignar, irA }) {
                 <DataTable
                     columns={[
                         { key: 'sala',      label: 'Sala' },
-                        { key: 'acumulado', label: 'Ganados' },
+                        { key: 'acumulado', label: 'Acumulados' },
                         { key: 'canjeado',  label: 'Canjeados' },
                     ]}
                     loading={cargando}

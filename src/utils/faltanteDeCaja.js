@@ -45,6 +45,10 @@ export function datosDeFaltanteDeCaja(n) {
         sala: String(m.sala || ''),
         hora: String(m.hora || ''),
         corteId: m.corte_id ?? null,
+        /* Quién lo confirmó (2026-09-25). Los avisos anteriores no lo traen y
+         * la tarjeta simplemente no pinta la línea. */
+        confirmoId: m.confirmado_por ?? null,
+        confirmoNombre: m.confirmado_nombre ? String(m.confirmado_nombre) : null,
         contado,
         esperado,
         arrastre,

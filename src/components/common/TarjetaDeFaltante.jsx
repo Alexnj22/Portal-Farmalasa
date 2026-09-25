@@ -1,6 +1,8 @@
 import React from 'react';
 import { TrendingDown } from 'lucide-react';
 import { formatMoney } from '../../utils/formatNumber';
+import { shortEmployeeName } from '../../utils/nameUtils';
+import AvatarConEstado from './AvatarConEstado';
 
 /* «Ayer la caja cerró con faltante», dentro de la campana.
  *
@@ -84,7 +86,7 @@ export function AnilloDeFaltante({ datos, isDark }) {
 
 export function CuerpoDeFaltanteDeCaja({ datos, claseTenue, isDark }) {
     const { falta, sala, hora, contado, esperado, proporcion,
-            arrastre, arrastreDesde, aportes } = datos;
+            arrastre, arrastreDesde, aportes, confirmoId, confirmoNombre } = datos;
     const tonoTexto = isDark ? 'text-danger-text' : 'text-danger';
     const tonoFondo = isDark ? 'bg-danger-text'   : 'bg-danger';
     /* La barra sale SÓLO cuando el día no arrastraba nada. Con arrastre, este
@@ -157,6 +159,14 @@ export function CuerpoDeFaltanteDeCaja({ datos, claseTenue, isDark }) {
                 <p className={`text-caption font-semibold ${claseTenue}`}>
                     {sala}{sala && hora ? ' · ' : ''}{hora ? `corte de las ${hora}` : ''}
                 </p>
+            )}
+
+            {confirmoNombre && (
+                <span className={`inline-flex items-center gap-1.5 text-caption ${claseTenue}`}>
+                    <AvatarConEstado emp={{ id: confirmoId, name: confirmoNombre }} px={20}
+                        radio="rounded-full" mostrarChip={false} />
+                    <span>Lo confirmó <span className="font-bold">{shortEmployeeName(confirmoNombre)}</span></span>
+                </span>
             )}
         </div>
     );

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.7 — Aviso de faltante nombra quién confirmó; aviso único a jefes con pendientes
+
+Pedido del usuario sobre los faltantes de caja.
+
+- **El aviso de las 8:00 dice quién confirmó el corte**: «Salud 2 — el corte de
+  las 1:05 p. m., confirmado por Sergio Tobias, quedó $20.25 abajo…». La tarjeta
+  de la campana pinta su foto (`confirmado_por` en metadata; avisos viejos sin
+  el dato no muestran la línea). El enlace abre directo Efectivo → Diferencias.
+- **Aviso único a los jefes, 26-sep 8:00 SV**:
+  `avisar_diferencias_pendientes_a_jefes()` le manda a cada Jefe/a y Subjefe/a
+  de Sala lo que su sala tiene pendiente de todo el historial —cortes sin
+  resolver y saldo por cobrar a responsables—. Lo dispara el cron
+  `diferencias-pendientes-jefes-2026-09-26`, que se borra al terminar.
+  Declarado en `gate:eficiencia`.
+- Se mandó una prueba de cada aviso al usuario.
+
 ## v2.1075.6 — Puntos: tarjetas sin cortes, montos en dólares y el detalle del cliente rediseñado
 
 - **Tarjetas de Consulta**: el subtítulo «$17,423.76 · 11,295 clientes» se

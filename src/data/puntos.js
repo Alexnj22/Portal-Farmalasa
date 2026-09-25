@@ -161,3 +161,60 @@ export const OPCIONES_FILTRO_PUNTOS = [
     ...['acumulado', 'pendiente', 'retirado', 'devuelto', 'por_revisar', 'no_acumula', 'sin_enviar']
         .map(k => ({ value: k, label: ROTULO_PUNTOS[k].label })),
 ];
+
+// ── La vista «Puntos» ───────────────────────────────────────────────────────
+//
+// Las cuatro lecturas y la única escritura de la vista. Todas pasan por
+// funciones de la base que comprueban el permiso del módulo `puntos` ADENTRO
+// (migración 20260925194023): el libro tiene RLS de `clientes`, y quien opera
+// el programa no tiene por qué tener además ese otro módulo.
+//
+// A diferencia de `fetchPuntosDeCliente`, éstas SÍ lanzan: son la pantalla
+// entera, no un dato de apoyo en una ficha, y un vacío silencioso se leería
+// como «no hay nada que revisar».
+
+async function rpc(nombre, args = {}) {
+    const { data, error } = await supabase.rpc(nombre, args);
+    if (error) throw error;
+    return data;
+}
+
+/** ¿Funciona el programa? Configuración, arranque, libro, hoy, mes, salas y vencimientos. */
+export const fetchResumenDePuntos = () => rpc('puntos_panel_resumen');
+
+/** Canjes que el cliente no tenía cómo pagar y anulaciones con puntos ya gastados (60 días). */
+export const fetchAvisosDePuntos = () => rpc('puntos_panel_avisos');
+
+/** Cuentas del sistema anterior que no pasaron solas, con su motivo. */
+export const fetchCuentasPorAsignar = () => rpc('puntos_panel_pendientes');
+
+/**
+ * Fichas que podrían ser de una cuenta pendiente. Sólo SUGIERE: por teléfono y
+ * nombre parecido, o por lo que se escriba en `busqueda`. Nada se une solo.
+ */
+export const fetchFichasCandidatas = (idCliente, busqueda = null) =>
+    rpc('puntos_panel_candidatas', { p_id_cliente: idCliente, p_busqueda: busqueda || null });
+
+/**
+ * Pasa una cuenta del sistema anterior a una ficha, con todo su historial.
+ * `simular` (por defecto) devuelve las dos lado a lado sin escribir. La firma
+ * la pone la base con la sesión de quien asigna, nunca el navegador.
+ */
+export const asignarCuentaAnterior = ({ idCliente, customerId, nota, simular = true }) =>
+    rpc('puntos_panel_asignar', {
+        p_id_cliente: idCliente, p_customer_id: customerId, p_nota: nota, p_simular: simular,
+    });
+
+/** Por qué una cuenta no pasó sola, dicho para quien atiende el reclamo. */
+export const QUE_HACER_POR_MOTIVO = {
+    'ninguna ficha del portal tiene ese DUI':
+        'Buscar la ficha del cliente por nombre o teléfono. Si no tiene, crearla en caja con su DUI.',
+    'DUI mal escrito en el sistema anterior':
+        'El DUI de la cuenta vieja no es válido. Confirmar con el documento del cliente antes de asignar.',
+    'el DUI está en varias fichas del portal':
+        'Hay fichas repetidas con ese DUI. Elegir la correcta o fusionarlas primero.',
+    'el mismo DUI está en varias cuentas del sistema anterior':
+        'El cliente tenía dos cuentas. Se pueden asignar las dos a la misma ficha.',
+    'sin DUI':
+        'La cuenta vieja no tiene documento. Confirmar identidad por nombre y teléfono.',
+};

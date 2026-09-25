@@ -234,6 +234,7 @@ const GRUPOS_CRUDOS = [
                 // igual sin ver cuánto factura cada cliente.
                 { key: 'clientes_ver_montos', label: 'Ver la facturación por cliente', tipo: 'cap' },
             ]},
+            { key: 'puntos',         label: 'Puntos',        desc: 'El programa de puntos entero: lo acumulado y canjeado por día y por sala, los avisos de canjes sin saldo y anulaciones con puntos ya gastados, cuándo vencen, y las cuentas del sistema anterior que quedaron por asignar. Editar = asignar una de esas cuentas a la ficha de un cliente', icono: 'Star', hasApprove: false },
             { key: 'metas',          label: 'Metas',         desc: 'Metas mensuales de venta por sala: cumplimiento en vivo, proyección de cierre e histórico con el tramo del bono', icono: 'Target', hasApprove: true, hasScope: true },
             { key: 'promociones',    label: 'Promociones',   desc: 'Campañas de laboratorio que pagan por unidad vendida —el lote repartido por sala, su avance y lo que habría ganado cada persona— y los descuentos que la venta le rebaja al renglón', icono: 'DollarSign', hasApprove: true, hasScope: true },
         ],

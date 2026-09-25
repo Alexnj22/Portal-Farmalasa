@@ -61,6 +61,9 @@ export const MODULE_MAP = {
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icono: 'FileText'   },
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icono: 'Receipt'    },
     clientes:          { path: '/clientes',         label: 'Clientes',                 icono: 'Contact'    },
+    // El programa de puntos, entero (2026-09-25): desde el 1-oct vive en el
+    // portal y la ficha de cada cliente sólo muestra el suyo.
+    puntos:            { path: '/puntos',           label: 'Puntos',                   icono: 'Star'       },
     encuesta:          { path: '/encuesta',         label: 'Clima organizacional',     icono: 'BarChart2'  },
     encuesta_admin:    { path: '/encuesta-admin',   label: 'Encuestas',                icono: 'PenLine'    },
     /* El slot de «Bonificaciones» era el que quedó cuando se retiró Promociones

@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1073.0 — Puntos: la vista del programa
+
+Nueva vista **Puntos** (`/puntos`, grupo Comercial, módulo `puntos` para
+Gerencia, Administración y Supervisión de Ventas). Desde el 1-oct el programa
+vive en el portal y hasta ahora sólo se veía el panel de cada ficha.
+
+- **Resumen**: puntos de los clientes y su valor, lo acumulado y canjeado hoy y
+  en el mes, por sala, y cuándo vencen. Avisa si el arranque falló o si en
+  horario de sala pasa más de una hora sin acumular.
+- **Avisos**: canjes sin saldo suficiente y ventas anuladas con los puntos ya
+  canjeados (60 días).
+- **Cuentas por asignar**: las cuentas del sistema anterior que no pasaron
+  solas, con su motivo y qué hacer. Al abrir una se sugieren fichas por
+  teléfono o nombre parecido, se puede buscar otra, y asignar exige escribir
+  el motivo; firma la base con la sesión. Se habilita recién después del
+  arranque: antes, la copia del 1-oct reemplazaría el archivo y la asignación
+  se duplicaría.
+
 ## v2.1072.0 — La búsqueda cierra: gate:busqueda y el índice en el tablero
 
 - **`npm run gate:busqueda`**, que también corre en el pre-commit cuando se toca `src/`. Falla si aparece un buscador fuera de la regla: un `toLowerCase().includes()` sobre lo que escribió la persona, un `.ilike()` con el texto del usuario, o `normSearch` fuera de `searchUtils.js`. Bloquea desde el primer hallazgo, y las excepciones legítimas van con su motivo escrito.

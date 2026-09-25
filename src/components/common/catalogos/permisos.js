@@ -82,6 +82,7 @@ import {
     Thermometer,
     Pill,
     Mail,
+    Star,
 } from 'lucide-react';
 import { MODULE_GROUPS as GRUPOS, MODULE_INFO as INFO } from '../../../constants/permissionModules';
 
@@ -161,6 +162,7 @@ const ICONOS = {
     Wrench,
     X,
     Zap,
+    Star,
 };
 
 // Le agrega `.icon` a todo objeto del catálogo que tenga `icono`, a cualquier

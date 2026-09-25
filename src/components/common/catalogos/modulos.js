@@ -66,6 +66,7 @@ import {
     Landmark,
     PackagePlus,
     Thermometer,
+    Star,
 } from 'lucide-react';
 import { MODULE_MAP as BASE } from '../../../constants/moduleMap';
 
@@ -129,6 +130,7 @@ const ICONOS = {
     Wallet,
     Wrench,
     X,
+    Star,
 };
 
 // Le agrega `.icon` a todo objeto del catálogo que tenga `icono`, a cualquier

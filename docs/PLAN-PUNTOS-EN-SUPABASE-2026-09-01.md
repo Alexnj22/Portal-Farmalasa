@@ -837,6 +837,26 @@ devuelto, por revisar y «sin puntos» (antes «Sin enviar»). «Pendientes» y
 «Retirados» quedan para lo anterior al 1-oct. Ensayado en el branch con las 11
 ventas de prueba.
 
+### La vista «Puntos» (`/puntos`, 2026-09-25)
+
+Módulo nuevo `puntos` (Gerencia, Administración, Supervisión de Ventas y QA),
+en el grupo Comercial. Tres pestañas:
+
+- **Resumen**: puntos de los clientes y su valor, acumulado y canjeado hoy y en
+  el mes, por sala, cuándo vencen, y avisos de estado — antes del corte dice que
+  el programa pasa el 1-oct; si el arranque falló, dice por qué; si en horario
+  de sala pasa más de una hora sin acumular, lo advierte.
+- **Avisos**: canjes sin saldo suficiente y anulaciones con puntos ya
+  canjeados, 60 días.
+- **Cuentas por asignar**: las 709, con motivo y qué hacer; el modal sugiere
+  fichas (mismo teléfono o nombre parecido), busca, exige el motivo y firma con
+  la sesión. **Sólo después del arranque** (`puntos_panel_asignar` lo frena
+  antes): la copia de las 2:00 reemplaza el archivo y una asignación previa se
+  duplicaría.
+
+Todo sale de funciones DEFINER que comprueban el permiso adentro (migraciones
+`20260925194023` y `20260925194342`).
+
 ### Lo que queda abierto a propósito
 
 - Una venta de septiembre que se anule en octubre **no** descuenta: sus puntos

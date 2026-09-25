@@ -410,8 +410,8 @@ export const AREAS = [
         resumen: 'Lo vendido: anulaciones en vivo, ranking de vendedores, productos más vendidos, cuadre diario y lo que se cobra sin ser venta de productos.',
         modulos: ['ventas', 'ventas_tab_ventas', 'ventas_tab_vendedores', 'ventas_tab_productos',
                   'ventas_tab_inyecciones',
-                  'ventas_ver_cards', 'ventas_no_producto'],
-        rutas: ['/ventas'],
+                  'ventas_ver_cards', 'ventas_no_producto', 'puntos'],
+        rutas: ['/ventas', '/puntos'],
         archivos: [
             'src/views/VentasView.jsx',
             'src/views/ventas/',
@@ -421,6 +421,9 @@ export const AREAS = [
             // porque la sirve la misma función y el estado es de una VENTA;
             // la ficha del cliente es su segundo consumidor.
             'src/data/puntos.js',
+            // La vista del programa (2026-09-25).
+            'src/views/PuntosView.jsx',
+            'src/views/puntos/',
         ],
         tablas: ['sales_invoices', 'sales_invoice_items', 'sales_invoice_changelog', 'sales_daily_stats',
                  'ventas_monthly_stats', 'sales_alert_log', 'sales_gap_resolutions',

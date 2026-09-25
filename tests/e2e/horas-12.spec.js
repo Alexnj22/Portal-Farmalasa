@@ -22,7 +22,7 @@ const E2E_USER = process.env.E2E_USER;
 const E2E_PASSWORD = process.env.E2E_PASSWORD;
 
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map((r) => r.trim()) : [
-    'inicio', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
+    'inicio', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes', 'puntos',
     'proveedores', 'facturacion', 'facturas-compra', 'cotizaciones', 'conteo-inventario',
     'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
     'personal', 'monitor', 'auditoria-de-tiempos', 'horarios', 'nomina', 'solicitudes',

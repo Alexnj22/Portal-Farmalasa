@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import { Target, Plus, History, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -72,8 +73,7 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
         if (salaFilter) base = base.filter((r) => String(r.branch_id) === salaFilter);
         if (soloConMeta) base = base.filter((r) => r.monto_meta != null);
         if (searchTerm?.trim()) {
-            const q = searchTerm.trim().toLowerCase();
-            base = base.filter((r) => (salaNombre(r.branch_id) || '').toLowerCase().includes(q));
+            base = base.filter((r) => tokenMatch(searchTerm, salaNombre(r.branch_id)));
         }
         return base;
     }, [rows, salaFilter, soloConMeta, searchTerm, salaNombre]);

@@ -791,9 +791,12 @@ de −51 a +25 puntos).
 
 ### Lo que falta
 
-4. Los dos crones de una sola vez del 1-oct: `puntos-archivar-arranque` 08:00
-   UTC y `puntos-arranque-1oct` 08:10 UTC — **espera el OK del usuario** sobre
-   estos números.
+4. ✅ Programados (migración `20260925175856`, OK del usuario):
+   `puntos-archivar-arranque` 08:00 UTC y `puntos-arranque-1oct` 08:10 UTC del
+   1-oct, con guarda `current_date = 2026-10-01` en el comando.
+   **Después del encendido**, en `scripts/eficiencia-gate.mjs`: quitar los dos
+   de arriba, `sync-puntos-1min` y `puntos-vencer-mensual`, y declarar
+   `puntos-motor-1min` — si no, el gate queda en rojo con razón.
 5. Operativo: nadie en la aplicación vieja después del cierre del 30-sep; MySQL
    encendido a las 02:00 del 1-oct; apagar el Apps Script de Drive; la caja
    consulta el saldo en la ficha del portal antes de un canje.

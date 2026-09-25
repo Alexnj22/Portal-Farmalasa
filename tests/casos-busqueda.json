@@ -1,0 +1,401 @@
+{
+  "nota": "Casos de la regla de búsqueda (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md). Valen para los DOS gemelos: src/utils/busqueda.js y, cuando exista, su gemelo SQL. Los nombres son productos reales del catálogo medidos el 2026-09-25. Agregar acá cada búsqueda que salga mal en sala, tal cual se escribió.",
+  "normalizar": [
+    {
+      "entrada": "TEMISAR PLUS 80/12.5MG X 30 COMPRIMIDOS",
+      "salida": "temisar plus 80 12.5 mg x 30 comprimidos",
+      "por": "la barra separaba nada: quedaba 80125mg"
+    },
+    {
+      "entrada": "CLIMABEL 2.5MG X 30 COMPRIMIDOS",
+      "salida": "climabel 2.5 mg x 30 comprimidos",
+      "por": "2.5 quedaba 25"
+    },
+    {
+      "entrada": "Solución 2,5 %",
+      "salida": "solucion 2.5",
+      "por": "la coma decimal es el mismo número"
+    },
+    {
+      "entrada": "VALVEY 100UI/ML FRASCO VIAL X 10ML (INSULINA)",
+      "salida": "valvey 100 ui ml frasco vial x 10 ml insulina"
+    },
+    {
+      "entrada": "JERINGA NIPRO/RIM 5ML 22GX 1 1/2 X 100",
+      "salida": "jeringa nipro rim 5 ml 22 gx 1 1 2 x 100"
+    },
+    {
+      "entrada": "MAGNESIA PHILLIPS S/MENTA X 120 ML.",
+      "salida": "magnesia phillips s menta x 120 ml"
+    },
+    {
+      "entrada": "S.S.N",
+      "salida": "ssn",
+      "por": "sigla: se junta"
+    },
+    {
+      "entrada": "D'ANGELO, S.A.",
+      "salida": "d angelo sa"
+    },
+    {
+      "entrada": "CO-TRIMOXAZOL",
+      "salida": "co trimoxazol"
+    },
+    {
+      "entrada": "LOSARTAN 50MG X 100 TAB. ECOMED",
+      "salida": "losartan 50 mg x 100 tab ecomed"
+    },
+    {
+      "entrada": "Ácido ÑANDÚ  x30",
+      "salida": "acido nandu x 30"
+    },
+    {
+      "entrada": "  ",
+      "salida": ""
+    },
+    {
+      "entrada": "NEUROBION 25,000 AMP",
+      "salida": "neurobion 25000 amp",
+      "por": "separador de miles, no decimal (29 productos)"
+    },
+    {
+      "entrada": "BADYKET 2,500 UI X 2 JERINGAS",
+      "salida": "badyket 2500 ui x 2 jeringas"
+    },
+    {
+      "entrada": "1,000,000 UI",
+      "salida": "1000000 ui"
+    },
+    {
+      "entrada": "0.125 MG",
+      "salida": "0.125 mg",
+      "por": "un cero delante: es decimal"
+    }
+  ],
+  "coincide": [
+    {
+      "consulta": "90 alcohol",
+      "texto": "ALCOHOL 90 GRADOS X 1 GALON",
+      "esperado": true,
+      "por": "el orden de las palabras no importa"
+    },
+    {
+      "consulta": "500mg",
+      "texto": "ACETAMINOFEN 500 MG X 100 TAB",
+      "esperado": true,
+      "por": "pegado encuentra separado"
+    },
+    {
+      "consulta": "500 mg",
+      "texto": "ACETAMINOFEN 500MG CAJA X 100 TAB MK",
+      "esperado": true,
+      "por": "separado encuentra pegado"
+    },
+    {
+      "consulta": "500",
+      "texto": "METFORMINA 1500MG X 30",
+      "esperado": false,
+      "por": "un número coincide completo"
+    },
+    {
+      "consulta": "5",
+      "texto": "ACETAMINOFEN 500MG CAJA X 100 TAB MK",
+      "esperado": false,
+      "por": "«5» no es «500» (decisión 1 del usuario)"
+    },
+    {
+      "consulta": "25",
+      "texto": "CLIMABEL 2.5MG X 30 COMPRIMIDOS",
+      "esperado": false,
+      "por": "«25» no es «2.5»"
+    },
+    {
+      "consulta": "2.5",
+      "texto": "CLIMABEL 2.5MG X 30 COMPRIMIDOS",
+      "esperado": true
+    },
+    {
+      "consulta": "2,5",
+      "texto": "CLIMABEL 2.5MG X 30 COMPRIMIDOS",
+      "esperado": true
+    },
+    {
+      "consulta": "12.5",
+      "texto": "TEMISAR PLUS 80/12.5MG X 30 COMPRIMIDOS",
+      "esperado": true
+    },
+    {
+      "consulta": "80",
+      "texto": "TEMISAR PLUS 80/12.5MG X 30 COMPRIMIDOS",
+      "esperado": true
+    },
+    {
+      "consulta": "menta",
+      "texto": "MAGNESIA PHILLIPS S/MENTA X 120 ML.",
+      "esperado": true
+    },
+    {
+      "consulta": "clavulanico",
+      "texto": "AMOXICILINA/CLAVULANICO 875/125 MG",
+      "esperado": true
+    },
+    {
+      "consulta": "cotrimoxazol",
+      "texto": "CO-TRIMOXAZOL 800/160 MG",
+      "esperado": true,
+      "por": "la forma compacta rescata el guion"
+    },
+    {
+      "consulta": "ssn",
+      "texto": "SUERO S.S.N 0.9% 500 ML",
+      "esperado": true
+    },
+    {
+      "consulta": "mk",
+      "texto": "LOSARTAN 50 MG X 30 TAB MK",
+      "esperado": true
+    },
+    {
+      "consulta": "mk",
+      "texto": "SMKX JARABE",
+      "esperado": false,
+      "por": "palabra corta: sólo al inicio de una palabra"
+    },
+    {
+      "consulta": "gel",
+      "texto": "ANGELINA CREMA",
+      "esperado": true,
+      "por": "3+ letras: en cualquier parte, como hoy (no se pierde nada)"
+    },
+    {
+      "consulta": "jose",
+      "texto": "JOSÉ PÉREZ",
+      "esperado": true,
+      "por": "sin tildes de los dos lados"
+    },
+    {
+      "consulta": "José",
+      "texto": "JOSE PEREZ",
+      "esperado": true
+    },
+    {
+      "consulta": "nandu",
+      "texto": "ÑANDÚ",
+      "esperado": true
+    },
+    {
+      "consulta": "80360",
+      "texto": "0000080360",
+      "esperado": true,
+      "por": "un número largo es un identificador: se busca dentro"
+    },
+    {
+      "consulta": "7501",
+      "texto": "7501234567890",
+      "esperado": true,
+      "por": "el comienzo de un código de barras"
+    },
+    {
+      "consulta": "grav 500",
+      "texto": "GRAVOL 500MG X 8",
+      "esperado": true
+    },
+    {
+      "consulta": "ibuprofeno 400",
+      "texto": "IBUPROFENO 600MG X 100",
+      "esperado": false
+    },
+    {
+      "consulta": "",
+      "texto": "CUALQUIER COSA",
+      "esperado": true,
+      "por": "consulta vacía: no filtra"
+    },
+    {
+      "consulta": "b12",
+      "texto": "VITAMINA B12 1000 MCG",
+      "esperado": true
+    },
+    {
+      "consulta": "b12",
+      "texto": "VITAMINA B 12 X 30",
+      "esperado": true
+    },
+    {
+      "consulta": "b12",
+      "texto": "BABYSIL CREMA X 12 SOBRES",
+      "esperado": false,
+      "por": "letras y dígitos juntos van seguidos, no sueltos (medido: 8 falsos)"
+    },
+    {
+      "consulta": "500mg",
+      "texto": "METFORMINA 1500MG X 30",
+      "esperado": false
+    },
+    {
+      "consulta": "sal",
+      "texto": "BASTON 4 PUNTOS ALUMINIO PLATEADO",
+      "esperado": false,
+      "por": "la forma de rescate no junta palabras separadas (puntoSALuminio)"
+    },
+    {
+      "consulta": "tab",
+      "texto": "DEXTROVITA B 5% 1000 ML BONIN",
+      "esperado": false,
+      "por": "ídem (dextroviTA B)"
+    },
+    {
+      "consulta": "500",
+      "texto": "ATACAND 16MG X 14 COMP. 5001234567890",
+      "esperado": false,
+      "por": "3 dígitos no se buscan dentro de un código (medido: 124 falsos)"
+    },
+    {
+      "consulta": "vit c",
+      "texto": "MACROVITAM GOTAS X 30ML",
+      "esperado": false,
+      "por": "la «c» suelta no es una letra en cualquier parte"
+    },
+    {
+      "consulta": "vit c",
+      "texto": "VITAMINA C 500MG",
+      "esperado": true
+    },
+    {
+      "consulta": "25000",
+      "texto": "NEUROBION 25,000 AMP",
+      "esperado": true
+    },
+    {
+      "consulta": "500",
+      "texto": "BADYKET 2,500 UI X 2 JERINGAS",
+      "esperado": false,
+      "por": "2,500 es dos mil quinientos"
+    },
+    {
+      "consulta": "2500",
+      "texto": "BADYKET 2,500 UI X 2 JERINGAS",
+      "esperado": true
+    },
+    {
+      "consulta": "138",
+      "texto": "$138.97",
+      "esperado": true,
+      "por": "un entero encuentra el monto con centavos"
+    },
+    {
+      "consulta": "1234",
+      "texto": "$1,234.50",
+      "esperado": true
+    },
+    {
+      "consulta": "1,234.50",
+      "texto": "$1,234.50",
+      "esperado": true
+    },
+    {
+      "consulta": "13",
+      "texto": "$138.97",
+      "esperado": false
+    }
+  ],
+  "orden": [
+    {
+      "consulta": "sal",
+      "lista": [
+        "ACIDO BORICO SOBRE X 28G SALUFARMA",
+        "ASPIRADOR NASAL GERBER FIRST ESSENTIALS",
+        "BETASALIC LOCION X 30 ML",
+        "SAL ANDREWS SOBRE",
+        "SALBUTAMOL 4MG X 100 TAB. SAIMED"
+      ],
+      "primeros": [
+        "SAL ANDREWS SOBRE",
+        "SALBUTAMOL 4MG X 100 TAB. SAIMED"
+      ],
+      "ultimos": [
+        "ASPIRADOR NASAL GERBER FIRST ESSENTIALS",
+        "BETASALIC LOCION X 30 ML"
+      ],
+      "por": "lo que empieza con lo escrito va antes que lo que lo contiene en medio"
+    },
+    {
+      "consulta": "losartan 100",
+      "lista": [
+        "LOSARTAN 50MG X 100 TAB. ECOMED",
+        "LOSARTAN 100 MG X 30 TAB  MK"
+      ],
+      "primeros": [
+        "LOSARTAN 100 MG X 30 TAB  MK"
+      ],
+      "ultimos": [
+        "LOSARTAN 50MG X 100 TAB. ECOMED"
+      ],
+      "por": "lo escrito seguido y en orden gana"
+    }
+  ],
+  "aproximada": [
+    {
+      "consulta": "amoxisilina",
+      "texto": "AMOXICILINA 500 MG X 30 CAP MK",
+      "esperado": true,
+      "por": "fonética: c/s. Los trigramas del servidor daban 0.60 y no la encontraban"
+    },
+    {
+      "consulta": "omeprasol",
+      "texto": "OMEPRAZOL 20MG X 100 GELCAPS. BALAXI",
+      "esperado": true,
+      "por": "fonética: z/s"
+    },
+    {
+      "consulta": "dicloefnac",
+      "texto": "DICLOFENAC SODICO 50MG X 20 TAB. MK",
+      "esperado": true,
+      "por": "letras cambiadas de lugar"
+    },
+    {
+      "consulta": "acetaminofem",
+      "texto": "ACETAMINOFEN 500MG X 100 TAB SAIMED",
+      "esperado": true
+    },
+    {
+      "consulta": "ibuprofemo",
+      "texto": "IBUPROFENO 400MG X 100 SAIMED",
+      "esperado": true
+    },
+    {
+      "consulta": "amoxisilina 500",
+      "texto": "AMOXICILINA 500 MG X 30 CAP MK",
+      "esperado": true
+    },
+    {
+      "consulta": "ibuprofeno 400",
+      "texto": "IBUPROFENO 600MG X 100",
+      "esperado": false,
+      "por": "un número nunca es aproximado"
+    },
+    {
+      "consulta": "amoxisilina 875",
+      "texto": "AMOXICILINA 500 MG X 30 CAP MK",
+      "esperado": false
+    },
+    {
+      "consulta": "loratadina",
+      "texto": "LOSARTAN 50 MG X 30 TAB MK",
+      "esperado": false,
+      "por": "otra palabra, no un error de dedo"
+    },
+    {
+      "consulta": "gra",
+      "texto": "GRAVOL",
+      "esperado": false,
+      "por": "menos de 4 letras: no hay aproximada"
+    },
+    {
+      "consulta": "paracetamol",
+      "texto": "ACETAMINOFEN 500MG X 100 TAB SAIMED",
+      "esperado": false,
+      "por": "sin sinónimos (decisión 4 del usuario)"
+    }
+  ]
+}

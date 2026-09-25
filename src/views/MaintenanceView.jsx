@@ -193,7 +193,7 @@ export default function MaintenanceView() {
     // Agrupados como en Permisos.
     const grupos = useMemo(() => {
         const filtrados = buscar.trim()
-            ? smartFilter(buscar, bloqueables, k => [info(k).label, info(k).desc, k]).results
+            ? smartFilter(buscar, bloqueables, k => [info(k).label, info(k).desc, k], { orden: 'relevancia' }).results
             : bloqueables;
         const porGrupo = new Map();
         for (const key of filtrados) {

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import { Receipt, Plus, Coins, TrendingUp, Percent, AlertTriangle, RefreshCw, Search, Undo2 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -49,11 +50,9 @@ export default function TabGastos({ canEdit, reloadKey, onChanged, onAgregarGast
     }, [reloadKey, intento]);
 
     const visibles = useMemo(() => {
-        const q = searchTerm?.trim().toLowerCase();
-        if (!q) return gastos;
+        if (!searchTerm?.trim()) return gastos;
         return gastos.filter((g) =>
-            (g.concepto || '').toLowerCase().includes(q)
-            || (g.salas || []).some((s) => (s.sala || '').toLowerCase().includes(q)));
+            tokenMatch(searchTerm, g.concepto, ...(g.salas || []).map((s) => s.sala)));
     }, [gastos, searchTerm]);
 
     const resumen = useMemo(() => {

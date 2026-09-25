@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import { Target, TrendingUp, Gauge, BarChart3, Plus, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -108,8 +109,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
         let base = rows;
         if (salaMes) base = base.filter((r) => String(r.branch_id) === salaMes);
         if (searchTerm?.trim()) {
-            const q = searchTerm.trim().toLowerCase();
-            base = base.filter((r) => (salaNombre(r.branch_id) || '').toLowerCase().includes(q));
+            base = base.filter((r) => tokenMatch(searchTerm, salaNombre(r.branch_id)));
         }
         return base;
     }, [rows, salaMes, searchTerm, salaNombre]);

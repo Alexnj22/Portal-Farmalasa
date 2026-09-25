@@ -75,7 +75,7 @@ export default function LabsPanel({ onClose, onChanged }) {
         setSaving(null);
     };
 
-    const visible = search.trim() ? smartFilter(search, labs, l => [l.nombre]).results : labs;
+    const visible = search.trim() ? smartFilter(search, labs, l => [l.nombre], { orden: 'relevancia' }).results : labs;
     const hiddenCount = labs.filter(l => l.ocultar_en_minmax).length;
 
     // Glassmorphism tokens shared across elements

@@ -21,7 +21,7 @@ import {
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon,
 } from '../../data/cargarCompra';
 import { formatMoney } from '../../utils/formatNumber';
-import { normalizeText } from '../../utils/helpers';
+import { tokenMatch } from '../../utils/searchUtils';
 import { useAuth } from '../../context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
@@ -405,13 +405,9 @@ function TabPorConfirmar({ puedeEditar }) {
     };
 
     const visibles = useMemo(() => {
-        const q = normalizeText(busca.trim());
-        if (!q) return filas ?? [];
-        return (filas ?? []).filter(f =>
-            normalizeText(f.proveedor || '').includes(q)
-            || normalizeText(f.descripcion || '').includes(q)
-            || normalizeText(f.codigo_proveedor || '').includes(q)
-            || normalizeText(f.sugerido_nombre || '').includes(q));
+        if (!busca.trim()) return filas ?? [];
+        return (filas ?? []).filter(f => tokenMatch(busca,
+            f.proveedor, f.descripcion, f.codigo_proveedor, f.sugerido_nombre));
     }, [filas, busca]);
 
     // El recorte por estado lo hace la base, así que lo que hay en `filas` ES
@@ -658,12 +654,9 @@ export default function CargarCompraView() {
     useEffect(() => { setPagina(1); }, [busca, dias]);
 
     const visibles = useMemo(() => {
-        const q = normalizeText(busca.trim());
-        if (!q) return filas ?? [];
-        return (filas ?? []).filter(f =>
-            normalizeText(f.emisor_nombre || '').includes(q)
-            || normalizeText(f.proveedor_ficha || '').includes(q)
-            || normalizeText(f.codigo_generacion || '').includes(q));
+        if (!busca.trim()) return filas ?? [];
+        return (filas ?? []).filter(f => tokenMatch(busca,
+            f.emisor_nombre, f.proveedor_ficha, f.codigo_generacion));
     }, [filas, busca]);
 
     const totales = useMemo(() => {

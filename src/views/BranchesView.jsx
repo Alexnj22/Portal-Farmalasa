@@ -660,7 +660,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
 
     const { results: filteredBranches, isFuzzy: isBranchSearchFuzzy } = useMemo(() => {
         if (!searchTerm.trim()) return { results: filteredBranchesBase, isFuzzy: false };
-        return smartFilter(searchTerm, filteredBranchesBase, b => [b.name, b.address]);
+        return smartFilter(searchTerm, filteredBranchesBase, b => [b.name, b.address], { orden: 'relevancia' });
     }, [filteredBranchesBase, searchTerm]);
 
     const handleViewProfile = useCallback((branch) => {

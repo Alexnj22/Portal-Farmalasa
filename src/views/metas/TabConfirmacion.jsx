@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -117,9 +118,8 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     // cambia nada y el control miente.
     const coincide = useCallback(
         (r) => {
-            const q = searchTerm?.trim().toLowerCase();
-            if (!q) return true;
-            return (salaNombre(r.branch_id) || '').toLowerCase().includes(q);
+            if (!searchTerm?.trim()) return true;
+            return tokenMatch(searchTerm, salaNombre(r.branch_id));
         },
         [searchTerm, salaNombre],
     );

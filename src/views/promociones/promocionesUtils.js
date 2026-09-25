@@ -90,7 +90,7 @@ export function porLaboratorio(renglones = []) {
 export const textoBuscable = (p) => [
     p.nombre, p.nota,
     ...(Array.isArray(p.laboratorios) ? p.laboratorios : []),
-].filter(Boolean).join(' ').toLowerCase();
+].filter(Boolean).join(' ');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // El tipo LABORATORIO — el mes es su unidad

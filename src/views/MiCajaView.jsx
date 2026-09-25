@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
+import { tokenMatch } from '../utils/searchUtils';
 import { useSearchParams } from 'react-router-dom';
 import {
     AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
@@ -1420,11 +1421,6 @@ const fechaLegible = (f) => (f
  * otro huso vería la remesa de las 12:59 a otra hora y no tendría cómo saberlo. */
 const horaLegible = (cuando) => (cuando ? hora12(cuando) : '');
 
-/* Para buscar: sin tildes y en minúsculas de los dos lados. Quien escribe
- * «aplicacion» tiene que encontrar «Aplicación», y el papel imprime todo en
- * mayúsculas. */
-const plano = (t) => String(t ?? '')
-    .normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 
 /** Sale del dato, no de una lista escrita a mano: `efectivo` → `Efectivo`. */
 const conMayuscula = (t) => {
@@ -1877,16 +1873,15 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
      * resultados no tiene que aparecer vacío — `repartirPorCorte` ya saca los
      * grupos sin líneas. */
     const filtradas = useMemo(() => {
-        const q = plano(busqueda);
-        if (!q) return lineas;
-        return lineas.filter((l) => plano([
+        if (!busqueda.trim()) return lineas;
+        return lineas.filter((l) => tokenMatch(busqueda,
             l.titulo,
             l.origen,
             ...(l.detalle || []),
             anotaron?.get(l.quien)?.name,
             // El monto se busca como se lee: «300» encuentra −$300.00.
             l.monto?.toFixed?.(2),
-        ].filter(Boolean).join(' ')).includes(q));
+        ));
     }, [lineas, busqueda, anotaron]);
 
     /* Repartidos por corte: qué ya contó un corte firmado y qué sigue

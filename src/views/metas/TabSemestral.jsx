@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import {
     CalendarRange, Users, UserX, Lock, Unlock, Download, AlertTriangle, RefreshCw, Coins, Check, X,
 } from 'lucide-react';
@@ -106,9 +107,8 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
     // Los totales de arriba cuentan a TODOS; la búsqueda sólo recorta la tabla.
     const personas = todas;
     const filtradas = useMemo(() => {
-        const q = searchTerm.trim().toLowerCase();
-        if (!q) return todas;
-        return todas.filter((p) => `${p.nombre} ${p.code || ''}`.toLowerCase().includes(q));
+        if (!searchTerm.trim()) return todas;
+        return todas.filter((p) => tokenMatch(searchTerm, p.nombre, p.code));
     }, [todas, searchTerm]);
     const aprobado = hoja?.estado === 'aprobado';
     const terminado = meses.length === 6 && meses[5].ym < ymActual;

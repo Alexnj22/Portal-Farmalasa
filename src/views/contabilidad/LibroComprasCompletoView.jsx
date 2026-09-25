@@ -15,7 +15,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { formatearNit, formatearNrc } from '../../utils/nitUtils';
-import { normalizeText } from '../../utils/helpers';
+import { tokenMatch } from '../../utils/searchUtils';
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } from '../../data/libroComprasCompleto';
@@ -264,16 +264,13 @@ export default function LibroComprasCompletoView({ openModal }) {
     }, [filas, esDecl]);
 
     const filasVistas = useMemo(() => {
-        const q = normalizeText(busqueda.trim());
-        if (!q) return delTab;
-        return delTab.filter(r =>
-            normalizeText(r.proveedor || '').includes(q) ||
-            normalizeText(r.documento_completo || '').includes(q) ||
-            normalizeText(r.nit || '').includes(q) ||
+        if (!busqueda.trim()) return delTab;
+        return delTab.filter(r => tokenMatch(busqueda,
+            r.proveedor, r.documento_completo, r.nit,
             // «Repetido» se busca porque se ve: es el rótulo que la fila lleva
             // puesto, y el aviso de arriba manda a buscarlo. Sin esto, dar con
             // 2 renglones entre 300 sería pasar el ojo por la tabla entera.
-            (q.length >= 3 && Number(r.veces_en_el_libro || 1) > 1 && 'repetido'.includes(q)));
+            Number(r.veces_en_el_libro || 1) > 1 ? 'repetido' : null));
     }, [delTab, busqueda]);
 
     const totales = useMemo(() => {

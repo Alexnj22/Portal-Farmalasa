@@ -250,6 +250,23 @@ const CRONS = [
           + 'default de la función): el primer punto que puede vencer es del 1-oct-2027, así que '
           + 'hasta entonces lo único que hace es dejar su medición en `puntos_vencimiento_log`.',
   },
+  // Los dos de UNA sola vez del 1-oct-2026 (migración 20260925175856). Se
+  // borran solos al encender: ese día este manifiesto cambia entero — salen
+  // éstos, `sync-puntos-1min` y `puntos-vencer-mensual`, y entra
+  // `puntos-motor-1min` (sistema: 0, lee y escribe sólo en el portal).
+  {
+    job: 'puntos-archivar-arranque', slug: 'puntos-archivar', cadencia: '0 8 1 10 *',
+    corridasDia: 1 / 365, sistema: 0,
+    motivo: 'Copia la base de puntos anterior al archivo del portal la madrugada del corte. '
+          + '`sistema: 0`: no toca el sistema de origen, lee MySQL. Una vez; el comando lleva la '
+          + 'guarda `current_date = 2026-10-01` para no repetirse al año siguiente.',
+  },
+  {
+    job: 'puntos-arranque-1oct', slug: 'puntos-arranque', cadencia: '10 8 1 10 *',
+    corridasDia: 1 / 365, sistema: 0,
+    motivo: 'Migra el historial, cuadra y sólo si cuadra enciende el programa en el portal. '
+          + 'Una vez; 22 s medidos en el ensayo real. Misma guarda de fecha que la copia.',
+  },
   {
     job: 'sync-puntos-1min', slug: 'sync-puntos', cadencia: '* 12-23,0-5 * * *',
     corridasDia: 1080, sistema: 0,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import {
     ReceiptText, Download, Check, Undo2, PackageCheck,
 } from 'lucide-react';
@@ -195,12 +196,11 @@ function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onC
     // lista ya está en pantalla y no hay nada que adivinar.
     const visibles = useMemo(() => {
         if (!filas) return null;
-        const q = busca.trim().toLowerCase();
-        if (!q) return filas;
-        return filas.filter(f => [
+        if (!busca.trim()) return filas;
+        return filas.filter(f => tokenMatch(busca,
             f.etiqueta, f.emisor_nombre, f.items_text, f.linea,
             String(f.monto_total), fmtFecha(f.fecha_emision),
-        ].some(v => String(v ?? '').toLowerCase().includes(q)));
+        ));
     }, [filas, busca]);
 
     // Tres grupos y no dos. «De tu línea» estaba cayendo bajo el rótulo «Sin

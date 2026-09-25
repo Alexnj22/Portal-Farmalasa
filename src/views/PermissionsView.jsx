@@ -1125,7 +1125,7 @@ const PermissionsView = () => {
         // buscando en la otra columna, y esconder cargos mientras tanto haría
         // desaparecer el que se está editando.
         if (buscaModulos || !q) return { filteredRoles: orgRoles, isPermRoleFuzzy: false };
-        const { results, isFuzzy } = smartFilter(q, orgRoles, r => [r.name]);
+        const { results, isFuzzy } = smartFilter(q, orgRoles, r => [r.name], { orden: 'relevancia' });
         return { filteredRoles: results, isPermRoleFuzzy: isFuzzy };
     }, [orgRoles, q, buscaModulos]);
 
@@ -1147,7 +1147,7 @@ const PermissionsView = () => {
             .map(g => ({
                 ...g,
                 modules: smartFilter(q, g.modules,
-                    m => [m.label, g.group, ...(m.sub || []).map(s => s.label)]).results,
+                    m => [m.label, g.group, ...(m.sub || []).map(s => s.label)], { orden: 'relevancia' }).results,
             }))
             .filter(g => g.modules.length > 0);
     }, [buscaModulos, q]);

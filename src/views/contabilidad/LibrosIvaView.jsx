@@ -16,7 +16,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { formatearNit, formatearNrc } from '../../utils/nitUtils';
-import { normalizeText } from '../../utils/helpers';
+import { tokenMatch } from '../../utils/searchUtils';
 import { exportCsv, buildCsvText } from '../../utils/csvExport';
 import { fmtFecha, soloNumero, csvRetencionVentas, CSV_RET_VENTAS_HEADERS,
          construirLibro } from './libroIva';
@@ -1072,13 +1072,10 @@ export default function LibrosIvaView({ openModal }) {
         [filas]);
 
     const filasVistas = useMemo(() => {
-        const q = normalizeText(busqueda);
         const textos = Object.values(acceso);
-        let out = q
-            ? filasNumeradas.filter(r => textos.some(fn => {
-                const v = fn(r);
-                return typeof v === 'string' && normalizeText(v).includes(q);
-            }))
+        let out = busqueda.trim()
+            ? filasNumeradas.filter(r => tokenMatch(busqueda,
+                ...textos.map(fn => fn(r)).filter(v => typeof v === 'string')))
             : filasNumeradas;
 
         const fn = orden.key && acceso[orden.key];

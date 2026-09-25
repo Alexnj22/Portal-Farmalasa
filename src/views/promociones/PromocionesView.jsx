@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import {
     Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
     CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText,
@@ -202,9 +203,9 @@ export default function PromocionesView() {
     }, [promos]);
 
     const filtradas = useMemo(() => {
-        const q = busqueda.trim().toLowerCase();
+        const q = busqueda.trim();
         return promos.filter((p) => {
-            if (q && !textoBuscable(p).includes(q)) return false;
+            if (q && !tokenMatch(q, textoBuscable(p))) return false;
             if (fTipo && (esLaboratorio(p) ? 'laboratorio' : 'producto') !== fTipo) return false;
             /* Por el estado VISIBLE y no por `p.estado`: la pantalla pinta
                «Vencida» y «Por vencer», que no son estados guardados sino una
@@ -222,12 +223,9 @@ export default function PromocionesView() {
     /* Busca por nombre del descuento y también por el de sus productos: quien
        pregunta «¿este producto tiene descuento?» escribe el producto. */
     const descuentosFiltrados = useMemo(() => {
-        const q = busqueda.trim().toLowerCase();
-        if (!q) return descuentos;
-        return descuentos.filter((d) => (
-            `${d.descripcion} ${(d.productos || []).map((p) => p.nombre).join(' ')}`
-                .toLowerCase().includes(q)
-        ));
+        if (!busqueda.trim()) return descuentos;
+        return descuentos.filter((d) => tokenMatch(busqueda,
+            d.descripcion, ...(d.productos || []).map((p) => p.nombre)));
     }, [descuentos, busqueda]);
 
     const vivas      = useMemo(() => filtradas.filter((p) => p.estado !== 'finalizada'), [filtradas]);

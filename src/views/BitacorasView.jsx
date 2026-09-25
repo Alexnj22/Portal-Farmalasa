@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { tokenMatch } from '../utils/searchUtils';
 import { BookOpen, CalendarCheck, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -192,12 +193,11 @@ export default function BitacorasView() {
     }, [libro]);
 
     const libroFiltrado = useMemo(() => {
-        const q = busqueda.trim().toLowerCase();
-        if (!q) return delLibro;
-        return delLibro.filter(r => [
+        if (!busqueda.trim()) return delLibro;
+        return delLibro.filter(r => tokenMatch(busqueda,
             r.folio_txt, String(r.folio), r.producto_nombre, r.lote, r.paciente,
             r.medico, r.numero_junta, r.cliente, r.vendedor, r.correlativo_doc,
-        ].some(v => String(v ?? '').toLowerCase().includes(q)));
+        ));
     }, [delLibro, busqueda]);
 
     const filtersContent = (

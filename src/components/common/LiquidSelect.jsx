@@ -6,8 +6,8 @@ import useCapaFlotante from '../../plataforma/capaFlotante';
 import SelectorTactil from './SelectorTactil';
 import { AnimatePresence, motion } from 'framer-motion';
 import { msDelTema } from './gotaApertura';
+import { filtrar } from '../../utils/busqueda';
 
-const normalize = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 const LiquidSelect = ({
     value,
@@ -289,20 +289,26 @@ const LiquidSelect = ({
     // ve un `useMemo` capturado por una función previa, no puede preservar la
     // memoización y deja de optimizar el componente entero (lo marca el lint
     // como "Compilation Skipped").
-    const filteredOptions = useMemo(() => {
+    const { lista: filteredOptions, aproximado: sonParecidos } = useMemo(() => {
+        const exactas = (lista) => ({ lista, aproximado: false });
         if (serverSearch) {
             // Parent controls data — show everything except separator and empty-value (handled by clearable button)
-            return options.filter(opt => !opt.isSeparator && opt.value !== '');
+            return exactas(options.filter(opt => !opt.isSeparator && opt.value !== ''));
         }
         // Large lists: require typing before showing anything
-        if (isLargeList && !searchTerm) return [];
-        if (!searchTerm) return options.slice(0, maxOptions);
-        const q = normalize(searchTerm);
-        return options.filter(opt =>
-            !opt.isSeparator &&
-            (normalize(opt.label).includes(q) ||
-            (opt.sublabel && normalize(opt.sublabel).includes(q)))
-        ).slice(0, maxOptions);
+        if (isLargeList && !searchTerm) return exactas([]);
+        if (!searchTerm.trim()) return exactas(options.slice(0, maxOptions));
+        // La regla del portal (utils/busqueda.js). Las opciones de un select son
+        // un catálogo —se busca UNA— así que lo más parecido va primero. Antes
+        // era `includes` de la frase entera: «500 acetaminofen» no encontraba
+        // «ACETAMINOFEN 500MG».
+        const { resultados, aproximado } = filtrar(
+            searchTerm,
+            options.filter(opt => !opt.isSeparator),
+            opt => [opt.label, opt.sublabel],
+            { orden: 'relevancia' },
+        );
+        return { lista: resultados.slice(0, maxOptions), aproximado };
     }, [options, searchTerm, isLargeList, maxOptions, serverSearch]);
 
     // Navigable (non-separator, non-disabled) options — used for keyboard nav
@@ -547,7 +553,13 @@ const LiquidSelect = ({
                         Escribe para buscar
                     </div>
                 ) : filteredOptions.length > 0 ? (
-                    filteredOptions.map((opt) => {
+                    <>
+                    {sonParecidos && (
+                        <div className="px-4 pt-1 pb-2 text-caption font-bold text-content-3">
+                            Parecidos a &ldquo;{searchTerm.trim()}&rdquo;
+                        </div>
+                    )}
+                    {filteredOptions.map((opt) => {
                         const sIdx = selectableOptions.indexOf(opt);
                         const isHighlighted = sIdx >= 0 && sIdx === highlightedIndex;
                         return opt.isSeparator ? (
@@ -596,7 +608,8 @@ const LiquidSelect = ({
                                 </span>
                             </button>
                         );
-                    })
+                    })}
+                    </>
                 ) : (
                     <div className="px-4 py-8 text-body-sm font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 text-content-3">
                         <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm bg-surface-card-hover">

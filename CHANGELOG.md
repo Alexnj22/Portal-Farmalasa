@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1064.1 — Puntos: el arranque del 1-oct queda programado
+
+Dos crones de una sola vez en producción (migración `20260925175856`):
+`puntos-archivar-arranque` copia la base de puntos anterior a las 02:00 SV del
+1-oct y `puntos-arranque-1oct` migra, cuadra y enciende a las 02:10. Cada uno
+lleva la guarda `current_date = 2026-10-01` en el comando: el cron es anual por
+construcción y, si el arranque fallara sin borrarlos, volverían a disparar en
+2027. Declarados en `gate:eficiencia`.
+
+## v2.1064.0 — Búsqueda: una sola regla en el navegador
+
+Primer tramo de `docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md` (F1 y F2). El
+usuario reportó que la búsqueda «deja muchas cosas sueltas y muestra resultados
+incorrectos». La auditoría encontró cinco mecanismos distintos, y que el
+defecto estaba en la REGLA más que en el reparto.
+
+- **`src/utils/busqueda.js`**, la regla nueva, medida contra los 4,397
+  productos activos:
+  - La puntuación separa en vez de borrarse. `2.5MG` quedaba `25mg`, y buscar
+    «25» traía 33 productos de 2.5.
+  - `25,000` es veinticinco mil.
+  - «500mg» encuentra `500 MG`.
+  - Un número coincide completo: «5» bajó de 1,487 resultados a 294.
+  - Una palabra de 1–2 letras coincide al inicio de otra palabra: «vit c» ya no
+    trae MACROVITAM.
+  - «b12» va seguido.
+  - Los catálogos ordenan por parecido: «sal» trae primero SAL ANDREWS y
+    SALBUTAMOL, antes que NASAL.
+  - La búsqueda aproximada combina fonética del español y distancia con
+    transposición. Nunca compara números: «ibuprofeno 400» ya no muestra el de
+    600.
+- `smartFilter` y `tokenMatch` pasan a la regla nueva: son unos 52 buscadores.
+  `smartFilter` acepta `{ orden: 'relevancia' | 'original' }`; los historiales
+  conservan su orden.
+- `LiquidSelect` (≈250 desplegables) y `SelectorTactil` usan la regla, con el
+  aviso «Parecidos a …» cuando el resultado es aproximado.
+- **17 filtros escritos a mano pasan a la regla**: bitácoras, las 5 pestañas de
+  metas, promociones, facturas de sala, cargar compra, CxP, libros, Mi caja y
+  solicitudes de datos. Varios no quitaban tildes, y todos exigían la frase
+  exacta.
+- `tests/casos-busqueda.json`: 77 casos con nombres reales, que también van a
+  valer para el gemelo SQL.
+- `normSearch` **no cambia**: es el gemelo de `norm_search` y arma los patrones
+  que viajan al servidor. Pasa a la regla nueva junto con las columnas del
+  servidor (F3/F4).
+
 ## v2.1063.1 — Puntos: la copia de la base vieja va por fases, y el ensayo general con datos reales
 
 La migración del corte del 1-oct está aplicada a producción

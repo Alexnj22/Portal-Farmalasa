@@ -6,6 +6,7 @@ import SearchInput from './SearchInput';
 import Button from './Button';
 import { SkeletonText } from './StateViews';
 import { agruparPorLetra } from '../../utils/alfabetico';
+import { filtrar } from '../../utils/busqueda';
 
 /**
  * SelectorTactil — elegir de una lista LARGA con el pulgar.
@@ -50,7 +51,6 @@ import { agruparPorLetra } from '../../utils/alfabetico';
 const RAIL_W = 26;          // ancho del riel; el suficiente para un dedo sin comerse la lista
 const LETRA_H = 30;         // alto de cada encabezado pegajoso
 
-const sinTildes = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '');
 
 const SelectorTactil = memo(({
     open,
@@ -93,12 +93,13 @@ const SelectorTactil = memo(({
     }, [onSearchChange]);
 
     // ── Filtrado y agrupación ────────────────────────────────────────────
-    const grupos = useMemo(() => {
-        const term = sinTildes(q).trim().toUpperCase();
-        const visibles = serverSearch || !term
-            ? options
-            : options.filter((o) => sinTildes(o.label).toUpperCase().includes(term));
-        return agruparPorLetra(visibles);
+    // La regla del portal (utils/busqueda.js), en orden 'original': esta hoja
+    // agrupa por letra y el riel salta a la letra, así que reordenar por
+    // parecido rompería los grupos. Lo aproximado sí se avisa.
+    const { grupos, sonParecidos } = useMemo(() => {
+        if (serverSearch || !q.trim()) return { grupos: agruparPorLetra(options), sonParecidos: false };
+        const { resultados, aproximado } = filtrar(q, options, (o) => [o.label], { orden: 'original' });
+        return { grupos: agruparPorLetra(resultados), sonParecidos: aproximado };
     }, [options, q, serverSearch]);
 
     const letras = grupos.map((g) => g.letra);
@@ -203,7 +204,13 @@ const SelectorTactil = memo(({
                                 </p>
                                 {!!q && <p className="text-caption text-content-3">Prueba con menos letras.</p>}
                             </div>
-                        ) : grupos.map((g) => (
+                        ) : <>
+                        {sonParecidos && (
+                            <p className="px-4 pt-2 pb-1 text-caption font-bold text-content-3">
+                                Parecidos a &ldquo;{q.trim()}&rdquo;
+                            </p>
+                        )}
+                        {grupos.map((g) => (
                             <section key={g.letra} data-seccion={g.letra}>
                                 <h3
                                     data-letra={g.letra}
@@ -225,6 +232,7 @@ const SelectorTactil = memo(({
                                 ))}
                             </section>
                         ))}
+                        </>}
                     </div>
 
                     {/* Riel A–Z. `touch-none` es obligatorio: sin él el navegador

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import { ReceiptText, Loader2, Undo2, Store, CalendarRange, CircleSlash, CheckCircle2, Clock } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -187,14 +188,13 @@ export default function FacturasSalaView() {
 
     const visibles = useMemo(() => {
         if (!filas) return null;
-        const q = search.trim().toLowerCase();
+        const q = search.trim();
         return filas.filter(f => {
             if (estado && estadoDe(f) !== estado) return false;
             if (sala && f.sala !== sala) return false;
             if (!q) return true;
-            return [f.etiqueta, f.emisor_nombre, f.sala, f.tomada_por, f.items_text,
-                    String(f.monto_total)]
-                .some(v => String(v ?? '').toLowerCase().includes(q));
+            return tokenMatch(q, f.etiqueta, f.emisor_nombre, f.sala, f.tomada_por, f.items_text,
+                String(f.monto_total));
         });
     }, [filas, estado, sala, search]);
 

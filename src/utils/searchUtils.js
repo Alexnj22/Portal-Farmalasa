@@ -1,4 +1,12 @@
+import { coincide, filtrar } from './busqueda';
+
 /**
+ * ⚠️ Gemelo EXACTO de `norm_search` en la base: arma los patrones que viajan
+ * a las columnas `*_norm` (`likePattern`, `filtroProductoOCodigo`, los RPC de
+ * inventario). NO usarlo para comparar en memoria — para eso está
+ * `utils/busqueda.js`. Se retira cuando las columnas del servidor pasen a la
+ * regla nueva (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md, F3/F4).
+ *
  * Normaliza un string para búsqueda: elimina tildes, puntuación y pasa a minúsculas.
  * "S.S.N" → "ssn"  |  "Ácido" → "acido"  |  "CO-TRIMOXAZOL" → "cotrimoxazol"
  */
@@ -12,69 +20,14 @@ export function normSearch(str = '') {
 }
 
 /**
- * Búsqueda por tokens: cada palabra del query debe aparecer en al menos un campo.
+ * ¿Coincide? — la regla del portal (`utils/busqueda.js`): todas las palabras
+ * en cualquier orden, los números completos, las palabras cortas al inicio.
  * tokenMatch("grav 500", "GRAVOL 500MG X 8", "Lab") → true
  */
 export function tokenMatch(query, ...fields) {
-    const tokens = normSearch(query).split(/\s+/).filter(Boolean);
-    if (!tokens.length) return true;
-    const haystack = fields.map(f => normSearch(f ?? '')).join(' ');
-    return tokens.every(t => haystack.includes(t));
+    return coincide(query, ...fields);
 }
 
-function levenshtein(a, b) {
-    const dp = Array.from({ length: b.length + 1 }, (_, i) => i);
-    for (let i = 1; i <= a.length; i++) {
-        let prev = i;
-        for (let j = 1; j <= b.length; j++) {
-            const val = a[i - 1] === b[j - 1] ? dp[j - 1] : 1 + Math.min(dp[j - 1], dp[j], prev);
-            dp[j - 1] = prev;
-            prev = val;
-        }
-        dp[b.length] = prev;
-    }
-    return dp[b.length];
-}
-
-/**
- * Score de similitud fuzzy 0–1. Usar solo como fallback cuando tokenMatch da 0 resultados.
- * Threshold recomendado: >= 0.72
- */
-export function fuzzyScore(query, ...fields) {
-    if (tokenMatch(query, ...fields)) return 1;
-    const q = normSearch(query);
-    const hay = fields.map(f => normSearch(f ?? '')).join(' ');
-    const qWords = q.split(/\s+/).filter(w => w.length >= 3);
-    const hWords = hay.split(/\s+/).filter(w => w.length >= 2);
-    if (!qWords.length || !hWords.length) return 0;
-    let total = 0;
-    for (const qw of qWords) {
-        let best = 0;
-        for (const hw of hWords) {
-            const maxLen = Math.max(qw.length, hw.length);
-            if (maxLen === 0) continue;
-            const score = 1 - levenshtein(qw, hw.slice(0, qw.length + 2)) / maxLen;
-            if (score > best) best = score;
-        }
-        total += best;
-    }
-    return total / qWords.length;
-}
-
-const FUZZY_THRESHOLD = 0.72;
-const FUZZY_MIN_QUERY  = 4;
-
-/**
- * Filtra un array usando tokenMatch primero; si no hay resultados y el query
- * es suficientemente largo, cae a fuzzyScore.
- *
- * Devuelve { results, isFuzzy } — isFuzzy=true indica que los resultados son
- * aproximados y se debe mostrar el banner "Resultados similares para X".
- *
- * @param {string} query
- * @param {any[]} data
- * @param {(item: any) => string[]} getFields  — función que extrae los campos a buscar
- */
 /**
  * Patrón LIKE tokenizado para columnas *_norm en el servidor (PostgREST .ilike()).
  * "alcohol 90" → "%alcohol%90%" (matchea "alcohol90"). Orden-dependiente,
@@ -86,20 +39,19 @@ export function likePattern(q = '') {
     return toks.length ? `%${toks.join('%')}%` : '%';
 }
 
-export function smartFilter(query, data, getFields) {
-    if (!query?.trim()) return { results: data, isFuzzy: false };
-
-    const exact = data.filter(item => tokenMatch(query, ...getFields(item)));
-    if (exact.length) return { results: exact, isFuzzy: false };
-
-    if (query.trim().length < FUZZY_MIN_QUERY) return { results: [], isFuzzy: false };
-
-    const scored = data
-        .map(item => ({ item, score: fuzzyScore(query, ...getFields(item)) }))
-        .filter(({ score }) => score >= FUZZY_THRESHOLD)
-        .sort((a, b) => b.score - a.score);
-
-    return { results: scored.map(s => s.item), isFuzzy: scored.length > 0 };
+/**
+ * Filtra una lista con la regla del portal y devuelve `{ results, isFuzzy }`.
+ * `isFuzzy` = los resultados son aproximados: la pantalla muestra
+ * «Resultados similares para X».
+ *
+ * `orden` (plan §8.1): 'relevancia' en CATÁLOGOS (productos, personas,
+ * cargos, módulos…), 'original' en HISTORIALES y en tablas cuyo orden elige
+ * el usuario. El default es 'original' porque reordenar un historial sin que
+ * nadie lo pidiera es peor que no ordenar un catálogo.
+ */
+export function smartFilter(query, data, getFields, { orden = 'original' } = {}) {
+    const { resultados, aproximado } = filtrar(query, data, getFields, { orden });
+    return { results: resultados, isFuzzy: aproximado };
 }
 
 /**

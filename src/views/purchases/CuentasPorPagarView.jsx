@@ -21,7 +21,7 @@ import {
     registrarPago, aprobarPago, anularPago, guardarCondicionesProveedor,
 } from '../../data/cuentasPorPagar';
 import { formatMoney } from '../../utils/formatNumber';
-import { normalizeText } from '../../utils/helpers';
+import { tokenMatch } from '../../utils/searchUtils';
 import { useAuth } from '../../context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
@@ -373,11 +373,9 @@ export default function CuentasPorPagarView() {
         () => (pagos ?? []).filter(p => p.estado === 'pendiente'), [pagos]);
 
     const visibles = useMemo(() => {
-        const q = normalizeText(busca.trim());
         const base = tab === 'pagos' ? (pagos ?? []) : (filas ?? []);
-        if (!q) return base;
-        return base.filter(r => normalizeText(r.proveedor || '').includes(q)
-            || normalizeText(r.referencia || '').includes(q));
+        if (!busca.trim()) return base;
+        return base.filter(r => tokenMatch(busca, r.proveedor, r.referencia));
     }, [filas, pagos, tab, busca]);
 
     const totalPaginas = Math.ceil(visibles.length / porPagina);

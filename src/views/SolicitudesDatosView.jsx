@@ -19,6 +19,7 @@
  * pública puede ser cualquiera. El papel no desaparece: deja de ser el registro.
  */
 import React, { useState, useEffect, useMemo } from 'react';
+import { tokenMatch } from '../utils/searchUtils';
 import { ShieldCheck, Printer, Clock, Inbox, AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -101,7 +102,7 @@ export default function SolicitudesDatosView() {
     }, [showToast]);
 
     const visibles = useMemo(() => {
-        const q = busqueda.trim().toLowerCase();
+        const q = busqueda.trim();
         return filas.filter((s) => {
             if (pestana === 'resueltas' && s.estado !== 'RESUELTA') return false;
             if (pestana === 'tramite' && (s.estado === 'RESUELTA' || s.estado === 'ANULADA')) return false;
@@ -115,8 +116,7 @@ export default function SolicitudesDatosView() {
                 if (hasta && d > hasta) return false;
             }
             if (!q) return true;
-            return [s.folio_txt, s.solicitante_nombre, s.solicitante_numero, s.descripcion]
-                .some((v) => String(v ?? '').toLowerCase().includes(q));
+            return tokenMatch(q, s.folio_txt, s.solicitante_nombre, s.solicitante_numero, s.descripcion);
         });
     }, [filas, pestana, estado, desde, hasta, busqueda]);
 

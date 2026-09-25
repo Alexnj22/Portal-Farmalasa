@@ -32,7 +32,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
 
     const results = useMemo(() => {
         if (!query.trim()) return items;
-        const { results } = smartFilter(query, items, (m) => [m.label, m.groupLabel, ...(m.keywords || [])]);
+        const { results } = smartFilter(query, items, (m) => [m.label, m.groupLabel, ...(m.keywords || [])], { orden: 'relevancia' });
         return results;
     }, [query, items]);
 

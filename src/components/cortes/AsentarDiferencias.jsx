@@ -47,9 +47,22 @@ import { useAuth } from '../../context/AuthContext';
  * La corrección existía —anular y resolver de nuevo— pero vivía en la tarjeta
  * del corte, tres pantallas atrás. Ahora está en la fila, y la hace el servidor
  * en una sola transacción (`justificar_diferencia_corte`).
+ *
+ * ── 2026-09-25: también los ABONOS ─────────────────────────────────────────
+ * Un faltante sin causa ya no se registra entero: se asigna a responsables y el
+ * dinero entra por abonos, cada uno el día en que se hizo. Así que lo que hay
+ * que anotar en el sistema son los abonos (`kind: 'abono'`), que entran como
+ * los faltantes de antes. No llevan «No lleva movimiento»: un abono es dinero
+ * que alguien entregó; si estuvo mal, se anula desde el faltante.
+ *
+ * Y corregir a «causa encontrada» pide ahora el número del documento: el
+ * servidor rechaza una causa encontrada sin comprobante.
  */
 
 const clave = (d) => `${d.branch_id}|${Number(d.monto) < 0 ? 'ENTRA' : 'SALE'}`;
+// Un abono y una diferencia pueden tener el mismo `id` numérico: son tablas
+// distintas. La marca de excluida no puede confundirlos.
+const claveFila = (d) => `${d.kind === 'abono' ? 'a' : 'd'}${d.id}`;
 
 export default function AsentarDiferencias({ abierto, diferencias = [], nombreSala = {}, onClose, onHecho }) {
     const { user } = useAuth();
@@ -73,6 +86,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
     const [corrigiendo, setCorrigiendo] = useState(null);
     const [motivoCorregir, setMotivoCorregir] = useState('');
     const [causaCorregir, setCausaCorregir] = useState('');
+    const [refCorregir, setRefCorregir] = useState('');
 
     const grupos = useMemo(() => {
         const m = new Map();
@@ -86,10 +100,10 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         return [...m.values()];
     }, [visibles]);
 
-    const alternar = useCallback((id) => {
+    const alternar = useCallback((k) => {
         setExcluidas((prev) => {
             const s = new Set(prev);
-            if (s.has(id)) s.delete(id); else s.add(id);
+            if (s.has(k)) s.delete(k); else s.add(k);
             return s;
         });
     }, []);
@@ -118,24 +132,26 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
     }, [nombreSala, user, showToast]);
 
     const registrar = useCallback(async (g) => {
-        const incluidas = g.filas.filter((d) => !excluidas.has(d.id));
-        const ids = incluidas.map((d) => d.id);
+        const incluidas = g.filas.filter((d) => !excluidas.has(claveFila(d)));
+        const ids = incluidas.filter((d) => d.kind !== 'abono').map((d) => d.id);
+        const abonoIds = incluidas.filter((d) => d.kind === 'abono').map((d) => d.id);
         const ref = (refs.get(g.k) || '').trim();
-        if (!ids.length || !ref) return;
+        if (!incluidas.length || !ref) return;
 
         setOcupada(g.k);
-        const { error } = await asentarDiferencias(ids, ref);
+        const { error } = await asentarDiferencias(ids, ref, abonoIds);
         if (error) {
             setOcupada(null);
             showToast?.('No se pudo registrar', mensajeAmigable(error, 'Vuelve a cargar la lista.'), 'error');
             return;
         }
         appendAuditLog?.('CORTE_CAJA_DIFERENCIAS_ASENTADAS', user?.id, {
-            sucursal: nombreSala[g.branchId] || '', referencia: ref, cuantas: ids.length,
+            sucursal: nombreSala[g.branchId] || '', referencia: ref,
+            cuantas: ids.length, abonos: abonoIds.length,
         });
         showToast?.(
             g.entra ? 'Ingreso registrado' : 'Vale registrado',
-            `${ids.length} ${ids.length === 1 ? 'diferencia' : 'diferencias'} con el número ${ref}`,
+            `${incluidas.length} ${incluidas.length === 1 ? 'movimiento' : 'movimientos'} con el número ${ref}`,
             'success',
         );
 
@@ -154,6 +170,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
     const abrirCorreccion = useCallback((d) => {
         setCorrigiendo(d.id);
         setMotivoCorregir('');
+        setRefCorregir('');
         // La causa arranca con la que ya tenía: casi siempre es la buena y lo que
         // estuvo mal fue la vía. Se deja editable porque el usuario pidió las dos
         // mitades — «debe permitir poner causa, y corregir la diferencia».
@@ -165,7 +182,9 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         if (!motivo) return;
 
         setOcupada(`dif:${d.id}`);
-        const { error } = await justificarDiferencia(d.id, motivo, causaCorregir);
+        const { error } = await justificarDiferencia(d.id, motivo, causaCorregir, {
+            evidenciaRef: refCorregir.trim(),
+        });
         setOcupada(null);
         if (error) {
             showToast?.('No se pudo corregir', mensajeAmigable(error, 'Vuelve a cargar la lista.'), 'error');
@@ -174,14 +193,16 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         appendAuditLog?.('CORTE_CAJA_DIFERENCIA_CORREGIDA', user?.id, {
             diferencia_id: d.id, corte_id: d.corte_id, sucursal: nombreSala[d.branch_id] || '',
             fecha: d.fecha, monto: d.monto, via_anterior: d.via, motivo, causa: causaCorregir,
+            evidencia_ref: refCorregir.trim(),
         });
         showToast?.('Diferencia corregida',
             'Queda como causa encontrada: no mueve dinero, así que sale de esta lista.', 'success');
         setCorrigiendo(null);
         setMotivoCorregir('');
         setCausaCorregir('');
+        setRefCorregir('');
         onHecho?.();
-    }, [motivoCorregir, causaCorregir, showToast, appendAuditLog, user, nombreSala, onHecho]);
+    }, [motivoCorregir, causaCorregir, refCorregir, showToast, appendAuditLog, user, nombreSala, onHecho]);
 
     return (
         <LiquidModal
@@ -219,7 +240,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                 </Notice>
 
                 {grupos.map((g) => {
-                    const incluidas = g.filas.filter((d) => !excluidas.has(d.id));
+                    const incluidas = g.filas.filter((d) => !excluidas.has(claveFila(d)));
                     const total = incluidas.reduce((a, d) => a + Math.abs(Number(d.monto)), 0);
                     const ref = refs.get(g.k) || '';
                     return (
@@ -234,13 +255,13 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                             </div>
 
                             {g.filas.map((d) => (
-                                <div key={d.id} className="space-y-2">
+                                <div key={claveFila(d)} className="space-y-2">
                                     <div className="flex items-start gap-2">
                                         <div className="min-w-0 flex-1">
                                             <Checkbox
-                                                name={`asentar-${d.id}`}
-                                                checked={!excluidas.has(d.id)}
-                                                onChange={() => alternar(d.id)}
+                                                name={`asentar-${claveFila(d)}`}
+                                                checked={!excluidas.has(claveFila(d))}
+                                                onChange={() => alternar(claveFila(d))}
                                                 label={`${d.fecha} · ${formatMoney(Math.abs(Number(d.monto)))}`}
                                                 description={d.causa}
                                             />
@@ -248,7 +269,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                         {/* Con rótulo y no sólo ícono: es una acción
                                             que cambia lo que significa la fila, y
                                             nadie la va a descubrir tanteando. */}
-                                        {corrigiendo !== d.id && (
+                                        {d.kind !== 'abono' && corrigiendo !== d.id && (
                                             <Button
                                                 variant="ghost" size="sm" icon={Undo2}
                                                 className="shrink-0"
@@ -260,7 +281,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                         )}
                                     </div>
 
-                                    {corrigiendo === d.id && (
+                                    {d.kind !== 'abono' && corrigiendo === d.id && (
                                         <div data-surface="card" className="p-3 space-y-2">
                                             <Notice variant="info">
                                                 <span className="font-bold">Queda como «ya se encontró la causa»</span>
@@ -286,6 +307,13 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                                 rows={2}
                                                 placeholder="De dónde salió la diferencia"
                                             />
+                                            <PortalInput
+                                                label="Número del documento corregido"
+                                                name={`ref-corregir-${d.id}`}
+                                                value={refCorregir}
+                                                onChange={(e) => setRefCorregir(e.target.value)}
+                                                placeholder="Ingreso, vale, factura o recibo"
+                                            />
                                             <div className="flex items-center justify-end gap-1.5">
                                                 <Button variant="ghost" size="sm"
                                                     disabled={!!ocupada}
@@ -294,7 +322,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                                 </Button>
                                                 <Button variant="primary" size="sm"
                                                     loading={ocupada === `dif:${d.id}`}
-                                                    disabled={!motivoCorregir.trim() || !causaCorregir.trim()}
+                                                    disabled={!motivoCorregir.trim() || !causaCorregir.trim() || !refCorregir.trim()}
                                                     onClick={() => corregir(d)}>
                                                     Corregir
                                                 </Button>

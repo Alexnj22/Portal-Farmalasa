@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.0 — Diferencias de caja por día: causa con comprobante, responsables y abonos
+
+Pedido del usuario sobre Salud 2 del 24-sep: «necesito ver qué días hay
+diferencias y cómo puedo abonarlas; no entiendo dónde debo corregir, cómo quedó
+el día». Ese día cerró con **−$20.25** y el último corte decía **$0.00** (su
+tramo); la resolución vivía escondida dentro del detalle de cada corte.
+
+- **Pestaña nueva «Diferencias» en /caja.** La unidad es el DÍA: cómo cerró
+  (neto de los cortes confirmados), qué cortes no cuadraron y en qué estado
+  está cada uno — sin resolver, falta confirmar, con saldo, falta registrarlo,
+  resuelto. No sigue al período: lo pendiente se ve siempre. Carril con días
+  sin resolver, cuánto falta cobrar, por registrar y resueltos.
+- **«Se encontró la causa» exige comprobante**: el número del documento
+  corregido o una foto (también al corregir desde «Registrar»). Lo rechaza el
+  servidor.
+- **«No se encontró» asigna responsables.** Vienen marcados quienes VENDIERON
+  en el tramo del corte (`sales_invoices.cod_vendedor`), con su número de
+  ventas; en el corte de la 1:05 de Salud 2, cinco personas. Asignar no mueve
+  dinero ni imprime.
+- **Abonos parciales, por persona o todo junto**, en días distintos. Cada abono
+  imprime su comprobante (debía · abona · queda) y se anota en el sistema por
+  separado — «Registrar» ahora junta retiros y abonos. Se pueden anular con
+  motivo mientras no estén registrados. Es reposición voluntaria: nunca toca la
+  planilla (CT Arts. 132 y 134).
+- Base: migración `20260925152434` — tabla `cortes_caja_diferencia_abonos`,
+  `evidencia_ref`/`evidencia_foto_url`, `get_dias_con_diferencia`,
+  `abonar_diferencia_corte`, `anular_abono_diferencia`, y
+  `get_corte_turno` con las ventas del tramo. Medido: todo el historial desde el
+  14-ago en 65 ms; 95 días con diferencia.
 ## v2.1060.11 — Núcleo portable F1: el reloj de marcación del kiosco sin navegador
 
 Sin cambios visibles. Cuarto paso de F1 del plan

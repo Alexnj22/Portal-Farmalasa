@@ -385,13 +385,20 @@ export function reabrirCorte(id, motivo) {
  *
  * `personas`: [{ employee_id, monto, del_turno }] y sólo para `REPONE`.
  */
-export function resolverDiferencia(corteId, { via, causa, montoVisto, personas = [] }) {
+export function resolverDiferencia(corteId, {
+    via, causa, montoVisto, personas = [], evidenciaRef = null, evidenciaFoto = null,
+}) {
     return supabase.rpc('resolver_diferencia_corte', {
         p_corte_id: corteId,
         p_via: via,
         p_causa: causa,
         p_monto_esperado: montoVisto,
         p_personas: personas,
+        // «Se encontró la causa» se respalda (usuario, 2026-09-25): el número
+        // del documento que se corrigió, una foto, o las dos. El servidor
+        // rechaza la causa encontrada sin ninguna.
+        p_evidencia_ref: evidenciaRef || null,
+        p_evidencia_foto: evidenciaFoto || null,
     });
 }
 
@@ -410,9 +417,11 @@ export function anularDiferencia(id, motivo) {
  * Anula la vieja y crea la justificada en UNA transacción: hacerlo en dos
  * llamadas dejaría el corte con su diferencia sin resolver si la segunda falla.
  */
-export function justificarDiferencia(id, motivo, causa) {
+export function justificarDiferencia(id, motivo, causa, { evidenciaRef = null, evidenciaFoto = null } = {}) {
     return supabase.rpc('justificar_diferencia_corte', {
         p_id: id, p_motivo: motivo, p_causa: causa || null,
+        p_evidencia_ref: evidenciaRef || null,
+        p_evidencia_foto: evidenciaFoto || null,
     });
 }
 
@@ -430,8 +439,71 @@ export function marcarComprobanteImpreso(id) {
  * número de ingreso o de vale. Es el «un solo ingreso» que pidió el usuario: acá
  * queda el detalle fila por fila, allá un documento por el total.
  */
-export function asentarDiferencias(ids, referencia) {
-    return supabase.rpc('asentar_diferencias_corte', { p_ids: ids, p_ref: referencia });
+export function asentarDiferencias(ids, referencia, abonoIds = []) {
+    return supabase.rpc('asentar_diferencias_corte', {
+        p_ids: ids, p_ref: referencia, p_abono_ids: abonoIds,
+    });
+}
+
+/**
+ * Los días con diferencia: por sala y día, cómo quedó (`neto`, la suma de los
+ * tramos confirmados) y cada corte que no cuadró con su resolución y saldos.
+ *
+ * Es la pantalla que faltaba (usuario, 2026-09-25): el día de Salud 2 que cerró
+ * con −$20.25 mostraba su último corte en $0.00 —su tramo— y «cómo quedó el
+ * día» no se leía en ninguna parte. Un solo JSON: todo el historial cuesta
+ * 65 ms y no hay techo de 1000 filas que cuidar.
+ *
+ * `{ dias, error }` y no una lista a secas: «no hay días con diferencia» y «no
+ * se pudo leer» no pueden verse igual en una pantalla que dice qué falta cobrar.
+ */
+export async function fetchDiasConDiferencia({ desde, hasta }) {
+    const { data, error } = await supabase.rpc('get_dias_con_diferencia', {
+        p_desde: desde, p_hasta: hasta,
+    });
+    if (error) {
+        console.error('cortes: fetchDiasConDiferencia failed:', error.message);
+        return { dias: [], error };
+    }
+    return { dias: Array.isArray(data) ? data : [], error: null };
+}
+
+/**
+ * Abonar a un faltante con responsables. `abonos`: [{ persona_id, monto }] —
+ * una fila es un abono individual; todas con su saldo es el pago total. El
+ * servidor rechaza abonar más de lo que le queda a cada quien.
+ *
+ * Es una reposición VOLUNTARIA y nunca toca la planilla: un faltante no se
+ * descuenta del salario (ver docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md).
+ */
+export function abonarDiferencia(diferenciaId, abonos) {
+    return supabase.rpc('abonar_diferencia_corte', {
+        p_diferencia_id: diferenciaId, p_abonos: abonos,
+    });
+}
+
+/** Se anula, nunca se borra: el comprobante del abono ya salió y alguien lo firmó. */
+export function anularAbono(id, motivo) {
+    return supabase.rpc('anular_abono_diferencia', { p_id: id, p_motivo: motivo });
+}
+
+/** Constancia de que los comprobantes se mandaron a imprimir (recibido, no «salió papel»). */
+export function marcarAbonosImpresos(ids) {
+    return supabase.rpc('marcar_abonos_impresos', { p_ids: ids });
+}
+
+/**
+ * La foto que respalda una causa encontrada. Bucket privado; se guarda la URL
+ * en formato PÚBLICO como identificador porque la firmada expira (regla 10).
+ */
+export async function subirEvidenciaDeDiferencia(archivo, { salaId, userId }) {
+    const ext = (archivo.name?.split('.').pop() || 'jpg').toLowerCase();
+    const path = `cortes/${salaId ?? 'sin-sala'}/${userId ?? 'anon'}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+        .from('payment-proofs').upload(path, archivo, { contentType: archivo.type });
+    if (error) throw new Error(`No se pudo subir la foto: ${error.message}`);
+    const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path);
+    return data?.publicUrl || null;
 }
 
 /**

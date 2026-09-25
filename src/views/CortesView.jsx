@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, HandCoins, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -14,6 +14,7 @@ import Notice from '../components/common/Notice';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import AsentarDiferencias from '../components/cortes/AsentarDiferencias';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
+import DiasConDiferencia from '../components/cortes/DiasConDiferencia';
 import FichasDeCaja from '../components/cortes/FichasDeCaja';
 /* La pestaña «Hoy» es `MiCajaView` entera, y va DIFERIDA a propósito: arrastra
  * los diálogos de operar la caja —abrir, corte, entrada, salida, la lectura de
@@ -45,6 +46,7 @@ import TarjetaCorte from '../components/cortes/TarjetaCorte';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import useResolverCorte from '../hooks/useResolverCorte';
+import useDiasConDiferencia from '../hooks/useDiasConDiferencia';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import {
     fetchAperturas, fetchCortes, fetchDiferencias, fetchEntradasParaCruce,
@@ -61,6 +63,7 @@ import { fetchCobrosDelPortal } from '../data/creditos';
  * ninguna pantalla de Efectivo. */
 import { fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '../data/bolsas';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
+import { diaEnFiltro, pendientesDeRegistrar, resumenDeDias } from '../utils/diferenciasDeCaja';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { formatMoney } from '../utils/formatNumber';
 import { tokenMatch } from '../utils/searchUtils';
@@ -120,6 +123,10 @@ import { tokenMatch } from '../utils/searchUtils';
 const PESTANAS = [
     { key: 'hoy',         label: 'Hoy',         icon: Wallet,        modulo: 'caja_vales'  },
     { key: 'cortes',      label: 'Cortes',      icon: Scale,         modulo: 'cortes_caja' },
+    // Los DÍAS con diferencia y qué falta hacer con cada uno (usuario,
+    // 2026-09-25). Es una sección y no un recorte de «Cortes»: la unidad es el
+    // día, no el corte, y no sigue al período — lo pendiente se ve siempre.
+    { key: 'diferencias', label: 'Diferencias', icon: HandCoins,     modulo: 'cortes_caja' },
     { key: 'movimientos', label: 'Movimientos', icon: ArrowDownLeft, modulo: 'cortes_caja' },
 ];
 
@@ -207,6 +214,26 @@ const METRICAS = [
     { clave: 'cuadrados',  filtro: 'diferencia', valor: 'ok',        icon: ShieldCheck,  label: 'Cuadraron',     iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
     { clave: 'exceso',     filtro: 'diferencia', valor: 'sobra',     icon: TrendingUp,   label: 'Exceso',        iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
     { clave: 'faltante',   filtro: 'diferencia', valor: 'falta',     icon: TrendingDown, label: 'Faltante',      iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
+];
+
+// El recorte de la pestaña «Diferencias». `PENDIENTES` es el de entrada: la
+// pestaña existe para lo que falta hacer, y lo resuelto se pide a propósito.
+const ESTADOS_DIF = [
+    { value: 'PENDIENTES',    label: 'Pendientes' },
+    { value: 'sin_resolver',  label: 'Sin resolver' },
+    { value: 'con_saldo',     label: 'Con saldo' },
+    { value: 'por_registrar', label: 'Por registrar' },
+    { value: 'resuelto',      label: 'Resueltos' },
+    { value: 'TODOS',         label: 'Todos' },
+];
+
+// Cuatro números del carril de «Diferencias», cada uno atajo de su estado.
+// `saldo` va en dinero y no en días: lo que se pregunta es cuánto falta cobrar.
+const METRICAS_DIF = [
+    { clave: 'sin_resolver',  icon: AlertTriangle, label: 'Días sin resolver', iconBg: 'bg-danger/10',  iconCls: 'text-danger-text', valueCls: 'text-danger-text' },
+    { clave: 'con_saldo',     icon: HandCoins,     label: 'Falta cobrar',      iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text', dinero: 'saldo' },
+    { clave: 'por_registrar', icon: Landmark,      label: 'Por registrar',     iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
+    { clave: 'resuelto',      icon: ShieldCheck,   label: 'Resueltos',         iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
 ];
 
 const CortesView = () => {
@@ -303,6 +330,12 @@ const CortesView = () => {
     );
     const enHoy         = pestana === 'hoy';
     const enMovimientos = pestana === 'movimientos';
+    const enDiferencias = pestana === 'diferencias';
+    const [filtroDif, setFiltroDif] = useState('PENDIENTES');
+    const {
+        dias: diasDif, resoluciones: resolucionesDif, cargando: cargandoDif,
+        error: errorDif, recargar: recargarDif,
+    } = useDiasConDiferencia({ activo: enDiferencias, hasta: hoySV() });
     // Las fichas de caja acompañan a los CORTES: ahí es donde se pregunta de
     // quién es el corte que se está leyendo.
     const enCortes      = pestana === 'cortes';
@@ -354,7 +387,9 @@ const CortesView = () => {
      * caja de UNA sala y trae lo suyo por su cuenta. Pedirlos igual sería
      * bajar el período entero de las seis salas para no mirarlo. */
     const cargar = useCallback(async () => {
-        if (enHoy) { setCargando(false); return; }
+        // «Diferencias» trae lo suyo —todo el historial, no el período— con
+        // `useDiasConDiferencia`.
+        if (enHoy || enDiferencias) { setCargando(false); return; }
         setCargando(true);
         const filas = await fetchCortes({ desde, hasta });
         setCortes(filas || VACIO);
@@ -365,7 +400,7 @@ const CortesView = () => {
         const autores = await fetchPersonas((filas || []).map((c) => c.resuelto_por));
         setPersonas(new Map(autores.map((p) => [p.id, p])));
         setDifs(await fetchDiferencias({ desde, hasta }) || VACIO);
-    }, [desde, hasta, enHoy]);
+    }, [desde, hasta, enHoy, enDiferencias]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + al cambiar el rango
 
@@ -509,10 +544,31 @@ const CortesView = () => {
     // movimiento se hace POR sala: al mirar una sola, el aviso tiene que hablar
     // de esa y no del total de las seis. Las justificadas quedan fuera — no
     // mueven dinero, así que no hay nada que anotar allá.
-    const sinAsentar = useMemo(() => (difs || []).filter((d) => (
-        !d.anulada_at && !d.asentado_at && d.via !== 'JUSTIFICA'
-        && (!sala || String(d.branch_id) === String(sala))
-    )), [difs, sala]);
+    //
+    // Desde el 2026-09-25 un faltante sin causa no se anota entero: se anotan
+    // sus ABONOS, cada uno el día que entró el dinero (`pendientesDeRegistrar`).
+    // En «Diferencias» la lista sale de todo el historial, no del período.
+    const sinAsentar = useMemo(
+        () => pendientesDeRegistrar(enDiferencias ? resolucionesDif : difs, { sala }),
+        [difs, resolucionesDif, enDiferencias, sala],
+    );
+
+    // Los días de «Diferencias» con la sala, el estado y la búsqueda puestos.
+    // Se busca por sala, fecha, monto y por quién responde.
+    const diasDelRecorte = useMemo(() => diasDif.filter((d) => {
+        if (sala && String(d.branch_id) !== String(sala)) return false;
+        return tokenMatch(busqueda,
+            nombreSala[d.branch_id], d.fecha, String(d.neto),
+            ...d.cortes.flatMap((c) => [
+                String(c.tramo), c.empleado_texto, c.diferencia?.causa,
+                ...(c.diferencia?.personas || []).map((p) => p.nombre),
+            ]));
+    }), [diasDif, sala, busqueda, nombreSala]);
+    const resumenDif = useMemo(() => resumenDeDias(diasDelRecorte), [diasDelRecorte]);
+    const diasVisibles = useMemo(
+        () => diasDelRecorte.filter((d) => diaEnFiltro(d, filtroDif)),
+        [diasDelRecorte, filtroDif],
+    );
 
     const filtrados = useMemo(() => conTramoTodos.filter((c) => {
         if (sala && String(c.branch_id) !== String(sala)) return false;
@@ -673,7 +729,7 @@ const CortesView = () => {
     const metricaActiva = (m) => (m.filtro === 'estado' ? estado : diferencia) === m.valor;
 
     const limpiar = () => {
-        setSala(''); setPeriodo(HOY);
+        setSala(''); setPeriodo(HOY); setFiltroDif('PENDIENTES');
         setEstado('TODOS'); setDiferencia('TODAS');
         setTipoMov('TODOS'); setEstadoMov('TODOS');
         setBusqueda(''); setPagina(1);
@@ -694,7 +750,9 @@ const CortesView = () => {
             showSearch={!enHoy}
             placeholder={enMovimientos
                 ? 'Buscar por concepto, cliente, folio, sala o monto…'
-                : 'Buscar por sala, persona, hora o monto…'}
+                : enDiferencias
+                    ? 'Buscar por sala, fecha, responsable o monto…'
+                    : 'Buscar por sala, persona, hora o monto…'}
         />
     );
 
@@ -738,8 +796,20 @@ const CortesView = () => {
                     <CarrilCards className="flex-1"
                         ariaLabel={enMovimientos
                             ? 'Resumen de los movimientos del período'
-                            : 'Resumen de los cortes del período'}>
-                        {enMovimientos
+                            : enDiferencias
+                                ? 'Resumen de los días con diferencia'
+                                : 'Resumen de los cortes del período'}>
+                        {enDiferencias
+                            ? METRICAS_DIF.map((m) => (
+                                <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                                    label={m.label}
+                                    value={m.dinero ? formatMoney(resumenDif[m.dinero]) : resumenDif[m.clave]}
+                                    valueCls={m.valueCls}
+                                    active={filtroDif === m.clave}
+                                    onClick={() => setFiltroDif((v) => (v === m.clave ? 'PENDIENTES' : m.clave))}
+                                    loading={cargandoDif} />
+                            ))
+                            : enMovimientos
                             ? METRICAS_MOV.map((m) => (
                                 <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
                                     label={m.label} value={m.valor_txt} valueCls={m.valueCls}
@@ -762,7 +832,7 @@ const CortesView = () => {
                         promesa de «el lugar único donde mirar qué se filtra». */}
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
-                            activeCount={[sala, !periodoIntacto,
+                            activeCount={enDiferencias ? [sala, filtroDif !== 'PENDIENTES'].filter(Boolean).length : [sala, !periodoIntacto,
                                 enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
                                 // En movimientos no hay cuarta ranura: el recorte
                                 // por estado lo aplican las tarjetas. Contarlo acá
@@ -788,6 +858,17 @@ const CortesView = () => {
                                 justamente para cuando el centro no es texto sino
                                 un control que se abre. Tocar «Hoy» abre el panel;
                                 las flechas corren el período por su unidad. */}
+                            {/* «Diferencias» no sigue al período: lo pendiente
+                                se ve siempre. Su ranura es el estado del día. */}
+                            {enDiferencias ? (
+                                <FilterBar.Section active={filtroDif !== 'PENDIENTES'} onClear={() => setFiltroDif('PENDIENTES')} label="estado">
+                                    <FilterBar.Opciones
+                                        label="Estado" icon={CheckCircle2}
+                                        value={filtroDif} onChange={(v) => setFiltroDif(v || 'PENDIENTES')}
+                                        options={ESTADOS_DIF} ancho="165px"
+                                    />
+                                </FilterBar.Section>
+                            ) : (<>
                             <FilterBar.Section active={!periodoIntacto} onClear={() => verPeriodo(null)}
                                 label="fecha">
                                 <PeriodStepper
@@ -833,6 +914,7 @@ const CortesView = () => {
                                     </FilterBar.Section>
                                 </>
                             )}
+                            </>)}
                         </FilterBar>
                     </div>
                 </div>
@@ -883,17 +965,17 @@ const CortesView = () => {
                     />
                 )}
 
-                {enCortes && !cargando && puedeResolver && sinAsentar.length > 0 && (
+                {(enCortes || enDiferencias) && !(enDiferencias ? cargandoDif : cargando) && puedeResolver && sinAsentar.length > 0 && (
                     <Notice variant="warning" icon={Landmark}>
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                             <div className="min-w-0">
                                 <span className="font-bold">
                                     {sinAsentar.length === 1
-                                        ? 'Hay una diferencia resuelta sin anotar en el sistema'
-                                        : `Hay ${sinAsentar.length} diferencias resueltas sin anotar en el sistema`}
+                                        ? 'Hay un movimiento de diferencias sin anotar en el sistema'
+                                        : `Hay ${sinAsentar.length} movimientos de diferencias sin anotar en el sistema`}
                                 </span>
                                 <span className="block mt-0.5 font-normal text-content-2">
-                                    Un solo movimiento por sala las cubre a todas.
+                                    Retiros de sobrante y abonos a faltantes. Un solo movimiento por sala cubre varios.
                                 </span>
                             </div>
                             <Button variant="secondary" size="sm" onClick={() => setAsentando(true)}>
@@ -901,6 +983,21 @@ const CortesView = () => {
                             </Button>
                         </div>
                     </Notice>
+                )}
+
+                {enDiferencias && (
+                    <DiasConDiferencia
+                        dias={diasVisibles}
+                        cargando={cargandoDif}
+                        error={errorDif}
+                        nombreSala={nombreSala}
+                        puedeResolver={puedeResolver}
+                        busqueda={busqueda}
+                        filtroActivo={filtroDif}
+                        onCambio={recargarDif}
+                        onLimpiarBusqueda={() => setBusqueda('')}
+                        onVerTodos={() => setFiltroDif('TODOS')}
+                    />
                 )}
 
                 {enCortes && cargando && <LoadingState label="Buscando los cortes" />}
@@ -1006,7 +1103,7 @@ const CortesView = () => {
                 diferencias={sinAsentar}
                 nombreSala={nombreSala}
                 onClose={() => setAsentando(false)}
-                onHecho={cargar}
+                onHecho={enDiferencias ? recargarDif : cargar}
             />
 
             <CorteDetalleModal

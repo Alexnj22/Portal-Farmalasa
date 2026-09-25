@@ -181,3 +181,74 @@ export function construirComprobante({ corte, sala, diferencia, personas = [], r
         ],
     };
 }
+
+/**
+ * El comprobante de UN abono a un faltante — o de varios hechos juntos.
+ *
+ * Desde el 2026-09-25 un faltante sin causa se asigna a responsables y el dinero
+ * entra por abonos, que pueden ser parciales y en días distintos. Asignar no
+ * mueve dinero y no saca papel; cada abono sí, porque es el momento en que
+ * alguien entrega efectivo y firma.
+ *
+ * Lleva la fecha del CORTE del faltante y la del abono: son dos días distintos
+ * casi siempre, y el papel se anexa al ingreso del día en que entró el dinero.
+ * Y lleva el saldo que le queda a cada quien, a diferencia del de la
+ * reposición entera: acá el saldo ES parte de lo que se firma — «abono $2 y me
+ * quedan $2.05».
+ *
+ * Es una reposición voluntaria: nunca un descuento de planilla.
+ *
+ * @param {object} corte     fecha, hora y empleado_texto del corte del faltante
+ * @param {string} sala      nombre de la sucursal
+ * @param {Array}  abonos    [{ nombre, monto, saldo }] — `saldo` es lo que queda DESPUÉS del abono
+ * @param {string} registradoPor
+ * @param {string} cuando    ISO del abono
+ */
+export function construirComprobanteDeAbono({ corte, sala, abonos = [], registradoPor, cuando }) {
+    const total = abonos.reduce((a, x) => a + Math.abs(Number(x.monto ?? 0)), 0);
+    return {
+        titulo: 'ABONO A FALTANTE DE CAJA',
+        encabezado: {
+            titulo: soloAscii(EMPRESA.razonSocial),
+            lineas: [`NIT ${EMPRESA.nit}`],
+        },
+        datos: [
+            ['Sala', recortar(sala || '', 34)],
+            ['Faltante del', `${fechaCorta(corte?.fecha)}  ${hora12Papel(corte?.hora)}`],
+            ['Caja a nombre de', recortar(corte?.empleado_texto || '', 24)],
+        ],
+        items: {
+            // Cuatro columnas y no tres: la geometría del rollo sólo está
+            // medida para dos y para cuatro (`encabezadoDeItems`), y con tres
+            // colapsaría a «primera … última» y perdería el abono.
+            columnas: [
+                { label: 'QUIEN ABONA' },
+                { label: 'DEBIA', alinear: 'der' },
+                { label: 'ABONA', alinear: 'der' },
+                { label: 'QUEDA', alinear: 'der' },
+            ],
+            filas: abonos.map((x) => {
+                const monto = Math.abs(Number(x.monto ?? 0));
+                const queda = Math.max(0, Number(x.saldo ?? 0));
+                return [
+                    recortar(x.nombre || 'Sin nombre', 28),
+                    formatMoney(queda + monto),
+                    formatMoney(monto),
+                    formatMoney(queda),
+                ];
+            }),
+        },
+        totales: [['ENTRA A CAJA', formatMoney(total), true]],
+        pie: [
+            `Registro: ${recortar(registradoPor || 'Sin registrar', 40)}`,
+            selloDeTiempo(cuando),
+            '',
+            'Entrega ____________________',
+            '',
+            'Recibe   ____________________',
+            '',
+            'Reposicion voluntaria. No es descuento de salario.',
+            'Anexar al ingreso de caja del dia.',
+        ],
+    };
+}

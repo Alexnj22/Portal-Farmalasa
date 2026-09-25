@@ -1,13 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Ban, HandCoins, Printer, ShieldCheck } from 'lucide-react';
+import { Ban, HandCoins, Image as ImageIcon, Printer, ShieldCheck } from 'lucide-react';
+import AbonosDeDiferencia from './AbonosDeDiferencia';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
+import FileField from '../common/FileField';
 import Notice from '../common/Notice';
+import PhotoLightbox from '../common/PhotoLightbox';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
-import { fetchTurnoDelCorte } from '../../data/cortes';
+import { fetchTurnoDelCorte, subirEvidenciaDeDiferencia } from '../../data/cortes';
+import { getSignedFileUrl } from '../../utils/storageFiles';
+import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import { repartirEnPartes, severidad } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
@@ -36,10 +42,47 @@ import { fechaHora12 } from '../../utils/hora';
  * y lo que falta o sobra para llegar al total se ve mientras se escribe. Un
  * reparto que no suma exacto deja a alguien debiendo un centavo que no está en
  * ningún lado, y el servidor lo rechaza — mejor verlo antes de apretar.
+ *
+ * ── 2026-09-25: dos caminos claros, y el faltante sin causa se ABONA ───────
+ * «Si encontré causa, qué pasó y cómo lo valido. Si no encontré causa, que
+ * pueda seleccionar los responsables —por defecto quienes hicieron ventas en
+ * el rango de ese corte— y que se pueda abonar, individual o total» (usuario).
+ *
+ *   · «Se encontró la causa» exige comprobante: el número del documento que se
+ *     corrigió o una foto. El servidor rechaza sin ninguno de los dos.
+ *   · «No se encontró la causa» asigna responsables. Ya no significa que el
+ *     dinero entró: entra por abonos (`AbonosDeDiferencia`), parciales y en
+ *     días distintos. Por eso asignar no imprime nada.
+ *   · La propuesta de responsables sale de quién VENDIÓ en el tramo del corte
+ *     (`sales_invoices.cod_vendedor`), no de la sala entera: el turno sigue
+ *     sin encenderse y proponer a todos obligaba a adivinar.
  */
 
+function VerFoto({ url }) {
+    const [firmando, setFirmando] = useState(false);
+    const [ampliada, setAmpliada] = useState(null);
+    const [fallo, setFallo] = useState(false);
+    if (!url) return null;
+    const abrir = async () => {
+        setFirmando(true); setFallo(false);
+        try {
+            const firmada = await getSignedFileUrl(url);
+            if (firmada) setAmpliada(firmada); else setFallo(true);
+        } catch { setFallo(true); }
+        setFirmando(false);
+    };
+    return (
+        <>
+            <Button variant="ghost" size="sm" icon={ImageIcon} loading={firmando} onClick={abrir}>
+                {fallo ? 'No se pudo abrir' : 'Ver la foto'}
+            </Button>
+            <PhotoLightbox src={ampliada} alt="Comprobante de la causa" onClose={() => setAmpliada(null)} />
+        </>
+    );
+}
+
 const VIA_LARGO = {
-    REPONE: 'Se repuso el dinero',
+    REPONE: 'Sin causa · con responsables',
     RETIRA: 'Se retiró el sobrante',
     JUSTIFICA: 'Se encontró la causa',
 };
@@ -60,6 +103,15 @@ export default function ResolverDiferencia({
 }) {
     const { user } = useAuth();
     const { resolver, anular, imprimir, ocupado } = useResolverDiferencia({ nombreSala, origen });
+    // Borrador por corte (`gate:borradores`): la sesión de sala se cierra sola
+    // a los 5 minutos, y la causa y el número del comprobante se escriben
+    // mientras se busca el papel. La foto no se guarda: es un archivo.
+    const claveBorrador = corte?.id ? `corte_dif_${corte.id}` : null;
+    const [borrador] = useState(() => (claveBorrador ? loadDraft(claveBorrador) : null));
+    const [evidenciaRef, setEvidenciaRef] = useState(() => borrador?.evidenciaRef || '');
+    const [foto, setFoto] = useState(null);
+    const [subiendo, setSubiendo] = useState(false);
+    const [errorFoto, setErrorFoto] = useState('');
 
     const tramo = Number(corte?.tramo ?? 0);
     const sev = severidad(tramo);
@@ -72,16 +124,21 @@ export default function ResolverDiferencia({
     // la causa y guardar sin tocar el segmentado mandaba el default — «no lo
     // toco» y «lo mando como viene» son lo mismo, y las dos opciones significan
     // cosas muy distintas para el dinero. Ahora hay que elegir.
-    const [via, setVia] = useState(null);
-    const [causa, setCausa] = useState('');
+    const [via, setVia] = useState(() => borrador?.via || null);
+    const [causa, setCausa] = useState(() => borrador?.causa || '');
     const [candidatos, setCandidatos] = useState([]);
     const [marcadas, setMarcadas] = useState(() => new Set());
     const [montos, setMontos] = useState(() => new Map());
-    const [abriendo, setAbriendo] = useState(false);
+    const [abriendo, setAbriendo] = useState(() => !!(borrador?.via || borrador?.causa));
     const [motivoAnular, setMotivoAnular] = useState('');
     const [anulando, setAnulando] = useState(false);
 
     const corteId = corte?.id ?? null;
+
+    useEffect(() => {
+        if (!claveBorrador || !abriendo) return;
+        if (via || causa.trim() || evidenciaRef.trim()) saveDraft(claveBorrador, { via, causa, evidenciaRef });
+    }, [claveBorrador, abriendo, via, causa, evidenciaRef]);
     const yaResuelta = !!diferencia && !diferencia.anulada_at;
 
     // Los candidatos a aportar. Se piden al abrir el formulario y no con el
@@ -92,12 +149,14 @@ export default function ResolverDiferencia({
         fetchTurnoDelCorte(corteId).then((filas) => {
             if (!vivo) return;
             setCandidatos(filas);
-            // Preselección: los del turno, y siempre quien tiene la sesión —es
-            // la persona responsable (regla del usuario). Hoy el módulo de
-            // turnos no está encendido, así que en la práctica arranca con una
-            // sola marcada, que es lo honesto: proponer a toda la sala como
-            // aportante sería inventar un turno que nadie registró.
-            const previa = filas.filter((f) => f.del_turno || f.id === user?.id).map((f) => f.id);
+            // Preselección (usuario, 2026-09-25): quienes VENDIERON en el tramo
+            // de este corte. Si nadie vendió —o las ventas todavía no llegaron—
+            // cae a los del turno y a quien tiene la sesión, que era la regla de
+            // antes. Nunca la sala entera: eso sería inventar responsables.
+            const vendieron = filas.filter((f) => Number(f.ventas) > 0).map((f) => f.id);
+            const previa = vendieron.length
+                ? vendieron
+                : filas.filter((f) => f.del_turno || f.id === user?.id).map((f) => f.id);
             setMarcadas(new Set(previa.length ? previa : filas.slice(0, 1).map((f) => f.id)));
         });
         return () => { vivo = false; };
@@ -147,9 +206,32 @@ export default function ResolverDiferencia({
             nombre: candidatos.find((c) => c.id === p.employee_id)?.name || '',
             monto: p.monto,
         }));
-        const r = await resolver(corte, { via, causa, montoVisto: tramo, personas, nombres });
-        if (r) { setAbriendo(false); setCausa(''); onCambio?.(); }
-    }, [marcadas, via, montos, candidatos, resolver, corte, causa, tramo, onCambio]);
+        // La foto se sube ANTES de resolver: la URL es parte de la resolución.
+        // Si la subida falla no se resuelve — una causa encontrada sin su
+        // respaldo es justo lo que el servidor rechaza.
+        let evidenciaFoto = null;
+        if (via === 'JUSTIFICA' && foto) {
+            setSubiendo(true); setErrorFoto('');
+            try {
+                evidenciaFoto = await subirEvidenciaDeDiferencia(foto, { salaId: corte?.branch_id, userId: user?.id });
+            } catch (e) {
+                setErrorFoto(e.message || 'No se pudo subir la foto.');
+                setSubiendo(false);
+                return;
+            }
+            setSubiendo(false);
+        }
+        const r = await resolver(corte, {
+            via, causa, montoVisto: tramo, personas, nombres,
+            evidenciaRef: via === 'JUSTIFICA' ? evidenciaRef.trim() : null,
+            evidenciaFoto,
+        });
+        if (r) {
+            if (claveBorrador) clearDraft(claveBorrador);
+            setAbriendo(false); setCausa(''); setEvidenciaRef(''); setFoto(null);
+            onCambio?.();
+        }
+    }, [marcadas, via, montos, candidatos, resolver, corte, causa, tramo, onCambio, foto, evidenciaRef, user, claveBorrador]);
 
     const confirmarAnular = useCallback(async () => {
         const ok = await anular(corte, diferencia, motivoAnular);
@@ -176,23 +258,45 @@ export default function ResolverDiferencia({
                     {diferencia.asentado_at && (
                         <Badge variant="info" size="sm">Registrado {diferencia.asentado_ref}</Badge>
                     )}
-                    {!diferencia.asentado_at && diferencia.via !== 'JUSTIFICA' && (
+                    {!diferencia.asentado_at && diferencia.via === 'RETIRA' && (
                         <Badge variant="warning" size="sm" dot>Falta registrarlo en el sistema</Badge>
                     )}
                 </div>
 
                 <div className="text-caption text-content-2">{diferencia.causa}</div>
 
-                {(personasResueltas || []).length > 0 && (
+                {(diferencia.evidencia_ref || diferencia.evidencia_foto_url) && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {diferencia.evidencia_ref && (
+                            <span className="text-caption text-content-2">
+                                Comprobante: <span className="font-bold">{diferencia.evidencia_ref}</span>
+                            </span>
+                        )}
+                        <VerFoto url={diferencia.evidencia_foto_url} />
+                    </div>
+                )}
+
+                {diferencia.via === 'RETIRA' && (personasResueltas || []).length > 0 && (
                     <div className="text-caption text-content-3">
-                        {personasResueltas.map((p) => `${p.nombre} ${formatMoney(Math.abs(Number(p.monto)))}`).join(' · ')}
+                        {personasResueltas.map((p) => `${shortEmployeeName(p.nombre)} ${formatMoney(Math.abs(Number(p.monto)))}`).join(' · ')}
                     </div>
                 )}
 
                 <div className="text-caption text-content-3">
-                    {diferencia.registrado_nombre || 'Sin registrar quién'} · {selloDeTiempo(diferencia.registrado_at)}
-                    {diferencia.impreso_at ? ' · comprobante impreso' : ' · sin imprimir'}
+                    {diferencia.registrado_nombre ? shortEmployeeName(diferencia.registrado_nombre) : 'Sin registrar quién'} · {selloDeTiempo(diferencia.registrado_at)}
+                    {diferencia.via === 'RETIRA' && (diferencia.impreso_at ? ' · comprobante impreso' : ' · sin imprimir')}
                 </div>
+
+                {diferencia.via === 'REPONE' && (
+                    <AbonosDeDiferencia
+                        corte={corte}
+                        diferencia={diferencia}
+                        nombreSala={nombreSala}
+                        puedeResolver={puedeResolver}
+                        origen={origen}
+                        onCambio={onCambio}
+                    />
+                )}
 
                 {anulando ? (
                     <div className="space-y-2">
@@ -216,7 +320,7 @@ export default function ResolverDiferencia({
                     </div>
                 ) : puedeResolver && (
                     <div className="flex items-center justify-end gap-1.5">
-                        {diferencia.via !== 'JUSTIFICA' && (
+                        {diferencia.via === 'RETIRA' && (
                             <Button variant="secondary" size="sm" icon={Printer} onClick={reimprimir} loading={ocupado}>
                                 Imprimir comprobante
                             </Button>
@@ -224,7 +328,10 @@ export default function ResolverDiferencia({
                         {/* Ya registrada en el sistema significa que el dinero se
                             movió allá: anularla acá dejaría las dos cuentas
                             distintas, y el servidor la rechaza. */}
-                        {!diferencia.asentado_at && (
+                        {/* Con abonos vivos el servidor la rechaza: primero se
+                            anulan los abonos, porque ese dinero ya entró. */}
+                        {!diferencia.asentado_at
+                            && !(diferencia.abonos || []).some((a) => !a.anulada_at) && (
                             <Button variant="ghost" size="sm" icon={Ban} onClick={() => setAnulando(true)}>
                                 Anular
                             </Button>
@@ -242,21 +349,22 @@ export default function ResolverDiferencia({
         return (
             <Button variant="secondary" icon={HandCoins} onClick={() => setAbriendo(true)} className="w-full">
                 {falta
-                    ? `Confirmar faltante de ${formatMoney(Math.abs(tramo))} para reponer el dinero`
+                    ? `Resolver el faltante de ${formatMoney(Math.abs(tramo))}`
                     : `Resolver el sobrante de ${formatMoney(Math.abs(tramo))}`}
             </Button>
         );
     }
 
     const opciones = falta
-        ? [{ value: 'REPONE', label: 'Se repone el dinero' }, { value: 'JUSTIFICA', label: 'Ya se encontró la causa' }]
-        : [{ value: 'RETIRA', label: 'Se retira el sobrante' }, { value: 'JUSTIFICA', label: 'Ya se encontró la causa' }];
+        ? [{ value: 'JUSTIFICA', label: 'Se encontró la causa' }, { value: 'REPONE', label: 'No se encontró' }]
+        : [{ value: 'JUSTIFICA', label: 'Se encontró la causa' }, { value: 'RETIRA', label: 'Se retira el sobrante' }];
+    const faltaComprobante = via === 'JUSTIFICA' && !evidenciaRef.trim() && !foto;
 
     return (
         <div data-surface="card" className="p-3 space-y-3">
             <div className="flex items-baseline justify-between gap-3 flex-wrap">
                 <span className="text-caption font-black uppercase tracking-widest text-content-3">
-                    {falta ? 'Reponer el faltante' : 'Resolver el sobrante'}
+                    {falta ? 'Resolver el faltante' : 'Resolver el sobrante'}
                 </span>
                 <span className="text-body font-bold tabular-nums text-content">
                     {formatMoney(Math.abs(tramo))}
@@ -270,22 +378,54 @@ export default function ResolverDiferencia({
                 options={opciones}
             />
 
-            <PortalTextarea
-                label="Causa"
-                name="causa"
-                value={causa}
-                onChange={(e) => setCausa(e.target.value)}
-                rows={2}
-                placeholder={falta
-                    ? 'Qué pasó con el dinero que faltó'
-                    : 'De dónde salió el dinero de más'}
-            />
+            {via && (
+                <PortalTextarea
+                    label={via === 'JUSTIFICA' ? 'Qué pasó' : via === 'REPONE' ? 'Qué se revisó' : 'Causa'}
+                    name="causa"
+                    value={causa}
+                    onChange={(e) => setCausa(e.target.value)}
+                    rows={2}
+                    placeholder={via === 'JUSTIFICA'
+                        ? (falta ? 'Ej.: se cobró en efectivo una venta que se registró con tarjeta' : 'De dónde salió el dinero de más')
+                        : via === 'REPONE'
+                            ? 'Qué se revisó sin encontrar la causa'
+                            : 'Por qué se retira el sobrante'}
+                />
+            )}
+
+            {via === 'JUSTIFICA' && (
+                <div className="space-y-2">
+                    <PortalInput
+                        label="Número del documento corregido"
+                        name="evidencia-ref"
+                        value={evidenciaRef}
+                        onChange={(e) => setEvidenciaRef(e.target.value)}
+                        placeholder="Ingreso, vale, factura o recibo"
+                    />
+                    <FileField
+                        label="Foto del comprobante"
+                        accept="image/*"
+                        maxSizeMB={10}
+                        file={foto}
+                        onChange={(f) => { setErrorFoto(''); setFoto(f || null); }}
+                        emptyState="neutral"
+                        tipoDeDocumento="comprobante"
+                        hint="El documento que muestra la causa. Basta con el número o con la foto."
+                    />
+                    {errorFoto && <Notice variant="danger">{errorFoto}</Notice>}
+                    {faltaComprobante && (
+                        <p className="text-caption text-content-3">
+                            Para dar la causa por encontrada hace falta el número del documento o una foto.
+                        </p>
+                    )}
+                </div>
+            )}
 
             {via === 'REPONE' && (
                 <div className="space-y-2">
                     <div className="flex items-baseline justify-between gap-2">
                         <span className="text-caption font-black uppercase tracking-widest text-content-3">
-                            Quién repone
+                            Quién responde
                         </span>
                         <span className={`text-caption tabular-nums ${restan === 0 ? 'text-success-text' : 'text-danger-text'}`}>
                             {restan === 0
@@ -309,8 +449,10 @@ export default function ResolverDiferencia({
                                         name={`aporta-${c.id}`}
                                         checked={marcada}
                                         onChange={() => alternar(c.id)}
-                                        label={c.name}
-                                        description={c.del_turno ? 'Del turno' : undefined}
+                                        label={shortEmployeeName(c.name)}
+                                        description={Number(c.ventas) > 0
+                                            ? `${c.ventas} ${Number(c.ventas) === 1 ? 'venta' : 'ventas'} en este corte`
+                                            : c.del_turno ? 'Del turno' : 'Sin ventas en este corte'}
                                     />
                                 </div>
                                 {marcada && (
@@ -320,7 +462,7 @@ export default function ResolverDiferencia({
                                             inputMode="decimal"
                                             maskType="DECIMAL"
                                             prefix="$"
-                                            aria-label={`Cuánto repone ${c.name}`}
+                                            aria-label={`Cuánto le toca a ${shortEmployeeName(c.name)}`}
                                             value={montos.get(c.id) ?? ''}
                                             onChange={(e) => cambiarMonto(c.id, e.target.value)}
                                         />
@@ -330,39 +472,51 @@ export default function ResolverDiferencia({
                         );
                     })}
 
-                    {/* El turno no está encendido todavía: decirlo es más honesto
-                        que presentar la lista de la sala como si fuera el turno. */}
-                    {candidatos.length > 0 && !candidatos.some((c) => c.del_turno) && (
-                        <Notice variant="info">
-                            Todavía no se registra quién estuvo en cada turno, así que aquí aparece
-                            la sala completa. Marca sólo a quienes aportan.
-                        </Notice>
+                    {candidatos.length > 0 && (
+                        <p className="text-caption text-content-3">
+                            {candidatos.some((c) => Number(c.ventas) > 0)
+                                ? 'Vienen marcados quienes vendieron entre el corte anterior y este. Quita o agrega según corresponda.'
+                                : 'Nadie tiene ventas registradas en este tramo todavía: marca a quienes responden.'}
+                        </p>
                     )}
                 </div>
             )}
 
-            {via && via !== 'JUSTIFICA' && (
+            {via === 'RETIRA' && (
                 <Notice variant="info">
                     <span className="font-bold">Al guardar sale el comprobante para firmar</span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        Anexalo al corte. Después hay que registrar {falta ? 'el ingreso' : 'el vale'} en
-                        el sistema — se puede hacer uno solo por varias diferencias.
+                        Anéxalo al corte. Después hay que registrar el vale en el sistema — se
+                        puede hacer uno solo por varias diferencias.
+                    </span>
+                </Notice>
+            )}
+            {via === 'REPONE' && (
+                <Notice variant="info">
+                    <span className="font-bold">Al guardar, cada responsable queda con su saldo</span>
+                    <span className="block mt-0.5 font-normal text-content-2">
+                        Después se abona por persona o todo junto, en uno o varios días. Cada abono
+                        imprime su comprobante. Es una reposición voluntaria: nunca se descuenta del salario.
                     </span>
                 </Notice>
             )}
 
             <div className="flex items-center justify-end gap-1.5">
-                <Button variant="ghost" size="sm" onClick={() => setAbriendo(false)} disabled={ocupado}>
+                <Button variant="ghost" size="sm" disabled={ocupado} onClick={() => {
+                    if (claveBorrador) clearDraft(claveBorrador);
+                    setAbriendo(false);
+                }}>
                     Volver
                 </Button>
                 <Button
                     variant="primary"
                     size="sm"
-                    loading={ocupado}
-                    disabled={!via || !causa.trim() || (via === 'REPONE' && (restan !== 0 || !marcadas.size))}
+                    loading={ocupado || subiendo}
+                    disabled={!via || !causa.trim() || faltaComprobante
+                        || (via === 'REPONE' && (restan !== 0 || !marcadas.size))}
                     onClick={guardar}
                 >
-                    {via && via !== 'JUSTIFICA' ? 'Guardar e imprimir' : 'Guardar'}
+                    {via === 'RETIRA' ? 'Guardar e imprimir' : via === 'REPONE' ? 'Asignar responsables' : 'Guardar'}
                 </Button>
             </div>
         </div>

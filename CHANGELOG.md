@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1067.0 — Búsqueda: /inventario con la regla del portal
+
+/inventario pasa a la regla del portal (`20260925184107`). La lista, la
+inversión y el contador de «próximos a vencer» resuelven la búsqueda una sola
+vez con `busqueda_productos` y comparan por `erp_product_id`. La vista
+materializada no se toca.
+
+- **El navegador manda el texto tal cual.** Antes lo mandaba ya pasado por
+  `normSearch`, que borraba el punto: «2.5» llegaba como «25» y la lista traía
+  **1,099 filas en lugar de 63**.
+- **La inversión y los próximos a vencer ahora leen el código de barras**, como
+  la lista. Antes, buscando un código, los totales no cuadraban con las filas.
+- «amoxisilina» ahora encuentra las 29 filas de amoxicilina, con aviso de
+  resultado aproximado. El resto de las búsquedas de la línea base dan
+  **el mismo número de filas** que antes.
+- `inventory_proximos_count` deja de ser `LANGUAGE sql` + `SET`, y
+  `buscar_inventario_global_v2` sale del manifiesto de planes genéricos: ahora
+  es plpgsql.
+
 ## v2.1066.0 — Búsqueda: Mín·Máx, promociones y existencias con la regla del portal
 
 Continúa F4 de `docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md`: tres búsquedas de

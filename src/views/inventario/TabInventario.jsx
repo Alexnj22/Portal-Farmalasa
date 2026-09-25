@@ -14,7 +14,8 @@ import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import ExpedienteMovil from '../../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../../components/common/usarExpediente';
-import { normSearch } from '../../utils/searchUtils';
+import { buscarIdsDeProducto } from '../../data/busquedaProductos';
+import AvisoParecidos from '../../components/common/AvisoParecidos';
 import {
     fetchInventorySyncLog, fetchProductCategories, fetchAllVencidosInventory,
     fetchExpiredInventoryCount, fetchInventoryDetail,
@@ -196,6 +197,7 @@ export default function TabInventario({ searchTerm = '' }) {
     const [filterCat,        setFilterCat]        = useState(null);
     const [groups,           setGroups]           = useState([]);
     const [total,            setTotal]            = useState(0);
+    const [sonParecidos,     setSonParecidos]     = useState(false);
     const [loading,          setLoading]          = useState(false);
     const [page,             setPage]             = useState(1);
     const [pageSize,         setPageSize]         = useState(25);
@@ -251,7 +253,11 @@ export default function TabInventario({ searchTerm = '' }) {
         setLoadError(null);
         setExpandedKey(null);
         try {
-            const [{ data, error }, smResult, invResult] = await Promise.all([
+            // La base aplica la regla del portal (`busqueda_productos`) con el
+            // texto TAL CUAL: antes viajaba ya pasado por `normSearch`, que
+            // borraba el punto y convertía «2.5» en «25» (1,099 filas de más).
+            // La cuarta llamada sólo pregunta si lo que salió es aproximado.
+            const [{ data, error }, smResult, invResult, parecidos] = await Promise.all([
                 supabase.rpc('inventory_grouped', {
                     p_erp_id:         erpId,
                     p_vencidos:       fVenc,
@@ -259,7 +265,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     p_area_vencidos:  fArea,
                     p_lab_id:    labId,
                     p_categoria: catId,
-                    p_search:    normSearch(q) || null,
+                    p_search:    q?.trim() || null,
                     p_sort:      sf,
                     p_sort_dir:  sd,
                     p_limit:     ps,
@@ -269,14 +275,15 @@ export default function TabInventario({ searchTerm = '' }) {
                     p_erp_id:    erpId,
                     p_lab_id:    labId,
                     p_categoria: catId,
-                    p_search:    normSearch(q) || null,
+                    p_search:    q?.trim() || null,
                 }),
                 supabase.rpc('inventory_inversion', {
                     p_erp_id:    erpId,
                     p_lab_id:    labId,
                     p_categoria: catId,
-                    p_search:    normSearch(q) || null,
+                    p_search:    q?.trim() || null,
                 }),
+                q?.trim() ? buscarIdsDeProducto(q, { limite: 1, soloActivos: false }) : { aproximado: false },
             ]);
             if (rid !== loadRef.current) return;
             if (error) throw error;
@@ -285,6 +292,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
             setGroups(data || []);
             setTotal(data?.length ? Number(data[0].total) : 0);
+            setSonParecidos(!!parecidos?.aproximado && !!data?.length);
 
             const today = new Date().toISOString().split('T')[0];
             const { count: ec } = await fetchExpiredInventoryCount(erpId, today);
@@ -462,6 +470,7 @@ export default function TabInventario({ searchTerm = '' }) {
             </div>
 
             {/* ── Table ── */}
+            {sonParecidos && !loadError && <AvisoParecidos texto={searchTerm} />}
             {loadError ? (
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger-text" />

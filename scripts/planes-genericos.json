@@ -1,7 +1,7 @@
 {
  "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
- "actualizado": "2026-09-22",
- "medidas": 43,
+ "actualizado": "2026-09-25",
+ "medidas": 42,
  "sin_medir": 24,
  "funciones": {
   "auth_module_scope": {
@@ -21,12 +21,6 @@
    "casos": "una bolsa con dos salidas · 7 bloques",
    "divergencia": null,
    "nota": "medida el 2026-09-03 con literales: 0.233 ms, todo Index Scan (bolsas_pkey, bolsas_mov_bolsa, caja_vales_portal_pkey). El plan NO puede depender de los argumentos: los dos parámetros entran como Index Cond de una PK y como Filter sobre una fila, así que el genérico es el mismo plan y forzar el personalizado sólo agregaría el costo de replanificar"
-  },
-  "buscar_inventario_global_v2": {
-   "ms": "74",
-   "casos": "triage fuera de la ventana del corte",
-   "divergencia": null,
-   "nota": "sana"
   },
   "calc_credito_declarable": {
    "ms": "0.1",

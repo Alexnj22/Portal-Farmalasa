@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1073.6 — Puntos: la migración pasa a ser incremental
+
+La migración de los puntos del sistema anterior deja de ser de una sola vez
+(decisión del usuario: «¿si migramos ya? y el 1 solo actualizamos?»). Cada
+compra y cada canje viejos llevan su número de origen (`ref_anterior`, único) y
+la cuenta de donde vinieron, así que volver a correrla trae sólo lo nuevo y
+cuadra cada cuenta vieja contra su saldo. Una copia nueva del sistema anterior
+hereda las asignaciones a mano de la anterior, y por eso asignar ya no espera
+al arranque. Ensayado con los datos reales dentro de una transacción deshecha:
+10,632 cuentas y 119,496 compras en 36 s, segunda pasada sin cambios, 0
+descuadradas. Todavía no se escribió el libro.
+
 ## v2.1073.5 — Puntos: vuelve el rótulo Acumulados
 
 En la vista «Puntos», «Ganados» vuelve a decir «Acumulados» (pedido del usuario).

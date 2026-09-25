@@ -448,6 +448,13 @@ const TIEMPOS = [
    * la SEXTA llamada de cada conexión y pasa de ~650 a ~1,680 ms. Un techo de 5x
    * no atajaría ese 2.6x, que es exactamente el que ya ocurrió. */
   { clave: 'buscar-en-ventas',          sql: `SELECT count(*) FROM public.search_ventas_ids('maria', CURRENT_DATE-365, CURRENT_DATE)` },
+  /* Las dos formas de búsqueda que recorrían las 180,000 facturas del año sin
+   * índice (medido el 2026-09-25 con `medir:como-usuario`): un número cuya
+   * pieza queda en dos caracteres —«2.5» → «%25%»: 10,022 ms— y una palabra
+   * corta ADELANTE de una larga —«jo perez» entraba por «%jo%»: 9,715 ms—.
+   * Hoy 53 y 191 ms. Techo ~5x: el modo de falla es un 50–200x, no un 2x. */
+  { clave: 'buscar-en-ventas-un-numero',   sql: `SELECT count(*) FROM public.search_ventas_ids('2.5', CURRENT_DATE-365, CURRENT_DATE)` },
+  { clave: 'buscar-en-ventas-corta-y-larga', sql: `SELECT count(*) FROM public.search_ventas_ids('jo perez', CURRENT_DATE-365, CURRENT_DATE)` },
   /* Ventas > Productos: la tabla, y las tres llamadas de abrir un producto.
    *
    * Otro agujero de la misma familia que `buscar-en-ventas`: el 2026-08-21 un

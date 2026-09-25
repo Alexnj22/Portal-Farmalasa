@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1074.2 — Búsqueda medida como usuario: Ventas y personas sin barrer tablas
+
+Se midieron las 48 búsquedas del servidor como las usa la gente —con permisos de usuario, de alcance total y de sala— y con cuatro clases de término: uno que existe, uno mal escrito, un número y uno que no existe en ningún lado. Dos no estaban bien:
+
+- **Ventas, buscando un número o una palabra corta al inicio.** «2.5» tardaba **10 s** y «jo perez» **9.7 s** sobre un año: la búsqueda entraba al índice por la primera pieza del término, y con menos de tres caracteres el índice no sirve y se recorrían las 180,000 facturas. Ahora entra por la pieza más larga, y si ninguna alcanza, «2.5» se busca sólo entre los productos, que es lo que quiere decir. **44 ms y 175 ms**, con los mismos resultados.
+- **Solicitudes de datos, buscando una persona que no existe.** Leía **225 MB** por búsqueda: con los permisos de un usuario, recorría todas las fichas de clientes en orden alfabético buscando 20 que no aparecían. Ahora junta primero las que coinciden y después las ordena: **11 MB**.
+- Clientes, Cotizaciones y Anulaciones entran por el índice con el mismo cambio.
+
+Todo se ensayó en producción dentro de una transacción que se revertía, con la huella de los resultados antes y después: idénticos en 35 casos. `gate:perf` mide ahora también «2.5» y «jo perez» en Ventas, y `medir:como-usuario` lleva las 48 búsquedas.
+
 ## v2.1074.1 — Puntos: el arranque sabe sincronizar sin encender
 
 `puntos-arranque` acepta `{"encender": false}`: trae al libro lo nuevo del

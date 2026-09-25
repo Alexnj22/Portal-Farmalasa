@@ -279,6 +279,12 @@ Medido al cerrar (`gate:perf`): `busqueda-del-tablero` 18.5 ms (techo 32),
 307 ms. «5» 1,487 → 294 resultados; «2.5» en Existencias 1,099 → 63 y en Ventas
 4,451 → 44.
 
+Medido como usuario el mismo día (`npm run medir:como-usuario`, 48 búsquedas ×
+3 identidades): quedaban dos que barrían tablas, las dos corregidas en
+v2.1074.2 — Ventas con un número o una palabra corta adelante (10 s → 44 ms) y
+personas sin coincidencia bajo RLS (225 MB → 11 MB). La más lenta que queda es
+Ventas «maria» sobre un año, ~500 ms, que devuelve miles de facturas.
+
 Tres trampas de rendimiento que salieron al pasar las funciones a la regla,
 todas medidas:
 - Una función que no es `PARALLEL SAFE` llamada **dentro** de una consulta le

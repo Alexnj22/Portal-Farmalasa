@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.5 — El aviso de faltante habla de traslado y de la sala de quien firma
+
+«No se entiende qué es»: el aviso decía *«Merlyn Lemus (Salud 5) abrió la bolsa
+de Salud 3 y falta…»*. «Bolsa» era el nombre de la tabla (`bolsa_faltante`), no
+una palabra de la sala. Hoy dice *«Faltó un producto en un traslado — Merlyn
+Lemus (Salud 5) recibió el traslado que mandó Salud 3 y no venía…»*, y el
+recordatorio diario dice «en el traslado de Salud 3 a Salud 5».
+
+Y la tarjeta pintaba «Merlyn Lemus · Salud 3» sobre alguien de Salud 5: pone la
+sala del aviso junto al nombre, y esa sala era la de origen. Ahora es la de
+quien lo declaró. Los 9 avisos ya enviados se corrigieron igual.
+
 ## v2.1061.4 — Crear ruta: el modal ya no se recarga sin fin, y la prueba de punta a punta
 
 Encontrado al probar el arreglo del reordenamiento con pedidos reales en el

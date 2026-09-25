@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.5 — MIN·MAX por aprobar muestra presentación base, factor y en qué se despacha
+
+Pedido del usuario: «imagina que me pida 0 / 1 y la caja es x10 factor 10, 1
+unidad no se mandará». El MIN·MAX va en unidades y el pedido despacha
+presentaciones enteras, así que la tarjeta de la campana ahora muestra la
+presentación base con su factor, en qué se despacha (de `unidad_de_despacho`, el
+mismo canónico de Pedidos), la lista de presentaciones si hay más de una, y un
+aviso en rojo cuando el MAX propuesto no alcanza para una unidad de despacho.
+El trigger `notificar_solicitud_minmax` suma `presentaciones` y `despacho` a la
+metadata (migración `20260925231231`).
+
 ## v2.1075.4 — Diferencias: las fotos salen, y recibir y anotar se firma una vez
 
 Reporte del usuario: las tarjetas y la ficha de Diferencias mostraban iniciales

@@ -116,6 +116,34 @@ export function datosDeTrasladosPorRespaldo(n) {
  * Mismo contrato: `null` si el aviso es anterior a que su metadata trajera lo
  * que la tarjeta dibuja. */
 
+/* Las presentaciones con su factor, de la más chica (la base) a la más grande,
+ * y la unidad en que el pedido despacha (25-sep). El MIN·MAX va en unidades; el
+ * pedido manda presentaciones enteras, así que un MAX menor que la unidad de
+ * despacho no alcanza para mandar ni una. */
+function leerPresentaciones(v) {
+    return (Array.isArray(v) ? v : [])
+        .filter((p) => p && p.tipo && num(p.factor) > 0)
+        .map((p) => ({ tipo: String(p.tipo).trim(), factor: num(p.factor) }))
+        .sort((a, b) => a.factor - b.factor);
+}
+
+function leerDespacho(v) {
+    if (!v || !v.tipo || !(num(v.unidades) > 0)) return null;
+    return {
+        etiqueta: String(v.etiqueta || v.tipo).trim(),
+        factor: num(v.factor) ?? 1,
+        multiplo: num(v.multiplo) ?? 1,
+        unidades: num(v.unidades),
+    };
+}
+
+/* ¿El MAX propuesto alcanza para despachar al menos una unidad de despacho? */
+export function maxNoAlcanzaParaDespachar(datos) {
+    const d = datos?.despacho;
+    return !!d && d.unidades > 1 && datos.maxNuevo != null
+        && datos.maxNuevo > 0 && datos.maxNuevo < d.unidades;
+}
+
 export function datosDeMinmaxPendiente(n) {
     if (n?.type !== 'MINMAX_PENDING') return null;
     const m = n.metadata || {};
@@ -128,6 +156,8 @@ export function datosDeMinmaxPendiente(n) {
         ventasMeses: leerMeses(m.ventas_meses),
         ventasMesCurso: num(m.ventas_mes_curso),
         existencia: num(m.existencia),
+        presentaciones: leerPresentaciones(m.presentaciones),
+        despacho: leerDespacho(m.despacho),
         minHoy: num(m.min_hoy),
         maxHoy: num(m.max_hoy),
         minNuevo: num(m.min_nuevo),

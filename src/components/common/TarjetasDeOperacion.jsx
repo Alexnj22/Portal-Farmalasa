@@ -18,7 +18,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
 import Button from './Button';
 import PortalInput from './PortalInput';
-import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES, ETAPAS_DE_PEDIDO } from '../../utils/avisosDeOperacion';
+import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES, ETAPAS_DE_PEDIDO, maxNoAlcanzaParaDespachar } from '../../utils/avisosDeOperacion';
 import { porQueDesde } from '../../utils/productosParados';
 import { diasEntre, hoySV } from '../../utils/fecha';
 
@@ -477,6 +477,56 @@ function Ventas({ meses, mesCurso, existencia, claseTenue, azul }) {
     );
 }
 
+/* La presentación base, en qué se despacha y con qué factor (usuario, 25-sep:
+ * «imagina que me pida 0 / 1 y la caja es x10 factor 10, 1 unidad no se
+ * mandará»). El MIN·MAX va en unidades; el pedido manda presentaciones enteras.
+ * Si el MAX propuesto no llega a una, se dice en la tarjeta, antes de aprobar. */
+function Presentaciones({ datos, claseTenue, isDark }) {
+    const { presentaciones: lista, despacho } = datos;
+    const base = lista[0] ?? null;
+    if (!base && !despacho) return null;
+    /* Sin regla ni presentación mayor, el canónico despacha «UNIDAD» ×1: es la
+     * base misma, y se nombra como la base. */
+    const desp = despacho && !(despacho.unidades === 1 && base?.factor === 1)
+        ? despacho : null;
+    const rojo = tonos(isDark).rojo;
+    return (
+        <>
+            <Celda rotulo="Presentación base" claseTenue={claseTenue}>
+                {base ? <>{base.tipo} <span className="font-semibold">· factor {unidades(base.factor)}</span></> : '—'}
+            </Celda>
+            <Celda rotulo="Se despacha en" claseTenue={claseTenue} derecha>
+                {desp
+                    ? <>{desp.etiqueta} <span className="font-semibold">· {desp.multiplo > 1
+                        ? `${desp.multiplo} × ${unidades(desp.factor)} = ${unidades(desp.unidades)} u.`
+                        : `factor ${unidades(desp.factor)}`}</span></>
+                    : (base?.tipo ?? '—')}
+            </Celda>
+            {lista.length > 1 && (
+                <div className="bg-surface-card-hover px-2.5 py-1.5" style={{ gridColumn: '1 / -1' }}>
+                    <p className={`text-caption font-semibold break-words ${claseTenue}`}>
+                        Presentaciones:{' '}
+                        {lista.map((p, i) => (
+                            <React.Fragment key={`${p.tipo}-${p.factor}`}>
+                                {i > 0 && ' · '}
+                                <b className="font-black">{p.tipo}</b> ×{unidades(p.factor)}
+                            </React.Fragment>
+                        ))}
+                    </p>
+                </div>
+            )}
+            {maxNoAlcanzaParaDespachar(datos) && (
+                <div className={`bg-surface-card-hover px-2.5 py-2 ${rojo.texto}`} style={{ gridColumn: '1 / -1' }}>
+                    <p className="text-caption font-bold leading-snug break-words">
+                        Con MAX {unidades(datos.maxNuevo)} no alcanza para una {despacho.etiqueta}{' '}
+                        ({unidades(despacho.unidades)} u.): el pedido no mandará nada.
+                    </p>
+                </div>
+            )}
+        </>
+    );
+}
+
 /* El motivo se escribe como sale del teclado —a veces TODO EN MAYÚSCULAS—:
  * se muestra en oración, con la primera en mayúscula. */
 const enOracion = (t) => {
@@ -505,6 +555,7 @@ export function CuerpoDeMinmax({ datos, claseTenue, isDark, buscarEmpleado }) {
             )}
             <Celda rotulo="Hoy" claseTenue={claseTenue}>{minmax(datos.minHoy, datos.maxHoy)}</Celda>
             <Celda rotulo="Propone" clase={azul.texto} derecha>{minmax(datos.minNuevo, datos.maxNuevo)}</Celda>
+            <Presentaciones datos={datos} claseTenue={claseTenue} isDark={isDark} />
             {datos.motivo && (
                 <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
                     <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.8 — Diferencias: filtro por mes y paginación
+
+- **Ranura «Mes»** en la pestaña Diferencias: abre en el mes actual, con los
+  meses que tienen días y «Todos los meses». Un **faltante sin resolver entra
+  siempre**, sea del mes que sea (usuario: «las diferencias negativas sin
+  resolver siempre se muestran todas»). El carril cuenta lo del mes.
+- **Paginación** (30 días por página). El orden —lo urgente primero, después lo
+  reciente— se hace antes de paginar (`ordenarDias`), para que un «sin
+  resolver» viejo no quede en la página 3.
+
 ## v2.1061.7 — Diferencias: el sobrante se acumula, el faltante se paga, y no se mezclan
 
 La regla, definida por el usuario el 2026-09-25:

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-    conEstados, diaEnFiltro, estadoDeCorte, peorEstado, pendientesDeRegistrar, porSigno, resumenDeDias,
+    conEstados, diaEnFiltro, diaEnMes, estadoDeCorte, mesesDeLosDias, ordenarDias, peorEstado,
+    pendientesDeRegistrar, porSigno, resumenDeDias,
     saldoDeDiferencia,
 } from '../../src/utils/diferenciasDeCaja';
 
@@ -160,5 +161,26 @@ describe('porSigno: faltantes y sobrantes no se mezclan', () => {
     it('un sobrante con causa sale del acumulado', () => {
         expect(estadoDeCorte({ estado: 'CONFIRMADO', tramo: 3, diferencia: { via: 'JUSTIFICA' } })).toBe('resuelto');
         expect(estadoDeCorte({ estado: 'CONFIRMADO', tramo: 3, diferencia: null })).toBe('acumulado');
+    });
+});
+
+describe('diaEnMes y ordenarDias', () => {
+    const [viejo, reciente, sobra] = porSigno(conEstados([
+        { fecha: '2026-08-10', cortes: [{ id: 1, estado: 'CONFIRMADO', tramo: -3, diferencia: null }] },
+        { fecha: '2026-09-02', cortes: [{ id: 2, estado: 'CONFIRMADO', tramo: -1, diferencia: { via: 'JUSTIFICA' } }] },
+        { fecha: '2026-08-11', cortes: [{ id: 3, estado: 'CONFIRMADO', tramo: -2, diferencia: { via: 'JUSTIFICA' } }] },
+    ]), 'falta');
+    it('un faltante sin resolver de otro mes se muestra igual', () => {
+        expect(diaEnMes(viejo, '2026-09')).toBe(true);
+        expect(diaEnMes(sobra, '2026-09')).toBe(false);
+        expect(diaEnMes(reciente, '2026-09')).toBe(true);
+        expect(diaEnMes(sobra, 'TODOS')).toBe(true);
+    });
+    it('lo urgente primero, después lo reciente', () => {
+        expect(ordenarDias([sobra, reciente, viejo]).map((d) => d.fecha))
+            .toEqual(['2026-08-10', '2026-09-02', '2026-08-11']);
+    });
+    it('los meses, del más reciente al más viejo', () => {
+        expect(mesesDeLosDias([viejo, reciente, sobra])).toEqual(['2026-09', '2026-08']);
     });
 });

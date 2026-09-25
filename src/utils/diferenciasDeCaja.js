@@ -215,3 +215,37 @@ export function porSigno(dias, signo = 'falta') {
         .filter((d) => d.cortes.length);
     return conEstados(quedan);
 }
+
+const ORDEN_URGENCIA = ['sin_resolver', 'por_confirmar', 'con_saldo', 'por_registrar', 'acumulado', 'resuelto'];
+
+/**
+ * El orden de la lista: lo más urgente arriba, después lo más reciente. Vive
+ * acá y no en el componente porque la lista se PAGINA: ordenar dentro de cada
+ * página dejaría un «sin resolver» de agosto en la página 3.
+ */
+export function ordenarDias(dias) {
+    return [...(dias || [])].sort((a, b) => (
+        ORDEN_URGENCIA.indexOf(a.estadoDif) - ORDEN_URGENCIA.indexOf(b.estadoDif)
+        || String(b.fecha).localeCompare(String(a.fecha))
+        || Number(a.branch_id) - Number(b.branch_id)
+    ));
+}
+
+/**
+ * ¿El día entra en el mes elegido? `mes` es `YYYY-MM` o `TODOS`.
+ *
+ * Un FALTANTE SIN RESOLVER entra siempre, sea del mes que sea (usuario,
+ * 2026-09-25: «las diferencias negativas sin resolver siempre se muestran
+ * todas»). Es dinero que falta y nadie explicó: esconderlo por la fecha es cómo
+ * se olvida.
+ */
+export function diaEnMes(dia, mes) {
+    if (!mes || mes === 'TODOS') return true;
+    if (String(dia.fecha).startsWith(mes)) return true;
+    return (dia.cortes || []).some((c) => Number(c.tramo) < 0 && c.estadoDif === 'sin_resolver');
+}
+
+/** Los meses que tienen algún día, del más reciente al más viejo (`YYYY-MM`). */
+export function mesesDeLosDias(dias) {
+    return [...new Set((dias || []).map((d) => String(d.fecha).slice(0, 7)))].sort().reverse();
+}

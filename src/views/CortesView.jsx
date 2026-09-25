@@ -63,7 +63,9 @@ import { fetchCobrosDelPortal } from '../data/creditos';
  * ninguna pantalla de Efectivo. */
 import { fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '../data/bolsas';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
-import { diaEnFiltro, pendientesDeRegistrar, porSigno, resumenDeDias } from '../utils/diferenciasDeCaja';
+import {
+    diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resumenDeDias,
+} from '../utils/diferenciasDeCaja';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { formatMoney } from '../utils/formatNumber';
 import { tokenMatch } from '../utils/searchUtils';
@@ -250,6 +252,11 @@ const METRICAS_DIF = {
     ],
 };
 
+// «sept 2026». La fecha se arma a mediodía UTC para que ningún huso la mueva.
+const rotuloDeMes = (mes) => new Date(`${mes}-15T12:00:00Z`).toLocaleDateString('es-SV', {
+    month: 'long', year: 'numeric', timeZone: 'UTC',
+});
+
 const CortesView = () => {
     const branches = useStaff((s) => s.branches) || VACIO;
     const { hasPermission, getScope, user } = useAuth();
@@ -347,6 +354,11 @@ const CortesView = () => {
     const enDiferencias = pestana === 'diferencias';
     const [filtroDif, setFiltroDif] = useState('PENDIENTES');
     const [signoDif, setSignoDif] = useState('falta');
+    // El mes abre en el ACTUAL. Los faltantes sin resolver de otros meses
+    // entran igual (`diaEnMes`): «siempre se muestran todas» (usuario).
+    const [mesDif, setMesDif] = useState(() => hoySV().slice(0, 7));
+    const [paginaDif, setPaginaDif] = useState(1);
+    const [porPaginaDif, setPorPaginaDif] = useState(30);
     const {
         dias: diasDif, resoluciones: resolucionesDif, cargando: cargandoDif,
         error: errorDif, recargar: recargarDif,
@@ -579,10 +591,28 @@ const CortesView = () => {
                 ...(c.diferencia?.personas || []).map((p) => p.nombre),
             ]));
     }), [diasDif, signoDif, sala, busqueda, nombreSala]);
-    const resumenDif = useMemo(() => resumenDeDias(diasDelRecorte), [diasDelRecorte]);
+    // El carril cuenta lo del MES (con los faltantes sin resolver de antes):
+    // es lo que la lista de abajo puede mostrar.
+    const diasDelMes = useMemo(() => diasDelRecorte.filter((d) => diaEnMes(d, mesDif)), [diasDelRecorte, mesDif]);
+    const resumenDif = useMemo(() => resumenDeDias(diasDelMes), [diasDelMes]);
     const diasVisibles = useMemo(
-        () => diasDelRecorte.filter((d) => diaEnFiltro(d, filtroDif)),
-        [diasDelRecorte, filtroDif],
+        () => ordenarDias(diasDelMes.filter((d) => diaEnFiltro(d, filtroDif))),
+        [diasDelMes, filtroDif],
+    );
+    const opcionesMes = useMemo(() => {
+        const meses = mesesDeLosDias(diasDif);
+        const actual = hoySV().slice(0, 7);
+        if (!meses.includes(actual)) meses.unshift(actual);
+        return [
+            ...meses.map((m) => ({ value: m, label: rotuloDeMes(m) })),
+            { value: 'TODOS', label: 'Todos los meses' },
+        ];
+    }, [diasDif]);
+    const totalPaginasDif = Math.max(1, Math.ceil(diasVisibles.length / porPaginaDif));
+    const paginaDifActual = Math.min(paginaDif, totalPaginasDif);
+    const diasDeLaPagina = useMemo(
+        () => diasVisibles.slice((paginaDifActual - 1) * porPaginaDif, paginaDifActual * porPaginaDif),
+        [diasVisibles, paginaDifActual, porPaginaDif],
     );
 
     const filtrados = useMemo(() => conTramoTodos.filter((c) => {
@@ -745,6 +775,7 @@ const CortesView = () => {
 
     const limpiar = () => {
         setSala(''); setPeriodo(HOY); setFiltroDif('PENDIENTES'); setSignoDif('falta');
+        setMesDif(hoySV().slice(0, 7)); setPaginaDif(1);
         setEstado('TODOS'); setDiferencia('TODAS');
         setTipoMov('TODOS'); setEstadoMov('TODOS');
         setBusqueda(''); setPagina(1);
@@ -821,7 +852,7 @@ const CortesView = () => {
                                     value={m.dinero ? formatMoney(resumenDif[m.dinero]) : resumenDif[m.clave]}
                                     valueCls={m.valueCls}
                                     active={filtroDif === m.clave}
-                                    onClick={() => setFiltroDif((v) => (v === m.clave ? FILTRO_INICIAL[signoDif] : m.clave))}
+                                    onClick={() => { setPaginaDif(1); setFiltroDif((v) => (v === m.clave ? FILTRO_INICIAL[signoDif] : m.clave)); }}
                                     loading={cargandoDif} />
                             ))
                             : enMovimientos
@@ -847,7 +878,7 @@ const CortesView = () => {
                         promesa de «el lugar único donde mirar qué se filtra». */}
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
-                            activeCount={enDiferencias ? [sala, signoDif !== 'falta'].filter(Boolean).length : [sala, !periodoIntacto,
+                            activeCount={enDiferencias ? [sala, signoDif !== 'falta', mesDif !== hoySV().slice(0, 7)].filter(Boolean).length : [sala, !periodoIntacto,
                                 enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
                                 // En movimientos no hay cuarta ranura: el recorte
                                 // por estado lo aplican las tarjetas. Contarlo acá
@@ -877,15 +908,22 @@ const CortesView = () => {
                                 se ve siempre. Su ranura es el estado del día. */}
                             {/* Select y no segmentado (usuario): `umbral={2}`
                                 lo fuerza aunque sean tres opciones. */}
-                            {enDiferencias ? (
+                            {enDiferencias ? (<>
                                 <FilterBar.Section active={signoDif !== 'falta'} onClear={() => { setSignoDif('falta'); setFiltroDif('PENDIENTES'); }} label="tipo">
                                     <FilterBar.Opciones
                                         label="Tipo" icon={Scale}
-                                        value={signoDif} onChange={(v) => { setSignoDif(v || 'falta'); setFiltroDif(FILTRO_INICIAL[v || 'falta']); }}
+                                        value={signoDif} onChange={(v) => { setSignoDif(v || 'falta'); setFiltroDif(FILTRO_INICIAL[v || 'falta']); setPaginaDif(1); }}
                                         options={SIGNOS_DIF} umbral={2} ancho="150px"
                                     />
                                 </FilterBar.Section>
-                            ) : (<>
+                                <FilterBar.Section active={mesDif !== hoySV().slice(0, 7)} onClear={() => { setMesDif(hoySV().slice(0, 7)); setPaginaDif(1); }} label="mes">
+                                    <FilterBar.Opciones
+                                        label="Mes" icon={CalendarDays}
+                                        value={mesDif} onChange={(v) => { setMesDif(v || hoySV().slice(0, 7)); setPaginaDif(1); }}
+                                        options={opcionesMes} umbral={1} ancho="170px"
+                                    />
+                                </FilterBar.Section>
+                            </>) : (<>
                             <FilterBar.Section active={!periodoIntacto} onClear={() => verPeriodo(null)}
                                 label="fecha">
                                 <PeriodStepper
@@ -1004,7 +1042,8 @@ const CortesView = () => {
 
                 {enDiferencias && (
                     <DiasConDiferencia
-                        dias={diasVisibles}
+                        dias={diasDeLaPagina}
+                        diasParaFicha={diasDelRecorte}
                         cargando={cargandoDif}
                         error={errorDif}
                         nombreSala={nombreSala}
@@ -1014,7 +1053,19 @@ const CortesView = () => {
                         signo={signoDif}
                         onCambio={recargarDif}
                         onLimpiarBusqueda={() => setBusqueda('')}
-                        onVerTodos={() => setFiltroDif('TODOS')}
+                        onVerTodos={() => { setFiltroDif('TODOS'); setMesDif('TODOS'); setPaginaDif(1); }}
+                    />
+                )}
+
+                {enDiferencias && !cargandoDif && diasVisibles.length > porPaginaDif && (
+                    <TablePagination
+                        page={paginaDifActual}
+                        totalPages={totalPaginasDif}
+                        onPageChange={setPaginaDif}
+                        pageSize={porPaginaDif}
+                        onPageSizeChange={(v) => { setPorPaginaDif(Number(v)); setPaginaDif(1); }}
+                        total={diasVisibles.length}
+                        unit="días"
                     />
                 )}
 

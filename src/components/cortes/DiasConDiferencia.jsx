@@ -38,8 +38,6 @@ const ESTADO = {
     resuelto:      { label: 'Resuelto', variant: 'success' },
 };
 
-const ORDEN = ['sin_resolver', 'por_confirmar', 'con_saldo', 'por_registrar', 'acumulado', 'resuelto'];
-
 // La fecha de un corte es la de la sala: se lee a mediodía UTC para que ningún
 // huso la corra de día.
 const rotularFecha = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
@@ -64,6 +62,10 @@ const clave = (d) => `${d.branch_id}|${d.fecha}`;
 
 export default function DiasConDiferencia({
     dias = [],
+    // La lista completa del tipo, para la ficha: `dias` es sólo la página, y
+    // después de abonar un día puede cambiar de estado y salirse de ella sin
+    // que la ficha abierta deba cerrarse.
+    diasParaFicha = null,
     cargando = false,
     error = null,
     nombreSala = {},
@@ -77,17 +79,14 @@ export default function DiasConDiferencia({
 }) {
     const [abierto, setAbierto] = useState(null);
 
-    const ordenados = useMemo(() => [...dias].sort((a, b) => (
-        ORDEN.indexOf(a.estadoDif) - ORDEN.indexOf(b.estadoDif)
-        || String(b.fecha).localeCompare(String(a.fecha))
-        || Number(a.branch_id) - Number(b.branch_id)
-    )), [dias]);
+    // Ya viene ordenada y paginada (`ordenarDias` en la vista).
+    const ordenados = dias;
 
     // La ficha lee el día VIVO de la lista: después de abonar se recarga, y la
     // ficha tiene que mostrar el saldo nuevo sin cerrarse.
     const diaAbierto = useMemo(
-        () => (abierto ? dias.find((d) => clave(d) === abierto) || null : null),
-        [abierto, dias],
+        () => (abierto ? (diasParaFicha || dias).find((d) => clave(d) === abierto) || null : null),
+        [abierto, dias, diasParaFicha],
     );
     const visible = useSobreviveAlCierre(diaAbierto);
 

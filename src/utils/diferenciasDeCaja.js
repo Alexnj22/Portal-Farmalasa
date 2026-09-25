@@ -91,17 +91,20 @@ export function conEstados(dias) {
 export function resumenDeDias(dias) {
     const r = { sin_resolver: 0, por_confirmar: 0, con_saldo: 0, por_registrar: 0, resuelto: 0, saldo: 0 };
     for (const d of dias || []) {
-        r[d.estadoDif] = (r[d.estadoDif] || 0) + 1;
+        const e = d.estadoDif === 'compensado' ? 'resuelto' : d.estadoDif;
+        r[e] = (r[e] || 0) + 1;
         r.saldo += centavos(d.saldo);
     }
     r.saldo /= 100;
     return r;
 }
 
-/** ¿El día entra en el filtro? `PENDIENTES` = todo lo que no está resuelto. */
+/** ¿El día entra en el filtro? `PENDIENTES` = lo que no está resuelto ni compensado. */
 export function diaEnFiltro(dia, filtro) {
     if (!filtro || filtro === 'TODOS') return true;
-    if (filtro === 'PENDIENTES') return dia.estadoDif !== 'resuelto';
+    const cerrado = dia.estadoDif === 'resuelto' || dia.estadoDif === 'compensado';
+    if (filtro === 'PENDIENTES') return !cerrado;
+    if (filtro === 'resuelto') return cerrado;
     return dia.estadoDif === filtro;
 }
 
@@ -163,36 +166,53 @@ export function pendientesDeRegistrar(resoluciones, { sala = '' } = {}) {
 }
 
 /**
- * Los días recortados a un SIGNO: `falta` deja sólo los cortes con faltante,
- * `sobra` sólo los de sobrante, `todos` no recorta.
+ * Los días clasificados por cómo CERRARON, no por sus cortes sueltos.
  *
- * Pedido del usuario (2026-09-25): «debe poderse separar las diferencias
- * negativas y las positivas, por defecto las negativas». Un día puede tener
- * las dos —un sobrante a mediodía y un faltante a la noche—, así que el recorte
- * es por CORTE y el estado del día se recalcula sobre los que quedan: un día
- * con el faltante saldado y un sobrante sin resolver no puede aparecer como
- * «sin resolver» en la lista de faltantes.
+ * Pedido del usuario (2026-09-25): «separar las negativas y las positivas, por
+ * defecto las negativas». La primera versión recortaba por corte, y mostró el
+ * error de fondo — La Popular del 24-sep: «Faltó $0.20 · Sobró $0.20», y el
+ * usuario preguntó «¿esos que sobran y faltan lo mismo?». No faltó nada: el
+ * sobrante de mediodía ya no estaba en el conteo de la noche, así que ese
+ * corte midió −$0.20 contra el anterior y el día cerró EXACTO. Contar ese
+ * tramo como faltante pendiente le pedía a alguien reponer dinero que nunca
+ * faltó.
  *
- * Lo que NO se recalcula son los totales del día (`faltanteDia`, `sobranteDia`,
- * `neto`): la tarjeta los muestra enteros para que se lea cómo fue el día, no
- * sólo la mitad filtrada.
+ * Por eso:
+ *   · un día con `neto` en cero (y sin cortes por confirmar) está
+ *     `compensado`: no es trabajo pendiente;
+ *   · un día con neto negativo es de FALTANTE, y su estado sale sólo de los
+ *     cortes con faltante; con neto positivo, al revés. Los cortes del otro
+ *     signo se compensaron dentro del día y se marcan así;
+ *   · un corte todavía sin confirmar cuenta siempre: puede mover el neto.
+ *
+ * `faltanteDia` y `sobranteDia` son los dos lados del día entero, para la
+ * tarjeta.
  */
 export function porSigno(dias, signo = 'todos') {
-    const conTotales = (dias || []).map((d) => ({
-        ...d,
-        faltanteDia: d.faltanteDia ?? d.faltante,
-        sobranteDia: d.sobranteDia ?? d.sobrante,
-    }));
-    if (signo !== 'falta' && signo !== 'sobra') return conTotales;
-    const quedan = conTotales
-        .map((d) => ({
+    return (dias || []).map((d) => {
+        const neto = centavos(d.neto);
+        const lado = Math.sign(neto);
+        const porConfirmar = (d.cortes || []).some((c) => c.estado === 'PENDIENTE');
+        const compensado = neto === 0 && !porConfirmar;
+        const cortes = (d.cortes || []).map((c) => {
+            const cuenta = c.estado === 'PENDIENTE' || (lado !== 0 && Math.sign(centavos(c.tramo)) === lado);
+            // Una resolución ya dada se respeta aunque el corte se haya
+            // compensado: alguien decidió algo y eso no se borra de la vista.
+            return cuenta || c.diferencia ? c : { ...c, estadoDif: 'compensado' };
+        });
+        const cuentan = cortes.filter((c) => c.estadoDif !== 'compensado');
+        return {
             ...d,
-            cortes: (d.cortes || []).filter((c) => (signo === 'falta' ? Number(c.tramo) < 0 : Number(c.tramo) > 0)),
-        }))
-        .filter((d) => d.cortes.length);
-    return conEstados(quedan).map((d, i) => ({
-        ...d,
-        faltanteDia: quedan[i].faltanteDia,
-        sobranteDia: quedan[i].sobranteDia,
-    }));
+            cortes,
+            compensado,
+            estadoDif: compensado ? 'compensado' : peorEstado(cuentan.map((c) => c.estadoDif)),
+            faltanteDia: d.faltanteDia ?? d.faltante,
+            sobranteDia: d.sobranteDia ?? d.sobrante,
+        };
+    }).filter((d) => {
+        if (signo !== 'falta' && signo !== 'sobra') return true;
+        const quiere = signo === 'falta' ? -1 : 1;
+        return Math.sign(centavos(d.neto)) === quiere
+            || d.cortes.some((c) => c.estado === 'PENDIENTE' && Math.sign(centavos(c.tramo)) === quiere);
+    });
 }

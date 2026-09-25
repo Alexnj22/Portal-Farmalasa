@@ -12,6 +12,11 @@ import { construirComprobanteDeAsiento } from '../../utils/corteComprobante';
 import { imprimirDocumento } from '../../utils/ticketPrint';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
+
+// «31 ago» y no «2026-08-31»: la fecha se lee, no se procesa.
+const fechaCorta = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
+    day: 'numeric', month: 'short', timeZone: 'UTC',
+});
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
@@ -214,30 +219,20 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         >
             <LiquidModal.Header>
                 <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Registrar en el sistema</h3>
+                    <h3 className="text-body font-bold text-content">Anotar en el sistema</h3>
                     <p className="text-caption text-content-3">
-                        Un solo movimiento por sala cubre varias diferencias
+                        Dinero que ya se movió por una diferencia y no tiene su vale o ingreso
                     </p>
                 </div>
             </LiquidModal.Header>
 
             <LiquidModal.Body className="space-y-4">
-                <Notice variant="info" icon={Landmark}>
-                    <span className="font-bold">Primero se anota allá, después se marca aquí</span>
-                    <span className="block mt-0.5 font-normal text-content-2">
-                        Haz un movimiento por el total de cada grupo y escribe con qué número
-                        quedó. Se anota en cada una de las diferencias que cubre.
-                    </span>
-                    {/* La lista da por hecho que cada fila mueve dinero, y hay
-                        una que no: la que ya tiene explicación. Decirlo acá es
-                        lo que evita que alguien haga un vale para cerrar el
-                        aviso. */}
-                    <span className="block mt-1.5 font-normal text-content-2">
-                        Si alguna ya tiene su explicación y no hay dinero que mover, corrígela
-                        con <span className="font-bold">No lleva movimiento</span>. También
-                        puedes cerrar y dejarlas pendientes.
-                    </span>
-                </Notice>
+                {/* Una línea y no dos párrafos (usuario, 2026-09-25: «mira esos
+                    textos enormes»). El «No lleva movimiento» se explica solo
+                    en su propio botón. */}
+                <p className="text-caption text-content-2">
+                    Haz el vale o el ingreso en el sistema por el total de cada grupo y escribe aquí su número.
+                </p>
 
                 {grupos.map((g) => {
                     const incluidas = g.filas.filter((d) => !excluidas.has(claveFila(d)));
@@ -250,7 +245,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                     {nombreSala[g.branchId] || `Sucursal ${g.branchId}`}
                                 </span>
                                 <span className="text-caption text-content-2">
-                                    {g.entra ? 'Entra a caja' : 'Sale de caja'}
+                                    {g.entra ? 'Ingreso · entró al cajón' : 'Vale · salió del cajón'}
                                 </span>
                             </div>
 
@@ -262,7 +257,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                                 name={`asentar-${claveFila(d)}`}
                                                 checked={!excluidas.has(claveFila(d))}
                                                 onChange={() => alternar(claveFila(d))}
-                                                label={`${d.fecha} · ${formatMoney(Math.abs(Number(d.monto)))}`}
+                                                label={`${fechaCorta(d.fecha)} · ${formatMoney(Math.abs(Number(d.monto)))}`}
                                                 description={d.causa}
                                             />
                                         </div>
@@ -276,7 +271,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                                 disabled={!!ocupada}
                                                 onClick={() => abrirCorreccion(d)}
                                             >
-                                                No lleva movimiento
+                                                No movió dinero
                                             </Button>
                                         )}
                                     </div>
@@ -284,12 +279,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                     {d.kind !== 'abono' && corrigiendo === d.id && (
                                         <div data-surface="card" className="p-3 space-y-2">
                                             <Notice variant="info">
-                                                <span className="font-bold">Queda como «ya se encontró la causa»</span>
-                                                <span className="block mt-0.5 font-normal text-content-2">
-                                                    No entra ni sale dinero: sale de esta lista y no va
-                                                    en el {g.entra ? 'ingreso' : 'vale'}. La resolución
-                                                    anterior se anula y queda en la bitácora del corte.
-                                                </span>
+                                                Queda como causa encontrada y sale de esta lista.
                                             </Notice>
                                             <PortalTextarea
                                                 label="Por qué se corrige"

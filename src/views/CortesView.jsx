@@ -216,17 +216,6 @@ const METRICAS = [
     { clave: 'faltante',   filtro: 'diferencia', valor: 'falta',     icon: TrendingDown, label: 'Faltante',      iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
 ];
 
-// El recorte de la pestaña «Diferencias». `PENDIENTES` es el de entrada: la
-// pestaña existe para lo que falta hacer, y lo resuelto se pide a propósito.
-const ESTADOS_DIF = [
-    { value: 'PENDIENTES',    label: 'Pendientes' },
-    { value: 'sin_resolver',  label: 'Sin resolver' },
-    { value: 'con_saldo',     label: 'Deben los responsables' },
-    { value: 'por_registrar', label: 'Falta anotar' },
-    { value: 'resuelto',      label: 'Resueltos' },
-    { value: 'TODOS',         label: 'Todos' },
-];
-
 // Faltantes o sobrantes (usuario, 2026-09-25): «debe poderse separar las
 // negativas y las positivas; por defecto las negativas». Un faltante es lo que
 // se cobra o se explica; un sobrante casi siempre es un ingreso sin anotar.
@@ -236,14 +225,19 @@ const SIGNOS_DIF = [
     { value: 'todos', label: 'Todos' },
 ];
 
-// Cuatro números del carril de «Diferencias», cada uno atajo de su estado.
-// Cada uno lleva `sub` porque dos de los nombres no se entendían solos
-// (usuario, 2026-09-25: «¿por registrar qué es? ¿por cobrar qué es?»).
+// Cuatro números del carril de «Diferencias», y son ELLOS el filtro de estado:
+// tocar uno recorta a ese estado y volver a tocarlo vuelve a «pendientes». Es
+// el mismo patrón que Movimientos (la tarjeta encendida se ve en la fila). Hubo
+// además un select con seis estados que decía lo mismo dos veces; el usuario
+// preguntó si todos eran útiles, y no lo eran.
+//
+// Rótulo y `sub` CORTOS: la tarjeta mide ~230 px y los largos se cortaban con
+// «…» — «Deben los responsabl…», «Nadie dijo la causa ni qui…».
 const METRICAS_DIF = [
-    { clave: 'sin_resolver',  icon: AlertTriangle, label: 'Días sin resolver',      sub: 'Nadie dijo la causa ni quién responde', iconBg: 'bg-danger/10',  iconCls: 'text-danger-text', valueCls: 'text-danger-text' },
-    { clave: 'con_saldo',     icon: HandCoins,     label: 'Deben los responsables', sub: 'Faltantes asignados que no se han abonado', iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text', dinero: 'saldo' },
-    { clave: 'por_registrar', icon: Landmark,      label: 'Falta anotar',           sub: 'Abonos o retiros sin su ingreso o vale en el sistema', iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
-    { clave: 'resuelto',      icon: ShieldCheck,   label: 'Resueltos',              sub: 'Con causa, saldados y anotados', iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+    { clave: 'sin_resolver',  icon: AlertTriangle, label: 'Sin resolver', sub: 'Días sin causa',     iconBg: 'bg-danger/10',  iconCls: 'text-danger-text', valueCls: 'text-danger-text' },
+    { clave: 'con_saldo',     icon: HandCoins,     label: 'Por cobrar',   sub: 'A responsables',     iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text', dinero: 'saldo' },
+    { clave: 'por_registrar', icon: Landmark,      label: 'Por anotar',   sub: 'En el sistema',      iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
+    { clave: 'resuelto',      icon: ShieldCheck,   label: 'Resueltos',    sub: 'O compensados',      iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
 ];
 
 const CortesView = () => {
@@ -843,7 +837,7 @@ const CortesView = () => {
                         promesa de «el lugar único donde mirar qué se filtra». */}
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
-                            activeCount={enDiferencias ? [sala, filtroDif !== 'PENDIENTES', signoDif !== 'falta'].filter(Boolean).length : [sala, !periodoIntacto,
+                            activeCount={enDiferencias ? [sala, signoDif !== 'falta'].filter(Boolean).length : [sala, !periodoIntacto,
                                 enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
                                 // En movimientos no hay cuarta ranura: el recorte
                                 // por estado lo aplican las tarjetas. Contarlo acá
@@ -871,22 +865,17 @@ const CortesView = () => {
                                 las flechas corren el período por su unidad. */}
                             {/* «Diferencias» no sigue al período: lo pendiente
                                 se ve siempre. Su ranura es el estado del día. */}
-                            {enDiferencias ? (<>
+                            {/* Select y no segmentado (usuario): `umbral={2}`
+                                lo fuerza aunque sean tres opciones. */}
+                            {enDiferencias ? (
                                 <FilterBar.Section active={signoDif !== 'falta'} onClear={() => setSignoDif('falta')} label="tipo">
                                     <FilterBar.Opciones
                                         label="Tipo" icon={Scale}
                                         value={signoDif} onChange={(v) => setSignoDif(v || 'falta')}
-                                        options={SIGNOS_DIF} ancho="150px"
+                                        options={SIGNOS_DIF} umbral={2} ancho="150px"
                                     />
                                 </FilterBar.Section>
-                                <FilterBar.Section active={filtroDif !== 'PENDIENTES'} onClear={() => setFiltroDif('PENDIENTES')} label="estado">
-                                    <FilterBar.Opciones
-                                        label="Estado" icon={CheckCircle2}
-                                        value={filtroDif} onChange={(v) => setFiltroDif(v || 'PENDIENTES')}
-                                        options={ESTADOS_DIF} ancho="190px"
-                                    />
-                                </FilterBar.Section>
-                            </>) : (<>
+                            ) : (<>
                             <FilterBar.Section active={!periodoIntacto} onClear={() => verPeriodo(null)}
                                 label="fecha">
                                 <PeriodStepper
@@ -989,15 +978,15 @@ const CortesView = () => {
                             <div className="min-w-0">
                                 <span className="font-bold">
                                     {sinAsentar.length === 1
-                                        ? 'Hay un movimiento de diferencias sin anotar en el sistema'
-                                        : `Hay ${sinAsentar.length} movimientos de diferencias sin anotar en el sistema`}
+                                        ? '1 movimiento por anotar en el sistema'
+                                        : `${sinAsentar.length} movimientos por anotar en el sistema`}
                                 </span>
                                 <span className="block mt-0.5 font-normal text-content-2">
-                                    Retiros de sobrante y abonos a faltantes. Un solo movimiento por sala cubre varios.
+                                    Dinero que ya entró o salió del cajón por una diferencia.
                                 </span>
                             </div>
                             <Button variant="secondary" size="sm" onClick={() => setAsentando(true)}>
-                                Registrar
+                                Anotar
                             </Button>
                         </div>
                     </Notice>

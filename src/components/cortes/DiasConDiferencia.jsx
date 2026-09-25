@@ -30,12 +30,17 @@ import { hora12 } from '../../utils/hora';
 const ESTADO = {
     sin_resolver:  { label: 'Sin resolver', variant: 'danger' },
     por_confirmar: { label: 'Falta confirmar el corte', variant: 'warning' },
-    con_saldo:     { label: 'Deben los responsables', variant: 'warning' },
-    por_registrar: { label: 'Falta anotar', variant: 'info' },
+    con_saldo:     { label: 'Por cobrar', variant: 'warning' },
+    por_registrar: { label: 'Por anotar', variant: 'info' },
     resuelto:      { label: 'Resuelto', variant: 'success' },
+    // Lo que sobró en un corte ya no estaba en el siguiente y el día cerró
+    // exacto: no faltó dinero (ver `porSigno`).
+    compensado:    { label: 'Se compensó', variant: 'success' },
 };
 
-const ORDEN = ['sin_resolver', 'por_confirmar', 'con_saldo', 'por_registrar', 'resuelto'];
+const ORDEN = ['sin_resolver', 'por_confirmar', 'con_saldo', 'por_registrar', 'resuelto', 'compensado'];
+
+const COMPENSADO_TEXTO = 'Lo que sobró en un corte ya no estaba en el siguiente: el día cerró exacto y no hay nada que cobrar.';
 
 // La fecha de un corte es la de la sala: se lee a mediodía UTC para que ningún
 // huso la corra de día.
@@ -164,6 +169,10 @@ export default function DiasConDiferencia({
                                 </div>
                             </div>
 
+                            {d.compensado && (
+                                <p className="text-caption text-content-2">{COMPENSADO_TEXTO}</p>
+                            )}
+
                             <div className="space-y-0.5">
                                 {d.cortes.map((c) => (
                                     <div key={c.id} className="flex items-baseline justify-between gap-2 text-caption">
@@ -175,7 +184,7 @@ export default function DiasConDiferencia({
 
                             <div className="flex items-center justify-between gap-2 text-caption">
                                 <span className="text-content-3">
-                                    {d.saldo > 0 ? `Los responsables deben ${formatMoney(d.saldo)}` : `${d.cortes_del_dia} ${Number(d.cortes_del_dia) === 1 ? 'corte' : 'cortes'} en el día`}
+                                    {d.saldo > 0 ? `Por cobrar ${formatMoney(d.saldo)}` : `${d.cortes_del_dia} ${Number(d.cortes_del_dia) === 1 ? 'corte' : 'cortes'} en el día`}
                                 </span>
                                 <ChevronRight className="w-4 h-4 text-content-3" aria-hidden="true" />
                             </div>
@@ -213,10 +222,11 @@ export default function DiasConDiferencia({
                                     {conSigno(visible.neto)}
                                 </div>
                                 <p className="text-caption text-content-2">
-                                    {comoQuedo(visible.neto)}, contando los cortes confirmados.
-                                    {' '}{visible.cortes.length === 1
-                                        ? 'Un corte no cuadró; su diferencia se arrastró a los siguientes del día.'
-                                        : `${visible.cortes.length} cortes no cuadraron. Cada uno se resuelve por separado.`}
+                                    {visible.compensado
+                                        ? COMPENSADO_TEXTO
+                                        : visible.cortes.length === 1
+                                            ? 'Un corte no cuadró y así quedó el día.'
+                                            : 'Se resuelven sólo los cortes que dejaron el día así; los demás se compensaron.'}
                                 </p>
                             </div>
 
@@ -247,6 +257,11 @@ export default function DiasConDiferencia({
                                             </Notice>
                                         )}
 
+                                        {c.estadoDif === 'compensado' && !c.diferencia ? (
+                                            <p className="text-caption text-content-3 px-1">
+                                                Se compensó con otro corte del día: no hace falta resolverlo.
+                                            </p>
+                                        ) : (
                                         <ResolverDiferencia
                                             corte={corte}
                                             nombreSala={nombreSala}
@@ -256,8 +271,9 @@ export default function DiasConDiferencia({
                                             origen="diferencias"
                                             onCambio={onCambio}
                                         />
+                                        )}
 
-                                        {!puedeResolver && !c.diferencia && (
+                                        {!puedeResolver && !c.diferencia && c.estadoDif !== 'compensado' && (
                                             <p className="text-caption text-content-3 px-1">
                                                 Sin resolver. Quien opera la caja de la sala lo resuelve desde aquí.
                                             </p>

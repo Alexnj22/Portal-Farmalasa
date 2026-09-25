@@ -126,27 +126,45 @@ describe('pendientesDeRegistrar', () => {
 
 describe('porSigno', () => {
     const dias = conEstados([
+        // Salud 2, 24-sep: faltante de verdad.
         { fecha: 'a', neto: -20.25, cortes: [{ id: 1, estado: 'CONFIRMADO', tramo: -20.25, diferencia: null }] },
-        { fecha: 'b', neto: 2, cortes: [
-            { id: 2, estado: 'CONFIRMADO', tramo: -3, diferencia: { via: 'JUSTIFICA' } },
-            { id: 3, estado: 'CONFIRMADO', tramo: 5, diferencia: null },
+        // La Popular, 24-sep: +0.20 y después −0.20 → cerró exacto.
+        { fecha: 'b', neto: 0, cortes: [
+            { id: 2, estado: 'CONFIRMADO', tramo: 0.2, diferencia: null },
+            { id: 3, estado: 'CONFIRMADO', tramo: -0.2, diferencia: null },
         ] },
-        { fecha: 'c', neto: 1, cortes: [{ id: 4, estado: 'CONFIRMADO', tramo: 1, diferencia: null }] },
+        // Sobró 5 a mediodía y faltaron 3 a la noche: el día cerró +2.
+        { fecha: 'c', neto: 2, cortes: [
+            { id: 4, estado: 'CONFIRMADO', tramo: 5, diferencia: null },
+            { id: 5, estado: 'CONFIRMADO', tramo: -3, diferencia: null },
+        ] },
     ]);
-    it('faltantes: sólo días con faltante, y el estado sale de esos cortes', () => {
-        const f = porSigno(dias, 'falta');
-        expect(f.map((d) => d.fecha)).toEqual(['a', 'b']);
-        // El día b tiene su faltante justificado: el sobrante sin resolver no lo ensucia.
-        expect(f[1].estadoDif).toBe('resuelto');
-        expect(f[1].cortes.map((c) => c.id)).toEqual([2]);
+    it('un día que cerró exacto está compensado y no es pendiente', () => {
+        const b = porSigno(dias).find((d) => d.fecha === 'b');
+        expect(b.compensado).toBe(true);
+        expect(b.estadoDif).toBe('compensado');
+        expect(diaEnFiltro(b, 'PENDIENTES')).toBe(false);
+        expect(diaEnFiltro(b, 'resuelto')).toBe(true);
     });
-    it('conserva los totales del día entero', () => {
-        const [, b] = porSigno(dias, 'falta');
-        expect(b.faltanteDia).toBe(-3);
-        expect(b.sobranteDia).toBe(5);
-    });
-    it('sobrantes y todos', () => {
-        expect(porSigno(dias, 'sobra').map((d) => d.fecha)).toEqual(['b', 'c']);
+    it('faltantes = días que cerraron en negativo', () => {
+        expect(porSigno(dias, 'falta').map((d) => d.fecha)).toEqual(['a']);
+        expect(porSigno(dias, 'sobra').map((d) => d.fecha)).toEqual(['c']);
         expect(porSigno(dias, 'todos')).toHaveLength(3);
+    });
+    it('el corte del signo contrario se compensó y no decide el estado', () => {
+        const c = porSigno(dias).find((d) => d.fecha === 'c');
+        expect(c.cortes.find((k) => k.id === 5).estadoDif).toBe('compensado');
+        expect(c.estadoDif).toBe('sin_resolver');
+        expect(c.faltanteDia).toBe(-3);
+        expect(c.sobranteDia).toBe(5);
+    });
+    it('un corte por confirmar siempre cuenta', () => {
+        const [d] = porSigno(conEstados([{ fecha: 'd', neto: 0, cortes: [
+            { id: 6, estado: 'PENDIENTE', tramo: -1, diferencia: null },
+        ] }]), 'falta');
+        expect(d.estadoDif).toBe('por_confirmar');
+    });
+    it('el resumen cuenta los compensados como resueltos', () => {
+        expect(resumenDeDias(porSigno(dias)).resuelto).toBe(1);
     });
 });

@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.2 — Diferencias: días compensados, filtros más simples y textos que caben
+
+Cuatro observaciones del usuario sobre la pestaña «Diferencias»:
+
+- **«¿Esos que sobran y faltan lo mismo?»** — La Popular del 24-sep: «Faltó
+  $0.20 · Sobró $0.20». No faltó nada: lo que sobró a mediodía ya no estaba en
+  el conteo de la noche, y el día cerró exacto. Ahora un día que cierra en
+  cero es **«Se compensó»** y no aparece como pendiente, y un día se clasifica
+  por cómo CERRÓ: faltante si su neto es negativo, sobrante si es positivo. Los
+  cortes del signo contrario se marcan «se compensó con otro corte del día» y
+  no piden resolución (`porSigno`, 5 pruebas nuevas).
+- **Textos cortados en el carril.** Rótulos cortos: *Sin resolver · Por cobrar
+  · Por anotar · Resueltos*, cada uno con una línea de dos o tres palabras.
+- **Filtros.** «Tipo» (Faltantes · Sobrantes · Todos) pasa a select. El select
+  de seis estados se quitó: repetía lo que ya hacen las tarjetas del carril,
+  que son el filtro de estado.
+- **«Registrar» → «Anotar en el sistema»**, con una línea de explicación en vez
+  de dos párrafos, fechas como «31 ago» y el botón «No movió dinero».
+
 ## v2.1061.1 — Diferencias: faltantes y sobrantes por separado, y los dos montos del día
 
 Sobre la pestaña «Diferencias», pedido del usuario: «debe poderse separar las

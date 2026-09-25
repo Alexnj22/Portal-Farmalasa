@@ -161,3 +161,38 @@ export function pendientesDeRegistrar(resoluciones, { sala = '' } = {}) {
     }
     return filas;
 }
+
+/**
+ * Los días recortados a un SIGNO: `falta` deja sólo los cortes con faltante,
+ * `sobra` sólo los de sobrante, `todos` no recorta.
+ *
+ * Pedido del usuario (2026-09-25): «debe poderse separar las diferencias
+ * negativas y las positivas, por defecto las negativas». Un día puede tener
+ * las dos —un sobrante a mediodía y un faltante a la noche—, así que el recorte
+ * es por CORTE y el estado del día se recalcula sobre los que quedan: un día
+ * con el faltante saldado y un sobrante sin resolver no puede aparecer como
+ * «sin resolver» en la lista de faltantes.
+ *
+ * Lo que NO se recalcula son los totales del día (`faltanteDia`, `sobranteDia`,
+ * `neto`): la tarjeta los muestra enteros para que se lea cómo fue el día, no
+ * sólo la mitad filtrada.
+ */
+export function porSigno(dias, signo = 'todos') {
+    const conTotales = (dias || []).map((d) => ({
+        ...d,
+        faltanteDia: d.faltanteDia ?? d.faltante,
+        sobranteDia: d.sobranteDia ?? d.sobrante,
+    }));
+    if (signo !== 'falta' && signo !== 'sobra') return conTotales;
+    const quedan = conTotales
+        .map((d) => ({
+            ...d,
+            cortes: (d.cortes || []).filter((c) => (signo === 'falta' ? Number(c.tramo) < 0 : Number(c.tramo) > 0)),
+        }))
+        .filter((d) => d.cortes.length);
+    return conEstados(quedan).map((d, i) => ({
+        ...d,
+        faltanteDia: quedan[i].faltanteDia,
+        sobranteDia: quedan[i].sobranteDia,
+    }));
+}

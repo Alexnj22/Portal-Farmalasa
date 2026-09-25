@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.1 — Diferencias: faltantes y sobrantes por separado, y los dos montos del día
+
+Sobre la pestaña «Diferencias», pedido del usuario: «debe poderse separar las
+negativas y las positivas, por defecto las negativas; en las cards, que diga
+cuánto es el positivo y cuál el negativo. ¿Por registrar qué es? ¿Por cobrar
+qué es?».
+
+- **Ranura «Tipo»: Faltantes (por defecto) · Sobrantes · Todos.** El recorte es
+  por corte, y el estado del día se recalcula con los que quedan: un día con el
+  faltante saldado y un sobrante sin resolver no aparece como «sin resolver»
+  entre los faltantes (`porSigno`, con prueba).
+- **Cada tarjeta muestra «Faltó» y «Sobró» del día entero**, aunque el filtro
+  deje ver sólo una mitad de sus cortes.
+- **Nombres que se explican solos.** «Falta cobrar» → **Deben los
+  responsables** (faltantes asignados que no se han abonado); «Por registrar» →
+  **Falta anotar** (abonos o retiros sin su ingreso o vale en el sistema). Cada
+  tarjeta del carril lleva una línea que dice qué cuenta.
+
 ## v2.1061.0 — Diferencias de caja por día: causa con comprobante, responsables y abonos
 
 Pedido del usuario sobre Salud 2 del 24-sep: «necesito ver qué días hay

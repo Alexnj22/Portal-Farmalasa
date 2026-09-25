@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    conEstados, diaEnFiltro, estadoDeCorte, peorEstado, pendientesDeRegistrar, resumenDeDias,
+    conEstados, diaEnFiltro, estadoDeCorte, peorEstado, pendientesDeRegistrar, porSigno, resumenDeDias,
     saldoDeDiferencia,
 } from '../../src/utils/diferenciasDeCaja';
 
@@ -121,5 +121,32 @@ describe('pendientesDeRegistrar', () => {
     });
     it('respeta la sala', () => {
         expect(pendientesDeRegistrar(res, { sala: '25' }).map((x) => x.kind)).toEqual(['abono']);
+    });
+});
+
+describe('porSigno', () => {
+    const dias = conEstados([
+        { fecha: 'a', neto: -20.25, cortes: [{ id: 1, estado: 'CONFIRMADO', tramo: -20.25, diferencia: null }] },
+        { fecha: 'b', neto: 2, cortes: [
+            { id: 2, estado: 'CONFIRMADO', tramo: -3, diferencia: { via: 'JUSTIFICA' } },
+            { id: 3, estado: 'CONFIRMADO', tramo: 5, diferencia: null },
+        ] },
+        { fecha: 'c', neto: 1, cortes: [{ id: 4, estado: 'CONFIRMADO', tramo: 1, diferencia: null }] },
+    ]);
+    it('faltantes: sólo días con faltante, y el estado sale de esos cortes', () => {
+        const f = porSigno(dias, 'falta');
+        expect(f.map((d) => d.fecha)).toEqual(['a', 'b']);
+        // El día b tiene su faltante justificado: el sobrante sin resolver no lo ensucia.
+        expect(f[1].estadoDif).toBe('resuelto');
+        expect(f[1].cortes.map((c) => c.id)).toEqual([2]);
+    });
+    it('conserva los totales del día entero', () => {
+        const [, b] = porSigno(dias, 'falta');
+        expect(b.faltanteDia).toBe(-3);
+        expect(b.sobranteDia).toBe(5);
+    });
+    it('sobrantes y todos', () => {
+        expect(porSigno(dias, 'sobra').map((d) => d.fecha)).toEqual(['b', 'c']);
+        expect(porSigno(dias, 'todos')).toHaveLength(3);
     });
 });

@@ -30,8 +30,8 @@ import { hora12 } from '../../utils/hora';
 const ESTADO = {
     sin_resolver:  { label: 'Sin resolver', variant: 'danger' },
     por_confirmar: { label: 'Falta confirmar el corte', variant: 'warning' },
-    con_saldo:     { label: 'Con saldo', variant: 'warning' },
-    por_registrar: { label: 'Falta registrarlo', variant: 'info' },
+    con_saldo:     { label: 'Deben los responsables', variant: 'warning' },
+    por_registrar: { label: 'Falta anotar', variant: 'info' },
     resuelto:      { label: 'Resuelto', variant: 'success' },
 };
 
@@ -69,6 +69,7 @@ export default function DiasConDiferencia({
     onLimpiarBusqueda,
     onVerTodos,
     filtroActivo = 'PENDIENTES',
+    signo = 'falta',
 }) {
     const [abierto, setAbierto] = useState(null);
 
@@ -109,8 +110,8 @@ export default function DiasConDiferencia({
         return filtroActivo === 'PENDIENTES' ? (
             <EmptyState
                 compact icon={ShieldCheck} iconClass="text-success-text"
-                title="Sin pendientes"
-                subtitle="Todas las diferencias tienen su causa o están saldadas y registradas."
+                title={signo === 'falta' ? 'Sin faltantes pendientes' : signo === 'sobra' ? 'Sin sobrantes pendientes' : 'Sin pendientes'}
+                subtitle="Todas tienen su causa, o están saldadas y anotadas en el sistema."
                 action={onVerTodos && <Button variant="secondary" onClick={onVerTodos}>Ver todos los días</Button>}
             />
         ) : (
@@ -144,6 +145,25 @@ export default function DiasConDiferencia({
                                 {comoQuedo(d.neto)}
                             </div>
 
+                            {/* Los dos lados del día, siempre (usuario, 2026-09-25:
+                                «que diga cuánto es el positivo y cuál el
+                                negativo»). Son del día ENTERO aunque el filtro
+                                muestre sólo una mitad de sus cortes. */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <div data-surface="card" className="px-2 py-1.5">
+                                    <div className="text-micro font-black uppercase tracking-widest text-content-3">Faltó</div>
+                                    <div className={`text-label font-bold tabular-nums ${Number(d.faltanteDia) < 0 ? 'text-danger-text' : 'text-content-3'}`}>
+                                        {formatMoney(Math.abs(Number(d.faltanteDia || 0)))}
+                                    </div>
+                                </div>
+                                <div data-surface="card" className="px-2 py-1.5">
+                                    <div className="text-micro font-black uppercase tracking-widest text-content-3">Sobró</div>
+                                    <div className={`text-label font-bold tabular-nums ${Number(d.sobranteDia) > 0 ? 'text-warning-text' : 'text-content-3'}`}>
+                                        {formatMoney(Number(d.sobranteDia || 0))}
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="space-y-0.5">
                                 {d.cortes.map((c) => (
                                     <div key={c.id} className="flex items-baseline justify-between gap-2 text-caption">
@@ -155,7 +175,7 @@ export default function DiasConDiferencia({
 
                             <div className="flex items-center justify-between gap-2 text-caption">
                                 <span className="text-content-3">
-                                    {d.saldo > 0 ? `Falta cobrar ${formatMoney(d.saldo)}` : `${d.cortes_del_dia} ${Number(d.cortes_del_dia) === 1 ? 'corte' : 'cortes'} en el día`}
+                                    {d.saldo > 0 ? `Los responsables deben ${formatMoney(d.saldo)}` : `${d.cortes_del_dia} ${Number(d.cortes_del_dia) === 1 ? 'corte' : 'cortes'} en el día`}
                                 </span>
                                 <ChevronRight className="w-4 h-4 text-content-3" aria-hidden="true" />
                             </div>

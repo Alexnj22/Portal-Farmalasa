@@ -210,7 +210,7 @@ export default function AbonosDeDiferencia({
                                 </div>
                                 {!a.anulada_at && (a.asentado_at
                                     ? <Badge variant="info" size="sm">Registrado {a.asentado_ref}</Badge>
-                                    : <Badge variant="warning" size="sm" dot>Falta registrarlo</Badge>)}
+                                    : <Badge variant="warning" size="sm" dot>Falta anotar</Badge>)}
                                 {!a.anulada_at && puedeResolver && anulando !== a.id && (
                                     <div className="flex items-center gap-1">
                                         <Button variant="ghost" size="sm" icon={Printer} iconOnly

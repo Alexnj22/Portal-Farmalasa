@@ -63,7 +63,7 @@ import { fetchCobrosDelPortal } from '../data/creditos';
  * ninguna pantalla de Efectivo. */
 import { fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '../data/bolsas';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
-import { diaEnFiltro, pendientesDeRegistrar, resumenDeDias } from '../utils/diferenciasDeCaja';
+import { diaEnFiltro, pendientesDeRegistrar, porSigno, resumenDeDias } from '../utils/diferenciasDeCaja';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { formatMoney } from '../utils/formatNumber';
 import { tokenMatch } from '../utils/searchUtils';
@@ -221,19 +221,29 @@ const METRICAS = [
 const ESTADOS_DIF = [
     { value: 'PENDIENTES',    label: 'Pendientes' },
     { value: 'sin_resolver',  label: 'Sin resolver' },
-    { value: 'con_saldo',     label: 'Con saldo' },
-    { value: 'por_registrar', label: 'Por registrar' },
+    { value: 'con_saldo',     label: 'Deben los responsables' },
+    { value: 'por_registrar', label: 'Falta anotar' },
     { value: 'resuelto',      label: 'Resueltos' },
     { value: 'TODOS',         label: 'Todos' },
 ];
 
+// Faltantes o sobrantes (usuario, 2026-09-25): «debe poderse separar las
+// negativas y las positivas; por defecto las negativas». Un faltante es lo que
+// se cobra o se explica; un sobrante casi siempre es un ingreso sin anotar.
+const SIGNOS_DIF = [
+    { value: 'falta', label: 'Faltantes' },
+    { value: 'sobra', label: 'Sobrantes' },
+    { value: 'todos', label: 'Todos' },
+];
+
 // Cuatro números del carril de «Diferencias», cada uno atajo de su estado.
-// `saldo` va en dinero y no en días: lo que se pregunta es cuánto falta cobrar.
+// Cada uno lleva `sub` porque dos de los nombres no se entendían solos
+// (usuario, 2026-09-25: «¿por registrar qué es? ¿por cobrar qué es?»).
 const METRICAS_DIF = [
-    { clave: 'sin_resolver',  icon: AlertTriangle, label: 'Días sin resolver', iconBg: 'bg-danger/10',  iconCls: 'text-danger-text', valueCls: 'text-danger-text' },
-    { clave: 'con_saldo',     icon: HandCoins,     label: 'Falta cobrar',      iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text', dinero: 'saldo' },
-    { clave: 'por_registrar', icon: Landmark,      label: 'Por registrar',     iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
-    { clave: 'resuelto',      icon: ShieldCheck,   label: 'Resueltos',         iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+    { clave: 'sin_resolver',  icon: AlertTriangle, label: 'Días sin resolver',      sub: 'Nadie dijo la causa ni quién responde', iconBg: 'bg-danger/10',  iconCls: 'text-danger-text', valueCls: 'text-danger-text' },
+    { clave: 'con_saldo',     icon: HandCoins,     label: 'Deben los responsables', sub: 'Faltantes asignados que no se han abonado', iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text', dinero: 'saldo' },
+    { clave: 'por_registrar', icon: Landmark,      label: 'Falta anotar',           sub: 'Abonos o retiros sin su ingreso o vale en el sistema', iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
+    { clave: 'resuelto',      icon: ShieldCheck,   label: 'Resueltos',              sub: 'Con causa, saldados y anotados', iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
 ];
 
 const CortesView = () => {
@@ -332,6 +342,7 @@ const CortesView = () => {
     const enMovimientos = pestana === 'movimientos';
     const enDiferencias = pestana === 'diferencias';
     const [filtroDif, setFiltroDif] = useState('PENDIENTES');
+    const [signoDif, setSignoDif] = useState('falta');
     const {
         dias: diasDif, resoluciones: resolucionesDif, cargando: cargandoDif,
         error: errorDif, recargar: recargarDif,
@@ -555,7 +566,7 @@ const CortesView = () => {
 
     // Los días de «Diferencias» con la sala, el estado y la búsqueda puestos.
     // Se busca por sala, fecha, monto y por quién responde.
-    const diasDelRecorte = useMemo(() => diasDif.filter((d) => {
+    const diasDelRecorte = useMemo(() => porSigno(diasDif, signoDif).filter((d) => {
         if (sala && String(d.branch_id) !== String(sala)) return false;
         return tokenMatch(busqueda,
             nombreSala[d.branch_id], d.fecha, String(d.neto),
@@ -563,7 +574,7 @@ const CortesView = () => {
                 String(c.tramo), c.empleado_texto, c.diferencia?.causa,
                 ...(c.diferencia?.personas || []).map((p) => p.nombre),
             ]));
-    }), [diasDif, sala, busqueda, nombreSala]);
+    }), [diasDif, signoDif, sala, busqueda, nombreSala]);
     const resumenDif = useMemo(() => resumenDeDias(diasDelRecorte), [diasDelRecorte]);
     const diasVisibles = useMemo(
         () => diasDelRecorte.filter((d) => diaEnFiltro(d, filtroDif)),
@@ -729,7 +740,7 @@ const CortesView = () => {
     const metricaActiva = (m) => (m.filtro === 'estado' ? estado : diferencia) === m.valor;
 
     const limpiar = () => {
-        setSala(''); setPeriodo(HOY); setFiltroDif('PENDIENTES');
+        setSala(''); setPeriodo(HOY); setFiltroDif('PENDIENTES'); setSignoDif('falta');
         setEstado('TODOS'); setDiferencia('TODAS');
         setTipoMov('TODOS'); setEstadoMov('TODOS');
         setBusqueda(''); setPagina(1);
@@ -802,7 +813,7 @@ const CortesView = () => {
                         {enDiferencias
                             ? METRICAS_DIF.map((m) => (
                                 <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
-                                    label={m.label}
+                                    label={m.label} sub={m.sub}
                                     value={m.dinero ? formatMoney(resumenDif[m.dinero]) : resumenDif[m.clave]}
                                     valueCls={m.valueCls}
                                     active={filtroDif === m.clave}
@@ -832,7 +843,7 @@ const CortesView = () => {
                         promesa de «el lugar único donde mirar qué se filtra». */}
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
-                            activeCount={enDiferencias ? [sala, filtroDif !== 'PENDIENTES'].filter(Boolean).length : [sala, !periodoIntacto,
+                            activeCount={enDiferencias ? [sala, filtroDif !== 'PENDIENTES', signoDif !== 'falta'].filter(Boolean).length : [sala, !periodoIntacto,
                                 enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
                                 // En movimientos no hay cuarta ranura: el recorte
                                 // por estado lo aplican las tarjetas. Contarlo acá
@@ -860,15 +871,22 @@ const CortesView = () => {
                                 las flechas corren el período por su unidad. */}
                             {/* «Diferencias» no sigue al período: lo pendiente
                                 se ve siempre. Su ranura es el estado del día. */}
-                            {enDiferencias ? (
+                            {enDiferencias ? (<>
+                                <FilterBar.Section active={signoDif !== 'falta'} onClear={() => setSignoDif('falta')} label="tipo">
+                                    <FilterBar.Opciones
+                                        label="Tipo" icon={Scale}
+                                        value={signoDif} onChange={(v) => setSignoDif(v || 'falta')}
+                                        options={SIGNOS_DIF} ancho="150px"
+                                    />
+                                </FilterBar.Section>
                                 <FilterBar.Section active={filtroDif !== 'PENDIENTES'} onClear={() => setFiltroDif('PENDIENTES')} label="estado">
                                     <FilterBar.Opciones
                                         label="Estado" icon={CheckCircle2}
                                         value={filtroDif} onChange={(v) => setFiltroDif(v || 'PENDIENTES')}
-                                        options={ESTADOS_DIF} ancho="165px"
+                                        options={ESTADOS_DIF} ancho="190px"
                                     />
                                 </FilterBar.Section>
-                            ) : (<>
+                            </>) : (<>
                             <FilterBar.Section active={!periodoIntacto} onClear={() => verPeriodo(null)}
                                 label="fecha">
                                 <PeriodStepper
@@ -994,6 +1012,7 @@ const CortesView = () => {
                         puedeResolver={puedeResolver}
                         busqueda={busqueda}
                         filtroActivo={filtroDif}
+                        signo={signoDif}
                         onCambio={recargarDif}
                         onLimpiarBusqueda={() => setBusqueda('')}
                         onVerTodos={() => setFiltroDif('TODOS')}

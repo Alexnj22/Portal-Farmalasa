@@ -490,36 +490,42 @@ function Presentaciones({ datos, claseTenue, isDark }) {
     const desp = despacho && !(despacho.unidades === 1 && base?.factor === 1)
         ? despacho : null;
     const rojo = tonos(isDark).rojo;
+    /* El nombre arriba y el factor en su propio renglón, más chico: en media
+     * tarjeta «CAJA X 10 · factor 10» se partía por la mitad del dato. */
+    const detalle = (texto) => (
+        <span className={`block text-caption font-semibold mt-0.5 ${claseTenue}`}>{texto}</span>
+    );
     return (
         <>
-            <Celda rotulo="Presentación base" claseTenue={claseTenue}>
-                {base ? <>{base.tipo} <span className="font-semibold">· factor {unidades(base.factor)}</span></> : '—'}
+            <Celda rotulo="Base" claseTenue={claseTenue}>
+                {base ? <>{base.tipo}{detalle(`factor ${unidades(base.factor)}`)}</> : '—'}
             </Celda>
-            <Celda rotulo="Se despacha en" claseTenue={claseTenue} derecha>
+            <Celda rotulo="Despacho" claseTenue={claseTenue} derecha>
                 {desp
-                    ? <>{desp.etiqueta} <span className="font-semibold">· {desp.multiplo > 1
+                    ? <>{desp.etiqueta}{detalle(desp.multiplo > 1
                         ? `${desp.multiplo} × ${unidades(desp.factor)} = ${unidades(desp.unidades)} u.`
-                        : `factor ${unidades(desp.factor)}`}</span></>
-                    : (base?.tipo ?? '—')}
+                        : `factor ${unidades(desp.factor)}`)}</>
+                    : <>{base?.tipo ?? '—'}{base && detalle(`factor ${unidades(base.factor)}`)}</>}
             </Celda>
             {lista.length > 1 && (
-                <div className="bg-surface-card-hover px-2.5 py-1.5" style={{ gridColumn: '1 / -1' }}>
-                    <p className={`text-caption font-semibold break-words ${claseTenue}`}>
-                        Presentaciones:{' '}
-                        {lista.map((p, i) => (
-                            <React.Fragment key={`${p.tipo}-${p.factor}`}>
-                                {i > 0 && ' · '}
-                                <b className="font-black">{p.tipo}</b> ×{unidades(p.factor)}
-                            </React.Fragment>
+                <div className="bg-surface-card-hover px-2.5 py-2 min-w-0" style={{ gridColumn: '1 / -1' }}>
+                    <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Presentaciones</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                        {lista.map((p) => (
+                            <Badge key={`${p.tipo}-${p.factor}`} variant="neutral">
+                                {p.tipo} ×{unidades(p.factor)}
+                            </Badge>
                         ))}
-                    </p>
+                    </div>
                 </div>
             )}
             {maxNoAlcanzaParaDespachar(datos) && (
-                <div className={`bg-surface-card-hover px-2.5 py-2 ${rojo.texto}`} style={{ gridColumn: '1 / -1' }}>
-                    <p className="text-caption font-bold leading-snug break-words">
-                        Con MAX {unidades(datos.maxNuevo)} no alcanza para una {despacho.etiqueta}{' '}
-                        ({unidades(despacho.unidades)} u.): el pedido no mandará nada.
+                <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 flex items-start gap-2"
+                    style={{ gridColumn: '1 / -1' }}>
+                    <PackageX className={`w-4 h-4 flex-shrink-0 mt-px ${rojo.texto}`} aria-hidden="true" />
+                    <p className={`text-caption font-bold leading-snug break-words ${rojo.texto}`}>
+                        MAX {unidades(datos.maxNuevo)} es menos de lo que se despacha
+                        ({despacho.etiqueta}, {unidades(despacho.unidades)} u.): el pedido no mandará nada.
                     </p>
                 </div>
             )}

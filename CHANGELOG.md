@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.8 — MIN·MAX: presentaciones sin desbordes y más limpias
+
+Pedido del usuario: «que los textos no se salgan y se vea estético». Rótulos
+cortos (Base / Despacho) para que no se partan en dos renglones y desalineen la
+fila; el factor va en su propio renglón debajo del nombre; las presentaciones
+son píldoras (`Badge`) que bajan de línea solas; el aviso lleva ícono y ya no
+concuerda mal el género («una BLISTER»). Medido con Playwright en iPhone 13 y a
+1440 px sobre tres casos (una, dos y cuatro presentaciones, con múltiplo):
+cero elementos fuera de la tarjeta.
+
 ## v2.1075.7 — Aviso de faltante nombra quién confirmó; aviso único a jefes con pendientes
 
 Pedido del usuario sobre los faltantes de caja.

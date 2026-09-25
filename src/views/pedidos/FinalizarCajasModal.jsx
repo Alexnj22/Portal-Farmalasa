@@ -13,7 +13,13 @@ import { smartFilter } from '../../utils/searchUtils';
 import { lanzarSimulacroTraslado, fetchTrasladoErp, updatePedidoSucursalStatus } from '../../data/pedidos';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
-export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoId, pedidoNumero, paginas = null, draftKey = null }) {
+// Un solo «sin productos» para siempre: `items` es dependencia del efecto que
+// reinicia el diálogo, y un `[]` nuevo en cada render lo volvía a correr —y a
+// pintar— aunque el diálogo estuviera cerrado. Ver `SIN_CLAVES` en
+// `CrearRutaModal`, donde el mismo patrón sí era un ciclo sin fin.
+const SIN_PRODUCTOS = [];
+
+export default function FinalizarCajasModal({ open, onClose, onConfirm, items = SIN_PRODUCTOS, sucId, pedidoId, pedidoNumero, paginas = null, draftKey = null }) {
     const montadoParaSalida = useMontadoParaSalida(open);
     const [screen,          setScreen]          = useState(1);
     const [totalCajasInput, setTotalCajasInput] = useState('');

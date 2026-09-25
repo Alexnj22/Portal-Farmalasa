@@ -40,7 +40,16 @@ function svcMin() { return 10; }
 // escrito en la línea que lo usaba).
 const BODEGA_POR_DEFECTO = { lat: 14.041177, lng: -88.963111 };
 
-export default function CrearRutaModal({ open, onClose, onCreated, initialKeys = [] }) {
+// El «sin claves» por defecto tiene que ser UNO SOLO para siempre. Con
+// `initialKeys = []` en la firma, cada render recibía un arreglo NUEVO, y como
+// el efecto que carga los pedidos depende de `initialKeys`, cada carga
+// disparaba la siguiente: el modal reiniciaba el paso, borraba la selección y
+// volvía a pedir todo, sin fin. Medido el 2026-09-25 abriéndolo desde «Rutas
+// de entrega» (que no pasa claves): 20,315 consultas en 10 segundos y la lista
+// de pedidos nunca llegaba a pintarse.
+const SIN_CLAVES = [];
+
+export default function CrearRutaModal({ open, onClose, onCreated, initialKeys = SIN_CLAVES }) {
   const montadoParaSalida = useMontadoParaSalida(open);
   const { user } = useAuth();
 

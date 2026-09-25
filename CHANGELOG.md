@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.4 — Crear ruta: el modal ya no se recarga sin fin, y la prueba de punta a punta
+
+Encontrado al probar el arreglo del reordenamiento con pedidos reales en el
+entorno de pruebas.
+
+- **«Crear ruta» abierto desde «Rutas de entrega» se recargaba sin fin.** La
+  firma del modal decía `initialKeys = []`: cada render recibía un arreglo
+  NUEVO, y como el efecto que carga los pedidos depende de él, cada carga
+  disparaba la siguiente —reiniciaba el paso, borraba la selección y volvía a
+  pedir todo—. Medido: **20,315 consultas en 10 segundos** y la lista de
+  pedidos nunca llegaba a pintarse. Con `SIN_CLAVES` (un solo arreglo para
+  siempre): 1 consulta y la lista aparece. Desde la pestaña de pedidos no
+  pasaba porque ésa sí le pasa las claves.
+- Mismo patrón, sin ciclo pero con trabajo de más: `FinalizarCajasModal`
+  corría su reinicio y se repintaba en cada render de la pestaña de pedidos
+  aunque estuviera cerrado. Barrido de los 16 componentes con un `= []`/`= {}`
+  en la firma usado como dependencia: sólo esos dos cambiaban estado.
+- **`tests/e2e/crear-ruta.spec.js`**: selecciona los pedidos, optimiza, baja
+  una parada, crea la ruta y compara lo que se MANDA a la base contra las
+  distancias calculadas aparte desde las coordenadas de cada sala. Con la
+  versión anterior falla (Salud 2 quedaba primera con 319 m, la distancia
+  desde Salud 1, en vez de 2,968 desde la bodega); con ésta pasa, y la fila
+  guardada en `rutas`/`ruta_pedidos` coincide.
+- `scripts/entorno-pruebas/semilla_pedidos_ruta.sql`: el mapa de salas, dos
+  pedidos listos para ruta y el permiso de editar rutas de la cuenta de
+  pruebas (sólo esa pestaña: los barridos siguen sin poder escribir).
+
 ## v2.1061.3 — Rutas de reparto: reordenar vuelve a medir, y la matemática sin navegador
 
 Quinto paso de F1 del plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`, y trae

@@ -990,7 +990,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 open={!!finalizarModal}
                 onClose={() => setFinalizarModal(null)}
                 onConfirm={handleFinalizarConCajas}
-                items={finalizarModal?.rows ?? []}
+                items={finalizarModal?.rows}
                 sucId={finalizarModal?.sucId}
                 pedidoId={finalizarModal?.pedidoId}
                 pedidoNumero={finalizarModal?.numero}

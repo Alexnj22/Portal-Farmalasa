@@ -174,7 +174,10 @@ export const createConteoInventarioSlice = (set, get) => ({
         laboratorioId = null, orderBy = null, orderDir = 'asc', area = null,
     } = {}) => {
         const from = (page - 1) * pageSize;
-        const [{ data: count, error: countErr }, { data: rows, error: rowsErr }] = await Promise.all([
+        // La tercera pregunta es si lo que salió es APROXIMADO: la regla del
+        // portal cae a lo parecido cuando nada coincide tal cual, y la pantalla
+        // lo tiene que decir (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md).
+        const [{ data: count, error: countErr }, { data: rows, error: rowsErr }, parecidos] = await Promise.all([
             supabase.rpc('get_conteo_products_count', {
                 p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,
                 p_laboratorio_id: laboratorioId, p_area: area,
@@ -185,10 +188,16 @@ export const createConteoInventarioSlice = (set, get) => ({
                 p_laboratorio_id: laboratorioId, p_order_by: orderBy, p_order_dir: orderDir,
                 p_area: area,
             }),
+            search
+                ? supabase.rpc('conteo_busqueda_aproximada', { p_conteo_id: conteoId, p_search: search })
+                : Promise.resolve({ data: null }),
         ]);
         if (countErr) throw countErr;
         if (rowsErr) throw rowsErr;
-        return { rows: rows || [], total: count || 0 };
+        return {
+            rows: rows || [], total: count || 0,
+            aproximado: Array.isArray(parecidos?.data) && parecidos.data.length > 0,
+        };
     },
 
     // Solo los laboratorios que están EN ESTE conteo. El catálogo completo son

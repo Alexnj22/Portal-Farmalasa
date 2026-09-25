@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
+import AvisoParecidos from '../../components/common/AvisoParecidos';
 import HojaMovil from '../../components/common/HojaMovil';
 import AsaHoja from '../../components/common/AsaHoja';
 import Button from '../../components/common/Button';
@@ -1553,6 +1554,7 @@ export default function ConteoDetailView() {
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
     const [total, setTotal] = useState(0);
+    const [sonParecidos, setSonParecidos] = useState(false);
     // El área de vencidos: su propia lista, sin paginación. Son decenas de
     // productos (83 en el conteo abierto contra 2,759 de bodega), así que
     // paginarla sería un control para pasar de página que nunca se usa.
@@ -1672,6 +1674,7 @@ export default function ConteoDetailView() {
             });
             setProducts(productsPage.rows);
             setTotal(productsPage.total);
+            setSonParecidos(!!productsPage.aproximado);
             setDesbloqueadas({});
 
             // Nada se contrae: las líneas de los productos de la página vienen
@@ -2453,6 +2456,7 @@ export default function ConteoDetailView() {
                     filas existen y las dos aceptan un número. */}
                 {!enVencidos && (
                     <>
+                        {sonParecidos && !loading && products.length > 0 && <AvisoParecidos texto={searchDiferido} />}
                         <ListaDeConteo
                             enFichas={enFichas}
                             loading={loading}

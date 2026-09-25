@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1068.0 — Búsqueda: el conteo físico con la regla del portal
+
+El conteo físico pasa a la regla del portal (`20260925184802`). Sus cuatro
+funciones (renglones y productos, lista y contador) buscan sobre producto,
+lote, laboratorio, presentación y código.
+
+- «2.5» traía **469 renglones** de otras concentraciones y ahora trae **21**.
+  «500mg» ahora también encuentra lo escrito «500 MG» (76 → 120).
+- **Búsqueda aproximada en el conteo**: si nada coincide tal cual,
+  `conteo_busqueda_aproximada` devuelve los productos parecidos, calculados
+  igual para la lista y para el contador, así la paginación cuadra.
+  «amoxisilina» pasa de 0 a 7 renglones, y la pantalla lo avisa.
+- **Más rápido que antes** (`20260925185211`, `20260925185314`). La primera
+  versión tardaba 347 ms y la definitiva 100 ms (55 ms sin búsqueda). Dos
+  cambios:
+  - el prefiltro compara contra columnas ya normalizadas (`products.busq_todo`
+    y la nueva `laboratorios.nombre_busq`) en lugar de normalizar 3,400
+    renglones por llamada;
+  - las funciones de la regla que corren por fila se declaran caras (`COST`),
+    para que el planificador las evalúe DESPUÉS del prefiltro. Con el costo por
+    defecto las ponía primero y corrían sobre los 3,407 renglones.
+- `get_conteo_items_count` deja de ser `LANGUAGE sql` + `SET` y sale del
+  manifiesto de planes genéricos.
+
 ## v2.1067.0 — Búsqueda: /inventario con la regla del portal
 
 /inventario pasa a la regla del portal (`20260925184107`). La lista, la

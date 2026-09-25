@@ -24,6 +24,12 @@
 //
 // `{ "simular": true }` hace TODO el recorrido sin escribir una fila del libro
 // ni tocar un cron: es la corrida de ensayo.
+//
+// `{ "encender": false }` es la SINCRONIZACIÓN de cada noche hasta el corte
+// (decisión del usuario, 2026-09-25: «¿si migramos ya? y el 1 solo
+// actualizamos?»): trae al libro lo nuevo del sistema anterior y cuadra, pero
+// no enciende nada. Sólo avisa si algo falla — una noche que salió bien no es
+// noticia.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { getCorsHeaders, requireInvokeSecret } from '../_shared/security.ts';
 
@@ -47,6 +53,7 @@ Deno.serve(async (req) => {
   );
   const body = await req.json().catch(() => ({}));
   const simular = body?.simular === true;
+  const encender = body?.encender !== false;
 
   const rpc = async (fn: string, args: Record<string, unknown>) => {
     const { data, error } = await supabase.rpc(fn, args);
@@ -61,7 +68,7 @@ Deno.serve(async (req) => {
     const { data: cfg, error: eCfg } = await supabase
       .from('puntos_config').select('fuente, acumulacion_activa').maybeSingle();
     if (eCfg) throw new Error(`puntos_config: ${eCfg.message}`);
-    if (!simular && cfg?.fuente === 'portal') {
+    if (!simular && encender && cfg?.fuente === 'portal') {
       // Ya arrancó. Correr dos veces no puede migrar dos veces (la función
       // salta las cuentas migradas), pero tampoco tiene nada que hacer.
       return json({ ok: true, ya_estaba_encendido: true });
@@ -115,11 +122,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── 4 · Encender ────────────────────────────────────────────────────────
-    informe.encendido = await rpc('puntos_encender', {
-      p_inicio: INICIO, p_base_url: Deno.env.get('SUPABASE_URL'), p_simular: simular,
-    });
-    encendido = !simular;
+    // ── 4 · Encender (salvo en la sincronización de cada noche) ─────────────
+    if (encender) {
+      informe.encendido = await rpc('puntos_encender', {
+        p_inicio: INICIO, p_base_url: Deno.env.get('SUPABASE_URL'), p_simular: simular,
+      });
+      encendido = !simular;
+    } else {
+      informe.sincronizacion = true;
+    }
   } catch (e) {
     informe.error = e instanceof Error ? e.message : String(e);
   }
@@ -130,7 +141,8 @@ Deno.serve(async (req) => {
     .insert({ simulado: simular, ok, encendido, resultado: informe });
   if (eLog) console.error('no se pudo anotar el arranque:', eLog.message);
 
-  if (!simular) {
+  // La sincronización de cada noche sólo avisa si falló.
+  if (!simular && (encender || !ok)) {
     const { data: gente, error: eGente } = await supabase
       .from('employees').select('id')
       .eq('status', 'ACTIVO').eq('tipo_ficha', 'empleado').in('role_id', ROLES_AVISO);
@@ -140,7 +152,8 @@ Deno.serve(async (req) => {
       p_recipients: (gente ?? []).map((g: any) => String(g.id)),
       p_type: ok ? 'PUNTOS_ARRANQUE_OK' : 'PUNTOS_ARRANQUE_FALLO',
       p_title: ok ? 'Los puntos ya funcionan desde el portal'
-                  : 'Los puntos NO se pasaron al portal',
+                  : encender ? 'Los puntos NO se pasaron al portal'
+                  : 'La actualización de puntos de esta noche falló',
       p_body: ok
         // Las cuentas del LIBRO, no las de esta corrida: si un intento anterior
         // falló después de migrar, el reintento las encuentra ya migradas y
@@ -150,7 +163,9 @@ Deno.serve(async (req) => {
           } cuentas que hay que revisar a mano.`
         : `No se encendió nada y los puntos siguen como estaban. Motivo: ${informe.error}`,
       p_link: '/clientes',
-      p_metadata: { check_key: `puntos_arranque:${INICIO}:${ok ? 'ok' : 'fallo'}` },
+      p_metadata: { check_key: encender
+        ? `puntos_arranque:${INICIO}:${ok ? 'ok' : 'fallo'}`
+        : `puntos_sincronizacion:${new Date().toISOString().slice(0, 10)}` },
       p_push: true,
       p_branch_id: null,
     });

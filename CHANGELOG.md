@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1074.1 — Puntos: el arranque sabe sincronizar sin encender
+
+`puntos-arranque` acepta `{"encender": false}`: trae al libro lo nuevo del
+sistema anterior y cuadra, sin encender el programa. Es la sincronización de
+cada noche hasta el corte, y sólo avisa si falla. Desplegada; los crones de cada
+noche esperan el OK para migrar.
+
 ## v2.1074.0 — Puntos: Consulta con gráficas y clientes, y la ficha deja de mostrar puntos
 
 La vista **Puntos** pasa a mostrarlo todo (pedido del usuario), y la ficha

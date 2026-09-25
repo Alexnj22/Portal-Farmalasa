@@ -46,7 +46,7 @@ import AvisosApagadosDialog from '../common/AvisosApagadosDialog';
 import OfflineBanner from '../common/OfflineBanner';
 import BannerPortal from '../common/BannerPortal';
 import Contador from '../common/Contador';
-import { MODULE_MAP } from '../../constants/moduleMap';
+import { MODULE_MAP } from '../common/catalogos/modulos';
 import { prefetchRuta } from '../../constants/routeImporters';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { remontarAlGirar, contarRenderShell } from '../../plataforma/cajaNegra';

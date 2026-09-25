@@ -16,7 +16,7 @@
     "EmployeeFormModal": "Creció de 52 a 57 kB durante el expediente del Codigo de Trabajo (26-27 ago): lectura del DUI, acreditaciones profesionales, los campos del contrato del Art. 23, contactos y dependientes. Es contenido, no peso muerto — el texto de los avisos legales pesa. El techo sube UNA vez con el motivo escrito; si vuelve a crecer, lo que toca es partir el modal por pestana, no subirlo otra vez.",
     "BitacorasView": "Subido el 2026-08-27 al diferir `UnifiedModal`. Ese modal viajaba en el ENTRY —72 kB de fuente que bajaba todo el mundo en cada despliegue, incluida la gente de sala que nunca abre una ficha—. Al pasarlo a `lazy` el entry cayo de 306 a 294 kB (techo 303) y su peso se reparte entre las rutas que SI lo abren. El cambio es a favor: el entry se paga en frio despues de cada despliegue y lo paga todo el mundo; esto se paga una vez por ruta y queda en cache. Medido con el gate, antes y despues. (de 75 a 78). Y +1 más el 2026-08-28, por lo mismo que BolsasView: `FileField` ganó el teléfono y el editor para los 21 adjuntos. Los dos kilobytes de esta vista tienen dueños distintos y motivos distintos — el primero es el diferido de `UnifiedModal`, el segundo es esto.",
     "CortesView": "Subido el 2026-08-27 al diferir `UnifiedModal`. Ese modal viajaba en el ENTRY —72 kB de fuente que bajaba todo el mundo en cada despliegue, incluida la gente de sala que nunca abre una ficha—. Al pasarlo a `lazy` el entry cayo de 306 a 294 kB (techo 303) y su peso se reparte entre las rutas que SI lo abren. El cambio es a favor: el entry se paga en frio despues de cada despliegue y lo paga todo el mundo; esto se paga una vez por ruta y queda en cache. Medido con el gate, antes y despues. (de 72 a 73).",
-    "UnifiedModal": "No es una vista: es el modal de fichas, que desde el 2026-08-27 baja aparte en vez de viajar en el entry. 17 kB medidos; el techo se fija en 18 para el margen de reparto."
+    "UnifiedModal": "No es una vista: es el modal de fichas, que desde el 2026-08-27 baja aparte en vez de viajar en el entry. 17 kB medidos; el techo se fija en 18 para el margen de reparto. Subido a mano el 2026-09-25, de 18 a 19 (mide 19). Tanda C del núcleo portable (docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md): los catálogos del núcleo guardan el ícono por NOMBRE y `components/common/catalogos/constantes.js` le pone el componente. El modal pasó a importar ese complemento: +976 B del complemento (el mapa de nombres y los nombres como texto) y 4 íconos de los tipos de evento. Medido chunk por chunk contra main. No hay nada que diferir: son los íconos que la ficha dibuja. El costo es el del enfoque —guardar el nombre y además el mapa que lo traduce—, a cambio de que el catálogo sea reutilizable por la app nativa."
   },
   "entry": 296,
   "vistas": {
@@ -122,7 +122,7 @@
     "BolsasView": 62,
     "NotificationBell": 33,
     "EquiposView": 47,
-    "UnifiedModal": 18,
+    "UnifiedModal": 19,
     "CapturaDeFotoView": 13
   }
 }

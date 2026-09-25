@@ -5,7 +5,7 @@ import { Users, Shield, Star, Stethoscope, Briefcase, ArrowUpRight, AlertCircle,
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '../../utils/clickable';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import { SIN_ASIGNAR } from '../../data/constants';
+import { SIN_ASIGNAR } from '../common/catalogos/constantes';
 
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;

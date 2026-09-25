@@ -76,7 +76,7 @@ const WidgetBolsasSala = lazy(() => import('./dashboard/WidgetBolsasSala'));
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
 import WidgetVendedores from './dashboard/WidgetVendedores';
 import { SALAS_VENTA } from './metas/metasUtils';
-import { MODULE_MAP } from '../constants/moduleMap';
+import { MODULE_MAP } from '../components/common/catalogos/modulos';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';

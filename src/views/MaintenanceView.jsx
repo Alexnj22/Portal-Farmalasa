@@ -13,7 +13,7 @@ import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
-import { MODULE_INFO } from '../constants/permissionModules';
+import { MODULE_INFO } from '../components/common/catalogos/permisos';
 import { smartFilter } from '../utils/searchUtils';
 import { fetchLockableModules, lockModule, unlockModule } from '../data/moduleLocks';
 import { fetchTrasladoSwitch, setTrasladoSwitch } from '../data/trasladoSwitch';

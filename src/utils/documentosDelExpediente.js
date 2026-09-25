@@ -35,10 +35,6 @@
  * título lo escribe una persona y ES el dato, así que manda sobre el catálogo.
  */
 
-import {
-    Receipt, Award, CreditCard, FileText, Car, Bike,
-    Stethoscope, ShieldCheck, ScrollText, Accessibility,
-} from 'lucide-react';
 
 // ── El catálogo ────────────────────────────────────────────────────────────
 //
@@ -214,24 +210,24 @@ export function descripcionDelArchivo(nombre, url) {
 // caía en la hoja genérica, que es como cuatro documentos distintos de una
 // misma persona terminaban dibujando el mismo papel.
 const ICONOS = {
-    DUI_COMPLETO: CreditCard, DUI_FRENTE: CreditCard, DUI_REVERSO: CreditCard,
-    DOCUMENTO_IDENTIDAD: CreditCard,
+    DUI_COMPLETO: 'CreditCard', DUI_FRENTE: 'CreditCard', DUI_REVERSO: 'CreditCard',
+    DOCUMENTO_IDENTIDAD: 'CreditCard',
 
-    SRS: Award, ENFERMERIA: Award, MEDICO: Award, CONTADURIA: Award,
-    DEPENDIENTE_FARMACIA: Award,
+    SRS: 'Award', ENFERMERIA: 'Award', MEDICO: 'Award', CONTADURIA: 'Award',
+    DEPENDIENTE_FARMACIA: 'Award',
 
-    ANUALIDAD_JVPQF: Receipt, ANUALIDAD_JVPE: Receipt,
+    ANUALIDAD_JVPQF: 'Receipt', ANUALIDAD_JVPE: 'Receipt',
 
-    LICENCIA_MOTO: Bike, LICENCIA_CARRO: Car,
+    LICENCIA_MOTO: 'Bike', LICENCIA_CARRO: 'Car',
 
-    CERTIFICADO_MEDICO_ANUAL: Stethoscope, EXAMEN_MEDICO: Stethoscope,
+    CERTIFICADO_MEDICO_ANUAL: 'Stethoscope', EXAMEN_MEDICO: 'Stethoscope',
 
-    TARJETA_ISSS: ShieldCheck, TARJETA_AFP: ShieldCheck,
+    TARJETA_ISSS: 'ShieldCheck', TARJETA_AFP: 'ShieldCheck',
 
-    CERTIFICACION_DISCAPACIDAD: Accessibility,
+    CERTIFICACION_DISCAPACIDAD: 'Accessibility',
 
-    CONTRATO: ScrollText, CONTRATO_REGENCIA: ScrollText,
+    CONTRATO: 'ScrollText', CONTRATO_REGENCIA: 'ScrollText',
 };
 
 /** El ícono de la categoría. `FileText` para lo que no tiene uno propio. */
-export const iconoDeCategoria = (categoria) => ICONOS[categoria] || FileText;
+export const nombreDelIconoDeCategoria = (categoria) => ICONOS[categoria] || 'FileText';

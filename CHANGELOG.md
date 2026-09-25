@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1064.3 — Núcleo portable tanda C: los catálogos guardan el ícono por nombre
+
+Sin cambios visibles. Tanda C del plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+
+- **Siete catálogos del núcleo guardaban componentes de la web adentro**: el
+  menú (`MODULE_MAP`, 57 íconos), los permisos (73), los tipos de evento de
+  personal, los tipos de aviso, las categorías de documento, la severidad de
+  un aviso y los conflictos del calendario de horarios. Ahora guardan el
+  NOMBRE (`icono: 'Home'`), y una app nativa puede reutilizarlos.
+- **`components/common/catalogos/*`**: un complemento por catálogo que importa
+  exactamente sus íconos y entrega la misma API de siempre (`.icon`,
+  `iconoDeTipo`, `iconoDeCategoria`, `severidadDelTitulo(...).Icono`). Las 16
+  pantallas que los dibujan sólo cambiaron de dónde importan. Las funciones del
+  núcleo que ahora devuelven nombres se renombraron (`nombreDelIconoDeTipo`,
+  `nombreDelIconoDeCategoria`) para que quien las siguiera usando falle al
+  compilar en vez de quedarse sin ícono — y cazó una prueba que lo hacía.
+- **`IconoPorNombre`**: dibuja el ícono de un catálogo por su nombre.
+- **Verificado**: 440 comparaciones viejo contra nuevo, entrada por entrada,
+  mismo componente; y en pantalla, contra `main`, los 431 íconos del menú,
+  Permisos, Personal y Solicitudes idénticos y en el mismo orden.
+  `tests/unit/catalogosConIconos.test.js` falla si un catálogo nombra un ícono
+  que su complemento no importa (probado fabricando la regresión).
+- **El costo, medido**: +406 B en el arranque (los nombres como texto y el
+  mapa del menú), +3 kB en Mantenimiento y +1 kB en Permisos, la campana y el
+  modal de personal. El techo del modal se subió a mano de 18 a 19 con su
+  motivo en `_motivos`. `gate:nucleo` 8 → 1: queda sólo el aviso de
+  inactividad dentro de `AuthContext`.
+
 ## v2.1064.2 — Compras: la búsqueda de proveedor ya no se parte con una coma
 
 `src/data/compras.js` metía el texto del buscador crudo dentro de un

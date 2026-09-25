@@ -22,7 +22,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
 import { fetchAllMinMaxChangeRequests } from '../data/minmaxRequests';
 import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '../constants/erp';
-import { ICONO_POR_TIPO } from '../constants/tipoIconos';
+import { ICONO_POR_TIPO } from '../components/common/catalogos/tiposDeAviso';
 import { MODULO_QUE_DECIDE } from '../constants/solicitudModulos';
 import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
 /* Los dos formularios se cargan tarde. No es una optimización de gusto: es la

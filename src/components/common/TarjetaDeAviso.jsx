@@ -32,12 +32,12 @@ import {
     datosDeRespuesta, datosDeDecision, datosDeDiferencia, diferenciaMeToca,
     datosDeConteo, datosDeHacienda, datosDePromo, datosDeMetasPorAprobar, datosDeReinicio, datosDeProductosSinVenta,
 } from '../../utils/avisosDeOperacion';
-import { iconoDeTipo } from '../../constants/tipoIconos';
+import { iconoDeTipo } from './catalogos/tiposDeAviso';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import {
     severidadDelTitulo, tituloSinEmoji, tintForType, etiquetaDeAccion,
     RESUELTA_LABEL, cuandoLlego,
-} from '../../utils/notificacionTexto';
+} from './catalogos/notificaciones';
 
 /* La tarjeta de UN aviso — la misma en la campana y en `/notificaciones`.
  *

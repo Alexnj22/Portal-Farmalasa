@@ -1,8 +1,3 @@
-import {
-  FileText, IdCard, User, HeartPulse, AlertCircle, Paperclip, Calendar,
-  TrendingUp, ArrowRightLeft, Building2, Watch, LogOut, GraduationCap, ClipboardList, DollarSign, RefreshCw,
-  MessageSquareWarning, FileWarning, Ban, ShieldCheck
-} from 'lucide-react';
 import { normalizeText } from '../utils/helpers';
 
 
@@ -10,19 +5,21 @@ import { normalizeText } from '../utils/helpers';
 // Bucket B categórico (tipos de evento) salvo TERMINATION, que es Bucket A
 // (severidad real — es un desenlace negativo/definitivo, no una categoría
 // más entre pares).
+// El ícono por NOMBRE (`icono`); con `.icon` lo entrega
+// `components/common/catalogos/constantes.js`.
 export const EVENT_TYPES = {
-  VACATION: { label: 'Vacaciones', color: 'bg-success/10 text-success-text', icon: Calendar, requiresDuration: true, defaultDocType: 'MEMO' },
-  DISABILITY: { label: 'Incapacidad médica', color: 'bg-chart-6/10 text-chart-6-text', icon: HeartPulse, requiresDuration: true, defaultDocType: 'MEDICAL' },
-  PERMIT: { label: 'Permiso / licencia', color: 'bg-warning/10 text-warning-text', icon: ClipboardList, requiresDuration: true, defaultDocType: 'MEMO' },
-  PROMOTION: { label: 'Cambio de cargo', color: 'bg-chart-3/10 text-chart-3-text', icon: TrendingUp, requiresDuration: false, requiresNewRole: true, defaultDocType: 'CONTRACT' },
-  SALARY: { label: 'Ajuste salarial', color: 'bg-success/10 text-success-text', icon: DollarSign, requiresDuration: false, requiresNewCode: false, defaultDocType: 'OTHER' },
-  TRANSFER: { label: 'Traslado de sucursal', color: 'bg-chart-1/10 text-chart-1-text', icon: ArrowRightLeft, requiresDuration: false, requiresTargetBranch: true, defaultDocType: 'MEMO' },
-  SUPPORT: { label: 'Apoyo temporal', color: 'bg-chart-4/10 text-chart-4-text', icon: Building2, requiresDuration: true, requiresTargetBranch: true, defaultDocType: 'MEMO' },
-  CODE_CHANGE: { label: 'Cambio de código/ID', color: 'bg-chart-3/10 text-chart-3-text', icon: IdCard, requiresDuration: false, requiresNewCode: true, defaultDocType: 'OTHER' },
-  INDUCTION: { label: 'Inducción', color: 'bg-chart-9/10 text-chart-9-text', icon: GraduationCap, requiresDuration: true, defaultDocType: 'OTHER' },
-  SHIFT_CHANGE: { label: 'Cambio de turno', color: 'bg-chart-9/10 text-chart-9-text', icon: Watch, requiresDuration: false, defaultDocType: 'MEMO' },
-  TERMINATION: { label: 'Liquidación/Renuncia', color: 'bg-danger text-white', icon: LogOut, requiresDuration: false, defaultDocType: 'CONTRACT' },
-  REHIRE: { label: 'Recontratación', color: 'bg-success/10 text-success-text', icon: RefreshCw, requiresDuration: false, defaultDocType: 'CONTRACT' },
+  VACATION: { label: 'Vacaciones', color: 'bg-success/10 text-success-text', icono: 'Calendar', requiresDuration: true, defaultDocType: 'MEMO' },
+  DISABILITY: { label: 'Incapacidad médica', color: 'bg-chart-6/10 text-chart-6-text', icono: 'HeartPulse', requiresDuration: true, defaultDocType: 'MEDICAL' },
+  PERMIT: { label: 'Permiso / licencia', color: 'bg-warning/10 text-warning-text', icono: 'ClipboardList', requiresDuration: true, defaultDocType: 'MEMO' },
+  PROMOTION: { label: 'Cambio de cargo', color: 'bg-chart-3/10 text-chart-3-text', icono: 'TrendingUp', requiresDuration: false, requiresNewRole: true, defaultDocType: 'CONTRACT' },
+  SALARY: { label: 'Ajuste salarial', color: 'bg-success/10 text-success-text', icono: 'DollarSign', requiresDuration: false, requiresNewCode: false, defaultDocType: 'OTHER' },
+  TRANSFER: { label: 'Traslado de sucursal', color: 'bg-chart-1/10 text-chart-1-text', icono: 'ArrowRightLeft', requiresDuration: false, requiresTargetBranch: true, defaultDocType: 'MEMO' },
+  SUPPORT: { label: 'Apoyo temporal', color: 'bg-chart-4/10 text-chart-4-text', icono: 'Building2', requiresDuration: true, requiresTargetBranch: true, defaultDocType: 'MEMO' },
+  CODE_CHANGE: { label: 'Cambio de código/ID', color: 'bg-chart-3/10 text-chart-3-text', icono: 'IdCard', requiresDuration: false, requiresNewCode: true, defaultDocType: 'OTHER' },
+  INDUCTION: { label: 'Inducción', color: 'bg-chart-9/10 text-chart-9-text', icono: 'GraduationCap', requiresDuration: true, defaultDocType: 'OTHER' },
+  SHIFT_CHANGE: { label: 'Cambio de turno', color: 'bg-chart-9/10 text-chart-9-text', icono: 'Watch', requiresDuration: false, defaultDocType: 'MEMO' },
+  TERMINATION: { label: 'Liquidación/Renuncia', color: 'bg-danger text-white', icono: 'LogOut', requiresDuration: false, defaultDocType: 'CONTRACT' },
+  REHIRE: { label: 'Recontratación', color: 'bg-success/10 text-success-text', icono: 'RefreshCw', requiresDuration: false, defaultDocType: 'CONTRACT' },
 
   // ── Régimen disciplinario del RIT Art. 83 ─────────────────────────────────
   // `soloPorSancion` las saca del selector de «nueva novedad» SIN sacarlas del
@@ -31,10 +28,10 @@ export const EVENT_TYPES = {
   // Una sanción pasa por `registrar_sancion`, que es donde viven la escalera,
   // la firma del servidor y la validación del Art. 83 — dejarla en el selector
   // sería ofrecer un atajo que se salta las tres.
-  AMONESTACION_VERBAL:  { label: 'Amonestación verbal',   color: 'bg-warning/10 text-warning-text', icon: MessageSquareWarning, requiresDuration: false, defaultDocType: 'MEMO', soloPorSancion: true },
-  AMONESTACION_ESCRITA: { label: 'Amonestación escrita',  color: 'bg-warning/10 text-warning-text', icon: FileWarning,          requiresDuration: false, defaultDocType: 'MEMO', soloPorSancion: true },
-  SUSPENSION:           { label: 'Suspensión',            color: 'bg-danger/10 text-danger-text',   icon: Ban,                  requiresDuration: true,  defaultDocType: 'MEMO', soloPorSancion: true },
-  RECTIFICACION:        { label: 'Memorando de rectificación', color: 'bg-success/10 text-success-text', icon: ShieldCheck,     requiresDuration: false, defaultDocType: 'MEMO', soloPorSancion: true },
+  AMONESTACION_VERBAL:  { label: 'Amonestación verbal',   color: 'bg-warning/10 text-warning-text', icono: 'MessageSquareWarning', requiresDuration: false, defaultDocType: 'MEMO', soloPorSancion: true },
+  AMONESTACION_ESCRITA: { label: 'Amonestación escrita',  color: 'bg-warning/10 text-warning-text', icono: 'FileWarning',          requiresDuration: false, defaultDocType: 'MEMO', soloPorSancion: true },
+  SUSPENSION:           { label: 'Suspensión',            color: 'bg-danger/10 text-danger-text',   icono: 'Ban',                  requiresDuration: true,  defaultDocType: 'MEMO', soloPorSancion: true },
+  RECTIFICACION:        { label: 'Memorando de rectificación', color: 'bg-success/10 text-success-text', icono: 'ShieldCheck',     requiresDuration: false, defaultDocType: 'MEMO', soloPorSancion: true },
 };
 
 

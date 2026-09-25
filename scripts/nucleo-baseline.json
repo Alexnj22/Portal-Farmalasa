@@ -1,29 +1,8 @@
 {
-  "total": 8,
-  "archivos": 8,
+  "total": 1,
+  "archivos": 1,
   "porArchivo": {
-    "src/constants/moduleMap.js": {
-      "pantalla": 1
-    },
-    "src/constants/permissionModules.js": {
-      "pantalla": 1
-    },
-    "src/constants/tipoIconos.js": {
-      "pantalla": 1
-    },
     "src/context/AuthContext.jsx": {
-      "pantalla": 1
-    },
-    "src/data/constants.js": {
-      "pantalla": 1
-    },
-    "src/utils/documentosDelExpediente.js": {
-      "pantalla": 1
-    },
-    "src/utils/notificacionTexto.js": {
-      "pantalla": 1
-    },
-    "src/utils/scheduleHelpers.js": {
       "pantalla": 1
     }
   }

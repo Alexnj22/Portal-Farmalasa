@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { formatTime12h } from '../utils/helpers';
-import { WEEK_DAYS } from '../data/constants';
+import { WEEK_DAYS } from '../components/common/catalogos/constantes';
 
 import TabHistory from './branch-tabs/TabHistory';
 import TabExpediente from './branch-tabs/TabExpediente';

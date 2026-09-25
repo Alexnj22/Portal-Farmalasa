@@ -1,4 +1,3 @@
-import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { hora12, horasEnTexto } from './hora';
 
 /* Cómo se LEE una notificación: severidad, tono, verbo y antigüedad.
@@ -25,9 +24,9 @@ import { hora12, horasEnTexto } from './hora';
 // título arranca en su primera palabra y la severidad se ve donde se mira
 // primero. No hace falta un mapa por tipo: quien escribe el aviso ya la declaró.
 export const SEVERIDAD = [
-    { re: /^(🚨|❌|⛔)/u,  Icono: AlertCircle,   claro: 'bg-danger/10 text-danger border-danger/30',   oscuro: 'bg-danger/10 text-danger-text border-danger/40' },
-    { re: /^(⚠️|⚠)/u,     Icono: AlertTriangle, claro: 'bg-warning/10 text-warning border-warning/30', oscuro: 'bg-warning/10 text-warning-text border-warning/40' },
-    { re: /^(✅|✔️)/u,     Icono: CheckCircle2,  claro: 'bg-success/10 text-success border-success/25', oscuro: 'bg-success/10 text-success-text border-success/20' },
+    { re: /^(🚨|❌|⛔)/u,  icono: 'AlertCircle',   claro: 'bg-danger/10 text-danger border-danger/30',   oscuro: 'bg-danger/10 text-danger-text border-danger/40' },
+    { re: /^(⚠️|⚠)/u,     icono: 'AlertTriangle', claro: 'bg-warning/10 text-warning border-warning/30', oscuro: 'bg-warning/10 text-warning-text border-warning/40' },
+    { re: /^(✅|✔️)/u,     icono: 'CheckCircle2',  claro: 'bg-success/10 text-success border-success/25', oscuro: 'bg-success/10 text-success-text border-success/20' },
 ];
 
 export const severidadDelTitulo = (titulo = '') =>

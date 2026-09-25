@@ -21,7 +21,7 @@ vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
 const { kioscoIdentificar, kioscoMarcar, kioscoBitacora } = await import('../../src/data/kiosco');
 const { redactSensitive, normalizeKioskAuditInfo, INPUT_METHOD, DETAILS_MAX_BYTES } =
     await import('../../src/utils/timeClock.audit');
-const { ICONO_POR_TIPO, iconoDeTipo } = await import('../../src/constants/tipoIconos');
+const { ICONO_POR_TIPO, iconoDeTipo } = await import('../../src/components/common/catalogos/tiposDeAviso');
 
 const rpcReal = espia.supabase.rpc;
 const conEquipo = () => localStorage.setItem('kiosk_config',

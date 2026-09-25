@@ -1,4 +1,3 @@
-import { Palmtree, HeartPulse, FileText, CalendarOff, Building2 } from 'lucide-react';
 import { hora12 } from './hora';
 
 /* La semana se mudó a `utils/semana.js` (2026-08-21) para que Solicitudes y
@@ -115,6 +114,8 @@ export const getRoleTheme = (roleName) => {
     return { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-divider', variante: 'neutral' };
 };
 
+// El ícono va por NOMBRE (`icono`): lo dibuja la pantalla con `IconoPorNombre`,
+// y el núcleo no importa componentes de la web.
 export const getDayConflictLocal = (dateStr, history) => {
     // Eventos principales (mayor prioridad)
     const event = (history || []).find(ev =>
@@ -122,10 +123,10 @@ export const getDayConflictLocal = (dateStr, history) => {
     );
     if (event) {
         const config = {
-            VACATION:    { label: 'Vacaciones', icon: Palmtree,   bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30' },
-            DISABILITY:  { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30' },
-            PERMIT:      { label: 'Permiso',     icon: FileText,   bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
-            HOLIDAY:     { label: 'Asueto',      icon: CalendarOff,bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' }
+            VACATION:    { label: 'Vacaciones', icono: 'Palmtree',   bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30' },
+            DISABILITY:  { label: 'Incapacidad', icono: 'HeartPulse', bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30' },
+            PERMIT:      { label: 'Permiso',     icono: 'FileText',   bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
+            HOLIDAY:     { label: 'Asueto',      icono: 'CalendarOff',bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' }
         };
         return config[event.type] || config.PERMIT;
     }
@@ -139,7 +140,7 @@ export const getDayConflictLocal = (dateStr, history) => {
         return {
             type: 'SUPPORT',
             label: `Apoyo en ${targetBranch}`,
-            icon: Building2,
+            icono: 'Building2',
             bg: 'bg-chart-4/10',
             text: 'text-chart-4-text',
             border: 'border-chart-4/30',

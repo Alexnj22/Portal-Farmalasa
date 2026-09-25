@@ -22,7 +22,7 @@ import { getExpiryBadge } from '../../utils/documentExpiry';
 import {
     nombreDeDocumento, grupoDeCategoria, iconoDeCategoria,
     tinteDeCategoria, descripcionDelArchivo,
-} from '../../utils/documentosDelExpediente';
+} from '../../components/common/catalogos/documentos';
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
 //

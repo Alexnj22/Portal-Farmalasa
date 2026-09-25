@@ -4,7 +4,7 @@ import Badge from './Badge';
 import { Eye, FolderOpen } from 'lucide-react';
 import { openStoredFile } from '../../utils/storageFiles';
 import { getExpiryBadge, getExpiringDocuments } from '../../utils/documentExpiry';
-import { nombreDeDocumento, iconoDeCategoria, tinteDeCategoria } from '../../utils/documentosDelExpediente';
+import { nombreDeDocumento, iconoDeCategoria, tinteDeCategoria } from './catalogos/documentos';
 
 
 const DocumentRow = ({ doc }) => {

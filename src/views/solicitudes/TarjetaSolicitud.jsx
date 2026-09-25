@@ -8,7 +8,7 @@ import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import ModalShell from '../../components/common/ModalShell';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../../store/slices/requestsSlice';
-import { ICONO_POR_TIPO } from '../../constants/tipoIconos';
+import { ICONO_POR_TIPO } from '../../components/common/catalogos/tiposDeAviso';
 import { useAuth } from '../../context/AuthContext';
 import { CaraPersona, ChipPersona } from './PersonasSolicitud';
 import {

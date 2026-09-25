@@ -40,7 +40,7 @@ import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { smartFilter } from '../../utils/searchUtils';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
-import { SIN_ASIGNAR } from '../../data/constants';
+import { SIN_ASIGNAR } from '../../components/common/catalogos/constantes';
 
 /*
  * Equipos por sucursal — BOCETO (2026-08-26).

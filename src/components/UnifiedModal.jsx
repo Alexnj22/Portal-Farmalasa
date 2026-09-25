@@ -13,7 +13,7 @@ import useMontadoParaSalida from '../plataforma/useMontadoParaSalida';
 import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { buscarCargo } from '../utils/roles';
-import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, SIN_ASIGNAR } from '../data/constants';
+import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, SIN_ASIGNAR } from './common/catalogos/constantes';
 import { clearDraft } from '../utils/draftUtils';
 import useBorrador from '../hooks/useBorrador';
 import AvisoDeBorrador from './common/AvisoDeBorrador';

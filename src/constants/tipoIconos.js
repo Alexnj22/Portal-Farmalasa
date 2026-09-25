@@ -1,9 +1,3 @@
-import {
-    Palmtree, FileText, RefreshCw, Coffee, DollarSign, FileCheck, Stethoscope,
-    Ban, CreditCard, UserCog, Contact, CalendarClock, CalendarX2,
-    Package, BarChart2, ClipboardList, Info, Bell,
-    PackagePlus, Trash2, ArrowLeftRight, Wallet, Target, Landmark, Archive,
-} from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Un tipo = un ícono, en toda la app.
@@ -23,95 +17,97 @@ import {
 // día que alguien agrega una clave y no sabe que hay otra copia.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const ICONO_POR_TIPO = {
+// Por NOMBRE: el componente lo pone `components/common/catalogos/tiposDeAviso.js`,
+// que exporta `ICONO_POR_TIPO` e `iconoDeTipo` con la API de siempre.
+export const NOMBRE_DE_ICONO_POR_TIPO = {
     // ── Tipos de solicitud (los muestra RequestsView, y el canal los usa
     //    tal cual como `type` de notificación) ──
-    VACATION:               Palmtree,
-    PERMIT:                 FileText,
-    SHIFT_CHANGE:           RefreshCw,
-    OVERTIME:               Coffee,
-    ADVANCE:                DollarSign,
-    CERTIFICATE:            FileCheck,
-    DISABILITY:             Stethoscope,
-    ANNULMENT_REQUEST:      Ban,        // pide deshacer algo ya enviado
-    PAYMENT_CHANGE_REQUEST: CreditCard,
-    VENDOR_CHANGE_REQUEST:  UserCog,
-    CLIENT_CHANGE_REQUEST:  Contact,
+    VACATION:               'Palmtree',
+    PERMIT:                 'FileText',
+    SHIFT_CHANGE:           'RefreshCw',
+    OVERTIME:               'Coffee',
+    ADVANCE:                'DollarSign',
+    CERTIFICATE:            'FileCheck',
+    DISABILITY:             'Stethoscope',
+    ANNULMENT_REQUEST:      'Ban',        // pide deshacer algo ya enviado
+    PAYMENT_CHANGE_REQUEST: 'CreditCard',
+    VENDOR_CHANGE_REQUEST:  'UserCog',
+    CLIENT_CHANGE_REQUEST:  'Contact',
     // Los dos que faltaban (2026-08-15). Los dos son tipos que la base admite y
     // que Postgres ya sabía nombrar; acá no existían, así que caían al genérico.
     // `VACATION_CHANGE` la crea el plan de vacaciones cuando alguien pide correr
     // sus fechas; `SHIFT_EXCEPTION` sí tenía rótulo pero no ícono.
-    VACATION_CHANGE:        CalendarClock,
-    SHIFT_EXCEPTION:        CalendarX2,
+    VACATION_CHANGE:        'CalendarClock',
+    SHIFT_EXCEPTION:        'CalendarX2',
 
     // Los tres que mueven producto. Faltaban los tres, así que en la Bandeja y
     // en la campana caían al ícono genérico — justo los tipos donde el ícono
     // más ayuda, porque un descarte y una carga se leen distinto de un golpe.
-    INVENTORY_LOAD_REQUEST:     PackagePlus,
-    INVENTORY_DISCARD_REQUEST:  Trash2,
-    INVENTORY_TRANSFER_REQUEST: ArrowLeftRight,
+    INVENTORY_LOAD_REQUEST:     'PackagePlus',
+    INVENTORY_DISCARD_REQUEST:  'Trash2',
+    INVENTORY_TRANSFER_REQUEST: 'ArrowLeftRight',
     // Min/Max vive en otra tabla pero se muestra en el mismo centro, así que
     // necesita su ícono acá igual que los demás.
-    MINMAX_CHANGE_REQUEST:      BarChart2,
+    MINMAX_CHANGE_REQUEST:      'BarChart2',
 
     // ── Tipos propios del canal de notificaciones ──
-    PEDIDO_TRACKING:  Package,
-    PEDIDO_LLEGADA:   Package,
-    PEDIDO_REENVIO:   Package,
-    PEDIDO_PROBLEMA:  Package,
-    MINMAX_PENDING:   BarChart2,
-    MINMAX_DECIDED:   BarChart2,
-    REQUEST_PENDING:  ClipboardList,
-    REQUEST_DECIDED:  ClipboardList,
+    PEDIDO_TRACKING:  'Package',
+    PEDIDO_LLEGADA:   'Package',
+    PEDIDO_REENVIO:   'Package',
+    PEDIDO_PROBLEMA:  'Package',
+    MINMAX_PENDING:   'BarChart2',
+    MINMAX_DECIDED:   'BarChart2',
+    REQUEST_PENDING:  'ClipboardList',
+    REQUEST_DECIDED:  'ClipboardList',
     // El mismo `Wallet` del módulo (`moduleMap`/`permissionModules`): el aviso
     // lleva a esa pantalla y tiene que verse como ella. Y el recordatorio de la
     // mañana lleva el mismo ícono que el corte que vino a recordar: son el
     // mismo trabajo visto dos veces, no dos asuntos.
-    CORTE_NUEVO:      Wallet,
-    CORTE_PENDIENTE:  Wallet,
+    CORTE_NUEVO:      'Wallet',
+    CORTE_PENDIENTE:  'Wallet',
     // El día que nadie cerró: el mismo trabajo de caja, visto a la mañana.
-    DIA_SIN_CIERRE:   Wallet,
+    DIA_SIN_CIERRE:   'Wallet',
     // El mismo `Landmark` con el que el circuito de bolsas rotula «Depósitos al
     // banco»: el aviso lleva a esa sección y tiene que verse como ella.
-    DEPOSITO_BANCO:   Landmark,
+    DEPOSITO_BANCO:   'Landmark',
     // El `FileText` de Facturación: el aviso lleva a Pendiente MH (2026-09-22).
-    DTE_RECHAZO:      FileText,
+    DTE_RECHAZO:      'FileText',
     // El plazo legal de una solicitud de datos personales (Art. 20): avisa a los
     // 3 días hábiles de que venza, y otra vez si se venció.
-    DATOS_PLAZO: FileText,
+    DATOS_PLAZO: 'FileText',
     // Productos sin venta: el `Archive` de «Stock retenido» en Gestión de stock,
     // que es adonde lleva el aviso.
-    PRODUCTOS_SIN_VENTA: Archive,
-    SYSTEM:           Info,       // mensaje del portal, no de una persona
+    PRODUCTOS_SIN_VENTA: 'Archive',
+    SYSTEM:           'Info',       // mensaje del portal, no de una persona
 };
 
 // Fallback por familia: cubre un `PEDIDO_*` nuevo que nadie agregó al mapa.
 // El orden importa solo para prefijos que no se solapan (no hay ninguno hoy).
 const POR_PREFIJO = [
-    ['PEDIDO',  Package],
-    ['MINMAX',  BarChart2],
-    ['REQUEST', ClipboardList],
+    ['PEDIDO',  'Package'],
+    ['MINMAX',  'BarChart2'],
+    ['REQUEST', 'ClipboardList'],
     // Los seis tipos de Metas (`METAS_PROPUESTAS`, `METAS_POR_APROBAR`,
     // `METAS_AJUSTADA`, `METAS_APROBADAS`, `METAS_RECORDATORIO` y
     // `METAS_CIERRE_SALA`) caían todos a la campana genérica. Van por prefijo y
     // no uno por uno porque el módulo los emite desde SQL: la lista de allá
     // crece sin pasar por acá, y una lista a mano se desincroniza el día que
     // alguien agrega el séptimo. El `Target` es el mismo ícono del módulo.
-    ['METAS',   Target],
+    ['METAS',   'Target'],
     // Los avisos de cortes ya son TRES —el corte nuevo, el pendiente de las
     // 7:30 y el faltante de ayer de las 8:00— y los emite SQL, igual que los de
     // Metas: la lista de allá crece sin pasar por acá. Con el prefijo, el
     // cuarto nace con el `Wallet` del módulo en vez de con la campana genérica,
     // que es lo que le pasó a `CORTE_DIFERENCIA_AYER` hasta esta línea.
-    ['CORTE',   Wallet],
+    ['CORTE',   'Wallet'],
 ];
 
 /** Ícono de un tipo. Nunca devuelve undefined. */
-export function iconoDeTipo(type = '') {
-    const exacto = ICONO_POR_TIPO[type];
+export function nombreDelIconoDeTipo(type = '') {
+    const exacto = NOMBRE_DE_ICONO_POR_TIPO[type];
     if (exacto) return exacto;
     for (const [prefijo, icono] of POR_PREFIJO) {
         if (type.startsWith(prefijo)) return icono;
     }
-    return Bell;
+    return 'Bell';
 }

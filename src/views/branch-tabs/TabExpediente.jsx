@@ -10,7 +10,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import AlertModal from '../../components/common/AlertModal';
 import SearchInput from '../../components/common/SearchInput';
 import { EmptyState } from '../../components/common/StateViews';
-import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento } from '../../data/constants';
+import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento } from '../../components/common/catalogos/constantes';
 
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS

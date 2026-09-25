@@ -16,7 +16,7 @@ import {
     Copy, Printer
 } from 'lucide-react';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
-import { EVENT_TYPES, WEEK_DAYS, SIN_ASIGNAR } from '../data/constants';
+import { EVENT_TYPES, WEEK_DAYS, SIN_ASIGNAR } from '../components/common/catalogos/constantes';
 import { formatDate, formatTime12h, getEffectiveStatus } from '../utils/helpers';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Badge from '../components/common/Badge';
-import { MODULE_GROUPS, pestanasDe, capacidadesDe } from '../constants/permissionModules';
+import { MODULE_GROUPS, pestanasDe, capacidadesDe } from '../components/common/catalogos/permisos';
 import SegmentedControl from '../components/common/SegmentedControl';
 import FilterBar from '../components/common/FilterBar';
 import ViewTabBar from '../components/common/ViewTabBar';

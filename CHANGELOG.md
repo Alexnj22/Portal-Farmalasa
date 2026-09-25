@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1062.0 — El abono a un faltante entra a la caja como ingreso
+
+Decidido por el usuario el 2026-09-25. Un abono mete efectivo al cajón; si
+nadie anotaba su ingreso antes del siguiente corte, ese corte salía con un
+sobrante igual al abono, y con la regla «el sobrante se acumula» ese dinero se
+sumaba al acumulado de la sala sin haber sobrado.
+
+- **Al abonar, el portal hace el ingreso** «Abono a faltante de caja» en la caja
+  de esa sala (por `operar-caja`, el camino de «Mi caja») y lo liga al abono
+  con `ligar_abono_a_ingreso`, que comprueba sala, entrada, tipo, monto y que
+  la caja lo haya aceptado. El abono queda anotado solo: «En caja · Ingreso N».
+- **Con la caja cerrada no se abona**: el dinero entra siempre a un cajón
+  abierto y a su corte.
+- **Un ingreso por abono**, con clave de envío derivada del abono: reintentar
+  no duplica. Si la caja no lo acepta, el abono queda guardado y su fila ofrece
+  «Hacer el ingreso».
+- El tipo `ABONO_FALTANTE` está apagado en el selector de «Mi caja»: un abono
+  hecho a mano ahí no quedaría ligado a ningún faltante.
+- **«Mi caja» (ver y operar) para Subjefe/a de Sala (su sala) y Gerente General
+  (todas)**, a pedido del usuario: podían abonar pero no hacer el ingreso.
+- Migración `20260925170823`.
+
 ## v2.1061.13 — Los parámetros de Mín·Máx y los laboratorios ocultos exigen alcance sobre todas las salas
 
 Sigue a v2.1061.10, que acotó a Compras a Bodega. El alcance de sala cubría las

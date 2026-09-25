@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import {
-    abonarDiferencia, anularAbono as anularAbonoRpc, anularDiferencia,
-    marcarAbonosImpresos, marcarComprobanteImpreso, resolverDiferencia,
+    abonarDiferencia, anularAbono as anularAbonoRpc, anularDiferencia, ligarAbonoAIngreso,
+    marcarAbonosImpresos, marcarComprobanteImpreso, resolverDiferencia, salaConCajaAbierta,
 } from '../data/cortes';
+import { anotarIngreso } from '../data/bolsas';
 import { construirComprobante, construirComprobanteDeAbono } from '../utils/corteComprobante';
 import { imprimirDocumento } from '../utils/ticketPrint';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -10,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { hora12 } from '../utils/hora';
+import { shortEmployeeName } from '../utils/nameUtils';
 
 /**
  * Resolver la diferencia de un corte, imprimir su comprobante y anularla.
@@ -139,6 +141,49 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
     }, [nombreSala, showToast, user]);
 
     /**
+     * El INGRESO del abono en la caja de la sala, hecho por el portal (usuario,
+     * 2026-09-25). Sin él, el siguiente corte salía con un sobrante igual al
+     * abono, y con «el sobrante se acumula» eso ensuciaba el acumulado.
+     *
+     * La clave de envío sale del id del abono: reintentar el MISMO abono nunca
+     * escribe dos ingresos (`clave_envio` en `operar-caja`). Devuelve el error
+     * en vez de lanzar: el abono ya está guardado y lo que falla es el paso
+     * siguiente, que se reintenta desde la fila del abono.
+     */
+    const ingresoDelAbono = useCallback(async (corte, abono) => {
+        const nombre = shortEmployeeName(abono.nombre || '');
+        const r = await anotarIngreso({
+            sala: corte.branch_id,
+            monto: Number(abono.monto),
+            // El sistema de la caja corta el concepto a 50; el detalle va entero.
+            concepto: `Abono faltante ${corte.fecha} ${nombre}`.slice(0, 50),
+            conceptoCompleto: `Abono al faltante del corte de las ${hora12(corte.hora)} del ${corte.fecha} · ${nombre}`,
+            tipo: 'ABONO_FALTANTE',
+            clave: `abono-faltante-${abono.id}`,
+        });
+        if (r?.error) return { error: r.error };
+        const { error } = await ligarAbonoAIngreso(abono.id, r.movimiento_del_portal);
+        return error ? { error } : { ok: true };
+    }, []);
+
+    /** Reintentar el ingreso de un abono que quedó guardado sin entrar a la caja. */
+    const hacerIngreso = useCallback(async (corte, abono) => {
+        if (!abono || ocupado) return false;
+        setOcupado(true);
+        const r = await ingresoDelAbono(corte, abono);
+        setOcupado(false);
+        if (r.error) {
+            showToast?.('No entró a la caja', mensajeAmigable(r.error, 'Revisa que la caja esté abierta e inténtalo de nuevo.'), 'error');
+            return false;
+        }
+        appendAuditLog?.('CORTE_CAJA_ABONO_INGRESADO', user?.id, {
+            corte_id: corte.id, abono_id: abono.id, monto: abono.monto, origen,
+        });
+        showToast?.('Ingreso hecho', 'El abono ya está en la caja.', 'success');
+        return true;
+    }, [ocupado, ingresoDelAbono, showToast, appendAuditLog, user, origen]);
+
+    /**
      * Abonar a un faltante con responsables. `abonos`: [{ persona_id, monto,
      * nombre, saldoAntes }]. Se guarda primero y se imprime después, por lo
      * mismo que la resolución: el dinero ya está en la mano.
@@ -146,6 +191,18 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
     const abonar = useCallback(async (corte, dif, abonos) => {
         if (!corte || !dif || ocupado || !abonos?.length) return null;
         setOcupado(true);
+        const sala = nombreSala[corte.branch_id] || '';
+
+        // Con la caja cerrada no se abona (usuario): el dinero tiene que entrar
+        // a un cajón abierto y quedar en su corte. `null` es «no se pudo
+        // preguntar»: se sigue, y `operar-caja` lo vuelve a frenar si hace falta.
+        if (await salaConCajaAbierta(corte.branch_id) === false) {
+            setOcupado(false);
+            showToast?.('La caja está cerrada',
+                `${sala || 'La sala'} no tiene la caja abierta. El abono se hace cuando esté abierta.`, 'error');
+            return null;
+        }
+
         const { data, error } = await abonarDiferencia(dif.id, abonos.map((a) => ({
             persona_id: a.persona_id, monto: Number(a.monto),
         })));
@@ -156,7 +213,6 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             return null;
         }
         const total = abonos.reduce((t, a) => t + Number(a.monto), 0);
-        const sala = nombreSala[corte.branch_id] || '';
         appendAuditLog?.('CORTE_CAJA_ABONO_REGISTRADO', user?.id, {
             corte_id: corte.id, diferencia_id: dif.id, sucursal: sala, fecha: corte.fecha,
             abonos: abonos.map((a) => ({ persona_id: a.persona_id, monto: Number(a.monto) })),
@@ -166,6 +222,20 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             `${sala} · ${abonos.length === 1 ? abonos[0].nombre : `${abonos.length} personas`}`, 'success');
 
         const guardados = Array.isArray(data) ? data : [];
+
+        // Un ingreso por abono: cada uno queda ligado a su movimiento y se
+        // puede seguir de punta a punta. Si alguno falla, el abono ya está
+        // guardado y se reintenta desde su fila.
+        const fallidos = [];
+        for (const g of guardados) {
+            const r = await ingresoDelAbono(corte, g);
+            if (r.error) fallidos.push({ g, error: r.error });
+        }
+        if (fallidos.length) {
+            showToast?.('El abono se guardó, pero no entró a la caja',
+                `${mensajeAmigable(fallidos[0].error, 'La caja no lo aceptó.')} Reinténtalo con «Hacer el ingreso» en el abono.`, 'error');
+        }
+
         const papel = abonos.map((a) => {
             const g = guardados.find((x) => String(x.persona_id) === String(a.persona_id));
             return {
@@ -178,7 +248,7 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
         await imprimirAbonos(corte, papel, guardados[0]?.registrado_at);
         setOcupado(false);
         return guardados;
-    }, [ocupado, nombreSala, appendAuditLog, showToast, user, origen, imprimirAbonos]);
+    }, [ocupado, nombreSala, appendAuditLog, showToast, user, origen, imprimirAbonos, ingresoDelAbono]);
 
     const anularAbono = useCallback(async (corte, abono, motivo) => {
         if (!abono || ocupado) return false;
@@ -196,5 +266,5 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
         return true;
     }, [ocupado, appendAuditLog, showToast, user, origen]);
 
-    return { resolver, anular, imprimir, abonar, anularAbono, imprimirAbonos, ocupado };
+    return { resolver, anular, imprimir, abonar, anularAbono, imprimirAbonos, hacerIngreso, ocupado };
 }

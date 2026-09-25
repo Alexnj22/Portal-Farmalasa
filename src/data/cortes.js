@@ -482,6 +482,15 @@ export function abonarDiferencia(diferenciaId, abonos) {
     });
 }
 
+/**
+ * Liga un abono con el ingreso que el portal hizo en la caja por él. El
+ * servidor comprueba el movimiento —misma sala, entrada, tipo, monto y ya
+ * aceptado por la caja— y recién entonces da el abono por anotado.
+ */
+export function ligarAbonoAIngreso(abonoId, movimientoId) {
+    return supabase.rpc('ligar_abono_a_ingreso', { p_abono_id: abonoId, p_movimiento_id: movimientoId });
+}
+
 /** Se anula, nunca se borra: el comprobante del abono ya salió y alguien lo firmó. */
 export function anularAbono(id, motivo) {
     return supabase.rpc('anular_abono_diferencia', { p_id: id, p_motivo: motivo });

@@ -43,7 +43,7 @@ export default function AbonosDeDiferencia({
     origen = 'modulo',
     onCambio,
 }) {
-    const { abonar, anularAbono, imprimirAbonos, ocupado } = useResolverDiferencia({ nombreSala, origen });
+    const { abonar, anularAbono, imprimirAbonos, hacerIngreso, ocupado } = useResolverDiferencia({ nombreSala, origen });
 
     const personas = useMemo(() => diferencia?.personas || [], [diferencia]);
     const abonos = useMemo(() => diferencia?.abonos || [], [diferencia]);
@@ -211,9 +211,17 @@ export default function AbonosDeDiferencia({
                                         {a.anulada_at && ` · anuló ${a.anulada_nombre ? shortEmployeeName(a.anulada_nombre) : 'sin nombre'}: ${a.anulada_motivo}`}
                                     </span>
                                 </div>
+                                {/* El portal hace el ingreso al abonar. Si la caja no lo
+                                    aceptó, el abono quedó guardado sin entrar: acá
+                                    se reintenta, con la misma clave, sin duplicar. */}
                                 {!a.anulada_at && (a.asentado_at
-                                    ? <Badge variant="info" size="sm">Registrado {a.asentado_ref}</Badge>
-                                    : <Badge variant="warning" size="sm" dot>Falta anotar</Badge>)}
+                                    ? <Badge variant="info" size="sm">En caja · {a.asentado_ref}</Badge>
+                                    : puedeResolver
+                                        ? <Button variant="secondary" size="sm" loading={ocupado}
+                                            onClick={async () => { if (await hacerIngreso(corte, a)) onCambio?.(); }}>
+                                            Hacer el ingreso
+                                        </Button>
+                                        : <Badge variant="warning" size="sm" dot>No entró a la caja</Badge>)}
                                 {!a.anulada_at && puedeResolver && anulando !== a.id && (
                                     <div className="flex items-center gap-1">
                                         <Button variant="ghost" size="sm" icon={Printer} iconOnly
@@ -254,8 +262,9 @@ export default function AbonosDeDiferencia({
             )}
 
             <p className="text-caption text-content-3">
-                Cada abono entra al cajón el día que se hace: regístralo en el sistema
-                antes del siguiente corte. Es una reposición voluntaria y nunca se descuenta del salario.
+                Al abonar, el portal hace el ingreso en la caja de la sala: el siguiente corte ya lo
+                cuenta. Con la caja cerrada no se puede abonar. Es una reposición voluntaria y nunca
+                se descuenta del salario.
             </p>
         </div>
     );

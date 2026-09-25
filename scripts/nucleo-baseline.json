@@ -1,6 +1,6 @@
 {
-  "total": 24,
-  "archivos": 11,
+  "total": 18,
+  "archivos": 10,
   "porArchivo": {
     "src/constants/moduleMap.js": {
       "pantalla": 1
@@ -31,9 +31,6 @@
     },
     "src/utils/scheduleHelpers.js": {
       "pantalla": 1
-    },
-    "src/utils/ticketPrint.js": {
-      "navegador": 6
     }
   }
 }

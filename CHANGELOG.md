@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1062.4 — Ticketera: lo del navegador a su capa, el ticket se queda en el núcleo
+
+Sin cambios visibles. Tanda B2 del plan
+`docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+
+- `utils/ticketPrint.js` sigue siendo el ÚNICO punto de entrada para imprimir
+  (`imprimirDocumento`, CLAUDE.md) y exporta los mismos nombres; las 11
+  pantallas que lo usan no cambian.
+- Lo que sólo existe en un navegador pasa a **`plataforma/impresion.js`**:
+  dibujar el código de barras como SVG, pedir el alto de página del marco,
+  imprimir un iframe con el diálogo del sistema y el permiso de red local.
+  Armar el ticket —el texto del rollo de 54 columnas, que una impresora
+  Bluetooth imprimiría igual— se queda en el núcleo.
+- Los ajustes de la impresora (ancho del rollo, sistema) pasan a `almacen`.
+- **Enfrentadas la versión vieja y la nueva en Chrome y en Safari** con el
+  ticket de prueba de caja: mismos códigos de barras (CODE128 y CODE39), mismo
+  HTML, mismo texto del rollo, mismo alto de página (80 × 171 mm), e
+  `imprimirTicket` imprime una vez y sin error. Las 18 pruebas de
+  `ticketPrint.test.js` (geometría anclada contra un ticket real) pasan.
+  `gate:nucleo` 24 → 18.
+
 ## v2.1062.3 — Fotos: una sola forma de achicarlas, y la detección de teléfono a su capa
 
 Sin cambios visibles. Tanda B2 del plan

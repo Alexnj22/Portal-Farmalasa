@@ -1,3 +1,5 @@
+import * as almacen from '../plataforma/almacen';
+import { svgDeCodigoDeBarras, ajustarAltoDelMarco, imprimirMarco as imprimirMarcoDelNavegador, imprimirHtmlSinVista, permisoDeRedLocal } from '../plataforma/impresion';
 // ─── Impresión en rollo (ticketera) ──────────────────────────────────────────
 //
 // El portal imprimía sólo en hoja: `pedidoPrint.js`, `conteoInventarioPrint.js`
@@ -132,12 +134,9 @@ export const limpiarValorDeBarras = (valor) =>
 export async function dibujarCodigoDeBarras(valor, simbologia = 'CODE128') {
     const limpio = limpiarValorDeBarras(valor);
     if (!limpio) return '';
-    const JsBarcode = (await import('jsbarcode')).default;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    JsBarcode(svg, limpio, {
-        format: simbologia, width: 2, height: 50, displayValue: false, margin: 0,
-    });
-    return new XMLSerializer().serializeToString(svg);
+    // El dibujo es del navegador (`plataforma/impresion.js`); limpiar el valor
+    // es regla del ticket y se queda acá.
+    return svgDeCodigoDeBarras(limpio, simbologia);
 }
 
 /**
@@ -450,26 +449,7 @@ export function construirTicketHtml(ticket) {
  *
  * @returns {number|null} el alto en mm que quedó pedido.
  */
-const HOLGURA_MM = 4;
-
-export function ajustarAltoDePagina(marco) {
-    const doc = marco?.contentDocument;
-    if (!doc?.documentElement) return null;
-
-    const ancho = doc.documentElement.dataset.ancho || ANCHO_POR_DEFECTO;
-    const alto = doc.body?.getBoundingClientRect().height || doc.body?.scrollHeight;
-    if (!alto) return null;
-    const mm = Math.ceil((alto / 96) * 25.4) + HOLGURA_MM;
-
-    let regla = doc.getElementById('alto-de-pagina');
-    if (!regla) {
-        regla = doc.createElement('style');
-        regla.id = 'alto-de-pagina';
-        doc.head.appendChild(regla);
-    }
-    regla.textContent = `@page { size: ${ancho}mm ${mm}mm; margin: 0; }`;
-    return mm;
-}
+export const ajustarAltoDePagina = (marco) => ajustarAltoDelMarco(marco, ANCHO_POR_DEFECTO);
 
 /**
  * Imprime el documento que ya está pintado en un iframe.
@@ -478,23 +458,7 @@ export function ajustarAltoDePagina(marco) {
  * papel no puede diferir de lo que el usuario acaba de mirar. Devuelve el
  * motivo del fallo, o null si el diálogo se abrió.
  */
-export function imprimirMarco(marco) {
-    const ventana = marco?.contentWindow;
-    if (!ventana) return 'La vista previa todavía no está lista.';
-    try {
-        // Se remide en cada impresión: el contenido pudo cambiar desde que se
-        // pintó (otro ancho de rollo, otro documento) y un alto viejo cortaría
-        // el final o dejaría papel en blanco.
-        ajustarAltoDePagina(marco);
-        // `focus()` primero: Safari imprime la página de arriba en vez del
-        // iframe si el marco no tiene el foco.
-        ventana.focus();
-        ventana.print();
-        return null;
-    } catch (err) {
-        return err?.message || 'El navegador no abrió el diálogo de impresión.';
-    }
-}
+export const imprimirMarco = (marco) => imprimirMarcoDelNavegador(marco, ANCHO_POR_DEFECTO);
 
 /**
  * Imprime un ticket sin necesidad de una vista previa en pantalla — para los
@@ -505,28 +469,7 @@ export function imprimirMarco(marco) {
  * porque `afterprint` no llega en todos los navegadores.
  */
 export function imprimirTicket(ticket) {
-    const marco = document.createElement('iframe');
-    marco.setAttribute('aria-hidden', 'true');
-    marco.setAttribute('title', 'Impresión');
-    marco.style.cssText = 'position:fixed;left:-10000px;top:0;width:120mm;height:1px;border:0;';
-    document.body.appendChild(marco);
-
-    let sacado = false;
-    const sacar = () => {
-        if (sacado) return;
-        sacado = true;
-        marco.remove();
-    };
-
-    return new Promise((resolve) => {
-        marco.onload = () => {
-            const error = imprimirMarco(marco);
-            marco.contentWindow?.addEventListener('afterprint', sacar);
-            setTimeout(sacar, 60_000);
-            resolve(error);
-        };
-        marco.srcdoc = construirTicketHtml(ticket);
-    });
+    return imprimirHtmlSinVista(construirTicketHtml(ticket), ANCHO_POR_DEFECTO);
 }
 
 // ── El camino sin diálogo: la impresora de esta computadora ──────────────────
@@ -1223,14 +1166,7 @@ export function construirTicketDePruebaDeCaja({
  *
  * @returns {Promise<'granted'|'denied'|'prompt'|null>} null = no se sabe.
  */
-export async function permisoDeRedLocal() {
-    try {
-        const p = await navigator.permissions.query({ name: 'local-network-access' });
-        return p.state;
-    } catch {
-        return null;
-    }
-}
+export { permisoDeRedLocal };
 
 /**
  * Comprueba qué contesta esta computadora, antes de gastar papel.
@@ -1352,7 +1288,7 @@ const LS_AJUSTES = 'portal-impresion';
 
 export function leerAjustesDeImpresion() {
     try {
-        const g = JSON.parse(localStorage.getItem(LS_AJUSTES) || '{}');
+        const g = JSON.parse(almacen.leer(LS_AJUSTES) || '{}');
         return {
             ancho: ANCHOS_ROLLO.some(a => a.mm === g.ancho) ? g.ancho : ANCHO_POR_DEFECTO,
             sistema: g.sistema === 'windows' ? 'windows' : 'linux',
@@ -1363,7 +1299,7 @@ export function leerAjustesDeImpresion() {
 }
 
 export function guardarAjustesDeImpresion(ajustes) {
-    try { localStorage.setItem(LS_AJUSTES, JSON.stringify(ajustes)); } catch { /* modo privado o sin cuota */ }
+    try { almacen.guardar(LS_AJUSTES, JSON.stringify(ajustes)); } catch { /* modo privado o sin cuota */ }
     return ajustes;
 }
 

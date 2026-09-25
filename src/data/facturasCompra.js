@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { getSignedFileUrl } from '../utils/storageFiles';
 
 import { registrarEgreso } from './egreso';
+import { descargarArchivo } from '../plataforma/descargas';
 // supabase-js lanza FunctionsHttpError con .message genérico
 // ("Edge Function returned a non-2xx status code") — el mensaje real que arma
 // la función (ej. "Máximo 300 documentos...") solo está en error.context
@@ -20,18 +21,10 @@ async function extractFunctionErrorMessage(error) {
 // a.click() + URL.revokeObjectURL(a.href) espalda-con-espalda (sin agregar
 // el <a> al DOM) puede revocar el blob URL antes de que el navegador
 // empiece a leerlo — la descarga se pierde en silencio, sin error en
-// consola (justo lo reportado). El patrón robusto: agregar al DOM, click,
-// remover, y revocar con demora (no inmediato).
-function triggerDownload(blob, filename) {
-    const a = Object.assign(window.document.createElement('a'), {
-        href: URL.createObjectURL(blob),
-        download: filename,
-    });
-    window.document.body.appendChild(a);
-    a.click();
-    window.document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-}
+// consola (justo lo reportado). El patrón robusto vive hoy en
+// `plataforma/descargas.js`, y es el que usan TODAS las descargas: acá se
+// había corregido y en otros tres sitios no.
+const triggerDownload = descargarArchivo;
 
 export async function fetchPurchaseDteDocuments(desde, hasta) {
     const { data, error } = await supabase.rpc('get_purchase_dte_documents', { p_desde: desde, p_hasta: hasta });

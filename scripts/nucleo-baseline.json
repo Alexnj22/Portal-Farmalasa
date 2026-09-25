@@ -1,6 +1,6 @@
 {
-  "total": 42,
-  "archivos": 19,
+  "total": 31,
+  "archivos": 15,
   "porArchivo": {
     "src/constants/moduleMap.js": {
       "pantalla": 1
@@ -23,19 +23,10 @@
     "src/data/constants.js": {
       "pantalla": 1
     },
-    "src/data/facturasCompra.js": {
-      "navegador": 3
-    },
-    "src/data/librosIva.js": {
-      "navegador": 1
-    },
     "src/data/recorteSugerido.js": {
       "navegador": 1
     },
     "src/store/slices/employeeSlice.js": {
-      "navegador": 1
-    },
-    "src/utils/csvExport.js": {
       "navegador": 1
     },
     "src/utils/documentoDeBienvenida.js": {
@@ -52,9 +43,6 @@
     },
     "src/utils/scheduleHelpers.js": {
       "pantalla": 1
-    },
-    "src/utils/storageFiles.js": {
-      "navegador": 6
     },
     "src/utils/ticketPrint.js": {
       "navegador": 6

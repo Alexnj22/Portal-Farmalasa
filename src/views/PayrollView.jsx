@@ -26,6 +26,7 @@ import { shortEmployeeName } from '../utils/nameUtils';
 
 import { registrarEgreso } from '../data/egreso';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
+import { descargarArchivo } from '../plataforma/descargas';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -490,10 +491,7 @@ const PayrollView = ({ openModal }) => {
             return `${emp.name||''},${emp.bank_name||''},${acct},${emp.account_type||''},${round2(e.net_pay).toFixed(2)}`;
         }).join('\n');
         const blob = new Blob([`Nombre,Banco,Cuenta,Tipo,Monto\n${rows}`], { type: 'text/csv' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href = url; a.download = `planilla-banco-${activePeriod.name}.csv`; a.click();
-        URL.revokeObjectURL(url);
+        descargarArchivo(blob, `planilla-banco-${activePeriod.name}.csv`);
         // La salida más sensible del portal: nombre, banco y número de cuenta de
         // cada persona. `cuentas_visibles` distingue quién se llevó los números
         // de verdad de quién se llevó `****` — sin eso, las dos descargas se

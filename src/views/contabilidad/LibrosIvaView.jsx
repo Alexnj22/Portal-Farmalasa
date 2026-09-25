@@ -30,6 +30,7 @@ import {
 import { getSignedFileUrl } from '../../utils/storageFiles';
 
 import { registrarEgreso } from '../../data/egreso';
+import { descargarArchivo } from '../../plataforma/descargas';
 // ─────────────────────────────────────────────────────────────────────────────
 // Los siete libros y anexos de IVA del ERP, generados desde el portal:
 // ventas desde `sales_invoices`, compras desde `purchase_receipts`.
@@ -520,13 +521,9 @@ function getZipLib() {
 // `sales-dte` es un bucket PRIVADO: en la base vive la URL formato-public como
 // identificador y `getSignedFileUrl` la firma en el momento de abrirla. Guardar
 // una firmada sería guardar algo que expira.
-function dispararDescarga(blob, nombre) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = nombre;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-}
+// El patrón que no pierde el archivo vive en `plataforma/descargas.js`; acá
+// se liberaba en el acto, que es justo lo que puede ganarle al navegador.
+const dispararDescarga = descargarArchivo;
 
 async function bajarArchivo(path, nombre) {
     const url = await getSignedFileUrl(path);
@@ -1048,12 +1045,7 @@ export default function LibrosIvaView({ openModal }) {
         armarPaqueteDelMes({ desde, hasta, mes, nombreSucursal })
             .then(paquete => {
                 if (!paquete) { setError('No hay libros con datos en este período.'); return; }
-                const a = Object.assign(document.createElement('a'), {
-                    href: URL.createObjectURL(paquete.blob),
-                    download: paquete.nombre,
-                });
-                a.click();
-                URL.revokeObjectURL(a.href);
+                descargarArchivo(paquete.blob, paquete.nombre);
                 registrarEgreso('libros_iva', { formato: 'zip', filas: paquete.archivos ?? null, detalle: { mes, paquete: 'mes-completo' } });
             })
             .catch(e => setError(e?.message || 'No se pudo generar el paquete.'))

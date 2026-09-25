@@ -106,3 +106,50 @@ describe('cicloDeVida', async () => {
         expect(fn).toHaveBeenCalledTimes(1);
     });
 });
+
+// Las descargas: el patrón que NO pierde el archivo (defecto del 2026-07-22,
+// anotado en `data/facturasCompra.js`). El enlace tiene que estar en la página
+// al hacer clic, y el archivo se libera DESPUÉS, no en el acto.
+describe('descargas', async () => {
+    const d = await import('../../src/plataforma/descargas');
+
+    it('agrega el enlace a la página, hace clic, lo quita y libera con demora', () => {
+        vi.useFakeTimers();
+        const liberar = vi.fn();
+        const orig = { crear: URL.createObjectURL, liberar: URL.revokeObjectURL };
+        URL.createObjectURL = () => 'blob:prueba';
+        URL.revokeObjectURL = liberar;
+        let enPagina = null;
+        const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function () {
+            enPagina = document.body.contains(this);
+        });
+        d.descargarArchivo(new Blob(['x']), 'reporte.csv');
+        expect(click).toHaveBeenCalledTimes(1);
+        expect(enPagina, 'el enlace tiene que estar en la página al hacer clic').toBe(true);
+        expect(document.querySelector('a[download="reporte.csv"]')).toBeNull();
+        expect(liberar, 'liberar en el acto puede ganarle al navegador').not.toHaveBeenCalled();
+        vi.advanceTimersByTime(2000);
+        expect(liberar).toHaveBeenCalledWith('blob:prueba');
+        URL.createObjectURL = orig.crear; URL.revokeObjectURL = orig.liberar;
+        vi.useRealTimers();
+    });
+
+    it('abre la pestaña ANTES de esperar la dirección (si no, el navegador la bloquea)', async () => {
+        const win = { location: { href: '' }, close: vi.fn() };
+        const open = vi.spyOn(window, 'open').mockReturnValue(win);
+        let soltar;
+        const promesa = new Promise((r) => { soltar = r; });
+        const hecho = d.abrirEnPestanaCuandoLlegue(promesa);
+        expect(open, 'se abrió después del await').toHaveBeenCalledWith('about:blank', '_blank');
+        soltar('https://archivo');
+        await hecho;
+        expect(win.location.href).toBe('https://archivo');
+    });
+
+    it('si la dirección no llega, cierra la pestaña que abrió', async () => {
+        const win = { location: { href: '' }, close: vi.fn() };
+        vi.spyOn(window, 'open').mockReturnValue(win);
+        await d.abrirEnPestanaCuandoLlegue(Promise.resolve(null));
+        expect(win.close).toHaveBeenCalled();
+    });
+});

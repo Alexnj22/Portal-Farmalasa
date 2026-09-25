@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1062.2 — Descargas: un solo camino, el que no pierde el archivo
+
+Tanda B2 del plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`, con un arreglo
+de fondo.
+
+- **Nueve descargas usaban el patrón que puede perder el archivo en silencio.**
+  El defecto se había encontrado y corregido el 2026-07-22 en las facturas de
+  compra (`a.click()` y liberar el archivo en el mismo instante, con el enlace
+  fuera de la página: la descarga puede no llegar, sin ningún error), pero la
+  corrección no llegó a los demás. Seguían así: la exportación a CSV de todas
+  las tablas (`exportCsv`), el ZIP de los documentos de venta, los archivos
+  guardados, **la planilla del banco**, la quincena de asistencia, el CSV de
+  Mín·Máx y las dos descargas de los libros de IVA.
+- **`plataforma/descargas.js`**: `descargarArchivo` (el patrón que sí
+  funciona: enlace en la página, clic, quitarlo, liberar con demora),
+  `abrirEnPestanaNueva` y `abrirEnPestanaCuandoLlegue` (la pestaña se abre
+  dentro del clic y se navega cuando llega la URL firmada, para que el
+  navegador no la bloquee). Las nueve descargas pasan por ahí.
+- Verificado con un archivo real en Chrome y en Safari: llega con el contenido
+  idéntico y no queda ningún enlace en la página. Tres pruebas nuevas anclan el
+  orden (enlace en la página al hacer clic, liberar después, abrir la pestaña
+  antes de esperar).
+- La caché de URLs firmadas de `storageFiles` pasa a `almacen`.
+  `gate:nucleo` 42 → 31.
+
 ## v2.1062.1 — Pedidos: la revisión de Mín·Máx no vacía estado en el efecto y descarta respuestas viejas
 
 `ItemSections.jsx` era el único archivo con `react-hooks/set-state-in-effect`

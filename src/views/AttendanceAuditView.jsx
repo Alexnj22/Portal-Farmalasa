@@ -43,6 +43,7 @@ import { registrarEgreso } from '../data/egreso';
 import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, isAutoPunch,
          isPendingPunch, getCurrentQuincenaStart, getQuincenaEnd, prevQuincena, nextQuincena }
     from './asistencia/quincena';
+import { descargarArchivo } from '../plataforma/descargas';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
@@ -1019,12 +1020,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     });
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `quincena-${selectedQuincena}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    descargarArchivo(blob, `quincena-${selectedQuincena}.csv`);
     registrarEgreso('asistencia', { formato: 'csv', filas: rows.length - 1, detalle: { quincena: selectedQuincena } });
   }, [quincenaSummary, branchNameById, selectedQuincena]);
 

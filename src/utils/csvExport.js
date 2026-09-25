@@ -19,6 +19,7 @@
 // libro fiscal, una fila en blanco es una fila del libro.
 
 import { registrarEgreso } from '../data/egreso';
+import { descargarArchivo } from '../plataforma/descargas';
 
 function escapeCell(value) {
     if (value == null) return '';
@@ -45,12 +46,7 @@ function escapeCell(value) {
  */
 export function exportCsv(headers, rows, filename, modulo) {
     const blob = new Blob([buildCsvText(headers, rows)], { type: 'text/csv;charset=utf-8;' });
-    const a = Object.assign(document.createElement('a'), {
-        href: URL.createObjectURL(blob),
-        download: filename,
-    });
-    a.click();
-    URL.revokeObjectURL(a.href);
+    descargarArchivo(blob, filename);
 
     if (!modulo) console.error(`[exportCsv] "${filename}" se descargó sin declarar módulo.`);
     registrarEgreso(modulo || 'sin-declarar', {

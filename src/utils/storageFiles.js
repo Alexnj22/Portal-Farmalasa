@@ -1,4 +1,6 @@
 import { supabase } from '../supabaseClient';
+import { descargarArchivo, abrirEnPestanaNueva, abrirEnPestanaCuandoLlegue } from '../plataforma/descargas';
+import * as almacen from '../plataforma/almacen';
 
 // Buckets privados (2026-07-02): las URLs "public" guardadas en BD quedaron
 // como identificadores — para mostrarlas hay que convertirlas a URL firmada
@@ -64,13 +66,10 @@ export const getSignedFileUrl = async (storedUrl, expiresIn = 3600) => {
     return data.signedUrl;
 };
 
-export const openStoredFile = async (storedUrl) => {
-    // Abrir la pestaña ANTES del await — los popup blockers matan window.open post-async
-    const win = window.open('about:blank', '_blank');
-    const url = await getSignedFileUrl(storedUrl);
-    if (url && win) win.location.href = url;
-    else if (win) win.close();
-};
+export const openStoredFile = (storedUrl) =>
+    // La pestaña se abre ANTES de pedir la URL firmada: los bloqueadores de
+    // ventanas matan un window.open que llega después de un await.
+    abrirEnPestanaCuandoLlegue(getSignedFileUrl(storedUrl));
 
 // Fuerza una descarga real (save-as) en vez de abrir/navegar una pestaña —
 // usar en botones explícitamente etiquetados "Descargar" (openStoredFile
@@ -86,15 +85,10 @@ export const downloadStoredFile = async (storedUrl, filename) => {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
-        const a = Object.assign(document.createElement('a'), {
-            href: URL.createObjectURL(blob),
-            download: filename || 'archivo',
-        });
-        a.click();
-        URL.revokeObjectURL(a.href);
+        descargarArchivo(blob, filename || 'archivo');
     } catch (e) {
         console.error('downloadStoredFile:', e.message);
-        window.open(url, '_blank');
+        abrirEnPestanaNueva(url);
     }
 };
 
@@ -120,7 +114,7 @@ const MAX_FIRMAS = 600;
 
 const leerFirmas = () => {
     try {
-        const raw = localStorage.getItem(LS_FIRMAS);
+        const raw = almacen.leer(LS_FIRMAS);
         return raw ? JSON.parse(raw) : {};
     } catch { return {}; }
 };
@@ -133,7 +127,7 @@ const guardarFirmas = (firmas) => {
             entradas.sort((a, b) => b[1].exp - a[1].exp);      // se conservan las más longevas
             entradas = entradas.slice(0, MAX_FIRMAS);
         }
-        localStorage.setItem(LS_FIRMAS, JSON.stringify(Object.fromEntries(entradas)));
+        almacen.guardar(LS_FIRMAS, JSON.stringify(Object.fromEntries(entradas)));
     } catch { /* storage lleno o bloqueado — la firma igual se devolvió */ }
 };
 
@@ -141,7 +135,7 @@ const guardarFirmas = (firmas) => {
 // la URL, sin sesión. En el kiosco el dispositivo es compartido, así que al
 // cerrar sesión se van con el resto del cache (lo llama `clearAuthCache`).
 export const clearSignedUrlCache = () => {
-    try { localStorage.removeItem(LS_FIRMAS); } catch { /* ignore */ }
+    try { almacen.borrar(LS_FIRMAS); } catch { /* ignore */ }
 };
 
 // Firma EN LOTE: recibe URLs crudas y devuelve Map url→firmada (12h default).

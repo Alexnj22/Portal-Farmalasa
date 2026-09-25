@@ -12,10 +12,17 @@ import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHe
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
 import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "../plataforma/pushEquipo";
-import AvisoDeInactividad from "../components/common/AvisoDeInactividad";
 import { programarEn } from "../utils/temporizadorLargo";
 
 const AuthContext = createContext(null);
+
+// El aviso de «¿sigues ahí?» en su propio contexto: la sesión decide CUÁNDO
+// avisar y la pantalla decide CÓMO. Así el núcleo no importa un diálogo de la
+// web (en la app nativa el dibujo será otro) y, como sólo lo lee el aviso,
+// que aparezca o se vaya no vuelve a renderizar a quien usa `useAuth`.
+const AvisoDeSesionContext = createContext({ hasta: null, seguir: () => {} });
+// eslint-disable-next-line react-refresh/only-export-components -- mismo patrón que useAuth
+export const useAvisoDeSesion = () => useContext(AvisoDeSesionContext);
 
 // eslint-disable-next-line react-refresh/only-export-components -- patrón estándar de contexto+hook; separar useAuth a otro archivo tocaría decenas de imports para una mejora de solo Fast Refresh en dev
 export const useAuth = () => {
@@ -1325,19 +1332,23 @@ export const AuthProvider = ({ children }) => {
   // que la lectura falló y se queda en el splash para siempre.
   }, [user, loading, isSU, rolePerms, permsLoading, permsError, moduleLocks, refreshPermissions, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Se monta acá y no en el layout a propósito: colgado del provider aparece en
-  // CUALQUIER pantalla donde haya sesión —incluida una que se abra fuera del
-  // layout—, y `{children}` conserva su referencia, así que este estado no
-  // vuelve a renderizar el árbol de abajo.
+  const seguirEnLaSesion = useCallback(() => {
+    ponerAviso(null); writeLastActivity(true); latirSesion();
+  }, [ponerAviso, latirSesion]); // eslint-disable-line react-hooks/exhaustive-deps
+  const aviso = useMemo(
+    () => ({ hasta: user ? avisoHasta : null, seguir: seguirEnLaSesion }),
+    [user, avisoHasta, seguirEnLaSesion],
+  );
+
+  // El aviso lo dibuja `AvisoDeInactividadDeLaSesion`, montado junto a `<App />`
+  // en `main.jsx` y no en el layout: así aparece en CUALQUIER pantalla con
+  // sesión —incluida una que se abra fuera del layout—. `{children}` conserva
+  // su referencia, así que este estado no vuelve a renderizar el árbol de abajo.
   return (
     <AuthContext.Provider value={value}>
-      {children}
-      {!!user && (
-        <AvisoDeInactividad
-          hasta={avisoHasta}
-          onSeguir={() => { ponerAviso(null); writeLastActivity(true); latirSesion(); }}
-        />
-      )}
+      <AvisoDeSesionContext.Provider value={aviso}>
+        {children}
+      </AvisoDeSesionContext.Provider>
     </AuthContext.Provider>
   );
 };

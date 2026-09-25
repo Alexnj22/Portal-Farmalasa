@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1064.4 — Núcleo portable: el aviso de inactividad sale del contexto de sesión
+
+Sin cambios visibles. Cierra la fase F1 del núcleo portable: **`gate:nucleo`
+en 0** — ningún archivo de lógica usa el navegador ni importa una pantalla.
+
+- `AuthContext` decidía CUÁNDO avisar «¿sigues ahí?» y además dibujaba el
+  diálogo. Ahora publica el aviso en su propio contexto (`useAvisoDeSesion`) y
+  lo dibuja `AvisoDeInactividadDeLaSesion`, montado junto a `<App />` en
+  `main.jsx`. Como sólo el aviso lee ese contexto, que aparezca o se vaya no
+  vuelve a renderizar a quien usa `useAuth`.
+- Verificado con `tests/e2e/inactividad.spec.js` contra la base de pruebas: el
+  cartel aparece, la sesión se cierra cuando el contador llega a cero y
+  moverse con el cartel puesto la salva.
+
 ## v2.1064.3 — Núcleo portable tanda C: los catálogos guardan el ícono por nombre
 
 Sin cambios visibles. Tanda C del plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.

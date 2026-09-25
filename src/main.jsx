@@ -76,6 +76,7 @@ window.addEventListener('vite:preloadError', (event) => {
 
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
+import { AvisoDeInactividadDeLaSesion } from "./components/common/AvisoDeInactividad";
 import { ThemeProvider } from "./plataforma/ThemeContext";
 import MotionProvider from "./components/MotionProvider";
 
@@ -94,6 +95,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <MotionProvider>
         <AuthProvider>
           <App />
+          <AvisoDeInactividadDeLaSesion />
         </AuthProvider>
       </MotionProvider>
     </ThemeProvider>

@@ -1,9 +1,5 @@
 {
-  "total": 1,
-  "archivos": 1,
-  "porArchivo": {
-    "src/context/AuthContext.jsx": {
-      "pantalla": 1
-    }
-  }
+  "total": 0,
+  "archivos": 0,
+  "porArchivo": {}
 }

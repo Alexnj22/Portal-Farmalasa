@@ -28,9 +28,22 @@
   `tests/e2e/inactividad.spec.js` contra la base de pruebas con el límite en 5
   minutos (el mínimo que acepta `roles_idle_limit_min_check`), y se devolvió a
   720.
-- **Pendiente de F1**: los 61 archivos restantes (237 usos). Los que siguen en
-  peso: `cajaNegra` (42), `useTimeClockEngine` (20), `usePushSubscription` (14),
-  `routeOptimizer` (13).
+- **F1 paso 3 — v2.1060.11**: el reloj de marcación del kiosco.
+- **Rutas — v2.1061.3 y v2.1061.4** (salieron al pasar por `routeOptimizer`):
+  reordenar una ruta no volvía a medir los tramos, y «Crear ruta» se recargaba
+  sin fin. La matemática quedó sin navegador y la tabla de Google en
+  `plataforma/mapas.js`. Prueba de punta a punta: `tests/e2e/crear-ruta.spec.js`.
+- **Tandas A y B — v2.1061.11 y v2.1061.12**: diecisiete archivos a los
+  adaptadores; lo que es propio de la web (`cajaNegra`, push, hooks de UI,
+  `ThemeContext`) se muda a `src/plataforma/`.
+- **Tanda B2 — v2.1062.2 a v2.1062.5**: descargas por un solo camino (nueve
+  eran frágiles, la planilla del banco incluida), una sola forma de achicar
+  fotos (eran cuatro), la impresión y el tema a su capa.
+- **Tanda C — v2.1064.3**: siete catálogos guardan el ícono por NOMBRE; los
+  complementos de `components/common/catalogos/` le vuelven a pegar el
+  componente. 440 comparaciones viejo/nuevo idénticas.
+- **F1 cerrada — v2.1064.4**: el aviso de inactividad sale de `AuthContext`.
+  **`gate:nucleo` en 0.**
 
 ## Para qué
 

@@ -166,7 +166,14 @@ const GRUPOS_CRUDOS = [
             // Cortes de caja va pegado a Ventas: es el dinero de esas mismas
             // ventas. `hasScope` porque la sala mira la suya y la supervisión
             // mira todas — el mismo alcance que ya tiene Ventas.
-            { key: 'cortes_caja',   label: 'Cortes de caja', desc: 'Confirmar o descartar los cortes de cada sala, con la diferencia de cada tramo y qué revisar cuando no cuadra', icon: Wallet, hasApprove: false, hasScope: true },
+            { key: 'cortes_caja',   label: 'Cortes de caja', desc: 'Confirmar o descartar los cortes de cada sala, con la diferencia de cada tramo y qué revisar cuando no cuadra', icon: Wallet, hasApprove: false, hasScope: true, sub: [
+                // Capacidad y no pestaña: gatea la ACCIÓN, no la vista. La
+                // pestaña Diferencias la ve quien ve Cortes; resolver —dar la
+                // causa, asignar responsables, abonar y anotar— sólo quien
+                // tenga esto (usuario, 2026-09-25: «solo jefe y subjefe que
+                // puedan asignar y abonar»). El alcance es el de Cortes.
+                { key: 'cortes_caja_resolver', label: 'Resolver diferencias: causa, responsables y abonos', tipo: 'cap' },
+            ]},
             // Lo que pasa DESPUÉS del corte: el efectivo se guarda en una bolsa
             // y espera ahí hasta que alguien lo retira, hasta tres días. `can_edit`
             // es guardar la bolsa e imprimir su etiqueta; el alcance es el mismo

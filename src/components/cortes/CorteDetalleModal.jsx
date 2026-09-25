@@ -92,6 +92,9 @@ export default function CorteDetalleModal({
 }) {
     const { hasPermission } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
+    // La diferencia se resuelve con su propia capacidad (2026-09-25); firmar y
+    // reabrir el corte siguen con `can_edit` de cortes.
+    const puedeResolverDif = hasPermission('cortes_caja_resolver');
     // La escritura es la misma que la del módulo, el Inicio y la campana.
     const { resolver, ocupadoId, dialogoDeEntrega } = useResolverCorte({ nombreSala, origen });
 
@@ -712,7 +715,7 @@ export default function CorteDetalleModal({
                                 nombreSala={nombreSala}
                                 diferencia={diferencia}
                                 personasResueltas={diferencia?.personas || []}
-                                puedeResolver={puedeResolver}
+                                puedeResolver={puedeResolverDif}
                                 origen={origen}
                                 onCambio={() => setRecarga((n) => n + 1)}
                             />

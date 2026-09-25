@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.9 — Diferencias: resolver, asignar y abonar es un permiso aparte
+
+Decidido por el usuario: la pestaña Diferencias la ve quien ve Cortes de caja,
+pero resolver, asignar responsables y abonar sólo los cargos de todas las salas
+y, en la sala, Jefe/a y Subjefe/a. «Así se lleva mejor control, además de que
+todo movimiento debe decir quién lo hizo.»
+
+- **Capacidad nueva `cortes_caja_resolver`** en Permisos → Cortes de caja
+  («Resolver diferencias: causa, responsables y abonos»). La tienen
+  Administrador, Gerente General, Jefe/a de Talento Humano, Supervisor/a de
+  Ventas y QA (todas las salas) y Jefe/a y Subjefe/a de Sala (su sala).
+  **Dependiente de Farmacia y Regente de Enfermería dejan de poder resolver**:
+  siguen viendo la pestaña y confirmando sus cortes. Antes podían asignar los
+  responsables de un faltante de su propia sala.
+- Las ocho funciones de diferencias piden la capacidad en el servidor
+  (migración `20260925163503`, que reescribe sólo la línea del candado y aborta
+  si no la encuentra). Confirmar y reabrir cortes no cambia.
+- **Quién hizo cada paso de un abono**: recibió · anotó · anuló, con su nombre.
+
 ## v2.1061.8 — Diferencias: filtro por mes y paginación
 
 - **Ranura «Mes»** en la pestaña Diferencias: abre en el mes actual, con los

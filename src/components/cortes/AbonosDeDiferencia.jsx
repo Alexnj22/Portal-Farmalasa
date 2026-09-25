@@ -204,8 +204,11 @@ export default function AbonosDeDiferencia({
                                     <span className="text-caption text-content-2"> · {shortEmployeeName(a.nombre)}</span>
                                     <span className="block text-caption text-content-3">
                                         {fechaHora12(a.registrado_at)}
+                                        {/* Quién hizo cada paso (usuario: «todo movimiento
+                                            debe decir quién lo hizo»). */}
                                         {a.registrado_nombre && ` · recibió ${shortEmployeeName(a.registrado_nombre)}`}
-                                        {a.anulada_at && ` · anulado: ${a.anulada_motivo}`}
+                                        {a.asentado_at && ` · anotó ${a.asentado_nombre ? shortEmployeeName(a.asentado_nombre) : 'sin nombre'}`}
+                                        {a.anulada_at && ` · anuló ${a.anulada_nombre ? shortEmployeeName(a.anulada_nombre) : 'sin nombre'}: ${a.anulada_motivo}`}
                                     </span>
                                 </div>
                                 {!a.anulada_at && (a.asentado_at

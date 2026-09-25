@@ -261,6 +261,10 @@ const CortesView = () => {
     const branches = useStaff((s) => s.branches) || VACIO;
     const { hasPermission, getScope, user } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
+    // Resolver una DIFERENCIA —causa, responsables, abonos, anotar— es una
+    // capacidad aparte desde el 2026-09-25 (usuario: «solo jefe y subjefe que
+    // puedan asignar y abonar»). Confirmar cortes sigue en `puedeResolver`.
+    const puedeResolverDif = hasPermission('cortes_caja_resolver');
     /* Las salidas de bolsa son de OTRO módulo, con su propio permiso. Se
      * pregunta antes de pedirlas: la policy de `bolsas` devuelve cero filas y no
      * un error, y leer ese vacío como «no hubo ninguna» es cómo se pierde
@@ -1020,7 +1024,7 @@ const CortesView = () => {
                     />
                 )}
 
-                {(enCortes || enDiferencias) && !(enDiferencias ? cargandoDif : cargando) && puedeResolver && sinAsentar.length > 0 && (
+                {(enCortes || enDiferencias) && !(enDiferencias ? cargandoDif : cargando) && puedeResolverDif && sinAsentar.length > 0 && (
                     <Notice variant="warning" icon={Landmark}>
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                             <div className="min-w-0">
@@ -1047,7 +1051,7 @@ const CortesView = () => {
                         cargando={cargandoDif}
                         error={errorDif}
                         nombreSala={nombreSala}
-                        puedeResolver={puedeResolver}
+                        puedeResolver={puedeResolverDif}
                         busqueda={busqueda}
                         filtroActivo={filtroDif}
                         signo={signoDif}

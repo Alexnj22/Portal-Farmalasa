@@ -34,7 +34,10 @@ import {
 } from '../data/kiosco';
 import useKioskDevice from './useKioskDevice';
 import { useAuth } from '../context/AuthContext';
-import { XCircle, ShieldAlert } from 'lucide-react';
+import { escucharConexion, soltarConexion } from '../plataforma/conexion';
+import { recargar } from '../plataforma/navegacion';
+import { escucharTeclas, soltarTeclas } from '../plataforma/teclado';
+import { useFocoDelLector } from '../plataforma/useFocoDelLector';
 
 import { mensajeAmigable } from '../utils/errorMessages';
 import { requiereCodigoSu } from '../utils/kioskAutorizacion';
@@ -126,10 +129,10 @@ export function useTimeClockEngine(props = {}) {
             }).catch(() => {});
         };
         tryFlush();
-        window.addEventListener('online', tryFlush);
+        escucharConexion(tryFlush);
         const interval = setInterval(tryFlush, 30_000);
         return () => {
-            window.removeEventListener('online', tryFlush);
+            soltarConexion(tryFlush);
             clearInterval(interval);
         };
     }, [registrarMarcaje, mergeKioskAttendance]);
@@ -142,24 +145,6 @@ export function useTimeClockEngine(props = {}) {
     }, []);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            if (
-                inputRef.current &&
-                document.activeElement !== inputRef.current &&
-                !feedback &&
-                !isProcessing &&
-                !earlyExitData &&
-                !selfDeclareData &&
-                !isConfiguring &&
-                !isRevokeModalOpen
-            ) {
-                inputRef.current.focus();
-            }
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [feedback, isProcessing, earlyExitData, selfDeclareData, isConfiguring, isRevokeModalOpen]);
-
-    useEffect(() => {
         return () => {
             if (closeTimerRef.current) {
                 clearTimeout(closeTimerRef.current);
@@ -168,52 +153,18 @@ export function useTimeClockEngine(props = {}) {
         };
     }, []);
 
-    const canAutoFocus = useCallback(() => {
-        return (
-            !!inputRef.current &&
-            !feedback &&
-            !isProcessing &&
-            !earlyExitData &&
-            !isConfiguring &&
-            !isRevokeModalOpen
-        );
-    }, [earlyExitData, feedback, isConfiguring, isProcessing, isRevokeModalOpen]);
-
-    const ensureInputFocus = useCallback(() => {
-        if (!canAutoFocus()) return;
-        if (!inputRef.current) return;
-        if (document.activeElement === inputRef.current) return;
-
-        requestAnimationFrame(() => {
-            if (!canAutoFocus()) return;
-            inputRef.current?.focus();
-        });
-    }, [canAutoFocus]);
-
-    useEffect(() => {
-        ensureInputFocus();
-
-        const onVisibility = () => {
-            if (document.visibilityState === 'visible') ensureInputFocus();
-        };
-
-        const onWindowFocus = () => ensureInputFocus();
-        const onUserInteract = () => ensureInputFocus();
-
-        document.addEventListener('visibilitychange', onVisibility, true);
-        window.addEventListener('focus', onWindowFocus, true);
-        window.addEventListener('click', onUserInteract, true);
-        window.addEventListener('keydown', onUserInteract, true);
-        window.addEventListener('touchstart', onUserInteract, true);
-
-        return () => {
-            document.removeEventListener('visibilitychange', onVisibility, true);
-            window.removeEventListener('focus', onWindowFocus, true);
-            window.removeEventListener('click', onUserInteract, true);
-            window.removeEventListener('keydown', onUserInteract, true);
-            window.removeEventListener('touchstart', onUserInteract, true);
-        };
-    }, [ensureInputFocus]);
+    // El foco del campo que lee el carné. La regla de CUÁNDO se calcula acá, una
+    // sola vez; el cómo —temporizador y oyentes— vive en la capa del navegador.
+    // Ver `plataforma/useFocoDelLector.js`: antes eran dos copias de esta
+    // condición y no coincidían.
+    const puedeEnfocarLector =
+        !feedback &&
+        !isProcessing &&
+        !earlyExitData &&
+        !selfDeclareData &&
+        !isConfiguring &&
+        !isRevokeModalOpen;
+    const ensureInputFocus = useFocoDelLector(inputRef, puedeEnfocarLector);
 
     const closeFeedback = useCallback(() => {
         if (closeTimerRef.current) {
@@ -347,7 +298,7 @@ export function useTimeClockEngine(props = {}) {
                         ? 'Ese mismo marcaje acaba de quedar guardado.'
                         : 'Avisa a tu jefatura para que lo registre.',
                 color: 'orange',
-                icon: ShieldAlert,
+                iconKey: 'shield',
             });
             setAuthPrompt(null);
             setSpecialMode(false);
@@ -581,7 +532,7 @@ export function useTimeClockEngine(props = {}) {
             showToast('Desvinculado', 'Dispositivo desvinculado exitosamente.', 'success');
             
             setTimeout(() => {
-                window.location.reload();
+                recargar();
             }, 1500);
 
         } catch {
@@ -624,7 +575,7 @@ export function useTimeClockEngine(props = {}) {
                     showToast('Kiosco Vinculado', `Kiosco "${deviceNameInput}" autorizado correctamente.`, 'success');
 
                     setTimeout(() => {
-                        window.location.reload();
+                        recargar();
                     }, 2000);
                 }
             } else {
@@ -748,7 +699,7 @@ const submitEarlyExit = useCallback((e) => {
                     message: 'SE NECESITA UNA SESIÓN',
                     subtext: 'Para configurar este equipo hay que iniciar sesión con una cuenta con permiso sobre sucursales.',
                     color: 'red',
-                    icon: ShieldAlert,
+                    iconKey: 'shield',
                 });
                 setScanCode('');
                 scheduleFeedbackClose(4000);
@@ -778,7 +729,7 @@ const submitEarlyExit = useCallback((e) => {
                 message: 'USO DE LECTOR REQUERIDO',
                 subtext: 'Por seguridad, solo se permite el carné físico. Contacta a tu supervisor si necesitas ayuda.',
                 color: 'red',
-                icon: ShieldAlert,
+                iconKey: 'shield',
             });
             setScanCode('');
             scheduleFeedbackClose(4000);
@@ -797,7 +748,7 @@ const submitEarlyExit = useCallback((e) => {
                 message: 'KIOSCO NO AUTORIZADO',
                 subtext: 'Dispositivo no vinculado o permiso revocado.',
                 color: 'red',
-                icon: ShieldAlert,
+                iconKey: 'shield',
             });
             setScanCode('');
             scheduleFeedbackClose(4000);
@@ -888,7 +839,7 @@ const submitEarlyExit = useCallback((e) => {
                             ? 'Sin conexión: se verificará y te avisaremos cuando quede confirmado.'
                             : `Entrada con hora real — ${earlyPendingData?.earlyMins || 0} min antes del turno`,
                         color: pendingVerification ? 'orange' : 'purple',
-                        icon: ShieldAlert,
+                        iconKey: 'shield',
                         time: hora12ConSegundos(time),
                         shiftName: authPrompt.customConfig?.config?.shift?.name || 'General',
                         announcement: null,
@@ -947,7 +898,7 @@ const submitEarlyExit = useCallback((e) => {
                         ? 'Espera unos minutos antes de volver a intentar.'
                         : 'Autorización Denegada',
                     color: 'red',
-                    icon: XCircle,
+                    iconKey: 'x',
                 });
                 setScanCode('');
                 scheduleFeedbackClose(2500);
@@ -992,7 +943,7 @@ const submitEarlyExit = useCallback((e) => {
                        : sinAcceso             ? 'Tu acceso está suspendido. Habla con tu jefatura.'
                        : 'Vuelve a pasar tu carné. Si sigue igual, avisa a tu jefatura.',
                 color: sinAcceso ? 'orange' : 'red',
-                icon: sinAcceso ? ShieldAlert : XCircle,
+                iconKey: sinAcceso ? 'shield' : 'x',
             });
             setScanCode('');
             setIsProcessing(false);
@@ -1010,7 +961,7 @@ const submitEarlyExit = useCallback((e) => {
                 message: 'Actualizando la lista',
                 subtext: 'Tu registro es nuevo en esta sucursal. Espera un momento y vuelve a pasar el carné.',
                 color: 'orange',
-                icon: ShieldAlert,
+                iconKey: 'shield',
             });
             setScanCode('');
             setIsProcessing(false);
@@ -1035,7 +986,7 @@ const submitEarlyExit = useCallback((e) => {
                 message: employee.name,
                 subtext: `En ${EVENT_LABELS[employee.active_event_type]} — Contacta a RRHH`,
                 color: 'orange',
-                icon: ShieldAlert,
+                iconKey: 'shield',
             });
             setScanCode('');
             scheduleFeedbackClose(4000);
@@ -1077,7 +1028,7 @@ const submitEarlyExit = useCallback((e) => {
                     message: 'TURNO INACTIVO',
                     subtext: 'No se detectó una entrada activa (IN o IN_EXTRA).',
                     color: 'red',
-                    icon: XCircle,
+                    iconKey: 'x',
                 });
                 setScanCode('');
                 setIsProcessing(false); // 🚨 IMPORTANTE: Liberar el estado de procesamiento
@@ -1132,7 +1083,7 @@ const submitEarlyExit = useCallback((e) => {
                     message: 'MARCAJE DUPLICADO DETECTADO',
                     subtext: `${employee.name} — Último marcaje: ${lastTimeStr}. Si hay un error, contacta a tu supervisor.`,
                     color: 'orange',
-                    icon: ShieldAlert,
+                    iconKey: 'shield',
                 });
                 setScanCode('');
                 setIsProcessing(false);
@@ -1164,7 +1115,7 @@ const submitEarlyExit = useCallback((e) => {
                 message: 'Entrada registrada',
                 subtext: `Tu hora de entrada es a las ${format12hNoSeconds(adjustedTime)}`,
                 color: 'blue',
-                icon: ShieldAlert,
+                iconKey: 'shield',
                 time: hora12ConSegundos(time),
                 shiftName: customConfig?.config?.shift?.name || 'General',
                 announcement: null,
@@ -1210,7 +1161,7 @@ const submitEarlyExit = useCallback((e) => {
                 message: 'ERROR DE CONEXIÓN',
                 subtext: 'No se pudo procesar. Intente de nuevo.',
                 color: 'red',
-                icon: ShieldAlert,
+                iconKey: 'shield',
             });
             setScanCode('');
             setIsProcessing(false);
@@ -1282,8 +1233,8 @@ const submitEarlyExit = useCallback((e) => {
             }
         };
 
-        window.addEventListener('keydown', onKeyDown, true);
-        return () => window.removeEventListener('keydown', onKeyDown, true);
+        escucharTeclas(onKeyDown, true);
+        return () => soltarTeclas(onKeyDown, true);
     }, [authPrompt, feedback, isProcessing, earlyExitData, selfDeclareData, isConfiguring, isRevokeModalOpen, handleScan]);
 
     // Lunch alerts: employees currently working whose scheduled lunch time has arrived

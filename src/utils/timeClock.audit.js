@@ -1,15 +1,4 @@
 // src/utils/timeClock.audit.js
-import { 
-  CheckCircle2, 
-  Utensils, 
-  Baby, 
-  LogOut, 
-  ShieldAlert, 
-  AlertTriangle, 
-  CalendarHeart,  
-  DoorOpen, 
-  CircleCheck
-} from 'lucide-react';
 import { claveDeDia } from './scheduleHelpers';
 import { hora12, hora12ConSegundos } from './hora';
 
@@ -301,17 +290,6 @@ export const buildAuthPromptState = ({
 });
 
 // 🚨 MAPEO DINÁMICO DE ICONOS
-const ICON_MAP = {
-  check: CheckCircle2,
-  utensils: Utensils,
-  baby: Baby,
-  logout: LogOut,
-  alert: AlertTriangle,
-  shield: ShieldAlert,
-  calendarHeart: CalendarHeart,
-  plus: CircleCheck,
-  doorOpen: DoorOpen,
-};
 
 export const buildFeedbackState = ({
   employee,
@@ -324,8 +302,9 @@ export const buildFeedbackState = ({
   status: 'success',
   employee,
   ...theme,
-  // 🚨 Inyectamos el componente React real en lugar de pasar un string vacío
-  icon: ICON_MAP[theme?.iconKey] || CheckCircle2, 
+  // El NOMBRE del ícono, no el componente: lo dibuja `iconosDelKiosco.js` en
+  // la pantalla. La lógica de marcación no importa nada de la web.
+  iconKey: theme?.iconKey || 'check',
   time: hora12ConSegundos(now),
   shiftName,
   announcement,

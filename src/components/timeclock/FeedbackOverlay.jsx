@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Button from '../common/Button';
 import { Baby, CheckSquare, Clock, Megaphone, AlertTriangle, CheckCircle2, TimerReset } from 'lucide-react';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
+import { IconoDelKiosco } from './iconosDelKiosco';
 
 // 🚨 MAPA DE TEMAS LIQUIDGLASS DARK (Glows, Bordes e Íconos)
 const THEME_MAP = {
@@ -27,7 +28,7 @@ export default function FeedbackOverlay({
   const {
     status,
     color,
-    icon: Icon,
+    iconKey,
     employee,
     message,
     subtext,
@@ -204,9 +205,10 @@ export default function FeedbackOverlay({
                     ? 'bg-danger/10 border-danger/40 shadow-[var(--shadow-shine-lg)] animate-[pulse_2s_infinite]'
                     : 'bg-white/[0.03] border-white/10 shadow-[var(--shadow-glass-dark)]'
                   }`}>
-                {Icon && (
+                {iconKey && (
                   <div className={color === 'red' ? 'animate-bounce' : ''}>
-                    <Icon
+                    <IconoDelKiosco
+                      clave={iconKey}
                       size={96}
                       strokeWidth={1.5}
                       className={`${theme.icon} drop-shadow-[0_0_20px_currentColor]`}

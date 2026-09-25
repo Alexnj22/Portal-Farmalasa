@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.11 — Núcleo portable F1: el reloj de marcación del kiosco sin navegador
+
+Sin cambios visibles. Cuarto paso de F1 del plan
+`docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`, y el primero que además MEJORA la
+lógica en vez de sólo mudarla.
+
+- **El foco del lector de carné, una sola regla.** `useTimeClockEngine` lo
+  mantenía con dos mecanismos —un temporizador de cada segundo y oyentes de
+  toque/clic/tecla/foco— y cada uno con SU lista de «cuándo no robar el foco».
+  No coincidían: el temporizador respetaba el panel de autodeclaración y los
+  oyentes no. Hoy no rompía nada (ese panel no tiene campos de texto), pero
+  eran dos copias de la misma regla ya separadas. Ahora el motor la calcula
+  una vez y `plataforma/useFocoDelLector.js` la aplica en los dos.
+- **Los íconos del resultado van por nombre** (`iconKey`), el patrón que ya
+  usaba `timeClock.rules`: la lógica de marcación deja de importar
+  `lucide-react` y `components/timeclock/iconosDelKiosco.jsx` los dibuja.
+- Adaptadores nuevos: `conexion.js` (volvió la red), `teclado.js` (el lector
+  en la pantalla de espera) y `recargar()` en `navegacion.js`.
+- `gate:nucleo` 181 → 160.
+- Verificado contra la base de pruebas: `kiosco-marcacion.spec.js` («carné no
+  reconocido») y dos lecturas seguidas con su ícono y el regreso solo a la
+  espera. `scripts/entorno-pruebas/semilla_kiosco.sql` vuelve a sembrar el
+  dispositivo que esa prueba necesita (se perdía al rehacer el branch).
+
 ## v2.1060.10 — Avisos sin nombres cortados en el teléfono
 
 Barrido de la campana con el último aviso real de cada tipo (55 muestras, 29

@@ -1,6 +1,6 @@
 {
-  "total": 181,
-  "archivos": 61,
+  "total": 160,
+  "archivos": 59,
   "porArchivo": {
     "src/constants/moduleMap.js": {
       "pantalla": 1
@@ -82,10 +82,6 @@
     },
     "src/hooks/useSearchToggle.js": {
       "navegador": 4
-    },
-    "src/hooks/useTimeClockEngine.js": {
-      "pantalla": 1,
-      "navegador": 19
     },
     "src/store/slices/auditSlice.js": {
       "navegador": 4
@@ -175,9 +171,6 @@
     },
     "src/utils/ticketPrint.js": {
       "navegador": 6
-    },
-    "src/utils/timeClock.audit.js": {
-      "pantalla": 1
     },
     "src/utils/tratamientoDeFoto.js": {
       "navegador": 1

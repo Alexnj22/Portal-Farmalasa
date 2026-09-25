@@ -12,3 +12,9 @@
 export function irA(ruta) {
     window.location.href = ruta;
 }
+
+/** `window.location.reload()` — recargar la página entera. En la app nativa
+ *  será reiniciar la app o volver a la pantalla de entrada. */
+export function recargar() {
+    window.location.reload();
+}

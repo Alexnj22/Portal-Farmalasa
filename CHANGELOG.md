@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1062.3 — Fotos: una sola forma de achicarlas, y la detección de teléfono a su capa
+
+Sin cambios visibles. Tanda B2 del plan
+`docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+
+- **Achicar una foto estaba escrito cuatro veces**, cada una con su propio
+  «abrir la imagen, calcular la escala, dibujar en un lienzo»: las fotos de
+  empleado (WebP, 400 px de ancho), la foto que se manda desde el teléfono, la
+  que se usa para sugerir el recorte y la que se le manda a un lector. Ahora
+  es `plataforma/imagenes.js` (`abrirImagen`, `lienzoReducido`, `reducirAJpeg`,
+  `comprimirFotoDeEmpleado`) y las cuatro son una llamada con sus mismos
+  parámetros. **Enfrentadas contra las versiones viejas en Chrome y Safari,
+  con seis imágenes de prueba (chicas, grandes, verticales, horizontales, con
+  transparencia) y con giro: 60 comparaciones, 0 bytes distintos.**
+- **La detección de teléfono** (`isMobileOrApp`) pasa a
+  `plataforma/dispositivo.js` como `esMovilOApp`, junto a su pregunta hermana
+  (¿es la app instalada?); `utils/helpers` la re-exporta con su nombre de
+  siempre.
+- Dos pruebas que leían el código de la foto del teléfono ahora miran donde
+  vive la lógica y siguen exigiendo lo mismo (tamaño de documento, JPEG al
+  85 %, nunca agrandar). `gate:nucleo` 31 → 24.
+
 ## v2.1062.2 — Descargas: un solo camino, el que no pierde el archivo
 
 Tanda B2 del plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`, con un arreglo

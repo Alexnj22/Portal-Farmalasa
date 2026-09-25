@@ -17,3 +17,25 @@ export function esAppInstalada() {
     const nativo = !!(window.Capacitor?.isNativePlatform?.());
     return instalada || nativo;
 }
+
+/**
+ * ¿Es un teléfono, una tablet o la app nativa? Por user-agent, y con el caso de
+ * los iPad modernos, que en Safari se presentan como una Mac: la única forma de
+ * distinguirlos es la pantalla táctil. (Antes vivía en `utils/helpers.js`.)
+ */
+export function esMovilOApp() {
+    if (typeof window === 'undefined') return false;
+
+    // 1. Detectar si está corriendo como App Nativa (Capacitor)
+    if (window.Capacitor?.isNativePlatform()) return true;
+
+    // 2. Detectar Celulares y Tablets por User Agent
+    const ua = navigator.userAgent;
+    const isMobile = /Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(ua);
+    const isTablet = /(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua);
+
+    // 3. Detectar iPads modernos (iOS 13+ finge ser una Mac en Safari, la única forma de saberlo es por la pantalla táctil)
+    const isModernIPad = navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform);
+
+    return isMobile || isTablet || isModernIPad;
+}

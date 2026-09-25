@@ -104,14 +104,21 @@ describe('lo que hace el navegador', () => {
      * eligió UN tamaño para los dos casos porque el teléfono no sabe para qué
      * es la foto — el QR no lo dice, y metérselo sería meter un dato en la
      * llave. */
+    // El «cómo» de achicar vive en `plataforma/imagenes.js` desde el
+    // 2026-09-25 (eran cuatro copias). Lo que se exige acá no cambió: el
+    // teléfono manda la foto a tamaño de DOCUMENTO, en JPEG al 85 %, y el
+    // reductor común no agranda nunca.
+    const imagenes = leer('src/plataforma/imagenes.js');
+
     it('la foto se reduce antes de mandarla, a tamaño de DOCUMENTO', () => {
         expect(telefono).toMatch(/ladoMaximo = 1600/);
-        expect(telefono).toMatch(/toDataURL\('image\/jpeg', 0\.85\)/);
+        expect(telefono).toMatch(/reducirAJpeg\(file, \{ ladoMaximo, calidad: 0\.85/);
+        expect(imagenes).toMatch(/toDataURL\('image\/jpeg', calidad\)/);
     });
 
     it('una foto ya chica NO se agranda', () => {
         // Reescalar hacia arriba sólo agrega peso y le quita nitidez.
-        expect(telefono).toMatch(/Math\.min\(1, ladoMaximo/);
+        expect(imagenes).toMatch(/Math\.min\(1, ladoMaximo/);
     });
 
     it('esperar la foto NO depende sólo del canal en vivo', () => {

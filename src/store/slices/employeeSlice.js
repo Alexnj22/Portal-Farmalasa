@@ -19,6 +19,7 @@ import { TERMINATION_REASONS, SIN_ASIGNAR } from '../../data/constants';
 import { claveDeDia } from '../../utils/scheduleHelpers';
 import * as almacen from '../../plataforma/almacen';
 import { emitir } from '../../plataforma/eventos';
+import { comprimirFotoDeEmpleado } from '../../plataforma/imagenes';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -94,42 +95,9 @@ const registerSkillCatalogEntries = (skills) => {
 };
 
 // 🚨 COMPRESOR DE IMÁGENES NATIVO (Actualizado para mantener fondos transparentes)
-const compressImage = (file, maxWidth = 400) => {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                
-                // Solo reducimos si la imagen es muy grande, no la estiramos
-                const scaleSize = maxWidth > img.width ? 1 : maxWidth / img.width;
-                canvas.width = img.width * scaleSize;
-                canvas.height = img.height * scaleSize;
-                
-                const ctx = canvas.getContext('2d');
-                
-                // Dibujamos la imagen respetando la transparencia
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                
-                // 🚨 Usamos formato WebP que SÍ soporta transparencia y además comprime
-                canvas.toBlob((blob) => {
-                    if (!blob) { resolve(file); return; }
-                    // Si un navegador muy viejo no soporta WebP, usamos PNG de respaldo
-                    const finalType = blob.type || 'image/png';
-                    const ext = finalType.includes('webp') ? '.webp' : '.png';
-                    
-                    resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ext, { 
-                        type: finalType, 
-                        lastModified: Date.now() 
-                    }));
-                }, 'image/webp', 0.85); // 85% de calidad
-            };
-        };
-    });
-};
+// La foto se achica antes de subirla: `plataforma/imagenes.js` (antes estaba
+// escrita acá, una de cuatro copias del mismo «abrir, escalar, dibujar»).
+const compressImage = comprimirFotoDeEmpleado;
 
 // Direcciones alternas: cada una es {department, municipality, address}
 // completa (no solo texto libre) — se descartan las filas vacías (agregadas

@@ -24,6 +24,7 @@
  * recuadro de siempre. Una ayuda que se cae no puede impedir adjuntar un papel.
  */
 import { supabase } from '../supabaseClient';
+import { reducirAJpeg } from '../plataforma/imagenes';
 
 /* La imagen se achica ANTES de mandarla. Para decir DÓNDE está un documento no
  * hace falta resolución: 1024 px del lado mayor alcanzan de sobra y la pregunta
@@ -32,24 +33,8 @@ import { supabase } from '../supabaseClient';
 const LADO_PARA_PREGUNTAR = 1024;
 
 async function achicar(file) {
-    const dataUrl = await new Promise((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(fr.result);
-        fr.onerror = () => rej(new Error('no se pudo leer'));
-        fr.readAsDataURL(file);
-    });
-    const img = await new Promise((res, rej) => {
-        const el = new Image();
-        el.onload = () => res(el);
-        el.onerror = () => rej(new Error('no se pudo abrir'));
-        el.src = dataUrl;
-    });
-    const escala = Math.min(1, LADO_PARA_PREGUNTAR / Math.max(img.width, img.height));
-    const c = document.createElement('canvas');
-    c.width = Math.round(img.width * escala);
-    c.height = Math.round(img.height * escala);
-    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-    return { base64: c.toDataURL('image/jpeg', 0.8), tipo: 'image/jpeg' };
+    const base64 = await reducirAJpeg(file, { ladoMaximo: LADO_PARA_PREGUNTAR, calidad: 0.8, mensaje: 'no se pudo abrir' });
+    return { base64, tipo: 'image/jpeg' };
 }
 
 /**

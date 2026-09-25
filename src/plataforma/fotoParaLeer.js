@@ -1,3 +1,4 @@
+import { abrirImagen, lienzoReducido } from './imagenes';
 /**
  * La foto que se le manda a un lector, reducida.
  *
@@ -86,35 +87,11 @@ function pdfABase64(archivo) {
  * la llamada pasó de 12 s a 27 s con alguien esperando delante del formulario.
  * Girar cuesta exactamente lo mismo que no girar.
  */
-export function aBase64Reducido(archivo, { girar = 0 } = {}) {
+export async function aBase64Reducido(archivo, { girar = 0 } = {}) {
     if (archivo?.type === 'application/pdf') return pdfABase64(archivo);
-    return new Promise((res, rej) => {
-        const url = URL.createObjectURL(archivo);
-        const img = new Image();
-        img.onload = () => {
-            URL.revokeObjectURL(url);
-            // Nunca se AGRANDA: estirar una foto chica no agrega información.
-            const escala = Math.min(1, LADO_PARA_LEER / Math.max(img.width, img.height));
-            const w = Math.max(1, Math.round(img.width * escala));
-            const h = Math.max(1, Math.round(img.height * escala));
-            const cuarto = ((girar % 360) + 360) % 360 === 90 || ((girar % 360) + 360) % 360 === 270;
-            const c = document.createElement('canvas');
-            // Girado un cuarto de vuelta, el lienzo cambia de forma: se dibuja
-            // en el sistema rotado y el ancho pasa a ser el alto.
-            c.width  = cuarto ? h : w;
-            c.height = cuarto ? w : h;
-            const ctx = c.getContext('2d');
-            ctx.imageSmoothingQuality = 'high';
-            if (girar) {
-                ctx.translate(c.width / 2, c.height / 2);
-                ctx.rotate((girar * Math.PI) / 180);
-                ctx.drawImage(img, -w / 2, -h / 2, w, h);
-            } else {
-                ctx.drawImage(img, 0, 0, w, h);
-            }
-            res(c.toDataURL('image/jpeg', 0.8).split(',')[1] || '');
-        };
-        img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('No se pudo leer la foto.')); };
-        img.src = url;
-    });
+    // Nunca se AGRANDA, y girado un cuarto de vuelta el lienzo cambia de forma:
+    // las dos cosas las resuelve `lienzoReducido`.
+    const img = await abrirImagen(archivo);
+    const c = lienzoReducido(img, { ladoMaximo: LADO_PARA_LEER, girar, suavizado: 'high' });
+    return c.toDataURL('image/jpeg', 0.8).split(',')[1] || '';
 }

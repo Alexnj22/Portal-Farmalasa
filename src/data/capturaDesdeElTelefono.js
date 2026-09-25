@@ -9,6 +9,7 @@
  * una computadora no se ejecuta nunca.
  */
 import { supabase } from '../supabaseClient';
+import { reducirAJpeg } from '../plataforma/imagenes';
 
 /** ¿Ese código todavía sirve? La llama el TELÉFONO, sin sesión. */
 export async function capturaVigente(secreto) {
@@ -39,30 +40,9 @@ export async function capturaVigente(secreto) {
  * la muestra chica igual.
  */
 export async function reducirParaMandar(file, ladoMaximo = 1600) {
-    const dataUrl = await new Promise((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(fr.result);
-        fr.onerror = () => rej(new Error('No se pudo leer la foto.'));
-        fr.readAsDataURL(file);
-    });
-
-    const img = await new Promise((res, rej) => {
-        const el = new Image();
-        el.onload = () => res(el);
-        el.onerror = () => rej(new Error('No se pudo abrir la foto.'));
-        el.src = dataUrl;
-    });
-
-    const escala = Math.min(1, ladoMaximo / Math.max(img.width, img.height));
-    // Una foto que ya es chica NO se agranda: reescalar hacia arriba sólo
-    // agrega peso y le quita nitidez.
-    const w = Math.round(img.width * escala);
-    const h = Math.round(img.height * escala);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    return { base64: canvas.toDataURL('image/jpeg', 0.85), tipo: 'image/jpeg' };
+    // Una foto que ya es chica NO se agranda (lo garantiza `lienzoReducido`).
+    const base64 = await reducirAJpeg(file, { ladoMaximo, calidad: 0.85, mensaje: 'No se pudo abrir la foto.' });
+    return { base64, tipo: 'image/jpeg' };
 }
 
 /** El mismo reductor, pero devolviendo un archivo — para armar el PDF. */

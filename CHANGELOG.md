@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.3 — Rutas de reparto: reordenar vuelve a medir, y la matemática sin navegador
+
+Quinto paso de F1 del plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`, y trae
+un **arreglo visible**.
+
+- **Reordenar una ruta vuelve a medirla.** En «Crear ruta», subir, bajar,
+  quitar o agregar una parada la renumeraba y NADA más: cada parada se quedaba
+  con la distancia y el tiempo desde la que tenía ANTES del cambio. Los totales
+  de kilómetros y minutos quedaban mal, y se guardaban así con la ruta
+  (`p_distancia_total_m`, `p_duracion_min` y el tramo de cada parada). Ahora
+  todo cambio de orden pasa por `armarRuta`, que mide cada tramo desde la
+  parada anterior — con la distancia real por carretera si la optimización la
+  consiguió, y en línea recta si no.
+- **La matemática de la ruta, en el núcleo; los mapas, en la plataforma.**
+  `utils/routeOptimizer.js` queda sin navegador (distancias, mejor orden,
+  armado); `plataforma/mapas.js` carga Google Maps y Leaflet y le pide a Google
+  la tabla de distancias igual que antes.
+- **El 40 km/h estaba escrito tres veces** (el optimizador y dos veces en la
+  pantalla): ahora es `tramoEnLineaRecta`, uno solo.
+- La optimización automática da **exactamente lo mismo que antes**: enfrentadas
+  la versión vieja y la nueva sobre 2,000 rutas al azar, en línea recta y por
+  carretera (con celdas que Google no resuelve), 0 diferencias.
+- `gate:nucleo` 160 → 147.
+
 ## v2.1061.2 — Diferencias: días compensados, filtros más simples y textos que caben
 
 Cuatro observaciones del usuario sobre la pestaña «Diferencias»:

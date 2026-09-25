@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { GOOGLE_MAPS_API_KEY } from '../plataforma/config';
 
 const BODEGA_SUC_ID = 6;
 const AVG_SPEED_KMH = 40;
@@ -43,105 +44,99 @@ function tspBrute(n, distFn) {
   return bestOrder;
 }
 
-// ── Haversine optimization (sync) ─────────────────────────────────────────
+// ── Un tramo en línea recta ───────────────────────────────────────────────
+// La ÚNICA estimación sin carretera del portal: distancia en línea recta y
+// tiempo a 40 km/h. Estaba escrita a mano tres veces —acá y dos en
+// `CrearRutaModal`, con el 40 copiado—.
+export function tramoEnLineaRecta(a, b) {
+  const d = haversineMeters(a.lat, a.lng, b.lat, b.lng);
+  return { dist_m: Math.round(d), dur_min: minsFromMeters(d) };
+}
+
+/**
+ * Arma una ruta en EL ORDEN DADO: numera las paradas y mide cada una desde la
+ * anterior (la primera, desde la bodega) con `medir(a, b) → {dist_m, dur_min}`.
+ *
+ * Existe porque el orden no lo decide sólo la optimización: la persona sube,
+ * baja, quita y agrega paradas a mano. Hasta el 2026-09-25 esos cambios
+ * renumeraban y NO volvían a medir: cada parada se quedaba con la distancia
+ * desde la que tenía ANTES, los totales de kilómetros y minutos quedaban mal
+ * —y se guardaban así con la ruta—. Ahora el mismo armado sirve para las dos
+ * cosas y no hay forma de reordenar sin medir.
+ *
+ * Una parada sin coordenadas no se puede medir (queda en null), y la que le
+ * sigue se mide desde el último punto conocido — la ruta no se corta ahí.
+ */
+export function armarRuta(paradas, bodega, medir = tramoEnLineaRecta) {
+  let desde = bodega;
+  return paradas.map((p, i) => {
+    const tieneCoords = p.lat != null && p.lng != null;
+    const tramo = tieneCoords && desde ? medir(desde, p) : { dist_m: null, dur_min: null };
+    if (tieneCoords) desde = p;
+    return { ...p, orden: i + 1, dist_m: tramo.dist_m, dur_min: tramo.dur_min };
+  });
+}
+
+/**
+ * Un medidor a partir de una tabla de carretera (`{dist, dur}`, ver
+ * `plataforma/mapas.js#matrizPorCarretera`). Busca el par en la tabla por
+ * coordenadas; si Google no resolvió ese par, o el par no está (una parada
+ * agregada después), cae a la línea recta — la misma regla que ya aplicaba la
+ * optimización por celda.
+ */
+export function medidorDeMatriz(puntos, matriz) {
+  const indice = new Map(puntos.map((p, i) => [`${p.lat},${p.lng}`, i]));
+  const celda = (a, b) => {
+    const i = indice.get(`${a.lat},${a.lng}`);
+    const j = indice.get(`${b.lat},${b.lng}`);
+    return i != null && j != null && matriz.dist[i][j] != null ? [i, j] : null;
+  };
+  const medir = (a, b) => {
+    const c = celda(a, b);
+    if (!c) return tramoEnLineaRecta(a, b);
+    return { dist_m: Math.round(matriz.dist[c[0]][c[1]]), dur_min: minsFromSeconds(matriz.dur[c[0]][c[1]]) };
+  };
+  // La distancia SIN redondear, para elegir el orden: la optimización siempre
+  // comparó metros exactos, y redondear podría deshacer un empate distinto.
+  medir.distancia = (a, b) => {
+    const c = celda(a, b);
+    return c ? matriz.dist[c[0]][c[1]] : haversineMeters(a.lat, a.lng, b.lat, b.lng);
+  };
+  return medir;
+}
+
+function ordenOptimo(stops, bodega, distancia) {
+  if (stops.length <= 1) return stops;
+  const nodes = [bodega, ...stops]; // index 0=bodega, 1..n=stops
+  const orden = tspBrute(stops.length, (i, j) => distancia(nodes[i], nodes[j]));
+  return orden.map((si) => stops[si]);
+}
+
+// ── Optimización en línea recta (sync) ──────────────────────────────────────
 // stops: [{erp_sucursal_id, suc_name, lat, lng, items:[]}]
 // bodega: {lat, lng}
 export function optimizeRoute(stops, bodega) {
   if (!stops.length) return [];
-
-  const nodes = [bodega, ...stops]; // index 0=bodega, 1..n=stops
-  const distFn = (i, j) => haversineMeters(nodes[i].lat, nodes[i].lng, nodes[j].lat, nodes[j].lng);
-
-  const order = stops.length === 1 ? [0] : tspBrute(stops.length, distFn);
-
-  return order.map((si, pos) => {
-    const prevIdx = pos === 0 ? 0 : order[pos - 1] + 1;
-    const d = haversineMeters(nodes[prevIdx].lat, nodes[prevIdx].lng, stops[si].lat, stops[si].lng);
-    return { ...stops[si], orden: pos + 1, dist_m: Math.round(d), dur_min: minsFromMeters(d) };
-  });
+  const recta = (a, b) => haversineMeters(a.lat, a.lng, b.lat, b.lng);
+  return armarRuta(ordenOptimo(stops, bodega, recta), bodega, tramoEnLineaRecta);
 }
 
-// ── Google Maps loader (singleton) ────────────────────────────────────────
-let _mapsPromise = null;
-export function loadGoogleMaps() {
-  if (_mapsPromise) return _mapsPromise;
-  if (window.google?.maps?.DistanceMatrixService) {
-    _mapsPromise = Promise.resolve(window.google.maps);
-    return _mapsPromise;
-  }
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  if (!apiKey) return Promise.reject(new Error('No Maps API key'));
-
-  _mapsPromise = new Promise((resolve, reject) => {
-    // gm_authFailure se dispara cuando la key es inválida o está restringida
-    const prevAuthFailure = window.gm_authFailure;
-    window.gm_authFailure = () => {
-      _mapsPromise = null; // permite reintentar si la key se corrige
-      reject(new Error('InvalidKey'));
-      if (prevAuthFailure) prevAuthFailure();
-    };
-
-    const cb = '__gmaps_cb_' + Date.now();
-    window[cb] = () => { delete window[cb]; resolve(window.google.maps); };
-    const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${cb}&libraries=geometry&loading=async`;
-    s.onerror = (e) => { _mapsPromise = null; reject(e); };
-    document.head.appendChild(s);
-  });
-  return _mapsPromise;
-}
-
-// ── Google Maps Distance Matrix optimization (async, called once) ─────────
-// Returns same shape as optimizeRoute but with real road distances/durations.
-export async function optimizeRouteGoogleMaps(stops, bodega) {
-  if (!stops.length) return [];
-  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) return optimizeRoute(stops, bodega);
-
-  const maps = await loadGoogleMaps();
-  const svc  = new maps.DistanceMatrixService();
-
-  // All points: bodega first, then each unique stop
-  const allPoints = [
+/**
+ * Optimización con distancias reales por carretera. La tabla la trae
+ * `obtenerMatriz(puntos)` —en la web, el SDK de Google (`plataforma/mapas.js`);
+ * en la app nativa será el intermediario del servidor—, así que esto no conoce
+ * al navegador. Devuelve las paradas ordenadas y el MEDIDOR, para que la
+ * pantalla vuelva a medir con las mismas distancias de carretera cuando la
+ * persona reordene. Lanza si no hay tabla: quien la pide cae a `optimizeRoute`.
+ */
+export async function optimizarPorCarretera(stops, bodega, obtenerMatriz) {
+  if (!stops.length) return { paradas: [], medir: tramoEnLineaRecta };
+  const puntos = [
     { lat: bodega.lat, lng: bodega.lng },
-    ...stops.map(s => ({ lat: s.lat, lng: s.lng })),
+    ...stops.map((st) => ({ lat: st.lat, lng: st.lng })),
   ];
-
-  const result = await svc.getDistanceMatrix({
-    origins:      allPoints,
-    destinations: allPoints,
-    travelMode:   maps.TravelMode.DRIVING,
-    unitSystem:   maps.UnitSystem.METRIC,
-  });
-
-  // Build distance matrix [i][j] = meters, [i][j]_dur = seconds
-  const n = allPoints.length;
-  const distMatrix = Array.from({ length: n }, () => new Array(n).fill(Infinity));
-  const durMatrix  = Array.from({ length: n }, () => new Array(n).fill(0));
-
-  result.rows.forEach((row, i) => {
-    row.elements.forEach((el, j) => {
-      if (el.status === 'OK') {
-        distMatrix[i][j] = el.distance.value;
-        durMatrix[i][j]  = el.duration.value;
-      } else {
-        // Fallback to haversine for this pair
-        distMatrix[i][j] = haversineMeters(allPoints[i].lat, allPoints[i].lng, allPoints[j].lat, allPoints[j].lng);
-        durMatrix[i][j]  = distMatrix[i][j] / 1000 / AVG_SPEED_KMH * 3600;
-      }
-    });
-  });
-
-  const order = stops.length === 1 ? [0] : tspBrute(stops.length, (i, j) => distMatrix[i][j]);
-
-  return order.map((si, pos) => {
-    const prevIdx = pos === 0 ? 0 : order[pos - 1] + 1;
-    return {
-      ...stops[si],
-      orden:   pos + 1,
-      dist_m:  Math.round(distMatrix[prevIdx][si + 1]),
-      dur_min: minsFromSeconds(durMatrix[prevIdx][si + 1]),
-    };
-  });
+  const medir = medidorDeMatriz(puntos, await obtenerMatriz(puntos));
+  return { paradas: armarRuta(ordenOptimo(stops, bodega, medir.distancia), bodega, medir), medir };
 }
 
 export function totalRoute(orderedStops) {
@@ -169,7 +164,7 @@ export function decodePolyline(str) {
 
 // ── Supabase proxy helper (bypasses browser CORS restriction) ─────────────
 async function mapsProxy(type, params) {
-  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const key = GOOGLE_MAPS_API_KEY;
   const { data, error } = await supabase.functions.invoke('maps-proxy', {
     body: { type, params, key },
   });
@@ -181,7 +176,7 @@ async function mapsProxy(type, params) {
 // ── REST Directions — real-road polyline + return leg (via proxy) ─────────
 // points: [bodega, ...orderedStops, bodega] — bodega is both origin and destination
 export async function getDirectionsREST(points) {
-  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY || points.length < 2) return null;
+  if (!GOOGLE_MAPS_API_KEY || points.length < 2) return null;
 
   const fmt    = p => `${p.lat},${p.lng}`;
   const origin = fmt(points[0]);
@@ -199,36 +194,6 @@ export async function getDirectionsREST(points) {
       ? { dist_m: lastLeg.distance.value, dur_min: minsFromSeconds(lastLeg.duration.value) }
       : null,
   };
-}
-
-// ── Leaflet loader (mapa de respaldo — no necesita API key) ───────────────
-//
-// Viene del paquete, NO de unpkg. Antes se inyectaban un `<script>` y un
-// `<link>` apuntando a `unpkg.com/leaflet@1.9.4`, o sea código de un tercero
-// corriendo **dentro del origen del portal**, con acceso a todo el
-// `localStorage` —token de sesión incluido— y sin `integrity` que lo atara a
-// una versión concreta. No hacía falta que atacaran al portal: alcanzaba con
-// que comprometieran ese paquete en el CDN.
-//
-// Va por `await import()` porque sólo hace falta al abrir un mapa: es la regla
-// de librerías pesadas de CLAUDE.md, la misma de `pdfmake`/`@zxing`/`@imgly`.
-// Lo vigila `PESADAS` en `scripts/bundle-gate.mjs`.
-let _leafletPromise = null;
-export function loadLeaflet() {
-  if (_leafletPromise) return _leafletPromise;
-  if (window.L?.map) { _leafletPromise = Promise.resolve(window.L); return _leafletPromise; }
-  _leafletPromise = Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')])
-    .then(([m]) => {
-      const L = m.default || m;
-      // `window.L` se sigue publicando a propósito: `RutaMapModal.jsx` lo lee
-      // directo en su camino de posición en vivo (`&& window.L`, y `const L =
-      // window.L` justo después). Quitarlo obliga a rehacer esos dos caminos
-      // para no comprar nada.
-      window.L = L;
-      return L;
-    })
-    .catch((err) => { _leafletPromise = null; throw err; });
-  return _leafletPromise;
 }
 
 export { BODEGA_SUC_ID };

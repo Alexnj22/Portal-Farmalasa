@@ -11,7 +11,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { notifyBranch } from '../../utils/notify';
 import PedidoModal from './PedidoModal';
-import { optimizeRoute, optimizeRouteGoogleMaps, totalRoute, haversineMeters, loadGoogleMaps, loadLeaflet, getDirectionsREST } from '../../utils/routeOptimizer';
+import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '../../utils/routeOptimizer';
+import { loadGoogleMaps, loadLeaflet, matrizPorCarretera } from '../../plataforma/mapas';
 import {
     fetchEmployeeDriverInfo, fetchPedidosDisponiblesParaRuta, fetchPedidoSucursalStatusFinalizados,
     fetchSucursalesConCoords, updateRutaStatus, fetchBranchIdsForSucursales,
@@ -34,6 +35,10 @@ function fmtMin(min) {
 
 // Tiempo fijo de descarga por parada — se recalibrará con datos reales
 function svcMin() { return 10; }
+
+// La bodega cuando todavía no llegaron sus coordenadas (antes, un literal
+// escrito en la línea que lo usaba).
+const BODEGA_POR_DEFECTO = { lat: 14.041177, lng: -88.963111 };
 
 export default function CrearRutaModal({ open, onClose, onCreated, initialKeys = [] }) {
   const montadoParaSalida = useMontadoParaSalida(open);
@@ -59,6 +64,9 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
 
   // Step 2
   const [paradas,        setParadas]        = useState([]);
+  // Con qué se miden los tramos: carretera si la optimización pudo pedir la
+  // tabla a Google, línea recta si no. Lo usan también los cambios a mano.
+  const medirRef = useRef(tramoEnLineaRecta);
   const [optimizing,     setOptimizing]     = useState(false);
   const [mapsMode,       setMapsMode]       = useState(false);
   const [returnLeg,      setReturnLeg]      = useState(null);
@@ -196,8 +204,9 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     // Haversine return leg — siempre recalcular al cambiar paradas
     const lastCoords = coordsMap[paradas[paradas.length - 1]?.erp_sucursal_id];
     if (lastCoords) {
-      const dm = haversineMeters(lastCoords.lat, lastCoords.lng, bodegaCoords.lat, bodegaCoords.lng);
-      setReturnLeg({ dist_m: Math.round(dm), dur_min: Math.max(1, Math.round(dm / 1000 / 40 * 60)) });
+      // Con la misma medida que los tramos (carretera si se conoce), no con una
+      // fórmula aparte: el 40 km/h estaba copiado acá a mano.
+      setReturnLeg(medirRef.current(lastCoords, bodegaCoords));
     }
 
     const orderedPoints = [
@@ -329,15 +338,18 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
 
     const stopsWithCoords = [...sucMap.values()].filter(s => s.lat && s.lng);
     const stopsNoCoords   = [...sucMap.values()].filter(s => !s.lat || !s.lng);
-    const bodega = bodegaCoords ?? { lat: 14.041177, lng: -88.963111 };
+    const bodega = bodegaCoords ?? BODEGA_POR_DEFECTO;
 
     let optimized;
     let usedMaps = false;
     try {
-      optimized = await optimizeRouteGoogleMaps(stopsWithCoords, bodega);
+      const r = await optimizarPorCarretera(stopsWithCoords, bodega, matrizPorCarretera);
+      optimized = r.paradas;
+      medirRef.current = r.medir;
       usedMaps  = true;
     } catch {
       optimized = optimizeRoute(stopsWithCoords, bodega);
+      medirRef.current = tramoEnLineaRecta;
     }
 
     const ts = Date.now();
@@ -355,38 +367,39 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
   }, [selectedItems, coordsMap, bodegaCoords]);
 
   // ── Reorder / remove / add encargo ────────────────────────────────────────
+  // Mover, quitar o agregar una parada cambia desde DÓNDE se llega a cada una,
+  // así que se vuelve a armar la ruta entera con la misma medida de la
+  // optimización. Antes sólo se renumeraba: cada parada conservaba la distancia
+  // desde la que tenía antes y los totales —que se guardan con la ruta—
+  // quedaban mal.
+  const rearmar = useCallback(
+    (lista) => armarRuta(lista, bodegaCoords ?? BODEGA_POR_DEFECTO, medirRef.current),
+    [bodegaCoords],
+  );
+
   const moveStop = useCallback((idx, dir) => {
     setParadas(prev => {
       const next = [...prev];
       const t = idx + dir;
       if (t < 0 || t >= next.length) return prev;
       [next[idx], next[t]] = [next[t], next[idx]];
-      return next.map((s, i) => ({ ...s, orden: i + 1 }));
+      return rearmar(next);
     });
-  }, []);
+  }, [rearmar]);
 
   const removeStop = useCallback((uid) => {
-    setParadas(prev => prev.filter(s => s._uid !== uid).map((s, i) => ({ ...s, orden: i + 1 })));
-  }, []);
+    setParadas(prev => rearmar(prev.filter(s => s._uid !== uid)));
+  }, [rearmar]);
 
   const addEncargo = useCallback((sucId) => {
     const coords = coordsMap[sucId];
     const name = sucNameMap[sucId] ?? `Suc. ${sucId}`;
-    setParadas(prev => {
-      const prevStop = prev.length > 0 ? coordsMap[prev[prev.length - 1].erp_sucursal_id] : bodegaCoords;
-      let dist_m = null, dur_min = null;
-      if (prevStop && coords) {
-        dist_m  = Math.round(haversineMeters(prevStop.lat, prevStop.lng, coords.lat, coords.lng));
-        dur_min = Math.max(1, Math.round(dist_m / 1000 / 40 * 60));
-      }
-      return [...prev, {
-        erp_sucursal_id: sucId, suc_name: name, lat: coords?.lat, lng: coords?.lng,
-        isEncargo: true, items: [], orden: prev.length + 1,
-        dist_m, dur_min, _uid: `enc-${sucId}-${Date.now()}`,
-      }];
-    });
+    setParadas(prev => rearmar([...prev, {
+      erp_sucursal_id: sucId, suc_name: name, lat: coords?.lat, lng: coords?.lng,
+      isEncargo: true, items: [], _uid: `enc-${sucId}-${Date.now()}`,
+    }]));
     setShowAddVisita(false);
-  }, [coordsMap, sucNameMap, bodegaCoords]);
+  }, [coordsMap, sucNameMap, rearmar]);
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {

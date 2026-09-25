@@ -1,6 +1,6 @@
 {
-  "total": 160,
-  "archivos": 59,
+  "total": 147,
+  "archivos": 58,
   "porArchivo": {
     "src/constants/moduleMap.js": {
       "pantalla": 1
@@ -152,10 +152,6 @@
     "src/utils/pushEquipo.js": {
       "navegador": 3,
       "env": 2
-    },
-    "src/utils/routeOptimizer.js": {
-      "navegador": 9,
-      "env": 4
     },
     "src/utils/scheduleHelpers.js": {
       "pantalla": 1

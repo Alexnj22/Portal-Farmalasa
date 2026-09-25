@@ -4,7 +4,7 @@ import Button from '../../components/common/Button';
 import { X, MapPin, CheckCircle2, Clock, Crosshair, Truck, Radio, RefreshCw } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import PedidoModal from './PedidoModal';
-import { loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
+import { loadGoogleMaps, loadLeaflet } from '../../plataforma/mapas';
 import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';

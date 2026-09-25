@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1074.4 — Puntos: migrado al libro y actualizado cada noche hasta el corte
+
+Con el OK del usuario, el historial del sistema de puntos anterior ya está en
+el libro del portal: 10,632 cuentas, 1,657,564 puntos, 119,593 compras y 1,668
+canjes, cuadrado al punto (0 descuadradas). El programa sigue apagado hasta el
+1-oct. Hasta el 30-sep, cada noche (22:30 y 22:40 SV) se copia el sistema
+anterior y se trae sólo lo nuevo. La vista Puntos ya muestra los clientes.
+
 ## v2.1074.3 — U1: el calendario — meses, días y semanas salen de utils/fecha
 
 Arregla un conteo de días que daba **uno de menos entre la medianoche y las 6

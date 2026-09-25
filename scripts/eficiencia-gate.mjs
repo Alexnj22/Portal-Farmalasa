@@ -261,6 +261,21 @@ const CRONS = [
           + '`sistema: 0`: no toca el sistema de origen, lee MySQL. Una vez; el comando lleva la '
           + 'guarda `current_date = 2026-10-01` para no repetirse al año siguiente.',
   },
+  // La actualización de cada noche hasta el 30-sep (migración 20260925214820):
+  // «migrar ya y el 1 solo actualizar». Se borran solos al encender.
+  {
+    job: 'puntos-archivar-noche', slug: 'puntos-archivar', cadencia: '30 4 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Copia el sistema de puntos anterior cada noche hasta el corte, después del cierre '
+          + 'de las salas. `sistema: 0`: lee MySQL, no el sistema de origen. Guarda de fecha en '
+          + 'el comando: después del 30-sep no hace nada.',
+  },
+  {
+    job: 'puntos-sincronizar-noche', slug: 'puntos-arranque', cadencia: '40 4 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Trae al libro del portal sólo lo nuevo de la copia y cuadra, sin encender el programa. '
+          + '~40 s medidos con la migración entera; las noches siguientes, menos.',
+  },
   {
     job: 'puntos-arranque-1oct', slug: 'puntos-arranque', cadencia: '10 8 1 10 *',
     corridasDia: 1 / 365, sistema: 0,

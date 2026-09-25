@@ -857,6 +857,19 @@ en el grupo Comercial. Tres pestañas:
 Todo sale de funciones DEFINER que comprueban el permiso adentro (migraciones
 `20260925194023` y `20260925194342`).
 
+### Migrado el 2026-09-25 y actualizado cada noche hasta el corte
+
+Con OK del usuario («si»), a las 21:47 UTC: copia fresca (14,687 clientes ·
+124,912 compras · 1,734 canjes) y migración **incremental** al libro — **10,632
+cuentas, 1,657,564 puntos, 119,593 compras, 1,668 canjes, 0 descuadradas**, 6 con
+ajuste. El motor sigue APAGADO (`fuente = mysql`): el libro es un espejo.
+
+Cada noche hasta el 30-sep (migración `20260925214820`): `puntos-archivar-noche`
+22:30 SV copia y `puntos-sincronizar-noche` 22:40 SV trae SÓLO lo nuevo (por
+`ref_anterior`) y cuadra; avisa sólo si falla. El 1-oct 02:00/02:10 corre el
+arranque: última actualización y encendido; `puntos_encender` borra los cuatro
+crones de puntos que ya no sirven.
+
 ### Lo que queda abierto a propósito
 
 - Una venta de septiembre que se anule en octubre **no** descuenta: sus puntos

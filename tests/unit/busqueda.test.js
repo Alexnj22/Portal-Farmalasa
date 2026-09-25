@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import casos from '../casos-busqueda.json';
 import {
-    normalizar, coincide, puntaje, parecido, filtrar, fonetica,
+    normalizar, coincide, puntaje, parecido, filtrar, fonetica, patronSinTildes,
     UMBRAL_APROXIMADA,
 } from '../../src/utils/busqueda';
 
@@ -86,5 +86,18 @@ describe('aproximada', () => {
         expect(fonetica('omeprasol')).toBe(fonetica('omeprazol'));
         expect(fonetica('vitamina')).toBe(fonetica('bitamina'));
         expect(fonetica('hierro')).toBe(fonetica('ierro'));
+    });
+});
+
+describe('patronSinTildes (para imatch de PostgREST)', () => {
+    it('una palabra sin tildes encuentra la escrita con tildes, y al revés', () => {
+        const re = (p) => new RegExp(patronSinTildes(p), 'i');
+        expect(re('jose').test('JOSÉ PÉREZ')).toBe(true);
+        expect(re('José').test('JOSE PEREZ')).toBe(true);
+        expect(re('nunez').test('NÚÑEZ')).toBe(true);
+        expect(re('perez').test('PAREZ')).toBe(false);
+    });
+    it('la puntuación no viaja: no hay comodines que escapar', () => {
+        expect(patronSinTildes('s.a.')).toBe('s[aáàâäAÁÀÂÄ]');
     });
 });

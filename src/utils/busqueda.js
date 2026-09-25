@@ -310,6 +310,27 @@ export function parecido(consulta, ...campos) {
     return peor;
 }
 
+// ── Para columnas sin normalizar en PostgREST ───────────────────────────────
+
+const CLASES_SIN_TILDE = {
+    a: '[aáàâäAÁÀÂÄ]', e: '[eéèêëEÉÈÊË]', i: '[iíìîïIÍÌÎÏ]', o: '[oóòôöOÓÒÔÖ]',
+    u: '[uúùûüUÚÙÛÜ]', n: '[nñNÑ]', c: '[cçCÇ]',
+};
+
+/**
+ * Una palabra como expresión regular que ignora tildes, para `imatch` de
+ * PostgREST sobre una columna que la base no tiene normalizada: «jose» →
+ * `j[oó…]s[eé…]`, que encuentra «JOSÉ». Es la salida cuando la columna no
+ * tiene su forma `*_busq` (una tabla chica que no justifica una migración).
+ * No aplica la regla completa —números completos, relevancia—: sólo el
+ * «ignorar tildes y mayúsculas» que el `ilike` no sabe hacer.
+ */
+export function patronSinTildes(palabra) {
+    return compactar(palabra).replace(/ /g, '').split('')
+        .map(ch => CLASES_SIN_TILDE[ch] ?? ch)
+        .join('');
+}
+
 // ── Filtrar una lista ───────────────────────────────────────────────────────
 
 /**

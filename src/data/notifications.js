@@ -51,12 +51,6 @@ export function fetchNotifications() {
         .limit(100);
 }
 
-/* Los comodines de LIKE y el separador de `or()`, neutralizados.
-   `\` primero: si no, escapa las barras que agrega este mismo paso. */
-const escaparBusqueda = (t) => String(t).trim()
-    .replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
-    .replace(/,/g, ' ');
-
 /* Cuánto atrás LLEGA el listado.
  *
  * Decisión del usuario (2026-09-04): «que todas se borren solas (de la vista no
@@ -99,9 +93,9 @@ export const DIAS_VISIBLES = 60;
  * (`notifications_select`), así que no hay filtro por persona acá — ponerlo
  * sería confiar en que el navegador diga la verdad sobre quién es.
  *
- * `busca` pasa por `escaparBusqueda`: un `%` o un `_` que alguien escriba son
- * comodines de LIKE, y una coma parte el `or()` de PostgREST en dos condiciones
- * — o sea que buscar «salud, 5» pediría otra cosa sin avisar.
+ * `busca` se resuelve en la base (`notificaciones_que_coinciden`) y vuelve como
+ * ids: ya no viaja texto dentro de un `or()`, donde una coma partía la
+ * condición en dos.
  *
  * El `.range()` va PEGADO al `.from()`, con los filtros armados antes: el
  * detector `sin-paginar` de `npm run gate:data` mira los 450 caracteres que
@@ -113,8 +107,18 @@ export const DIAS_VISIBLES = 60;
  * @param estado  'todas' | 'sin_leer'
  * @param busca   texto libre sobre título y cuerpo, o null
  */
-export function fetchNotificationsPage({ estado = 'todas', busca = null, pagina = 0, porPagina = 25 } = {}) {
+export async function fetchNotificationsPage({ estado = 'todas', busca = null, pagina = 0, porPagina = 25 } = {}) {
     const piso = new Date(Date.now() - DIAS_VISIBLES * 86400000).toISOString();
+
+    // La búsqueda con la regla del portal (`notificaciones_que_coinciden`: sin
+    // tildes, palabras en cualquier orden). Antes era `ilike` de la frase.
+    let idsBuscados = null;
+    if (busca) {
+        const { data, error } = await supabase.rpc('notificaciones_que_coinciden', { p_q: busca, p_desde: piso });
+        if (error) return { data: null, error, count: 0 };
+        idsBuscados = data ?? [];
+        if (!idsBuscados.length) return { data: [], error: null, count: 0 };
+    }
 
     let q = supabase.from('notifications')
         .select(CAMPOS, { count: 'exact' })
@@ -125,10 +129,7 @@ export function fetchNotificationsPage({ estado = 'todas', busca = null, pagina 
     // Ningún estado mira `deleted_at`: ése es el punto de esta pantalla.
     if (estado === 'sin_leer') q = q.is('read_at', null);
 
-    if (busca) {
-        const t = escaparBusqueda(busca);
-        q = q.or(`title.ilike.%${t}%,body.ilike.%${t}%`);
-    }
+    if (idsBuscados) q = q.in('id', idsBuscados);
 
     return q;
 }

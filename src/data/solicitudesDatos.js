@@ -202,6 +202,18 @@ export async function buscarPersona({ numero, nombre, telefono } = {}) {
           docCols: ['paciente_documento'], telCols: [], nombreCol: 'paciente_nombre' },
     ];
 
+    // Por NOMBRE, la base aplica la regla del portal a los cuatro sitios de una
+    // vez (`buscar_personas_por_nombre`): sin tildes, palabras en cualquier
+    // orden, y el practicante por nombre Y apellidos (antes sólo apellidos:
+    // «José Pérez» no lo encontraba nunca). Acá vuelven los ids por sitio.
+    let porNombreIds = null;
+    if (porNombre) {
+        const { data, error } = await supabase.rpc('buscar_personas_por_nombre', { p_nombre: nom });
+        if (error) throw error;
+        porNombreIds = { cliente: data?.clientes ?? [], practicante: data?.practicantes ?? [],
+                         proveedor: data?.proveedores ?? [], receta: data?.recetas ?? [] };
+    }
+
     const consultas = donde.map((d) => {
         if (d.rpc) {
             return supabase.rpc(d.rpc, {
@@ -222,7 +234,9 @@ export async function buscarPersona({ numero, nombre, telefono } = {}) {
             const formasTel = [tel, conGuionTel, `+503${tel}`].filter(Boolean);
             q = q.or(d.telCols.flatMap((c) => formasTel.map((v) => `${c}.eq.${v}`)).join(','));
         } else {
-            q = q.ilike(d.nombreCol, `%${nom}%`);
+            const ids = porNombreIds?.[d.clave] ?? [];
+            if (!ids.length) return supabase.from(d.tabla).select(d.cols).limit(0);
+            q = q.in(d.clave === 'proveedor' ? 'nit' : 'id', ids);
         }
         return q;
     });

@@ -575,17 +575,21 @@ export async function buscarMedicosLocalPorNombre(nombres, apellidos, junta = 'P
     const terminos = [nombres, apellidos].map(t => String(t || '').trim()).filter(Boolean);
     if (!terminos.length) return { medicos: [], error: null };
 
-    let qb = supabase.from('medicos')
+    // Todos los términos tienen que aparecer —con uno solo, buscar «JOSE» trae
+    // media tabla—, en cualquier orden y sin importar tildes: la regla del
+    // portal (`buscar_medicos_ids`). Antes era `ilike` por término, que no
+    // encontraba «JOSÉ» escribiendo «jose».
+    const { data: ids, error: e1 } = await supabase.rpc('buscar_medicos_ids', {
+        p_q: terminos.join(' '), p_junta: junta, p_tope: tope,
+    });
+    if (e1) return { medicos: [], error: e1.message };
+    if (!ids?.length) return { medicos: [], error: null };
+    const { data, error } = await supabase.from('medicos')
         .select('id, nombre, numero_junta, junta, carrera, origen, verificado_at')
-        .eq('junta', junta)
-        .limit(tope);
-    // Todos los términos tienen que aparecer: con uno solo, buscar «JOSE» trae
-    // media tabla y la lista deja de servir para elegir.
-    for (const t of terminos) qb = qb.ilike('nombre', `%${t}%`);
-
-    const { data, error } = await qb;
+        .in('id', ids);
     if (error) return { medicos: [], error: error.message };
-    return { medicos: data ?? [], error: null };
+    const pos = new Map(ids.map((id, k) => [Number(id), k]));
+    return { medicos: [...(data ?? [])].sort((a, b) => pos.get(Number(a.id)) - pos.get(Number(b.id))), error: null };
 }
 
 /**

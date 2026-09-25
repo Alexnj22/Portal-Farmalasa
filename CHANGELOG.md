@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1071.0 — Búsqueda: personas, médicos, notificaciones y compras con la regla
+
+Los últimos cuatro buscadores del servidor pasan a la regla
+(`20260925192318`). Los cuatro usaban `ilike` de la frase entera, que no ignora
+tildes: «jose perez» no encontraba «JOSÉ PÉREZ».
+
+- **Solicitudes de datos**: la persona se busca por nombre con
+  `buscar_personas_por_nombre` en clientes, practicantes, proveedores y
+  recetas, y con `buscar_empleado_para_solicitud` en personal. Arregla un error
+  aparte: el practicante se buscaba **sólo en `last_names`**, así que «José
+  Pérez» no lo encontraba nunca. La respuesta de esta pantalla es un documento
+  con membrete, y decir que no consta alguien que sí consta es la falla que no
+  se puede tener.
+- **Médicos de la bitácora**: `buscar_medicos_ids`, con las palabras en
+  cualquier orden y sin importar tildes.
+- **Notificaciones**: `notificaciones_que_coinciden` devuelve ids. Ya no viaja
+  texto dentro de un `or()`, así que se retira `escaparBusqueda`.
+- **Compras (proveedor)**: `imatch` con `patronSinTildes` por palabra, una
+  expresión regular que ignora tildes para columnas que la base no tiene
+  normalizadas.
+- Medido como QA: menos de 60 ms.
+
 ## v2.1070.0 — Búsqueda: clientes y facturas de la sala con la regla del portal
 
 Clientes y las facturas del widget de anulación pasan a la regla del portal.

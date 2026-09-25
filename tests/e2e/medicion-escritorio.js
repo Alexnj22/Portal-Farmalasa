@@ -188,7 +188,12 @@ export const MEDIR_ESCRITORIO = () => {
     // `clientWidth`), no que la clase esté puesta. Una clase `truncate` sobre un
     // texto que entra no recorta nada.
     const textosCortados = [];
-    document.querySelectorAll('th, h1, h2, h3, h4, button, label, [role="tab"]').forEach((el) => {
+    //
+    // `[data-texto-metrica]` son los tres textos de `StatCard` (2026-09-25): la
+    // tarjeta topa en 200px y un subtítulo armado con dos datos —«$17,423.76 ·
+    // 11,295 clientes»— se cortaba en Puntos sin que nada lo viera, porque un
+    // `<span>` no entraba en esta lista. Ahí el texto también ES el dato.
+    document.querySelectorAll('th, h1, h2, h3, h4, button, label, [role="tab"], [data-texto-metrica]').forEach((el) => {
         if (!visible(el)) return;
         const cs = getComputedStyle(el);
         if (cs.textOverflow !== 'ellipsis') return;

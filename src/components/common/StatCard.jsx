@@ -226,7 +226,9 @@ export default function StatCard({
                     // siendo lo primero que se lee, pero en una baldosa no
                     // compite con nada más y a `text-title-sm` empujaba el alto
                     // de la franja entera.
-                    : <span className={`block truncate tabular-nums font-black leading-none ${
+                    // `data-texto-metrica`: el barrido de escritorio mide si estos
+                    // tres textos se están cortando de verdad (DESIGN §25.7).
+                    : <span data-texto-metrica="" className={`block truncate tabular-nums font-black leading-none ${
                         String(value ?? '').length > 9 ? 'text-body'
                         : String(value ?? '').length > 6 ? 'text-body-lg'
                         : densa ? 'text-body-lg' : 'text-title-sm'} ${valueCls}`}>
@@ -249,7 +251,7 @@ export default function StatCard({
                     // precio" salían cortados a mitad de palabra. Bajo 560px el
                     // texto envuelve — una etiqueta de dos líneas se lee, una
                     // cortada no.
-                    : <span className="block truncate text-caption font-bold text-content-2 leading-none mt-1">
+                    : <span data-texto-metrica="" className="block truncate text-caption font-bold text-content-2 leading-none mt-1">
                         {label}
                       </span>
                 }
@@ -261,7 +263,7 @@ export default function StatCard({
                     `sub` tienen exactamente la misma altura total.
                 */}
                 {!sinDetalle && (
-                    <span className="block truncate text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px]">
+                    <span data-texto-metrica="" className="block truncate text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px]">
                         {!loading ? sub : ''}
                     </span>
                 )}

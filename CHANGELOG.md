@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.6 — Puntos: tarjetas sin cortes, montos en dólares y el detalle del cliente rediseñado
+
+- **Tarjetas de Consulta**: el subtítulo «$17,423.76 · 11,295 clientes» se
+  cortaba. Un dato por `sub`; los clientes tienen su tarjeta y el mes pasa a la
+  nota del panel por sala. Rótulos cortos para que entren seis a 1440 px.
+- **Regla nueva (DESIGN §25.7)** y su instrumento: los textos de `StatCard`
+  llevan `data-texto-metrica` y el barrido de escritorio reporta cualquiera que
+  se corte. En su primera corrida cazó tres rótulos más de esta misma vista.
+- **Gráficas en puntos o en dólares** (selector en el panel); el tooltip dice
+  siempre las dos cosas.
+- **Buscando, las gráficas se pliegan** en una línea: la lista queda justo
+  debajo de las tarjetas. Además, gráficas más bajas.
+- **Detalle del cliente rediseñado**: saldo con el reparto de lo acumulado
+  (disponible, canjeado, vencido), cuatro datos, historia por mes que filtra
+  los movimientos al tocar un mes, movimientos agrupados por mes con filtro por
+  tipo, la sala por nombre y el valor en dólares de cada uno.
+- `puntos_panel_cliente` devuelve el nombre de cada sala.
+
 ## v2.1075.5 — MIN·MAX por aprobar muestra presentación base, factor y en qué se despacha
 
 Pedido del usuario: «imagina que me pida 0 / 1 y la caja es x10 factor 10, 1

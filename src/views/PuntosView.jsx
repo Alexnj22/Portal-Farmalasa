@@ -34,6 +34,7 @@ import FilterBar from '../components/common/FilterBar';
 import Badge from '../components/common/Badge';
 import Notice from '../components/common/Notice';
 import StatCard from '../components/common/StatCard';
+import SegmentedControl from '../components/common/SegmentedControl';
 import CarrilCards from '../components/common/CarrilCards';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -198,7 +199,8 @@ export default function PuntosView({ openModal }) {
                     <>
                         <Resumen resumen={resumen} serie={serie} cargando={cargando}
                             avisos={veAvisos ? avisos.length : null}
-                            porAsignar={vePorAsignar ? cuentas.length : null} irA={setPestana} />
+                            porAsignar={vePorAsignar ? cuentas.length : null} irA={setPestana}
+                            buscando={busquedaClientes.trim().length > 0} />
                         <ClientesConPuntos busqueda={busquedaClientes} onAbrir={setClienteAbierto} />
                     </>
                 )}
@@ -335,7 +337,10 @@ export default function PuntosView({ openModal }) {
     );
 }
 
-function Resumen({ resumen, serie, cargando, avisos, porAsignar, irA }) {
+function Resumen({ resumen, serie, cargando, avisos, porAsignar, irA, buscando }) {
+    // En qué se leen las gráficas. El tooltip muestra siempre las dos; esto
+    // decide el eje (pedido del usuario: «ver en monto $ también»).
+    const [unidad, setUnidad] = useState('puntos');
     const cfg = resumen?.config;
     const enPortal = cfg?.fuente === 'portal' && cfg?.encendido;
     const anterior = resumen?.origen === 'sistema_anterior';
@@ -369,17 +374,24 @@ function Resumen({ resumen, serie, cargando, avisos, porAsignar, irA }) {
                 pestaña no tenga píldora de filtros. */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <CarrilCards className="flex-1" ariaLabel="Resumen del programa de puntos">
+                {/* Un dato por `sub` (DESIGN §25.7): la tarjeta topa en 200px y
+                    «$17,423.76 · 11,295 clientes» se cortaba. Los clientes van
+                    en su propia tarjeta y el mes, en el panel por sala. */}
                 <StatCard icon={Coins} iconBg="bg-brand/10" iconCls="text-brand-text"
-                    label="Puntos de los clientes" value={pts(resumen?.libro?.puntos)}
-                    sub={`${dolares(resumen?.libro?.puntos)} · ${pts(resumen?.libro?.cuentas_con_saldo)} clientes`}
+                    label="Puntos" value={pts(resumen?.libro?.puntos)}
+                    sub={`Valen ${dolares(resumen?.libro?.puntos)}`}
+                    loading={cargando} />
+                <StatCard icon={Users} iconBg="bg-brand/10" iconCls="text-brand-text"
+                    label="Clientes" value={pts(resumen?.libro?.cuentas_con_saldo)}
+                    sub="Con saldo"
                     loading={cargando} />
                 <StatCard icon={TrendingUp} iconBg="bg-success/10" iconCls="text-success-text"
                     label="Acumulados hoy" value={pts(hoy.acumulado)}
-                    sub={`${pts(hoy.ventas)} ventas · mes ${pts(mes.acumulado)}`}
+                    sub={`${dolares(hoy.acumulado)} · ${pts(hoy.ventas)} ventas`}
                     loading={cargando} />
                 <StatCard icon={Gift} iconBg="bg-warning/10" iconCls="text-warning-text"
                     label="Canjeados hoy" value={pts(hoy.canjeado)}
-                    sub={`${pts(hoy.canjes)} canjes · mes ${pts(mes.canjeado)}`}
+                    sub={`${dolares(hoy.canjeado)} · ${pts(hoy.canjes)} canjes`}
                     loading={cargando} />
                 {avisos != null && (
                     <StatCard icon={AlertTriangle} iconBg="bg-danger/10" iconCls="text-danger-text"
@@ -388,46 +400,68 @@ function Resumen({ resumen, serie, cargando, avisos, porAsignar, irA }) {
                 )}
                 {porAsignar != null && (
                     <StatCard icon={UserSearch} iconBg="bg-surface-card-hover" iconCls="text-content-3"
-                        label="Cuentas por asignar" value={pts(porAsignar)}
-                        sub={`${pts(resumen?.pendientes?.puntos)} puntos guardados`}
+                        label="Por asignar" value={pts(porAsignar)}
+                        sub={`${pts(resumen?.pendientes?.puntos)} puntos`}
                         onClick={() => irA('por_asignar')} loading={cargando} />
                 )}
             </CarrilCards>
             </div>
 
-            {/* Gráficas y no tablas (pedido del usuario): el número exacto está
-                en el tooltip de cada punto y cada barra. */}
-            <Panel icono={TrendingUp} titulo="Últimos 30 días">
-                <Suspense fallback={<Hueco alto={240} />}>
-                    <GraficaDiaria serie={serie} />
-                </Suspense>
-            </Panel>
+            {/* Buscando, lo que se mira es la lista: las gráficas se pliegan en
+                una línea para que la tabla quede arriba y se vea que está
+                (pedido del usuario, 2026-09-25). */}
+            {buscando ? (
+                <p className="text-caption text-content-3 flex items-center gap-2">
+                    <TrendingUp size={14} /> Las gráficas vuelven al borrar la búsqueda.
+                </p>
+            ) : (
+                <>
+                    {/* Gráficas y no tablas (pedido del usuario): el número exacto
+                        —en puntos y en dólares— está en el tooltip de cada punto. */}
+                    <Panel icono={TrendingUp} titulo="Últimos 30 días"
+                        accion={(
+                            <SegmentedControl size="sm" value={unidad} onChange={setUnidad} label="Ver en"
+                                options={[
+                                    { value: 'puntos', label: 'Puntos' },
+                                    { value: 'dolares', label: 'Dólares' },
+                                ]} />
+                        )}>
+                        <Suspense fallback={<Hueco alto={190} />}>
+                            <GraficaDiaria serie={serie} unidad={unidad} />
+                        </Suspense>
+                    </Panel>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <Panel icono={Store} titulo="Este mes, por sala">
-                    {(resumen?.por_sala ?? []).length === 0 && !cargando
-                        ? <p className="text-body-sm text-content-3 py-6 text-center">Sin movimientos este mes</p>
-                        : <Suspense fallback={<Hueco alto={220} />}><GraficaSalas salas={resumen?.por_sala} /></Suspense>}
-                </Panel>
-                <Panel icono={CalendarClock} titulo="Cuándo vencen"
-                    nota="A los doce meses de la compra. Lo acumulado hasta el 30 de septiembre de 2026 vence el 1 de octubre de 2027.">
-                    {(resumen?.vencimientos ?? []).length === 0 && !cargando
-                        ? <p className="text-body-sm text-content-3 py-6 text-center">Sin puntos por vencer</p>
-                        : <Suspense fallback={<Hueco alto={180} />}><GraficaVencimientos vencimientos={resumen?.vencimientos} /></Suspense>}
-                </Panel>
-            </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Panel icono={Store} titulo="Este mes, por sala"
+                            nota={`Acumulados ${pts(mes.acumulado)} (${dolares(mes.acumulado)}) · canjeados ${pts(mes.canjeado)} (${dolares(mes.canjeado)})`}>
+                            {(resumen?.por_sala ?? []).length === 0 && !cargando
+                                ? <p className="text-body-sm text-content-3 py-6 text-center">Sin movimientos este mes</p>
+                                : <Suspense fallback={<Hueco alto={180} />}><GraficaSalas salas={resumen?.por_sala} unidad={unidad} /></Suspense>}
+                        </Panel>
+                        <Panel icono={CalendarClock} titulo="Cuándo vencen"
+                            nota="A los doce meses de la compra. Lo acumulado hasta el 30 de septiembre de 2026 vence el 1 de octubre de 2027.">
+                            {(resumen?.vencimientos ?? []).length === 0 && !cargando
+                                ? <p className="text-body-sm text-content-3 py-6 text-center">Sin puntos por vencer</p>
+                                : <Suspense fallback={<Hueco alto={150} />}><GraficaVencimientos vencimientos={resumen?.vencimientos} unidad={unidad} /></Suspense>}
+                        </Panel>
+                    </div>
+                </>
+            )}
         </>
     );
 }
 
-function Panel({ icono: Icono, titulo, nota, children }) {
+function Panel({ icono: Icono, titulo, nota, accion, children }) {
     return (
         <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-3 min-w-0">
-            <div>
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
-                    <Icono size={14} /> {titulo}
-                </h3>
-                {nota && <p className="text-caption text-content-3 mt-1">{nota}</p>}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                        <Icono size={14} /> {titulo}
+                    </h3>
+                    {nota && <p className="text-caption text-content-3 mt-1">{nota}</p>}
+                </div>
+                {accion}
             </div>
             {children}
         </section>

@@ -5271,6 +5271,31 @@ palabra.
 Bajo 560px el texto envuelve (`max-[560px]:whitespace-normal`). El **valor**
 mantiene `nowrap` en todo ancho: un número partido no comunica nada.
 
+#### El `sub` de una `StatCard` lleva UN dato, dos como mucho y cortos (2026-09-25)
+
+La tarjeta topa en **200px**, y descontando el ícono al texto le quedan ~124:
+**unos 22 caracteres** en `text-micro`. Por encima de eso el `truncate` corta, y
+con números adentro el largo lo decide el dato, no el código — el mismo `sub`
+entra un día y al siguiente no.
+
+En Puntos, `«$17,423.76 · 11,295 clientes»` salía `«$17,423.76 · 11,295 client…»`.
+Y el aviso fue del usuario, no del instrumento: la sección 3 del barrido de
+escritorio medía `th`, títulos, botones y pestañas, y los textos de la tarjeta
+son `<span>`. Hoy llevan `data-texto-metrica` y el barrido los mide igual.
+
+Regla:
+
+- **Un dato por `sub`.** Si hay dos que importan, el segundo es otra tarjeta.
+- Dos sólo si juntos caben en el peor caso: el número más largo que puede tomar
+  ese dato, no el de hoy. `$47.95 · 380 ventas` sí; `ventas · mes 146,487`, no.
+- **Nunca «se ve en el tooltip»**: la tarjeta no tiene tooltip. El `aria-label`
+  lleva el texto entero para un lector de pantalla, no para quien mira.
+- Lo que no entra en la fila de tarjetas va a la nota del panel que lo explica
+  (en Puntos, el mes va en el encabezado de «Este mes, por sala»).
+
+Se verifica con el barrido de escritorio (`barrido-escritorio.spec.js`), que
+ahora reporta cualquier `[data-texto-metrica]` cuyo `scrollWidth` supere su ancho.
+
 ### 25.8 `clickable()` — y qué se rompió al aplicarlo
 
 `src/utils/clickable.js` le da el contrato de teclado a un elemento que se

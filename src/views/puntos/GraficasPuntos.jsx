@@ -17,10 +17,10 @@
  */
 import React from 'react';
 import {
-    ComposedChart, Area, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+    ComposedChart, Area, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
-import { formatQty } from '../../utils/formatNumber';
+import { formatQty, formatMoney, formatMoneyCorto } from '../../utils/formatNumber';
 
 const COLOR = {
     acumulado: 'var(--chart-1)',
@@ -36,6 +36,19 @@ const TOOLTIP = {
 };
 const pts = (v) => formatQty(Number(v) || 0);
 const corto = (v) => (v >= 1000 ? `${Math.round(v / 100) / 10}k` : String(v));
+
+// ── Puntos o dólares ───────────────────────────────────────────────────────
+// 100 puntos = US$1.00. La `unidad` decide el EJE; el tooltip dice siempre las
+// dos cosas, porque quien mira dólares igual quiere saber cuántos puntos son.
+// Los datos no se convierten: el eje se re-rotula, así la forma de la curva es
+// idéntica en las dos lecturas y no hay un redondeo distinto en cada una.
+const dolares = (v) => formatMoney((Number(v) || 0) / 100);
+const ejeDe = (unidad) => (unidad === 'dolares'
+    // Sin centavos en el eje: «$100.00» no entra en su ancho y el tooltip
+    // ya lleva el monto exacto.
+    ? (v) => (v >= 100_000 ? formatMoneyCorto(v / 100) : formatMoney(v / 100, { decimales: 0 }))
+    : corto);
+const ambos = (v) => `${pts(v)} pts · ${dolares(v)}`;
 
 // «2026-09-25» → «25 sep», sin pasar por `new Date` en UTC (retrocede un día).
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -54,11 +67,11 @@ const LEYENDA = {
 };
 
 /** Acumulado y canjeado por día. */
-export function GraficaDiaria({ serie }) {
+export function GraficaDiaria({ serie, unidad = 'puntos' }) {
     const datos = (serie ?? []).map((d) => ({ ...d, etiqueta: dia(d.fecha) }));
     const paso = Math.max(0, Math.ceil(datos.length / 8) - 1);
     return (
-        <ChartContainer minHeight={240}>
+        <ChartContainer minHeight={190}>
             <ComposedChart data={datos} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
                 <defs>
                     <linearGradient id="puntosAcumulado" x1="0" y1="0" x2="0" y2="1">
@@ -68,10 +81,10 @@ export function GraficaDiaria({ serie }) {
                 </defs>
                 <CartesianGrid stroke={COLOR.rejilla} vertical={false} />
                 <XAxis dataKey="etiqueta" interval={paso} minTickGap={18} tickLine={false} axisLine={false} tick={EJE} />
-                <YAxis tickLine={false} axisLine={false} width={44} tick={EJE} tickFormatter={corto} />
+                <YAxis tickLine={false} axisLine={false} width={52} tick={EJE} tickFormatter={ejeDe(unidad)} />
                 <Tooltip contentStyle={TOOLTIP}
                     cursor={{ stroke: COLOR.texto, strokeDasharray: '4 4' }}
-                    formatter={(v, nombre) => [pts(v), nombre]}
+                    formatter={(v, nombre) => [ambos(v), nombre]}
                     labelFormatter={(l) => l} />
                 <Legend {...LEYENDA} />
                 <Area type="monotone" dataKey="acumulado" name="Acumulados" stroke={COLOR.acumulado}
@@ -86,41 +99,78 @@ export function GraficaDiaria({ serie }) {
 }
 
 /** Acumulado y canjeado del mes, por sala. */
-export function GraficaSalas({ salas }) {
+export function GraficaSalas({ salas, unidad = 'puntos' }) {
     const datos = salas ?? [];
     return (
-        <ChartContainer minHeight={Math.max(180, datos.length * 44 + 40)}>
+        <ChartContainer minHeight={Math.max(150, datos.length * 32 + 40)}>
             <BarChart data={datos} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}
                 barGap={2} barCategoryGap="22%">
                 <CartesianGrid stroke={COLOR.rejilla} horizontal={false} />
-                <XAxis type="number" tickLine={false} axisLine={false} tick={EJE} tickFormatter={corto} />
+                <XAxis type="number" tickLine={false} axisLine={false} tick={EJE} tickFormatter={ejeDe(unidad)} />
                 <YAxis type="category" dataKey="sala" tickLine={false} axisLine={false} width={84}
                     tick={{ ...EJE, fontSize: 11, fill: 'var(--text-secondary)' }} />
                 <Tooltip contentStyle={TOOLTIP} cursor={{ fill: COLOR.rejilla, opacity: 0.35 }}
-                    formatter={(v, nombre) => [pts(v), nombre]} />
+                    formatter={(v, nombre) => [ambos(v), nombre]} />
                 <Legend {...LEYENDA} />
                 <Bar dataKey="acumulado" name="Acumulados" fill={COLOR.acumulado} radius={[0, 4, 4, 0]}
-                    maxBarSize={16} isAnimationActive={false} />
+                    maxBarSize={12} isAnimationActive={false} />
                 <Bar dataKey="canjeado" name="Canjeados" fill={COLOR.canjeado} radius={[0, 4, 4, 0]}
-                    maxBarSize={16} isAnimationActive={false} />
+                    maxBarSize={12} isAnimationActive={false} />
             </BarChart>
         </ChartContainer>
     );
 }
 
 /** Cuántos puntos vencen, por mes. Una sola serie: el título la nombra. */
-export function GraficaVencimientos({ vencimientos }) {
+export function GraficaVencimientos({ vencimientos, unidad = 'puntos' }) {
     const datos = (vencimientos ?? []).map((v) => ({ ...v, etiqueta: mes(v.mes) }));
     return (
-        <ChartContainer minHeight={180}>
+        <ChartContainer minHeight={150}>
             <BarChart data={datos} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
                 <CartesianGrid stroke={COLOR.rejilla} vertical={false} />
                 <XAxis dataKey="etiqueta" tickLine={false} axisLine={false} tick={EJE} />
-                <YAxis tickLine={false} axisLine={false} width={44} tick={EJE} tickFormatter={corto} />
+                <YAxis tickLine={false} axisLine={false} width={52} tick={EJE} tickFormatter={ejeDe(unidad)} />
                 <Tooltip contentStyle={TOOLTIP} cursor={{ fill: COLOR.rejilla, opacity: 0.35 }}
-                    formatter={(v, _n, p) => [`${pts(v)} de ${pts(p?.payload?.clientes)} clientes`, 'Vencen']} />
+                    formatter={(v, _n, p) => [`${ambos(v)} de ${pts(p?.payload?.clientes)} clientes`, 'Vencen']} />
                 <Bar dataKey="puntos" name="Vencen" fill={COLOR.acumulado} radius={[4, 4, 0, 0]}
                     maxBarSize={56} isAnimationActive={false} />
+            </BarChart>
+        </ChartContainer>
+    );
+}
+
+/**
+ * La historia de UN cliente, por mes: lo acumulado y lo canjeado. Es la
+ * gráfica del detalle del cliente, y es un control: tocar un mes filtra sus
+ * movimientos (`onElegir`); los demás meses se atenúan mientras hay uno elegido.
+ * El saldo al cierre de cada mes va en el tooltip — no es otra serie: dibujado
+ * junto a los flujos del mes aplasta las barras contra el piso.
+ */
+export function GraficaCliente({ meses, unidad = 'puntos', activo = null, onElegir }) {
+    const datos = (meses ?? []).map((m) => ({ ...m, etiqueta: mes(`${m.mes}-01`) }));
+    const opacidad = (m) => (activo && activo !== m.mes ? 0.3 : 1);
+    const elegir = (d) => onElegir?.(d?.mes === activo ? null : d?.mes ?? null);
+    return (
+        <ChartContainer minHeight={170}>
+            <BarChart data={datos} margin={{ top: 8, right: 8, left: -8, bottom: 0 }} barGap={2} barCategoryGap="24%">
+                <CartesianGrid stroke={COLOR.rejilla} vertical={false} />
+                <XAxis dataKey="etiqueta" tickLine={false} axisLine={false} tick={EJE} minTickGap={12} />
+                <YAxis tickLine={false} axisLine={false} width={52} tick={EJE} tickFormatter={ejeDe(unidad)} />
+                <Tooltip contentStyle={TOOLTIP} cursor={{ fill: COLOR.rejilla, opacity: 0.35 }}
+                    formatter={(v, nombre) => [ambos(v), nombre]}
+                    labelFormatter={(l, p) => {
+                        const saldo = p?.[0]?.payload?.saldo;
+                        return saldo == null ? l : `${l} · quedaron ${pts(saldo)} pts`;
+                    }} />
+                <Legend {...LEYENDA} />
+                <Bar dataKey="acumulado" name="Acumulados" fill={COLOR.acumulado} radius={[4, 4, 0, 0]}
+                    maxBarSize={18} isAnimationActive={false} cursor="pointer" onClick={elegir}>
+                    {datos.map((m) => <Cell key={m.mes} fillOpacity={opacidad(m)} />)}
+                </Bar>
+                <Bar dataKey="canjeado" name="Canjeados" fill={COLOR.canjeado} radius={[4, 4, 0, 0]}
+                    maxBarSize={18} isAnimationActive={false} cursor="pointer" onClick={elegir}>
+                    {datos.map((m) => <Cell key={m.mes} fillOpacity={opacidad(m)} />)}
+                </Bar>
             </BarChart>
         </ChartContainer>
     );

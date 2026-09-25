@@ -271,6 +271,13 @@ const CRONS = [
           + 'el comando: después del 30-sep no hace nada.',
   },
   {
+    job: 'avisos-diferidos-5min', slug: null, cadencia: '*/5 * * * *',
+    corridasDia: 288, sistema: 0,
+    motivo: 'Entrega los avisos que nacieron fuera del horario laboral de quien los recibe '
+          + '(regla del usuario 2026-09-25). SQL puro sobre la cola; casi siempre vacía. '
+          + 'Sólo llama a send-push-notification cuando hay algo que entregar.',
+  },
+  {
     job: 'puntos-sincronizar-noche', slug: 'puntos-arranque', cadencia: '40 4 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Trae al libro del portal sólo lo nuevo de la copia y cuadra, sin encender el programa. '

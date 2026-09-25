@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.0 — Avisos sólo en horario laboral
+
+Regla del usuario: ningún aviso ni notificación fuera del horario laboral.
+Administración (Gerencia, Administración, Talento Humano, Supervisión de
+Ventas) recibe de 8:00 a 23:00; los demás, de 7:00 hasta el cierre de su sala
+ese día (sala cerrada = sin avisos ese día).
+
+- Vale para todo el portal: la campana y el teléfono. Lo que nace fuera de
+  horario **no se pierde**: espera en `avisos_diferidos` y se entrega al abrir
+  la ventana de esa persona (cron `avisos-diferidos-5min`), con la hora de
+  origen en `metadata.nacio_el`.
+- Una sola función decide la ventana (`aviso_ventana`). La campana se aparta
+  con un trigger en `notifications` —hay ~20 funciones que escriben ahí— y el
+  teléfono se filtra en `send-push-notification`, por donde pasa todo push.
+- Si la consulta del horario falla, el teléfono no suena: la regla es una
+  prohibición.
+
 ## v2.1074.5 — Diferencias de caja: los responsables desmarcados ya no vuelven solos
 
 Salud 2, corte de la 1:05 p. m. del 24-sep: se eligieron 3 responsables y se

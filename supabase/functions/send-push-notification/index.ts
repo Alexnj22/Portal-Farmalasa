@@ -61,10 +61,24 @@ serve(async (req) => {
       return new Response(JSON.stringify({ sent: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Horario laboral (2026-09-25): ningún teléfono suena fuera de la ventana
+    // de su dueño. `avisos_filtrar_push` devuelve quién está en horario y deja
+    // el envío en cola para el resto; se entrega al abrir su ventana. Si la
+    // pregunta falla NO se manda: la regla es una prohibición, no un deseo.
+    const empleados = [...new Set(subs.map((s: { employee_id: string }) => s.employee_id))];
+    const { data: enHorario, error: horarioErr } = await supabase
+      .rpc('avisos_filtrar_push', { p_ids: empleados, p_payload: body });
+    if (horarioErr) throw new Error(`avisos_filtrar_push: ${horarioErr.message}`);
+    const permitidos = new Set<string>(enHorario ?? []);
+    const aEnviar = subs.filter((s: { employee_id: string }) => permitidos.has(s.employee_id));
+    if (aEnviar.length === 0) {
+      return new Response(JSON.stringify({ sent: 0, diferidos: empleados.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const payload = JSON.stringify({ title, body: message, url, urgent, tag: `ann-${announcement_id}` });
 
     const results = await Promise.allSettled(
-      subs.map(async (sub: { endpoint: string; p256dh: string; auth: string; employee_id: string }) => {
+      aEnviar.map(async (sub: { endpoint: string; p256dh: string; auth: string; employee_id: string }) => {
         try {
           await webpush.sendNotification(
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
@@ -82,7 +96,7 @@ serve(async (req) => {
     );
 
     const sent = results.filter(r => r.status === 'fulfilled').length;
-    return new Response(JSON.stringify({ sent, total: subs.length }), {
+    return new Response(JSON.stringify({ sent, total: aEnviar.length, diferidos: empleados.length - permitidos.size }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

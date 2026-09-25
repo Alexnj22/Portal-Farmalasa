@@ -101,8 +101,10 @@ Deno.serve(async (req) => {
 
   if (req.method !== "POST") return json({ error: "solo POST" }, 405);
 
+  // Los secretos de la base vieja se exigen SÓLO donde se usan (abajo): con
+  // `puntos_config.fuente = 'portal'` el saldo sale del libro del portal, y
+  // exigirlos acá dejaría la pantalla del cliente muda el día que se borren.
   const cfg = conf();
-  if (!cfg) return json({ error: "no disponible" }, 503);
 
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -315,6 +317,7 @@ Deno.serve(async (req) => {
     // Sin DUI en la ficha no hay cuenta que buscar del otro lado. Se contesta lo
     // mismo que a quien todavía no acumuló: es exactamente su situación, y es
     // uno de los casos para los que existe el código.
+    if (!cfg) return json({ error: "no disponible" }, 503);
     const mysql = await import("npm:mysql2@3.11.0/promise");
     conn = await mysql.createConnection(cfg);
 

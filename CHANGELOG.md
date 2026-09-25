@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1063.0 — Puntos: el corte del 1-oct, rediseñado y ensayado
+
+El 1-oct a las 02:00 los puntos pasan al portal y la base vieja deja de usarse.
+Se trae el historial completo (cada compra y cada canje con su fecha), no sólo
+el saldo, y el motor arranca con las ventas de ese día.
+
+- **`puntos-archivar`**: copia de sólo lectura de la base vieja, en una
+  instantánea consistente, a `puntos_archivo_*`. Una carga es todo o nada.
+- **`puntos-arranque`**: migra el historial por tandas, cuadra el libro y SÓLO
+  si cuadra enciende (piso de arranque, acumulación, pantallas, apaga los crones
+  viejos, crea el del motor). Si algo falla no enciende nada y avisa.
+- **`mis-puntos` y `puntos-consulta`** ya no exigen los secretos de la base
+  vieja para contestar desde el portal: el día que se borren habrían quedado
+  mudas.
+
+Ensayado entero en el entorno de pruebas (`scripts/entorno-pruebas/siembra_puntos.sql`).
+El ensayo encontró que `puntos_cuadrar` —el freno antes de encender— fallaba
+por la API desde el 1-sep. La migración SQL (piso, archivo, migración con
+historial, encendido y el arreglo de `puntos_cuadrar`) todavía NO está aplicada
+a producción. Detalle y pasos en `docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md` §12.
+
 ## v2.1062.5 — Núcleo portable: el tema y el documento de bienvenida a la capa de la web
 
 Sin cambios visibles. Plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.

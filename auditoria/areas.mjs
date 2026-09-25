@@ -435,7 +435,11 @@ export const AREAS = [
                  // todavía no se hicieron. Ver
                  // docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md
                  'puntos_cuenta', 'puntos_lote', 'puntos_salida', 'puntos_salida_lote',
-                 'puntos_vencimiento_log', 'puntos_config'],
+                 'puntos_vencimiento_log', 'puntos_config',
+                 // La copia del sistema de puntos anterior (se apaga el
+                 // 2026-10-01) y la bitácora del arranque de esa madrugada.
+                 'puntos_archivo_carga', 'puntos_archivo_cliente', 'puntos_archivo_venta',
+                 'puntos_archivo_canje', 'puntos_arranque'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync', 'sync-puntos', 'puntos-probe',
                // `puntos-vencer` la creó otra sesión el 2026-08-31 y quedó sin
@@ -447,7 +451,10 @@ export const AREAS = [
                // corriendo el circuito viejo. `puntos-motor` es el futuro cron
                // (acumular + canjes + anulaciones) y `puntos-traer-saldos` el
                // puente de una sola vez para la migración.
-               'puntos-motor', 'puntos-traer-saldos'],
+               'puntos-motor', 'puntos-traer-saldos',
+               // El corte del 1-oct (2026-09-25): copiar el sistema anterior y
+               // migrar su historial al libro, y encender el motor.
+               'puntos-archivar', 'puntos-arranque'],
         crons: ['sync-dte-inv-all-1min', 'check-sales-alerts-5min', 'check-sales-reconciliation-daily',
                 'close-ventas-month', 'refresh-sales-daily-stats', 'refresh-sales-daily-stats-full',
                 'refresh-product-sales-rollup-daily', 'refresh-product-sales-monthly-agg',

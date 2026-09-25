@@ -707,3 +707,80 @@ le pone el saldo de una persona a otra —hay **100 DUI repetidos en 203 fichas*
 y `puntos_migrar` informa pero no elige—; encender la acumulación sin haberla
 visto simulada mete filas en el libro mayor que después hay que distinguir de las
 buenas. El resto del plan se puede rehacer; esos tres, no.
+
+---
+
+## 12. El corte del 1-oct, rediseñado y ensayado (2026-09-25)
+
+**Esto reemplaza al §10 y al §11.** Tres decisiones del usuario del 25-sep lo
+cambiaron:
+
+1. **El 1-oct a las 02:00 se migra y desde ese día MySQL no se usa más.** El
+   motor arranca SÓLO con las ventas y canjes del día del arranque.
+2. **Se trae el HISTORIAL, no sólo el saldo**: cada acumulación es un lote con
+   su fecha real y cada canje una salida que consume del más viejo al más
+   nuevo — «para saber cuáles puntos siguen y cuáles no». Todo lo anterior al
+   1-oct vence el 1-oct-2027 (régimen de transición).
+3. **Los tickets que nadie presentó NO se migran** (~3.07M de puntos; 129k de
+   septiembre). Si no se acumularon allá, quedan perdidos.
+
+### Las piezas nuevas
+
+| pieza | qué hace |
+|---|---|
+| `puntos_config.inicio` + `puntos_desde_efectivo()` | el piso: acumular, canjes y anulaciones no miran antes del arranque. **Sin él, el 1-oct acreditaba y descontaba dos veces las ventas del 28–30 de septiembre** (la ventana del motor es de 3 días) |
+| `puntos_archivo_*` + `puntos-archivar` | copia de sólo lectura de `Clientes`, `Ventas`, `Canjes`, en una instantánea consistente. La base vieja se apaga; su historial queda acá. Una carga es todo o nada (`puntos_archivo_cerrar`) |
+| `puntos_migrar_historial()` | migra desde el archivo, por tandas. Liga por DUI; **no elige** con DUI repetido (en el portal o allá), sin ficha o sin DUI: lo informa y queda en el archivo para resolverlo con `p_solo_cliente`. Si el historial no da `Clientes.Puntos`, entra un **ajuste** con motivo, nunca en silencio |
+| `puntos-arranque` + `puntos_encender()` | migra, cuadra y **sólo si cuadra** enciende en un acto: piso, acumulación, fuente de pantallas, apaga `sync-puntos-1min` y `puntos-vencer-mensual`, crea `puntos-motor-1min`. Si algo falla no enciende nada, anota en `puntos_arranque` y avisa a Gerencia/Administración |
+
+### Defectos que encontró el ensayo (y ya no están)
+
+- **`puntos_cuadrar` sólo corría desde la consola**: `DELETE FROM _cuadre;` sin
+  WHERE, y por la API corre `pg_safeupdate`. El freno antes de encender no
+  frenaba nada: fallaba. Estaba así en producción desde el 1-sep.
+- **`mis-puntos` y `puntos-consulta` exigían los secretos de MySQL antes de
+  mirar el interruptor**: el día que se borren, las dos pantallas mudas aunque
+  el saldo ya viva en el portal.
+
+### Ensayado en el entorno de pruebas (`siembra_puntos.sql`)
+
+Migración: 8 de 8 casos (cuadra, ajuste de entrada, ajuste de salida, sin
+ficha, DUI en dos cuentas de allá, DUI en dos fichas, sin DUI, saldo cero con
+historial), idempotente, cuadre 0. Motor: acumula, excluye <$1 / bajo precio 3 /
+sólo bebidas / convenio, respeta el piso, canje con y sin saldo (con aviso, una
+sola vez), anulación, segunda corrida sin duplicar. Pantallas leyendo el libro.
+Arranque real: falló dos veces por los defectos de arriba **sin encender nada**,
+y a la tercera encendió, apagó los dos crones viejos y creó el del motor.
+
+### Contra producción, en simulado (sin escribir)
+
+Último mes (25-ago → 24-sep): el motor acredita **16,249 facturas / 184,390
+puntos, 0 que el circuito actual no acreditó**. Las 326 al revés son catálogo o
+precios que cambiaron después del envío, no una regla distinta (las dos
+funciones tienen la misma).
+
+### Lo que falta, en orden
+
+1. Aplicar la migración a producción (borrador probado en el branch).
+2. Desplegar `puntos-archivar`, `puntos-arranque`, `puntos-motor`, `mis-puntos`,
+   `puntos-consulta`. Ninguna enciende nada.
+3. **Ensayo general contra datos reales**: `puntos-archivar` (copia real) y
+   `puntos-arranque {"simular": true}` → los números de verdad: cuántas cuentas
+   quedan afuera y por qué.
+4. Crear los dos crones de una sola vez: `puntos-archivar-arranque` a las
+   **08:00 UTC del 1-oct** (02:00 SV) y `puntos-arranque-1oct` a las 08:10.
+   `puntos_encender` los borra al terminar.
+5. **Operativo, no código**: que nadie use la aplicación de puntos vieja desde
+   el cierre del 30-sep (lo que se escriba allá después de la copia se pierde),
+   apagar el disparador del Apps Script en Drive, y que la caja consulte el
+   saldo en la ficha del portal antes de aplicar un canje.
+
+### Lo que queda abierto a propósito
+
+- Una venta de septiembre que se anule en octubre **no** descuenta: sus puntos
+  entraron con el historial migrado, sin la venta ligada.
+- `puntos-vencer-mensual` se apaga; el vencimiento en el portal
+  (`puntos_vencer_lotes`) no vence nada antes del 2-oct-2027 y su cron se
+  decide antes de esa fecha.
+- `mis-puntos` muestra una cortesía de cumpleaños como «compra»: el motivo
+  viaja en el estado de cuenta pero esa pantalla no lo pinta.

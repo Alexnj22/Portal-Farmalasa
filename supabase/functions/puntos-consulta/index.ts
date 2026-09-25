@@ -39,8 +39,10 @@ Deno.serve(async (req) => {
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
+  // Los secretos de la base vieja se exigen SÓLO donde se usan, no a la
+  // entrada: con `puntos_config.fuente = 'portal'` esta función no la toca, y
+  // exigirlos arriba dejaría la ficha sin saldo el día que se borren.
   const cfg = conf();
-  if (!cfg) return json({ error: "faltan los secretos PUNTOS_MYSQL_*" }, 500);
 
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -128,6 +130,7 @@ Deno.serve(async (req) => {
       const dui = String(cli.dui).replace(/\D/g, "");
       if (dui.length < 8) return json({ ok: true, motivo: "dui_corto", cliente: null, movimientos: [] });
 
+      if (!cfg) return json({ error: "faltan los secretos PUNTOS_MYSQL_*" }, 500);
       conn = await mysql.createConnection(cfg);
       const [cuentas] = await conn.query(
         "SELECT idCliente, TRIM(CONCAT(COALESCE(Nombres,''),' ',COALESCE(Apellidos,''))) nombre, Puntos saldo " +

@@ -439,7 +439,9 @@ export const AREAS = [
                  // La copia del sistema de puntos anterior (se apaga el
                  // 2026-10-01) y la bitácora del arranque de esa madrugada.
                  'puntos_archivo_carga', 'puntos_archivo_cliente', 'puntos_archivo_venta',
-                 'puntos_archivo_canje', 'puntos_arranque'],
+                 'puntos_archivo_canje', 'puntos_arranque',
+                 // Las cuentas de la base vieja que no pasan solas (2026-09-25).
+                 'puntos_cuentas_pendientes'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync', 'sync-puntos', 'puntos-probe',
                // `puntos-vencer` la creó otra sesión el 2026-08-31 y quedó sin

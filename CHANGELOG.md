@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1064.5 — Puntos: las cuentas que no pasan solas quedan aparte, y se asignan a mano
+
+Decisión del usuario sobre las 709 cuentas de la base vieja que no se pueden
+ligar por DUI: las de DUI mal escrito se dejan así y las que no tienen
+coincidencia quedan aparte, para asignarlas a mano si el cliente reclama. Nada
+se une por teléfono ni por nombre.
+
+- **`puntos_cuentas_pendientes`**: nombre, DUI, teléfono, saldo, última compra
+  y motivo de cada una.
+- **`puntos_asignar_cuenta_anterior`**: pasa una cuenta a la ficha elegida con
+  todo su historial; exige el motivo y deja el rastro. La migración automática
+  usa la misma función por cuenta.
+- **La tanda pasó de 3.6 s a 22 s entre dos ensayos** sin tocar el SQL: la
+  tabla de lotes quedó con estadísticas de vacía y el planificador dejó el
+  índice. `puntos_consumir` y la migración por cuenta lo fijan. Ensayo final
+  con los datos reales: 25.7 s, 0 descuadradas.
+
 ## v2.1064.4 — Núcleo portable: el aviso de inactividad sale del contexto de sesión
 
 Sin cambios visibles. Cierra la fase F1 del núcleo portable: **`gate:nucleo`

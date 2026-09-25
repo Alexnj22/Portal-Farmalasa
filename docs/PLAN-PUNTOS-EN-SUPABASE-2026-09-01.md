@@ -801,6 +801,31 @@ de −51 a +25 puntos).
    encendido a las 02:00 del 1-oct; apagar el Apps Script de Drive; la caja
    consulta el saldo en la ficha del portal antes de un canje.
 
+### Las 709 cuentas que no pasan solas (decisión del usuario, 2026-09-25)
+
+«Si son inválidos significa que están mal, así que déjalos así. Si no hay
+match, déjalos aparte, por si un cliente reclama, los asignamos manualmente
+después.» Nada se une por teléfono ni por nombre, y el DUI de la base vieja
+NUNCA se escribe en la ficha (280 de 621 no pasan el verificador, y el DUI de
+la ficha viaja a los DTE).
+
+- **`puntos_cuentas_pendientes`** — vista con nombre, DUI, teléfono, saldo,
+  última compra y motivo: 341 «ninguna ficha tiene ese DUI», 280 «DUI mal
+  escrito», 53 «varias fichas», 25 «varias cuentas allá», 10 «sin DUI».
+- **Cuando alguien reclama**: `puntos_asignar_cuenta_anterior(id_cliente,
+  customer_id, 'motivo')` muestra las dos lado a lado (simula por defecto); con
+  `p_simular := false` pasa la cuenta con todo su historial y deja el rastro en
+  `puntos_archivo_cliente.asignada_*`. Sin motivo no asigna; dos veces, tampoco.
+- La migración automática y la manual son la MISMA función por cuenta
+  (`puntos_migrar_cuenta_anterior`).
+
+**Una trampa medida en el camino**: la tanda pasó de 3.6 s a 22 s entre dos
+ensayos sin tocar el SQL. `puntos_lote` quedó con estadísticas de tabla vacía
+después de los ensayos deshechos, y el 1-oct va a estar igual: vacía en las
+estadísticas y llenándose en la corrida. `puntos_consumir` y
+`puntos_migrar_cuenta_anterior` fijan el índice. Ensayo final: 25.7 s, 0
+descuadradas, 709 pendientes exactas.
+
 ### Lo que queda abierto a propósito
 
 - Una venta de septiembre que se anule en octubre **no** descuenta: sus puntos

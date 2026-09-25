@@ -85,6 +85,13 @@ Deno.serve(async (req) => {
       p_desde: desde, p_hasta: hasta, p_simular: simular, p_tope: body?.tope_anulaciones ?? 500,
     });
 
+    // ── El estado de cada venta, para la columna «Puntos» de Ventas ─────────
+    // Va DESPUÉS de acumular y anular: sella lo que el libro ya dice. Una venta
+    // que entre entre la acumulación y el sello queda «sin puntos» un minuto y
+    // la corrida siguiente la pasa a acumulado. En simulado no sella: sellar es
+    // escribir.
+    const sello = simular ? null : await rpc('puntos_sellar_estado', { p_desde: desde, p_hasta: hasta });
+
     // ── Avisar a la sala y a supervisión ────────────────────────────────────
     const avisos = (canjes?.avisos ?? []) as Array<Record<string, unknown>>;
     let avisados = 0;
@@ -164,7 +171,7 @@ Deno.serve(async (req) => {
     return json({
       ok: fallidos.length === 0,
       encendido, simulado: simular, ventana: { desde, hasta },
-      acumulacion, canjes, anulaciones,
+      acumulacion, canjes, anulaciones, sello,
       avisados, avisos_pendientes: avisos.length, fallidos,
     }, fallidos.length ? 500 : 200);
   } catch (e) {

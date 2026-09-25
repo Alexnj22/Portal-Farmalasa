@@ -125,8 +125,11 @@ export async function salaDeHoy() {
 }
 
 export const ROTULO_PUNTOS = {
-    acumulado:   { label: 'Acumulados', variante: 'success', ayuda: 'El cliente ya presentó el ticket y se le dieron sus puntos.' },
-    pendiente:   { label: 'Pendientes', variante: 'neutral', ayuda: 'La venta está registrada y sus puntos se pueden reclamar.' },
+    /* Desde el 1-oct-2026 los puntos se acreditan solos, sin presentar el
+       ticket: «Acumulados» dice que están en la cuenta, no CÓMO llegaron.
+       «Pendientes» sólo existe en ventas anteriores a esa fecha. */
+    acumulado:   { label: 'Acumulados', variante: 'success', ayuda: 'Los puntos de esta venta están en la cuenta del cliente.' },
+    pendiente:   { label: 'Pendientes', variante: 'neutral', ayuda: 'Venta anterior al 1 de octubre de 2026 cuyo ticket no se presentó.' },
     /* «Retirados» y «Devueltos» decían lo mismo hasta el 2026-08-29 y NO son lo
        mismo. Se separaron porque el usuario vio «Devueltos» en ventas anuladas y
        preguntó si se le habían quitado puntos a alguien que nunca los canjeó. No
@@ -139,7 +142,9 @@ export const ROTULO_PUNTOS = {
        de un año alguien leería «anuladas» sobre 61 ventas que nunca se anularon,
        y no tendría cómo saber que la conclusión estaba mal. */
     no_acumula:  { label: 'No acumula',  variante: 'neutral', ayuda: 'La compra es de un convenio o de una empresa, así que no acumula puntos. La venta es correcta.' },
-    sin_enviar:  { label: 'Sin enviar', variante: 'neutral', ayuda: 'Esta venta no acumula puntos.' },
+    /* La clave sigue siendo `sin_enviar` porque la escribe la base; el rótulo
+       ya no habla de «enviar», que era la tubería y no el negocio. */
+    sin_enviar:  { label: 'Sin puntos', variante: 'neutral', ayuda: 'Esta venta no cumple las condiciones para acumular puntos.' },
 };
 
 /**

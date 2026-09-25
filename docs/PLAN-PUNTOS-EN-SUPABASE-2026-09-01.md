@@ -826,6 +826,17 @@ estadísticas y llenándose en la corrida. `puntos_consumir` y
 `puntos_migrar_cuenta_anterior` fijan el índice. Ensayo final: 25.7 s, 0
 descuadradas, 709 pendientes exactas.
 
+### La columna «Puntos» de Ventas sigue viva después del corte
+
+Leía `puntos_enviados.estado_puntos`, que llenaba `sync-puntos` — el que el
+arranque apaga. Desde el 1-oct cada venta nueva habría salido sin estado y el
+filtro no la encontraba, sin error. `puntos_sellar_estado` (migración
+`20260925193427`) lo escribe desde el libro en la misma tabla y con los mismos
+valores, y `puntos-motor` lo llama después de acumular y anular: acumulado,
+devuelto, por revisar y «sin puntos» (antes «Sin enviar»). «Pendientes» y
+«Retirados» quedan para lo anterior al 1-oct. Ensayado en el branch con las 11
+ventas de prueba.
+
 ### Lo que queda abierto a propósito
 
 - Una venta de septiembre que se anule en octubre **no** descuenta: sus puntos

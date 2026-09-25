@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1071.1 — Puntos: la columna de Ventas sigue viva después del corte
+
+La columna «Puntos» de Ventas y su filtro leían el estado que dejaba el puente
+con la base vieja, y el arranque del 1-oct lo apaga: desde ese día cada venta
+nueva habría salido sin estado, sin error. Ahora `puntos-motor` lo sella desde
+el libro del portal (`puntos_sellar_estado`) en la misma tabla y con los mismos
+valores, así que la pantalla no cambia: acumulado, devuelto, por revisar y
+«Sin puntos», que reemplaza a «Sin enviar». «Pendientes» queda para ventas
+anteriores al 1-oct, y la ayuda de «Acumulados» ya no habla de presentar el
+ticket.
+
 ## v2.1071.0 — Búsqueda: personas, médicos, notificaciones y compras con la regla
 
 Los últimos cuatro buscadores del servidor pasan a la regla

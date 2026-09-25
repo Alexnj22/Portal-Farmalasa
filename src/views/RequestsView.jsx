@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
 import { useNowTick } from '../hooks/useNowTick';
 import { useRecargarAlVolver } from '../hooks/useRecargarAlVolver';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe } from '../utils/semana';
 import { useDecidirSolicitud } from '../hooks/useDecidirSolicitud';
 import GlassViewLayout from '../components/GlassViewLayout';

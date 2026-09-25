@@ -24,7 +24,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import useCerrarBolsa from '../hooks/useCerrarBolsa';
-import useResolverCorte from '../hooks/useResolverCorte';
+import useResolverCorte from '../components/cortes/useResolverCorte';
 import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, iniciarTurno,
     estadoDeCajaEnElOrigen, fetchBolsas,

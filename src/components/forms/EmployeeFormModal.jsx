@@ -238,7 +238,7 @@ export function aplicarFichaEnlazada(prev, val, ficha) {
 import ModalShell from '../common/ModalShell';
 import FileField from '../common/FileField';
 import CarneDeDependiente from '../common/CarneDeDependiente';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';

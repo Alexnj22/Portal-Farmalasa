@@ -40,7 +40,7 @@ import { saldoDeBolsa } from '../../utils/bolsasReparto';
  * El lector es el camino normal, y ahí sólo vale el escaneo —como en el apoyo de
  * un pedido—: un código tecleado lo escribe cualquiera que lo sepa, y lo que
  * esto registra es que alguien ESTUVO acá con su carné. El detector vive en
- * `hooks/useCapturaDeCarne` y el panel en `components/common/EsperaDeCarne` —
+ * `plataforma/useCapturaDeCarne` y el panel en `components/common/EsperaDeCarne` —
  * los mismos que usa el apoyo, para que se vean y se comporten igual.
  *
  * Desde el 2026-08-19 el bloque entero es `IdentidadDeQuienRetira`: la salida de

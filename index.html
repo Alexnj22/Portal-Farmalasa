@@ -122,7 +122,7 @@
         var THEMES = ['liquid', 'dark', 'solid', 'solid-dark'];
         var t;
         // El teléfono y la computadora guardan su tema aparte (2026-08-20).
-        // Espeja src/utils/temaPorDispositivo.js: misma consulta, mismas claves.
+        // Espeja src/plataforma/temaPorDispositivo.js: misma consulta, mismas claves.
         var esMovil = false;
         try { esMovil = !!(window.matchMedia && window.matchMedia('(hover: none)').matches); } catch (e) { /* sin matchMedia: escritorio */ }
         try {

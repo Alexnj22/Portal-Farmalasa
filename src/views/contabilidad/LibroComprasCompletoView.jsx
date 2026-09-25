@@ -10,7 +10,7 @@ import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
-import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';

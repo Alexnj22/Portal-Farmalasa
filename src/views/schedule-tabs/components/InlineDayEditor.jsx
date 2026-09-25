@@ -11,7 +11,7 @@ import { useStaffStore } from '../../../store/staffStore';
 import { timeToMins, formatHourAMPM, resolverTurnoDelDia, reparosDelDia } from '../../../utils/scheduleHelpers';
 import ModalShell from '../../../components/common/ModalShell';
 import HojaMovil from '../../../components/common/HojaMovil';
-import useMediaQuery from '../../../hooks/useMediaQuery';
+import useMediaQuery from '../../../plataforma/useMediaQuery';
 import { CORTE_TELEFONO } from '../../../components/common/usarExpediente';
 import { clickable } from '../../../utils/clickable';
 import { shortEmployeeName } from '../../../utils/nameUtils';

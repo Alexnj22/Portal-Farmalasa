@@ -5,7 +5,7 @@ import AsaHoja from './AsaHoja';
 import Badge from './Badge';
 import Button from './Button';
 import { createPortal } from 'react-dom';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { CalendarDays, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { permitirEscapeDelScroll } from '../../src/utils/scrollEncadenado';
+import { permitirEscapeDelScroll } from '../../src/plataforma/scrollEncadenado';
 
 // Estas pruebas anclan la única regla que distingue los DOS reportes opuestos
 // del usuario sobre el scroll del tablero (ver el encabezado del módulo):

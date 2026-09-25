@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import EditorDeDocumento from '../../src/components/common/EditorDeDocumento';
 import { DOCS, avisosDeFoto, sePuedeGuardar } from '../../src/utils/fotoDocumento';
-import { acabadoPorDefecto, acabadosDe } from '../../src/utils/tratamientoDeFoto';
+import { acabadoPorDefecto, acabadosDe } from '../../src/plataforma/tratamientoDeFoto';
 
 /**
  * ── El DUI se recorta, pero NO se aclara ─────────────────────────────────────
@@ -217,7 +217,7 @@ describe('el giro sale del orden de las esquinas', () => {
         // Vive en la tubería compartida desde que el camino automático y el
         // editor tienen que producir el mismo archivo.
         const componer = fs.readFileSync(
-            path.join(process.cwd(), 'src/utils/componerDocumento.js'), 'utf8');
+            path.join(process.cwd(), 'src/plataforma/componerDocumento.js'), 'utf8');
         expect(componer).toMatch(/yaOrdenadas:\s*true/);
     });
 

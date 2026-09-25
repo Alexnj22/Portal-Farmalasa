@@ -27,7 +27,7 @@ import React, { createContext, useContext } from 'react';
 import Badge from './Badge';
 import { ArrowUp, ArrowDown, ChevronsUpDown, Inbox } from 'lucide-react';
 import Button from './Button';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 import ModalShell from './ModalShell';
 import HojaMovil from './HojaMovil';
 import OjoDeTarjeta from './OjoDeTarjeta';

@@ -1,6 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Search, Loader2, X } from 'lucide-react';
-import { useSearchToggle } from '../../hooks/useSearchToggle';
+import { useSearchToggle } from '../../plataforma/useSearchToggle';
 
 /**
  * Buscador inline para widgets, modales y tabs internos (Tipo 2).

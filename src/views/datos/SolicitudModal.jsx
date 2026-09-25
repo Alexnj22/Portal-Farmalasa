@@ -28,7 +28,7 @@ import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { DERECHOS, guardarSolicitud, plazoDe, buscarPersona, resumenDeCliente } from '../../data/solicitudesDatos';
 import { papelDeRespuesta, filasParaPortabilidad } from '../../utils/respuestaDeDatos';
-import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '../../utils/ventanaDeImpresion';
+import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
 import { exportCsv } from '../../utils/csvExport';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { shortEmployeeName } from '../../utils/nameUtils';

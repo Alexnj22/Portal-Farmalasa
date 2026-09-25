@@ -20,7 +20,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { IMPORTADORES, IMPORTADOR_POR_RUTA, prefetchRuta } from '../../src/constants/routeImporters';
 import { playFeedbackTone, playSuccessTone, playWarningTone, playErrorTone }
-    from '../../src/utils/kioskSound';
+    from '../../src/plataforma/kioskSound';
 
 describe('cada ruta sabe qué vista precargar', () => {
     it('todo importador es una función que se puede llamar dos veces', () => {

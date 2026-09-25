@@ -86,7 +86,7 @@ Contando **uso real** (sin comentarios): `window`, `document`,
 | `utils/routeOptimizer.js` | 17 | Google Maps por `window` + env |
 | `hooks/usePushSubscription.js` | 13 | Web Push (`navigator.serviceWorker`) |
 | `utils/ticketPrint.js` | 9 | ventana de impresión + ajustes locales |
-| `hooks/useAnclaje.js`, `context/ThemeContext.jsx` | 9 c/u | `window`/`document` |
+| `plataforma/useAnclaje.js`, `context/ThemeContext.jsx` | 9 c/u | `window`/`document` |
 | 46 archivos más | 1–8 | la mayoría, almacenamiento o `document` para un PDF/foto |
 
 Por tipo, lo que hay detrás son **cinco adaptadores**, no 55 arreglos:
@@ -103,9 +103,9 @@ Por tipo, lo que hay detrás son **cinco adaptadores**, no 55 arreglos:
 
 | archivo | importa |
 |---|---|
-| `hooks/useResolverCorte.jsx` | `components/cortes/CerrarElDiaAhora`, `EntregaDeCaja` |
-| `hooks/usePaginaEnUrl.js` | `components/common/TablePagination` |
-| `hooks/useMontadoParaSalida.js` | `components/common/gotaApertura` |
+| `components/cortes/useResolverCorte.jsx` | `components/cortes/CerrarElDiaAhora`, `EntregaDeCaja` |
+| `plataforma/usePaginaEnUrl.js` | `components/common/TablePagination` |
+| `plataforma/useMontadoParaSalida.js` | `components/common/gotaApertura` |
 | `context/AuthContext.jsx` | `components/common/AvisoDeInactividad` |
 
 Y **13 archivos de lógica importan íconos o animación** (`lucide-react`,

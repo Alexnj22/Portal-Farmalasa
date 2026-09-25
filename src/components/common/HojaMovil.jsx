@@ -2,7 +2,7 @@ import React, { memo, useRef, useContext } from 'react';
 import AsaHoja from './AsaHoja';
 import { useArrastreHoja } from './arrastreHoja';
 import { EstadoDialogoCtx } from './estadoDialogo';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 import { usePanelLateral } from '../../hooks/useLayoutCompacto';
 
 /**

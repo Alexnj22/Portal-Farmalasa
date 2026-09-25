@@ -7,7 +7,7 @@ import PedidoModal from './PedidoModal';
 import { loadGoogleMaps, loadLeaflet } from '../../plataforma/mapas';
 import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
-import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { hora12 } from '../../utils/hora';
 
 // Capacitor geolocation nativa — solo disponible en app nativa (Android/iOS)

@@ -19,7 +19,7 @@ import {
 } from '../../data/pedidos';
 
 import { mensajeAmigable } from '../../utils/errorMessages';
-import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { metaDePedido } from '../../utils/avisosDeOperacion';

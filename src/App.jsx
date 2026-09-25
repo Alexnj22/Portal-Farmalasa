@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams } from "react-router-dom";
-import { usePestanaEnUrl } from './hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from './plataforma/usePestanaEnUrl';
 import { Loader2 } from "lucide-react";
 import { IMPORTADORES } from "./constants/routeImporters";
 

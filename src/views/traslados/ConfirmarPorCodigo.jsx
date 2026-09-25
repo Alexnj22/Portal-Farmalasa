@@ -5,7 +5,7 @@ import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
-import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
+import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
 import { fetchTrasladoPorCodigo, recibirTraslado } from '../../data/traslados';
 import DeclararFaltantes from './DeclararFaltantes';
 import { declararFaltanteTardio, HORAS_PARA_DECLARAR_TARDE } from '../../data/faltantes';

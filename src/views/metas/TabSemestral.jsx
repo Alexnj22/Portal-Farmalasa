@@ -14,7 +14,7 @@ import PromptModal from '../../components/common/PromptModal';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { EmptyState } from '../../components/common/StateViews';
-import usePaginaEnUrl from '../../hooks/usePaginaEnUrl';
+import usePaginaEnUrl from '../../plataforma/usePaginaEnUrl';
 import { formatMoney } from '../../utils/formatNumber';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { exportCsv } from '../../utils/csvExport';

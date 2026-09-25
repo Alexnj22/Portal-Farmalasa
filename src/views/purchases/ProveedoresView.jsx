@@ -7,7 +7,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
-import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
 import { fetchSuppliersBasic } from '../../data/compras';

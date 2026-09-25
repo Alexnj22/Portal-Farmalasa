@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import { mensajeAmigable } from '../utils/errorMessages';
-import { fireBrowserNotif } from '../utils/browserNotif';
+import { fireBrowserNotif } from '../plataforma/browserNotif';
 import { ERP_NAMES } from '../constants/erp';
 
 // Se monta UNA vez en AppLayout. Escucha `inventory_sync_log` (INSERT con

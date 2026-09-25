@@ -19,7 +19,7 @@ import { OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../ut
 import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
 const ESTADO_OPTIONS = [

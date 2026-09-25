@@ -3,7 +3,7 @@ import { Activity, Archive, ListPlus } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { useAuth } from '../context/AuthContext';
 import TabParados   from './inventario/TabParados';
 import TabSinMinMax from './inventario/TabSinMinMax';

@@ -3,7 +3,7 @@ import { AlertTriangle, Loader2, Info } from 'lucide-react';
 import ModalShell from './ModalShell';
 import Button from './Button';
 import HojaMovil from './HojaMovil';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 
 // El diálogo de confirmación del portal — el que pregunta antes de borrar.
 //

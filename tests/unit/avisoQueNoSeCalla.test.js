@@ -27,7 +27,7 @@ vi.mock('../../src/store/toastStore', () => ({
 }));
 
 const { notifyEmployees, notifyBranch } = await import('../../src/utils/notify');
-const { fireBrowserNotif } = await import('../../src/utils/browserNotif');
+const { fireBrowserNotif } = await import('../../src/plataforma/browserNotif');
 
 const ok = (n) => ({ data: n, error: null });
 const fallo = (e) => ({ data: null, error: e });

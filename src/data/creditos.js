@@ -4,11 +4,11 @@ import { fetchAllRows } from '../utils/supabaseUtils';
  * foto de teléfono son 4 MB y el lector no necesita más resolución que la del
  * papel—, y por eso no se reescribe acá: dos reducciones se desajustan.
  *
- * Sale de `utils/fotoParaLeer` y no de `data/bolsas`, que es donde vivía: un
+ * Sale de `plataforma/fotoParaLeer` y no de `data/bolsas`, que es donde vivía: un
  * `import` no trae una función, trae el módulo entero. Esta línea metía los
  * 63 kB de `data/bolsas` en el chunk de arranque, porque `requestsSlice` importa
  * este archivo. Ver la cabecera de `fotoParaLeer`. */
-import { aBase64Reducido } from '../utils/fotoParaLeer';
+import { aBase64Reducido } from '../plataforma/fotoParaLeer';
 
 /**
  * Los créditos de los clientes — verlos y abonarles.

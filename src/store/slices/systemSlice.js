@@ -5,7 +5,7 @@ import { assertHeadcountAvailable } from './employeeSlice';
 import { signStorageUrls } from '../../utils/storageFiles';
 import { fetchAllRows } from '../../utils/supabaseUtils';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
-import { fireBrowserNotif } from '../../utils/browserNotif';
+import { fireBrowserNotif } from '../../plataforma/browserNotif';
 import { buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
 import { fetchSalarios, fetchIdentidades, codigoDeCarneLibre, guardarDatosProtegidos } from '../../data/employees';

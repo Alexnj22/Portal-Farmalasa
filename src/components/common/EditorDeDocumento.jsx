@@ -44,7 +44,7 @@
  * ══ LO QUE SE CONSERVÓ, Y POR QUÉ ═══════════════════════════════════════════
  *
  * Todo lo que estaba MEDIDO: los dos tratamientos de píxeles (`realzar`,
- * `aclarar` — ver `utils/tratamientoDeFoto.js`), la revisión que avisa antes de
+ * `aclarar` — ver `plataforma/tratamientoDeFoto.js`), la revisión que avisa antes de
  * guardar (`avisosDeFoto`), el piso por debajo del cual no se guarda
  * (`sePuedeGuardar`) y los tamaños de salida por tipo de papel. Nada de eso era
  * el problema.
@@ -56,10 +56,10 @@ import LiquidModal from './LiquidModal';
 import Notice from './Notice';
 import LienzoDeEncuadre from './LienzoDeEncuadre';
 import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento, sePuedeGuardar } from '../../utils/fotoDocumento';
-import { ESQUINAS_ENTERAS, girarEsquinas, ordenarEsquinas } from '../../utils/perspectiva';
-import { aEscala, aArchivo, rectificarPapel } from '../../utils/componerDocumento';
-import { acabadoPorDefecto, acabadosDe, aplicarAcabado } from '../../utils/tratamientoDeFoto';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import { ESQUINAS_ENTERAS, girarEsquinas, ordenarEsquinas } from '../../plataforma/perspectiva';
+import { aEscala, aArchivo, rectificarPapel } from '../../plataforma/componerDocumento';
+import { acabadoPorDefecto, acabadosDe, aplicarAcabado } from '../../plataforma/tratamientoDeFoto';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import SegmentedControl from './SegmentedControl';
 
 // El lado con el que se revisa la foto antes de guardarla. 800 alcanza para

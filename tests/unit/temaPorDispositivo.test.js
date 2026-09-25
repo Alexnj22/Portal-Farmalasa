@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 // El tema del teléfono y el de la computadora se guardan aparte, y esa decisión
-// vive DOS veces: en `src/utils/temaPorDispositivo.js` y en el script inline de
+// vive DOS veces: en `src/plataforma/temaPorDispositivo.js` y en el script inline de
 // `index.html` que estampa `data-theme` antes del primer pintado.
 //
 // El espejo es a propósito —el script tiene que correr antes de que exista un
@@ -19,7 +19,7 @@ import { resolve } from 'node:path';
 // jsdom de vitest esa URL no es de esquema `file:` y `readFileSync` la rechaza.
 const leer = (rel) => readFileSync(resolve(process.cwd(), rel), 'utf8');
 const html = leer('index.html');
-const modulo = leer('src/utils/temaPorDispositivo.js');
+const modulo = leer('src/plataforma/temaPorDispositivo.js');
 // La OTRA mitad del espejo: el script inline resuelve lo mismo que
 // `resolveInitialTheme`, que es quien lee las claves del lado de React.
 const contexto = leer('src/context/ThemeContext.jsx');

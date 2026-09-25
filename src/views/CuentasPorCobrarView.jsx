@@ -20,7 +20,7 @@ import useBorrador from '../hooks/useBorrador';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
-import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
+import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';
 import {
     DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchCreditosDelCliente,
     fetchHistorialDelOrigen, fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito,

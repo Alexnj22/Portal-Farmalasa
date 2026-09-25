@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo, useState, lazy, Suspense } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useToastStore } from '../store/toastStore';
-import { MODULO_QUE_DECIDE } from '../constants/solicitudModulos';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { useDecidirSolicitud } from './useDecidirSolicitud';
-import useCortesDeAvisos, { AVISOS_DE_CORTE } from './useCortesDeAvisos';
-import useResolverCorte from './useResolverCorte';
-import { seConfirmaDeUnClic } from '../utils/cortesDiagnostico';
-import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../data/solicitudDeAviso';
+import { useAuth } from '../../context/AuthContext';
+import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
+import { MODULO_QUE_DECIDE } from '../../constants/solicitudModulos';
+import { mensajeAmigable } from '../../utils/errorMessages';
+import { useDecidirSolicitud } from '../../hooks/useDecidirSolicitud';
+import useCortesDeAvisos, { AVISOS_DE_CORTE } from '../../hooks/useCortesDeAvisos';
+import useResolverCorte from '../cortes/useResolverCorte';
+import { seConfirmaDeUnClic } from '../../utils/cortesDiagnostico';
+import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/solicitudDeAviso';
 
 /* Decidir DESDE el aviso — la campana y el historial, con las mismas reglas.
  *
@@ -31,8 +31,8 @@ import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../data/solicit
  *                        peleando por el mismo toque. La vista no pasa nada.
  */
 const ModalSolicitud = lazy(() =>
-    import('../views/solicitudes/TarjetaSolicitud').then(m => ({ default: m.ModalSolicitud })));
-const CorteDetalleModal = lazy(() => import('../components/cortes/CorteDetalleModal'));
+    import('../../views/solicitudes/TarjetaSolicitud').then(m => ({ default: m.ModalSolicitud })));
+const CorteDetalleModal = lazy(() => import('../cortes/CorteDetalleModal'));
 
 export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo = null, origen = 'campana' } = {}) {
     const { hasPermission } = useAuth();

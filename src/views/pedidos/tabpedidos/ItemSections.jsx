@@ -15,7 +15,7 @@ import TablePagination from '../../../components/common/TablePagination';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { calcSolicitado } from './helpers';
 import SearchInput from '../../../components/common/SearchInput';
-import { useSearchToggle } from '../../../hooks/useSearchToggle';
+import { useSearchToggle } from '../../../plataforma/useSearchToggle';
 import { fetchStockParamsForRevision, guardarMinMaxDesdePedido, effectiveMinMaxPair } from '../../../data/stockParams';
 import PortalInput from '../../../components/common/PortalInput';
 

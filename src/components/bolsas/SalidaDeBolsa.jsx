@@ -199,7 +199,7 @@ export default function SalidaDeBolsa({
      * puede decidir. Hasta el 2026-09-17 lo contestaba la lectura de la boleta:
      * costaba una llamada ENTERA al lector sobre la foto cruda, y encima erraba
      * entre el 10% y el 15% en cada esquina (medido el 2026-08-29, ver el
-     * encabezado de `utils/detectarPapel`). */
+     * encabezado de `plataforma/detectarPapel`). */
     const [sugerido, setSugerido] = useState(null);
     /* Cuál es la foto que está esperando su recuadro. Alguien puede cancelar y
      * elegir otra mientras la pregunta viaja, y aplicar el recuadro de la

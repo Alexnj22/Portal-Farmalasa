@@ -9,7 +9,7 @@
 // papel, y ahí se acaba: es una credencial, igual que el PIN del carné.
 
 import { emitirCarneTemporal } from '../data/carneTemporal';
-import { imprimirCarneDePapel } from './carnePrint';
+import { imprimirCarneDePapel } from '../plataforma/carnePrint';
 import { useToastStore } from '../store/toastStore';
 import { useStaffStore } from '../store/staffStore';
 

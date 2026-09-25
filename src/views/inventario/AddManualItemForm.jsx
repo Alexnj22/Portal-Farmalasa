@@ -6,7 +6,7 @@ import Notice from '../../components/common/Notice';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
-import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
+import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { Campo, CajaFecha } from './camposDeConteo';

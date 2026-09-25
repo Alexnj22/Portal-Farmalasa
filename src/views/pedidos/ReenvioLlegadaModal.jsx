@@ -5,7 +5,7 @@ import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package,
 import PedidoModal from './PedidoModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
-import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const TOGGLE_CFG = {

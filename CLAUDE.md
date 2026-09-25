@@ -1318,7 +1318,7 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   renglón por renglón). El baseline es la deuda del día que se escribió el gate
   y **sólo baja**: no se regenera para tapar un hallazgo nuevo.
 - **La pestaña activa de una vista vive en la DIRECCIÓN, nunca en `useState`.**
-  El hook canónico es `usePestanaEnUrl` (`src/hooks/usePestanaEnUrl.js`) y vale
+  El hook canónico es `usePestanaEnUrl` (`src/plataforma/usePestanaEnUrl.js`) y vale
   también para las vistas nuevas. Una pestaña en memoria se pierde con cualquier
   recarga: F5 —o volver por el historial, o abrir el enlace que alguien pasó—
   devuelve a la primera sin decir nada, y como no falla nada nadie lo reporta

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import TabPorRevisar from './clientes/TabPorRevisar';
 import FilterBar from '../components/common/FilterBar';
 import CarrilCards from '../components/common/CarrilCards';

@@ -5,7 +5,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 import { CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import AnotarLectura from '../../components/bitacoras/AnotarLectura';
 import AnotarLimpieza from '../../components/bitacoras/AnotarLimpieza';

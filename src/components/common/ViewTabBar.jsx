@@ -2,7 +2,7 @@ import { useState, useRef, useLayoutEffect, useCallback } from 'react';
 import { Search, X, ChevronRight, ScanLine } from 'lucide-react';
 import LiquidSelect from './LiquidSelect';
 import Contador from './Contador';
-import { useSearchToggle } from '../../hooks/useSearchToggle';
+import { useSearchToggle } from '../../plataforma/useSearchToggle';
 import { usePublicarBuscador, useHayBarraFlotante } from './CanalDeVista';
 
 const spring = 'ease-[var(--ease-spring)]';

@@ -1,6 +1,6 @@
 {
-  "total": 97,
-  "archivos": 42,
+  "total": 42,
+  "archivos": 19,
   "porArchivo": {
     "src/constants/moduleMap.js": {
       "pantalla": 1
@@ -32,55 +32,10 @@
     "src/data/recorteSugerido.js": {
       "navegador": 1
     },
-    "src/hooks/useAnclaje.js": {
-      "navegador": 9
-    },
-    "src/hooks/useCapturaDeCarne.js": {
-      "navegador": 4
-    },
-    "src/hooks/useCoarsePointer.js": {
-      "navegador": 4
-    },
-    "src/hooks/useMediaQuery.js": {
-      "navegador": 2
-    },
-    "src/hooks/useMontadoParaSalida.js": {
-      "pantalla": 1
-    },
-    "src/hooks/useMotionConfig.js": {
-      "pantalla": 1
-    },
-    "src/hooks/usePaginaEnUrl.js": {
-      "pantalla": 2
-    },
-    "src/hooks/usePestanaEnUrl.js": {
-      "pantalla": 1
-    },
-    "src/hooks/useResolverCorte.jsx": {
-      "pantalla": 2
-    },
-    "src/hooks/useSearchToggle.js": {
-      "navegador": 4
-    },
     "src/store/slices/employeeSlice.js": {
       "navegador": 1
     },
-    "src/utils/browserNotif.js": {
-      "navegador": 3
-    },
-    "src/utils/capaFlotante.js": {
-      "navegador": 1
-    },
-    "src/utils/carnePrint.js": {
-      "navegador": 2
-    },
-    "src/utils/componerDocumento.js": {
-      "navegador": 1
-    },
     "src/utils/csvExport.js": {
-      "navegador": 1
-    },
-    "src/utils/detectarPapel.js": {
       "navegador": 1
     },
     "src/utils/documentoDeBienvenida.js": {
@@ -89,45 +44,20 @@
     "src/utils/documentosDelExpediente.js": {
       "pantalla": 1
     },
-    "src/utils/fotoParaLeer.js": {
-      "navegador": 1
-    },
     "src/utils/helpers.js": {
       "navegador": 4
-    },
-    "src/utils/kioskSound.js": {
-      "navegador": 1
     },
     "src/utils/notificacionTexto.js": {
       "pantalla": 1
     },
-    "src/utils/perspectiva.js": {
-      "navegador": 1
-    },
-    "src/utils/pushEquipo.js": {
-      "navegador": 3,
-      "env": 2
-    },
     "src/utils/scheduleHelpers.js": {
       "pantalla": 1
-    },
-    "src/utils/scrollEncadenado.js": {
-      "navegador": 3
     },
     "src/utils/storageFiles.js": {
       "navegador": 6
     },
-    "src/utils/temaPorDispositivo.js": {
-      "navegador": 1
-    },
     "src/utils/ticketPrint.js": {
       "navegador": 6
-    },
-    "src/utils/tratamientoDeFoto.js": {
-      "navegador": 1
-    },
-    "src/utils/ventanaDeImpresion.js": {
-      "navegador": 4
     }
   }
 }

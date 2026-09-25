@@ -10,7 +10,7 @@ import { exportCsv } from '../utils/csvExport';
 import { fechaHora12 } from '../utils/hora';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import {
     fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidas, updateVentaPerdidaStatus,
 } from '../data/ventasPerdidas';

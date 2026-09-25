@@ -14,9 +14,9 @@ import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useTheme } from '../context/ThemeContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
-import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
-import usePestanaEnUrl from '../hooks/usePestanaEnUrl';
-import useAccionesDeAviso from '../hooks/useAccionesDeAviso';
+import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';
+import usePestanaEnUrl from '../plataforma/usePestanaEnUrl';
+import useAccionesDeAviso from '../components/common/useAccionesDeAviso';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { fetchNotificationsPage, DIAS_VISIBLES } from '../data/notifications';
 

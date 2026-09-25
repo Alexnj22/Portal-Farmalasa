@@ -8,7 +8,7 @@ import TablePagination from '../components/common/TablePagination';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { fetchSyncHealthRecent, SYNC_HEALTH_DOMAINS } from '../data/syncHealth';
 import { ERP_NAMES } from '../constants/erp';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { hora12 } from '../utils/hora';
 
 const DOMAIN_LABELS = {

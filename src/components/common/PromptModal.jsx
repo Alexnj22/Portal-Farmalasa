@@ -4,7 +4,7 @@ import { MessageSquarePlus } from 'lucide-react';
 import ModalShell from './ModalShell';
 import PortalTextarea from './PortalTextarea';
 import HojaMovil from './HojaMovil';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 
 // Mismo shell visual que ConfirmModal/AlertModal (glass modal, glow, footer
 // con 2 botones) — extendido con un textarea para pedir una nota corta antes

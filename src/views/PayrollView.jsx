@@ -25,7 +25,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
 
 import { registrarEgreso } from '../data/egreso';
-import { abrirVentanaDeImpresion, escribirEImprimir } from '../utils/ventanaDeImpresion';
+import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));

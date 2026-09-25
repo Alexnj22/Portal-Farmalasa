@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { EstadoDialogoCtx } from "./estadoDialogo";
 import { useGotaApertura, tiemposGota } from "./gotaApertura";
-import useMediaQuery from "../../hooks/useMediaQuery";
+import useMediaQuery from "../../plataforma/useMediaQuery";
 import { usePanelLateral } from "../../hooks/useLayoutCompacto";
 import { abrirDialogo, useEsDialogoDeEncima } from "./dialogosAbiertos";
 import { createPortal } from "react-dom";

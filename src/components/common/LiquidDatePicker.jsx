@@ -3,7 +3,7 @@ import AsaHoja from './AsaHoja';
 import Button from './Button';
 import { createPortal } from 'react-dom';
 import ModalShell from './ModalShell';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];

@@ -35,7 +35,7 @@ import { getExpiringDocuments } from '../../utils/documentExpiry';
 import { soloPersonalEnPlanilla, soloNoEmpleados, esFichaQueNoEsEmpleado } from '../../utils/tipoDeFicha';
 import { exportarDirectorio } from '../../utils/directorioCsv';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { smartFilter } from '../../utils/searchUtils';

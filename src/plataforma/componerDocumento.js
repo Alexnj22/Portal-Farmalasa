@@ -16,9 +16,9 @@
  * distintos — y nadie lo notaría hasta comparar dos archivos del mismo papel.
  * Es la lección de las dos copias del carné, aplicada a los píxeles.
  */
-import { medidaAjustada } from './formatosDePapel';
+import { medidaAjustada } from '../utils/formatosDePapel';
 import { medidaDelPapel, rectificar } from './perspectiva';
-import { escalaDeSalida } from './fotoDocumento';
+import { escalaDeSalida } from '../utils/fotoDocumento';
 import { aplicarAcabado } from './tratamientoDeFoto';
 
 const CALIDAD = 0.92;

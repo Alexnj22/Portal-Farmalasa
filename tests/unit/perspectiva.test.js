@@ -13,7 +13,7 @@
 // y no lo es. El dibujo por malla se mide aparte, en el navegador.
 
 import { describe, it, expect } from 'vitest';
-import { homografia, aplicar, ordenarEsquinas, deformacion, girarEsquinas } from '../../src/utils/perspectiva';
+import { homografia, aplicar, ordenarEsquinas, deformacion, girarEsquinas } from '../../src/plataforma/perspectiva';
 
 const cerca = (a, b, tol = 1e-6) => expect(Math.abs(a - b)).toBeLessThan(tol);
 
@@ -106,7 +106,7 @@ describe('cuánto se aparta de un rectángulo', () => {
 // WebKit, con foto de 1600×1200 y de 3024×4032, en rectángulo y en trapecio.
 // Antes: NINGUNA.
 
-import { afinDeTriangulos } from '../../src/utils/perspectiva';
+import { afinDeTriangulos } from '../../src/plataforma/perspectiva';
 
 describe('la afín de cada triángulo de la malla', () => {
     const orig = [{ x: 120, y: 60 }, { x: 380, y: 40 }, { x: 460, y: 300 }];

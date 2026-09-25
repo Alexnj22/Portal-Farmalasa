@@ -86,7 +86,7 @@ export async function sugerirRecorte(file, { secretoDeCaptura } = {}) {
  * 1% de desvío en un papel que contrasta con el fondo, tarda 5 a 13 ms, no
  * gasta red y no necesita permiso; el modelo, sobre la misma foto, erraba entre
  * el 10% y el 15% en cada una de las cuatro. Ver el encabezado de
- * `utils/detectarPapel.js`.
+ * `plataforma/detectarPapel.js`.
  *
  * El modelo no sobra: contesta justo lo que el umbral no puede —un papel que no
  * contrasta con la mesa— y además dice el GIRO, que es una pregunta sobre el
@@ -104,7 +104,7 @@ export async function buscarEsquinas(file, { secretoDeCaptura } = {}) {
 
     try {
         const [{ detectarPapel }, imagen] = await Promise.all([
-            import('../utils/detectarPapel'),
+            import('../plataforma/detectarPapel'),
             new Promise((res, rej) => {
                 const url = URL.createObjectURL(file);
                 const el = new Image();

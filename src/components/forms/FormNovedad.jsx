@@ -22,7 +22,7 @@ import Badge from '../common/Badge';
 import PortalInput from '../common/PortalInput';
 import { formatMoney } from '../../utils/formatNumber';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { abrirVentanaDeImpresion } from '../../utils/ventanaDeImpresion';
+import { abrirVentanaDeImpresion } from '../../plataforma/ventanaDeImpresion';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -641,7 +641,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 // El documento y sus dos trampas —la ventana
                                 // sincrónica y el SVG dibujado acá, no por un
                                 // script de un tercero adentro del origen del
-                                // portal— viven en `utils/carnePrint`: el perfil
+                                // portal— viven en `plataforma/carnePrint`: el perfil
                                 // del empleado imprime la MISMA etiqueta, y dos
                                 // copias se desincronizan sin que nadie lo note
                                 // hasta tener los dos papeles al lado.
@@ -649,7 +649,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     // Sincrónica dentro del gesto: después de un
                                     // `await` el bloqueador de emergentes la mata.
                                     const win = abrirVentanaDeImpresion();
-                                    const { imprimirEtiquetaDeCarne } = await import('../../utils/carnePrint');
+                                    const { imprimirEtiquetaDeCarne } = await import('../../plataforma/carnePrint');
                                     const r = await imprimirEtiquetaDeCarne(win, {
                                         nombre: activeEmployee?.name || '',
                                         valor: formData.newKioskPin || '',

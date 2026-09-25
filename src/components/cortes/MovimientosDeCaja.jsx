@@ -9,7 +9,7 @@ import { EmptyState } from '../common/StateViews';
 import AvatarConEstado from '../common/AvatarConEstado';
 import { formatMoney } from '../../utils/formatNumber';
 import { tokenMatch } from '../../utils/searchUtils';
-import { usePaginaEnUrl } from '../../hooks/usePaginaEnUrl';
+import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { emparejarCobrosConMovimientos } from '../../utils/cortesDiagnostico';
 import { cobroEnEfectivo } from '../../data/creditos';
 import { shortEmployeeName } from '../../utils/nameUtils';

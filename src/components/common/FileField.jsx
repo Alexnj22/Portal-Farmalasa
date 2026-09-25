@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect, memo, lazy, Suspense }
 import { UploadCloud, FileCheck2, Eye, X, Loader2, Camera, Smartphone } from 'lucide-react';
 import ListRow from './ListRow';
 import Button from './Button';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA, aceptaImagenes } from '../../utils/capturaDeFoto';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 /* Los dos por `lazy`, y por el mismo motivo: este componente está en los 21

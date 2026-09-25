@@ -29,7 +29,7 @@ import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { rotuloCampo } from '../utils/rotuloDeCampo';
-import { abrirVentanaDeImpresion, escribirEImprimir } from '../utils/ventanaDeImpresion';
+import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { useToastStore } from '../store/toastStore';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────

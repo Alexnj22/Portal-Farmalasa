@@ -2038,7 +2038,7 @@ thead.sticky,
    Lo que se QUEDA (funcional, comunica estado):
      skeleton · spinners · entrada de vista/ruta/tab · reveal de input
 
-   El lado JS lo resuelve src/hooks/useMotionConfig.js — framer-motion no lee
+   El lado JS lo resuelve src/plataforma/useMotionConfig.js — framer-motion no lee
    estas reglas. Ese hook además cierra S1.6: prefers-reduced-motion estaba
    resuelto para las clases CSS de aquí abajo pero los 25 archivos con
    framer-motion lo ignoraban por completo.
@@ -2301,7 +2301,7 @@ thead.sticky,
    tablero cruzando el borde del menú de a 2px: la tarjeta de 532×256 de atrás
    pasaba de dy=-2 a dy=0.
 
-   El atributo lo pone `src/utils/capaFlotante.js` sobre `#root`, y ahí está la
+   El atributo lo pone `src/plataforma/capaFlotante.js` sobre `#root`, y ahí está la
    gracia: los portales cuelgan de `body`, o sea que son HERMANOS de `#root` y
    estos selectores no los alcanzan. El menú abierto conserva sus propios
    hovers; el resto de la app se queda quieta. Sin una sola excepción a mano.
@@ -3434,7 +3434,7 @@ html, body, #root {
    elegido a quién scrollear, así que la lógica fina no es aplicable.
 
    La rueda NO pasa por acá: ahí sí se puede distinguir un gesto de otro, y lo
-   hace `src/utils/scrollEncadenado.js` — contener dentro del gesto, encadenar
+   hace `src/plataforma/scrollEncadenado.js` — contener dentro del gesto, encadenar
    cuando el gesto empieza en el borde. Los dos reportes cumplidos, ninguno
    revertido.
 

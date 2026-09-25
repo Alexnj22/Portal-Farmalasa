@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient';
-import { aBase64Reducido } from '../utils/fotoParaLeer';
+import { aBase64Reducido } from '../plataforma/fotoParaLeer';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { repartoDeUnaSalida } from '../utils/cortesDiagnostico';
@@ -644,7 +644,7 @@ export async function leerBoleta(archivo, esperado) {
      * atravesado deja los renglones contra el lado corto de la imagen, que es
      * donde menos resolución efectiva les queda. Ampliar también lo arregla y
      * cuesta 27 s contra 12 con alguien esperando; girar cuesta lo mismo que no
-     * girar. El detalle de la medición, en `utils/fotoParaLeer`.
+     * girar. El detalle de la medición, en `plataforma/fotoParaLeer`.
      *
      * Y sólo se acepta si la vuelta girada QUEDA CONFIRMADA: si vuelve a
      * contradecirse, o si el papel no tiene con qué confirmar, se devuelve la

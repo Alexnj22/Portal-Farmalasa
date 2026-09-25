@@ -1,4 +1,4 @@
-import useMediaQuery from './useMediaQuery';
+import useMediaQuery from '../plataforma/useMediaQuery';
 
 /**
  * ¿Esta pantalla se dibuja con el layout compacto (el del teléfono)?

@@ -36,7 +36,7 @@ const CarneDelDia = lazy(() => import('../components/personal/CarneDelDia'));
 // viajar en la carga de todos los días.
 const SancionModal = lazy(() => import('../components/personal/SancionModal'));
 import AvatarConEstado from '../components/common/AvatarConEstado';
-import useMediaQuery from '../hooks/useMediaQuery';
+import useMediaQuery from '../plataforma/useMediaQuery';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
 import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
@@ -46,7 +46,7 @@ import { clickable } from '../utils/clickable';
 import ModalShell from '../components/common/ModalShell';
 
 import { rotuloCampo } from '../utils/rotuloDeCampo';
-import { abrirVentanaDeImpresion } from '../utils/ventanaDeImpresion';
+import { abrirVentanaDeImpresion } from '../plataforma/ventanaDeImpresion';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -376,7 +376,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         try {
             const mapa = await fetchCredenciales([emp.id]);
             const pin = mapa.get(emp.id)?.kiosk_pin;
-            const { imprimirEtiquetaDeCarne } = await import('../utils/carnePrint');
+            const { imprimirEtiquetaDeCarne } = await import('../plataforma/carnePrint');
             const r = await imprimirEtiquetaDeCarne(win, { nombre: emp.name, valor: pin });
             if (!r.ok) showToast('No se pudo imprimir el carné', r.motivo, 'error');
         } catch (err) {

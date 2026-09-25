@@ -10,7 +10,7 @@ import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Notice from '../../components/common/Notice';
 import { LoadingState } from '../../components/common/StateViews';
-import usePestanaEnUrl from '../../hooks/usePestanaEnUrl';
+import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
 import { useAuth } from '../../context/AuthContext';
 import { fetchPromociones } from '../../data/promociones';
 import { fetchDescuentos } from '../../data/descuentos';

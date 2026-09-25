@@ -4,7 +4,7 @@ import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 import { Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon } from 'lucide-react';
 import SearchInput from '../../../components/common/SearchInput';
-import { useSearchToggle } from '../../../hooks/useSearchToggle';
+import { useSearchToggle } from '../../../plataforma/useSearchToggle';
 import { AnimatePresence, motion } from 'framer-motion';
 import { tokenMatch } from '../../../utils/searchUtils';
 import { shortEmployeeName } from '../../../utils/nameUtils';

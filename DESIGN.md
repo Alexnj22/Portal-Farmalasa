@@ -782,7 +782,7 @@ tarjeta de 532×256 de atrás pasaba de `dy=-2` a `dy=0`. Se leía como un rebot
 entre el select y la tarjeta.
 
 **Todo flotante ANCLADO a un disparador llama `useCapaFlotante(abierto)`**
-(`src/utils/capaFlotante.js`):
+(`src/plataforma/capaFlotante.js`):
 
 ```jsx
 import useCapaFlotante from '../../utils/capaFlotante';
@@ -2116,7 +2116,7 @@ bytes** gzip, que en `ConteoDetailView` cruzaron un borde de redondeo del
 #### La pestaña activa vive en la DIRECCIÓN — `usePestanaEnUrl` (2026-08-20)
 
 **Nunca `useState` para la pestaña activa.** El hook canónico es
-`usePestanaEnUrl` (`src/hooks/usePestanaEnUrl.js`) y **vale para toda vista con
+`usePestanaEnUrl` (`src/plataforma/usePestanaEnUrl.js`) y **vale para toda vista con
 pestañas, incluidas las nuevas**. Lo vigila la categoría `pestana-fuera-de-la-url`
 de `npm run gate:design`, bloqueante en cero.
 
@@ -2159,7 +2159,7 @@ a los 5 minutos (v2.647.0), el service worker recarga la aplicación al publicar
 una versión, y F5 existe. Cualquiera de las tres deja a alguien de pie frente al
 estante buscando de nuevo dónde iba entre 1,400 productos.
 
-`usePaginaEnUrl` (`src/hooks/usePaginaEnUrl.js`) devuelve
+`usePaginaEnUrl` (`src/plataforma/usePaginaEnUrl.js`) devuelve
 `{ page, pageSize, totalPages, setPage, setPageSize, resetPage }` y se diferencia
 de su hermano en tres decisiones, las tres con motivo:
 
@@ -4837,7 +4837,7 @@ sin ir caso por caso:
    (no se pierde un resultado por accidente, mismo criterio que el
    buscador expandible de widget).
 
-**Implementación:** hook compartido `useSearchToggle` en `src/hooks/useSearchToggle.js`.
+**Implementación:** hook compartido `useSearchToggle` en `src/plataforma/useSearchToggle.js`.
 
 ```jsx
 import { useSearchToggle } from '../hooks/useSearchToggle';
@@ -4878,7 +4878,7 @@ llama DENTRO del componente reutilizable — cada copia montada crea su
 propio ref interno, no uno compartido desde afuera. Fix: un atributo
 `data-search-toggle-id` (vía `useId()`) en vez de un ref — ambas copias
 montadas lo llevan por igual, y `e.target.closest(selector)` encuentra
-cualquiera de las dos sin importar cuál se clickeó. Ver `src/hooks/useSearchToggle.js`
+cualquiera de las dos sin importar cuál se clickeó. Ver `src/plataforma/useSearchToggle.js`
 para la implementación completa y el comentario in-line con el mismo
 razonamiento.
 

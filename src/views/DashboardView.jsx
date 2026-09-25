@@ -81,7 +81,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
 import { useLayoutCompacto } from '../hooks/useLayoutCompacto';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { getTodayAttendanceStatus } from '../utils/helpers';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ListRow from '../components/common/ListRow';
@@ -94,9 +94,9 @@ import {
 import { fetchRolesForPermissions, fetchRolePermissions } from '../data/permissions';
 import { clickable } from '../utils/clickable';
 import { reacomodar } from '../utils/acomodoWidgets';
-import { permitirEscapeDelScroll } from '../utils/scrollEncadenado';
+import { permitirEscapeDelScroll } from '../plataforma/scrollEncadenado';
 import { formatMoney } from '../utils/formatNumber';
-import useCapaFlotante from '../utils/capaFlotante';
+import useCapaFlotante from '../plataforma/capaFlotante';
 import { shortEmployeeName } from '../utils/nameUtils';
 import {
     catalogoDePestana, pestanasVisibles, ordenDeLaPestana, widgetsSinUbicar,
@@ -776,7 +776,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
     setViewYear(value.getFullYear()); setOpen(true);
   };
   // Con el selector de mes abierto, los widgets de atrás se quedan quietos —
-  // ver `src/utils/capaFlotante.js`. Es justo el tablero donde se midió el
+  // ver `src/plataforma/capaFlotante.js`. Es justo el tablero donde se midió el
   // salto: 51 de 70 posiciones del puntero tenían una tarjeta moviéndose.
   useCapaFlotante(open);
   useEffect(() => {

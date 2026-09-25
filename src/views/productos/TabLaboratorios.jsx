@@ -1,4 +1,4 @@
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 import React, { useState, useEffect, useCallback } from 'react';
 import ListRow from '../../components/common/ListRow';
 import { SkeletonText } from '../../components/common/StateViews';

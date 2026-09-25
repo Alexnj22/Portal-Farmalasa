@@ -7,7 +7,7 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import { identificarPorCarne, identificarPorUsuario } from '../../data/bolsas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
+import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
 /**

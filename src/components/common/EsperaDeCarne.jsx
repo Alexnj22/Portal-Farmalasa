@@ -11,7 +11,7 @@ import { SkeletonText } from './StateViews';
  * así, tienen que VERSE igual — y dos copias del mismo panel dejan de verse
  * igual en cuanto una se toca.
  *
- * La lógica de captura es `hooks/useCapturaDeCarne`; esto sólo dibuja lo que
+ * La lógica de captura es `plataforma/useCapturaDeCarne`; esto sólo dibuja lo que
  * ese detector va contando. El código leído no se pinta nunca: son puntos, no
  * caracteres — es una credencial.
  */

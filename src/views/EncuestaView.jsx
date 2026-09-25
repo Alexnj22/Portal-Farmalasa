@@ -16,7 +16,7 @@ import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ViewTabBar from '../components/common/ViewTabBar';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import {
     fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView,

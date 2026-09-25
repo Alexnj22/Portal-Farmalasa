@@ -6,7 +6,7 @@ import { clickable } from '../../utils/clickable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
-import useCapaFlotante from '../../utils/capaFlotante';
+import useCapaFlotante from '../../plataforma/capaFlotante';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
     Plus, Trash2, PackagePlus, Check, ChevronLeft, FileText, Truck, Star,
@@ -18,7 +18,7 @@ import { useToastStore } from '../../store/toastStore';
 import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
-import { useSearchToggle } from '../../hooks/useSearchToggle';
+import { useSearchToggle } from '../../plataforma/useSearchToggle';
 import {
     fetchProductPreciosOpts, fetchProductPreciosOptsForProducts,
     searchAvailableProducts, fetchLastDispatchInfo,
@@ -32,7 +32,7 @@ import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { alcanceDeRecepcion, construirCajasEspeciales } from '../../utils/cajasEspeciales';
 import { estadoDeHojas, hojasContables, hojasContadas } from '../../utils/hojasRecepcion';
-import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { lotesAsignadosToDispatch } from '../../utils/pedidoPrint';
 
 // `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
@@ -696,7 +696,7 @@ export default function RecepcionModal({
     const [extraDropCoords, setExtraDropCoords] = useState({ top: 0, left: 0, width: 0 });
 
     // Con la lista de resultados abierta, lo de atrás se queda quieto — ver
-    // `src/utils/capaFlotante.js`. Acá hay tarjetas debajo del campo de
+    // `src/plataforma/capaFlotante.js`. Acá hay tarjetas debajo del campo de
     // búsqueda, así que es el mismo salto que en el tablero.
     useCapaFlotante(extraResults.length > 0);
 

@@ -22,7 +22,7 @@ import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClo
 import { getHourlyCode, toLocalISO } from '../utils/helpers';
 import { verifyKioskAuthorization } from '../data/kioskAuth';
 import { hasRecentKioskVerification, recordKioskVerification } from '../utils/kioskGrace';
-import { playFeedbackTone } from '../utils/kioskSound';
+import { playFeedbackTone } from '../plataforma/kioskSound';
 import { enqueueAttendancePunch, flushAttendanceQueue } from '../utils/attendanceQueue';
 import {
     kioscoAvisoLeido,

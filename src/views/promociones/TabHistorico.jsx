@@ -4,7 +4,7 @@ import Badge from '../../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { EmptyState } from '../../components/common/StateViews';
-import usePaginaEnUrl from '../../hooks/usePaginaEnUrl';
+import usePaginaEnUrl from '../../plataforma/usePaginaEnUrl';
 import { fmtUnidades, fmtVigencia, rotuloMes, esLaboratorio } from './promocionesUtils';
 
 /**

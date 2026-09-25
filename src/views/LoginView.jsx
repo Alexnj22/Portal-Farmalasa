@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { isMobileOrApp } from '../utils/helpers';
 import { supabase } from '../supabaseClient';
 import { mensajeAmigable } from '../utils/errorMessages';
-import useMediaQuery from '../hooks/useMediaQuery';
+import useMediaQuery from '../plataforma/useMediaQuery';
 import { esAtajoDePegar, esPegadoDeUnaPersona } from '../utils/pegadoManual';
 
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.

@@ -2,7 +2,7 @@
 // registering apoyo (support staff) on a pedido.
 //
 // La captura del escaneo y el panel que la dibuja salieron de acá el
-// 2026-08-17 (`hooks/useCapturaDeCarne` + `components/common/EsperaDeCarne`):
+// 2026-08-17 (`plataforma/useCapturaDeCarne` + `components/common/EsperaDeCarne`):
 // la entrega del efectivo pide lo mismo, y el usuario la pidió «así como
 // apoyo». Dos copias del detector se corrigen por separado — que es justo lo
 // que pasó con el PIN contra el código.
@@ -13,7 +13,7 @@ import EsperaDeCarne from '../../../components/common/EsperaDeCarne';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { Users, Loader2, AlertTriangle, Check } from 'lucide-react';
 import { signPhotosDeep } from '../../../utils/storageFiles';
-import useCapturaDeCarne from '../../../hooks/useCapturaDeCarne';
+import useCapturaDeCarne from '../../../plataforma/useCapturaDeCarne';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import PedidoModal from '../PedidoModal';

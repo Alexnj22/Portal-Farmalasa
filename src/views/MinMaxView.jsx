@@ -5,7 +5,7 @@ import ViewTabBar         from '../components/common/ViewTabBar';
 import TabMinMax          from './productos/TabMinMax';
 import TabQuiebres        from './productos/TabQuiebres';
 import { useAuth }       from '../context/AuthContext';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { fetchStockConfigFull, fetchErpSucursalIdForBranchLocked } from '../data/stockParams';
 
 // La pestaña «Red» se retiró el 2026-08-09 a pedido del usuario: «no se me es de

@@ -1,7 +1,7 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { useState, useEffect, useRef } from 'react';
 import HojaMovil from '../../../components/common/HojaMovil';
-import useMediaQuery from '../../../hooks/useMediaQuery';
+import useMediaQuery from '../../../plataforma/useMediaQuery';
 import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
 import ModalShell from '../../../components/common/ModalShell';

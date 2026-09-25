@@ -44,7 +44,7 @@ beforeEach(async () => {
     reclamarPushSubscription.mockResolvedValue({ error: null });
     soltarPushSubscription.mockResolvedValue({ error: null });
     montarNavegador(SUB);
-    mod = await import('../../src/utils/pushEquipo');
+    mod = await import('../../src/plataforma/pushEquipo');
 });
 afterEach(() => { delete globalThis.navigator; delete globalThis.window; });
 
@@ -81,7 +81,7 @@ describe('reclamar el equipo al entrar', () => {
     it('sin suscripción devuelve null: nadie activó avisos en este equipo', async () => {
         montarNavegador(null);
         vi.resetModules();
-        const m = await import('../../src/utils/pushEquipo');
+        const m = await import('../../src/plataforma/pushEquipo');
         await expect(m.reclamarPushDelEquipo('emp-1')).resolves.toBe(null);
     });
 

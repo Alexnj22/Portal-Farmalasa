@@ -7,7 +7,7 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import EsperaDeCarne from '../../components/common/EsperaDeCarne';
-import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
+import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
 import { fetchTrasladoPorCodigo, fetchTrasladoParaImprimir } from '../../data/traslados';
 import {
     fetchRetiroAbierto, fetchPendientesEnSala, cargarBulto, firmarEntregaConCarne,

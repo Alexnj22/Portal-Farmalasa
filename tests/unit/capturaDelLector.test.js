@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import useCapturaDeCarne from '../../src/hooks/useCapturaDeCarne';
+import useCapturaDeCarne from '../../src/plataforma/useCapturaDeCarne';
 
 /**
  * Lo que el lector manda y lo que el portal entiende.

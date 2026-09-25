@@ -20,7 +20,7 @@
 // de prueba (Sistema → Prueba de impresión) imprime las dos simbologías juntas
 // para que el papel conteste cuál lee el lector de verdad. Si contesta CODE39,
 // lo que cambia es esta línea y nada más.
-import { imprimirDocumento, fechaHora, limpiarValorDeBarras } from './ticketPrint';
+import { imprimirDocumento, fechaHora, limpiarValorDeBarras } from '../utils/ticketPrint';
 import { VENTANA_BLOQUEADA } from './ventanaDeImpresion';
 
 export const SIMBOLOGIA_DEL_CARNE = 'CODE128';
@@ -111,7 +111,7 @@ export async function imprimirEtiquetaDeCarne(win, { nombre, valor }) {
 
     let svg = '';
     try {
-        const { dibujarCodigoDeBarras } = await import('./ticketPrint');
+        const { dibujarCodigoDeBarras } = await import('../utils/ticketPrint');
         svg = await dibujarCodigoDeBarras(limpio, 'CODE128');
     } catch { /* abajo */ }
     if (!svg) {

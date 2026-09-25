@@ -23,7 +23,7 @@
  */
 import { chromium } from 'playwright';
 import fs from 'node:fs';
-const codigo = fs.readFileSync('src/utils/detectarPapel.js','utf8').replace(/^export /gm,'');
+const codigo = fs.readFileSync('src/plataforma/detectarPapel.js','utf8').replace(/^export /gm,'');
 const CASOS = [
   { n:'papel claro sobre mesa oscura',  q:[[.155,.130],[.865,.235],[.800,.880],[.115,.735]], mesa:'#6b4a2f', papel:'#fdfdfa', espera:'papel', tope:3 },
   { n:'blanco sobre escritorio claro',  q:[[.180,.140],[.840,.190],[.820,.860],[.160,.800]], mesa:'#c9c6bf', papel:'#ffffff', espera:'papel', tope:5 },

@@ -16,7 +16,7 @@ import TabStaff from './branch-tabs/TabStaff';
 
 import GlassViewLayout from '../components/GlassViewLayout';
 import { useAuth } from '../context/AuthContext';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
 
 // ============================================================================

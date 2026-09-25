@@ -40,7 +40,7 @@ import {
 import PortalInput from '../../components/common/PortalInput';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 
 

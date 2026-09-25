@@ -109,7 +109,7 @@ async function main() {
         await pag.goto('about:blank');
         // El módulo del repo, sin tocar: sólo se le quita el `export` para
         // poder evaluarlo suelto. Si alguien lo cambia, esto prueba el cambio.
-        const fuente = fs.readFileSync(path.join(RAIZ, 'src/utils/fotoParaLeer.js'), 'utf8');
+        const fuente = fs.readFileSync(path.join(RAIZ, 'src/plataforma/fotoParaLeer.js'), 'utf8');
         await pag.evaluate(fuente.replace(/export function/g, 'window.aBase64Reducido = function'));
 
         const filas = [];

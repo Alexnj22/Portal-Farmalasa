@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { reclamarPushSubscription, soltarPushSubscription } from '../data/pushSubscriptions';
-import { reclamarPushDelEquipo } from '../utils/pushEquipo';
+import { reclamarPushDelEquipo } from './pushEquipo';
 import { useToastStore } from '../store/toastStore';
 
 import { VAPID_PUBLIC_KEY } from './config';
@@ -94,7 +94,7 @@ export function usePushSubscription() {
     return () => window.removeEventListener(SYNC_EVENT, refresh);
   }, [refresh]);
 
-  // Al entrar, este equipo pasa a ser de quien entró (ver `utils/pushEquipo.js`).
+  // Al entrar, este equipo pasa a ser de quien entró (ver `plataforma/pushEquipo.js`).
   // Va acá y no en los cuatro caminos de login porque así cubre también la
   // sesión restaurada al recargar, que es como llega la mayoría de las visitas.
   useEffect(() => {

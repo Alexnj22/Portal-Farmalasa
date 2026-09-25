@@ -9,7 +9,7 @@ import LiquidModal from "./common/LiquidModal";
 import { useToastStore } from '../store/toastStore';
 import { LoadingState } from './common/StateViews';
 import { supabase } from '../supabaseClient';
-import useMontadoParaSalida from '../hooks/useMontadoParaSalida';
+import useMontadoParaSalida from '../plataforma/useMontadoParaSalida';
 import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { buscarCargo } from '../utils/roles';

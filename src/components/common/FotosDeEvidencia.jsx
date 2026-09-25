@@ -1,6 +1,6 @@
 import React, { memo, useCallback } from 'react';
 import { Camera, Images, X } from 'lucide-react';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 
 /**

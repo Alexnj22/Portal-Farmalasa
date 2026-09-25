@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { CLAVE_TEMA, ES_MOVIL } from '../utils/temaPorDispositivo';
+import { CLAVE_TEMA, ES_MOVIL } from '../plataforma/temaPorDispositivo';
 
 const ThemeContext = createContext(null);
 

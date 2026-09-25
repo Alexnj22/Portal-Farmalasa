@@ -5,8 +5,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Settings, Copy, CheckCircle2, ChevronDown } from 'lucide-react';
 import SidebarSyncStatus from './SidebarSyncStatus';
 import { ThemeAxisPicker } from './ThemeToggle';
-import useMotionConfig from '../../hooks/useMotionConfig';
-import useCapaFlotante from '../../utils/capaFlotante';
+import useMotionConfig from '../../plataforma/useMotionConfig';
+import useCapaFlotante from '../../plataforma/capaFlotante';
 
 // Agrupa lo que antes eran 3 bloques sueltos del footer del sidebar (PIN/SU,
 // Sync/Alertas, ThemeToggle) detrás de un solo ícono de Ajustes — a pedido
@@ -58,7 +58,7 @@ export default function SidebarSettingsMenu({
 
   // Con el popover abierto, el contenido de atrás se queda quieto — si no, la
   // tarjeta que queda debajo entra y sale de :hover mientras uno recorre el
-  // menú. Ver `src/utils/capaFlotante.js`.
+  // menú. Ver `src/plataforma/capaFlotante.js`.
   useCapaFlotante(isOpen);
 
   // Mismo patrón de posicionamiento que LiquidSelect/ThemeToggle: recalcular

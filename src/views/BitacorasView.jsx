@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpen, CalendarCheck, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 import CarrilCards from '../components/common/CarrilCards';

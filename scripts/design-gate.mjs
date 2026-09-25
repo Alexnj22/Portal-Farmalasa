@@ -181,11 +181,11 @@ const EXCEPTIONS = {
   // configurada la pantalla quien lo subió.
   // (Se llamaba `bitacoras/EditorDeReceta.jsx` hasta el 2026-08-20, cuando la
   // salida de dinero necesitó el mismo editor y pasó a `common/`.)
-  // (El relleno se mudó a `utils/componerDocumento.js` el 2026-08-29, cuando
+  // (El relleno se mudó a `plataforma/componerDocumento.js` el 2026-08-29, cuando
   // el camino automático y el editor pasaron a compartir la misma tubería: el
   // motivo es el mismo y ahora vive donde está el píxel.)
   'src/components/common/EditorDeDocumento.jsx': ['hex'],
-  'src/utils/componerDocumento.js': ['hex'],
+  'src/plataforma/componerDocumento.js': ['hex'],
   // `carril-pildora` en ClientesView es la EXCEPCIÓN MEDIDA, no deuda — y estaba
   // contando como ratchet, que es al revés de lo que hay que decir. El motivo
   // está escrito en la propia vista: a 1440px el área de contenido son ~1110px,
@@ -1813,7 +1813,7 @@ function scanFile(path) {
   // `[data-surface="card"]` se levanta 2px, salta un bloque de media pantalla.
   // Medido cruzando el borde del menú de a 2px en el tablero: la tarjeta de
   // 532×256 de atrás pasaba de dy=-2 a dy=0. Se corrige con `useCapaFlotante`
-  // (`src/utils/capaFlotante.js`), y esto es lo que impide que el próximo
+  // (`src/plataforma/capaFlotante.js`), y esto es lo que impide que el próximo
   // flotante se olvide — que es exactamente cómo se acumuló esta deuda.
   //
   // La firma estructural del flotante ANCLADO son las tres cosas juntas:
@@ -3206,7 +3206,7 @@ function scanFile(path) {
   // La clase se queda —y esta categoría también— porque sigue siendo el piso
   // correcto. Lo que se le agregó es el escape, y vive en dos sitios que hay
   // que conocer ANTES de mover nada acá:
-  //   · rueda → `src/utils/scrollEncadenado.js`
+  //   · rueda → `src/plataforma/scrollEncadenado.js`
   //   · dedo  → `index.css`, §scroll del tablero
   // Si algún día esta categoría se apaga «porque el scroll no se puede mover»,
   // el arreglo es ése, no quitar la clase: quitarla revive el reporte del 14.
@@ -3276,7 +3276,7 @@ function scanFile(path) {
   // después de llevar las 20 vistas que faltaban al patrón: «que eso sea
   // canónico / regla siempre ante nuevas vistas».
   //
-  // El canónico es `usePestanaEnUrl` (`src/hooks/usePestanaEnUrl.js`), que
+  // El canónico es `usePestanaEnUrl` (`src/plataforma/usePestanaEnUrl.js`), que
   // además valida el `?tab=` contra las pestañas REALMENTE visibles — la parte
   // que se olvida al copiar el bloque a mano, y sin la cual un `?tab=loquesea`
   // deja la vista pintando el vacío.

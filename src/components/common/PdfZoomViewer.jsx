@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ExternalLink, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import Button from './Button';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 
 // Visor de PDF con zoom propio, compartido por los dos DTE del portal: el de
 // compras (`FormPurchaseDteViewer`) y el de ventas (`FormSalesDteViewer`).

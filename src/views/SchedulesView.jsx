@@ -20,7 +20,7 @@ import TabShifts from './schedule-tabs/TabShifts';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import ViewTabBar from '../components/common/ViewTabBar';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 

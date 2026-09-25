@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { fetchOrphanObjects, updateOrphanObjectStatus } from '../data/orphanObjects';
 import Badge from '../components/common/Badge';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 
 const STATUS_LABELS = {
     candidate: 'Candidato',

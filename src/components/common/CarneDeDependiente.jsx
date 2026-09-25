@@ -36,7 +36,7 @@ import ModalShell from './ModalShell';
 import PortalInput from './PortalInput';
 import QrDeCaptura from './QrDeCaptura';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { normalizarCarne, numeroDelCarne, porQueNoSirve } from '../../utils/carneDeDependiente';
 
 // Arrastra `@zxing` y prende la cámara: sólo hace falta al apretar el botón.

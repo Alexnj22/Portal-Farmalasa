@@ -22,7 +22,7 @@ import {
 } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
-import useResolverCorte from '../../hooks/useResolverCorte';
+import useResolverCorte from './useResolverCorte';
 import { hora12, fechaHora12 } from '../../utils/hora';
 
 /**

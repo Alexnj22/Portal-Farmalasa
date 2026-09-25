@@ -3,7 +3,7 @@ import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
-import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import FilterBar from '../../components/common/FilterBar';
 import { tokenMatch } from '../../utils/searchUtils';
 import {

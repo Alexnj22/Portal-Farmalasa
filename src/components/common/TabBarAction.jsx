@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { NOMBRE_POR_ICONO, TONO_POR_ICONO, CLASE_TEXTO_POR_TONO } from './iconNames';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 
 /**
  * TabBarAction — acción dentro de la barra flotante de vista (`ViewTabBar`).

@@ -14,7 +14,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { MemoryRouter, useSearchParams } from 'react-router-dom';
-import { usePestanaEnUrl } from '../../src/hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../../src/plataforma/usePestanaEnUrl';
 import { useNowTick } from '../../src/hooks/useNowTick';
 import { vi, beforeEach, afterEach } from 'vitest';
 

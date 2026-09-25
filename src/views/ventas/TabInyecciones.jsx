@@ -8,7 +8,7 @@ import FilterBar from '../../components/common/FilterBar';
 import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { usePaginaEnUrl } from '../../hooks/usePaginaEnUrl';
+import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { fetchInyeccionesAplicadas } from '../../data/ventas';
 import { shortEmployeeName } from '../../utils/nameUtils';

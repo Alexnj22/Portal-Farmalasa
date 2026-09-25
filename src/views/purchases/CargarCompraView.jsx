@@ -23,7 +23,7 @@ import {
 import { formatMoney } from '../../utils/formatNumber';
 import { normalizeText } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
-import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
 
 // Vista «Cargar compra».

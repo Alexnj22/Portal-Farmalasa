@@ -8,7 +8,7 @@ import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import FilterBar from '../../components/common/FilterBar';
 import PortalInput from '../../components/common/PortalInput';
 import Notice from '../../components/common/Notice';
-import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { smartFilter } from '../../utils/searchUtils';
 import { lanzarSimulacroTraslado, fetchTrasladoErp, updatePedidoSucursalStatus } from '../../data/pedidos';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';

@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.12 — Núcleo portable F1: tanda B, lo propio de la web se muda a su capa
+
+Sin cambios visibles. Plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+
+Veinticuatro archivos que NO son lógica del negocio sino interfaz o
+capacidades de la web se mudan fuera del núcleo. Su contenido no cambia; sólo
+la carpeta y las referencias.
+
+- **A `src/plataforma/`** (22): los hooks de interfaz —panel anclado,
+  buscador que se abre y cierra, puntero grueso, consultas de medios, captura
+  del lector de carné, preferencias de animación, montaje para salida, página y
+  pestaña en la dirección— y las capacidades del navegador —scroll encadenado,
+  capa flotante, ventana de impresión, carné impreso, tratamiento de foto,
+  perspectiva, foto para leer, detección de papel, composición de documento,
+  sonido del kiosco, avisos del navegador, tema por dispositivo y el push del
+  equipo—.
+- **A componentes** (2): `useResolverCorte` y `useAccionesDeAviso`, que dibujan
+  diálogos. El gate del núcleo cazó el segundo: al mudar el primero, un hook del
+  núcleo quedó importando un componente.
+- Quedan para una tanda aparte los que MEZCLAN lógica reutilizable con el
+  navegador (armar un ticket y mandarlo a imprimir, armar un CSV y
+  descargarlo): se separan, no se mudan enteros.
+- Imports, excepciones de `gate:design`, baselines, mapa de áreas, pruebas y
+  documentación actualizados en 139 archivos. `gate:nucleo` 97 → 42. Peso por
+  vista idéntico al de `main`; 2,781 pruebas y 13 e2e en verde.
+
 ## v2.1061.11 — Núcleo portable F1: tanda A, diecisiete archivos de lógica a los adaptadores
 
 Sin cambios visibles. Plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.

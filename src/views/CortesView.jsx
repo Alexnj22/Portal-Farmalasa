@@ -45,9 +45,9 @@ import MovimientosDeCaja from '../components/cortes/MovimientosDeCaja';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
-import useResolverCorte from '../hooks/useResolverCorte';
+import useResolverCorte from '../components/cortes/useResolverCorte';
 import useDiasConDiferencia from '../hooks/useDiasConDiferencia';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import {
     fetchAperturas, fetchCortes, fetchDiferencias, fetchEntradasParaCruce,
     fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas,

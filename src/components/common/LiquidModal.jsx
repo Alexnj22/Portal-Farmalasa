@@ -3,7 +3,7 @@ import AsaHoja from './AsaHoja';
 import ModalShell from './ModalShell';
 import { useArrastreHoja } from './arrastreHoja';
 import { usePanelLateral } from '../../hooks/useLayoutCompacto';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 
 /**
  * Standard glass modal shell for the portal.

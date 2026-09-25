@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, act, cleanup } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import usePaginaEnUrl from '../../src/hooks/usePaginaEnUrl';
+import usePaginaEnUrl from '../../src/plataforma/usePaginaEnUrl';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La página de una tabla vive en la dirección.

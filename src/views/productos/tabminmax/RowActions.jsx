@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     XCircle, RotateCcw, History, Eye, EyeOff, Loader2, Trash2, Upload, MoreHorizontal, MessageSquareText } from 'lucide-react';
-import useCapaFlotante from '../../../utils/capaFlotante';
+import useCapaFlotante from '../../../plataforma/capaFlotante';
 import { useEnHojaDeAcciones } from '../../../components/common/hojaDeAcciones';
 
 export default function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, publishing, hidingIds, onOpenMotivo,
@@ -29,7 +29,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
     // Con el menú abierto, la fila y la tarjeta de atrás se quedan quietas.
     // La regla sólo apaga `transform`/`box-shadow`, nunca `pointer-events`, así
     // que el mouseenter/mouseleave que abre y cierra este menú sigue igual.
-    // Ver `src/utils/capaFlotante.js`.
+    // Ver `src/plataforma/capaFlotante.js`.
     useCapaFlotante(open);
 
     const openMenu = useCallback(() => {

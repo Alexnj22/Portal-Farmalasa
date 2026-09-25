@@ -1,4 +1,4 @@
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 
 // El corte y la resolución de la fila abierta viven fuera del componente porque
 // la regla de fast-refresh pide que un archivo de componente exporte sólo

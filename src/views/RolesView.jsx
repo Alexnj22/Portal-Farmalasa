@@ -18,7 +18,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { smartFilter } from '../utils/searchUtils';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '../utils/errorMessages';

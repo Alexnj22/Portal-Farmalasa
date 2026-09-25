@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import HojaMovil from './HojaMovil';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 
 /**
  * CuerpoDialogo — el contenido de un diálogo, en la anatomía que corresponda.

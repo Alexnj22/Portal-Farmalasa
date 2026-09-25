@@ -7,7 +7,7 @@ import TarjetaCorte from '../../components/cortes/TarjetaCorte';
 import { fetchCortes, fetchCortesResumen, fetchPersonas } from '../../data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes } from '../../utils/cortesDiagnostico';
 import { useAuth } from '../../context/AuthContext';
-import useResolverCorte from '../../hooks/useResolverCorte';
+import useResolverCorte from '../../components/cortes/useResolverCorte';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
 /* El detalle del corte se baja al abrir uno, no al entrar al Inicio.

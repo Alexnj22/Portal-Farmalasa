@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ChevronDown, EyeOff, Filter, GitCompare, Loader2, Trash2, Upload, X } from 'lucide-react';
 import TabBarAction from '../../../components/common/TabBarAction';
 import LiquidTooltip from '../../../components/common/LiquidTooltip';
-import useAnclaje from '../../../hooks/useAnclaje';
+import useAnclaje from '../../../plataforma/useAnclaje';
 import useLayoutCompacto from '../../../hooks/useLayoutCompacto';
 
 /**

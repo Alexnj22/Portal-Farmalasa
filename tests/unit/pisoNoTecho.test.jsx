@@ -22,7 +22,7 @@ import { NOMBRE_POR_ICONO, TONO_POR_ICONO, CLASE_TEXTO_POR_TONO, VARIANTES_RELLE
     from '../../src/components/common/iconNames';
 import { MODULE_SEARCH_KEYWORDS } from '../../src/constants/menuSearchKeywords';
 import useSobreviveAlCierre from '../../src/hooks/useSobreviveAlCierre';
-import useMediaQuery from '../../src/hooks/useMediaQuery';
+import useMediaQuery from '../../src/plataforma/useMediaQuery';
 import { CORTE_TELEFONO, useExpedienteMovil } from '../../src/components/common/usarExpediente';
 
 describe('el nombre que un botón de sólo ícono no tiene', () => {

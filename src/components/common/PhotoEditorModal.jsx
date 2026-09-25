@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Button from './Button';
 import Cropper from 'react-easy-crop';
 import ModalShell from './ModalShell';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 import {
     X, ZoomIn, ZoomOut, Scissors, Loader2, Check,
     RotateCcw, RotateCw, Eraser, Paintbrush, ChevronLeft, Plus, Minus,

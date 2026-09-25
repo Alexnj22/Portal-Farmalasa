@@ -7,7 +7,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { armarHtmlDelMes } from './bitacoraPapel';
-import { escribirEImprimir } from './ventanaDeImpresion';
+import { escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 
 export { armarHtmlDelMes, hojasDelMes } from './bitacoraPapel';
 

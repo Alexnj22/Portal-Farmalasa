@@ -3,7 +3,7 @@ import SegmentedControl from '../components/common/SegmentedControl';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
 import {

@@ -1,5 +1,5 @@
 import { MotionConfig } from 'framer-motion';
-import { useMotionConfig } from '../hooks/useMotionConfig';
+import { useMotionConfig } from '../plataforma/useMotionConfig';
 
 /**
  * MotionProvider — aplica la política de movimiento a TODO el árbol de

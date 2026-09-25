@@ -7,7 +7,7 @@ import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
-import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { useStaffStore } from '../store/staffStore';
 import { useNowTick } from '../hooks/useNowTick';
 import { smartFilter } from '../utils/searchUtils';

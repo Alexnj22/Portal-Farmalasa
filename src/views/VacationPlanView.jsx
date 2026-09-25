@@ -6,7 +6,7 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
-import useMediaQuery from '../hooks/useMediaQuery';
+import useMediaQuery from '../plataforma/useMediaQuery';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
     ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Pencil,

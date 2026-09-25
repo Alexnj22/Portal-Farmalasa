@@ -19,7 +19,7 @@ import Contador from './Contador';
    estilo, era la mitad de lo que la tarjeta HACE. */
 import TarjetaDeAviso from './TarjetaDeAviso';
 import { paletaDeAviso } from './paletaDeAviso';
-import useAccionesDeAviso from '../../hooks/useAccionesDeAviso';
+import useAccionesDeAviso from './useAccionesDeAviso';
 
 
 

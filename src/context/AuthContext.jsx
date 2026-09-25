@@ -11,7 +11,7 @@ import { anotar } from '../plataforma/cajaNegra';
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
-import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "../utils/pushEquipo";
+import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "../plataforma/pushEquipo";
 import AvisoDeInactividad from "../components/common/AvisoDeInactividad";
 import { programarEn } from "../utils/temporizadorLargo";
 
@@ -622,7 +622,7 @@ export const AuthProvider = ({ children }) => {
     // sesión tiene que soltarlo: si no, los avisos de quien se fue siguen
     // cayendo en esa pantalla. Va acá arriba por dos razones: `clearAuthCache()`
     // se lleva la clase de dispositivo, que es el criterio, y el RPC necesita
-    // que el token siga puesto. Ver `utils/pushEquipo.js`.
+    // que el token siga puesto. Ver `plataforma/pushEquipo.js`.
     //
     // Este es el embudo de TODOS los cierres —el botón, el vencimiento por
     // inactividad y la sesión que ya no vale—, que es justo lo que hace falta:
@@ -671,7 +671,7 @@ export const AuthProvider = ({ children }) => {
   // sesión que ya no vale. Cerrar la pestaña no es ninguno de los tres: no
   // dispara nada, y la suscripción de avisos del EQUIPO quedaba ligada a quien
   // se fue. En una computadora de sala eso significa que sus avisos siguen
-  // cayendo en esa pantalla. Ver `utils/pushEquipo.js`.
+  // cayendo en esa pantalla. Ver `plataforma/pushEquipo.js`.
   useEffect(() => {
     if (!user?.id) return undefined;
     const alIrseLaPagina = () => {

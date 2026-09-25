@@ -148,7 +148,7 @@ describe('la pantalla del teléfono', () => {
 // Las esquinas del papel: propuestas, pero corregibles — y CONECTADAS
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// El enderezado de perspectiva existía completo —`utils/perspectiva.js`, el
+// El enderezado de perspectiva existía completo —`plataforma/perspectiva.js`, el
 // efecto del editor, el conmutador— y NUNCA corría desde un adjunto: la lectura
 // devolvía las cuatro esquinas y `FileField` no se las pasaba al editor. Una
 // función entera muerta sin dar un error, que es exactamente por qué «lo de las
@@ -191,7 +191,7 @@ describe('las cuatro esquinas del papel', () => {
 
     it('el resultado sale de la medida del papel, no de una lista de formas', () => {
         const componer = fs.readFileSync(
-            path.join(process.cwd(), 'src/utils/componerDocumento.js'), 'utf8');
+            path.join(process.cwd(), 'src/plataforma/componerDocumento.js'), 'utf8');
         expect(componer).toMatch(/medidaDelPapel\(enPx\)/);
         // Y se ajusta al papel real cuando se lo reconoce: carta, oficio o
         // cédula. Sin eso, la hoja sale «casi carta».

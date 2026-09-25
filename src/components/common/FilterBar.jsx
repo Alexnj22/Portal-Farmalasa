@@ -5,7 +5,7 @@ import { X, SlidersHorizontal, MoreHorizontal, Building2 } from 'lucide-react';
 import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 // El anclaje de los paneles de esta barra vive en `hooks/` desde que son tres
 // (desborde, otros, y el de borradores que TabMinMax mete como ranura).
-import useAnclaje from '../../hooks/useAnclaje';
+import useAnclaje from '../../plataforma/useAnclaje';
 import Contador from './Contador';
 import BarraFlotante, { LARGO_ROTULO_CLUSTER } from './BarraFlotante';
 import TabBarAction from './TabBarAction';

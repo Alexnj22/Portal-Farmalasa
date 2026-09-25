@@ -20,7 +20,7 @@ import ModalShell from '../../components/common/ModalShell';
 import HojaMovil from '../../components/common/HojaMovil';
 import ListRow from '../../components/common/ListRow';
 import Checkbox from '../../components/common/Checkbox';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useMediaQuery from '../../plataforma/useMediaQuery';
 import { CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';

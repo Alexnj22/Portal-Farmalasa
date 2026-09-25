@@ -13,7 +13,7 @@ import {
 } from '../../data/bitacoras';
 import { registrarEgreso } from '../../data/egreso';
 import { imprimirMesDeBitacoras } from '../../utils/bitacoraPrint';
-import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../utils/ventanaDeImpresion';
+import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
 import { logoComoDataUrl, LOGO_DE_LA_EMPRESA } from '../../utils/marcaDeLaSala';
 
 // ═══════════════════════════════════════════════════════════════════════════

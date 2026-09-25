@@ -4,7 +4,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilterBar from '../../components/common/FilterBar';
 import ViewTabBar from '../../components/common/ViewTabBar';
-import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
+import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { Bell, Globe, Building2, User, CheckCircle2, Flame, Clock, Search, X, ChevronLeft, ChevronRight, RefreshCw, Palmtree, FileText, DollarSign, FileCheck, Stethoscope, CalendarDays, ArrowLeftRight, Sparkles, ChevronsRight, Pencil } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';

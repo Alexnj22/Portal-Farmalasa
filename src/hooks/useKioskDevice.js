@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { mensajeAmigable } from '../utils/errorMessages';
+import * as almacen from '../plataforma/almacen';
 
 const KIOSK_LS_KEY = 'kiosk_config';
 const EMPTY_BRANCHES = [];
@@ -12,7 +13,7 @@ const GRACE_MS = 15 * 60 * 1000;
 // y evitar el "parpadeo" de la UI al recargar la página.
 const readLocalConfigSafe = () => {
   try {
-    const raw = localStorage.getItem(KIOSK_LS_KEY);
+    const raw = almacen.leer(KIOSK_LS_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     
@@ -49,12 +50,12 @@ export default function useKioskDevice() {
   // -----------------------------
   const writeLocalConfig = useCallback((config) => {
     if (!config) return;
-    localStorage.setItem(KIOSK_LS_KEY, JSON.stringify(config));
+    almacen.guardar(KIOSK_LS_KEY, JSON.stringify(config));
     setKioskConfig(config);
   }, []);
 
   const revokeLocalConfig = useCallback(() => {
-    localStorage.removeItem(KIOSK_LS_KEY);
+    almacen.borrar(KIOSK_LS_KEY);
     setKioskConfig(null);
   }, []);
 

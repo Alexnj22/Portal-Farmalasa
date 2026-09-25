@@ -1,3 +1,4 @@
+import * as almacen from '../plataforma/almacen';
 // src/store/utils.js
 
 export const makeId = () => {
@@ -100,7 +101,7 @@ export const persistEmployees = (employees) => {
             delete safe.salario_conocido;
             return { ...safe, history: [], documents: [], attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday) };
         });
-        localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(light));
+        almacen.guardar(CACHE_KEYS.EMPLOYEES, JSON.stringify(light));
     } catch (e) {
         console.warn('⚠️ Alerta de Memoria LocalStorage:', e);
     }

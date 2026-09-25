@@ -17,6 +17,8 @@ import { aplicarPendientes } from '../../data/documentosCompartidos';
 import { guardarDiaDeHorario } from '../../data/schedules';
 import { TERMINATION_REASONS, SIN_ASIGNAR } from '../../data/constants';
 import { claveDeDia } from '../../utils/scheduleHelpers';
+import * as almacen from '../../plataforma/almacen';
+import { emitir } from '../../plataforma/eventos';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -459,7 +461,7 @@ export const assertHeadcountAvailable = (state, roleId, branchId, excludeEmploye
 };
 
 export const createEmployeeSlice = (set, get) => ({
-    employees: safeJsonParse(localStorage.getItem(CACHE_KEYS.EMPLOYEES), []) || [],
+    employees: safeJsonParse(almacen.leer(CACHE_KEYS.EMPLOYEES), []) || [],
     attendanceLoaded: false,
 
     setEmployees: (updater) => set((state) => {
@@ -1000,7 +1002,7 @@ export const createEmployeeSlice = (set, get) => ({
                     : 'Expediente creado'
             });
             
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             const roles = get().roles;
             const mainRoleName = roles.find(r => String(r.id) === String(newEmp.role_id))?.name || null;
@@ -1369,7 +1371,7 @@ export const createEmployeeSlice = (set, get) => ({
                 }
             }
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             const roles = get().roles;
             const mainRoleName = roles.find(r => String(r.id) === String(updated.role_id))?.name || null;
@@ -1511,7 +1513,7 @@ export const createEmployeeSlice = (set, get) => ({
             notas: rehireData.notes || ''
         });
 
-        window.dispatchEvent(new CustomEvent('force-history-refresh'));
+        emitir('force-history-refresh');
 
         set((state) => {
             const next = state.employees.map(e => {
@@ -1587,7 +1589,7 @@ export const createEmployeeSlice = (set, get) => ({
             notas: reason
         });
 
-        window.dispatchEvent(new CustomEvent('force-history-refresh'));
+        emitir('force-history-refresh');
 
         set((state) => {
             const next = state.employees.map(e =>
@@ -1758,7 +1760,7 @@ export const createEmployeeSlice = (set, get) => ({
                 return { employees: next };
             });
 
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            emitir('force-history-refresh');
 
             return newPunch || { timestamp, type: dbType, details: metadata };
 

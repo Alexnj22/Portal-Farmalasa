@@ -1,3 +1,4 @@
+import * as almacen from '../plataforma/almacen';
 // Ventana de gracia de autorización del kiosco.
 //
 // Reemplaza a `kiosk_supervisor_pins`, el caché de localStorage que guardaba
@@ -18,7 +19,7 @@ const GRACE_DAYS = 7;
 
 function readGrace() {
     try {
-        const raw = localStorage.getItem(GRACE_KEY);
+        const raw = almacen.leer(GRACE_KEY);
         const obj = raw ? JSON.parse(raw) : {};
         return obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : {};
     } catch {
@@ -41,7 +42,7 @@ export function recordKioskVerification(employeeId) {
         if (!Number.isFinite(t) || t < cutoff) delete grace[id];
     }
 
-    try { localStorage.setItem(GRACE_KEY, JSON.stringify(grace)); } catch { /* localStorage lleno */ }
+    try { almacen.guardar(GRACE_KEY, JSON.stringify(grace)); } catch { /* localStorage lleno */ }
 }
 
 // ¿Este empleado se autorizó en este kiosco dentro de la ventana? Solo se
@@ -58,5 +59,5 @@ export function hasRecentKioskVerification(employeeId, days = GRACE_DAYS) {
 // Se llama al desvincular el dispositivo: la ventana de gracia es propiedad
 // del kiosco, no del navegador.
 export function clearKioskGrace() {
-    try { localStorage.removeItem(GRACE_KEY); } catch { /* no disponible */ }
+    try { almacen.borrar(GRACE_KEY); } catch { /* no disponible */ }
 }

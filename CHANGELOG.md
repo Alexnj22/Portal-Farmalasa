@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.11 — Núcleo portable F1: tanda A, diecisiete archivos de lógica a los adaptadores
+
+Sin cambios visibles. Plan `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+
+Los 58 archivos que quedaban se clasificaron en tres tandas: **A** lógica que
+sólo necesitaba los adaptadores que ya existían, **B** interfaz y capacidades
+propias de la web (se mudan a `src/plataforma/`), **C** íconos dentro de
+catálogos. Ésta es la A: diecisiete archivos, reemplazos exactos.
+
+- Almacenamiento → `almacen`: los slices de auditoría, sucursales y empleados,
+  la caché del store, los borradores, la gracia y la cola del kiosco, la
+  configuración del dispositivo y el aviso de versión nueva (`deLaSesion`).
+- Avisos entre pantallas → `emitir`: `requestsSlice` y `employeeSlice`.
+- Visibilidad y recarga → `cicloDeVida` / `recargar`: versión nueva, refresco
+  en vivo y recargar al volver.
+- Navegar y configuración → `irA`, `origen` (nuevo), `SUPABASE_URL`.
+- `gate:nucleo` 147 → 97. Lint idéntico al de antes en los 17 archivos; las
+  e2e del kiosco, crear ruta, inactividad y el Inicio del teléfono pasan
+  contra la base de pruebas.
+
 ## v2.1061.10 — Compras edita Mín·Máx de Bodega y desde el pedido, sin decidir solicitudes; los avisos de pedido sólo a quien ve Pedidos
 
 Del listado de avisos por cargo que pidió el usuario:

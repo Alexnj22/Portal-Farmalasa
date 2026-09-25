@@ -1,12 +1,13 @@
+import * as almacen from '../plataforma/almacen';
 const PREFIX = 'pedido_draft_';
 
 export function saveDraft(key, data) {
-    try { localStorage.setItem(PREFIX + key, JSON.stringify({ ts: Date.now(), data })); } catch { /* localStorage no disponible (privado/cuota) */ }
+    try { almacen.guardar(PREFIX + key, JSON.stringify({ ts: Date.now(), data })); } catch { /* localStorage no disponible (privado/cuota) */ }
 }
 
 export function loadDraft(key) {
     try {
-        const raw = localStorage.getItem(PREFIX + key);
+        const raw = almacen.leer(PREFIX + key);
         if (!raw) return null;
         const { ts, data } = JSON.parse(raw);
         // Expire after 24 hours
@@ -27,7 +28,7 @@ export function loadDraft(key) {
  */
 export function loadDraftTime(key) {
     try {
-        const raw = localStorage.getItem(PREFIX + key);
+        const raw = almacen.leer(PREFIX + key);
         if (!raw) return null;
         const { ts } = JSON.parse(raw);
         if (!ts || Date.now() - ts > 86_400_000) return null;
@@ -36,5 +37,5 @@ export function loadDraftTime(key) {
 }
 
 export function clearDraft(key) {
-    try { localStorage.removeItem(PREFIX + key); } catch { /* localStorage no disponible (privado/cuota) */ }
+    try { almacen.borrar(PREFIX + key); } catch { /* localStorage no disponible (privado/cuota) */ }
 }

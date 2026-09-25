@@ -1,4 +1,7 @@
 import { anotar } from '../plataforma/cajaNegra';
+import * as almacen from '../plataforma/almacen';
+import { recargar } from '../plataforma/navegacion';
+import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '../plataforma/cicloDeVida';
 
 /**
  * «Hay una versión nueva» — el aviso que reemplazó a la recarga sola.
@@ -48,9 +51,9 @@ const ESPERA_TRAS_FALLIDO_MS = 10 * 60 * 1000;
 /** Cuánto se calla el aviso cuando alguien elige «Ahora no». */
 export const POSPONER_MS = 30 * 60 * 1000;
 
-const leerSesion = (k) => { try { return sessionStorage.getItem(k); } catch { return null; } };
-const escribirSesion = (k, v) => { try { sessionStorage.setItem(k, v); } catch { /* modo privado */ } };
-const borrarSesion = (k) => { try { sessionStorage.removeItem(k); } catch { /* modo privado */ } };
+const leerSesion = (k) => { try { return almacen.deLaSesion.leer(k); } catch { return null; } };
+const escribirSesion = (k, v) => { try { almacen.deLaSesion.guardar(k, v); } catch { /* modo privado */ } };
+const borrarSesion = (k) => { try { almacen.deLaSesion.borrar(k); } catch { /* modo privado */ } };
 
 /**
  * El archivo de código que está corriendo AHORA, leído del DOM.
@@ -203,7 +206,7 @@ export function actualizarAhora() {
     escribirSesion(CLAVE_INTENTO, String(Date.now()));
     if (estado.entrada) escribirSesion(CLAVE_OBJETIVO, String(estado.entrada).split('/').pop());
     anotar('actualizar-a-mano', { version: estado.version, entrada: estado.entrada });
-    window.location.reload();
+    recargar();
 }
 
 // ── La vigilancia ────────────────────────────────────────────────────────────
@@ -242,13 +245,13 @@ export async function revisarVersion({ forzar = false, fetchImpl } = {}) {
 export function iniciarVigilanciaDeVersion() {
     if (!entradaQueCorre()) return () => {};
 
-    const alVolver = () => { if (document.visibilityState === 'visible') revisarVersion(); };
-    document.addEventListener('visibilitychange', alVolver);
+    const alVolver = () => { if (visibilidad() === 'visible') revisarVersion(); };
+    escucharVisibilidad(alVolver);
     const reloj = setInterval(() => revisarVersion(), CADA_MS);
     revisarVersion({ forzar: true });
 
     return () => {
-        document.removeEventListener('visibilitychange', alVolver);
+        soltarVisibilidad(alVolver);
         clearInterval(reloj);
     };
 }

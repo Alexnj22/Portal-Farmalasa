@@ -5,9 +5,10 @@ import {
     fetchBranchDocuments, fetchAuditLogsForBranch, fetchActiveKioskDeviceCount, insertKioskDevice,
     updateKioskDevice, fetchBranchKiosks, fetchBranchExpenseRecord, updateBranchExpense, insertBranchExpense,
 } from '../../data/branches';
+import * as almacen from '../../plataforma/almacen';
 
 const persistBranches = (branches) => {
-    localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
+    almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
     return branches;
 };
 
@@ -55,7 +56,7 @@ const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newF
 };
 
 export const createBranchSlice = (set, get) => ({
-    branches: safeJsonParse(localStorage.getItem(CACHE_KEYS.BRANCHES), []) || [],
+    branches: safeJsonParse(almacen.leer(CACHE_KEYS.BRANCHES), []) || [],
     
     // 🔴 NUEVO: ESTADO GLOBAL PARA EL HISTORIAL (Vital para que no requiera F5)
     branchHistory: {}, 

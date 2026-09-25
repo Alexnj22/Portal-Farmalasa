@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
+import { SUPABASE_URL } from '../plataforma/config';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Bitácoras — capa de datos.
@@ -701,7 +702,7 @@ export async function subirFotoDeReceta(file, branchId) {
     // En la base va la URL formato-public como IDENTIFICADOR — nunca una
     // firmada, que expira. `openStoredFile` la firma al mostrarla.
     const base = supabase.storageUrl?.replace(/\/storage\/v1$/, '')
-        || import.meta.env.VITE_SUPABASE_URL;
+        || SUPABASE_URL;
     return { url: `${base}/storage/v1/object/public/${BUCKET_RECETAS}/${path}`, error: null };
 }
 

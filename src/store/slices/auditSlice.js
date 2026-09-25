@@ -1,5 +1,6 @@
 import { safeJsonParse, CACHE_KEYS } from '../utils';
 import { insertAuditLog, fetchAuditLogs as fetchAuditLogsData } from '../../data/audit';
+import * as almacen from '../../plataforma/almacen';
 
 // ==========================================================
 // 🔐 Auditoría PRO (sin IP)
@@ -114,7 +115,7 @@ const safeDetails = (raw) => {
 let lastAuditFetchTime = 0;
 
 export const createAuditSlice = (set) => ({
-  auditLog: safeJsonParse(localStorage.getItem(CACHE_KEYS.AUDIT), []) || [],
+  auditLog: safeJsonParse(almacen.leer(CACHE_KEYS.AUDIT), []) || [],
 
   setAuditLog: (updater) =>
     set((state) => {
@@ -123,7 +124,7 @@ export const createAuditSlice = (set) => ({
     }),
 
   appendAuditLog: async (actionOrObj, targetId = null, details = {}, override_user_name = null) => {
-    const storedUser = safeJsonParse(localStorage.getItem('sb_user'));
+    const storedUser = safeJsonParse(almacen.leer('sb_user'));
 
     let action = actionOrObj;
     let tId = targetId;
@@ -184,7 +185,7 @@ export const createAuditSlice = (set) => ({
         const insertedRow = data || { ...logData, created_at: new Date().toISOString() };
         const next = [insertedRow, ...(state.auditLog || [])];
         // Mantenemos la memoria local ligera (max 1000)
-        localStorage.setItem(CACHE_KEYS.AUDIT, JSON.stringify(next.slice(0, 1000)));
+        almacen.guardar(CACHE_KEYS.AUDIT, JSON.stringify(next.slice(0, 1000)));
         return { auditLog: next };
       });
       
@@ -210,7 +211,7 @@ export const createAuditSlice = (set) => ({
       if (error) throw error; // Dispara el error para que el catch lo atrape
 
       set({ auditLog: data || [] });
-      localStorage.setItem(CACHE_KEYS.AUDIT, JSON.stringify(data || []));
+      almacen.guardar(CACHE_KEYS.AUDIT, JSON.stringify(data || []));
       
     } catch (err) {
       // ALERTA CRÍTICA: Ahora el sistema te gritará si falta una columna en la DB

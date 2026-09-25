@@ -20,6 +20,7 @@ import { guardarDiaDeHorario } from '../../data/schedules';
 import { signStorageUrls } from '../../utils/storageFiles';
 import { formatMoney } from '../../utils/formatNumber';
 import { claveDeDia } from '../../utils/scheduleHelpers';
+import { emitir } from '../../plataforma/eventos';
 
 // ============================================================================
 // 📋 SOLICITUDES — Employee-initiated requests requiring admin approval
@@ -401,7 +402,7 @@ const avisarYaDecidida = (get) => {
         'Alguien la decidió antes —desde otra pestaña o desde otra cuenta—, así que no se volvió a aplicar. Se actualizó la pantalla.',
         'error');
     get().fetchNotifications?.();
-    window.dispatchEvent(new CustomEvent('requests-updated'));
+    emitir('requests-updated');
     return YA_AVISADO;
 };
 
@@ -1161,7 +1162,7 @@ export const createRequestsSlice = (set, get) => ({
             aplicado?.instruccion ? 'info' : 'success',
             aplicado?.instruccion ? 8000 : undefined,
         );
-        window.dispatchEvent(new CustomEvent('requests-updated'));
+        emitir('requests-updated');
         return true;
     },
 
@@ -1273,7 +1274,7 @@ export const createRequestsSlice = (set, get) => ({
         }
 
         useToastStore.getState().showToast(...get()._avisoDeCaja(req.type, r, modo));
-        window.dispatchEvent(new CustomEvent('requests-updated'));
+        emitir('requests-updated');
         return true;
     },
 
@@ -1385,7 +1386,7 @@ export const createRequestsSlice = (set, get) => ({
             partes.join(' · '),
             'success',
         );
-        window.dispatchEvent(new CustomEvent('requests-updated'));
+        emitir('requests-updated');
         return true;
     },
 
@@ -1532,7 +1533,7 @@ export const createRequestsSlice = (set, get) => ({
 
         if (toastMsg) useToastStore.getState().showToast('Aprobado', toastMsg, 'success');
         else useToastStore.getState().showToast('Solicitud Aprobada', `${REQUEST_TYPES[req.type]?.label || req.type} aprobada correctamente.`, 'success');
-        window.dispatchEvent(new CustomEvent('requests-updated'));
+        emitir('requests-updated');
         return true;
     },
 
@@ -1638,7 +1639,7 @@ export const createRequestsSlice = (set, get) => ({
                     push: true,
                 });
                 useToastStore.getState().showToast('Aprobado — Nivel 1', 'El compañero aprobó. Enviado al jefe de sucursal.', 'success');
-                window.dispatchEvent(new CustomEvent('requests-updated'));
+                emitir('requests-updated');
                 return true;
             }
 
@@ -1679,7 +1680,7 @@ export const createRequestsSlice = (set, get) => ({
                     `Solicitud avanzada al nivel ${nextLevel}. Notificado el siguiente aprobador.`,
                     'success'
                 );
-                window.dispatchEvent(new CustomEvent('requests-updated'));
+                emitir('requests-updated');
                 return true;
             }
 

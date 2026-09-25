@@ -15,6 +15,7 @@
 // tirar un marcaje sólo porque se cayó el internet.
 
 import { supabase } from '../supabaseClient';
+import * as almacen from '../plataforma/almacen';
 
 // Un error de PostgREST que trae `code` es una respuesta REAL del servidor;
 // sin `code` es una caída de red. La diferencia decide si el marcaje se
@@ -23,7 +24,7 @@ const esRechazoDelServidor = (error) => Boolean(error?.code);
 
 function credenciales() {
     try {
-        const raw = localStorage.getItem('kiosk_config');
+        const raw = almacen.leer('kiosk_config');
         if (!raw) return null;
         const cfg = JSON.parse(raw);
         if (!cfg?.deviceId || !cfg?.deviceToken) return null;

@@ -1,6 +1,6 @@
 {
-  "total": 147,
-  "archivos": 58,
+  "total": 97,
+  "archivos": 42,
   "porArchivo": {
     "src/constants/moduleMap.js": {
       "pantalla": 1
@@ -17,12 +17,6 @@
     "src/context/ThemeContext.jsx": {
       "navegador": 7
     },
-    "src/data/bitacoras.js": {
-      "env": 1
-    },
-    "src/data/capturaDeFoto.js": {
-      "navegador": 1
-    },
     "src/data/capturaDesdeElTelefono.js": {
       "navegador": 1
     },
@@ -31,9 +25,6 @@
     },
     "src/data/facturasCompra.js": {
       "navegador": 3
-    },
-    "src/data/kiosco.js": {
-      "navegador": 1
     },
     "src/data/librosIva.js": {
       "navegador": 1
@@ -50,9 +41,6 @@
     "src/hooks/useCoarsePointer.js": {
       "navegador": 4
     },
-    "src/hooks/useKioskDevice.js": {
-      "navegador": 3
-    },
     "src/hooks/useMediaQuery.js": {
       "navegador": 2
     },
@@ -62,20 +50,11 @@
     "src/hooks/useMotionConfig.js": {
       "pantalla": 1
     },
-    "src/hooks/useNotificationsChannel.js": {
-      "navegador": 1
-    },
     "src/hooks/usePaginaEnUrl.js": {
       "pantalla": 2
     },
     "src/hooks/usePestanaEnUrl.js": {
       "pantalla": 1
-    },
-    "src/hooks/useRecargarAlVolver.js": {
-      "navegador": 3
-    },
-    "src/hooks/useRefrescoEnVivo.js": {
-      "navegador": 3
     },
     "src/hooks/useResolverCorte.jsx": {
       "pantalla": 2
@@ -83,26 +62,8 @@
     "src/hooks/useSearchToggle.js": {
       "navegador": 4
     },
-    "src/store/slices/auditSlice.js": {
-      "navegador": 4
-    },
-    "src/store/slices/branchSlice.js": {
-      "navegador": 2
-    },
     "src/store/slices/employeeSlice.js": {
-      "navegador": 7
-    },
-    "src/store/slices/requestsSlice.js": {
-      "navegador": 7
-    },
-    "src/store/slices/vacationPlanSlice.js": {
-      "env": 1
-    },
-    "src/store/utils.js": {
       "navegador": 1
-    },
-    "src/utils/attendanceQueue.js": {
-      "navegador": 2
     },
     "src/utils/browserNotif.js": {
       "navegador": 3
@@ -128,17 +89,11 @@
     "src/utils/documentosDelExpediente.js": {
       "pantalla": 1
     },
-    "src/utils/draftUtils.js": {
-      "navegador": 4
-    },
     "src/utils/fotoParaLeer.js": {
       "navegador": 1
     },
     "src/utils/helpers.js": {
       "navegador": 4
-    },
-    "src/utils/kioskGrace.js": {
-      "navegador": 3
     },
     "src/utils/kioskSound.js": {
       "navegador": 1
@@ -173,9 +128,6 @@
     },
     "src/utils/ventanaDeImpresion.js": {
       "navegador": 4
-    },
-    "src/utils/versionNueva.js": {
-      "navegador": 7
     }
   }
 }

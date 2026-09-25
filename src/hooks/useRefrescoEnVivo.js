@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef } from 'react';
 import { supabase } from '../supabaseClient';
+import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '../plataforma/cicloDeVida';
 
 /**
  * Que una pantalla de trabajo compartido se ponga al día sola.
@@ -85,7 +86,7 @@ export function useRefrescoEnVivo(recargar, {
         if (pendienteRef.current) { pendienteRef.current = false; leer(); }
 
         const siVencio = () => {
-            if (document.visibilityState !== 'visible') return;
+            if (visibilidad() !== 'visible') return;
             if (Date.now() - ultimaRef.current < ms) return;
             leer();
         };
@@ -95,10 +96,10 @@ export function useRefrescoEnVivo(recargar, {
          * segundos en vez de esperar el ciclo entero. Un `Date.now()` cada
          * cinco segundos no cuesta nada; una consulta de más, sí. */
         const tic = setInterval(siVencio, Math.min(ms, 5_000));
-        document.addEventListener('visibilitychange', siVencio);
+        escucharVisibilidad(siVencio);
         return () => {
             clearInterval(tic);
-            document.removeEventListener('visibilitychange', siVencio);
+            soltarVisibilidad(siVencio);
         };
     }, [ms, activo, leer]);
 

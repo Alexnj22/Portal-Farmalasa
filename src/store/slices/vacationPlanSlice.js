@@ -7,6 +7,7 @@ import {
     insertVacationPlan,
 } from '../../data/vacationPlans';
 import { resolverApprovalRequest, updateApprovalRequest } from '../../data/requests';
+import { SUPABASE_URL } from '../../plataforma/config';
 
 export const createVacationPlanSlice = (set, get) => ({
     vacationPlans: [],
@@ -62,7 +63,6 @@ export const createVacationPlanSlice = (set, get) => ({
         set({ isGeneratingPlan: true });
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
             const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-vacation-plan`, {
                 method: 'POST',
                 headers: {

@@ -1,3 +1,4 @@
+import * as almacen from '../plataforma/almacen';
 // Cola local de marcajes de asistencia. Cuando el kiosco no tiene conexión, el
 // marcaje se guarda acá en vez de perderse — se reintenta cuando la conexión
 // vuelve. localStorage alcanza de sobra: el volumen real por kiosco es de
@@ -23,7 +24,7 @@ const MAX_EDAD_MS = 24 * 60 * 60 * 1000;
 
 function readQueue() {
     try {
-        const raw = localStorage.getItem(QUEUE_KEY);
+        const raw = almacen.leer(QUEUE_KEY);
         const arr = raw ? JSON.parse(raw) : [];
         return Array.isArray(arr) ? arr : [];
     } catch {
@@ -32,7 +33,7 @@ function readQueue() {
 }
 
 function writeQueue(queue) {
-    try { localStorage.setItem(QUEUE_KEY, JSON.stringify(queue)); } catch { /* localStorage lleno o no disponible */ }
+    try { almacen.guardar(QUEUE_KEY, JSON.stringify(queue)); } catch { /* localStorage lleno o no disponible */ }
 }
 
 export function enqueueAttendancePunch({ employeeId, type, metadata, ocurridoEn = null }) {

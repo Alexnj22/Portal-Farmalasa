@@ -5,6 +5,7 @@ import { useStaffStore } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { fireBrowserNotif } from '../utils/browserNotif';
 import { useRecargarAlVolver } from './useRecargarAlVolver';
+import { irA } from '../plataforma/navegacion';
 
 // Montar UNA sola vez (AppLayout). Carga inicial + realtime de la tabla
 // notifications filtrado al empleado actual; RLS respalda el filtro.
@@ -33,7 +34,7 @@ export function useNotificationsChannel() {
                         `Farmalasa · ${n.title}`,
                         n.body || '',
                         `notif-${n.id}`,
-                        n.link ? () => { window.location.href = n.link; } : undefined
+                        n.link ? () => { irA(n.link); } : undefined
                     );
                 }
             )

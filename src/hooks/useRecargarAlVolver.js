@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '../plataforma/cicloDeVida';
 
 /**
  * Volver a leer cuando la pestaña vuelve a estar visible.
@@ -27,13 +28,13 @@ export function useRecargarAlVolver(recargar, msMinimo = 15000) {
 
     useEffect(() => {
         const alVolver = () => {
-            if (document.visibilityState !== 'visible') return;
+            if (visibilidad() !== 'visible') return;
             const ahora = Date.now();
             if (ahora - ultimaRef.current < msMinimo) return;
             ultimaRef.current = ahora;
             recargarRef.current?.();
         };
-        document.addEventListener('visibilitychange', alVolver);
-        return () => document.removeEventListener('visibilitychange', alVolver);
+        escucharVisibilidad(alVolver);
+        return () => soltarVisibilidad(alVolver);
     }, [msMinimo]);
 }

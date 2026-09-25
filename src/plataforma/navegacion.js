@@ -18,3 +18,8 @@ export function irA(ruta) {
 export function recargar() {
     window.location.reload();
 }
+
+/** `window.location.origin` — la dirección base del portal, para armar enlaces
+ *  que se abren en OTRO dispositivo (el QR para tomar una foto con el
+ *  teléfono). En la app nativa será la dirección pública del portal. */
+export const origen = () => window.location.origin;

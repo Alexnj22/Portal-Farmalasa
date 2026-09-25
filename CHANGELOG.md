@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1061.10 — Compras edita Mín·Máx de Bodega y desde el pedido, sin decidir solicitudes; los avisos de pedido sólo a quien ve Pedidos
+
+Del listado de avisos por cargo que pidió el usuario:
+
+- **Jefe/a de Compras ya no aprueba ni rechaza ajustes de Mín·Máx.** Tenía
+  «aprobar» en `requests_minmax` con «ver» apagado, y por eso le llegaban las
+  solicitudes. Y el módulo Mín·Máx pasa a alcance de su sala: edita Bodega.
+- **Lo que corrige desde un pedido sigue funcionando**, ahora por
+  `guardar_minmax_desde_pedido`: la autorización sale del renglón del pedido y
+  no del alcance del módulo. Con el UPDATE directo de antes, el alcance nuevo
+  hubiera dado cero filas sin error. Verificado con su sesión: sala directa 0
+  filas, Bodega 1, desde el pedido OK, aprobar = no.
+- **Los avisos de un pedido (`PEDIDO_*`) van sólo a quien puede ver Pedidos**,
+  también el del teléfono. Servicios Generales de Salud 4 recibía «en camino» y
+  «llegó el conductor» sin poder entrar al módulo.
+
 ## v2.1061.9 — Diferencias: resolver, asignar y abonar es un permiso aparte
 
 Decidido por el usuario: la pestaña Diferencias la ve quien ve Cortes de caja,

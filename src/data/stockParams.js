@@ -66,6 +66,16 @@ export function updateStockParams(erpProductId, erpSucursalId, patch) {
         .eq('erp_product_id', erpProductId).eq('erp_sucursal_id', erpSucursalId);
 }
 
+// El MIN·MAX que se corrige desde un renglón de pedido. No es `updateStockParams`
+// a propósito: ese UPDATE pasa por `psp_update`, que con alcance de una sala
+// devuelve CERO filas sin error sobre las demás — y desde un pedido se corrige
+// la sala que pidió, no la propia. La función lo autoriza por el renglón.
+export function guardarMinMaxDesdePedido(pedidoItemId, min, max) {
+    return supabase.rpc('guardar_minmax_desde_pedido', {
+        p_pedido_item_id: pedidoItemId, p_min: min, p_max: max,
+    });
+}
+
 export function updateStockParamsBulk(erpProductIds, erpSucursalId, patch) {
     return supabase.from('product_stock_params').update(patch)
         .in('erp_product_id', erpProductIds).eq('erp_sucursal_id', erpSucursalId);

@@ -16,7 +16,7 @@ import ConfirmModal from '../../../components/common/ConfirmModal';
 import { calcSolicitado } from './helpers';
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../hooks/useSearchToggle';
-import { fetchStockParamsForRevision, updateStockParams, effectiveMinMaxPair } from '../../../data/stockParams';
+import { fetchStockParamsForRevision, guardarMinMaxDesdePedido, effectiveMinMaxPair } from '../../../data/stockParams';
 import PortalInput from '../../../components/common/PortalInput';
 
 const MINI_PAGE = 15;
@@ -434,11 +434,11 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
             //     pendiente, quedaba pendiente — y al publicar, el borrador viejo
             //     pisaba lo que se acaba de guardar acá. Es lo mismo que hace el
             //     guardado en vivo de MIN·MAX (useMinMaxData, rama saveLive).
-            const { error } = await updateStockParams(row.erp_product_id, row.erp_sucursal_id, {
-                min_units: min, max_units: max, manual_min: null, manual_max: null,
-                draft_status: 'none', draft_min: null, draft_max: null,
-                updated_at: new Date().toISOString(),
-            });
+            //   Los dos los pone ahora `guardar_minmax_desde_pedido` en la base.
+            //   Va por función y no por UPDATE porque quien corrige desde un
+            //   pedido puede tener Mín·Máx acotado a su propia sala (Compras,
+            //   2026-09-25): el UPDATE directo daba cero filas sin error.
+            const { error } = await guardarMinMaxDesdePedido(row.id, min, max);
             if (error) throw error;
             // target_id debe ser el producto (no el pedido) — es lo que el historial
             // MIN/MAX de Productos usa para buscar cambios de un producto puntual.

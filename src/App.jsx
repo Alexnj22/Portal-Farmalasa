@@ -870,7 +870,7 @@ function MainApp() {
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
                                     <Route path="solicitudes-datos" element={<PermissionGuard moduleKey="datos_personales"><SolicitudesDatosView /></PermissionGuard>} />
-                                    <Route path="puntos" element={<PermissionGuard moduleKey="puntos"><PuntosView /></PermissionGuard>} />
+                                    <Route path="puntos" element={<PermissionGuard moduleKey="puntos"><PuntosView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario/:id" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoDetailView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />

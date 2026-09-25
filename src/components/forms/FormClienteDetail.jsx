@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Loader2, Check, IdCard, MapPin, Phone, ShieldCheck, Receipt,
-    History, AlertTriangle, Store, Building2, Star, KeyRound, Eye, Printer, RefreshCw,
+    History, AlertTriangle, Store, Building2,
 } from 'lucide-react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
@@ -12,18 +12,12 @@ import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
 import { LoadingState } from '../common/StateViews';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import ElegirSalaDeImpresion from '../personal/ElegirSalaDeImpresion';
-import { fetchSalasConCaja } from '../../data/impresion';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
 import {
     fetchCustomerDetail, updateCustomerFiscal, pushClienteAlErp,
     codigoDeError, mensajeDeError,
 } from '../../data/customers';
-import {
-    fetchPuntosDeCliente, estadoCodigoAcceso, verCodigoAcceso, emitirCodigoAcceso, salaDeHoy,
-} from '../../data/puntos';
 import {
     EL_SALVADOR_GEO, municipiosDe, distritosDe, normalizarGeo, conciliarGeo,
 } from '../../data/elSalvadorGeo';
@@ -35,7 +29,7 @@ import useBorrador from '../../hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { hora12 } from '../../utils/hora';
-import { fechaNumerica, fechaTexto } from '../../utils/fecha';
+import { fechaNumerica } from '../../utils/fecha';
 
 const CATEGORIAS = [
     'Consumidor', 'Contribuyente', 'Gran Contribuyente',
@@ -168,324 +162,6 @@ function PanelActividad({ actividad, facturas, bitacora }) {
                                 {' → '}
                                 <span className="text-content-2 font-bold">{h.valor_nuevo || '(vacío)'}</span>
                             </p>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
-/**
- * Los puntos del cliente: su saldo y sus movimientos.
- *
- * Carga sola al abrirse el panel y no antes: el dato viene de otro sistema, así
- * que pedirlo al abrir la ficha le sumaría una espera a todo el mundo por algo
- * que la mayoría no va a mirar.
- *
- * ── Los cuatro motivos por los que puede venir vacío, y por qué se DICEN ────
- * Un panel vacío se lee como «este cliente no tiene puntos», y sólo uno de los
- * cuatro casos significa eso. Los otros tres son problemas de datos que alguien
- * puede arreglar — y que nadie va a arreglar si la pantalla los esconde.
- */
-/**
- * El código de acceso a «Mis puntos», en la ficha.
- *
- * ── Por qué el código NO se muestra al abrir ────────────────────────────────
- * Porque es una llave: quien la ve puede consultar el saldo de esa persona. Se
- * muestra que EXISTE y desde cuándo —eso no compromete nada— y verlo es un
- * botón aparte que queda anotado en la bitácora con quién y cuándo. Sin esa
- * separación, abrir cualquier ficha registraría que alguien miró la llave, y la
- * bitácora dejaría de distinguir al que la consultó del que sólo pasó por ahí.
- *
- * ── Se puede emitir para CUALQUIER cliente ─────────────────────────────────
- * No sólo para extranjeros. Lo que depende de la categoría es otra cosa: si el
- * código alcanza SOLO, sin teléfono. Para una ficha extranjera sí —su teléfono
- * no sirve de llave porque el circuito de Hacienda se lo reemplaza por el de la
- * farmacia—; para el resto va acompañado del teléfono, y eso es lo que permite
- * que el código sea de siete caracteres y no de una docena.
- */
-function CodigoDeAcceso({ customerId, nombre, puedeEditar }) {
-    // `showToast(titulo, mensaje, tipo)` — así lo expone el store, y así lo usa
-    // el resto de este archivo. `addToast` no existe.
-    const aviso = (titulo, mensaje, tipo) =>
-        useToastStore.getState().showToast(titulo, mensaje, tipo);
-    const { user, getScope } = useAuth();
-    const branches = useStaff(s => s.branches) || [];
-    const [estado, setEstado] = useState(null);
-    const [codigo, setCodigo] = useState(null);
-    const [ocupado, setOcupado] = useState(false);
-    // ¿En qué sala se imprime? Se PREGUNTA, no se deduce de la ficha de quien
-    // aprieta: medido el 2026-09-01, las 48 personas activas tienen sucursal
-    // asignada, así que «el empleado sin sucursal» no existe y esa condición
-    // nunca dispararía. Lo que sí pasa es que alguien de supervisión atienda
-    // desde el mostrador de OTRA sala —o desde su casa—, y ahí su sucursal
-    // asignada es justo el destino equivocado: el papel saldría lejos del
-    // cliente que lo está esperando.
-    const [preguntando, setPreguntando] = useState(false);
-    const [salas, setSalas] = useState([]);
-    const [cargandoSalas, setCargandoSalas] = useState(false);
-    const [falloSalas, setFalloSalas] = useState(false);
-
-    useEffect(() => {
-        let vivo = true;
-        estadoCodigoAcceso(customerId)
-            .then(e => { if (vivo) setEstado(e); })
-            .catch(() => { if (vivo) setEstado({ tiene: false }); });
-        return () => { vivo = false; };
-    }, [customerId]);
-
-    const conError = (accion) => async (fn) => {
-        setOcupado(true);
-        try { await fn(); } catch (e) {
-            aviso('No se pudo',
-                e?.message === 'FORBIDDEN'
-                    ? `No tienes permiso para ${accion}.`
-                    : `No se pudo ${accion}. ${e?.message ?? 'Intenta de nuevo.'}`,
-                'error');
-        } finally { setOcupado(false); }
-    };
-
-    const ver = () => conError('ver el código')(async () => {
-        setCodigo(await verCodigoAcceso(customerId));
-    });
-
-    const emitir = () => conError('generar el código')(async () => {
-        const r = await emitirCodigoAcceso(customerId);
-        setCodigo(r?.codigo ?? null);
-        setEstado(await estadoCodigoAcceso(customerId));
-        aviso(r?.veces_emitido > 1 ? 'Código nuevo' : 'Código generado',
-            r?.veces_emitido > 1
-                ? 'El anterior dejó de servir en este momento.'
-                : 'Ya se puede imprimir y entregar.',
-            'success');
-    });
-
-    // ── A dónde sale el papel ─────────────────────────────────────────────
-    // Sin diálogo para quien atiende (decisión del usuario, 2026-09-01): un paso
-    // de más en cada impresión se paga todos los días.
-    //
-    //   1. ¿Se mueve entre salas, o no tiene sucursal? → que ELIJA
-    //   2. Si no, la cola de su sucursal, directo
-    //   3. Si su caja no está disponible → el diálogo igual
-    //
-    // ── Quién «se mueve entre salas» sale del ALCANCE, no del cargo ─────────
-    // `getScope('ventas')`: los tres cargos de sala —dependiente, jefe/a de
-    // sala, regente— lo tienen en `BRANCH`, y supervisión y gerencia en `ALL`.
-    // O sea que la persona que anda por varias salas ya está marcada como tal en
-    // los permisos, y no hay que mantener una lista de cargos que se
-    // desactualiza sola.
-    //
-    // Se mira `ventas` y NO `clientes` a propósito: `clientes` está en `ALL`
-    // para todo el mundo —un cliente no pertenece a una sala— así que ahí el
-    // alcance no distingue a nadie. Medido antes de elegirlo.
-    const alImprimir = () => conError('leer las cajas de impresión')(async () => {
-        const andaPorVariasSalas = getScope('ventas') === 'ALL';
-        // La sala se pregunta a la BASE, no se lee de la sesión: hoy contesta la
-        // de la ficha, y el día que los horarios digan la del día contesta ésa
-        // —quien va de apoyo imprime donde está— sin tocar esta pantalla. Si la
-        // consulta falla se cae a la de la sesión, que es lo que había antes.
-        let miSala = null;
-        try { miSala = await salaDeHoy(); } catch { miSala = user?.branchId ?? null; }
-        if (miSala == null) miSala = user?.branchId ?? null;
-
-        if (!andaPorVariasSalas && miSala != null) {
-            await imprimir({ salaId: Number(miSala) })();
-            const nombre = branches.find(b => String(b.id) === String(miSala))?.name || 'tu sala';
-            aviso('Enviado a imprimir', `El papel sale por la ticketera de ${nombre}.`, 'success');
-            return;
-        }
-
-        // Se mueve entre salas, o no tiene una: hay que preguntar. La lista se
-        // lee EN EL CLIC y no en un efecto — una caja se apaga en cualquier
-        // momento, así que lo que se ofrece es de ese instante.
-        setCargandoSalas(true);
-        let lista = [];
-        let fallo = false;
-        try {
-            const r = await fetchSalasConCaja();
-            lista = r?.salas ?? [];
-            fallo = !!r?.error;
-        } catch { fallo = true; } finally { setCargandoSalas(false); }
-
-        setSalas(lista);
-        setFalloSalas(fallo);
-        setPreguntando(true);
-    });
-
-    // El import es diferido: la ticketera y su maquetación pesan, y esta ficha
-    // se abre muchas más veces de las que alguien imprime un papel.
-    const imprimir = ({ salaId }) => () => conError('imprimir el papel')(async () => {
-        setPreguntando(false);
-        const valor = codigo ?? await verCodigoAcceso(customerId);
-        if (!valor) { aviso('Sin código', 'Este cliente todavía no tiene uno. Genéralo primero.', 'error'); return; }
-        const { imprimirTicketDeCodigo } = await import('../../utils/puntosCodigoTicket');
-        await imprimirTicketDeCodigo(
-            { nombre, codigo: valor, emitidoPor: user?.name || user?.email || '' },
-            { sala: salaId },
-        );
-    });
-
-    const legible = codigo
-        ? `${codigo.slice(0, 3)} - ${codigo.slice(3)}`
-        : null;
-
-    return (
-        <div data-surface="card" className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-content-2" aria-hidden="true" />
-                <span className="text-caption">Código de acceso</span>
-                {estado?.tiene
-                    ? <Badge size="sm" variant="success">Emitido</Badge>
-                    : <Badge size="sm" variant="neutral">Sin código</Badge>}
-            </div>
-
-            {/* Ya no se distingue la ficha extranjera: el código entra SOLO en
-                todas. Distinguirla obligaba a explicar dos reglas a quien
-                atiende, y la que sobraba era la del teléfono — ver la migración
-                `20260903164641_puntos_el_codigo_entra_solo`. */}
-            <p className="text-sm text-content-2">
-                El cliente entra a Mis puntos con este código, sin ningún otro dato.
-                Sirve cuando no tiene su documento a mano.
-            </p>
-
-            {legible && (
-                <p className="text-center font-mono text-2xl tracking-[0.2em] py-2">{legible}</p>
-            )}
-
-            {estado?.tiene && !legible && (
-                <p className="text-xs text-content-3">
-                    Emitido el {fechaTexto(estado.emitido_at)}
-                    {estado.veces_emitido > 1 && ` · ${estado.veces_emitido} veces`}
-                </p>
-            )}
-
-            <div className="flex flex-wrap gap-2">
-                {estado?.tiene && !legible && (
-                    <Button size="sm" variant="secondary" icon={Eye} onClick={ver} disabled={ocupado}>
-                        Ver el código
-                    </Button>
-                )}
-                {puedeEditar && (
-                    <Button size="sm" variant={estado?.tiene ? 'ghost' : 'primary'}
-                        icon={estado?.tiene ? RefreshCw : KeyRound}
-                        onClick={emitir} disabled={ocupado}>
-                        {estado?.tiene ? 'Generar uno nuevo' : 'Generar código'}
-                    </Button>
-                )}
-                {estado?.tiene && (
-                    <Button size="sm" variant="secondary" icon={Printer}
-                        onClick={alImprimir} disabled={ocupado || cargandoSalas}>
-                        Imprimir
-                    </Button>
-                )}
-            </div>
-
-            {estado?.tiene && (
-                <p className="text-xs text-content-3">
-                    Ver el código queda registrado. Generar uno nuevo deja el anterior sin efecto.
-                </p>
-            )}
-
-            <ElegirSalaDeImpresion
-                open={preguntando}
-                onClose={() => setPreguntando(false)}
-                onElegir={(elec) => imprimir(elec)()}
-                salas={salas}
-                cargando={cargandoSalas}
-                fallo={falloSalas}
-                titulo="Imprimir el código de acceso" />
-        </div>
-    );
-}
-
-function PanelPuntos({ customerId }) {
-    // Arranca en `true` en vez de encenderse dentro del efecto: el panel se monta
-    // cuando se lo abre y ya nace cargando, así que un `setCargando(true)` ahí
-    // adentro sería un render de más por nada.
-    const [cargando, setCargando] = useState(true);
-    const [datos, setDatos] = useState(null);
-
-    useEffect(() => {
-        let vivo = true;
-        fetchPuntosDeCliente(customerId)
-            .then(d => { if (vivo) setDatos(d); })
-            .finally(() => { if (vivo) setCargando(false); });
-        return () => { vivo = false; };
-    }, [customerId]);
-
-    if (cargando) return <LoadingState label="Buscando los puntos del cliente…" />;
-
-    const MOTIVOS = {
-        sin_dui:    'La ficha no tiene DUI, y el documento es lo único que liga a esta persona con su cuenta de puntos. Agregándolo, sus puntos aparecen aquí.',
-        dui_corto:  'El DUI de la ficha no tiene los ocho dígitos, así que no se puede buscar su cuenta de puntos.',
-        sin_cuenta: 'Esta persona todavía no tiene cuenta de puntos. Se le crea en la sala la primera vez que acumula.',
-        duplicado:  'Hay más de una cuenta de puntos con este mismo DUI. Hasta que se unifiquen no se puede decir cuál es la suya.',
-        error:      'No se pudieron consultar los puntos en este momento. Vuelve a abrir la ficha en un rato.',
-    };
-
-    if (!datos?.cliente) {
-        return (
-            <Notice variant={datos?.motivo === 'sin_cuenta' ? 'info' : 'warning'} icon={AlertTriangle}>
-                {MOTIVOS[datos?.motivo] ?? MOTIVOS.error}
-            </Notice>
-        );
-    }
-
-    const { cliente, movimientos, hay_mas: hayMas } = datos;
-    // Los totales vienen SUMADOS de la historia completa, no de la lista. Antes
-    // se calculaban sobre los 200 visibles y se rotulaban «en pantalla» para no
-    // mentir; un total que sólo cuenta lo visible no es un total.
-    const cuadra = cliente.acumulados - cliente.canjeados === cliente.saldo;
-
-    return (
-        <div className="space-y-5">
-            <div className="grid grid-cols-3 gap-3">
-                <Dato label="Puntos disponibles" value={cliente.saldo.toLocaleString()}
-                    valueCls={cliente.saldo > 0 ? 'text-success-text' : 'text-content-2'} />
-                <Dato label="Acumulados (total)" value={cliente.acumulados.toLocaleString()} />
-                <Dato label="Canjeados (total)" value={cliente.canjeados.toLocaleString()} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-                <Dato label="Compras que sumaron" value={cliente.n_compras.toLocaleString()} />
-                <Dato label="Canjes" value={cliente.n_canjes.toLocaleString()} />
-            </div>
-
-            {/* Si acumulados − canjeados no da el saldo, el saldo guardado y su
-                historia no coinciden. Se DICE en vez de mostrar tres números que
-                no cierran y dejar que quien mire crea que se equivocó al sumar. */}
-            {!cuadra && (
-                <Notice variant="warning" icon={AlertTriangle}>
-                    Los puntos disponibles no coinciden con la resta de acumulados menos
-                    canjeados ({(cliente.acumulados - cliente.canjeados).toLocaleString()}).
-                    El saldo puede tener un ajuste hecho a mano.
-                </Notice>
-            )}
-
-            <SectionHeader icon={Star}>Movimientos</SectionHeader>
-            {hayMas && (
-                <p className="text-caption text-content-3">
-                    Se muestran los 200 más recientes. Los totales de arriba sí incluyen todo.
-                </p>
-            )}
-            {movimientos.length === 0 ? (
-                <p className="text-body-sm text-content-3">La cuenta existe pero todavía no tiene movimientos.</p>
-            ) : (
-                <div className="space-y-1.5">
-                    {movimientos.map((m, i) => (
-                        <div key={i}
-                            className="flex items-center gap-3 px-3 py-2 rounded-btn bg-surface-card-hover/60 border border-divider">
-                            <span className="text-caption tabular-nums text-content-3 w-[74px] shrink-0">{fmtDate(m.fecha)}</span>
-                            <Badge size="sm" variant={m.tipo === 'canje' ? 'warning' : 'success'}>
-                                {m.tipo === 'canje' ? 'Canje' : 'Compra'}
-                            </Badge>
-                            <span className="text-caption text-content-3 truncate min-w-0 flex-1">
-                                {m.sala || '—'}{m.documento ? ` · ${m.documento}` : ''}
-                            </span>
-                            <span className={`text-body-sm font-bold tabular-nums shrink-0 ${
-                                Number(m.puntos) < 0 ? 'text-warning-text' : 'text-success-text'}`}>
-                                {Number(m.puntos) > 0 ? '+' : ''}{Number(m.puntos || 0).toLocaleString()}
-                            </span>
                         </div>
                     ))}
                 </div>
@@ -697,7 +373,8 @@ const FormClienteDetail = ({ formData }) => {
                 options={[
                     { value: 'ficha', label: 'Ficha fiscal' },
                     { value: 'actividad', label: 'Actividad' },
-                    { value: 'puntos', label: 'Puntos' },
+                    // «Puntos» se fue a la vista Puntos (2026-09-25): ahí están
+                    // el saldo, los movimientos y el código de acceso.
                 ]}
                 value={panel}
                 onChange={setPanel}
@@ -719,20 +396,7 @@ const FormClienteDetail = ({ formData }) => {
                 </Notice>
             )}
 
-            {panel === 'puntos' ? (
-                <div className="space-y-5">
-                    {/* Va ARRIBA del panel y fuera de él a propósito: `PanelPuntos`
-                        corta temprano cuando no hay cuenta de puntos —sin DUI, sin
-                        cuenta, DUI duplicado— y ésos son exactamente los casos en
-                        los que el código hace falta. Adentro, el bloque no se vería
-                        justo cuando importa. */}
-                    <CodigoDeAcceso
-                        customerId={id}
-                        nombre={form.name || cliente?.name || ''}
-                        puedeEditar={editable} />
-                    <PanelPuntos customerId={id} />
-                </div>
-            ) : panel === 'actividad' ? (
+            {panel === 'actividad' ? (
                 <PanelActividad actividad={actividad} facturas={facturas} bitacora={bitacora} />
             ) : (
                 <div className="space-y-5">

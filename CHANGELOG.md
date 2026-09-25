@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1074.0 — Puntos: Consulta con gráficas y clientes, y la ficha deja de mostrar puntos
+
+La vista **Puntos** pasa a mostrarlo todo (pedido del usuario), y la ficha
+del cliente deja de mostrar puntos.
+
+- **«Resumen» pasa a «Consulta»**: las cifras de siempre y, en lugar de
+  tablas, **gráficas interactivas** — acumulado y canjeado por día (30 días),
+  por sala en el mes, y cuándo vencen—. El número exacto está en el tooltip.
+  Azul para acumulado y rosa para canjeado en las tres, elegidos con el
+  validador de paleta (azul/naranja fallaba sobre el fondo oscuro).
+- **Debajo, los clientes con puntos**, del mayor saldo al menor, con buscador y
+  paginado en la base (página en la dirección). Al tocar uno se abre todo lo
+  suyo: saldo, acumulados, canjeados, próximo vencimiento, cada movimiento, las
+  cuentas del sistema anterior que se le asignaron y el código de acceso a «Mis
+  puntos». **«Editar cliente»** abre la ficha ahí mismo, con el mismo modal que
+  usa Clientes.
+- **Un permiso por pestaña**: Consulta y Cuentas por asignar también para quien
+  ve Clientes (la caja revisa el saldo aquí antes de un canje); Avisos sólo
+  para administración.
+- La ficha del cliente pierde su sección «Puntos». El código de acceso se mudó
+  tal cual a `src/views/puntos/CodigoDeAcceso.jsx`.
+- Asignar una cuenta ya no espera al arranque: la migración incremental hace
+  que la copia de cada noche conserve la asignación.
+
 ## v2.1073.6 — Puntos: la migración pasa a ser incremental
 
 La migración de los puntos del sistema anterior deja de ser de una sola vez

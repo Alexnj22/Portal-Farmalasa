@@ -6,7 +6,11 @@
  * apagó esa madrugada) y lo único que se veía era el panel de cada ficha. Esta
  * vista contesta las tres preguntas de quien opera el programa:
  *
- *   · Resumen            — ¿funciona? ¿cuánto se acumuló y se canjeó?
+ *   · Consulta           — ¿funciona? ¿cuánto se acumuló y se canjeó? En
+ *                          gráficas, y debajo los clientes con sus puntos:
+ *                          al tocar uno se ve todo lo suyo y se edita su ficha
+ *                          (el panel de puntos de la ficha se mudó aquí,
+ *                          pedido del usuario, 2026-09-25).
  *   · Avisos             — ¿qué hay que revisar? (canjes sin saldo, anulaciones
  *                          con puntos ya gastados)
  *   · Cuentas por asignar — las cuentas del sistema anterior que no pasaron
@@ -17,11 +21,13 @@
  * una ficha sólo cuando alguien la elige y escribe por qué. Las fichas que se
  * sugieren son eso, sugerencias.
  *
- * Los datos salen de funciones de la base que comprueban el permiso del módulo
- * `puntos` adentro (ver `src/data/puntos.js`).
+ * Cada pestaña tiene su permiso (`puntos_tab_consulta`, `puntos_tab_avisos`,
+ * `puntos_tab_por_asignar`) y la base lo vuelve a comprobar en cada función:
+ * Avisos es sólo de administración; Consulta la ve también la caja, que ahí
+ * revisa el saldo antes de un canje.
  */
-import React, { useState, useEffect, useMemo } from 'react';
-import { Star, Gauge, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import { Star, Search, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -41,12 +47,24 @@ import { formatMoney, formatQty } from '../utils/formatNumber';
 import { fechaHora12 } from '../utils/hora';
 import {
     fetchResumenDePuntos, fetchAvisosDePuntos, fetchCuentasPorAsignar, QUE_HACER_POR_MOTIVO,
+    fetchSerieDePuntos, fetchClientesConPuntos,
 } from '../data/puntos';
+import { useTextoRebotado } from '../hooks/useBusqueda';
+import { useStaffStore as useStaff } from '../store/staffStore';
 import AsignarCuentaModal from './puntos/AsignarCuentaModal';
+import ClientePuntosModal from './puntos/ClientePuntosModal';
+
+// `recharts` pesa: viaja en su propio chunk y se pide cuando la pestaña lo pinta.
+const GraficaDiaria = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaDiaria })));
+const GraficaSalas = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaSalas })));
+const GraficaVencimientos = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaVencimientos })));
 import { fechaTexto } from '../utils/fecha';
 
+// Cada pestaña con su permiso. La lista que se le pasa a la URL es la de las
+// VISIBLES: una dirección con `?tab=avisos` en manos de quien no la tiene cae a
+// la primera que sí.
 const PESTANAS = [
-    { key: 'resumen',     label: 'Resumen',             icon: Gauge },
+    { key: 'consulta',    label: 'Consulta',            icon: Search },
     { key: 'avisos',      label: 'Avisos',              icon: AlertTriangle },
     { key: 'por_asignar', label: 'Cuentas por asignar', icon: UserSearch },
 ];
@@ -55,12 +73,6 @@ const PESTANAS = [
 const dolares = (puntos) => formatMoney((Number(puntos) || 0) / 100);
 const pts = (n) => formatQty(Number(n) || 0);
 const fechaCorta = (iso) => fechaTexto(iso, { day: 'numeric', month: 'short', year: 'numeric' }, '—');
-// «octubre de 2027» → «Octubre de 2027»: sólo la primera letra. Con la clase
-// `capitalize` salía «Octubre De 2027».
-const mesLargo = (iso) => {
-    const t = fechaTexto(iso, { month: 'long', year: 'numeric' });
-    return t.charAt(0).toUpperCase() + t.slice(1);
-};
 
 // ¿La acumulación está parada? Sólo se pregunta de 8:00 a 22:00 SV: las salas
 // abren a las 7 y la primera hora puede no traer ninguna venta con puntos; de
@@ -80,11 +92,22 @@ const MOTIVO_OPCIONES = [
     ...Object.keys(QUE_HACER_POR_MOTIVO).map((m) => ({ value: m, label: m.charAt(0).toUpperCase() + m.slice(1) })),
 ];
 
-export default function PuntosView() {
+export default function PuntosView({ openModal }) {
     const { hasPermission } = useAuth();
     const puedeAsignar = hasPermission('puntos', 'can_edit');
+    const puedeEditarFicha = hasPermission('clientes', 'can_edit');
     const showToast = useToastStore((s) => s.showToast);
-    const [pestana, setPestana] = usePestanaEnUrl(PESTANAS, 'resumen');
+    // Con el nombre literal de cada permiso: así los encuentra `gate:permisos`
+    // y quien busque dónde se consulta cada uno.
+    const permitidas = {
+        consulta:    hasPermission('puntos_tab_consulta', 'can_view'),
+        avisos:      hasPermission('puntos_tab_avisos', 'can_view'),
+        por_asignar: hasPermission('puntos_tab_por_asignar', 'can_view'),
+    };
+    const visibles = PESTANAS.filter((t) => permitidas[t.key]);
+    const [pestana, setPestana] = usePestanaEnUrl(visibles, visibles[0]?.key ?? 'consulta');
+    const veAvisos = visibles.some((t) => t.key === 'avisos');
+    const vePorAsignar = visibles.some((t) => t.key === 'por_asignar');
 
     const [resumen, setResumen] = useState(null);
     const [avisos, setAvisos] = useState([]);
@@ -93,6 +116,8 @@ export default function PuntosView() {
     const [busqueda, setBusqueda] = useState('');
     const [motivo, setMotivo] = useState('TODOS');
     const [abierta, setAbierta] = useState(null);
+    const [serie, setSerie] = useState([]);
+    const [clienteAbierto, setClienteAbierto] = useState(null);
 
     // `version` sube para recargar (después de asignar una cuenta). El estado
     // ya nace «cargando» y la recarga lo prende desde el evento: prenderlo
@@ -102,11 +127,16 @@ export default function PuntosView() {
         let vivo = true;
         (async () => {
             try {
-                const [r, a, c] = await Promise.all([
-                    fetchResumenDePuntos(), fetchAvisosDePuntos(), fetchCuentasPorAsignar(),
+                // Sólo lo que la persona puede ver: pedir Avisos sin su permiso
+                // sería un error de la base en cada visita.
+                const [r, a, c, se] = await Promise.all([
+                    fetchResumenDePuntos(),
+                    veAvisos ? fetchAvisosDePuntos() : Promise.resolve([]),
+                    vePorAsignar ? fetchCuentasPorAsignar() : Promise.resolve([]),
+                    fetchSerieDePuntos(30),
                 ]);
                 if (!vivo) return;
-                setResumen(r); setAvisos(a ?? []); setCuentas(c ?? []);
+                setResumen(r); setAvisos(a ?? []); setCuentas(c ?? []); setSerie(se ?? []);
             } catch (e) {
                 if (vivo) showToast('No se pudo cargar', mensajeAmigable(e), 'error');
             } finally {
@@ -114,7 +144,7 @@ export default function PuntosView() {
             }
         })();
         return () => { vivo = false; };
-    }, [showToast, version]);
+    }, [showToast, version, veAvisos, vePorAsignar]);
 
     const cuentasVisibles = useMemo(() => {
         const q = busqueda.trim();
@@ -140,7 +170,9 @@ export default function PuntosView() {
     const tramo = (lista, p) => lista.slice((p.page - 1) * p.pageSize, p.page * p.pageSize);
 
     // Buscar o filtrar cambia QUÉ lista es: la posición vieja ya no señala nada.
+    const [busquedaClientes, setBusquedaClientes] = useState('');
     const buscar = (v) => {
+        if (pestana === 'consulta') { setBusquedaClientes(v); return; }
         setBusqueda(v);
         (pestana === 'avisos' ? pagAvisos : pagCuentas).resetPage();
     };
@@ -148,21 +180,27 @@ export default function PuntosView() {
 
     const filtersContent = (
         <ViewTabBar
-            tabs={PESTANAS}
+            tabs={visibles}
             activeTab={pestana}
             onTabChange={setPestana}
-            searchValue={pestana === 'resumen' ? undefined : busqueda}
-            onSearchChange={pestana === 'resumen' ? undefined : buscar}
-            placeholder={pestana === 'avisos' ? 'Buscar por cliente o documento…' : 'Buscar por nombre, DUI o teléfono…'}
+            searchValue={pestana === 'consulta' ? busquedaClientes : busqueda}
+            onSearchChange={buscar}
+            placeholder={pestana === 'avisos' ? 'Buscar por cliente o documento…'
+                : pestana === 'consulta' ? 'Buscar cliente por nombre, DUI o teléfono…'
+                : 'Buscar por nombre, DUI o teléfono…'}
         />
     );
 
     return (
         <GlassViewLayout icon={Star} title="Puntos" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 space-y-6">
-                {pestana === 'resumen' && (
-                    <Resumen resumen={resumen} cargando={cargando} avisos={avisos.length}
-                        porAsignar={cuentas.length} irA={setPestana} />
+                {pestana === 'consulta' && (
+                    <>
+                        <Resumen resumen={resumen} serie={serie} cargando={cargando}
+                            avisos={veAvisos ? avisos.length : null}
+                            porAsignar={vePorAsignar ? cuentas.length : null} irA={setPestana} />
+                        <ClientesConPuntos busqueda={busquedaClientes} onAbrir={setClienteAbierto} />
+                    </>
                 )}
 
                 {pestana === 'avisos' && (
@@ -268,9 +306,6 @@ export default function PuntosView() {
                 open={!!abierta}
                 cuenta={abierta}
                 puedeAsignar={puedeAsignar}
-                // Antes del arranque la base no deja asignar: la copia del 1-oct
-                // reemplaza el archivo y la asignación se duplicaría.
-                enPortal={resumen?.config?.fuente === 'portal'}
                 onClose={() => setAbierta(null)}
                 onAsignada={(idCliente) => {
                     setCuentas((p) => p.filter((c) => c.id_cliente !== idCliente));
@@ -279,11 +314,28 @@ export default function PuntosView() {
                     setVersion((v) => v + 1);
                 }}
             />
+
+            <ClientePuntosModal
+                open={!!clienteAbierto}
+                customerId={clienteAbierto}
+                puedeEditarFicha={puedeEditarFicha}
+                onClose={() => setClienteAbierto(null)}
+                // La ficha se edita en el MISMO modal que usa Clientes. Se cierra
+                // éste primero para no apilar dos diálogos.
+                onEditar={(c) => {
+                    setClienteAbierto(null);
+                    openModal?.('editCliente', {
+                        id: c.id, nombre: c.nombre, canEdit: puedeEditarFicha,
+                        onSaved: () => setVersion((v) => v + 1),
+                    });
+                    useStaff.getState().appendAuditLog?.('CLIENTES_VER_FICHA', String(c.id), { nombre: c.nombre, desde: 'puntos' });
+                }}
+            />
         </GlassViewLayout>
     );
 }
 
-function Resumen({ resumen, cargando, avisos, porAsignar, irA }) {
+function Resumen({ resumen, serie, cargando, avisos, porAsignar, irA }) {
     const cfg = resumen?.config;
     const enPortal = cfg?.fuente === 'portal' && cfg?.encendido;
     const anterior = resumen?.origen === 'sistema_anterior';
@@ -329,70 +381,142 @@ function Resumen({ resumen, cargando, avisos, porAsignar, irA }) {
                     label="Canjeados hoy" value={pts(hoy.canjeado)}
                     sub={`${pts(hoy.canjes)} canjes · mes ${pts(mes.canjeado)}`}
                     loading={cargando} />
-                <StatCard icon={AlertTriangle} iconBg="bg-danger/10" iconCls="text-danger-text"
-                    label="Avisos" value={pts(avisos)} sub="Últimos 60 días"
-                    onClick={() => irA('avisos')} loading={cargando} />
-                <StatCard icon={UserSearch} iconBg="bg-surface-card-hover" iconCls="text-content-3"
-                    label="Cuentas por asignar" value={pts(porAsignar)}
-                    sub={`${pts(resumen?.pendientes?.puntos)} puntos guardados`}
-                    onClick={() => irA('por_asignar')} loading={cargando} />
+                {avisos != null && (
+                    <StatCard icon={AlertTriangle} iconBg="bg-danger/10" iconCls="text-danger-text"
+                        label="Avisos" value={pts(avisos)} sub="Últimos 60 días"
+                        onClick={() => irA('avisos')} loading={cargando} />
+                )}
+                {porAsignar != null && (
+                    <StatCard icon={UserSearch} iconBg="bg-surface-card-hover" iconCls="text-content-3"
+                        label="Cuentas por asignar" value={pts(porAsignar)}
+                        sub={`${pts(resumen?.pendientes?.puntos)} puntos guardados`}
+                        onClick={() => irA('por_asignar')} loading={cargando} />
+                )}
             </CarrilCards>
             </div>
 
-            <section className="space-y-3">
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
-                    <Store size={14} /> Este mes, por sala
-                </h3>
-                <DataTable
-                    columns={[
-                        { key: 'sala',      label: 'Sala' },
-                        { key: 'acumulado', label: 'Acumulados' },
-                        { key: 'canjeado',  label: 'Canjeados' },
-                    ]}
-                    loading={cargando}
-                    minWidth="480px"
-                    empty={{ icon: Inbox, message: 'Sin movimientos este mes' }}
-                >
-                    {(resumen?.por_sala ?? []).map((s, i) => (
-                        <DataRow key={s.sucursal ?? i} index={i}>
-                            <DataCell>{s.sala}</DataCell>
-                            <DataCell><span className="tabular-nums">{pts(s.acumulado)}</span></DataCell>
-                            <DataCell><span className="tabular-nums">{pts(s.canjeado)}</span></DataCell>
-                        </DataRow>
-                    ))}
-                </DataTable>
-            </section>
+            {/* Gráficas y no tablas (pedido del usuario): el número exacto está
+                en el tooltip de cada punto y cada barra. */}
+            <Panel icono={TrendingUp} titulo="Últimos 30 días">
+                <Suspense fallback={<Hueco alto={240} />}>
+                    <GraficaDiaria serie={serie} />
+                </Suspense>
+            </Panel>
 
-            <section className="space-y-3">
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
-                    <CalendarClock size={14} /> Cuándo vencen
-                </h3>
-                <p className="text-caption text-content-3">
-                    Los puntos vencen a los doce meses de la compra. Lo acumulado hasta el 30 de septiembre
-                    de 2026 vence el 1 de octubre de 2027 (régimen de transición del reglamento).
-                </p>
-                <DataTable
-                    columns={[
-                        { key: 'mes',      label: 'Vencen en' },
-                        { key: 'puntos',   label: 'Puntos' },
-                        { key: 'valor',    label: 'Equivalen a' },
-                        { key: 'clientes', label: 'Clientes' },
-                    ]}
-                    loading={cargando}
-                    minWidth="560px"
-                    movil={{ identidad: 'mes', ancla: 'puntos' }}
-                    empty={{ icon: Inbox, message: 'Sin puntos por vencer' }}
-                >
-                    {(resumen?.vencimientos ?? []).map((v, i) => (
-                        <DataRow key={v.mes} index={i}>
-                            <DataCell>{mesLargo(v.mes)}</DataCell>
-                            <DataCell><span className="tabular-nums">{pts(v.puntos)}</span></DataCell>
-                            <DataCell><span className="tabular-nums">{dolares(v.puntos)}</span></DataCell>
-                            <DataCell><span className="tabular-nums">{pts(v.clientes)}</span></DataCell>
-                        </DataRow>
-                    ))}
-                </DataTable>
-            </section>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <Panel icono={Store} titulo="Este mes, por sala">
+                    {(resumen?.por_sala ?? []).length === 0 && !cargando
+                        ? <p className="text-body-sm text-content-3 py-6 text-center">Sin movimientos este mes</p>
+                        : <Suspense fallback={<Hueco alto={220} />}><GraficaSalas salas={resumen?.por_sala} /></Suspense>}
+                </Panel>
+                <Panel icono={CalendarClock} titulo="Cuándo vencen"
+                    nota="A los doce meses de la compra. Lo acumulado hasta el 30 de septiembre de 2026 vence el 1 de octubre de 2027.">
+                    {(resumen?.vencimientos ?? []).length === 0 && !cargando
+                        ? <p className="text-body-sm text-content-3 py-6 text-center">Sin puntos por vencer</p>
+                        : <Suspense fallback={<Hueco alto={180} />}><GraficaVencimientos vencimientos={resumen?.vencimientos} /></Suspense>}
+                </Panel>
+            </div>
         </>
+    );
+}
+
+function Panel({ icono: Icono, titulo, nota, children }) {
+    return (
+        <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-3 min-w-0">
+            <div>
+                <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                    <Icono size={14} /> {titulo}
+                </h3>
+                {nota && <p className="text-caption text-content-3 mt-1">{nota}</p>}
+            </div>
+            {children}
+        </section>
+    );
+}
+
+// El lugar de la gráfica mientras llega su chunk: mismo alto, sin salto.
+function Hueco({ alto }) {
+    return <div className="animate-pulse rounded-card bg-surface-card-hover" style={{ height: alto }} />;
+}
+
+/**
+ * Los clientes con puntos, debajo de las gráficas. Pagina en la BASE (son
+ * ~10,600 cuentas, no se bajan enteras) y la página vive en la dirección con su
+ * propio parámetro. Tocar un cliente abre todo lo suyo.
+ */
+function ClientesConPuntos({ busqueda, onAbrir }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const aplicado = useTextoRebotado(busqueda);
+    const [datos, setDatos] = useState({ total: 0, filas: [] });
+    const [cargando, setCargando] = useState(true);
+    const pag = usePaginaEnUrl({ total: datos.total, tamPorDefecto: 25, param: 'pag_clientes', paramTam: 'ver_clientes' });
+    const { page, pageSize, resetPage } = pag;
+
+    // Una búsqueda nueva es otra lista: vuelve a la primera página. Con `ref`
+    // para no correr en el montaje — ahí la página de la dirección es la que
+    // hay que respetar (quien recargó en la 4 sigue en la 4).
+    const busquedaPrevia = useRef(aplicado);
+    useEffect(() => {
+        if (busquedaPrevia.current === aplicado) return;
+        busquedaPrevia.current = aplicado;
+        resetPage();
+    }, [aplicado, resetPage]);
+
+    useEffect(() => {
+        let vivo = true;
+        (async () => {
+            try {
+                const r = await fetchClientesConPuntos({ busqueda: aplicado, limite: pageSize, desde: (page - 1) * pageSize });
+                if (vivo) setDatos({ total: r?.total ?? 0, filas: r?.filas ?? [] });
+            } catch (e) {
+                if (vivo) showToast('No se pudo cargar', mensajeAmigable(e), 'error');
+            } finally {
+                if (vivo) setCargando(false);
+            }
+        })();
+        return () => { vivo = false; };
+    }, [aplicado, page, pageSize, showToast]);
+
+    return (
+        <section className="flex flex-col gap-3">
+            <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                <Users size={14} /> Clientes con puntos
+                {datos.total > 0 && <span className="font-bold text-content-3 normal-case tracking-normal">· {pts(datos.total)}</span>}
+            </h3>
+            <DataTable
+                columns={[
+                    { key: 'nombre',     label: 'Cliente' },
+                    { key: 'dui',        label: 'DUI' },
+                    { key: 'telefono',   label: 'Teléfono' },
+                    { key: 'saldo',      label: 'Puntos' },
+                    { key: 'acumulados', label: 'Acumulados' },
+                    { key: 'canjeados',  label: 'Canjeados' },
+                    { key: 'ultima',     label: 'Última acumulación' },
+                ]}
+                loading={cargando}
+                minWidth="920px"
+                movil={{ usarAccionDeFila: true, identidad: 'nombre', ancla: 'saldo' }}
+                empty={{ icon: Inbox, message: aplicado ? 'Sin coincidencias' : 'Sin clientes con puntos' }}
+            >
+                {datos.filas.map((c, i) => (
+                    <DataRow key={c.customer_id} index={i} onClick={() => onAbrir(c.customer_id)}>
+                        <DataCell><span className="font-bold text-content">{c.nombre}</span></DataCell>
+                        <DataCell><span className="tabular-nums">{c.dui || '—'}</span></DataCell>
+                        <DataCell><span className="tabular-nums">{c.telefono || '—'}</span></DataCell>
+                        <DataCell>
+                            <span className="font-black tabular-nums text-content">{pts(c.saldo)}</span>
+                            <span className="text-caption text-content-3 ml-1.5">{dolares(c.saldo)}</span>
+                        </DataCell>
+                        <DataCell><span className="tabular-nums">{pts(c.acumulados)}</span></DataCell>
+                        <DataCell><span className="tabular-nums">{pts(c.canjeados)}</span></DataCell>
+                        <DataCell>{fechaCorta(c.ultima_acumulacion)}</DataCell>
+                    </DataRow>
+                ))}
+            </DataTable>
+            {datos.total > pageSize && (
+                <TablePagination page={pag.page} totalPages={pag.totalPages} onPageChange={pag.setPage}
+                    pageSize={pag.pageSize} onPageSizeChange={pag.setPageSize} total={datos.total} unit="clientes" />
+            )}
+        </section>
     );
 }

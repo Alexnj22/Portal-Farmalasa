@@ -45,25 +45,10 @@ import { supabase } from '../supabaseClient';
  * (`puntos_enviados(estado_puntos)` en `COLUMNAS_LISTA`). Mantener las dos era
  * una llamada de más por página y la misma regla escrita dos veces. */
 
-/** Saldo y movimientos de un cliente. `motivo` dice por qué vino vacío. */
-export async function fetchPuntosDeCliente(customerId) {
-    if (!customerId) return { cliente: null, movimientos: [], motivo: 'sin_cliente' };
-    try {
-        const { data, error } = await supabase.functions.invoke('puntos-consulta', {
-            body: { accion: 'cliente', customer_id: customerId },
-        });
-        if (error) throw error;
-        if (!data?.ok) throw new Error(data?.error || 'respuesta sin ok');
-        return {
-            cliente: data.cliente || null,
-            movimientos: data.movimientos || [],
-            motivo: data.motivo || null,
-        };
-    } catch (e) {
-        console.error('puntos.js: fetchPuntosDeCliente', e);
-        return { cliente: null, movimientos: [], motivo: 'error' };
-    }
-}
+/* Acá vivía `fetchPuntosDeCliente`, que pedía a `puntos-consulta` el saldo
+ * para el panel de la ficha del cliente. El panel se fue el 2026-09-25 a la vista
+ * «Puntos» (pedido del usuario) y ahí el cliente se lee del libro del portal
+ * con `fetchPuntosCliente`, que también trae el historial migrado. */
 
 /**
  * Cómo se dice cada estado en pantalla.
@@ -169,7 +154,7 @@ export const OPCIONES_FILTRO_PUNTOS = [
 // (migración 20260925194023): el libro tiene RLS de `clientes`, y quien opera
 // el programa no tiene por qué tener además ese otro módulo.
 //
-// A diferencia de `fetchPuntosDeCliente`, éstas SÍ lanzan: son la pantalla
+// Éstas SÍ lanzan: son la pantalla
 // entera, no un dato de apoyo en una ficha, y un vacío silencioso se leería
 // como «no hay nada que revisar».
 
@@ -218,3 +203,18 @@ export const QUE_HACER_POR_MOTIVO = {
     'sin DUI':
         'La cuenta vieja no tiene documento. Confirmar identidad por nombre y teléfono.',
 };
+
+// ── La pestaña Consulta ─────────────────────────────────────────────────────
+
+/** Acumulado y canjeado por día, los últimos `dias` (7–120). */
+export const fetchSerieDePuntos = (dias = 30) => rpc('puntos_panel_serie', { p_dias: dias });
+
+/**
+ * Los clientes con cuenta de puntos, del mayor saldo al menor. Pagina en la
+ * base (son ~10,600): devuelve `{ total, filas }`.
+ */
+export const fetchClientesConPuntos = ({ busqueda = null, limite = 25, desde = 0 } = {}) =>
+    rpc('puntos_panel_clientes', { p_busqueda: busqueda || null, p_limite: limite, p_desde: desde });
+
+/** Todo de un cliente: ficha, cuenta (saldo, vencimientos, movimientos) y cuentas viejas asignadas. */
+export const fetchPuntosCliente = (customerId) => rpc('puntos_panel_cliente', { p_customer_id: customerId });

@@ -29,19 +29,18 @@ import { fetchFichasCandidatas, asignarCuentaAnterior, QUE_HACER_POR_MOTIVO } fr
 const pts = (n) => formatQty(Number(n) || 0);
 const dolares = (n) => formatMoney((Number(n) || 0) / 100);
 
-export default function AsignarCuentaModal({ open, cuenta, puedeAsignar, enPortal, onClose, onAsignada }) {
+export default function AsignarCuentaModal({ open, cuenta, puedeAsignar, onClose, onAsignada }) {
     if (!cuenta) return null;
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-2xl"
             ariaLabel={`Asignar la cuenta ${cuenta.id_cliente}`}>
-            <Cuerpo key={cuenta.id_cliente} cuenta={cuenta} puedeAsignar={puedeAsignar && enPortal}
-                enPortal={enPortal}
+            <Cuerpo key={cuenta.id_cliente} cuenta={cuenta} puedeAsignar={puedeAsignar}
                 onClose={onClose} onAsignada={onAsignada} />
         </LiquidModal>
     );
 }
 
-function Cuerpo({ cuenta, puedeAsignar, enPortal, onClose, onAsignada }) {
+function Cuerpo({ cuenta, puedeAsignar, onClose, onAsignada }) {
     const showToast = useToastStore((s) => s.showToast);
     const [termino, setTermino] = useState('');
     const [fichas, setFichas] = useState([]);
@@ -158,11 +157,7 @@ function Cuerpo({ cuenta, puedeAsignar, enPortal, onClose, onAsignada }) {
                         </div>
                     </div>
 
-                    {!enPortal ? (
-                        <Notice variant="info" bloque>
-                            Las cuentas se pueden asignar a partir del 1 de octubre, cuando los puntos pasen al portal.
-                        </Notice>
-                    ) : puedeAsignar ? (
+                    {puedeAsignar ? (
                         <PortalTextarea label="Por qué se asigna" name="nota_asignacion" rows={2} required
                             value={nota} onChange={(e) => setNota(e.target.value)}
                             placeholder="Ej.: el cliente reclamó en Salud 2 y mostró su DUI"

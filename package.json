@@ -58,6 +58,7 @@
     "gate:undefinidos": "node scripts/undefinidos-gate.mjs",
     "gate:tdz": "node scripts/tdz-gate.mjs",
     "busqueda:gemelos": "node scripts/busqueda/comparar_gemelos.mjs",
+    "gate:busqueda": "node scripts/busqueda-gate.mjs",
     "gate:nombre": "node scripts/nombre-gate.mjs",
     "gate:hora": "node scripts/hora-gate.mjs",
     "gate:nucleo": "node scripts/nucleo-gate.mjs",

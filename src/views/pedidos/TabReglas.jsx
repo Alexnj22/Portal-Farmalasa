@@ -7,7 +7,6 @@ import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import { SkeletonText } from '../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
-import { normSearch } from '../../utils/searchUtils';
 import {
     Loader2, Check, X, Ban, AlertTriangle, Package, ShieldAlert,
     Sparkles, FlaskConical, Box, Layers, Sigma, ArrowRight, Building2,
@@ -707,7 +706,8 @@ export default function TabReglas({ searchTerm = '' }) {
                 labId: o.labId,
                 sortKey: dbSk,
                 ascending: o.sortDir !== 'desc',
-                term: o.term.length >= 2 ? (normSearch(o.term) || o.term) : '',
+                // Crudo: la base aplica la regla del portal (ver TabCatalogo).
+                term: o.term.trim().length >= 2 ? o.term.trim() : '',
                 ruleFilter: o.ruleFilter,
                 ruleIds: o.ruleIds,
                 soloNuevos: o.soloNuevos,

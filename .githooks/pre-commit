@@ -158,6 +158,14 @@ if git diff --cached --name-only | grep -qE '^src/.*\.jsx$'; then
   node scripts/nombre-gate.mjs --hook || exit 1
 fi
 
+# busqueda-gate: ningún buscador nuevo fuera de la regla del portal
+# (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md). Un `toLowerCase().includes(q)`
+# o un `ilike` de la frase no dan error: una búsqueda que no encuentra se lee
+# como «no hay», y por eso vivieron meses. Bloqueante en CERO.
+if git diff --cached --name-only | grep -qE '^src/'; then
+  node scripts/busqueda-gate.mjs --hook || exit 1
+fi
+
 # hora-gate: toda hora que ve una persona sale en 12 horas y de `utils/hora.js`.
 # Regla del usuario del 23-sep, repetida el 24-sep («en todo el portal 12 horas,
 # no 24 … y verifica la regla»): el primer día se escribió el canónico y sólo se

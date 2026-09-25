@@ -268,10 +268,26 @@ escrito a mano, y RPC con `p_search` que no usen la regla. Baseline que
 
 | fase | estado |
 |---|---|
-| F1 · la regla (JS) | ✅ v2.1064.0: `src/utils/busqueda.js` y 77 casos en `tests/casos-busqueda.json`, medida contra los 4,397 productos. Falta el gemelo SQL. |
+| F1 · la regla | ✅ v2.1064.0 (JS) y v2.1066.0 (gemelo SQL `busqueda_*`). `npm run busqueda:gemelos`: 0 diferencias sobre 33,810 nombres reales y 26 búsquedas de producto. |
 | F2 · navegador | ✅ v2.1064.0: `smartFilter`/`tokenMatch` (≈52 buscadores), `LiquidSelect`, `SelectorTactil` y los 17 filtros D. Los catálogos marcados con `orden: 'relevancia'`: menú, sucursales, mantenimiento, permisos y laboratorios de Mín·Máx. |
-| F0 · defectos sueltos | 🟡 (2) `compras.js` ya no arma el `.or()` con el texto crudo (v2.1064.1). Falta el debounce de ComprasView, que va con el hook compartido de F5. Los demás puntos de F0 están en la base. |
-| F3 / F4 | ⏳ `products` y `customers` son tablas calientes: el DDL va entre 06:00 y 11:59 UTC y se prueba antes en el branch. |
+| F3 / F4 · servidor + aproximada | ✅ v2.1066.0 → v2.1072.0, en horario con `lock_timeout`. Productos (una sola función, `busqueda_productos`), existencias, conteo, Mín·Máx, promociones, Ventas, clientes, facturas de la sala, personas, médicos y notificaciones. La aproximada corre sólo si lo exacto no trajo nada, y siempre con el aviso `AvisoParecidos`. |
+| F5 · que no vuelva | 🟡 `npm run gate:busqueda` (v2.1072.0, en el pre-commit): filtro a mano, `ilike` con el texto del usuario y `normSearch` fuera de su archivo, bloqueante en cero. **Falta** el hook compartido de debounce (`useBusqueda`), que incluye el debounce de ComprasView pendiente de F0. |
+| F0 · defectos sueltos | ✅ salvo ese debounce. |
+
+Medido al cerrar (`gate:perf`): `busqueda-del-tablero` 18.5 ms (techo 32),
+`buscar-en-ventas` 683 ms (la versión vieja medía 702), `buscar-en-productos`
+307 ms. «5» 1,487 → 294 resultados; «2.5» en Existencias 1,099 → 63 y en Ventas
+4,451 → 44.
+
+Tres trampas de rendimiento que salieron al pasar las funciones a la regla,
+todas medidas:
+- Una función que no es `PARALLEL SAFE` llamada **dentro** de una consulta le
+  quita los workers a la consulta entera: Ventas 695 ms con los ids resueltos
+  antes en un arreglo, 1,304 ms con la llamada adentro.
+- `columna ~ ALL (arreglo)` no entra por el índice de trigramas; la primera
+  palabra como expresión simple sí (9 → 5 ms).
+- Las funciones por fila de la regla se declaran con `COST` alto para que el
+  planificador aplique primero el prefiltro barato (conteo 347 → 100 ms).
 
 Lo que midió F1 y no estaba previsto en §4: `25,000` / `2,500 UI` usan la coma
 como **separador de miles** (29 productos), así que no es un decimal. Además,

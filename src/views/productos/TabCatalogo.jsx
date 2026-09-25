@@ -26,7 +26,6 @@ import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 // entero, no solo esta vista.
 import ExpedienteMovil from '../../components/common/ExpedienteMovil.jsx';
 import { useExpedienteMovil } from '../../components/common/usarExpediente';
-import { normSearch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
@@ -1626,7 +1625,9 @@ export default function TabCatalogo({
         setLoading(true);
         setLoadError(null);
         try {
-            const term = q.trim() ? (normSearch(q) || q.trim()).replace(/,/g, ' ') : null;
+            // Crudo: la base aplica la regla del portal. `normSearch` borraba
+            // el punto y «2.5» llegaba como «25».
+            const term = q.trim() || null;
             const fNuevosIso = fNuevos
                 ? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
                 : null;

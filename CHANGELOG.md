@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1072.0 — La búsqueda cierra: gate:busqueda y el índice en el tablero
+
+- **`npm run gate:busqueda`**, que también corre en el pre-commit cuando se toca `src/`. Falla si aparece un buscador fuera de la regla: un `toLowerCase().includes()` sobre lo que escribió la persona, un `.ilike()` con el texto del usuario, o `normSearch` fuera de `searchUtils.js`. Bloquea desde el primer hallazgo, y las excepciones legítimas van con su motivo escrito.
+- El Catálogo y las Reglas de despacho le mandaban a la base el texto ya pasado por `normSearch`, que convierte «2.5» en «25». Ahora mandan lo que se escribió.
+- En `busqueda_productos`, la primera palabra entra por el índice de trigramas. La búsqueda del tablero bajó de 27 a 18 ms.
+- Ventas aplica la regla exacta sólo cuando las palabras la necesitan, no pide la búsqueda aproximada cuando no la usa, y resuelve los productos antes de buscar las facturas. Así la consulta sigue repartida entre varios procesos: con «maria» sobre un año pasó de 4,417 a 683 ms.
+
 ## v2.1071.1 — Puntos: la columna de Ventas sigue viva después del corte
 
 La columna «Puntos» de Ventas y su filtro leían el estado que dejaba el puente

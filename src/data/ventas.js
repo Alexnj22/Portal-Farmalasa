@@ -106,6 +106,20 @@ export async function fetchInyeccionesAplicadas({ fini, ffin, branchId = null })
  * y las dos llamadas se mueven juntas: si dejan de coincidir, el encabezado
  * vuelve a hablar de una lista que no está en pantalla.
  */
+/**
+ * ¿La búsqueda de facturas cayó en la aproximada? La lista se arma con
+ * `get_ventas_con_receta`, que no lo dice; esto lo pregunta aparte y barato
+ * (dos `EXISTS`), con la misma decisión que `search_ventas_ids`.
+ * docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
+ */
+export async function ventasBusquedaEsAproximada({ searchTerm, fini, ffin }) {
+    const { data, error } = await supabase.rpc('ventas_busqueda_aproximada', {
+        p_search: searchTerm, p_fini: fini, p_ffin: ffin,
+    });
+    if (error) { console.error('ventasBusquedaEsAproximada:', error.message); return false; }
+    return !!data;
+}
+
 export function fetchVentasConReceta({ fini, ffin, branchFilter, anuladas, searchTerm, sortCol, sortDir, page, pageSize, soloReceta = true }) {
     return supabase.rpc('get_ventas_con_receta', {
         p_fini:         fini,

@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1069.0 — Búsqueda: Ventas con la regla del portal
+
+Ventas pasa a la regla del portal (`20260925185838`).
+
+- **Facturas** (`search_ventas_ids`). Cliente, correlativo e id se siguen
+  prefiltrando con los índices de trigramas que ya existían: `sales_invoices`
+  tiene 548 mil filas y es tabla caliente, así que no se reconstruyen en
+  horario. Sobre lo que pasa el prefiltro decide la regla exacta. Los productos
+  se resuelven con `busqueda_productos`.
+  - Medido sobre un mes, con los mismos resultados que antes salvo lo que se
+    quería cambiar: «2.5» pasa de **4,451 facturas a 44**.
+  - Si nada coincide tal cual, la búsqueda muestra las facturas con productos
+    parecidos. La función devuelve una columna nueva, `aproximado`, y
+    `ventas_busqueda_aproximada` (`20260925190217`) le dice a la lista que lo
+    avise, con dos `EXISTS` y sin repetir la búsqueda.
+- **Ventas › Productos** (`get_product_sales_agg_base`): usa
+  `busqueda_productos` y busca por nombre, laboratorio y código, que es lo que
+  la tabla muestra. El navegador le manda el texto tal cual (antes lo mandaba
+  pasado por `normSearch`) y el filtro local también mira el laboratorio.
+- Medido como usuario con `npm run medir:como-usuario`: buscar en todo el año
+  tarda 197 ms con alcance total y 83 ms con alcance de sala.
+
 ## v2.1068.0 — Búsqueda: el conteo físico con la regla del portal
 
 El conteo físico pasa a la regla del portal (`20260925184802`). Sus cuatro

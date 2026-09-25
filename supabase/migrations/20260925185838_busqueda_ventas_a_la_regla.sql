@@ -1,0 +1,338 @@
+-- Ventas busca con la regla del portal (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md).
+--
+-- · Ventas por producto (`get_product_sales_agg_base`): el producto se resuelve
+--   con `busqueda_productos` —nombre, laboratorio y código, lo que la tabla
+--   muestra— en lugar de su propio `LIKE` sobre `nombre_norm`.
+-- · Facturas (`search_ventas_ids`): cliente, correlativo e id se siguen
+--   prefiltrando con los índices de trigramas sobre `norm_search(...)` —
+--   `sales_invoices` tiene 548 mil filas y es tabla caliente: reconstruir esos
+--   índices con la regla nueva no cabe en horario— y la regla exacta decide
+--   sobre lo que pasa. Cada palabra tiene que estar en el MISMO campo, como
+--   antes: es lo que deja usar un índice por campo.
+--   Los productos, con `busqueda_productos`. Y si NADA coincide tal cual, las
+--   facturas con productos PARECIDOS; la columna nueva `aproximado` lo dice.
+--   Por eso la función se recrea: cambia su `RETURNS TABLE`. Sus dos
+--   llamadores de SQL leen `s.id` y no se enteran.
+-- Sólo reemplaza funciones: no toca ninguna tabla.
+SET lock_timeout = '5s';
+
+DROP FUNCTION IF EXISTS public.search_ventas_ids(text, date, date);
+
+CREATE FUNCTION public.search_ventas_ids(p_search text, p_fini date DEFAULT NULL::date, p_ffin date DEFAULT NULL::date)
+ RETURNS TABLE(id bigint, aproximado boolean)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+ SET plan_cache_mode TO 'force_custom_plan'
+AS $function$
+#variable_conflict use_column
+DECLARE
+  v_tok   jsonb  := public.busqueda_palabras(p_search);
+  v_pats  text[] := public.busqueda_patrones_legados(public.busqueda_palabras(p_search));
+  v_first text;
+  v_puede boolean;
+  v_sala  integer;
+  v_n     int;
+BEGIN
+  -- DEFINER para que el `LIKE` entre al índice de trigramas; el alcance del
+  -- RLS lo pone `alcance_de_ventas()`.
+  SELECT a.puede, a.sala INTO v_puede, v_sala FROM public.alcance_de_ventas() a;
+  IF NOT coalesce(v_puede, false) THEN RETURN; END IF;
+
+  IF v_pats IS NULL THEN
+    RETURN QUERY
+    SELECT si.id, false
+      FROM public.sales_invoices si
+     WHERE (p_fini IS NULL OR si.fecha >= p_fini)
+       AND (p_ffin IS NULL OR si.fecha <= p_ffin)
+       AND (v_sala IS NULL OR si.branch_id = v_sala);
+    RETURN;
+  END IF;
+
+  v_first := v_pats[1];
+
+  RETURN QUERY
+  SELECT si.id, false
+    FROM public.sales_invoices si
+   WHERE (p_fini IS NULL OR si.fecha >= p_fini)
+     AND (p_ffin IS NULL OR si.fecha <= p_ffin)
+     AND (v_sala IS NULL OR si.branch_id = v_sala)
+     AND (
+          (public.norm_search(si.erp_invoice_id) LIKE v_first
+           AND public.norm_search(si.erp_invoice_id) LIKE ALL (v_pats)
+           AND public.busqueda_coincide(v_tok, si.erp_invoice_id))
+       OR (public.norm_search(si.correlativo)    LIKE v_first
+           AND public.norm_search(si.correlativo)    LIKE ALL (v_pats)
+           AND public.busqueda_coincide(v_tok, si.correlativo))
+       OR (public.norm_search(si.cliente)        LIKE v_first
+           AND public.norm_search(si.cliente)        LIKE ALL (v_pats)
+           AND public.busqueda_coincide(v_tok, si.cliente))
+     )
+  UNION
+  -- Las facturas que llevan un producto que coincide tal cual.
+  SELECT si.id, false
+    FROM public.sales_invoices si
+   WHERE (p_fini IS NULL OR si.fecha >= p_fini)
+     AND (p_ffin IS NULL OR si.fecha <= p_ffin)
+     AND (v_sala IS NULL OR si.branch_id = v_sala)
+     AND si.id IN (
+           SELECT ii.invoice_id
+             FROM public.sales_invoice_items ii
+            WHERE ii.erp_product_id IN (
+                  SELECT b.id FROM public.busqueda_productos(p_search, false, false, false) b
+                   WHERE NOT b.aproximado));
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  IF v_n > 0 THEN RETURN; END IF;
+
+  -- Nada tal cual: las facturas con productos PARECIDOS.
+  RETURN QUERY
+  SELECT si.id, true
+    FROM public.sales_invoices si
+   WHERE (p_fini IS NULL OR si.fecha >= p_fini)
+     AND (p_ffin IS NULL OR si.fecha <= p_ffin)
+     AND (v_sala IS NULL OR si.branch_id = v_sala)
+     AND si.id IN (
+           SELECT ii.invoice_id
+             FROM public.sales_invoice_items ii
+            WHERE ii.erp_product_id IN (
+                  SELECT b.id FROM public.busqueda_productos(p_search, false, false, false) b
+                   WHERE b.aproximado));
+END;
+$function$;
+
+REVOKE EXECUTE ON FUNCTION public.search_ventas_ids(text, date, date) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.search_ventas_ids(text, date, date) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.get_product_sales_agg_base(p_fini date, p_ffin date, p_branch_id integer DEFAULT NULL::integer, p_search text DEFAULT NULL::text)
+ RETURNS TABLE(erp_product_id integer, descripcion text, cantidad numeric, neto numeric, costo_total numeric, presentaciones jsonb, ultima_venta date, ultima_venta_por_suc jsonb, laboratorio_id integer, laboratorio_nombre text, oculto_en_ventas boolean, oculto_por_first_names text, oculto_por_last_names text, oculto_at timestamp with time zone)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+ SET plan_cache_mode TO 'force_custom_plan'
+AS $function$
+#variable_conflict use_column
+BEGIN
+RETURN QUERY
+
+WITH
+-- LA BÚSQUEDA SE RESUELVE UNA VEZ, SOBRE PRODUCTS.
+--
+-- Antes cada uno de los cuatro buscadores corría
+-- `norm_search(descripcion) LIKE ALL (...)` sobre el texto de la FACTURA: una
+-- llamada a función por fila sobre 548K líneas, sin índice posible. Medido
+-- aislado sobre un año: 15,278 ms contra 54 ms.
+--
+-- ⚠️ Es un cambio de SEMÁNTICA y por eso se midió antes: sobre un año y ocho
+-- términos, **0 productos perdidos** — lo que encuentra el texto de la factura
+-- lo encuentra siempre el registro del producto.
+--
+-- El código de barras entra acá también, así que un escaneo filtra igual que
+-- un nombre y sin costo extra.
+prods_buscados AS MATERIALIZED (
+  -- Desde 2026-09-25, la regla del portal (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md):
+  -- nombre, laboratorio y código —lo que la tabla muestra; el principio activo
+  -- no se ve y no se busca—, con respaldo aproximado.
+  SELECT b.id
+  FROM public.busqueda_productos(p_search, false, true, false) b
+  WHERE p_search IS NOT NULL AND p_search <> ''
+),
+branch_esid AS (
+  SELECT m.erp_sucursal_id AS esid
+  FROM public.erp_sucursal_map m
+  WHERE m.branch_id = p_branch_id AND NOT m.es_bodega
+),
+bounds AS (
+  SELECT date_trunc('month', CURRENT_DATE)::date AS curr_month,
+         LEAST(p_ffin, date_trunc('month', CURRENT_DATE)::date - 1) AS past_to
+),
+bounds2 AS (
+  SELECT curr_month, past_to,
+    CASE WHEN p_fini = date_trunc('month', p_fini)::date
+         THEN to_char(p_fini, 'YYYY-MM')
+         ELSE to_char((date_trunc('month', p_fini) + interval '1 month')::date, 'YYYY-MM') END AS ym_full_from,
+    CASE WHEN past_to = (date_trunc('month', past_to) + interval '1 month' - interval '1 day')::date
+         THEN to_char(past_to, 'YYYY-MM')
+         ELSE to_char((date_trunc('month', past_to) - interval '1 month')::date, 'YYYY-MM') END AS ym_full_to,
+    CASE WHEN p_fini < curr_month AND p_fini <> date_trunc('month', p_fini)::date
+         THEN p_fini END AS pl_from,
+    CASE WHEN p_fini < curr_month AND p_fini <> date_trunc('month', p_fini)::date
+         THEN LEAST(past_to, (date_trunc('month', p_fini) + interval '1 month' - interval '1 day')::date) END AS pl_to
+  FROM bounds
+),
+bounds3 AS (
+  SELECT b.*,
+    CASE WHEN p_fini < b.curr_month
+              AND b.past_to <> (date_trunc('month', b.past_to) + interval '1 month' - interval '1 day')::date
+         THEN GREATEST(date_trunc('month', b.past_to)::date, p_fini, COALESCE(b.pl_to + 1, p_fini)) END AS pr_from,
+    CASE WHEN p_fini < b.curr_month
+              AND b.past_to <> (date_trunc('month', b.past_to) + interval '1 month' - interval '1 day')::date
+         THEN b.past_to END AS pr_to
+  FROM bounds2 b
+),
+pres_partial AS (
+  SELECT s.erp_product_id, MAX(s.descripcion) AS descripcion, s.presentacion,
+         SUM(s.cantidad) AS cantidad, SUM(s.neto) AS neto
+  FROM (
+    SELECT sii.erp_product_id, sii.descripcion, sii.presentacion, sii.cantidad::numeric AS cantidad,
+      CASE WHEN si.tipo_documento='CCF' THEN sii.total_linea::numeric ELSE sii.total_linea::numeric/1.13 END AS neto
+    FROM public.sales_invoice_items sii JOIN public.sales_invoices si ON si.id=sii.invoice_id CROSS JOIN bounds3 b
+    WHERE si.fecha BETWEEN b.pl_from AND b.pl_to
+      AND sii.erp_product_id IS NOT NULL AND sii.erp_product_id != 0
+      AND si.estado NOT IN ('NULA','DTE INVALIDADO EN MH')
+      AND (p_branch_id IS NULL OR si.branch_id = p_branch_id)
+      AND (p_search IS NULL OR p_search = '' OR sii.erp_product_id IN (SELECT b2.id FROM prods_buscados b2))
+    UNION ALL
+    SELECT sii.erp_product_id, sii.descripcion, sii.presentacion, sii.cantidad::numeric,
+      CASE WHEN si.tipo_documento='CCF' THEN sii.total_linea::numeric ELSE sii.total_linea::numeric/1.13 END
+    FROM public.sales_invoice_items sii JOIN public.sales_invoices si ON si.id=sii.invoice_id CROSS JOIN bounds3 b
+    WHERE si.fecha BETWEEN b.pr_from AND b.pr_to
+      AND sii.erp_product_id IS NOT NULL AND sii.erp_product_id != 0
+      AND si.estado NOT IN ('NULA','DTE INVALIDADO EN MH')
+      AND (p_branch_id IS NULL OR si.branch_id = p_branch_id)
+      AND (p_search IS NULL OR p_search = '' OR sii.erp_product_id IN (SELECT b2.id FROM prods_buscados b2))
+  ) s GROUP BY s.erp_product_id, s.presentacion
+),
+pres_past AS (
+  SELECT a.erp_product_id, MAX(a.descripcion) AS descripcion, a.presentacion,
+         SUM(a.cantidad) AS cantidad, SUM(a.neto) AS neto
+  FROM public.product_sales_monthly_agg a CROSS JOIN bounds3 b
+  WHERE p_fini < b.curr_month
+    AND a.year_month >= b.ym_full_from AND a.year_month <= b.ym_full_to
+    AND a.year_month < to_char(b.curr_month,'YYYY-MM')
+    AND (p_branch_id IS NULL OR a.branch_id = p_branch_id)
+    AND (p_search IS NULL OR p_search = '' OR a.erp_product_id IN (SELECT b2.id FROM prods_buscados b2))
+  GROUP BY a.erp_product_id, a.presentacion
+),
+-- Los renglones del mes en curso se leen UNA vez. Los usaban dos CTE —las
+-- ventas del período (`pres_live`) y la última venta por sala
+-- (`last_sale_live`)— y cada uno recorría por su cuenta los mismos renglones:
+-- el 22-sep eran 13,293 facturas y ~55,000 bloques cada pasada. El rollup
+-- mensual no cubre el mes en curso, así que éste siempre se lee en vivo y su
+-- costo crece con el día del mes.
+facturas_mes AS MATERIALIZED (
+  SELECT si.id, si.tipo_documento, si.branch_id, si.fecha
+  FROM public.sales_invoices si
+  WHERE si.estado NOT IN ('NULA','DTE INVALIDADO EN MH')
+    AND si.fecha >= date_trunc('month', CURRENT_DATE)::date
+),
+rango_mes AS MATERIALIZED (SELECT min(fm.id) AS lo, max(fm.id) AS hi FROM facturas_mes fm),
+lineas_mes AS MATERIALIZED (
+  SELECT sii.erp_product_id, sii.descripcion, sii.presentacion, sii.cantidad::numeric AS cantidad,
+         CASE WHEN si.tipo_documento='CCF' THEN sii.total_linea::numeric ELSE sii.total_linea::numeric/1.13 END AS neto,
+         si.branch_id, si.fecha
+  FROM public.sales_invoice_items sii JOIN facturas_mes si ON si.id=sii.invoice_id
+  WHERE sii.invoice_id BETWEEN (SELECT rm.lo FROM rango_mes rm) AND (SELECT rm.hi FROM rango_mes rm)
+    AND sii.erp_product_id IS NOT NULL AND sii.erp_product_id != 0
+),
+pres_live AS (
+  SELECT l.erp_product_id, MAX(l.descripcion) AS descripcion, l.presentacion,
+         SUM(l.cantidad) AS cantidad, SUM(l.neto) AS neto
+  FROM lineas_mes l
+  WHERE l.fecha BETWEEN GREATEST(p_fini, date_trunc('month',CURRENT_DATE)::date) AND p_ffin
+    AND (p_branch_id IS NULL OR l.branch_id = p_branch_id)
+    AND (p_search IS NULL OR p_search = '' OR l.erp_product_id IN (SELECT b2.id FROM prods_buscados b2))
+  GROUP BY l.erp_product_id, l.presentacion
+),
+pres AS (
+  SELECT u2.erp_product_id, u2.descripcion, u2.presentacion, u2.cantidad, u2.neto, u2.precio_unitario_avg,
+         COALESCE(m.factor,1) AS factor,
+         CASE WHEN m.costo IS NOT NULL AND (m.vineta=0 OR m.costo<=m.vineta) THEN m.costo END AS costo_pres
+  FROM (
+    SELECT erp_product_id, MAX(descripcion) AS descripcion, presentacion,
+           SUM(cantidad) AS cantidad, SUM(neto) AS neto,
+           SUM(neto)/NULLIF(SUM(cantidad),0) AS precio_unitario_avg
+    FROM (
+      SELECT erp_product_id, descripcion, presentacion, cantidad, neto FROM pres_partial
+      UNION ALL SELECT erp_product_id, descripcion, presentacion, cantidad, neto FROM pres_past
+      UNION ALL SELECT erp_product_id, descripcion, presentacion, cantidad, neto FROM pres_live
+    ) u GROUP BY erp_product_id, presentacion
+  ) u2
+  LEFT JOIN LATERAL (
+    SELECT pp.factor, pp.costo, pp.vineta FROM public.product_precios pp
+    JOIN public.presentaciones pr ON pr.id = pp.id_presentacion
+    WHERE pp.product_id = u2.erp_product_id AND pp.activo = true
+      AND UPPER(u2.presentacion) LIKE UPPER(pr.tipo) || ' %'
+    ORDER BY length(pr.tipo) DESC LIMIT 1) m ON true
+),
+best_cost AS (
+  SELECT product_id, COALESCE(MIN(costo) FILTER (WHERE vineta=0 OR costo<=vineta), MIN(costo)) AS costo
+  FROM public.product_precios WHERE activo = true AND product_id IN (SELECT pres.erp_product_id FROM pres)
+  GROUP BY product_id
+),
+prod_with_sales AS (
+  SELECT p.erp_product_id, MAX(p.descripcion) AS descripcion, SUM(p.cantidad) AS cantidad, SUM(p.neto) AS neto,
+    CASE WHEN COUNT(COALESCE(p.costo_pres, bc.costo)) = 0 THEN NULL
+         ELSE ROUND(SUM(COALESCE(p.costo_pres, bc.costo) * p.cantidad), 2) END AS costo_total,
+    jsonb_agg(jsonb_build_object('presentacion',p.presentacion,'cantidad',p.cantidad,'neto',p.neto,
+      'precio_unitario_avg',p.precio_unitario_avg,'factor',COALESCE(p.factor,1))
+      ORDER BY p.presentacion) AS presentaciones
+  FROM pres p LEFT JOIN best_cost bc ON bc.product_id = p.erp_product_id
+  GROUP BY p.erp_product_id
+),
+zero_sale_cands AS (
+  SELECT pr.id AS erp_product_id, pr.nombre AS descripcion
+  FROM public.products pr CROSS JOIN branch_esid be
+  WHERE pr.activo = true
+    AND (p_search IS NULL OR p_search = '' OR pr.id IN (SELECT b2.id FROM prods_buscados b2))
+    AND NOT EXISTS (SELECT 1 FROM prod_with_sales pws WHERE pws.erp_product_id = pr.id)
+    AND (EXISTS (SELECT 1 FROM public.product_stock_params psp
+                 WHERE psp.erp_product_id = pr.id AND psp.erp_sucursal_id = be.esid
+                   AND COALESCE(psp.manual_max, psp.max_units, 0) > 0)
+      OR EXISTS (SELECT 1 FROM public.inventory inv
+                 WHERE inv.erp_product_id = pr.id AND inv.erp_sucursal_id = be.esid
+                   AND inv.is_vencidos = false AND inv.cantidad > 0))
+),
+all_cands AS (
+  SELECT pws.erp_product_id, pws.descripcion FROM prod_with_sales pws
+  UNION ALL SELECT z.erp_product_id, z.descripcion FROM zero_sale_cands z
+),
+last_sale_hist AS (
+  SELECT a.erp_product_id AS prod_id, a.branch_id,
+         MAX(COALESCE(a.ultima_venta, ((a.year_month||'-01')::date + INTERVAL '1 month' - INTERVAL '1 day')::date)) AS last_date
+  FROM public.product_sales_monthly_agg a
+  WHERE a.erp_product_id IN (SELECT ac.erp_product_id FROM all_cands ac)
+  GROUP BY a.erp_product_id, a.branch_id
+),
+-- ⬇ CAMBIO: sin el `IN (SELECT all_cands)`. Todo producto vendido este mes YA es
+-- candidato, así que el semi-join no descartaba ninguna fila y costaba 155 ms;
+-- las filas de más las descarta sola el LEFT JOIN final.
+last_sale_live AS (
+  SELECT l.erp_product_id AS prod_id, l.branch_id, MAX(l.fecha) AS last_date
+  FROM lineas_mes l
+  GROUP BY l.erp_product_id, l.branch_id
+),
+ultima_venta_agg AS MATERIALIZED (
+  SELECT pb.prod_id, MAX(pb.last_date) AS ultima_venta_global,
+    MAX(pb.last_date) FILTER (WHERE pb.branch_id = p_branch_id) AS ultima_venta_branch,
+    COALESCE(jsonb_agg(jsonb_build_object('branch_id',pb.branch_id,'fecha',pb.last_date)
+      ORDER BY pb.last_date DESC NULLS LAST, pb.branch_id) FILTER (WHERE pb.last_date IS NOT NULL), '[]'::jsonb) AS ultima_venta_por_suc
+  FROM (
+    SELECT prod_id, branch_id, MAX(last_date) AS last_date
+    FROM (SELECT prod_id, branch_id, last_date FROM last_sale_hist
+          UNION ALL SELECT prod_id, branch_id, last_date FROM last_sale_live) u
+    GROUP BY prod_id, branch_id) pb
+  GROUP BY pb.prod_id
+)
+SELECT
+  ac.erp_product_id,
+  COALESCE(pws.descripcion, ac.descripcion)::text AS descripcion,
+  COALESCE(pws.cantidad, 0::numeric) AS cantidad,
+  COALESCE(pws.neto, 0::numeric) AS neto,
+  pws.costo_total,
+  COALESCE(pws.presentaciones, '[]'::jsonb) AS presentaciones,
+  CASE WHEN p_branch_id IS NULL THEN uva.ultima_venta_global ELSE uva.ultima_venta_branch END AS ultima_venta,
+  COALESCE(uva.ultima_venta_por_suc, '[]'::jsonb) AS ultima_venta_por_suc,
+  p2.laboratorio_id, l2.nombre AS laboratorio_nombre,
+  COALESCE(p2.oculto_en_ventas, false) AS oculto_en_ventas,
+  emp.first_names AS oculto_por_first_names, emp.last_names AS oculto_por_last_names, p2.oculto_at
+FROM all_cands ac
+LEFT JOIN prod_with_sales pws ON pws.erp_product_id = ac.erp_product_id
+LEFT JOIN ultima_venta_agg uva ON uva.prod_id = ac.erp_product_id
+LEFT JOIN public.products p2 ON p2.id = ac.erp_product_id
+LEFT JOIN public.laboratorios l2 ON l2.id = p2.laboratorio_id
+LEFT JOIN public.employees emp ON emp.id = p2.oculto_por
+ORDER BY (pws.erp_product_id IS NULL) ASC, COALESCE(pws.neto,0) DESC,
+  CASE WHEN p_branch_id IS NULL THEN uva.ultima_venta_global ELSE uva.ultima_venta_branch END DESC NULLS LAST;
+
+END;
+$function$;

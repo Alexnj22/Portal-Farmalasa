@@ -27,12 +27,13 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../components/common/usarExpediente';
 import TablePagination from '../components/common/TablePagination';
-import { smartFilter, normSearch } from '../utils/searchUtils';
+import { smartFilter } from '../utils/searchUtils';
+import AvisoParecidos from '../components/common/AvisoParecidos';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { useNowTick } from '../hooks/useNowTick';
 import FilterBar from '../components/common/FilterBar';
 import {
-    fetchAntibioticProductIds, fetchVentasConReceta, fetchVentasRecetaStats,
+    fetchAntibioticProductIds, fetchVentasConReceta, fetchVentasRecetaStats, ventasBusquedaEsAproximada,
     fetchInvoicesList, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice,
     fetchProductPreciosActivos, fetchInvoiceChangelog, fetchVendorMonthlyStats,
     fetchProductPreciosDetail, fetchProductPreciosHistory, fetchVentasSinProducto,
@@ -438,6 +439,17 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const letrasBuscadas = searchTerm?.trim().length ?? 0;
     const isSearching = letrasBuscadas >= MIN_LETRAS_BUSQUEDA;
     const busquedaCorta = letrasBuscadas > 0 && !isSearching;
+
+    // Si nada coincide tal cual, la base muestra las facturas de productos
+    // PARECIDOS; la lista lo tiene que decir (PLAN-BUSQUEDA-UNIFICADA).
+    const [facturasParecidas, setFacturasParecidas] = useState(false);
+    useEffect(() => {
+        if (!isSearching) { setFacturasParecidas(false); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- sin búsqueda no hay aviso
+        let vivo = true;
+        ventasBusquedaEsAproximada({ searchTerm: searchTerm.trim(), fini, ffin })
+            .then((es) => { if (vivo) setFacturasParecidas(es); });
+        return () => { vivo = false; };
+    }, [isSearching, searchTerm, fini, ffin]);
 
     const empMap = useMemo(() => {
         const m = new Map();
@@ -945,6 +957,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 <Notice variant="info" icon={Search} className="mb-3">
                     Escribe al menos {MIN_LETRAS_BUSQUEDA} letras para buscar
                 </Notice>
+            )}
+            {isSearching && facturasParecidas && rows.length > 0 && (
+                <AvisoParecidos texto={searchTerm} className="mb-3" />
             )}
 
             <DataTable
@@ -2025,7 +2040,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 p_fini:      fini,
                 p_ffin:      ffin,
                 p_branch_id: Number(filterBranch),
-                p_search:    normSearch(searchTerm) || searchTerm,
+                // Crudo: la base aplica la regla del portal. `normSearch`
+                // borraba el punto y «2.5» llegaba como «25».
+                p_search:    searchTerm,
             });
             if (!alive) return;
             // Si falla, searchRows queda null y la tabla cae al filtro local
@@ -2259,7 +2276,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const { results: filtered, isFuzzy: isProdFuzzy } = useMemo(() => {
         const { results, isFuzzy } = !searchTerm
             ? { results: tableBaseRows, isFuzzy: false }
-            : smartFilter(searchTerm, tableBaseRows, r => [r.descripcion, ...(r.presentaciones || []).map(p => p.presentacion)]);
+            // El laboratorio se ve en la tabla: se busca (y la base ya lo busca).
+            : smartFilter(searchTerm, tableBaseRows, r => [r.descripcion, r.laboratorio_nombre, ...(r.presentaciones || []).map(p => p.presentacion)]);
         const labFiltered = filterLab ? results.filter(r => String(r.laboratorio_id) === String(filterLab)) : results;
         const sorted = [...labFiltered].sort((a, b) => {
             const asc = sortDir === 'asc' ? 1 : -1;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import { useSearchParams } from 'react-router-dom';
 import { Package, LayoutList, Boxes } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -29,12 +30,7 @@ export default function ProductosView() {
     const activeTab    = VALID.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
-    const [rawSearch,       setRawSearch]       = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
-        return () => clearTimeout(t);
-    }, [rawSearch]);
+    const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();
 
     // ── Qué pestañas están MONTADAS ──────────────────────────────────────────
     // Las pestañas se montaban todas y las inactivas se escondían con

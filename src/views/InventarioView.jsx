@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import { Boxes } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
@@ -17,12 +18,7 @@ import TabInventario   from './inventario/TabInventario';
  * paginación.
  */
 export default function InventarioView() {
-    const [rawSearch,       setRawSearch]       = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
-        return () => clearTimeout(t);
-    }, [rawSearch]);
+    const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();
 
     const filtersContent = (
         <ViewTabBar

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
+import { useTextoRebotado } from '../hooks/useBusqueda';
 import SegmentedControl from '../components/common/SegmentedControl';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
@@ -206,7 +207,7 @@ const AnnouncementsView = ({ openModal }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [announcementSearch, setAnnouncementSearch] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const debouncedSearchTerm = useTextoRebotado(announcementSearch);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -225,10 +226,6 @@ const AnnouncementsView = ({ openModal }) => {
     return () => window.removeEventListener('force-history-refresh', handleSalyRefresh);
   }, [fetchInitialData, setListTab]);
 
-  useEffect(() => {
-    const timerId = setTimeout(() => { setDebouncedSearchTerm(announcementSearch); }, 300);
-    return () => clearTimeout(timerId);
-  }, [announcementSearch]);
 
   useEffect(() => {
     setCurrentPage(1);

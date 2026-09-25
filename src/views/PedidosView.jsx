@@ -1,4 +1,5 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { lazy, Suspense } from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import { useSearchParams } from 'react-router-dom';
 import { ClipboardList, Loader2, Settings2, BarChart2, Package, Truck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -63,13 +64,8 @@ export default function PedidosView() {
     const rawTab      = searchParams.get('tab');
     const activeTab   = VALID.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
 
-    const [rawSearch,       setRawSearch]       = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();
 
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
-        return () => clearTimeout(t);
-    }, [rawSearch]);
 
     const handleTabChange = (tab) => {
         setSearchParams(p => { p.set('tab', tab); return p; });

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import { useSearchParams } from 'react-router-dom';
 import { FlaskConical, MapPin, CalendarClock } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -18,13 +19,8 @@ export default function LaboratoriosView() {
     const activeTab   = VALID_TABS.has(rawTab) ? rawTab : 'ubicaciones';
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
-    const [rawSearch,       setRawSearch]       = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();
 
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
-        return () => clearTimeout(t);
-    }, [rawSearch]);
 
     // Montar al VISITAR, no al entrar. `hidden` esconde pero no desmonta, así
     // que abrir «Ubicaciones» también cargaba «Política de vencimiento» —sus

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -2985,13 +2986,8 @@ export default function VentasView() {
         const r = currentMonthRange();
         return `${r.fini}|${r.ffin}`;
     });
-    const [rawSearch, setRawSearch]     = useState('');
+    const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();
     const [privacyMode, setPrivacyMode] = useState(false);
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
-        return () => clearTimeout(t);
-    }, [rawSearch]);
 
     const salesBranches = useMemo(() =>
         (branches || []).filter(b => SALES_BRANCH_IDS.includes(b.id)),

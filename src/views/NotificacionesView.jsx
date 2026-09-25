@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTextoRebotado } from '../hooks/useBusqueda';
 import { useNavigate } from 'react-router-dom';
 import {
     Bell, BellOff, Check, RotateCcw, Search, Inbox,
@@ -124,11 +125,7 @@ export default function NotificacionesView() {
        —el defecto que `gate:perf` nació midiendo: un buscador que salía con la
        primera letra— y además cada respuesta que llega tarde puede pisar a una
        más nueva. */
-    const [buscaAplicada, setBuscaAplicada] = useState('');
-    useEffect(() => {
-        const t = setTimeout(() => setBuscaAplicada(busqueda.trim()), 350);
-        return () => clearTimeout(t);
-    }, [busqueda]);
+    const buscaAplicada = useTextoRebotado(busqueda);
 
     /* Cambiar de pestaña o de búsqueda vuelve a la página 1: la 7 de una lista
        de 300 no existe en una de 12, y la tabla saldría vacía sin decir por qué.

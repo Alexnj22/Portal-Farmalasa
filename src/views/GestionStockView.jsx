@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import { Activity, Archive, ListPlus } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -42,12 +43,7 @@ export default function GestionStockView() {
         setSearchParams(p => { p.set('sala', String(erp)); return p; }, { replace: true });
     }, [setSearchParams]);
 
-    const [rawSearch,       setRawSearch]       = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
-        return () => clearTimeout(t);
-    }, [rawSearch]);
+    const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();
 
     const filtersContent = (
         <ViewTabBar

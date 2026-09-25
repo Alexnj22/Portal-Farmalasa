@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useTextoRebotado } from '../hooks/useBusqueda';
 import {
     Contact, Users, IdCard, Building2, MapPin, AlertTriangle, ShieldCheck,
     FileWarning, Receipt, Store, Search,
@@ -198,11 +199,7 @@ export default function ClientesView({ openModal }) {
     // El buscador escribe por tecla y cada consulta cruza 24,502 fichas: sin
     // rebote se dispara una por letra y la última en volver no es la última que
     // se pidió — la lista termina mostrando el resultado de un query anterior.
-    const [searchAplicado, setSearchAplicado] = useState('');
-    useEffect(() => {
-        const t = setTimeout(() => setSearchAplicado(search.trim()), 300);
-        return () => clearTimeout(t);
-    }, [search]);
+    const searchAplicado = useTextoRebotado(search);
 
     // Descarta la respuesta de un pedido que ya quedó viejo (el usuario cambió
     // de filtro mientras viajaba). Sin esto, dos cargas que se cruzan dejan en

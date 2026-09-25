@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
 import { ShoppingCart, Package, ChevronDown, ChevronRight, Users, AlertTriangle } from 'lucide-react';
@@ -208,13 +209,17 @@ function TabFacturas({
     // teléfono no se pinta: `DataTable` ahí dibuja fichas. Va al expediente.
     const { enTelefono, abierto } = useExpedienteMovil(rows, expandedId);
 
+    // Dos búsquedas seguidas pueden volver al revés: la vieja pisaría a la nueva.
+    const vigente = useRef(0);
     const load = useCallback(async () => {
+        const turno = ++vigente.current;
         setLoading(true);
         setExpandedId(null);
         const from = (page - 1) * PAGE_SIZE;
         const to   = from + PAGE_SIZE - 1;
 
         const { data, count } = await fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinProveedor, supplierId, searchTerm });
+        if (turno !== vigente.current) return;
         setRows(data || []);
         setTotal(count || 0);
         setLoading(false);
@@ -384,12 +389,15 @@ function TabProductos({ searchTerm }) {
     const [page,    setPage]    = useState(1);
     const [total,   setTotal]   = useState(0);
 
+    const vigente = useRef(0);
     const load = useCallback(async () => {
+        const turno = ++vigente.current;
         setLoading(true);
         const from = (page - 1) * PAGE_SIZE;
         const to   = from + PAGE_SIZE - 1;
 
         const { data, count } = await fetchProductPurchaseSummaryPage(from, to, searchTerm);
+        if (turno !== vigente.current) return;
         setRows(data || []);
         setTotal(count || 0);
         setLoading(false);
@@ -462,7 +470,7 @@ export default function ComprasView() {
         : (allowedTabs[0]?.key ?? 'facturas');
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
-    const [search, setSearch] = useState('');
+    const [search, setSearch, busqueda] = useBusqueda();
 
     const range = defaultRange();
     const [dateStart, setDateStart] = useState(range.start);
@@ -510,11 +518,11 @@ export default function ComprasView() {
                     supplierId={supplierId || null} setSupplierId={setSupplierId}
                     sinProveedor={sinProveedor} setSinProveedor={setSinProveedor}
                     unlinkedCount={unlinkedCount}
-                    searchTerm={search}
+                    searchTerm={busqueda}
                 />
             )}
             {activeTab === 'productos' && (
-                <TabProductos searchTerm={search} />
+                <TabProductos searchTerm={busqueda} />
             )}
         </GlassViewLayout>
     );

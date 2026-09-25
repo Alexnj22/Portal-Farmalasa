@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -125,8 +126,7 @@ const AuditView = ({ openModal }) => {
         return map;
     }, [employees]);
 
-    const [rawSearchTerm, setRawSearchTerm] = useState('');
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+    const [rawSearchTerm, setRawSearchTerm, debouncedSearchTerm] = useBusqueda();
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [actionFilter, setActionFilter] = useState('ALL');
@@ -160,10 +160,6 @@ const AuditView = ({ openModal }) => {
         };
     }, [isLive, fetchAuditLogs]); // 🚨 IMPORTANTE: Eliminamos auditLog.length de las dependencias.
 
-    useEffect(() => {
-        const timerId = setTimeout(() => { setDebouncedSearchTerm(rawSearchTerm); }, 300);
-        return () => clearTimeout(timerId);
-    }, [rawSearchTerm]);
 
     useEffect(() => { setCurrentPage(1); }, [debouncedSearchTerm, startDate, endDate, actionFilter]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
 
@@ -175,9 +171,9 @@ const AuditView = ({ openModal }) => {
     }, []);
 
     const clearFilters = useCallback(() => {
-        setRawSearchTerm(''); setDebouncedSearchTerm('');
+        setRawSearchTerm('');
         setStartDate(''); setEndDate(''); setActionFilter('ALL');
-    }, []);
+    }, [setRawSearchTerm]);
 
     const processedLogsBase = useMemo(() => {
         if (!Array.isArray(auditLog)) return [];

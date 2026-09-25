@@ -271,8 +271,8 @@ escrito a mano, y RPC con `p_search` que no usen la regla. Baseline que
 | F1 · la regla | ✅ v2.1064.0 (JS) y v2.1066.0 (gemelo SQL `busqueda_*`). `npm run busqueda:gemelos`: 0 diferencias sobre 33,810 nombres reales y 26 búsquedas de producto. |
 | F2 · navegador | ✅ v2.1064.0: `smartFilter`/`tokenMatch` (≈52 buscadores), `LiquidSelect`, `SelectorTactil` y los 17 filtros D. Los catálogos marcados con `orden: 'relevancia'`: menú, sucursales, mantenimiento, permisos y laboratorios de Mín·Máx. |
 | F3 / F4 · servidor + aproximada | ✅ v2.1066.0 → v2.1072.0, en horario con `lock_timeout`. Productos (una sola función, `busqueda_productos`), existencias, conteo, Mín·Máx, promociones, Ventas, clientes, facturas de la sala, personas, médicos y notificaciones. La aproximada corre sólo si lo exacto no trajo nada, y siempre con el aviso `AvisoParecidos`. |
-| F5 · que no vuelva | 🟡 `npm run gate:busqueda` (v2.1072.0, en el pre-commit): filtro a mano, `ilike` con el texto del usuario y `normSearch` fuera de su archivo, bloqueante en cero. **Falta** el hook compartido de debounce (`useBusqueda`), que incluye el debounce de ComprasView pendiente de F0. |
-| F0 · defectos sueltos | ✅ salvo ese debounce. |
+| F5 · que no vuelva | ✅ `npm run gate:busqueda` (v2.1072.0, en el pre-commit): filtro a mano, `ilike` con el texto del usuario y `normSearch` fuera de su archivo, bloqueante en cero. `useBusqueda` (v2.1073.1): una sola espera de 350 ms para los buscadores que consultan a la base, en 13 vistas. |
+| F0 · defectos sueltos | ✅ Compras ya espera y descarta las respuestas viejas (v2.1073.1). |
 
 Medido al cerrar (`gate:perf`): `busqueda-del-tablero` 18.5 ms (techo 32),
 `buscar-en-ventas` 683 ms (la versión vieja medía 702), `buscar-en-productos`

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1073.1 — Buscadores: una sola espera antes de consultar
+
+- Compras consultaba a la base con cada tecla: buscar «amoxicilina» eran once consultas, y una respuesta vieja podía llegar al final y quedar en pantalla sobre la nueva. Ahora espera a que se termine de escribir y descarta las respuestas que ya no corresponden.
+- La espera vivía escrita a mano en doce vistas, con tiempos de 250 a 380 ms. Ahora sale de un solo hook, `useBusqueda` (`src/hooks/useBusqueda.js`), que usan Productos, Existencias, Mín·Máx, Pedidos, Ventas, Facturación, Gestión de stock, Laboratorios, Clientes, Notificaciones, Avisos, Auditoría y Compras. Los espacios de más no disparan otra búsqueda, y vaciar el buscador se aplica al instante.
+
 ## v2.1073.0 — Puntos: la vista del programa
 
 Nueva vista **Puntos** (`/puntos`, grupo Comercial, módulo `puntos` para

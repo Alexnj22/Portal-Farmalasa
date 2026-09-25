@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
@@ -3037,12 +3038,7 @@ export default function FacturacionView() {
     // el carril eran N métricas para una sola pregunta, y encima no filtraban.
     const [obsCode, setObsCode] = useState('');
     const [obsConteos, setObsConteos] = useState([]);
-    const [rawSearch, setRawSearch] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
-        return () => clearTimeout(t);
-    }, [rawSearch]);
+    const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();
     const salesBranches = useMemo(
         () => branches.filter(b => SALES_BRANCH_IDS.includes(b.id)),
         [branches]

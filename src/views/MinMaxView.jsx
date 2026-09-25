@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useBusqueda } from '../hooks/useBusqueda';
 import { BarChart2 } from 'lucide-react';
 import GlassViewLayout    from '../components/GlassViewLayout';
 import ViewTabBar         from '../components/common/ViewTabBar';
@@ -54,16 +55,11 @@ export default function MinMaxView() {
     const TABS = ALL_MINMAX_TABS.filter(t => hasPermission(`minmax_tab_${t.key}`));
 
     const [activeTab,       setActiveTab]       = usePestanaEnUrl(TABS, 'sucursal');
-    const [rawSearch,       setRawSearch]       = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();
     const [config,          setConfig]          = useState(DEFAULT_CONFIG);
     const [configLoaded,    setConfigLoaded]    = useState(false);
     const [lockedErpId,     setLockedErpId]     = useState(null);
 
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
-        return () => clearTimeout(t);
-    }, [rawSearch]);
 
     const loadConfig = useCallback(async () => {
         const { data, error } = await fetchStockConfigFull();

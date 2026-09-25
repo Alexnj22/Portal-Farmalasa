@@ -6,6 +6,7 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { formatMoney } from '../../utils/formatNumber';
 
 const SERVICE_LABELS = {
     rent: 'Arrendamiento',
@@ -84,7 +85,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 timeline_title: `Pago de ${serviceName}`,
                 dimension: 'FINANZAS',
                 old_value: currentPaidThrough || 'Sin pagos previos',
-                new_value: `Mes: ${updated.billing_month} | Monto: $${updated.amount} | ${fileStatusMsg}`,
+                new_value: `Mes: ${updated.billing_month} | Monto: ${formatMoney(updated.amount)} | ${fileStatusMsg}`,
                 notas: updated.notes || ''
             }
         });
@@ -103,7 +104,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 timeline_title: `Pago de ${serviceName}`,
                 dimension: 'FINANZAS',
                 old_value: currentPaidThrough || 'Sin pagos previos',
-                new_value: `Mes: ${paymentData.billing_month} | Monto: $${paymentData.amount} | ⚠️ COMPROBANTE PENDIENTE`,
+                new_value: `Mes: ${paymentData.billing_month} | Monto: ${formatMoney(paymentData.amount)} | ⚠️ COMPROBANTE PENDIENTE`,
                 notas: paymentData.notes || ''
             }
         }));

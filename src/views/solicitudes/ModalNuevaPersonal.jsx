@@ -24,6 +24,7 @@ import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { rango12 } from '../../utils/hora';
 import { fechaTexto, hoySV } from '../../utils/fecha';
+import { formatMoney } from '../../utils/formatNumber';
 
 /**
  * El formulario de una solicitud personal, en un modal.
@@ -324,7 +325,7 @@ export default function ModalNuevaPersonal({
             return `${nombre} · ${fmtCorto(payload.date)} · con ${shortEmployeeName(companero)}`;
         }
         if (tipo === 'ADVANCE' && payload.amount) {
-            return `${nombre} · $${Number(payload.amount).toLocaleString('es-SV')}`;
+            return `${nombre} · ${formatMoney(payload.amount)}`;
         }
         if (tipo === 'CERTIFICATE' && payload.certificateType) {
             return CERT_TYPES.find(c => c.key === payload.certificateType)?.label ?? nombre;

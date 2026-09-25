@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine, Tooltip, Cell } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
-import { formatMoney } from '../../utils/formatNumber';
+import { formatMoney, formatMoneyCorto } from '../../utils/formatNumber';
 
 /**
  * El «día por día» del mes en curso, en su propio módulo para que `recharts`
@@ -61,7 +61,7 @@ export default function GraficaMesDias({ dias, ritmo }) {
                 <YAxis
                     tickLine={false} axisLine={false} width={52}
                     tick={{ fontSize: 10, fill: COLOR.texto, fontWeight: 700 }}
-                    tickFormatter={(v) => (v ? `$${Math.round(v / 1000)}k` : '0')}
+                    tickFormatter={(v) => (v ? formatMoneyCorto(v) : '0')}
                 />
                 <Tooltip
                     cursor={{ fill: COLOR.rejilla, opacity: 0.35 }}

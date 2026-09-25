@@ -1,3 +1,4 @@
+import { formatMoney } from './formatNumber';
 // ── Catálogos del anexo de compras F-07 v14 (§3) + Art. 65 LIVA ──────────────
 //
 // Viven acá y no dentro de una vista porque los usan DOS pantallas: la ficha del
@@ -64,5 +65,4 @@ export const tipoCostoGastoLabel = (v) => etiqueta(TIPO_CG_TODOS, v);
 
 // Dinero del portal: siempre con separador de miles y dos decimales. Un crédito
 // fiscal sin centavos no es el mismo número.
-export const fmtMoneda = (n) =>
-    `$${Number(n || 0).toLocaleString('es-SV', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const fmtMoneda = (n) => formatMoney(Number(n || 0));

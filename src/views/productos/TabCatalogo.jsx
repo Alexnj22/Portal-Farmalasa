@@ -745,7 +745,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true, comoPanel = fal
         </div>
     );
     const fmtDate   = d => d ? fechaTexto(d, { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
-    const fmtCost   = v => v != null && parseFloat(v) > 0 ? `$${parseFloat(v).toFixed(4)}` : '—';
+    const fmtCost   = v => v != null && parseFloat(v) > 0 ? formatMoney(v, { decimales: 4 }) : '—';
 
     return (
         <div className="space-y-3">

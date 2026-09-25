@@ -4,7 +4,7 @@ import {
     ReferenceLine, Tooltip,
 } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
+import { formatMoney, formatMoneyCorto, formatPct } from '../../utils/formatNumber';
 
 // Las dos gráficas del histórico, sobre los últimos 12 meses cerrados.
 //
@@ -162,7 +162,7 @@ export default function GraficasHistorico({ datos, umbralMedio = 95, umbralTotal
                             <YAxis
                                 tickLine={false} axisLine={false} width={52}
                                 tick={{ fontSize: 10, fill: COLOR.texto, fontWeight: 700 }}
-                                tickFormatter={(v) => (v ? `$${Math.round(v / 1000)}k` : '0')}
+                                tickFormatter={(v) => (v ? formatMoneyCorto(v) : '0')}
                             />
                             <Tooltip
                                 contentStyle={TOOLTIP}

@@ -17,6 +17,7 @@ import { hora12 } from '../../utils/hora';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { supabase } from '../../supabaseClient'; 
 import { fechaTexto, hoySV } from '../../utils/fecha';
+import { formatMoney } from '../../utils/formatNumber';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS (Colores e Iconos dinámicos)
@@ -234,7 +235,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
             let desc = item.name || 'Registro del Sistema';
             const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
             if (parsedDetails.timeline_title) desc = parsedDetails.timeline_title;
-            else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) desc = `Pago de ${parsedDetails.servicio} registrado ($${parsedDetails.monto})`;
+            else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) desc = `Pago de ${parsedDetails.servicio} registrado (${formatMoney(parsedDetails.monto)})`;
             let actor = item.isSynthetic || item.isDoc ? 'Administrador' : (item.user_name || item.user_email || 'Sistema');
             return `"${dStr}","${tStr}","${action}","${desc.replace(/"/g, '""')}","${actor.replace(/"/g, '""')}"`;
         });
@@ -266,7 +267,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             let itemTitle = item.name || 'Registro del sistema';
                             const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
                             if (parsedDetails.timeline_title) itemTitle = parsedDetails.timeline_title;
-                            else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) itemTitle = `Pago ${parsedDetails.servicio} ($${parsedDetails.monto})`;
+                            else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) itemTitle = `Pago ${parsedDetails.servicio} (${formatMoney(parsedDetails.monto)})`;
                             return (
                                 <tr key={idx} className="border-b border-divider break-inside-avoid">
                                     <td className="py-2.5 px-2 font-bold">{dateObj.toLocaleDateString('es-SV')}</td>
@@ -540,7 +541,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                 newVal = parsedDetails.new_value;
                                                                             } else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) {
                                                                                 itemTitle = `Pago de ${parsedDetails.servicio}`;
-                                                                                newVal = `Monto: $${parsedDetails.monto}`;
+                                                                                newVal = `Monto: ${formatMoney(parsedDetails.monto)}`;
                                                                             }
 
                                                                             let actorName = item.user_name || item.actor_name || 'SISTEMA';

@@ -5,6 +5,7 @@
 
 import { exportCsv } from './csvExport';
 import { fechaNumerica } from './fecha';
+import { formatMoney } from './formatNumber';
 
 // pdfmake bajo demanda — mismo motivo que en pedidoPrint.js: estático metía
 // 809 kB gzip de fuentes embebidas en el chunk de ConteoDetailView, y esta
@@ -34,10 +35,7 @@ const fmtFecha = (iso) => fechaNumerica(iso, { vacio: '—' });
 function fmtFechaLarga(date) {
     return date.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
 }
-function fmtMoney(n) {
-    if (n === null || n === undefined) return '—';
-    return `$${Number(n).toFixed(2)}`;
-}
+const fmtMoney = (n) => formatMoney(n);
 // Las cifras del sistema llegan en NULL cuando el llamador no tiene
 // `conteo_ver_sistema` (las RPCs las tapan en origen). `String(null)` imprime la
 // palabra "null" en el PDF, que es peor que un guion: parece un dato roto.

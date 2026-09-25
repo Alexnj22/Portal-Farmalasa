@@ -91,6 +91,8 @@ const EXCLUDE_FILES = new Set(['src/version.js']);
 // suelto. Un `hex` nuevo en LoginView hoy sigue pasando, pero uno nuevo en
 // cualquier vista normal falla — que es lo que antes no ocurría.
 const EXCEPTIONS = {
+  // El canónico del dinero: es el ÚNICO que puede pegar el `$` a una cifra.
+  'src/utils/formatNumber.js': ['formato-cifra'],
     // ── El papel de un documento legal no tiene tema ────────────────────────
     // `src/generated/formularioDatos.js` es el formulario de solicitud de datos
     // convertido a una cadena para la ventana de impresión. Sus hex son los del
@@ -380,9 +382,9 @@ const EXCEPTIONS = {
   // cualquier teléfono. Mismo criterio que la guía de encuadre de la cámara.
   'src/components/common/QrDeCaptura.jsx': ['hex'],
   'src/utils/corteZPrint.js': ['hex'],           // idem: el PDF del Corte Z no pasa por CSS ni por los tokens del tema
-  // pdfmake: docDefinition, no CSS. `formato-cifra`: el PDF del conteo tiene su
-  // propio `fmtMoney` porque va a papel, no a pantalla.
-  'src/utils/conteoInventarioPrint.js': ['hex', 'formato-cifra'],
+  // pdfmake: docDefinition, no CSS. (Su dinero ya pasa por `formatMoney`: el
+  // papel también lleva separador de miles.)
+  'src/utils/conteoInventarioPrint.js': ['hex'],
   // <meta name="theme-color"> necesita un color SÓLIDO; --bg-page es un
   // gradiente, así que no se puede derivar del token con getComputedStyle.
   'src/plataforma/ThemeContext.jsx': ['hex'],
@@ -1324,7 +1326,11 @@ const ICONO_RETIRADO = {
   CheckCheck:  'Check',
 };
 
-const MONEDA_A_MANO_RE = /\$\$\{[^}]*\.toFixed\(\s*[12]\s*\)/g;
+// También `$${x}` a secas (2026-09-25): el salario de la ficha del empleado
+// salía `$365` o `$1234.5` —sin centavos y sin separador— porque no llevaba
+// `toFixed` y la regla vieja sólo miraba ése. Un `$` pegado a una
+// interpolación que no es `formatMoney` es dinero armado a mano.
+const MONEDA_A_MANO_RE = /\$\$\{(?!\s*formatMoney)[^}]*\}/g;
 
 // Marca líneas que son comentario puro (`// ...`, `* ...` de bloque, `/* ... */`
 // completo en una sola línea) para no confundir código prohibido mencionado

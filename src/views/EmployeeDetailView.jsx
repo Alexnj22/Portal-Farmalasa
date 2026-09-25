@@ -48,6 +48,7 @@ import ModalShell from '../components/common/ModalShell';
 import { rotuloCampo } from '../utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion } from '../plataforma/ventanaDeImpresion';
 import { fechaTexto, hoySV } from '../utils/fecha';
+import { formatMoney } from '../utils/formatNumber';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -1101,7 +1102,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         {/* Un guión y no `$0.00`: cero es un SUELDO, y decirlo cuando el
                                                             dato falta es afirmar algo que nadie escribió. */}
                                                         <p className="text-2xl font-black text-success-text tracking-tight">
-                                                            {(emp.salary || emp.base_salary) ? `$${emp.salary || emp.base_salary}` : '—'}
+                                                            {(emp.salary || emp.base_salary) ? formatMoney(emp.salary || emp.base_salary) : '—'}
                                                         </p>
                                                     </div>
                                                     <div data-surface="card" className="p-5 flex flex-col justify-center">

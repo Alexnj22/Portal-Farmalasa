@@ -6,6 +6,7 @@ import {
     updateKioskDevice, fetchBranchKiosks, fetchBranchExpenseRecord, updateBranchExpense, insertBranchExpense,
 } from '../../data/branches';
 import * as almacen from '../../plataforma/almacen';
+import { formatMoney } from '../../utils/formatNumber';
 
 const persistBranches = (branches) => {
     almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
@@ -529,14 +530,14 @@ export const createBranchSlice = (set, get) => ({
                 // 🔴 LÓGICA DE AUDITORÍA INTELIGENTE
                 let timelineTitle = `Pago de ${srvName}`;
                 let oldVal = `Mes: ${expenseData.billing_month}`;
-                let newVal = `Monto: $${expenseData.amount}`;
+                let newVal = `Monto: ${formatMoney(expenseData.amount)}`;
                 let actionType = 'PAGO_REGISTRADO';
 
                 // Si ya existía, significa que entraron a adjuntar el comprobante o actualizar el monto
                 if (existingRecord) {
                     timelineTitle = receiptUrl ? `Comprobante Adjuntado: ${srvName}` : `Actualización de Pago: ${srvName}`;
                     oldVal = `Mes: ${expenseData.billing_month}`;
-                    newVal = receiptUrl ? `Recibo guardado en expediente` : `Monto actualizado a $${expenseData.amount}`;
+                    newVal = receiptUrl ? `Recibo guardado en expediente` : `Monto actualizado a ${formatMoney(expenseData.amount)}`;
                     actionType = 'EDITAR_SUCURSAL'; // Cambiamos el tipo para que no salga el icono de pago duplicado
                 }
 

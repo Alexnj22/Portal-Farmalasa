@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.1 — U1: el dinero — los montos sueltos pasan por formatMoney
+
+Cierra U1. El dinero ya tenía canónico (`formatMoney`, desde julio) y un
+gate; lo que quedaba eran montos que la regla no veía.
+
+- **La regla sólo miraba `$${x.toFixed(2)}`.** Un `$` pegado a un número
+  crudo pasaba: el **salario de la ficha del empleado** salía `$365` o
+  `$1234.5`, sin centavos ni separador de miles. Ahora `formato-cifra` falla
+  con cualquier `$${…}` que no sea `formatMoney`, y atrapó 13 sitios más:
+  - el historial de la sucursal y lo que registran pagos y gastos
+    («Monto: $123.5»);
+  - el monto de una solicitud de personal, que perdía los centavos;
+  - los ejes de las gráficas de metas (`formatMoneyCorto`);
+  - el bono de una promoción, el costo en el catálogo, el F07 y el PDF del
+    conteo (este último ya no está exceptuado: el papel también lleva
+    separador de miles).
+- `formatNumber.js` queda como la única excepción de la regla: es el que
+  pega el `$`.
+- **Sin tocar, a propósito:** la boleta de pago y la planilla impresas siguen
+  con `$1234.50` (sin separador), porque están exceptuadas como documento
+  legal. Cambiarlas es decisión del usuario.
+- Verificado: 2,904 pruebas, lint sin errores nuevos, compilación y las
+  vistas tocadas recorridas contra la base de pruebas.
+
 ## v2.1075.0 — Avisos sólo en horario laboral
 
 Regla del usuario: ningún aviso ni notificación fuera del horario laboral.

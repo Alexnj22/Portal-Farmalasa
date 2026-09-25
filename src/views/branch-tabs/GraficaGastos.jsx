@@ -66,7 +66,7 @@ export default function GraficaGastos({ data }) {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontWeight: 800 }}
-                    tickFormatter={(value) => `$${value}`}
+                    tickFormatter={(value) => formatMoney(value, { decimales: 0 })}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in srgb, var(--brand) 5%, transparent)', rx: 8 }} />
                 <Bar

@@ -27,6 +27,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import Campo from './Campo';
 import { fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento } from './promocionesUtils';
 import { hoySV } from '../../utils/fecha';
+import { formatMoney } from '../../utils/formatNumber';
 
 const CLAVE_BORRADOR = 'promocion_nueva';
 
@@ -854,7 +855,7 @@ function RenglonListo({ r, proveedores, onEditar, onQuitar }) {
                 <p className="text-caption text-content-3 truncate">
                     {r.lote_total ? `Lote ${fmtUnidades(r.lote_total)} · ` : 'Sin lote · '}
                     {r.tiene_bono
-                        ? `$${r.bono_vendedor} · paga ${r.paga === 'empresa' ? 'la empresa' : (prov || 'un proveedor')}`
+                        ? `${formatMoney(r.bono_vendedor)} · paga ${r.paga === 'empresa' ? 'la empresa' : (prov || 'un proveedor')}`
                         : 'sólo mide, no paga bono'}
                 </p>
             </div>

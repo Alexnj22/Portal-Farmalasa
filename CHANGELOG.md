@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1074.5 — Diferencias de caja: los responsables desmarcados ya no vuelven solos
+
+Salud 2, corte de la 1:05 p. m. del 24-sep: se eligieron 3 responsables y se
+guardaron las 5 que vendieron en el tramo, a $4.05 cada una. La preselección
+(«quienes vendieron») vivía en un efecto que se volvía a correr cada vez que
+`user` cambiaba de identidad —re-firma de la foto, recarga de permisos— o se
+alternaba la vía, y cada vuelta volvía a marcar a todos y rehacía el reparto.
+Ahora se preselecciona una sola vez por apertura del formulario. La resolución
+ya guardada no se toca: hay que anularla y volver a resolverla.
+
 ## v2.1074.4 — Puntos: migrado al libro y actualizado cada noche hasta el corte
 
 Con el OK del usuario, el historial del sistema de puntos anterior ya está en

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Ban, HandCoins, Image as ImageIcon, Printer, ShieldCheck } from 'lucide-react';
 import AbonosDeDiferencia from './AbonosDeDiferencia';
 import Badge from '../common/Badge';
@@ -143,12 +143,22 @@ export default function ResolverDiferencia({
 
     // Los candidatos a aportar. Se piden al abrir el formulario y no con el
     // corte: sólo hacen falta si alguien va a reponer.
+    // La preselección se hace UNA vez por corte. El efecto se vuelve a correr
+    // solo —`user` cambia de identidad cuando se re-firma la foto o se
+    // recargan los permisos, y alternar la vía también lo dispara— y cada
+    // vuelta pisaba lo que la persona había desmarcado: Salud 2 del 24-sep se
+    // guardó con las cinco que vendieron sobre tres elegidas, sin aviso.
+    const preseleccionDe = useRef(null);
+    const userId = user?.id ?? null;
     useEffect(() => {
-        if (!abriendo || !corteId || via !== 'REPONE') return;
+        if (!abriendo) { preseleccionDe.current = null; return; }
+        if (!corteId || via !== 'REPONE') return;
         let vivo = true;
         fetchTurnoDelCorte(corteId).then((filas) => {
             if (!vivo) return;
             setCandidatos(filas);
+            if (preseleccionDe.current === corteId) return;
+            preseleccionDe.current = corteId;
             // Preselección (usuario, 2026-09-25): quienes VENDIERON en el tramo
             // de este corte. Si nadie vendió —o las ventas todavía no llegaron—
             // cae a los del turno y a quien tiene la sesión, que era la regla de
@@ -156,11 +166,11 @@ export default function ResolverDiferencia({
             const vendieron = filas.filter((f) => Number(f.ventas) > 0).map((f) => f.id);
             const previa = vendieron.length
                 ? vendieron
-                : filas.filter((f) => f.del_turno || f.id === user?.id).map((f) => f.id);
+                : filas.filter((f) => f.del_turno || f.id === userId).map((f) => f.id);
             setMarcadas(new Set(previa.length ? previa : filas.slice(0, 1).map((f) => f.id)));
         });
         return () => { vivo = false; };
-    }, [abriendo, corteId, via, user]);
+    }, [abriendo, corteId, via, userId]);
 
     // El reparto se rehace al cambiar quiénes aportan. Va en render y no en un
     // efecto —el proyecto prohíbe `setState` dentro de `useEffect`— usando el

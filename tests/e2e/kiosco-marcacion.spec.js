@@ -2,9 +2,10 @@ import { test, expect } from '@playwright/test';
 
 // Prueba del kiosco de marcación contra el ENTORNO DE PRUEBAS.
 //
-// Requiere `npm run dev:staging` levantado en :5173 y el kiosco sembrado en el
-// branch de pruebas (dispositivo + empleados con PIN de carné + horario
-// publicado). Los valores de abajo son los del branch `staging`.
+// Requiere el portal levantado contra el entorno de pruebas y el kiosco
+// sembrado ahí con `scripts/entorno-pruebas/semilla_kiosco.sql` (dispositivo +
+// persona con carné + turno de hoy). Correr la semilla antes: corre el turno a
+// la hora actual y borra las marcaciones de hoy.
 //
 // Lo que verifica que ninguna prueba unitaria puede: que el carné escaneado
 // llega al servidor, que el marcaje QUEDA GUARDADO —no encolado— y que el
@@ -18,7 +19,11 @@ const KIOSCO = {
     deviceName:  'Kiosco Salud 1 (pruebas)',
 };
 
-const CARNE = 'NZXPLEGQ';        // PIN impreso en el carné de Marta Alfaro
+// PIN del carné de Marta Alfaro (código 9101). Lo siembra
+// `scripts/entorno-pruebas/semilla_kiosco.sql` —junto con el dispositivo y su
+// turno de hoy— y lo deriva del código el trigger `derivar_kiosk_pin`. El que
+// estaba acá (NZXPLEGQ) era de un branch que ya no existe.
+const CARNE = 'DKXRHEYU';
 const CARNE_INEXISTENTE = 'ZZZZ9999';
 
 // Un lector físico entrega el carné entero en milisegundos. El kiosco mide esa

@@ -168,7 +168,7 @@ function TablaDeVendedores({ tabla, promedio, isDark, buscarEmpleado }) {
                         <span className="relative flex-shrink-0">
                             <AvatarConEstado emp={emp} px={22} radio="rounded-full" marco="" mostrarChip={false} />
                         </span>
-                        <span className={`relative flex-1 min-w-0 truncate text-caption ${t.texto} ${v.yo ? 'font-black' : 'font-semibold'}`}>
+                        <span className={`relative flex-1 min-w-0 break-words leading-tight text-caption ${t.texto} ${v.yo ? 'font-black' : 'font-semibold'}`}>
                             {shortEmployeeName(emp)}
                         </span>
                         {v.venta != null && (
@@ -270,8 +270,8 @@ function PodioDeLaEmpresa({ top3, buscarEmpleado, claseTenue }) {
                         </span>
                         <AvatarConEstado emp={emp} px={26} radio="rounded-full" marco="" />
                         <span className="flex-1 min-w-0">
-                            <span className="block text-caption font-black truncate">{shortEmployeeName(emp)}</span>
-                            <span className={`block text-micro font-semibold truncate ${claseTenue}`}>{v.sala}</span>
+                            <span className="block text-caption font-black break-words leading-tight">{shortEmployeeName(emp)}</span>
+                            <span className={`block text-micro font-semibold break-words ${claseTenue}`}>{v.sala}</span>
                         </span>
                         {v.venta != null && (
                             <span className="text-caption font-black tabular-nums flex-shrink-0">
@@ -311,7 +311,7 @@ export function CuerpoDeCierreDeEmpresa({ datos, claseTenue, isDark, buscarEmple
                 <ul className="flex flex-col gap-1">
                     {sucursales.map(({ sala, pct }) => (
                         <li key={sala} className="flex items-center gap-2 min-w-0">
-                            <span className={`text-caption font-semibold truncate w-24 flex-shrink-0 ${claseTenue}`}>
+                            <span className={`text-caption font-semibold break-words leading-tight w-24 flex-shrink-0 ${claseTenue}`}>
                                 {sala}
                             </span>
                             <span className="flex-1 h-1.5 rounded-full bg-border-card overflow-hidden">
@@ -376,7 +376,7 @@ function LineaDeCaja({ datos, claseTenue, isDark }) {
         <div className="flex flex-col gap-1">
             {conDif.map((s) => (
                 <p key={s.sala} className="text-caption font-semibold flex items-baseline gap-1.5">
-                    <span className="truncate">{s.sala}</span>
+                    <span className="break-words">{s.sala}</span>
                     <span className={`tabular-nums font-black ${
                         s.diferencia < 0 ? tonoDeCumplimiento(0, isDark).texto : tonoDeCumplimiento(97, isDark).texto}`}>
                         {s.diferencia > 0 ? '+' : ''}{formatMoney(s.diferencia)}
@@ -426,7 +426,7 @@ export function CuerpoDeCierreDelDia({ datos, claseTenue, isDark }) {
                 <ul className="flex flex-col gap-1">
                     {sucursales.map(({ sala, pct, venta: vs }) => (
                         <li key={sala} className="flex items-center gap-2 min-w-0">
-                            <span className={`text-caption font-semibold truncate w-24 flex-shrink-0 ${claseTenue}`}>
+                            <span className={`text-caption font-semibold break-words leading-tight w-24 flex-shrink-0 ${claseTenue}`}>
                                 {sala}
                             </span>
                             {/* El tope de la barra es 130% igual que en el cierre

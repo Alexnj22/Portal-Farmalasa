@@ -422,15 +422,15 @@ const TarjetaDeAviso = ({
                         adelante —que es lo que de verdad se reconoce— y sin
                         costar una consulta: las dos salen de la fila. */}
                     {(quien || sucursal) && !conPersona && (
-                        <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
+                        <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 mt-1.5 min-w-0">
                             {quien && (
                                 <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />
                             )}
-                            <span className={`text-caption font-bold truncate ${cx.rowTitleRead}`}>
+                            <span className={`text-caption font-bold break-words min-w-0 ${cx.rowTitleRead}`}>
                                 {quien ? shortEmployeeName(quien) : sucursal}
                             </span>
                             {quien && sucursal && (
-                                <span className={`text-caption font-medium truncate ${cx.rowTime}`}>· {sucursal}</span>
+                                <span className={`text-caption font-medium break-words min-w-0 ${cx.rowTime}`}>· {sucursal}</span>
                             )}
                         </div>
                     )}

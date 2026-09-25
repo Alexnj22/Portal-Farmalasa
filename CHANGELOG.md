@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1060.10 — Avisos sin nombres cortados en el teléfono
+
+Barrido de la campana con el último aviso real de cada tipo (55 muestras, 29
+tipos) a 320, 360 y 390 px y en escritorio. Donde se cortaba con «…»:
+
+- **Cierre de meta de la empresa:** los tres que más vendieron salían como
+  «Brissa…», «Marib…». Ahora el nombre baja de renglón.
+- **Cierre de meta de la sala:** la lista de vendedores cortaba «Yessica
+  Herna…», «Wendy Mart…».
+- **Quién y de qué sala** en el pie de los avisos: ya no se corta si el nombre es
+  largo.
+
+Lo único que sigue recortado a propósito son los mensajes largos a tres
+renglones, que tienen su botón «Ver mensaje completo».
+
 ## v2.1060.9 — Aviso de aperturas sin cortes en el teléfono
 
 En la campana, cada renglón de «Así abrió la mañana» pone la sala arriba y

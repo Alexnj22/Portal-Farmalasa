@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1063.1 — Puntos: la copia de la base vieja va por fases, y el ensayo general con datos reales
+
+La migración del corte del 1-oct está aplicada a producción
+(`20260925174654`) y las cinco funciones desplegadas, **con nada encendido**.
+
+- **`puntos-archivar` va por fases.** Copiar las 124,813 compras en una sola
+  ejecución murió con `WORKER_RESOURCE_LIMIT`. Ahora «abrir» copia clientes y
+  canjes y congela el último número de compra; cada tanda de 15,000 compras
+  corre en su propia ejecución, y «cerrar» comprueba los conteos. Copia
+  completa en menos de un minuto.
+- De la ficha de allá se copia una **lista cerrada** de columnas: tiene nueve
+  banderas de salud y el filtro por nombre se había quedado corto con cinco.
+- **Ensayo general contra los datos reales**, con la migración real dentro de
+  una transacción que se deshizo: 10,632 cuentas, 1,656,965 puntos (95.1%),
+  0 descuadradas, 22 s. Quedan 709 cuentas para resolver a mano (sin ficha,
+  DUI repetido, sin DUI). Detalle en `docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md` §12.
+
 ## v2.1063.0 — Puntos: el corte del 1-oct, rediseñado y ensayado
 
 El 1-oct a las 02:00 los puntos pasan al portal y la base vieja deja de usarse.
@@ -38,9 +55,7 @@ el saldo, y el motor arranca con las ventas de ese día.
 
 Ensayado entero en el entorno de pruebas (`scripts/entorno-pruebas/siembra_puntos.sql`).
 El ensayo encontró que `puntos_cuadrar` —el freno antes de encender— fallaba
-por la API desde el 1-sep. La migración SQL (piso, archivo, migración con
-historial, encendido y el arreglo de `puntos_cuadrar`) todavía NO está aplicada
-a producción. Detalle y pasos en `docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md` §12.
+por la API desde el 1-sep. Detalle y pasos en `docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md` §12.
 
 ## v2.1062.5 — Núcleo portable: el tema y el documento de bienvenida a la capa de la web
 

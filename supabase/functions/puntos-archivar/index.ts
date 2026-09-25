@@ -21,18 +21,24 @@
 // la marca `completa` y borra las anteriores. La migración lee SIEMPRE la
 // última completa: una copia cortada a la mitad nunca es la que se migra.
 //
-// Las tres tablas se leen dentro de UNA transacción con instantánea
-// consistente: si en el medio alguien canjea en la caja, la copia no puede
-// traer el canje sin la cuenta ya descontada, ni al revés.
+// Clientes y canjes se leen en UNA instantánea consistente, y en ella se
+// congela el último número de compra: las compras se copian después, por
+// tandas, hasta ese número. Lo que entre a la caja mientras tanto no desarma el
+// conteo.
 //
 // Modos:
-//   { "columnas": true }  → las columnas de las tablas, para mirar.
-//   { }                   → copia completa.
+//   { "columnas": true }              → las columnas de las tablas, para mirar.
+//   { }                               → copia completa (encadena las tres fases).
+//   { "fase": "abrir" | "ventas" | "cerrar", … } → una fase suelta.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { getCorsHeaders, requireInvokeSecret } from '../_shared/security.ts';
 
 // Filas por INSERT: 2,000 entra cómodo en un payload de PostgREST.
 const TANDA = 2000;
+
+// Compras por ejecución. Cada tanda es una ejecución aparte, con su propio
+// presupuesto de memoria y CPU.
+const LOTE_VENTAS = 15000;
 
 // Una fecha que Postgres no acepta (`0000-00-00`, vacía) no puede tumbar la
 // copia: el dato crudo queda en `datos` y la fila entra con esta fecha, que es
@@ -55,12 +61,6 @@ function fechaValida(v: unknown): string | null {
   const s = String(v ?? '').trim();
   if (!/^\d{4}-\d{2}-\d{2}/.test(s) || s.startsWith('0000')) return null;
   return s.slice(0, 19);
-}
-
-async function clavePrimaria(conn: any, tabla: string): Promise<string> {
-  const [k] = await conn.query(`SHOW KEYS FROM \`${tabla}\` WHERE Key_name = 'PRIMARY'`) as any;
-  if (!k?.length) throw new Error(`${tabla} no tiene clave primaria: no hay cómo identificar sus filas`);
-  return String(k[0].Column_name);
 }
 
 Deno.serve(async (req) => {
@@ -95,29 +95,46 @@ Deno.serve(async (req) => {
       return json({ ok: true, ...out });
     }
 
-    // ── Leer, en una sola instantánea ───────────────────────────────────────
-    const pkVenta = await clavePrimaria(conn, 'Ventas');
-    const pkCanje = await clavePrimaria(conn, 'Canjes');
+    const fase = String(body?.fase ?? '');
 
-    await conn.query('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
-    await conn.query('START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY');
-    const [clientes] = await conn.query('SELECT * FROM Clientes ORDER BY idCliente') as any;
-    const [ventas] = await conn.query(
-      `SELECT v.*, s.Abreviatura AS _sala FROM Ventas v
-         LEFT JOIN Sucursales s ON s.idSucursal = v.idSucursal ORDER BY v.\`${pkVenta}\``) as any;
-    const [canjes] = await conn.query(
-      `SELECT k.*, s.Abreviatura AS _sala FROM Canjes k
-         LEFT JOIN Sucursales s ON s.idSucursal = k.idSucursal ORDER BY k.\`${pkCanje}\``) as any;
-    await conn.query('COMMIT');
+    // ── Sin fase: encadena las tres, cada una en su PROPIA ejecución ─────────
+    // Todo en una sola no entra: 124,809 compras agotaron la memoria y el CPU
+    // de una función (WORKER_RESOURCE_LIMIT, medido el 2026-09-25). Esta
+    // ejecución sólo espera; el trabajo lo hacen las otras.
+    if (!fase) {
+      await conn.end(); conn = null;
+      const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/puntos-archivar`;
+      const llamar = async (b: Record<string, unknown>) => {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: req.headers.get('Authorization') ?? '' },
+          body: JSON.stringify(b),
+          // Cada fase tarda segundos; si una se cuelga, la cadena tiene que
+          // cortar con error y no quedarse esperando hasta que la maten.
+          signal: AbortSignal.timeout(140_000),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d?.ok === false) throw new Error(`fase ${b.fase}: ${d?.error ?? r.status}`);
+        return d;
+      };
+      const abierta = await llamar({ fase: 'abrir' });
+      let despues = 0, tandas = 0, copiadas = 0;
+      for (;;) {
+        const t = await llamar({ fase: 'ventas', carga: abierta.carga, tope: abierta.tope_venta, despues_de: despues });
+        copiadas += t.n; tandas++;
+        if (!t.n || t.n < LOTE_VENTAS) break;
+        despues = t.ultimo;
+      }
+      const cierre = await llamar({ fase: 'cerrar', carga: abierta.carga });
+      return json({ ok: true, carga: abierta.carga, tandas, ventas: copiadas, cierre });
+    }
 
-    // ── Abrir la carga ──────────────────────────────────────────────────────
-    const { data: carga, error: eCarga } = await supabase
-      .from('puntos_archivo_carga')
-      .insert({ mysql_clientes: clientes.length, mysql_ventas: ventas.length, mysql_canjes: canjes.length })
-      .select('id').single();
-    if (eCarga) throw new Error(`puntos_archivo_carga: ${eCarga.message}`);
-    const cargaId = carga.id as number;
-
+    const escribir = async (tabla: string, filas: Record<string, unknown>[]) => {
+      for (let i = 0; i < filas.length; i += TANDA) {
+        const { error } = await supabase.from(tabla).insert(filas.slice(i, i + TANDA));
+        if (error) throw new Error(`${tabla} (tanda ${i / TANDA}): ${error.message}`);
+      }
+    };
     const avisos = { fechas_invalidas: 0, puntos_no_enteros: 0 };
     const entero = (v: unknown) => {
       const n = Number(v ?? 0);
@@ -130,42 +147,80 @@ Deno.serve(async (req) => {
       return f ?? FECHA_DE_RESPALDO;
     };
 
-    const escribir = async (tabla: string, filas: Record<string, unknown>[]) => {
-      for (let i = 0; i < filas.length; i += TANDA) {
-        const { error } = await supabase.from(tabla).insert(filas.slice(i, i + TANDA));
-        if (error) throw new Error(`${tabla} (tanda ${i / TANDA}): ${error.message}`);
-      }
-    };
+    // ── Abrir: clientes y canjes enteros, y el tope de las compras ──────────
+    // Se lee en una instantánea consistente y se congela el último número de
+    // compra: las tandas siguientes copian hasta ahí y no más, así lo que entre
+    // a la caja mientras se copia no desarma el conteo.
+    if (fase === 'abrir') {
+      await conn.query('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+      await conn.query('START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY');
+      const [[tope]] = await conn.query('SELECT COALESCE(MAX(idVenta), 0) AS id, COUNT(*) AS n FROM Ventas') as any;
+      const [clientes] = await conn.query('SELECT * FROM Clientes ORDER BY idCliente') as any;
+      const [canjes] = await conn.query(
+        `SELECT k.*, s.Abreviatura AS _sala FROM Canjes k
+           LEFT JOIN Sucursales s ON s.idSucursal = k.idSucursal ORDER BY k.idCanje`) as any;
+      await conn.query('COMMIT');
 
-    // De la ficha de allá NO se copian las banderas de salud ni credenciales:
-    // no hacen falta para los puntos, y un dato de salud guardado sin motivo es
-    // exactamente lo que el aviso de privacidad promete no hacer. (Además están
-    // vacías: 10 diabéticos sobre 14,631, medido el 2026-08-29.)
-    const SENSIBLE = /pass|clave|contra|pin|token|diab|hiper|card|tiroid|enferm|alerg|embaraz/i;
-    const sinSensibles = (c: Record<string, unknown>) =>
-      Object.fromEntries(Object.entries(c).filter(([k]) => !SENSIBLE.test(k)));
+      const { data: carga, error: eCarga } = await supabase
+        .from('puntos_archivo_carga')
+        .insert({ mysql_clientes: clientes.length, mysql_ventas: Number(tope.n), mysql_canjes: canjes.length })
+        .select('id').single();
+      if (eCarga) throw new Error(`puntos_archivo_carga: ${eCarga.message}`);
 
-    await escribir('puntos_archivo_cliente', clientes.map((c: any) => ({
-      carga_id: cargaId, id_cliente: Number(c.idCliente),
-      dui: c.DUI == null ? null : String(c.DUI), puntos: entero(c.Puntos), datos: sinSensibles(c),
-    })));
-    await escribir('puntos_archivo_venta', ventas.map((v: any) => ({
-      carga_id: cargaId, id_venta: Number(v[pkVenta]), id_cliente: Number(v.idCliente),
-      fecha: fecha(v.Fecha_ingreso), puntos: entero(v.PuntosVenta),
-      sucursal: v._sala ?? null, ticket: v.TicketFactura == null ? null : String(v.TicketFactura), datos: v,
-    })));
-    await escribir('puntos_archivo_canje', canjes.map((k: any) => ({
-      carga_id: cargaId, id_canje: Number(k[pkCanje]), id_cliente: Number(k.idCliente),
-      fecha: fecha(k.FechaCanje), puntos: entero(k.PuntosCanjeados),
-      sucursal: k._sala ?? null, ticket: k.TKT == null ? null : String(k.TKT), datos: k,
-    })));
+      // De la ficha de allá se copia una lista CERRADA de columnas. La tabla
+      // trae nueve banderas de salud (Diabeticos, Hipertensos, Cardiacos,
+      // LechesYSuplementos, Renales, Tiroides, Lipidicos, TrasMetabolicos,
+      // Otros) y un filtro por nombre ya se había quedado corto con cinco de
+      // ellas. Un dato de salud guardado sin motivo es exactamente lo que el
+      // aviso de privacidad promete no hacer; una columna nueva allá no entra
+      // sola acá.
+      const PERMITIDAS = new Set(['idCliente', 'DUI', 'Nombres', 'Apellidos', 'Telefono', 'Correo',
+        'FechaNacimiento', 'Puntos', 'creacion', 'Estado', 'EnvioPromociones']);
+      const sinSensibles = (c: Record<string, unknown>) =>
+        Object.fromEntries(Object.entries(c).filter(([k]) => PERMITIDAS.has(k)));
+
+      await escribir('puntos_archivo_cliente', clientes.map((c: any) => ({
+        carga_id: carga.id, id_cliente: Number(c.idCliente),
+        dui: c.DUI == null ? null : String(c.DUI), puntos: entero(c.Puntos), datos: sinSensibles(c),
+      })));
+      await escribir('puntos_archivo_canje', canjes.map((k: any) => ({
+        carga_id: carga.id, id_canje: Number(k.idCanje), id_cliente: Number(k.idCliente),
+        fecha: fecha(k.FechaCanje), puntos: entero(k.PuntosCanjeados),
+        sucursal: k._sala ?? null, ticket: k.TKT == null ? null : String(k.TKT),
+        datos: { idVendedor: k.idVendedor, idSucursal: k.idSucursal, Tipo: k.Tipo },
+      })));
+      return json({ ok: true, carga: carga.id, tope_venta: Number(tope.id), ventas_total: Number(tope.n), ...avisos });
+    }
+
+    // ── Una tanda de compras ────────────────────────────────────────────────
+    if (fase === 'ventas') {
+      const cargaId = Number(body?.carga), tope = Number(body?.tope), despues = Number(body?.despues_de ?? 0);
+      if (!cargaId || !tope) return json({ ok: false, error: 'faltan carga y tope' }, 400);
+      const [ventas] = await conn.query(
+        `SELECT v.idVenta, v.idCliente, v.idVendedor, v.idSucursal, v.Tipo, v.Fecha_ingreso,
+                v.TicketFactura, v.Monto, v.PuntosVenta, v.Saldo, s.Abreviatura AS _sala
+           FROM Ventas v LEFT JOIN Sucursales s ON s.idSucursal = v.idSucursal
+          WHERE v.idVenta > ? AND v.idVenta <= ?
+          ORDER BY v.idVenta LIMIT ?`, [despues, tope, LOTE_VENTAS]) as any;
+      await escribir('puntos_archivo_venta', ventas.map((v: any) => ({
+        carga_id: cargaId, id_venta: Number(v.idVenta), id_cliente: Number(v.idCliente),
+        fecha: fecha(v.Fecha_ingreso), puntos: entero(v.PuntosVenta),
+        sucursal: v._sala ?? null, ticket: v.TicketFactura == null ? null : String(v.TicketFactura),
+        datos: { idVendedor: v.idVendedor, idSucursal: v.idSucursal, Tipo: v.Tipo, Monto: v.Monto, Saldo: v.Saldo },
+      })));
+      const ultimo = ventas.length ? Number(ventas[ventas.length - 1].idVenta) : despues;
+      return json({ ok: true, n: ventas.length, ultimo, ...avisos });
+    }
 
     // ── Cerrar: sólo si lo escrito es lo leído ─────────────────────────────
-    const { data: cierre, error: eCierre } = await supabase.rpc('puntos_archivo_cerrar', { p_carga: cargaId });
-    if (eCierre) throw new Error(`puntos_archivo_cerrar: ${eCierre.message}`);
+    if (fase === 'cerrar') {
+      const { data: cierre, error: eCierre } = await supabase.rpc('puntos_archivo_cerrar', { p_carga: Number(body?.carga) });
+      if (eCierre) throw new Error(`puntos_archivo_cerrar: ${eCierre.message}`);
+      const ok = (cierre as any)?.ok === true;
+      return json({ ok, cierre, error: ok ? undefined : 'los conteos no cuadran' }, ok ? 200 : 500);
+    }
 
-    const ok = (cierre as any)?.ok === true;
-    return json({ ok, carga: cargaId, cierre, ...avisos }, ok ? 200 : 500);
+    return json({ ok: false, error: `fase desconocida: ${fase}` }, 400);
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   } finally {

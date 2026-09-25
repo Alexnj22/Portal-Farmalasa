@@ -759,21 +759,44 @@ puntos, 0 que el circuito actual no acreditó**. Las 326 al revés son catálogo
 precios que cambiaron después del envío, no una regla distinta (las dos
 funciones tienen la misma).
 
-### Lo que falta, en orden
+### Hecho en producción el 2026-09-25 (con OK del usuario)
 
-1. Aplicar la migración a producción (borrador probado en el branch).
-2. Desplegar `puntos-archivar`, `puntos-arranque`, `puntos-motor`, `mis-puntos`,
-   `puntos-consulta`. Ninguna enciende nada.
-3. **Ensayo general contra datos reales**: `puntos-archivar` (copia real) y
-   `puntos-arranque {"simular": true}` → los números de verdad: cuántas cuentas
-   quedan afuera y por qué.
-4. Crear los dos crones de una sola vez: `puntos-archivar-arranque` a las
-   **08:00 UTC del 1-oct** (02:00 SV) y `puntos-arranque-1oct` a las 08:10.
-   `puntos_encender` los borra al terminar.
-5. **Operativo, no código**: que nadie use la aplicación de puntos vieja desde
-   el cierre del 30-sep (lo que se escriba allá después de la copia se pierde),
-   apagar el disparador del Apps Script en Drive, y que la caja consulte el
-   saldo en la ficha del portal antes de aplicar un canje.
+1. ✅ Migración `20260925174654_puntos_corte_1oct_archivo_historial_y_encendido`.
+2. ✅ Desplegadas `puntos-archivar`, `puntos-arranque`, `puntos-motor`,
+   `mis-puntos`, `puntos-consulta`. Nada encendido: `fuente = mysql`,
+   `acumulacion_activa = false`.
+3. ✅ **Ensayo general contra los datos reales.**
+   - **Copia**: 14,687 clientes · 124,813 compras · 1,733 canjes, conteos
+     idénticos, < 1 min. La primera versión (todo en una ejecución) murió con
+     `WORKER_RESOURCE_LIMIT`: hoy va por fases, cada tanda de 15,000 compras en
+     su propia ejecución.
+   - **Arranque simulado**: ~5 s.
+   - **Migración REAL dentro de una transacción que se deshizo**: 12 tandas,
+     **10,632 cuentas, 119,499 lotes, 1,670 canjes, 0 que no cuadren, cuadre 0
+     descuadradas**, tanda más lenta 3.6 s (el techo de `service_role` es 120 s),
+     22 s en total. Al terminar, el libro volvió a cero.
+
+| grupo | cuentas con saldo | puntos | US$ |
+|---|---:|---:|---:|
+| **se migran** | 10,586 | **1,656,965** | 16,569.65 |
+| sin ficha en el portal | 621 | 74,216 | 742.16 |
+| DUI en varias fichas del portal | 53 | 5,692 | 56.92 |
+| DUI en varias cuentas de allá | 25 | 4,061 | 40.61 |
+| sin DUI | 10 | 792 | 7.92 |
+
+**95.1% de los puntos pasan solos.** Los 709 que no, quedan en el archivo y se
+pasan con `puntos_migrar_historial(false, 0, 1, <id_cliente>)` cuando se
+resuelve su ficha. 6 cuentas entran con ajuste (historial ≠ saldo, diferencias
+de −51 a +25 puntos).
+
+### Lo que falta
+
+4. Los dos crones de una sola vez del 1-oct: `puntos-archivar-arranque` 08:00
+   UTC y `puntos-arranque-1oct` 08:10 UTC — **espera el OK del usuario** sobre
+   estos números.
+5. Operativo: nadie en la aplicación vieja después del cierre del 30-sep; MySQL
+   encendido a las 02:00 del 1-oct; apagar el Apps Script de Drive; la caja
+   consulta el saldo en la ficha del portal antes de un canje.
 
 ### Lo que queda abierto a propósito
 

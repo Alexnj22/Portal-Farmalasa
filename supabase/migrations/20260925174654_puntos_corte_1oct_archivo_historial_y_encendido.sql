@@ -1,8 +1,3 @@
--- BORRADOR de la migración del corte del 1-oct (ver PLAN-PUNTOS-EN-SUPABASE §12).
--- Probado con execute_sql en el branch de pruebas el 2026-09-25. NO aplicado a
--- producción. Al aplicarlo con apply_migration, su archivo va a
--- supabase/migrations/<versión>_<name>.sql y este borrador se borra.
-
 SET lock_timeout = '5s';
 
 -- ═══ 1 · La fecha de arranque ═══════════════════════════════════════════════

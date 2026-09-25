@@ -31,6 +31,8 @@ import StatCard from '../components/common/StatCard';
 import CarrilCards from '../components/common/CarrilCards';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
+import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';
+import TablePagination from '../components/common/TablePagination';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -127,13 +129,30 @@ export default function PuntosView() {
         return !q ? avisos : avisos.filter((a) => tokenMatch(q, a.cliente, a.documento, a.sala));
     }, [avisos, busqueda]);
 
+    /* La página vive en la DIRECCIÓN (DESIGN.md §14 · usePaginaEnUrl): la sesión
+     * de sala se cierra sola y el portal se recarga al publicar una versión, y
+     * quien va por la página 12 de las 709 cuentas no puede volver a la 1.
+     * Cada pestaña con su propio parámetro: cambiar de pestaña no mueve la
+     * posición de la otra, y no hace falta escribir dos veces la dirección. */
+    const pagCuentas = usePaginaEnUrl({ total: cuentasVisibles.length, tamPorDefecto: 50 });
+    const pagAvisos = usePaginaEnUrl({ total: avisosVisibles.length, tamPorDefecto: 50,
+        param: 'pag_avisos', paramTam: 'ver_avisos' });
+    const tramo = (lista, p) => lista.slice((p.page - 1) * p.pageSize, p.page * p.pageSize);
+
+    // Buscar o filtrar cambia QUÉ lista es: la posición vieja ya no señala nada.
+    const buscar = (v) => {
+        setBusqueda(v);
+        (pestana === 'avisos' ? pagAvisos : pagCuentas).resetPage();
+    };
+    const filtrarMotivo = (v) => { setMotivo(v); pagCuentas.resetPage(); };
+
     const filtersContent = (
         <ViewTabBar
             tabs={PESTANAS}
             activeTab={pestana}
             onTabChange={setPestana}
             searchValue={pestana === 'resumen' ? undefined : busqueda}
-            onSearchChange={pestana === 'resumen' ? undefined : setBusqueda}
+            onSearchChange={pestana === 'resumen' ? undefined : buscar}
             placeholder={pestana === 'avisos' ? 'Buscar por cliente o documento…' : 'Buscar por nombre, DUI o teléfono…'}
         />
     );
@@ -161,7 +180,7 @@ export default function PuntosView() {
                         movil={{ identidad: 'cliente', ancla: 'puntos' }}
                         empty={{ icon: Inbox, message: busqueda.trim() ? 'Sin coincidencias' : 'Nada que revisar en los últimos 60 días' }}
                     >
-                        {avisosVisibles.map((a, i) => (
+                        {tramo(avisosVisibles, pagAvisos).map((a, i) => (
                             <DataRow key={`${a.tipo}-${a.invoice_id}-${i}`} index={i}>
                                 <DataCell>{fechaHora12(a.cuando)}</DataCell>
                                 <DataCell>
@@ -183,6 +202,11 @@ export default function PuntosView() {
                         ))}
                     </DataTable>
                 )}
+                {pestana === 'avisos' && avisosVisibles.length > pagAvisos.pageSize && (
+                    <TablePagination page={pagAvisos.page} totalPages={pagAvisos.totalPages}
+                        onPageChange={pagAvisos.setPage} pageSize={pagAvisos.pageSize}
+                        onPageSizeChange={pagAvisos.setPageSize} total={avisosVisibles.length} unit="avisos" />
+                )}
 
                 {pestana === 'por_asignar' && (
                     <>
@@ -192,9 +216,9 @@ export default function PuntosView() {
                             reclame, se busca su cuenta aquí y se asigna a su ficha.
                         </Notice>
                         <div className="flex justify-end min-w-0">
-                            <FilterBar onClear={() => setMotivo('TODOS')} activeCount={motivo !== 'TODOS' ? 1 : 0}>
-                                <FilterBar.Section active={motivo !== 'TODOS'} onClear={() => setMotivo('TODOS')} label="motivo">
-                                    <FilterBar.Opciones value={motivo} onChange={setMotivo}
+                            <FilterBar onClear={() => filtrarMotivo('TODOS')} activeCount={motivo !== 'TODOS' ? 1 : 0}>
+                                <FilterBar.Section active={motivo !== 'TODOS'} onClear={() => filtrarMotivo('TODOS')} label="motivo">
+                                    <FilterBar.Opciones value={motivo} onChange={filtrarMotivo}
                                         options={MOTIVO_OPCIONES} label="Motivo" />
                                 </FilterBar.Section>
                             </FilterBar>
@@ -216,7 +240,7 @@ export default function PuntosView() {
                             movil={{ usarAccionDeFila: true, identidad: 'nombre', ancla: 'saldo' }}
                             empty={{ icon: Inbox, message: busqueda.trim() || motivo !== 'TODOS' ? 'Sin coincidencias' : 'Sin cuentas por asignar' }}
                         >
-                            {cuentasVisibles.map((c, i) => (
+                            {tramo(cuentasVisibles, pagCuentas).map((c, i) => (
                                 <DataRow key={c.id_cliente} index={i} onClick={() => setAbierta(c)}>
                                     <DataCell><span className="tabular-nums text-content-3">{c.id_cliente}</span></DataCell>
                                     <DataCell>{c.nombre || <span className="text-content-3">Sin nombre</span>}</DataCell>
@@ -231,6 +255,11 @@ export default function PuntosView() {
                                 </DataRow>
                             ))}
                         </DataTable>
+                        {cuentasVisibles.length > pagCuentas.pageSize && (
+                            <TablePagination page={pagCuentas.page} totalPages={pagCuentas.totalPages}
+                                onPageChange={pagCuentas.setPage} pageSize={pagCuentas.pageSize}
+                                onPageSizeChange={pagCuentas.setPageSize} total={cuentasVisibles.length} unit="cuentas" />
+                        )}
                     </>
                 )}
             </div>
@@ -257,6 +286,7 @@ export default function PuntosView() {
 function Resumen({ resumen, cargando, avisos, porAsignar, irA }) {
     const cfg = resumen?.config;
     const enPortal = cfg?.fuente === 'portal' && cfg?.encendido;
+    const anterior = resumen?.origen === 'sistema_anterior';
     const hoy = resumen?.periodos?.hoy ?? {};
     const mes = resumen?.periodos?.mes ?? {};
     const quieto = motorQuieto(resumen?.ultima_acumulacion, enPortal);
@@ -264,10 +294,12 @@ function Resumen({ resumen, cargando, avisos, porAsignar, irA }) {
 
     return (
         <>
-            {!cargando && cfg && !enPortal && (
+            {!cargando && anterior && (
                 <Notice variant="info" icon={CalendarClock} bloque>
-                    El programa pasa al portal el 1 de octubre de 2026 a las 2:00 a. m. Hasta entonces los
-                    puntos siguen en el sistema anterior, así que estas cifras están en cero.
+                    El programa pasa al portal el 1 de octubre de 2026 a las 2:00 a. m. Hasta entonces las
+                    cifras salen del sistema anterior: los puntos de los clientes son los de su última copia
+                    ({resumen?.copia_al ? fechaHora12(resumen.copia_al) : 'sin copia todavía'}), y lo ganado y
+                    canjeado, de las ventas del portal.
                 </Notice>
             )}
             {!cargando && arranque && !arranque.simulado && !arranque.ok && (
@@ -290,7 +322,7 @@ function Resumen({ resumen, cargando, avisos, porAsignar, irA }) {
                     sub={`${dolares(resumen?.libro?.puntos)} · ${pts(resumen?.libro?.cuentas_con_saldo)} clientes`}
                     loading={cargando} />
                 <StatCard icon={TrendingUp} iconBg="bg-success/10" iconCls="text-success-text"
-                    label="Acumulados hoy" value={pts(hoy.acumulado)}
+                    label="Ganados hoy" value={pts(hoy.acumulado)}
                     sub={`${pts(hoy.ventas)} ventas · mes ${pts(mes.acumulado)}`}
                     loading={cargando} />
                 <StatCard icon={Gift} iconBg="bg-warning/10" iconCls="text-warning-text"
@@ -314,7 +346,7 @@ function Resumen({ resumen, cargando, avisos, porAsignar, irA }) {
                 <DataTable
                     columns={[
                         { key: 'sala',      label: 'Sala' },
-                        { key: 'acumulado', label: 'Acumulados' },
+                        { key: 'acumulado', label: 'Ganados' },
                         { key: 'canjeado',  label: 'Canjeados' },
                     ]}
                     loading={cargando}

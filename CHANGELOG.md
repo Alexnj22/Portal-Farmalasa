@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1073.4 — Puntos: la vista muestra el sistema actual antes del arranque, y pagina en la dirección
+
+- **La vista «Puntos» ya no sale en cero antes del 1-oct.** El resumen leía sólo
+  el libro del portal, que está vacío hasta el arranque. Ahora, mientras el
+  sistema anterior siga mandando, muestra: los puntos de los clientes de su
+  última copia (con la fecha), lo ganado hoy y en el mes de las ventas enviadas
+  con puntos, y los canjes de las ventas con descuento de puntos. El aviso dice
+  de dónde sale cada cifra. «Acumulados» pasa a «Ganados».
+- **Cuentas por asignar y Avisos paginan**, con la página en la dirección
+  (`usePaginaEnUrl`, DESIGN.md §14): una recarga no devuelve a la página 1 y una
+  página fuera de rango se corrige a la última. Cada pestaña con su propio
+  parámetro.
+
 ## v2.1073.3 — Buscadores: una sola espera antes de consultar
 
 - Compras consultaba a la base con cada tecla: buscar «amoxicilina» eran once consultas, y una respuesta vieja podía llegar al final y quedar en pantalla sobre la nueva. Ahora espera a que se termine de escribir y descarta las respuestas que ya no corresponden.

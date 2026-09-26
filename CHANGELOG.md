@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.34 — Plan del núcleo: F3 cerrada
+
+Sin cambios en el portal. `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md` marca F3
+cerrada, con su bitácora, y deja el estado del plan al día: sigue F4.
+
 ## v2.1075.33 — F3 parte 4: etapas de bolsas y familias de solicitud con el ícono por nombre
 
 Sin cambios visibles. Sigue F3 del plan del núcleo portable.

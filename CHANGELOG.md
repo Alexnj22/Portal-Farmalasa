@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.29 — Facturación: si el comprobante no sube, el pago no se confirma
+
+Al confirmar un pago con comprobante adjunto, si el archivo no se logra subir
+el pago **ya no se confirma**: aparece «No se pudo subir el comprobante» y el
+formulario queda como estaba para reintentar. Antes se confirmaba sin
+comprobante, en verde y sin avisar, y nadie se enteraba hasta revisar la lista.
+Quien confirma sin adjuntar nada sigue igual que siempre. (Decisión del
+usuario, opción A.)
+
 ## v2.1075.28 — F3 parte 2: los hooks de Pedidos y Mín·Máx pasan al núcleo
 
 Sin cambios visibles. La lógica de las dos pantallas más cargadas sale de la

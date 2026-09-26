@@ -2160,8 +2160,22 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
             // Compiler ya documentado); al migrar a `FileField` ese ref desapareció
             // y el linter pasa a ver el archivo entero.
             const path = `invoices/${invoiceId}/${Date.now()}.${ext}`;
-            // Si la subida falla se sigue SIN comprobante, como siempre fue.
-            proofUrl = await subirArchivo('payment-proofs', path, confirmFile).catch(() => null);
+            // Si la subida falla, NO se confirma (decisión del usuario,
+            // 2026-09-26). Antes se seguía sin comprobante y en silencio: la
+            // persona adjuntó el archivo, vio «Pago confirmado» en verde, y el
+            // pago quedaba sin comprobante sin que nadie lo supiera. Quien no
+            // adjunta nada sigue confirmando igual que siempre.
+            try {
+                proofUrl = await subirArchivo('payment-proofs', path, confirmFile);
+            } catch (e) {
+                console.error('handleConfirm: subir comprobante:', e?.message);
+                useToastStore.getState().showToast(
+                    'No se pudo subir el comprobante',
+                    'El pago no se confirmó. Revisa la conexión e intenta de nuevo.',
+                    'error',
+                );
+                setConfirmSaving(false); return;
+            }
         }
 
         const inv = pending.find(r => r.id === invoiceId);

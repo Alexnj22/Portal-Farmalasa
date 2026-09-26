@@ -334,6 +334,7 @@ export const AREAS = [
                   'requests_personales'],
         rutas: ['/solicitudes', '/solicitudes-personales'],
         archivos: [
+            'src/constants/familiasOperativas.js',
             'src/utils/movimientoTexto.js',
             'src/views/RequestsView.jsx', 'src/views/solicitudes/',
             'src/data/requests.js', 'src/data/solicitudDeAviso.js',
@@ -535,6 +536,8 @@ export const AREAS = [
         modulos: ['cortes_caja', 'bolsas', 'bolsas_conteo', 'bolsas_ver_montos', 'bolsas_ver_cards'],
         rutas: ['/cortes', '/bolsas'],
         archivos: [
+            'src/constants/bolsas.js',
+            'src/utils/bolsasTexto.js',
             'src/views/CortesView.jsx', 'src/views/BolsasView.jsx', 'src/views/bolsas/',
             'src/views/MiCajaView.jsx',
             'src/components/cortes/', 'src/components/bolsas/', 'src/components/caja/',

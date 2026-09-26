@@ -1,63 +1,11 @@
 import { Banknote, Package, Scale, Send, ShieldCheck } from 'lucide-react';
-import { fechaTexto } from '../../utils/fecha';
+import { ETAPAS_DE_BOLSA } from '../../constants/bolsas';
 
-/* ── Las cuatro etapas, en el orden en que pasan las cosas ──────────────────
- *
- * Vive en su propio archivo porque la leen los DOS lados: `BolsasView` para
- * dibujar las pestañas y `CircuitoDeBolsas` para saber qué cuerpo pintar. La
- * lista tiene que ser UNA — con dos copias, agregar una etapa al circuito
- * dejaría una pestaña sin contenido o un contenido sin pestaña, y las dos
- * fallan en silencio.
- *
- * Y va aparte del motor y no adentro por una razón mecánica: un archivo que
- * exporta componentes **y** constantes rompe el refresco en caliente de Vite
- * (`react-refresh/only-export-components`), o sea que tocar la lista obligaría
- * a recargar la pantalla entera en desarrollo.
- *
- * `estado` es el valor de la columna, y por eso está acá y no en la vista: es
- * la traducción entre lo que dice la base y lo que lee quien mueve el dinero.
- * «ABIERTA» no significa nada para quien tiene la bolsa en la mano.
- *
- * `soloAdmin` marca las tres que exigen alcance ALL. La sala ve una sola etapa
- * —la suya— y con una sola pestaña `ViewTabBar` no dibuja ninguna: no hay entre
- * qué elegir, que es exactamente la regla de §14.
- */
-export const ETAPAS = [
-    { key: 'sala',        label: 'En la sala',          icon: Package,     estado: 'ABIERTA'   },
-    /* ── «Diferencias» NO es una etapa del circuito, y por eso va aparte ────
-     *
-     * Es la única pestaña que la sala comparte con administración, y existe
-     * porque el aviso llegaba a una puerta cerrada (2026-08-26). Cuando una
-     * bolsa no cuadra, `confirmar_conteo` ya le avisa a la sala —eso funcionaba
-     * desde el principio— y el aviso apuntaba a `/bolsas?tab=finalizadas`, que
-     * es `soloAdmin`. O sea: le llegaba la notificación, tocaba, y caía en «En
-     * la sala», donde esa bolsa ya no está porque se contó hace días.
-     *
-     * Y la sala SÍ puede resolverla: `resolver_diferencia_bolsa` acepta a quien
-     * tenga `bolsas` con `can_edit` sobre una bolsa de su propia sucursal. El
-     * permiso estaba; faltaba la pantalla.
-     *
-     * Va sin `estado` porque no lo tiene: son bolsas CONTADAS con una condición
-     * —no cuadraron y nadie anotó por qué—. Va segunda, que para la sala es la
-     * de al lado. */
-    { key: 'diferencias', label: 'Diferencias',         icon: Scale,       estado: null },
-    { key: 'camino',      label: 'Esperando recepción', icon: Send,        estado: 'ENTREGADA', soloAdmin: true },
-    { key: 'contar',      label: 'Por contar',          icon: Banknote,    estado: 'RECIBIDA',  soloAdmin: true },
-    { key: 'finalizadas', label: 'Finalizadas',         icon: ShieldCheck, estado: 'CONTADA',   soloAdmin: true },
-];
+// Las etapas (claves, estados, alcance) viven en `constants/bolsas.js` —con el
+// porqué de cada una—; acá sólo se les pone el ícono. `rangoDeDias` vive en
+// `utils/bolsasTexto.js` y se re-exporta para quien ya lo importaba de acá.
+const ICONOS = { Banknote, Package, Scale, Send, ShieldCheck };
 
-/* ── El rango de días que cubre una tanda, dicho corto ──────────────────────
- *
- * Vive acá y no en `ConteosDeBolsas` porque lo leen los DOS lados —la tabla de
- * conteos y la ranura de la píldora, que la arma `CircuitoDeBolsas`— y ese
- * componente se carga en diferido: importarlo desde el motor para sacar una
- * función de tres líneas rompería el corte del bundle.
- *
- * Un solo día se dice «17 ago» y no «17 ago → 17 ago», que sería decir dos
- * veces lo mismo.
- */
-export const rangoDeDias = (desde, hasta) => {
-    if (!desde) return '—';
-    const corto = (f) => fechaTexto(f, { day: 'numeric', month: 'short' });
-    return desde === hasta ? corto(desde) : `${corto(desde)} → ${corto(hasta)}`;
-};
+export const ETAPAS = ETAPAS_DE_BOLSA.map((e) => ({ ...e, icon: ICONOS[e.icono] }));
+
+export { rangoDeDias } from '../../utils/bolsasTexto';

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.33 — F3 parte 4: etapas de bolsas y familias de solicitud con el ícono por nombre
+
+Sin cambios visibles. Sigue F3 del plan del núcleo portable.
+
+- Las etapas del circuito de bolsas (clave, estado de la base, alcance) pasan a
+  `constants/bolsas.js`, y el rango de días de una tanda a
+  `utils/bolsasTexto.js`. La pantalla sólo les pone el ícono.
+- Las familias de solicitud operativa (textos, permiso) y la regla de cuáles
+  puede abrir cada persona pasan a `constants/familiasOperativas.js`. La
+  pantalla pone el ícono y el color de cada baldosa.
+- Verificado en el entorno de pruebas: las cinco pestañas de Bolsas, y el
+  diálogo de nueva solicitud con las familias que corresponden al permiso de la
+  cuenta. Para abrirlo se le dio a la cuenta de pruebas edición en Solicitudes
+  un momento y se le quitó al terminar.
+
 ## v2.1075.32 — F3 parte 3: la lógica pura de seis pantallas al núcleo; las salas en un solo sitio
 
 Sin cambios visibles. Sigue F3 del plan del núcleo portable.

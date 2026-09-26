@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.13 — El detalle de MIN·MAX en Solicitudes muestra ventas, presentaciones y factor
+
+Reporte del usuario: «aquí no modificaste eso, no me sale el factor, ni las
+mejoras de la notificación» — el detalle de la solicitud en Solicitudes no
+tenía nada de lo que ya mostraba la campana, y «Vendidas en 6 meses» salía en
+«—» porque la solicitud nunca lo guardaba.
+
+Nueva función `contexto_de_solicitud_minmax(producto, sala)`: ventas de los 6
+meses cerrados, presentaciones y unidad de despacho (`unidad_de_despacho`, el
+canónico de Pedidos). La usan las dos pantallas —el trigger de la campana ya la
+llama en vez de repetir las consultas— y el detalle la pide al abrirse, así que
+sirve también para las solicitudes viejas. El detalle muestra ahora: vendidas en
+6 meses y el último mes, este mes, en sala, última venta, Base / Despacho con su
+factor (una sola caja si coinciden), las presentaciones (una por factor) y el
+aviso en rojo cuando el MAX no llega a una unidad de despacho. Migración
+`20260926145452`. Medido con Playwright en iPhone 13 y 1440 px: cero desbordes.
+
 ## v2.1075.12 — Aviso de diferencias pendientes, compacto
 
 Reporte del usuario: «too much, se repite info, compactalo».

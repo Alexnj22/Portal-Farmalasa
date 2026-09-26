@@ -125,7 +125,7 @@ export function datosDeTrasladosPorRespaldo(n) {
  * cantidad dicha dos veces. Se queda con el nombre del despacho si es uno de
  * ellos —así la lista y la celda «Despacho» dicen lo mismo—, y si no con el más
  * corto. */
-function leerPresentaciones(v, despacho) {
+export function leerPresentaciones(v, despacho) {
     const porFactor = new Map();
     for (const p of Array.isArray(v) ? v : []) {
         if (!p || !p.tipo || !(num(p.factor) > 0)) continue;
@@ -142,7 +142,7 @@ function leerPresentaciones(v, despacho) {
         .sort((a, b) => a.factor - b.factor);
 }
 
-function leerDespacho(v) {
+export function leerDespacho(v) {
     if (!v || !v.tipo || !(num(v.unidades) > 0)) return null;
     return {
         tipo: String(v.tipo).trim(),
@@ -306,7 +306,7 @@ export function datosDePedido(n) {
  * para todos los tipos. Un aviso anterior no lo trae y queda como texto. */
 /* Las ventas mes a mes que manda `ventas_por_mes_de_producto`: MIN·MAX y los
  * productos de un traslado las leen igual. */
-function leerMeses(v) {
+export function leerMeses(v) {
     return (Array.isArray(v) ? v : [])
         .filter((x) => x && /^\d{4}-\d{2}$/.test(String(x.ym)))
         .map((x) => ({ ym: String(x.ym), unidades: num(x.unidades) ?? 0 }));

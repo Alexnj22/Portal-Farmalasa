@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import {
     ArrowLeftRight, Stethoscope, FileImage, AlertTriangle, CalendarDays,
     Banknote, FileCheck2, Ban, CreditCard, Receipt, CheckCircle2,
-    PackagePlus, Trash2, Minus, Plus, BarChart2, Clock,
+    PackagePlus, Trash2, Minus, Plus, BarChart2, Clock, PackageX,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
@@ -20,6 +20,10 @@ import LaVenta from './VentaDeSolicitud';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { ajusteSinCambio, fmtUltimaVenta } from '../../utils/minmaxSolicitud';
 import { fechaTexto } from '../../utils/fecha';
+import { fetchContextoDeSolicitudMinMax } from '../../data/minmaxRequests';
+import {
+    leerMeses, leerPresentaciones, leerDespacho, maxNoAlcanzaParaDespachar,
+} from '../../utils/avisosDeOperacion';
 
 // El detalle de una solicitud, en UN solo lugar.
 //
@@ -502,6 +506,124 @@ const BloqueRecibido = ({ req, recibido, despachado, employeesById }) => {
 };
 
 /* ─── El bloque que depende del tipo ──────────────────────────────────────── */
+/* ─── Ventas y presentaciones de un ajuste de MIN·MAX ────────────────────
+ * Lo mismo que la tarjeta de la campana (usuario, 26-sep: «aquí no modificaste
+ * eso, no me sale el factor, ni las mejoras de la notificación»): la venta de
+ * los 6 meses cerrados y la del último, la presentación base, en qué se
+ * despacha y con qué factor, y el aviso cuando el MAX no llega a una unidad de
+ * despacho. Se pide al abrir —`contexto_de_solicitud_minmax`, la misma función
+ * que llena el aviso—, así que sirve también para las solicitudes viejas.
+ *
+ * Mientras llega, o si falla, las cifras que la solicitud guardó siguen ahí y
+ * lo que falta va como «—», nunca como 0. */
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const cifra = (v) => (v != null && Number.isFinite(Number(v)) ? Number(v).toLocaleString('es-SV') : '—');
+
+function ContextoMinMax({ meta, rechazada }) {
+    const [ctx, setCtx] = useState(null);
+    useEffect(() => {
+        if (!meta.erp_product_id) return undefined;
+        let vivo = true;
+        fetchContextoDeSolicitudMinMax(meta.erp_product_id, meta.erp_sucursal_id)
+            .then((d) => { if (vivo) setCtx(d); });
+        return () => { vivo = false; };
+    }, [meta.erp_product_id, meta.erp_sucursal_id]);
+
+    const meses = leerMeses(ctx?.ventas_meses);
+    const despacho = leerDespacho(ctx?.despacho);
+    const lista = leerPresentaciones(ctx?.presentaciones, despacho);
+    const base = lista[0] ?? null;
+    const total6 = meses.length ? meses.reduce((s, m) => s + m.unidades, 0) : meta.ventas_6m;
+    const ultimo = meses[meses.length - 1] ?? null;
+    const nombreUltimo = ultimo ? MESES_CORTOS[Number(ultimo.ym.slice(5, 7)) - 1] : null;
+    // Si la base es también lo que se despacha, una sola caja.
+    const desp = despacho && despacho.unidades !== base?.factor ? despacho : null;
+    const noAlcanza = !rechazada && maxNoAlcanzaParaDespachar({
+        despacho, maxNuevo: meta.max_pedido == null || meta.max_pedido === '' ? null : Number(meta.max_pedido),
+    });
+
+    return (
+        <>
+            <div className="grid grid-cols-2 gap-2">
+                <Caja>
+                    <Rotulo>Vendidas en 6 meses</Rotulo>
+                    <p className="text-body font-black text-content-2 tabular-nums">{cifra(total6)}</p>
+                </Caja>
+                <Caja>
+                    <Rotulo>Último mes{nombreUltimo ? ` · ${nombreUltimo}` : ''}</Rotulo>
+                    <p className="text-body font-black text-content-2 tabular-nums">{cifra(ultimo?.unidades)}</p>
+                </Caja>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                <Caja>
+                    <Rotulo>Vendidas este mes</Rotulo>
+                    <p className="text-body font-black text-content-2 tabular-nums">{cifra(meta.ventas_mes)}</p>
+                </Caja>
+                <Caja>
+                    <Rotulo>En sala</Rotulo>
+                    <p className="text-body font-black text-content-2 tabular-nums">
+                        {meta.existencia != null && Number.isFinite(Number(meta.existencia))
+                            ? `${cifra(meta.existencia)} und` : '—'}
+                    </p>
+                </Caja>
+            </div>
+            <Caja>
+                <Rotulo>Última venta</Rotulo>
+                <p className={`text-body-sm font-black leading-tight ${meta.ultima_venta ? 'text-content-2' : 'text-content-3'}`}>
+                    {meta.ultima_venta ? fmtUltimaVenta(meta.ultima_venta) : '—'}
+                </p>
+            </Caja>
+            {(base || despacho) && (desp ? (
+                <div className="grid grid-cols-2 gap-2">
+                    <Caja>
+                        <Rotulo>Base</Rotulo>
+                        <p className="text-body-sm font-black text-content-2 break-words">{base?.tipo ?? '—'}</p>
+                        {base && <p className="text-caption font-semibold text-content-3 mt-0.5">factor {cifra(base.factor)}</p>}
+                    </Caja>
+                    <Caja>
+                        <Rotulo>Despacho</Rotulo>
+                        <p className="text-body-sm font-black text-content-2 break-words">{desp.etiqueta}</p>
+                        <p className="text-caption font-semibold text-content-3 mt-0.5">
+                            {desp.multiplo > 1
+                                ? `${desp.multiplo} × ${cifra(desp.factor)} = ${cifra(desp.unidades)} u.`
+                                : `factor ${cifra(desp.factor)}`}
+                        </p>
+                    </Caja>
+                </div>
+            ) : (
+                <Caja>
+                    <Rotulo>Base y despacho</Rotulo>
+                    <p className="text-body-sm font-black text-content-2 break-words">{base?.tipo ?? despacho?.etiqueta}</p>
+                    <p className="text-caption font-semibold text-content-3 mt-0.5">
+                        factor {cifra(base?.factor ?? despacho?.factor ?? 1)}
+                    </p>
+                </Caja>
+            ))}
+            {lista.length > 1 && (
+                <Caja>
+                    <Rotulo>Presentaciones</Rotulo>
+                    <div className="flex flex-wrap gap-1.5">
+                        {lista.map((pr) => (
+                            <Badge key={`${pr.tipo}-${pr.factor}`} variant="neutral">
+                                {pr.tipo} ×{cifra(pr.factor)}
+                            </Badge>
+                        ))}
+                    </div>
+                </Caja>
+            )}
+            {noAlcanza && (
+                <div className="px-3 py-2.5 rounded-2xl border border-danger/30 bg-danger/10 flex items-start gap-2">
+                    <PackageX size={14} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2} />
+                    <p className="text-caption text-danger-text font-semibold leading-snug break-words">
+                        MAX {cifra(meta.max_pedido)} es menos de lo que se despacha
+                        ({despacho.etiqueta}, {cifra(despacho.unidades)} u.): el pedido no mandará nada.
+                    </p>
+                </div>
+            )}
+        </>
+    );
+}
+
 export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cantidades, employeesById, enCampana = false }) => {
     const t = req.type;
 
@@ -610,43 +732,10 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         </p>
                     </div>
                 )}
-                {/* Las tres cifras que dicen si el producto está vivo. Sueltas
-                    no alcanzan: 26 en seis meses puede ser 26 el mes pasado o
-                    26 con la última venta en enero, y sólo la fecha lo separa.
-                    Se muestra el bloque aunque falte alguna —las solicitudes
-                    anteriores al 2026-08-14 no traen las dos nuevas— y lo que
-                    falta va como «—», nunca como 0. */}
-                <div className="grid grid-cols-2 gap-2">
-                    <Caja>
-                        <Rotulo>Vendidas este mes</Rotulo>
-                        <p className="text-body font-black text-content-2 tabular-nums">
-                            {Number.isFinite(Number(meta.ventas_mes)) && meta.ventas_mes != null
-                                ? Number(meta.ventas_mes).toLocaleString() : '—'}
-                        </p>
-                    </Caja>
-                    <Caja>
-                        <Rotulo>Vendidas en 6 meses</Rotulo>
-                        <p className="text-body font-black text-content-2 tabular-nums">
-                            {Number.isFinite(Number(meta.ventas_6m)) && meta.ventas_6m != null
-                                ? Number(meta.ventas_6m).toLocaleString() : '—'}
-                        </p>
-                    </Caja>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    <Caja>
-                        <Rotulo>En sala</Rotulo>
-                        <p className="text-body font-black text-content-2 tabular-nums">
-                            {Number.isFinite(Number(meta.existencia)) && meta.existencia != null
-                                ? `${Number(meta.existencia).toLocaleString()} und` : '—'}
-                        </p>
-                    </Caja>
-                    <Caja>
-                        <Rotulo>Última venta</Rotulo>
-                        <p className={`text-body-sm font-black leading-tight ${meta.ultima_venta ? 'text-content-2' : 'text-content-3'}`}>
-                            {meta.ultima_venta ? fmtUltimaVenta(meta.ultima_venta) : '—'}
-                        </p>
-                    </Caja>
-                </div>
+                {/* Las cifras que dicen si el producto está vivo, y en qué se
+                    despacha. Sueltas no alcanzan: 26 en seis meses puede ser 26
+                    el mes pasado o 26 con la última venta en enero. */}
+                <ContextoMinMax meta={meta} rechazada={rechazada} />
             </div>
         );
     }

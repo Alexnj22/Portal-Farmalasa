@@ -66,6 +66,22 @@ export async function fetchMinMaxContextoVenta(erpProductId, erpSucursalId) {
     };
 }
 
+/**
+ * Ventas de los 6 meses cerrados, presentaciones y en qué se despacha, para el
+ * detalle de una solicitud (26-sep). Es la misma función que llena la tarjeta
+ * de la campana: `contexto_de_solicitud_minmax`. Se pide al abrir el detalle,
+ * así que también sirve para solicitudes anteriores a que el aviso lo trajera.
+ * Ante un error devuelve `null`: el detalle se dibuja igual, sin esos datos.
+ */
+export async function fetchContextoDeSolicitudMinMax(erpProductId, erpSucursalId) {
+    const { data, error } = await supabase.rpc('contexto_de_solicitud_minmax', {
+        p_erp_product_id:  Number(erpProductId),
+        p_erp_sucursal_id: Number(erpSucursalId),
+    });
+    if (error) { console.error('fetchContextoDeSolicitudMinMax:', error.message); return null; }
+    return data ?? null;
+}
+
 export function insertMinMaxChangeRequest(payload) {
     return supabase.from('minmax_change_requests').insert(payload);
 }

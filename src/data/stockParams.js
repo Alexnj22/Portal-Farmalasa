@@ -287,3 +287,27 @@ export const fetchUltimasVentasDelProducto = (params) => supabase.rpc('get_produ
 
 /** La política de vencimiento y devolución de un producto. */
 export const fetchPoliticaDeVencimiento = (params) => supabase.rpc('get_product_vencimiento_policy', params);
+
+// ── Las consultas de la pantalla de MIN·MAX (F3 del núcleo portable) ────────
+// Vivían dentro de `useMinMaxData.js`. Reciben los parámetros tal cual.
+
+/** El costo del inventario de una sala (`p_erp_sucursal_id`). */
+export const fetchResumenDeCostoDelInventario = (params) => supabase.rpc('get_inventory_cost_summary', params);
+
+/** Cuánto costaría el borrador de MIN·MAX de una sala (`p_erp_sucursal_id`). */
+export const fetchCostoEstimadoDelBorrador = (params) => supabase.rpc('get_draft_cost_estimate', params);
+
+/** El análisis de MIN·MAX de una sala, en JSON (sin el techo de 1000 filas). */
+export const fetchAnalisisDeStock = (params) => supabase.rpc('get_stock_analysis_jsonb', params);
+
+/** Recalcula el borrador de MIN·MAX de una sala. */
+export const calcularMinMaxDeSala = (params) => supabase.rpc('calculate_stock_params', params);
+
+/** Deja un producto en MIN·MAX cero en todas las salas. */
+export const ponerEnCeroProductoEnTodasLasSalas = (params) => supabase.rpc('zero_out_product_all_branches', params);
+
+/** Descarta el borrador de MIN·MAX de una sala; devuelve cuántos. */
+export const descartarBorradoresDeMinMax = (params) => supabase.rpc('discard_stock_drafts', params);
+
+/** Publica el borrador de MIN·MAX de una sala (o de algunos productos). */
+export const publicarMinMax = (params) => supabase.rpc('publish_stock_params', params);

@@ -2,7 +2,6 @@
 // Extracción mecánica: mismos nombres, misma lógica, sin cambios de
 // comportamiento.
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { supabase } from '../../../supabaseClient';
 import { signPhotosDeep } from '../../../utils/storageFiles';
 import { useAuth } from '../../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
@@ -13,20 +12,7 @@ import { ERP_NAMES } from '../../../constants/erp';
 import { printFromPedidoItems, getExactPageGroups } from '../../../utils/pedidoPrint';
 import { PAUSE_REASONS } from './constants';
 import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, faltantesDeLaSala, describirFaltantes } from './helpers';
-import {
-    fetchEmployeeBranchId, fetchSucursalIdForBranch, fetchBodegaBranchId, fetchBranchIdForSucursal,
-    fetchBranchInfoForSucursal, fetchBranchNamesForSucursales, fetchApoyoForPedidos, fetchApoyoForPedido,
-    fetchActiveRutas, fetchRutaLocations, upsertRutaLocation, updateRutaPedidoEntregado,
-    fetchPedidoItemsAll, fetchPedidoItemEventosAll, fetchPedidoItemsPendientesIds,
-    fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, updatePedidoItemsFaltaCaja,
-    fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
-    confirmarEnvioPedido, despacharTrasladoPedido, tieneEtiquetaDeDespacho, noReenviarEspeciales,
-    fetchTrasladosDePedidos,
-    fetchResumenIngresoPedidos,
-    fetchItemsSinIngresar,
-    recibirTrasladoPedido,
-    fetchEntregasDePedidos,
-} from '../../../data/pedidos';
+import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBodegaBranchId, fetchBranchIdForSucursal, fetchBranchInfoForSucursal, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoItemsPendientesIds, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchSucursalIdForBranch, fetchTrasladosDePedidos, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../../../data/pedidos';
 import {
     fetchDevolucionesDePedido, decidirDevolucion,
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
@@ -38,6 +24,7 @@ import { mensajeAmigable } from '../../../utils/errorMessages';
 import { cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '../../../utils/cajasEspeciales';
 import { fetchEmployeesPublicByIds } from '../../../data/employees';
 import { metaDePedido } from '../../../utils/avisosDeOperacion';
+import { escucharCambios } from '../../../data/tiempoReal';
 const ERP_ORDER = [5, 1, 2, 3, 4, 7];
 
 // Cuánto se esperan los avisos de Realtime antes de recargar. Un UPDATE sobre
@@ -190,7 +177,7 @@ export function usePedidosData({ searchTerm = '' }) {
     // ── Loaders ───────────────────────────────────────────────────────────────
 
     const loadActive = useCallback(async () => {
-        const { data, error } = await supabase.rpc('get_pedidos_en_curso');
+        const { data, error } = await fetchPedidosEnCurso();
         if (error) { console.error('loadActive: get_pedidos_en_curso failed:', error.message); return []; }
         setActiveRows(data ?? []);
         const rows = data ?? [];
@@ -200,7 +187,7 @@ export function usePedidosData({ searchTerm = '' }) {
         });
         const ids = [...new Set(rows.map(r => r.pedido_id))];
         if (ids.length) {
-            const { data: statRows, error: statErr } = await supabase.rpc('get_pedido_item_stats', { p_pedido_ids: ids });
+            const { data: statRows, error: statErr } = await fetchResumenDeRenglonesPorPedido({ p_pedido_ids: ids });
             if (statErr) console.error('loadActive: get_pedido_item_stats failed:', statErr.message);
             (statRows ?? []).forEach(s => {
                 const k = `act_${s.pedido_id}_${s.erp_sucursal_id}`;
@@ -310,8 +297,8 @@ export function usePedidosData({ searchTerm = '' }) {
             if (!key || !detallesPedidosRef.current.has(key)) return;
             juntar(`detalle:${key}`, () => fetchItems(key, pedidoId, sucId));
         };
-        const ch = supabase.channel('tab-pedidos-rt')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, (payload) => {
+        return escucharCambios('tab-pedidos-rt', [
+            { tabla: 'pedidos', alCambiar: (payload) => {
                 recargarActivos();
                 juntar('rutas', () => loadActiveRutas()); // rutas/ruta_pedidos pueden no estar en la pub; pedidos sí
                 const s = payload.new?.status;
@@ -325,21 +312,20 @@ export function usePedidosData({ searchTerm = '' }) {
                 const meta = expandedMetaRef.current;
                 const affectedId = payload.new?.id ?? payload.old?.id;
                 if (meta && meta.pedidoId === affectedId) recargarDetalle(expanded, meta.pedidoId, meta.sucId);
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'pedido_sucursal_status' }, () => { recargarActivos(); })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pedido_item_eventos' }, (payload) => {
+            } },
+            { tabla: 'pedido_sucursal_status', alCambiar: () => { recargarActivos(); } },
+            { tabla: 'pedido_item_eventos', evento: 'INSERT', alCambiar: (payload) => {
                 const { pedido_id, erp_sucursal_id } = payload.new ?? {};
                 if (!pedido_id) return;
                 recargarDetalle(`act_${pedido_id}_${erp_sucursal_id}`, pedido_id, erp_sucursal_id);
                 recargarActivos();
-            })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedido_items' }, (payload) => {
+            } },
+            { tabla: 'pedido_items', evento: 'UPDATE', alCambiar: (payload) => {
                 const { pedido_id, erp_sucursal_id } = payload.new ?? {};
                 if (!pedido_id) return;
                 recargarDetalle(`act_${pedido_id}_${erp_sucursal_id}`, pedido_id, erp_sucursal_id);
-            })
-            .subscribe();
-        return () => supabase.removeChannel(ch);
+            } },
+        ]);
         // fetchItems/loadActiveRutas quedan fuera: se declaran más abajo en el archivo
         // (forward reference) y sus propias deps (isBranch/erpSucursalId; loadActiveRutas
         // no tiene ninguna) rara vez cambian durante la vida de este componente, así que
@@ -448,12 +434,11 @@ export function usePedidosData({ searchTerm = '' }) {
         return () => { vivo = false; };
     }, [activeRows, pedidoRutaMap, entregaMap, empMap]);
     useEffect(() => {
-        const ch = supabase.channel('pedido-rutas-rt')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'rutas' }, () => { loadActiveRutas(); loadActive(); })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_pedidos' }, () => { loadActiveRutas(); loadActive(); })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_locations' }, loadActiveRutas)
-            .subscribe();
-        return () => supabase.removeChannel(ch);
+        return escucharCambios('pedido-rutas-rt', [
+            { tabla: 'rutas', alCambiar: () => { loadActiveRutas(); loadActive(); } },
+            { tabla: 'ruta_pedidos', alCambiar: () => { loadActiveRutas(); loadActive(); } },
+            { tabla: 'ruta_locations', alCambiar: loadActiveRutas },
+        ]);
     }, [loadActiveRutas, loadActive]);
 
     // ── GPS background persistente — conductor con ruta en_ruta ──────────────
@@ -591,7 +576,7 @@ export function usePedidosData({ searchTerm = '' }) {
         const key = `lc_${pedidoId}_${sucId}`;
         setBusyLifecycle(key);
         try {
-            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: stage, p_user_id: user?.id ?? null, p_razon: razon });
+            const { error } = await avanzarEtapaDePedidoEnSala({ p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: stage, p_user_id: user?.id ?? null, p_razon: razon });
             if (error) throw error;
             useStaff.getState().appendAuditLog(`PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId, { sucursal_id: sucId, razon });
             loadActive();
@@ -697,7 +682,7 @@ export function usePedidosData({ searchTerm = '' }) {
         if (!anularModal) return;
         setBusyAnular(true);
         try {
-            const { error } = await supabase.rpc('anular_pedido', {
+            const { error } = await anularPedido({
                 p_pedido_id:  anularModal.pedidoId,
                 p_anulado_por: user?.id ?? null,
                 p_motivo:     motivo || null,
@@ -771,7 +756,7 @@ export function usePedidosData({ searchTerm = '' }) {
             //    con excepción cuando hay una pausa sin reanudar, y supabase-js
             //    devuelve el error en vez de lanzarlo — sin este chequeo el
             //    rechazo se perdía y el resto seguía escribiendo igual.
-            const { error: lcErr } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
+            const { error: lcErr } = await avanzarEtapaDePedidoEnSala({
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'finalizar', p_user_id: user?.id ?? null,
             });
@@ -954,7 +939,7 @@ export function usePedidosData({ searchTerm = '' }) {
             //    sobre una base donde `llegada_fisica_at` seguía vacío. Si esta
             //    línea falla no hay llegada, y todo lo que viene abajo estaría
             //    contando algo que no pasó.
-            const { error: llegadaErr } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
+            const { error: llegadaErr } = await avanzarEtapaDePedidoEnSala({
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'confirmar_llegada', p_user_id: user?.id ?? null,
             });
@@ -1337,7 +1322,7 @@ export function usePedidosData({ searchTerm = '' }) {
             // Mismo silencio que la llegada: sin mirar el `error`, la tarjeta
             // pasaba a «Confirmado» y la bitácora lo daba por hecho sobre una
             // fila que no se había tocado.
-            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'recibir_erp', p_user_id: user?.id ?? null });
+            const { error } = await avanzarEtapaDePedidoEnSala({ p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'recibir_erp', p_user_id: user?.id ?? null });
             if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, { sucursal_id: sucId });
             setErpStatus(prev => ({ ...prev, [key]: true }));
@@ -1520,7 +1505,7 @@ export function usePedidosData({ searchTerm = '' }) {
     // pantalla. Pero tampoco firma lo que no ocurrió — si el reporte no entra,
     // se avisa y la bitácora se queda callada.
     const handleReportarDiferencias = useCallback(async (pedidoId, sucId) => {
-        const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
+        const { error } = await avanzarEtapaDePedidoEnSala({
             p_pedido_id: pedidoId, p_sucursal_id: sucId,
             p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null,
         });
@@ -1538,7 +1523,7 @@ export function usePedidosData({ searchTerm = '' }) {
     const handleCorregirBodega = useCallback(async (pedidoId, sucId, nota) => {
         setBusyAction('corr_bodega');
         try {
-            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
+            const { error } = await avanzarEtapaDePedidoEnSala({
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'corregir_bodega', p_user_id: user?.id ?? null, p_nota: nota || null,
             });
@@ -1556,7 +1541,7 @@ export function usePedidosData({ searchTerm = '' }) {
     const handleConfirmarCorreccion = useCallback(async (pedidoId, sucId) => {
         setBusyAction('confirmar_corr');
         try {
-            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
+            const { error } = await avanzarEtapaDePedidoEnSala({
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'confirmar_correccion', p_user_id: user?.id ?? null,
             });
@@ -1572,7 +1557,7 @@ export function usePedidosData({ searchTerm = '' }) {
     const handleResolverItem = useCallback(async (pedidoId, sucId, itemId, action, tipo, nota) => {
         setBusyAction(`res_${itemId}`);
         try {
-            const { error } = await supabase.rpc('resolve_pedido_item', {
+            const { error } = await resolverRenglonDePedido({
                 p_item_id: itemId, p_action: action,
                 p_user_id: user?.id ?? null,
                 p_tipo:    tipo ?? null,

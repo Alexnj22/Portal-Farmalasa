@@ -336,3 +336,40 @@ export function fetchProductPreciosHistory(productId) {
 
 /** Los productos más vendidos en un rango (`p_fini`, `p_ffin`, `p_limite`). */
 export const fetchTopProductosDelMes = (params) => supabase.rpc('get_top_productos_mes', params);
+
+// ── Las consultas de la vista de Ventas (F3 del núcleo portable) ────────────
+// Vivían dentro de `VentasView.jsx`. Reciben los parámetros de la función tal
+// cual y devuelven `{ data, error }`.
+
+/** Los totales de ventas de un período (`p_fini`, `p_ffin`, `p_branch_id`, `p_hora_corte`). */
+export const fetchResumenDeVentas = (params) => supabase.rpc('get_ventas_stats', params);
+
+/** Los puntos canjeados en un período, con el mismo corte que los totales. */
+export const fetchPuntosCanjeados = (params) => supabase.rpc('get_puntos_canjeados', params);
+
+/** Las ventas que acumularon puntos, paginadas y ordenadas. */
+export const fetchVentasConPuntos = (params) => supabase.rpc('get_ventas_con_puntos', params);
+
+/** El resumen de cada vendedor en un período. */
+export const fetchResumenDeVendedores = (params) => supabase.rpc('get_vendedores_resumen', params);
+
+/** Las ventas de un vendedor día por día. */
+export const fetchVendedorPorDia = (params) => supabase.rpc('get_vendedor_diario', params);
+
+/** Las ventas agregadas por producto de un período (JSON, sin el techo de 1000 filas). */
+export const fetchVentasPorProducto = (params) => supabase.rpc('get_product_sales_agg_jsonb', params);
+
+/** Oculta o vuelve a mostrar un producto en el ranking de Ventas. */
+export const alternarProductoOcultoEnVentas = (params) => supabase.rpc('toggle_producto_oculto_ventas', params);
+
+/** Las líneas de venta de un producto en un período. */
+export const fetchLineasDeVentaDelProducto = (params) => supabase.rpc('get_product_drill_lines', params);
+
+/** La tendencia de ventas de un producto. */
+export const fetchTendenciaDelProducto = (params) => supabase.rpc('get_product_trend', params);
+
+/** El resumen de ventas de un producto en un período. */
+export const fetchResumenDelProductoVendido = (params) => supabase.rpc('get_product_drill_summary', params);
+
+/** El total vendido de todos los productos en un período. */
+export const fetchTotalVendidoPorProductos = (params) => supabase.rpc('get_product_sales_total', params);

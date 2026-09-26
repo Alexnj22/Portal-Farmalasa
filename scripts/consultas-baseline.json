@@ -1,9 +1,5 @@
 {
-  "total": 43,
-  "archivos": 3,
-  "porArchivo": {
-    "src/views/VentasView.jsx": 15,
-    "src/views/pedidos/tabpedidos/usePedidosData.js": 15,
-    "src/views/productos/tabminmax/useMinMaxData.js": 13
-  }
+  "total": 0,
+  "archivos": 0,
+  "porArchivo": {}
 }

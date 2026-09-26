@@ -4,23 +4,18 @@
 // Bodega (antes duplicados inline en el JSX) y `_openBodegaEdit` se
 // consolidan aquí en `openBodegaTooltip`/`closeBodegaTooltip`/`openBodegaEdit`.
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { supabase } from '../../../supabaseClient';
 import { signPhotosDeep } from '../../../utils/storageFiles';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import { smartFilter } from '../../../utils/searchUtils';
 import { normXyz, hasDispatchRisk } from './helpers';
 import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, AJUSTE_CFGS } from './constants';
-import {
-    upsertStockParams, upsertStockParamsReturning, upsertStockParamsBulk, updateStockParams, updateStockParamsBulk,
-    fetchAjustesManuales,
-    fetchStockParams, fetchStockParamsUpdates, fetchStockConfig, fetchEmployeeByEmail,
-    fetchEmployeesBasic, fetchAuditLogsForProduct, effectiveMinMaxPair,
-} from '../../../data/stockParams';
+import { calcularMinMaxDeSala, descartarBorradoresDeMinMax, effectiveMinMaxPair, fetchAjustesManuales, fetchAnalisisDeStock, fetchAuditLogsForProduct, fetchCostoEstimadoDelBorrador, fetchEmployeeByEmail, fetchEmployeesBasic, fetchResumenDeCostoDelInventario, fetchResumenDelProductoPorSala, fetchStockConfig, fetchStockParams, fetchStockParamsUpdates, ponerEnCeroProductoEnTodasLasSalas, publicarMinMax, updateStockParams, updateStockParamsBulk, upsertStockParams, upsertStockParamsBulk, upsertStockParamsReturning } from '../../../data/stockParams';
 import { fetchSolicitudesDeProducto } from '../../../data/minmaxRequests';
 
 // Warns (but does NOT block) when a saved value is 4× above or 4× below the calculated reference.
 import { mensajeAmigable } from '../../../utils/errorMessages';
+import { usuarioDeLaSesion } from '../../../data/auth';
 const warnIfOutrageous = (field, numVal, row) => {
     if (!numVal || numVal <= 0 || !row) return;
     const calcRef = field === 'min' ? (row.calc_min ?? 0) : (row.calc_max ?? 0);
@@ -174,8 +169,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         costTimer.current = setTimeout(() => {
             costTimer.current = null;
             Promise.all([
-                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: sucursalId }),
-                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: sucursalId }),
+                fetchResumenDeCostoDelInventario({ p_erp_sucursal_id: sucursalId }),
+                fetchCostoEstimadoDelBorrador({ p_erp_sucursal_id: sucursalId }),
             ]).then(([{ data: cost }, { data: draft }]) => {
                 if (cost)  setCostSummary(cost);
                 if (draft) setDraftCost(draft);
@@ -192,7 +187,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     }, [toast]);
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
+        usuarioDeLaSesion().then((user) => {
             if (!user?.email) return;
             fetchEmployeeByEmail(user.email)
                 .then(async ({ data: emp }) => { if (emp) { await signPhotosDeep(emp); setCurrentEmployee(emp); } });
@@ -227,9 +222,9 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             // consulta más pesada de la vista. Son pocas filas y las cubre
             // `idx_psp_manual_at`.
             const [rowsRes, costRes, draftRes, cfgRes, ajustesRes] = await Promise.all([
-                supabase.rpc('get_stock_analysis_jsonb',   { p_erp_sucursal_id: erpId }),
-                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
-                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
+                fetchAnalisisDeStock({ p_erp_sucursal_id: erpId }),
+                fetchResumenDeCostoDelInventario({ p_erp_sucursal_id: erpId }),
+                fetchCostoEstimadoDelBorrador({ p_erp_sucursal_id: erpId }),
                 fetchStockConfig(),
                 fetchAjustesManuales(erpId),
             ]);
@@ -341,7 +336,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         const wasPublished = hasPublishedData;
         setCalculating(true); setCalcMode('single'); setConfigChanged(false);
         try {
-            const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: selectedErp });
+            const { data: res, error: e } = await calcularMinMaxDeSala({ p_erp_sucursal_id: selectedErp });
             if (e) throw e;
             useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${(res?.rows ?? 0).toLocaleString()} borradores generados`, 'success');
             await loadData(selectedErp);
@@ -360,7 +355,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const id = ids[i];
             setCalcProgress({ current: i + 1, total: ids.length, name: ERP_NAMES[id] });
             try {
-                const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: id });
+                const { data: res, error: e } = await calcularMinMaxDeSala({ p_erp_sucursal_id: id });
                 if (e) throw e;
                 totalRows += res?.rows ?? 0;
             } catch {
@@ -477,7 +472,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const handleZeroAllBranches = useCallback(async (row) => {
         // Ya no hace falta pedir el usuario: la RPC resuelve published_by con
         // auth.email() (F4.2), asi que este getUser() era un round-trip para nada.
-        const { error } = await supabase.rpc('zero_out_product_all_branches', {
+        const { error } = await ponerEnCeroProductoEnTodasLasSalas({
             p_erp_product_id: row.erp_product_id,
         });
         if (error) {
@@ -843,7 +838,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     // Descarta todos los borradores de la sucursal actual usando el RPC discard_stock_drafts.
     const handleDiscardAll = useCallback(async () => {
         setDiscardingAll(true);
-        const { data: count, error: e } = await supabase.rpc('discard_stock_drafts', { p_erp_sucursal_id: selectedErp });
+        const { data: count, error: e } = await descartarBorradoresDeMinMax({ p_erp_sucursal_id: selectedErp });
         setDiscardingAll(false);
         setDiscardConfirm(false);
         if (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Error al descartar: ${mensajeAmigable(e)}`, 'error'); return; }
@@ -1026,10 +1021,10 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const handlePublish = useCallback(async (productIds = null, dejadasAparte = 0) => {
         setPublishing(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const user = await usuarioDeLaSesion();
             const rpcParams = { p_erp_sucursal_id: selectedErp };   // sin p_published_by (F4.2: muerto)
             if (productIds) rpcParams.p_erp_product_ids = productIds;
-            const { data: res, error: e } = await supabase.rpc('publish_stock_params', rpcParams);
+            const { data: res, error: e } = await publicarMinMax(rpcParams);
             if (e) throw e;
             useStaff.getState().appendAuditLog('MINMAX_PUBLISH', String(selectedErp), {
                 sucursal: ERP_NAMES[selectedErp],
@@ -1292,7 +1287,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         tooltipCancelRef.current?.();
         let cancelled = false;
         tooltipCancelRef.current = () => { cancelled = true; };
-        const { data: branches, error: branchesErr } = await supabase.rpc('get_product_branch_summary', { p_erp_product_id: productId });
+        const { data: branches, error: branchesErr } = await fetchResumenDelProductoPorSala({ p_erp_product_id: productId });
         if (cancelled) return;
         // Un tooltip vacío por error se lee como "no hay nada pendiente".
         if (branchesErr) console.error('[minmax] get_product_branch_summary', branchesErr.message);

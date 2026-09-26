@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.26 — F3 tandas 2-4: Ventas, Pedidos y Mín·Máx dejan de hablarle a la base
+
+Sin cambios visibles. **`gate:consultas` llega a 0**: ninguna pantalla le
+habla directo a la base. Todo lo que la app del teléfono va a necesitar leer
+o escribir ya tiene nombre en `src/data`.
+
+- **Ventas** (15 usos): 11 consultas a `data/ventas.js` (resumen, puntos
+  canjeados, vendedores, productos, tendencia, ocultar del ranking…).
+- **Pedidos** (`usePedidosData`, 15 usos): 5 consultas a `data/pedidos.js`
+  (pedidos en curso, etapas por sala, anular, resolver renglón) y sus dos
+  canales de tiempo real a `escucharCambios`, que ahora admite un manejador por
+  tabla.
+- **Mín·Máx** (`useMinMaxData`, 13 usos): 7 consultas a `data/stockParams.js`
+  (análisis, costo, calcular, descartar y publicar el borrador) y la sesión a
+  `usuarioDeLaSesion`.
+- El trinquete queda en **0**: cualquier consulta nueva en una pantalla falla
+  en el pre-commit.
+
+Verificado: lint sin errores nuevos, 2,911 pruebas, gates y compilación. En
+el navegador, contra la base de pruebas: las 4 pestañas de Ventas, las 5 de
+Facturación y las 2 de Productos, y Pedidos, Mín·Máx e Inventario con el MISMO
+contenido que la versión de main sin estos cambios.
+
 ## v2.1075.25 — F3 tanda 1: las pantallas chicas dejan de hablarle a la base
 
 Sin cambios visibles. **31 pantallas** dejan de importar el cliente de la base:

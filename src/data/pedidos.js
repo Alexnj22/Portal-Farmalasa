@@ -642,3 +642,21 @@ export const fetchIndicadoresDePedidos = (params) => supabase.rpc('get_pedido_kp
 
 /** Por qué se pausaron los pedidos en un rango (`p_desde`, `p_hasta`). */
 export const fetchRazonesDePausa = (params) => supabase.rpc('get_pausa_razones_stats', params);
+
+// ── Las consultas del tablero de pedidos (F3 del núcleo portable) ───────────
+// Vivían dentro de `usePedidosData.js`. Reciben los parámetros tal cual.
+
+/** Los pedidos en curso, con su estado por sala. */
+export const fetchPedidosEnCurso = () => supabase.rpc('get_pedidos_en_curso');
+
+/** Cuántos renglones tiene cada pedido y en qué estado (`p_pedido_ids`). */
+export const fetchResumenDeRenglonesPorPedido = (params) => supabase.rpc('get_pedido_item_stats', params);
+
+/** Mueve la etapa de un pedido en una sala (preparación, envío, llegada…). */
+export const avanzarEtapaDePedidoEnSala = (params) => supabase.rpc('update_pedido_sucursal_lifecycle', params);
+
+/** Anula un pedido. */
+export const anularPedido = (params) => supabase.rpc('anular_pedido', params);
+
+/** Resuelve la novedad de un renglón de pedido. */
+export const resolverRenglonDePedido = (params) => supabase.rpc('resolve_pedido_item', params);

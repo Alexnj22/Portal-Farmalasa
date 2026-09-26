@@ -14,7 +14,6 @@ import {
     ChevronUp, Search, X, Trophy, Star, ChevronLeft,
     ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical, Syringe
 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
 import { ROTULO_PUNTOS, OPCIONES_FILTRO_PUNTOS } from '../data/puntos';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
@@ -33,12 +32,7 @@ import AvisoParecidos from '../components/common/AvisoParecidos';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { useNowTick } from '../hooks/useNowTick';
 import FilterBar from '../components/common/FilterBar';
-import {
-    fetchAntibioticProductIds, fetchVentasConReceta, fetchVentasRecetaStats, ventasBusquedaEsAproximada,
-    fetchInvoicesList, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice,
-    fetchProductPreciosActivos, fetchInvoiceChangelog, fetchVendorMonthlyStats,
-    fetchProductPreciosDetail, fetchProductPreciosHistory, fetchVentasSinProducto,
-} from '../data/ventas';
+import { alternarProductoOcultoEnVentas, fetchAntibioticProductIds, fetchInvoiceChangelog, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice, fetchInvoicesList, fetchLineasDeVentaDelProducto, fetchProductPreciosActivos, fetchProductPreciosDetail, fetchProductPreciosHistory, fetchPuntosCanjeados, fetchResumenDeVendedores, fetchResumenDeVentas, fetchResumenDelProductoVendido, fetchTendenciaDelProducto, fetchTotalVendidoPorProductos, fetchVendedorPorDia, fetchVendorMonthlyStats, fetchVentasConPuntos, fetchVentasConReceta, fetchVentasPorProducto, fetchVentasRecetaStats, fetchVentasSinProducto, ventasBusquedaEsAproximada } from '../data/ventas';
 import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -525,10 +519,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
         const { prevFini, prevFfin } = prevMonthRange;
         const [cur, prev, puntosCur, puntosPrev] = await Promise.all([
-            supabase.rpc('get_ventas_stats', { p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter, p_hora_corte: horaCorte }),
-            supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter, p_hora_corte: horaCorte }),
-            supabase.rpc('get_puntos_canjeados', { p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter, p_hora_corte: horaCorte }),
-            supabase.rpc('get_puntos_canjeados', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter, p_hora_corte: horaCorte }),
+            fetchResumenDeVentas({ p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter, p_hora_corte: horaCorte }),
+            fetchResumenDeVentas({ p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter, p_hora_corte: horaCorte }),
+            fetchPuntosCanjeados({ p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter, p_hora_corte: horaCorte }),
+            fetchPuntosCanjeados({ p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter, p_hora_corte: horaCorte }),
         ]);
 
         const s    = cur.data?.[0] || {};
@@ -558,7 +552,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         let fetched = [];
 
         if (filterPuntos && !isSearching) {
-            const { data, error } = await supabase.rpc('get_ventas_con_puntos', {
+            const { data, error } = await fetchVentasConPuntos({
                 p_fini:      fini,
                 p_ffin:      ffin,
                 p_branch_id: filterBranch ? Number(filterBranch) : null,
@@ -1194,7 +1188,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 
     const fetchVendedores = useCallback(async () => {
         setLoading(true);
-        const { data, error } = await supabase.rpc('get_vendedores_resumen', {
+        const { data, error } = await fetchResumenDeVendedores({
             p_fini: fini, p_ffin: ffin,
             p_branch_id: filterBranch ? Number(filterBranch) : null,
         });
@@ -1213,7 +1207,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
     useEffect(() => {
         const { prevFini, prevFfin } = computePrevRange(fini, ffin);
         const horaCorte = currentHoraCorte(ffin);
-        supabase.rpc('get_ventas_stats', {
+        fetchResumenDeVentas({
             p_fini: prevFini, p_ffin: prevFfin,
             p_branch_id: filterBranch ? Number(filterBranch) : null,
             p_hora_corte: horaCorte,
@@ -1251,7 +1245,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         if (expanded === cod) { setExpanded(null); return; }
         setExpanded(cod);
         setLoadingExpand(true);
-        const { data, error } = await supabase.rpc('get_vendedor_diario', {
+        const { data, error } = await fetchVendedorPorDia({
             p_cod_vendedor: cod, p_fini: fini, p_ffin: ffin,
         });
         if (error) console.error('toggleExpand: get_vendedor_diario failed:', error.message);
@@ -1982,7 +1976,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             };
             // Una sola llamada JSONB (Patrón C): fetchAllRows re-ejecutaba el RPC
             // completo (~1-2s) por cada página de 1000 filas.
-            const { data: presData, error: presErr } = await supabase.rpc('get_product_sales_agg_jsonb', rpcParams);
+            const { data: presData, error: presErr } = await fetchVentasPorProducto(rpcParams);
             if (rid !== fetchGenRef.current) return; // otro período/sucursal ya pidió datos
             if (presErr) throw presErr;
             if (presData === null) throw new Error('No se pudo cargar productos');
@@ -2035,7 +2029,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         let alive = true;
         setSearchLoading(true);
         (async () => {
-            const { data, error: e } = await supabase.rpc('get_product_sales_agg_jsonb', {
+            const { data, error: e } = await fetchVentasPorProducto({
                 p_fini:      fini,
                 p_ffin:      ffin,
                 p_branch_id: Number(filterBranch),
@@ -2060,7 +2054,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     // cualquier valor arbitrario en un update directo a la tabla.
     const toggleOculto = useCallback(async (row) => {
         const nextVal = !row.oculto_en_ventas;
-        const { error: e } = await supabase.rpc('toggle_producto_oculto_ventas', {
+        const { error: e } = await alternarProductoOcultoEnVentas({
             p_erp_product_id: row.erp_product_id,
             p_oculto: nextVal,
         });
@@ -2113,7 +2107,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setDrillSummary(null);
         try {
             const [{ data, error: e }, { data: precios }, { data: history }, { data: monthly }, { data: summary }] = await Promise.all([
-                supabase.rpc('get_product_drill_lines', {
+                fetchLineasDeVentaDelProducto({
                     p_erp_product_id: productId,
                     p_fini:           fini,
                     p_ffin:           ffin,
@@ -2125,7 +2119,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 // pasarle el período devolvía siempre los 3 anteriores a HOY, así
                 // que al elegir julio la tarjeta de al lado hablaba de julio y
                 // ésta seguía mostrando agosto, sin decirlo.
-                supabase.rpc('get_product_trend', {
+                fetchTendenciaDelProducto({
                     p_erp_product_id: productId,
                     p_branch_id:      filterBranch ? Number(filterBranch) : null,
                     p_fini:           fini,
@@ -2133,7 +2127,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 }),
                 // Totales EXACTOS del período: el detalle de arriba corta en las
                 // últimas 300 ventas, así que pie y gráfico no pueden sumarlo.
-                supabase.rpc('get_product_drill_summary', {
+                fetchResumenDelProductoVendido({
                     p_erp_product_id: productId,
                     p_fini:           fini,
                     p_ffin:           ffin,
@@ -2249,7 +2243,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         const prevParams = { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: filterBranch ? Number(filterBranch) : null };
         let alive = true;
         (async () => {
-            const { data: total, error } = await supabase.rpc('get_product_sales_total', prevParams);
+            const { data: total, error } = await fetchTotalVendidoPorProductos(prevParams);
             if (!alive) return; // el período/sucursal ya cambió — no pisar el pct nuevo
             if (error) console.error('get_product_sales_total failed:', error.message);
             setPrevProdStats({ sum: parseFloat(total || 0) });

@@ -11,16 +11,17 @@ import { supabase } from '../supabaseClient';
 
 /**
  * @param {string} canal   nombre único del canal
- * @param {Array<{tabla: string, evento?: string, filtro?: string}>} escuchas
- * @param {(payload) => void} alCambiar
+ * @param {Array<{tabla: string, evento?: string, filtro?: string, alCambiar?: Function}>} escuchas
+ *        cada una puede traer su propio `alCambiar`; si no, usa el general
+ * @param {(payload) => void} [alCambiar]
  * @returns {() => void}   cierra el canal
  */
 export function escucharCambios(canal, escuchas, alCambiar) {
     let ch = supabase.channel(canal);
-    for (const { tabla, evento = '*', filtro } of escuchas) {
+    for (const { tabla, evento = '*', filtro, alCambiar: propio } of escuchas) {
         ch = ch.on('postgres_changes',
             { event: evento, schema: 'public', table: tabla, ...(filtro ? { filter: filtro } : {}) },
-            alCambiar);
+            propio ?? alCambiar);
     }
     ch.subscribe();
     return () => { supabase.removeChannel(ch); };

@@ -160,8 +160,13 @@ async function herramientas(ref) {
     await sql(ref, `select cron.alter_job(jobid, active := false) from cron.job
                      where active and command ilike '%net.http_post%'
                        and command ilike '%${PROD}%'`, { escribe: true });
+    // Ventas, clientes y vendedores inventados. Sólo siembra con la base vacía
+    // (o sea, después de rehacer el branch); va antes de correr las fechas para
+    // que lo sembrado quede pegado a hoy igual que todo lo demás.
+    await sql(ref, leer('sembrar_datos_de_prueba.sql'), { escribe: true });
     await sql(ref, leer('correr_fechas.sql'), { escribe: true });
     await sql(ref, 'select * from public.correr_fechas_del_branch_de_pruebas()', { escribe: true });
+    await sql(ref, leer('recalcular_resumenes.sql'), { escribe: true });
     await sql(ref, leer('permisos_de_la_cuenta_de_pruebas.sql'), { escribe: true });
     await igualarPermisosDeTablas(ref);
 }

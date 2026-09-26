@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.27 — Pruebas con datos: ventas, clientes y vendedores inventados
+
+Sin cambios en el portal. El entorno de pruebas deja de estar vacío: el
+mantenimiento diario siembra **ventas, clientes y vendedores inventados** cada
+vez que la base está vacía, o sea después de cada reconstrucción. Antes se
+sembraba a mano y se perdía en cada una.
+
+- `sembrar_datos_de_prueba.sql`: 90 días de facturas en las 6 salas (~16,800,
+  con proporciones de producción: formas de pago, CCF, anuladas, sin sello),
+  400 clientes con DUI de formato válido (60 contribuyentes con NRC), 12
+  vendedores y el mapa de salas. Cero datos reales; determinista.
+- `recalcular_resumenes.sql`: los resúmenes del Inicio, Ventas y Mín·Máx,
+  recalculados **después** de correr las fechas para que no queden un día atrás.
+
 ## v2.1075.26 — F3 tandas 2-4: Ventas, Pedidos y Mín·Máx dejan de hablarle a la base
 
 Sin cambios visibles. **`gate:consultas` llega a 0**: ninguna pantalla le

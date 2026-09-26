@@ -5,26 +5,11 @@ import { X, MapPin, CheckCircle2, Clock, Crosshair, Truck, Radio, RefreshCw } fr
 import PedidoModal from './PedidoModal';
 import { loadGoogleMaps, loadLeaflet } from '../../plataforma/mapas';
 import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '../../data/pedidos';
-import { registerPlugin } from '@capacitor/core';
+import { seguirPosicion } from '../../plataforma/ubicacion';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { hora12 } from '../../utils/hora';
 import { escucharCambios } from '../../data/tiempoReal';
 
-// Capacitor geolocation nativa — solo disponible en app nativa (Android/iOS)
-const isNative = !!(window.Capacitor?.isNativePlatform?.());
-let CapGeo = null;
-if (isNative) {
-  import(/* @vite-ignore */ '@capacitor/geolocation').then(m => { CapGeo = m.Geolocation; }).catch(() => {});
-}
-// @capacitor-community/background-geolocation es un plugin 100% nativo sin
-// entrada JS (sin main/module/exports en su package.json) — importarlo con
-// import() dinámico (como antes) hacía que vite:import-analysis intentara
-// resolverlo como paquete real y tirara "Failed to resolve entry", incluso
-// solo con CARGAR este archivo (no con ejecutar la rama isNative). Fix:
-// registerPlugin (la forma documentada por el propio plugin) — resuelve vía
-// @capacitor/core, que sí es un paquete real, y es seguro de llamar también
-// en navegador (fuera de plataforma nativa devuelve un stub sin operar).
-const BgGeo = registerPlugin('BackgroundGeolocation');
 
 function fmtTime(iso) {
   if (!iso) return null;
@@ -102,10 +87,8 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     leafletDrvRef.current   = null;
     latestGpsPosRef.current = null;
     firstWriteRef.current   = false;
-    if (watchIdRef.current !== null) {
-      navigator.geolocation?.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
+    watchIdRef.current?.();
+    watchIdRef.current = null;
   }, [open]);
 
   // ── Cargar coordenadas de sucursales ────────────────────────────────────────
@@ -129,51 +112,19 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   }, [open]);
 
   // ── GPS propio — solo conductor ─────────────────────────────────────────────
+  // Cómo se mide lo decide la plataforma (`plataforma/ubicacion`), la misma
+  // que usa el rastreo de fondo de `usePedidosData`. `watchIdRef` guarda la
+  // función que lo detiene.
   const startGps = useCallback(async () => {
     setGpsStatus('loading');
     try {
-      if (isNative && BgGeo) {
-        // App nativa: background geolocation — funciona con pantalla apagada
-        const id = await BgGeo.addWatcher(
-          { backgroundTitle: 'Ruta activa', backgroundMessage: 'Rastreando tu posición para la entrega.', requestPermissions: true, stale: false, distanceFilter: 20 },
-          (loc, err) => {
-            if (err) { console.warn('[BgGeo]', err); return; }
-            setGpsPos({ lat: loc.latitude, lng: loc.longitude });
-            setGpsStatus('ok');
-          }
-        );
-        watchIdRef.current = id;
-      } else if (isNative && CapGeo) {
-        // App nativa sin BgGeo — usar @capacitor/geolocation (solo foreground)
-        await CapGeo.requestPermissions({ permissions: ['location'] });
-        const pos = await CapGeo.getCurrentPosition({ enableHighAccuracy: true });
-        setGpsPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setGpsStatus('ok');
-        const id = await CapGeo.watchPosition({ enableHighAccuracy: true, timeout: 10000 },
-          (p, err) => {
-            if (err) return;
-            setGpsPos({ lat: p.coords.latitude, lng: p.coords.longitude });
-          }
-        );
-        watchIdRef.current = id;
-      } else if (navigator.geolocation) {
-        // Web — watchPosition estándar
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            setGpsStatus('ok');
-            setGpsPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            watchIdRef.current = navigator.geolocation.watchPosition(
-              (p) => setGpsPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
-              (err) => console.warn('[GPS] watch:', err.code),
-              { enableHighAccuracy: true, maximumAge: 5000 },
-            );
-          },
-          (err) => { setGpsStatus(err.code === 1 ? 'denied' : 'timeout'); },
-          { enableHighAccuracy: true, timeout: 15000 },
-        );
-      } else {
-        setGpsStatus('denied');
-      }
+      watchIdRef.current = await seguirPosicion(
+        (pos) => { setGpsPos(pos); setGpsStatus('ok'); },
+        {
+          mensaje: 'Rastreando tu posición para la entrega.',
+          alFallar: (motivo) => setGpsStatus(motivo === 'sin-senal' ? 'timeout' : 'denied'),
+        },
+      );
     } catch (err) {
       console.warn('[GPS] startGps error:', err);
       setGpsStatus('denied');
@@ -181,17 +132,9 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   }, []);
 
   const stopGps = useCallback(async () => {
-    if (watchIdRef.current === null) return;
-    try {
-      if (isNative && BgGeo) {
-        await BgGeo.removeWatcher({ id: watchIdRef.current });
-      } else if (isNative && CapGeo) {
-        await CapGeo.clearWatch({ id: watchIdRef.current });
-      } else {
-        navigator.geolocation?.clearWatch(watchIdRef.current);
-      }
-    } catch { /* ignore cleanup errors */ }
+    const detener = watchIdRef.current;
     watchIdRef.current = null;
+    await detener?.();
   }, []);
 
   useEffect(() => {

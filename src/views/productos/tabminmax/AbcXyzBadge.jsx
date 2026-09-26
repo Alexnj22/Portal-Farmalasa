@@ -1,7 +1,7 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C) — combined ABC×XYZ badge, plain
 // text, only C/Z get color.
 import { ABC_CFG, XYZ_CFG } from './constants';
-import { normXyz } from './helpers';
+import { normXyz } from '../../../utils/minmaxTabla';
 import LiquidTooltip from '../../../components/common/LiquidTooltip';
 
 export default function AbcXyzBadge({ abc, xyz }) {

@@ -27,7 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { useAuth } from '../../context/AuthContext';
 import { applyPresRule } from '../../utils/presentacion';
-import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant, hasDispatchRisk } from './tabminmax/helpers';
+import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant, hasDispatchRisk } from '../../utils/minmaxTabla';
 import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, VISIBLE_STAT_KEYS, AJUSTE_CFGS, MOTIVO_AJUSTE } from './tabminmax/constants';
 import CoverageBar from './tabminmax/CoverageBar';
 import StockBar from './tabminmax/StockBar';
@@ -45,7 +45,7 @@ import ConfigPanel from './tabminmax/ConfigPanel';
 import LabsPanel from './tabminmax/LabsPanel';
 import BorradoresRanura from './tabminmax/BorradoresRanura';
 import { fetchProveedorPrincipal, fetchStockNetoPorSala, upsertStockParams } from '../../data/stockParams';
-import { useMinMaxData, estadoAjuste } from './tabminmax/useMinMaxData';
+import { useMinMaxData, estadoAjuste } from '../../hooks/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
 import { hora12 } from '../../utils/hora';
@@ -433,6 +433,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     // que se tocó está en la página que se está viendo.
     const { enTelefono, abierto: abiertoMovil } =
         useExpedienteMovil(pageRows, expandedId, 'erp_product_id');
+
+    // Al expandir, el panel se trae a la vista cuando termina la animación de
+    // altura (350ms). Vive acá y no en `useMinMaxData`: mover la página es
+    // cosa de la pantalla, y el hook es lógica que la app nativa reutiliza.
+    React.useEffect(() => {
+        if (!expandedId) return;
+        const t = setTimeout(() => {
+            document.querySelector(`[data-expand-row="${expandedId}"]`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 380);
+        return () => clearTimeout(t);
+    }, [expandedId]);
 
     // ─── Render ───────────────────────────────────────────────────────────────
     // Los filtros de estado, como UN control. Todos contestan la misma pregunta

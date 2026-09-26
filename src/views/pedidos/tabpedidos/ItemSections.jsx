@@ -13,7 +13,7 @@ import { useToastStore } from '../../../store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../../components/common/DataTable';
 import TablePagination from '../../../components/common/TablePagination';
 import ConfirmModal from '../../../components/common/ConfirmModal';
-import { calcSolicitado } from './helpers';
+import { calcSolicitado } from '../../../utils/tableroDePedidos';
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../plataforma/useSearchToggle';
 import { fetchStockParamsForRevision, guardarMinMaxDesdePedido, effectiveMinMaxPair } from '../../../data/stockParams';

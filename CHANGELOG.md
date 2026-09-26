@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.28 — F3 parte 2: los hooks de Pedidos y Mín·Máx pasan al núcleo
+
+Sin cambios visibles. La lógica de las dos pantallas más cargadas sale de la
+carpeta de pantallas y pasa al núcleo, donde la app del teléfono la puede usar
+tal cual (`docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`, F3).
+
+- `usePedidosData` y `useMinMaxData` → `src/hooks/`; sus ayudantes →
+  `utils/tableroDePedidos.js` y `utils/minmaxTabla.js`.
+- **Seguir la posición del teléfono estaba escrito dos veces** (el mapa del
+  conductor y el rastreo de fondo), con dos configuraciones del mismo plugin.
+  Ahora es uno: `plataforma/ubicacion.js`. Y la rama «Capacitor sin plugin de
+  fondo» del mapa no corría nunca: el plugin registrado siempre existe.
+- Los catálogos que usa la lógica (motivos de pausa; estados de stock, de
+  ajuste y motivos de MIN·MAX) → `constants/pedidos.js` y `constants/minmax.js`,
+  con el ícono por NOMBRE. La pantalla sólo pone el color sobre esas claves.
+- MIN·MAX tenía su propia copia de los nombres y el orden de las salas, idéntica
+  a `constants/erp.js`; Pedidos, la suya del orden. Ahora leen el canónico.
+- Traer a la vista el panel expandido de MIN·MAX pasa del hook a la pantalla.
+
 ## v2.1075.27 — Pruebas con datos: ventas, clientes y vendedores inventados
 
 Sin cambios en el portal. El entorno de pruebas deja de estar vacío: el

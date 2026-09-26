@@ -4,7 +4,7 @@ import CuerpoDialogo from '../../../components/common/CuerpoDialogo';
 import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 import { ERP_NAMES } from './constants';
-import { sugerenciaParaLaRegla } from './helpers';
+import { sugerenciaParaLaRegla } from '../../../utils/minmaxTabla';
 
 /**
  * Por qué este producto nunca va a entrar en un pedido, y con qué número sí.

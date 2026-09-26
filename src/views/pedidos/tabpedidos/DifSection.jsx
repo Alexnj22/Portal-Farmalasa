@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight, Clock } from 'lucide-react';
-import { calcSolicitado, fmtRelative, fmtDia, fmtHM } from './helpers';
+import { calcSolicitado, fmtRelative, fmtDia, fmtHM } from '../../../utils/tableroDePedidos';
 import { ERP_NAMES } from '../../../constants/erp';
 import Badge from '../../../components/common/Badge';
 import Notice from '../../../components/common/Notice';

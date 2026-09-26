@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useRef, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { BarChart2, ChevronDown } from 'lucide-react';
-import { normXyz } from './helpers';
+import { normXyz } from '../../../utils/minmaxTabla';
 import Button from '../../../components/common/Button';
 import useCapaFlotante from '../../../plataforma/capaFlotante';
 import useLayoutCompacto from '../../../hooks/useLayoutCompacto';

@@ -1,19 +1,20 @@
-// ERP branch names/order/alert config — shared by TabMinMax.jsx (main
-// component body) and its extracted sub-components (Bloque 6.C).
-export const ERP_NAMES = {
-    1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
-    4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
-};
-export const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
+// Estilos de MIN·MAX. Los nombres y las claves viven en `constants/minmax.js`
+// (los usa la lógica); acá sólo va cómo se ven. Los nombres de sala son los de
+// `constants/erp.js` — esta pantalla tenía su propia copia, idéntica.
+import { ERP_NAMES, ERP_ORDEN as ERP_ORDER } from '../../../constants/erp';
+import { ALERTA_ETIQUETA, ESTADOS_DE_STOCK, ESTADOS_DE_AJUSTE } from '../../../constants/minmax';
+
+export { ERP_NAMES, ERP_ORDER };
+export { MOTIVO_AJUSTE } from '../../../constants/minmax';
 
 export const ALERT = {
-    out_of_stock: { label: 'Sin stock',     pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-out',         row: 'bg-stock-out/10'         },
-    below_min:    { label: 'Bajo mínimo',   pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-below-min',   row: 'bg-stock-below-min/10'   },
-    approaching:  { label: 'Próx. mínimo',  pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-approaching', row: ''                        },
-    ok:           { label: 'OK',            pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-ok',          row: ''                        },
-    overstocked:  { label: 'Exceso',        pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-overstocked', row: 'bg-stock-overstocked/10' },
-    dead_stock:   { label: 'Sin movimiento',pill: 'bg-surface-card-hover text-content-3 border-border-card', dot: 'bg-stock-dead',        row: 'bg-surface-card-hover/60' },
-    no_data:      { label: 'Sin historial', pill: 'bg-surface-card-hover text-content-3 border-border-card', dot: 'bg-stock-no-data',     row: ''                        },
+    out_of_stock: { label: ALERTA_ETIQUETA.out_of_stock, pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-out',         row: 'bg-stock-out/10'         },
+    below_min:    { label: ALERTA_ETIQUETA.below_min, pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-below-min',   row: 'bg-stock-below-min/10'   },
+    approaching:  { label: ALERTA_ETIQUETA.approaching, pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-approaching', row: ''                        },
+    ok:           { label: ALERTA_ETIQUETA.ok, pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-ok',          row: ''                        },
+    overstocked:  { label: ALERTA_ETIQUETA.overstocked, pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-overstocked', row: 'bg-stock-overstocked/10' },
+    dead_stock:   { label: ALERTA_ETIQUETA.dead_stock, pill: 'bg-surface-card-hover text-content-3 border-border-card', dot: 'bg-stock-dead',        row: 'bg-surface-card-hover/60' },
+    no_data:      { label: ALERTA_ETIQUETA.no_data, pill: 'bg-surface-card-hover text-content-3 border-border-card', dot: 'bg-stock-no-data',     row: ''                        },
 };
 
 // Alert stat chips — usados por useMinMaxData.js (inicializar contadores) y
@@ -26,15 +27,16 @@ export const ALERT = {
 // de paleta no los alcanzaba: el chip seguía brillando del rojo viejo. El de
 // "sin movimiento" no era un glow sino una sombra gris, y por eso va a
 // `--shadow-elevation-sm`.
-export const STAT_CFGS = [
-    { key: 'out_of_stock', label: 'Sin stock',      dot: 'bg-stock-out',         active: 'bg-stock-out/20 backdrop-blur-sm border-stock-out/40 text-danger-text shadow-[var(--shadow-glow-danger-md)]',             chipActive: 'bg-stock-out/10 text-danger-text'       },
-    { key: 'below_min',    label: 'Bajo mínimo',    dot: 'bg-stock-below-min',   active: 'bg-stock-below-min/20 backdrop-blur-sm border-stock-below-min/40 text-chart-4-text shadow-[var(--shadow-glow-chart-4-md)]',   chipActive: 'bg-stock-below-min/10 text-chart-4-text' },
-    { key: 'approaching',  label: 'Próx. mínimo',   dot: 'bg-stock-approaching', active: 'bg-stock-approaching/20 backdrop-blur-sm border-stock-approaching/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]',      chipActive: 'bg-stock-approaching/10 text-warning-text'   },
-    { key: 'ok',           label: 'OK',              dot: 'bg-stock-ok', active: 'bg-stock-ok/20 backdrop-blur-sm border-stock-ok/40 text-success-text shadow-[var(--shadow-glow-success-md)]', chipActive: 'bg-stock-ok/10 text-success-text'},
-    { key: 'overstocked',  label: 'Excesos',         dot: 'bg-stock-overstocked',    active: 'bg-stock-overstocked/20 backdrop-blur-sm border-stock-overstocked/40 text-chart-1-text shadow-[var(--shadow-glow-chart-1-md)]',         chipActive: 'bg-stock-overstocked/10 text-chart-1-text'     },
-    { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-stock-dead',   active: 'bg-surface-card-hover backdrop-blur-sm border-border-card text-content-2 shadow-[var(--shadow-elevation-sm)]',     chipActive: 'bg-surface-card-hover text-content-2'  },
-    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-stock-no-data',   active: 'bg-stock-no-data/20 backdrop-blur-sm border-stock-no-data/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]',    chipActive: 'bg-stock-no-data/10 text-warning-text' },
-];
+const ESTILO_DE_ESTADO = {
+    out_of_stock: { dot: 'bg-stock-out',         active: 'bg-stock-out/20 backdrop-blur-sm border-stock-out/40 text-danger-text shadow-[var(--shadow-glow-danger-md)]',             chipActive: 'bg-stock-out/10 text-danger-text' },
+    below_min: { dot: 'bg-stock-below-min',   active: 'bg-stock-below-min/20 backdrop-blur-sm border-stock-below-min/40 text-chart-4-text shadow-[var(--shadow-glow-chart-4-md)]',   chipActive: 'bg-stock-below-min/10 text-chart-4-text' },
+    approaching: { dot: 'bg-stock-approaching', active: 'bg-stock-approaching/20 backdrop-blur-sm border-stock-approaching/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]',      chipActive: 'bg-stock-approaching/10 text-warning-text' },
+    ok: { dot: 'bg-stock-ok', active: 'bg-stock-ok/20 backdrop-blur-sm border-stock-ok/40 text-success-text shadow-[var(--shadow-glow-success-md)]', chipActive: 'bg-stock-ok/10 text-success-text' },
+    overstocked: { dot: 'bg-stock-overstocked',    active: 'bg-stock-overstocked/20 backdrop-blur-sm border-stock-overstocked/40 text-chart-1-text shadow-[var(--shadow-glow-chart-1-md)]',         chipActive: 'bg-stock-overstocked/10 text-chart-1-text' },
+    dead_stock: { dot: 'bg-stock-dead',   active: 'bg-surface-card-hover backdrop-blur-sm border-border-card text-content-2 shadow-[var(--shadow-elevation-sm)]',     chipActive: 'bg-surface-card-hover text-content-2' },
+    no_data: { dot: 'bg-stock-no-data',   active: 'bg-stock-no-data/20 backdrop-blur-sm border-stock-no-data/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]',    chipActive: 'bg-stock-no-data/10 text-warning-text' },
+};
+export const STAT_CFGS = ESTADOS_DE_STOCK.map((e) => ({ ...e, ...ESTILO_DE_ESTADO[e.key] }));
 // Solo estos chips se muestran en el filtro bar
 export const VISIBLE_STAT_KEYS = ['overstocked', 'dead_stock', 'no_data'];
 
@@ -58,54 +60,12 @@ export const XYZ_CFG = {
 };
 
 // ── Ajuste a mano ────────────────────────────────────────────────────────────
-// Los motivos son los mismos cuatro que acepta el CHECK de
-// `product_stock_params.manual_motivo`, y salieron de las 16 razones que la
-// gente YA escribía en las solicitudes de cambio — no de una lista inventada.
-// Ver docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md §2.5.
-export const MOTIVO_AJUSTE = {
-    ya_no_rota:   { label: 'Ya no rota',        detalle: 'Se dejó de vender o sólo se trae por encargo' },
-    lo_buscan:    { label: 'Lo están buscando', detalle: 'Hay demanda que no aparece porque no hubo producto' },
-    cliente_fijo: { label: 'Cliente fijo',      detalle: 'Un cliente compra una cantidad conocida cada cierto tiempo' },
-    otro:         { label: 'Otro',              detalle: 'Queda anotado, y la fila se revisa a mano' },
+// Los motivos y los estados (con su texto de ayuda) viven en
+// `constants/minmax.js`; acá sólo el color de cada chip.
+const ESTILO_DE_AJUSTE = {
+    a_mano: { dot: 'bg-content-3', active: 'bg-surface-card-hover backdrop-blur-sm border-border-card text-content-2', chipActive: 'bg-surface-card-hover text-content-2' },
+    en_conflicto: { dot: 'bg-stock-approaching', active: 'bg-stock-approaching/20 backdrop-blur-sm border-stock-approaching/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]', chipActive: 'bg-stock-approaching/10 text-warning-text' },
+    volvio_a_moverse: { dot: 'bg-stock-overstocked', active: 'bg-stock-overstocked/20 backdrop-blur-sm border-stock-overstocked/40 text-chart-1-text shadow-[var(--shadow-glow-chart-1-md)]', chipActive: 'bg-stock-overstocked/10 text-chart-1-text' },
+    respetado: { dot: 'bg-stock-ok', active: 'bg-stock-ok/20 backdrop-blur-sm border-stock-ok/40 text-success-text shadow-[var(--shadow-glow-success-md)]', chipActive: 'bg-stock-ok/10 text-success-text' },
 };
-
-// Los tres estados de un ajuste. El orden es el de urgencia: lo primero que hay
-// que mirar es lo que el cálculo contradice.
-export const AJUSTE_CFGS = [
-    // «A mano» va primero porque es el más común y el más flojo: sólo dice que
-    // el número de hoy lo escribió una persona. Los otros tres son SELLADOS —
-    // solicitud aprobada o motivo declarado— y son los únicos que el cálculo
-    // del mes que viene respeta.
-    {
-        key: 'a_mano',
-        label: 'A mano',
-        ayuda: 'Este número lo escribió una persona en la revisión del mes. El cálculo del mes que viene lo va a reemplazar.',
-        dot: 'bg-content-3',
-        active: 'bg-surface-card-hover backdrop-blur-sm border-border-card text-content-2',
-        chipActive: 'bg-surface-card-hover text-content-2',
-    },
-    {
-        key: 'en_conflicto',
-        label: 'En conflicto',
-        ayuda: 'Se aprobó una solicitud con este número y el cálculo propone otro. Hay que decidir cuál queda.',
-        dot: 'bg-stock-approaching',
-        active: 'bg-stock-approaching/20 backdrop-blur-sm border-stock-approaching/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]',
-        chipActive: 'bg-stock-approaching/10 text-warning-text',
-    },
-    {
-        key: 'volvio_a_moverse',
-        label: 'Volvió a moverse',
-        ayuda: 'Se marcó como «ya no rota» y volvió a venderse. El motivo dejó de ser cierto.',
-        dot: 'bg-stock-overstocked',
-        active: 'bg-stock-overstocked/20 backdrop-blur-sm border-stock-overstocked/40 text-chart-1-text shadow-[var(--shadow-glow-chart-1-md)]',
-        chipActive: 'bg-stock-overstocked/10 text-chart-1-text',
-    },
-    {
-        key: 'respetado',
-        label: 'Respetado',
-        ayuda: 'El ajuste sigue en pie y el cálculo no lo contradice.',
-        dot: 'bg-stock-ok',
-        active: 'bg-stock-ok/20 backdrop-blur-sm border-stock-ok/40 text-success-text shadow-[var(--shadow-glow-success-md)]',
-        chipActive: 'bg-stock-ok/10 text-success-text',
-    },
-];
+export const AJUSTE_CFGS = ESTADOS_DE_AJUSTE.map((e) => ({ ...e, ...ESTILO_DE_AJUSTE[e.key] }));

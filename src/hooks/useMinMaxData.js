@@ -4,18 +4,19 @@
 // Bodega (antes duplicados inline en el JSX) y `_openBodegaEdit` se
 // consolidan aquí en `openBodegaTooltip`/`closeBodegaTooltip`/`openBodegaEdit`.
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { signPhotosDeep } from '../../../utils/storageFiles';
-import { useStaffStore as useStaff } from '../../../store/staffStore';
-import { useToastStore } from '../../../store/toastStore';
-import { smartFilter } from '../../../utils/searchUtils';
-import { normXyz, hasDispatchRisk } from './helpers';
-import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, AJUSTE_CFGS } from './constants';
-import { calcularMinMaxDeSala, descartarBorradoresDeMinMax, effectiveMinMaxPair, fetchAjustesManuales, fetchAnalisisDeStock, fetchAuditLogsForProduct, fetchCostoEstimadoDelBorrador, fetchEmployeeByEmail, fetchEmployeesBasic, fetchResumenDeCostoDelInventario, fetchResumenDelProductoPorSala, fetchStockConfig, fetchStockParams, fetchStockParamsUpdates, ponerEnCeroProductoEnTodasLasSalas, publicarMinMax, updateStockParams, updateStockParamsBulk, upsertStockParams, upsertStockParamsBulk, upsertStockParamsReturning } from '../../../data/stockParams';
-import { fetchSolicitudesDeProducto } from '../../../data/minmaxRequests';
+import { signPhotosDeep } from '../utils/storageFiles';
+import { useStaffStore as useStaff } from '../store/staffStore';
+import { useToastStore } from '../store/toastStore';
+import { smartFilter } from '../utils/searchUtils';
+import { normXyz, hasDispatchRisk } from '../utils/minmaxTabla';
+import { ERP_NAMES, ERP_ORDEN as ERP_ORDER } from '../constants/erp';
+import { ALERTA_ETIQUETA, ESTADOS_DE_STOCK, ESTADOS_DE_AJUSTE } from '../constants/minmax';
+import { calcularMinMaxDeSala, descartarBorradoresDeMinMax, effectiveMinMaxPair, fetchAjustesManuales, fetchAnalisisDeStock, fetchAuditLogsForProduct, fetchCostoEstimadoDelBorrador, fetchEmployeeByEmail, fetchEmployeesBasic, fetchResumenDeCostoDelInventario, fetchResumenDelProductoPorSala, fetchStockConfig, fetchStockParams, fetchStockParamsUpdates, ponerEnCeroProductoEnTodasLasSalas, publicarMinMax, updateStockParams, updateStockParamsBulk, upsertStockParams, upsertStockParamsBulk, upsertStockParamsReturning } from '../data/stockParams';
+import { fetchSolicitudesDeProducto } from '../data/minmaxRequests';
 
 // Warns (but does NOT block) when a saved value is 4× above or 4× below the calculated reference.
-import { mensajeAmigable } from '../../../utils/errorMessages';
-import { usuarioDeLaSesion } from '../../../data/auth';
+import { mensajeAmigable } from '../utils/errorMessages';
+import { usuarioDeLaSesion } from '../data/auth';
 const warnIfOutrageous = (field, numVal, row) => {
     if (!numVal || numVal <= 0 || !row) return;
     const calcRef = field === 'min' ? (row.calc_min ?? 0) : (row.calc_max ?? 0);
@@ -198,16 +199,6 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         setExpandedId(prev => prev === id ? null : id);
     }, []);
 
-    useEffect(() => {
-        if (!expandedId) return;
-        // Wait for the height animation to finish (350ms), then scroll the panel into view
-        const t = setTimeout(() => {
-            document.querySelector(`[data-expand-row="${expandedId}"]`)
-                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 380);
-        return () => clearTimeout(t);
-    }, [expandedId]);
-
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
         setLoading(true); setInlineDraftEdit(null); setExpandedId(null);
@@ -379,8 +370,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         stats, ajusteStats, ajusteCount,
         criticalACount,
     } = useMemo(() => {
-        const statCounts = Object.fromEntries(STAT_CFGS.map(s => [s.key, 0]));
-        const ajusteCounts = Object.fromEntries(AJUSTE_CFGS.map(a => [a.key, 0]));
+        const statCounts = Object.fromEntries(ESTADOS_DE_STOCK.map(s => [s.key, 0]));
+        const ajusteCounts = Object.fromEntries(ESTADOS_DE_AJUSTE.map(a => [a.key, 0]));
         let ajustadas = 0;
         let hasPublished = false, drafts = 0, sparse = 0, changes = 0, bPending = 0, dispatchRisk = 0;
         let firstCalc = null, firstDraftCalc = null;
@@ -1178,7 +1169,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     }, [filtered, selectedErp]);
     const filterLabel = useMemo(() => {
         if (filterAbc !== 'all' && filterXyz === 'all' && filterAlert === 'all' && !searchTerm) return `Clase ${filterAbc}`;
-        if (filterAlert !== 'all' && filterAbc === 'all' && filterXyz === 'all' && !searchTerm) return ALERT[filterAlert]?.label ?? filterAlert;
+        if (filterAlert !== 'all' && filterAbc === 'all' && filterXyz === 'all' && !searchTerm) return ALERTA_ETIQUETA[filterAlert] ?? filterAlert;
         if (searchTerm && filterAbc === 'all' && filterXyz === 'all' && filterAlert === 'all') return `"${searchTerm}"`;
         return 'Filtrados';
     }, [filterAbc, filterXyz, filterAlert, searchTerm]);

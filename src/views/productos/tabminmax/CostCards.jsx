@@ -1,6 +1,6 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { DollarSign, TrendingUp, TrendingDown, Layers } from 'lucide-react';
-import { fmtMoney } from './helpers';
+import { fmtMoney } from '../../../utils/minmaxTabla';
 import StatCard from '../../../components/common/StatCard';
 
 /**

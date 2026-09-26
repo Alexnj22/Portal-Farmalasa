@@ -29,7 +29,7 @@
   "src/views/branch-tabs/TabStaff.jsx": 1,
   "src/views/pedidos/ProgramarEntregaModal.jsx": 1,
   "src/views/pedidos/tabpedidos/LifecycleTimeline.jsx": 1,
-  "src/views/pedidos/tabpedidos/helpers.js": 2,
+  "src/utils/tableroDePedidos.js": 2,
   "src/views/personal/EquiposView.jsx": 1,
   "src/views/productos/TabMinMax.jsx": 1,
   "src/views/productos/tabminmax/ExpandedPanel.jsx": 1,

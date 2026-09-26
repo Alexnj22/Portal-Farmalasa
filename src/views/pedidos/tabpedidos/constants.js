@@ -1,16 +1,9 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C) — shared by StagePill/SucPill/PauseModal.
-import { Package, Activity, Pause, CheckCircle2, Truck, PackageCheck, Database, Coffee, Clock, ClipboardList, Bell, MessageSquare } from 'lucide-react';
+import { Package, Activity, Pause, CheckCircle2, Truck, PackageCheck, Database } from 'lucide-react';
 
-// Usado por PauseModal (extraído) y por el cuerpo principal de TabPedidos.jsx
-// (busca el motivo de pausa para mostrarlo en el timeline) — se queda acá
-// para no duplicarlo entre ambos.
-export const PAUSE_REASONS = [
-    { key: 'almuerzo',     label: 'Almuerzo',             icon: Coffee,        maxUses: 1    },
-    { key: 'insumos',      label: 'Espera de insumos',    icon: Clock,         maxUses: null },
-    { key: 'reunion',      label: 'Reunión de turno',     icon: ClipboardList, maxUses: null },
-    { key: 'interrupcion', label: 'Interrupción externa', icon: Bell,          maxUses: null },
-    { key: 'otro',         label: 'Otro…',                icon: MessageSquare, maxUses: null, requiresComment: true },
-];
+// Los motivos de pausa (PAUSE_REASONS) viven en `constants/pedidos.js`: los
+// usa la lógica, y la pantalla dibuja su ícono por nombre.
+
 
 // Tokenizado T7 — mismo criterio de color por etapa que TabEnCurso.jsx
 // (STAGE_CONFIG/COLOR_CLASSES ahí), mismo concepto de dispatch-stage.

@@ -2,44 +2,34 @@
 // Extracción mecánica: mismos nombres, misma lógica, sin cambios de
 // comportamiento.
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { signPhotosDeep } from '../../../utils/storageFiles';
-import { useAuth } from '../../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../../store/staffStore';
-import { useToastStore } from '../../../store/toastStore';
-import { notifyBranch } from '../../../utils/notify';
-import { tokenMatch } from '../../../utils/searchUtils';
-import { ERP_NAMES } from '../../../constants/erp';
-import { printFromPedidoItems, getExactPageGroups } from '../../../utils/pedidoPrint';
-import { PAUSE_REASONS } from './constants';
-import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, faltantesDeLaSala, describirFaltantes } from './helpers';
-import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBodegaBranchId, fetchBranchIdForSucursal, fetchBranchInfoForSucursal, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoItemsPendientesIds, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchSucursalIdForBranch, fetchTrasladosDePedidos, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../../../data/pedidos';
+import { signPhotosDeep } from '../utils/storageFiles';
+import { useAuth } from '../context/AuthContext';
+import { useStaffStore as useStaff } from '../store/staffStore';
+import { useToastStore } from '../store/toastStore';
+import { notifyBranch } from '../utils/notify';
+import { tokenMatch } from '../utils/searchUtils';
+import { ERP_NAMES, SUCURSALES as ERP_ORDER } from '../constants/erp';
+import { printFromPedidoItems, getExactPageGroups } from '../utils/pedidoPrint';
+import { PAUSE_REASONS } from '../constants/pedidos';
+import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, faltantesDeLaSala, describirFaltantes } from '../utils/tableroDePedidos';
+import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBodegaBranchId, fetchBranchIdForSucursal, fetchBranchInfoForSucursal, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoItemsPendientesIds, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchSucursalIdForBranch, fetchTrasladosDePedidos, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
 import {
     fetchDevolucionesDePedido, decidirDevolucion,
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
-} from '../../../data/devoluciones';
-import { decidirDiferencia, confirmarLlegadaDiferencia } from '../../../data/diferencias';
-import { registerPlugin } from '@capacitor/core';
+} from '../data/devoluciones';
+import { decidirDiferencia, confirmarLlegadaDiferencia } from '../data/diferencias';
+import { seguirPosicion } from '../plataforma/ubicacion';
 
-import { mensajeAmigable } from '../../../utils/errorMessages';
-import { cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '../../../utils/cajasEspeciales';
-import { fetchEmployeesPublicByIds } from '../../../data/employees';
-import { metaDePedido } from '../../../utils/avisosDeOperacion';
-import { escucharCambios } from '../../../data/tiempoReal';
-const ERP_ORDER = [5, 1, 2, 3, 4, 7];
+import { mensajeAmigable } from '../utils/errorMessages';
+import { cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '../utils/cajasEspeciales';
+import { fetchEmployeesPublicByIds } from '../data/employees';
+import { metaDePedido } from '../utils/avisosDeOperacion';
+import { escucharCambios } from '../data/tiempoReal';
 
 // Cuánto se esperan los avisos de Realtime antes de recargar. Un UPDATE sobre
 // los renglones de un pedido llega como UN aviso por renglón, casi juntos: con
 // esta ventana, los 206 de una recepción se vuelven una o dos recargas.
 const ESPERA_RECARGA_MS = 1500;
-
-// @capacitor-community/background-geolocation es un plugin 100% nativo sin
-// entrada JS — el import() dinámico que se usaba antes hacía que
-// vite:import-analysis intentara resolverlo como paquete real al cargar
-// este archivo (no al ejecutar la rama isNative) y tiraba "Failed to
-// resolve entry", rompiendo /pedidos en el dev server. registerPlugin (la
-// forma documentada por el plugin, vía @capacitor/core que sí es un
-// paquete real) es seguro de llamar también fuera de plataforma nativa.
-const BackgroundGeolocation = registerPlugin('BackgroundGeolocation');
 
 export function usePedidosData({ searchTerm = '' }) {
     const { user, getScope, hasPermission } = useAuth();
@@ -442,62 +432,31 @@ export function usePedidosData({ searchTerm = '' }) {
     }, [loadActiveRutas, loadActive]);
 
     // ── GPS background persistente — conductor con ruta en_ruta ──────────────
-    // Corre independiente del RutaMapModal: pantalla apagada o modal cerrado
-    const bgGpsWatchRef    = useRef(null);
-    const bgGpsIntervalRef = useRef(null);
-    const bgGpsPosRef      = useRef(null);
+    // Corre independiente del RutaMapModal: pantalla apagada o modal cerrado.
+    // Cómo se mide lo decide la plataforma (`plataforma/ubicacion`).
+    const bgGpsPosRef = useRef(null);
     useEffect(() => {
         // Solo activo si el usuario es conductor de una ruta en_ruta hoy
         const entry = [...pedidoRutaMap.values()]
             .find(v => v.ruta.conductor_id && String(v.ruta.conductor_id) === String(user?.id) && v.ruta.status === 'en_ruta');
-
-        if (!entry) {
-            // Limpiar si ya no hay ruta activa
-            if (bgGpsWatchRef.current !== null) {
-                navigator.geolocation?.clearWatch(bgGpsWatchRef.current);
-                bgGpsWatchRef.current = null;
-            }
-            if (bgGpsIntervalRef.current) { clearInterval(bgGpsIntervalRef.current); bgGpsIntervalRef.current = null; }
-            return;
-        }
+        if (!entry) return;
 
         const rutaId = entry.ruta.id;
-        const isNative = !!(window.Capacitor?.isNativePlatform?.());
-
-        const startBg = async () => {
-            try {
-                if (isNative) {
-                    bgGpsWatchRef.current = await BackgroundGeolocation.addWatcher(
-                        { backgroundTitle: 'Ruta activa', backgroundMessage: 'Rastreando tu posición.', requestPermissions: true, stale: false, distanceFilter: 20 },
-                        (loc) => { if (loc) bgGpsPosRef.current = { lat: loc.latitude, lng: loc.longitude }; }
-                    );
-                } else if (navigator.geolocation) {
-                    bgGpsWatchRef.current = navigator.geolocation.watchPosition(
-                        (p) => { bgGpsPosRef.current = { lat: p.coords.latitude, lng: p.coords.longitude }; },
-                        (err) => console.warn('[BG-GPS]', err.code),
-                        { enableHighAccuracy: true, maximumAge: 10000 },
-                    );
-                }
-                // Escribir a DB cada 30s
-                bgGpsIntervalRef.current = setInterval(async () => {
-                    const pos = bgGpsPosRef.current;
-                    if (!pos) return;
-                    await upsertRutaLocation(rutaId, pos.lat, pos.lng).then(() => {}, () => {});
-                }, 30_000);
-            } catch (e) { console.warn('[BG-GPS] start error:', e); }
-        };
-
-        startBg();
+        let detener = null;
+        let cerrado = false;
+        seguirPosicion((pos) => { bgGpsPosRef.current = pos; })
+            .then((d) => { if (cerrado) d(); else detener = d; })
+            .catch((e) => console.warn('[BG-GPS] start error:', e));
+        // Escribir a DB cada 30s
+        const intervalo = setInterval(() => {
+            const pos = bgGpsPosRef.current;
+            if (!pos) return;
+            upsertRutaLocation(rutaId, pos.lat, pos.lng).then(() => {}, () => {});
+        }, 30_000);
         return () => {
-            if (bgGpsWatchRef.current !== null) {
-                if (isNative) {
-                    BackgroundGeolocation.removeWatcher({ id: bgGpsWatchRef.current }).catch(() => {});
-                } else {
-                    navigator.geolocation?.clearWatch(bgGpsWatchRef.current);
-                }
-                bgGpsWatchRef.current = null;
-            }
-            if (bgGpsIntervalRef.current) { clearInterval(bgGpsIntervalRef.current); bgGpsIntervalRef.current = null; }
+            cerrado = true;
+            detener?.();
+            clearInterval(intervalo);
         };
     }, [pedidoRutaMap, user?.id]);
 

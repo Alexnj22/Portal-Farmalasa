@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { necesitaAtencion, faltantesDeLaSala, describirFaltantes } from '../../src/views/pedidos/tabpedidos/helpers';
+import { necesitaAtencion, faltantesDeLaSala, describirFaltantes } from '../../src/utils/tableroDePedidos';
 
 /**
  * La primera clave del orden del tablero: lo que le pide algo a alguien AHORA

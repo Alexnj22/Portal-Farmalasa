@@ -428,7 +428,7 @@ Su hermana `segmentado-a-mano` cubre §15.3: un `.map()` de opciones cuyo
 un `SegmentedControl` escrito a mano. Un botón suelto que cambia de tono según
 la acción **no** lo es, y por eso el detector mira el parámetro y no el `===`.
 
-**Semáforo de riesgo de stock (7 estados)** — el real de `src/views/productos/tabminmax/constants.js` (`STAT_CFGS`), no el que se mencionaba antes en este documento:
+**Semáforo de riesgo de stock (7 estados)** — el real de `src/views/productos/tabminmax/constants.js` (`STAT_CFGS`, con las claves y los nombres en `src/constants/minmax.js`), no el que se mencionaba antes en este documento:
 ```
 --stock-out: #ef4444          --stock-below-min: #f97316
 --stock-approaching: #fbbf24  --stock-ok: #10b981

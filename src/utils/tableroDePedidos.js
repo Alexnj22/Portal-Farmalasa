@@ -1,6 +1,6 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C) — shared by the main tab and
 // its extracted sub-components, kept here so neither side duplicates it.
-import { hora12 } from '../../../utils/hora';
+import { hora12 } from './hora';
 
 export function fmtMin(min) {
     if (min == null || isNaN(min) || min < 0) return null;

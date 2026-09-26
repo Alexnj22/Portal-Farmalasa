@@ -1,7 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { CircleDot } from 'lucide-react';
 import PeriodPicker from '../../../components/common/PeriodPicker';
-import { currentMonthRange } from './helpers';
+import { currentMonthRange } from '../../../utils/tableroDePedidos';
 import FilterBar from '../../../components/common/FilterBar';
 
 /**

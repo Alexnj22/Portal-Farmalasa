@@ -10,7 +10,7 @@ import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useAuth } from '../../../context/AuthContext';
 import { useNowTick } from '../../../hooks/useNowTick';
 import { ERP_NAMES, ERP_ORDER, ALERT } from './constants';
-import { sortedPres, formatDominant } from './helpers';
+import { sortedPres, formatDominant } from '../../../utils/minmaxTabla';
 import StockBar from './StockBar';
 import AbcXyzBadge from './AbcXyzBadge';
 import { fetchLotesPorVencer, fetchPoliticaDeVencimiento, fetchProductCostHistory, fetchResumenDelProductoPorSala, fetchStockParamsHistory, fetchUltimasVentasDelProducto } from '../../../data/stockParams';

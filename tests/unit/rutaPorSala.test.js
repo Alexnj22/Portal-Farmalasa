@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agruparPorRuta, claveParada, getBranchStage, estadoDeLaSala, puedePrepararse, puedeDespacharse } from '../../src/views/pedidos/tabpedidos/helpers';
+import { agruparPorRuta, claveParada, getBranchStage, estadoDeLaSala, puedePrepararse, puedeDespacharse } from '../../src/utils/tableroDePedidos';
 
 // El caso real, tal como estaba en producción el 2026-08-24.
 //

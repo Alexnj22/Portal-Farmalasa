@@ -32,8 +32,9 @@ vi.mock('../../src/data/pedidos', () => ({
 const { avisarSalidaALasSalas } = await import('../../src/utils/avisoSalidaPedido');
 const { haversineMeters, optimizeRoute, totalRoute, decodePolyline } =
     await import('../../src/utils/routeOptimizer');
-const { PAUSE_REASONS, STAGE_CONFIG, COLOR_CLS, SUC_VARIANTE } =
+const { STAGE_CONFIG, COLOR_CLS, SUC_VARIANTE } =
     await import('../../src/views/pedidos/tabpedidos/constants');
+const { PAUSE_REASONS } = await import('../../src/constants/pedidos');
 const { fetchProductPresentacionesForDispatch, fetchAllDispatchRules, fetchProductsWithLabPage } =
     await import('../../src/data/dispatchRules');
 const { fetchProductPreciosOptsForProducts, searchAvailableProducts, fetchLastDispatchInfo } =

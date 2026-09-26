@@ -1,11 +1,16 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
-import { Pause, Coffee, Loader2 } from 'lucide-react';
+import { Pause, Coffee, Clock, ClipboardList, Bell, MessageSquare, Loader2 } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import PedidoModal from '../PedidoModal';
 import { ERP_NAMES } from '../../../constants/erp';
-import { PAUSE_REASONS } from './constants';
+import { PAUSE_REASONS } from '../../../constants/pedidos';
+import IconoPorNombre from '../../../components/common/IconoPorNombre';
 import PortalTextarea from '../../../components/common/PortalTextarea';
 import { rotuloCampo } from '../../../utils/rotuloDeCampo';
+
+// Los íconos de los motivos de pausa: el catálogo (`constants/pedidos`) sólo
+// trae el nombre.
+const ICONOS_DE_PAUSA = { Coffee, Clock, ClipboardList, Bell, MessageSquare };
 
 export default function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment, setComment, onCancel, onConfirm, busy }) {
     const alreadyHadAlmuerzo = history.some(h => h.razon?.toLowerCase().includes('almuerzo'));
@@ -41,7 +46,6 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                         <p className="text-label font-semibold text-content-2 uppercase tracking-wide mb-2">¿Por qué pausas?</p>
                         <div className="grid grid-cols-2 gap-2">
                             {PAUSE_REASONS.map(opt => {
-                                const Icon     = opt.icon;
                                 const isUsed   = opt.maxUses === 1 && alreadyHadAlmuerzo;
                                 const isSel    = razonSel === opt.key;
                                 return (
@@ -56,7 +60,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                                                      'border-divider text-content-2 hover:bg-surface-card-hover'
                                         }`}
                                     >
-                                        <Icon size={15} className={isUsed ? 'text-content-3' : isSel ? 'text-warning' : 'text-content-3'} />
+                                        <IconoPorNombre iconos={ICONOS_DE_PAUSA} nombre={opt.icono} size={15} className={isUsed ? 'text-content-3' : isSel ? 'text-warning' : 'text-content-3'} />
                                         <div>
                                             <div>{opt.label}</div>
                                             {isUsed && <div className="text-caption text-content-3">Ya registrado</div>}

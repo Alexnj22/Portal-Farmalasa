@@ -3,7 +3,7 @@
 
 // Normalize legacy demand_variability values → X/Y/Z
 export const normXyz = (v) => ({ stable: 'X', moderate: 'Y', erratic: 'Z' }[v] ?? v ?? 'X');
-import { formatMoneyCorto } from '../../../utils/formatNumber';
+import { formatMoneyCorto } from './formatNumber';
 
 // `translateDbError` vivía acá y se eliminó el 2026-08-01: sus 7 reglas se
 // mudaron a `utils/errorMessages`, que es el único traductor del portal.

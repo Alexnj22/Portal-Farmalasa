@@ -18,7 +18,7 @@
     "src/components/common/NotificationBell.jsx": 1,
     "src/views/RolesView.jsx": 1,
     "src/views/purchases/FacturasCompraView.jsx": 2,
-    "src/views/pedidos/tabpedidos/usePedidosData.js": 5,
+    "src/hooks/usePedidosData.js": 5,
     "src/views/pedidos/RecepcionModal.jsx": 2,
     "src/views/pedidos/LlegadaModal.jsx": 1,
     "src/views/pedidos/TabReglas.jsx": 1,
@@ -29,7 +29,7 @@
     "src/views/EncuestaView.jsx": 1,
     "src/views/VentasView.jsx": 2,
     "src/views/productos/TabCatalogo.jsx": 2,
-    "src/views/productos/tabminmax/useMinMaxData.js": 2,
+    "src/hooks/useMinMaxData.js": 2,
     "src/views/MiCajaView.jsx": 1,
     "src/store/slices/requestsSlice.js": 2
   }

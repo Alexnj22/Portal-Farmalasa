@@ -3,7 +3,7 @@
 // its pause badge, shown inside each expanded pedido card.
 import React from 'react';
 import { Pause } from 'lucide-react';
-import { fmtMin, elapsed, fmtHM } from './helpers';
+import { fmtMin, elapsed, fmtHM } from '../../../utils/tableroDePedidos';
 import Badge from '../../../components/common/Badge';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '../../../utils/nameUtils';

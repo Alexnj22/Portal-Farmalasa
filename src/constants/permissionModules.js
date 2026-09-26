@@ -237,6 +237,7 @@ const GRUPOS_CRUDOS = [
             { key: 'puntos',         label: 'Puntos',        desc: 'El programa de puntos entero: lo acumulado y canjeado por día y por sala, los avisos de canjes sin saldo y anulaciones con puntos ya gastados, cuándo vencen, y las cuentas del sistema anterior que quedaron por asignar. Editar = asignar una de esas cuentas a la ficha de un cliente', icono: 'Star', hasApprove: false, sub: [
                 // Una por pestaña (pedido del usuario, 2026-09-25). Avisos es sólo
                 // de administración; Consulta la ve también la caja.
+                { key: 'puntos_tab_resumen',     label: 'Resumen',             tipo: 'tab' },
                 { key: 'puntos_tab_consulta',    label: 'Consulta',            tipo: 'tab' },
                 { key: 'puntos_tab_avisos',      label: 'Avisos',              tipo: 'tab' },
                 { key: 'puntos_tab_por_asignar', label: 'Cuentas por asignar', tipo: 'tab' },

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.15 — Puntos: pestaña Resumen con las gráficas; Consulta queda con tarjetas y listado
+
+Pedido del usuario: una pestaña de inicio con lo relevante y Consulta sólo con
+el listado y las tarjetas.
+
+- **Resumen** (primera pestaña): la curva de 30 días y el mes por sala en una
+  fila; debajo, el mes en cifras, cuándo vencen (lista por mes, en puntos y
+  dólares — ya no la línea que se partía en tres renglones) y el estado del
+  programa (dónde funciona, última acumulación, última copia).
+- **Consulta**: las tarjetas y la lista de clientes.
+- Los avisos del programa (el cambio del 1-oct, un arranque fallido, la
+  acumulación parada) van en las dos: la caja sólo mira Consulta.
+- Permiso nuevo `puntos_tab_resumen`, dado a todo cargo que ya tenía Consulta.
+  `puntos_panel_serie` lo exige desde ahora.
+
 ## v2.1075.14 — Puntos: las gráficas de Consulta en una fila compacta
 
 Opción elegida por el usuario entre tres. La curva de 30 días ocupa dos

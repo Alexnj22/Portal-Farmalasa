@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1078.1 — Pruebas: las funciones aceptan varios dominios del portal
+
+`PORTAL_ORIGIN` de las edge functions admite varios dominios separados por coma.
+En producción sigue siendo uno solo y nada cambia; en el entorno de pruebas
+permite probar desde dev.farmasalud.lat y desde el enlace de Vercel de una rama
+a la vez (hasta hoy sólo aceptaba `localhost`).
+
 ## v2.1078.0 — Distribución: pantallas de pedidos, documentos, clientes, catálogo y empresa
 
 Vista nueva **Distribución** (`/distribucion`, menú Comercial, permiso

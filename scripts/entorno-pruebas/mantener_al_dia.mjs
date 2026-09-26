@@ -115,6 +115,41 @@ function comparar(prod, branch) {
     };
 }
 
+/**
+ * Los permisos de las tablas, iguales a los de producción.
+ *
+ * Medido el 2026-09-26 en un branch recién rehecho: **382 permisos de menos en
+ * 144 tablas** para `anon`, `authenticated` y `service_role` —cortes de caja,
+ * metas, bitácoras, promociones, puntos, las líneas de traslado de pedidos…—.
+ * En producción esas tablas nacieron con los privilegios por defecto del
+ * panel; el branch las arma por migraciones y no los hereda. El portal de
+ * pruebas quedaba con esos módulos vacíos («permission denied for table»), y
+ * se leía como un defecto del portal.
+ *
+ * Sólo AGREGA lo que producción tiene y el branch no; nunca quita. A
+ * producción sólo le lee la lista.
+ */
+async function igualarPermisosDeTablas(ref) {
+    const q = `select grantee, table_name, string_agg(privilege_type, ', ' order by privilege_type) as privs
+                 from information_schema.role_table_grants
+                where table_schema = 'public' and grantee in ('anon', 'authenticated', 'service_role')
+                group by 1, 2`;
+    const [prod, br] = await Promise.all([sql(PROD, q), sql(ref, q)]);
+    const tiene = new Map(br.map((r) => [`${r.grantee}|${r.table_name}`, new Set(r.privs.split(', '))]));
+    const existe = new Set(br.map((r) => r.table_name));
+    const grants = [];
+    for (const r of prod) {
+        const ya = tiene.get(`${r.grantee}|${r.table_name}`) ?? new Set();
+        const faltan = r.privs.split(', ').filter((p) => !ya.has(p));
+        // Una tabla que el branch no tiene (todavía) no se toca: la trae el push.
+        if (faltan.length && (existe.has(r.table_name) || ya.size)) {
+            grants.push(`GRANT ${faltan.join(', ')} ON public."${r.table_name}" TO ${r.grantee};`);
+        }
+    }
+    if (grants.length) await sql(ref, grants.join('\n'), { escribe: true });
+    console.log(`✓ Permisos de tablas: ${grants.length ? `${grants.length} igualados a producción` : 'ya iguales a producción'}.`);
+}
+
 async function herramientas(ref) {
     const leer = (f) => fs.readFileSync(path.join(aqui, f), 'utf8');
     // Los crons que llaman a PRODUCCIÓN por HTTP se apagan en cada corrida, no
@@ -128,6 +163,7 @@ async function herramientas(ref) {
     await sql(ref, leer('correr_fechas.sql'), { escribe: true });
     await sql(ref, 'select * from public.correr_fechas_del_branch_de_pruebas()', { escribe: true });
     await sql(ref, leer('permisos_de_la_cuenta_de_pruebas.sql'), { escribe: true });
+    await igualarPermisosDeTablas(ref);
 }
 
 async function rehacer(viejo) {

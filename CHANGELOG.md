@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.23 — Entorno de pruebas: la cuenta entra y los permisos de tablas igualan a producción
+
+Dos defectos de la base de pruebas rehecha el 26-sep, que dejaban el portal de
+pruebas (y `dev.farmasalud.lat`) sin poder usarse de verdad:
+
+- **La cuenta `pruebas` pedía cambiar la contraseña** en el primer acceso: la
+  base se arma con la versión de la semilla registrada en producción, anterior
+  al arreglo de `must_change_password`. Los recorridos del navegador daban
+  verde mirando la pantalla de entrada. Ahora `permisos_de_la_cuenta_de_pruebas.sql`
+  (corre todos los días) pone la marca.
+- **382 permisos de tablas de menos en 144 tablas** para `anon`,
+  `authenticated` y `service_role` (cortes de caja, metas, bitácoras,
+  promociones, puntos, líneas de traslado…): «permission denied for table»
+  y módulos vacíos. En producción esas tablas nacieron con los privilegios del
+  panel; el branch no los hereda. El mantenimiento diario ahora los iguala
+  a producción (sólo agrega; a producción sólo le lee la lista).
+
 ## v2.1075.22 — gate:perf en verde: la foto diaria auditada, puntos declarado hasta el arranque
 
 Cierra los cinco hallazgos que `gate:perf` levantó el 26-sep. Sin cambios de

@@ -38,6 +38,19 @@ BEGIN
     RAISE EXCEPTION 'Sólo en el branch de pruebas: no se encontró la cuenta `pruebas`.';
   END IF;
 
+  -- ── Entrar sin que pida cambiar la contraseña (2026-09-26) ───────────────
+  -- La semilla del branch pone `must_change_password: false`, pero el branch
+  -- se arma con la versión de esa migración REGISTRADA en producción, que es
+  -- anterior a ese arreglo: la cuenta nació sin la marca y el portal se quedaba
+  -- en «Cambia tu contraseña». Los recorridos del navegador daban verde mirando
+  -- la pantalla de entrada. Como este archivo corre todos los días, acá no se
+  -- pierde al rehacer el branch.
+  UPDATE auth.users
+     SET raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb)
+                              || '{"must_change_password": false}'::jsonb
+   WHERE id = (SELECT id FROM public.employees WHERE username = 'pruebas')
+     AND coalesce((raw_user_meta_data->>'must_change_password')::boolean, true);
+
   UPDATE public.role_permissions SET can_view = true WHERE role_id = v_rol;
 
   -- Las que ni siquiera tenían fila. Se listan a mano y no se copian de

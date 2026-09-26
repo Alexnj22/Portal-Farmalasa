@@ -4,7 +4,9 @@ import Button from './Button';
 import AvatarConEstado from './AvatarConEstado';
 import NotificacionDetalle from './NotificacionDetalle';
 import { AnilloDeMeta, CuerpoDeCierreDeMeta, CuerpoDeCierreDeEmpresa, CuerpoDeCierreDelDia } from './CierreDeMeta';
-import { AnilloDeFaltante, CuerpoDeFaltanteDeCaja } from './TarjetaDeFaltante';
+import {
+    AnilloDeFaltante, CuerpoDeFaltanteDeCaja, InsigniaDeDiferenciasPendientes, CuerpoDeDiferenciasPendientes,
+} from './TarjetaDeFaltante';
 import { AnilloDeAperturas, CuerpoDeAperturas } from './TarjetaDeAperturas';
 import { InsigniaDeCreditos, CuerpoDeCreditos } from './TarjetaDeCreditos';
 import {
@@ -22,7 +24,7 @@ import {
     InsigniaDeProductosSinVenta, CuerpoDeProductosSinVenta,
 } from './TarjetasDeOperacion';
 import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
-import { datosDeFaltanteDeCaja } from '../../utils/faltanteDeCaja';
+import { datosDeFaltanteDeCaja, datosDeDiferenciasPendientes } from '../../utils/faltanteDeCaja';
 import { datosDeAperturasDeLaManana } from '../../utils/aperturasDeLaManana';
 import { datosDeCreditosVencidos } from '../../utils/creditosVencidos';
 import {
@@ -191,6 +193,8 @@ const TarjetaDeAviso = ({
        cosa —cuánto se contó de lo que debía haber— y su color es uno solo,
        porque un faltante nunca es verde. */
     const faltante = datosDeFaltanteDeCaja(n);
+    /* Lo que la sala tiene pendiente de todas sus diferencias (aviso a jefes). */
+    const difPend = datosDeDiferenciasPendientes(n);
     /* Cómo abrió la mañana. Tampoco entra en `conAnillo`: su arco no mide un
        porcentaje sino CUÁNTAS de las seis salas abrieron, y su color no sale de
        la escala de cumplimiento — están todas o falta alguna, no hay franja
@@ -222,7 +226,7 @@ const TarjetaDeAviso = ({
     // Las tarjetas que ya muestran a la persona con su cara: la fila general
     // de «quién y qué sala» la repetiría.
     const conPersona = solicitud || respuesta || decision || diferencia;
-    const conTarjeta = creditos || corteNuevo || bitacora || traslados || minmaxPend || bolsa || deposito
+    const conTarjeta = difPend || creditos || corteNuevo || bitacora || traslados || minmaxPend || bolsa || deposito
         || alertaCcf || factSala || cortesPend || pedidoAv || solicitud || respuesta || decision || diferencia
         || conteo || hacienda || promo || metasAprob || reinicio || sinVenta;
 
@@ -258,6 +262,8 @@ const TarjetaDeAviso = ({
             >
                 {faltante ? (
                     <AnilloDeFaltante datos={faltante} isDark={isDark} />
+                ) : difPend ? (
+                    <InsigniaDeDiferenciasPendientes isDark={isDark} />
                 ) : aperturas ? (
                     <AnilloDeAperturas datos={aperturas} isDark={isDark} />
                 ) : creditos ? (
@@ -339,6 +345,9 @@ const TarjetaDeAviso = ({
                     )}
                     {faltante && (
                         <CuerpoDeFaltanteDeCaja datos={faltante} claseTenue={cx.rowBody} isDark={isDark} />
+                    )}
+                    {difPend && (
+                        <CuerpoDeDiferenciasPendientes datos={difPend} claseTenue={cx.rowBody} isDark={isDark} />
                     )}
                     {aperturas && (
                         <CuerpoDeAperturas datos={aperturas} claseTenue={cx.rowBody}

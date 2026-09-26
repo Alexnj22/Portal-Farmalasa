@@ -508,14 +508,6 @@ const CRONS = [
           + 'de SQL puro es invisible al barrido de `functions/v1/`.',
   },
   {
-    job: 'diferencias-pendientes-jefes-2026-09-26', slug: null, cadencia: '0 14 26 9 *',
-    corridasDia: 1, sistema: 0,
-    motivo: 'SQL puro y de UNA sola vez (pedido del usuario el 2026-09-25): el 26-sep a las 8:00 SV '
-          + 'le avisa a cada Jefe/a de Sala las diferencias de caja que su sala tiene pendientes. '
-          + 'El propio comando se borra con `cron.unschedule` al terminar, así que después de esa '
-          + 'fecha esta entrada ya no nombra nada vivo y se quita.',
-  },
-  {
     job: 'avisar-diferencias-vencidas', slug: null, cadencia: '0 15 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'No llama a ninguna función: es una consulta y un aviso. Cuando una sala y bodega '

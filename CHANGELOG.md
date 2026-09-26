@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.10 — Aviso de diferencias pendientes: tarjeta con monto, barra y cuadros
+
+Reporte del usuario: el aviso «diferencias de caja pendientes» a los jefes
+«no parece moderno» — era prosa recortada con «Ver mensaje completo».
+
+- Ahora es una tarjeta: el monto pendiente grande, una barra que reparte lo
+  sin resolver (rojo) contra lo por cobrar a responsables (ámbar), y un cuadro
+  por cada mitad con su cifra y cuántos cortes. Sin texto que expandir.
+- Se lee de la metadata, así que también se ven así los 6 avisos que salieron
+  hoy a las 8:00.
+- El cron de una sola vez ya corrió y se borró solo: sale del manifiesto de
+  `gate:eficiencia`.
+
 ## v2.1075.9 — MIN·MAX: una presentación por factor
 
 Pedido del usuario: «no repitas si las presentaciones distintas son el mismo

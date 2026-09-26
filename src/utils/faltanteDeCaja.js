@@ -66,3 +66,21 @@ export function datosDeFaltanteDeCaja(n) {
             : null,
     };
 }
+
+/**
+ * «Tu sala tiene diferencias de caja pendientes» (aviso a jefes, 2026-09-25).
+ * Lo que hace falta para dibujarlo en vez de leerlo: cuántos cortes siguen sin
+ * resolver y por cuánto, y cuánto falta cobrar a responsables. Si no hay nada
+ * de las dos cosas, `null` y la campana vuelve a la fila de texto.
+ */
+export function datosDeDiferenciasPendientes(n) {
+    if (n?.type !== 'CORTE_DIFERENCIAS_PENDIENTES') return null;
+    const m = n.metadata || {};
+    const sinResolver = num(m.sin_resolver) ?? 0;
+    const montoSinResolver = num(m.monto_sin_resolver) ?? 0;
+    const conSaldo = num(m.con_saldo) ?? 0;
+    const porCobrar = num(m.por_cobrar) ?? 0;
+    const total = Math.round((montoSinResolver + porCobrar) * 100) / 100;
+    if (total <= 0) return null;
+    return { sala: String(m.sala || ''), sinResolver, montoSinResolver, conSaldo, porCobrar, total };
+}

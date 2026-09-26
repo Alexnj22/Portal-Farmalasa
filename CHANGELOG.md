@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.18 — Pedidos: el resumen de ingreso lee 12 veces menos
+
+`resumen_ingreso_pedidos` —lo que dice, por pedido y sala, cuántos renglones
+ya entraron al inventario— leía 214 MB por llamada y se llama ~1,000 veces;
+`gate:perf` la marcó. Buscaba el ítem de cada renglón uno por uno: ahora trae
+de una vez los ítems ya contados de esos pedidos. **16,445 → 1,343 bloques y
+159 → 26 ms** con 20 pedidos reales, y resultado idéntico al anterior con 20
+recientes, 200 al azar, todos los pedidos y un id que no existe.
+
+Revisado en la misma pasada, sin cambios: `inventory_daily_snapshot` pasó su
+techo (588 contra 547 MB) y no es un defecto —lee 2,234 bloques; el resto es
+ESCRIBIR la foto diaria de ~14,000 filas con sus dos índices, 2.1 s a la 1:45
+am—. Su techo no se sube sin decisión del usuario.
+
 ## v2.1075.17 — Entorno de pruebas: al rehacerse, dev se apunta solo a la base nueva
 
 `dev.farmasalud.lat` dejó de cargar el 2026-09-26: el mantenimiento diario no

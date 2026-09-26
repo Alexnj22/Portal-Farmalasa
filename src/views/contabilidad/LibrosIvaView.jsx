@@ -19,7 +19,7 @@ import { formatearNit, formatearNrc } from '../../utils/nitUtils';
 import { tokenMatch } from '../../utils/searchUtils';
 import { exportCsv, buildCsvText } from '../../utils/csvExport';
 import { fmtFecha, soloNumero, csvRetencionVentas, CSV_RET_VENTAS_HEADERS,
-         construirLibro } from './libroIva';
+         construirLibro } from '../../utils/libroIva';
 import {
     fetchAnexoRetencionRenta,
     fetchVentasFueraDelLibro,

@@ -18,8 +18,8 @@ import {
 import { guardarDescuento, sincronizarProductosDelDescuento } from '../../data/descuentos';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore } from '../../store/staffStore';
-import { SALAS_VENTA } from '../metas/metasUtils';
-import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion } from './promocionesUtils';
+import { SALAS_VENTA } from '../../utils/metasUtils';
+import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion } from '../../utils/promocionesUtils';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import AgregarProductos from './AgregarProductos';
 import Campo from './Campo';

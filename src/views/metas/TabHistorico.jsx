@@ -10,7 +10,7 @@ import { Skeleton, SkeletonText, EmptyState } from '../../components/common/Stat
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { fetchMetasHistorico } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { agruparHistoricoPorMes, ymLabelCorto, TRAMO_CFG } from './metasUtils';
+import { agruparHistoricoPorMes, ymLabelCorto, TRAMO_CFG } from '../../utils/metasUtils';
 
 // Las dos gráficas arrastran `recharts` (95 kB gzip) y esta es la última de las
 // cinco pestañas de Metas, así que viajan en su propio chunk. Leer el encabezado

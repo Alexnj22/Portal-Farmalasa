@@ -1,5 +1,5 @@
-import { formatMoney, formatQty } from '../../utils/formatNumber';
-import { correrMes, hoySV, mesSV } from '../../utils/fecha';
+import { formatMoney, formatQty } from './formatNumber';
+import { correrMes, hoySV, mesSV } from './fecha';
 
 /**
  * Promociones — lo que comparten las pestañas.

@@ -31,8 +31,8 @@ const RetiroModal        = lazy(() => import('./traslados/RetiroModal'));
 /* Mismo motivo que las tarjetas de arriba: la lista de faltantes se dibuja sólo
    cuando su consulta volvió con algo, y lo normal es que no haya ninguno. */
 const FilasFaltante      = lazy(() => import('./traslados/FilasFaltante'));
-import { buscadorDePersonas } from './solicitudes/movimientoTexto';
-import { textoBuscable } from './traslados/trasladoTexto';
+import { buscadorDePersonas } from '../utils/movimientoTexto';
+import { textoBuscable } from '../utils/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
 import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '../data/envios';
 import { fetchFaltantes } from '../data/faltantes';

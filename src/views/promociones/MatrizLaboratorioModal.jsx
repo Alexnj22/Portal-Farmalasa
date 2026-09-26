@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import MatrizLaboratorio from './MatrizLaboratorio';
-import { rotuloMes } from './promocionesUtils';
+import { rotuloMes } from '../../utils/promocionesUtils';
 
 /**
  * La matriz de una promoción de laboratorio, en un diálogo.

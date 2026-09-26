@@ -1,7 +1,7 @@
 import React from 'react';
 import Badge from '../../components/common/Badge';
 import { formatPct } from '../../utils/formatNumber';
-import { TRAMO_CFG } from './metasUtils';
+import { TRAMO_CFG } from '../../utils/metasUtils';
 
 // La barra de avance lleva la regla del bono DIBUJADA: el fondo se pinta en las
 // tres zonas —rojo hasta el umbral del medio bono, ámbar entre ese umbral y la

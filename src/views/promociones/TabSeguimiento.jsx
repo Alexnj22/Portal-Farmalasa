@@ -13,7 +13,7 @@ import MatrizLaboratorio from './MatrizLaboratorio';
 import {
     fmtMoneda, fmtUnidades, porLaboratorio, rotuloPresentacion, MOTIVO_CIERRE,
     esLaboratorio,
-} from './promocionesUtils';
+} from '../../utils/promocionesUtils';
 
 /**
  * El avance de UNA promoción: por producto, por sala y por persona.

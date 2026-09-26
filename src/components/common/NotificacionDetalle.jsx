@@ -5,7 +5,7 @@ import { fetchApprovalRequestById } from '../../data/requests';
 import { fetchMinMaxChangeRequestById } from '../../data/minmaxRequests';
 import { adaptarMinMax } from '../../store/slices/requestsSlice';
 import { ERP_NAMES } from '../../constants/erp';
-import { buscadorDePersonas } from '../../views/solicitudes/movimientoTexto';
+import { buscadorDePersonas } from '../../utils/movimientoTexto';
 import { mensajeAmigable } from '../../utils/errorMessages';
 
 // El detalle de una solicitud, DENTRO de la campana.

@@ -1,5 +1,5 @@
-import { hora12 } from '../../utils/hora';
-import { relojSV } from '../../utils/fecha';
+import { hora12 } from './hora';
+import { relojSV } from './fecha';
 // ── La quincena y las horas de la auditoría de asistencia ────────────────────
 //
 // Extraídas de `AttendanceAuditView.jsx` (1,497 líneas) por el mismo motivo que

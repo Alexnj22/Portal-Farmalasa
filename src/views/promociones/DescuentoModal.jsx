@@ -12,13 +12,13 @@ import { LoadingState } from '../../components/common/StateViews';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import useBorrador from '../../hooks/useBorrador';
 import { useStaffStore } from '../../store/staffStore';
-import { SALAS_VENTA } from '../metas/metasUtils';
+import { SALAS_VENTA } from '../../utils/metasUtils';
 import {
     fetchDescuento, fetchPreciosDeProductos, guardarDescuento,
 } from '../../data/descuentos';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
-import { ordenarPorPerdida, precioConDescuento } from './promocionesUtils';
+import { ordenarPorPerdida, precioConDescuento } from '../../utils/promocionesUtils';
 import { hoySV } from '../../utils/fecha';
 import Campo from './Campo';
 

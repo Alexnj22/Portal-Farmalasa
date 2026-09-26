@@ -7,7 +7,7 @@ import Notice from '../../components/common/Notice';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import { fetchPromocionLaboratorio } from '../../data/promociones';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from './promocionesUtils';
+import { fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '../../utils/promocionesUtils';
 import Campo from './Campo';
 
 /**

@@ -12,7 +12,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
     ymHoySV, diaHoySV, ymSumar, ymLabel, ymLabelCorto,
     agruparHistoricoPorMes, tramoLabel, SALAS_VENTA, YM_INICIO_HISTORIA,
-} from '../../src/views/metas/metasUtils';
+} from '../../src/utils/metasUtils';
 
 afterEach(() => vi.useRealTimers());
 const enUTC = (iso) => { vi.useFakeTimers(); vi.setSystemTime(new Date(iso)); };

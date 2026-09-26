@@ -13,6 +13,9 @@ export const ERP_NAMES = {
  */
 export const ERP_ORDEN = [5, 1, 2, 3, 4, 7, 6];
 
+/** La sucursal del sistema de origen que es la Bodega. */
+export const ERP_BODEGA = 6;
+
 /** branch_id del portal → sucursal del sistema de origen. */
 export const BRANCH_A_ERP = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
 

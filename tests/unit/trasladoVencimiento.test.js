@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fmtFechaLarga, lotesPedidos } from '../../src/views/traslados/trasladoTexto';
+import { fmtFechaLarga, lotesPedidos } from '../../src/utils/trasladoTexto';
 
 // `fmtFechaLarga` tiene tres usos y los tres son vencimientos de lote, que
 // llegan como fecha SIN hora ('2027-11-01'). Leída como UTC y pintada en hora

@@ -42,7 +42,7 @@ import { shortEmployeeName } from '../utils/nameUtils';
 import { registrarEgreso } from '../data/egreso';
 import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, isAutoPunch,
          isPendingPunch, getCurrentQuincenaStart, getQuincenaEnd, prevQuincena, nextQuincena }
-    from './asistencia/quincena';
+    from '../utils/quincena';
 import { descargarArchivo } from '../plataforma/descargas';
 import { fechaTexto } from '../utils/fecha';
 
@@ -90,7 +90,7 @@ function getRoleOrder(role) {
 }
 
 
-// Las horas y los bordes de la quincena viven en `asistencia/quincena.js`, con
+// Las horas y los bordes de la quincena viven en `utils/quincena.js`, con
 // sus tres hermanas de `data/attendanceAudit.js`: es matemática pura y adentro
 // de esta vista de 1.497 líneas no se podía probar.
 

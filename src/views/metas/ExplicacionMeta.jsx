@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { SkeletonText } from '../../components/common/StateViews';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { explicarMetaPropuesta } from '../../data/metas';
-import { ymLabelCorto } from './metasUtils';
+import { ymLabelCorto } from '../../utils/metasUtils';
 
 // De dónde sale la propuesta. La fórmula (decisión del usuario, 2026-08-05):
 //

@@ -1,12 +1,10 @@
 // Las salas como las nombra Gestión de stock. Vivían copiadas en cada pestaña.
 
-export const ERP_NAMES = {
-    1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
-    4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
-};
-export const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
-export const ERP_BODEGA = 6;
-export const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
+// Nombres, orden, Bodega y el mapa sala↔sucursal: los de `constants/erp.js`
+// (acá vivía una copia idéntica de cada uno).
+export {
+    ERP_NAMES, ERP_ORDEN as ERP_ORDER, ERP_BODEGA, BRANCH_A_ERP as MI_ERP_POR_BRANCH,
+} from '../../constants/erp';
 
 // El NOMBRE de la variante de `Badge`; el canónico pone el color.
 export const SUC_VARIANTE = {

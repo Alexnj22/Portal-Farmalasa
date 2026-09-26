@@ -22,6 +22,7 @@ import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import { clickable } from '../../utils/clickable';
 import { imprimirTicketDeTraslado } from '../../utils/imprimirTraslado';
 import { fechaTexto } from '../../utils/fecha';
+import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '../../constants/erp';
 
 // Mandarle producto a otra sala sin que te lo pidan.
 //
@@ -45,8 +46,6 @@ import { fechaTexto } from '../../utils/fecha';
 /** Cuántas letras antes de salir a preguntar (misma regla que la consulta). */
 const MIN_LETRAS = 3;
 
-const NOMBRE_SALA = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
-const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
 
 /**
  * De qué ESTANTE sale el producto, dicho con una sola cadena.

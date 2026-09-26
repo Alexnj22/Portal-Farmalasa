@@ -26,7 +26,7 @@ import { render, screen } from '@testing-library/react';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const DetalleSolicitud = (await import('../../src/views/solicitudes/DetalleSolicitud.jsx')).default;
-const { cuandoSeDecidio } = await import('../../src/views/solicitudes/movimientoTexto.js');
+const { cuandoSeDecidio } = await import('../../src/utils/movimientoTexto.js');
 
 /* Traslado 35559 — Salud 5 → Salud 4, ULTRA DOCEPLEX. El del reporte. */
 const REAL = {

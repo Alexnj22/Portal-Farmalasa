@@ -4,7 +4,7 @@ import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { useNowTick } from '../../hooks/useNowTick';
 import { useStaffStore } from '../../store/staffStore';
-import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, salaQueEspera, salaDePersona, areaQueDecide } from './movimientoTexto';
+import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, salaQueEspera, salaDePersona, areaQueDecide } from '../../utils/movimientoTexto';
 
 /* La cara de quien pide y la de quien decide.
  *

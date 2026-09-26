@@ -11,8 +11,8 @@ import {
 } from '../../data/envios';
 import { imprimirTicketDeEnvio } from '../../utils/imprimirTraslado';
 import { useAuth } from '../../context/AuthContext';
-import { fmtCuando, fmtFechaLarga } from './trasladoTexto';
-import { desdeHace } from '../solicitudes/movimientoTexto';
+import { fmtCuando, fmtFechaLarga } from '../../utils/trasladoTexto';
+import { desdeHace } from '../../utils/movimientoTexto';
 
 // Las tarjetas del envío, en un solo lugar.
 //

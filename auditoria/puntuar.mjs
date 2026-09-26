@@ -571,7 +571,7 @@ function puntuar(area) {
     // El `.js` frente al `.jsx` es la convención que este repo YA sigue: la
     // lógica que importa se saca del componente a un módulo propio, y por eso
     // existen `data/attendanceAudit.js`, `utils/semana.js` y
-    // `views/asistencia/quincena.js` — los tres nacieron de un archivo que
+    // `utils/quincena.js` — los tres nacieron de un archivo que
     // decía «acá no se podían probar». Medir los `.js` premia exactamente esa
     // extracción.
     //

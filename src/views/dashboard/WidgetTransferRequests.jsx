@@ -7,7 +7,7 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { useNowTick } from '../../hooks/useNowTick';
-import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
+import { buscadorDePersonas } from '../../utils/movimientoTexto';
 import {
     fetchSalasQueCubro, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
 } from '../../data/traslados';

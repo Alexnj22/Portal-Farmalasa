@@ -10,7 +10,7 @@ import PromptModal from '../../components/common/PromptModal';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchExcedentes, decidirExcedente } from '../../data/promociones';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fmtMoneda, fmtUnidades } from './promocionesUtils';
+import { fmtMoneda, fmtUnidades } from '../../utils/promocionesUtils';
 
 /**
  * Lo vendido por encima del lote, esperando decisión.

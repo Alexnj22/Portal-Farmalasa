@@ -14,7 +14,7 @@ import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import useBorrador from '../../hooks/useBorrador';
 import { useStaffStore } from '../../store/staffStore';
-import { SALAS_VENTA } from '../metas/metasUtils';
+import { SALAS_VENTA } from '../../utils/metasUtils';
 import {
     crearPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
     fetchLaboratoriosConProductos,
@@ -25,7 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import Campo from './Campo';
-import { fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento } from './promocionesUtils';
+import { fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento } from '../../utils/promocionesUtils';
 import { hoySV } from '../../utils/fecha';
 import { formatMoney } from '../../utils/formatNumber';
 

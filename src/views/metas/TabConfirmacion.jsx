@@ -18,7 +18,7 @@ import {
 } from '../../data/metas';
 import ExplicacionMeta from './ExplicacionMeta';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from './metasUtils';
+import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from '../../utils/metasUtils';
 
 // Un toque = 1% sobre la propuesta, y el recorrido se topa en ±10%: más que eso
 // no es ajustar una meta, es escribir otra — y para eso está devolverla.

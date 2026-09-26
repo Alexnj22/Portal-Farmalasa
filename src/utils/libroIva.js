@@ -16,8 +16,8 @@
 // vista, que ahora los importa: una sola definición, dos consumidores — y no dos
 // copias, que es exactamente lo que un libro fiscal no puede permitirse.
 
-import { formatearNit, formatearNrc } from '../../utils/nitUtils';
-import { fechaNumerica } from '../../utils/fecha';
+import { formatearNit, formatearNrc } from './nitUtils';
+import { fechaNumerica } from './fecha';
 
 // DD/MM/YYYY: el formato del libro. Se parte la cadena en vez de construir un
 // Date — `new Date('2026-06-01')` es UTC y en El Salvador (−6) retrocede un día.

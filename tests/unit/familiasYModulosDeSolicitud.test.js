@@ -12,7 +12,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { MODULO_QUE_DECIDE, QUIEN_RESUELVE } from '../../src/constants/solicitudModulos';
-import { areaQueDecide } from '../../src/views/solicitudes/movimientoTexto';
+import { areaQueDecide } from '../../src/utils/movimientoTexto';
 import { FAMILIAS, familiasDisponibles } from '../../src/views/solicitudes/familiasOperativas';
 
 describe('qué módulo decide cada tipo de solicitud', () => {

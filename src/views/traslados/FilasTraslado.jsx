@@ -9,16 +9,16 @@ import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
     fetchDisponibilidadTraslado,
 } from '../../data/traslados';
-import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, loQueLlego, piezasDe, renglonesDe } from './trasladoTexto';
+import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, loQueLlego, piezasDe, renglonesDe } from '../../utils/trasladoTexto';
 import DeclararFaltantes from './DeclararFaltantes';
-import { desdeHace, cuantoTardo } from '../solicitudes/movimientoTexto';
+import { desdeHace, cuantoTardo } from '../../utils/movimientoTexto';
 import { ChipPersona, FichaPersona } from '../solicitudes/PersonasSolicitud';
 import ModalShell from '../../components/common/ModalShell';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
-import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
+import { buscadorDePersonas } from '../../utils/movimientoTexto';
 import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa } from '../../utils/imprimirTraslado';
 
 /* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la

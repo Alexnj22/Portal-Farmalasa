@@ -1,12 +1,12 @@
-import { QUIEN_RESUELVE } from '../../constants/solicitudModulos';
-import { hora12 } from '../../utils/hora';
-import { fechaTexto } from '../../utils/fecha';
+import { QUIEN_RESUELVE } from '../constants/solicitudModulos';
+import { hora12 } from './hora';
+import { fechaTexto } from './fecha';
 
 // Cómo se lee una solicitud que MUEVE PRODUCTO: carga, descarte y traslado.
 //
 // Aparte del componente porque son funciones puras y ese archivo exporta
 // componentes: mezclarlos rompe el fast refresh de Vite. Mismo reparto que
-// `traslados/trasladoTexto.js`, que es el hermano mayor de este archivo.
+// `utils/trasladoTexto.js`, que es el hermano mayor de este archivo.
 //
 // ── Por qué existe ─────────────────────────────────────────────────────────
 // Hasta el 2026-08-10 la Bandeja de Aprobaciones no tenía UN SOLO bloque para

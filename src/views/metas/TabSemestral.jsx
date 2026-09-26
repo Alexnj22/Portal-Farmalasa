@@ -25,7 +25,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import {
     ymHoySV, ymLabelCorto, semestreDe, semestreSumar, semestreLabel, semestrePagoLabel,
-} from './metasUtils';
+} from '../../utils/metasUtils';
 
 // El primer semestre con la foto del cierre: julio y agosto de 2026 se tomaron
 // el 22-sep al crear el módulo. Enero–junio 2026 se pagó en julio fuera del

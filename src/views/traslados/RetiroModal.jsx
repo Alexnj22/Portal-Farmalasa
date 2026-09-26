@@ -16,7 +16,7 @@ import {
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
-import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
+import { buscadorDePersonas } from '../../utils/movimientoTexto';
 import { reimprimirTicketDeTraslado } from '../../utils/imprimirTraslado';
 import LecturaQueNoEntro from './LecturaQueNoEntro';
 

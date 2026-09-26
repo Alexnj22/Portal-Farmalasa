@@ -9,7 +9,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { guardarMetaManual, fetchMetasRows } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA } from './metasUtils';
+import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA } from '../../utils/metasUtils';
 
 const squircleClass = 'w-12 h-12 rounded-2xl bg-surface-card-hover border border-border-card shadow-sm flex items-center justify-center shrink-0';
 

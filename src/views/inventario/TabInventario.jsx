@@ -22,10 +22,8 @@ import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { hoySV } from '../../utils/fecha';
 
-const ERP_NAMES = {
-    1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
-    5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
-};
+import { ERP_NAMES } from '../../constants/erp';
+// Orden numérico a propósito en esta pestaña (no el de despacho de `ERP_ORDEN`).
 const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
 // Guarda el NOMBRE de la variante, no tres clases (2026-07-28, D3.5).
 const ERP_VARIANTE = {

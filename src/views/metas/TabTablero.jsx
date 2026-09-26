@@ -14,7 +14,7 @@ import GraficaMes from './GraficaMes';
 import RankingVendedores from './RankingVendedores';
 import { fetchMetasDashboard, fetchMetasRows, fetchMesEnCurso, fetchBonoActivo } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG, tramoLabel } from './metasUtils';
+import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG, tramoLabel } from '../../utils/metasUtils';
 
 const fmtPct = (v) => formatPct(v);
 

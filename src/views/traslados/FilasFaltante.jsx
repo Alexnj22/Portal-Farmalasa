@@ -3,7 +3,7 @@ import { Check, Loader2, PackageX } from 'lucide-react';
 import Button from '../../components/common/Button';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { cerrarFaltante } from '../../data/faltantes';
-import { fmtCuando } from './trasladoTexto';
+import { fmtCuando } from '../../utils/trasladoTexto';
 
 // Lo que faltó en una bolsa, y qué se hizo con eso.
 //

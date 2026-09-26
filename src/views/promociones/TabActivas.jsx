@@ -9,7 +9,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import {
     fmtUnidades, fmtVigencia, diasRestantes, estadoVisible, rotuloMes,
     esLaboratorio,
-} from './promocionesUtils';
+} from '../../utils/promocionesUtils';
 
 /**
  * Las promociones vivas, como tarjetas.

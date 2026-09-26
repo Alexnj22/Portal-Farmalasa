@@ -17,7 +17,7 @@ import { fetchBonoMetaSala, setBonificaciones } from '../../data/metas';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, SALAS_VENTA, TRAMO_CFG } from './metasUtils';
+import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, SALAS_VENTA, TRAMO_CFG } from '../../utils/metasUtils';
 
 const COLS_BASE = [
     { key: 'persona', label: 'Persona' },

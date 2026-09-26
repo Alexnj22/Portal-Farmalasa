@@ -1,4 +1,4 @@
-import { relojSV } from '../../utils/fecha';
+import { relojSV } from './fecha';
 // Utilidades compartidas de Metas: meses en 'YYYY-MM' contados en el DÍA DE
 // NEGOCIO de El Salvador (UTC-6 fijo, la misma convención -6h del resto del
 // portal) — con la fecha UTC, desde las 18:00 el portal ya estaría "mañana".

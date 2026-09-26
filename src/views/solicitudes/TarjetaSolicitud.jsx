@@ -15,7 +15,7 @@ import {
     resumenMovimiento, esMovimiento, lineasDe, esParcial,
     fmtDiaMes as fmtDate, fmtHora, fmtFechaHora, desdeHace,
     personasDe, cuandoSeDecidio, salaQueEspera, areaQueDecide, motivoDeRechazoCorto,
-} from './movimientoTexto';
+} from '../../utils/movimientoTexto';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 

@@ -14,7 +14,7 @@ import { useToastStore } from '../../store/toastStore';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { fetchMetasGastos, anularMetaGasto } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymLabel, ymLabelCorto } from './metasUtils';
+import { ymHoySV, ymLabel, ymLabelCorto } from '../../utils/metasUtils';
 
 const COLS = [
     { key: 'mes',   label: 'Mes' },

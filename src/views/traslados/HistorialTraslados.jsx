@@ -9,7 +9,7 @@ import ModalShell from '../../components/common/ModalShell';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { ChipPersona } from '../solicitudes/PersonasSolicitud';
 import { clickable } from '../../utils/clickable';
-import { fmtFechaLarga, piezasDe, renglonesDe, resumenItems } from './trasladoTexto';
+import { fmtFechaLarga, piezasDe, renglonesDe, resumenItems } from '../../utils/trasladoTexto';
 
 /* El detalle de un traslado ES el detalle de una solicitud —vive en
  * `approval_requests` y su tipo es `INVENTORY_TRANSFER_REQUEST`—, así que se

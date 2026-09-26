@@ -265,8 +265,9 @@ export const AREAS = [
         modulos: ['monitor', 'time_audit', 'time_audit_descargar'],
         rutas: ['/monitor', '/auditoria-de-tiempos'],
         archivos: [
+            'src/utils/quincena.js',
             'src/views/AttendanceMonitorView.jsx', 'src/views/AttendanceAuditView.jsx',
-            'src/data/attendanceAudit.js', 'src/views/asistencia/quincena.js',
+            'src/data/attendanceAudit.js',
         ],
         tablas: ['attendance', 'timesheets', 'overtime_bank'],
         edge: ['consolidate-timesheets'],
@@ -333,6 +334,7 @@ export const AREAS = [
                   'requests_personales'],
         rutas: ['/solicitudes', '/solicitudes-personales'],
         archivos: [
+            'src/utils/movimientoTexto.js',
             'src/views/RequestsView.jsx', 'src/views/solicitudes/',
             'src/data/requests.js', 'src/data/solicitudDeAviso.js',
             'src/store/slices/requestsSlice.js',
@@ -484,6 +486,7 @@ export const AREAS = [
         modulos: ['metas'],
         rutas: ['/metas'],
         archivos: [
+            'src/utils/metasUtils.js',
             'src/views/metas/',
             'src/data/metas.js',
         ],
@@ -504,6 +507,7 @@ export const AREAS = [
         modulos: ['promociones'],
         rutas: ['/promociones'],
         archivos: [
+            'src/utils/promocionesUtils.js',
             'src/views/promociones/',
             'src/data/promociones.js',
             'src/data/descuentos.js',
@@ -733,6 +737,7 @@ export const AREAS = [
         modulos: ['traslados', 'dash_traslados'],
         rutas: ['/traslados'],
         archivos: [
+            'src/utils/trasladoTexto.js',
             'src/views/TrasladosView.jsx', 'src/views/traslados/',
             'src/data/traslados.js', 'src/data/envios.js', 'src/data/trasladoSwitch.js',
             'src/data/retiros.js', 'src/data/faltantes.js',
@@ -791,6 +796,7 @@ export const AREAS = [
                   'cierre_periodo', 'resumen_fiscal'],
         rutas: ['/libros-iva', '/libro-compras-completo', '/corte-z', '/cierre-periodo', '/resumen-fiscal'],
         archivos: [
+            'src/utils/libroIva.js',
             'src/views/contabilidad/',
             'src/data/librosIva.js', 'src/data/libroComprasCompleto.js', 'src/data/cierrePeriodo.js',
             'src/data/resumenFiscal.js', 'src/data/corteZ.js',

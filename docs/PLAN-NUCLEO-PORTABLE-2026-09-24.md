@@ -166,10 +166,10 @@ pantallas, son lógica que quedó cerca de su vista:
 | `views/pedidos/tabpedidos/usePedidosData.js` | 2,020 |
 | `views/productos/tabminmax/useMinMaxData.js` | 1,391 |
 | `components/common/gotaApertura.js` | 590 |
-| `views/contabilidad/libroIva.js` | 393 |
-| `views/solicitudes/movimientoTexto.js` | 386 |
+| `views/contabilidad/libroIva.js` (→ `utils/`, F3) | 393 |
+| `views/solicitudes/movimientoTexto.js` (→ `utils/`, F3) | 386 |
 | `views/pedidos/tabpedidos/helpers.js` | 318 |
-| `views/promociones/promocionesUtils.js` | 248 |
+| `views/promociones/promocionesUtils.js` (→ `utils/`, F3) | 248 |
 | 18 más | 27–206 |
 
 Y **58 consultas a Supabase escritas directo en 26 pantallas**. Las más
@@ -202,8 +202,8 @@ revisar una por una: ¿el servidor la revalida o confía en lo que llega?
 |---|---|---:|
 | `utils/cortesDiagnostico.js` | `contraste`, tramos, `estadoDelDia`, sugerencias: el juez que leen **los 8 lectores de un corte**. En la base existe `corte_diferencia` para los frenos: hay que confirmar que las dos dicen lo mismo | 1,386 |
 | `utils/timeClock.rules.js` + `.helpers.js` | qué marca toca, tardanza, en el kiosco | 598 |
-| `views/asistencia/quincena.js` | los bordes del período que se paga | 88 |
-| `views/contabilidad/libroIva.js` | las columnas del anexo que se presenta a Hacienda | 393 |
+| `views/asistencia/quincena.js` (→ `utils/`, F3) | los bordes del período que se paga | 88 |
+| `views/contabilidad/libroIva.js` (→ `utils/`, F3) | las columnas del anexo que se presenta a Hacienda | 393 |
 | `utils/cajasEspeciales.js` | cuántas cajas especiales tiene un despacho | 188 |
 | `utils/avisosDeOperacion.js` + `notifyBranch` | los avisos de pedido **los escribe el navegador**, no la base (21 usos) | 508 |
 

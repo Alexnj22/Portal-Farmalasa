@@ -11,7 +11,7 @@ import DeclararFaltantes from './DeclararFaltantes';
 import { declararFaltanteTardio, HORAS_PARA_DECLARAR_TARDE } from '../../data/faltantes';
 import { FilaEnvioPorDecidir } from './FilasEnvio';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fmtCuando } from './trasladoTexto';
+import { fmtCuando } from '../../utils/trasladoTexto';
 import LecturaQueNoEntro from './LecturaQueNoEntro';
 
 // La cámara pesa y sólo hace falta si alguien la pide: el camino normal es el

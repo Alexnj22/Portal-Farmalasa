@@ -7,7 +7,7 @@ import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
 import { fetchPreciosDeProductos } from '../../data/descuentos';
 import { formatMoney } from '../../utils/formatNumber';
-import { fmtVigencia, ordenarPorPerdida, precioConDescuento } from './promocionesUtils';
+import { fmtVigencia, ordenarPorPerdida, precioConDescuento } from '../../utils/promocionesUtils';
 import Campo from './Campo';
 
 /**

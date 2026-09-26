@@ -11,13 +11,13 @@ import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import { LoadingState } from '../../components/common/StateViews';
 import useBorrador from '../../hooks/useBorrador';
 import { useStaffStore } from '../../store/staffStore';
-import { SALAS_VENTA } from '../metas/metasUtils';
+import { SALAS_VENTA } from '../../utils/metasUtils';
 import {
     crearPromocionLaboratorio, editarPromocionLaboratorio,
     fetchPromocionLaboratorio, fetchLaboratorios, fetchProveedoresDelSistema,
 } from '../../data/promociones';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fmtMoneda, mesesRecientes } from './promocionesUtils';
+import { fmtMoneda, mesesRecientes } from '../../utils/promocionesUtils';
 import Campo from './Campo';
 
 const CLAVE_BORRADOR = 'promocion_laboratorio';

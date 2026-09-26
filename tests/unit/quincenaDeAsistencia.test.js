@@ -16,7 +16,7 @@ import {
     getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h,
     isEditedPunch, isAutoPunch, isPendingPunch,
     getCurrentQuincenaStart, getQuincenaEnd, prevQuincena, nextQuincena,
-} from '../../src/views/asistencia/quincena';
+} from '../../src/utils/quincena';
 
 const enSV = (iso) => new Date(iso).getTime();
 

@@ -36,7 +36,7 @@ import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
 const ModalNuevaPersonal  = lazy(() => import('./solicitudes/ModalNuevaPersonal'));
 const ModalNuevaOperativa = lazy(() => import('./solicitudes/ModalNuevaOperativa'));
 import { familiasDisponibles } from './solicitudes/familiasOperativas';
-import { lineasDe, buscadorDePersonas } from './solicitudes/movimientoTexto';
+import { lineasDe, buscadorDePersonas } from '../utils/movimientoTexto';
 import { EmptyState } from '../components/common/StateViews';
 
 // Las pestañas viven acá arriba y no dentro del componente: `usePestanaEnUrl`

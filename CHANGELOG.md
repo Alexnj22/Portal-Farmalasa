@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.32 — F3 parte 3: la lógica pura de seis pantallas al núcleo; las salas en un solo sitio
+
+Sin cambios visibles. Sigue F3 del plan del núcleo portable.
+
+- Seis archivos de lógica pura que vivían junto a su pantalla pasan a
+  `src/utils/`: `libroIva`, `movimientoTexto`, `promocionesUtils`,
+  `trasladoTexto`, `metasUtils` y `quincena`. Cada uno queda en su misma área
+  de auditoría.
+- **El mapa de salas estaba copiado cinco veces** (nombres y sala↔sucursal) en
+  el buscador del Inicio, Gestión de stock, Inventario y los dos diálogos de
+  traslado. Todos leen ahora `constants/erp.js`, que gana `ERP_BODEGA`. Los
+  ÓRDENES propios se conservan a propósito: el buscador pone Bodega primero
+  (pedido del usuario) e Inventario usa el numérico.
+- Recorridas contra el entorno de pruebas: Inicio, Metas, Promociones,
+  Traslados, Solicitudes, Libros de IVA, Auditoría de tiempos, Inventario y
+  Gestión de stock, sin errores.
+
 ## v2.1075.31 — Pendiente documentado: el peso de las pantallas
 
 Sin cambios en el portal. `docs/PENDIENTE-PESO-DE-LAS-PANTALLAS-2026-09-26.md`

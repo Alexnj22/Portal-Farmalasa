@@ -5,7 +5,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination from '../../components/common/TablePagination';
 import { EmptyState } from '../../components/common/StateViews';
 import usePaginaEnUrl from '../../plataforma/usePaginaEnUrl';
-import { fmtUnidades, fmtVigencia, rotuloMes, esLaboratorio } from './promocionesUtils';
+import { fmtUnidades, fmtVigencia, rotuloMes, esLaboratorio } from '../../utils/promocionesUtils';
 
 /**
  * Las promociones terminadas.

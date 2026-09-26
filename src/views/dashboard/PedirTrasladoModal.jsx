@@ -15,6 +15,7 @@ import { fetchInventoryByProductIds } from '../../data/inventory';
 import { lotesEnUnidades, repartirPedido } from '../../utils/unidadesInventario';
 import { opcionesDePresentacion } from '../../utils/presentacion';
 import { diasEntre, fechaTexto, hoySV } from '../../utils/fecha';
+import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '../../constants/erp';
 
 // Pedirle un producto a otra sala.
 //
@@ -54,8 +55,6 @@ import { diasEntre, fechaTexto, hoySV } from '../../utils/fecha';
 // estante en el sistema lo sigue contestando el mapa. Elegir entre dos opciones
 // que la base ofreció no es lo mismo que dictarle una ubicación.
 
-const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
-const NOMBRE_SALA = { 1:'Salud 1', 2:'Salud 2', 3:'Salud 3', 4:'Salud 4', 5:'La Popular', 6:'Bodega', 7:'Salud 5' };
 
 /**
  * De dónde sale el producto, dicho con una sola cadena.

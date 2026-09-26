@@ -5,7 +5,7 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchPagosBonoProducto } from '../../data/bonosProducto';
-import { fmtMoneda } from './promocionesUtils';
+import { fmtMoneda } from '../../utils/promocionesUtils';
 
 const PAGADO = new Set(['pagado', 'fuera_del_portal']);
 

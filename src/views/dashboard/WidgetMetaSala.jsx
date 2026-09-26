@@ -9,7 +9,7 @@ import { fetchVentasSinProducto } from '../../data/ventas';
 import AvisoSinProducto from '../../components/common/AvisoSinProducto';
 import { useAuth } from '../../context/AuthContext';
 import BarraAvance from '../metas/BarraAvance';
-import { TRAMO_CFG, tramoLabel, ymLabel } from '../metas/metasUtils';
+import { TRAMO_CFG, tramoLabel, ymLabel } from '../../utils/metasUtils';
 
 // La meta de la sala en el Inicio. Es el mismo dato que el tablero del módulo,
 // pero contado desde la sala y para HOY: cuánto lleva el mes, cuánto vendió hoy,

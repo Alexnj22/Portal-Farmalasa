@@ -13,7 +13,7 @@ import { useToastStore } from '../../store/toastStore';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { crearMetaGasto, previewMetaGasto } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, ymLabelCorto } from './metasUtils';
+import { ymHoySV, ymSumar, ymLabel, ymLabelCorto } from '../../utils/metasUtils';
 
 const squircleClass = 'w-12 h-12 rounded-2xl bg-surface-card-hover border border-border-card shadow-sm flex items-center justify-center shrink-0';
 

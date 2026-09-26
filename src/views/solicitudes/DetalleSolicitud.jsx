@@ -14,7 +14,7 @@ import { getSignedFileUrl } from '../../utils/storageFiles';
 import {
     lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento, fmtFechaHora,
     motivoDeRechazo, cuantoTardo,
-} from './movimientoTexto';
+} from '../../utils/movimientoTexto';
 import { CaraPersona, ChipPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
 import { shortEmployeeName } from '../../utils/nameUtils';

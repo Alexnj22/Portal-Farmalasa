@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.19 — Entorno de pruebas: la recompilación de dev va sin target
+
+Probado con el token real: las variables Preview se actualizaron, pero la
+recompilación falló con 400 —la API de Vercel no acepta `target: 'preview'`;
+un despliegue de prueba se pide sin `target`—. Corregido.
+
 ## v2.1075.18 — Pedidos: el resumen de ingreso lee 12 veces menos
 
 `resumen_ingreso_pedidos` —lo que dice, por pedido y sala, cuántos renglones

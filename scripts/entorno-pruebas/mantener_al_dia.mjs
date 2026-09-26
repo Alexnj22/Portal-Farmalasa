@@ -186,7 +186,9 @@ async function avisarAVercel(ref) {
     const { deployments } = await vercel('GET', `/v6/deployments?projectId=${VERCEL_PROJECT_ID}&target=preview&limit=50`);
     const ultimo = deployments.find((d) => d.meta?.githubCommitRef === RAMA_DE_PRUEBAS);
     if (!ultimo) { console.log(`  (no hay despliegues de ${RAMA_DE_PRUEBAS} que recompilar)`); return; }
-    const nuevo = await vercel('POST', '/v13/deployments', { name: ultimo.name, deploymentId: ultimo.uid, target: 'preview' });
+    // Sin `target`: así es un despliegue de prueba (Preview). La API sólo
+    // acepta 'production', 'staging' o un entorno propio como valor.
+    const nuevo = await vercel('POST', '/v13/deployments', { name: ultimo.name, deploymentId: ultimo.uid });
     console.log(`✓ Vercel: recompilando ${RAMA_DE_PRUEBAS} (${nuevo.url})`);
 }
 

@@ -60,7 +60,7 @@ import { construirComprobanteDeMovimiento } from '../utils/movimientoTicket';
 import { conceptoDelPapel, sentidoDelPapel } from '../utils/conceptoDelPapel';
 import { choqueDeBoleta } from '../utils/boletaRepetida';
 import { conSigno, formatMoney } from '../utils/formatNumber';
-import { imprimirDocumento } from '../utils/ticketPrint';
+import { imprimirDocumento } from '../utils/imprimirDiferido';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { getSignedFileUrl } from '../utils/storageFiles';
 import { saldoDeBolsa } from '../utils/bolsasReparto';

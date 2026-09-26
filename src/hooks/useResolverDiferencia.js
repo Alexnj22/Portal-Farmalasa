@@ -5,7 +5,7 @@ import {
 } from '../data/cortes';
 import { anotarIngreso } from '../data/bolsas';
 import { construirComprobante, construirComprobanteDeAbono } from '../utils/corteComprobante';
-import { imprimirDocumento } from '../utils/ticketPrint';
+import { imprimirDocumento } from '../utils/imprimirDiferido';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';

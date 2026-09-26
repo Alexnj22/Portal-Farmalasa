@@ -9,7 +9,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
 import { asentarDiferencias, justificarDiferencia } from '../../data/cortes';
 import { construirComprobanteDeAsiento } from '../../utils/corteComprobante';
-import { imprimirDocumento } from '../../utils/ticketPrint';
+import { imprimirDocumento } from '../../utils/imprimirDiferido';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
 

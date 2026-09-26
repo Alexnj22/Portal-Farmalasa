@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.30 — Peso: la campana y la ticketera se cargan cuando se usan
+
+Sin cambios visibles. Lo que se descarga para entrar al portal baja, medido con
+`npm run gate:bundle`:
+
+- **La campana: 71 → 37 kB.** Vive en TODAS las pantallas y traía adentro las
+  tarjetas de operación (cortes, bolsas, metas, créditos) aunque nadie la
+  abriera. Hoy la tarjeta se carga al abrirla, y se precarga al acercar el
+  puntero, así que en escritorio ya está lista. Verificado abriéndola con un
+  aviso de prueba en el entorno de pruebas (borrado después).
+- **Cortes: 115 → 107 kB; Mi caja: 91 → 86 kB.** Importaban la ticketera entera
+  sólo para imprimir desde un botón. `utils/imprimirDiferido.js` tiene la misma
+  firma que `imprimirDocumento` y la carga al primer uso.
+
 ## v2.1075.29 — Facturación: si el comprobante no sube, el pago no se confirma
 
 Al confirmar un pago con comprobante adjunto, si el archivo no se logra subir

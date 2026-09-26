@@ -11,13 +11,21 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { PIDE_DECISION } from '../../utils/notificacionTexto';
 import Contador from './Contador';
+import { LoadingState } from './StateViews';
 /* La tarjeta de un aviso, su paleta y la máquina de decidir viven fuera desde
    el 2026-09-04: la vista `/notificaciones` dibuja la MISMA tarjeta y tiene que
    poder lo mismo. La primera versión de esa vista la escribió de nuevo en
    forma simplificada y el usuario lo vio de una — «en la vista no se ven las
    notificaciones modernas, como en la notificación»—: lo que faltaba no era
    estilo, era la mitad de lo que la tarjeta HACE. */
-import TarjetaDeAviso from './TarjetaDeAviso';
+// La tarjeta se carga al ABRIR la campana, no al montar el encabezado: arrastra
+// las tarjetas de operación (cortes, bolsas, metas, créditos) y la campana
+// vive en TODAS las pantallas. Medido el 2026-09-26 con `npm run gate:bundle`:
+// la campana había pasado de 33 a 71 kB gzip, y esa descarga la pagaba todo el
+// que entraba al portal aunque no la abriera. Se precarga al acercar el puntero
+// o el foco, así que en escritorio la tarjeta ya está cuando se abre.
+const cargarTarjeta = () => import('./TarjetaDeAviso');
+const TarjetaDeAviso = React.lazy(cargarTarjeta);
 import { paletaDeAviso } from './paletaDeAviso';
 import useAccionesDeAviso from './useAccionesDeAviso';
 
@@ -395,6 +403,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
             {/* ── Botón campana ── */}
             <button
                 onClick={() => setIsOpen(o => !o)}
+                onPointerEnter={() => { cargarTarjeta().catch(() => {}); }}
+                onFocus={() => { cargarTarjeta().catch(() => {}); }}
                 aria-label="Notificaciones"
                 // §1.5 · sin vidrio propio: la campana vive dentro del encabezado,
                 // que ya es una superficie de vidrio, y una anidada queda a 1.02:1
@@ -572,6 +582,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                        dicen dónde EMPIEZA y dónde TERMINA cada una — que es lo que
                                        una línea sola no puede decir. */
                                     <div className="p-2 flex flex-col gap-2">
+                                        <React.Suspense fallback={<LoadingState variant="content" />}>
                                         <AnimatePresence initial={false}>
                                             {notifications.map(n => {
                                                 const pendingOne = pendingEntryByNotifId.get(n.id);
@@ -638,6 +649,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                 );
                                             })}
                                         </AnimatePresence>
+                                        </React.Suspense>
                                     </div>
                                 )}
                             </div>

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.21 — Puntos: la última acumulación se calcula sólo para la página visible
+
+`puntos_panel_clientes` calculaba `max(ganado_el)` para las 10,632 cuentas
+aunque muestre 25 (~33,000 bloques por llamada; aviso de otra sesión, que ya
+había puesto el índice `puntos_lote_por_cliente_y_fecha`). Ahora se calcula
+sobre la página, salvo al ordenar por esa columna. Verificado contra la
+versión anterior en cinco órdenes y una búsqueda: salida idéntica; ~90 → ~23 ms.
+Reescrita desde la definición viva (`pg_get_functiondef`).
+
 ## v2.1075.20 — Puntos: el cierre nocturno de la copia, 95% menos lectura; el panel de consulta 14x más rápido
 
 Dos índices, sin tocar ninguna función (el trabajo de puntos sigue en curso

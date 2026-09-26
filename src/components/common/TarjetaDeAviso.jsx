@@ -226,6 +226,9 @@ const TarjetaDeAviso = ({
     // Las tarjetas que ya muestran a la persona con su cara: la fila general
     // de «quién y qué sala» la repetiría.
     const conPersona = solicitud || respuesta || decision || diferencia;
+    // La sala ya va en el título de las diferencias pendientes: la fila de
+    // abajo la repetía (usuario: «se repite info»).
+    const salaEnTitulo = difPend;
     const conTarjeta = difPend || creditos || corteNuevo || bitacora || traslados || minmaxPend || bolsa || deposito
         || alertaCcf || factSala || cortesPend || pedidoAv || solicitud || respuesta || decision || diferencia
         || conteo || hacienda || promo || metasAprob || reinicio || sinVenta;
@@ -430,7 +433,7 @@ const TarjetaDeAviso = ({
                         aparecía en ninguna parte. Acá van como dato, con la cara
                         adelante —que es lo que de verdad se reconoce— y sin
                         costar una consulta: las dos salen de la fila. */}
-                    {(quien || sucursal) && !conPersona && (
+                    {(quien || sucursal) && !conPersona && !salaEnTitulo && (
                         <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 mt-1.5 min-w-0">
                             {quien && (
                                 <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />

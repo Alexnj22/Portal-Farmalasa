@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.12 — Aviso de diferencias pendientes, compacto
+
+Reporte del usuario: «too much, se repite info, compactalo».
+
+- Un renglón: el monto y qué es («$0.20 · 1 corte sin resolver»). La barra y
+  el desglose sólo salen cuando hay dos partes (sin resolver y por cobrar), y
+  en una línea, no en cuadros.
+- Fuera la frase del pie y la fila con el nombre de la sala: ya está en el
+  título.
+
+## v2.1075.11 — Puntos: la lista de clientes se ordena por el encabezado
+
+- Las siete columnas de «Clientes con puntos» se ordenan tocando el
+  encabezado. El orden se resuelve en la BASE (`puntos_panel_clientes` con
+  `p_orden`/`p_dir`, lista cerrada de columnas): la lista pagina ahí, y ordenar
+  en el navegador habría ordenado sólo la página visible. ~90 ms medido como
+  usuario en cualquier columna.
+- El orden vive en la dirección (`orden_clientes=nombre.asc`), junto a la
+  página: recargar deja la misma lista en el mismo lugar.
+- El DUI y el teléfono ya no se parten en dos renglones.
+
 ## v2.1075.10 — Aviso de diferencias pendientes: tarjeta con monto, barra y cuadros
 
 Reporte del usuario: el aviso «diferencias de caja pendientes» a los jefes

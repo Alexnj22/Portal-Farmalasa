@@ -26,7 +26,8 @@
  * Avisos es sólo de administración; Consulta la ve también la caja, que ahí
  * revisa el saldo antes de un canje.
  */
-import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Star, Search, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -478,6 +479,9 @@ function Hueco({ alto }) {
  * ~10,600 cuentas, no se bajan enteras) y la página vive en la dirección con su
  * propio parámetro. Tocar un cliente abre todo lo suyo.
  */
+// Las columnas por las que la base sabe ordenar (`puntos_panel_clientes`).
+const ORDEN_CLIENTES = ['nombre', 'dui', 'telefono', 'saldo', 'acumulados', 'canjeados', 'ultima'];
+
 function ClientesConPuntos({ busqueda, onAbrir }) {
     const showToast = useToastStore((s) => s.showToast);
     const aplicado = useTextoRebotado(busqueda);
@@ -485,6 +489,28 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
     const [cargando, setCargando] = useState(true);
     const pag = usePaginaEnUrl({ total: datos.total, tamPorDefecto: 25, param: 'pag_clientes', paramTam: 'ver_clientes' });
     const { page, pageSize, resetPage } = pag;
+
+    // El orden vive en la dirección igual que la página (`orden_clientes=
+    // nombre.asc`): la página sin su orden señala otras filas después de
+    // recargar. Se REEMPLAZA en el historial: ordenar no es navegar.
+    const [params, setParams] = useSearchParams();
+    const [orden, dir] = (() => {
+        const [o, d] = String(params.get('orden_clientes') ?? '').split('.');
+        return ORDEN_CLIENTES.includes(o) ? [o, d === 'asc' ? 'asc' : 'desc'] : ['saldo', 'desc'];
+    })();
+    const ordenar = useCallback((col) => {
+        if (!ORDEN_CLIENTES.includes(col)) return;
+        // Misma columna: invierte. Otra: los textos empiezan A→Z y los números
+        // de mayor a menor, que es lo que se busca primero en cada caso.
+        const nuevoDir = col === orden ? (dir === 'asc' ? 'desc' : 'asc')
+            : (['nombre', 'dui', 'telefono'].includes(col) ? 'asc' : 'desc');
+        setParams((p) => {
+            const n = new URLSearchParams(p);
+            n.set('orden_clientes', `${col}.${nuevoDir}`);
+            n.delete('pag_clientes');
+            return n;
+        }, { replace: true });
+    }, [orden, dir, setParams]);
 
     // Una búsqueda nueva es otra lista: vuelve a la primera página. Con `ref`
     // para no correr en el montaje — ahí la página de la dirección es la que
@@ -500,7 +526,9 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
         let vivo = true;
         (async () => {
             try {
-                const r = await fetchClientesConPuntos({ busqueda: aplicado, limite: pageSize, desde: (page - 1) * pageSize });
+                const r = await fetchClientesConPuntos({
+                    busqueda: aplicado, limite: pageSize, desde: (page - 1) * pageSize, orden, dir,
+                });
                 if (vivo) setDatos({ total: r?.total ?? 0, filas: r?.filas ?? [] });
             } catch (e) {
                 if (vivo) showToast('No se pudo cargar', mensajeAmigable(e), 'error');
@@ -509,7 +537,7 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
             }
         })();
         return () => { vivo = false; };
-    }, [aplicado, page, pageSize, showToast]);
+    }, [aplicado, page, pageSize, orden, dir, showToast]);
 
     return (
         <section className="flex flex-col gap-3">
@@ -519,14 +547,17 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
             </h3>
             <DataTable
                 columns={[
-                    { key: 'nombre',     label: 'Cliente' },
-                    { key: 'dui',        label: 'DUI' },
-                    { key: 'telefono',   label: 'Teléfono' },
-                    { key: 'saldo',      label: 'Puntos' },
-                    { key: 'acumulados', label: 'Acumulados' },
-                    { key: 'canjeados',  label: 'Canjeados' },
-                    { key: 'ultima',     label: 'Última acumulación' },
+                    { key: 'nombre',     label: 'Cliente',            sortable: true },
+                    { key: 'dui',        label: 'DUI',                sortable: true },
+                    { key: 'telefono',   label: 'Teléfono',           sortable: true },
+                    { key: 'saldo',      label: 'Puntos',             sortable: true },
+                    { key: 'acumulados', label: 'Acumulados',         sortable: true },
+                    { key: 'canjeados',  label: 'Canjeados',          sortable: true },
+                    { key: 'ultima',     label: 'Última acumulación', sortable: true },
                 ]}
+                sortKey={orden}
+                sortDir={dir}
+                onSort={ordenar}
                 loading={cargando}
                 minWidth="920px"
                 movil={{ usarAccionDeFila: true, identidad: 'nombre', ancla: 'saldo' }}
@@ -535,8 +566,9 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
                 {datos.filas.map((c, i) => (
                     <DataRow key={c.customer_id} index={i} onClick={() => onAbrir(c.customer_id)}>
                         <DataCell><span className="font-bold text-content">{c.nombre}</span></DataCell>
-                        <DataCell><span className="tabular-nums">{c.dui || '—'}</span></DataCell>
-                        <DataCell><span className="tabular-nums">{c.telefono || '—'}</span></DataCell>
+                        {/* Sin partir: «00478819-» arriba y «7» abajo no se lee como un DUI. */}
+                        <DataCell><span className="tabular-nums whitespace-nowrap">{c.dui || '—'}</span></DataCell>
+                        <DataCell><span className="tabular-nums whitespace-nowrap">{c.telefono || '—'}</span></DataCell>
                         <DataCell>
                             <span className="font-black tabular-nums text-content">{pts(c.saldo)}</span>
                             <span className="text-caption text-content-3 ml-1.5">{dolares(c.saldo)}</span>

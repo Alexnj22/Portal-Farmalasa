@@ -192,47 +192,46 @@ export function CuerpoDeDiferenciasPendientes({ datos, claseTenue, isDark }) {
     const { sinResolver, montoSinResolver, conSaldo, porCobrar, total } = datos;
     const rojo = isDark ? 'text-danger-text' : 'text-danger';
     const ambar = isDark ? 'text-warning-text' : 'text-warning';
-    const cuadros = [
+    /* Compacta (usuario: «too much, se repite info»): el monto una vez, y al
+     * lado de qué es. El desglose sólo cuando hay DOS partes que desglosar;
+     * con una sola, el renglón ya lo dice todo. */
+    const partes = [
         sinResolver > 0 && {
-            k: 'sin', tono: rojo, punto: 'bg-danger', rotulo: 'Sin resolver', monto: montoSinResolver,
-            detalle: `${sinResolver} ${sinResolver === 1 ? 'corte' : 'cortes'}`,
+            k: 'sin', punto: 'bg-danger', tono: rojo, monto: montoSinResolver,
+            texto: `${sinResolver} ${sinResolver === 1 ? 'corte sin resolver' : 'cortes sin resolver'}`,
         },
         porCobrar > 0 && {
-            k: 'cobrar', tono: ambar, punto: 'bg-warning', rotulo: 'Por cobrar', monto: porCobrar,
-            detalle: conSaldo > 0 ? `a responsables · ${conSaldo} ${conSaldo === 1 ? 'corte' : 'cortes'}` : 'a responsables',
+            k: 'cobrar', punto: 'bg-warning', tono: ambar, monto: porCobrar,
+            texto: conSaldo > 1 ? `por cobrar en ${conSaldo} cortes` : 'por cobrar a responsables',
         },
     ].filter(Boolean);
+    const dos = partes.length > 1;
 
     return (
-        <div className="flex flex-col gap-2 mt-1">
+        <div className="flex flex-col gap-1.5 mt-0.5">
             <div className="flex items-baseline gap-2 flex-wrap tabular-nums">
                 <span className={`text-body-lg font-black tracking-tight ${rojo}`}>{formatMoney(total)}</span>
-                <span className={`text-body-sm font-semibold ${claseTenue}`}>pendientes de resolver o cobrar</span>
-            </div>
-
-            {cuadros.length > 1 && (
-                <span className="h-1.5 rounded-full bg-border-card overflow-hidden flex gap-px" data-medida="dato">
-                    <span className="block h-full bg-danger" style={{ width: `${(montoSinResolver / total) * 100}%` }} />
-                    <span className="block h-full bg-warning" style={{ width: `${(porCobrar / total) * 100}%` }} />
+                <span className={`text-body-sm font-semibold ${claseTenue}`}>
+                    {dos ? 'pendientes' : partes[0].texto}
                 </span>
-            )}
-
-            <div className={`grid gap-2 ${cuadros.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                {cuadros.map((c) => (
-                    <div key={c.k} className="rounded-xl bg-surface-card-hover px-2.5 py-2 min-w-0">
-                        <span className={`flex items-center gap-1.5 text-caption font-semibold ${claseTenue}`}>
-                            <span className={`w-2 h-2 rounded-full ${c.punto}`} aria-hidden="true" />
-                            {c.rotulo}
-                        </span>
-                        <span className={`block text-body font-black tabular-nums ${c.tono}`}>{formatMoney(c.monto)}</span>
-                        <span className={`block text-caption truncate ${claseTenue}`}>{c.detalle}</span>
-                    </div>
-                ))}
             </div>
-
-            <p className={`text-caption ${claseTenue}`}>
-                Cada faltante se paga o se explica con su comprobante.
-            </p>
+            {dos && (
+                <>
+                    <span className="h-1 rounded-full bg-border-card overflow-hidden flex gap-px" data-medida="dato">
+                        <span className="block h-full bg-danger" style={{ width: `${(montoSinResolver / total) * 100}%` }} />
+                        <span className="block h-full bg-warning" style={{ width: `${(porCobrar / total) * 100}%` }} />
+                    </span>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-caption tabular-nums">
+                        {partes.map((p) => (
+                            <span key={p.k} className={`inline-flex items-center gap-1.5 ${claseTenue}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${p.punto}`} aria-hidden="true" />
+                                <span className={`font-bold ${p.tono}`}>{formatMoney(p.monto)}</span>
+                                {p.texto}
+                            </span>
+                        ))}
+                    </div>
+                </>
+            )}
         </div>
     );
 }

@@ -213,8 +213,12 @@ export const fetchSerieDePuntos = (dias = 30) => rpc('puntos_panel_serie', { p_d
  * Los clientes con cuenta de puntos, del mayor saldo al menor. Pagina en la
  * base (son ~10,600): devuelve `{ total, filas }`.
  */
-export const fetchClientesConPuntos = ({ busqueda = null, limite = 25, desde = 0 } = {}) =>
-    rpc('puntos_panel_clientes', { p_busqueda: busqueda || null, p_limite: limite, p_desde: desde });
+// El orden va a la base: la lista pagina ahí, y ordenar en el navegador
+// ordenaría sólo la página visible.
+export const fetchClientesConPuntos = ({ busqueda = null, limite = 25, desde = 0, orden = 'saldo', dir = 'desc' } = {}) =>
+    rpc('puntos_panel_clientes', {
+        p_busqueda: busqueda || null, p_limite: limite, p_desde: desde, p_orden: orden, p_dir: dir,
+    });
 
 /** Todo de un cliente: ficha, cuenta (saldo, vencimientos, movimientos) y cuentas viejas asignadas. */
 export const fetchPuntosCliente = (customerId) => rpc('puntos_panel_cliente', { p_customer_id: customerId });

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.35 — Plan del núcleo: se recupera el texto que la edición anterior cortó
+
+Sin cambios en el portal. La edición de v2.1075.34 dejó el plan del núcleo en
+88 de sus 336 líneas: se insertó el bloque de F3 sin volver a pegar lo que
+seguía (la misma trampa de la memoria «`s[:i] + nuevo` trunca»). Reconstruido
+desde la versión anterior; frente a ella sólo cambian la línea de estado y el
+bloque de F3.
+
 ## v2.1075.34 — Plan del núcleo: F3 cerrada
 
 Sin cambios en el portal. `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md` marca F3

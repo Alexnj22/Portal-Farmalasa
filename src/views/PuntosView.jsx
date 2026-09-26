@@ -58,8 +58,6 @@ import ClientePuntosModal from './puntos/ClientePuntosModal';
 
 // `recharts` pesa: viaja en su propio chunk y se pide cuando la pestaña lo pinta.
 const GraficaDiaria = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaDiaria })));
-const GraficaSalas = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaSalas })));
-const GraficaVencimientos = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaVencimientos })));
 import { fechaTexto } from '../utils/fecha';
 
 // Cada pestaña con su permiso. La lista que se le pasa a la URL es la de las
@@ -417,44 +415,46 @@ function Resumen({ resumen, serie, cargando, avisos, porAsignar, irA, buscando }
                 </p>
             ) : (
                 <>
-                    {/* Gráficas y no tablas (pedido del usuario): el número exacto
-                        —en puntos y en dólares— está en el tooltip de cada punto. */}
-                    <Panel icono={TrendingUp} titulo="Últimos 30 días"
-                        accion={(
-                            <SegmentedControl size="sm" value={unidad} onChange={setUnidad} label="Ver en"
-                                options={[
-                                    { value: 'puntos', label: 'Puntos' },
-                                    { value: 'dolares', label: 'Dólares' },
-                                ]} />
-                        )}>
-                        <Suspense fallback={<Hueco alto={190} />}>
-                            <GraficaDiaria serie={serie} unidad={unidad} />
-                        </Suspense>
-                    </Panel>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Una fila compacta (elegida por el usuario, 2026-09-26): la
+                        curva de 30 días a dos tercios y las salas a su lado como
+                        lista con barras. Las salas no necesitan ejes: son seis
+                        filas, y el número va escrito. */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <Panel icono={TrendingUp} titulo="Últimos 30 días" className="lg:col-span-2"
+                            accion={(
+                                <SegmentedControl size="sm" value={unidad} onChange={setUnidad} label="Ver en"
+                                    options={[
+                                        { value: 'puntos', label: 'Puntos' },
+                                        { value: 'dolares', label: 'Dólares' },
+                                    ]} />
+                            )}>
+                            <Suspense fallback={<Hueco alto={190} />}>
+                                <GraficaDiaria serie={serie} unidad={unidad} />
+                            </Suspense>
+                        </Panel>
                         <Panel icono={Store} titulo="Este mes, por sala"
-                            nota={`Acumulados ${pts(mes.acumulado)} (${dolares(mes.acumulado)}) · canjeados ${pts(mes.canjeado)} (${dolares(mes.canjeado)})`}>
+                            nota={unidad === 'dolares'
+                                ? `${dolares(mes.acumulado)} acumulados · ${dolares(mes.canjeado)} canjeados`
+                                : `${pts(mes.acumulado)} acumulados · ${pts(mes.canjeado)} canjeados`}>
                             {(resumen?.por_sala ?? []).length === 0 && !cargando
                                 ? <p className="text-body-sm text-content-3 py-6 text-center">Sin movimientos este mes</p>
-                                : <Suspense fallback={<Hueco alto={180} />}><GraficaSalas salas={resumen?.por_sala} unidad={unidad} /></Suspense>}
-                        </Panel>
-                        <Panel icono={CalendarClock} titulo="Cuándo vencen"
-                            nota="A los doce meses de la compra. Lo acumulado hasta el 30 de septiembre de 2026 vence el 1 de octubre de 2027.">
-                            {(resumen?.vencimientos ?? []).length === 0 && !cargando
-                                ? <p className="text-body-sm text-content-3 py-6 text-center">Sin puntos por vencer</p>
-                                : <Suspense fallback={<Hueco alto={150} />}><GraficaVencimientos vencimientos={resumen?.vencimientos} unidad={unidad} /></Suspense>}
+                                : <SalasDelMes salas={resumen?.por_sala ?? []} unidad={unidad} />}
                         </Panel>
                     </div>
+
+                    {/* Vencimientos en una LÍNEA: hasta oct-2027 todo vence el
+                        mismo día, y una gráfica de una barra ocupaba media fila
+                        para decir un solo número. */}
+                    <Vencimientos lista={resumen?.vencimientos ?? []} />
                 </>
             )}
         </>
     );
 }
 
-function Panel({ icono: Icono, titulo, nota, accion, children }) {
+function Panel({ icono: Icono, titulo, nota, accion, className = '', children }) {
     return (
-        <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-3 min-w-0">
+        <section data-surface="card" className={`p-4 md:p-5 flex flex-col gap-3 min-w-0 ${className}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                     <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
@@ -466,6 +466,58 @@ function Panel({ icono: Icono, titulo, nota, accion, children }) {
             </div>
             {children}
         </section>
+    );
+}
+
+/**
+ * Lo del mes por sala, como lista: nombre, dos barras (acumulado y canjeado,
+ * los mismos colores de la curva) y el número escrito. Las barras comparten
+ * escala —la del mayor acumulado— para que se comparen entre salas. El ANCHO es
+ * el dato (`data-medida="dato"`). Sin `title`: los dos números ya van escritos.
+ */
+function SalasDelMes({ salas, unidad }) {
+    const tope = Math.max(1, ...salas.map((s) => Number(s.acumulado) || 0));
+    const cifra = (v) => (unidad === 'dolares' ? dolares(v) : pts(v));
+    return (
+        <ul className="flex flex-col gap-3">
+            {salas.map((s) => (
+                <li key={s.sala} className="flex flex-col gap-1 min-w-0">
+                    <div className="flex items-baseline justify-between gap-2 min-w-0">
+                        <span className="text-caption font-bold text-content-2 truncate">{s.sala}</span>
+                        <span className="text-caption text-content-3 tabular-nums whitespace-nowrap">
+                            <span className="font-bold text-content">{cifra(s.acumulado)}</span> · {cifra(s.canjeado)}
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5" data-medida="dato">
+                        <span className="h-1.5 rounded-full bg-[var(--chart-1)]"
+                            style={{ width: `${((Number(s.acumulado) || 0) / tope) * 100}%` }} />
+                        <span className="h-1.5 rounded-full bg-[var(--chart-6)]"
+                            style={{ width: `${((Number(s.canjeado) || 0) / tope) * 100}%` }} />
+                    </div>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+/** Cuándo vencen los puntos, dicho en una línea (las tres fechas más próximas). */
+function Vencimientos({ lista }) {
+    if (lista.length === 0) return null;
+    const proximas = lista.slice(0, 3);
+    return (
+        <p className="text-caption text-content-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <CalendarClock size={14} className="shrink-0" />
+            <span>Vencen:</span>
+            {proximas.map((v, i) => (
+                <span key={v.mes} className="tabular-nums">
+                    <span className="font-bold text-content-2">{pts(v.puntos)} pts ({dolares(v.puntos)})</span>
+                    {' '}en {fechaTexto(v.mes, { month: 'long', year: 'numeric' })}
+                    {i < proximas.length - 1 ? ' ·' : ''}
+                </span>
+            ))}
+            {lista.length > 3 && <span>· y {lista.length - 3} meses más</span>}
+            <span>— a los doce meses de la compra.</span>
+        </p>
     );
 }
 

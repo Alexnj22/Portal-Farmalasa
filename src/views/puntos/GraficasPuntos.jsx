@@ -98,47 +98,6 @@ export function GraficaDiaria({ serie, unidad = 'puntos' }) {
     );
 }
 
-/** Acumulado y canjeado del mes, por sala. */
-export function GraficaSalas({ salas, unidad = 'puntos' }) {
-    const datos = salas ?? [];
-    return (
-        <ChartContainer minHeight={Math.max(150, datos.length * 32 + 40)}>
-            <BarChart data={datos} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}
-                barGap={2} barCategoryGap="22%">
-                <CartesianGrid stroke={COLOR.rejilla} horizontal={false} />
-                <XAxis type="number" tickLine={false} axisLine={false} tick={EJE} tickFormatter={ejeDe(unidad)} />
-                <YAxis type="category" dataKey="sala" tickLine={false} axisLine={false} width={84}
-                    tick={{ ...EJE, fontSize: 11, fill: 'var(--text-secondary)' }} />
-                <Tooltip contentStyle={TOOLTIP} cursor={{ fill: COLOR.rejilla, opacity: 0.35 }}
-                    formatter={(v, nombre) => [ambos(v), nombre]} />
-                <Legend {...LEYENDA} />
-                <Bar dataKey="acumulado" name="Acumulados" fill={COLOR.acumulado} radius={[0, 4, 4, 0]}
-                    maxBarSize={12} isAnimationActive={false} />
-                <Bar dataKey="canjeado" name="Canjeados" fill={COLOR.canjeado} radius={[0, 4, 4, 0]}
-                    maxBarSize={12} isAnimationActive={false} />
-            </BarChart>
-        </ChartContainer>
-    );
-}
-
-/** Cuántos puntos vencen, por mes. Una sola serie: el título la nombra. */
-export function GraficaVencimientos({ vencimientos, unidad = 'puntos' }) {
-    const datos = (vencimientos ?? []).map((v) => ({ ...v, etiqueta: mes(v.mes) }));
-    return (
-        <ChartContainer minHeight={150}>
-            <BarChart data={datos} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
-                <CartesianGrid stroke={COLOR.rejilla} vertical={false} />
-                <XAxis dataKey="etiqueta" tickLine={false} axisLine={false} tick={EJE} />
-                <YAxis tickLine={false} axisLine={false} width={52} tick={EJE} tickFormatter={ejeDe(unidad)} />
-                <Tooltip contentStyle={TOOLTIP} cursor={{ fill: COLOR.rejilla, opacity: 0.35 }}
-                    formatter={(v, _n, p) => [`${ambos(v)} de ${pts(p?.payload?.clientes)} clientes`, 'Vencen']} />
-                <Bar dataKey="puntos" name="Vencen" fill={COLOR.acumulado} radius={[4, 4, 0, 0]}
-                    maxBarSize={56} isAnimationActive={false} />
-            </BarChart>
-        </ChartContainer>
-    );
-}
-
 /**
  * La historia de UN cliente, por mes: lo acumulado y lo canjeado. Es la
  * gráfica del detalle del cliente, y es un control: tocar un mes filtra sus

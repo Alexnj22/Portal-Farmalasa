@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.14 — Puntos: las gráficas de Consulta en una fila compacta
+
+Opción elegida por el usuario entre tres. La curva de 30 días ocupa dos
+tercios de la fila y, a su lado, «Este mes, por sala» pasa de gráfica de barras
+con ejes a lista con dos barritas y el número escrito (sigue el selector
+Puntos/Dólares). «Cuándo vencen» deja de ser gráfica: hasta oct-2027 todo vence
+el mismo día y la barra única ocupaba media fila para decir un número; ahora es
+una línea. Se retiran `GraficaSalas` y `GraficaVencimientos`.
+
 ## v2.1075.13 — El detalle de MIN·MAX en Solicitudes muestra ventas, presentaciones y factor
 
 Reporte del usuario: «aquí no modificaste eso, no me sale el factor, ni las

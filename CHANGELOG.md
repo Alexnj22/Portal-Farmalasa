@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1077.0 — Distribución: esquema, candados de venta y emisor distribucion-dte probados en el entorno de pruebas
+
+Segunda pieza de la S.A.S. de distribución. Todo aplicado SÓLO en el branch de
+pruebas; el SQL vive en `supabase/borradores/distribucion/` hasta que pase a
+producción.
+
+- **Esquema `dist_*`** (no `ruta_*`: «ruta» ya es el reparto de Bodega a las
+  salas): emisor, clientes con su licencia de la SRS, catálogo con la casilla
+  de venta libre, pedidos, DTE emitidos con cada intento ante Hacienda,
+  contingencias, correlativos y token. RLS en todas; los DTE y correlativos
+  sólo los escribe el servidor.
+- **Qué se le vende a quién lo decide la base.** Probado en pruebas: tienda
+  sin licencia → rechazado; producto con receta a una tienda → rechazado;
+  crédito a quien no lo tiene → rechazado; el precio sale del catálogo aunque
+  el teléfono mande otro.
+- **`distribucion-dte`** factura un pedido: elige Factura o Crédito Fiscal según el
+  cliente, aplica la retención del 1% al supermercado gran contribuyente,
+  reserva el correlativo, firma, guarda y transmite con la política de
+  reintentos de Hacienda (consultar antes de reenviar). Sin certificado queda
+  «sin firmar»; sin credenciales, «firmado» pendiente de enviar. Dos clics a
+  la vez generan un solo documento. La firma hecha en el servidor verifica
+  contra la llave pública con un certificado local de prueba.
+- Cliente de la API de Hacienda y eventos de invalidación y contingencia, con
+  15 pruebas más (80 en total).
+
 ## v2.1076.0 — Motor de DTE 2.0 para la S.A.S. de rutas: armar y firmar Factura, CCF, remisión y notas
 
 Primera pieza del emisor propio de la S.A.S. de distribución (rama

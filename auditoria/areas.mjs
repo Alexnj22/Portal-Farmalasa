@@ -613,17 +613,21 @@ export const AREAS = [
         // propio certificado y su propia conexión con Hacienda. Mezclarlas
         // haría que un cambio en el emisor nuevo descongele la facturación de
         // las siete salas, y al revés.
-        id: 'ruta',
-        nombre: 'Venta en ruta y emisor DTE propio',
-        resumen: 'La S.A.S. de distribución: motor de DTE 2.0 (armar, firmar, transmitir a Hacienda), preventa, clientes de ruta y liquidación del vendedor.',
+        id: 'distribucion',
+        nombre: 'Distribución: venta en ruta y emisor DTE propio',
+        resumen: 'La S.A.S. de distribución: motor de DTE 2.0 (armar, firmar, transmitir a Hacienda), preventa, clientes de ruta y liquidación del vendedor. Prefijo dist_ porque «ruta» ya es el reparto de Bodega a las salas.',
         modulos: [],
         rutas: [],
         archivos: [
             'supabase/functions/_shared/dte/',
-            'tests/unit/dteMotor.test.js', 'tests/fixtures/dte-reales-2026-09.json',
+            'supabase/functions/distribucion-dte/',
+            'supabase/borradores/distribucion/',
+            'scripts/entorno-pruebas/probar_distribucion.mjs',
+            'tests/unit/dteMotor.test.js', 'tests/unit/dteHacienda.test.js',
+            'tests/fixtures/dte-reales-2026-09.json',
         ],
         tablas: [],
-        edge: [],
+        edge: ['distribucion-dte'],
         crons: [],
         docs: [],
     },

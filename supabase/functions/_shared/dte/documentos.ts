@@ -253,6 +253,17 @@ function armado(tipo: TipoDte, json: Record<string, unknown>, totalPagar: Dec): 
   };
 }
 
+/**
+ * El total a pagar que tendrá un documento, sin armarlo. Sirve para escribir
+ * el pago ANTES de armar: `pagosDe` exige que los pagos sumen el total, y el
+ * total depende del tipo (en la Factura el IVA va dentro del precio).
+ */
+export function totalAPagar(tipo: TipoDte, renglones: Renglon[], o?: OpcionesResumen): string {
+  const base: BasePrecio = tipo === TIPO_DTE.FACTURA ? "con_iva" : "sin_iva";
+  const { res } = calcular(renglones, base, o);
+  return num(res.totalPagar).toFixed(2);
+}
+
 // ── 01 · Factura (consumidor final, tienda no inscrita en IVA) ─────────────
 
 export function armarFactura(d: DatosVenta): DteArmado {

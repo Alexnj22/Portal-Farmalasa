@@ -185,6 +185,13 @@ if git diff --cached --name-only | grep -qE '^src/(data|utils|store|hooks|contex
   node scripts/nucleo-gate.mjs --hook || exit 1
 fi
 
+# consultas-gate: las pantallas (`views`, `components`) no le hablan a la base;
+# la consulta va a `src/data` o a un hook de `src/hooks`, que es lo que la app
+# del teléfono reutiliza. Trinquete: la cuenta por archivo no puede subir.
+if git diff --cached --name-only | grep -qE '^src/(views|components)/|^scripts/consultas-'; then
+  node scripts/consultas-gate.mjs --hook || exit 1
+fi
+
 # permissions-gate: solo si el commit toca el registro de permisos o código que
 # los consulta. Cruza lo declarado en Permisos contra lo que el código realmente
 # gatea (por sus cinco caminos: literal, plantilla, variable, indirecta y guard

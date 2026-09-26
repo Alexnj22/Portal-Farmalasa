@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.24 — F3: gate:consultas — las pantallas no le hablan a la base
+
+Arranca F3 del núcleo portable. Una consulta escrita dentro de una pantalla
+es una que la app del teléfono tendría que reescribir; su lugar es `src/data`
+o un hook de `src/hooks`.
+
+- `npm run gate:consultas`: trinquete por archivo sobre `src/views` y
+  `src/components`. Baseline: **103 usos en 35 archivos**; sólo baja. Corre en
+  el pre-commit cuando el commit toca pantallas. Probado con una regresión
+  fabricada.
+- El quitacomentarios de `gate:nucleo` se mudó a `scripts/lib/sin-comentarios.mjs`
+  para que lo compartan los dos gates (verificado: `gate:nucleo` sigue viendo
+  un `window` nuevo y no el de un comentario).
+
 ## v2.1075.23 — Entorno de pruebas: la cuenta entra y los permisos de tablas igualan a producción
 
 Dos defectos de la base de pruebas rehecha el 26-sep, que dejaban el portal de

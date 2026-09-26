@@ -7,6 +7,9 @@ name: Entorno de pruebas al día
 # cero. Rehacerlo cambia su dirección: en la máquina, `npm run pruebas:env`
 # reescribe .env.staging. Detalle en `scripts/entorno-pruebas/mantener_al_dia.mjs`.
 #
+# Si lo rehace, actualiza las variables Preview de Vercel y recompila dev
+# (secretos VERCEL_TOKEN, VERCEL_PROJECT_ID y VERCEL_TEAM_ID).
+#
 # Necesita el secreto SUPABASE_ACCESS_TOKEN: un token personal de Supabase
 # (Account → Access Tokens). Sin él, el job falla en el primer paso y lo dice.
 
@@ -14,6 +17,11 @@ on:
   schedule:
     - cron: '30 10 * * *'   # 04:30 SV — los crons de sync están quietos
   workflow_dispatch:
+    inputs:
+      solo_vercel:
+        description: 'Sólo apuntar Vercel (dev) al branch actual, sin tocar el branch'
+        type: boolean
+        default: false
 
 jobs:
   al-dia:
@@ -24,6 +32,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node scripts/entorno-pruebas/mantener_al_dia.mjs --aplicar
+      - run: node scripts/entorno-pruebas/mantener_al_dia.mjs ${{ inputs.solo_vercel && '--vercel' || '--aplicar' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          # Al rehacer el branch cambia su dirección, y dev.farmasalud.lat
+          # compila con ella: sin esto dev queda apuntando a un branch borrado
+          # (pasó el 2026-09-26). Sin VERCEL_TOKEN la corrida sale en ROJO.
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}

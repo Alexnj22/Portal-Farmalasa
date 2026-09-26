@@ -4,6 +4,7 @@
 //   SUPABASE_ACCESS_TOKEN=sbp_… node scripts/entorno-pruebas/mantener_al_dia.mjs            # sólo mira
 //   SUPABASE_ACCESS_TOKEN=sbp_… node scripts/entorno-pruebas/mantener_al_dia.mjs --aplicar  # lo pone al día
 //   SUPABASE_ACCESS_TOKEN=sbp_… node scripts/entorno-pruebas/mantener_al_dia.mjs --env      # reescribe .env.staging
+//   … --vercel   # apunta las variables Preview de Vercel al branch actual y recompila dev
 //
 // Lo corre todos los días `.github/workflows/entorno-pruebas.yml`.
 //
@@ -33,6 +34,18 @@
 // `.env.staging` desde la API: URL y clave anónima del branch nuevo, y las dos
 // claves que no son de Supabase se copian del `.env`.
 //
+// ── Y avisarle a Vercel (2026-09-26) ─────────────────────────────────────────
+// `dev.farmasalud.lat` —la rama `sesion/nucleo` en Vercel— compila con las
+// variables *Preview* `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`. El
+// 26-sep el push falló en la migración 12 de 47, el branch se rehizo, cambió
+// de `ref`… y dev siguió apuntando al viejo, que ya no existía: el entorno de
+// pruebas no cargaba y la corrida figuraba en VERDE. Desde entonces, al
+// rehacerlo:
+//   · con `VERCEL_TOKEN`, se actualizan esas dos variables y se recompila el
+//     último despliegue de la rama de pruebas;
+//   · sin él, la corrida termina en ROJO y dice qué falta. Un entorno roto que
+//     da verde es peor que uno que avisa.
+
 // ── Lo que NO hace ────────────────────────────────────────────────────────────
 // Nunca escribe en producción: a producción sólo le LEE la lista de migraciones,
 // y `sql()` se niega a correr escrituras contra ella.
@@ -46,6 +59,7 @@ const NOMBRE = 'staging';
 const API = 'https://api.supabase.com/v1';
 const aplicar = process.argv.includes('--aplicar');
 const soloEnv = process.argv.includes('--env');
+const soloVercel = process.argv.includes('--vercel');   // apunta Vercel al branch actual, sin tocar nada más
 const token = process.env.SUPABASE_ACCESS_TOKEN;
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const raiz = path.resolve(aqui, '..', '..');
@@ -131,6 +145,51 @@ async function rehacer(viejo) {
     return b;
 }
 
+const VERCEL = 'https://api.vercel.com';
+const RAMA_DE_PRUEBAS = process.env.VERCEL_RAMA_DE_PRUEBAS || 'sesion/nucleo';
+let vercelPendiente = false;
+
+async function vercel(metodo, ruta, cuerpo) {
+    const sep = ruta.includes('?') ? '&' : '?';
+    const r = await fetch(`${VERCEL}${ruta}${sep}teamId=${process.env.VERCEL_TEAM_ID}`, {
+        method: metodo,
+        headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
+        body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+        signal: AbortSignal.timeout(60_000),
+    });
+    const texto = await r.text();
+    if (!r.ok) throw new Error(`Vercel ${metodo} ${ruta} → ${r.status}: ${texto.slice(0, 300)}`);
+    return texto ? JSON.parse(texto) : null;
+}
+
+/** Las variables *Preview* de Vercel apuntan al branch nuevo, y dev se recompila. */
+async function avisarAVercel(ref) {
+    const { VERCEL_TOKEN, VERCEL_PROJECT_ID, VERCEL_TEAM_ID } = process.env;
+    if (!VERCEL_TOKEN || !VERCEL_PROJECT_ID || !VERCEL_TEAM_ID) {
+        console.error(`✗ El branch cambió a ${ref} y Vercel NO se actualizó: faltan VERCEL_TOKEN, `
+            + 'VERCEL_PROJECT_ID o VERCEL_TEAM_ID. dev.farmasalud.lat apunta al branch viejo hasta '
+            + 'que se actualicen VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY (Preview) y se recompile.');
+        vercelPendiente = true;
+        return;
+    }
+    const claves = await api('GET', `/projects/${ref}/api-keys`);
+    const anon = claves.find((k) => k.name === 'anon' && !k.disabled)?.api_key;
+    if (!anon) throw new Error('El branch no devolvió la clave anónima.');
+    const valores = { VITE_SUPABASE_URL: `https://${ref}.supabase.co`, VITE_SUPABASE_ANON_KEY: anon };
+    const { envs } = await vercel('GET', `/v9/projects/${VERCEL_PROJECT_ID}/env`);
+    for (const [clave, valor] of Object.entries(valores)) {
+        const vars = envs.filter((e) => e.key === clave && e.target?.includes('preview') && !e.target?.includes('production'));
+        if (!vars.length) throw new Error(`Vercel no tiene ${clave} en Preview.`);
+        for (const e of vars) await vercel('PATCH', `/v9/projects/${VERCEL_PROJECT_ID}/env/${e.id}`, { value: valor });
+    }
+    console.log(`✓ Vercel: las variables Preview apuntan a ${ref}`);
+    const { deployments } = await vercel('GET', `/v6/deployments?projectId=${VERCEL_PROJECT_ID}&target=preview&limit=50`);
+    const ultimo = deployments.find((d) => d.meta?.githubCommitRef === RAMA_DE_PRUEBAS);
+    if (!ultimo) { console.log(`  (no hay despliegues de ${RAMA_DE_PRUEBAS} que recompilar)`); return; }
+    const nuevo = await vercel('POST', '/v13/deployments', { name: ultimo.name, deploymentId: ultimo.uid, target: 'preview' });
+    console.log(`✓ Vercel: recompilando ${RAMA_DE_PRUEBAS} (${nuevo.url})`);
+}
+
 async function escribirEnv(ref) {
     const claves = await api('GET', `/projects/${ref}/api-keys`);
     const anon = claves.find((k) => k.name === 'anon' && !k.disabled)?.api_key;
@@ -155,6 +214,13 @@ async function escribirEnv(ref) {
 (async () => {
     let b = await buscarBranch();
 
+    if (soloVercel) {
+        if (!b) throw new Error(`No existe el branch «${NOMBRE}».`);
+        await avisarAVercel(b.project_ref);
+        if (vercelPendiente) process.exitCode = 1;
+        return;
+    }
+
     if (soloEnv) {
         if (!b) throw new Error(`No existe el branch «${NOMBRE}».`);
         await escribirEnv(b.project_ref);
@@ -166,6 +232,8 @@ async function escribirEnv(ref) {
         if (!aplicar) process.exit(2);
         b = await rehacer(null);
         await herramientas(b.project_ref);
+        await avisarAVercel(b.project_ref);
+        if (vercelPendiente) process.exitCode = 1;
         return;
     }
 
@@ -187,7 +255,10 @@ async function escribirEnv(ref) {
             c = comparar(await versiones(PROD), await versiones(b.project_ref));
             console.log(`  push terminó en ${b.status}; faltan ${c.faltan}`);
         }
-        if (!c.igual) b = await rehacer(b);
+        if (!c.igual) {
+            b = await rehacer(b);
+            await avisarAVercel(b.project_ref);
+        }
 
         c = comparar(await versiones(PROD), await versiones(b.project_ref));
         if (!c.igual) {
@@ -202,6 +273,7 @@ async function escribirEnv(ref) {
         await herramientas(b.project_ref);
         console.log('✓ Fechas a hoy y permisos de la cuenta de pruebas al día.');
     }
+    if (vercelPendiente) process.exitCode = 1;
 })().catch((e) => {
     console.error(`✗ ${e.message}`);
     process.exit(1);

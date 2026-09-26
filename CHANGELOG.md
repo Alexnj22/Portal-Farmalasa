@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.17 — Entorno de pruebas: al rehacerse, dev se apunta solo a la base nueva
+
+`dev.farmasalud.lat` dejó de cargar el 2026-09-26: el mantenimiento diario no
+pudo poner al día la base de pruebas (falló la migración 12 de 47, por restos
+de ensayos), la rehízo —como está programado— y la base nueva nació con OTRA
+dirección. Vercel siguió compilando dev contra la vieja, que ya no existía, y
+la corrida figuró en VERDE.
+
+- Corregido en el momento: variables Preview de Vercel y `.env.staging`
+  apuntadas a `jffhpyutjltvozoyllpj`, dev recompilado (v2.1075.16 contra la
+  base nueva) y entrada con la cuenta de pruebas verificada.
+- De raíz: `mantener_al_dia.mjs`, al rehacer, actualiza esas dos variables en
+  Vercel y recompila la rama de pruebas. Sin `VERCEL_TOKEN` la corrida sale en
+  ROJO y dice qué falta, en vez de dar verde con dev roto. `--vercel` (y
+  «Run workflow» con `solo_vercel`) lo hace a mano.
+
 ## v2.1075.16 — U2: una sola definición de venta en la base
 
 «¿Esta factura cuenta como venta?» ahora tiene UNA respuesta en la base. Sin

@@ -209,7 +209,7 @@ considerar aplicar entre 06:00–11:59 UTC (crons de sync inactivos: corren
 `12-23,0-5`).
 
 **Probar primero en staging.** Existe un branch de Supabase dedicado para esto:
-**`wqmsadndftaudblohgws`** (nombre `staging`, persistente, rehecho el 2026-09-23). Para DDL sobre las
+**`jffhpyutjltvozoyllpj`** (nombre `staging`, persistente, rehecho solo el 2026-09-26). Para DDL sobre las
 tablas calientes listadas arriba, probarlo ahí primero, confirmar que no rompe
 nada, y sólo entonces aplicar a prod. Ya se usó así para 0B.8 (RPC
 `verify_kiosk_device`) y 0B.2 (secretos de Vault en `cron.job.command`) — ambos
@@ -232,9 +232,9 @@ herramienta que lo mantiene útil.** `execute_sql` prueba igual de bien y no dej
 rastro; si la prueba ensucia el esquema, se limpia a mano o se rehace el branch,
 que es barato cuando no hay que rescatar nada.
 
-⚠️ **El ref cambia cada vez que se rehace el branch.** Ya van cuatro: el de julio
-(`ewcmerxqjvludtgskuin`), el de agosto (`cbnjplmnfmfsambavjce`) y el del 24-ago
-(`qvctarsqvlhbzgvwbbbt`) están borrados —
+⚠️ **El ref cambia cada vez que se rehace el branch.** Ya van cinco: el de julio
+(`ewcmerxqjvludtgskuin`), el de agosto (`cbnjplmnfmfsambavjce`), el del 24-ago
+(`qvctarsqvlhbzgvwbbbt`) y el del 23-sep (`wqmsadndftaudblohgws`) están borrados —
 si encontrás alguno de esos en un doc, es viejo. El vigente sale de
 `supabase branches list` o del `VITE_SUPABASE_URL` de `.env.staging`. Trae datos
 de muestra, cero PII.
@@ -245,7 +245,13 @@ compara la lista de migraciones, hace `push` si le faltan, y si el push falla lo
 **rehace** (quita «permanente», lo borra y lo crea de nuevo). Después apaga los
 crons que llaman a producción, corre las fechas a hoy y los permisos de la cuenta
 de pruebas. Necesita el secreto `SUPABASE_ACCESS_TOKEN` en GitHub. Si lo rehizo,
-el ref cambió: `npm run pruebas:env` reescribe `.env.staging`.
+el ref cambió: `npm run pruebas:env` reescribe `.env.staging`, y **el script
+apunta solo las variables Preview de Vercel al ref nuevo y recompila
+`dev.farmasalud.lat`** (secretos `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`,
+`VERCEL_TEAM_ID`). Sin eso dev queda contra un branch borrado: pasó el
+2026-09-26 —el push falló en la migración 12 de 47, se rehízo, y la corrida dio
+VERDE con dev roto—. Hoy, sin `VERCEL_TOKEN` la corrida sale en ROJO. A mano:
+«Run workflow» con `solo_vercel`.
 
 Tres cosas medidas ese día que explican el diseño:
 1. **`reset` no sirve**: reconstruye con la historia PROPIA del branch (quedó en

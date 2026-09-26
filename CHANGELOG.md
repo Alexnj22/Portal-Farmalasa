@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.31 — Pendiente documentado: el peso de las pantallas
+
+Sin cambios en el portal. `docs/PENDIENTE-PESO-DE-LAS-PANTALLAS-2026-09-26.md`
+deja escrito lo que sigue sobre el techo en `gate:bundle` (entry +11 kB,
+Cortes +34 y nueve vistas más), qué se sabe de la causa, cómo se midió y las
+opciones. Aplazado por decisión del usuario para seguir con el plan del núcleo.
+
 ## v2.1075.30 — Peso: la campana y la ticketera se cargan cuando se usan
 
 Sin cambios visibles. Lo que se descarga para entrar al portal baja, medido con

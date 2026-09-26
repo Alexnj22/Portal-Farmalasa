@@ -85,7 +85,9 @@ const MENU_GROUPS = [
     // necesita su ficha fiscal correcta. Quedan 4 de los 6 que admite un grupo.
     // `puntos` (2026-09-25) va con Clientes: el programa es de los clientes y
     // lo opera quien supervisa la venta. 5 de 6.
-    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'cotizaciones', 'clientes', 'puntos'] },
+    // `distribucion` (2026-09-26): la venta en ruta de la S.A.S. Es otra
+    // empresa, pero la opera el mismo equipo comercial. 6 de 6: el grupo lleno.
+    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'cotizaciones', 'clientes', 'puntos', 'distribucion'] },
     // Cortes de caja salió de Comercial a menú propio (2026-08-20, pedido del
     // usuario). No es una pregunta sobre la venta: es el cuadre del efectivo al
     // cerrar el turno, y quien lo abre —la sala que cierra, quien confirma la

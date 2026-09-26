@@ -99,6 +99,7 @@ const PuntosView = lazy(IMPORTADORES.PuntosView);
 const ConteoDetailView = lazy(IMPORTADORES.ConteoDetailView);
 const FacturacionView = lazy(IMPORTADORES.FacturacionView);
 const CotizacionesView = lazy(IMPORTADORES.CotizacionesView);
+const DistribucionView = lazy(IMPORTADORES.DistribucionView);
 const EncuestaView = lazy(IMPORTADORES.EncuestaView);
 const EncuestaAdminView = lazy(IMPORTADORES.EncuestaAdminView);
 const NoAccessView = lazy(IMPORTADORES.NoAccessView);
@@ -845,6 +846,7 @@ function MainApp() {
                                     <Route path="cuentas-por-cobrar" element={<PermissionGuard moduleKey="cuentas_por_cobrar"><CuentasPorCobrarView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
+                                    <Route path="distribucion" element={<PermissionGuard moduleKey="distribucion"><DistribucionView /></PermissionGuard>} />
                                     <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
@@ -1045,6 +1047,7 @@ const ROUTE_TITLES = {
     '/cuentas-por-cobrar': 'Cuentas por cobrar',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
+    '/distribucion':      'Distribución',
     '/clientes':          'Clientes',
     '/metas':             'Metas',
     // Copiado LITERAL del `title` del GlassViewLayout de la vista: es lo que

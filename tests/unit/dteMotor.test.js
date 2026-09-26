@@ -140,7 +140,7 @@ describe('el resumen contra DTE reales sellados por Hacienda', () => {
 });
 
 // ── Datos de prueba de la S.A.S. (ficticios) ──────────────────────────────
-const DIR = { departamento: '04', municipio: '37', distrito: '07', complemento: 'Barrio El Centro, Chalatenango' };
+const DIR = { departamento: '04', municipio: '36', distrito: '07', complemento: 'Barrio El Centro, Chalatenango' };
 const EMISOR = {
     nit: '0407-010126-101-5', nrc: '345678-9', nombre: 'DISTRIBUIDORA DE PRUEBA, S.A.S.',
     codActividad: '46491', descActividad: 'Venta al por mayor de productos farmacéuticos y medicinales',

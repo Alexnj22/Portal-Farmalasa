@@ -28,7 +28,7 @@ BEGIN
         establecimiento, punto_venta, tipo_establecimiento, cod_estable_mh, cod_punto_venta_mh, ambiente)
     VALUES ('DISTRIBUIDORA DE PRUEBA, S.A.S.', 'DISTRIBUIDORA PRUEBA', '04070101261015', '3456789',
         '46491', 'Venta al por mayor de productos farmacéuticos y medicinales',
-        '04', '37', '07', 'Barrio El Centro, bodega de distribución', '23010013', 'facturas@ejemplo.com',
+        '04', '36', '07', 'Barrio El Centro, bodega de distribución', '23010013', 'facturas@ejemplo.com',
         'B001', 'P001', '04', 'B001', 'P001', '00')
     RETURNING id INTO v_emisor;
 
@@ -37,18 +37,18 @@ BEGIN
         licencia_srs, licencia_srs_vence, limite_credito, plazo_dias, ruta, creado_por)
     VALUES
       (v_emisor, 'tienda', 'TIENDA LA ESQUINA', '13', '01234567-8', NULL, NULL, NULL, false,
-       '04', '37', '07', 'Barrio San Antonio, frente al parque', '77778888', NULL,
+       '04', '36', '07', 'Barrio San Antonio, frente al parque', '77778888', NULL,
        'DVL-2026-00123', '2027-03-31', 0, 0, 'Ruta 1 — Chalatenango centro', v_yo),
       (v_emisor, 'supermercado', 'SUPER EL AHORRO, S.A. DE C.V.', '36', '06141203901011', '1122334',
        '47111', 'Venta en supermercados', true,
-       '04', '37', '07', 'Carretera Troncal del Norte km 72', '23334444', 'compras@superahorro.com',
+       '04', '36', '07', 'Carretera Troncal del Norte km 72', '23334444', 'compras@superahorro.com',
        'DVL-2026-00456', '2027-03-31', 2500, 30, 'Ruta 1 — Chalatenango centro', v_yo),
       (v_emisor, 'farmacia', 'FARMACIA DEL PUEBLO, S.A. DE C.V.', '36', '04071503901023', '1234567',
        '47721', 'Venta al por menor de productos farmacéuticos', false,
-       '04', '37', '07', '2a Calle Oriente #5', '24445555', 'compras@farmaciadelpueblo.com',
+       '04', '36', '07', '2a Calle Oriente #5', '24445555', 'compras@farmaciadelpueblo.com',
        'F-2025-0789', '2027-03-31', 1500, 30, 'Ruta 2 — Nueva Concepción', v_yo),
       (v_emisor, 'tienda', 'TIENDA SIN LICENCIA (prueba del candado)', NULL, NULL, NULL, NULL, NULL, false,
-       '04', '37', '07', 'Caserío El Pino', '70001111', NULL,
+       '04', '36', '07', 'Caserío El Pino', '70001111', NULL,
        NULL, NULL, 0, 0, 'Ruta 2 — Nueva Concepción', v_yo);
 
     -- Catálogo: los 60 primeros productos activos. En el branch no existe el

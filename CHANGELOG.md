@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1078.0 — Distribución: pantallas de pedidos, documentos, clientes, catálogo y empresa
+
+Vista nueva **Distribución** (`/distribucion`, menú Comercial, permiso
+`distribucion` + capacidad `distribucion_config`), con cinco pestañas:
+
+- **Pedidos** — preventa: se elige el cliente y la lista de productos ya viene
+  recortada a venta libre si es tienda o supermercado; el cliente sin licencia
+  de la SRS se ve en rojo. «Guardar y facturar» emite en el acto. Borrador
+  automático y UUID de idempotencia (reintentar no duplica).
+- **Documentos** — cada DTE con su estado real frente a Hacienda (sellado,
+  por enviar, falta la firma, rechazado), sus observaciones, el archivo JSON y
+  el enlace a la consulta pública de Hacienda cuando está sellado.
+- **Clientes** — ficha con la dirección en códigos de Hacienda, NRC,
+  actividad económica, licencia de la SRS y crédito.
+- **Catálogo** — precio sin IVA y la casilla de venta libre; lo antibiótico,
+  con receta o regulado nunca se puede marcar.
+- **Empresa** — los datos del emisor y el ambiente (pruebas/producción).
+
+Dos catálogos de Hacienda nuevos, generados del Excel oficial: departamento,
+municipio y distrito con sus CÓDIGOS (`geoCodigosMH.js`, 262 de 262 distritos
+emparejados, 51 abreviaturas revisadas a mano) y las 774 actividades
+económicas (`actividadesMH.js`, carga diferida). El vendedor y quien crea un
+cliente los pone la base (`auth_employee_id()`), no la pantalla.
+
+Probado contra el entorno de pruebas con Playwright en escritorio y en iPhone
+(`tests/e2e/distribucion*.spec.js`): las cinco pestañas sin errores ni
+desborde, y un pedido tomado y facturado desde la pantalla.
+
 ## v2.1077.0 — Distribución: esquema, candados de venta y emisor distribucion-dte probados en el entorno de pruebas
 
 Segunda pieza de la S.A.S. de distribución. Todo aplicado SÓLO en el branch de

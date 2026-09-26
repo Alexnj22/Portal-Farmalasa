@@ -96,7 +96,7 @@ CREATE TABLE public.dist_clientes (
     lng                 double precision,
     notas               text,
     activo              boolean NOT NULL DEFAULT true,
-    creado_por          uuid   REFERENCES public.employees(id),
+    creado_por          uuid   DEFAULT public.auth_employee_id() REFERENCES public.employees(id),
     created_at          timestamptz NOT NULL DEFAULT now(),
     updated_at          timestamptz NOT NULL DEFAULT now(),
     -- Un contribuyente sin NIT ni actividad no puede recibir un CCF: se exige al guardar,
@@ -242,7 +242,9 @@ CREATE TABLE public.dist_pedidos (
     id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     emisor_id       smallint NOT NULL REFERENCES public.dist_emisores(id),
     cliente_id      bigint NOT NULL REFERENCES public.dist_clientes(id),
-    vendedor_id     uuid   NOT NULL REFERENCES public.employees(id),
+    -- La pone la base: la ficha de quien inserta. La pantalla conoce la CUENTA
+    -- y para la mayoría del personal no es el mismo id que la ficha.
+    vendedor_id     uuid   NOT NULL DEFAULT public.auth_employee_id() REFERENCES public.employees(id),
     estado          text NOT NULL DEFAULT 'confirmado'
                     CHECK (estado IN ('confirmado','facturado','entregado','anulado')),
     condicion       smallint NOT NULL DEFAULT 1 CHECK (condicion IN (1,2)),   -- CAT-016

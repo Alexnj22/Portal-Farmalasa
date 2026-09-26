@@ -20,7 +20,6 @@ import { EVENT_TYPES, WEEK_DAYS, SIN_ASIGNAR } from '../components/common/catalo
 import { formatDate, formatTime12h, getEffectiveStatus } from '../utils/helpers';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../supabaseClient';
 import { useToastStore } from '../store/toastStore';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { fetchEmployeeApprovalRequestsDetail } from '../data/requests';
@@ -49,6 +48,7 @@ import { rotuloCampo } from '../utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion } from '../plataforma/ventanaDeImpresion';
 import { fechaTexto, hoySV } from '../utils/fecha';
 import { formatMoney } from '../utils/formatNumber';
+import { fijarContrasenaDeEmpleado } from '../data/auth';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -392,10 +392,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         try {
             // Sin mirar el error, una edge function que falla cae en el `else`
             // de abajo con un mensaje genérico y el motivo real se pierde.
-            const { data, error } = await supabase.functions.invoke(
-                'set-employee-password',
-                { body: { username: emp.username, password: '1234' } }
-            );
+            const { data, error } = await fijarContrasenaDeEmpleado(emp.username, '1234');
             if (error) throw error;
             if (data?.ok) {
                 // Restablecer es el ÚNICO camino para cambiar una contraseña (el

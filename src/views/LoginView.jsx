@@ -7,10 +7,10 @@ import {
 
 import { useAuth } from '../context/AuthContext';
 import { isMobileOrApp } from '../utils/helpers';
-import { supabase } from '../supabaseClient';
 import { mensajeAmigable } from '../utils/errorMessages';
 import useMediaQuery from '../plataforma/useMediaQuery';
 import { esAtajoDePegar, esPegadoDeUnaPersona } from '../utils/pegadoManual';
+import { cambiarMiContrasenaInicial } from '../data/auth';
 
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
@@ -858,7 +858,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         if (newPassword !== confirmPassword)      { setChangePassError('Las contraseñas no coinciden.'); return; }
         setChangePassLoading(true);
         try {
-            const { error } = await supabase.auth.updateUser({ password: newPassword, data: { must_change_password: false } });
+            const { error } = await cambiarMiContrasenaInicial(newPassword);
             if (error) { setChangePassError(mensajeAmigable(error)); setChangePassLoading(false); return; }
             completePasswordChange(pendingUserLocal); setMustChangePwd(false); setPendingUserLocal(null); setNewPassword(''); setConfirmPassword('');
         } catch { setChangePassError('Error de conexión. Intenta de nuevo.'); }

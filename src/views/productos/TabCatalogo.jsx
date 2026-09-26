@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperat
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { createPortal } from 'react-dom';
-import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
@@ -43,6 +42,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 import { fechaTexto, hoySV } from '../../utils/fecha';
+import { subirArchivo } from '../../utils/storageFiles';
 
 
 const PRICE_FIELDS = [
@@ -1014,9 +1014,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         try {
             const resized = await resizeImage(blob, 800, 0.85);
             const path = `${product.id}.jpg`;
-            const { error: upErr } = await supabase.storage.from('product-photos').upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
-            if (upErr) throw upErr;
-            const { data: { publicUrl } } = supabase.storage.from('product-photos').getPublicUrl(path);
+            const publicUrl = await subirArchivo('product-photos', path, resized, { upsert: true, contentType: 'image/jpeg' });
             const cacheBust = `${publicUrl}?t=${Date.now()}`;
             await updateProductFoto(product.id, cacheBust);
             setLocalFoto(cacheBust);

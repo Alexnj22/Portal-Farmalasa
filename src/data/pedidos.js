@@ -618,3 +618,27 @@ export function fetchSucursalesConCoords() {
 export function fetchBranchIdsForSucursales(sucIds) {
     return supabase.from('erp_sucursal_map').select('erp_sucursal_id, branch_id').in('erp_sucursal_id', sucIds);
 }
+
+// ── Llamadas que vivían en las pantallas (F3 del núcleo portable) ──────────
+// Reciben los parámetros de la función tal cual y devuelven `{ data, error }`.
+
+/** Crea una ruta de reparto con sus paradas; devuelve su id. */
+export const crearRuta = (params) => supabase.rpc('crear_ruta', params);
+
+/** Lo que necesita cada sala antes de generar un pedido (`p_sucursal_ids`). */
+export const fetchTableroParaGenerarPedido = (params) => supabase.rpc('get_pedido_generar_dashboard', params);
+
+/** La vista previa del pedido para las salas elegidas. */
+export const fetchVistaPreviaDePedido = (params) => supabase.rpc('get_pedido_preview', params);
+
+/** Confirma un pedido con sus renglones; devuelve su id. */
+export const confirmarPedido = (params) => supabase.rpc('confirm_pedido', params);
+
+/** Asigna los códigos de cada sala dentro de un pedido. */
+export const iniciarCodigosDeSucursalesDelPedido = (params) => supabase.rpc('init_pedido_sucursal_codigos', params);
+
+/** Los indicadores de pedidos en un rango (`p_desde`, `p_hasta`). */
+export const fetchIndicadoresDePedidos = (params) => supabase.rpc('get_pedido_kpis', params);
+
+/** Por qué se pausaron los pedidos en un rango (`p_desde`, `p_hasta`). */
+export const fetchRazonesDePausa = (params) => supabase.rpc('get_pausa_razones_stats', params);

@@ -15,9 +15,9 @@ import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
 import { hora12 } from '../../utils/hora';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
-import { supabase } from '../../supabaseClient'; 
 import { fechaTexto, hoySV } from '../../utils/fecha';
 import { formatMoney } from '../../utils/formatNumber';
+import { analizarHistorial } from '../../data/ia';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS (Colores e Iconos dinámicos)
@@ -204,11 +204,9 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 };
             }).slice(0, 150);
 
-            const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-history', {
-                body: { 
-                    branchName: liveBranch?.name || 'la sucursal', 
-                    historyData: JSON.stringify(compressedHistory) 
-                } 
+            const { data: aiResponse, error: aiError } = await analizarHistorial({
+                branchName: liveBranch?.name || 'la sucursal',
+                historyData: JSON.stringify(compressedHistory),
             });
 
             if (aiError) throw new Error(aiError.message);

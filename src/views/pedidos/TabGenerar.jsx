@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import { supabase } from '../../supabaseClient';
 import { smartFilter } from '../../utils/searchUtils';
 import {
     Building2, ClipboardList, CheckCircle2,
@@ -18,11 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { printPerSucursal, buildPedidoCodigo, fefoProject, getExactPageGroups } from '../../utils/pedidoPrint';
 import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
 import Contador from '../../components/common/Contador';
-import {
-    fetchActiveEmployeesBasic, fetchPedidoNumero, fetchPedidoIdsSinceExcluding,
-    fetchPedidoSucursalStatusForPedidos, fetchPedidoItemsForPrintCapture, updatePedidoSucursalStatus,
-    tieneEtiquetaDeDespacho,
-} from '../../data/pedidos';
+import { confirmarPedido, fetchActiveEmployeesBasic, fetchPedidoIdsSinceExcluding, fetchPedidoItemsForPrintCapture, fetchPedidoNumero, fetchPedidoSucursalStatusForPedidos, fetchTableroParaGenerarPedido, fetchVistaPreviaDePedido, iniciarCodigosDeSucursalesDelPedido, tieneEtiquetaDeDespacho, updatePedidoSucursalStatus } from '../../data/pedidos';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 
 function friendlyError(e) {
@@ -88,7 +83,7 @@ export default function TabGenerar({ searchTerm = '' }) {
     const refreshStats = useCallback(() => {
         setDashLoading(true);
         setSinBodegaLoad(true);
-        supabase.rpc('get_pedido_generar_dashboard', { p_sucursal_ids: SUCURSALES })
+        fetchTableroParaGenerarPedido({ p_sucursal_ids: SUCURSALES })
             .then(({ data }) => {
                 setDashStats(Array.isArray(data?.stats) ? data.stats : []);
                 setSinBodega(Array.isArray(data?.sin_bodega) ? data.sin_bodega : []);
@@ -121,8 +116,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             const rpcParams = globalMode
                 ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
                 : { p_sucursal_ids: [...selected] };
-            const { data, error: rpcErr } = await supabase
-                .rpc('get_pedido_preview', rpcParams);
+            const { data, error: rpcErr } = await fetchVistaPreviaDePedido(rpcParams);
             if (rpcErr) throw rpcErr;
             const rows = Array.isArray(data) ? data : [];
             if (rows.length === 0) {
@@ -154,7 +148,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 caja_especial:         row.caja_especial ?? false,
             }));
             const esEmpleado = employees.some(e => e.id === user?.id);
-            const { data: pedidoId, error: confErr } = await supabase.rpc('confirm_pedido', {
+            const { data: pedidoId, error: confErr } = await confirmarPedido({
                 p_created_by:     user?.id ?? null,
                 p_notes:          null,
                 p_items:          pItems,
@@ -200,7 +194,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             const codigosMap = {};
             for (const id of sucIds) codigosMap[id] = codigoFn(id);
 
-            supabase.rpc('init_pedido_sucursal_codigos', {
+            iniciarCodigosDeSucursalesDelPedido({
                 p_pedido_id: pedidoId,
                 p_codigos:   sucIds.map(id => ({ erp_sucursal_id: id, codigo: codigosMap[id] })),
             }).then(() => {}).catch(() => {});

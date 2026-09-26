@@ -59,3 +59,9 @@ export function fetchCotizacionItems(cotizacionId) {
 export function deleteCotizacionItems(cotizacionId) {
     return supabase.from('cotizacion_items').delete().eq('cotizacion_id', cotizacionId);
 }
+
+// ── Llamadas que vivían en las pantallas (F3 del núcleo portable) ──────────
+// Reciben los parámetros de la función tal cual y devuelven `{ data, error }`.
+
+/** El número que le toca a la próxima cotización. */
+export const siguienteNumeroDeCotizacion = () => supabase.rpc('next_cotizacion_numero');

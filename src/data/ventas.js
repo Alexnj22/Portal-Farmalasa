@@ -330,3 +330,9 @@ export function fetchProductPreciosHistory(productId) {
         .eq('product_id', productId)
         .order('valid_from', { ascending: false });
 }
+
+// ── Llamadas que vivían en las pantallas (F3 del núcleo portable) ──────────
+// Reciben los parámetros de la función tal cual y devuelven `{ data, error }`.
+
+/** Los productos más vendidos en un rango (`p_fini`, `p_ffin`, `p_limite`). */
+export const fetchTopProductosDelMes = (params) => supabase.rpc('get_top_productos_mes', params);

@@ -23,7 +23,6 @@ import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
 import { EmptyState } from '../../../components/common/StateViews';
 import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { supabase } from '../../../supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import {
   fetchProductPhotoMap,
@@ -61,6 +60,7 @@ import { useComposicionTraslado } from '../../../store/composicionTraslado';
 const PedirTrasladoModal = lazy(() => import('../PedirTrasladoModal'));
 import { ERP_BRANCH_MAP, BRANCH_ORDER, MI_ERP_POR_BRANCH } from './salas';
 import { fechaTexto } from '../../../utils/fecha';
+import { buscarEnSrs } from '../../../data/srs';
 
 // Desde cuántas letras se sale a preguntar. Con una sola, el buscador pedía
 // 16,722 filas —lo que empareja con «a»— y el navegador se quedaba pintando.
@@ -74,19 +74,6 @@ const VENCIDOS_THEME = { dot: 'var(--danger)', pill: 'bg-danger/10 border-danger
 const DEFAULT_THEME = NEUTRAL_THEME;
 
 /* ─── SRS helpers ──────────────────────────────────────────────────────────── */
-async function srsFetch(q) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const base = import.meta.env.VITE_SUPABASE_URL;
-  const url  = `${base}/functions/v1/srs-proxy?q=${encodeURIComponent(q)}&page=1&page-max=5`;
-  const res  = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${session?.access_token}`,
-      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-    },
-  });
-  if (!res.ok) throw new Error(`SRS ${res.status}`);
-  return res.json();
-}
 
 function sanitizeSrs(v) {
   if (v == null) return '';
@@ -754,7 +741,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
       if (grouped.length === 0) {
         setSrsLoading(true);
         try {
-          const srsJson = await srsFetch(q);
+          const srsJson = await buscarEnSrs(q, { porPagina: 5 });
           const srsData = srsJson.data || [];
           setSrsResults(srsData);
 

@@ -3,7 +3,6 @@ import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import Button from '../../components/common/Button';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { supabase } from '../../supabaseClient';
 import { smartFilter } from '../../utils/searchUtils';
 import {
     BarChart2, Clock, Truck, PackageCheck,
@@ -12,6 +11,7 @@ import {
 import { ERP_NAMES } from '../../constants/erp';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import { fetchIndicadoresDePedidos, fetchRazonesDePausa } from '../../data/pedidos';
 
 const COLS_SUCURSAL = [
     { key: 'sucursal',  label: 'Sucursal' },
@@ -66,8 +66,8 @@ export default function TabMetricas({ searchTerm = '' }) {
             const desde = toDateStr(desdeD);
 
             const [{ data: kData, error: e1 }, { data: rData, error: e2 }] = await Promise.all([
-                supabase.rpc('get_pedido_kpis',          { p_desde: desde, p_hasta: hasta }),
-                supabase.rpc('get_pausa_razones_stats',  { p_desde: desde, p_hasta: hasta }),
+                fetchIndicadoresDePedidos({ p_desde: desde, p_hasta: hasta }),
+                fetchRazonesDePausa({ p_desde: desde, p_hasta: hasta }),
             ]);
             if (e1) throw e1;
             if (e2) throw e2;

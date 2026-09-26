@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import Notice from '../common/Notice';
 import Button from '../common/Button';
 import { KeyRound, Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
 import { useStaffStore } from '../../store/staffStore';
 import PortalInput from '../common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { fijarContrasenaDeEmpleado } from '../../data/auth';
 
 const FormSetPassword = ({ formData, onClose }) => {
     const [password, setPassword] = useState('');
@@ -28,9 +28,7 @@ const FormSetPassword = ({ formData, onClose }) => {
 
         setLoading(true);
         try {
-            const { data, error: fnErr } = await supabase.functions.invoke('set-employee-password', {
-                body: { username, password },
-            });
+            const { data, error: fnErr } = await fijarContrasenaDeEmpleado(username, password);
 
             if (fnErr) {
                 setError('Error de red: la función no respondió.');

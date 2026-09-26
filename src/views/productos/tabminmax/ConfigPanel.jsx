@@ -5,10 +5,10 @@ import useMediaQuery from '../../../plataforma/useMediaQuery';
 import Button from '../../../components/common/Button';
 import ModalShell from '../../../components/common/ModalShell';
 import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
-import { supabase } from '../../../supabaseClient';
 import { updateStockConfig } from '../../../data/stockParams';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import PortalInput from '../../../components/common/PortalInput';
+import { usuarioDeLaSesion } from '../../../data/auth';
 
 // Definido a nivel de módulo — dentro del componente, React lo recreaba en cada render
 // y desmontaba/remontaba el <input>, perdiendo el foco tras cada tecla (M-4).
@@ -42,7 +42,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
         if (Number(form.xyz_y_percentile) > 100) { setErr('El percentil de Y no puede superar 100'); return; }
         if (Number(form.approaching_pct) < 1 || Number(form.approaching_pct) > 100) { setErr('Alerta próximo debe estar entre 1 y 100%'); return; }
         setSaving(true); setErr('');
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await usuarioDeLaSesion();
         const payload = {
             cycle_days:          Number(form.cycle_days),
             reorder_x_days:      Number(form.reorder_x_days),

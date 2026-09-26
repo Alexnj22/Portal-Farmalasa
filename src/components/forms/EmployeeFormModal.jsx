@@ -34,7 +34,6 @@ import { NATIONALITY_OPTIONS } from '../../data/nationalities';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
-import { supabase } from '../../supabaseClient';
 import {
     codigoDeCarneLibre, duiDisponible, fetchCredenciales, fetchEducationCatalogEntries, fetchLastTerminationEvent,
     fetchIdentidades, fetchSalarios,
@@ -243,6 +242,7 @@ import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { NOMBRES_DE_MES, fechaTexto, hoySV } from '../../utils/fecha';
+import { analizarDocumento, leerDui } from '../../data/ia';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -1695,13 +1695,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             let aiResponse = null;
             let aiError = null;
             if (stored) {
-                ({ data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
+                ({ data: aiResponse, error: aiError } = await analizarDocumento({
                     // Los nombres SÓLO en los papeles colectivos: pedirlos en
                     // cada documento agrega trabajo al modelo para una respuesta
                     // que en un carné no se usa, y un campo que nadie mira es un
                     // campo que se llena mal sin que nadie lo note.
-                    body: { filePath: stored.path, bucketName: stored.bucket,
-                            ...(COMPARTIBLES.has(category) ? { buscarPersonas: true } : {}) }
+                    filePath: stored.path, bucketName: stored.bucket,
+                    ...(COMPARTIBLES.has(category) ? { buscarPersonas: true } : {}),
                 }));
                 if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate) {
                     expiryDate = aiResponse.aiData.expDate;
@@ -1790,7 +1790,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 setDuiCaras(null);
                 setLeyendoDui(true);
                 try {
-                    const { data, error } = await supabase.functions.invoke('leer-dui', { body: { frente: stored } });
+                    const { data, error } = await leerDui({ frente: stored });
                     aplicarLecturaDui(data, error, true);
                 } catch (errLectura) {
                     console.error('leer-dui:', errLectura);
@@ -1813,7 +1813,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         const caras = category === 'DUI_FRENTE'
                             ? { frente: stored, reverso: guardadaOtra }
                             : { frente: guardadaOtra, reverso: stored };
-                        const { data, error } = await supabase.functions.invoke('leer-dui', { body: caras });
+                        const { data, error } = await leerDui(caras);
                         // Que no se pueda leer NO es un error del alta: el
                         // documento ya quedó subido y los campos se teclean.
                         aplicarLecturaDui(data, error, false);

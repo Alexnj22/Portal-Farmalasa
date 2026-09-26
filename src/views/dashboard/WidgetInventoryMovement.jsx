@@ -9,7 +9,6 @@ import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
-import { supabase } from '../../supabaseClient';
 import LanzadorSolicitud, { PieModal, EncabezadoModal } from './LanzadorSolicitud';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -23,6 +22,7 @@ import {
     fetchPerecederos, insertMovimientoInventario, fetchSucursalEnConteo,
 } from '../../data/inventoryMovements';
 import { diasEntre, fechaNumerica, hoySV } from '../../utils/fecha';
+import { subirArchivo } from '../../utils/storageFiles';
 
 // Widget «Ajuste de Inventario».
 //
@@ -596,11 +596,9 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                 for (const [i, f] of fotos.entries()) {
                     const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
                     const path = `${carpeta}/${Date.now()}-${i}.${ext}`;
-                    const { error: errUp } = await supabase.storage
-                        .from(BUCKET_EVIDENCIA).upload(path, f, { contentType: f.type });
-                    if (errUp) throw new Error(`No se pudo subir la foto: ${errUp.message}`);
-                    const { data } = supabase.storage.from(BUCKET_EVIDENCIA).getPublicUrl(path);
-                    evidencia.push(data?.publicUrl ?? null);
+                    const url = await subirArchivo(BUCKET_EVIDENCIA, path, f, { contentType: f.type })
+                        .catch((e) => { throw new Error(`No se pudo subir la foto: ${e.message}`); });
+                    evidencia.push(url);
                 }
                 evidencia = evidencia.filter(Boolean);
                 setSubiendo(false);

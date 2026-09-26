@@ -1,28 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Button from '../common/Button';
-import { supabase } from '../../supabaseClient';
 import { Search, Loader2, ChevronLeft, ChevronRight, FlaskConical, Building2, Pill, X } from 'lucide-react';
 import Badge from '../common/Badge';
 import SearchInput from '../common/SearchInput';
 import { clickable } from '../../utils/clickable';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fechaTexto } from '../../utils/fecha';
+import { buscarEnSrs } from '../../data/srs';
 
-// Direct fetch wrapper using supabase session token
-async function srsFetch(q, page = 1) {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    const base  = import.meta.env.VITE_SUPABASE_URL;
-    const url   = `${base}/functions/v1/srs-proxy?q=${encodeURIComponent(q)}&page=${page}&page-max=10`;
-    const res   = await fetch(url, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-    });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
-    return res.json();
-}
 
 // ── SrsBuscadorWidget ─────────────────────────────────────────────────────────
 
@@ -44,7 +29,7 @@ export default function SrsBuscadorWidget({
         setLoading(true);
         setError(null);
         try {
-            const json = await srsFetch(q, pg);
+            const json = await buscarEnSrs(q, { pagina: pg, porPagina: 10 });
             setResults(json.data || []);
             setTotal(json.total || 0);
             setLastPage(json.last_page || 1);

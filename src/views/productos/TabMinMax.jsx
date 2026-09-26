@@ -7,7 +7,6 @@ import TabBarAction from '../../components/common/TabBarAction';
 import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { supabase } from '../../supabaseClient';
 import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,
@@ -45,7 +44,7 @@ import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import ConfigPanel from './tabminmax/ConfigPanel';
 import LabsPanel from './tabminmax/LabsPanel';
 import BorradoresRanura from './tabminmax/BorradoresRanura';
-import { upsertStockParams } from '../../data/stockParams';
+import { fetchProveedorPrincipal, fetchStockNetoPorSala, upsertStockParams } from '../../data/stockParams';
 import { useMinMaxData, estadoAjuste } from './tabminmax/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
@@ -513,8 +512,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const chunks = [];
                                 for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
                                 const [nsResults, spResults] = await Promise.all([
-                                    Promise.all(chunks.map(c => supabase.rpc('get_sucursal_net_stock', { p_product_ids: c }))),
-                                    Promise.all(chunks.map(c => supabase.rpc('get_top_supplier_per_product', { p_product_ids: c }))),
+                                    Promise.all(chunks.map(c => fetchStockNetoPorSala({ p_product_ids: c }))),
+                                    Promise.all(chunks.map(c => fetchProveedorPrincipal({ p_product_ids: c }))),
                                 ]);
                                 nsResults.forEach(r => { if (r.data) r.data.forEach(row => { netStockMap[row.erp_product_id] = row.net_stock; }); });
                                 spResults.forEach(r => { if (r.data) r.data.forEach(row => { supplierMap[row.erp_product_id] = row.proveedor; }); });

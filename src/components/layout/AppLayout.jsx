@@ -13,7 +13,6 @@ import {
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, BookOpen,
     Thermometer, Wallet
 } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
 import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
 import { useAuth } from '../../context/AuthContext';
 import { fetchKioskAuthCode } from '../../data/kioskAuth';
@@ -52,6 +51,7 @@ import { shortEmployeeName } from '../../utils/nameUtils';
 import { remontarAlGirar, contarRenderShell } from '../../plataforma/cajaNegra';
 import { useHayDialogo } from '../common/dialogosAbiertos';
 import { hoySV } from '../../utils/fecha';
+import { escucharCambios } from '../../data/tiempoReal';
 
 // MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
 
@@ -240,10 +240,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             setVpPending(count || 0);
         };
         load();
-        const ch = supabase.channel('vp-badge')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas_perdidas' }, load)
-            .subscribe();
-        return () => { supabase.removeChannel(ch); };
+        return escucharCambios('vp-badge', [{ tabla: 'ventas_perdidas' }], load);
     }, []);
     const navigate = useNavigate();
     const location = useLocation();

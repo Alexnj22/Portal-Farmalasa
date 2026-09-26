@@ -9,7 +9,6 @@ import {
     Package, Hash, Receipt, Tag, Percent, CheckCircle2, AlertCircle, ShoppingCart, Calculator,
     Pencil, Info, AlertTriangle, ChevronDown,
 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import PortalInput from '../components/common/PortalInput';
@@ -18,11 +17,7 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
-import {
-    fetchAllProductPreciosForCotizaciones, searchProductsActive, searchCustomersByName,
-    fetchCotizacionesList, insertCotizacion, updateCotizacion, insertCotizacionItems,
-    fetchCotizacionItems, deleteCotizacionItems,
-} from '../data/cotizaciones';
+import { deleteCotizacionItems, fetchAllProductPreciosForCotizaciones, fetchCotizacionItems, fetchCotizacionesList, insertCotizacion, insertCotizacionItems, searchCustomersByName, searchProductsActive, siguienteNumeroDeCotizacion, updateCotizacion } from '../data/cotizaciones';
 import { fetchBranchesBasic } from '../data/system';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { clickable } from '../utils/clickable';
@@ -623,7 +618,7 @@ export default function CotizacionesView() {
         if (items.length === 0) { setSaveError('Agrega al menos un producto.'); return; }
         setSaveError(''); setSaving(true);
         try {
-            const { data: numData, error: numErr } = await supabase.rpc('next_cotizacion_numero');
+            const { data: numData, error: numErr } = await siguienteNumeroDeCotizacion();
             if (numErr) throw numErr;
             const { data: cotData, error: cotErr } = await insertCotizacion({ numero: numData, ...buildPayload() });
             if (cotErr) throw cotErr;

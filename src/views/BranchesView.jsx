@@ -22,9 +22,9 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 
-import { supabase } from '../supabaseClient';
 import { smartFilter } from '../utils/searchUtils';
 import { fechaTexto } from '../utils/fecha';
+import { analizarSucursal } from '../data/ia';
 
 const FILTER_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -293,9 +293,7 @@ const BranchCard = memo(({
                 progresoExpediente: `Documentos Legales: ${completion.legal}%, Datos del Local: ${completion.property}%, Servicios Básicos: ${completion.services}%`
             };
 
-            const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-branch', {
-                body: { branchName: branch.name, branchData: JSON.stringify(snapshotData) } 
-            });
+            const { data: aiResponse, error: aiError } = await analizarSucursal({ branchName: branch.name, branchData: JSON.stringify(snapshotData) });
 
             if (aiError) throw new Error(aiError.message);
             if (!aiResponse?.success) throw new Error("Fallo en la generación del resumen.");

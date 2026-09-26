@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import { supabase } from '../../supabaseClient';
 import {
     AlertTriangle, Calendar, CalendarClock, Loader2, Package, PackageX,
     Building2, X, ChevronLeft, ChevronRight, ChevronDown, DollarSign,
@@ -16,10 +15,7 @@ import ExpedienteMovil from '../../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import { buscarIdsDeProducto } from '../../data/busquedaProductos';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
-import {
-    fetchInventorySyncLog, fetchProductCategories, fetchAllVencidosInventory,
-    fetchExpiredInventoryCount, fetchInventoryDetail,
-} from '../../data/inventarioTab';
+import { fetchAllVencidosInventory, fetchExpiredInventoryCount, fetchInventarioAgrupado, fetchInventarioInversion, fetchInventarioProximosAVencer, fetchInventoryDetail, fetchInventorySyncLog, fetchProductCategories } from '../../data/inventarioTab';
 import { fetchLaboratoriosBasic } from '../../data/laboratorios';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
@@ -259,7 +255,7 @@ export default function TabInventario({ searchTerm = '' }) {
             // borraba el punto y convertía «2.5» en «25» (1,099 filas de más).
             // La cuarta llamada sólo pregunta si lo que salió es aproximado.
             const [{ data, error }, smResult, invResult, parecidos] = await Promise.all([
-                supabase.rpc('inventory_grouped', {
+                fetchInventarioAgrupado({
                     p_erp_id:         erpId,
                     p_vencidos:       fVenc,
                     p_proximos:       fSix,
@@ -272,13 +268,13 @@ export default function TabInventario({ searchTerm = '' }) {
                     p_limit:     ps,
                     p_offset:    (pg - 1) * ps,
                 }),
-                supabase.rpc('inventory_proximos_count', {
+                fetchInventarioProximosAVencer({
                     p_erp_id:    erpId,
                     p_lab_id:    labId,
                     p_categoria: catId,
                     p_search:    q?.trim() || null,
                 }),
-                supabase.rpc('inventory_inversion', {
+                fetchInventarioInversion({
                     p_erp_id:    erpId,
                     p_lab_id:    labId,
                     p_categoria: catId,

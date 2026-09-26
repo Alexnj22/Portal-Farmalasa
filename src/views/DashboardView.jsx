@@ -45,7 +45,6 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { REQUEST_TYPES } from '../store/slices/requestsSlice';
-import { supabase } from '../supabaseClient';
 import GlassViewLayout from '../components/GlassViewLayout';
 import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
 import SearchInput from '../components/common/SearchInput';
@@ -103,6 +102,7 @@ import {
     hospedaBaldosasDeSucursal,
 } from '../constants/dashboardTabs';
 import { fechaTexto } from '../utils/fecha';
+import { fetchTopProductosDelMes } from '../data/ventas';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
@@ -2002,7 +2002,7 @@ const DashboardView = ({ openModal }) => {
     const fini = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const ffin = localDateStr();
     setTopProdLoading(true);
-    supabase.rpc('get_top_productos_mes', { p_fini: fini, p_ffin: ffin, p_limite: 10 })
+    fetchTopProductosDelMes({ p_fini: fini, p_ffin: ffin, p_limite: 10 })
       .then(({ data, error }) => {
         if (error) console.error('[top_productos]', error);
         setTopProductos(data || []);

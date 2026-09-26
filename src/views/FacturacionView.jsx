@@ -12,7 +12,6 @@ import {
     ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, Copy, Info,
     ShieldCheck
 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -27,7 +26,7 @@ import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/comm
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../components/common/usarExpediente';
 import TablePagination from '../components/common/TablePagination';
-import { openStoredFile } from '../utils/storageFiles';
+import { openStoredFile, subirArchivo } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
 import FileField from '../components/common/FileField';
 import PortalTextarea from '../components/common/PortalTextarea';
@@ -2161,11 +2160,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
             // Compiler ya documentado); al migrar a `FileField` ese ref desapareció
             // y el linter pasa a ver el archivo entero.
             const path = `invoices/${invoiceId}/${Date.now()}.${ext}`;
-            const { error: upErr } = await supabase.storage.from('payment-proofs').upload(path, confirmFile);
-            if (!upErr) {
-                const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(path);
-                proofUrl = urlData?.publicUrl || null;
-            }
+            // Si la subida falla se sigue SIN comprobante, como siempre fue.
+            proofUrl = await subirArchivo('payment-proofs', path, confirmFile).catch(() => null);
         }
 
         const inv = pending.find(r => r.id === invoiceId);

@@ -2,13 +2,13 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { X, MapPin, CheckCircle2, Clock, Crosshair, Truck, Radio, RefreshCw } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
 import PedidoModal from './PedidoModal';
 import { loadGoogleMaps, loadLeaflet } from '../../plataforma/mapas';
 import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { hora12 } from '../../utils/hora';
+import { escucharCambios } from '../../data/tiempoReal';
 
 // Capacitor geolocation nativa — solo disponible en app nativa (Android/iOS)
 const isNative = !!(window.Capacitor?.isNativePlatform?.());
@@ -70,16 +70,13 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   // ── Suscripción live a ruta_pedidos (actualiza marcadores sin reabrir modal) ─
   useEffect(() => {
     if (!open || !ruta?.id) return;
-    const ch = supabase.channel(`ruta-stops-live-${ruta.id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ruta_pedidos',
-        filter: `ruta_id=eq.${ruta.id}` }, (payload) => {
+    return escucharCambios(`ruta-stops-live-${ruta.id}`,
+      [{ tabla: 'ruta_pedidos', evento: 'UPDATE', filtro: `ruta_id=eq.${ruta.id}` }], (payload) => {
         setLocalParadas(prev => {
           const base = prev ?? [...(ruta?.ruta_pedidos ?? [])];
           return base.map(s => s.id === payload.new.id ? { ...s, ...payload.new } : s);
         });
-      })
-      .subscribe();
-    return () => supabase.removeChannel(ch);
+      });
   }, [open, ruta?.id]); // eslint-disable-line
 
   // ── Reset al cerrar ─────────────────────────────────────────────────────────
@@ -215,19 +212,13 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
         setDriverOnline(ageMin < 3);
       });
 
-    const channel = supabase.channel(`ruta-loc-${ruta.id}`)
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'ruta_locations',
-        filter: `ruta_id=eq.${ruta.id}`,
-      }, ({ new: row }) => {
+    return escucharCambios(`ruta-loc-${ruta.id}`,
+      [{ tabla: 'ruta_locations', filtro: `ruta_id=eq.${ruta.id}` }], ({ new: row }) => {
         if (row?.lat != null && row?.lng != null) {
           setDriverPos({ lat: parseFloat(row.lat), lng: parseFloat(row.lng) });
           setDriverOnline(true);
         }
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+      });
   }, [open, isConductor, ruta.id]);
 
   // ── Conductor: escribir posición en DB cada 30 s ───────────────────────────

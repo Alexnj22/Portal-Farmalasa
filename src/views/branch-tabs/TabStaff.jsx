@@ -15,10 +15,11 @@ import AlertModal from '../../components/common/AlertModal';
 import Notice from '../../components/common/Notice';
 import { calculateMinimumStaff } from '../../utils/staffHelpers';
 
-import { supabase } from '../../supabaseClient';
 import { fetchBranchHourlySalesAll } from '../../data/schedules';
 import { clickable } from '../../utils/clickable';
 import { fechaTexto, hoySV } from '../../utils/fecha';
+import { analizarSucursal } from '../../data/ia';
+import { sincronizarVentasDeSucursal } from '../../data/branches';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS
@@ -225,7 +226,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                     fechaF: chunk.f,
                 };
 
-                const { data, error } = await supabase.functions.invoke('sync-wfm-sales', { body: payload });
+                const { data, error } = await sincronizarVentasDeSucursal(payload);
 
                 if (error) {
                     let errorMsg = error.message;
@@ -451,11 +452,9 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 cumplimientoLegal: `${complianceScore}%`
             };
 
-            const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-branch', {
-                body: {
-                    branchName: liveBranch?.name || 'la sucursal',
-                    branchData: JSON.stringify(wfmSnapshot)
-                }
+            const { data: aiResponse, error: aiError } = await analizarSucursal({
+                branchName: liveBranch?.name || 'la sucursal',
+                branchData: JSON.stringify(wfmSnapshot),
             });
 
             if (aiError) throw new Error(aiError.message);

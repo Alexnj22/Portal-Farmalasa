@@ -80,6 +80,9 @@ export const AREAS = [
         rutas: ['(todas)'],
         archivos: [
             'src/App.jsx', 'src/main.jsx', 'src/supabaseClient.js', 'src/entorno.js', 'src/version.js',
+            // Servicios compartidos que salieron de las pantallas (F3 del núcleo portable):
+            // tiempo real y lo que se le pide a la IA, que usan varias áreas.
+            'src/data/tiempoReal.js', 'src/data/ia.js',
             'src/plataforma/',   // adaptadores del núcleo portable (docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md)
             'src/components/common/', 'src/components/layout/', 'src/components/GlassViewLayout.jsx',
             'src/components/MotionProvider.jsx', 'src/components/UnifiedModal.jsx',
@@ -621,6 +624,7 @@ export const AREAS = [
             'src/views/productos/TabPoliticaVencimiento.jsx',
             'src/views/LaboratoriosView.jsx',
             'src/data/productos.js', 'src/data/presentaciones.js', 'src/data/laboratorios.js',
+            'src/data/srs.js',   // el registro sanitario (salió de 3 copias en pantallas, F3)
             'src/data/minmaxLabs.js',
             'src/utils/presentacion.js', 'src/utils/unidadesInventario.js',
         ],

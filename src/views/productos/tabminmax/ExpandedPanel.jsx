@@ -6,7 +6,6 @@ import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Package, Building2, CheckCircle2, TrendingDown } from 'lucide-react';
-import { supabase } from '../../../supabaseClient';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useAuth } from '../../../context/AuthContext';
 import { useNowTick } from '../../../hooks/useNowTick';
@@ -14,7 +13,7 @@ import { ERP_NAMES, ERP_ORDER, ALERT } from './constants';
 import { sortedPres, formatDominant } from './helpers';
 import StockBar from './StockBar';
 import AbcXyzBadge from './AbcXyzBadge';
-import { fetchStockParamsHistory, fetchProductCostHistory } from '../../../data/stockParams';
+import { fetchLotesPorVencer, fetchPoliticaDeVencimiento, fetchProductCostHistory, fetchResumenDelProductoPorSala, fetchStockParamsHistory, fetchUltimasVentasDelProducto } from '../../../data/stockParams';
 import { formatMoney } from '../../../utils/formatNumber';
 import { fechaTexto } from '../../../utils/fecha';
 
@@ -65,24 +64,24 @@ export default function ExpandedPanel({ row, cycleDays }) {
         setBranchReady(false); // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar de producto
         setDetailReady(false);
 
-        supabase.rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id })
+        fetchResumenDelProductoPorSala({ p_erp_product_id: row.erp_product_id })
             .then(({ data }) => {
                 setBranchData(data || []);
                 setBranchReady(true);
             });
 
         Promise.all([
-            supabase.rpc('get_product_expiring_lots', { p_erp_product_id: row.erp_product_id }),
+            fetchLotesPorVencer({ p_erp_product_id: row.erp_product_id }),
             fetchStockParamsHistory(row.erp_product_id, row._erp_sucursal_id),
             canSeeCosts
                 ? fetchProductCostHistory(row.erp_product_id)
                 : Promise.resolve({ data: [] }),
             canSeeCosts
-                ? supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id === 6 ? null : row._erp_sucursal_id })
+                ? fetchUltimasVentasDelProducto({ p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id === 6 ? null : row._erp_sucursal_id })
                 : Promise.resolve({ data: [] }),
             // 7B.2: política de vencimiento/devolución resuelta (laboratorio →
             // viñeta del proveedor, con ND a nivel de producto como excepción).
-            supabase.rpc('get_product_vencimiento_policy', { p_erp_product_id: row.erp_product_id }),
+            fetchPoliticaDeVencimiento({ p_erp_product_id: row.erp_product_id }),
         ]).then(([{ data: eData }, { data: hData }, { data: pData }, { data: sData }, { data: polData }]) => {
             setExpiryData(eData || []);
             setHistoryData(hData || []);

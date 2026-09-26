@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
-import { supabase } from '../../supabaseClient';
 import {
     X, FlaskConical, Loader2, Check, SkipForward,
     ChevronRight, AlertTriangle, Zap, Search, Package, Plus,
@@ -14,6 +13,7 @@ import {
 } from '../../data/productos';
 import PortalInput from '../common/PortalInput';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { buscarEnSrs } from '../../data/srs';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -112,7 +112,7 @@ async function srsFetchMulti(product) {
     for (const q of strategies) {
         if (seen.has(q) || !q.trim()) continue;
         seen.add(q);
-        const json = await srsFetch(q, 1, 15);
+        const json = await buscarEnSrs(q, { porPagina: 15 });
         if ((json.data || []).length > 0) return json;
     }
     return { data: [], total: 0 };
@@ -155,21 +155,6 @@ function buildPaText(principios) {
     return principios.map(p => [p.nombre, p.concentracion].filter(Boolean).join(' ')).join(', ');
 }
 
-// ── SRS fetch via edge function ───────────────────────────────────────────────
-
-async function srsFetch(q, page = 1, pageMax = 15) {
-    const { data: { session } } = await supabase.auth.getSession();
-    const base = import.meta.env.VITE_SUPABASE_URL;
-    const url  = `${base}/functions/v1/srs-proxy?q=${encodeURIComponent(q)}&page=${page}&page-max=${pageMax}`;
-    const res  = await fetch(url, {
-        headers: {
-            Authorization: `Bearer ${session?.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-    });
-    if (!res.ok) throw new Error(`SRS ${res.status}`);
-    return res.json();
-}
 
 // ── Save to Supabase ──────────────────────────────────────────────────────────
 

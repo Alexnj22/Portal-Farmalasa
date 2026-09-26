@@ -8,7 +8,6 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import LiquidModal from "./common/LiquidModal";
 import { useToastStore } from '../store/toastStore';
 import { LoadingState } from './common/StateViews';
-import { supabase } from '../supabaseClient';
 import useMontadoParaSalida from '../plataforma/useMontadoParaSalida';
 import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
@@ -18,6 +17,8 @@ import { clearDraft } from '../utils/draftUtils';
 import useBorrador from '../hooks/useBorrador';
 import AvisoDeBorrador from './common/AvisoDeBorrador';
 import { SENSITIVE_FIELDS } from '../store/utils';
+import { subirArchivo } from '../utils/storageFiles';
+import { analizarDocumento } from '../data/ia';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -647,22 +648,12 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         const fileExt = docData.file.name.split('.').pop();
                         const filePath = `branches/${targetBranchId}/customDocs/${docId}_${Date.now()}.${fileExt}`;
 
-                        const { error: uploadError } = await supabase.storage
-                            .from(NOMBRE_DEL_BUCKET)
-                            .upload(filePath, docData.file, { upsert: true });
+                        const publicUrl = await subirArchivo(NOMBRE_DEL_BUCKET, filePath, docData.file, { upsert: true });
 
-                        if (uploadError) throw new Error(uploadError.message || "No se pudo subir el archivo.");
-
-                        const { data: publicUrlData } = supabase.storage
-                            .from(NOMBRE_DEL_BUCKET)
-                            .getPublicUrl(filePath);
-
-                        fileUrl = publicUrlData.publicUrl;
+                        fileUrl = publicUrl;
 
                         try {
-                            const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
-                                body: { filePath: filePath, bucketName: NOMBRE_DEL_BUCKET }
-                            });
+                            const { data: aiResponse, error: aiError } = await analizarDocumento({ filePath: filePath, bucketName: NOMBRE_DEL_BUCKET });
 
                             if (!aiError && aiResponse?.success && aiResponse.aiData) {
                                 aiSummary = aiResponse.aiData.aiSummary;

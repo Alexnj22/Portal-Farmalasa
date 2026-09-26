@@ -11,7 +11,6 @@ import { solicitarMinMax } from '../../data/minmaxRequests';
 import FilterBar from '../../components/common/FilterBar';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { supabase } from '../../supabaseClient';
 import { fetchMinMaxIgnored, upsertMinMaxIgnored, deleteMinMaxIgnored } from '../../data/stockParams';
 import { smartFilter } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
@@ -19,6 +18,7 @@ import { exportCsv } from '../../utils/csvExport';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { ERP_NAMES, ERP_ORDER } from './salasDeStock';
 import { hoySV } from '../../utils/fecha';
+import { fetchVendidosSinMinMax } from '../../data/inventarioTab';
 
 // units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
 // Los umbrales están calibrados para eso: 2 cajas/mes es demanda retail real.
@@ -127,7 +127,7 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
     const pedir = useCallback(() => {
         const id = ++pedido.current;
         return Promise.all([
-            supabase.rpc('get_products_sold_no_minmax_jsonb', { p_erp_sucursal_id: sala }),
+            fetchVendidosSinMinMax({ p_erp_sucursal_id: sala }),
             fetchMinMaxIgnored(sala),
         ]).then(([{ data, error: e }, ign]) => {
             if (id !== pedido.current) return;

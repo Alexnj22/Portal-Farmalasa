@@ -88,3 +88,7 @@ export function fetchBranchExpensesHistory(branchId) {
         .order('billing_month', { ascending: true })
         .limit(100);
 }
+
+/** Trae las ventas de una sucursal desde el sistema de origen. `{ data, error }`. */
+export const sincronizarVentasDeSucursal = (payload) =>
+    supabase.functions.invoke('sync-wfm-sales', { body: payload });

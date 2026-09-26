@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import { clickable } from '../../utils/clickable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch } from '../../utils/searchUtils';
-import { supabase } from '../../supabaseClient';
 import useCapaFlotante from '../../plataforma/capaFlotante';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
@@ -19,12 +18,7 @@ import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
 import { useSearchToggle } from '../../plataforma/useSearchToggle';
-import {
-    fetchProductPreciosOpts, fetchProductPreciosOptsForProducts,
-    searchAvailableProducts, fetchLastDispatchInfo,
-    agregarExtraAPedido, actualizarExtraDePedido, quitarExtraDePedido,
-    corregirRecepcionDeItem,
-} from '../../data/recepcion';
+import { actualizarExtraDePedido, agregarExtraAPedido, corregirRecepcionDeItem, fetchLastDispatchInfo, fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, quitarExtraDePedido, recibirPedidoDeSucursal, searchAvailableProducts } from '../../data/recepcion';
 import { updatePedidoSucursalStatus, recibirTrasladoPedido } from '../../data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import ConfirmModal from '../../components/common/ConfirmModal';
@@ -1180,7 +1174,7 @@ export default function RecepcionModal({
         setSaving(true); setSaveError(null);
         try {
             const p_items = buildPItems([row]);
-            const { error } = await supabase.rpc('receive_pedido_sucursal', {
+            const { error } = await recibirPedidoDeSucursal({
                 p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
                 p_items, p_received_by: user?.id ?? null,
             });
@@ -1357,7 +1351,7 @@ export default function RecepcionModal({
         const p_items = buildPItems(rowsToSave);
 
         try {
-            const { error } = await supabase.rpc('receive_pedido_sucursal', {
+            const { error } = await recibirPedidoDeSucursal({
                 p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
                 p_items, p_received_by: user?.id ?? null,
             });
@@ -1417,7 +1411,7 @@ export default function RecepcionModal({
         });
 
         try {
-            const { error } = await supabase.rpc('receive_pedido_sucursal', {
+            const { error } = await recibirPedidoDeSucursal({
                 p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
                 p_items, p_received_by: user?.id ?? null,
             });
@@ -1501,7 +1495,7 @@ export default function RecepcionModal({
             }
 
             if (p_items.length) {
-                const { error } = await supabase.rpc('receive_pedido_sucursal', {
+                const { error } = await recibirPedidoDeSucursal({
                     p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
                     p_items, p_received_by: user?.id ?? null,
                 });

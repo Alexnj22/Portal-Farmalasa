@@ -8,7 +8,6 @@ import StatCard from '../../components/common/StatCard';
 import FilterBar from '../../components/common/FilterBar';
 import { EmptyState } from '../../components/common/StateViews';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { insertMinMaxChangeRequest } from '../../data/minmaxRequests';
@@ -20,6 +19,7 @@ import { fetchUnidadDeDespacho } from '../../data/inventory';
 import { nombreDeDespacho, paraBodega, esPocoParaMandar } from '../../utils/unidadDeDespacho';
 import { ERP_NAMES, ERP_ORDER, ERP_BODEGA, MI_ERP_POR_BRANCH, SUC_VARIANTE } from './salasDeStock';
 import { fechaTexto, hoySV } from '../../utils/fecha';
+import { fetchProductosParadosDeSala } from '../../data/inventarioTab';
 
 const EnviarProductoModal = lazy(() => import('../dashboard/EnviarProductoModal'));
 
@@ -120,7 +120,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
      * (`key={sala}` en la vista), así que no hay nada que limpiar. */
     const pedir = useCallback(() => {
         const id = ++pedido.current;
-        return supabase.rpc('productos_parados_de_sala', { p_erp_sucursal_id: sala }).then(({ data, error: e }) => {
+        return fetchProductosParadosDeSala({ p_erp_sucursal_id: sala }).then(({ data, error: e }) => {
             if (id !== pedido.current) return;
             if (e) { setError(e.message); setCargando(false); return; }
             const rows = Array.isArray(data) ? data : [];

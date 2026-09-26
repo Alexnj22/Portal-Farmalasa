@@ -67,3 +67,21 @@ export function fetchInventoryDetail(erpId, productId, isVencidos) {
         .gt('cantidad', 0)
         .order('presentacion').order('lote');
 }
+
+// ── Llamadas que vivían en las pantallas (F3 del núcleo portable) ──────────
+// Reciben los parámetros de la función tal cual y devuelven `{ data, error }`.
+
+/** Una página del inventario agrupado por producto, con sus filtros y orden. */
+export const fetchInventarioAgrupado = (params) => supabase.rpc('inventory_grouped', params);
+
+/** Cuántos productos vencen pronto, con los mismos filtros de la tabla. */
+export const fetchInventarioProximosAVencer = (params) => supabase.rpc('inventory_proximos_count', params);
+
+/** La inversión en inventario, con los mismos filtros de la tabla. */
+export const fetchInventarioInversion = (params) => supabase.rpc('inventory_inversion', params);
+
+/** Los productos con existencia y sin venta de una sala (`p_erp_sucursal_id`). */
+export const fetchProductosParadosDeSala = (params) => supabase.rpc('productos_parados_de_sala', params);
+
+/** Lo que se vende en una sala y no tiene MIN·MAX (`p_erp_sucursal_id`). */
+export const fetchVendidosSinMinMax = (params) => supabase.rpc('get_products_sold_no_minmax_jsonb', params);

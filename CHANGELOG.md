@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.25 — F3 tanda 1: las pantallas chicas dejan de hablarle a la base
+
+Sin cambios visibles. **31 pantallas** dejan de importar el cliente de la base:
+`gate:consultas` baja de **103 a 45 usos** (35 → 3 archivos: quedan Ventas,
+Pedidos y Mín·Máx, que son las tandas siguientes).
+
+Lo que se unificó en el camino, además de mudar:
+- **`subirArchivo`** (`utils/storageFiles.js`): subir y devolver la URL que se
+  guarda estaba escrito a mano en 5 pantallas (y 9 funciones del núcleo, que
+  van en otra tanda).
+- **`buscarEnSrs`** (`data/srs.js`): la búsqueda en el registro sanitario
+  estaba COPIADA tres veces, cada copia leyendo la dirección y la llave del
+  navegador.
+- **`escucharCambios`** (`data/tiempoReal.js`): los 5 canales de tiempo real.
+- `data/ia.js` (análisis de documentos, DUI, sucursal, historial, Saly), y en
+  `data/auth.js` la contraseña y el usuario de la sesión.
+- 21 consultas `rpc` a su módulo de `src/data`, con nombre en español y los
+  mismos parámetros.
+
+Anotado, sin cambiar: en Facturación, si falla la subida del comprobante de
+pago, el pago se confirma SIN comprobante y sin avisar. Se conservó así hasta
+que el usuario lo decida.
+
+Verificado: lint sin errores nuevos, 2,911 pruebas, gates, compilación y 16
+vistas recorridas contra la base de pruebas.
+
 ## v2.1075.24 — F3: gate:consultas — las pantallas no le hablan a la base
 
 Arranca F3 del núcleo portable. Una consulta escrita dentro de una pantalla

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Button from '../../components/common/Button';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { Truck, CheckCircle2, Home, Play, Plus, ChevronDown, ChevronUp, Navigation, Map, Search } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
 import { tokenMatch } from '../../utils/searchUtils';
 import { clickable } from '../../utils/clickable';
 import { useAuth } from '../../context/AuthContext';
@@ -25,6 +24,7 @@ import {
 import { avisarSalidaALasSalas } from '../../utils/avisoSalidaPedido';
 import { metaDePedido } from '../../utils/avisosDeOperacion';
 import { hora12 } from '../../utils/hora';
+import { escucharCambios } from '../../data/tiempoReal';
 
 const STATUS_BADGE = {
   pendiente:  { label: 'Pendiente',  variante: 'warning' },
@@ -310,12 +310,7 @@ export default function TabRutas({ searchTerm = '' }) {
 
   // Realtime: recarga cuando cambia el estado de rutas o paradas
   useEffect(() => {
-    const ch = supabase
-      .channel('rutas-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rutas' }, () => loadRutas())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_pedidos' }, () => loadRutas())
-      .subscribe();
-    return () => supabase.removeChannel(ch);
+    return escucharCambios('rutas-realtime', [{ tabla: 'rutas' }, { tabla: 'ruta_pedidos' }], () => loadRutas());
   }, [loadRutas]);
 
   // Search filter

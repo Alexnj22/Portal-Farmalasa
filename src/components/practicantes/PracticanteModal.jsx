@@ -9,7 +9,6 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
 import { CatalogSelect, CatalogOtherInput } from '../common/CatalogSelect';
 import { inputHoverClass } from '../../utils/inputStyles';
-import { supabase } from '../../supabaseClient';
 import { fetchInstitucionCatalogValues } from '../../data/practicantes';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -21,6 +20,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { subirArchivo } from '../../utils/storageFiles';
 
 const ESTADO_OPTIONS = [
     { value: 'ACTIVO', label: 'Activo' },
@@ -172,10 +172,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                 const ext = convenioFile.name.split('.').pop() || 'pdf';
                 const folder = practicante?.id || crypto.randomUUID();
                 const path = `practicantes/${folder}/convenio_${Date.now()}.${ext}`;
-                const { error: upErr } = await supabase.storage.from('documents').upload(path, convenioFile);
-                if (upErr) throw upErr;
-                const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
-                convenioUrl = urlData?.publicUrl || convenioUrl;
+                convenioUrl = (await subirArchivo('documents', path, convenioFile)) || convenioUrl;
             }
 
             const payload = {

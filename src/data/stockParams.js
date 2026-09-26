@@ -266,3 +266,24 @@ export async function fetchQuiebresSala(erpSucursalId, dias = 30) {
     if (error) return { data: null, error };
     return { data: { ...data, filas: data?.filas ?? [] }, error: null };
 }
+
+// ── Llamadas que vivían en las pantallas (F3 del núcleo portable) ──────────
+// Reciben los parámetros de la función tal cual y devuelven `{ data, error }`.
+
+/** El stock neto por sala de un lote de productos (`p_product_ids`, ≤1000). */
+export const fetchStockNetoPorSala = (params) => supabase.rpc('get_sucursal_net_stock', params);
+
+/** El proveedor principal de un lote de productos (`p_product_ids`, ≤1000). */
+export const fetchProveedorPrincipal = (params) => supabase.rpc('get_top_supplier_per_product', params);
+
+/** Existencias y ventas de un producto en cada sala (`p_erp_product_id`). */
+export const fetchResumenDelProductoPorSala = (params) => supabase.rpc('get_product_branch_summary', params);
+
+/** Los lotes de un producto que vencen pronto (`p_erp_product_id`). */
+export const fetchLotesPorVencer = (params) => supabase.rpc('get_product_expiring_lots', params);
+
+/** Las últimas ventas de un producto, en una sala o en todas. */
+export const fetchUltimasVentasDelProducto = (params) => supabase.rpc('get_product_last_sales', params);
+
+/** La política de vencimiento y devolución de un producto. */
+export const fetchPoliticaDeVencimiento = (params) => supabase.rpc('get_product_vencimiento_policy', params);

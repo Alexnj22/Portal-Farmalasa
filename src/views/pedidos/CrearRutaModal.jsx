@@ -5,7 +5,6 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
 import { signPhotosDeep } from '../../utils/storageFiles';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -13,10 +12,7 @@ import { notifyBranch } from '../../utils/notify';
 import PedidoModal from './PedidoModal';
 import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '../../utils/routeOptimizer';
 import { loadGoogleMaps, loadLeaflet, matrizPorCarretera } from '../../plataforma/mapas';
-import {
-    fetchEmployeeDriverInfo, fetchPedidosDisponiblesParaRuta, fetchPedidoSucursalStatusFinalizados,
-    fetchSucursalesConCoords, updateRutaStatus, fetchBranchIdsForSucursales,
-} from '../../data/pedidos';
+import { crearRuta, fetchBranchIdsForSucursales, fetchEmployeeDriverInfo, fetchPedidoSucursalStatusFinalizados, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '../../data/pedidos';
 
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
@@ -431,7 +427,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
 
       const totals = totalRoute(paradas.filter(s => s.dist_m != null));
 
-      const { data: rutaId, error } = await supabase.rpc('crear_ruta', {
+      const { data: rutaId, error } = await crearRuta({
         p_conductor_id:      user?.id ?? null,
         p_conductor_nombre:  conductorNombre,
         p_paradas:           rpcParadas,

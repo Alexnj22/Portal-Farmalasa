@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Bell, BellOff, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
 import { fetchInventorySyncLogRecent } from '../../data/inventory';
 import { usePushSubscription } from '../../plataforma/usePushSubscription';
 import { useNowTick } from '../../hooks/useNowTick';
 import { useAuth } from '../../context/AuthContext';
+import { escucharCambios } from '../../data/tiempoReal';
 
 const WARN_MINS  = 8;
 const STALE_MINS = 15;
@@ -56,11 +56,9 @@ export default function SidebarSyncStatus() {
     if (!veDatos) return undefined;
     fetchLatest(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
     const timer = setInterval(fetchLatest, 90_000);
-    const channel = supabase
-      .channel('sidebar-sync-status')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inventory_sync_log' }, aplicarEvento)
-      .subscribe();
-    return () => { clearInterval(timer); supabase.removeChannel(channel); };
+    const cerrar = escucharCambios('sidebar-sync-status',
+      [{ tabla: 'inventory_sync_log', evento: 'INSERT' }], aplicarEvento);
+    return () => { clearInterval(timer); cerrar(); };
   }, [fetchLatest, aplicarEvento, veDatos]);
 
   const now       = useNowTick();

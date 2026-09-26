@@ -13,6 +13,21 @@ import * as almacen from '../plataforma/almacen';
 const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados', 'purchase-dte', 'sales-dte', 'inventario-evidencia'];
 const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?.*)?$/;
 
+/**
+ * Sube un archivo y devuelve su URL formato-public: el IDENTIFICADOR que se
+ * guarda en la base (nunca una firmada, que expira). Lanza si la subida falla.
+ *
+ * La subida estaba escrita a mano en catorce lugares —cinco pantallas y nueve
+ * funciones del núcleo—, cada uno con su manejo del error y de la URL. Es la
+ * pieza que la app del teléfono necesita tal cual (F3 del núcleo portable).
+ */
+export async function subirArchivo(bucket, path, archivo, { upsert = false, contentType } = {}) {
+    const { error } = await supabase.storage.from(bucket)
+        .upload(path, archivo, { upsert, ...(contentType ? { contentType } : {}) });
+    if (error) throw new Error(error.message || 'No se pudo subir el archivo.');
+    return supabase.storage.from(bucket).getPublicUrl(path).data?.publicUrl ?? null;
+}
+
 // Extrae {bucket, path} de una URL formato-public de Supabase Storage — para
 // llamar edge functions que necesitan el path crudo (ej. analyze-document),
 // no la URL. Devuelve null si no matchea (URL externa, o ya no es de storage).

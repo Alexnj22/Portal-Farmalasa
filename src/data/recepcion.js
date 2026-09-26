@@ -121,3 +121,9 @@ export function corregirRecepcionDeItem({ itemId, cantidad, nota }) {
         p_nota: nota ?? null,
     });
 }
+
+// ── Llamadas que vivían en las pantallas (F3 del núcleo portable) ──────────
+// Reciben los parámetros de la función tal cual y devuelven `{ data, error }`.
+
+/** Registra lo que recibió una sala de un pedido. */
+export const recibirPedidoDeSucursal = (params) => supabase.rpc('receive_pedido_sucursal', params);

@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
-import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -25,6 +24,7 @@ import {
 import { clickable } from '../utils/clickable';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '../utils/nameUtils';
+import { preguntarASaly } from '../data/ia';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
 const SUPERVISOR_DE_JEFE = {
@@ -562,9 +562,7 @@ export default function EncuestaView() {
         const surveyId = selectedSurveyIdRef.current;
         setLoadingAi(p => ({ ...p, [segment]: true }));
         try {
-            const { data, error } = await supabase.functions.invoke('saly-ai', {
-                body: { action: 'analyze-survey-comments', payload: { comments, segment } },
-            });
+            const { data, error } = await preguntarASaly({ action: 'analyze-survey-comments', payload: { comments, segment } });
             if (error) throw error;
             const summary = data.aiSummary || 'Sin respuesta.';
             setAiSummaries(prev => ({ ...prev, [segment]: summary }));

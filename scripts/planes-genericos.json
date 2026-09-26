@@ -1,7 +1,7 @@
 {
  "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
- "actualizado": "2026-09-25",
- "medidas": 43,
+ "actualizado": "2026-09-26",
+ "medidas": 44,
  "sin_medir": 23,
  "funciones": {
   "auth_module_scope": {
@@ -399,6 +399,12 @@
    "casos": "pedido reciente, sala 1",
    "divergencia": null,
    "nota": "barrido"
+  },
+  "resumen_ingreso_pedidos": {
+   "ms": "26",
+   "casos": "20 pedidos reales · 1,343 bloques",
+   "divergencia": null,
+   "nota": "medida el 2026-09-26 con el plan GENÉRICO forzado (force_generic_plan): 26 ms, bitmap por idx_pedido_items_pedido_status y pedido_traslado_linea_hoja_idx + hash join. El plan no depende de cuántos pedidos lleguen en el arreglo: con el genérico ya entra por índice en las dos tablas. Se reescribió ese día (antes 16,445 bloques, buscando el ítem de cada renglón por su llave)."
   }
  },
  "_2026_09_02_el_ms_no_alcanza": "get_top_supplier_per_product y get_sucursal_net_stock SALEN de esta lista: se pasaron a plpgsql con plan_cache_mode='force_custom_plan' (migración 20260902153208). Las dos TENÍAN el defecto y esta lista las daba por sanas — la primera con «19 ms» y la segunda con «costo despreciable». El número no estaba mal: con la caché caliente el plan malo cuesta 43 ms. Lo que estaba mal es el CRITERIO. La auditoría del 25-ago descartaba candidatas por TIEMPO («bajo 200 ms no hace falta medirla a fondo»), y el tiempo sobre una base en reposo no puede ver una diferencia de 61× en TRABAJO: 48,441 bloques contra 791 para devolver las mismas 1,000 filas. La primera llamada del día, con lo que sí hay que ir a buscar al disco, costó 876 ms. El hallazgo salió de la sección F de gate:perf (bloques por llamada), no de ésta. PENDIENTE: quedan 12 funciones de esta lista con un parámetro de ARRAY — la forma donde el plan genérico más se equivoca, porque estima la lista en 127 filas sin verla. Ninguna está medida POR BLOQUES.",

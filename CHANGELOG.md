@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.22 — gate:perf en verde: la foto diaria auditada, puntos declarado hasta el arranque
+
+Cierra los cinco hallazgos que `gate:perf` levantó el 26-sep. Sin cambios de
+código; los arreglos de verdad están en v2.1075.18, v2.1075.20 y v2.1075.21.
+
+- `inventory_daily_snapshot`: **auditada** (deja de ser deuda) y techo 90,000
+  bloques con decisión del usuario —el peso es escribir la foto diaria, crece
+  con el catálogo; ordenar la inserción se midió y no ayuda—.
+- `resumen_ingreso_pedidos` declarada en `planes-genericos.json` con su
+  medición: 26 ms con el plan genérico.
+- `puntos_archivo_cerrar` y `puntos_migrar_historial` declaradas como deuda
+  hasta el arranque del 1-oct, con lo medido.
+- `puntos_panel_clientes` no se declara: la otra sesión la corrigió
+  (v2.1075.21). Su estadística y la de `puntos_archivo_cerrar` se reiniciaron
+  para que el gate mida las versiones nuevas.
+
 ## v2.1075.21 — Puntos: la última acumulación se calcula sólo para la página visible
 
 `puntos_panel_clientes` calculaba `max(ganado_el)` para las 10,632 cuentas

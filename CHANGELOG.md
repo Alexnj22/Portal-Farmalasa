@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.20 — Puntos: el cierre nocturno de la copia, 95% menos lectura; el panel de consulta 14x más rápido
+
+Dos índices, sin tocar ninguna función (el trabajo de puntos sigue en curso
+en otra sesión). Los dos medidos con `BEGIN…ROLLBACK` sobre producción.
+
+- **`puntos_archivo_cerrar`** (cada noche a las 22:30 hasta el 1-oct) leía
+  7 GB: al heredar las asignaciones de la copia anterior buscaba «otra carga»
+  y ningún índice servía, así que recorría la llave entera por cada uno de los
+  14,687 clientes. Índice parcial por `id_cliente` de los asignados:
+  **3,386,846 → 163,982 bloques, 15 s → 0.28 s**.
+- **`puntos_panel_clientes`** (Puntos → Consulta) buscaba la última
+  acumulación de cada cuenta leyendo todos sus lotes. Índice por
+  `(customer_id, ganado_el)`: **1,039 → 73 ms**. La lectura en bloques casi no
+  baja porque sigue calculándola para las 10,632 cuentas y no sólo para las 25
+  visibles; eso es un cambio a la función, que queda para quien la mantiene.
+- Revisadas sin cambios: `puntos_migrar_historial` (escribe el historial de
+  cada cuenta: el peso es de escritura, corre de noche y termina con el
+  arranque del 1-oct) e `inventory_daily_snapshot` (ver v2.1075.18).
+
 ## v2.1075.19 — Entorno de pruebas: la recompilación de dev va sin target
 
 Probado con el token real: las variables Preview se actualizaron, pero la

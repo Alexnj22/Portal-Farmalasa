@@ -1,0 +1,1621 @@
+[
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 30,
+    "precioUni": 4.08774,
+    "montoDescu": 4.9053,
+    "ventaGravada": 117.73,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 4,
+    "precioUni": 46.41,
+    "montoDescu": 7.4256,
+    "ventaGravada": 178.21,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 6,
+    "precioUni": 46.41,
+    "montoDescu": 11.1384,
+    "ventaGravada": 267.32,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 6,
+    "precioUni": 48.60984,
+    "montoDescu": 11.66633,
+    "ventaGravada": 279.99,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 18.70884,
+    "montoDescu": 2.80632,
+    "ventaGravada": 53.32,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 896.57,
+   "subTotal": 896.57,
+   "iva": 116.55,
+   "ivaPerci": 8.97,
+   "ivaRete": 0,
+   "montoTotalOperacion": 1013.12,
+   "totalPagar": 1022.09
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 16,
+    "precioUni": 21.12,
+    "montoDescu": 0,
+    "ventaGravada": 337.92,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 200,
+    "precioUni": 0.81,
+    "montoDescu": 0,
+    "ventaGravada": 162,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 499.92,
+   "subTotal": 499.92,
+   "iva": 64.99,
+   "ivaPerci": 5,
+   "ivaRete": 0,
+   "montoTotalOperacion": 564.91,
+   "totalPagar": 569.91
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 10,
+    "precioUni": 3.947,
+    "montoDescu": 0,
+    "ventaGravada": 39.47,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 4.345,
+    "montoDescu": 0,
+    "ventaGravada": 8.69,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 15.37,
+    "montoDescu": 0,
+    "ventaGravada": 30.74,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 78.9,
+   "subTotal": 78.9,
+   "iva": 10.26,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 89.16,
+   "totalPagar": 89.16
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 10,
+    "precioUni": 10.62,
+    "montoDescu": 21.24,
+    "ventaGravada": 84.96,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 31.82,
+    "montoDescu": 6.364,
+    "ventaGravada": 25.456,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 9.94,
+    "montoDescu": 1.988,
+    "ventaGravada": 7.952,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 3.54,
+    "montoDescu": 2.124,
+    "ventaGravada": 8.496,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 21.98,
+    "montoDescu": 8.792,
+    "ventaGravada": 35.168,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 162.03,
+   "subTotal": 162.03,
+   "iva": 21.06,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 183.09,
+   "totalPagar": 183.09
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 10,
+    "precioUni": 2.654867,
+    "montoDescu": 0,
+    "ventaGravada": 26.55,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 10,
+    "precioUni": 2.168142,
+    "montoDescu": 0,
+    "ventaGravada": 21.68,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 5,
+    "precioUni": 2.654867,
+    "montoDescu": 0,
+    "ventaGravada": 13.27,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 5,
+    "precioUni": 4.690265,
+    "montoDescu": 0,
+    "ventaGravada": 23.45,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 3.353982,
+    "montoDescu": 0,
+    "ventaGravada": 6.71,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 5,
+    "precioUni": 1.938053,
+    "montoDescu": 0,
+    "ventaGravada": 9.69,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 3.539823,
+    "montoDescu": 0,
+    "ventaGravada": 7.08,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 4.247788,
+    "montoDescu": 0,
+    "ventaGravada": 4.25,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 6,
+    "precioUni": 8.699115,
+    "montoDescu": 0,
+    "ventaGravada": 52.19,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 6,
+    "precioUni": 6.230088,
+    "montoDescu": 0,
+    "ventaGravada": 37.38,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 6,
+    "precioUni": 7.920354,
+    "montoDescu": 0,
+    "ventaGravada": 47.52,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 10,
+    "precioUni": 1.150442,
+    "montoDescu": 0,
+    "ventaGravada": 11.5,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 19.070796,
+    "montoDescu": 0,
+    "ventaGravada": 19.07,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 19.566372,
+    "montoDescu": 0,
+    "ventaGravada": 19.57,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 5,
+    "precioUni": 1.769912,
+    "montoDescu": 0,
+    "ventaGravada": 8.85,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 3.00885,
+    "montoDescu": 0,
+    "ventaGravada": 3.01,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 0.566372,
+    "montoDescu": 0,
+    "ventaGravada": 0.57,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 312.35,
+   "subTotal": 312.35,
+   "iva": 40.6,
+   "ivaPerci": 3.12,
+   "ivaRete": 0,
+   "montoTotalOperacion": 352.95,
+   "totalPagar": 356.07
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 6,
+    "precioUni": 8.04,
+    "montoDescu": 3.3768,
+    "ventaGravada": 44.86,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 41.6,
+    "montoDescu": 9.984,
+    "ventaGravada": 114.82,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 5,
+    "precioUni": 5.56,
+    "montoDescu": 3.336,
+    "ventaGravada": 24.46,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 29.68,
+    "montoDescu": 3.5616,
+    "ventaGravada": 26.12,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 19.98,
+    "montoDescu": 2.3976,
+    "ventaGravada": 17.58,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 5,
+    "precioUni": 12.04,
+    "montoDescu": 6.622,
+    "ventaGravada": 53.58,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 27.03,
+    "montoDescu": 2.9733,
+    "ventaGravada": 24.06,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 8,
+    "precioUni": 20.5,
+    "montoDescu": 32.8,
+    "ventaGravada": 131.2,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 15.09,
+    "montoDescu": 2.1126,
+    "ventaGravada": 28.07,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 49.61,
+    "montoDescu": 8.4337,
+    "ventaGravada": 41.18,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 10.81,
+    "montoDescu": 0.7567,
+    "ventaGravada": 10.05,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 74.76,
+    "montoDescu": 5.2332,
+    "ventaGravada": 69.53,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 19.08,
+    "montoDescu": 3.816,
+    "ventaGravada": 15.26,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 600.77,
+   "subTotal": 600.77,
+   "iva": 78.1,
+   "ivaPerci": 6.01,
+   "ivaRete": 0,
+   "montoTotalOperacion": 678.87,
+   "totalPagar": 684.88
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 1,
+    "precioUni": 38.0442,
+    "montoDescu": 5.6991,
+    "ventaGravada": 32.3451,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 32.35,
+   "subTotal": 32.35,
+   "iva": 4.2,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 36.55,
+   "totalPagar": 36.55
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 40,
+    "precioUni": 21.68,
+    "montoDescu": 69.376,
+    "ventaGravada": 797.82,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 797.82,
+   "subTotal": 797.82,
+   "iva": 103.72,
+   "ivaPerci": 7.98,
+   "ivaRete": 0,
+   "montoTotalOperacion": 901.54,
+   "totalPagar": 909.52
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 40,
+    "precioUni": 1.95,
+    "montoDescu": 19.5,
+    "ventaGravada": 58.5,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 8,
+    "precioUni": 7.79,
+    "montoDescu": 7.79,
+    "ventaGravada": 54.53,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 4,
+    "precioUni": 58.76,
+    "montoDescu": 58.76,
+    "ventaGravada": 176.28,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 1.08,
+    "montoDescu": 0,
+    "ventaGravada": 1.08,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 290.39,
+   "subTotal": 290.39,
+   "iva": 37.75,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 328.14,
+   "totalPagar": 328.14
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 1,
+    "precioUni": 20.62,
+    "montoDescu": 1.6496,
+    "ventaGravada": 18.9704,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 10.3,
+    "montoDescu": 1.545,
+    "ventaGravada": 8.755,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 4,
+    "precioUni": 10.4,
+    "montoDescu": 6.24,
+    "ventaGravada": 35.36,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 63.09,
+   "subTotal": 63.09,
+   "iva": 8.2,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 71.29,
+   "totalPagar": 71.29
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 40,
+    "precioUni": 1.769912,
+    "montoDescu": 0,
+    "ventaGravada": 70.8,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 15,
+    "precioUni": 3.584071,
+    "montoDescu": 0,
+    "ventaGravada": 53.76,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 0.566372,
+    "montoDescu": 0,
+    "ventaGravada": 0.57,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 125.12,
+   "subTotal": 125.12,
+   "iva": 16.27,
+   "ivaPerci": 1.25,
+   "ivaRete": 0,
+   "montoTotalOperacion": 141.39,
+   "totalPagar": 142.64
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 200,
+    "precioUni": 0.81,
+    "montoDescu": 0,
+    "ventaGravada": 162,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 162,
+   "subTotal": 162,
+   "iva": 21.06,
+   "ivaPerci": 1.62,
+   "ivaRete": 0,
+   "montoTotalOperacion": 183.06,
+   "totalPagar": 184.68
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 2,
+    "precioUni": 31.82,
+    "montoDescu": 12.728,
+    "ventaGravada": 50.912,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 9.94,
+    "montoDescu": 1.988,
+    "ventaGravada": 7.952,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 12.74,
+    "montoDescu": 7.644,
+    "ventaGravada": 30.576,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 14.16,
+    "montoDescu": 8.496,
+    "ventaGravada": 33.984,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 10,
+    "precioUni": 4.25,
+    "montoDescu": 8.5,
+    "ventaGravada": 34,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 21.98,
+    "montoDescu": 8.792,
+    "ventaGravada": 35.168,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 5,
+    "precioUni": 4.39,
+    "montoDescu": 4.39,
+    "ventaGravada": 17.56,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 210.15,
+   "subTotal": 210.15,
+   "iva": 27.32,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 237.47,
+   "totalPagar": 237.47
+  }
+ },
+ {
+  "tipo": "01",
+  "version": 1,
+  "renglones": [
+   {
+    "cantidad": 1,
+    "precioUni": 6.79,
+    "montoDescu": 0,
+    "ventaGravada": 6.79,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 0.7811504
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 11.29,
+    "montoDescu": 0,
+    "ventaGravada": 11.29,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.2988495
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 16.49,
+    "montoDescu": 0,
+    "ventaGravada": 16.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.8970796
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 13.99,
+    "montoDescu": 0,
+    "ventaGravada": 13.99,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.609469
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 9.79,
+    "montoDescu": 0,
+    "ventaGravada": 9.79,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.1262831
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 7.19,
+    "montoDescu": 0,
+    "ventaGravada": 7.19,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 0.8271681
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 7.49,
+    "montoDescu": 0,
+    "ventaGravada": 7.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 0.8616814
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 13.59,
+    "montoDescu": 0,
+    "ventaGravada": 13.59,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.5634513
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 11.49,
+    "montoDescu": 0,
+    "ventaGravada": 11.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.3218584
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 19.99,
+    "montoDescu": 0,
+    "ventaGravada": 19.99,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 2.2997345
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 16.99,
+    "montoDescu": 0,
+    "ventaGravada": 33.98,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 3.9092035
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 31.49,
+    "montoDescu": 0,
+    "ventaGravada": 31.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 3.6227433
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 13.49,
+    "montoDescu": 0,
+    "ventaGravada": 13.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.5519469
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 20.49,
+    "montoDescu": 0,
+    "ventaGravada": 20.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 2.3572566
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 17.99,
+    "montoDescu": 0,
+    "ventaGravada": 17.99,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 2.069646
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 15.49,
+    "montoDescu": 0,
+    "ventaGravada": 15.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.7820353
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 24.49,
+    "montoDescu": 0,
+    "ventaGravada": 24.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 2.8174336
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 8.69,
+    "montoDescu": 0,
+    "ventaGravada": 8.69,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 0.9997345
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 10.99,
+    "montoDescu": 0,
+    "ventaGravada": 10.99,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.2643362
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 5.69,
+    "montoDescu": 0,
+    "ventaGravada": 5.69,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 0.6546017
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 14.99,
+    "montoDescu": 0,
+    "ventaGravada": 29.98,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 3.4490265
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 25.99,
+    "montoDescu": 0,
+    "ventaGravada": 25.99,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 2.99
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 8.99,
+    "montoDescu": 0,
+    "ventaGravada": 8.99,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.0342477
+   }
+  ],
+  "resumen": {
+   "totalGravada": 365.85,
+   "subTotal": 365.85,
+   "iva": 42.08,
+   "ivaRete": 0,
+   "montoTotalOperacion": 365.85,
+   "totalPagar": 365.85
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 1,
+    "precioUni": 3.306,
+    "montoDescu": 0,
+    "ventaGravada": 3.306,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 11,
+    "precioUni": 2.9925,
+    "montoDescu": 0,
+    "ventaGravada": 32.9175,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 8,
+    "precioUni": 5.985,
+    "montoDescu": 0,
+    "ventaGravada": 47.88,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 9.12,
+    "montoDescu": 0,
+    "ventaGravada": 27.36,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 9.5,
+    "montoDescu": 0,
+    "ventaGravada": 28.5,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 4.6455,
+    "montoDescu": 0,
+    "ventaGravada": 13.9365,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 27.55,
+    "montoDescu": 0,
+    "ventaGravada": 27.55,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 9,
+    "precioUni": 13.8795,
+    "montoDescu": 0,
+    "ventaGravada": 124.9155,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 26.904,
+    "montoDescu": 0,
+    "ventaGravada": 53.808,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 5,
+    "precioUni": 12.274,
+    "montoDescu": 0,
+    "ventaGravada": 61.37,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 4,
+    "precioUni": 10.0605,
+    "montoDescu": 0,
+    "ventaGravada": 40.242,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 8.4075,
+    "montoDescu": 0,
+    "ventaGravada": 8.4075,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 10,
+    "precioUni": 6.593,
+    "montoDescu": 0,
+    "ventaGravada": 65.93,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 536.12,
+   "subTotal": 536.12,
+   "iva": 69.7,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 605.82,
+   "totalPagar": 605.82
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 1,
+    "precioUni": 50.13,
+    "montoDescu": 10.03,
+    "ventaGravada": 40.1,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 40.1,
+   "subTotal": 40.1,
+   "iva": 5.21,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 45.31,
+   "totalPagar": 45.31
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 40,
+    "precioUni": 1.95,
+    "montoDescu": 19.5,
+    "ventaGravada": 58.5,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 13,
+    "precioUni": 12.75,
+    "montoDescu": 38.25,
+    "ventaGravada": 127.5,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 1.08,
+    "montoDescu": 0,
+    "ventaGravada": 1.08,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 187.08,
+   "subTotal": 187.08,
+   "iva": 24.32,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 211.4,
+   "totalPagar": 211.4
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 4,
+    "precioUni": 42.47787,
+    "montoDescu": 0,
+    "ventaGravada": 169.91148,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 169.91,
+   "subTotal": 169.91,
+   "iva": 22.09,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 192,
+   "totalPagar": 192
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 12,
+    "precioUni": 3,
+    "montoDescu": 0,
+    "ventaGravada": 36,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 10,
+    "precioUni": 0.97,
+    "montoDescu": 0,
+    "ventaGravada": 9.7,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 0.01,
+    "montoDescu": 0,
+    "ventaGravada": 0.01,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 45.71,
+   "subTotal": 45.71,
+   "iva": 5.94,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 51.65,
+   "totalPagar": 51.65
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 3,
+    "precioUni": 20.66,
+    "montoDescu": 5.5782,
+    "ventaGravada": 56.4,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 19.24,
+    "montoDescu": 4.6176,
+    "ventaGravada": 33.86,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 4,
+    "precioUni": 9.47735,
+    "montoDescu": 3.41183,
+    "ventaGravada": 34.5,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 124.76,
+   "subTotal": 124.76,
+   "iva": 16.22,
+   "ivaPerci": 1.25,
+   "ivaRete": 0,
+   "montoTotalOperacion": 140.98,
+   "totalPagar": 142.23
+  }
+ },
+ {
+  "tipo": "01",
+  "version": 1,
+  "renglones": [
+   {
+    "cantidad": 1,
+    "precioUni": 32.0807,
+    "montoDescu": 0,
+    "ventaGravada": 32.0807,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 3.6907
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 32.0807,
+    "montoDescu": 0,
+    "ventaGravada": 32.0807,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 3.6907
+   }
+  ],
+  "resumen": {
+   "totalGravada": 64.16,
+   "subTotal": 64.16,
+   "iva": 7.38,
+   "ivaRete": 0,
+   "montoTotalOperacion": 64.16,
+   "totalPagar": 64.16
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 10,
+    "precioUni": 2.9925,
+    "montoDescu": 0,
+    "ventaGravada": 29.925,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 4,
+    "precioUni": 5.985,
+    "montoDescu": 0,
+    "ventaGravada": 23.94,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 9.5,
+    "montoDescu": 0,
+    "ventaGravada": 28.5,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 4,
+    "precioUni": 4.6455,
+    "montoDescu": 0,
+    "ventaGravada": 18.582,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 27.55,
+    "montoDescu": 0,
+    "ventaGravada": 55.1,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 7,
+    "precioUni": 18.4965,
+    "montoDescu": 0,
+    "ventaGravada": 129.4755,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 0,
+    "montoDescu": 0,
+    "ventaGravada": 0,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 7,
+    "precioUni": 8.9015,
+    "montoDescu": 0,
+    "ventaGravada": 62.3105,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 0,
+    "montoDescu": 0,
+    "ventaGravada": 0,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 347.83,
+   "subTotal": 347.83,
+   "iva": 45.22,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 393.05,
+   "totalPagar": 393.05
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 4,
+    "precioUni": 4.345,
+    "montoDescu": 0,
+    "ventaGravada": 17.38,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 4.15,
+    "montoDescu": 0,
+    "ventaGravada": 12.45,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 4,
+    "precioUni": 15.3725,
+    "montoDescu": 0,
+    "ventaGravada": 61.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 4,
+    "precioUni": 8.1425,
+    "montoDescu": 0,
+    "ventaGravada": 32.57,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 3.636667,
+    "montoDescu": 0,
+    "ventaGravada": 10.910001,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 134.8,
+   "subTotal": 134.8,
+   "iva": 17.52,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 152.32,
+   "totalPagar": 152.32
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 6,
+    "precioUni": 46.36,
+    "montoDescu": 36.1608,
+    "ventaGravada": 241.9992,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 46.21,
+    "montoDescu": 12.0146,
+    "ventaGravada": 80.4054,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 322.4,
+   "subTotal": 322.4,
+   "iva": 41.91,
+   "ivaPerci": 3.22,
+   "ivaRete": 0,
+   "montoTotalOperacion": 364.31,
+   "totalPagar": 367.53
+  }
+ },
+ {
+  "tipo": "01",
+  "version": 1,
+  "renglones": [
+   {
+    "cantidad": 1,
+    "precioUni": 5.7969,
+    "montoDescu": 0,
+    "ventaGravada": 5.7969,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 0.6669
+   },
+   {
+    "cantidad": 3,
+    "precioUni": 5.7969,
+    "montoDescu": 0,
+    "ventaGravada": 17.3907,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 2.0007
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 5.8082,
+    "montoDescu": 0,
+    "ventaGravada": 5.8082,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 0.6682
+   },
+   {
+    "cantidad": 5,
+    "precioUni": 14.2719,
+    "montoDescu": 0,
+    "ventaGravada": 71.3595,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 8.2095
+   }
+  ],
+  "resumen": {
+   "totalGravada": 100.36,
+   "subTotal": 100.36,
+   "iva": 11.55,
+   "ivaRete": 0,
+   "montoTotalOperacion": 100.36,
+   "totalPagar": 100.36
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 8,
+    "precioUni": 4.44,
+    "montoDescu": 0,
+    "ventaGravada": 35.52,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 33,
+    "precioUni": 1.47,
+    "montoDescu": 0,
+    "ventaGravada": 48.51,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 1.5,
+    "montoDescu": 0,
+    "ventaGravada": 1.5,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 85.53,
+   "subTotal": 85.53,
+   "iva": 11.12,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 96.65,
+   "totalPagar": 96.65
+  }
+ },
+ {
+  "tipo": "01",
+  "version": 1,
+  "renglones": [
+   {
+    "cantidad": 1,
+    "precioUni": 6.59,
+    "montoDescu": 0,
+    "ventaGravada": 6.59,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 0.7581415
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 13.99,
+    "montoDescu": 0,
+    "ventaGravada": 13.99,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.609469
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 21.49,
+    "montoDescu": 0,
+    "ventaGravada": 21.49,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 2.4723008
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 6.19,
+    "montoDescu": 0,
+    "ventaGravada": 6.19,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 0.7121238
+   },
+   {
+    "cantidad": 2,
+    "precioUni": 37.79,
+    "montoDescu": 0,
+    "ventaGravada": 75.58,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 8.6950442
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 14.29,
+    "montoDescu": 0,
+    "ventaGravada": 14.29,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0,
+    "ivaItem": 1.6439823
+   }
+  ],
+  "resumen": {
+   "totalGravada": 138.13,
+   "subTotal": 138.13,
+   "iva": 15.89,
+   "ivaRete": 0,
+   "montoTotalOperacion": 138.13,
+   "totalPagar": 138.13
+  }
+ },
+ {
+  "tipo": "03",
+  "version": 3,
+  "renglones": [
+   {
+    "cantidad": 1,
+    "precioUni": 15.78,
+    "montoDescu": 0,
+    "ventaGravada": 15.78,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 31.01,
+    "montoDescu": 0,
+    "ventaGravada": 31.01,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   },
+   {
+    "cantidad": 1,
+    "precioUni": 34.04,
+    "montoDescu": 0,
+    "ventaGravada": 34.04,
+    "ventaExenta": 0,
+    "ventaNoSuj": 0
+   }
+  ],
+  "resumen": {
+   "totalGravada": 80.83,
+   "subTotal": 80.83,
+   "iva": 10.51,
+   "ivaPerci": 0,
+   "ivaRete": 0,
+   "montoTotalOperacion": 91.34,
+   "totalPagar": 91.34
+  }
+ }
+]

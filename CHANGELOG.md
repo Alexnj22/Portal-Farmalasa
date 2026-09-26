@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.0 — Motor de DTE 2.0 para la S.A.S. de rutas: armar y firmar Factura, CCF, remisión y notas
+
+Primera pieza del emisor propio de la S.A.S. de distribución (rama
+`sesion/sas-ruta`, todavía sin pantalla ni conexión con Hacienda).
+`supabase/functions/_shared/dte/` arma Factura v2, Crédito Fiscal v4, Nota de
+Remisión v4 y Notas de Crédito y Débito v4, y las firma igual que el firmador
+oficial (JWS RS512 con la llave del `.crt` de Hacienda), con WebCrypto y sin
+contenedor Java.
+
+Los números se calculan con enteros escalados a 8 decimales, con la regla de
+redondeo del Manual Funcional v2.0 §XXI (`2.675` → `2.68`, que `toFixed` da
+`2.67`). Los jueces de las 65 pruebas vienen de afuera: los esquemas JSON
+oficiales de factura.gob.sv (julio 2026) y 28 DTE reales ya sellados por
+Hacienda, reducidos a sus números. 21 de 24 Créditos Fiscales cuadran al
+centavo exacto; los otros 3 son proveedores que truncan donde el manual manda
+subir en 5, y entran en la holgura de ±0.01. Área nueva de auditoría: `ruta`.
+
 ## v2.1075.21 — Puntos: la última acumulación se calcula sólo para la página visible
 
 `puntos_panel_clientes` calculaba `max(ganado_el)` para las 10,632 cuentas

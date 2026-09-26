@@ -606,6 +606,27 @@ export const AREAS = [
         docs: ['docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md', 'docs/resumen-dte-el-salvador.md',
                'docs/RETOMAR-CLIENTES-2026-08-01.md'],
     },
+    {
+        // Área aparte y no dentro de `facturacion-dte` a propósito: aquélla
+        // mira los DTE que emite el sistema de la caja para las farmacias;
+        // ésta EMITE los suyos, con otro NIT (la S.A.S. de distribución), su
+        // propio certificado y su propia conexión con Hacienda. Mezclarlas
+        // haría que un cambio en el emisor nuevo descongele la facturación de
+        // las siete salas, y al revés.
+        id: 'ruta',
+        nombre: 'Venta en ruta y emisor DTE propio',
+        resumen: 'La S.A.S. de distribución: motor de DTE 2.0 (armar, firmar, transmitir a Hacienda), preventa, clientes de ruta y liquidación del vendedor.',
+        modulos: [],
+        rutas: [],
+        archivos: [
+            'supabase/functions/_shared/dte/',
+            'tests/unit/dteMotor.test.js', 'tests/fixtures/dte-reales-2026-09.json',
+        ],
+        tablas: [],
+        edge: [],
+        crons: [],
+        docs: [],
+    },
 
     // ═══ PRODUCTO Y EXISTENCIA ══════════════════════════════════════════════
     {

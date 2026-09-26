@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.16 — U2: una sola definición de venta en la base
+
+«¿Esta factura cuenta como venta?» ahora tiene UNA respuesta en la base. Sin
+cambios visibles: ningún total se movió.
+
+- **El problema.** ~100 funciones leían facturas y cada una escribía su filtro:
+  «todo menos NULA e INVALIDADO» (metas, Ventas, Mín·Máx, promociones), «sólo
+  FINALIZADA» (caja, formas de pago, puntos) y «FINALIZADA con sello» (libros,
+  Z, período). Hoy existen sólo tres estados, así que las dos primeras daban lo
+  mismo por casualidad; con un estado nuevo, metas y caja habrían mostrado
+  totales distintos del mismo día.
+- **La decisión (del usuario):** un estado que nadie conoce NO cuenta como
+  venta hasta que se revise, y se avisa.
+- **En la base:**
+  - `venta_valida(estado)` y `venta_fiscal(estado, recibido_mh)`, sin
+    `SET search_path` a propósito para que se inlineen (el plan sigue usando el
+    índice de `estado`).
+  - `avisar_estados_de_venta_desconocidos` + cron horario: avisa al cargo
+    «Sistema — Alertas Técnicas» una vez por estado. 1 ms y 9 bloques. Probado
+    en la base de pruebas con un estado inventado.
+  - **59 funciones** pasan a usarlas (80 reemplazos). La migración reescribe
+    la definición VIVA de cada una y aborta si el conteo no da; se ensayó con
+    `BEGIN…ROLLBACK` en producción.
+  - Quedan fuera, a propósito, las 4 del circuito de Hacienda: preguntan «¿está
+    anulada?», no «¿cuenta como venta?».
+- **Verificado:** las 59 definiciones son idénticas, byte por byte, a las
+  generadas fuera, y cada una vuelve a la original deshaciendo el cambio. 43
+  resultados medidos antes y después; las cuatro diferencias se compararon con
+  la versión vieja lado a lado sobre los mismos datos, y eran idénticas (las
+  movían ventas nuevas).
+- **El freno:** `migration-gate` rechaza en el pre-commit una migración nueva
+  con el filtro a mano. Hizo falta el mismo día: otra sesión reaplicó su copia
+  vieja de `puntos_panel_serie` 38 segundos después de la migración, y hubo que
+  volver a cambiarla (paso 3).
+
 ## v2.1075.15 — Puntos: pestaña Resumen con las gráficas; Consulta queda con tarjetas y listado
 
 Pedido del usuario: una pestaña de inicio con lo relevante y Consulta sólo con

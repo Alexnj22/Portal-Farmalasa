@@ -130,6 +130,42 @@ for (const archivo of locales.sort()) {
   versiones.set(version, archivo);
 }
 
+// ── 2b. «¿Cuenta como venta?» no se escribe a mano (U2, 2026-09-26) ──────────────
+//
+// Desde U2 la base contesta esa pregunta UNA vez: `public.venta_valida(estado)`
+// y `public.venta_fiscal(estado, recibido_mh)`. Unas cien funciones escribían
+// su propio filtro con tres redacciones que coincidían por casualidad.
+//
+// La regla vive en el PRE-COMMIT y no sólo en un gate contra producción por
+// lo que pasó el mismo día que se migró: otra sesión aplicó su copia de
+// `puntos_panel_serie` 38 segundos después y el filtro a mano volvió solo. Un
+// chequeo remoto se entera después; éste, antes de que el archivo entre.
+//
+// Mira sólo migraciones POSTERIORES a U2 (las anteriores son historia) y sin
+// comentarios. Lo legítimo —el circuito de Hacienda pregunta «¿está anulada?»,
+// no «¿cuenta como venta?»— se declara en el archivo con
+// `-- venta-a-mano: <motivo>`.
+const CORTE_U2 = '20260926151127';
+const VENTA_A_MANO = [
+  /estado\s+not\s+in\s*\(\s*'(?:NULA|DTE INVALIDADO EN MH)'/i,
+  /(?<![\w.'])(?<![Ss][Ee][Tt]\s)(?:\w+\.)?estado\s*=\s*'FINALIZADA'/,
+];
+for (const archivo of locales) {
+  const m = archivo.match(NOMBRE);
+  if (!m || m[1] <= CORTE_U2) continue;
+  const crudo = readFileSync(`${DIR}/${archivo}`, 'utf8');
+  if (/--\s*venta-a-mano:\s*\S/.test(crudo)) continue;
+  const texto = crudo.replace(/--.*$/gm, '');
+  const hallado = VENTA_A_MANO.map(r => texto.match(r)).find(Boolean);
+  if (hallado) {
+    err(`Filtro de venta escrito a mano en ${archivo}: «${hallado[0]}»`,
+      ['Usar `public.venta_valida(si.estado)` (lo que se vendió) o',
+       '`public.venta_fiscal(si.estado, si.recibido_mh)` (lo que entra al libro).',
+       'Si de verdad la pregunta es otra (¿está anulada?), declararlo en el archivo con',
+       '`-- venta-a-mano: <motivo>`. Ver docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md §E2.']);
+  }
+}
+
 // ── 3. El baseline: exactamente uno, y ordena primero ───────────────────────────
 if (!versiones.has(BASELINE)) {
   err(`Falta el baseline ${BASELINE}_baseline_schema.sql`,

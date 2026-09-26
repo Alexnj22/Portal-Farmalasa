@@ -60,6 +60,18 @@
   que no sea `formatMoney` (el salario de la ficha salía crudo). **U1
   cerrada.** La boleta y la planilla impresas pasaron también a llevar
   separador de miles (v2.1075.2, pedido del usuario); el archivo del banco no.
+- **U2 — una sola definición de venta en la base (2026-09-26)**. Decisión del
+  usuario: un estado desconocido NO cuenta, y se le avisa. Tres migraciones:
+  `venta_valida`/`venta_fiscal` + el vigilante horario (150011); 59 funciones
+  reescritas desde su definición viva con 80 reemplazos, abortando si el
+  conteo no daba (150848); y dos que quedaron —una porque otra sesión reaplicó
+  su copia 38 s después— (151127). Verificado: las 59 definiciones idénticas
+  byte por byte a las generadas fuera, cada una reversible a la original; 43
+  resultados medidos como la cuenta de QA y el servidor, y cada diferencia
+  comparada con la versión vieja lado a lado sobre los mismos datos: idénticas
+  (las diferencias venían de ventas nuevas). Quedan fuera, a propósito, las 4
+  del circuito de Hacienda. `migration-gate` rechaza el filtro a mano en el
+  pre-commit.
 
 ## Para qué
 

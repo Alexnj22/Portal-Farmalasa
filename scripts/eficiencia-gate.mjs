@@ -476,6 +476,15 @@ const CRONS = [
           + 'sala y por día porque después el juez contesta «ya tiene Z».',
   },
   {
+    job: 'estados-de-venta-desconocidos', slug: null, cadencia: '20 * * * *',
+    corridasDia: 24, sistema: 0,
+    motivo: 'SQL puro: `avisar_estados_de_venta_desconocidos` mira si apareció un estado de '
+          + 'factura que no es ninguno de los tres conocidos —que `venta_valida` deja fuera de las '
+          + 'ventas— y le avisa al cargo de alertas técnicas una sola vez por estado. Lee por '
+          + '`idx_si_no_finalizada`: medido en producción, 1 ms y 9 bloques. No toca el sistema de '
+          + 'origen (U2, 2026-09-26).',
+  },
+  {
     job: 'dias-sin-cierre-0700-sv', slug: null, cadencia: '0 13 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: `avisar_dias_sin_cierre` le avisa a la sala y a supervisión, a las 7:00 SV, '

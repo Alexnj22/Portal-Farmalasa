@@ -1467,6 +1467,20 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   cuenta: ahí la izquierda es el valor, no un test. Esa distinción faltaba en
   la primera versión y puso el gate en verde tapando tres sitios reales.
 
+- **«¿Esta factura cuenta como venta?» se contesta con `public.venta_valida(estado)`,
+  y «¿entra al libro?» con `public.venta_fiscal(estado, recibido_mh)`** (U2,
+  2026-09-26). Nunca `estado NOT IN ('NULA','DTE INVALIDADO EN MH')` ni `estado =
+  'FINALIZADA'` a mano: eran tres redacciones en ~100 funciones que coincidían
+  por casualidad. Un estado que nadie conoce NO cuenta (decisión del usuario) y
+  `avisar_estados_de_venta_desconocidos` le avisa al cargo de alertas técnicas.
+  Las dos funciones van **sin `SET search_path` a propósito**: así se inlinean
+  y el planificador sigue usando el índice de `estado` (excepción razonada a la
+  regla 4). **El pre-commit lo vigila**: `migration-gate` rechaza una migración
+  nueva con el filtro a mano, salvo `-- venta-a-mano: <motivo>` (el circuito de
+  Hacienda pregunta otra cosa: «¿está anulada?»). Nació de que, el mismo día que
+  se migró, otra sesión reaplicó su copia vieja de una función de puntos 38
+  segundos después. Al reescribir una función que lee `sales_invoices`, partir
+  de su definición VIVA (`pg_get_functiondef`), no de un archivo viejo.
 - **`npm run gate:tdz` — leer una variable antes de su `const`.** Corre en el
   pre-commit cuando el commit toca `src/` y **bloquea en cero**. Es hermano de
   `gate:undefinidos`: aquél caza la variable que NO EXISTE, éste la que existe

@@ -467,7 +467,10 @@ export const AREAS = [
                 'refresh-primera-venta-daily', 'heal-dte-sync', 'dte-resync-mes-hora',
                 'vacuum-sales-invoices',
                 'dte-resync-month-popular', 'dte-resync-month-salud1', 'dte-resync-month-salud2',
-                'dte-resync-month-salud3', 'dte-resync-month-salud4', 'dte-resync-month-salud5'],
+                'dte-resync-month-salud3', 'dte-resync-month-salud4', 'dte-resync-month-salud5',
+                // El vigilante de `venta_valida` (U2, 2026-09-26): avisa si
+                // aparece un estado de factura que nadie conoce.
+                'estados-de-venta-desconocidos'],
         docs: ['docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md',
                'docs/PUNTOS-EL-CIRCUITO-Y-LO-QUE-FALTA-2026-08-29.md'],
     },

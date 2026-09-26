@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.9 — MIN·MAX: una presentación por factor
+
+Pedido del usuario: «no repitas si las presentaciones distintas son el mismo
+factor». La lista de la solicitud muestra una presentación por factor («CAJA» y
+«CAJA X 10», las dos ×10, salen una vez), quedándose con el nombre de la de
+despacho cuando es una de ellas, o si no con el más corto. Y cuando la base es
+también lo que se despacha, va una sola celda «Base y despacho» en vez de dos
+iguales lado a lado.
+
 ## v2.1075.8 — MIN·MAX: presentaciones sin desbordes y más limpias
 
 Pedido del usuario: «que los textos no se salgan y se vea estético». Rótulos

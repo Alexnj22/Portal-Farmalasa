@@ -497,16 +497,25 @@ function Presentaciones({ datos, claseTenue, isDark }) {
     );
     return (
         <>
-            <Celda rotulo="Base" claseTenue={claseTenue}>
-                {base ? <>{base.tipo}{detalle(`factor ${unidades(base.factor)}`)}</> : '—'}
-            </Celda>
-            <Celda rotulo="Despacho" claseTenue={claseTenue} derecha>
-                {desp
-                    ? <>{desp.etiqueta}{detalle(desp.multiplo > 1
-                        ? `${desp.multiplo} × ${unidades(desp.factor)} = ${unidades(desp.unidades)} u.`
-                        : `factor ${unidades(desp.factor)}`)}</>
-                    : <>{base?.tipo ?? '—'}{base && detalle(`factor ${unidades(base.factor)}`)}</>}
-            </Celda>
+            {/* Si la base es también lo que se despacha, una sola celda: dos
+                celdas iguales lado a lado son la misma cosa dicha dos veces. */}
+            {desp && desp.unidades !== base?.factor ? (
+                <>
+                    <Celda rotulo="Base" claseTenue={claseTenue}>
+                        {base ? <>{base.tipo}{detalle(`factor ${unidades(base.factor)}`)}</> : '—'}
+                    </Celda>
+                    <Celda rotulo="Despacho" claseTenue={claseTenue} derecha>
+                        {desp.etiqueta}{detalle(desp.multiplo > 1
+                            ? `${desp.multiplo} × ${unidades(desp.factor)} = ${unidades(desp.unidades)} u.`
+                            : `factor ${unidades(desp.factor)}`)}
+                    </Celda>
+                </>
+            ) : (
+                <Celda rotulo="Base y despacho" claseTenue={claseTenue} sola>
+                    {base?.tipo ?? desp?.etiqueta ?? '—'}
+                    {detalle(`factor ${unidades(base?.factor ?? desp?.factor ?? 1)}`)}
+                </Celda>
+            )}
             {lista.length > 1 && (
                 <div className="bg-surface-card-hover px-2.5 py-2 min-w-0" style={{ gridColumn: '1 / -1' }}>
                     <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Presentaciones</p>

@@ -120,16 +120,32 @@ export function datosDeTrasladosPorRespaldo(n) {
  * y la unidad en que el pedido despacha (25-sep). El MIN·MAX va en unidades; el
  * pedido manda presentaciones enteras, así que un MAX menor que la unidad de
  * despacho no alcanza para mandar ni una. */
-function leerPresentaciones(v) {
-    return (Array.isArray(v) ? v : [])
-        .filter((p) => p && p.tipo && num(p.factor) > 0)
-        .map((p) => ({ tipo: String(p.tipo).trim(), factor: num(p.factor) }))
+/* Una por factor (usuario, 26-sep: «no repitas si las presentaciones distintas
+ * son el mismo factor»): «CAJA» y «CAJA X 10», las dos ×10, son la misma
+ * cantidad dicha dos veces. Se queda con el nombre del despacho si es uno de
+ * ellos —así la lista y la celda «Despacho» dicen lo mismo—, y si no con el más
+ * corto. */
+function leerPresentaciones(v, despacho) {
+    const porFactor = new Map();
+    for (const p of Array.isArray(v) ? v : []) {
+        if (!p || !p.tipo || !(num(p.factor) > 0)) continue;
+        const tipo = String(p.tipo).trim(), factor = num(p.factor);
+        const ya = porFactor.get(factor);
+        const esDespacho = despacho && despacho.factor === factor
+            && (tipo === despacho.etiqueta || tipo === despacho.tipo);
+        if (!ya || (esDespacho && !ya.esDespacho) || (!ya.esDespacho && tipo.length < ya.tipo.length)) {
+            porFactor.set(factor, { tipo, factor, esDespacho: !!esDespacho });
+        }
+    }
+    return [...porFactor.values()]
+        .map(({ tipo, factor }) => ({ tipo, factor }))
         .sort((a, b) => a.factor - b.factor);
 }
 
 function leerDespacho(v) {
     if (!v || !v.tipo || !(num(v.unidades) > 0)) return null;
     return {
+        tipo: String(v.tipo).trim(),
         etiqueta: String(v.etiqueta || v.tipo).trim(),
         factor: num(v.factor) ?? 1,
         multiplo: num(v.multiplo) ?? 1,
@@ -156,7 +172,7 @@ export function datosDeMinmaxPendiente(n) {
         ventasMeses: leerMeses(m.ventas_meses),
         ventasMesCurso: num(m.ventas_mes_curso),
         existencia: num(m.existencia),
-        presentaciones: leerPresentaciones(m.presentaciones),
+        presentaciones: leerPresentaciones(m.presentaciones, leerDespacho(m.despacho)),
         despacho: leerDespacho(m.despacho),
         minHoy: num(m.min_hoy),
         maxHoy: num(m.max_hoy),

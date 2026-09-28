@@ -100,6 +100,45 @@ export function GraficaDiaria({ serie, unidad = 'puntos' }) {
 }
 
 /**
+ * Cuándo vencen los puntos, mes por mes, desde el mes actual hasta el último
+ * vencimiento (tope 24 meses). Los meses sin vencimientos van en cero a
+ * propósito: lo que se lee es CUÁNDO cae cada uno — hoy, que no vence nada
+ * hasta octubre de 2027 y ahí vence todo junto. Una sola barra sin eje de
+ * tiempo no decía eso.
+ */
+export function GraficaVencimientos({ lista, hoy, unidad = 'puntos' }) {
+    const porMes = new Map((lista ?? []).map((v) => [String(v.mes).slice(0, 7), v]));
+    const inicio = String(hoy ?? new Date().toISOString()).slice(0, 7);
+    const ultimo = [...porMes.keys()].sort().pop() ?? inicio;
+    const datos = [];
+    let [a, m] = inicio.split('-').map(Number);
+    for (let i = 0; i < 24; i += 1) {
+        const clave = `${a}-${String(m).padStart(2, '0')}`;
+        const v = porMes.get(clave);
+        datos.push({ clave, etiqueta: mes(`${clave}-01`), puntos: Number(v?.puntos) || 0, clientes: Number(v?.clientes) || 0 });
+        if (clave >= ultimo) break;
+        m += 1; if (m > 12) { m = 1; a += 1; }
+    }
+    return (
+        <ChartContainer minHeight={220}>
+            <BarChart data={datos} margin={{ top: 8, right: 8, left: -8, bottom: 0 }} barCategoryGap="18%">
+                <CartesianGrid stroke={COLOR.rejilla} vertical={false} />
+                <XAxis dataKey="etiqueta" interval="preserveStartEnd" minTickGap={16} tickLine={false} axisLine={false} tick={EJE} />
+                <YAxis tickLine={false} axisLine={false} width={52} tick={EJE} tickFormatter={ejeDe(unidad)} />
+                <Tooltip contentStyle={TOOLTIP} cursor={{ fill: COLOR.rejilla, opacity: 0.35 }}
+                    formatter={(v, _n, p) => [
+                        Number(v) > 0 ? `${ambos(v)} de ${pts(p?.payload?.clientes)} clientes` : 'Nada vence',
+                        'Vencen']} />
+                {/* Una sola serie: el título la nombra. Azul y no el rosa de
+                    «canjeado»: el color sigue a la serie en todas las gráficas. */}
+                <Bar dataKey="puntos" name="Vencen" fill={COLOR.acumulado} radius={[4, 4, 0, 0]}
+                    maxBarSize={28} isAnimationActive={false} />
+            </BarChart>
+        </ChartContainer>
+    );
+}
+
+/**
  * La historia de UN cliente, por mes: lo acumulado y lo canjeado. Es la
  * gráfica del detalle del cliente, y es un control: tocar un mes filtra sus
  * movimientos (`onElegir`); los demás meses se atenúan mientras hay uno elegido.

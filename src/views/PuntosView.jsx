@@ -30,7 +30,7 @@
  */
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Star, Search, LayoutDashboard, Activity, Trophy, Wallet, ChevronRight, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users } from 'lucide-react';
+import { Star, Search, LayoutDashboard, Trophy, Wallet, ChevronRight, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -60,6 +60,7 @@ import ClientePuntosModal from './puntos/ClientePuntosModal';
 
 // `recharts` pesa: viaja en su propio chunk y se pide cuando la pestaña lo pinta.
 const GraficaDiaria = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaDiaria })));
+const GraficaVencimientos = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaVencimientos })));
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { clickable } from '@nucleo/utils/clickable';
 
@@ -76,7 +77,6 @@ const PESTANAS = [
 // 100 puntos = US$1.00 (cláusula 4 del reglamento).
 const dolares = (puntos) => formatMoney((Number(puntos) || 0) / 100);
 const pts = (n) => formatQty(Number(n) || 0);
-const conMayuscula = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
 const fechaCorta = (iso) => fechaTexto(iso, { day: 'numeric', month: 'short', year: 'numeric' }, '—');
 
 // ¿La acumulación está parada? Sólo se pregunta de 8:00 a 22:00 SV: las salas
@@ -520,16 +520,19 @@ function Resumen({ resumen, serie, tablero, cargando, irA, onAbrirCliente }) {
                     nota="Toca uno para ver todo lo suyo.">
                     <LosQueMasTienen lista={tablero?.top ?? []} onAbrir={onAbrirCliente} />
                 </Panel>
-                <div className="flex flex-col gap-4 min-w-0">
-                    <Panel icono={CalendarClock} titulo="Cuándo vencen" nota="A los doce meses de la compra.">
-                        {/* Del tablero y no del resumen: el mismo libro que «Se les
-                            debe», así las dos cifras cuadran. */}
-                        <Vencimientos lista={tablero?.vencimientos ?? []} />
-                    </Panel>
-                    <Panel icono={Activity} titulo="El programa">
-                        <EstadoDelPrograma resumen={resumen} tablero={tablero} />
-                    </Panel>
-                </div>
+                {/* En gráfica (pedido del usuario, 2026-09-28): se ve CUÁNDO cae
+                    cada vencimiento, no sólo cuánto. Del tablero y no del
+                    resumen: el mismo libro que «Se les debe», así cuadran. */}
+                <Panel icono={CalendarClock} titulo="Cuándo vencen"
+                    nota={tablero?.vencimientos?.[0]
+                        ? `Lo próximo: ${pts(tablero.vencimientos[0].puntos)} puntos (${dolares(tablero.vencimientos[0].puntos)}) en ${fechaTexto(tablero.vencimientos[0].mes, { month: 'long', year: 'numeric' })}.`
+                        : 'A los doce meses de la compra.'}>
+                    {(tablero?.vencimientos ?? []).length === 0 && !cargando
+                        ? <p className="text-body-sm text-content-3 py-6 text-center">Sin puntos por vencer</p>
+                        : <Suspense fallback={<Hueco alto={220} />}>
+                            <GraficaVencimientos lista={tablero?.vencimientos ?? []} hoy={tablero?.hoy} unidad={unidad} />
+                          </Suspense>}
+                </Panel>
             </div>
         </>
     );
@@ -560,32 +563,6 @@ function LosQueMasTienen({ lista, onAbrir }) {
                 </li>
             ))}
         </ol>
-    );
-}
-
-/** De dónde salen las cifras y cuándo fue lo último que pasó. */
-function EstadoDelPrograma({ resumen, tablero }) {
-    const cfg = resumen?.config;
-    const enPortal = cfg?.fuente === 'portal' && cfg?.encendido;
-    const act = tablero?.mes_actual ?? {};
-    const filas = [
-        ['Funciona en', enPortal ? 'El portal' : 'El sistema anterior, hasta el 1 oct 2026'],
-        ['Clientes con saldo', pts(tablero?.deuda?.clientes)],
-        ['Compraron este mes', pts(act.clientes_acumularon)],
-        ['Canjearon este mes', pts(act.clientes_canjearon)],
-        ['Cuentas sin asignar', `${pts(resumen?.pendientes?.cuentas)} · ${pts(resumen?.pendientes?.puntos)} pts`],
-        ['Última acumulación', resumen?.ultima_acumulacion ? fechaHora12(resumen.ultima_acumulacion) : '—'],
-        ...(enPortal ? [] : [['Última copia', resumen?.copia_al ? fechaHora12(resumen.copia_al) : '—']]),
-    ];
-    return (
-        <dl className="flex flex-col gap-2">
-            {filas.map(([k, v]) => (
-                <div key={k} className="flex items-baseline justify-between gap-3">
-                    <dt className="text-caption text-content-3">{k}</dt>
-                    <dd className="text-caption font-bold text-content-2 text-right tabular-nums">{v}</dd>
-                </div>
-            ))}
-        </dl>
     );
 }
 
@@ -633,35 +610,6 @@ function SalasDelMes({ salas, unidad }) {
                     </div>
                 </li>
             ))}
-        </ul>
-    );
-}
-
-/**
- * Cuándo vencen, por mes: las cuatro fechas más próximas, cada una con su monto
- * en puntos y en dólares. Hasta oct-2027 es UNA sola fila — por eso no es una
- * gráfica: una barra sola ocupaba media fila para decir un número.
- */
-function Vencimientos({ lista }) {
-    if (lista.length === 0) return <p className="text-body-sm text-content-3">Sin puntos por vencer</p>;
-    const proximas = lista.slice(0, 4);
-    return (
-        <ul className="flex flex-col gap-2.5">
-            {proximas.map((v) => (
-                <li key={v.mes} className="flex items-baseline justify-between gap-3 min-w-0">
-                    {/* Mayúscula sólo al principio: `capitalize` daba «Octubre De 2027». */}
-                    <span className="text-caption font-bold text-content-2">
-                        {conMayuscula(fechaTexto(v.mes, { month: 'long', year: 'numeric' }))}
-                    </span>
-                    <span className="text-right tabular-nums">
-                        <span className="text-body-sm font-black text-content">{pts(v.puntos)}</span>
-                        <span className="text-caption text-content-3 ml-1.5">{dolares(v.puntos)}</span>
-                    </span>
-                </li>
-            ))}
-            {lista.length > proximas.length && (
-                <li className="text-caption text-content-3">y {lista.length - proximas.length} meses más</li>
-            )}
         </ul>
     );
 }

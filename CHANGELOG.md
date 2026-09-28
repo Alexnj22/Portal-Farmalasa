@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1082.1 — Puntos: Cuándo vencen en gráfica, sin el panel El programa
+
+Pedido del usuario: se quita el panel «El programa» y «Cuándo vencen» pasa a
+gráfica.
+
+- La gráfica va del mes actual al último vencimiento, con los meses sin
+  vencimientos en cero: se lee CUÁNDO cae cada uno (hoy, nada hasta octubre de
+  2027 y ahí todo junto). Azul, como la serie de puntos; el tooltip da puntos,
+  dólares y cuántos clientes.
+- La nota del panel dice lo próximo que vence, escrito, para no tener que tocar
+  la barra.
+- Ocupa el tercio al lado de «Los que más puntos tienen».
+
 ## v2.1082.0 — F8 paso 2 — todas las pantallas abren en la app (mixta)
 
 En la app del teléfono, cada módulo que todavía no es nativo se abre como el

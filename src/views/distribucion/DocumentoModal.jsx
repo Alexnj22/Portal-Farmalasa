@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    FileCheck2, RefreshCw, Loader2, Download, ExternalLink, Printer, Pencil, Undo2, Ban,
+    FileCheck2, RefreshCw, Loader2, Download, ExternalLink, Printer, Pencil, Undo2, Ban, RotateCcw,
 } from 'lucide-react';
 import PortalInput from '../../components/common/PortalInput';
 import PagosDelPedido from './PagosDelPedido';
@@ -26,6 +26,8 @@ import {
 } from '@nucleo/utils/distribucionDocumento';
 import { MARCA_PAPEL } from './marca';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
+import { useNavigate } from 'react-router-dom';
+import { rutaVolverAVender } from './rutas';
 
 // Un documento de Distribución con sus dos papeles a la vista: el TICKET (lo
 // que sale por la ticketera) y el PDF (la representación gráfica del DTE).
@@ -84,6 +86,7 @@ function VistaPdf({ url, error }) {
 }
 
 export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = false, onClose, onCambio, onCorregirPedido }) {
+    const navigate = useNavigate();
     const showToast = useToastStore(s => s.showToast);
     const [d, setD] = useState(null);
     const [vista, setVista] = useState('ticket');
@@ -277,6 +280,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
             <LiquidModal.Footer>
                 <div className="flex flex-wrap items-center justify-end gap-2 w-full">
                     <Button variant="ghost" onClick={onClose} disabled={!!ocupado}>Cerrar</Button>
+                    {puedeVender && d?.pedido_id && (
+                        <Button variant="secondary" icon={RotateCcw} onClick={() => navigate(rutaVolverAVender(d.pedido_id))}>Volver a vender</Button>
+                    )}
                     {d && vista === 'ticket' && (
                         <Button variant="secondary" icon={Printer} onClick={() => imprimirTicket(d)}>Imprimir ticket</Button>
                     )}

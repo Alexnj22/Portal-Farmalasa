@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1091.0 — Torogoz: la venta más compacta y rápida; volver a vender
+
+Pedido del usuario: «mejora las vistas, más moderno, compacto, práctico:
+la preventa / venta se hará muy seguido, que sea de fácil uso».
+
+- **Una franja para el cliente**: cliente, documento y lista en una línea,
+  con sus avisos debajo. Sin encabezados de paso que ocupaban espacio.
+- **Pendientes** pasa a un botón del encabezado (con su número) que abre la
+  lista; ya no empuja la venta hacia abajo.
+- **Buscador grande** con los resultados flotando encima de la lista (no la
+  mueven con cada letra); Esc limpia.
+- **Un renglón por producto** en pantalla ancha. Lista y precio en un solo
+  control (precio grande, lista debajo, cada opción con su precio).
+- **Barra de acción fija abajo** en computadora y teléfono: total, «Guardar
+  preventa» y «Facturar». Ctrl+Enter factura; `/` vuelve al buscador.
+- **Guardar preventa deja la pantalla lista para la siguiente**, en vez de
+  mandar a Pedidos.
+- Observaciones detrás de un botón; el cobro queda más corto.
+- **Volver a vender** (pedido y documento): abre una venta nueva con el mismo
+  cliente y productos, sin descuentos ni pagos. «Repetir su último pedido» al
+  elegir cliente se quitó a pedido del usuario.
+- Teléfono: el renglón en tres líneas cortas y la forma de pago en su propia
+  línea (al lado del monto quedaba en «E»).
+
+
 ## v2.1090.2 — El letrero del entorno de pruebas ya no tapa el menú
 
 Reporte del usuario: la píldora «Entorno de pruebas» (abajo a la izquierda)

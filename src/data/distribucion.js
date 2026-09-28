@@ -155,6 +155,21 @@ export async function fetchPedidos({ desde, estados } = {}) {
     return rows;
 }
 
+/**
+ * Lo que un cliente compró en sus últimos pedidos (sin anulados), para
+ * «repetir el último pedido» y «lo que suele llevar». En ruta el pedido de una
+ * tienda se parece mucho al de la semana pasada: empezar desde ahí ahorra
+ * buscar producto por producto. Diez pedidos alcanzan y es una sola consulta.
+ */
+export async function fetchHistorialDeCliente(clienteId) {
+    const { data, error } = await supabase.from('dist_pedidos')
+        .select('id, created_at, estado, dist_pedido_items(product_id, presentacion, cantidad, lista_id)')
+        .eq('cliente_id', clienteId).neq('estado', 'anulado')
+        .order('created_at', { ascending: false }).limit(10);
+    if (error) throw error;
+    return data ?? [];
+}
+
 /** Todo lo que la vista de venta necesita para corregir un pedido por facturar. */
 export async function fetchPedidoParaCorregir(pedidoId) {
     const [{ data: pedido, error }, items, pagos] = await Promise.all([

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Receipt, Ban, Loader2, RefreshCw, Pencil, FileText } from 'lucide-react';
+import { ClipboardList, Receipt, Ban, Loader2, RefreshCw, Pencil, FileText, RotateCcw } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -17,11 +17,14 @@ import {
 import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, FORMA_PAGO, rotuloTipoCliente } from './comun';
 import PagosDelPedido from './PagosDelPedido';
 import { calcularVenta } from './motor';
+import { useNavigate } from 'react-router-dom';
+import { rutaVolverAVender } from './rutas';
 
 // El detalle de un pedido y lo que se puede hacer con él. Facturar lo hace el
 // servidor; acá se pide y se muestra lo que contestó, incluido «quedó firmado
 // y sin enviar», que NO es lo mismo que emitido.
 export default function PedidoModal({ pedido, puedeVender, onClose, onCambio, onCorregir, onVerDocumento }) {
+    const navigate = useNavigate();
     const showToast = useToastStore(s => s.showToast);
     const [items, setItems] = useState(null);
     const [error, setError] = useState('');
@@ -149,6 +152,12 @@ export default function PedidoModal({ pedido, puedeVender, onClose, onCambio, on
             <LiquidModal.Footer>
                 <div className="flex flex-wrap items-center justify-end gap-2 w-full">
                     <Button variant="ghost" onClick={onClose} disabled={!!ocupado}>Cerrar</Button>
+                    {/* Una venta nueva con el mismo cliente y los mismos productos. */}
+                    {puedeVender && !anulando && pedido.estado !== 'confirmado' && (
+                        <Button variant="secondary" icon={RotateCcw} disabled={!!ocupado} onClick={() => navigate(rutaVolverAVender(pedido.id))}>
+                            Volver a vender
+                        </Button>
+                    )}
                     {puedeFacturar && !anulando && (
                         <Button variant="secondary" icon={Ban} disabled={!!ocupado} onClick={() => setAnulando(true)}>Anular</Button>
                     )}

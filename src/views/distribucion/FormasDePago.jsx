@@ -75,8 +75,10 @@ export default function FormasDePago({ filas, setFilas, total, cliente, plazo, s
                         {/* Arriba la forma, el monto y quitar; abajo, a lo ancho, lo propio
                             de esa forma (entrega y cambio, referencia, plazo). En la columna
                             del cobro no caben las cuatro cosas en una línea. */}
-                        <div className="grid grid-cols-[minmax(0,1fr)_8rem_auto] gap-2 items-end">
-                            <div className="min-w-0">
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_8rem_auto] gap-2 items-end">
+                            {/* En el teléfono la forma va sola en su línea: al lado del
+                                monto quedaba en «E». */}
+                            <div className="min-w-0 col-span-2 sm:col-span-1">
                                 <LiquidSelect value={f.forma} options={opciones} clearable={false}
                                     onChange={(val) => set(f.clave, { forma: val || '01', adjunto: null, recibido: '', referencia: '' })} />
                             </div>
@@ -93,7 +95,7 @@ export default function FormasDePago({ filas, setFilas, total, cliente, plazo, s
                             <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar esta forma de pago"
                                 disabled={filas.length === 1} onClick={() => quitar(f.clave)} />
                             {f.forma === '01' && (
-                                <div className="col-span-3 grid grid-cols-2 gap-2 items-end">
+                                <div className="col-span-2 sm:col-span-3 grid grid-cols-2 gap-2 items-end">
                                     <PortalInput name={`recibido-pago-${f.clave}`} inputMode="decimal" value={f.recibido} label="Entrega" compact
                                         prefix="$" placeholder={montos[i] ? montos[i].toFixed(2) : '0.00'} hasError={cambio != null && cambio < 0}
                                         onChange={(e) => set(f.clave, { recibido: e.target.value })}
@@ -107,13 +109,13 @@ export default function FormasDePago({ filas, setFilas, total, cliente, plazo, s
                                 </div>
                             )}
                             {comprobante && (
-                                <div className="col-span-3">
+                                <div className="col-span-2 sm:col-span-3">
                                     <PortalInput name={`ref-pago-${f.clave}`} value={f.referencia} compact label="N.º de autorización o referencia"
                                         placeholder="Opcional" onChange={(e) => set(f.clave, { referencia: e.target.value })} />
                                 </div>
                             )}
                             {f.forma === '13' && (
-                                <div className="col-span-3">
+                                <div className="col-span-2 sm:col-span-3">
                                     <PortalInput label="Plazo (días)" name="plazo" inputMode="numeric" value={plazo} compact
                                         onChange={(e) => setPlazo(e.target.value)}
                                         helperText={`Hasta ${cliente?.plazo_dias ?? 0} días · aprobado ${formatMoney(cliente?.limite_credito ?? 0)}`} />

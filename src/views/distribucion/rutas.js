@@ -22,3 +22,5 @@ export const rutaVenta = (pedidoId = null) => (pedidoId ? `${BASE_TOROGOZ}/venta
 export const rutaDocumento = (dteId, { imprimir = false } = {}) =>
     rutaSeccion('pedidos', `documento=${dteId}${imprimir ? '&imprimir=1' : ''}`);
 export const rutaSolicitud = (id) => rutaSeccion('solicitudes', `solicitud=${id}`);
+/** Una venta NUEVA con el cliente y los productos de otra («Volver a vender»). */
+export const rutaVolverAVender = (pedidoId) => `${BASE_TOROGOZ}/venta?desde=${pedidoId}`;

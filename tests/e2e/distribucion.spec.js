@@ -203,8 +203,9 @@ test('pedidos separados en pendientes y finalizados; la venta lista las pendient
     expect(finalizados.some(t => /PREVENTA/i.test(t))).toBe(false);
     await page.screenshot({ path: `${SALIDA}/pedidos-finalizados.png`, fullPage: true });
 
-    // En la venta nueva, arriba, las pendientes: se elige una y se abre para finalizar.
+    // En la venta nueva, «Pendientes» arriba a la derecha: se elige una y se abre para finalizar.
     await page.goto('/torogoz/venta');
+    await page.getByRole('button', { name: /Pendientes/ }).first().click();
     const lista = page.locator('[data-pendiente]');
     await expect(lista.first()).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: `${SALIDA}/venta-pendientes.png`, fullPage: true });
@@ -212,4 +213,22 @@ test('pedidos separados en pendientes y finalizados; la venta lista las pendient
     await expect(page).toHaveURL(/\/torogoz\/venta\/\d+$/);
     await expect(page.getByRole('heading', { name: /Finalizar venta/ }).first()).toBeVisible();
     await expect(page.locator('[data-renglon]').first()).toBeVisible();
+});
+
+test('volver a vender desde un pedido finalizado; guardar la preventa deja lista la siguiente', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/torogoz/pedidos?vista=finalizados');
+    // Esperar a que la lista esté cargada: un clic sobre el esqueleto no abre nada.
+    await expect(page.getByText(/^Pedido \d+/).first()).toBeVisible({ timeout: 15_000 });
+    await page.getByText(/^Pedido \d+/).first().click();
+    await page.getByRole('button', { name: 'Volver a vender' }).click();
+    await expect(page).toHaveURL(/\/torogoz\/venta$/, { timeout: 15_000 });
+    await expect(page.locator('[data-renglon]').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Elegir cliente…')).toHaveCount(0);
+    await page.screenshot({ path: `${SALIDA}/volver-a-vender.png`, fullPage: true });
+    // La barra de abajo, siempre a mano: guardar la preventa deja la pantalla limpia.
+    await page.getByRole('button', { name: 'Guardar preventa' }).click();
+    await expect(page.getByText('Preventa guardada').first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator('[data-renglon]')).toHaveCount(0);
+    await expect(page.getByText('Elegir cliente…')).toBeVisible();
 });

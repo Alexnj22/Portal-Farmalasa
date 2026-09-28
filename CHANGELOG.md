@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.9 — Metas: la tarjeta de confirmación habla en palabras
+
+El usuario no entendía «Exigencia», «meta +3.6%» ni «meta +3.1%» bajo el promedio.
+
+- Debajo de la meta, una frase en dinero: «$1,780.98 más que la meta de septiembre».
+- Los botones dicen lo que hacen: **Bajar 1%** / **Subir 1%**, con «Es la que
+  propuso el sistema» o «2% más alta que la que propuso el sistema» y un botón
+  para volver a la propuesta.
+- «Para comparar»: tres renglones con nombre completo —meta de septiembre (con
+  cuánto se cumplió), venta de octubre 2025, venta promedio de julio a
+  septiembre— sin porcentajes sueltos. «Uno proyectado» pasa a «Septiembre
+  todavía no cierra: se estimó cómo termina».
+
 ## v2.1076.8 — Puntos: anular una compra toma de sus otros puntos, y el historial lo dice claro
 
 Decisión del usuario (2026-09-28).

@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1079.0 — F6 — los tokens del diseño en JSON, gate:tokens
+
+La app del teléfono no lee CSS: ahora los colores, espacios, radios y sombras
+del portal salen a `src/constants/tokens.json` (`npm run tokens:exportar`),
+generado desde `src/index.css` — los cuatro temas y las variantes de densidad,
+táctil y teléfono, con los `var()` ya resueltos. `npm run gate:tokens` (y el
+pre-commit) falla si el JSON quedó viejo o si un token apunta a una variable
+que no existe.
+
+**Arreglado:** el color neutro de las gráficas y chips (`chart-8`) apuntaba
+desde v2.139.0 a una variable que no existía, así que en los cuatro temas sus
+fondos salían transparentes. Ahora usa el gris terciario/secundario del tema.
+
 ## v2.1078.1 — Metas: la diferencia del ajuste en dinero, bajo el deslizador
 
 Pedido del usuario: que bajo el deslizador diga cuánto es la diferencia, y

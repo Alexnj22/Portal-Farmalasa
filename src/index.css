@@ -852,7 +852,7 @@ thead.sticky,
   --chart-2: var(--success);  --chart-2-text: var(--success-text);
   --chart-5: var(--chart-9);  --chart-5-text: var(--chart-9-text);
   --chart-7: var(--warning);  --chart-7-text: var(--warning-text);
-  --chart-8: var(--content-3); --chart-8-text: var(--content-2);
+  --chart-8: var(--text-tertiary); --chart-8-text: var(--text-secondary);
 
   /* A5 (2026-07-26) — el sistema tiene paletas CATEGÓRICAS (un color por
      categoría, sin orden) pero ninguna rampa ORDINAL. ABC/XYZ de MinMax sí
@@ -1308,7 +1308,7 @@ thead.sticky,
   --chart-2-text: var(--success-text);
   --chart-5-text: var(--chart-9-text);
   --chart-7-text: var(--warning-text);
-  --chart-8-text: var(--content-2);
+  --chart-8-text: var(--text-secondary);
 }
 
 /* Fase T5: degrada el costo de blur de liquid/dark en móvil (blur(44px)→
@@ -1544,7 +1544,7 @@ thead.sticky,
   --chart-1-text: #60a5fa; --chart-3-text: #a78bfa; --chart-4-text: #fb923c;
   --chart-6-text: #f472b6; --chart-9-text: #2dd4bf;
   --chart-2-text: var(--success-text); --chart-5-text: var(--chart-9-text);
-  --chart-7-text: var(--warning-text); --chart-8-text: var(--content-2);
+  --chart-7-text: var(--warning-text); --chart-8-text: var(--text-secondary);
   --success-text: #34d399; --warning-text: #fbbf24;
   /* Los `-text` de la identidad, invertidos igual que los de severidad: el
      verde y el magenta del logo son demasiado oscuros sobre fondo oscuro, y

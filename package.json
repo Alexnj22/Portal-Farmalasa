@@ -63,6 +63,8 @@
     "gate:hora": "node scripts/hora-gate.mjs",
     "gate:nucleo": "node scripts/nucleo-gate.mjs",
     "gate:consultas": "node scripts/consultas-gate.mjs",
+    "gate:tokens": "node scripts/exportar-tokens.mjs --revisar",
+    "tokens:exportar": "node scripts/exportar-tokens.mjs",
     "auditoria": "node scripts/auditoria-gate.mjs",
     "auditoria:desbloquear": "node scripts/auditoria-cli.mjs desbloquear",
     "auditoria:sellar": "node scripts/auditoria-cli.mjs sellar",

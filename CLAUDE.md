@@ -1529,6 +1529,13 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   `npm run tipos:base`** y commitear los tipos con la migración; `--remoto`
   compara con producción y falla si quedaron viejos. Tarda ~20 s, así que no va
   en el pre-commit: se corre al cerrar trabajo que toque el núcleo o la base.
+- **`npm run gate:tokens` — la paleta de la app sale del CSS.**
+  `src/constants/tokens.json` lo genera `npm run tokens:exportar` desde
+  `src/index.css`; **no se edita a mano**. Corre en el pre-commit cuando el
+  commit toca `index.css` y falla si el JSON quedó viejo, si un token apunta a
+  una variable que no existe (el navegador lo calla: así vivió `--chart-8`
+  sin color desde v2.139.0) o si aparece una consulta de medios nueva que el
+  export no clasifica. Al cambiar un token: editar el CSS y regenerar.
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
   crudos, elementos nativos del navegador), correr `npm run gate:design`.**
   Debe pasar en verde — las excepciones legítimas viven en

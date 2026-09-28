@@ -185,6 +185,14 @@ if git diff --cached --name-only | grep -qE '^src/(data|utils|store|hooks|contex
   node scripts/nucleo-gate.mjs --hook || exit 1
 fi
 
+# tokens-gate: `src/constants/tokens.json` es la paleta de la app nativa y sale
+# de `src/index.css` (F6 del plan del núcleo). Falla si el JSON quedó distinto
+# de lo que el CSS dice, o si un token apunta a una variable que no existe.
+# Local y en milisegundos.
+if git diff --cached --name-only | grep -qE '^src/index\.css$|^src/constants/tokens\.json$|^scripts/exportar-tokens'; then
+  node scripts/exportar-tokens.mjs --revisar || exit 1
+fi
+
 # consultas-gate: las pantallas (`views`, `components`) no le hablan a la base;
 # la consulta va a `src/data` o a un hook de `src/hooks`, que es lo que la app
 # del teléfono reutiliza. Trinquete: la cuenta por archivo no puede subir.

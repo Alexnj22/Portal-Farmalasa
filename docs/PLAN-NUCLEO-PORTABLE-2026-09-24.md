@@ -1,6 +1,6 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado:** F0 a F5, U1 y U2 **cerradas** · sigue **F6** (los tokens del diseño en JSON).
+**Estado:** F0 a F6, U1 y U2 **cerradas** · sigue **F7** (el núcleo a `packages/core`).
 
 ### Bitácora
 
@@ -101,6 +101,23 @@
   aviso en su línea y un parámetro de `.rpc()` mal escrito lo nombra. El primer
   día cazó un defecto real: la bitácora de cotizaciones leía `cliente_nombre`,
   que no existe (es `customer_name`), y el cliente salía vacío desde siempre.
+- **F6 — los tokens del diseño en JSON (2026-09-28)**. `src/constants/tokens.json`
+  sale de `src/index.css` con `npm run tokens:exportar` y NO se edita a mano:
+  los cuatro temas (`liquid`, `dark`, `solid`, `solid-dark`; 286–297 tokens
+  cada uno, compuestos en el orden del documento como los compone el
+  navegador y con los `var()` resueltos) y cuatro variantes (`compacto`,
+  `ultra`, `tactil`, `telefono`) con sólo lo que cada consulta de medios pisa.
+  En el teléfono aplica `tactil` (blanco de dedo 44px). Lo que no se resuelve
+  fuera de un navegador (`env()`, `color-mix()`) sale como texto. Lo vigila
+  `npm run gate:tokens`, también en el pre-commit: falla si el JSON no es el
+  que sale del CSS, si un token apunta a una variable que no existe, y si
+  aparece una consulta de medios que el export no conoce. Cazó un defecto real
+  el primer día: desde v2.139.0 `--chart-8` y `--chart-8-text` (el neutro)
+  apuntaban a `--content-3`/`--content-2`, que sólo existen como
+  `--color-content-*` del puente de Tailwind — en los cuatro temas el valor era
+  inválido y los fondos `chart-8/…` salían transparentes. Corregido a
+  `--text-tertiary`/`--text-secondary`, que es lo que el cambio original quiso
+  decir.
 
 ## Para qué
 

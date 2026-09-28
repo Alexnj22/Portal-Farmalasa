@@ -73,7 +73,7 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
     // Corregir: el documento nunca llegó a Hacienda, se retira y el pedido vuelve a la venta.
     await doc.getByRole('button', { name: 'Corregir' }).click();
     await expect(page).toHaveURL(/\/distribucion\/venta\/\d+$/, { timeout: 20_000 });
-    await expect(page.getByRole('heading', { name: /Corregir pedido/ }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Corregir venta/ }).first()).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/corregir.png`, fullPage: true });
 });
 
@@ -138,10 +138,10 @@ test('venta como en la caja: presentación, lista, descuento y el cambio del efe
     await expect(renglon).toBeVisible();
 
     // Presentación: de unidad a paquete (12 unidades, otro precio).
-    const precioUnidad = await renglon.locator('.tabular-nums').nth(1).innerText();
+    const precioUnidad = await renglon.getByTestId('precio-renglon').innerText();
     await renglon.getByLabel(/Presentación de/).click();
     await page.getByRole('option', { name: /PAQUETE/ }).click();
-    await expect(renglon.locator('.tabular-nums').nth(1)).not.toHaveText(precioUnidad);
+    await expect(renglon.getByTestId('precio-renglon')).not.toHaveText(precioUnidad);
 
     // Descuento de 5%. (El tope de la empresa no frena a esta cuenta: tiene
     // la capacidad de configurar Distribución. El freno se probó en la base.)

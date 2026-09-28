@@ -24,6 +24,21 @@ import { filaNueva, montosDePagos, redondear } from './pagos';
 // persona necesita en el mostrador, y no va al documento (Hacienda recibe el
 // monto pagado, no el billete).
 
+// Enter en un monto lo CONFIRMA: lo deja escrito con dos decimales —así se ve
+// que entró— y pasa al campo siguiente del cobro; en el último, al botón
+// principal (sin apretarlo: facturar es irreversible y no sale de un Enter).
+// Pedido del usuario: «si le doy Enter al poner monto no se guarda».
+function confirmarConEnter(e, valor, fijar) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const m = leerMonto(valor);
+    if (m != null) fijar(m.toFixed(2));
+    const actual = e.currentTarget;
+    const campos = [...(actual.closest('[data-cobro]')?.querySelectorAll('input:not([disabled]):not([type="file"])') ?? [])];
+    const siguiente = campos[campos.indexOf(actual) + 1];
+    (siguiente ?? document.querySelector('[data-accion-principal]'))?.focus();
+}
+
 const VERIF = {
     coincide: { variant: 'success', icon: CheckCircle2, label: 'Comprobante: coincide' },
     sin_lectura: { variant: 'info', icon: CheckCircle2, label: 'Comprobante: confirmado a mano' },
@@ -72,7 +87,8 @@ export default function FormasDePago({ filas, setFilas, total, cliente, plazo, s
                                 </div>
                             ) : (
                                 <PortalInput name={`monto-pago-${f.clave}`} inputMode="decimal" value={f.monto} label="Monto" compact
-                                    prefix="$" placeholder="0.00" onChange={(e) => set(f.clave, { monto: e.target.value })} />
+                                    prefix="$" placeholder="0.00" onChange={(e) => set(f.clave, { monto: e.target.value })}
+                                    onKeyDown={(e) => confirmarConEnter(e, f.monto, (v) => set(f.clave, { monto: v }))} />
                             )}
                             <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar esta forma de pago"
                                 disabled={filas.length === 1} onClick={() => quitar(f.clave)} />
@@ -80,7 +96,8 @@ export default function FormasDePago({ filas, setFilas, total, cliente, plazo, s
                                 <div className="col-span-3 grid grid-cols-2 gap-2 items-end">
                                     <PortalInput name={`recibido-pago-${f.clave}`} inputMode="decimal" value={f.recibido} label="Entrega" compact
                                         prefix="$" placeholder={montos[i] ? montos[i].toFixed(2) : '0.00'} hasError={cambio != null && cambio < 0}
-                                        onChange={(e) => set(f.clave, { recibido: e.target.value })} />
+                                        onChange={(e) => set(f.clave, { recibido: e.target.value })}
+                                        onKeyDown={(e) => confirmarConEnter(e, f.recibido, (v) => set(f.clave, { recibido: v }))} />
                                     <div className="flex flex-col justify-end min-h-10">
                                         <span className="text-caption text-content-3">Cambio</span>
                                         <span className={`font-black tabular-nums ${cambio != null && cambio < 0 ? 'text-danger-text' : 'text-success-text'}`}>

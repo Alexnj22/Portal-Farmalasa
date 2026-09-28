@@ -13,7 +13,12 @@ DECLARE
     v_emisor smallint;
     v_yo uuid;
 BEGIN
-    IF (SELECT count(*) FROM public.employees) > 2 THEN
+    -- Guarda: la cuenta de pruebas existe y la base es chica. Antes era «≤2
+    -- fichas», y el branch ya tiene 13 (cuentas de QA): rehecho el 28-sep, no
+    -- sembró nada y Distribución quedó vacía. Producción tiene 48 fichas y
+    -- ninguna cuenta `pruebas`.
+    IF NOT EXISTS (SELECT 1 FROM public.employees WHERE username = 'pruebas')
+       OR (SELECT count(*) FROM public.employees) > 30 THEN
         RAISE NOTICE 'semilla de distribución: esto no es el entorno de pruebas, no se siembra';
         RETURN;
     END IF;
@@ -54,12 +59,27 @@ BEGIN
     -- Catálogo: los 60 primeros productos activos. En el branch no existe el
     -- listado de la SRS, así que «venta libre» = ni antibiótico, ni regulado, ni
     -- con receta. En producción esa casilla la marca una persona contra el listado.
-    INSERT INTO public.dist_catalogo (emisor_id, product_id, precio_sin_iva, venta_libre)
-    SELECT v_emisor, p.id,
-           round((0.50 + (p.id % 97) * 0.35)::numeric, 2),
-           NOT (coalesce(p.es_antibiotico, false) OR coalesce(p.regulado, false) OR coalesce(p.requiere_receta, false))
-      FROM public.products p
-     WHERE coalesce(p.activo, true)
-     ORDER BY p.id
-     LIMIT 60;
+    -- La columna del precio cambia de nombre en 0007 (pasa a llevar IVA): la
+    -- semilla sirve antes y después, para que un branch rehecho con 0007 ya
+    -- aplicado también quede sembrado.
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = 'dist_catalogo' AND column_name = 'precio_con_iva') THEN
+        INSERT INTO public.dist_catalogo (emisor_id, product_id, precio_con_iva, venta_libre)
+        SELECT v_emisor, p.id,
+               round((0.50 + (p.id % 97) * 0.35)::numeric * 1.13, 2),
+               NOT (coalesce(p.es_antibiotico, false) OR coalesce(p.regulado, false) OR coalesce(p.requiere_receta, false))
+          FROM public.products p
+         WHERE coalesce(p.activo, true)
+         ORDER BY p.id
+         LIMIT 60;
+    ELSE
+        INSERT INTO public.dist_catalogo (emisor_id, product_id, precio_sin_iva, venta_libre)
+        SELECT v_emisor, p.id,
+               round((0.50 + (p.id % 97) * 0.35)::numeric, 2),
+               NOT (coalesce(p.es_antibiotico, false) OR coalesce(p.regulado, false) OR coalesce(p.requiere_receta, false))
+          FROM public.products p
+         WHERE coalesce(p.activo, true)
+         ORDER BY p.id
+         LIMIT 60;
+    END IF;
 END $$;

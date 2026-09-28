@@ -436,13 +436,19 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   const [emi, cli, its, pag] = await Promise.all([
     admin.from("dist_emisores").select("*").eq("id", p.emisor_id).single(),
     admin.from("dist_clientes").select("*").eq("id", p.cliente_id).single(),
-    admin.from("dist_pedido_items").select("id, product_id, cantidad, precio_con_iva, descuento, descripcion").eq("pedido_id", pedidoId).order("id"),
+    admin.from("dist_pedido_items").select("id, product_id, cantidad, precio_con_iva, descuento, descuento_estado, descripcion").eq("pedido_id", pedidoId).order("id"),
     admin.from("dist_pagos").select("id, orden, forma, monto, referencia").eq("pedido_id", pedidoId).order("orden"),
   ]);
   for (const r of [emi, cli, its, pag]) if (r.error) throw new Error(r.error.message);
   const e = emi.data!, c = cli.data!;
   if (!e.activo) throw new ErrorUsuario("el emisor está desactivado");
   if (!its.data!.length) throw new ErrorUsuario("el pedido no tiene productos");
+  // Un descuento pedido y todavía sin decidir: la venta es preventa hasta que
+  // lo resuelvan en Solicitudes (borrador 0008). Facturarla ahora sería
+  // emitir sin el descuento que el cliente espera, o con uno que nadie dio.
+  if (its.data!.some((i: any) => i.descuento_estado === "pendiente")) {
+    throw new ErrorUsuario("Esta venta tiene un descuento esperando aprobación: se factura cuando lo resuelvan.", 409);
+  }
 
   // El documento lo eligió quien vendió; si no eligió, el de la ficha. Un
   // Crédito Fiscal sin NRC no se emite aunque el pedido lo diga.

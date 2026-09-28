@@ -103,6 +103,7 @@ const GRUPOS_CRUDOS = [
              * necesariamente quien decide sobre la cartera de créditos—, y con un
              * solo interruptor dar uno regala el otro. */
             { key: 'requests_cuentas_por_cobrar', label: 'Decidir: cuentas por cobrar', desc: 'Resolver los pedidos de anular o corregir un abono ya cobrado. Quien lo cobró no puede deshacerlo: un abono aplicado es dinero. Corregirlo se aplica borrando el abono y volviendo a hacerlo, que es lo único que el sistema de la caja permite', icono: 'HandCoins', hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
+            { key: 'requests_distribucion', label: 'Decidir: descuentos de Distribución', desc: 'Aprobar o rechazar el descuento que un vendedor de Distribución no puede dar solo. Aprobarlo lo aplica a la venta; rechazarlo la deja sin él. Quien lo pidió no puede decidirlo', icono: 'Truck', hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
             { key: 'requests_personales', label: 'Solicitudes personales', desc: 'Las que hablan de una persona y no de la sala: vacaciones, permiso, incapacidad, anticipo salarial y constancias. Ver aquí es ver datos sensibles del expediente ajeno', icono: 'Palmtree', hasApprove: true, hasScope: true },
             // Módulo aparte de `requests` a propósito: acá `can_approve` habilita
             // confirmar un traslado de la propia sala y NADA más. Metido dentro de
@@ -239,6 +240,10 @@ const GRUPOS_CRUDOS = [
             // cambiar el NIT, el ambiente o un precio no es lo mismo que vender.
             { key: 'distribucion',   label: 'Distribución',  desc: 'Venta en ruta de la S.A.S. a tiendas, supermercados y farmacias: pedidos de preventa, facturación electrónica propia, clientes con su licencia de la SRS. Editar = tomar pedidos, facturarlos y mantener las fichas de clientes', icono: 'Truck', hasApprove: false, sub: [
                 { key: 'distribucion_config', label: 'Precios y datos de la empresa', tipo: 'cap' },
+                // Dar descuentos hasta el tope de la empresa sin pedirle a nadie.
+                // Sin esto —o pasando el tope— el descuento se PIDE y la venta
+                // queda como preventa (borrador distribucion/0008).
+                { key: 'distribucion_descuentos', label: 'Dar descuentos (hasta el tope)', tipo: 'cap' },
             ]},
             { key: 'puntos',         label: 'Puntos',        desc: 'El programa de puntos entero: lo acumulado y canjeado por día y por sala, los avisos de canjes sin saldo y anulaciones con puntos ya gastados, cuándo vencen, y las cuentas del sistema anterior que quedaron por asignar. Editar = asignar una de esas cuentas a la ficha de un cliente', icono: 'Star', hasApprove: false, sub: [
                 // Una por pestaña (pedido del usuario, 2026-09-25). Avisos es sólo

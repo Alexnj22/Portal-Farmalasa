@@ -166,7 +166,11 @@ CREATE TABLE public.dist_dte (
     created_at          timestamptz NOT NULL DEFAULT now(),
     -- El sello es lo que hace «sellado»: sin él el estado miente.
     CONSTRAINT dist_dte_sellado_con_sello CHECK (estado NOT IN ('sellado','invalidado') OR sello_recibido IS NOT NULL),
-    CONSTRAINT dist_dte_firmado_con_firma CHECK (estado = 'sin_firmar' OR firmado IS NOT NULL)
+    -- Sin firma sólo puede estar lo que nunca se firmó: el que espera firma y
+    -- el que se descartó antes de firmarse (corregir un pedido sin certificado
+    -- todavía). Sin `descartado` acá, «Corregir» fallaba en el entorno recién
+    -- rehecho (28-sep): el anterior tenía la regla cambiada a mano.
+    CONSTRAINT dist_dte_firmado_con_firma CHECK (estado IN ('sin_firmar', 'descartado') OR firmado IS NOT NULL)
 );
 -- El número de control no se repite en el año calendario (Manual §XI).
 CREATE UNIQUE INDEX dist_dte_numero_control_anio ON public.dist_dte (emisor_id, ambiente, numero_control, anio);

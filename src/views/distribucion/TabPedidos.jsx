@@ -31,7 +31,7 @@ const COLS = [
 ];
 
 const ESTADOS_FILTRO = [
-    { value: 'confirmado', label: 'Por facturar' },
+    { value: 'confirmado', label: 'Preventa' },
     { value: 'facturado',  label: 'Facturados' },
     { value: 'anulado',    label: 'Anulados' },
 ];
@@ -114,8 +114,8 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
         <div className="p-5 md:p-6 space-y-5">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de pedidos">
-                    <StatCard icon={ClipboardList} label="Por facturar" value={stats.porFacturar} loading={cargando}
-                        sub="Pedidos confirmados" active={estado === 'confirmado'} tono="brand"
+                    <StatCard icon={ClipboardList} label="Preventas" value={stats.porFacturar} loading={cargando}
+                        sub="Guardadas sin facturar" active={estado === 'confirmado'} tono="brand"
                         onClick={() => setEstado(v => (v === 'confirmado' ? '' : 'confirmado'))} />
                     <StatCard icon={CheckCircle2} label="Hoy" value={stats.facturadosHoy} loading={cargando}
                         iconBg="bg-success/10" iconCls="text-success" sub="Pedidos facturados hoy" />
@@ -149,7 +149,11 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
                     : { icon: ClipboardList, message: 'Sin pedidos', subtext: puedeVender ? 'Haz la primera con «Nueva venta».' : undefined }}
             >
                 {pagina.map((p, i) => {
-                    const est = ESTADO_PEDIDO[p.estado] ?? ESTADO_PEDIDO.confirmado;
+                    // Una preventa con un descuento pedido espera a que lo decidan:
+                    // no está «por facturar» todavía, y se dice así.
+                    const est = p.estado === 'confirmado' && p.descuento_solicitud_id
+                        ? { variant: 'warning', label: 'Descuento por aprobar' }
+                        : ESTADO_PEDIDO[p.estado] ?? ESTADO_PEDIDO.confirmado;
                     const dte = p.dist_dte;
                     const estDte = dte ? ESTADO_DOCUMENTO[dte.estado] : null;
                     return (

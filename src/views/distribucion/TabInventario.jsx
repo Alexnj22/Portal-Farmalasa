@@ -21,6 +21,7 @@ import { shortEmployeeName } from '../../utils/nameUtils';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchCatalogo, mensajeDeDistribucion } from '../../data/distribucion';
 import { fetchLotes, fetchMovimientosDeLote, entradaDeLote, ajustarLote } from '../../data/distribucionInventario';
+import useBorrador from '../../hooks/useBorrador';
 
 // El inventario de la distribuidora, por lote y vencimiento.
 //
@@ -72,6 +73,24 @@ function EntradaModal({ emisorId, onClose, onGuardado }) {
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState('');
 
+    // Una entrada de lote se escribe con la caja en la mano, y la sesión se
+    // cierra sola a los pocos minutos: lo escrito se guarda como borrador.
+    const { recuperado, descartar } = useBorrador(
+        emisorId ? `distribucion-entrada-lote-${emisorId}` : null,
+        { productoId, lote, vence, unidades, nota },
+        { vale: (v) => !!(v?.productoId || v?.lote || v?.unidades) },
+    );
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (repuesto.current || !recuperado) return;
+        repuesto.current = true;
+        setProductoId(recuperado.productoId ?? '');
+        setLote(recuperado.lote ?? '');
+        setVence(recuperado.vence ?? '');
+        setUnidades(recuperado.unidades ?? '');
+        setNota(recuperado.nota ?? '');
+    }, [recuperado]);
+
     useEffect(() => {
         let vivo = true;
         fetchCatalogo()
@@ -98,6 +117,7 @@ function EntradaModal({ emisorId, onClose, onGuardado }) {
             });
             useStaff.getState().appendAuditLog('DISTRIBUCION_LOTE_ENTRADA', String(r?.lote_id ?? ''),
                 { product_id: Number(productoId), lote: lote.trim().toUpperCase(), vence: vence || null, unidades: cant });
+            descartar();
             onGuardado();
         } catch (e) {
             setError(mensajeDeDistribucion(e));

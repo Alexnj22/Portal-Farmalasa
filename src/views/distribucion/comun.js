@@ -25,7 +25,8 @@ export const ESTADO_DOCUMENTO = {
 };
 
 export const ESTADO_PEDIDO = {
-    confirmado: { variant: 'info',    label: 'Por facturar' },
+    // «Preventa»: guardada sin facturar (así la llama quien vende en ruta).
+    confirmado: { variant: 'info',    label: 'Preventa' },
     facturado:  { variant: 'success', label: 'Facturado' },
     entregado:  { variant: 'success', label: 'Entregado' },
     anulado:    { variant: 'neutral', label: 'Anulado' },

@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1087.0 — Distribución: descuentos con aprobación, preventa, venta más clara y Enter en los montos
+
+Pedidos del usuario: que se diga que la lista cambia el precio de todos los
+productos, que la vista se vea mejor, qué es «sin factura», que Enter en un
+monto haga algo, y que los descuentos sean sólo de quien tiene permiso — el
+resto se pide, se aprueba o se rechaza, y la venta espera como preventa.
+
+- **Descuentos con aprobación** (borrador `distribucion/0008`): permisos
+  `distribucion_descuentos` (hasta el tope) y `requests_distribucion`
+  (decidir). Lo que no se puede dar queda «por aprobar», en cero, y la venta es
+  preventa; `dist_pedir_descuento` arma una solicitud `DIST_DESCUENTO` en
+  Solicitudes y avisa a quien decide; `dist_resolver_descuento` aplica o
+  rechaza (con motivo), firma, avisa al vendedor y no deja aprobarse a sí
+  mismo. Facturar con un descuento pendiente lo frena `distribucion-dte`.
+- **Lista de precios**: al cambiarla se actualizan todos los productos (también
+  los que tenían otra lista a mano), con aviso y texto que lo dice.
+- **«Guardar preventa»** en vez de «Sin facturar»; en Pedidos, «Preventa» y
+  «Descuento por aprobar».
+- **Enter** confirma el monto (dos decimales) y pasa al campo siguiente; en
+  cantidad y descuento vuelve al buscador.
+- **Vista**: pasos numerados, existencia por producto (y en el buscador),
+  panel del total con la marca, cambio destacado.
+- Entorno de pruebas rehecho el 28-sep: las semillas 0002/0005 ya no dependen
+  de «≤2 fichas», `scripts/entorno-pruebas/distribucion_pruebas.sql` repone
+  existencia, permisos y un vendedor de prueba, y `dist_dte_firmado_con_firma`
+  acepta `descartado` sin firma (el entorno viejo lo tenía cambiado a mano).
+- Inventario: la entrada de lote guarda borrador.
+
+
 ## v2.1086.1 — Distribución: precios con IVA en centavos y la pantalla calcula con el motor del documento
 
 Pregunta del usuario: «eso del redondeo, ¿cómo lo espera la ley?». La pantalla

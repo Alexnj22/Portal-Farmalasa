@@ -22,6 +22,9 @@ const MENSAJES = {
     DIST_DESCUENTO: 'El descuento pasa del importe del renglón.',
     DIST_SIN_PRECIO: 'Esa presentación no tiene precio cargado. Revisa el catálogo.',
     DIST_CCF_SIN_NRC: 'Ese cliente no tiene NRC: sólo se le puede emitir Factura.',
+    DIST_SIN_PERMISO: 'No tienes permiso para esto en Distribución.',
+    DIST_AUTOAPROBAR: 'No puedes decidir un descuento que pediste tú: lo decide otra persona con permiso.',
+    DIST_SOLICITUD_RESUELTA: 'Esa solicitud ya se resolvió.',
     DIST_PAGO_FACTURADO: 'La forma y el monto ya están en el documento: sólo se puede adjuntar el comprobante.',
 };
 
@@ -127,7 +130,7 @@ export async function agregarAlCatalogo(emisorId, productId, precioConIva, venta
 
 // ── Pedidos ────────────────────────────────────────────────────────────────
 
-const SELECT_PEDIDO = 'id, cliente_id, vendedor_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, created_at, dte_id, '
+const SELECT_PEDIDO = 'id, cliente_id, vendedor_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, created_at, dte_id, descuento_solicitud_id, '
     + 'dist_clientes(nombre, tipo, contribuyente), employees!dist_pedidos_vendedor_id_fkey(name), '
     + 'dist_dte!dist_pedidos_dte_id_fkey(numero_control, estado, total_pagar, tipo)';
 
@@ -145,7 +148,7 @@ export async function fetchPedidos({ desde } = {}) {
 export async function fetchPedidoParaCorregir(pedidoId) {
     const [{ data: pedido, error }, items, pagos] = await Promise.all([
         supabase.from('dist_pedidos')
-            .select('id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, reemplaza_dte_id')
+            .select('id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, reemplaza_dte_id, descuento_solicitud_id')
             .eq('id', pedidoId).single(),
         fetchItemsDePedido(pedidoId),
         fetchPagos(pedidoId),
@@ -156,7 +159,7 @@ export async function fetchPedidoParaCorregir(pedidoId) {
 
 export async function fetchItemsDePedido(pedidoId) {
     const { data, error } = await supabase.from('dist_pedido_items')
-        .select('id, product_id, cantidad, precio_con_iva, descuento, descuento_pct, descripcion, presentacion, unidades, lista_id')
+        .select('id, product_id, cantidad, precio_con_iva, descuento, descuento_pct, descuento_estado, descuento_pedido, descripcion, presentacion, unidades, lista_id')
         .eq('pedido_id', pedidoId).order('id');
     if (error) throw error;
     return data;
@@ -236,6 +239,27 @@ export async function actualizarPedido(pedidoId, { tipoDocumento, condicion, pla
         renglones.map(r => filaDeRenglon(pedidoId, r)),
         { onConflict: 'pedido_id,product_id,presentacion' });
     if (eIt) throw eIt;
+}
+
+/**
+ * Pide aprobación para los descuentos que quien vende no puede dar solo. La
+ * base ya dejó esos renglones en «pendiente» (y en cero) al guardarlos; esto
+ * arma UNA solicitud por venta en Solicitudes y avisa a quien puede decidirla.
+ * Si ya no queda nada pendiente, retira la solicitud abierta. Devuelve su id o null.
+ */
+export async function pedirDescuento(pedidoId, nota) {
+    const { data, error } = await supabase.rpc('dist_pedir_descuento', { p_pedido: pedidoId, p_nota: nota?.trim() || null });
+    if (error) throw error;
+    return data;
+}
+
+/** Aprueba (aplica a la venta) o rechaza (con motivo) un descuento pedido. */
+export async function resolverDescuento(solicitudId, aprobar, nota) {
+    const { data, error } = await supabase.rpc('dist_resolver_descuento', {
+        p_solicitud: solicitudId, p_aprobar: aprobar, p_nota: nota?.trim() || null,
+    });
+    if (error) throw error;
+    return data;
 }
 
 export async function anularPedido(pedidoId, motivo) {

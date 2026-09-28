@@ -75,6 +75,10 @@ export const REQUEST_TYPES = {
     // Vive en otra tabla (`minmax_change_requests`) pero se muestra en el mismo
     // centro: para quien mira la sala es una solicitud más. Ver `adaptarMinMax`.
     MINMAX_CHANGE_REQUEST:     { label: 'Ajuste de Min/Max',      color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
+    // Un vendedor de Distribución pide un descuento que no puede dar solo
+    // (borrador distribucion/0008). La venta queda como preventa hasta que se
+    // decida.
+    DIST_DESCUENTO:            { label: 'Descuento en una venta', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
 };
 
 /**
@@ -128,11 +132,22 @@ export const CAJA_REQUEST_TYPES = new Set([
     'ABONO_APROBACION',
 ]);
 
+/**
+ * La de Distribución: aprobar APLICA el descuento a la venta, rechazar lo deja
+ * como estaba. Las dos las hace `dist_resolver_descuento` en la base —que
+ * también impide que quien lo pidió se lo apruebe y avisa al vendedor—, así
+ * que ni aprobar ni rechazar pasan por el camino genérico.
+ */
+export const DISTRIBUCION_REQUEST_TYPES = new Set([
+    'DIST_DESCUENTO',
+]);
+
 /** Las que se aplican en un sistema externo al aprobarlas. */
 export const REQUEST_TYPES_QUE_SE_APLICAN = new Set([
     ...FACTURACION_REQUEST_TYPES,
     ...INVENTARIO_REQUEST_TYPES,
     ...CAJA_REQUEST_TYPES,
+    ...DISTRIBUCION_REQUEST_TYPES,
 ]);
 
 /**
@@ -160,6 +175,7 @@ export const TIPOS_OPERATIVOS = new Set([
     ...FACTURACION_REQUEST_TYPES,
     ...INVENTARIO_REQUEST_TYPES,
     ...CAJA_REQUEST_TYPES,
+    ...DISTRIBUCION_REQUEST_TYPES,
     'INVENTORY_TRANSFER_REQUEST',
 ]);
 
@@ -1272,6 +1288,39 @@ export const createRequestsSlice = (set, get) => ({
         return true;
     },
 
+    /**
+     * Decide un descuento de Distribución. Todo pasa en la base
+     * (`dist_resolver_descuento`): aplica o descarta, firma quién decidió,
+     * rechaza la autoaprobación y le avisa al vendedor —por eso acá NO se llama
+     * a `notifyEmployee`: serían dos avisos—. Entra por `await import()` por la
+     * misma razón que `data/creditos` arriba: no viajar en el chunk de arranque.
+     */
+    _decidirDistribucion: async (requestId, req, approverId, approverNote, aprobar) => {
+        const { resolverDescuento, mensajeDeDistribucion } = await import('../../data/distribucion');
+        try {
+            await resolverDescuento(requestId, aprobar, approverNote);
+        } catch (e) {
+            useToastStore.getState().showToast(aprobar ? 'No se aprobó' : 'No se rechazó', mensajeDeDistribucion(e), 'error');
+            return YA_AVISADO;
+        }
+        const estado = aprobar ? 'APPROVED' : 'REJECTED';
+        set(state => ({
+            requests: state.requests.map(x =>
+                x.id === requestId
+                    ? { ...x, status: estado, ...selloDeQuienDecidio(get, approverId), approver_note: approverNote }
+                    : x
+            ),
+        }));
+        apagarAviso(get, requestId, estado);
+        useToastStore.getState().showToast(
+            aprobar ? 'Descuento aprobado' : 'Descuento rechazado',
+            aprobar ? 'La venta ya se puede facturar con el descuento. Se le avisó al vendedor.'
+                    : 'La venta queda sin el descuento. Se le avisó al vendedor.',
+            aprobar ? 'success' : 'info');
+        emitir('requests-updated');
+        return true;
+    },
+
     /** Qué decir después. Cada una de las tres hizo algo distinto, y un toast
      *  genérico —«Solicitud aprobada»— no dice si el dinero se movió. */
     _avisoDeCaja: (tipo, r, modo) => {
@@ -1589,6 +1638,10 @@ export const createRequestsSlice = (set, get) => ({
             if (CAJA_REQUEST_TYPES.has(req.type))
                 return await get()._aprobarCaja(requestId, req, approverId, approverNote, aceptadas);
 
+            // Distribución: aprobar aplica el descuento a la venta, en la base.
+            if (DISTRIBUCION_REQUEST_TYPES.has(req.type))
+                return await get()._decidirDistribucion(requestId, req, approverId, approverNote, true);
+
             const currentLevel = req.current_level || 1;
             const nextLevel = currentLevel + 1;
             const newApprovals = [...(Array.isArray(req.approvals) ? req.approvals : []), {
@@ -1723,6 +1776,13 @@ export const createRequestsSlice = (set, get) => ({
              * habría visto un error. */
             if (req?.type === 'ABONO_APROBACION') {
                 return await get()._aprobarCaja(requestId, req, approverId, approverNote, null, 'reject');
+            }
+
+            /* Rechazar un descuento de Distribución también toca la venta: sus
+             * renglones quedan marcados «rechazado» y la preventa se libera
+             * para facturarse sin él. Lo hace la misma función que aprueba. */
+            if (req && DISTRIBUCION_REQUEST_TYPES.has(req.type)) {
+                return await get()._decidirDistribucion(requestId, req, approverId, approverNote, false);
             }
 
             /* Mismo candado que al aprobar, y por el mismo motivo: rechazar dos

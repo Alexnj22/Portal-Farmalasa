@@ -22,6 +22,7 @@ BEGIN
     INSERT INTO public.dist_listas (emisor_id, nombre, orden) VALUES
         (v_emisor, 'Mayoreo', 1), (v_emisor, 'Premium', 2), (v_emisor, 'VIP', 3), (v_emisor, 'Viñeta', 4);
 
+    CREATE TEMP TABLE semilla_precios ON COMMIT DROP AS
     WITH base AS (
         SELECT DISTINCT ON (pp.product_id, pr.tipo)
                pp.product_id, pr.tipo AS presentacion, greatest(pp.factor, 1) AS unidades,
@@ -38,9 +39,18 @@ BEGIN
           FROM base b CROSS JOIN public.dist_listas l
          WHERE l.emisor_id = v_emisor
     )
-    INSERT INTO public.dist_precios (emisor_id, product_id, presentacion, unidades, lista_id, precio_sin_iva)
-    SELECT v_emisor, product_id, presentacion, unidades, lista_id, round(con_iva / 1.13, 6)
-      FROM precios WHERE con_iva > 0.05;
+    SELECT * FROM precios WHERE con_iva > 0.05;
+
+    -- 0007 renombra la columna (pasa a llevar IVA): la semilla sirve antes y
+    -- después, igual que la de 0002.
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = 'dist_precios' AND column_name = 'precio_con_iva') THEN
+        INSERT INTO public.dist_precios (emisor_id, product_id, presentacion, unidades, lista_id, precio_con_iva)
+        SELECT v_emisor, product_id, presentacion, unidades, lista_id, round(con_iva, 2) FROM semilla_precios;
+    ELSE
+        INSERT INTO public.dist_precios (emisor_id, product_id, presentacion, unidades, lista_id, precio_sin_iva)
+        SELECT v_emisor, product_id, presentacion, unidades, lista_id, round(con_iva / 1.13, 6) FROM semilla_precios;
+    END IF;
 
     -- La farmacia a crédito compra en Premium; los demás, en la base.
     UPDATE public.dist_clientes c SET lista_id = l.id

@@ -10,7 +10,7 @@ import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
 import { anotar } from '@plataforma/cajaNegra';
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
-import { fetchEmployeeSafeByUsername } from "../data/auth";
+import { fetchEmployeeSafeByUsername, motivoDeLoginFallido } from "../data/auth";
 import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "@plataforma/pushEquipo";
 import { programarEn } from "../utils/temporizadorLargo";
 
@@ -1172,9 +1172,19 @@ export const AuthProvider = ({ children }) => {
       if (error) {
         skipAuthListener.current = false;
         if (isNetworkError(error)) return { ok: false, error: NETWORK_ERROR_MSG };
-        return error.message.includes('Invalid login credentials')
-          ? { ok: false, error: 'Usuario no encontrado o contraseña incorrecta.' }
-          : { ok: false, error: error.message };
+        // Por código y no por el texto: el texto de Auth está en inglés y
+        // llegaba tal cual a la pantalla («User is banned»).
+        if (error.code === 'invalid_credentials' || error.message.includes('Invalid login credentials')) {
+          return { ok: false, error: await motivoDeLoginFallido(cleanUsername) };
+        }
+        if (error.code === 'user_banned') {
+          return { ok: false, error: 'Tu acceso está bloqueado. Contacta a Recursos Humanos.' };
+        }
+        if (error.status === 429 || String(error.code || '').startsWith('over_')) {
+          return { ok: false, error: 'Demasiados intentos. Espera unos minutos antes de volver a intentar.' };
+        }
+        console.warn('signInWithPassword:', error.code, error.message);
+        return { ok: false, error: 'No se pudo iniciar sesión. Intenta de nuevo.' };
       }
 
       if (!data?.session) {

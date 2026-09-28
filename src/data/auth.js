@@ -5,6 +5,37 @@
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
 
+/**
+ * Por qué falló un login con usuario y contraseña, en palabras para la persona.
+ * Se llama SÓLO después de un `invalid_credentials`: Auth contesta lo mismo para
+ * un usuario que no existe y para una contraseña equivocada, y el servidor lo
+ * distingue con un tope de intentos por IP (ver `diagnosticarUsuario` en
+ * `ensure_user_by_code`). Nunca lanza: si no puede averiguarlo, devuelve el
+ * mensaje genérico — un diagnóstico caído no puede dejar a nadie sin respuesta.
+ */
+const GENERICO = 'Usuario o contraseña incorrectos.';
+const MENSAJE_DE_ESTADO = {
+    NO_EXISTE: (u) => `No existe el usuario «${u}». Revisa cómo lo escribiste: es nombre.apellido.`,
+    CONTRASENA: () => 'Contraseña incorrecta. Si no la recuerdas, pide a tu supervisor que la restablezca.',
+    INACTIVO: () => 'Tu cuenta está desactivada. Contacta a Recursos Humanos.',
+    BLOQUEADO: () => 'Tu acceso está bloqueado. Contacta a Recursos Humanos.',
+    SIN_ACCESO: () => 'Tu usuario todavía no tiene acceso al portal. Pide a tu supervisor que te lo active.',
+    CUENTA_DESALINEADA: () => 'Tu usuario tiene un problema de configuración. Pide a Sistemas que lo revise.',
+    DEMASIADOS_INTENTOS: () => 'Demasiados intentos fallidos. Espera unos minutos antes de volver a intentar.',
+};
+
+export async function motivoDeLoginFallido(usuario) {
+    try {
+        const { data, error } = await supabase.functions.invoke('ensure_user_by_code', {
+            body: { diagnosticar_usuario: usuario },
+        });
+        const armar = !error && data?.ok ? MENSAJE_DE_ESTADO[data.estado] : null;
+        return armar ? armar(usuario) : GENERICO;
+    } catch {
+        return GENERICO;
+    }
+}
+
 export function fetchEmployeeSafeByUsername(username) {
     return supabase.from('employees_safe').select('*').eq('username', username).single();
 }

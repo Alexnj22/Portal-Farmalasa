@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.0 — El login dice por qué no entraste
+
+Antes, cualquier fallo decía «Usuario no encontrado o contraseña incorrecta», y
+«cuenta bloqueada» o «demasiados intentos» llegaban en el inglés de Auth. El
+28-sep eso costó un restablecimiento a alguien con la contraseña intacta.
+
+Ahora, después de un intento fallido, el portal le pregunta a
+`ensure_user_by_code` (modo `diagnosticar_usuario`) y dice cuál de estos es:
+el usuario no existe, contraseña incorrecta, cuenta desactivada, acceso
+bloqueado, usuario sin acceso al portal, cuenta desalineada (renombre a medias)
+o demasiados intentos. Decir que un usuario no existe revela cuáles sí; por eso
+cada pregunta cuenta en el tope del login por código (15 fallos en 10 minutos
+por IP) y sólo se hace tras un fallo. La contraseña la sigue juzgando Auth.
+
 ## v2.1083.0 — F8 paso 3 — Bitácoras nativa en la app
 
 En la app del teléfono, Bitácoras es la primera pantalla nativa: el registro

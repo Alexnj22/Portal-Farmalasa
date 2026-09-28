@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.6 — El aviso de CCF sin sello se retira solo cuando llega el sello
+
+Pedido del usuario, siguiendo a v2.1084.4. Si el sello de Hacienda llega
+después de mandado el aviso «CCF sin sello», el aviso sale de la campana
+solo (`deleted_at`) en la siguiente corrida de `check-sales-alerts` (cada
+5 min). El listado de notificaciones lo sigue mostrando, con
+`metadata.retirado = 'sello_llego'`. El push que ya llegó al teléfono no se
+puede retirar. Migración `20260928221338_retirar_avisos_ccf_ya_sellados`;
+edge function redesplegada con `--no-verify-jwt` (v21).
+
 ## v2.1084.5 — Puntos: el detalle del cliente, compacto y con la foto de quien vendió
 
 Revisión completa del detalle del cliente, en escritorio y en teléfono.

@@ -21,6 +21,177 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1089.0 — Une la distribuidora (Torogoz) con el núcleo portable
+
+Pedido del usuario: ver la distribuidora en dev.farmasalud.lat, que publica
+`sesion/nucleo`. Se unió `sesion/sas-ruta` (v2.1080–2.1088: Distribución y
+Torogoz) sobre el núcleo portable.
+
+- Las importaciones de Distribución que cruzan el borde del núcleo pasan a
+  `@nucleo/…` (`gate:alias --escribir`, 95 en 21 archivos).
+- El número de pendientes del menú de Torogoz se pide desde `src/data`
+  (`contarDescuentosPendientes`), como pide `gate:consultas`.
+- `src/data/distribucion.js` y `distribucionInventario.js` llevan
+  `@ts-nocheck` con motivo: las tablas `dist_*` todavía no existen en
+  producción y `gate:tipos` revisa contra sus tipos. Se quita al migrar.
+- Conflictos resueltos conservando las dos partes (`index.css`,
+  `routeImporters.js`, `RequestsView.jsx`, `CHANGELOG.md`).
+
+
+## v2.1088.0 — Torogoz: la distribuidora con su propia entrada (/torogoz), login, menú y Solicitudes
+
+Decisión del usuario: la distribuidora «alimenta el portal y se consulta,
+pero parecen independientes: debe haber una URL aparte». Ruta dentro del
+portal, las mismas cuentas por permiso, y fuera del menú de las farmacias.
+
+- **`/torogoz`**: su login (`/torogoz/login`, mismo usuario y contraseña), su
+  marco con su marca y su menú — Nueva venta, Pedidos, Documentos, Clientes,
+  Catálogo, Inventario, Solicitudes y Empresa—, campana, salida y un enlace al
+  portal de las farmacias. Cada sección es una dirección (ya no pestañas).
+- **Solicitudes de descuento** se deciden en `/torogoz/solicitudes` (aprobar,
+  rechazar con motivo, ver la venta); el portal de las farmacias ya no las
+  lista y los avisos llevan allá.
+- Distribución sale del menú Comercial. Las direcciones viejas
+  (`/distribucion?tab=…`, `/distribucion/venta/…`) redirigen.
+- `distribucion/rutas.js` junta todas las direcciones de la distribuidora.
+- `gate:rutas` entiende las rutas anidadas bajo un prefijo propio
+  (`/torogoz/*`): antes leía `/venta` y daba `/torogoz` por inexistente.
+  Verificado fabricándole la regresión (quitar un título la caza).
+
+
+## v2.1087.0 — Distribución: descuentos con aprobación, preventa, venta más clara y Enter en los montos
+
+Pedidos del usuario: que se diga que la lista cambia el precio de todos los
+productos, que la vista se vea mejor, qué es «sin factura», que Enter en un
+monto haga algo, y que los descuentos sean sólo de quien tiene permiso — el
+resto se pide, se aprueba o se rechaza, y la venta espera como preventa.
+
+- **Descuentos con aprobación** (borrador `distribucion/0008`): permisos
+  `distribucion_descuentos` (hasta el tope) y `requests_distribucion`
+  (decidir). Lo que no se puede dar queda «por aprobar», en cero, y la venta es
+  preventa; `dist_pedir_descuento` arma una solicitud `DIST_DESCUENTO` en
+  Solicitudes y avisa a quien decide; `dist_resolver_descuento` aplica o
+  rechaza (con motivo), firma, avisa al vendedor y no deja aprobarse a sí
+  mismo. Facturar con un descuento pendiente lo frena `distribucion-dte`.
+- **Lista de precios**: al cambiarla se actualizan todos los productos (también
+  los que tenían otra lista a mano), con aviso y texto que lo dice.
+- **«Guardar preventa»** en vez de «Sin facturar»; en Pedidos, «Preventa» y
+  «Descuento por aprobar».
+- **Enter** confirma el monto (dos decimales) y pasa al campo siguiente; en
+  cantidad y descuento vuelve al buscador.
+- **Vista**: pasos numerados, existencia por producto (y en el buscador),
+  panel del total con la marca, cambio destacado.
+- Entorno de pruebas rehecho el 28-sep: las semillas 0002/0005 ya no dependen
+  de «≤2 fichas», `scripts/entorno-pruebas/distribucion_pruebas.sql` repone
+  existencia, permisos y un vendedor de prueba, y `dist_dte_firmado_con_firma`
+  acepta `descartado` sin firma (el entorno viejo lo tenía cambiado a mano).
+- Inventario: la entrada de lote guarda borrador.
+
+
+## v2.1086.1 — Distribución: precios con IVA en centavos y la pantalla calcula con el motor del documento
+
+Pregunta del usuario: «eso del redondeo, ¿cómo lo espera la ley?». La pantalla
+cobraba $32.40 sobre un documento de $32.39: el documento estaba bien (Manual
+Funcional: 8 decimales en el cuerpo, 2 en el resumen, ±$0.01 de holgura); la
+pantalla hacía su propia cuenta.
+
+- **La pantalla calcula con el motor del documento** (`motor.js` importa
+  `_shared/dte/calculos.ts`): importe por renglón, IVA, retención, percepción
+  y total son los del papel por construcción. Una prueba compara 500 ventas al
+  azar contra `totalAPagar` de la edge function: 0 diferencias. La prueba de
+  navegador compara el total de la pantalla con el del documento emitido.
+- **Precios con IVA en centavos** (borrador 0007): `dist_catalogo`,
+  `dist_precios` y `dist_pedido_items` pasan de `precio_sin_iva` (6 decimales)
+  a `precio_con_iva` (2). La Factura lo usa tal cual; el Crédito Fiscal lo lleva
+  a sin IVA a 8 decimales. El descuento se guarda en la misma base.
+- Catálogo: el precio se escribe con IVA y no acepta más de dos decimales.
+- Detalle del pedido: importes y total también del motor.
+
+
+## v2.1086.0 — Distribución: inventario por lote y el lote en el documento
+
+Pedido del usuario: el documento lleva lote y vencimiento, y «si se vende de
+dos lotes se separa». La distribuidora tiene inventario PROPIO (no el de
+Bodega: es otra empresa), y todavía no existía.
+
+- **Pestaña «Inventario»**: existencia por producto, lote y vencimiento, con
+  lotes por vencer (90 días) y vencidos. «Entrada de lote» registra lo que llega
+  (en unidades sueltas); un **ajuste** corrige la existencia o el vencimiento y
+  exige motivo. Cada lote tiene su historial de movimientos. No hay «salida» a
+  mano: una salida sin documento sería una venta sin documento.
+- **Al facturar se asigna el lote solo**: primero vence, primero sale; una
+  presentación no se parte entre lotes. Si no alcanza, NO factura y dice qué
+  falta («Sin existencia suficiente: … (faltan N unidades)»), sin dejar nada
+  reservado a medias. Vuelve al inventario si el documento se invalida o el
+  pedido se anula; un reintento después de un rechazo reasigna sin contar doble.
+- **Dos lotes = dos renglones** en el DTE, con «LOTE: X VENCE: dd/mm/aaaa» al
+  final de la descripción: queda DENTRO del documento firmado, como lo hacen las
+  droguerías que nos facturan. Partir no cambia el total (cantidad y descuento se
+  reparten exactos; probado con precio con y sin IVA).
+- El **PDF** separa esa cola en columnas Lote y Vence (sólo si el documento las
+  trae); el **ticket** la pega corta a la descripción («L:… V:…»).
+- Esquema en `supabase/borradores/distribucion/0006_inventario_lotes.sql`,
+  aplicado en pruebas con `execute_sql`. La existencia sólo cambia por funciones
+  (`dist_mover_lote` y quienes la llaman). Medido al probar: en este proyecto una
+  tabla nueva nace SIN `SELECT` para `authenticated` y CON `TRUNCATE` (que salta
+  el RLS) — se revoca todo y se da sólo lectura.
+- Verificado en pruebas de punta a punta: pedido 29 → documento 41 con dos
+  renglones (lote B2611 y A2703), total $76.44 igual al pago ya registrado,
+  existencias 1→0 y 10→8.
+- `distribucion-dte/index.ts` va con cuatro líneas de la sesión de Distribución
+  (precio con IVA en centavos, borrador 0007), a pedido suyo: la base de pruebas
+  ya cambió y el archivo tiene que coincidir.
+
+## v2.1085.0 — Distribución: la venta como en la caja — presentaciones, listas de precio, descuentos y el cobro abajo
+
+Pedido del usuario: «mira el ERP, no como guía en diseño sino en utilidad.
+¿Cómo selecciono precios / descuentos? ¿Presentaciones? Lo de pagar, abajo».
+
+- **Presentaciones y listas de precio** (`dist_listas`, `dist_precios`,
+  borrador 0004): cada producto se vende por unidad, caja, paquete…, cada una
+  con su precio por lista (Mayoreo, Premium, VIP, Viñeta en pruebas). El
+  cliente trae su lista; se cambia para toda la venta o por renglón. El precio
+  lo sigue poniendo el trigger; `precios.js` es su gemelo de pantalla.
+- **Descuento por renglón en % o en $**, con tope de la empresa
+  (`descuento_max_pct`, 10%): pasarlo exige la capacidad de configurar
+  Distribución, y lo frena la base, no sólo la pantalla.
+- **El cobro va abajo**, después de los productos: formas de pago, desglose,
+  total y botón. La última forma es «lo que falta» y se muestra como número,
+  no como campo (la referencia se confundía con el monto). El efectivo pide
+  cuánto entrega el cliente y muestra el cambio.
+- Precios con IVA si es Factura, sin IVA si es Crédito Fiscal.
+
+## v2.1084.0 — Distribución: el cierre al pie de la hoja y el PDF completo
+
+Dos pedidos del usuario: que los totales estén siempre en el mismo lugar, y
+revisar si al PDF o al JSON les falta algo legal, comparando con los que nos
+mandan los proveedores. Se revisaron 7 documentos reales de 7 emisores
+(Droguería Americana, Cofarsal, Santa Lucía, Nueva San Carlos, Zablah,
+Imberton, Calleja).
+
+- **El cierre va al pie de la última hoja, siempre a la misma altura**: valor en
+  letras, condición, observaciones y el resumen completo. Si los renglones
+  llegan hasta ahí, se abre una hoja más para él — nunca se encima.
+- **Varias hojas**: la cabecera de la tabla se repite; desde la segunda hoja
+  arriba dice quién emite, qué documento es, su número de control y «Hoja x de
+  y»; abajo, «continúa» en todas menos la última.
+- **Lo que faltaba frente a los proveedores y al formato de Hacienda**: código
+  y unidad de cada renglón, la fila «Sumas», el resumen con TODAS las filas del
+  esquema del tipo (suma total, los tres descuentos, IVA, sub-total, percibido,
+  retenido, monto total de la operación, otros montos no afectos) aunque valgan
+  cero, los **documentos relacionados** (una nota de crédito no decía a qué
+  crédito fiscal corrige), el apéndice si lo trae, el nombre comercial del
+  receptor, establecimiento y punto de venta, y la versión del JSON.
+- **Un documento invalidado lo dice** en la marca de agua y en el pie.
+- **El JSON que se descarga lleva la firma y el sello** (`jsonParaElCliente`).
+  Antes bajaba el documento sin `firmaElectronica` ni `selloRecibido`, o sea
+  uno que no puede demostrar que Hacienda lo recibió. Los 7 proveedores lo
+  entregan con los dos.
+- Medido en el camino: pdfmake no le consulta `pageBreakBefore` a un nodo de
+  texto vacío (el guardián del cierre usa un espacio), y una fila de 8pt con su
+  relleno mide ~17.3pt y no 15.6 — con la cuenta a ojo el total se salía de la
+  hoja.
+
 ## v2.1083.0 — F8 paso 3 — Bitácoras nativa en la app
 
 En la app del teléfono, Bitácoras es la primera pantalla nativa: el registro
@@ -32,6 +203,28 @@ portal.
 En el portal no cambia nada visible: la lógica de la ronda salió de las
 pantallas a un solo lugar que usan la web y la app, para que las dos anoten
 exactamente lo mismo.
+
+## v2.1083.0 — Distribución: la venta pasa a vista propia
+
+La venta de Distribución deja de ser un modal y pasa a **vista propia**:
+`/distribucion/venta` (nueva) y `/distribucion/venta/:pedidoId` (corregir un
+pedido, incluido el que reemplaza a un sellado). En el teléfono la hoja del
+modal se comía media pantalla, y una vista tiene dirección: recargar o volver
+no pierde la venta.
+
+- Escritorio en dos columnas: cliente, documento y productos a la izquierda;
+  arriba a la derecha el total y «Facturar», siempre a la vista (sólo desplaza
+  el bloque del pago); debajo las formas de pago, observaciones y el ticket.
+- Teléfono: una columna y una barra fija abajo con el total y los botones. La
+  barra publica su alto en `--alto-barra-flotante`, así los botones de «ir
+  arriba/abajo» del layout suben por encima de ella.
+- Toma la marca de la distribuidora (Torogoz) con `useMarca('distribucion')`:
+  todo va con tokens, ningún color a mano.
+- Al facturar vuelve a Pedidos con `?documento=` y se abre el documento con su
+  ticket y PDF (y lo imprime si se pidió); la dirección se limpia para que
+  recargar no lo vuelva a imprimir.
+- Las formas de pago van en filas más holgadas (el nombre se cortaba en la
+  columna angosta).
 
 ## v2.1082.1 — Puntos: Cuándo vencen en gráfica, sin el panel El programa
 
@@ -56,6 +249,30 @@ Android contra la base de pruebas.
 En el portal: cuando corre dentro de la app esconde su propio encabezado y sus
 pestañas de abajo (la app ya tiene su barra). En el navegador no cambia nada.
 
+## v2.1082.0 — Torogoz en el PDF y el ticket
+
+Los papeles de Distribución seguían sin la marca (pedido del usuario: «los pdf,
+tickets, y demás aún no se actualizan con el nombre / icono. mejora
+visualmente ambos»).
+
+- **PDF rediseñado.** Membrete con el icono y «Torogoz · Distribuidora», el tipo
+  de documento en un recuadro petróleo, una línea naranja de cierre, la
+  identificación del DTE y el QR en un panel, el receptor en otro, la tabla con
+  cabecera petróleo y renglones alternados, y el TOTAL A PAGAR destacado. Los
+  colores van en rellenos y rótulos, nunca en un dato, y se sigue leyendo
+  impreso en blanco y negro. Los dos códigos largos (generación y sello) van a
+  lo ancho: no se pueden partir y desbordaban el margen.
+- **Ticket**: el encabezado dice TOROGOZ y debajo, tal cual, el nombre legal,
+  el comercial, NIT, NRC, dirección y teléfono. El rollo no lleva el icono: una
+  imagen por el camino directo es un comando que esa impresora no probó.
+- **Los datos fiscales no cambian**: salen del DTE firmado. Torogoz va como
+  membrete; el nombre legal y el comercial siguen siendo los del emisor.
+- **La marca vive en un solo sitio**, `src/views/distribucion/marca.js`
+  (nombre, colores y el SVG del icono). El menú lo usa como `data:`; el PDF y el
+  ticket lo reciben como parámetro desde `DocumentoModal`, porque
+  `distribucionDocumento.js` es núcleo portable y no importa pantallas. Sin
+  marca, el papel sale en grises. `public/distribuidora/` se borró.
+
 ## v2.1081.2 — Las pruebas de CI dejan de entrar a producción
 
 `Playwright smoke` entraba a PRODUCCIÓN en cada push con credenciales que ya
@@ -72,6 +289,18 @@ Y la prueba de Editar Empleado necesitaba `staff_list.can_edit` y DUIs, que el
 branch no tenía: los pone `permisos_de_la_cuenta_de_pruebas.sql` (ficticios,
 prefijo 99).
 
+## v2.1081.2 — Torogoz: la distribuidora cambia de nombre e icono
+
+«Rumbo» no le gustó al usuario; eligió **Torogoz**. En `/distribucion` el menú
+y el encabezado del teléfono dicen **Torogoz · Distribuidora**, y el icono
+(`public/distribuidora/icono.svg`, hecho a su pedido) es el ave nacional en
+vuelo —la cola de raquetas que la distingue, ceja turquesa y antifaz— llevando
+un paquete, sobre el petróleo de la marca.
+
+Antes de usar el nombre fuera del portal hay que consultarlo en el CNR: existe
+Torogoz S.A. de C.V. (San Salvador, 1977, productos metálicos, con canal de
+distribución propio). Para el portal interno el usuario decidió usarlo igual.
+
 ## v2.1081.1 — La cuenta deja de reescribirse en cada renovación de sesión
 
 `ensure_user_by_code` quería borrar `systemRole` del metadata omitiéndolo, pero
@@ -80,6 +309,16 @@ Auth COMBINA el `user_metadata` recibido con el guardado: la clave sobrevivía,
 cuenta (77 de 131 cuentas lo tenían). Ahora se manda en `null`, que es lo único
 que la elimina. Visto investigando un reporte de «contraseña incorrecta» — la
 contraseña no había cambiado; esa escritura sólo tocaba el metadata.
+
+## v2.1081.1 — Rumbo: nombre e icono propuestos para la distribuidora
+
+Propuesta hecha a pedido del usuario, **pendiente de su aprobación**: la
+distribuidora todavía no tenía nombre ni logo. En `/distribucion` el encabezado
+del menú y el del teléfono dicen **Rumbo · Distribuidora** con su icono
+(`public/distribuidora/icono.svg`: una ruta blanca que sale de un punto naranja
+y termina en una flecha naranja, sobre petróleo). En el resto del portal no
+cambia nada. Si se descarta, se borran `MARCA_DISTRIBUIDORA` de `AppLayout` y
+la carpeta `public/distribuidora/`.
 
 ## v2.1081.0 — F8 paso 1 — la app del teléfono arranca con el núcleo del portal
 
@@ -92,6 +331,28 @@ En el portal: `supabaseClient.js` toma su configuración de la plataforma, y
 las reglas de una contraseña nueva viven en `utils/contrasena.js` — estaban
 copiadas en la entrada y en Personal con textos distintos («una mayúscula» /
 «una letra mayúscula»); ahora dicen lo mismo.
+
+## v2.1081.0 — Distribución: pagos por forma con comprobante, y corregir o deshacer un documento sellado
+
+- **Varias formas de pago en una venta** ($2 en efectivo, el resto con
+  tarjeta; parte a crédito si el cliente lo tiene). Es legal: Manual Funcional
+  §XIX; con contado y crédito mezclados el DTE sale en condición 3. La última
+  forma es «el resto» y la calcula el servidor contra el total del motor, así
+  los pagos suman el documento al centavo. Tabla `dist_pagos`.
+- **Comprobante de cada pago** (tarjeta, transferencia, cheque, electrónico):
+  al vender o después. Se lee el monto con `distribucion-comprobante` (Gemini;
+  sin llave, se escribe el monto del papel a mano) y si no coincide la
+  pantalla pregunta: usar el del comprobante o dejar el del pago diciendo por
+  qué. Bucket privado `dist-comprobantes`. Tarjeta «Sin comprobante» en Pedidos.
+- **Corregir un documento sellado**: abre un pedido nuevo que lo reemplaza; al
+  facturarlo, el original se invalida citándolo (CAT-024 tipo 1). La
+  invalidación sale cuando el reemplazo tiene sello.
+- **Deshacer la venta**: invalida el sellado sin reemplazo (tipo 2), con
+  motivo, y anula el pedido.
+- Probado en pruebas con sellos simulados: la cadena corrección → reemplazo →
+  invalidación pendiente cita al documento correcto; no se duplica; el motivo
+  es obligatorio. Las invalidaciones quedan pendientes hasta tener las
+  credenciales de Hacienda.
 
 ## v2.1080.2 — Metas: la gráfica de comparación en dos columnas
 
@@ -128,6 +389,26 @@ importan el núcleo por `@nucleo/…` y el núcleo pide la plataforma por
 `src/constants/` a `src/`. `npm run gate:alias` (también en el pre-commit)
 falla si una importación nueva cruza el borde por ruta relativa.
 
+## v2.1080.0 — Distribución con los colores de la distribuidora
+
+La distribuidora es otra empresa y tiene que distinguirse a simple vista de las
+farmacias (pedido del usuario). Mientras `/distribucion` está abierta, todo el
+portal —menú, botones, brillos de fondo, modales— se pinta con su marca, y al
+salir vuelve solo.
+
+- Paleta: **azul petróleo `#0f6e7d`** en el papel del magenta y **naranja
+  `#f28c1b`** en el del lima (`#b45309` para texto blanco). La Popular y La
+  Salud comparten el mismo par magenta/lima; su inverso RGB los devuelve
+  intercambiados, así que se giró el par 90° en la rueda. Todo el texto pasa AA.
+- `useMarca('distribucion')` (`src/plataforma/useMarca.js`) estampa
+  `data-marca` en `<html>`, para que los modales montados en `<body>` también
+  lo hereden; `index.css` redefine los tokens de marca e identidad bajo
+  `:root[data-marca="distribucion"]`, con sus variantes de tema oscuro.
+- Los brillos del menú y del fondo (`AppLayout`) estaban escritos como `rgba`
+  fijos; ahora salen de `--logo-*` con `color-mix`. Sin la marca dan el mismo
+  color de antes.
+- Los colores de dato (categorías, éxito/aviso/peligro) no cambian.
+
 ## v2.1079.2 — Metas: quién cambió cada meta, con foto y nombre
 
 Pedido del usuario: «el gerente debe ver las modificaciones, con foto y nombre».
@@ -157,6 +438,15 @@ a la propuesta? ¿el gerente no ve mis cambios?». El dato estaba
 - En «espera aprobación», el deslizador de quien aprueba se mide contra lo
   confirmado por el supervisor y lo dice así, no «la propuesta».
 
+## v2.1079.1 — Distribución: el tipo de documento se elige en cada venta
+
+Un contribuyente no siempre pide Crédito Fiscal (pedido del usuario). La venta
+tiene ahora un selector **Factura / Crédito Fiscal**: arranca en el que
+corresponde a la ficha y se puede cambiar. Sin NRC sólo hay Factura, y lo
+vuelven a frenar el trigger (`DIST_CCF_SIN_NRC`) y `distribucion-dte`. Columna
+nueva `dist_pedidos.tipo_documento` (NULL = el de la ficha). La retención del
+1% se estima sólo con Crédito Fiscal.
+
 ## v2.1079.0 — F6 — los tokens del diseño en JSON, gate:tokens
 
 La app del teléfono no lee CSS: ahora los colores, espacios, radios y sombras
@@ -170,6 +460,25 @@ que no existe.
 desde v2.139.0 a una variable que no existía, así que en los cuatro temas sus
 fondos salían transparentes. Ahora usa el gris terciario/secundario del tema.
 
+## v2.1079.0 — Distribución: venta ágil, ticket de venta, PDF del documento y corregir antes del sello
+
+- **Venta ágil** (`VentaModal`, reemplaza al formulario de pedido): se busca
+  el producto escribiendo nombre o código de barras, un toque lo agrega (Enter
+  agrega el primero), − y + ajustan, y el total queda fijo en el pie junto a
+  «Facturar e imprimir». La misma pantalla corrige un pedido por facturar.
+- **Ticket de venta** por `imprimirDocumento` (ticketera de la computadora o
+  diálogo del navegador), con QR a la consulta pública de Hacienda. Sale solo al
+  facturar si está marcado.
+- **PDF del documento** (representación gráfica del DTE, carta): emisor,
+  receptor, los tres números de identidad, QR, detalle, resumen, valor en
+  letras y la marca «SIN VALIDEZ FISCAL» en pruebas. pdfmake por `import()`.
+- Ticket y PDF salen del **JSON firmado**, nunca del pedido ni de la ficha: el
+  papel no puede contradecir al documento (8 pruebas nuevas).
+- **Corregir antes del sello**: la acción `descartar` de `distribucion-dte`
+  retira un documento que Hacienda no tiene (si alguna vez se intentó enviar,
+  le pregunta antes) y devuelve el pedido a «Por facturar». Estado nuevo
+  `descartado` en `dist_dte`. Con sello, el camino sigue siendo invalidar.
+
 ## v2.1078.1 — Metas: la diferencia del ajuste en dinero, bajo el deslizador
 
 Pedido del usuario: que bajo el deslizador diga cuánto es la diferencia, y
@@ -179,6 +488,13 @@ mejorar o mover el botón de volver.
   propuesta («−$1,314.77 · 3% menos que la propuesta»), o «Igual a la
   propuesta del sistema».
 - «Volver» pasa a **Restablecer**, dentro de esa misma ficha, a la derecha.
+
+## v2.1078.1 — Pruebas: las funciones aceptan varios dominios del portal
+
+`PORTAL_ORIGIN` de las edge functions admite varios dominios separados por coma.
+En producción sigue siendo uno solo y nada cambia; en el entorno de pruebas
+permite probar desde dev.farmasalud.lat y desde el enlace de Vercel de una rama
+a la vez (hasta hoy sólo aceptaba `localhost`).
 
 ## v2.1078.0 — F5: la base como contrato del núcleo
 
@@ -202,6 +518,34 @@ teléfono no compile si la base cambia debajo.
   defecto de 5 s y fallaba de a ratos con la suite entera; ahora tiene 30 s.
 - TypeScript entra sólo como herramienta de revisión (dependencia de
   desarrollo).
+
+## v2.1078.0 — Distribución: pantallas de pedidos, documentos, clientes, catálogo y empresa
+
+Vista nueva **Distribución** (`/distribucion`, menú Comercial, permiso
+`distribucion` + capacidad `distribucion_config`), con cinco pestañas:
+
+- **Pedidos** — preventa: se elige el cliente y la lista de productos ya viene
+  recortada a venta libre si es tienda o supermercado; el cliente sin licencia
+  de la SRS se ve en rojo. «Guardar y facturar» emite en el acto. Borrador
+  automático y UUID de idempotencia (reintentar no duplica).
+- **Documentos** — cada DTE con su estado real frente a Hacienda (sellado,
+  por enviar, falta la firma, rechazado), sus observaciones, el archivo JSON y
+  el enlace a la consulta pública de Hacienda cuando está sellado.
+- **Clientes** — ficha con la dirección en códigos de Hacienda, NRC,
+  actividad económica, licencia de la SRS y crédito.
+- **Catálogo** — precio sin IVA y la casilla de venta libre; lo antibiótico,
+  con receta o regulado nunca se puede marcar.
+- **Empresa** — los datos del emisor y el ambiente (pruebas/producción).
+
+Dos catálogos de Hacienda nuevos, generados del Excel oficial: departamento,
+municipio y distrito con sus CÓDIGOS (`geoCodigosMH.js`, 262 de 262 distritos
+emparejados, 51 abreviaturas revisadas a mano) y las 774 actividades
+económicas (`actividadesMH.js`, carga diferida). El vendedor y quien crea un
+cliente los pone la base (`auth_employee_id()`), no la pantalla.
+
+Probado contra el entorno de pruebas con Playwright en escritorio y en iPhone
+(`tests/e2e/distribucion*.spec.js`): las cinco pestañas sin errores ni
+desborde, y un pedido tomado y facturado desde la pantalla.
 
 ## v2.1077.4 — Metas: el deslizador de la meta se puede arrastrar
 
@@ -236,6 +580,7 @@ curvas a contestar las preguntas de quien opera el programa
   sistema anterior (con las cuentas sin asignar) y no cuadraba con «Se les debe».
 - En el teléfono: rótulos cortos que no se cortan, y las fechas de la curva ya
   no se enciman.
+
 ## v2.1077.2 — Metas: Salud 4 se ve en la barra de la meta general
 
 La sexta sala tomaba `chart-8`, que no se pintaba: quedaba un hueco en la barra
@@ -285,6 +630,31 @@ Verificado: lint sin problemas nuevos en ningún archivo, 2,903 pruebas, nueve
 gates y el build en verde, y las 22 pantallas tocadas recorridas contra el
 entorno de pruebas sin errores. Hecho en cuatro tandas paralelas, una por grupo
 de módulos, y juntadas acá.
+
+## v2.1077.0 — Distribución: esquema, candados de venta y emisor distribucion-dte probados en el entorno de pruebas
+
+Segunda pieza de la S.A.S. de distribución. Todo aplicado SÓLO en el branch de
+pruebas; el SQL vive en `supabase/borradores/distribucion/` hasta que pase a
+producción.
+
+- **Esquema `dist_*`** (no `ruta_*`: «ruta» ya es el reparto de Bodega a las
+  salas): emisor, clientes con su licencia de la SRS, catálogo con la casilla
+  de venta libre, pedidos, DTE emitidos con cada intento ante Hacienda,
+  contingencias, correlativos y token. RLS en todas; los DTE y correlativos
+  sólo los escribe el servidor.
+- **Qué se le vende a quién lo decide la base.** Probado en pruebas: tienda
+  sin licencia → rechazado; producto con receta a una tienda → rechazado;
+  crédito a quien no lo tiene → rechazado; el precio sale del catálogo aunque
+  el teléfono mande otro.
+- **`distribucion-dte`** factura un pedido: elige Factura o Crédito Fiscal según el
+  cliente, aplica la retención del 1% al supermercado gran contribuyente,
+  reserva el correlativo, firma, guarda y transmite con la política de
+  reintentos de Hacienda (consultar antes de reenviar). Sin certificado queda
+  «sin firmar»; sin credenciales, «firmado» pendiente de enviar. Dos clics a
+  la vez generan un solo documento. La firma hecha en el servidor verifica
+  contra la llave pública con un certificado local de prueba.
+- Cliente de la API de Hacienda y eventos de invalidación y contingencia, con
+  15 pruebas más (80 en total).
 
 ## v2.1076.11 — Metas: la tarjeta de confirmación con gráfico de comparación
 
@@ -487,6 +857,23 @@ Decisiones del usuario del 2026-09-28.
 - **Mis puntos** nombra cada movimiento: un vencimiento o una anulación salían
   como «Compra» con un menos adelante. El cumpleaños sale como tal, también en
   el detalle del cliente.
+
+## v2.1076.0 — Motor de DTE 2.0 para la S.A.S. de rutas: armar y firmar Factura, CCF, remisión y notas
+
+Primera pieza del emisor propio de la S.A.S. de distribución (rama
+`sesion/sas-ruta`, todavía sin pantalla ni conexión con Hacienda).
+`supabase/functions/_shared/dte/` arma Factura v2, Crédito Fiscal v4, Nota de
+Remisión v4 y Notas de Crédito y Débito v4, y las firma igual que el firmador
+oficial (JWS RS512 con la llave del `.crt` de Hacienda), con WebCrypto y sin
+contenedor Java.
+
+Los números se calculan con enteros escalados a 8 decimales, con la regla de
+redondeo del Manual Funcional v2.0 §XXI (`2.675` → `2.68`, que `toFixed` da
+`2.67`). Los jueces de las 65 pruebas vienen de afuera: los esquemas JSON
+oficiales de factura.gob.sv (julio 2026) y 28 DTE reales ya sellados por
+Hacienda, reducidos a sus números. 21 de 24 Créditos Fiscales cuadran al
+centavo exacto; los otros 3 son proveedores que truncan donde el manual manda
+subir en 5, y entran en la holgura de ±0.01. Área nueva de auditoría: `ruta`.
 
 ## v2.1075.37 — Los avisos de pedido los escribe la base
 
@@ -733,6 +1120,7 @@ código; los arreglos de verdad están en v2.1075.18, v2.1075.20 y v2.1075.21.
 - `puntos_panel_clientes` no se declara: la otra sesión la corrigió
   (v2.1075.21). Su estadística y la de `puntos_archivo_cerrar` se reiniciaron
   para que el gate mida las versiones nuevas.
+
 
 ## v2.1075.21 — Puntos: la última acumulación se calcula sólo para la página visible
 

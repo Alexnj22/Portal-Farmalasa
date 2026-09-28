@@ -1,0 +1,64 @@
+// La marca de la distribuidora, en UN solo sitio: el menú del portal, el PDF
+// del documento y el ticket la leen de acá, así no pueden decir cosas
+// distintas. Vive con las pantallas y no en `utils/` a propósito: la lógica
+// que arma el papel (utils/distribucionDocumento.js) es núcleo portable y
+// recibe la marca como parámetro (`MARCA_PAPEL`), no la importa.
+//
+// «Torogoz» lo eligió el usuario el 2026-09-28; el icono (el ave nacional en
+// vuelo, con su cola de raquetas, llevando un paquete) es una propuesta hecha a
+// su pedido. OJO: existe Torogoz S.A. de C.V. (San Salvador, 1977, productos
+// metálicos, con canal de distribución propio) — antes de usar el nombre fuera
+// del portal, consultarlo en el CNR.
+//
+// La marca NO reemplaza los datos fiscales: en el papel, el nombre legal, el
+// comercial, el NIT y el NRC salen del DTE firmado, como siempre. Torogoz va
+// como encabezado, igual que un membrete.
+
+export const COLORES_DISTRIBUIDORA = {
+    petroleo: '#0f6e7d',
+    petroleoOscuro: '#0b5561',
+    petroleoClaro: '#e8f3f5',
+    naranja: '#f28c1b',
+    naranjaTexto: '#b45309',
+};
+
+/** El icono como texto SVG: lo embebe el PDF y, como `data:`, el menú. */
+export const ICONO_DISTRIBUIDORA_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Torogoz">
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#0f6e7d"/>
+  <g stroke="#7fd0db" stroke-width="2.2" stroke-linecap="round" fill="none">
+    <path d="M20 30 C 15 31, 11 33, 8 37"/>
+    <path d="M21 32 C 17 35, 14 39, 12 44"/>
+  </g>
+  <ellipse cx="7" cy="39" rx="2.6" ry="3.8" transform="rotate(35 7 39)" fill="#7fd0db"/>
+  <ellipse cx="11.3" cy="46.5" rx="2.6" ry="3.8" transform="rotate(20 11.3 46.5)" fill="#7fd0db"/>
+  <g stroke="#11242c" stroke-width="1.8" stroke-linecap="round">
+    <line x1="30" y1="35" x2="29.5" y2="40.5"/>
+    <line x1="36" y1="35" x2="36.5" y2="40.5"/>
+  </g>
+  <rect x="25" y="40" width="16" height="13" rx="2.4" fill="#ffffff"/>
+  <rect x="31.8" y="40" width="2.6" height="13" fill="#f28c1b"/>
+  <path d="M18 29 C 22 22, 35 19, 43 22 C 46 29, 41 36, 32 36.5 C 25 37, 20 34, 18 29 Z" fill="#f28c1b"/>
+  <path d="M28 35.8 C 35 36.5, 41 33.5, 44 28 C 44 34, 38 37.5, 31 37 Z" fill="#f9b97a"/>
+  <path d="M23 27 C 26 17, 33 9, 41 6.5 C 41 15, 36 24, 29 30 Z" fill="#7fd0db"/>
+  <path d="M27 25 C 30 18, 34 13, 38.5 10" stroke="#0f6e7d" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".55"/>
+  <circle cx="45.5" cy="23" r="7.5" fill="#f28c1b"/>
+  <path d="M40.5 19.6 C 43.5 17.3, 48 17, 51.5 18.6" stroke="#7fd0db" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M41.5 23.6 L 52.8 22.2 L 52.8 25.4 L 42.5 25.6 Z" fill="#11242c"/>
+  <circle cx="47.6" cy="22.8" r="2.2" fill="#ffffff"/>
+  <circle cx="48.1" cy="22.9" r="1.1" fill="#11242c"/>
+  <path d="M52.4 21.8 L 59.5 24 L 52.4 26 Z" fill="#11242c"/>
+</svg>`;
+
+export const MARCA_DISTRIBUIDORA = {
+    nombre: 'Torogoz',
+    bajada: 'Distribuidora',
+    icono: `data:image/svg+xml;utf8,${encodeURIComponent(ICONO_DISTRIBUIDORA_SVG)}`,
+};
+
+/** Lo que necesitan el PDF y el ticket: se lo pasa la pantalla. */
+export const MARCA_PAPEL = {
+    nombre: MARCA_DISTRIBUIDORA.nombre,
+    bajada: MARCA_DISTRIBUIDORA.bajada,
+    iconoSvg: ICONO_DISTRIBUIDORA_SVG,
+    colores: COLORES_DISTRIBUIDORA,
+};

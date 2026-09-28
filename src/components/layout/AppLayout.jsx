@@ -4,6 +4,7 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { MARCA_DISTRIBUIDORA } from '../../views/distribucion/marca';
 import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Activity,
@@ -65,6 +66,14 @@ import { escucharCambios } from '@nucleo/data/tiempoReal';
 // directorio de empleados; Clima Organizacional estaba partido entre su
 // propio grupo (encuesta) y RRHH (encuesta_admin) sin motivo. Ningún grupo
 // nuevo pasa de 6 ítems.
+// El encabezado del menú dice de quién es la pantalla. La distribuidora es otra
+// empresa y lleva su marca (`views/distribucion/marca.js`).
+const MARCA_PORTAL = { icono: '/Logo192.png', alt: 'FLS', titulo: 'Portal', bajada: 'La Salud & La Popular', bajadaCorta: 'La Salud' };
+const MARCA_DISTRIBUIDORA_MENU = {
+    icono: MARCA_DISTRIBUIDORA.icono, alt: MARCA_DISTRIBUIDORA.nombre, titulo: MARCA_DISTRIBUIDORA.nombre,
+    bajada: MARCA_DISTRIBUIDORA.bajada, bajadaCorta: MARCA_DISTRIBUIDORA.bajada,
+};
+
 const MENU_GROUPS = [
     { key: 'overview',      label: 'Inicio',        icon: Home,          modules: ['overview']                          },
     // `traslados` va acá y no en Inventario: un traslado ES una solicitud
@@ -85,6 +94,8 @@ const MENU_GROUPS = [
     // necesita su ficha fiscal correcta. Quedan 4 de los 6 que admite un grupo.
     // `puntos` (2026-09-25) va con Clientes: el programa es de los clientes y
     // lo opera quien supervisa la venta. 5 de 6.
+    // `distribucion` estuvo acá del 26 al 28-sep: desde entonces la
+    // distribuidora tiene su propia entrada (`/torogoz`) y no va en este menú.
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'cotizaciones', 'clientes', 'puntos'] },
     // Cortes de caja salió de Comercial a menú propio (2026-08-20, pedido del
     // usuario). No es una pregunta sobre la venta: es el cuadre del efectivo al
@@ -289,6 +300,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     const activePath = location.pathname;
     const activeId = activePath.split('/')[1] || '';
+    // Distribución es otra empresa: su vista lleva su propio nombre e icono en
+    // el encabezado (los colores los pone `useMarca` en la vista).
+    const marca = activeId === 'distribucion' ? MARCA_DISTRIBUIDORA_MENU : MARCA_PORTAL;
 
     const cargoLabel = (() => {
         if (isSU) return 'Super Admin';
@@ -1038,11 +1052,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     magenta cruz+arco inferior), mismo criterio que los blobs del sidebar
                     (AUDITORIA-TEMA-2026-07.md §7.7) ── */}
                 <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
-                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'70vw', height:'70vw', top:'-15%', left:'-15%', background:'radial-gradient(circle, rgba(142,195,15,0.45) 0%, rgba(185,224,90,0.20) 40%, transparent 70%)', filter:'blur(35px)' }} />
-                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'55vw', height:'55vw', top:'-5%', right:'-20%', background:'radial-gradient(circle, rgba(152,29,151,0.38) 0%, rgba(226,163,224,0.15) 40%, transparent 70%)', filter:'blur(30px)' }} />
-                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'80vw', height:'80vw', bottom:'-35%', left:'-10%', background:'radial-gradient(circle, rgba(152,29,151,0.35) 0%, rgba(226,163,224,0.12) 40%, transparent 70%)', filter:'blur(40px)', animationDelay:'4s', animationDuration:'18s' }} />
-                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'45vw', height:'45vw', top:'25%', right:'5%', background:'radial-gradient(circle, rgba(142,195,15,0.32) 0%, rgba(185,224,90,0.12) 40%, transparent 70%)', filter:'blur(28px)', animationDelay:'2s', animationDuration:'14s' }} />
-                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'30vw', height:'30vw', top:'50%', left:'38%', background:'radial-gradient(circle, rgba(152,29,151,0.28) 0%, rgba(226,163,224,0.10) 40%, transparent 70%)', filter:'blur(22px)', animationDelay:'6s', animationDuration:'11s' }} />
+                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'70vw', height:'70vw', top:'-15%', left:'-15%', background:'radial-gradient(circle, color-mix(in srgb, var(--logo-green) 45%, transparent) 0%, color-mix(in srgb, var(--logo-green-soft) 20%, transparent) 40%, transparent 70%)', filter:'blur(35px)' }} />
+                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'55vw', height:'55vw', top:'-5%', right:'-20%', background:'radial-gradient(circle, color-mix(in srgb, var(--logo-magenta) 38%, transparent) 0%, color-mix(in srgb, var(--logo-magenta-soft) 15%, transparent) 40%, transparent 70%)', filter:'blur(30px)' }} />
+                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'80vw', height:'80vw', bottom:'-35%', left:'-10%', background:'radial-gradient(circle, color-mix(in srgb, var(--logo-magenta) 35%, transparent) 0%, color-mix(in srgb, var(--logo-magenta-soft) 12%, transparent) 40%, transparent 70%)', filter:'blur(40px)', animationDelay:'4s', animationDuration:'18s' }} />
+                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'45vw', height:'45vw', top:'25%', right:'5%', background:'radial-gradient(circle, color-mix(in srgb, var(--logo-green) 32%, transparent) 0%, color-mix(in srgb, var(--logo-green-soft) 12%, transparent) 40%, transparent 70%)', filter:'blur(28px)', animationDelay:'2s', animationDuration:'14s' }} />
+                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'30vw', height:'30vw', top:'50%', left:'38%', background:'radial-gradient(circle, color-mix(in srgb, var(--logo-magenta) 28%, transparent) 0%, color-mix(in srgb, var(--logo-magenta-soft) 10%, transparent) 40%, transparent 70%)', filter:'blur(22px)', animationDelay:'6s', animationDuration:'11s' }} />
                 </div>
 
                 {/* Mobile backdrop */}
@@ -1115,9 +1129,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {/* Eco del logo real (public/Logo512.png): verde arriba, magenta abajo —
                             reemplaza el violeta/azul genérico sin relación con la marca (2026-07-23) */}
                         <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-header" style={{ zIndex: 0 }}>
-                            <div className="animate-ambient-drift absolute rounded-full" style={{ width:'220px', height:'220px', top:'-10%', left:'-30%', background:'radial-gradient(circle, rgba(142,195,15,0.26) 0%, transparent 70%)', filter:'blur(20px)', animationDuration:'14s' }} />
-                            <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'170px', height:'170px', bottom:'8%', right:'-25%', background:'radial-gradient(circle, rgba(152,29,151,0.24) 0%, transparent 70%)', filter:'blur(16px)', animationDuration:'18s', animationDelay:'5s' }} />
-                            <div className="animate-ambient-drift absolute rounded-full" style={{ width:'130px', height:'130px', top:'42%', right:'-15%', background:'radial-gradient(circle, rgba(152,29,151,0.16) 0%, transparent 70%)', filter:'blur(14px)', animationDuration:'11s', animationDelay:'2s' }} />
+                            <div className="animate-ambient-drift absolute rounded-full" style={{ width:'220px', height:'220px', top:'-10%', left:'-30%', background:'radial-gradient(circle, color-mix(in srgb, var(--logo-green) 26%, transparent) 0%, transparent 70%)', filter:'blur(20px)', animationDuration:'14s' }} />
+                            <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'170px', height:'170px', bottom:'8%', right:'-25%', background:'radial-gradient(circle, color-mix(in srgb, var(--logo-magenta) 24%, transparent) 0%, transparent 70%)', filter:'blur(16px)', animationDuration:'18s', animationDelay:'5s' }} />
+                            <div className="animate-ambient-drift absolute rounded-full" style={{ width:'130px', height:'130px', top:'42%', right:'-15%', background:'radial-gradient(circle, color-mix(in srgb, var(--logo-magenta) 16%, transparent) 0%, transparent 70%)', filter:'blur(14px)', animationDuration:'11s', animationDelay:'2s' }} />
                         </div>
 
                         <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.06)] to-transparent pointer-events-none z-ambient" />
@@ -1160,15 +1174,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-[rgb(var(--sidebar-realce)/0.18)]
                                         ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                         <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.2)] to-transparent pointer-events-none rounded-t-[1.25rem]" />
-                                        <img src="/Logo192.png" alt="FLS"
+                                        <img src={marca.icono} alt={marca.alt}
                                             className={`object-contain relative z-base transition-transform duration-[var(--dur-slow)] group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                     </div>
                                 </Link>
 
                                 {isExpanded && (
                                     <div className="animate-in fade-in zoom-in-95 duration-[var(--dur-slow)] origin-left min-w-0">
-                                        <h1 className="font-black text-subtitle leading-tight tracking-tight text-[rgb(var(--sidebar-ink))]">Portal</h1>
-                                        <p className="text-caption font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-[rgb(var(--sidebar-ink)/0.5)]">La Salud & La Popular</p>
+                                        <h1 className="font-black text-subtitle leading-tight tracking-tight text-[rgb(var(--sidebar-ink))]">{marca.titulo}</h1>
+                                        <p className="text-caption font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-[rgb(var(--sidebar-ink)/0.5)]">{marca.bajada}</p>
                                     </div>
                                 )}
                             </div>
@@ -1240,7 +1254,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         en el borde. La escala `--shadow-glow-*` es de un color por token,
                         así que este no cabe ahí — y hacerle un token propio sería una
                         escala de uno. Documentado como excepción en el gate. */}
-                    <div className="absolute left-0 inset-y-[15%] w-[2px] rounded-full bg-gradient-to-b from-logo-green to-logo-magenta shadow-[0_0_10px_rgba(152,29,151,0.7),0_0_20px_rgba(142,195,15,0.35)]" />
+                    <div className="absolute left-0 inset-y-[15%] w-[2px] rounded-full bg-gradient-to-b from-logo-green to-logo-magenta shadow-[0_0_10px_color-mix(in_srgb,var(--logo-magenta)_70%,transparent),0_0_20px_color-mix(in_srgb,var(--logo-green)_35%,transparent)]" />
                             </div>
 
                             {visibleGroups.map(g => renderGroup(g))}
@@ -1411,8 +1425,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <Button variant="ghost" icon={Menu} iconOnly onClick={() => setIsSidebarOpen(true)} />
                                 <div className="w-px h-6 rounded-full bg-divider" />
                                 <div className="flex flex-col justify-center">
-                                    <h1 className="text-body-lg font-black leading-none tracking-tight">Portal</h1>
-                                    <p className="text-micro font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">La Salud</p>
+                                    <h1 className="text-body-lg font-black leading-none tracking-tight">{marca.titulo}</h1>
+                                    <p className="text-micro font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">{marca.bajadaCorta}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">

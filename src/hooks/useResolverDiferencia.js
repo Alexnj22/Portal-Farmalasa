@@ -8,7 +8,6 @@ import { construirComprobante, construirComprobanteDeAbono } from '../utils/cort
 import { imprimirDocumento } from '../utils/imprimirDiferido';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { hora12 } from '../utils/hora';
 import { shortEmployeeName } from '../utils/nameUtils';
@@ -29,7 +28,6 @@ import { shortEmployeeName } from '../utils/nameUtils';
  */
 export default function useResolverDiferencia({ nombreSala = {}, origen = 'modulo' } = {}) {
     const { user } = useAuth();
-    const appendAuditLog = useStaff((s) => s.appendAuditLog);
     const showToast = useToastStore((s) => s.showToast);
     const [ocupado, setOcupado] = useState(false);
 
@@ -66,9 +64,12 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
     }) => {
         if (!corte || ocupado) return null;
         setOcupado(true);
+        const sala = nombreSala[corte.branch_id] || '';
+        // Las entradas de la bitácora de este archivo las anotan las funciones
+        // de `data/cortes.js` (D3, 2026-09-28): acá sólo va el contexto legible.
         const { data, error } = await resolverDiferencia(corte.id, {
             via, causa, montoVisto, personas, evidenciaRef, evidenciaFoto,
-        });
+        }, { sucursal: sala, fecha: corte.fecha, hora: corte.hora, origen });
         if (error) {
             setOcupado(false);
             // El servidor rechaza cuando su monto no coincide con el que se vio
@@ -78,13 +79,6 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             return null;
         }
 
-        const sala = nombreSala[corte.branch_id] || '';
-        appendAuditLog?.('CORTE_CAJA_DIFERENCIA_RESUELTA', user?.id, {
-            corte_id: corte.id, diferencia_id: data?.id, sucursal: sala,
-            fecha: corte.fecha, hora: corte.hora, monto: data?.monto, via, causa, origen,
-            evidencia_ref: evidenciaRef || null, con_foto: !!evidenciaFoto,
-            responsables: via === 'REPONE' ? personas.length : undefined,
-        });
         showToast?.(
             via === 'REPONE' ? 'Responsables asignados' : via === 'RETIRA' ? 'Sobrante resuelto' : 'Causa registrada',
             `${sala} · ${hora12(corte.hora)}`.trim(), 'success',
@@ -98,23 +92,20 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
 
         setOcupado(false);
         return data;
-    }, [ocupado, nombreSala, appendAuditLog, showToast, user, origen, imprimir]);
+    }, [ocupado, nombreSala, showToast, origen, imprimir]);
 
     const anular = useCallback(async (corte, dif, motivo) => {
         if (!dif || ocupado) return false;
         setOcupado(true);
-        const { error } = await anularDiferencia(dif.id, motivo);
+        const { error } = await anularDiferencia(dif.id, motivo, { corte_id: corte?.id, origen });
         setOcupado(false);
         if (error) {
             showToast?.('No se pudo anular', mensajeAmigable(error, 'Vuelve a intentar.'), 'error');
             return false;
         }
-        appendAuditLog?.('CORTE_CAJA_DIFERENCIA_ANULADA', user?.id, {
-            corte_id: corte?.id, diferencia_id: dif.id, motivo, origen,
-        });
         showToast?.('Resolución anulada', 'El corte vuelve a quedar con su diferencia.', 'success');
         return true;
-    }, [ocupado, appendAuditLog, showToast, user, origen]);
+    }, [ocupado, showToast, origen]);
 
     /**
      * El papel de uno o varios abonos. `abonos`: [{ id, nombre, monto, saldo }]
@@ -162,7 +153,8 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             clave: `abono-faltante-${abono.id}`,
         });
         if (r?.error) return { error: r.error };
-        const { error } = await ligarAbonoAIngreso(abono.id, r.movimiento_del_portal);
+        const { error } = await ligarAbonoAIngreso(abono.id, r.movimiento_del_portal,
+            { corte_id: corte.id, monto: abono.monto });
         return error ? { error } : { ok: true };
     }, []);
 
@@ -176,12 +168,9 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             showToast?.('No entró a la caja', mensajeAmigable(r.error, 'Revisa que la caja esté abierta e inténtalo de nuevo.'), 'error');
             return false;
         }
-        appendAuditLog?.('CORTE_CAJA_ABONO_INGRESADO', user?.id, {
-            corte_id: corte.id, abono_id: abono.id, monto: abono.monto, origen,
-        });
         showToast?.('Ingreso hecho', 'El abono ya está en la caja.', 'success');
         return true;
-    }, [ocupado, ingresoDelAbono, showToast, appendAuditLog, user, origen]);
+    }, [ocupado, ingresoDelAbono, showToast]);
 
     /**
      * Abonar a un faltante con responsables. `abonos`: [{ persona_id, monto,
@@ -203,21 +192,16 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             return null;
         }
 
+        const total = abonos.reduce((t, a) => t + Number(a.monto), 0);
         const { data, error } = await abonarDiferencia(dif.id, abonos.map((a) => ({
             persona_id: a.persona_id, monto: Number(a.monto),
-        })));
+        })), { corte_id: corte.id, sucursal: sala, fecha: corte.fecha, total, origen });
         if (error) {
             setOcupado(false);
             showToast?.('No se pudo guardar el abono',
                 mensajeAmigable(error, 'Vuelve a cargar e inténtalo de nuevo.'), 'error');
             return null;
         }
-        const total = abonos.reduce((t, a) => t + Number(a.monto), 0);
-        appendAuditLog?.('CORTE_CAJA_ABONO_REGISTRADO', user?.id, {
-            corte_id: corte.id, diferencia_id: dif.id, sucursal: sala, fecha: corte.fecha,
-            abonos: abonos.map((a) => ({ persona_id: a.persona_id, monto: Number(a.monto) })),
-            total, origen,
-        });
         showToast?.(abonos.length === 1 ? 'Abono registrado' : 'Abonos registrados',
             `${sala} · ${abonos.length === 1 ? abonos[0].nombre : `${abonos.length} personas`}`, 'success');
 
@@ -248,23 +232,20 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
         await imprimirAbonos(corte, papel, guardados[0]?.registrado_at);
         setOcupado(false);
         return guardados;
-    }, [ocupado, nombreSala, appendAuditLog, showToast, user, origen, imprimirAbonos, ingresoDelAbono]);
+    }, [ocupado, nombreSala, showToast, origen, imprimirAbonos, ingresoDelAbono]);
 
     const anularAbono = useCallback(async (corte, abono, motivo) => {
         if (!abono || ocupado) return false;
         setOcupado(true);
-        const { error } = await anularAbonoRpc(abono.id, motivo);
+        const { error } = await anularAbonoRpc(abono.id, motivo, { corte_id: corte?.id, monto: abono.monto, origen });
         setOcupado(false);
         if (error) {
             showToast?.('No se pudo anular el abono', mensajeAmigable(error, 'Vuelve a intentar.'), 'error');
             return false;
         }
-        appendAuditLog?.('CORTE_CAJA_ABONO_ANULADO', user?.id, {
-            corte_id: corte?.id, abono_id: abono.id, monto: abono.monto, motivo, origen,
-        });
         showToast?.('Abono anulado', 'Su monto vuelve al saldo de esa persona.', 'success');
         return true;
-    }, [ocupado, appendAuditLog, showToast, user, origen]);
+    }, [ocupado, showToast, origen]);
 
     return { resolver, anular, imprimir, abonar, anularAbono, imprimirAbonos, hacerIngreso, ocupado };
 }

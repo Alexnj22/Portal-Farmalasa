@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep } from '../utils/storageFiles';
+import { conBitacora } from './audit';
 
 // Cortes de caja — lectura para CortesView y el widget del Inicio.
 //
@@ -327,11 +328,16 @@ export async function fetchEntradasParaCruce({ desde, hasta }) {
  * decide, mirando el horario de la sala, si fue el último del día o si nadie
  * recibió; esa decisión no la toma esta pantalla.
  */
+// Las funciones que deciden sobre un corte ANOTAN su entrada legible en la
+// bitácora (D3, 2026-09-28) — la base ya guarda el hecho en
+// `cortes_caja_eventos`; esto es la línea que se lee en Sistema → Bitácora, y
+// ahora la deja cualquier cliente que llame a la función. `contexto` son los
+// datos legibles (sala, fecha, hora, origen); la acción la fija la función.
 export function resolverCorte(id, estado, {
     motivo = null, observaciones = null,
     recibidoPor = null, vale = null, sinEntregaMotivo = null,
-} = {}) {
-    return supabase.rpc('resolver_corte_caja', {
+} = {}, contexto = {}) {
+    return conBitacora(supabase.rpc('resolver_corte_caja', {
         p_id: id,
         p_estado: estado,
         p_motivo: motivo,
@@ -339,7 +345,8 @@ export function resolverCorte(id, estado, {
         p_recibido_por: recibidoPor,
         p_vale: vale,
         p_sin_entrega_motivo: sinEntregaMotivo,
-    });
+    }), estado === 'CONFIRMADO' ? 'CORTE_CAJA_CONFIRMADO' : 'CORTE_CAJA_DESCARTADO', id,
+    { corte_id: id, motivo: motivo || undefined, ...contexto });
 }
 
 /**
@@ -387,8 +394,8 @@ export function reabrirCorte(id, motivo) {
  */
 export function resolverDiferencia(corteId, {
     via, causa, montoVisto, personas = [], evidenciaRef = null, evidenciaFoto = null,
-}) {
-    return supabase.rpc('resolver_diferencia_corte', {
+}, contexto = {}) {
+    return conBitacora(supabase.rpc('resolver_diferencia_corte', {
         p_corte_id: corteId,
         p_via: via,
         p_causa: causa,
@@ -399,12 +406,16 @@ export function resolverDiferencia(corteId, {
         // rechaza la causa encontrada sin ninguna.
         p_evidencia_ref: evidenciaRef || null,
         p_evidencia_foto: evidenciaFoto || null,
+    }), 'CORTE_CAJA_DIFERENCIA_RESUELTA', corteId, {
+        corte_id: corteId, via, causa, evidencia_ref: evidenciaRef || null, con_foto: !!evidenciaFoto,
+        responsables: via === 'REPONE' ? personas.length : undefined, ...contexto,
     });
 }
 
 /** Se anula, nunca se borra: el comprobante ya salió y alguien lo firmó. */
-export function anularDiferencia(id, motivo) {
-    return supabase.rpc('anular_diferencia_corte', { p_id: id, p_motivo: motivo });
+export function anularDiferencia(id, motivo, contexto = {}) {
+    return conBitacora(supabase.rpc('anular_diferencia_corte', { p_id: id, p_motivo: motivo }),
+        'CORTE_CAJA_DIFERENCIA_ANULADA', id, { diferencia_id: id, motivo, ...contexto });
 }
 
 /**
@@ -417,11 +428,13 @@ export function anularDiferencia(id, motivo) {
  * Anula la vieja y crea la justificada en UNA transacción: hacerlo en dos
  * llamadas dejaría el corte con su diferencia sin resolver si la segunda falla.
  */
-export function justificarDiferencia(id, motivo, causa, { evidenciaRef = null, evidenciaFoto = null } = {}) {
-    return supabase.rpc('justificar_diferencia_corte', {
+export function justificarDiferencia(id, motivo, causa, { evidenciaRef = null, evidenciaFoto = null } = {}, contexto = {}) {
+    return conBitacora(supabase.rpc('justificar_diferencia_corte', {
         p_id: id, p_motivo: motivo, p_causa: causa || null,
         p_evidencia_ref: evidenciaRef || null,
         p_evidencia_foto: evidenciaFoto || null,
+    }), 'CORTE_CAJA_DIFERENCIA_CORREGIDA', id, {
+        diferencia_id: id, motivo, causa, evidencia_ref: evidenciaRef || null, ...contexto,
     });
 }
 
@@ -439,9 +452,11 @@ export function marcarComprobanteImpreso(id) {
  * número de ingreso o de vale. Es el «un solo ingreso» que pidió el usuario: acá
  * queda el detalle fila por fila, allá un documento por el total.
  */
-export function asentarDiferencias(ids, referencia, abonoIds = []) {
-    return supabase.rpc('asentar_diferencias_corte', {
+export function asentarDiferencias(ids, referencia, abonoIds = [], contexto = {}) {
+    return conBitacora(supabase.rpc('asentar_diferencias_corte', {
         p_ids: ids, p_ref: referencia, p_abono_ids: abonoIds,
+    }), 'CORTE_CAJA_DIFERENCIAS_ASENTADAS', referencia, {
+        referencia, cuantas: ids.length, abonos: abonoIds.length, ...contexto,
     });
 }
 
@@ -476,9 +491,13 @@ export async function fetchDiasConDiferencia({ desde, hasta }) {
  * Es una reposición VOLUNTARIA y nunca toca la planilla: un faltante no se
  * descuenta del salario (ver docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md).
  */
-export function abonarDiferencia(diferenciaId, abonos) {
-    return supabase.rpc('abonar_diferencia_corte', {
+export function abonarDiferencia(diferenciaId, abonos, contexto = {}) {
+    return conBitacora(supabase.rpc('abonar_diferencia_corte', {
         p_diferencia_id: diferenciaId, p_abonos: abonos,
+    }), 'CORTE_CAJA_ABONO_REGISTRADO', diferenciaId, {
+        diferencia_id: diferenciaId,
+        abonos: (abonos ?? []).map((a) => ({ persona_id: a.persona_id, monto: Number(a.monto) })),
+        ...contexto,
     });
 }
 
@@ -487,13 +506,15 @@ export function abonarDiferencia(diferenciaId, abonos) {
  * servidor comprueba el movimiento —misma sala, entrada, tipo, monto y ya
  * aceptado por la caja— y recién entonces da el abono por anotado.
  */
-export function ligarAbonoAIngreso(abonoId, movimientoId) {
-    return supabase.rpc('ligar_abono_a_ingreso', { p_abono_id: abonoId, p_movimiento_id: movimientoId });
+export function ligarAbonoAIngreso(abonoId, movimientoId, contexto = {}) {
+    return conBitacora(supabase.rpc('ligar_abono_a_ingreso', { p_abono_id: abonoId, p_movimiento_id: movimientoId }),
+        'CORTE_CAJA_ABONO_INGRESADO', abonoId, { abono_id: abonoId, movimiento_id: movimientoId, ...contexto });
 }
 
 /** Se anula, nunca se borra: el comprobante del abono ya salió y alguien lo firmó. */
-export function anularAbono(id, motivo) {
-    return supabase.rpc('anular_abono_diferencia', { p_id: id, p_motivo: motivo });
+export function anularAbono(id, motivo, contexto = {}) {
+    return conBitacora(supabase.rpc('anular_abono_diferencia', { p_id: id, p_motivo: motivo }),
+        'CORTE_CAJA_ABONO_ANULADO', id, { abono_id: id, motivo, ...contexto });
 }
 
 /** Constancia de que los comprobantes se mandaron a imprimir (recibido, no «salió papel»). */

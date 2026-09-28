@@ -16,7 +16,6 @@ import { formatMoney } from '../../utils/formatNumber';
 // «31 ago» y no «2026-08-31»: la fecha se lee, no se procesa.
 const fechaCorta = (f) => fechaTexto(f, {
     day: 'numeric', month: 'short' });
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
 import { fechaTexto } from '../../utils/fecha';
@@ -71,7 +70,6 @@ const claveFila = (d) => `${d.kind === 'abono' ? 'a' : 'd'}${d.id}`;
 
 export default function AsentarDiferencias({ abierto, diferencias = [], nombreSala = {}, onClose, onHecho }) {
     const { user } = useAuth();
-    const appendAuditLog = useStaff((s) => s.appendAuditLog);
     const showToast = useToastStore((s) => s.showToast);
 
     // Lo que se pinta sobrevive al cierre: el panel sigue montado unos cuadros
@@ -144,16 +142,13 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         if (!incluidas.length || !ref) return;
 
         setOcupada(g.k);
-        const { error } = await asentarDiferencias(ids, ref, abonoIds);
+        // La entrada de la bitácora la anota `asentarDiferencias` (D3, 2026-09-28).
+        const { error } = await asentarDiferencias(ids, ref, abonoIds, { sucursal: nombreSala[g.branchId] || '' });
         if (error) {
             setOcupada(null);
             showToast?.('No se pudo registrar', mensajeAmigable(error, 'Vuelve a cargar la lista.'), 'error');
             return;
         }
-        appendAuditLog?.('CORTE_CAJA_DIFERENCIAS_ASENTADAS', user?.id, {
-            sucursal: nombreSala[g.branchId] || '', referencia: ref,
-            cuantas: ids.length, abonos: abonoIds.length,
-        });
         showToast?.(
             g.entra ? 'Ingreso registrado' : 'Vale registrado',
             `${incluidas.length} ${incluidas.length === 1 ? 'movimiento' : 'movimientos'} con el número ${ref}`,
@@ -170,7 +165,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         await imprimirAsiento(asiento);
         setOcupada(null);
         onHecho?.();
-    }, [excluidas, refs, showToast, appendAuditLog, user, nombreSala, onHecho, imprimirAsiento]);
+    }, [excluidas, refs, showToast, nombreSala, onHecho, imprimirAsiento]);
 
     const abrirCorreccion = useCallback((d) => {
         setCorrigiendo(d.id);
@@ -187,19 +182,18 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         if (!motivo) return;
 
         setOcupada(`dif:${d.id}`);
+        // La entrada de la bitácora la anota `justificarDiferencia` (D3, 2026-09-28).
         const { error } = await justificarDiferencia(d.id, motivo, causaCorregir, {
             evidenciaRef: refCorregir.trim(),
+        }, {
+            corte_id: d.corte_id, sucursal: nombreSala[d.branch_id] || '',
+            fecha: d.fecha, monto: d.monto, via_anterior: d.via,
         });
         setOcupada(null);
         if (error) {
             showToast?.('No se pudo corregir', mensajeAmigable(error, 'Vuelve a cargar la lista.'), 'error');
             return;
         }
-        appendAuditLog?.('CORTE_CAJA_DIFERENCIA_CORREGIDA', user?.id, {
-            diferencia_id: d.id, corte_id: d.corte_id, sucursal: nombreSala[d.branch_id] || '',
-            fecha: d.fecha, monto: d.monto, via_anterior: d.via, motivo, causa: causaCorregir,
-            evidencia_ref: refCorregir.trim(),
-        });
         showToast?.('Diferencia corregida',
             'Queda como causa encontrada: no mueve dinero, así que sale de esta lista.', 'success');
         setCorrigiendo(null);
@@ -207,7 +201,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         setCausaCorregir('');
         setRefCorregir('');
         onHecho?.();
-    }, [motivoCorregir, causaCorregir, refCorregir, showToast, appendAuditLog, user, nombreSala, onHecho]);
+    }, [motivoCorregir, causaCorregir, refCorregir, showToast, nombreSala, onHecho]);
 
     return (
         <LiquidModal

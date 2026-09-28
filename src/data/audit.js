@@ -5,6 +5,7 @@
 // autoría sale de la sesión y no de `localStorage`, qué se respalda y qué se
 // resincroniza, y las dos lecciones de la caja negra.
 import { supabase } from '../supabaseClient';
+import { armarEntrada } from '../utils/bitacora';
 
 // La autoría del log NO la elige el navegador: la resuelve
 // `registrar_bitacora` con `auth_employee_id()` adentro. Es el mismo patrón de
@@ -45,6 +46,49 @@ export function insertAuditLog(logData) {
         // De respaldo: sólo se usa si la ficha no se puede resolver.
         p_user_name:    logData.user_name,
     });
+}
+
+// ── Anotar desde la capa de datos (2026-09-28) ─────────────────────────────
+// Las funciones que GUARDAN anotan su propia entrada, para que cualquier
+// cliente —el portal o la app del teléfono— la herede al llamarlas. La pantalla
+// ya no tiene que acordarse. `appendAuditLog` del store también pasa por acá.
+//
+// Nunca lanza: una acción ya hecha no puede fallar porque no se pudo anotar
+// (y en dinero y lo fiscal la base anota además por su cuenta,
+// `bitacora_de_dinero`). Devuelve la fila escrita, o `null`.
+const escuchas = new Set();
+
+/** Avisa cada fila anotada (el store la agrega a su lista local). */
+export function escucharAnotaciones(fn) {
+    escuchas.add(fn);
+    return () => escuchas.delete(fn);
+}
+
+export async function anotar(accion, targetId = null, detalles = {}, { nombre = null } = {}) {
+    const entrada = armarEntrada(accion, targetId, detalles, nombre);
+    if (!entrada) return null;
+    try {
+        const { data, error } = await insertAuditLog(entrada);
+        if (error) throw error;
+        const fila = data || { ...entrada, created_at: new Date().toISOString() };
+        for (const fn of escuchas) {
+            try { fn(fila); } catch { /* una escucha rota no corta a las demás */ }
+        }
+        return fila;
+    } catch (err) {
+        console.error('bitácora: no se pudo anotar', entrada.action, err?.message || err);
+        return null;
+    }
+}
+
+/**
+ * Espera la escritura y, si salió bien, anota. No demora la respuesta: la
+ * anotación sale por detrás (nunca lanza). Devuelve `{ data, error }` tal cual.
+ */
+export async function conBitacora(escritura, accion, targetId, detalles = {}) {
+    const res = await escritura;
+    if (!res?.error) anotar(accion, targetId, detalles);
+    return res;
 }
 
 export function fetchAuditLogs(limit) {

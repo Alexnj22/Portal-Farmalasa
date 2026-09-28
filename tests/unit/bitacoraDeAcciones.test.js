@@ -18,12 +18,27 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const insertAuditLog = vi.fn(async (fila) => ({ data: { id: 1, ...fila }, error: null }));
-const fetchAuditLogsData = vi.fn(async () => ({ data: [], error: null }));
-
-vi.mock('../../src/data/audit', () => ({
-    insertAuditLog: (...a) => insertAuditLog(...a),
-    fetchAuditLogs: (...a) => fetchAuditLogsData(...a),
+// Desde el 2026-09-28 el store delega en `anotar` (src/data/audit.js), que es
+// lo mismo que usan las funciones de datos. Se simula sólo el cliente de
+// Supabase y se reconstruye la fila desde los parámetros de `registrar_bitacora`:
+// así la prueba cubre la lógica real, no una copia.
+const insertAuditLog = vi.fn();
+vi.mock('../../src/supabaseClient', () => ({
+    supabase: {
+        rpc: async (nombre, p) => {
+            if (nombre !== 'registrar_bitacora') return { data: null, error: null };
+            const fila = {
+                user_name: p.p_user_name, action: p.p_action, target_id: p.p_target_id,
+                details: p.p_details, source: p.p_source, severity: p.p_severity,
+                branch_id: p.p_branch_id, branch_name: p.p_branch_name,
+                device_name: p.p_device_name, input_method: p.p_input_method,
+            };
+            // Una prueba puede forzar la respuesta (p. ej. un error de permisos).
+            const forzada = await insertAuditLog(fila);
+            return forzada ?? { data: { id: 1, ...fila }, error: null };
+        },
+        from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: [], error: null }) }) }) }),
+    },
 }));
 
 const { createAuditSlice } = await import('../../src/store/slices/auditSlice');

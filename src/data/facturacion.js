@@ -5,6 +5,7 @@
 // fuera de alcance — es acceso a bucket, no a tabla).
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { anotar, conBitacora } from './audit';
 
 /**
  * Termina el trámite pendiente ante Hacienda: invalida las anuladas que no se
@@ -22,12 +23,22 @@ import { fetchAllRows } from '../utils/supabaseUtils';
  * Nunca lanza: devuelve `{ ok, resueltas, fallidas, detalle }` o
  * `{ ok:false, error }` para que la vista decida qué mostrar.
  */
-export async function regularizarDte({ alcance, invoiceId = null, branchId = null, bolsa = null } = {}) {
+export async function regularizarDte({ alcance, invoiceId = null, branchId = null, bolsa = null } = {}, contexto = {}) {
     try {
         const { data, error } = await supabase.functions.invoke('regularizar-dte', {
             body: { alcance, invoice_id: invoiceId, branch_id: branchId, bolsa },
         });
-        if (!error) return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+        if (!error) {
+            const res = data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+            // La corrida por lote la anota la propia edge function; la de UNA
+            // factura, que es un botón de una persona, se anota acá.
+            if (res.ok && alcance === 'una') {
+                anotar('REGULARIZAR_UNA_MH', invoiceId, {
+                    resueltas: res.resueltas, fichas_corregidas: res.fichas_corregidas, ...contexto,
+                });
+            }
+            return res;
+        }
         // El motivo real viaja en el cuerpo: sin leerlo, todo fallo se ve como
         // un "non-2xx status code" indistinguible.
         let detalle = '';
@@ -216,8 +227,13 @@ export function fetchObservationResolutions(columns) {
         .select(columns).order('resolved_at', { ascending: false });
 }
 
-export function insertObservationResolution(payload) {
-    return supabase.from('sales_observation_resolutions').insert(payload);
+// Las funciones que resuelven algo fiscal ANOTAN su propia entrada en la
+// bitácora (D3, 2026-09-28): cualquier cliente que las llame la deja, sin que la
+// pantalla tenga que acordarse. `contexto` son los datos legibles de la entrada
+// (el correlativo, el comentario); la acción la fija la función.
+export function insertObservationResolution(payload, contexto = {}) {
+    return conBitacora(supabase.from('sales_observation_resolutions').insert(payload),
+        'SOLVENTAR_OBSERVACION', payload.invoice_id, { comment: payload.comment ?? null, ...contexto });
 }
 
 // Acá vivía `updateInvoiceReceivedMh`, que hacía `update({ recibido_mh: true })`
@@ -367,9 +383,14 @@ export function fetchInvoiceResolutionsHistorial(columns) {
     return supabase.from('sales_invoice_resolutions').select(columns).order('resolved_at', { ascending: false });
 }
 
-export function insertInvoiceResolution(payload, selectCols) {
+/**
+ * `accion` dice QUÉ se solventó —la misma tabla guarda anulaciones y pendientes
+ * de Hacienda—: 'SOLVENTAR_ANULACION' o 'SOLVENTAR_PENDIENTE_MH'.
+ */
+export function insertInvoiceResolution(payload, selectCols, { accion = 'SOLVENTAR_ANULACION', ...contexto } = {}) {
     const q = supabase.from('sales_invoice_resolutions').insert(payload);
-    return selectCols ? q.select(selectCols) : q;
+    return conBitacora(selectCols ? q.select(selectCols) : q,
+        accion, payload.invoice_id, { comment: payload.comment ?? null, ...contexto });
 }
 
 // ── Campos nulos (sales_invoice_nulls) ──────────────────────────────────────
@@ -384,8 +405,9 @@ export function fetchSalesInvoiceNulls(filterBranch) {
     return q;
 }
 
-export function insertNullResolution(payload) {
-    return supabase.from('sales_null_resolutions').insert(payload);
+export function insertNullResolution(payload, contexto = {}) {
+    return conBitacora(supabase.from('sales_null_resolutions').insert(payload),
+        'SOLVENTAR_CAMPO_NULO', payload.null_id, { comment: payload.comment ?? null, ...contexto });
 }
 
 export function fetchNullResolutionIds() {
@@ -404,8 +426,12 @@ export function fetchGapResolutions() {
     return supabase.from('sales_gap_resolutions').select('*').order('resolved_at', { ascending: false });
 }
 
-export function insertGapResolution(payload) {
-    return supabase.from('sales_gap_resolutions').insert(payload).select('*');
+export function insertGapResolution(payload, contexto = {}) {
+    return conBitacora(supabase.from('sales_gap_resolutions').insert(payload).select('*'),
+        'SOLVENTAR_SALTO_CORRELATIVO', payload.branch_id, {
+            tipo_documento: payload.tipo_documento, gap_from: payload.gap_from, gap_to: payload.gap_to,
+            comment: payload.comment ?? null, ...contexto,
+        });
 }
 
 // ── Pagos no-efectivo (sales_payment_confirmations) ─────────────────────────
@@ -437,6 +463,9 @@ export function fetchPaymentConfirmationsHistorial() {
         .order('confirmed_at', { ascending: false });
 }
 
-export function insertPaymentConfirmation(payload) {
-    return supabase.from('sales_payment_confirmations').insert(payload).select('*');
+export function insertPaymentConfirmation(payload, contexto = {}) {
+    return conBitacora(supabase.from('sales_payment_confirmations').insert(payload).select('*'),
+        'CONFIRMAR_PAGO_NO_EFECTIVO', payload.invoice_id, {
+            tipo_pago: payload.tipo_pago, branch_id: payload.branch_id, has_proof: !!payload.proof_url, ...contexto,
+        });
 }

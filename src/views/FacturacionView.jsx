@@ -623,7 +623,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
         const { data, error } = await insertInvoiceResolution({
             invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
-        }, 'id, invoice_id, comment, resolved_by, resolved_at');
+        }, 'id, invoice_id, comment, resolved_by, resolved_at', {
+            accion: 'SOLVENTAR_ANULACION', correlativo: rows.find(r => r.id === invoiceId)?.correlativo,
+        });
         if (error) { avisarFalloAlSolventar(error, 'handleSolve'); setSaving(false); return; }
         setResolvedIds(prev => new Set([...prev, invoiceId]));
         const newRec = data?.[0];
@@ -632,10 +634,6 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
             setResolved(prev => [{ ...newRec, invoice: inv || null }, ...prev]);
         }
         const correlativo = rows.find(r => r.id === invoiceId)?.correlativo;
-        useStaff.getState().appendAuditLog('SOLVENTAR_ANULACION', String(invoiceId), {
-            correlativo,
-            comment: comment.trim() || null,
-        });
         useToastStore.getState().showToast('Anulación solventada', correlativo || '', 'success');
         setSolvingId(null); setComment(''); setSaving(false);
     };
@@ -1259,11 +1257,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         // de lectura de abajo ya espera (`manuallyResolvedIds`).
         const { error } = await insertInvoiceResolution({
             invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
-        });
+        }, undefined, { accion: 'SOLVENTAR_PENDIENTE_MH', correlativo: inv?.correlativo, resolved_by: resolvedBy });
         if (error) { avisarFalloAlSolventar(error, 'handleSolve (pendiente MH)'); setSaving(false); return; }
-        useStaff.getState().appendAuditLog('SOLVENTAR_PENDIENTE_MH', String(invoiceId), {
-            correlativo: inv?.correlativo, comment: comment.trim() || null, resolved_by: resolvedBy,
-        });
         useToastStore.getState().showToast('Pendiente solventado', inv?.correlativo || '', 'success');
         setResolved(prev => [{ ...inv, resolution: { comment: comment.trim() || null, resolved_by: resolvedBy, resolved_at: new Date().toISOString() } }, ...prev]);
         setRows(prev => prev.filter(r => r.id !== invoiceId));
@@ -1284,17 +1279,13 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
      */
     const handleRegularizarUna = async (r) => {
         setEnviandoId(r.id);
-        const res = await regularizarDte({ alcance: 'una', invoiceId: r.id });
+        const res = await regularizarDte({ alcance: 'una', invoiceId: r.id }, { correlativo: r.correlativo });
         setEnviandoId(null);
 
         if (!res.ok) {
             useToastStore.getState().showToast('No se pudo enviar', mensajeAmigable(res.error), 'error');
             return;
         }
-        useStaff.getState().appendAuditLog('REGULARIZAR_UNA_MH', String(r.id), {
-            correlativo: r.correlativo, resueltas: res.resueltas,
-            fichas_corregidas: res.fichas_corregidas,
-        });
         if (res.resueltas > 0) {
             const partes = [r.correlativo];
             if (res.fichas_corregidas) partes.push('se corrigió la ficha del cliente');
@@ -1685,13 +1676,9 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
         setSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
         const payload = { branch_id: gap.branch_id, tipo_documento: gap.tipo_documento, gap_from: gap.gap_from, gap_to: gap.gap_to, comment: comment.trim() || null, resolved_by: resolvedBy };
-        const { data, error } = await insertGapResolution(payload);
+        const { data, error } = await insertGapResolution(payload, { branch_name: getBranch(gap.branch_id) });
         if (error) { avisarFalloAlSolventar(error, 'handleSolveGap'); setSaving(false); return; }
         if (data?.[0]) setGapResolutions(prev => [data[0], ...prev]);
-        useStaff.getState().appendAuditLog('SOLVENTAR_SALTO_CORRELATIVO', String(gap.branch_id), {
-            tipo_documento: gap.tipo_documento, gap_from: gap.gap_from, gap_to: gap.gap_to,
-            branch_name: getBranch(gap.branch_id), comment: comment.trim() || null,
-        });
         useToastStore.getState().showToast(
             'Salto solventado', `${gap.tipo_documento} ${gap.gap_from}–${gap.gap_to}`, 'success');
         setSolvingGap(null); setComment(''); setSaving(false);
@@ -1702,12 +1689,8 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
         const { error } = await insertNullResolution({
             null_id: n.id, comment: nullComment.trim() || null, resolved_by: resolvedBy,
-        });
+        }, { branch: getBranch(n.branch_id), correlativo: n.correlativo, campos: n.campos_nulos });
         if (error) { avisarFalloAlSolventar(error, 'handleSolveNull'); setNullSaving(false); return; }
-        useStaff.getState().appendAuditLog('SOLVENTAR_CAMPO_NULO', String(n.id), {
-            branch: getBranch(n.branch_id), correlativo: n.correlativo, campos: n.campos_nulos,
-            comment: nullComment.trim() || null,
-        });
         useToastStore.getState().showToast('Campos nulos solventados', n.correlativo || '', 'success');
         setNullResolvedIds(prev => new Set([...prev, n.id]));
         setSolvingNull(null); setNullComment(''); setNullSaving(false);
@@ -2189,7 +2172,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
             branch_id: inv?.branch_id,
         };
 
-        const { data, error } = await insertPaymentConfirmation(payload);
+        const { data, error } = await insertPaymentConfirmation(payload, { correlativo: inv?.correlativo });
         if (error) {
             console.error('handleConfirm: insert confirmation failed:', error.message);
             useToastStore.getState().showToast(
@@ -2202,10 +2185,6 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
         setConfirmedIds(prev => new Set([...prev, invoiceId]));
         if (data?.[0]) setConfirmed(prev => [{ ...data[0], invoice: inv || null }, ...prev]);
 
-        useStaff.getState().appendAuditLog('CONFIRMAR_PAGO_NO_EFECTIVO', String(invoiceId), {
-            correlativo: inv?.correlativo, tipo_pago: inv?.tipo_pago,
-            branch_id: inv?.branch_id, has_proof: !!proofUrl,
-        });
         useToastStore.getState().showToast('Pago confirmado', inv?.correlativo || '', 'success');
 
         setConfirmingId(null); setConfirmNotes(''); setConfirmFile(null);
@@ -2653,12 +2632,8 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
         const inv = rows.find(r => r.id === invoiceId);
         const { error: err } = await insertObservationResolution({
             invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
-        });
+        }, { correlativo: inv?.correlativo, observaciones: inv?.observaciones || [], resolved_by: resolvedBy });
         if (err) { avisarFalloAlSolventar(err, 'handleSolve (observaciones)'); setSaving(false); return; }
-        useStaff.getState().appendAuditLog('SOLVENTAR_OBSERVACION', String(invoiceId), {
-            correlativo: inv?.correlativo, observaciones: inv?.observaciones || [],
-            comment: comment.trim() || null, resolved_by: resolvedBy,
-        });
         useToastStore.getState().showToast('Observación solventada', inv?.correlativo || '', 'success');
         setResoluciones(prev => [{
             invoice_id: invoiceId, comment: comment.trim() || null,

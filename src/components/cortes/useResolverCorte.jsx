@@ -5,7 +5,6 @@ import EntregaDeCaja from './EntregaDeCaja';
 import { cerrarElDia, fetchBolsaDeCorte } from '../../data/bolsas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { hora12 } from '../../utils/hora';
 import { hoySV } from '../../utils/fecha';
@@ -58,7 +57,6 @@ import { hoySV } from '../../utils/fecha';
  */
 export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } = {}) {
     const { user, hasPermission, getScope } = useAuth();
-    const appendAuditLog = useStaff((s) => s.appendAuditLog);
     const showToast = useToastStore((s) => s.showToast);
     const [ocupadoId, setOcupadoId] = useState(null);
 
@@ -94,24 +92,16 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
     } = {}) => {
         if (!corte || ocupadoId) return false;
         setOcupadoId(corte.id);
+        const sala = nombreSala[corte.branch_id] || '';
+        // La entrada de la bitácora la anota `resolverCorte` (D3, 2026-09-28).
         const { error } = await resolverCorte(corte.id, estado, {
             motivo, observaciones, recibidoPor, vale, sinEntregaMotivo,
-        });
+        }, { sucursal: sala, fecha: corte.fecha, hora: corte.hora, diferencia: corte.tramo, origen });
         setOcupadoId(null);
         if (error) {
             showToast?.('No se pudo guardar', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
             return false;
         }
-        const sala = nombreSala[corte.branch_id] || '';
-        appendAuditLog?.(estado === 'CONFIRMADO' ? 'CORTE_CAJA_CONFIRMADO' : 'CORTE_CAJA_DESCARTADO', user?.id, {
-            corte_id: corte.id,
-            sucursal: sala,
-            fecha: corte.fecha,
-            hora: corte.hora,
-            diferencia: corte.tramo,
-            motivo: motivo || undefined,
-            origen,
-        });
         showToast?.(
             estado === 'CONFIRMADO' ? 'Corte confirmado' : 'Corte descartado',
             `${sala} · ${hora12(corte.hora)}`.trim(), 'success',
@@ -264,7 +254,7 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
             }
         }
         return true;
-    }, [ocupadoId, showToast, appendAuditLog, user, nombreSala, origen]);
+    }, [ocupadoId, showToast, user, nombreSala, origen]);
 
     /* ── El diálogo de la entrega ──────────────────────────────────────────
      *

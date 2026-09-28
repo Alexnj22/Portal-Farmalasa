@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.3 — Bitácora: facturación y cortes anotan desde la capa de datos
+
+La otra mitad de «la mezcla» (D3): la entrada legible de la bitácora la escribe
+la función que guarda, no la pantalla. Así la app del teléfono la hereda al
+llamar a la misma función.
+
+- `anotar()` en `src/data/audit.js`, con la lógica que vivía en el store
+  (acción, gravedad, origen, recorte del detalle) mudada a `utils/bitacora.js`.
+  `appendAuditLog` del store delega ahí, así que hay UNA forma de anotar.
+- Facturación (7 acciones) y cortes (9) dejaron de anotar desde la pantalla: lo
+  hacen `insertPaymentConfirmation`, las cuatro resoluciones, `regularizarDte`
+  (la de una factura), `resolverCorte`, las diferencias y los abonos. La
+  pantalla sólo pasa el contexto legible (correlativo, sala, hora).
+- De paso, el ingreso de un abono a la caja queda anotado también cuando entra
+  la primera vez, no sólo al reintentarlo.
+- Verificado en el entorno de pruebas: confirmar un pago con tarjeta desde el
+  navegador deja las dos entradas —la legible, con su correlativo, y la de la
+  base (`bitacora_de_dinero`)—, las dos firmadas por quien lo hizo.
+
+Sigue: bolsas, cuentas por pagar, cierre de período, planilla, metas y
+solicitudes; después, los módulos que no son de dinero.
+
 ## v2.1076.2 — La base anota sola el dinero y lo fiscal
 
 Decisión del usuario (D3 del plan del núcleo, «la mezcla»): la bitácora la

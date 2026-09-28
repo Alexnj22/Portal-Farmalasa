@@ -25,6 +25,8 @@ export const NOMBRE_DOCUMENTO = {
 };
 
 const CONDICION = { 1: 'Contado', 2: 'Credito', 3: 'Otro' };
+// CAT-014: las que usa una droguería (catalogos.ts); el resto se muestra por número.
+const UNIDAD_MEDIDA = { 59: 'Unidad', 99: 'Otra' };
 const PLAZO = { '01': 'dias', '02': 'meses', '03': 'anios' };
 
 /** La consulta pública de Hacienda: lo que abre el QR del papel. */
@@ -85,9 +87,11 @@ export function leerDocumento(dte) {
             direccion: direccionDe(j.emisor.direccion),
             telefono: j.emisor.telefono,
             correo: j.emisor.correo,
+            establecimiento: [j.emisor.codEstable, j.emisor.codPuntoVenta].filter(Boolean).join(' · ') || null,
         },
         receptor: {
             nombre: r.nombre ?? 'Consumidor final',
+            comercial: r.nombreComercial ?? null,
             documento: docReceptor,
             nrc: r.nrc ? formatoNrc(r.nrc) : null,
             actividad: r.descActividad ?? null,
@@ -95,8 +99,19 @@ export function leerDocumento(dte) {
             telefono: r.telefono ?? null,
             correo: r.correo ?? null,
         },
+        version: id.version,
+        invalidado: !!dte.invalidado_at,
+        relacionados: (j.documentoRelacionado ?? []).map(r => ({
+            tipo: NOMBRE_DOCUMENTO[r.tipoDocumento] ?? `Tipo ${r.tipoDocumento}`,
+            generacion: r.tipoGeneracion === 2 ? 'Electrónico' : 'Físico',
+            numero: r.numeroDocumento,
+            fecha: fechaDdMm(r.fechaEmision),
+        })),
+        apendice: (j.apendice ?? []).map(a => [a.etiqueta, a.valor]),
         renglones: j.cuerpoDocumento.map(c => ({
             n: c.numItem,
+            codigo: c.codigo ?? '',
+            unidad: UNIDAD_MEDIDA[c.uniMedida] ?? (c.uniMedida != null ? String(c.uniMedida) : ''),
             cantidad: cantidad(c.cantidad),
             descripcion: c.descripcion,
             precio: c.precioUni,
@@ -105,6 +120,7 @@ export function leerDocumento(dte) {
             exenta: c.ventaExenta,
             gravada: c.ventaGravada,
         })),
+        resumenCrudo: res,
         resumen: {
             gravada: res.totalGravada,
             exenta: res.totalExenta,
@@ -244,39 +260,123 @@ const lineasSuaves = {
     paddingTop: () => 4, paddingBottom: () => 4, paddingLeft: () => 5, paddingRight: () => 5,
 };
 
+// El cierre (letras + totales) va SIEMPRE al pie de la última hoja, a la
+// misma altura en todo documento: quien lo revisa sabe dónde mirar sin buscar.
+// Las filas salen del RESUMEN del propio JSON, en el orden del formato de
+// Hacienda, y se muestran aunque valgan cero: el bloque tiene siempre la misma
+// forma, y un campo que el tipo de documento no trae no se inventa.
+const FILAS_DEL_CIERRE = [
+    ['subTotalVentas', 'Suma total de operaciones'],
+    ['descuNoSuj', 'Descuento a ventas no sujetas'],
+    ['descuExenta', 'Descuento a ventas exentas'],
+    ['descuGravada', 'Descuento a ventas gravadas'],
+    ['__iva', 'IVA 13%'],
+    ['subTotal', 'Sub-total'],
+    ['ivaPerci', 'IVA percibido'],
+    ['ivaRete', 'IVA retenido', -1],
+    ['montoTotalOperacion', 'Monto total de la operación'],
+    ['totalNoGravado', 'Total otros montos no afectos'],
+];
+// Medido en el PDF: una fila de 8pt con relleno 4+4 ocupa ~17.3pt, y la del
+// total ~24. Con 15.6 (la cuenta a ojo) el total se salía de la hoja y
+// pdfmake lo pasaba solo a otra.
+const ALTO_FILA = 17.5;
+const ALTO_TOTAL = 26;
+const PAGINA = { alto: 792, ancho: 612, margen: 36, pie: 52 };
+const ANCHO = PAGINA.ancho - 2 * PAGINA.margen;
+
 /**
  * La definición del PDF. Carta, con el membrete de la marca: los colores van en
  * rellenos y rótulos, nunca en un dato, y todo se sigue leyendo impreso en
  * blanco y negro. Lo que la norma exige (Manual Funcional §XXII) está todo y
  * sale del JSON firmado; la marca sólo lo ordena.
+ *
+ * Con muchos renglones el documento sigue en otra hoja: la cabecera de la
+ * tabla se repite, desde la segunda hoja arriba se repite quién emite y qué
+ * documento es (una hoja suelta tiene que poder identificarse sola), y el
+ * cierre cae al pie de la ÚLTIMA. Si los renglones llegan hasta donde iría el
+ * cierre, se abre una hoja más para él — nunca se encima.
  */
 export function definicionPdf(dte, qrSvg, marca = null) {
     C = marca?.colores ?? SIN_MARCA;
     const d = leerDocumento(dte);
     const res = d.resumen;
-    const filasResumen = [
-        ['Ventas no sujetas', res.noSujeta], ['Ventas exentas', res.exenta], ['Ventas gravadas', res.gravada],
-        ...(res.descuento ? [['Descuentos', res.descuento]] : []),
-        ...(res.ivaIncluido ? [] : [['Sub-total', res.subTotal], ['IVA 13%', res.iva]]),
-        ...(res.percepcion ? [['IVA percibido', res.percepcion]] : []),
-        ...(res.retencion ? [['IVA retenido', -res.retencion]] : []),
+    const crudo = d.resumenCrudo;
+
+    // Filas del cierre: sólo las que el esquema de este tipo trae.
+    const filas = FILAS_DEL_CIERRE.flatMap(([k, rotulo, signo = 1]) => {
+        if (k === '__iva') {
+            if (res.ivaIncluido) return [];
+            const iva = (crudo.tributos ?? []).find(t => t.codigo === '20');
+            return crudo.tributos ? [[rotulo, iva?.valor ?? 0]] : [];
+        }
+        return k in crudo ? [[rotulo, signo * Number(crudo[k] ?? 0)]] : [];
+    });
+    const izquierda = [
+        par('Valor en letras', res.letras),
+        ...(d.condicion ? [par('Condición de la operación', d.condicion)] : []),
+        ...(res.ivaIncluido ? [par('IVA incluido en el precio', dinero(res.iva))] : []),
+        par('Observaciones', d.observaciones || '—'),
     ];
-    const ANCHO = 540; // carta (612) menos los márgenes
+    // La altura del cierre se calcula, no se mide: pdfmake no la sabe antes de
+    // dibujar. Se estima por arriba (las letras y las observaciones pueden
+    // ocupar dos renglones cada una).
+    const altoCierre = Math.max(
+        filas.length * ALTO_FILA + ALTO_TOTAL + 8,
+        24 + 13 * (izquierda.length + Math.ceil(String(d.observaciones ?? '').length / 60)),
+    );
+    const yCierre = PAGINA.alto - PAGINA.pie - altoCierre - 4;
+
+    const cierre = {
+        absolutePosition: { x: PAGINA.margen, y: yCierre },
+        columns: [
+            { width: '*', stack: izquierda },
+            {
+                width: 220,
+                table: {
+                    widths: ['*', 76],
+                    body: [
+                        ...filas.map(([t, v]) => [celda(t, { color: GRIS }), celda(v < 0 ? `-${dinero(-v)}` : dinero(v), { alignment: 'right' })]),
+                        [
+                            celda('TOTAL A PAGAR', { bold: true, fontSize: 9.5, color: '#ffffff', fillColor: C.petroleo, margin: [0, 2, 0, 2] }),
+                            celda(dinero(res.total), { bold: true, fontSize: 11, color: '#ffffff', fillColor: C.petroleo, alignment: 'right', margin: [0, 1, 0, 1] }),
+                        ],
+                    ],
+                },
+                layout: lineasSuaves,
+            },
+        ],
+        columnGap: 20,
+    };
+
+    const sumas = (k) => d.renglones.reduce((t, r) => t + Number(r[k] ?? 0), 0);
+    const marcaDeAgua = d.invalidado ? 'DOCUMENTO INVALIDADO' : d.prueba ? 'SIN VALIDEZ FISCAL' : null;
+
     return {
         pageSize: 'LETTER',
-        pageMargins: [36, 36, 36, 52],
+        pageMargins: [PAGINA.margen, 40, PAGINA.margen, PAGINA.pie],
         info: { title: `${d.nombre} ${d.numeroControl}`, author: d.emisor.nombre, creator: marca?.nombre ?? d.emisor.nombre },
-        ...(d.prueba ? { watermark: { text: 'SIN VALIDEZ FISCAL', color: '#999999', opacity: 0.12, bold: true } } : {}),
+        ...(marcaDeAgua ? { watermark: { text: marcaDeAgua, color: d.invalidado ? '#b91c1c' : '#999999', opacity: 0.12, bold: true } } : {}),
+        // Si el guardián del cierre quedó donde el cierre se encimaría con los
+        // renglones, se abre una hoja más.
+        pageBreakBefore: (nodo) => nodo.id === 'guarda-del-cierre' && nodo.startPosition.top > yCierre - 8,
+        header: (actual, total) => (actual === 1 ? null : {
+            margin: [PAGINA.margen, 16, PAGINA.margen, 0],
+            columns: [
+                { text: [{ text: marca?.nombre ?? d.emisor.nombre, bold: true, color: C.petroleo }, { text: `  ·  ${d.nombre}`, color: TINTA }], fontSize: 7.5 },
+                { text: `${d.numeroControl}  ·  ${d.fecha}  ·  Hoja ${actual} de ${total}`, fontSize: 7.5, color: GRIS, alignment: 'right' },
+            ],
+        }),
         footer: (actual, total) => ({
-            margin: [36, 14, 36, 0],
+            margin: [PAGINA.margen, 14, PAGINA.margen, 0],
             stack: [
                 { canvas: [{ type: 'line', x1: 0, y1: 0, x2: ANCHO, y2: 0, lineWidth: 0.6, lineColor: LINEA }] },
                 {
                     margin: [0, 5, 0, 0],
                     columns: [
                         { text: marca ? [{ text: marca.nombre, bold: true, color: C.petroleo }, { text: `  ·  ${d.emisor.nombre}`, color: GRIS }] : d.emisor.nombre, fontSize: 7, color: GRIS },
-                        { text: d.sellado ? 'Documento sellado por el Ministerio de Hacienda' : 'Documento pendiente del sello de Hacienda', fontSize: 7, color: GRIS, alignment: 'center' },
-                        { text: `Página ${actual} de ${total}`, alignment: 'right', fontSize: 7, color: GRIS },
+                        { text: d.invalidado ? 'Documento invalidado ante el Ministerio de Hacienda' : d.sellado ? 'Documento sellado por el Ministerio de Hacienda' : 'Documento pendiente del sello de Hacienda', fontSize: 7, color: GRIS, alignment: 'center' },
+                        { text: actual < total ? `Página ${actual} de ${total} · continúa` : `Página ${actual} de ${total}`, alignment: 'right', fontSize: 7, color: GRIS },
                     ],
                 },
             ],
@@ -324,6 +424,7 @@ export function definicionPdf(dte, qrSvg, marca = null) {
                             { columns: [par('NIT', d.emisor.nit), par('NRC', d.emisor.nrc)] },
                             par('Dirección', d.emisor.direccion),
                             { columns: [par('Teléfono', d.emisor.telefono), par('Correo', d.emisor.correo)] },
+                            ...(d.emisor.establecimiento ? [par('Establecimiento · punto de venta', d.emisor.establecimiento)] : []),
                         ],
                     },
                     {
@@ -336,6 +437,7 @@ export function definicionPdf(dte, qrSvg, marca = null) {
                                         stack: [
                                             par('Emisión', `${d.fecha} ${d.hora}`),
                                             par('Modelo', d.modelo), par('Transmisión', d.transmision),
+                                            par('Versión del JSON', d.version),
                                             parApilado('Número de control', d.numeroControl),
                                         ],
                                     },
@@ -368,6 +470,7 @@ export function definicionPdf(dte, qrSvg, marca = null) {
                         columns: [
                             { width: '*', stack: [
                                 { text: d.receptor.nombre, bold: true, fontSize: 9.5, color: TINTA, margin: [0, 0, 0, 2] },
+                                ...(d.receptor.comercial && d.receptor.comercial !== d.receptor.nombre ? [par('Nombre comercial', d.receptor.comercial)] : []),
                                 par('Documento', d.receptor.documento || '—'),
                                 ...(d.receptor.nrc ? [par('NRC', d.receptor.nrc)] : []),
                                 ...(d.receptor.actividad ? [par('Actividad', d.receptor.actividad)] : []),
@@ -388,54 +491,57 @@ export function definicionPdf(dte, qrSvg, marca = null) {
                 margin: [0, 14, 0, 0],
                 table: {
                     headerRows: 1,
-                    widths: [16, 32, '*', 52, 40, 48, 48, 54],
+                    dontBreakRows: true,
+                    widths: [14, 44, 28, 32, '*', 46, 38, 44, 42, 50],
                     body: [
-                        ['N°', 'Cant.', 'Descripción', 'Precio unit.', 'Desc.', 'No sujetas', 'Exentas', 'Gravadas']
-                            .map((t, i) => celda(t, { bold: true, color: '#ffffff', fillColor: C.petroleo, fontSize: 7, alignment: i < 3 ? 'left' : 'right' })),
+                        ['N°', 'Código', 'Cant.', 'Unidad', 'Descripción', 'Precio unit.', 'Desc.', 'No sujetas', 'Exentas', 'Gravadas']
+                            .map((t, i) => celda(t, { bold: true, color: '#ffffff', fillColor: C.petroleo, fontSize: 7, alignment: i < 5 ? 'left' : 'right' })),
                         ...d.renglones.map((r, i) => {
                             const fondo = i % 2 ? '#f5f8f9' : null;
                             const num = (v) => celda(dinero(v), { alignment: 'right', fillColor: fondo });
                             return [
-                                celda(r.n, { color: GRIS, fillColor: fondo }), celda(r.cantidad, { alignment: 'right', fillColor: fondo }),
+                                celda(r.n, { color: GRIS, fillColor: fondo }), celda(r.codigo, { fontSize: 7, fillColor: fondo }),
+                                celda(r.cantidad, { alignment: 'right', fillColor: fondo }), celda(r.unidad, { fontSize: 7, fillColor: fondo }),
                                 celda(r.descripcion, { fillColor: fondo }),
                                 num(r.precio), num(r.descuento), num(r.noSujeta), num(r.exenta), num(r.gravada),
                             ];
                         }),
+                        [
+                            { text: 'Sumas', colSpan: 7, alignment: 'right', bold: true, fontSize: 8, color: TINTA }, {}, {}, {}, {}, {}, {},
+                            ...[sumas('noSujeta'), sumas('exenta'), sumas('gravada')].map(v => celda(dinero(v), { alignment: 'right', bold: true })),
+                        ],
                     ],
                 },
                 layout: lineasSuaves,
             },
 
-            // ── Letras y totales ──
-            {
-                margin: [0, 12, 0, 0],
-                columns: [
-                    {
-                        width: '*',
-                        stack: [
-                            par('Valor en letras', res.letras),
-                            ...(d.condicion ? [par('Condición de la operación', d.condicion)] : []),
-                            ...(res.ivaIncluido ? [par('IVA incluido en el precio', dinero(res.iva))] : []),
-                            ...(d.observaciones ? [par('Observaciones', d.observaciones)] : []),
+            // ── Documentos relacionados (notas de crédito y débito, remisiones) ──
+            ...(d.relacionados.length ? [
+                { ...rotuloDeSeccion('Documentos relacionados'), margin: [0, 12, 0, 4] },
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: ['*', 70, 190, 60],
+                        body: [
+                            ['Tipo de documento', 'Generación', 'Número o código', 'Fecha'].map(t => celda(t, { bold: true, color: GRIS, fontSize: 7 })),
+                            ...d.relacionados.map(r => [celda(r.tipo), celda(r.generacion), celda(r.numero, { fontSize: 7.5 }), celda(r.fecha)]),
                         ],
                     },
-                    {
-                        width: 210,
-                        table: {
-                            widths: ['*', 76],
-                            body: [
-                                ...filasResumen.map(([t, v]) => [celda(t, { color: GRIS }), celda(v < 0 ? `-${dinero(-v)}` : dinero(v), { alignment: 'right' })]),
-                                [
-                                    celda('TOTAL A PAGAR', { bold: true, fontSize: 9.5, color: '#ffffff', fillColor: C.petroleo, margin: [0, 2, 0, 2] }),
-                                    celda(dinero(res.total), { bold: true, fontSize: 11, color: '#ffffff', fillColor: C.petroleo, alignment: 'right', margin: [0, 1, 0, 1] }),
-                                ],
-                            ],
-                        },
-                        layout: lineasSuaves,
-                    },
-                ],
-                columnGap: 20,
-            },
+                    layout: lineasSuaves,
+                },
+            ] : []),
+
+            // ── Apéndice: datos del emisor que viajan en el JSON ──
+            ...(d.apendice.length ? [
+                { ...rotuloDeSeccion('Información adicional'), margin: [0, 12, 0, 2] },
+                { columns: [0, 1].map(k => ({ width: '*', stack: d.apendice.filter((_, i) => i % 2 === k).map(([e, v]) => par(e, v)) })), columnGap: 16 },
+            ] : []),
+
+            // ── El cierre, al pie de la última hoja ──
+            // Un espacio y no '': pdfmake no le consulta `pageBreakBefore` a un
+            // nodo de texto vacío, y el guardián quedaba mudo (medido).
+            { id: 'guarda-del-cierre', text: ' ', fontSize: 1 },
+            cierre,
         ],
         defaultStyle: { font: 'Roboto', color: TINTA },
     };
@@ -448,6 +554,20 @@ export async function pdfDelDocumento(dte, marca = null) {
     // pdfmake 0.3 devuelve una promesa; la 0.2 recibía un callback. Se aceptan las dos.
     return doc.getBlob.length ? new Promise(r => doc.getBlob(r)) : doc.getBlob();
 }
+
+/**
+ * El archivo JSON que se le entrega al cliente: el documento TAL CUAL se firmó,
+ * más la firma y el sello de Hacienda. Es la forma en que lo entregan todos los
+ * proveedores que nos facturan a nosotros (medido sobre 7 emisores distintos el
+ * 2026-09-28): sin `firmaElectronica` y `selloRecibido`, el cliente recibe un
+ * documento que no puede demostrar que Hacienda lo recibió. Lo que no hay
+ * (sin firmar, sin sello) no se inventa: la clave no va.
+ */
+export const jsonParaElCliente = (dte) => ({
+    ...dte.json,
+    ...(dte.firmado ? { firmaElectronica: dte.firmado } : {}),
+    ...(dte.sello_recibido?.length === 40 ? { selloRecibido: dte.sello_recibido } : {}),
+});
 
 export const nombreDelPdf = (dte) =>
     `${(NOMBRE_DOCUMENTO[dte.tipo] ?? 'DOCUMENTO').replace(/\s+/g, '-')}-${dte.numero_control.slice(-6)}-${String(dte.codigo_generacion).toUpperCase()}.pdf`;

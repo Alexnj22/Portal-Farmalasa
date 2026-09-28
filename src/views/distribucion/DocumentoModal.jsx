@@ -22,7 +22,7 @@ import { registrarEgreso } from '../../data/egreso';
 import { descargarArchivo, abrirEnPestanaNueva } from '../../plataforma/descargas';
 import { construirTicketHtml, conCodigosDibujados, ajustarAltoDePagina } from '../../utils/ticketPrint';
 import {
-    ticketDeVenta, imprimirTicketDeVenta, pdfDelDocumento, nombreDelPdf, urlConsultaPublica,
+    ticketDeVenta, imprimirTicketDeVenta, pdfDelDocumento, nombreDelPdf, urlConsultaPublica, jsonParaElCliente,
 } from '../../utils/distribucionDocumento';
 import { MARCA_PAPEL } from './marca';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
@@ -173,7 +173,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     };
 
     const descargarJson = () => {
-        descargarArchivo(new Blob([JSON.stringify(d.json, null, 2)], { type: 'application/json' }),
+        descargarArchivo(new Blob([JSON.stringify(jsonParaElCliente(d), null, 2)], { type: 'application/json' }),
             `${String(d.codigo_generacion).toUpperCase()}.json`);
         registrarEgreso('distribucion', { formato: 'json', filas: 1, detalle: { dte_id: d.id, numero_control: d.numero_control } });
     };

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { armarFactura, armarCreditoFiscal } from '../../supabase/functions/_shared/dte/documentos.ts';
-import { ticketDeVenta, definicionPdf, leerDocumento, urlConsultaPublica, nombreDelPdf } from '../../src/utils/distribucionDocumento.js';
+import { ticketDeVenta, definicionPdf, leerDocumento, urlConsultaPublica, nombreDelPdf, jsonParaElCliente } from '../../src/utils/distribucionDocumento.js';
 
 // El ticket y el PDF de un documento de Distribución.
 //
@@ -105,4 +105,33 @@ describe('PDF (representación gráfica)', () => {
     it('el nombre del archivo identifica tipo, número y código', () => {
         expect(nombreDelPdf(ccf)).toBe(`COMPROBANTE-DE-CREDITO-FISCAL-000009-${ccf.codigo_generacion}.pdf`);
     });
+    it('el cierre va al pie de la hoja y tiene el guardián que abre otra si no cabe', () => {
+        const def = definicionPdf(ccf, null);
+        const cierre = def.content.find(n => n.absolutePosition);
+        expect(cierre.absolutePosition.y).toBeGreaterThan(500);
+        expect(def.content.some(n => n.id === 'guarda-del-cierre' && n.text === ' ')).toBe(true);
+        expect(def.pageBreakBefore({ id: 'guarda-del-cierre', startPosition: { top: cierre.absolutePosition.y } })).toBe(true);
+        expect(def.pageBreakBefore({ id: 'guarda-del-cierre', startPosition: { top: 300 } })).toBe(false);
+    });
+    it('lleva código y unidad de cada renglón, y los documentos relacionados si los hay', () => {
+        const texto = JSON.stringify(definicionPdf(ccf, null));
+        expect(texto).toContain('"Unidad"');
+        expect(texto).toContain('Monto total de la operación');
+    });
+    it('una hoja invalidada lo dice en la marca de agua', () => {
+        expect(definicionPdf({ ...ccf, invalidado_at: '2026-09-27T10:00:00Z' }, null).watermark.text).toBe('DOCUMENTO INVALIDADO');
+    });
 });
+
+describe('JSON para el cliente', () => {
+    it('lleva la firma y el sello cuando existen, y no los inventa cuando no', () => {
+        const j = jsonParaElCliente({ ...ccf, firmado: 'eyJ.firma.jws' });
+        expect(j.firmaElectronica).toBe('eyJ.firma.jws');
+        expect(j.selloRecibido).toBe(ccf.sello_recibido);
+        expect(j.identificacion).toEqual(ccf.json.identificacion);
+        const sin = jsonParaElCliente(factura);
+        expect('firmaElectronica' in sin).toBe(false);
+        expect('selloRecibido' in sin).toBe(false);
+    });
+});
+

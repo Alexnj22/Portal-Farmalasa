@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.0 — Distribución: el cierre al pie de la hoja y el PDF completo
+
+Dos pedidos del usuario: que los totales estén siempre en el mismo lugar, y
+revisar si al PDF o al JSON les falta algo legal, comparando con los que nos
+mandan los proveedores. Se revisaron 7 documentos reales de 7 emisores
+(Droguería Americana, Cofarsal, Santa Lucía, Nueva San Carlos, Zablah,
+Imberton, Calleja).
+
+- **El cierre va al pie de la última hoja, siempre a la misma altura**: valor en
+  letras, condición, observaciones y el resumen completo. Si los renglones
+  llegan hasta ahí, se abre una hoja más para él — nunca se encima.
+- **Varias hojas**: la cabecera de la tabla se repite; desde la segunda hoja
+  arriba dice quién emite, qué documento es, su número de control y «Hoja x de
+  y»; abajo, «continúa» en todas menos la última.
+- **Lo que faltaba frente a los proveedores y al formato de Hacienda**: código
+  y unidad de cada renglón, la fila «Sumas», el resumen con TODAS las filas del
+  esquema del tipo (suma total, los tres descuentos, IVA, sub-total, percibido,
+  retenido, monto total de la operación, otros montos no afectos) aunque valgan
+  cero, los **documentos relacionados** (una nota de crédito no decía a qué
+  crédito fiscal corrige), el apéndice si lo trae, el nombre comercial del
+  receptor, establecimiento y punto de venta, y la versión del JSON.
+- **Un documento invalidado lo dice** en la marca de agua y en el pie.
+- **El JSON que se descarga lleva la firma y el sello** (`jsonParaElCliente`).
+  Antes bajaba el documento sin `firmaElectronica` ni `selloRecibido`, o sea
+  uno que no puede demostrar que Hacienda lo recibió. Los 7 proveedores lo
+  entregan con los dos.
+- Medido en el camino: pdfmake no le consulta `pageBreakBefore` a un nodo de
+  texto vacío (el guardián del cierre usa un espacio), y una fila de 8pt con su
+  relleno mide ~17.3pt y no 15.6 — con la cuenta a ojo el total se salía de la
+  hoja.
+
 ## v2.1083.0 — Distribución: la venta pasa a vista propia
 
 La venta de Distribución deja de ser un modal y pasa a **vista propia**:

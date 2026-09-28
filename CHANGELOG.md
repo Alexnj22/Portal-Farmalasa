@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.8 — Puntos: anular una compra toma de sus otros puntos, y el historial lo dice claro
+
+Decisión del usuario (2026-09-28).
+
+- **Anular una compra quita sus puntos aunque ya se hayan usado.** Si el lote
+  de esa compra ya se canjeó, lo que falta se toma de los otros puntos del
+  cliente, los más viejos primero. Sólo lo que ni así alcanza queda como «no
+  recuperado» en Avisos; la cuenta nunca queda en negativo. Ejemplo: gana 50,
+  los canjea, tiene 100 de otras compras y se anula la primera → queda en 50,
+  sin aviso.
+- **El movimiento lo dice**: «Compra anulada · <documento>», más «sus puntos ya
+  se habían usado; se tomaron de sus otros puntos» o «faltaron N».
+- **El canje devuelto es su propio movimiento** (+X el día que se devolvió):
+  sin él, la lista no sumaba el saldo. Verificado: saldo 100, suma de la lista
+  100. En el detalle del cliente y en «Mis puntos».
+
 ## v2.1076.7 — Metas: la tarjeta de confirmación compara contra la meta del mes anterior
 
 Pedido del usuario: «¿cómo veo la meta del mes anterior para comparar?». Estaba,

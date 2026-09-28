@@ -55,7 +55,9 @@ const TIPO = {
     cumpleanos:  { icono: Cake,        rotulo: 'Cumpleaños',  burbuja: 'bg-brand/10 text-brand-text' },
     ajuste:      { icono: Wrench,      rotulo: 'Ajuste',      burbuja: 'bg-surface-card-hover text-content-3' },
     canje:       { icono: Gift,        rotulo: 'Canje',       burbuja: 'bg-warning/10 text-warning-text' },
-    anulacion:   { icono: Undo2,       rotulo: 'Anulación',   burbuja: 'bg-danger/10 text-danger-text' },
+    // La factura del canje se anuló y los puntos volvieron (2026-09-28).
+    canje_devuelto: { icono: Undo2,    rotulo: 'Canje devuelto', burbuja: 'bg-success/10 text-success-text' },
+    anulacion:   { icono: Undo2,       rotulo: 'Compra anulada', burbuja: 'bg-danger/10 text-danger-text' },
     vencimiento: { icono: CalendarX,   rotulo: 'Vencimiento', burbuja: 'bg-surface-card-hover text-content-3' },
 };
 const FILTROS = [
@@ -139,7 +141,9 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
             const clave = String(m.fecha).slice(0, 7);
             const fila = porMes.get(clave) ?? { mes: clave, acumulado: 0, canjeado: 0, neto: 0 };
             const p = Number(m.puntos) || 0;
-            if (p > 0) fila.acumulado += p;
+            // Un canje devuelto no es algo ganado: resta de lo canjeado del mes.
+            if (m.tipo === 'canje_devuelto') fila.canjeado -= p;
+            else if (p > 0) fila.acumulado += p;
             if (m.tipo === 'canje') fila.canjeado += -p;
             fila.neto += p;
             porMes.set(clave, fila);
@@ -528,7 +532,9 @@ function Movimiento({ m, sala }) {
     const p = Number(m.puntos) || 0;
     // El rótulo ya dice «Compra» o «Canje»: del motivo se quita esa palabra
     // para no leer «Compra · compra».
-    const detalle = String(m.motivo ?? '').replace(/^(compra|canje|cortesía cumpleaños)(\s·\s)?/i, '').trim();
+    const detalle = String(m.motivo ?? '')
+        .replace(/^(compra anulada|canje aplicado en el sistema de ventas|la factura del canje se anuló|compra|canje|cortesía cumpleaños)(\s·\s)?/i, '')
+        .trim();
     return (
         <div className="flex items-center gap-3 px-4 py-3 min-w-0">
             <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${t.burbuja}`}>

@@ -274,6 +274,7 @@ const TIPOS_DE_MOVIMIENTO = {
     cumpleanos:  { rotulo: 'Regalo de cumpleaños',    icono: Cake },
     ajuste:      { rotulo: 'Ajuste',                  icono: SlidersHorizontal },
     canje:       { rotulo: 'Canje',                   icono: Gift },
+    canje_devuelto: { rotulo: 'Canje devuelto',       icono: Undo2 },
     anulacion:   { rotulo: 'Compra anulada',          icono: Undo2 },
     vencimiento: { rotulo: 'Vencieron',               icono: CalendarX },
 };

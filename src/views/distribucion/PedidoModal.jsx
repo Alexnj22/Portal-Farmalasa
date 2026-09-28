@@ -15,6 +15,7 @@ import {
     fetchItemsDePedido, facturarPedido, anularPedido, reintentarDocumento, mensajeDeDistribucion,
 } from '../../data/distribucion';
 import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, FORMA_PAGO, rotuloTipoCliente } from './comun';
+import PagosDelPedido from './PagosDelPedido';
 
 // El detalle de un pedido y lo que se puede hacer con él. Facturar lo hace el
 // servidor; acá se pide y se muestra lo que contestó, incluido «quedó firmado
@@ -128,6 +129,8 @@ export default function PedidoModal({ pedido, puedeVender, onClose, onCambio, on
                             </div>
                         )}
                     </div>
+
+                    <PagosDelPedido pedidoId={pedido.id} puedeEditar={puedeVender && pedido.estado !== 'anulado'} onCambio={onCambio} />
 
                     {anulando && (
                         <PortalInput label="Motivo de la anulación" name="motivo" value={motivo}

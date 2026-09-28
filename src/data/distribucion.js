@@ -19,6 +19,7 @@ const MENSAJES = {
     DIST_PEDIDO_CERRADO: 'El pedido ya se facturó o se anuló.',
     DIST_DESCUENTO: 'El descuento pasa del importe del renglón.',
     DIST_CCF_SIN_NRC: 'Ese cliente no tiene NRC: sólo se le puede emitir Factura.',
+    DIST_PAGO_FACTURADO: 'La forma y el monto ya están en el documento: sólo se puede adjuntar el comprobante.',
 };
 
 export function mensajeDeDistribucion(error) {
@@ -231,3 +232,89 @@ async function invocar(body) {
 export const facturarPedido = (pedidoId) => invocar({ accion: 'facturar', pedido_id: pedidoId });
 export const reintentarDocumento = (dteId) => invocar({ accion: 'transmitir', dte_id: dteId });
 export const descartarDocumento = (dteId) => invocar({ accion: 'descartar', dte_id: dteId });
+/** Documento sellado: abre un pedido nuevo que, al facturarse, lo reemplaza y lo invalida. */
+export const corregirDocumentoSellado = (dteId) => invocar({ accion: 'corregir_sellado', dte_id: dteId });
+/** Documento sellado sin reemplazo: se deshizo la venta. */
+export const anularVenta = (dteId, motivo) => invocar({ accion: 'anular_venta', dte_id: dteId, motivo });
+export const reenviarInvalidacion = (dteId) => invocar({ accion: 'enviar_invalidacion', dte_id: dteId });
+
+// ── Pagos ──────────────────────────────────────────────────────────────────
+
+/** Formas que llevan comprobante (CAT-017): todo lo que no es efectivo ni crédito. */
+export const LLEVA_COMPROBANTE = new Set(['02', '03', '04', '05', '08', '99']);
+
+export async function fetchPagos(pedidoId) {
+    const { data, error } = await supabase.from('dist_pagos')
+        .select('id, orden, forma, monto, referencia, comprobante_url, monto_leido, verificacion, nota, lectura')
+        .eq('pedido_id', pedidoId).order('orden');
+    if (error) throw error;
+    return data;
+}
+
+/** Cuántos pagos esperan su comprobante (para la tarjeta de la vista). */
+export async function contarPagosSinComprobante() {
+    const { count, error } = await supabase.from('dist_pagos')
+        .select('id', { count: 'exact', head: true }).eq('verificacion', 'pendiente');
+    if (error) throw error;
+    return count ?? 0;
+}
+
+/**
+ * Reemplaza las formas de pago de un pedido por facturar. La última puede ir
+ * sin monto: es «el resto», y la calcula el servidor al facturar.
+ */
+export async function guardarPagos(pedidoId, filas) {
+    const { error: eBorrar } = await supabase.from('dist_pagos').delete().eq('pedido_id', pedidoId);
+    if (eBorrar) throw eBorrar;
+    if (!filas.length) return [];
+    const { data, error } = await supabase.from('dist_pagos').insert(filas.map((f, i) => ({
+        pedido_id: pedidoId, orden: i + 1, forma: f.forma,
+        monto: i === filas.length - 1 && f.resto ? null : f.monto,
+        referencia: f.referencia?.trim() || null,
+        // Al corregir un pedido, el comprobante que ya estaba se conserva.
+        ...(f.comprobante_url ? {
+            comprobante_url: f.comprobante_url, lectura: f.lectura ?? null, monto_leido: f.monto_leido ?? null,
+            verificacion: f.verificacion, nota: f.nota ?? null,
+        } : {}),
+    }))).select('id, orden');
+    if (error) throw error;
+    return data;
+}
+
+/** El archivo en base64, sin prefijo (lo que espera el lector). Puro JS, sin FileReader. */
+async function aBase64(archivo) {
+    const bytes = new Uint8Array(await archivo.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+}
+
+/**
+ * Lee el comprobante y lo cuadra contra el monto. Nunca lanza por la lectura:
+ * si el lector no está o falla, devuelve `sinLector` y la pantalla sigue a mano.
+ */
+export async function leerComprobante(archivo, montoEsperado, forma) {
+    const { data, error } = await supabase.functions.invoke('distribucion-comprobante', {
+        body: { imagenBase64: await aBase64(archivo), mimeType: archivo.type || 'image/jpeg', esperado: { monto: montoEsperado, forma } },
+    });
+    if (error) return { sinLector: true, leido: null, coincide: null, error: error.message };
+    return data;
+}
+
+/** Sube el comprobante al bucket privado. Guarda la URL en formato público (regla 10). */
+export async function subirComprobante(archivo, pedidoId) {
+    const ext = (archivo.name?.split('.').pop() || 'jpg').toLowerCase();
+    const path = `distribucion/${pedidoId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('dist-comprobantes').upload(path, archivo, { contentType: archivo.type });
+    if (error) throw new Error(`No se pudo subir el comprobante: ${error.message}`);
+    return supabase.storage.from('dist-comprobantes').getPublicUrl(path).data?.publicUrl ?? null;
+}
+
+/** Deja el comprobante y lo que se decidió sobre él en el pago. */
+export async function adjuntarComprobante(pagoId, { url, lectura, montoLeido, verificacion, nota }) {
+    const { error } = await supabase.from('dist_pagos').update({
+        comprobante_url: url, lectura: lectura ?? null, monto_leido: montoLeido ?? null,
+        verificacion, nota: nota?.trim() || null,
+    }).eq('id', pagoId);
+    if (error) throw error;
+}

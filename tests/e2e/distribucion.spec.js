@@ -92,3 +92,30 @@ test('a un contribuyente se le puede emitir Factura si la pide', async ({ page }
     const doc = page.getByRole('dialog', { name: 'Documento' });
     await expect(doc.getByRole('heading', { name: /^Factura/ })).toBeVisible({ timeout: 30_000 });
 });
+
+test('pago dividido: $2 en efectivo y el resto con tarjeta, comprobante después', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/distribucion?tab=pedidos');
+    await page.getByRole('button', { name: /nueva venta/i }).first().click();
+    const modal = page.getByRole('dialog');
+    await modal.getByText('Elegir cliente…').click();
+    await page.getByText('TIENDA LA ESQUINA', { exact: true }).last().click();
+    await modal.getByLabel('Buscar producto').fill('a');
+    await modal.getByRole('option').first().click();
+    await modal.getByRole('button', { name: 'Uno más' }).first().click();
+
+    await modal.getByRole('button', { name: 'Otra forma' }).click();
+    // La primera forma (efectivo) lleva monto; la segunda es «el resto».
+    await modal.locator('input[name^="monto-pago-"]').first().fill('2');
+    await expect(modal.getByText('El resto')).toBeVisible();
+    await expect(modal.getByText(/Comprobante pendiente/)).toBeVisible();
+    await modal.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    await page.screenshot({ path: `${SALIDA}/pago-dividido.png`, fullPage: true });
+    await modal.getByRole('button', { name: /^Facturar$/ }).click();
+
+    const doc = page.getByRole('dialog', { name: 'Documento' });
+    await expect(doc).toBeVisible({ timeout: 30_000 });
+    await doc.getByText('Datos', { exact: true }).click();
+    await expect(doc.getByText('Falta el comprobante')).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/pagos-en-documento.png`, fullPage: true });
+});

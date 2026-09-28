@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1081.0 — Distribución: pagos por forma con comprobante, y corregir o deshacer un documento sellado
+
+- **Varias formas de pago en una venta** ($2 en efectivo, el resto con
+  tarjeta; parte a crédito si el cliente lo tiene). Es legal: Manual Funcional
+  §XIX; con contado y crédito mezclados el DTE sale en condición 3. La última
+  forma es «el resto» y la calcula el servidor contra el total del motor, así
+  los pagos suman el documento al centavo. Tabla `dist_pagos`.
+- **Comprobante de cada pago** (tarjeta, transferencia, cheque, electrónico):
+  al vender o después. Se lee el monto con `distribucion-comprobante` (Gemini;
+  sin llave, se escribe el monto del papel a mano) y si no coincide la
+  pantalla pregunta: usar el del comprobante o dejar el del pago diciendo por
+  qué. Bucket privado `dist-comprobantes`. Tarjeta «Sin comprobante» en Pedidos.
+- **Corregir un documento sellado**: abre un pedido nuevo que lo reemplaza; al
+  facturarlo, el original se invalida citándolo (CAT-024 tipo 1). La
+  invalidación sale cuando el reemplazo tiene sello.
+- **Deshacer la venta**: invalida el sellado sin reemplazo (tipo 2), con
+  motivo, y anula el pedido.
+- Probado en pruebas con sellos simulados: la cadena corrección → reemplazo →
+  invalidación pendiente cita al documento correcto; no se duplica; el motivo
+  es obligatorio. Las invalidaciones quedan pendientes hasta tener las
+  credenciales de Hacienda.
+
 ## v2.1080.0 — Distribución con los colores de la distribuidora
 
 La distribuidora es otra empresa y tiene que distinguirse a simple vista de las

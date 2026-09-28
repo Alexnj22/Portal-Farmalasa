@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Plus, ClipboardList, Receipt, Clock, AlertTriangle, Search, CheckCircle2 } from 'lucide-react';
+import { Plus, ClipboardList, Receipt, Clock, AlertTriangle, Search, CheckCircle2, Paperclip } from 'lucide-react';
 import FilterBar from '../../components/common/FilterBar';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -15,7 +15,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { fechaNumerica, hoySV, sumarDias } from '../../utils/fecha';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { fetchPedidos, fetchClientes, fetchCatalogo, fetchItemsDePedido } from '../../data/distribucion';
+import { fetchPedidos, fetchClientes, fetchCatalogo, fetchItemsDePedido, fetchPagos, contarPagosSinComprobante } from '../../data/distribucion';
 import VentaModal from './VentaModal';
 import DocumentoModal from './DocumentoModal';
 import PedidoModal from './PedidoModal';
@@ -50,7 +50,8 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
     const [estado, setEstado] = useState('');
     const [nuevo, setNuevo] = useState(false);
     const [abierto, setAbierto] = useState(null);
-    const [corrigiendo, setCorrigiendo] = useState(null);   // { pedido, items }
+    const [corrigiendo, setCorrigiendo] = useState(null);   // { pedido, items, pagos }
+    const [sinComprobante, setSinComprobante] = useState(0);
     const [documento, setDocumento] = useState(null);       // { id, imprimir }
     const pedidoRef = useRef(0);
 
@@ -59,11 +60,12 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
         setCargando(true);
         setError('');
         try {
-            const [p, c, k] = await Promise.all([
+            const [p, c, k, sc] = await Promise.all([
                 fetchPedidos({ desde: sumarDias(hoySV(), -VENTANA_DIAS) }), fetchClientes(), fetchCatalogo(),
+                contarPagosSinComprobante(),
             ]);
             if (mio !== pedidoRef.current) return;
-            setPedidos(p); setClientes(c); setCatalogo(k);
+            setPedidos(p); setClientes(c); setCatalogo(k); setSinComprobante(sc);
         } catch (e) {
             if (mio !== pedidoRef.current) return;
             console.error('TabPedidos', e);
@@ -88,7 +90,8 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
         rechazados: pedidos.filter(p => p.dist_dte?.estado === 'rechazado').length,
     }), [pedidos, hoy]);
 
-    const alTerminar = ({ pedidoId, factura, errorFactura, imprimir, corregido }) => {
+    const alTerminar = ({ pedidoId, factura, errorFactura, imprimir, corregido, avisoComprobante }) => {
+        if (avisoComprobante) showToast('Falta un comprobante', avisoComprobante, 'warning');
         setNuevo(false);
         setCorrigiendo(null);
         useStaff.getState().appendAuditLog(corregido ? 'DISTRIBUCION_PEDIDO_CORREGIDO' : 'DISTRIBUCION_PEDIDO_CREADO',
@@ -103,7 +106,8 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
 
     const abrirCorreccion = async (p) => {
         try {
-            setCorrigiendo({ pedido: p, items: await fetchItemsDePedido(p.id) });
+            const [items, pagos] = await Promise.all([fetchItemsDePedido(p.id), fetchPagos(p.id)]);
+            setCorrigiendo({ pedido: p, items, pagos });
             setAbierto(null);
         } catch (e) {
             showToast('No se pudo abrir el pedido', mensajeAmigable(e), 'error');
@@ -130,6 +134,9 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
                     <StatCard icon={Clock} label="Sin sello" value={stats.sinSello} loading={cargando}
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls={stats.sinSello ? 'text-warning-text' : undefined}
                         sub="Todavía no cuentan ante Hacienda" />
+                    <StatCard icon={Paperclip} label="Sin comprobante" value={sinComprobante} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" valueCls={sinComprobante ? 'text-warning-text' : undefined}
+                        sub="Pagos con tarjeta, transferencia o cheque" />
                     <StatCard icon={AlertTriangle} label="Rechazados" value={stats.rechazados} loading={cargando}
                         iconBg="bg-danger/10" iconCls="text-danger" valueCls={stats.rechazados ? 'text-danger-text' : undefined}
                         sub="Hay que volver a facturarlos" />
@@ -204,7 +211,7 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
                 clientes={clientes} catalogo={catalogo} onListo={alTerminar} />
             {corrigiendo && (
                 <VentaModal open onClose={() => setCorrigiendo(null)} emisor={emisor} clientes={clientes} catalogo={catalogo}
-                    pedido={corrigiendo.pedido} itemsDelPedido={corrigiendo.items} onListo={alTerminar} />
+                    pedido={corrigiendo.pedido} itemsDelPedido={corrigiendo.items} pagosDelPedido={corrigiendo.pagos} onListo={alTerminar} />
             )}
             {abierto && (
                 <PedidoModal pedido={abierto} puedeVender={puedeVender} onClose={() => setAbierto(null)}

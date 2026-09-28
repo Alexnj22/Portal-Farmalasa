@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    FileCheck2, RefreshCw, Loader2, Download, ExternalLink, Printer, Pencil, Undo2,
+    FileCheck2, RefreshCw, Loader2, Download, ExternalLink, Printer, Pencil, Undo2, Ban,
 } from 'lucide-react';
+import PortalInput from '../../components/common/PortalInput';
+import PagosDelPedido from './PagosDelPedido';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -14,6 +16,7 @@ import { fechaTexto } from '../../utils/fecha';
 import { hora12 } from '../../utils/hora';
 import {
     fetchDocumento, reintentarDocumento, descartarDocumento, mensajeDeDistribucion,
+    corregirDocumentoSellado, anularVenta, reenviarInvalidacion,
 } from '../../data/distribucion';
 import { registrarEgreso } from '../../data/egreso';
 import { descargarArchivo, abrirEnPestanaNueva } from '../../plataforma/descargas';
@@ -34,7 +37,11 @@ import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
 //     —el servidor le pregunta a Hacienda antes— y el pedido vuelve a
 //     «Por facturar» para cambiarle lo que haga falta y facturarlo de nuevo;
 //   · si Hacienda lo RECHAZÓ: el pedido ya quedó libre, se corrige igual;
-//   · si tiene SELLO: se invalida ante Hacienda y se emite otro.
+//   · si tiene SELLO: «Corregir» abre un pedido NUEVO con lo mismo; al
+//     facturarlo, el servidor invalida el original citando al nuevo (CAT-024
+//     tipo 1). «Deshacer la venta» lo invalida sin reemplazo (tipo 2) y el
+//     pedido queda anulado. La invalidación sale cuando Hacienda ya conoce al
+//     reemplazo; mientras tanto queda «pendiente» y se ve acá.
 
 const VISTAS = [
     { value: 'ticket', label: 'Ticket' },
@@ -82,6 +89,8 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const [error, setError] = useState('');
     const [ocupado, setOcupado] = useState(null);
     const [pdf, setPdf] = useState({ blob: null, url: null, error: null });
+    const [deshaciendo, setDeshaciendo] = useState(false);
+    const [motivo, setMotivo] = useState('');
     const yaImprimio = useRef(false);
 
     const cargar = useCallback(() => {
@@ -140,9 +149,26 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
 
     const corregir = async () => {
         if (d.estado === 'rechazado') { onCorregirPedido?.(d.pedido_id); return; }
+        if (d.estado === 'sellado') {
+            const r = await accion('corregir', () => corregirDocumentoSellado(id), 'DISTRIBUCION_CORRECCION_ABIERTA');
+            if (r?.pedido_id) onCorregirPedido?.(r.pedido_id);
+            return;
+        }
         const r = await accion('corregir', () => descartarDocumento(id), 'DISTRIBUCION_DTE_DESCARTADO');
         if (r?.estado === 'descartado') onCorregirPedido?.(d.pedido_id);
         else { cargar(); onCambio?.(); }
+    };
+
+    const deshacer = async () => {
+        await accion('deshacer', () => anularVenta(id, motivo), 'DISTRIBUCION_VENTA_DESHECHA');
+        setDeshaciendo(false);
+        cargar();
+        onCambio?.();
+    };
+    const reenviarInv = async () => {
+        await accion('invalidacion', () => reenviarInvalidacion(id), 'DISTRIBUCION_INVALIDACION_REENVIO');
+        cargar();
+        onCambio?.();
     };
 
     const descargarJson = () => {
@@ -159,7 +185,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const est = d ? ESTADO_DOCUMENTO[d.estado] : null;
     const sinSello = d && ['sin_firmar', 'firmado', 'contingencia'].includes(d.estado);
     const puedeReintentar = puedeVender && d && ['sin_firmar', 'firmado'].includes(d.estado);
-    const puedeCorregir = puedeVender && d?.pedido_id && (sinSello || d.estado === 'rechazado');
+    const invalidando = d?.invalidacion_estado === 'pendiente' || d?.invalidacion_estado === 'procesada';
+    const puedeCorregir = puedeVender && d?.pedido_id && (sinSello || d.estado === 'rechazado' || (d.estado === 'sellado' && !invalidando));
+    const puedeDeshacer = puedeVender && d?.estado === 'sellado' && !invalidando;
     const obs = d?.observaciones_mh ?? [];
 
     return (
@@ -219,10 +247,27 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                                 {d.intentos > 0 && (<><dt className="text-content-3">Envíos a Hacienda</dt><dd className="text-content-2">{d.intentos}</dd></>)}
                             </dl>
                         )}
-                        {d.estado === 'sellado' && puedeVender && (
+                        {d.invalidacion_estado === 'pendiente' && (
+                            <Notice variant="warning" compact>
+                                Invalidación firmada y pendiente de enviar a Hacienda
+                                {d.reemplazo_id ? ': sale cuando el documento que lo reemplaza tenga sello.' : '.'}
+                            </Notice>
+                        )}
+                        {d.invalidacion_estado === 'rechazada' && (
+                            <Notice variant="danger" compact>Hacienda rechazó la invalidación. Revisa el motivo en «Datos» y vuelve a enviarla.</Notice>
+                        )}
+                        {d.estado === 'sellado' && puedeVender && !invalidando && (
                             <p className="text-caption text-content-3">
-                                Este documento ya tiene sello: para corregirlo hay que invalidarlo ante Hacienda y emitir otro.
+                                Con sello, «Corregir» emite un documento nuevo que reemplaza a éste, y éste se invalida ante Hacienda.
+                                Si la venta no se hizo, usa «Deshacer la venta».
                             </p>
+                        )}
+                        {deshaciendo && (
+                            <PortalInput label="¿Por qué se deshace la venta? (lo lee Hacienda)" name="motivo-invalidacion" value={motivo}
+                                placeholder="Ej.: el cliente devolvió toda la mercadería" onChange={(e) => setMotivo(e.target.value)} />
+                        )}
+                        {vista === 'datos' && d.pedido_id && (
+                            <PagosDelPedido pedidoId={d.pedido_id} puedeEditar={puedeVender} onCambio={onCambio} />
                         )}
                     </>)}
                 </div>
@@ -244,6 +289,18 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                             <Button variant="secondary" icon={ExternalLink} onClick={() => abrirEnPestanaNueva(urlConsultaPublica(d))}>Ver en Hacienda</Button>
                         )}
                     </>)}
+                    {puedeDeshacer && !deshaciendo && (
+                        <Button variant="secondary" tone="danger" icon={Ban} disabled={!!ocupado} onClick={() => setDeshaciendo(true)}>Deshacer la venta</Button>
+                    )}
+                    {deshaciendo && (
+                        <Button variant="secondary" tone="danger" icon={ocupado === 'deshacer' ? Loader2 : Ban}
+                            disabled={!!ocupado || !motivo.trim()} onClick={deshacer}>Invalidar ante Hacienda</Button>
+                    )}
+                    {puedeVender && ['pendiente', 'rechazada'].includes(d?.invalidacion_estado) && (
+                        <Button variant="secondary" icon={ocupado === 'invalidacion' ? Loader2 : RefreshCw} disabled={!!ocupado} onClick={reenviarInv}>
+                            Enviar invalidación
+                        </Button>
+                    )}
                     {puedeCorregir && (
                         <Button variant="secondary" icon={ocupado === 'corregir' ? Loader2 : (d.estado === 'rechazado' ? Pencil : Undo2)}
                             disabled={!!ocupado} onClick={corregir}>Corregir</Button>

@@ -14,9 +14,12 @@ import useBorrador from '../../hooks/useBorrador';
 import { tokenMatch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import { hoySV } from '../../utils/fecha';
-import { crearPedido, actualizarPedido, facturarPedido, mensajeDeDistribucion } from '../../data/distribucion';
+import {
+    crearPedido, actualizarPedido, facturarPedido, mensajeDeDistribucion, guardarPagos, subirComprobante, adjuntarComprobante,
+} from '../../data/distribucion';
+import FormasDePago, { filaNueva, problemaDePagos } from './FormasDePago';
 import Interruptor from './Interruptor';
-import { FORMA_PAGO, estimarPedido, leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO } from './comun';
+import { estimarPedido, leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO } from './comun';
 
 // La venta de preventa, pensada para hacerse parado frente a un mostrador.
 //
@@ -39,15 +42,15 @@ import { FORMA_PAGO, estimarPedido, leerMonto, rotuloTipoCliente, soloVentaLibre
 const RESULTADOS = 8;
 const conCantidad = (n) => String(Math.round(n * 10000) / 10000);
 
-export default function VentaModal({ open, onClose, emisor, clientes, catalogo, pedido = null, itemsDelPedido = null, onListo }) {
+export default function VentaModal({ open, onClose, emisor, clientes, catalogo, pedido = null, itemsDelPedido = null, pagosDelPedido = null, onListo }) {
     const corrigiendo = !!pedido;
     const [clienteId, setClienteId] = useState('');
     const [carrito, setCarrito] = useState([]); // [{ product_id, cantidad: string }]
     const [buscar, setBuscar] = useState('');
     const [tipoDoc, setTipoDoc] = useState('01');
-    const [condicion, setCondicion] = useState(1);
+    const [pagos, setPagos] = useState(() => [filaNueva()]);
+    const [pagoAbierto, setPagoAbierto] = useState(null);
     const [plazo, setPlazo] = useState('');
-    const [formaPago, setFormaPago] = useState('01');
     const [notas, setNotas] = useState('');
     const [imprimir, setImprimir] = useState(true);
     const [uuid, setUuid] = useState(() => crypto.randomUUID());
@@ -60,16 +63,17 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
         if (!open || !pedido) return;
         setClienteId(String(pedido.cliente_id));
         setTipoDoc(pedido.tipo_documento ?? (clientes.find(c => c.id === pedido.cliente_id)?.contribuyente ? '03' : '01'));
-        setCondicion(pedido.condicion);
         setPlazo(pedido.plazo_dias ? String(pedido.plazo_dias) : '');
-        setFormaPago(pedido.forma_pago ?? '01');
+        setPagos(pagosDelPedido?.length
+            ? pagosDelPedido.map(pg => ({ ...filaNueva(pg.forma), monto: pg.monto != null ? String(pg.monto) : '', referencia: pg.referencia ?? '', existente: pg }))
+            : [filaNueva(pedido.condicion === 2 ? '13' : (pedido.forma_pago ?? '01'))]);
         setNotas(pedido.observaciones ?? '');
         setCarrito((itemsDelPedido ?? []).map(i => ({ product_id: String(i.product_id), cantidad: conCantidad(Number(i.cantidad)) })));
-    }, [open, pedido, itemsDelPedido]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [open, pedido, itemsDelPedido, pagosDelPedido]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const { recuperado, descartar } = useBorrador(
         open && emisor && !corrigiendo ? `distribucion-venta-${emisor.id}` : null,
-        { clienteId, tipoDoc, carrito, condicion, plazo, formaPago, notas, uuid },
+        { clienteId, tipoDoc, carrito, pagos: pagos.map(({ adjunto, ...f }) => f), plazo, notas, uuid },
         { activo: open && !corrigiendo, vale: (v) => !!v?.clienteId || v?.carrito?.length > 0 },
     );
     const repuesto = useRef(false);
@@ -80,9 +84,8 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
         setClienteId(recuperado.clienteId ?? '');
         setTipoDoc(recuperado.tipoDoc ?? '01');
         setCarrito(recuperado.carrito ?? []);
-        setCondicion(recuperado.condicion ?? 1);
+        setPagos(recuperado.pagos?.length ? recuperado.pagos.map(f => ({ ...filaNueva(), ...f, adjunto: null })) : [filaNueva()]);
         setPlazo(recuperado.plazo ?? '');
-        setFormaPago(recuperado.formaPago ?? '01');
         setNotas(recuperado.notas ?? '');
         if (recuperado.uuid) setUuid(recuperado.uuid);
     }, [open, corrigiendo, recuperado]);
@@ -129,7 +132,7 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
         setClienteId(v || '');
         const c = clientes.find(x => String(x.id) === String(v));
         setTipoDoc(c?.contribuyente ? '03' : '01');
-        if (!c || !(c.plazo_dias > 0)) setCondicion(1);
+        if (!c || !(c.plazo_dias > 0)) setPagos(ps => ps.map(f => (f.forma === '13' ? { ...f, forma: '01' } : f)));
         setPlazo(c?.plazo_dias ? String(c.plazo_dias) : '');
         setError('');
     }, [clientes]);
@@ -141,14 +144,17 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
     });
     const cantidadMala = lineas.some(l => !l.n || l.n <= 0);
     const hayNoPermitidos = lineas.some(l => l.noVa);
-    const plazoNum = condicion === 2 ? leerMonto(plazo) : null;
-    const plazoMalo = condicion === 2 && (!plazoNum || !Number.isInteger(plazoNum) || plazoNum > (cliente?.plazo_dias ?? 0));
+    const conCredito = pagos.some(f => f.forma === '13');
+    const plazoNum = conCredito ? leerMonto(plazo) : null;
 
     const estimado = estimarPedido(
         lineas.filter(l => l.p && l.n > 0).map(l => ({ cantidad: l.n, precio_sin_iva: Number(l.p.precio_sin_iva) })),
         { contribuyente: tipoDoc === '03', granContribuyente: !!cliente?.gran_contribuyente },
     );
-    const excedeCredito = condicion === 2 && cliente && estimado.total > Number(cliente.limite_credito);
+    const alCredito = conCredito ? (pagos.length === 1 ? estimado.total : pagos.slice(0, -1).filter(f => f.forma === '13').reduce((a, f) => a + (leerMonto(f.monto) ?? 0), 0)
+        + (pagos[pagos.length - 1].forma === '13' ? Math.max(0, estimado.total - pagos.slice(0, -1).reduce((a, f) => a + (leerMonto(f.monto) ?? 0), 0)) : 0)) : 0;
+    const excedeCredito = conCredito && cliente && alCredito > Number(cliente.limite_credito);
+    const problemaPago = lineas.length ? problemaDePagos(pagos, estimado.total, { cliente, plazo }) : null;
 
     const bloqueo = !emisor ? 'Faltan los datos de la empresa.'
         : !cliente ? 'Elige el cliente.'
@@ -156,19 +162,24 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
         : !lineas.length ? 'Agrega al menos un producto.'
         : hayNoPermitidos ? 'Hay productos que este cliente no puede recibir: quítalos.'
         : cantidadMala ? 'Revisa las cantidades: tienen que ser mayores que cero.'
-        : plazoMalo ? `El plazo tiene que ser de 1 a ${cliente?.plazo_dias ?? 0} días.`
+        : problemaPago ? problemaPago
         : null;
     const listo = !bloqueo && !guardando;
 
     const reiniciar = () => {
-        setClienteId(''); setTipoDoc('01'); setCarrito([]); setBuscar(''); setCondicion(1); setPlazo('');
-        setFormaPago('01'); setNotas(''); setUuid(crypto.randomUUID()); setError('');
+        setClienteId(''); setTipoDoc('01'); setCarrito([]); setBuscar(''); setPagos([filaNueva()]); setPagoAbierto(null); setPlazo('');
+        setNotas(''); setUuid(crypto.randomUUID()); setError('');
     };
 
     const guardar = async (yFacturar) => {
         setGuardando(yFacturar ? 'facturar' : 'guardar');
         setError('');
         const renglones = lineas.map(l => ({ product_id: Number(l.product_id), cantidad: l.n, descripcion: l.p?.nombre }));
+        // La condición del pedido resume las formas: con crédito, el trigger
+        // verifica que el cliente lo tenga aprobado.
+        const condicion = conCredito ? 2 : 1;
+        const formaPago = pagos[0].forma === '13' ? '01' : pagos[0].forma;
+        let avisoComprobante = null;
         try {
             let pedidoId = pedido?.id;
             if (corrigiendo) {
@@ -179,6 +190,27 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
                     condicion, plazoDias: plazoNum, formaPago, observaciones: notas, clientUuid: uuid, renglones,
                 });
             }
+            const guardados = await guardarPagos(pedidoId, pagos.map((f, i) => ({
+                forma: f.forma, monto: leerMonto(f.monto), referencia: f.referencia,
+                resto: i === pagos.length - 1,
+                // Al corregir, el comprobante que ya estaba se conserva (sólo sus datos de comprobante).
+                ...(f.existente?.comprobante_url && !f.adjunto ? {
+                    comprobante_url: f.existente.comprobante_url, lectura: f.existente.lectura,
+                    monto_leido: f.existente.monto_leido, verificacion: f.existente.verificacion, nota: f.existente.nota,
+                } : {}),
+            })));
+            // Los comprobantes elegidos en la venta se suben ahora que el pedido
+            // existe. Si uno falla, la venta sigue y ese pago queda pendiente.
+            for (const [i, f] of pagos.entries()) {
+                if (!f.adjunto) continue;
+                try {
+                    const url = await subirComprobante(f.adjunto.archivo, pedidoId);
+                    await adjuntarComprobante(guardados[i].id, { url, lectura: f.adjunto.lectura, montoLeido: f.adjunto.montoLeido,
+                        verificacion: f.adjunto.verificacion, nota: f.adjunto.nota });
+                } catch (e) {
+                    avisoComprobante = `No se pudo guardar un comprobante (${mensajeDeDistribucion(e)}). Adjúntalo desde el pedido.`;
+                }
+            }
             let factura = null;
             let errorFactura = null;
             if (yFacturar) {
@@ -187,7 +219,7 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
             // El pedido YA quedó guardado aunque facturar falle: no se deshace.
             descartar();
             reiniciar();
-            onListo?.({ pedidoId, factura, errorFactura, imprimir: yFacturar && imprimir, corregido: corrigiendo });
+            onListo?.({ pedidoId, factura, errorFactura, imprimir: yFacturar && imprimir, corregido: corrigiendo, avisoComprobante });
         } catch (e) {
             setError(mensajeDeDistribucion(e));
         } finally {
@@ -307,23 +339,10 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <span className="text-caption font-bold text-content-2 block mb-1.5">Condición</span>
-                            <SegmentedControl value={condicion} onChange={setCondicion}
-                                options={[{ value: 1, label: 'Contado' }, { value: 2, label: 'Crédito', disabled: !tieneCredito }]} />
-                            {cliente && !tieneCredito && <p className="text-caption text-content-3 mt-1">Sin crédito aprobado.</p>}
-                        </div>
-                        {condicion === 2 ? (
-                            <PortalInput label="Plazo en días" name="plazo" inputMode="numeric" value={plazo}
-                                onChange={(e) => setPlazo(e.target.value)} helperText={`Hasta ${cliente?.plazo_dias ?? 0} días.`} />
-                        ) : (
-                            <div>
-                                <span className="text-caption font-bold text-content-2 block mb-1.5">Forma de pago</span>
-                                <LiquidSelect value={formaPago} onChange={(v) => setFormaPago(v || '01')} options={FORMA_PAGO} clearable={false} />
-                            </div>
-                        )}
-                    </div>
+                    {cliente && lineas.length > 0 && (
+                        <FormasDePago filas={pagos} setFilas={setPagos} total={estimado.total} cliente={cliente}
+                            plazo={plazo} setPlazo={setPlazo} abierto={pagoAbierto} setAbierto={setPagoAbierto} />
+                    )}
                     {excedeCredito && (
                         <Notice variant="warning" compact>Esta venta pasa del crédito aprobado del cliente ({formatMoney(cliente.limite_credito)}).</Notice>
                     )}

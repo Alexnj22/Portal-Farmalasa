@@ -4,6 +4,9 @@
 //   { accion: "facturar",   pedido_id }  arma, firma, guarda y transmite
 //   { accion: "transmitir", dte_id }     reintenta uno que quedó sin firmar o sin enviar
 //   { accion: "descartar",  dte_id }     retira uno que Hacienda NO tiene, para corregir el pedido
+//   { accion: "corregir_sellado", dte_id }        abre un pedido nuevo que lo reemplaza e invalida
+//   { accion: "anular_venta", dte_id, motivo }    invalida un sellado sin reemplazo (se deshizo la venta)
+//   { accion: "enviar_invalidacion", dte_id }     reintenta una invalidación pendiente
 //
 // ── Por qué el DTE lo arma el SERVIDOR ─────────────────────────────────────
 // El navegador sólo pide «factura este pedido». Todo lo demás —el tipo de
@@ -29,8 +32,9 @@ import {
 } from "../_shared/dte/documentos.ts";
 import { TIPO_DTE, VERSION, type Ambiente, type TipoDte } from "../_shared/dte/catalogos.ts";
 import { claveCoincide, firmarDte, importarLlavePrivada, leerCertificadoMH } from "../_shared/dte/firma.ts";
+import { armarInvalidacion } from "../_shared/dte/eventos.ts";
 import {
-  autenticar, consultar, ErrorHacienda, tokenVigente, transmitirConReintentos,
+  autenticar, consultar, ErrorHacienda, invalidar, tokenVigente, transmitirConReintentos,
   type RespuestaRecepcion, type Token,
 } from "../_shared/dte/hacienda.ts";
 
@@ -172,6 +176,12 @@ async function transmitirDte(admin: Admin, dteId: number) {
   const { error: e3 } = await admin.from("dist_dte").update(cambios).eq("id", dteId);
   if (e3) throw new Error(`guardar respuesta de Hacienda: ${e3.message}`);
 
+  if (sellado) {
+    const { data: esperan, error: eEsp } = await admin.from("dist_dte")
+      .select("id").eq("reemplazo_id", dteId).eq("invalidacion_estado", "pendiente");
+    if (eEsp) throw new Error(`buscar invalidaciones pendientes: ${eEsp.message}`);
+    for (const o of esperan ?? []) await enviarInvalidacion(admin, o.id);
+  }
   if (!sellado && dte.pedido_id) {
     // Rechazado: el pedido vuelve a estar por facturar. El DTE rechazado queda
     // como constancia; el que se emita después lleva otro código y número.
@@ -228,11 +238,192 @@ async function descartar(admin: Admin, dteId: number) {
   return { estado: "descartado", aviso: "Documento retirado. El pedido volvió a «Por facturar» para corregirlo." };
 }
 
+// ── Pagos por forma ─────────────────────────────────────────────────────────
+//
+// Varias formas en una venta ($2 efectivo, el resto tarjeta) — Manual §XIX.
+// La última fila sin monto es «el resto»: se calcula acá, contra el total del
+// motor, así los pagos suman el documento al centavo. Con crédito mezclado,
+// la condición es 3 («Otro»); todo a crédito, 2; nada a crédito, 1.
+const CREDITO = "13";
+
+async function resolverPagos(
+  admin: Admin, p: Record<string, any>, c: Record<string, any>, filas: Record<string, any>[], total: string,
+  { soloValidar = false } = {},
+) {
+  const totalC = Math.round(Number(total) * 100);
+  let lineas = filas.map((f) => ({ ...f, montoC: f.monto == null ? null : Math.round(Number(f.monto) * 100) }));
+  if (!lineas.length) {
+    // Pedido sin pagos detallados: la forma y la condición del pedido, por el total.
+    lineas = [{ id: null, orden: 1, forma: p.condicion === 2 ? CREDITO : (p.forma_pago ?? "01"), referencia: null, monto: null, montoC: null }];
+  }
+  const sinMonto = lineas.filter((l) => l.montoC == null);
+  if (sinMonto.length > 1) throw new ErrorUsuario("Sólo la última forma de pago puede ser «el resto».");
+  const fijos = lineas.reduce((a, l) => a + (l.montoC ?? 0), 0);
+  if (sinMonto.length) {
+    const resto = totalC - fijos;
+    if (resto <= 0) throw new ErrorUsuario(`Las formas de pago ya suman $${(fijos / 100).toFixed(2)} y el total es $${(totalC / 100).toFixed(2)}.`);
+    sinMonto[0].montoC = resto;
+  } else if (fijos !== totalC) {
+    throw new ErrorUsuario(`Las formas de pago suman $${(fijos / 100).toFixed(2)} y el total es $${(totalC / 100).toFixed(2)}.`);
+  }
+  const conCredito = lineas.some((l) => l.forma === CREDITO);
+  if (conCredito) {
+    if (!(c.plazo_dias > 0) || !(Number(c.limite_credito) > 0)) throw new ErrorUsuario(`${c.nombre} no tiene crédito aprobado.`);
+    if (!(p.plazo_dias > 0)) throw new ErrorUsuario("Una venta a crédito tiene que decir el plazo.");
+  }
+  const condicion = !conCredito ? 1 : lineas.every((l) => l.forma === CREDITO) ? 2 : 3;
+  if (!soloValidar && sinMonto.length && sinMonto[0].id) {
+    const { error } = await admin.from("dist_pagos").update({ monto: sinMonto[0].montoC / 100 }).eq("id", sinMonto[0].id);
+    if (error) throw new Error(`guardar el resto del pago: ${error.message}`);
+  }
+  const pagos = lineas.map((l) => ({
+    codigo: l.forma,
+    monto: (l.montoC! / 100).toFixed(2),
+    referencia: l.referencia ?? null,
+    plazo: l.forma === CREDITO ? "01" : null,
+    periodo: l.forma === CREDITO ? p.plazo_dias : null,
+  }));
+  return { pagos, condicion };
+}
+
+// ── Invalidar un documento sellado ──────────────────────────────────────────
+//
+// Se arma y se firma el evento (CAT-024: 1 corrección con reemplazo, 2 se
+// deshizo la venta, 3 otro) y se deja «pendiente»; `enviarInvalidacion` lo
+// manda. Quién responde por ella es quien la pide en el portal (nombre y DUI de
+// su ficha); quién la solicita, el cliente si tiene documento, si no la misma
+// persona.
+async function prepararInvalidacion(
+  admin: Admin, dteId: number, tipo: 1 | 2 | 3, motivo: string | null, reemplazoId: number | null, empleadoId: string,
+) {
+  const [{ data: d, error }, { data: emp, error: eEmp }] = await Promise.all([
+    admin.from("dist_dte").select("id, emisor_id, ambiente, tipo, codigo_generacion, numero_control, fec_emi, sello_recibido, json, estado, invalidacion_estado").eq("id", dteId).single(),
+    admin.from("employees").select("name, dui").eq("id", empleadoId).single(),
+  ]);
+  if (error) throw new Error(`leer el documento: ${error.message}`);
+  if (eEmp) throw new Error(`leer tu ficha: ${eEmp.message}`);
+  if (d.estado !== "sellado") throw new ErrorUsuario("Sólo se invalida un documento sellado por Hacienda.");
+  if (d.invalidacion_estado === "pendiente" || d.invalidacion_estado === "procesada") {
+    throw new ErrorUsuario("Este documento ya tiene una invalidación en curso.");
+  }
+  if (!emp?.dui) throw new ErrorUsuario("Tu ficha no tiene DUI: Hacienda pide el documento de quien invalida.");
+  const { data: e, error: eE } = await admin.from("dist_emisores").select("*").eq("id", d.emisor_id).single();
+  if (eE) throw new Error(`leer el emisor: ${eE.message}`);
+  if (!e.cod_estable_mh || !e.cod_punto_venta_mh) {
+    throw new ErrorUsuario("Faltan los códigos de establecimiento y punto de venta de Hacienda (pestaña Empresa).");
+  }
+  let reemplazo: string | null = null;
+  if (reemplazoId) {
+    const { data: r, error: eR } = await admin.from("dist_dte").select("codigo_generacion").eq("id", reemplazoId).single();
+    if (eR) throw new Error(`leer el reemplazo: ${eR.message}`);
+    reemplazo = String(r.codigo_generacion).toUpperCase();
+  }
+  const j = d.json as any;
+  const rec = j.receptor ?? null;
+  const recDoc = rec ? (rec.nit ? { tipoDocumento: "36", numDocumento: rec.nit } : { tipoDocumento: rec.tipoDocumento ?? null, numDocumento: rec.numDocumento ?? null }) : null;
+  const responsable = { nombre: emp.name, tipoDocumento: "13", numDocumento: emp.dui };
+  const solicita = recDoc?.numDocumento && recDoc.tipoDocumento
+    ? { nombre: rec.nombre, tipoDocumento: recDoc.tipoDocumento, numDocumento: recDoc.numDocumento }
+    : responsable;
+  let evento;
+  try {
+    evento = armarInvalidacion({
+      ambiente: d.ambiente as Ambiente,
+      emisor: {
+        nit: e.nit, nombre: e.nombre, telefono: e.telefono, correo: e.correo,
+        codEstableMH: e.cod_estable_mh, codPuntoVentaMH: e.cod_punto_venta_mh,
+      },
+      documento: {
+        tipoDte: d.tipo as TipoDte, codigoGeneracion: String(d.codigo_generacion).toUpperCase(),
+        selloRecibido: d.sello_recibido, numeroControl: d.numero_control, fecEmi: d.fec_emi,
+        receptor: rec ? { ...recDoc, nombre: rec.nombre ?? null, telefono: rec.telefono ?? null, correo: rec.correo ?? null } as any : null,
+      },
+      tipo, motivo, codigoGeneracionReemplazo: reemplazo, responsable, solicita,
+    });
+  } catch (err) {
+    throw new ErrorUsuario((err as Error).message);
+  }
+  const llave = await llaveDeFirma();
+  if (!llave) throw new ErrorUsuario("Falta el certificado de firma: no se puede preparar la invalidación.");
+  const firmado = await firmarDte(evento, llave);
+  const { error: eU } = await admin.from("dist_dte").update({
+    invalidacion_estado: "pendiente", invalidacion_tipo: tipo, invalidacion_motivo: motivo,
+    invalidacion_json: evento, invalidacion_firmado: firmado, invalidado_por: empleadoId, reemplazo_id: reemplazoId,
+  }).eq("id", dteId);
+  if (eU) throw new Error(`guardar la invalidación: ${eU.message}`);
+}
+
+async function enviarInvalidacion(admin: Admin, dteId: number) {
+  const { data: d, error } = await admin.from("dist_dte")
+    .select("id, emisor_id, ambiente, pedido_id, invalidacion_estado, invalidacion_tipo, invalidacion_firmado, reemplazo_id").eq("id", dteId).single();
+  if (error) throw new Error(`leer el documento: ${error.message}`);
+  if (d.invalidacion_estado !== "pendiente") return { estado: d.invalidacion_estado ?? "sellado" };
+  if (d.reemplazo_id) {
+    const { data: r, error: eR } = await admin.from("dist_dte").select("estado").eq("id", d.reemplazo_id).single();
+    if (eR) throw new Error(`leer el reemplazo: ${eR.message}`);
+    if (r.estado !== "sellado") {
+      return { estado: "sellado", aviso: "La invalidación sale cuando el documento que lo reemplaza tenga sello de Hacienda." };
+    }
+  }
+  const ambiente = d.ambiente as Ambiente;
+  const token = await tokenHacienda(admin, d.emisor_id, ambiente);
+  if (!token) return { estado: "sellado", aviso: "Invalidación firmada y pendiente de enviar: faltan las credenciales de Hacienda." };
+  let r;
+  try {
+    r = await invalidar(ambiente, token, { version: 3, firmado: d.invalidacion_firmado });
+  } catch (e) {
+    if (!(e instanceof ErrorHacienda)) throw e;
+    await registrarIntento(admin, dteId, "invalidar", e.http, e.respuesta, e.message);
+    return { estado: "sellado", aviso: `Hacienda no respondió (${e.message}). La invalidación queda pendiente.` };
+  }
+  await registrarIntento(admin, dteId, "invalidar", r.http, r.cruda, null);
+  const ok = r.estado === "PROCESADO";
+  const { error: eU } = await admin.from("dist_dte").update(ok
+    ? { estado: "invalidado", invalidado_at: new Date().toISOString(), invalidacion_estado: "procesada",
+        invalidacion_sello: r.selloRecibido, invalidacion_respuesta: r.cruda }
+    : { invalidacion_estado: "rechazada", invalidacion_respuesta: r.cruda }).eq("id", dteId);
+  if (eU) throw new Error(`guardar la respuesta: ${eU.message}`);
+  if (ok && d.pedido_id) {
+    const motivo = d.reemplazo_id ? "Documento invalidado y reemplazado." : "Venta deshecha: documento invalidado ante Hacienda.";
+    const { error: eP } = await admin.from("dist_pedidos").update({ estado: "anulado", anulado_motivo: motivo }).eq("id", d.pedido_id);
+    if (eP) throw new Error(`anular el pedido: ${eP.message}`);
+  }
+  return ok
+    ? { estado: "invalidado", mensaje: "Hacienda aceptó la invalidación." }
+    : { estado: "sellado", aviso: `Hacienda rechazó la invalidación: ${r.descripcionMsg ?? ""} ${r.observaciones.join(" ")}`.trim() };
+}
+
+/** Corregir un sellado: un pedido NUEVO con lo mismo, que al facturarse lo reemplaza. */
+async function corregirSellado(admin: Admin, dteId: number, empleadoId: string) {
+  const { data: d, error } = await admin.from("dist_dte").select("id, estado, pedido_id, invalidacion_estado").eq("id", dteId).single();
+  if (error) throw new Error(`leer el documento: ${error.message}`);
+  if (d.estado !== "sellado") throw new ErrorUsuario("Esto es para documentos sellados; los demás se corrigen con «Corregir».");
+  if (d.invalidacion_estado === "pendiente" || d.invalidacion_estado === "procesada") throw new ErrorUsuario("Este documento ya se está invalidando.");
+  const { data: ya, error: eYa } = await admin.from("dist_pedidos").select("id")
+    .eq("reemplaza_dte_id", dteId).neq("estado", "anulado").maybeSingle();
+  if (eYa) throw new Error(`buscar corrección: ${eYa.message}`);
+  if (ya) return { pedido_id: ya.id, aviso: "Ya había una corrección abierta para este documento." };
+  const { data: p, error: eP } = await admin.from("dist_pedidos")
+    .select("emisor_id, cliente_id, tipo_documento, condicion, forma_pago, plazo_dias, observaciones").eq("id", d.pedido_id).single();
+  if (eP) throw new Error(`leer el pedido: ${eP.message}`);
+  const { data: nuevo, error: eN } = await admin.from("dist_pedidos").insert({
+    ...p, vendedor_id: empleadoId, client_uuid: crypto.randomUUID(), reemplaza_dte_id: dteId,
+  }).select("id").single();
+  if (eN) throw new ErrorUsuario(`No se pudo abrir la corrección: ${eN.message}`);
+  const { data: its, error: eI } = await admin.from("dist_pedido_items")
+    .select("product_id, cantidad, descuento, descripcion").eq("pedido_id", d.pedido_id);
+  if (eI) throw new Error(`leer productos: ${eI.message}`);
+  const { error: eIns } = await admin.from("dist_pedido_items").insert(
+    (its ?? []).map((i: any) => ({ ...i, pedido_id: nuevo.id, precio_sin_iva: 0 })));
+  if (eIns) throw new ErrorUsuario(`No se pudieron copiar los productos: ${eIns.message}`);
+  return { pedido_id: nuevo.id };
+}
+
 // ── Facturar un pedido ──────────────────────────────────────────────────────
 
 async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   const { data: p, error } = await admin.from("dist_pedidos")
-    .select("id, emisor_id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, dte_id")
+    .select("id, emisor_id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, dte_id, reemplaza_dte_id")
     .eq("id", pedidoId).maybeSingle();
   if (error) throw new Error(`leer el pedido: ${error.message}`);
   if (!p) throw new ErrorUsuario("no existe ese pedido", 404);
@@ -241,12 +432,13 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
     throw new ErrorUsuario(`el pedido está ${p.estado}`);
   }
 
-  const [emi, cli, its] = await Promise.all([
+  const [emi, cli, its, pag] = await Promise.all([
     admin.from("dist_emisores").select("*").eq("id", p.emisor_id).single(),
     admin.from("dist_clientes").select("*").eq("id", p.cliente_id).single(),
     admin.from("dist_pedido_items").select("product_id, cantidad, precio_sin_iva, descuento, descripcion").eq("pedido_id", pedidoId).order("id"),
+    admin.from("dist_pagos").select("id, orden, forma, monto, referencia").eq("pedido_id", pedidoId).order("orden"),
   ]);
-  for (const r of [emi, cli, its]) if (r.error) throw new Error(r.error.message);
+  for (const r of [emi, cli, its, pag]) if (r.error) throw new Error(r.error.message);
   const e = emi.data!, c = cli.data!;
   if (!e.activo) throw new ErrorUsuario("el emisor está desactivado");
   if (!its.data!.length) throw new ErrorUsuario("el pedido no tiene productos");
@@ -275,23 +467,23 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   } catch (err) {
     throw new ErrorUsuario((err as Error).message);
   }
+  // Los pagos se validan ANTES de reservar número: un error acá no deja salto.
+  await resolverPagos(admin, p, c, pag.data ?? [], total, { soloValidar: true });
   const { data: correlativo, error: eCor } = await admin.rpc("dist_siguiente_correlativo", {
     p_emisor: e.id, p_ambiente: ambiente, p_tipo: tipo,
     p_establecimiento: e.establecimiento, p_punto_venta: e.punto_venta, p_anio: anio,
   });
   if (eCor) throw new Error(`correlativo: ${eCor.message}`);
 
+  const { pagos, condicion } = await resolverPagos(admin, p, c, pag.data ?? [], total);
   const base: Omit<DatosVenta, "pagos"> = {
     ambiente, emisor: emisorDe(e), correlativo: correlativo as number, receptor: receptorDe(c), renglones,
-    condicion: p.condicion, opciones, observaciones: p.observaciones,
+    condicion, opciones, observaciones: p.observaciones,
   };
   const armar = tipo === TIPO_DTE.CCF ? armarCreditoFiscal : armarFactura;
-  const pago = p.condicion === 2
-    ? { codigo: p.forma_pago === "01" ? "13" : p.forma_pago, monto: total, plazo: "01", periodo: p.plazo_dias }
-    : { codigo: p.forma_pago, monto: total };
   let doc;
   try {
-    doc = armar({ ...base, pagos: [pago] });
+    doc = armar({ ...base, pagos });
   } catch (err) {
     throw new ErrorUsuario((err as Error).message);
   }
@@ -312,6 +504,12 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
     .update({ estado: "facturado", dte_id: ins.id }).eq("id", p.id).eq("estado", "confirmado");
   if (ePed) throw new Error(`marcar el pedido: ${ePed.message}`);
 
+  if (p.reemplaza_dte_id) {
+    // Este documento corrige a uno sellado: el original se invalida citando a
+    // éste (CAT-024 tipo 1). Se prepara ya; sale hacia Hacienda cuando éste
+    // tenga su sello (Hacienda tiene que conocer al reemplazo primero).
+    await prepararInvalidacion(admin, p.reemplaza_dte_id, 1, "Se corrigió la información del documento.", ins.id, empleadoId);
+  }
   const envio = await transmitirDte(admin, ins.id);
   return { dte_id: ins.id, tipo, numero_control: doc.numeroControl, codigo_generacion: doc.codigoGeneracion, total: doc.totalPagar, ...envio };
 }
@@ -342,6 +540,19 @@ Deno.serve(async (req) => {
     }
     if (cuerpo?.accion === "descartar" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, { dte_id: cuerpo.dte_id, ...(await descartar(admin, cuerpo.dte_id)) });
+    }
+    if (cuerpo?.accion === "corregir_sellado" && Number.isInteger(cuerpo.dte_id)) {
+      return json(req, 200, await corregirSellado(admin, cuerpo.dte_id, empleado.id));
+    }
+    if (cuerpo?.accion === "anular_venta" && Number.isInteger(cuerpo.dte_id)) {
+      const tipo = cuerpo.tipo === 3 ? 3 : 2;
+      const motivo = typeof cuerpo.motivo === "string" ? cuerpo.motivo.trim() : "";
+      if (!motivo) throw new ErrorUsuario("Escribe por qué se deshace la venta.");
+      await prepararInvalidacion(admin, cuerpo.dte_id, tipo, motivo, null, empleado.id);
+      return json(req, 200, { dte_id: cuerpo.dte_id, ...(await enviarInvalidacion(admin, cuerpo.dte_id)) });
+    }
+    if (cuerpo?.accion === "enviar_invalidacion" && Number.isInteger(cuerpo.dte_id)) {
+      return json(req, 200, { dte_id: cuerpo.dte_id, ...(await enviarInvalidacion(admin, cuerpo.dte_id)) });
     }
     if (cuerpo?.accion === "transmitir" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, { dte_id: cuerpo.dte_id, ...(await transmitirDte(admin, cuerpo.dte_id)) });

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.8 — Puntos: el acceso a Mis puntos sube y se envía por WhatsApp
+
+Pedido del usuario: subir el acceso a Mis puntos y hacerlo más moderno y
+práctico.
+
+- **Sube**, justo debajo del saldo: es lo que se usa con el cliente enfrente
+  («¿cuánto tengo?, mándamelo»), no un dato del fondo del detalle.
+- **El código en casillas**, oculto hasta pedirlo (`••• – ••••`); al verlo,
+  las siete letras grandes y legibles.
+- **Acciones directas**: Ver, **Copiar**, **Enviar por WhatsApp** —al teléfono
+  de la ficha, con el enlace `/mis-puntos?codigo=…` que ya abre su saldo, igual
+  que el QR del papel—, Imprimir y Generar uno nuevo. Copiar y enviar pasan por
+  la misma lectura que Ver, así que también quedan en la bitácora.
+- La ventana de WhatsApp se abre en el clic (antes de esperar el código): abierta
+  después de una espera, el navegador la bloquea. Si igual la bloquea, avisa en
+  vez de sacar a la persona del portal.
+
 ## v2.1084.7 — Bodega recibe lo próximo a vencer y las averías en su área de vencidos
 
 Reporte de Bodega: un envío por «Próximo a vencer» aceptado en el portal entró

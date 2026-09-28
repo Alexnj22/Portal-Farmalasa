@@ -286,6 +286,12 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                             </dl>
                         </div>
 
+                        {/* El acceso sube, justo debajo del saldo (pedido del usuario,
+                            2026-09-28): es lo que se usa con el cliente enfrente —
+                            «¿cuánto tengo?, mándamelo»—, no un dato del fondo. */}
+                        <CodigoDeAcceso customerId={cliente.id} nombre={cliente.nombre || ''}
+                            telefono={cliente.telefono} puedeEditar={puedeEditarFicha} />
+
                         {puedeAjustar && (
                             <AjustarPuntos customerId={cliente.id} nombre={cliente.nombre}
                                 saldo={Number(cuenta?.saldo) || 0} habilitado={enPortal}
@@ -391,11 +397,6 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                             </section>
                         )}
 
-                        <section className="flex flex-col gap-2">
-                            <Titulo icono={KeyRound}>Acceso a Mis puntos</Titulo>
-                            <CodigoDeAcceso customerId={cliente.id} nombre={cliente.nombre || ''}
-                                puedeEditar={puedeEditarFicha} />
-                        </section>
                     </div>
                 )}
             </LiquidModal.Body>

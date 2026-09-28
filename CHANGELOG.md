@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1080.2 — Metas: la gráfica de comparación en dos columnas
+
+El usuario prefirió la versión anterior de las tarjetas: el problema era la
+gráfica, y las «dos columnas» eran dentro de cada tarjeta, no de tarjetas.
+
+- Vuelve la tarjeta de v2.1079.2 (tres por fila, una columna adentro).
+- «Para comparar» pasa de cuatro renglones a lo ancho a cuatro fichas en dos
+  columnas —meta nueva, meta del mes anterior, mismo mes del año pasado y
+  promedio—, con barras más finas, notas cortas y la leyenda de la raya en el
+  encabezado. Mide la mitad de alto.
+
 ## v2.1080.1 — Metas: tarjetas de confirmación compactas, en dos columnas
 
 Pedido del usuario: compactar las tarjetas, dos columnas, menos alto.

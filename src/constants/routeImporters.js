@@ -83,6 +83,7 @@ export const IMPORTADORES = {
     FacturacionView: () => import("../views/FacturacionView"),
     CotizacionesView: () => import("../views/CotizacionesView"),
     DistribucionView: () => import("../views/DistribucionView"),
+    DistribucionVentaView: () => import("../views/DistribucionVentaView"),
     EncuestaView: () => import("../views/EncuestaView"),
     EncuestaAdminView: () => import("../views/EncuestaAdminView"),
     NoAccessView: () => import("../views/NoAccessView"),

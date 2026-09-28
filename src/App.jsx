@@ -100,6 +100,7 @@ const ConteoDetailView = lazy(IMPORTADORES.ConteoDetailView);
 const FacturacionView = lazy(IMPORTADORES.FacturacionView);
 const CotizacionesView = lazy(IMPORTADORES.CotizacionesView);
 const DistribucionView = lazy(IMPORTADORES.DistribucionView);
+const DistribucionVentaView = lazy(IMPORTADORES.DistribucionVentaView);
 const EncuestaView = lazy(IMPORTADORES.EncuestaView);
 const EncuestaAdminView = lazy(IMPORTADORES.EncuestaAdminView);
 const NoAccessView = lazy(IMPORTADORES.NoAccessView);
@@ -847,6 +848,8 @@ function MainApp() {
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
                                     <Route path="distribucion" element={<PermissionGuard moduleKey="distribucion"><DistribucionView /></PermissionGuard>} />
+                                    <Route path="distribucion/venta" element={<PermissionGuard moduleKey="distribucion"><DistribucionVentaView /></PermissionGuard>} />
+                                    <Route path="distribucion/venta/:pedidoId" element={<PermissionGuard moduleKey="distribucion"><DistribucionVentaView /></PermissionGuard>} />
                                     <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
@@ -1048,6 +1051,7 @@ const ROUTE_TITLES = {
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
     '/distribucion':      'Distribución',
+    '/distribucion/venta': 'Nueva venta',
     '/clientes':          'Clientes',
     '/metas':             'Metas',
     // Copiado LITERAL del `title` del GlassViewLayout de la vista: es lo que

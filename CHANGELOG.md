@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1083.0 — Distribución: la venta pasa a vista propia
+
+La venta de Distribución deja de ser un modal y pasa a **vista propia**:
+`/distribucion/venta` (nueva) y `/distribucion/venta/:pedidoId` (corregir un
+pedido, incluido el que reemplaza a un sellado). En el teléfono la hoja del
+modal se comía media pantalla, y una vista tiene dirección: recargar o volver
+no pierde la venta.
+
+- Escritorio en dos columnas: cliente, documento y productos a la izquierda;
+  arriba a la derecha el total y «Facturar», siempre a la vista (sólo desplaza
+  el bloque del pago); debajo las formas de pago, observaciones y el ticket.
+- Teléfono: una columna y una barra fija abajo con el total y los botones. La
+  barra publica su alto en `--alto-barra-flotante`, así los botones de «ir
+  arriba/abajo» del layout suben por encima de ella.
+- Toma la marca de la distribuidora (Torogoz) con `useMarca('distribucion')`:
+  todo va con tokens, ningún color a mano.
+- Al facturar vuelve a Pedidos con `?documento=` y se abre el documento con su
+  ticket y PDF (y lo imprime si se pidió); la dirección se limpia para que
+  recargar no lo vuelva a imprimir.
+- Las formas de pago van en filas más holgadas (el nombre se cortaba en la
+  columna angosta).
+
 ## v2.1082.0 — Torogoz en el PDF y el ticket
 
 Los papeles de Distribución seguían sin la marca (pedido del usuario: «los pdf,

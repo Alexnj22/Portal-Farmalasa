@@ -617,9 +617,9 @@ export const AREAS = [
         nombre: 'Distribución: venta en ruta y emisor DTE propio',
         resumen: 'La S.A.S. de distribución: motor de DTE 2.0 (armar, firmar, transmitir a Hacienda), preventa, clientes de ruta y liquidación del vendedor. Prefijo dist_ porque «ruta» ya es el reparto de Bodega a las salas.',
         modulos: ['distribucion', 'distribucion_config'],
-        rutas: ['/distribucion'],
+        rutas: ['/distribucion', '/distribucion/venta'],
         archivos: [
-            'src/views/DistribucionView.jsx', 'src/views/distribucion/',
+            'src/views/DistribucionView.jsx', 'src/views/DistribucionVentaView.jsx', 'src/views/distribucion/',
             'src/data/distribucion.js', 'src/data/geoCodigosMH.js', 'src/data/actividadesMH.js',
             'src/utils/distribucionDocumento.js', 'tests/unit/distribucionDocumento.test.js',
             'tests/e2e/distribucion.spec.js', 'tests/e2e/distribucion-movil.spec.js', 'tests/e2e/distribucionEntrar.js',

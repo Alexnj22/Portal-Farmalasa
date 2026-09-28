@@ -69,25 +69,27 @@ export default function FormasDePago({ filas, setFilas, total, cliente, plazo, s
                 const v = VERIF[verif] ?? (comprobante ? VERIF.pendiente : null);
                 return (
                     <div key={f.clave} className="rounded-xl border border-divider p-3 flex flex-col gap-2">
-                        <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_140px_auto] gap-2 items-center">
-                            <div className="min-w-0 col-span-2 sm:col-span-1">
+                        {/* La forma en su propia fila: la columna del pago mide ~350px
+                            y lado a lado con el monto el nombre se cortaba («E…»). */}
+                        <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                            <div className="min-w-0">
                                 <LiquidSelect value={f.forma} options={opciones} clearable={false}
                                     onChange={(val) => set(f.clave, { forma: val || '01', adjunto: null })} />
                             </div>
-                            {ultima ? (
-                                <div className="text-right">
-                                    <p className="text-caption text-content-3">{filas.length > 1 ? 'El resto' : 'El total'}</p>
-                                    <p className="font-black tabular-nums text-content">{formatMoney(resto)}</p>
-                                </div>
-                            ) : (
-                                <PortalInput name={`monto-pago-${f.clave}`} inputMode="decimal" value={f.monto} aria-label="Monto"
-                                    placeholder="0.00" onChange={(e) => set(f.clave, { monto: e.target.value })} />
-                            )}
                             <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar esta forma de pago"
                                 disabled={filas.length === 1} onClick={() => quitar(f.clave)} />
                         </div>
+                        {ultima ? (
+                            <div className="flex items-baseline justify-between gap-2">
+                                <span className="text-caption text-content-3">{filas.length > 1 ? 'El resto' : 'El total'}</span>
+                                <span className="font-black tabular-nums text-content">{formatMoney(resto)}</span>
+                            </div>
+                        ) : (
+                            <PortalInput name={`monto-pago-${f.clave}`} inputMode="decimal" value={f.monto} label="Monto"
+                                placeholder="0.00" onChange={(e) => set(f.clave, { monto: e.target.value })} />
+                        )}
                         {comprobante && (
-                            <PortalInput name={`ref-pago-${f.clave}`} value={f.referencia} placeholder="Número de autorización, de cheque o de transferencia (opcional)"
+                            <PortalInput name={`ref-pago-${f.clave}`} value={f.referencia} placeholder="Autorización o referencia (opcional)"
                                 aria-label="Referencia del pago" onChange={(e) => set(f.clave, { referencia: e.target.value })} />
                         )}
                         {comprobante && (

@@ -121,6 +121,19 @@ export async function fetchPedidos({ desde } = {}) {
     return rows;
 }
 
+/** Todo lo que la vista de venta necesita para corregir un pedido por facturar. */
+export async function fetchPedidoParaCorregir(pedidoId) {
+    const [{ data: pedido, error }, items, pagos] = await Promise.all([
+        supabase.from('dist_pedidos')
+            .select('id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, reemplaza_dte_id')
+            .eq('id', pedidoId).single(),
+        fetchItemsDePedido(pedidoId),
+        fetchPagos(pedidoId),
+    ]);
+    if (error) throw error;
+    return { pedido, items, pagos };
+}
+
 export async function fetchItemsDePedido(pedidoId) {
     const { data, error } = await supabase.from('dist_pedido_items')
         .select('id, product_id, cantidad, precio_sin_iva, descuento, descripcion')

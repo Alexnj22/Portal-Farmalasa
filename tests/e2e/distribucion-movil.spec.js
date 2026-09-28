@@ -23,7 +23,17 @@ test('pestañas y formulario de pedido en el teléfono', async ({ page }) => {
     await page.goto('/distribucion?tab=pedidos');
     await page.waitForTimeout(1500);
     await page.getByRole('button', { name: /nueva venta/i }).first().click();
-    await expect(page.getByRole('dialog').getByText('Nueva venta')).toBeVisible();
+    await expect(page).toHaveURL(/\/distribucion\/venta$/);
+    await expect(page.getByRole('heading', { name: 'Nueva venta' }).first()).toBeVisible();
+    await page.getByText('Elegir cliente…').click();
+    await page.getByText('TIENDA LA ESQUINA', { exact: true }).last().click();
+    await page.getByLabel('Buscar producto').fill('a');
+    await page.getByRole('option').first().click();
+    await page.getByRole('button', { name: 'Uno más' }).first().click();
+    // La barra de abajo: total y «Facturar», siempre a mano en el teléfono.
+    await expect(page.getByRole('button', { name: /Facturar e imprimir/ })).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/nueva-venta.png` });
+    await page.getByRole('button', { name: 'Otra forma' }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${SALIDA}/nueva-venta-pago.png` });
     expect(errores).toEqual([]);
 });

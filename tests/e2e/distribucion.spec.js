@@ -30,8 +30,9 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
     await entrar(page);
     await page.goto('/distribucion?tab=pedidos');
     await page.getByRole('button', { name: /nueva venta/i }).first().click();
-    const modal = page.getByRole('dialog');
-    await expect(modal.getByText('Nueva venta')).toBeVisible();
+    await expect(page).toHaveURL(/\/distribucion\/venta$/);
+    const modal = page;
+    await expect(modal.getByRole('heading', { name: 'Nueva venta' }).first()).toBeVisible();
 
     await modal.getByText('Elegir cliente…').click();
     await page.getByText('TIENDA LA ESQUINA', { exact: true }).last().click();
@@ -71,7 +72,8 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
 
     // Corregir: el documento nunca llegó a Hacienda, se retira y el pedido vuelve a la venta.
     await doc.getByRole('button', { name: 'Corregir' }).click();
-    await expect(page.getByRole('dialog').getByText(/Corregir pedido/)).toBeVisible({ timeout: 20_000 });
+    await expect(page).toHaveURL(/\/distribucion\/venta\/\d+$/, { timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: /Corregir pedido/ }).first()).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/corregir.png`, fullPage: true });
 });
 
@@ -79,7 +81,7 @@ test('a un contribuyente se le puede emitir Factura si la pide', async ({ page }
     await entrar(page);
     await page.goto('/distribucion?tab=pedidos');
     await page.getByRole('button', { name: /nueva venta/i }).first().click();
-    const modal = page.getByRole('dialog');
+    const modal = page;
     await modal.getByText('Elegir cliente…').click();
     await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
     // Por la ficha (tiene NRC) arranca en Crédito Fiscal; se cambia a Factura.
@@ -97,7 +99,7 @@ test('pago dividido: $2 en efectivo y el resto con tarjeta, comprobante después
     await entrar(page);
     await page.goto('/distribucion?tab=pedidos');
     await page.getByRole('button', { name: /nueva venta/i }).first().click();
-    const modal = page.getByRole('dialog');
+    const modal = page;
     await modal.getByText('Elegir cliente…').click();
     await page.getByText('TIENDA LA ESQUINA', { exact: true }).last().click();
     await modal.getByLabel('Buscar producto').fill('a');

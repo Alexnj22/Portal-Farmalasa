@@ -106,10 +106,11 @@ test('pago dividido: $2 en efectivo y el resto con tarjeta, comprobante después
     await modal.getByRole('option').first().click();
     await modal.getByRole('button', { name: 'Uno más' }).first().click();
 
-    await modal.getByRole('button', { name: 'Otra forma' }).click();
-    // La primera forma (efectivo) lleva monto; la segunda es «el resto».
+    await modal.getByRole('button', { name: 'Dividir el pago' }).click();
+    // La nueva forma (transferencia) entra arriba y lleva monto; el efectivo
+    // queda último y es «lo que falta».
     await modal.locator('input[name^="monto-pago-"]').first().fill('2');
-    await expect(modal.getByText('El resto')).toBeVisible();
+    await expect(modal.getByText('Lo que falta')).toBeVisible();
     await expect(modal.getByText(/Comprobante pendiente/)).toBeVisible();
     await modal.getByRole('switch', { name: /Imprimir el ticket/ }).click();
     await page.screenshot({ path: `${SALIDA}/pago-dividido.png`, fullPage: true });
@@ -120,4 +121,47 @@ test('pago dividido: $2 en efectivo y el resto con tarjeta, comprobante después
     await doc.getByText('Datos', { exact: true }).click();
     await expect(doc.getByText('Falta el comprobante')).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: `${SALIDA}/pagos-en-documento.png`, fullPage: true });
+});
+
+test('venta como en la caja: presentación, lista, descuento y el cambio del efectivo, con el cobro abajo', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/distribucion/venta');
+    await page.getByText('Elegir cliente…').click();
+    await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
+    // La lista del encabezado sale de la ficha del cliente.
+    await expect(page.getByText('Premium').first()).toBeVisible();
+    await page.getByRole('radio', { name: 'Factura' }).click();
+
+    await page.getByLabel('Buscar producto').fill('transpore');
+    await page.getByRole('option').first().click();
+    const renglon = page.locator('[data-renglon]').first();
+    await expect(renglon).toBeVisible();
+
+    // Presentación: de unidad a paquete (12 unidades, otro precio).
+    const precioUnidad = await renglon.locator('.tabular-nums').nth(1).innerText();
+    await renglon.getByLabel(/Presentación de/).click();
+    await page.getByRole('option', { name: /PAQUETE/ }).click();
+    await expect(renglon.locator('.tabular-nums').nth(1)).not.toHaveText(precioUnidad);
+
+    // Descuento de 5%. (El tope de la empresa no frena a esta cuenta: tiene
+    // la capacidad de configurar Distribución. El freno se probó en la base.)
+    await renglon.locator('input[name^="descuento-"]').fill('5');
+    await expect(page.getByText('Descuentos')).toBeVisible();
+
+    // Efectivo: entrega un billete grande y se ve el cambio.
+    await page.locator('input[name^="recibido-pago-"]').fill('100');
+    await expect(page.getByText('Cambio').first()).toBeVisible();
+
+    // El cobro va DEBAJO de los productos, no al costado.
+    const yProductos = (await renglon.boundingBox()).y;
+    const yCobro = (await page.getByText('Forma de pago').boundingBox()).y;
+    expect(yCobro).toBeGreaterThan(yProductos);
+
+    await page.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    await page.screenshot({ path: `${SALIDA}/venta-caja.png`, fullPage: true });
+    await page.getByRole('button', { name: /^Facturar$/ }).click();
+    const doc = page.getByRole('dialog', { name: 'Documento' });
+    await expect(doc).toBeVisible({ timeout: 30_000 });
+    await expect(doc.frameLocator('iframe[title="Vista previa del ticket"]').getByText(/PAQUETE/).first()).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/venta-caja-ticket.png`, fullPage: true });
 });

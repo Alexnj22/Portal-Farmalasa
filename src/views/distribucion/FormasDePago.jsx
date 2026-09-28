@@ -8,36 +8,21 @@ import { formatMoney } from '../../utils/formatNumber';
 import { LLEVA_COMPROBANTE } from '../../data/distribucion';
 import ComprobantePago from './ComprobantePago';
 import { FORMA_PAGO, leerMonto } from './comun';
+import { filaNueva, montosDePagos, redondear } from './pagos';
 
 // Las formas de pago de una venta: una o varias ($2 en efectivo, el resto con
 // tarjeta), y parte a crédito si el cliente lo tiene aprobado. Es legal
 // (Manual Funcional §XIX); con contado y crédito mezclados el documento sale en
 // condición «Otro».
 //
-// La ÚLTIMA fila es siempre «el resto»: no se escribe, se calcula. El total que
-// se ve acá es estimado; el que manda es el del documento, que arma el servidor,
-// y el resto se ajusta a él al centavo.
-
-let siguienteClave = 1;
-export const filaNueva = (forma = '01') => ({ clave: siguienteClave++, forma, monto: '', referencia: '', adjunto: null, existente: null });
-
-/** Lo que falta para que las formas de pago se puedan guardar, o null. */
-export function problemaDePagos(filas, total, { cliente, plazo }) {
-    const fijas = filas.slice(0, -1);
-    for (const f of fijas) {
-        const m = leerMonto(f.monto);
-        if (!m || m <= 0) return 'Escribe el monto de cada forma de pago, menos la última (es el resto).';
-    }
-    const suma = fijas.reduce((a, f) => a + leerMonto(f.monto), 0);
-    if (total > 0 && suma >= total - 0.005) return `Las formas de pago ya suman ${formatMoney(suma)}: la última no tiene resto.`;
-    const conCredito = filas.some(f => f.forma === '13');
-    if (conCredito) {
-        if (!(cliente?.plazo_dias > 0) || !(Number(cliente?.limite_credito) > 0)) return 'Este cliente no tiene crédito aprobado.';
-        const p = leerMonto(plazo);
-        if (!p || !Number.isInteger(p) || p > cliente.plazo_dias) return `El plazo del crédito tiene que ser de 1 a ${cliente.plazo_dias} días.`;
-    }
-    return null;
-}
+// La ÚLTIMA fila es siempre «lo que falta»: no se escribe, se calcula, y se
+// muestra como un número —no como un campo— para que nadie intente escribirle.
+// El total que se ve es estimado; el que manda es el del documento, que arma el
+// servidor, y lo que falta se ajusta a él al centavo.
+//
+// El efectivo pide cuánto ENTREGA el cliente y muestra el cambio: es lo que la
+// persona necesita en el mostrador, y no va al documento (Hacienda recibe el
+// monto pagado, no el billete).
 
 const VERIF = {
     coincide: { variant: 'success', icon: CheckCircle2, label: 'Comprobante: coincide' },
@@ -49,49 +34,75 @@ const VERIF = {
 export default function FormasDePago({ filas, setFilas, total, cliente, plazo, setPlazo, abierto, setAbierto }) {
     const tieneCredito = cliente && cliente.plazo_dias > 0 && Number(cliente.limite_credito) > 0;
     const opciones = [...FORMA_PAGO, ...(tieneCredito ? [{ value: '13', label: 'A crédito' }] : [])];
-    const fijas = filas.slice(0, -1).reduce((a, f) => a + (leerMonto(f.monto) ?? 0), 0);
-    const resto = Math.max(0, Math.round((total - fijas) * 100) / 100);
+    const montos = montosDePagos(filas, total);
 
     const set = (clave, cambios) => setFilas(fs => fs.map(f => (f.clave === clave ? { ...f, ...cambios } : f)));
     const quitar = (clave) => setFilas(fs => (fs.length === 1 ? [filaNueva()] : fs.filter(f => f.clave !== clave)));
-    const agregar = () => setFilas(fs => [...fs, filaNueva(fs.some(f => f.forma === '01') ? '03' : '01')]);
+    // La nueva entra ARRIBA de la última: la última sigue siendo «lo que falta»
+    // y la nueva nace con un monto por escribir.
+    const agregar = () => setFilas(fs => [...fs.slice(0, -1), filaNueva(fs.some(f => f.forma === '01') ? '05' : '01'), fs[fs.length - 1]]);
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
                 <span className="text-caption font-bold text-content-2">Forma de pago</span>
-                <Button size="sm" variant="ghost" icon={Plus} onClick={agregar} disabled={filas.length >= 5}>Otra forma</Button>
+                <Button size="sm" variant="ghost" icon={Plus} onClick={agregar} disabled={filas.length >= 5}>Dividir el pago</Button>
             </div>
             {filas.map((f, i) => {
                 const ultima = i === filas.length - 1;
                 const comprobante = LLEVA_COMPROBANTE.has(f.forma);
                 const verif = f.adjunto?.verificacion ?? f.existente?.verificacion;
                 const v = VERIF[verif] ?? (comprobante ? VERIF.pendiente : null);
+                const recibido = leerMonto(f.recibido);
+                const cambio = f.forma === '01' && recibido ? redondear(recibido - montos[i]) : null;
                 return (
                     <div key={f.clave} className="rounded-xl border border-divider p-3 flex flex-col gap-2">
-                        {/* La forma en su propia fila: la columna del pago mide ~350px
-                            y lado a lado con el monto el nombre se cortaba («E…»). */}
-                        <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                        {/* Arriba la forma, el monto y quitar; abajo, a lo ancho, lo propio
+                            de esa forma (entrega y cambio, referencia, plazo). En la columna
+                            del cobro no caben las cuatro cosas en una línea. */}
+                        <div className="grid grid-cols-[minmax(0,1fr)_8rem_auto] gap-2 items-end">
                             <div className="min-w-0">
                                 <LiquidSelect value={f.forma} options={opciones} clearable={false}
-                                    onChange={(val) => set(f.clave, { forma: val || '01', adjunto: null })} />
+                                    onChange={(val) => set(f.clave, { forma: val || '01', adjunto: null, recibido: '', referencia: '' })} />
                             </div>
+                            {ultima ? (
+                                <div className="flex flex-col justify-end min-h-10">
+                                    <span className="text-caption text-content-3">{filas.length > 1 ? 'Lo que falta' : 'Total'}</span>
+                                    <span className="font-black tabular-nums text-content" data-testid={`monto-pago-${i}`}>{formatMoney(montos[i])}</span>
+                                </div>
+                            ) : (
+                                <PortalInput name={`monto-pago-${f.clave}`} inputMode="decimal" value={f.monto} label="Monto" compact
+                                    prefix="$" placeholder="0.00" onChange={(e) => set(f.clave, { monto: e.target.value })} />
+                            )}
                             <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar esta forma de pago"
                                 disabled={filas.length === 1} onClick={() => quitar(f.clave)} />
+                            {f.forma === '01' && (
+                                <div className="col-span-3 grid grid-cols-2 gap-2 items-end">
+                                    <PortalInput name={`recibido-pago-${f.clave}`} inputMode="decimal" value={f.recibido} label="Entrega" compact
+                                        prefix="$" placeholder={montos[i] ? montos[i].toFixed(2) : '0.00'} hasError={cambio != null && cambio < 0}
+                                        onChange={(e) => set(f.clave, { recibido: e.target.value })} />
+                                    <div className="flex flex-col justify-end min-h-10">
+                                        <span className="text-caption text-content-3">Cambio</span>
+                                        <span className={`font-black tabular-nums ${cambio != null && cambio < 0 ? 'text-danger-text' : 'text-success-text'}`}>
+                                            {cambio == null ? '—' : cambio < 0 ? `Faltan ${formatMoney(-cambio)}` : formatMoney(cambio)}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                            {comprobante && (
+                                <div className="col-span-3">
+                                    <PortalInput name={`ref-pago-${f.clave}`} value={f.referencia} compact label="N.º de autorización o referencia"
+                                        placeholder="Opcional" onChange={(e) => set(f.clave, { referencia: e.target.value })} />
+                                </div>
+                            )}
+                            {f.forma === '13' && (
+                                <div className="col-span-3">
+                                    <PortalInput label="Plazo (días)" name="plazo" inputMode="numeric" value={plazo} compact
+                                        onChange={(e) => setPlazo(e.target.value)}
+                                        helperText={`Hasta ${cliente?.plazo_dias ?? 0} días · aprobado ${formatMoney(cliente?.limite_credito ?? 0)}`} />
+                                </div>
+                            )}
                         </div>
-                        {ultima ? (
-                            <div className="flex items-baseline justify-between gap-2">
-                                <span className="text-caption text-content-3">{filas.length > 1 ? 'El resto' : 'El total'}</span>
-                                <span className="font-black tabular-nums text-content">{formatMoney(resto)}</span>
-                            </div>
-                        ) : (
-                            <PortalInput name={`monto-pago-${f.clave}`} inputMode="decimal" value={f.monto} label="Monto"
-                                placeholder="0.00" onChange={(e) => set(f.clave, { monto: e.target.value })} />
-                        )}
-                        {comprobante && (
-                            <PortalInput name={`ref-pago-${f.clave}`} value={f.referencia} placeholder="Autorización o referencia (opcional)"
-                                aria-label="Referencia del pago" onChange={(e) => set(f.clave, { referencia: e.target.value })} />
-                        )}
                         {comprobante && (
                             <div className="flex flex-wrap items-center gap-2">
                                 {v && <Badge size="sm" variant={v.variant} icon={v.icon} uppercase={false}>{v.label}</Badge>}
@@ -106,7 +117,7 @@ export default function FormasDePago({ filas, setFilas, total, cliente, plazo, s
                             </div>
                         )}
                         {comprobante && abierto === f.clave && !f.adjunto && (
-                            <ComprobantePago forma={f.forma} montoEsperado={ultima ? null : leerMonto(f.monto)} puedeCambiarMonto={!ultima}
+                            <ComprobantePago forma={f.forma} montoEsperado={montos[i] || null} puedeCambiarMonto={!ultima}
                                 onListo={(r) => {
                                     set(f.clave, { adjunto: r, ...(r.montoNuevo != null ? { monto: String(r.montoNuevo) } : {}) });
                                     setAbierto(null);
@@ -115,10 +126,6 @@ export default function FormasDePago({ filas, setFilas, total, cliente, plazo, s
                     </div>
                 );
             })}
-            {filas.some(f => f.forma === '13') && (
-                <PortalInput label="Plazo del crédito (días)" name="plazo" inputMode="numeric" value={plazo}
-                    onChange={(e) => setPlazo(e.target.value)} helperText={`Hasta ${cliente?.plazo_dias ?? 0} días. Crédito aprobado: ${formatMoney(cliente?.limite_credito ?? 0)}.`} />
-            )}
         </div>
     );
 }

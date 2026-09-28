@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1085.0 — Distribución: la venta como en la caja — presentaciones, listas de precio, descuentos y el cobro abajo
+
+Pedido del usuario: «mira el ERP, no como guía en diseño sino en utilidad.
+¿Cómo selecciono precios / descuentos? ¿Presentaciones? Lo de pagar, abajo».
+
+- **Presentaciones y listas de precio** (`dist_listas`, `dist_precios`,
+  borrador 0004): cada producto se vende por unidad, caja, paquete…, cada una
+  con su precio por lista (Mayoreo, Premium, VIP, Viñeta en pruebas). El
+  cliente trae su lista; se cambia para toda la venta o por renglón. El precio
+  lo sigue poniendo el trigger; `precios.js` es su gemelo de pantalla.
+- **Descuento por renglón en % o en $**, con tope de la empresa
+  (`descuento_max_pct`, 10%): pasarlo exige la capacidad de configurar
+  Distribución, y lo frena la base, no sólo la pantalla.
+- **El cobro va abajo**, después de los productos: formas de pago, desglose,
+  total y botón. La última forma es «lo que falta» y se muestra como número,
+  no como campo (la referencia se confundía con el monto). El efectivo pide
+  cuánto entrega el cliente y muestra el cambio.
+- Precios con IVA si es Factura, sin IVA si es Crédito Fiscal.
+
 ## v2.1084.0 — Distribución: el cierre al pie de la hoja y el PDF completo
 
 Dos pedidos del usuario: que los totales estén siempre en el mismo lugar, y

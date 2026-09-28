@@ -2,7 +2,7 @@
 //
 // Todo lo que decide algo vive en la base o en la edge function
 // `distribucion-dte`: qué se le puede vender a cada cliente (trigger), el
-// precio (sale del catálogo, no de lo que mande la pantalla), el tipo de
+// precio (sale de la lista de precios, no de lo que mande la pantalla), el tipo de
 // documento, el correlativo y la firma. Acá sólo se lee y se piden acciones;
 // por eso los errores de la base se devuelven tal cual y la vista los traduce.
 import { supabase } from '../supabaseClient';
@@ -17,7 +17,10 @@ const MENSAJES = {
     DIST_PLAZO: 'El plazo pasa del que tiene aprobado el cliente.',
     DIST_CLIENTE_INACTIVO: 'Ese cliente está desactivado.',
     DIST_PEDIDO_CERRADO: 'El pedido ya se facturó o se anuló.',
+    // El del tope va ANTES: `DIST_DESCUENTO` también está adentro de su código.
+    DIST_DESCUENTO_TOPE: 'Ese descuento pasa del tope que fijó la empresa. Pídele a quien administra Distribución que lo autorice.',
     DIST_DESCUENTO: 'El descuento pasa del importe del renglón.',
+    DIST_SIN_PRECIO: 'Esa presentación no tiene precio cargado. Revisa el catálogo.',
     DIST_CCF_SIN_NRC: 'Ese cliente no tiene NRC: sólo se le puede emitir Factura.',
     DIST_PAGO_FACTURADO: 'La forma y el monto ya están en el documento: sólo se puede adjuntar el comprobante.',
 };
@@ -92,6 +95,23 @@ export async function fetchCatalogo() {
     }));
 }
 
+/**
+ * Listas de precio y precios por presentación. Una tabla chica (listas) y una
+ * que crece con el catálogo (precios): ésa va paginada.
+ */
+export async function fetchListasYPrecios() {
+    const [{ data: listas, error }, precios] = await Promise.all([
+        supabase.from('dist_listas').select('id, emisor_id, nombre, orden, activo').order('orden'),
+        fetchAllRows(() => supabase.from('dist_precios')
+            .select('id, product_id, presentacion, unidades, lista_id, precio_sin_iva, activo')
+            .eq('activo', true)
+            .order('id')),
+    ]);
+    if (error) throw error;
+    if (precios === null) throw new Error('No se pudieron cargar los precios.');
+    return { listas: listas ?? [], precios };
+}
+
 export async function guardarPrecio(emisorId, productId, cambios) {
     const { error } = await supabase.from('dist_catalogo')
         .update(cambios).eq('emisor_id', emisorId).eq('product_id', productId);
@@ -136,10 +156,24 @@ export async function fetchPedidoParaCorregir(pedidoId) {
 
 export async function fetchItemsDePedido(pedidoId) {
     const { data, error } = await supabase.from('dist_pedido_items')
-        .select('id, product_id, cantidad, precio_sin_iva, descuento, descripcion')
+        .select('id, product_id, cantidad, precio_sin_iva, descuento, descuento_pct, descripcion, presentacion, unidades, lista_id')
         .eq('pedido_id', pedidoId).order('id');
     if (error) throw error;
     return data;
+}
+
+// Lo que viaja de un renglón. Precio 0 y descripción vacía: los pone el
+// trigger desde la lista de precios. El descuento viaja en % o en $, nunca los
+// dos: en % el monto lo calcula la base sobre SU precio.
+function filaDeRenglon(pedidoId, r) {
+    const enPct = r.descuentoTipo === 'pct' && Number(r.descuentoValor) > 0;
+    return {
+        pedido_id: pedidoId, product_id: r.product_id, cantidad: r.cantidad,
+        presentacion: r.presentacion || 'UNIDAD', lista_id: r.lista_id ?? null,
+        precio_sin_iva: 0, descripcion: '',
+        descuento_pct: enPct ? Number(r.descuentoValor) : null,
+        descuento: enPct ? 0 : (r.descuentoTipo === 'monto' ? Number(r.descuentoValor) || 0 : 0),
+    };
 }
 
 /**
@@ -164,11 +198,8 @@ export async function crearPedido({ emisorId, clienteId, tipoDocumento, condicio
     }
     // Los renglones van con precio 0: el trigger pone el del catálogo.
     const { error: eIt } = await supabase.from('dist_pedido_items').upsert(
-        renglones.map(r => ({
-            pedido_id: pedidoId, product_id: r.product_id, cantidad: r.cantidad,
-            precio_sin_iva: 0, descuento: r.descuento || 0, descripcion: r.descripcion || '',
-        })),
-        { onConflict: 'pedido_id,product_id' });
+        renglones.map(r => filaDeRenglon(pedidoId, r)),
+        { onConflict: 'pedido_id,product_id,presentacion' });
     if (eIt) {
         // Sin renglones el pedido no sirve: se anula para que no quede colgado.
         const { error: eAnular } = await supabase.from('dist_pedidos')
@@ -191,16 +222,19 @@ export async function actualizarPedido(pedidoId, { tipoDocumento, condicion, pla
         observaciones: observaciones?.trim() || null,
     }).eq('id', pedidoId).eq('estado', 'confirmado');
     if (error) throw error;
-    const ids = renglones.map(r => r.product_id);
-    const { error: eBorrar } = await supabase.from('dist_pedido_items').delete()
-        .eq('pedido_id', pedidoId).not('product_id', 'in', `(${ids.join(',') || 0})`);
-    if (eBorrar) throw eBorrar;
+    // Se borran los renglones que ya no están: la clave es producto + presentación.
+    const quedan = new Set(renglones.map(r => `${r.product_id}|${r.presentacion || 'UNIDAD'}`));
+    const { data: previos, error: ePrev } = await supabase.from('dist_pedido_items')
+        .select('id, product_id, presentacion').eq('pedido_id', pedidoId);
+    if (ePrev) throw ePrev;
+    const sobran = (previos ?? []).filter(p => !quedan.has(`${p.product_id}|${p.presentacion}`)).map(p => p.id);
+    if (sobran.length) {
+        const { error: eBorrar } = await supabase.from('dist_pedido_items').delete().in('id', sobran);
+        if (eBorrar) throw eBorrar;
+    }
     const { error: eIt } = await supabase.from('dist_pedido_items').upsert(
-        renglones.map(r => ({
-            pedido_id: pedidoId, product_id: r.product_id, cantidad: r.cantidad,
-            precio_sin_iva: 0, descuento: r.descuento || 0, descripcion: r.descripcion || '',
-        })),
-        { onConflict: 'pedido_id,product_id' });
+        renglones.map(r => filaDeRenglon(pedidoId, r)),
+        { onConflict: 'pedido_id,product_id,presentacion' });
     if (eIt) throw eIt;
 }
 
@@ -258,7 +292,7 @@ export const LLEVA_COMPROBANTE = new Set(['02', '03', '04', '05', '08', '99']);
 
 export async function fetchPagos(pedidoId) {
     const { data, error } = await supabase.from('dist_pagos')
-        .select('id, orden, forma, monto, referencia, comprobante_url, monto_leido, verificacion, nota, lectura')
+        .select('id, orden, forma, monto, referencia, efectivo_recibido, comprobante_url, monto_leido, verificacion, nota, lectura')
         .eq('pedido_id', pedidoId).order('orden');
     if (error) throw error;
     return data;
@@ -284,6 +318,7 @@ export async function guardarPagos(pedidoId, filas) {
         pedido_id: pedidoId, orden: i + 1, forma: f.forma,
         monto: i === filas.length - 1 && f.resto ? null : f.monto,
         referencia: f.referencia?.trim() || null,
+        efectivo_recibido: f.forma === '01' && Number(f.recibido) > 0 ? Number(f.recibido) : null,
         // Al corregir un pedido, el comprobante que ya estaba se conserva.
         ...(f.comprobante_url ? {
             comprobante_url: f.comprobante_url, lectura: f.lectura ?? null, monto_leido: f.monto_leido ?? null,

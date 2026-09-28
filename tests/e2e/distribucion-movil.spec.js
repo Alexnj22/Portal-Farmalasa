@@ -33,7 +33,9 @@ test('pestañas y formulario de pedido en el teléfono', async ({ page }) => {
     // La barra de abajo: total y «Facturar», siempre a mano en el teléfono.
     await expect(page.getByRole('button', { name: /Facturar e imprimir/ })).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/nueva-venta.png` });
-    await page.getByRole('button', { name: 'Otra forma' }).scrollIntoViewIfNeeded();
+    await page.locator('[data-renglon]').first().scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${SALIDA}/nueva-venta-renglon.png` });
+    await page.getByRole('button', { name: 'Dividir el pago' }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${SALIDA}/nueva-venta-pago.png` });
     expect(errores).toEqual([]);
 });

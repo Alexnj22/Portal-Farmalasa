@@ -1,6 +1,6 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho (paso 2 pospuesto) · **F8 en curso**: la app arranca, faltan las pantallas.
+**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho (paso 2 pospuesto) · **F8 en curso**: la app entra y abre las 58 pantallas (mixta); faltan las nativas.
 
 ### Bitácora
 
@@ -149,6 +149,32 @@
   13 simulado (web de Expo): entra y lista **58 módulos**, sin errores en
   consola. Compila también para Android. **Falta**: probarla en un teléfono de
   verdad, y las pantallas — hoy las 58 dicen «pronto».
+- **F8 paso 2 — estrategia MIXTA, todas abren desde hoy (2026-09-28)**.
+  Decisión del usuario, con la interfaz medida en ~175,000 líneas: las
+  pantallas que todavía no son nativas se abren como **el portal dentro de la
+  app, con la misma sesión** (`componentes/PortalIncrustado.js`), y las nativas
+  las van reemplazando una por una (`apps/mobile/pantallas.js`). Tres piezas:
+  1. **La sesión se presta, no se vuelve a pedir**: el script de entrada copia
+     las tres claves que escribe el mismo `AuthContext` (sesión de auth-js,
+     `sb_user`, `sb_last_activity_at`) al almacenamiento del portal.
+  2. **Un solo renovador a la vez**: si la app y el portal renuevan el MISMO
+     token de refresco, Supabase detecta el reuso y cierra la sesión de los
+     dos. Mientras el portal está abierto la app deja de renovar
+     (`stopAutoRefresh`) y adopta cada token que el portal renueva
+     (`postMessage` → `setSession`); si el portal cierra sesión, la app
+     también.
+  3. **Una sola barra**: con `data-en-la-app` en el `<html>` el portal esconde
+     su encabezado y sus pestañas móviles (final de `index.css`); lo marcan el
+     script de la app y, por si el WebView arma el documento después,
+     `main.jsx`.
+  Probado en un **emulador de Android** (Pixel 7, Android 15, Expo Go) contra
+  la base de pruebas y el portal local: entra, lista 58 módulos y abre
+  «Solicitudes de sucursal» del portal sin volver a pedir usuario, con una sola
+  barra. En producción el portal es `portal.farmasalud.lat`
+  (`EXPO_PUBLIC_PORTAL_URL`); `dev.farmasalud.lat` NO sirve para esto porque
+  está detrás del inicio de sesión de Vercel. **Falta**: probar la renovación
+  del token con una sesión de más de una hora, un teléfono físico, y empezar
+  las pantallas nativas por las más usadas en sala.
 
 ## Para qué
 

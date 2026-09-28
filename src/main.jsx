@@ -89,6 +89,12 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// Dentro de la app del teléfono (apps/mobile): su script de entrada deja la
+// bandera y el atributo; éste lo repite por si el WebView armó el <html>
+// después de correr ese script. Esconde la barra y las pestañas propias del
+// portal, porque la app ya tiene las suyas (ver el final de index.css).
+if (window.__FARMALASA_APP__) document.documentElement.setAttribute('data-en-la-app', '');
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ThemeProvider>

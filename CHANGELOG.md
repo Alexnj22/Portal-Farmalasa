@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1082.0 — F8 paso 2 — todas las pantallas abren en la app (mixta)
+
+En la app del teléfono, cada módulo que todavía no es nativo se abre como el
+portal dentro de la app, con la misma sesión: no vuelve a pedir usuario. Las
+pantallas nativas lo irán reemplazando una por una. Probado en un emulador de
+Android contra la base de pruebas.
+
+En el portal: cuando corre dentro de la app esconde su propio encabezado y sus
+pestañas de abajo (la app ya tiene su barra). En el navegador no cambia nada.
+
 ## v2.1081.2 — Las pruebas de CI dejan de entrar a producción
 
 `Playwright smoke` entraba a PRODUCCIÓN en cada push con credenciales que ya

@@ -27,7 +27,7 @@ export default function Raiz() {
           >
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="entrar" options={{ headerShown: false }} />
-            <Stack.Screen name="inicio" options={{ title: 'Inicio' }} />
+            <Stack.Screen name="inicio" options={{ title: "Inicio" }} />
           </Stack>
         </AuthProvider>
       </View>

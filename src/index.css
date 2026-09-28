@@ -4046,3 +4046,15 @@ button[data-foco="hijo"]:focus-visible,
    es theme-aware por el bloque de arriba. Eran un parche por valor; ahora el
    sistema se sostiene solo y cualquier `rounded-2xl` nuevo hereda la
    geometría del tema sin agregar una regla. */
+
+/* ── El portal dentro de la app del teléfono ────────────────────────────────
+   La app (apps/mobile) abre las pantallas que todavía no son nativas como el
+   portal incrustado, y ya tiene su propia barra con «volver» y el título. Sin
+   esto se veían dos barras apiladas y las pestañas de abajo del portal, que
+   navegaban DENTRO del incrustado con el título de la app diciendo otra cosa.
+   El atributo lo pone el script de entrada de la app
+   (apps/mobile/componentes/sesionCompartida.js); en el navegador nunca existe. */
+html[data-en-la-app] [data-shell="header-movil"],
+html[data-en-la-app] [data-shell="tabs-movil"] {
+  display: none !important;
+}

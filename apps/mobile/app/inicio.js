@@ -43,7 +43,7 @@ export default function Inicio() {
       renderItem={({ item }) => (
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.push(item.lista ? item.path : { pathname: '/pendiente', params: { nombre: item.label } })}
+          onPress={() => router.push(item.lista ? item.path : { pathname: '/portal', params: { ruta: item.path, nombre: item.label } })}
           style={({ pressed }) => ({
             minHeight: tema.tam.toque + 8,
             backgroundColor: tema.color.tarjeta,
@@ -58,7 +58,6 @@ export default function Inicio() {
           })}
         >
           <Text style={{ color: tema.color.texto, fontSize: tema.texto.cuerpo + 3, fontWeight: '600' }}>{item.label}</Text>
-          {!item.lista ? <Text style={{ color: tema.color.texto3, fontSize: tema.texto.caption + 2 }}>pronto</Text> : null}
         </Pressable>
       )}
       ListFooterComponent={<View style={{ marginTop: 16 }}><Boton onPress={logout}>Salir</Boton></View>}

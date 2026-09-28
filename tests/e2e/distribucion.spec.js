@@ -159,9 +159,15 @@ test('venta como en la caja: presentación, lista, descuento y el cambio del efe
 
     await page.getByRole('switch', { name: /Imprimir el ticket/ }).click();
     await page.screenshot({ path: `${SALIDA}/venta-caja.png`, fullPage: true });
+    // El total de la pantalla sale del mismo motor que el documento: tiene que
+    // ser EXACTAMENTE el que Hacienda recibe, no «uno parecido».
+    const totalPantalla = (await page.getByTestId('total-venta').innerText()).trim();
     await page.getByRole('button', { name: /^Facturar$/ }).click();
     const doc = page.getByRole('dialog', { name: 'Documento' });
     await expect(doc).toBeVisible({ timeout: 30_000 });
+    await doc.getByText('Datos', { exact: true }).click();
+    await expect(doc.getByText(totalPantalla).first()).toBeVisible({ timeout: 15_000 });
+    await doc.getByText('Ticket', { exact: true }).click();
     await expect(doc.frameLocator('iframe[title="Vista previa del ticket"]').getByText(/PAQUETE/).first()).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: `${SALIDA}/venta-caja-ticket.png`, fullPage: true });
 });

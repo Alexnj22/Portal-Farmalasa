@@ -58,8 +58,6 @@ export const DOC_IDENTIDAD = [
     { value: '37', label: 'Otro' },
 ];
 
-const IVA = 0.13;
-
 /**
  * Un monto escrito por una persona → número, o null si no es un monto.
  * Acepta coma o punto decimal («1,20» y «1.20»): el campo de dinero del
@@ -69,18 +67,6 @@ export function leerMonto(texto) {
     const t = String(texto ?? '').trim().replace(/\s/g, '').replace(',', '.');
     if (!/^\d+(\.\d{1,6})?$/.test(t)) return null;
     return Number(t);
-}
-
-/**
- * Lo que va a costar un pedido, para mostrarlo ANTES de facturar. Es una
- * estimación de pantalla: el número que vale es el del documento que arma el
- * servidor con el motor de DTE (redondeo de Hacienda, retención del 1%).
- */
-export function estimarPedido(renglones, { contribuyente, granContribuyente }) {
-    const subtotal = renglones.reduce((a, r) => a + r.cantidad * r.precio_sin_iva - (r.descuento || 0), 0);
-    const iva = Math.round(subtotal * IVA * 100) / 100;
-    const retencion = contribuyente && granContribuyente && subtotal >= 100 ? Math.round(subtotal * 0.01 * 100) / 100 : 0;
-    return { subtotal, iva, retencion, total: Math.round((subtotal + iva - retencion) * 100) / 100 };
 }
 
 /**

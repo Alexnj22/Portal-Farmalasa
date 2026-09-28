@@ -26,8 +26,9 @@ import {
 import Interruptor from './distribucion/Interruptor';
 import FormasDePago from './distribucion/FormasDePago';
 import { filaNueva, problemaDePagos, cambioDePagos } from './distribucion/pagos';
-import { estimarPedido, leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO } from './distribucion/comun';
-import { indexarPrecios, presentacionesDe, listasDe, precioDe, descuentoSinIva, IVA } from './distribucion/precios';
+import { leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO } from './distribucion/comun';
+import { indexarPrecios, presentacionesDe, listasDe, precioDe } from './distribucion/precios';
+import { calcularVenta, descuentoConIva } from './distribucion/motor';
 
 // La venta de Distribución, en su propia vista.
 //
@@ -50,8 +51,10 @@ import { indexarPrecios, presentacionesDe, listasDe, precioDe, descuentoSinIva, 
 // el precio lo pone él.
 //
 // ── Precios que se ven ─────────────────────────────────────────────────────
-// Con Factura, con IVA (es lo que paga el cliente y lo que dice el papel); con
-// Crédito Fiscal, sin IVA. Por dentro todo viaja sin IVA.
+// Se guardan CON IVA en centavos, que es lo que paga el cliente. Se ven como
+// los pone el documento: con IVA en la Factura, sin IVA en el Crédito Fiscal.
+// Todas las cuentas salen de `motor.js`, el mismo motor del documento: la
+// pantalla no puede decir un total y el papel otro.
 //
 // ── Marca ──────────────────────────────────────────────────────────────────
 // Es la otra empresa (Torogoz): `useMarca('distribucion')` pinta el portal con
@@ -159,7 +162,8 @@ export default function DistribucionVentaView() {
                             lista_id: i.lista_id ? String(i.lista_id) : '',
                             cantidad: conCantidad(Number(i.cantidad)),
                             descTipo: enPct || !monto ? 'pct' : 'monto',
-                            descValor: enPct ? String(Number(i.descuento_pct)) : monto ? (monto * (doc === '01' ? 1 + IVA : 1)).toFixed(2) : '',
+                            // El $ se guarda con IVA; se muestra en el precio que se ve.
+                            descValor: enPct ? String(Number(i.descuento_pct)) : monto ? (doc === '01' ? monto : monto / 1.13).toFixed(2) : '',
                         });
                     }));
                     setPagos(ped.pagos.length
@@ -204,7 +208,8 @@ export default function DistribucionVentaView() {
     const sinLicencia = cliente && (!cliente.licencia_srs || licenciaVencida);
     const tieneCredito = cliente && cliente.plazo_dias > 0 && Number(cliente.limite_credito) > 0;
     const conIva = tipoDoc === '01';
-    const factorVisto = conIva ? 1 + IVA : 1;
+    // Precio de lista (con IVA) → el que se ve. Sólo para mostrar: las cuentas son del motor.
+    const visto = (conIvaPrecio) => (conIva ? conIvaPrecio : conIvaPrecio / 1.13);
     const listaEfectiva = listaVenta ? Number(listaVenta) : listaBase;
     const topeDescuento = Number(emisor?.descuento_max_pct ?? 0);
 
@@ -254,41 +259,47 @@ export default function DistribucionVentaView() {
         setError('');
     }, [clientes]);
 
-    // Cada renglón resuelto: presentación, precio, descuento e importe.
-    const lineas = carrito.map(c => {
+    // Cada renglón resuelto: presentación, precio de lista y descuento (con IVA).
+    const base = carrito.map(c => {
         const p = porId.get(c.product_id);
         const presentaciones = p ? presentacionesDe(idx, p.product_id) : [];
         const presentacion = c.presentacion ?? presentaciones[0]?.presentacion ?? 'UNIDAD';
         const lista = c.lista_id ? Number(c.lista_id) : listaEfectiva;
         const r = p ? precioDe(idx, p, presentacion, lista) : null;
         const n = leerMonto(c.cantidad);
-        const bruto = r && n ? n * r.precio : 0;
-        const desc = descuentoSinIva({ tipo: c.descTipo, valor: leerMonto(c.descValor), importeSinIva: bruto, conIva });
-        const pct = bruto > 0 ? (desc / bruto) * 100 : 0;
+        const brutoConIva = r && n ? n * r.precio : 0;
+        const desc = r && n ? descuentoConIva({ tipo: c.descTipo, valor: leerMonto(c.descValor), cantidad: n, precioConIva: r.precio, conIva }) : 0;
+        const pct = brutoConIva > 0 ? (desc / brutoConIva) * 100 : 0;
         const descMalo = String(c.descValor ?? '').trim() !== '' && leerMonto(c.descValor) == null;
-        const pasaImporte = desc > bruto + 1e-6;
+        const pasaImporte = desc > brutoConIva + 1e-6;
         const pasaTope = !pasaImporte && pct > topeDescuento + 0.005 && !puedeConfigurar;
         return {
-            ...c, p, n, r, presentacion, presentaciones, bruto, desc, pct, neto: Math.max(0, bruto - desc),
+            ...c, p, n, r, presentacion, presentaciones, desc, pct,
             descMalo, pasaImporte, pasaTope, noVa: !p || !permitido(p), sinPrecio: !!p && !r,
             // Otra lista distinta de la de la venta: se marca para que se vea.
             otraLista: r?.listaId != null && r.listaId !== listaEfectiva,
         };
     });
+    // Los números —importe de cada renglón, IVA, retención, total— los da el
+    // motor del documento, con las mismas opciones que usa la edge function.
+    const cuentan = base.filter(l => l.r && l.n > 0 && !l.pasaImporte);
+    const venta = calcularVenta(
+        cuentan.map(l => ({ cantidad: l.n, precioConIva: l.r.precio, descuentoConIva: l.desc })),
+        {
+            tipoDoc,
+            retiene1: !!cliente?.gran_contribuyente && tipoDoc === '03',
+            percibe1: !!emisor?.gran_contribuyente && !cliente?.gran_contribuyente && tipoDoc === '03',
+        },
+    );
+    const delMotor = new Map(cuentan.map((l, i) => [l.clave, venta.renglones[i]]));
+    const lineas = base.map(l => ({ ...l, doc: delMotor.get(l.clave) ?? null }));
     const cantidadMala = lineas.some(l => !l.n || l.n <= 0);
     const hayNoPermitidos = lineas.some(l => l.noVa);
     const haySinPrecio = lineas.some(l => l.sinPrecio);
     const descuentoMalo = lineas.find(l => l.descMalo || l.pasaImporte || l.pasaTope);
     const conCredito = pagos.some(f => f.forma === '13');
     const plazoNum = conCredito ? leerMonto(plazo) : null;
-
-    const validas = lineas.filter(l => l.r && l.n > 0);
-    const estimado = estimarPedido(
-        validas.map(l => ({ cantidad: l.n, precio_sin_iva: l.r.precio, descuento: l.desc })),
-        { contribuyente: tipoDoc === '03', granContribuyente: !!cliente?.gran_contribuyente },
-    );
-    const suma = validas.reduce((a, l) => a + l.bruto, 0);
-    const descuentos = validas.reduce((a, l) => a + l.desc, 0);
+    const estimado = venta;
     const fijas = pagos.slice(0, -1);
     const sumaFijas = fijas.reduce((a, f) => a + (leerMonto(f.monto) ?? 0), 0);
     const alCredito = !conCredito ? 0
@@ -309,6 +320,7 @@ export default function DistribucionVentaView() {
         : descuentoMalo ? (descuentoMalo.pasaTope
             ? `El descuento de «${descuentoMalo.p?.nombre}» pasa del tope de ${topeDescuento}%.`
             : `Revisa el descuento de «${descuentoMalo.p?.nombre ?? 'un producto'}».`)
+        : venta.error ? `No se pudo calcular la venta: ${venta.error}.`
         : problemaPago ? problemaPago
         : null;
     const listo = !bloqueo && !guardando;
@@ -322,6 +334,7 @@ export default function DistribucionVentaView() {
             // vuelve a resolver el precio con esto, igual que `precioDe`.
             lista_id: (l.lista_id ? Number(l.lista_id) : listaEfectiva) ?? null,
             descuentoTipo: l.desc > 0 ? l.descTipo : null,
+            // En $ viaja con IVA (como se guarda); en %, el porcentaje.
             descuentoValor: l.descTipo === 'pct' ? leerMonto(l.descValor) : l.desc,
         }));
         const condicion = conCredito ? 2 : 1;
@@ -407,7 +420,7 @@ export default function DistribucionVentaView() {
     const filaTotal = (rotulo, valor, { fuerte = false, tono = '' } = {}) => (
         <div className={`flex items-baseline justify-between gap-3 ${fuerte ? 'pt-2 border-t border-divider' : ''}`}>
             <span className={fuerte ? 'text-body-sm font-bold text-content-2' : 'text-caption text-content-3'}>{rotulo}</span>
-            <span className={`tabular-nums ${fuerte ? 'text-title font-black text-brand-text' : `text-body-sm font-bold ${tono || 'text-content-2'}`}`}>{valor}</span>
+            <span data-testid={fuerte ? 'total-venta' : undefined} className={`tabular-nums ${fuerte ? 'text-title font-black text-brand-text' : `text-body-sm font-bold ${tono || 'text-content-2'}`}`}>{valor}</span>
         </div>
     );
 
@@ -491,7 +504,7 @@ export default function DistribucionVentaView() {
                                                     <span className="block text-caption text-content-3 truncate">{pres.map(x => x.presentacion).join(' · ')}</span>
                                                 </span>
                                                 <span className="text-caption text-content-3 tabular-nums shrink-0">
-                                                    {r ? `${formatMoney(r.precio * factorVisto)} ${conIva ? 'con IVA' : '+ IVA'}` : 'Sin precio'}
+                                                    {r ? `${formatMoney(visto(r.precio))} ${conIva ? 'con IVA' : '+ IVA'}` : 'Sin precio'}
                                                 </span>
                                             </button>
                                         );
@@ -532,7 +545,7 @@ export default function DistribucionVentaView() {
                                                         </p>
                                                     )}
                                                 </div>
-                                                <span className="lg:hidden tabular-nums font-black text-content shrink-0">{formatMoney(l.neto * factorVisto)}</span>
+                                                <span className="lg:hidden tabular-nums font-black text-content shrink-0">{formatMoney(l.doc?.importe ?? 0)}</span>
                                             </div>
                                             <div className="min-w-0">
                                                 <LiquidSelect compact value={l.presentacion} options={opcPres} clearable={false}
@@ -554,7 +567,7 @@ export default function DistribucionVentaView() {
                                             </div>
                                             <div className="text-right tabular-nums text-body-sm text-content-2">
                                                 <span className="lg:hidden text-caption text-content-3 mr-1">Precio</span>
-                                                {l.r ? formatMoney(l.r.precio * factorVisto) : '—'}
+                                                {l.r ? formatMoney(l.doc?.precioUni ?? visto(l.r.precio)) : '—'}
                                             </div>
                                             <div className="flex items-center gap-1 min-w-0">
                                                 <SegmentedControl size="sm" value={l.descTipo} label={`Descuento de ${nombre} en`}
@@ -565,8 +578,8 @@ export default function DistribucionVentaView() {
                                                     onChange={(e) => cambiar(l.clave, { descValor: e.target.value })} />
                                             </div>
                                             <div className="hidden lg:block text-right tabular-nums font-black text-content">
-                                                {formatMoney(l.neto * factorVisto)}
-                                                {l.desc > 0 && <span className="block text-caption font-normal text-content-3">−{formatMoney(l.desc * factorVisto)}</span>}
+                                                {formatMoney(l.doc?.importe ?? 0)}
+                                                {l.doc?.descuento > 0 && <span className="block text-caption font-normal text-content-3">−{formatMoney(l.doc.descuento)}</span>}
                                             </div>
                                             <div className="flex justify-end">
                                                 <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar de la venta" onClick={() => quitar(l.clave)} />
@@ -591,10 +604,11 @@ export default function DistribucionVentaView() {
                                     onChange={(e) => setNotas(e.target.value)} placeholder="Opcional. Sale impresa en el documento." />
                             </div>
                             <div className="flex flex-col gap-2">
-                                {filaTotal(`Suma (${validas.length} producto${validas.length === 1 ? '' : 's'})`, formatMoney(suma * factorVisto))}
-                                {descuentos > 0 && filaTotal('Descuentos', `−${formatMoney(descuentos * factorVisto)}`, { tono: 'text-success-text' })}
+                                {filaTotal(`Suma (${cuentan.length} producto${cuentan.length === 1 ? '' : 's'})`, formatMoney(venta.suma))}
+                                {venta.descuentos > 0 && filaTotal('Descuentos', `−${formatMoney(venta.descuentos)}`, { tono: 'text-success-text' })}
                                 {!conIva && filaTotal('IVA 13%', formatMoney(estimado.iva))}
                                 {estimado.retencion > 0 && filaTotal('Retención 1%', `−${formatMoney(estimado.retencion)}`)}
+                                {estimado.percepcion > 0 && filaTotal('Percepción 1%', formatMoney(estimado.percepcion))}
                                 {filaTotal('Total', formatMoney(estimado.total), { fuerte: true })}
                                 {conIva && estimado.iva > 0 && <p className="text-caption text-content-3 text-right">Incluye IVA de {formatMoney(estimado.iva)}</p>}
                                 {cambio > 0 && filaTotal('Cambio', formatMoney(cambio), { tono: 'text-success-text' })}

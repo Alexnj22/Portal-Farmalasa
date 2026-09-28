@@ -16,6 +16,7 @@ import {
 } from '../../data/distribucion';
 import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, FORMA_PAGO, rotuloTipoCliente } from './comun';
 import PagosDelPedido from './PagosDelPedido';
+import { calcularVenta } from './motor';
 
 // El detalle de un pedido y lo que se puede hacer con él. Facturar lo hace el
 // servidor; acá se pide y se muestra lo que contestó, incluido «quedó firmado
@@ -63,7 +64,13 @@ export default function PedidoModal({ pedido, puedeVender, onClose, onCambio, on
         }
     };
 
-    const subtotal = (items ?? []).reduce((a, i) => a + i.cantidad * i.precio_sin_iva - i.descuento, 0);
+    // Las cuentas del pedido las hace el motor del documento (precios con IVA
+    // en centavos): el mismo número que va a salir en el papel. La retención
+    // del 1% no entra acá; la pone el documento al facturar.
+    const docPedido = pedido.tipo_documento ?? '01';
+    const venta = calcularVenta((items ?? []).map(i => ({
+        cantidad: Number(i.cantidad), precioConIva: Number(i.precio_con_iva), descuentoConIva: Number(i.descuento) || 0,
+    })), { tipoDoc: docPedido });
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel={`Pedido ${pedido.id}`}>
@@ -109,23 +116,23 @@ export default function PedidoModal({ pedido, puedeVender, onClose, onCambio, on
 
                     <div className="rounded-xl border border-divider overflow-hidden">
                         {items === null && <p className="p-4 text-caption text-content-3">Cargando productos…</p>}
-                        {items?.map(i => (
+                        {items?.map((i, k) => (
                             <div key={i.id} className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-divider last:border-b-0">
                                 <div className="min-w-0">
                                     <p className="text-body-sm text-content-2 truncate">{i.descripcion}</p>
                                     <p className="text-caption text-content-3 tabular-nums">
-                                        {formatQty(i.cantidad, { decimalesMax: 4 })} × {formatMoney(i.precio_sin_iva)} sin IVA
+                                        {formatQty(i.cantidad, { decimalesMax: 4 })} × {formatMoney(venta.renglones[k]?.precioUni ?? 0)} {docPedido === '01' ? 'con IVA' : 'sin IVA'}
                                     </p>
                                 </div>
                                 <span className="tabular-nums font-bold text-content-2 shrink-0">
-                                    {formatMoney(i.cantidad * i.precio_sin_iva - i.descuento)}
+                                    {formatMoney(venta.renglones[k]?.importe ?? 0)}
                                 </span>
                             </div>
                         ))}
                         {items?.length > 0 && (
                             <div className="flex justify-between px-4 py-2.5 bg-surface-card-hover/40 text-body-sm">
-                                <span className="text-content-3">Subtotal sin IVA</span>
-                                <span className="tabular-nums font-black text-content">{formatMoney(subtotal)}</span>
+                                <span className="text-content-3">{docPedido === '01' ? 'Total' : `Total con IVA (${formatMoney(venta.iva)})`}</span>
+                                <span className="tabular-nums font-black text-content">{formatMoney(venta.total)}</span>
                             </div>
                         )}
                     </div>

@@ -7,11 +7,11 @@ if (el) throw el;
 const yo = (await sb.rpc('auth_employee_id')).data;
 const { data: emisor } = await sb.from('dist_emisores').select('id').single();
 const { data: clientes } = await sb.from('dist_clientes').select('id, nombre, tipo').order('id');
-const { data: cat } = await sb.from('dist_catalogo').select('product_id, venta_libre, precio_sin_iva').eq('venta_libre', true).limit(3);
+const { data: cat } = await sb.from('dist_catalogo').select('product_id, venta_libre, precio_con_iva').eq('venta_libre', true).limit(3);
 const facturar = async (cliente, extra = {}) => {
   const { data: p, error } = await sb.from('dist_pedidos').insert({ emisor_id: emisor.id, cliente_id: cliente.id, vendedor_id: yo, client_uuid: crypto.randomUUID(), ...extra }).select('id').single();
   if (error) return { cliente: cliente.nombre, error: error.message };
-  const { error: ei } = await sb.from('dist_pedido_items').insert(cat.map((c, i) => ({ pedido_id: p.id, product_id: c.product_id, cantidad: 12 * (i + 1), precio_sin_iva: 999, descripcion: '' })));
+  const { error: ei } = await sb.from('dist_pedido_items').insert(cat.map((c, i) => ({ pedido_id: p.id, product_id: c.product_id, cantidad: 12 * (i + 1), precio_con_iva: 999, descripcion: '' })));
   if (ei) return { cliente: cliente.nombre, error: ei.message };
   const { data, error: ef } = await sb.functions.invoke('distribucion-dte', { body: { accion: 'facturar', pedido_id: p.id } });
   let cuerpo = data; if (ef) { try { cuerpo = await ef.context.json(); } catch { cuerpo = ef.message; } }

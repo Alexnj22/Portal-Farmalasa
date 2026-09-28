@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1086.1 — Distribución: precios con IVA en centavos y la pantalla calcula con el motor del documento
+
+Pregunta del usuario: «eso del redondeo, ¿cómo lo espera la ley?». La pantalla
+cobraba $32.40 sobre un documento de $32.39: el documento estaba bien (Manual
+Funcional: 8 decimales en el cuerpo, 2 en el resumen, ±$0.01 de holgura); la
+pantalla hacía su propia cuenta.
+
+- **La pantalla calcula con el motor del documento** (`motor.js` importa
+  `_shared/dte/calculos.ts`): importe por renglón, IVA, retención, percepción
+  y total son los del papel por construcción. Una prueba compara 500 ventas al
+  azar contra `totalAPagar` de la edge function: 0 diferencias. La prueba de
+  navegador compara el total de la pantalla con el del documento emitido.
+- **Precios con IVA en centavos** (borrador 0007): `dist_catalogo`,
+  `dist_precios` y `dist_pedido_items` pasan de `precio_sin_iva` (6 decimales)
+  a `precio_con_iva` (2). La Factura lo usa tal cual; el Crédito Fiscal lo lleva
+  a sin IVA a 8 decimales. El descuento se guarda en la misma base.
+- Catálogo: el precio se escribe con IVA y no acepta más de dos decimales.
+- Detalle del pedido: importes y total también del motor.
+
+
 ## v2.1086.0 — Distribución: inventario por lote y el lote en el documento
 
 Pedido del usuario: el documento lleva lote y vencimiento, y «si se vende de

@@ -34,8 +34,8 @@ import { leerMonto } from './comun';
 const COLS = [
     { key: 'producto', label: 'Producto',   align: 'left', className: 'w-[260px]' },
     { key: 'canal',    label: 'Se vende a', align: 'left' },
-    { key: 'precio',   label: 'Precio sin IVA', align: 'right' },
-    { key: 'con_iva',  label: 'Con IVA',    align: 'right', hideBelow: 'md' },
+    { key: 'precio',   label: 'Precio con IVA', align: 'right' },
+    { key: 'sin_iva',  label: 'Sin IVA',    align: 'right', hideBelow: 'md' },
 ];
 
 function PrecioModal({ item, emisorId, onClose, onGuardado }) {
@@ -43,7 +43,7 @@ function PrecioModal({ item, emisorId, onClose, onGuardado }) {
     const [producto, setProducto] = useState(null);
     const [texto, setTexto] = useState('');
     const [opciones, setOpciones] = useState([]);
-    const [precio, setPrecio] = useState(nuevo ? '' : String(item.precio_sin_iva));
+    const [precio, setPrecio] = useState(nuevo ? '' : String(item.precio_con_iva));
     const [libre, setLibre] = useState(nuevo ? false : item.venta_libre);
     const [activo, setActivo] = useState(nuevo ? true : item.activo);
     const [guardando, setGuardando] = useState(false);
@@ -65,7 +65,10 @@ function PrecioModal({ item, emisorId, onClose, onGuardado }) {
     const controlado = nuevo
         ? !!(producto && (producto.es_antibiotico || producto.requiere_receta || producto.regulado))
         : item.controlado;
-    const precioNum = leerMonto(precio);
+    // Con IVA y en centavos: es lo que paga el cliente, y la columna no guarda
+    // más de dos decimales (un tercero se redondearía sin avisar).
+    const leido = leerMonto(precio);
+    const precioNum = leido !== null && Math.abs(leido * 100 - Math.round(leido * 100)) < 1e-9 ? leido : null;
     const listo = (nuevo ? !!producto : true) && precioNum !== null && !guardando;
 
     const guardar = async () => {
@@ -73,9 +76,9 @@ function PrecioModal({ item, emisorId, onClose, onGuardado }) {
         setError('');
         try {
             if (nuevo) await agregarAlCatalogo(emisorId, producto.id, precioNum, libre && !controlado);
-            else await guardarPrecio(emisorId, item.product_id, { precio_sin_iva: precioNum, venta_libre: libre && !controlado, activo });
+            else await guardarPrecio(emisorId, item.product_id, { precio_con_iva: precioNum, venta_libre: libre && !controlado, activo });
             useStaff.getState().appendAuditLog('DISTRIBUCION_PRECIO', String(nuevo ? producto.id : item.product_id),
-                { precio_sin_iva: precioNum, venta_libre: libre && !controlado, antes: nuevo ? null : item.precio_sin_iva });
+                { precio_con_iva: precioNum, venta_libre: libre && !controlado, antes: nuevo ? null : item.precio_con_iva });
             onGuardado();
         } catch (e) {
             setError(mensajeDeDistribucion(e));
@@ -102,10 +105,10 @@ function PrecioModal({ item, emisorId, onClose, onGuardado }) {
                             options={opciones.map(p => ({ value: String(p.id), label: p.nombre }))}
                             onChange={(v) => setProducto(opciones.find(p => String(p.id) === v) ?? null)} disabled={!opciones.length} />
                     </>)}
-                    <PortalInput label="Precio sin IVA ($)" name="precio" inputMode="decimal" value={precio}
+                    <PortalInput label="Precio con IVA ($)" name="precio" inputMode="decimal" value={precio}
                         onChange={(e) => setPrecio(e.target.value)} hasError={precio !== '' && precioNum === null}
                         errorMessage="Escribe un monto, por ejemplo 1.95"
-                        helperText={precioNum !== null ? `Con IVA: ${formatMoney(precioNum * 1.13)}` : undefined} />
+                        helperText={precioNum !== null ? `Lo que paga el cliente con Factura. En Crédito Fiscal: ${formatMoney(precioNum / 1.13)} + IVA.` : undefined} />
                     <Interruptor checked={libre && !controlado} disabled={controlado} onChange={setLibre}
                         label="Venta libre (se puede vender a tiendas y supermercados)" />
                     {controlado && (
@@ -215,8 +218,8 @@ export default function TabCatalogo({ emisor, puedeConfigurar, buscar }) {
                                     ? <Badge size="sm" variant="success">Venta libre</Badge>
                                     : <Badge size="sm" variant="neutral">Sólo farmacias</Badge>}
                         </DataCell>
-                        <DataCell align="right"><span className="tabular-nums font-bold text-content-2">{formatMoney(p.precio_sin_iva)}</span></DataCell>
-                        <DataCell align="right" hideBelow="md"><span className="tabular-nums text-content-3">{formatMoney(p.precio_sin_iva * 1.13)}</span></DataCell>
+                        <DataCell align="right"><span className="tabular-nums font-bold text-content-2">{formatMoney(p.precio_con_iva)}</span></DataCell>
+                        <DataCell align="right" hideBelow="md"><span className="tabular-nums text-content-3">{formatMoney(p.precio_con_iva / 1.13)}</span></DataCell>
                     </DataRow>
                 ))}
             </DataTable>

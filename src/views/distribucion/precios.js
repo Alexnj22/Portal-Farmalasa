@@ -9,9 +9,12 @@
 //      precio del catálogo.
 // Si las dos reglas divergieran, la pantalla mostraría un total y el
 // documento saldría con otro: al cambiar una, cambiar la otra.
+//
+// Los precios son CON IVA, en centavos (borrador 0007). Las cuentas —IVA,
+// descuento, total— no se hacen acá: las hace `motor.js`, que es el mismo
+// motor del documento.
 
 export const UNIDAD = 'UNIDAD';
-export const IVA = 0.13;
 
 /** Indexa los precios por producto → presentación → lista. */
 export function indexarPrecios(precios, listas) {
@@ -24,7 +27,7 @@ export function indexarPrecios(precios, listas) {
         if (!pres) porProducto.set(p.product_id, (pres = new Map()));
         let e = pres.get(p.presentacion);
         if (!e) pres.set(p.presentacion, (e = { presentacion: p.presentacion, unidades: p.unidades, porLista: new Map() }));
-        e.porLista.set(p.lista_id, Number(p.precio_sin_iva));
+        e.porLista.set(p.lista_id, Number(p.precio_con_iva));
     }
     return { porProducto, listas: activas, ordenDe };
 }
@@ -46,28 +49,17 @@ export function listasDe(idx, productId, presentacion) {
 }
 
 /**
- * El precio sin IVA de un renglón, con la lista que de verdad se aplicó.
+ * El precio CON IVA de un renglón, con la lista que de verdad se aplicó.
  * `null` si esa presentación no existe para el producto (la base lo rechaza).
  */
 export function precioDe(idx, producto, presentacion, listaId) {
     const e = idx.porProducto.get(Number(producto.product_id))?.get(presentacion);
     if (!e) {
         if (presentacion !== UNIDAD) return null;
-        return { precio: Number(producto.precio_sin_iva), listaId: null, unidades: 1 };
+        return { precio: Number(producto.precio_con_iva), listaId: null, unidades: 1 };
     }
     const pedida = listaId != null && e.porLista.has(Number(listaId)) ? Number(listaId) : null;
     const usada = pedida ?? idx.listas.find(l => e.porLista.has(l.id))?.id ?? null;
     if (usada == null) return null;
     return { precio: e.porLista.get(usada), listaId: usada, unidades: e.unidades };
-}
-
-/**
- * El descuento de un renglón en dólares SIN IVA, que es como lo guarda la base.
- * El $ se escribe en el precio que se ve: con IVA si el documento es Factura.
- */
-export function descuentoSinIva({ tipo, valor, importeSinIva, conIva }) {
-    const v = Number(valor);
-    if (!Number.isFinite(v) || v <= 0) return 0;
-    if (tipo === 'pct') return Math.round(importeSinIva * v / 100 * 1e6) / 1e6;
-    return Math.round((conIva ? v / (1 + IVA) : v) * 1e6) / 1e6;
 }

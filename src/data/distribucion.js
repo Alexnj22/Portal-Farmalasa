@@ -83,7 +83,7 @@ export async function guardarCliente(cliente) {
 export async function fetchCatalogo() {
     const rows = await fetchAllRows(() => supabase
         .from('dist_catalogo')
-        .select('emisor_id, product_id, precio_sin_iva, venta_libre, activo, products(nombre, codigo_barras, es_antibiotico, requiere_receta, regulado)')
+        .select('emisor_id, product_id, precio_con_iva, venta_libre, activo, products(nombre, codigo_barras, es_antibiotico, requiere_receta, regulado)')
         .order('product_id'));
     if (rows === null) throw new Error('No se pudo cargar el catálogo.');
     return rows.map(r => ({
@@ -103,7 +103,7 @@ export async function fetchListasYPrecios() {
     const [{ data: listas, error }, precios] = await Promise.all([
         supabase.from('dist_listas').select('id, emisor_id, nombre, orden, activo').order('orden'),
         fetchAllRows(() => supabase.from('dist_precios')
-            .select('id, product_id, presentacion, unidades, lista_id, precio_sin_iva, activo')
+            .select('id, product_id, presentacion, unidades, lista_id, precio_con_iva, activo')
             .eq('activo', true)
             .order('id')),
     ]);
@@ -118,9 +118,9 @@ export async function guardarPrecio(emisorId, productId, cambios) {
     if (error) throw error;
 }
 
-export async function agregarAlCatalogo(emisorId, productId, precioSinIva, ventaLibre) {
+export async function agregarAlCatalogo(emisorId, productId, precioConIva, ventaLibre) {
     const { error } = await supabase.from('dist_catalogo').insert({
-        emisor_id: emisorId, product_id: productId, precio_sin_iva: precioSinIva, venta_libre: ventaLibre,
+        emisor_id: emisorId, product_id: productId, precio_con_iva: precioConIva, venta_libre: ventaLibre,
     });
     if (error) throw error;
 }
@@ -156,21 +156,21 @@ export async function fetchPedidoParaCorregir(pedidoId) {
 
 export async function fetchItemsDePedido(pedidoId) {
     const { data, error } = await supabase.from('dist_pedido_items')
-        .select('id, product_id, cantidad, precio_sin_iva, descuento, descuento_pct, descripcion, presentacion, unidades, lista_id')
+        .select('id, product_id, cantidad, precio_con_iva, descuento, descuento_pct, descripcion, presentacion, unidades, lista_id')
         .eq('pedido_id', pedidoId).order('id');
     if (error) throw error;
     return data;
 }
 
 // Lo que viaja de un renglón. Precio 0 y descripción vacía: los pone el
-// trigger desde la lista de precios. El descuento viaja en % o en $, nunca los
-// dos: en % el monto lo calcula la base sobre SU precio.
+// trigger desde la lista de precios. El descuento viaja en % o en $ CON IVA,
+// nunca los dos: en % el monto lo calcula la base sobre SU precio.
 function filaDeRenglon(pedidoId, r) {
     const enPct = r.descuentoTipo === 'pct' && Number(r.descuentoValor) > 0;
     return {
         pedido_id: pedidoId, product_id: r.product_id, cantidad: r.cantidad,
         presentacion: r.presentacion || 'UNIDAD', lista_id: r.lista_id ?? null,
-        precio_sin_iva: 0, descripcion: '',
+        precio_con_iva: 0, descripcion: '',
         descuento_pct: enPct ? Number(r.descuentoValor) : null,
         descuento: enPct ? 0 : (r.descuentoTipo === 'monto' ? Number(r.descuentoValor) || 0 : 0),
     };

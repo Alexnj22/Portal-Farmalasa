@@ -1178,10 +1178,10 @@ export const AuthProvider = ({ children }) => {
           return { ok: false, error: await motivoDeLoginFallido(cleanUsername) };
         }
         if (error.code === 'user_banned') {
-          return { ok: false, error: 'Tu acceso está bloqueado. Contacta a Recursos Humanos.' };
+          return { ok: false, error: 'Usuario bloqueado.' };
         }
         if (error.status === 429 || String(error.code || '').startsWith('over_')) {
-          return { ok: false, error: 'Demasiados intentos. Espera unos minutos antes de volver a intentar.' };
+          return { ok: false, error: 'Demasiados intentos. Espera unos minutos.' };
         }
         console.warn('signInWithPassword:', error.code, error.message);
         return { ok: false, error: 'No se pudo iniciar sesión. Intenta de nuevo.' };

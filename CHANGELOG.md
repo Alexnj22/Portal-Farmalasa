@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.1 — Los mensajes del login, cortos
+
+A pedido del usuario: una línea práctica por caso — «Usuario incorrecto.»,
+«Contraseña incorrecta.», «Usuario dado de baja.», «Usuario bloqueado.»,
+«Usuario sin acceso al portal.», «Usuario mal configurado. Avisa a Sistemas.»,
+«Demasiados intentos. Espera unos minutos.»
+
 ## v2.1084.0 — El login dice por qué no entraste
 
 Antes, cualquier fallo decía «Usuario no encontrado o contraseña incorrecta», y

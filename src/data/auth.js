@@ -15,13 +15,13 @@ import { anotar } from './audit';
  */
 const GENERICO = 'Usuario o contraseña incorrectos.';
 const MENSAJE_DE_ESTADO = {
-    NO_EXISTE: (u) => `No existe el usuario «${u}». Revisa cómo lo escribiste: es nombre.apellido.`,
-    CONTRASENA: () => 'Contraseña incorrecta. Si no la recuerdas, pide a tu supervisor que la restablezca.',
-    INACTIVO: () => 'Tu cuenta está desactivada. Contacta a Recursos Humanos.',
-    BLOQUEADO: () => 'Tu acceso está bloqueado. Contacta a Recursos Humanos.',
-    SIN_ACCESO: () => 'Tu usuario todavía no tiene acceso al portal. Pide a tu supervisor que te lo active.',
-    CUENTA_DESALINEADA: () => 'Tu usuario tiene un problema de configuración. Pide a Sistemas que lo revise.',
-    DEMASIADOS_INTENTOS: () => 'Demasiados intentos fallidos. Espera unos minutos antes de volver a intentar.',
+    NO_EXISTE: 'Usuario incorrecto.',
+    CONTRASENA: 'Contraseña incorrecta.',
+    INACTIVO: 'Usuario dado de baja.',
+    BLOQUEADO: 'Usuario bloqueado.',
+    SIN_ACCESO: 'Usuario sin acceso al portal.',
+    CUENTA_DESALINEADA: 'Usuario mal configurado. Avisa a Sistemas.',
+    DEMASIADOS_INTENTOS: 'Demasiados intentos. Espera unos minutos.',
 };
 
 export async function motivoDeLoginFallido(usuario) {
@@ -29,8 +29,7 @@ export async function motivoDeLoginFallido(usuario) {
         const { data, error } = await supabase.functions.invoke('ensure_user_by_code', {
             body: { diagnosticar_usuario: usuario },
         });
-        const armar = !error && data?.ok ? MENSAJE_DE_ESTADO[data.estado] : null;
-        return armar ? armar(usuario) : GENERICO;
+        return (!error && data?.ok && MENSAJE_DE_ESTADO[data.estado]) || GENERICO;
     } catch {
         return GENERICO;
     }

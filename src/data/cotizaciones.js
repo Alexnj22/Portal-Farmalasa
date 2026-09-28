@@ -83,7 +83,7 @@ export async function crearCotizacion(payload, rows) {
     const { error: itemsErr } = await insertCotizacionItems(rows.map(r => ({ ...r, cotizacion_id: cot.id })));
     if (itemsErr) return { data: cot, error: itemsErr };
     anotar('CREAR_COTIZACION', cot.id, {
-        numero, cliente: cot.cliente_nombre ?? null, total: cot.total ?? null, renglones: rows.length,
+        numero, cliente: cot.customer_name ?? null, total: cot.total ?? null, renglones: rows.length,
     });
     return { data: cot, error: null };
 }

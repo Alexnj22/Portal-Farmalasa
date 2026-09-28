@@ -1,0 +1,26 @@
+{
+  "//": "Revisión de tipos del núcleo portable (F5 de docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md). No compila nada: `tsc --noEmit`. La vigila `npm run gate:tipos`.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src/data/**/*.js",
+    "src/utils/**/*.js",
+    "src/store/**/*.js",
+    "src/hooks/**/*.js",
+    "src/constants/**/*.js",
+    "src/supabaseClient.js",
+    "src/types/**/*.ts"
+  ],
+  "exclude": ["**/*.test.js"]
+}

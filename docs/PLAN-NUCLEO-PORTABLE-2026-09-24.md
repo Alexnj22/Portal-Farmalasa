@@ -1,6 +1,6 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado:** F0, F1, F2, U1, U2 y **F3 cerradas** · sigue **F4** (reglas de D2 y D3, con el usuario).
+**Estado:** F0 a F5, U1 y U2 **cerradas** · sigue **F6** (los tokens del diseño en JSON).
 
 ### Bitácora
 
@@ -86,6 +86,21 @@
   `constants/erp.js`. Lo que queda en `views/`/`components/` como `.js` es
   mecánica de pantalla (animación de diálogos, hojas, gestos) o estilo, y se
   queda ahí a propósito.
+- **F4 — las reglas y la bitácora (2026-09-28, v2.1075.36 a v2.1077.0)**. D2:
+  cinco reglas quedan en JavaScript compartido y el diagnóstico de cortes se
+  enfrenta a su gemelo de la base en `gate:cortes`; los avisos de pedido pasan a
+  la base (`20260928153240`). D3 «la mezcla»: la base anota sola el dinero y lo
+  fiscal (`bitacora_de_dinero`, 13 tablas) y la entrada legible sale de
+  `src/data` en todos los módulos.
+- **F5 — la base como contrato (2026-09-28)**. `src/types/database.ts` (tipos
+  de producción, `npm run tipos:base`), el cliente de Supabase declarado con
+  ellos y `tsc --checkJs` sobre el núcleo (`tsconfig.nucleo.json`). Lo vigila
+  `npm run gate:tipos`: trinquete por archivo (530 avisos de forma en 84
+  archivos al arrancar, sólo bajan) y `--remoto` compara los tipos con
+  producción. Fabricadas las dos regresiones: una columna mal escrita suma un
+  aviso en su línea y un parámetro de `.rpc()` mal escrito lo nombra. El primer
+  día cazó un defecto real: la bitácora de cotizaciones leía `cliente_nombre`,
+  que no existe (es `customer_name`), y el cliente salía vacío desde siempre.
 
 ## Para qué
 

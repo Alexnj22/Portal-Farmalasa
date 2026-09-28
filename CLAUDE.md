@@ -1521,6 +1521,14 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   (359 usos en 64 archivos) y **sólo baja**. Si hace falta el navegador, se
   pide por el adaptador de la plataforma; si hace falta un ícono, la lógica
   devuelve su NOMBRE. Plan y fases en `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+- **`npm run gate:tipos` — la base es un CONTRATO.** `src/types/database.ts`
+  son los tipos de producción y el cliente de Supabase se declara con ellos:
+  una tabla, columna o parámetro de `.rpc()` que no existe da un aviso de `tsc`
+  en vez de un cero en pantalla. Trinquete por archivo del núcleo
+  (`scripts/tipos-baseline.json`, **sólo baja**). **Al cambiar la base, correr
+  `npm run tipos:base`** y commitear los tipos con la migración; `--remoto`
+  compara con producción y falla si quedaron viejos. Tarda ~20 s, así que no va
+  en el pre-commit: se corre al cerrar trabajo que toque el núcleo o la base.
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
   crudos, elementos nativos del navegador), correr `npm run gate:design`.**
   Debe pasar en verde — las excepciones legítimas viven en

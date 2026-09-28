@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1078.0 — F5: la base como contrato del núcleo
+
+Sin cambios visibles. Una tabla, columna o parámetro de función que no existe
+en la base ya no pasa en silencio (un cero, un `null` en pantalla): da un aviso
+de tipos. Es F5 del plan del núcleo portable, y prepara que la app del
+teléfono no compile si la base cambia debajo.
+
+- `src/types/database.ts`: los tipos de producción (`npm run tipos:base`). El
+  cliente de Supabase se declara con ellos.
+- `npm run gate:tipos`: `tsc --checkJs` sobre el núcleo (`tsconfig.nucleo.json`,
+  no emite nada ni cambia el build). Trinquete por archivo: arranca en 530
+  avisos de forma en 84 archivos, que sólo bajan; `--remoto` además compara los
+  tipos con producción. Probado fabricando las dos regresiones: una columna mal
+  escrita en una consulta y un parámetro mal escrito en un `.rpc()` —éste lo
+  nombra: «Did you mean `p_q`?»—.
+- **El primer día cazó un defecto real**: la bitácora de crear una cotización
+  leía `cliente_nombre`, que no existe (la columna es `customer_name`); el
+  cliente salía vacío desde siempre. Corregido.
+- La prueba de fechas que recorre cada hora de 2024 a 2027 tenía el plazo por
+  defecto de 5 s y fallaba de a ratos con la suite entera; ahora tiene 30 s.
+- TypeScript entra sólo como herramienta de revisión (dependencia de
+  desarrollo).
+
 ## v2.1077.4 — Metas: el deslizador de la meta se puede arrastrar
 
 El usuario: la regla bajo Subir/Bajar «parece interactiva y no se puede tocar».

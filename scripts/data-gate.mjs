@@ -249,8 +249,13 @@ const exento = (archivo, cat) => Boolean(EXCEPTIONS[archivo]?.[cat]);
 // al auditar o antes de regenerar el baseline.
 // (`soloIndexado` se declara arriba, junto a los retratos, que necesitan lo mismo.)
 
+// `src/types/database.ts` NO se revisa: son los tipos GENERADOS de producción
+// (`npm run tipos:base`, F5 del plan del núcleo). Describen la base, no la
+// consultan — y por eso nombran lo que la base todavía expone aunque el código
+// no deba usarlo, como el `system_role` de compatibilidad de `employees_safe`
+// (2026-09-28: tres «columna-retirada» falsos al entrar el archivo).
 let archivos = execSync(
-  "find src supabase/functions -type f \\( -name '*.js' -o -name '*.jsx' -o -name '*.ts' \\) ! -name 'version.js'",
+  "find src supabase/functions -type f \\( -name '*.js' -o -name '*.jsx' -o -name '*.ts' \\) ! -name 'version.js' ! -path 'src/types/database.ts'",
   { cwd: RAIZ, encoding: 'utf8' },
 ).trim().split('\n').filter(Boolean);
 

@@ -27,7 +27,9 @@ describe('el día de El Salvador', () => {
         }
         expect(vueltas).toBeGreaterThan(34_000);
         expect(distintas).toBe(0);
-    });
+    // 34,000 vueltas con `Intl` cada una: sola tarda ~2 s, pero con la suite
+    // entera en paralelo pasaba los 5 s por defecto y fallaba de a ratos.
+    }, 30_000);
 
     it('a las 7:30 pm sigue siendo hoy — `toISOString()` ya decía mañana', () => {
         const noche = Date.parse('2026-09-26T01:30:00Z');       // 19:30 del 25 en la sala

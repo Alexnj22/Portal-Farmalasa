@@ -162,10 +162,17 @@ Deno.serve(async (req: Request) => {
         // `systemRole` se borra del metadata en vez de dejarse envejecer: un
         // valor viejo que ya no significa nada es peor que uno ausente, porque
         // el próximo que lo lea va a creerle.
+        //
+        // Se borra mandándolo en `null`, NO omitiéndolo: Auth COMBINA el
+        // `user_metadata` recibido con el guardado, así que una clave ausente
+        // sobrevive, y sólo un `null` la elimina. Hasta el 2026-09-28 se omitía:
+        // `systemRole` nunca se iba, `metaChanged` daba siempre verdadero y cada
+        // renovación de sesión de cada persona reescribía su cuenta.
         const { systemRole: _viejo, ...metaSinSystemRole } = curMeta;
         await admin.auth.admin.updateUserById(authenticatedUser.id, {
           user_metadata: {
             ...metaSinSystemRole,
+            systemRole:           null,
             code:                 employee.code,
             roleId:               newRoleId,
             rango:                newRango,

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1081.1 — La cuenta deja de reescribirse en cada renovación de sesión
+
+`ensure_user_by_code` quería borrar `systemRole` del metadata omitiéndolo, pero
+Auth COMBINA el `user_metadata` recibido con el guardado: la clave sobrevivía,
+`metaChanged` daba siempre verdadero y cada renovación de sesión reescribía la
+cuenta (77 de 131 cuentas lo tenían). Ahora se manda en `null`, que es lo único
+que la elimina. Visto investigando un reporte de «contraseña incorrecta» — la
+contraseña no había cambiado; esa escritura sólo tocaba el metadata.
+
 ## v2.1081.0 — F8 paso 1 — la app del teléfono arranca con el núcleo del portal
 
 Nace `apps/mobile` (Expo): entra con usuario y contraseña —incluido el cambio

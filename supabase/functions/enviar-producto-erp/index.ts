@@ -64,6 +64,14 @@ const sesionEn = (erpSucursal: number) => abrirSesionEn(erpSucursal, login);
  * cada renglón lleva su propio estado, así que reintentar no repite nada. */
 const PRESUPUESTO_MS = 110_000;
 
+// Bodega: la única sala con dos ubicaciones (estante y área de vencidos).
+const ERP_BODEGA = 6;
+
+// Lo que entra a Bodega por estos motivos no se vende: va a su área de
+// vencidos y no al estante (ver `destinoVencidos`). Son rótulos de
+// `motivos_envio()`, que es la que manda.
+const MOTIVOS_AL_AREA_DE_VENCIDOS = ["Próximo a vencer", "Avería"];
+
 interface Linea {
   id: string;
   posicion: number;
@@ -238,9 +246,21 @@ Deno.serve(async (req) => {
      * mandar de ahí — antes acá decía «y siempre la de trabajo», y eso dejaba a
      * Bodega sin poder empujar justo lo que más urge mover.
      *
-     * El DESTINO no cambia nunca: lo que entra a una sala entra a su estante de
-     * trabajo, aunque haya salido del área de vencidos de Bodega. Una sala que
-     * recibe algo próximo a vencer lo pone a la venta — que es el punto. */
+     * Lo que entra a una SALA entra a su estante de trabajo, aunque haya salido
+     * del área de vencidos de Bodega: una sala que recibe algo próximo a vencer
+     * lo pone a la venta — que es el punto.
+     *
+     * Lo que entra a BODEGA por «Próximo a vencer» o «Avería» no (2026-09-28).
+     * Hasta hoy acá decía «el destino no cambia nunca», y todo entraba al
+     * estante de trabajo: Bodega reportó que lo recibido por vencimiento le
+     * aparecía como existencia normal. Medido: 43 renglones de «Próximo a
+     * vencer» y 2 de avería desde el 26-ago, los 45 en la ubicación 1. Eso no
+     * se vende, así que va al área de vencidos — decisión del usuario, que
+     * dejó «Retiro del mercado» y «Baja rotación» en el estante.
+     *
+     * Con la ubicación de destino cambia también la de la DEVOLUCIÓN: un
+     * renglón devuelto se recibe primero y sale desde `ubicDestino`, o sea del
+     * mismo lugar donde entró. */
     const ubicacionDe = (
       m: { inv_ubicaciones?: unknown } | null | undefined,
       vencidos = false,
@@ -251,7 +271,9 @@ Deno.serve(async (req) => {
     );
     const origenVencidos = meta.origen_vencidos === true;
     const ubicOrigen  = ubicacionDe(porSucursal.get(erpOrigen), origenVencidos);
-    const ubicDestino = ubicacionDe(porSucursal.get(erpDestino));
+    const destinoVencidos = erpDestino === ERP_BODEGA
+      && MOTIVOS_AL_AREA_DE_VENCIDOS.includes(String(meta.motivo_tipo ?? ""));
+    const ubicDestino = ubicacionDe(porSucursal.get(erpDestino), destinoVencidos);
 
     /* Y qué decir cuando no hay ubicación. Son DOS cosas distintas —la sala no
      * está mapeada, o está mapeada y no tiene área de vencidos— y decir la
@@ -668,7 +690,12 @@ Deno.serve(async (req) => {
       if (sol.status !== "PENDING")
         return json({ ok: false, error: `Este envío ya está ${sol.status}.` }, 409);
       if (!ubicDestino)
-        return json({ ok: false, error: `No se conoce la ubicación de tu sala (${erpDestino}).` }, 422);
+        return json({
+          ok: false,
+          error: destinoVencidos
+            ? `Tu sala (${erpDestino}) no tiene área de vencidos.`
+            : `No se conoce la ubicación de tu sala (${erpDestino}).`,
+        }, 422);
       if (!(await puedeObrarPor(branchDestino)))
         return json({ ok: false, error: "Este envío lo decide la sala a la que llegó el producto." }, 403);
 

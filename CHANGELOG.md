@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.7 — Bodega recibe lo próximo a vencer y las averías en su área de vencidos
+
+Reporte de Bodega: un envío por «Próximo a vencer» aceptado en el portal entró
+al estante normal y no al área de vencidos. `enviar-producto-erp` recibía
+SIEMPRE en la ubicación de trabajo del destino, sin mirar el motivo. Medido: 43
+renglones de «Próximo a vencer» y 2 de avería (26-ago → 28-sep) entraron así.
+
+Ahora, si el destino es Bodega y el motivo es «Próximo a vencer» o «Avería», la
+recepción (y la devolución de un renglón rechazado, que sale del mismo lugar)
+usa el área de vencidos. «Baja rotación» y «Retiro del mercado» siguen al
+estante (decisión del usuario). Lo ya recibido NO se movió: se le pasó la lista
+a Bodega para hacerlo a mano. Edge function redesplegada con `--no-verify-jwt`.
+
 ## v2.1084.6 — El aviso de CCF sin sello se retira solo cuando llega el sello
 
 Pedido del usuario, siguiendo a v2.1084.4. Si el sello de Hacienda llega

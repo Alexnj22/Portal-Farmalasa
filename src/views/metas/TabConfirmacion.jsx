@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '../../utils/searchUtils';
-import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck, TrendingUp, TrendingDown, Store, Target } from 'lucide-react';
+import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck, TrendingUp, TrendingDown, Store, Target, RotateCcw } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -23,6 +23,9 @@ import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from '..
 // no es ajustar una meta, es escribir otra — y para eso está devolverla.
 const PASO_FACTOR = 0.01;
 const PASOS_MAX = 10;
+
+// La base de venta sobre la que corre el ajuste (ver `montoDe`).
+const baseDe = (r) => Number(r.monto_base ?? r.monto_propuesto ?? 0);
 
 // El relleno de la barra de la meta anterior, del color de cómo le fue — el
 // mismo reparto que `TRAMO_CFG` y que el alfiler de `BarraAvance`.
@@ -159,7 +162,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     // también ese gasto, que no se negocia. Y arranca de la base actual, no de
     // la propuesta original: una meta reabierta por un gasto ya venía ajustada.
     const montoDe = useCallback((r) => {
-        const base = Number(r.monto_base ?? r.monto_propuesto ?? 0);
+        const base = baseDe(r);
         const pasos = ajustes[r.id] ?? 0;
         return base > 0 ? Math.round(base * (1 + PASO_FACTOR * pasos) * 100) / 100 : 0;
     }, [ajustes]);
@@ -669,16 +672,25 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <div className="flex justify-between text-micro font-bold text-content-3 tabular-nums -mt-1 mx-1" aria-hidden>
                             <span>−10%</span><span>Propuesta</span><span>+10%</span>
                         </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <p className="text-micro font-semibold text-content-3">
-                                {pasos === 0
-                                    ? 'Es la que propuso el sistema.'
-                                    : `${Math.abs(pasos)}% ${pasos > 0 ? 'más alta' : 'más baja'} que la propuesta.`}
-                            </p>
+                        {/* Cuánto se movió, en dinero, justo debajo del
+                            deslizador — y ahí mismo la salida de vuelta. */}
+                        <div data-surface="card" className="flex items-center justify-between gap-3 px-3 py-2">
+                            {pasos === 0 ? (
+                                <p className="text-label font-semibold text-content-3 py-1.5">
+                                    Igual a la propuesta del sistema
+                                </p>
+                            ) : (
+                                <p className="text-label font-semibold text-content-2 min-w-0">
+                                    <span className={`font-black tabular-nums ${pasos > 0 ? 'text-chart-1-text' : 'text-content-1'}`}>
+                                        {pasos > 0 ? '+' : '−'}{formatMoney(Math.abs(montoNum - baseDe(r)))}
+                                    </span>
+                                    <span className="text-content-3"> · {Math.abs(pasos)}% {pasos > 0 ? 'más' : 'menos'} que la propuesta</span>
+                                </p>
+                            )}
                             {pasos !== 0 && (
-                                <Button variant="ghost" size="sm" icon={Undo2}
+                                <Button variant="ghost" size="sm" icon={RotateCcw} className="shrink-0"
                                     onClick={() => setAjustes((x) => ({ ...x, [r.id]: 0 }))}>
-                                    Volver
+                                    Restablecer
                                 </Button>
                             )}
                         </div>

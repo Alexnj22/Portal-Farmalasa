@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1078.1 — Metas: la diferencia del ajuste en dinero, bajo el deslizador
+
+Pedido del usuario: que bajo el deslizador diga cuánto es la diferencia, y
+mejorar o mover el botón de volver.
+
+- Bajo el deslizador, una ficha con la diferencia en dinero contra la
+  propuesta («−$1,314.77 · 3% menos que la propuesta»), o «Igual a la
+  propuesta del sistema».
+- «Volver» pasa a **Restablecer**, dentro de esa misma ficha, a la derecha.
+
 ## v2.1078.0 — F5: la base como contrato del núcleo
 
 Sin cambios visibles. Una tabla, columna o parámetro de función que no existe

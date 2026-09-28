@@ -9,14 +9,27 @@ const E2E_USER = process.env.E2E_USER;
 const E2E_PASSWORD = process.env.E2E_PASSWORD;
 const E2E_CARNE_CODE = process.env.E2E_CARNE_CODE;
 
+// El login le pone el foco a «usuario» ~60 ms después de montar
+// (`LoginView.jsx`, el efecto sin lector). Playwright llena los dos campos antes
+// de eso, y el foco tardío se llevaba la contraseña al campo de usuario:
+// «pruebaspruebas2026». Una persona no escribe en 60 ms; la prueba sí, y fallaba
+// una de cada tres corridas. Se espera ese foco antes de escribir —sin exigirlo:
+// con lector de carné el login NO lo pone— y se comprueba lo escrito.
+async function entrar(page) {
+    await page.goto('/login');
+    const usuario = page.locator('#username');
+    await expect(usuario).toBeFocused({ timeout: 3_000 }).catch(() => {});
+    await usuario.fill(E2E_USER);
+    await page.locator('#password').fill(E2E_PASSWORD);
+    await expect(usuario).toHaveValue(E2E_USER);
+    await page.locator('button[type="submit"]').first().click();
+}
+
 test.describe('Login', () => {
     test.skip(!E2E_USER || !E2E_PASSWORD, 'Requiere E2E_USER/E2E_PASSWORD');
 
     test('login con usuario y contraseña entra al portal', async ({ page }) => {
-        await page.goto('/login');
-        await page.locator('#username').fill(E2E_USER);
-        await page.locator('#password').fill(E2E_PASSWORD);
-        await page.locator('button[type="submit"]').first().click();
+        await entrar(page);
 
         await expect(page).not.toHaveURL(/\/login$/, { timeout: 15_000 });
         await expect(page.getByText('Inicio').first()).toBeVisible({ timeout: 15_000 });
@@ -42,10 +55,7 @@ test.describe('Flujos autenticados', () => {
     test.skip(!E2E_USER || !E2E_PASSWORD, 'Requiere E2E_USER/E2E_PASSWORD');
 
     test.beforeEach(async ({ page }) => {
-        await page.goto('/login');
-        await page.locator('#username').fill(E2E_USER);
-        await page.locator('#password').fill(E2E_PASSWORD);
-        await page.locator('button[type="submit"]').first().click();
+        await entrar(page);
         await expect(page.getByText('Inicio').first()).toBeVisible({ timeout: 15_000 });
     });
 

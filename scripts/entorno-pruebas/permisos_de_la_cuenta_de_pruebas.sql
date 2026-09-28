@@ -68,6 +68,31 @@ BEGIN
   GET DIAGNOSTICS v_nuevos = ROW_COUNT;
 
   RAISE NOTICE 'módulos tocados: %', v_nuevos;
+
+  -- ── La prueba de humo de CI corre acá, no en producción (2026-09-28) ─────
+  -- Hasta ese día `Playwright smoke` entraba a PRODUCCIÓN en cada push, con
+  -- credenciales que ya no servían: ~90 logins fallidos al día en el registro
+  -- de Auth y ni una corrida verde desde el 22-sep. Una de sus pruebas —el
+  -- freno de arranque de Editar Empleado— necesita dos cosas que el branch no
+  -- tenía, y las dos son la EXCEPCIÓN a «ver sí, editar no» de arriba:
+  --
+  -- 1. `staff_list.can_edit`, porque sin él el lápiz «Edición rápida» está
+  --    deshabilitado y la prueba no llega a abrir el modal. Sólo este módulo.
+  -- 2. Un DUI en cada ficha. Lo que la prueba verifica es que el DUI llegue
+  --    POBLADO al abrir el modal; con todas las fichas en NULL no tiene qué
+  --    mirar. Son ficticios (prefijo 99, único por el índice `employees_dui_
+  --    unique`) y sólo se ponen donde falta: el branch no lleva datos reales.
+  UPDATE public.role_permissions SET can_edit = true
+   WHERE role_id = v_rol AND module_key = 'staff_list' AND NOT can_edit;
+
+  UPDATE public.employees e
+     SET dui = '99' || lpad(n.rn::text, 6, '0') || '-0'
+    -- Numerados DESPUÉS de los que ya se pusieron: esto corre todos los días y
+    -- una ficha nueva no puede repetir el número de una de ayer.
+    FROM (SELECT id, row_number() OVER (ORDER BY id)
+                     + (SELECT count(*) FROM public.employees WHERE dui LIKE '99%') AS rn
+            FROM public.employees WHERE coalesce(dui, '') = '') n
+   WHERE e.id = n.id;
 END $$;
 
 SELECT count(*) FILTER (WHERE can_view) AS ve_ahora, count(*) AS total

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1081.2 — Las pruebas de CI dejan de entrar a producción
+
+`Playwright smoke` entraba a PRODUCCIÓN en cada push con credenciales que ya
+no servían: ~90 logins fallidos al día en el registro de Auth y ninguna corrida
+verde desde el 22-sep. Hoy el smoke y los dos barridos nocturnos corren contra
+el entorno de pruebas con la cuenta `pruebas`; la dirección del branch la
+averigua en cada corrida `mantener_al_dia.mjs --github-env`, porque cambia al
+rehacerlo.
+
+Al moverlo aparecieron dos cosas. La prueba escribía antes de que el login
+pusiera el foco en «usuario» (60 ms), y la contraseña caía en ese campo:
+fallaba una de cada tres corridas; ahora espera el foco y comprueba lo escrito.
+Y la prueba de Editar Empleado necesitaba `staff_list.can_edit` y DUIs, que el
+branch no tenía: los pone `permisos_de_la_cuenta_de_pruebas.sql` (ficticios,
+prefijo 99).
+
 ## v2.1081.1 — La cuenta deja de reescribirse en cada renovación de sesión
 
 `ensure_user_by_code` quería borrar `systemRole` del metadata omitiéndolo, pero

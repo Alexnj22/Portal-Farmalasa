@@ -65,25 +65,32 @@ jobs:
 
   e2e-smoke:
     name: Playwright smoke
-    # Requiere los GitHub Secrets: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-    # (públicos, ver .env.example), E2E_USER/E2E_PASSWORD (cuenta de prueba
-    # dedicada, NUNCA credenciales reales de producción — ver
-    # PLAN-EJECUCION-2026-07.md, Bloque 2). Opcional: E2E_CARNE_CODE.
-    # Si estos secrets no están configurados todavía, este job falla —
-    # es intencional (visibilidad de que falta setup), no un skip silencioso.
+    # Corre contra el ENTORNO DE PRUEBAS, no contra producción (2026-09-28).
+    # Hasta ese día entraba a producción en cada push con los secretos
+    # E2E_USER/E2E_PASSWORD, que dejaron de servir: ~90 logins fallidos al día
+    # en el registro de Auth —indistinguibles de alguien probando contraseñas—
+    # y ninguna corrida verde desde el 22-sep. La dirección del branch cambia
+    # cada vez que se rehace, así que no va en un secreto: la averigua
+    # `mantener_al_dia.mjs --github-env` con SUPABASE_ACCESS_TOKEN.
+    #
+    # La cuenta `pruebas` sólo existe en el branch (su semilla exige una base
+    # sin empleados) y ya está escrita en CLAUDE.md: no es un secreto.
+    # El login por carné queda fuera: necesita `ensure_user_by_code`, y las
+    # edge functions no se despliegan en el branch a propósito.
     runs-on: ubuntu-latest
     env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      E2E_USER: ${{ secrets.E2E_USER }}
-      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-      E2E_CARNE_CODE: ${{ secrets.E2E_CARNE_CODE }}
+      E2E_USER: pruebas
+      E2E_PASSWORD: pruebas2026
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+      - name: Apuntar al entorno de pruebas
+        run: node scripts/entorno-pruebas/mantener_al_dia.mjs --github-env
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test tests/e2e/smoke.spec.js
@@ -100,11 +107,10 @@ jobs:
     # mitades, con la app levantada y sesión real.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    # Contra el entorno de pruebas, igual que el smoke (ver ahí por qué).
     env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      E2E_USER: ${{ secrets.E2E_USER }}
-      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      E2E_USER: pruebas
+      E2E_PASSWORD: pruebas2026
     strategy:
       fail-fast: false
       # Las DOS MITADES, y no es una preferencia: seis corridas seguidas del
@@ -125,6 +131,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - name: Apuntar al entorno de pruebas
+        run: node scripts/entorno-pruebas/mantener_al_dia.mjs --github-env
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       - run: npm ci
       - run: npx playwright install --with-deps webkit
       # Sin `E2E_BASE_URL`, Playwright levanta el preview solo (ver `webServer`
@@ -165,17 +175,20 @@ jobs:
     # Son ~11 minutos.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    # Contra el entorno de pruebas, igual que el smoke (ver ahí por qué).
     env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      E2E_USER: ${{ secrets.E2E_USER }}
-      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      E2E_USER: pruebas
+      E2E_PASSWORD: pruebas2026
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+      - name: Apuntar al entorno de pruebas
+        run: node scripts/entorno-pruebas/mantener_al_dia.mjs --github-env
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Barrido de escritorio (1440 y 1280)

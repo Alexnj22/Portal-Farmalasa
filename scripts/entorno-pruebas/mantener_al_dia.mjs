@@ -5,6 +5,7 @@
 //   SUPABASE_ACCESS_TOKEN=sbp_… node scripts/entorno-pruebas/mantener_al_dia.mjs --aplicar  # lo pone al día
 //   SUPABASE_ACCESS_TOKEN=sbp_… node scripts/entorno-pruebas/mantener_al_dia.mjs --env      # reescribe .env.staging
 //   … --vercel   # apunta las variables Preview de Vercel al branch actual y recompila dev
+//   … --github-env   # en CI: exporta URL y clave anónima del branch actual a $GITHUB_ENV
 //
 // Lo corre todos los días `.github/workflows/entorno-pruebas.yml`.
 //
@@ -46,6 +47,14 @@
 //   · sin él, la corrida termina en ROJO y dice qué falta. Un entorno roto que
 //     da verde es peor que uno que avisa.
 
+// ── Y las pruebas de CI (2026-09-28) ─────────────────────────────────────────
+// `Playwright smoke` corría contra PRODUCCIÓN en cada push, con credenciales de
+// un secreto que dejó de servir: ~90 logins fallidos al día en el registro de
+// Auth —que ahí se leen igual que alguien probando contraseñas— y ninguna
+// corrida verde desde el 22-sep. Hoy corre contra este branch, y la dirección
+// NO va en un secreto por lo mismo que Vercel: cambia al rehacerlo. `--github-env`
+// la averigua en cada corrida.
+
 // ── Lo que NO hace ────────────────────────────────────────────────────────────
 // Nunca escribe en producción: a producción sólo le LEE la lista de migraciones,
 // y `sql()` se niega a correr escrituras contra ella.
@@ -60,6 +69,7 @@ const API = 'https://api.supabase.com/v1';
 const aplicar = process.argv.includes('--aplicar');
 const soloEnv = process.argv.includes('--env');
 const soloVercel = process.argv.includes('--vercel');   // apunta Vercel al branch actual, sin tocar nada más
+const soloGithubEnv = process.argv.includes('--github-env');
 const token = process.env.SUPABASE_ACCESS_TOKEN;
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const raiz = path.resolve(aqui, '..', '..');
@@ -233,6 +243,25 @@ async function avisarAVercel(ref) {
     console.log(`✓ Vercel: recompilando ${RAMA_DE_PRUEBAS} (${nuevo.url})`);
 }
 
+async function exportarAGithub(b) {
+    const destino = process.env.GITHUB_ENV;
+    if (!destino) throw new Error('--github-env sólo corre en GitHub Actions (falta GITHUB_ENV).');
+    // Un branch a medio rehacer contesta, pero sin esquema: la prueba fallaría
+    // por eso y se leería como un defecto del portal.
+    if (b.preview_project_status && b.preview_project_status !== 'ACTIVE_HEALTHY') {
+        throw new Error(`El branch «${NOMBRE}» no está listo (${b.preview_project_status}).`);
+    }
+    const claves = await api('GET', `/projects/${b.project_ref}/api-keys`);
+    const anon = claves.find((k) => k.name === 'anon' && !k.disabled)?.api_key;
+    if (!anon) throw new Error('El branch no devolvió la clave anónima.');
+    fs.appendFileSync(destino, [
+        `VITE_SUPABASE_URL=https://${b.project_ref}.supabase.co`,
+        `VITE_SUPABASE_ANON_KEY=${anon}`,
+        '',
+    ].join('\n'));
+    console.log(`✓ CI apunta al branch de pruebas (${b.project_ref})`);
+}
+
 async function escribirEnv(ref) {
     const claves = await api('GET', `/projects/${ref}/api-keys`);
     const anon = claves.find((k) => k.name === 'anon' && !k.disabled)?.api_key;
@@ -261,6 +290,12 @@ async function escribirEnv(ref) {
         if (!b) throw new Error(`No existe el branch «${NOMBRE}».`);
         await avisarAVercel(b.project_ref);
         if (vercelPendiente) process.exitCode = 1;
+        return;
+    }
+
+    if (soloGithubEnv) {
+        if (!b) throw new Error(`No existe el branch «${NOMBRE}».`);
+        await exportarAGithub(b);
         return;
     }
 

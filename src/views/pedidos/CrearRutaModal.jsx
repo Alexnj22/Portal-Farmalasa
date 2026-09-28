@@ -8,17 +8,15 @@ import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRi
 import { signPhotosDeep } from '../../utils/storageFiles';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { notifyBranch } from '../../utils/notify';
 import PedidoModal from './PedidoModal';
 import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '../../utils/routeOptimizer';
 import { loadGoogleMaps, loadLeaflet, matrizPorCarretera } from '../../plataforma/mapas';
-import { crearRuta, fetchBranchIdsForSucursales, fetchEmployeeDriverInfo, fetchPedidoSucursalStatusFinalizados, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '../../data/pedidos';
+import { crearRuta, fetchEmployeeDriverInfo, fetchPedidoSucursalStatusFinalizados, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '../../data/pedidos';
 
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { metaDePedido } from '../../utils/avisosDeOperacion';
 function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
@@ -453,34 +451,9 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         paradas:   rpcParadas.length,
       });
 
-      // Notificar paradas con pedido real — batch lookup de branch_ids
-      const realStops = paradas.filter(s => !s.isEncargo);
-      if (realStops.length > 0) {
-        const sucIds = [...new Set(realStops.map(s => s.erp_sucursal_id))];
-        const { data: mapas } = await fetchBranchIdsForSucursales(sucIds);
-        const branchMap = Object.fromEntries((mapas ?? []).map(m => [m.erp_sucursal_id, m.branch_id]));
-
-        for (const stop of realStops) {
-          const bid = branchMap[stop.erp_sucursal_id];
-          if (!bid) continue;
-          const numeros    = stop.items.map(i => `#${i.numero}`).join(', ');
-          const totalCajas = stop.items.reduce((s, i) => s + (i.total_cajas ?? 0), 0);
-          const cajasStr   = totalCajas ? ` en ${totalCajas} caja${totalCajas !== 1 ? 's' : ''}` : '';
-          // Con push, a pedido del usuario (2026-08-14): la sala necesita
-          // enterarse de que su pedido salió aunque no tenga el portal abierto
-          // —es cuando empieza a organizar quién lo recibe—. Antes era campana
-          // sola, o sea que sólo lo veía quien ya estaba mirando.
-          notifyBranch(bid, {
-            type: 'PEDIDO_TRACKING',
-            title: `Pedido ${numeros} en camino`,
-            body: `Tu pedido ${numeros} salió de bodega${cajasStr} con ${conductorCorto}.`,
-            link: '/pedidos',
-            push: true,
-            metadata: metaDePedido({ numeros: stop.items.map(i => i.numero), etapa: 'en_camino',
-              cajas: totalCajas || null, conductor: conductorCorto, conductorId: user?.id ?? null }),
-          });
-        }
-      }
+      // «En camino» a cada sala lo escribe la base al pasar la ruta a
+      // `en_ruta` (`avisar_salida_de_ruta`, 2026-09-28): uno por sala, con sus
+      // pedidos, sus cajas y el conductor, venga de este botón o de otro.
 
       onCreated?.();
       onClose();

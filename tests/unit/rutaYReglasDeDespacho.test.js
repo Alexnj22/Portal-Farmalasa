@@ -8,10 +8,9 @@
 //   · una regla de despacho mal filtrada no da error: ofrece una presentación
 //     que ya no existe, o esconde el producto que se estaba buscando.
 //
-// Y el aviso de salida existe porque hasta el 2026-08-14 **tres caminos ponían
-// una ruta en marcha y sólo uno avisaba**. Los otros dos son los que se usan
-// cuando la ruta quedó pendiente o se arma hoy y sale mañana: la sala se quedaba
-// esperando sin enterarse.
+// El aviso de salida ya no vive acá: desde el 2026-09-28 lo escribe la base
+// (`avisar_salida_de_ruta`, disparado por `rutas.salida_at`), así que los tres
+// caminos que ponen una ruta en marcha avisan igual por construcción.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
@@ -19,17 +18,6 @@ import { crearEspia } from './_espiaSupabase';
 const espia = crearEspia();
 vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
 
-const notifyBranch = vi.fn();
-const fetchBranchIdsForSucursales = vi.fn(async () => ({
-    data: [{ erp_sucursal_id: 3, branch_id: 25 }, { erp_sucursal_id: 5, branch_id: 2 }],
-    error: null,
-}));
-vi.mock('../../src/utils/notify', () => ({ notifyBranch: (...a) => notifyBranch(...a) }));
-vi.mock('../../src/data/pedidos', () => ({
-    fetchBranchIdsForSucursales: (...a) => fetchBranchIdsForSucursales(...a),
-}));
-
-const { avisarSalidaALasSalas } = await import('../../src/utils/avisoSalidaPedido');
 const { haversineMeters, optimizeRoute, totalRoute, decodePolyline } =
     await import('../../src/utils/routeOptimizer');
 const { STAGE_CONFIG, COLOR_CLS, SUC_VARIANTE } =
@@ -41,63 +29,6 @@ const { fetchProductPreciosOptsForProducts, searchAvailableProducts, fetchLastDi
     await import('../../src/data/recepcion');
 
 beforeEach(() => { vi.clearAllMocks(); espia.limpiar(); });
-
-describe('avisar a la sala que su pedido salió', () => {
-    const paradas = [
-        { erp_sucursal_id: 3, numeros: ['114', '115'] },
-        { erp_sucursal_id: 5 },
-    ];
-
-    it('avisa a cada sala, una vez', async () => {
-        await avisarSalidaALasSalas(paradas, 'Carlos');
-        expect(notifyBranch).toHaveBeenCalledTimes(2);
-        expect(notifyBranch.mock.calls.map(c => c[0])).toEqual([25, 2]);
-    });
-
-    it('va CON push: la sala empieza a organizar quién recibe', async () => {
-        // Antes era campana sola, o sea que sólo lo veía quien ya estaba mirando
-        // la pantalla.
-        await avisarSalidaALasSalas(paradas, 'Carlos');
-        for (const [, aviso] of notifyBranch.mock.calls) expect(aviso.push).toBe(true);
-    });
-
-    it('dice a quién esperar', async () => {
-        await avisarSalidaALasSalas(paradas, 'Carlos');
-        expect(notifyBranch.mock.calls[0][1].body).toContain('Carlos');
-    });
-
-    it('sin los números el aviso se DEGRADA, no se calla', async () => {
-        // La tarjeta de la pestaña de Pedidos no resuelve los números, y sin
-        // ellos el aviso sigue sirviendo.
-        await avisarSalidaALasSalas(paradas, 'Carlos');
-        expect(notifyBranch.mock.calls[0][1].title).toContain('#114, #115');
-        expect(notifyBranch.mock.calls[1][1].title).toBe('Tu pedido va en camino');
-    });
-
-    it('sin conductor tampoco se calla', async () => {
-        await avisarSalidaALasSalas([{ erp_sucursal_id: 3 }], null);
-        expect(notifyBranch.mock.calls[0][1].body).toBe('Salió de bodega.');
-    });
-
-    it('una sala que no está en el mapa se saltea, no rompe el resto', async () => {
-        await avisarSalidaALasSalas([{ erp_sucursal_id: 99 }, { erp_sucursal_id: 3 }], 'Ana');
-        expect(notifyBranch).toHaveBeenCalledTimes(1);
-        expect(notifyBranch.mock.calls[0][0]).toBe(25);
-    });
-
-    it('NO lanza: un aviso que falla no puede deshacer una ruta que ya salió', async () => {
-        // Primero se escribe el hecho, después se avisa.
-        fetchBranchIdsForSucursales.mockResolvedValueOnce({ data: null, error: { message: 'x' } });
-        await expect(avisarSalidaALasSalas(paradas, 'Ana')).resolves.toBeUndefined();
-        expect(notifyBranch).not.toHaveBeenCalled();
-    });
-
-    it('sin paradas no hace nada', async () => {
-        await avisarSalidaALasSalas([], 'Ana');
-        await avisarSalidaALasSalas(null, 'Ana');
-        expect(fetchBranchIdsForSucursales).not.toHaveBeenCalled();
-    });
-});
 
 describe('la distancia entre dos puntos', () => {
     it('el mismo punto son cero metros', () => {

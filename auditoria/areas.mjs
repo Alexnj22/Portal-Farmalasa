@@ -720,7 +720,7 @@ export const AREAS = [
             'src/data/dispatchRules.js', 'src/data/recepcion.js',
             'src/hooks/useResolverDiferencia.js', 'src/hooks/usePedidosData.js',
             'src/utils/tableroDePedidos.js', 'src/constants/pedidos.js',
-            'src/utils/pedidoPrint.js', 'src/utils/hojasRecepcion.js', 'src/utils/avisoSalidaPedido.js',
+            'src/utils/pedidoPrint.js', 'src/utils/hojasRecepcion.js',
             'src/utils/routeOptimizer.js', 'src/utils/decisionDiferencia.js',
         ],
         tablas: ['pedidos', 'pedido_items', 'pedido_apoyo', 'pedido_devolucion', 'pedido_item_eventos',

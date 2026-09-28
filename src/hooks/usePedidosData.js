@@ -6,13 +6,12 @@ import { signPhotosDeep } from '../utils/storageFiles';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
-import { notifyBranch } from '../utils/notify';
 import { tokenMatch } from '../utils/searchUtils';
 import { ERP_NAMES, SUCURSALES as ERP_ORDER } from '../constants/erp';
 import { printFromPedidoItems, getExactPageGroups } from '../utils/pedidoPrint';
 import { PAUSE_REASONS } from '../constants/pedidos';
-import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, faltantesDeLaSala, describirFaltantes } from '../utils/tableroDePedidos';
-import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBodegaBranchId, fetchBranchIdForSucursal, fetchBranchInfoForSucursal, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoItemsPendientesIds, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchSucursalIdForBranch, fetchTrasladosDePedidos, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
+import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, faltantesDeLaSala } from '../utils/tableroDePedidos';
+import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoItemsPendientesIds, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchSucursalIdForBranch, fetchTrasladosDePedidos, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
 import {
     fetchDevolucionesDePedido, decidirDevolucion,
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
@@ -23,7 +22,6 @@ import { seguirPosicion } from '../plataforma/ubicacion';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '../utils/cajasEspeciales';
 import { fetchEmployeesPublicByIds } from '../data/employees';
-import { metaDePedido } from '../utils/avisosDeOperacion';
 import { escucharCambios } from '../data/tiempoReal';
 
 // Cuánto se esperan los avisos de Realtime antes de recargar. Un UPDATE sobre
@@ -531,7 +529,7 @@ export function usePedidosData({ searchTerm = '' }) {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    const handleLifecycle = useCallback(async (pedidoId, sucId, stage, razon = null, numero = null) => {
+    const handleLifecycle = useCallback(async (pedidoId, sucId, stage, razon = null) => {
         const key = `lc_${pedidoId}_${sucId}`;
         setBusyLifecycle(key);
         try {
@@ -539,14 +537,8 @@ export function usePedidosData({ searchTerm = '' }) {
             if (error) throw error;
             useStaff.getState().appendAuditLog(`PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId, { sucursal_id: sucId, razon });
             loadActive();
-            if (stage === 'iniciar' && numero != null) {
-                fetchBranchInfoForSucursal(sucId).then(({ data: m }) => {
-                    if (!m?.branch_id) return;
-                    // Informativo: campana sin push
-                    notifyBranch(m.branch_id, { type: 'PEDIDO_TRACKING', title: `Pedido #${numero} en preparación`, body: `Bodega ha iniciado la preparación de tu pedido #${numero}. Te avisaremos cuando salga en camino.`, link: '/pedidos', push: true,
-                        metadata: metaDePedido({ numeros: [numero], sala: m.nombre, etapa: 'preparacion' }) });
-                }).catch(() => {});
-            }
+            // El aviso «en preparación» a la sala lo escribe la base
+            // (`avisar_camino_del_pedido`), no esta pantalla.
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
     }, [user, loadActive]);
 
@@ -916,79 +908,20 @@ export function usePedidosData({ searchTerm = '' }) {
                     electrolit_faltantes: electrolitFaltantes,
                 } : {}),
                 ...(especialesLlegadas !== null ? { cajas_especiales_llegadas: especialesLlegadas } : {}),
+                // Las cajas de más: antes sólo iban a la bitácora; ahora el aviso a
+                // bodega sale de la base y tiene que poder leerlas.
+                cajas_extra:       cajasExtra > 0 ? cajasExtra : null,
+                cajas_extra_notas: cajasExtra > 0 ? (cajasExtraNotas ?? null) : null,
             });
             if (metaErr) throw metaErr;
 
             useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas, cajasExtra, cajasExtraNotas });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
 
-            // 5a. Notificar bodega si hay problema en cajas físicas
-            //     La condición es de las cajas NUMERADAS, no del tipo: desde que el
-            //     tipo también cuenta el Electrolit y las especiales, un faltante
-            //     de ésos entraría acá y armaría el mensaje con dos listas vacías
-            //     («Salud 1 reporta: .»). Cada uno tiene su propio aviso — 5b y 5d.
-            if (hasFaltaNumerada || hasDanada) {
-                fetchBodegaBranchId().then(({ data: b }) => {
-                    if (!b?.branch_id) return;
-                    const parts = [];
-                    if (cajasDanadas.length > 0)  parts.push(`caja${cajasDanadas.length > 1 ? 's' : ''} dañada${cajasDanadas.length > 1 ? 's' : ''} ${cajasDanadas.map(n => `#${n}`).join(', ')}`);
-                    if (cajasFaltantes.length > 0) parts.push(`caja${cajasFaltantes.length > 1 ? 's' : ''} faltante${cajasFaltantes.length > 1 ? 's' : ''} ${cajasFaltantes.map(n => `#${n}`).join(', ')}`);
-                    const title   = `Problema en llegada — ${branchName}`;
-                    const message = `${branchName} reporta: ${parts.join(' y ')}.${nota ? ' ' + nota : ''}`;
-                    // Accionable para bodega (requiere reenvío) → con push
-                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true,
-                        metadata: metaDePedido({ sala: branchName, etapa: 'problema',
-                            detalle: `${parts.join(' y ')}.${nota ? ' ' + nota : ''}` }) });
-                }).catch(() => {});
-            }
-
-            // 5b. Notificar bodega si faltan cajas de Electrolit
-            if ((electrolitFaltantes ?? 0) > 0) {
-                fetchBodegaBranchId().then(({ data: b }) => {
-                    if (!b?.branch_id) return;
-                    const cnt = electrolitFaltantes;
-                    const title   = `Electrolit faltante — ${branchName}`;
-                    const message = `${branchName} reporta ${cnt} caja${cnt > 1 ? 's' : ''} de Electrolit que no llegaron.`;
-                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true,
-                        metadata: metaDePedido({ sala: branchName, etapa: 'problema',
-                            detalle: `${cnt} caja${cnt > 1 ? 's' : ''} de Electrolit no llegaron.` }) });
-                }).catch(() => {});
-            }
-
-            // 5c. Notificar si cajas de más
-            if (cajasExtra > 0) {
-                fetchBodegaBranchId().then(({ data: b }) => {
-                    if (!b?.branch_id) return;
-                    const notas = cajasExtraNotas ? Object.values(cajasExtraNotas).filter(Boolean) : [];
-                    const title   = `Cajas de más — ${branchName}`;
-                    const message = `${branchName} reporta ${cajasExtra} caja${cajasExtra > 1 ? 's' : ''} extra no esperada${cajasExtra > 1 ? 's' : ''}.${notas.length ? ' ' + notas.join(', ') : ''}`;
-                    // Informativo: campana sin push
-                    notifyBranch(b.branch_id, { type: 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: true,
-                        metadata: metaDePedido({ sala: branchName, etapa: 'recibido',
-                            detalle: `${cajasExtra} caja${cajasExtra > 1 ? 's' : ''} de más.${notas.length ? ' ' + notas.join(', ') : ''}` }) });
-                }).catch(() => {});
-            }
-
-            // 5d. Notificar si faltan cajas especiales
-            //
-            //     Nombra el PRODUCTO, no sólo la etiqueta. «no recibida: E2» le
-            //     pide a quien despacha que reconstruya de memoria a qué caja
-            //     apuntaba esa letra en ese despacho — que es justamente la
-            //     cuenta que esta pantalla hacía mal, y con el nombre al lado el
-            //     error se habría visto el mismo día.
-            if (hasFaltaEsp) {
-                fetchBodegaBranchId().then(({ data: b }) => {
-                    if (!b?.branch_id) return;
-                    const faltanE = Object.entries(especialesLlegadas).filter(([, v]) => v === 'faltante').map(([k]) => k);
-                    const nombreDe = new Map(cajasEspecialesDb.map(e => [e?.label, e?.product_name]));
-                    const detalle  = faltanE.map(l => (nombreDe.get(l) ? `${l} (${nombreDe.get(l)})` : l)).join(', ');
-                    const title   = `Caja especial faltante — ${branchName}`;
-                    const message = `${branchName} reporta caja${faltanE.length > 1 ? 's' : ''} especial${faltanE.length > 1 ? 'es' : ''} no recibida${faltanE.length > 1 ? 's' : ''}: ${detalle}.`;
-                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true,
-                        metadata: metaDePedido({ sala: branchName, etapa: 'problema',
-                            detalle: `No llegó: ${detalle}.` }) });
-                }).catch(() => {});
-            }
+            // 5. Los avisos a bodega —cajas, Electrolit, especiales y cajas de
+            //    más— los escribe la base al ver `llegada_tipo`
+            //    (`avisar_camino_del_pedido`, 2026-09-28). Una app que confirme la
+            //    llegada no puede olvidarlos.
 
             await loadActive();
             await fetchItems(key, pedidoId, sucId);
@@ -1025,15 +958,8 @@ export function usePedidosData({ searchTerm = '' }) {
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels });
 
-            fetchBranchIdForSucursal(sucId).then(({ data: m }) => {
-                if (!m?.branch_id) return;
-                // Armado sólo con las cajas numeradas, un reenvío de una caja
-                // especial decía «La caja  del pedido #178»: vacío justo donde
-                // iba lo que había que esperar.
-                const que = describirFaltantes({ cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesFaltantes.map(e => (typeof e === 'string' ? { label: e } : e)) }).join(' · ');
-                // Accionable (deben confirmar llegada) → con push
-                notifyBranch(m.branch_id, { type: 'PEDIDO_REENVIO', title: `Reenvío en camino — pedido #${numero}`, body: `Ya salió de bodega lo que faltaba del pedido #${numero}: ${que}. Confirma la llegada cuando lo recibas.`, link: '/pedidos', push: true });
-            }).catch(() => {});
+            // El aviso «reenvío en camino» a la sala lo escribe la base al ver
+            // `reenvio_bodega_at` (`avisar_camino_del_pedido`).
             await loadActive();
             setCrearRutaOpen([`${pedidoId}__${sucId}`]);
         } catch (e) {
@@ -1063,18 +989,9 @@ export function usePedidosData({ searchTerm = '' }) {
                 sucursal_id: sucId, labels, items: r.items ?? [],
                 traslados_anulados: r.anulados ?? [], ya_anulados: r.ya_anulados ?? [],
             });
+            // El aviso a la sala lo escribe `cerrar_no_reenviadas`, en la base.
             const que = noReenviar.map(p => (p.producto ? `${p.labels.join('–')} · ${p.producto}` : p.labels.join('–'))).join(' · ');
             const regresa = (r.anulados ?? []).length > 0 || (r.ya_anulados ?? []).length > 0;
-            fetchBranchIdForSucursal(sucId).then(({ data: m }) => {
-                if (!m?.branch_id) return;
-                notifyBranch(m.branch_id, {
-                    type: 'PEDIDO_PROBLEMA',
-                    title: `No se reenvía — pedido #${numero}`,
-                    body: `Bodega decidió no reenviar lo que no llegó del pedido #${numero}: ${que}.${regresa ? ' Ese producto regresó a bodega.' : ''} Ya no queda pendiente.`,
-                    link: '/pedidos',
-                    push: true,
-                });
-            }).catch(() => {});
             useToastStore.getState().showToast(
                 'Reenvío cancelado',
                 regresa ? `${que}: regresó a bodega.` : `${que}: no había salido, quedó cerrado.`,
@@ -1129,7 +1046,11 @@ export function usePedidosData({ searchTerm = '' }) {
             // Actualizar el ciclo correspondiente en el historial
             const nuevoHistorial = historial.map(c =>
                 c.ciclo === ciclo
-                    ? { ...c, arrived_at: now, arrived_tipo, arrived_por: user?.id ?? null, cajas_ok: cajasOk, cajas_danadas: cajasDanadas, cajas_aun_faltantes: cajasFaltantes, nota: nota || null }
+                    ? { ...c, arrived_at: now, arrived_tipo, arrived_por: user?.id ?? null, cajas_ok: cajasOk, cajas_danadas: cajasDanadas, cajas_aun_faltantes: cajasFaltantes, nota: nota || null,
+                      // Lo que sigue faltando, escrito en el ciclo: el aviso a bodega
+                      // sale de la base con ESTA escritura, antes de las que siguen.
+                      electrolit_ok: electrolitCount > 0 ? electrolitOk === true : null,
+                      especiales_aun: especialesAun }
                     : c
             );
 
@@ -1213,18 +1134,9 @@ export function usePedidosData({ searchTerm = '' }) {
                 }
             }
 
-            // Notificar bodega si aún hay pendientes de reenvío
-            const hayAunPendiente = hasFalta || !electrolitOk || especialesAun.length > 0;
-            if (hayAunPendiente) {
-                fetchBranchIdForSucursal(sucId).then(({ data: m }) => {
-                    if (!m?.branch_id) return;
-                    const partes = [];
-                    if (hasFalta) partes.push(`Cajas: ${cajasFaltantes.map(n => `#${n}`).join(', ')}`);
-                    if (!electrolitOk) partes.push('Electrolit aún pendiente');
-                    if (especialesAun.length > 0) partes.push(`Especiales: ${especialesAun.join(', ')}`);
-                    notifyBranch(m.branch_id, { type: 'PEDIDO_PROBLEMA', title: `Aún hay pendientes — reenvío ${ciclo}`, body: `${branchName} reporta que aún no llegó: ${partes.join(' | ')}. Se requiere otro envío.`, link: '/pedidos', push: true });
-                }).catch(() => {});
-            }
+            // Si aún falta algo, el aviso a BODEGA lo escribe la base al ver
+            // `segunda_llegada_at` (`avisar_camino_del_pedido`). Antes lo mandaba
+            // esta pantalla, y a la sala equivocada: la propia.
 
             await loadActive();
             const freshItems = await fetchItems(key, pedidoId, sucId);
@@ -1262,12 +1174,7 @@ export function usePedidosData({ searchTerm = '' }) {
             const { error } = await updateRutaPedidoEntregado(stopId, user?.id);
             if (error) throw error;
             useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stopId, { sucursal_id: sucId });
-            const { data: mapa, error: mapaErr } = await fetchBranchIdForSucursal(sucId);
-            if (mapaErr) throw mapaErr;
-            if (mapa?.branch_id) {
-                // Llegada física = accionable → con push
-                notifyBranch(mapa.branch_id, { type: 'PEDIDO_LLEGADA', title: 'Conductor llegó a tu sucursal', body: 'Confirma la recepción de tu pedido.', link: '/pedidos', push: true });
-            }
+            // «El conductor llegó» lo escribe la base (`avisar_llegada_del_conductor`).
             loadActiveRutas();
         } catch (e) {
             useToastStore.getState().showToast('No se pudo marcar la entrega', mensajeAmigable(e), 'error');

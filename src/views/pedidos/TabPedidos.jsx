@@ -19,7 +19,6 @@ import {
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
-import { notifyBranch } from '../../utils/notify';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -31,14 +30,12 @@ import DifSection from './tabpedidos/DifSection';
 import PostCompletionSection from './tabpedidos/PostCompletionSection';
 import ReceptionActions from './tabpedidos/ReceptionActions';
 import FilterPill from './tabpedidos/FilterPill';
-import { fetchBodegaBranchId, updateRutaStatus } from '../../data/pedidos';
-import { avisarSalidaALasSalas } from '../../utils/avisoSalidaPedido';
+import { updateRutaStatus } from '../../data/pedidos';
 import { usePedidosData } from '../../hooks/usePedidosData';
 import { clickable } from '../../utils/clickable';
 import { esCargoDeSupervision } from '../../utils/decisionDiferencia';
 import { dialogoDiferido } from '../../utils/dialogoDiferido';
 import { electrolitFueraDeEspeciales } from '../../utils/cajasEspeciales';
-import { metaDePedido } from '../../utils/avisosDeOperacion';
 import { hora12 } from '../../utils/hora';
 
 /* Los once diálogos se bajan al ABRIRLOS, no al entrar a la pestaña: abrir
@@ -914,7 +911,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
                                                             if (error) throw error;
                                                             useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
-                                                            await avisarSalidaALasSalas(ruta.ruta_pedidos ?? [], ruta.conductor_nombre);
                                                             loadActiveRutas();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
                                                         finally { setRutaOcupada(null); }
@@ -1056,23 +1052,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                        salir: la diferencia recién nacida vive en la sección de
                        Diferencias, que lee de la base. Y si nació una, bodega
                        tiene que enterarse: una diferencia que espera a que
-                       alguien mire la pantalla no cierra el circuito. */
+                       alguien mire la pantalla no cierra el circuito. El aviso
+                       lo escribe la base al ver `diferencias_reportadas_at`
+                       (`avisar_camino_del_pedido`, 2026-09-28). */
                     onCorregido={async () => {
                         const { pedido, sucId, key } = modal;
                         const loaded = await fetchItems(key, pedido.id, sucId);
                         if ((loaded || []).some(r => r.status === 'con_diferencia')) {
                             await handleReportarDiferencias(pedido.id, sucId);
-                            fetchBodegaBranchId().then(({ data: b }) => {
-                                if (!b?.branch_id) return;
-                                notifyBranch(b.branch_id, {
-                                    type: 'PEDIDO_PROBLEMA',
-                                    title: `Problemas en pedido #${pedido.numero} — ${branchName}`,
-                                    body: `${branchName} corrigió lo contado del pedido #${pedido.numero}. Revisa la diferencia y contesta.`,
-                                    link: '/pedidos', push: true,
-                                    metadata: metaDePedido({ numeros: [pedido.numero], sala: branchName, etapa: 'problema',
-                                        detalle: 'Corrigió lo contado. Revisa la diferencia y contesta.' }),
-                                });
-                            }).catch(() => {});
                         }
                         await loadActive();
                     }}
@@ -1089,20 +1076,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const loaded = await fetchItems(key, pedido.id, sucId);
                             const realHasDiff = hasDiff || (loaded || []).some(r => r.status === 'con_diferencia');
                             if (realHasDiff) await handleReportarDiferencias(pedido.id, sucId);
-                            fetchBodegaBranchId().then(({ data: b }) => {
-                                if (!b?.branch_id) return;
-                                const title   = realHasDiff
-                                    ? `Problemas en pedido #${pedido.numero} — ${branchName}`
-                                    : `Pedido #${pedido.numero} confirmado — ${branchName}`;
-                                const message = realHasDiff
-                                    ? `${branchName} reporta diferencias en la recepción del pedido #${pedido.numero}. Revisa y márcalo como corregido.`
-                                    : `${branchName} confirmó la recepción del pedido #${pedido.numero} sin novedades.`;
-                                // Con diferencias = accionable (push); sin novedades = solo campana
-                                notifyBranch(b.branch_id, { type: realHasDiff ? 'PEDIDO_PROBLEMA' : 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: true,
-                                    metadata: metaDePedido({ numeros: [pedido.numero], sala: branchName,
-                                        etapa: realHasDiff ? 'problema' : 'recibido',
-                                        detalle: realHasDiff ? 'Reporta diferencias en la recepción. Revisa y márcalo como corregido.' : null }) });
-                            }).catch(() => {});
                         } else {
                             // Partial box confirmed — reload items before active so DifSection gets fresh data
                             await fetchItems(key, pedido.id, sucId);

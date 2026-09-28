@@ -26,7 +26,7 @@ vi.mock('../../src/store/toastStore', () => ({
     useToastStore: { getState: () => ({ showToast }) },
 }));
 
-const { notifyEmployees, notifyBranch } = await import('../../src/utils/notify');
+const { notifyEmployees } = await import('../../src/utils/notify');
 const { fireBrowserNotif } = await import('../../src/plataforma/browserNotif');
 
 const ok = (n) => ({ data: n, error: null });
@@ -52,18 +52,6 @@ describe('cuando sale a la primera', () => {
         expect(await correr(notifyEmployees(['a', 'b', 'c'], { type: 'X', title: 'T' }))).toBe(3);
         expect(rpc).toHaveBeenCalledTimes(1);
         expect(showToast).not.toHaveBeenCalled();
-    });
-
-    it('los avisos a una sala y a personas son funciones DISTINTAS', async () => {
-        // El primitivo quedó cerrado: el navegador entra por una puerta angosta
-        // que exige un empleado, un tipo de la lista del portal y —la de
-        // empleados— a lo sumo 10 destinatarios.
-        rpc.mockResolvedValue(ok(1));
-        await correr(notifyEmployees(['a'], { type: 'X', title: 'T' }));
-        const deEmpleados = rpc.mock.calls[0][0];
-        rpc.mockClear();
-        await correr(notifyBranch(4, { type: 'X', title: 'T' }));
-        expect(rpc.mock.calls[0][0]).not.toBe(deEmpleados);
     });
 
     it('el push es opt-in: por defecto sólo enciende la campana', async () => {
@@ -155,12 +143,12 @@ describe('cuando no sale, se entera QUIEN HIZO LA ACCIÓN', () => {
     it('devuelve 0, y NUNCA lanza', async () => {
         // Que un aviso falle no puede deshacer la acción que ya se guardó.
         rpc.mockRejectedValue(new Error('Failed to fetch'));
-        await expect(correr(notifyBranch(4, { type: 'X', title: 'T' }))).resolves.toBe(0);
+        await expect(correr(notifyEmployees(['a'], { type: 'X', title: 'T' }))).resolves.toBe(0);
     });
 
     it('sin título, el aviso sigue teniendo sentido', async () => {
         rpc.mockResolvedValue(fallo({ message: 'Failed to fetch' }));
-        await correr(notifyBranch(4, { type: 'X', title: '' }));
+        await correr(notifyEmployees(['a'], { type: 'X', title: '' }));
         expect(showToast.mock.calls[0][1]).toContain('Avísale por otro medio');
     });
 });

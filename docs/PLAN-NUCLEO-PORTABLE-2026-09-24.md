@@ -353,7 +353,10 @@ justamente lo que rompe en silencio (un import que apunta al archivo viejo, un
   (`corte_diferencia`) y desde ese día `npm run gate:cortes` los enfrenta en
   cada corrida (sección F; iguales en 1,162 cortes, y una regresión fabricada
   de un centavo la caza). **Los avisos de pedido a las salas pasan a la base**,
-  donde ninguna app puede olvidarlos.
+  donde ninguna app puede olvidarlos — **hecho** en `20260928153240` (v2.1075.37):
+  los 15 envíos del navegador son hoy tres disparadores y una RPC, probados en
+  pruebas con un pedido completo (11 avisos, 0 fallos) y con definiciones
+  idénticas byte a byte a las de producción.
 - **F8:** no hay piloto de un solo flujo. Palabras del usuario: *«abrirán todas.
   Así que debe estar toda la info. No sé si necesariamente igual, pero debe
   estar todo.»* La app del teléfono tiene que cubrir todas las pantallas; la

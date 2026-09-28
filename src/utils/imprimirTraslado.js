@@ -10,7 +10,7 @@
 // la solicitud quedó en camino. Si el armado del papel o la cola fallaran y eso
 // subiera como excepción, la pantalla mostraría un error sobre una operación
 // que salió bien — y quien lo vea la va a volver a intentar, que es la peor
-// consecuencia posible. Es la misma decisión que `avisarSalidaALasSalas`:
+// consecuencia posible. Es la misma decisión que tomaban los avisos de salida de un pedido:
 // primero se escribe el hecho, después se avisa, y el aviso no puede deshacerlo.
 //
 // El resultado se devuelve igual para que la pantalla pueda DECIR que el papel

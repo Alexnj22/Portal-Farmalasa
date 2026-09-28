@@ -8,7 +8,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { notifyBranch } from '../../utils/notify';
 import { dialogoDiferido } from '../../utils/dialogoDiferido';
 
 /* Los dos diálogos llegan al abrirlos — ver `src/utils/dialogoDiferido.jsx`.
@@ -18,11 +17,9 @@ const CrearRutaModal = dialogoDiferido(() => import('./CrearRutaModal'));
 const RutaMapModal   = dialogoDiferido(() => import('./RutaMapModal'));
 import Badge from '../../components/common/Badge';
 import {
-    updateRutaStatus, updateRutaPedidoEntregado, fetchBranchIdForSucursal,
+    updateRutaStatus, updateRutaPedidoEntregado,
     fetchRutasConParadas, fetchBranchNamesForSucursales, fetchPedidoNumerosByIds,
 } from '../../data/pedidos';
-import { avisarSalidaALasSalas } from '../../utils/avisoSalidaPedido';
-import { metaDePedido } from '../../utils/avisosDeOperacion';
 import { hora12 } from '../../utils/hora';
 import { escucharCambios } from '../../data/tiempoReal';
 
@@ -64,7 +61,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
       const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
-      await avisarSalidaALasSalas(paradas, ruta.conductor_nombre, ruta.conductor_id);
+      // «En camino» a cada sala lo escribe la base (`avisar_salida_de_ruta`).
       onRefresh();
     } catch (e) {
       // `mensajeAmigable` ya manda el error crudo a la consola.
@@ -80,19 +77,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stop.id, { sucursal_id: stop.erp_sucursal_id });
 
-      // Llegada física = accionable → campana + push
-      const { data: mapa } = await fetchBranchIdForSucursal(stop.erp_sucursal_id);
-      if (mapa?.branch_id) {
-        notifyBranch(mapa.branch_id, {
-          type: 'PEDIDO_LLEGADA',
-          title: 'Conductor llegó a tu sucursal',
-          body: `${ruta.conductor_nombre} acaba de llegar. Confirma la recepción de tu pedido.`,
-          link: '/pedidos',
-          push: true,
-          metadata: metaDePedido({ numeros: stop.numeros ?? [], etapa: 'llego',
-            conductor: ruta.conductor_nombre ?? null, conductorId: ruta.conductor_id ?? null }),
-        });
-      }
+      // «El conductor llegó» lo escribe la base (`avisar_llegada_del_conductor`).
       onRefresh();
     } catch (e) {
       showToast('No se pudo marcar la entrega', mensajeAmigable(e), 'error');

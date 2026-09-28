@@ -268,20 +268,11 @@ export function datosDeCortesPendientes(n) {
 }
 
 /* ── Pedidos (24-sep): seguimiento, llegada del conductor y problemas ─────
- * Los avisos de pedido los escribe el NAVEGADOR (`notifyBranch`), no la base,
- * así que el metadata se arma acá con una sola forma para los seis sitios que
- * avisan. `etapa` ubica el aviso en el recorrido del pedido. */
+ * Desde el 2026-09-28 los escribe la BASE, y el metadata lo arma
+ * `public.meta_de_pedido(...)` con la forma `{ pedido: { numeros, sala, etapa,
+ * cajas, conductor, conductor_id, detalle } }`. Acá sólo se LEE (`datosDePedido`).
+ * Si la forma cambia allá, cambia acá. `etapa` ubica el aviso en el recorrido. */
 export const ETAPAS_DE_PEDIDO = ['preparacion', 'en_camino', 'llego', 'recibido'];
-
-export function metaDePedido({ numeros = [], sala = null, etapa, cajas = null, conductor = null,
-    conductorId = null, detalle = null } = {}) {
-    return {
-        pedido: {
-            numeros: (numeros ?? []).filter((x) => x != null).map(String),
-            sala, etapa, cajas, conductor, conductor_id: conductorId, detalle,
-        },
-    };
-}
 
 export function datosDePedido(n) {
     if (!['PEDIDO_TRACKING', 'PEDIDO_LLEGADA', 'PEDIDO_PROBLEMA', 'PEDIDO_REENVIO'].includes(n?.type)) return null;

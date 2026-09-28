@@ -27,22 +27,10 @@ export function fetchSucursalIdForBranch(branchId) {
     return supabase.from('erp_sucursal_map').select('erp_sucursal_id').eq('branch_id', branchId).eq('es_bodega', false).maybeSingle();
 }
 
-export function fetchBodegaBranchId() {
-    return supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle();
-}
-
-export function fetchBranchIdForSucursal(sucId) {
-    return supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle();
-}
-
 // ── pedidoPrint.js (direcciones para el encabezado del PDF de despacho) ────
 
 export function fetchErpSucursalAddressMap() {
     return supabase.from('erp_sucursal_map').select('erp_sucursal_id, branches(address)');
-}
-
-export function fetchBranchInfoForSucursal(sucId) {
-    return supabase.from('erp_sucursal_map').select('branch_id, nombre').eq('erp_sucursal_id', sucId).maybeSingle();
 }
 
 export function fetchBranchNamesForSucursales(sucIds) {
@@ -613,10 +601,6 @@ export function fetchSucursalesConCoords() {
     return supabase.from('erp_sucursal_map')
         .select('erp_sucursal_id, es_bodega, branch:branches!inner(settings, name)')
         .order('erp_sucursal_id');
-}
-
-export function fetchBranchIdsForSucursales(sucIds) {
-    return supabase.from('erp_sucursal_map').select('erp_sucursal_id, branch_id').in('erp_sucursal_id', sucIds);
 }
 
 // ── Llamadas que vivían en las pantallas (F3 del núcleo portable) ──────────

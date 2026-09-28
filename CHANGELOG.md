@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.37 — Los avisos de pedido los escribe la base
+
+Decisión del usuario (F4 del plan del núcleo): los avisos del camino de un
+pedido —preparación, salida, llegada del conductor, problemas en la llegada,
+reenvío, recepción— los escribía el navegador en un paso aparte, después de
+guardar. Una app del teléfono que se olvidara de ese paso dejaba a la sala
+esperando sin error. Hoy nacen en la base, del mismo dato que los justifica
+(migración `20260928153240`).
+
+- **Mismos textos.** Dos cambios a propósito: la salida de una ruta avisa de UNA
+  sola forma —antes eran tres según el botón— y **uno por sala** con todos sus
+  pedidos; y «el conductor llegó» nombra al conductor en las dos pestañas.
+- **Un aviso iba a la sala equivocada.** «Aún hay pendientes» tras un reenvío
+  le llegaba a la propia sala que lo reportaba; ahora le llega a bodega.
+- **Las cajas de más se guardan** (`cajas_extra`, `cajas_extra_notas`): antes
+  sólo iban a la bitácora y el aviso no tendría de dónde leerlas.
+- **Sin avisos dobles:** un portal viejo abierto sigue llamando al canal del
+  navegador, que ahora los acepta y no los emite.
+- **Un aviso que falla no deshace el trabajo** y queda en la bitácora
+  (`AVISO_DE_PEDIDO_FALLO`, CRITICAL). La primera versión mandaba `ERROR`, que
+  la bitácora rechaza: se cazó en la prueba, no en producción.
+- Se van `notifyBranch`, `avisoSalidaPedido.js`, `metaDePedido` y cuatro
+  lecturas de `data/pedidos.js`, que sólo servían para avisar.
+
+Probado en el entorno de pruebas con un pedido completo: 11 avisos, cada uno a
+quien corresponde y firmado por quien hizo la acción, 0 fallos; y «no se
+reenvía» dentro de `cerrar_no_reenviadas`. Las diez funciones de producción son
+idénticas byte a byte a las probadas.
+
 ## v2.1075.36 — Cortes: la pantalla y la base se comparan en cada gate
 
 Sin cambios en el portal. `npm run gate:cortes` gana la sección F: enfrenta la

@@ -115,20 +115,8 @@ export const notifyEmployees = async (recipientIds, { type, title, body = '', li
     }, title);
 };
 
-/**
- * Notifica a todos los empleados activos de una sucursal. Nunca lanza.
- * @param {number} branchId
- * @param {{type:string, title:string, body?:string, link?:string, metadata?:object, push?:boolean}} opts
- */
-export const notifyBranch = async (branchId, { type, title, body = '', link = null, metadata = {}, push = false }) => {
-    if (branchId == null) return 0;
-    return enviar('avisar_a_sucursal', {
-        p_branch_id: Number(branchId),
-        p_type: type,
-        p_title: title,
-        p_body: body,
-        p_link: link,
-        p_metadata: metadata,
-        p_push: push,
-    }, title);
-};
+// `notifyBranch` (avisar a una sala) se fue el 2026-09-28: sus únicos avisos
+// eran los del camino de un pedido, y ésos los escribe la base
+// (`avisar_camino_del_pedido`, `avisar_salida_de_ruta`,
+// `avisar_llegada_del_conductor`, `cerrar_no_reenviadas`). Así una app que
+// guarde el dato no puede olvidarse de avisar.

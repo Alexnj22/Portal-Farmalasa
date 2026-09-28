@@ -100,7 +100,11 @@ Deno.serve(async (req) => {
     if (!simular && avisos.length) {
       // Los antiduplicados de TODOS los avisos en una consulta, no uno por
       // aviso: `notifications` sólo crece y no tiene índice para esta clave.
-      const claves = avisos.map((a) => `puntos_sin_saldo:${a.invoice_id}`);
+      // Dos clases de aviso (2026-09-28): el canje sin saldo y el canje que
+      // dejó la venta en $0.00. Cada una con su clave: una venta puede ser las dos.
+      const claveDe = (a: Record<string, unknown>) =>
+        a.tipo === 'venta_en_cero' ? `puntos_venta_en_cero:${a.invoice_id}` : `puntos_sin_saldo:${a.invoice_id}`;
+      const claves = avisos.map(claveDe);
       const { data: yaAvisados, error: e1 } = await supabase
         .from('notifications').select('metadata').in('metadata->>check_key', claves);
       if (e1) throw new Error(`notifications: ${e1.message}`);
@@ -139,7 +143,8 @@ Deno.serve(async (req) => {
       }
 
       for (const a of avisos) {
-        const checkKey = `puntos_sin_saldo:${a.invoice_id}`;
+        const checkKey = claveDe(a);
+        const enCero = a.tipo === 'venta_en_cero';
         if (yaEstan.has(checkKey)) continue;
         const salaId = salaPorCodigo.get(a.sucursal as string);
         const destinatarios = [...new Set([
@@ -151,11 +156,14 @@ Deno.serve(async (req) => {
         // Un fallo en UN aviso no puede tumbar la corrida: se anota y se sigue.
         const { error: e4 } = await supabase.rpc('notify_employees', {
           p_recipients: destinatarios,
-          p_type: 'PUNTOS_SIN_SALDO',
-          p_title: 'Se canjearon puntos que el cliente no tenía',
-          // Se dice cuánto se pidió y cuánto había: es lo único accionable.
-          p_body: `Se aplicaron ${a.pedidos} puntos de descuento y el cliente tenía ${a.tenia}. Hay que revisar la venta.`,
-          p_link: '/clientes',
+          p_type: enCero ? 'PUNTOS_VENTA_EN_CERO' : 'PUNTOS_SIN_SALDO',
+          p_title: enCero ? 'Un canje dejó la venta en $0.00' : 'Se canjearon puntos que el cliente no tenía',
+          // Se dice lo accionable: cuánto se pidió y cuánto había, o que la
+          // venta se pagó entera con puntos (regla del usuario, 2026-09-28).
+          p_body: enCero
+            ? `La venta ${a.documento ?? ''} se pagó entera con ${a.puntos} puntos. Una venta no puede quedar en $0.00: hay que revisarla.`
+            : `Se aplicaron ${a.pedidos} puntos de descuento y el cliente tenía ${a.tenia}. Hay que revisar la venta.`,
+          p_link: '/puntos?tab=avisos',
           p_metadata: { check_key: checkKey, invoice_id: a.invoice_id, customer_id: a.customer_id },
           p_push: false,
           p_branch_id: salaId ?? null,

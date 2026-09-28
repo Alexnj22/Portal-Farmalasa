@@ -242,6 +242,8 @@ export default function PuntosView({ openModal }) {
                                         ? <Badge variant="danger" tone="soft" uppercase={false}>Canje sin saldo suficiente</Badge>
                                         : a.tipo === 'canje_devuelto'
                                             ? <Badge variant="info" tone="soft" uppercase={false}>Canje devuelto: la factura se anuló</Badge>
+                                        : a.tipo === 'canje_venta_en_cero'
+                                            ? <Badge variant="danger" tone="soft" uppercase={false}>Canje dejó la venta en $0.00</Badge>
                                             : <Badge variant="warning" tone="soft" uppercase={false}>Anulada con puntos ya canjeados</Badge>}
                                 </DataCell>
                                 <DataCell>{a.cliente || <span className="text-content-3">—</span>}</DataCell>
@@ -253,6 +255,8 @@ export default function PuntosView({ openModal }) {
                                             ? `Faltaron ${pts(a.faltaron)}`
                                             : a.tipo === 'canje_devuelto'
                                                 ? `${pts(a.puntos)} devueltos`
+                                            : a.tipo === 'canje_venta_en_cero'
+                                                ? `${pts(a.puntos)} canjeados`
                                                 : `${pts(a.puntos)} no recuperados`}
                                     </span>
                                 </DataCell>

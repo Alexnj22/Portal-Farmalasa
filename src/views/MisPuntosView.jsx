@@ -197,7 +197,7 @@ function ComoFunciona() {
                         <p className="text-body-lg text-content-2 leading-relaxed">
                             Identifícate en caja <strong className="text-content-1">antes de pagar</strong>:
                             con tu registro de cliente frecuente esa compra ya cuenta. Después ya no
-                            se puede. La compra tiene que pasar de $1.00, ser al precio normal de la
+                            se puede. La compra tiene que valer $1.00 o más, ser al precio normal de la
                             sala e incluir al menos un producto de farmacia o cuidado personal.
                         </p>
                     </section>
@@ -226,9 +226,9 @@ function ComoFunciona() {
                         <ul className="space-y-1.5">
                             {[
                                 'La compra que lleve algo a precio especial, de mayoreo, de convenio o con cualquier descuento (basta que aparezca en el ticket)',
-                                'La compra de $1.00 o menos',
+                                'La compra de menos de $1.00',
                                 'La parte que pagas con puntos',
-                                'La factura a nombre de una empresa o institución',
+                                'La compra por convenio con una empresa, aseguradora o institución, facturada a su nombre',
                             ].map((t) => (
                                 <li key={t} className="flex gap-2 text-body-lg text-content-2 leading-relaxed">
                                     <span className="text-content-3 shrink-0" aria-hidden="true">·</span>

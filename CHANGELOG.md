@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.10 — Puntos: aviso del canje que deja la venta en $0, productos que no acumulan y el texto de Mis puntos
+
+Decisiones del usuario (2026-09-28).
+
+- **«La venta no puede quedar a 0 ante un canje de puntos.»** El canje se hace
+  en el sistema de ventas y el portal no lo puede impedir: lo registra y avisa
+  a la sala y a supervisión (`PUNTOS_VENTA_EN_CERO`), y sale en Avisos. 40 de
+  550 canjes del último año dejaron la venta en $0.00. Los avisos de puntos
+  llevan ahora a Puntos → Avisos y no a Clientes.
+- **Productos que no acumulan aunque su laboratorio sí**: `puntos_producto_no_acumula`
+  (chips Tigo/Movistar/Digicel, Pepsi, Jugo Petit, cargados en laboratorios
+  de farmacia). Tabla aparte, no columna de `products` (tabla caliente).
+- **Convenios**: se excluyen, como dice el reglamento — por la ficha
+  (`acumula_puntos`, hoy MAPFRE).
+- **Mis puntos** alineado con el reglamento: no acumula la compra de MENOS de
+  $1.00 (antes decía «$1.00 o menos»), y el convenio se nombra como tal.
+- `puntos-motor` redesplegado (v3, `verify_jwt` falso como estaba); corrida en
+  seco sobre septiembre: 200, 13,350 ventas.
+
 ## v2.1076.9 — Metas: la tarjeta de confirmación habla en palabras
 
 El usuario no entendía «Exigencia», «meta +3.6%» ni «meta +3.1%» bajo el promedio.

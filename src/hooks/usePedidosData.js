@@ -1171,9 +1171,8 @@ export function usePedidosData({ searchTerm = '' }) {
 
     const handleEntregarStop = useCallback(async (stopId, rutaId, sucId) => {
         try {
-            const { error } = await updateRutaPedidoEntregado(stopId, user?.id);
+            const { error } = await updateRutaPedidoEntregado(stopId, user?.id, { sucursal_id: sucId });
             if (error) throw error;
-            useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stopId, { sucursal_id: sucId });
             // «El conductor llegó» lo escribe la base (`avisar_llegada_del_conductor`).
             loadActiveRutas();
         } catch (e) {

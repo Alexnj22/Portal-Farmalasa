@@ -3,7 +3,6 @@ import ListRow from '../../components/common/ListRow';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { tokenMatch } from '../../utils/searchUtils';
 import { useToastStore } from '../../store/toastStore';
@@ -103,11 +102,10 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             notas:            draft.notas.trim() || null,
             vineta:           draft.vineta !== '' ? parseFloat(draft.vineta) : null,
         };
-        const { data, error } = await insertProveedor(payload);
+        const lab = labs.find(l => l.id === labId);
+        const { data, error } = await insertProveedor(payload, { laboratorio: lab?.nombre });
         if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return false; }
         setProveedores(prev => ({ ...prev, [labId]: [...(prev[labId] || []), data].sort((a, b) => a.nombre.localeCompare(b.nombre)) }));
-        const lab = labs.find(l => l.id === labId);
-        useStaff.getState().appendAuditLog('CREAR_PROVEEDOR', String(data.id), { proveedor: data.nombre, laboratorio: lab?.nombre });
         useToastStore.getState().showToast('Guardado', 'Proveedor agregado.', 'success');
         return true;
     };
@@ -129,7 +127,6 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
                 .map(p => p.id === proveedor.id ? { ...p, ...payload } : p)
                 .sort((a, b) => a.nombre.localeCompare(b.nombre)),
         }));
-        useStaff.getState().appendAuditLog('EDITAR_PROVEEDOR', String(proveedor.id), { proveedor: payload.nombre });
         useToastStore.getState().showToast('Guardado', 'Proveedor actualizado.', 'success');
         return true;
     };
@@ -140,7 +137,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         const proveedor = deleteTarget;
         if (!proveedor) return;
         setDeleting(true);
-        const { error } = await deleteProveedor(proveedor.id);
+        const { error } = await deleteProveedor(proveedor.id, { proveedor: proveedor.nombre });
         setDeleting(false);
         setDeleteTarget(null);
         if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return; }
@@ -148,7 +145,6 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             ...prev,
             [proveedor.laboratorio_id]: (prev[proveedor.laboratorio_id] || []).filter(p => p.id !== proveedor.id),
         }));
-        useStaff.getState().appendAuditLog('ELIMINAR_PROVEEDOR', String(proveedor.id), { proveedor: proveedor.nombre });
         useToastStore.getState().showToast('Eliminado', 'Proveedor eliminado.', 'success');
     };
 
@@ -182,11 +178,10 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         if (!ndConfirm) return;
         const { lab, count } = ndConfirm;
         setNdProcessing(true);
-        const { data, error } = await updateProductsMarkND(lab.id);
+        const { data, error } = await updateProductsMarkND(lab.id, { laboratorio: lab.nombre });
         setNdProcessing(false);
         setNdConfirm(null);
         if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return; }
-        useStaff.getState().appendAuditLog('LABORATORIO_MARCAR_ND', String(lab.id), { laboratorio: lab.nombre, productos_afectados: data?.length ?? count });
         useToastStore.getState().showToast('Marcado', `${data?.length ?? count} producto${(data?.length ?? count) === 1 ? '' : 's'} de "${lab.nombre}" marcados como ND.`, 'success');
     };
 

@@ -1,5 +1,11 @@
 // Maestro de Proveedores — capa de datos. Lectura vía RPC Patrón C (json_agg).
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
+
+// Las escrituras de este archivo anotan su propia entrada en la bitácora (D3,
+// 2026-09-28): cualquier cliente que las llame la deja, no sólo la pantalla.
+// `contexto` son los datos legibles que sólo el llamador conoce (el nombre de
+// la ficha); la acción es fija. `anotar` nunca lanza.
 
 export async function fetchProveedoresMaestro() {
     const { data, error } = await supabase.rpc('get_proveedores_maestro');
@@ -13,9 +19,10 @@ export function fetchProveedorCategorias() {
     return supabase.from('proveedores_categorias').select('id, clase, nombre').order('clase').order('nombre');
 }
 
-export async function setProveedorCategoria(id, categoriaId) {
+export async function setProveedorCategoria(id, categoriaId, contexto = {}) {
     const { error } = await supabase.rpc('set_proveedor_categoria', { p_id: id, p_categoria_id: categoriaId });
     if (error) throw error;
+    anotar('PROVEEDORES_SET_CATEGORIA', id, { ...contexto, categoria_id: categoriaId ?? null });
 }
 
 // H5 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): asignación masiva. Las dos
@@ -30,18 +37,25 @@ export async function setProveedoresCategoriaBulk(ids, categoriaId) {
         p_ids: ids, p_categoria_id: categoriaId ?? null,
     });
     if (error) throw error;
-    return data ?? 0;
+    const cambiados = data ?? 0;
+    anotar('PROVEEDORES_CATEGORIA_BULK', null, {
+        seleccionados: ids.length, cambiados, categoria_id: categoriaId ?? null,
+    });
+    return cambiados;
 }
 
 export async function applyProveedoresCategoriaSugerida(ids) {
     const { data, error } = await supabase.rpc('apply_proveedores_categoria_sugerida', { p_ids: ids });
     if (error) throw error;
-    return data ?? 0;
+    const cambiados = data ?? 0;
+    anotar('PROVEEDORES_CATEGORIA_SUGERIDA_BULK', null, { seleccionados: ids.length, cambiados });
+    return cambiados;
 }
 
-export async function setProveedorSupplier(id, supplierId) {
+export async function setProveedorSupplier(id, supplierId, contexto = {}) {
     const { error } = await supabase.rpc('set_proveedor_supplier', { p_id: id, p_supplier_id: supplierId });
     if (error) throw error;
+    anotar('PROVEEDORES_SET_MATCH_ERP', id, { ...contexto, supplier_id: supplierId ?? null });
 }
 
 // ── Clasificación fiscal (Art. 65 LIVA + catálogos del anexo F-07 v14) ───────
@@ -51,7 +65,7 @@ export async function setProveedorSupplier(id, supplierId) {
 // que `setProveedorCategoria` y `setProveedorSupplier`, que ya viven aparte.
 //
 // El autor NO viaja: lo resuelve el servidor desde la sesión.
-export async function setProveedorClasificacionFiscal(id, c) {
+export async function setProveedorClasificacionFiscal(id, c, contexto = {}) {
     const { error } = await supabase.rpc('set_proveedor_clasificacion_fiscal', {
         p_id: id,
         p_iva_deducible: c.iva_deducible,
@@ -62,6 +76,7 @@ export async function setProveedorClasificacionFiscal(id, c) {
         p_nota: c.clasificacion_nota ?? null,
     });
     if (error) throw error;
+    anotar('PROVEEDORES_SET_CLASIFICACION_FISCAL', id, { ...contexto, ...c });
 }
 
 // Confirma en tanda, y SOLO las que están en 'propuesta'. Las 'pendiente' son
@@ -73,7 +88,9 @@ export async function setProveedorClasificacionFiscal(id, c) {
 export async function confirmarClasificacionPropuesta(ids) {
     const { data, error } = await supabase.rpc('confirmar_clasificacion_propuesta', { p_ids: ids });
     if (error) throw error;
-    return data ?? 0;
+    const cambiados = data ?? 0;
+    anotar('PROVEEDORES_CLASIFICACION_FISCAL_BULK', null, { seleccionados: ids.length, cambiados });
+    return cambiados;
 }
 
 // Las fichas que todavía no tienen clasificación confirmada, con el crédito
@@ -104,7 +121,9 @@ export async function resolverClasificacionPendiente(ids, c) {
         p_tipo_operacion: c.f07_tipo_operacion ?? null,
     });
     if (error) throw error;
-    return data ?? 0;
+    const cambiados = data ?? 0;
+    anotar('PROVEEDORES_RESOLVER_CLASIFICACION', null, { seleccionados: ids.length, cambiados, ...c });
+    return cambiados;
 }
 
 // H2 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): `percibe_1` ya NO se manda —
@@ -115,7 +134,7 @@ export async function resolverClasificacionPendiente(ids, c) {
 // Antes se mandaba un booleano plano y el RPC lo copiaba al override en cada
 // guardado, congelando el campo aunque el usuario solo hubiera tocado el
 // teléfono.
-export async function updateProveedorManual(id, fields) {
+export async function updateProveedorManual(id, fields, contexto = {}) {
     const { error } = await supabase.rpc('update_proveedor_manual', {
         p_id: id,
         p_contacto_nombre: fields.contacto_nombre || null,
@@ -131,4 +150,5 @@ export async function updateProveedorManual(id, fields) {
         p_retiene_renta: fields.retiene_renta ?? null,
     });
     if (error) throw error;
+    anotar('PROVEEDORES_UPDATE_MANUAL', id, { ...contexto, ...fields });
 }

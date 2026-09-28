@@ -144,10 +144,9 @@ export default function SolicitudesDatosView() {
         if (!win) { showToast('No se pudo imprimir', VENTANA_BLOQUEADA, 'error'); return; }
         setCreando(true);
         try {
+            // `crearSolicitud` anota `IMPRIMIR_SOLICITUD_DATOS` al nacer la hoja.
             const fila = await crearSolicitud(user?.branchId ?? null);
             const r = escribirEImprimir(win, papelDeSolicitudDeDatos(fila.folio_txt));
-            useStaff.getState().appendAuditLog?.('IMPRIMIR_SOLICITUD_DATOS', String(fila.id),
-                { folio: fila.folio_txt });
             if (!r.ok) showToast('No se pudo imprimir', r.motivo ?? 'La ventana no respondió.', 'error');
             setFilas((p) => [fila, ...p]);
         } catch (e) {

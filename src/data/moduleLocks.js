@@ -11,6 +11,7 @@
 // supabase-js devuelve `error: null`, así que un guardado optimista mostraría un
 // valor que nunca se persistió. Gatear en el cliente evita ese silencio.
 import { supabase } from '../supabaseClient';
+import { conBitacora } from './audit';
 
 export function fetchModuleLocks() {
     return supabase
@@ -19,16 +20,23 @@ export function fetchModuleLocks() {
         .gt('expires_at', new Date().toISOString());
 }
 
-export function lockModule(moduleKey, reason, hours = 4) {
-    return supabase.rpc('lock_module', {
+// Poner o levantar un candado se anota solo (D3, 2026-09-28): lo escribe la
+// función que lo hace y no la pantalla, así que también quedan anotados los que
+// se levantan desde el aviso del módulo o desde la app. Sólo si entró.
+
+/** Poner (o ajustar el motivo/la duración de) un candado → `MODULE_LOCK_ON`. */
+export function lockModule(moduleKey, reason, hours = 4, contexto = {}) {
+    return conBitacora(supabase.rpc('lock_module', {
         p_module_key: moduleKey,
         p_reason: reason || null,
         p_hours: hours,
-    });
+    }), 'MODULE_LOCK_ON', moduleKey, { module: moduleKey, reason: reason || null, hours, ...contexto });
 }
 
+/** Levantar un candado → `MODULE_LOCK_OFF`. */
 export function unlockModule(moduleKey) {
-    return supabase.rpc('unlock_module', { p_module_key: moduleKey });
+    return conBitacora(supabase.rpc('unlock_module', { p_module_key: moduleKey }),
+        'MODULE_LOCK_OFF', moduleKey, { module: moduleKey });
 }
 
 // Los módulos donde el candado SÍ hace algo. La RPC los deriva de las policies y

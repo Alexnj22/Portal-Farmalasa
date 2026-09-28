@@ -6,7 +6,6 @@ import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, Circl
 import Notice from '../../components/common/Notice';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import PortalInput from '../../components/common/PortalInput';
-import { useStaffStore } from '../../store/staffStore';
 import { HerramientasModal, PieModal } from './LanzadorSolicitud';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -32,7 +31,7 @@ function fmtEquiv(units, pres) {
 }
 
 /* ── Form: propone min/max para un producto+sucursal ── */
-function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) {
+function RequestForm({ product, erp, user, onBack, onSuccess }) {
   const [current, setCurrent]   = useState(null);   // { min, max } actuales
   const [loadingCur, setLoadingCur] = useState(false);
   const [mn, setMn]             = useState('');
@@ -171,12 +170,8 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         requested_by_id:   user?.id ?? null,
         requested_by_name: user?.name ?? null,
       });
+      // La entrada de la bitácora la anota `insertMinMaxChangeRequest` (D3).
       if (error) throw error;
-
-      await appendAuditLog('MINMAX_REQUEST_CREATED', String(product.id), {
-        product: product.nombre, sucursal_id: Number(erp),
-        requested_min: newMin, requested_max: newMax, reason: reason.trim() || null,
-      });
 
       // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
       // `notificar_solicitud_minmax` en la misma transacción que la solicitud.
@@ -431,7 +426,6 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 /* ── Main: busca producto → formulario ── */
 export function FormularioMinMax({ selectedErp = null }) {
   const { user }       = useAuth();
-  const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
   const [view, setView]   = useState('search'); // search | form | success
   const [picked, setPicked] = useState(null);
@@ -469,7 +463,7 @@ export function FormularioMinMax({ selectedErp = null }) {
   if (view === 'form' && picked) {
     return (
       <RequestForm
-        product={picked} erp={selectedErp} user={user} appendAuditLog={appendAuditLog}
+        product={picked} erp={selectedErp} user={user}
         onBack={() => { setView('search'); setPicked(null); }}
         /* El buscador se remonta al volver a 'search' —es otro nodo del
            árbol— así que su texto y sus resultados se van solos. Antes había

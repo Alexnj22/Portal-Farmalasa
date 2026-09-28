@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { SUPABASE_URL } from '../plataforma/config';
 import { hoySV } from '../utils/fecha';
+import { anotar } from './audit';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Bitácoras — capa de datos.
@@ -197,13 +198,16 @@ export async function registrarLimpieza({ areaId, fecha, turno, observaciones = 
  * mismo y queda dicho que se tocó. El detalle lo vuelve a armar la base contra
  * la lista del área.
  */
-export async function corregirLimpieza({ limpiezaId, puntos = [], observaciones = null, motivo }) {
+export async function corregirLimpieza({ limpiezaId, puntos = [], observaciones = null, motivo }, contexto = {}) {
     const { error } = await supabase.rpc('corregir_limpieza_bitacora', {
         p_limpieza_id: Number(limpiezaId),
         p_puntos: puntos || [],
         p_observaciones: observaciones || null,
         p_motivo: motivo,
     });
+    // Tocar un registro ya anotado deja rastro, y lo deja esta función (D3,
+    // 2026-09-28). `contexto` lleva el área, el turno y la fecha en palabras.
+    if (!error) anotar('CORREGIR_LIMPIEZA_BITACORA', String(limpiezaId ?? ''), { ...contexto, motivo });
     return { error: error?.message ?? null };
 }
 
@@ -214,11 +218,14 @@ export async function corregirLimpieza({ limpiezaId, puntos = [], observaciones 
  * motivo —el canon del portal para toda acción de usuario—: un libro que no se
  * puede corregir termina diciendo algo falso, que es peor que un hueco.
  */
-export async function anularLimpieza({ limpiezaId, motivo }) {
+export async function anularLimpieza({ limpiezaId, motivo }, contexto = {}) {
     const { error } = await supabase.rpc('anular_limpieza_bitacora', {
         p_limpieza_id: Number(limpiezaId),
         p_motivo: motivo,
     });
+    // Acá además es el único lugar donde vive el motivo de un registro que se
+    // quitó: se anota desde la función, no desde la pantalla (D3, 2026-09-28).
+    if (!error) anotar('QUITAR_LIMPIEZA_BITACORA', String(limpiezaId ?? ''), { ...contexto, motivo });
     return { error: error?.message ?? null };
 }
 
@@ -249,15 +256,68 @@ export async function reabrirMes({ branchId, periodo, motivo }) {
  * `bitacoras_configurar`. Un RPC acá sólo agregaría una capa que repite la
  * misma comprobación.
  */
-export async function guardarArea(id, cambios) {
+async function actualizarArea(id, cambios) {
     const { error } = await supabase.from('bitacora_areas').update(cambios).eq('id', Number(id));
     return { error: error?.message ?? null };
 }
 
-export async function crearArea(area) {
+async function insertarArea(area) {
     const { data, error } = await supabase.from('bitacora_areas').insert(area).select('id').single();
     if (error) return { id: null, error: error.message ?? 'No se pudo crear el área.' };
     return { id: data?.id ?? null, error: null };
+}
+
+// ── La configuración se anota sola (D3, 2026-09-28) ────────────────────────
+// Esto reescribe qué se le exige a la sala todos los días y, de rebote, el
+// número que el regente firma al cerrar el mes. Tiene permiso propio
+// (`bitacoras_configurar`) y tiene que dejar rastro de quién lo cambió — que es
+// exactamente lo que una bitácora regulada tiene que poder mostrar. Por eso lo
+// anota la función que guarda y no la pantalla: la app lo hereda.
+
+/** Guardar la configuración de un área → `CONFIGURAR_AREA_BITACORA`. */
+export async function guardarArea(id, cambios, contexto = {}) {
+    const res = await actualizarArea(id, cambios);
+    if (!res.error) anotar('CONFIGURAR_AREA_BITACORA', String(id), { ...contexto, ...cambios });
+    return res;
+}
+
+/** Dar de alta un área → `CREAR_AREA_BITACORA`. */
+export async function crearArea(area) {
+    const res = await insertarArea(area);
+    if (!res.error) {
+        anotar('CREAR_AREA_BITACORA', String(res.id ?? ''), {
+            sucursal: area?.branch_id ?? null, tipo: area?.tipo ?? null, nombre: area?.nombre ?? null,
+        });
+    }
+    return res;
+}
+
+/**
+ * Encender el refrigerador de una sucursal → `CONFIGURAR_REFRIGERADOR_BITACORA`.
+ *
+ * Si ya existió y se apagó, se vuelve a encender: crear otro chocaría con el
+ * UNIQUE (sucursal, tipo, nombre) y, peor, dejaría las lecturas viejas colgando
+ * de un área apagada. `nueva` es el área a crear si no existe (`areaNueva`).
+ */
+export async function encenderRefrigerador({ refri = null, nueva = null, branchId, calibradoEl, calibradoHasta }) {
+    const datos = { activa: true, calibrado_el: calibradoEl, calibrado_hasta: calibradoHasta };
+    const res = refri
+        ? await actualizarArea(refri.id, datos)
+        : await insertarArea({ ...nueva, ...datos });
+    if (!res.error) {
+        anotar('CONFIGURAR_REFRIGERADOR_BITACORA', String(refri?.id ?? res.id ?? branchId),
+            { sucursal: branchId, encendido: true, calibrado_el: calibradoEl });
+    }
+    return res;
+}
+
+/** Apagar el refrigerador de una sucursal → `CONFIGURAR_REFRIGERADOR_BITACORA`. */
+export async function apagarRefrigerador(refriId, branchId) {
+    const res = await actualizarArea(refriId, { activa: false });
+    if (!res.error) {
+        anotar('CONFIGURAR_REFRIGERADOR_BITACORA', String(refriId), { sucursal: branchId, encendido: false });
+    }
+    return res;
 }
 
 // ── Lo que la pantalla necesita saber del día ───────────────────────────────
@@ -947,6 +1007,9 @@ export async function aplicarHorarios(branchId, franjas, limpiezas) {
         p_limpiezas: limpiezas || [],
     });
     if (error) return { areas: 0, error: error.message ?? 'No se pudieron guardar los horarios.' };
+    anotar('CONFIGURAR_HORARIOS_BITACORA', String(branchId), {
+        sucursal: branchId, areas: data ?? 0, franjas, limpiezas,
+    });
     return { areas: data ?? 0, error: null };
 }
 

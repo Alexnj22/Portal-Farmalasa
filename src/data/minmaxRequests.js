@@ -6,6 +6,7 @@
 // bug, solo se extrae el query builder.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { anotar, conBitacora } from './audit';
 
 export function fetchProductPreciosForMinMax(productId) {
     return supabase.from('product_precios')
@@ -82,8 +83,17 @@ export async function fetchContextoDeSolicitudMinMax(erpProductId, erpSucursalId
     return data ?? null;
 }
 
+// Anota su propia entrada en la bitácora (D3, 2026-09-28), con los detalles
+// sacados del mismo payload: cualquier cliente que cree la solicitud la deja.
 export function insertMinMaxChangeRequest(payload) {
-    return supabase.from('minmax_change_requests').insert(payload);
+    return conBitacora(supabase.from('minmax_change_requests').insert(payload),
+        'MINMAX_REQUEST_CREATED', payload?.erp_product_id ?? null, {
+            product: payload?.product_name ?? null,
+            sucursal_id: payload?.erp_sucursal_id ?? null,
+            requested_min: payload?.requested_min ?? null,
+            requested_max: payload?.requested_max ?? null,
+            reason: payload?.reason ?? null,
+        });
 }
 
 /**
@@ -266,13 +276,17 @@ export async function fetchSolicitudesDeProducto(erpProductId, erpSucursalId) {
  * Devuelve `{ ok, aplicado, error }`. `aplicado: false` con `ok: true` es
  * «quedó pedida»: el pedido entró aunque la aprobación haya fallado.
  */
-export async function solicitarMinMax(payload, { aplicar = false } = {}) {
+// Anota MINMAX_DESDE_GESTION_STOCK cuando la solicitud quedó guardada (D3,
+// 2026-09-28); `contexto` lleva lo legible (sala, producto, min, max).
+export async function solicitarMinMax(payload, { aplicar = false } = {}, contexto = {}) {
     if (!aplicar) {
         const { error } = await supabase.from('minmax_change_requests').insert(payload);
+        if (!error) anotar('MINMAX_DESDE_GESTION_STOCK', null, { aplicado: false, ...contexto });
         return { ok: !error, aplicado: false, error: error?.message ?? null };
     }
     const { data, error } = await supabase.from('minmax_change_requests').insert(payload).select('id').single();
     if (error) return { ok: false, aplicado: false, error: error.message };
     const r = await decidirMinMax(data.id, true, 'Aplicado desde Gestión de stock');
+    anotar('MINMAX_DESDE_GESTION_STOCK', data.id, { aplicado: r.ok, ...contexto });
     return { ok: true, aplicado: r.ok, error: r.ok ? null : r.error };
 }

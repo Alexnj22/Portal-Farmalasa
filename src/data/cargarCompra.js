@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { buscarProductos as buscarPorRegla } from './busquedaProductos';
+import { anotar } from './audit';
 
 // Cargar compra desde el documento — la capa de datos.
 //
@@ -45,12 +46,18 @@ export async function fetchPropuesta(documentId) {
  * confirmación deja de preguntarse para siempre. El diccionario **no aprende de
  * lo que adivinó el parecido de nombre** — sólo de esto y del código de barras.
  */
-export async function confirmarProducto(emisorNit, codigoProveedor, productId) {
+//
+// Anota su propia entrada en la bitácora (D3, 2026-09-28). `contexto` lleva lo
+// legible que sólo la pantalla conoce (el nombre del proveedor y del producto).
+export async function confirmarProducto(emisorNit, codigoProveedor, productId, contexto = {}) {
     const { error } = await supabase.rpc('confirmar_alias_producto', {
         p_emisor_nit: emisorNit,
         p_codigo_prov: codigoProveedor,
         p_product_id: Number(productId),
     });
+    if (!error) {
+        anotar('COMPRA_ALIAS_CONFIRMADO', productId, { codigo: codigoProveedor, ...contexto });
+    }
     return { error: error?.message ?? null };
 }
 
@@ -108,10 +115,15 @@ export async function barrerDocumentos({ dias = 90, tanda = 40 } = {}) {
  * nadie iba a leer. Y como se ven con el filtro «No son productos», un error se
  * revisa mirando la lista, no leyendo motivos.
  */
-export async function apartarRenglon(id, deshacer = false) {
+//
+// Apartar y devolver anotan su entrada en la bitácora desde acá (D3).
+export async function apartarRenglon(id, deshacer = false, contexto = {}) {
     const { error } = await supabase.rpc('ignorar_renglon_pendiente', {
         p_id: id, p_motivo: null, p_deshacer: deshacer,
     });
+    if (!error) {
+        anotar(deshacer ? 'COMPRA_RENGLON_DEVUELTO' : 'COMPRA_RENGLON_APARTADO', id, contexto);
+    }
     return { error: error?.message ?? null };
 }
 

@@ -12,6 +12,9 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { diaSV } from '../utils/fecha';
+import { anotar, conBitacora } from './audit';
+import { updateAttendancePunch, updateEmployee } from './employees';
+import { resolverApprovalRequest } from './requests';
 
 // ── La hora de El Salvador, y los minutos de tardanza ───────────────────────
 //
@@ -93,10 +96,88 @@ export function fetchQuincenaTimesheets(startDate, endDate) {
  * Encontrado el 2026-09-15 cruzando TODA escritura del repo contra el catálogo
  * real de columnas de producción, a raíz del mismo defecto en `creditos-erp`.
  */
-export function approveTimesheetsBulk(ids) {
-    return supabase.from('timesheets')
+export function approveTimesheetsBulk(ids, { employeeId = null, quincena = null } = {}) {
+    // La firma la anota esta función (D3, 2026-09-28), no la pantalla.
+    return conBitacora(supabase.from('timesheets')
         .update({ status: 'APPROVED', updated_at: new Date().toISOString() })
-        .in('id', ids);
+        .in('id', ids),
+        'TIMESHEETS_BULK_APPROVED', employeeId != null ? String(employeeId) : null,
+        { empId: employeeId, count: ids.length, quincena });
+}
+
+/**
+ * Dar por revisadas las marcaciones que esperaban a Talento Humano →
+ * `ATTENDANCE_HR_REVIEW_CLEARED`. Vivía como un bucle en la pantalla; acá la
+ * bitácora sale de la misma función que escribe (D3, 2026-09-28). Lanza si
+ * una escritura falla, como hacía el bucle.
+ */
+export async function marcarMarcajesRevisados(punches, { employeeId = null, date = null, revisadoPor = null } = {}) {
+    const now = new Date().toISOString();
+    for (const p of punches) {
+        const details = { ...p.details, pendingHRReview: false, hrReviewedBy: revisadoPor, hrReviewedAt: now };
+        const { error } = await updateAttendancePunch(p.id, { details });
+        if (error) throw error;
+    }
+    anotar('ATTENDANCE_HR_REVIEW_CLEARED', employeeId != null ? String(employeeId) : null, {
+        empId: employeeId, date, count: punches.length,
+    });
+}
+
+/**
+ * Confirmar o rechazar un turno extra (`SHIFT_EXCEPTION`) →
+ * `SHIFT_EXCEPTION_APPROVED` / `SHIFT_EXCEPTION_REJECTED`.
+ *
+ * Se decide PRIMERO, y sólo si la decisión entra se toca al empleado. Con dos
+ * pestañas abiertas la lista sigue mostrando el turno extra por confirmar
+ * aunque ya se haya resuelto en la otra, y el orden viejo —escribir la
+ * excepción y después marcar la solicitud— dejaba pasar la segunda
+ * confirmación entera: horario reescrito, bitácora duplicada y un «Confirmado»
+ * que no era cierto. El UPDATE condicionado a PENDING es el candado de todo lo
+ * que sigue.
+ *
+ * Devuelve `{ error, yaResuelta }`. Vivía entero en la pantalla; salió acá con
+ * la bitácora (D3, 2026-09-28) para que la app lo herede tal cual.
+ */
+export async function resolverTurnoExtra(req, aprobar, {
+    confirmedStart = null, confirmedEnd = null, motivo = '', approverId = null, approverName = null,
+} = {}) {
+    const meta = req.metadata || {};
+    const newStatus = aprobar ? 'APPROVED' : 'REJECTED';
+    const nota = String(motivo ?? '').trim();
+    const { error: reqErr, count } = await resolverApprovalRequest(req.id, {
+        status: newStatus, approver_id: approverId,
+        /* El motivo del rechazo. Este camino no lo escribía y la pantalla no lo
+         * pedía: el empleado veía su turno extra rechazado sin saber por qué, y
+         * en la base no quedaba nada. Obligatorio desde el 2026-08-18. */
+        ...(nota ? { approver_note: nota } : {}),
+        updated_at: new Date().toISOString(),
+    });
+    if (reqErr) return { error: reqErr, yaResuelta: false };
+    if (count === 0) return { error: null, yaResuelta: true };
+
+    if (aprobar && confirmedStart && confirmedEnd) {
+        // La excepción va a la ficha para que consolidate-timesheets use las
+        // horas declaradas.
+        const { data: empRow } = await fetchEmployeeExceptions(req.employee_id);
+        if (empRow) {
+            const existing = Array.isArray(empRow.exceptions) ? empRow.exceptions : [];
+            const filtered = existing.filter(ex => ex.date !== meta.date);
+            const newEx = {
+                id: Date.now().toString(),
+                date: meta.date,
+                isCustom: true,
+                customStart: confirmedStart,
+                customEnd: confirmedEnd,
+                note: `Turno extra confirmado por TH (${approverName || 'supervisor'})`,
+            };
+            await updateEmployee(req.employee_id, { exceptions: [...filtered, newEx], updated_at: new Date().toISOString() });
+        }
+    }
+
+    anotar(`SHIFT_EXCEPTION_${newStatus}`, String(req.id), {
+        requestId: req.id, empId: req.employee_id, date: meta.date, confirmedStart, confirmedEnd,
+    });
+    return { error: null, yaResuelta: false };
 }
 
 export function closeQuincenaTimesheets(ids) {

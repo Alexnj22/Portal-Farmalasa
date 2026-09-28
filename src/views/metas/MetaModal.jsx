@@ -5,7 +5,6 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
-import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { guardarMetaManual, fetchMetasRows } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -105,10 +104,8 @@ export default function MetaModal({ isOpen, onClose, onSaved, salaOptions, initi
         if (!valido || saving) return;
         setSaving(true);
         try {
-            await guardarMetaManual({ branchId, yearMonth: ym, monto: montoNum, nota });
-            useStaffStore.getState().appendAuditLog('METAS_META_MANUAL', `${branchId}|${ym}`, {
-                monto: montoNum, nota: nota || undefined, estadoPrevio: estadoActual || 'sin meta',
-            });
+            await guardarMetaManual({ branchId, yearMonth: ym, monto: montoNum, nota },
+                { estadoPrevio: estadoActual || 'sin meta' });
             showToast('Meta guardada', `${ymLabel(ym)} quedó con su meta registrada.`, 'success');
             onSaved?.();
             onClose();

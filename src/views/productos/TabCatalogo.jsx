@@ -30,8 +30,8 @@ import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import {
-    deleteProductActivePrinciples, insertProductActivePrinciples, updateProductPrincipioActivo,
-    updateProductCategoria, insertProductCategory, upsertProductLocations, deleteProductLocations,
+    guardarPrincipiosActivos,
+    updateProductCategoria, insertProductCategory, guardarUbicacionesProducto,
     updateProductDevolutivo, updateProductFoto, fetchProductPreciosMarginPage, fetchProductCounts,
     fetchChangelogPage, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
 } from '../../data/productos';
@@ -276,32 +276,28 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     const save = async ({ quiet = false } = {}) => {
         setSavingPA(true);
         try {
-            await deleteProductActivePrinciples(productId);
             let text = null;
             let saved = [];
+            let rows = [];
             if (preset) {
-                await insertProductActivePrinciples([{
-                    product_id: productId, nombre: preset, concentracion: null, orden: 0,
-                }]);
+                rows = [{ product_id: productId, nombre: preset, concentracion: null, orden: 0 }];
                 text = preset;
                 saved = [{ nombre: preset }];
             } else {
                 const toSave = items.filter(p => p.nombre.trim());
                 if (toSave.length > 0) {
-                    await insertProductActivePrinciples(
-                        toSave.map((p, i) => ({
-                            product_id:    productId,
-                            nombre:        p.nombre.trim(),
-                            concentracion: p.concentracion?.trim() || null,
-                            orden:         i,
-                        }))
-                    );
+                    rows = toSave.map((p, i) => ({
+                        product_id:    productId,
+                        nombre:        p.nombre.trim(),
+                        concentracion: p.concentracion?.trim() || null,
+                        orden:         i,
+                    }));
                     text = toSave.map(p => [p.nombre.trim(), p.concentracion?.trim()].filter(Boolean).join(' ')).join(', ');
                 }
                 saved = toSave;
             }
-            await updateProductPrincipioActivo(productId, text);
-            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_PRINCIPLES', String(productId), { count: saved.length });
+            // Borra, inserta, escribe el texto y anota (D3).
+            await guardarPrincipiosActivos(productId, rows, text);
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Principios activos actualizados.', 'success');
             if (onSaved) onSaved(saved, text || null);
         } catch (e) {
@@ -392,7 +388,6 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
         setSavingCat(true);
         try {
             await updateProductCategoria(productId, selected);
-            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_CATEGORY', String(productId), { categoria: selected || null });
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Categoría actualizada.', 'success');
             onCategoryUpdated?.(productId, selected || null);
         } catch (e) {
@@ -487,11 +482,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                 updated_at:     new Date().toISOString(),
             }));
             const toDelete = locs.filter(l => !hasAnyData(l)).map(l => l.branch_id);
-            if (toUpsert.length > 0)
-                await upsertProductLocations(toUpsert);
-            if (toDelete.length > 0)
-                await deleteProductLocations(productId, toDelete);
-            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_LOCATIONS', String(productId), { branches: toUpsert.length });
+            await guardarUbicacionesProducto(productId, toUpsert, toDelete);
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Ubicaciones actualizadas.', 'success');
         } catch (e) {
             useToastStore.getState().showToast('Error', mensajeAmigable(e), 'error');
@@ -974,12 +965,11 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         if (savingDevolutivo) return;
         setSavingDevolutivo(true);
         const newVal = !devolutivo;
-        const { error } = await updateProductDevolutivo(product.id, newVal);
+        const { error } = await updateProductDevolutivo(product.id, newVal, { producto: product.nombre });
         if (error) {
             useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error');
         } else {
             setDevolutivo(newVal);
-            useStaff.getState().appendAuditLog('PRODUCTO_DEVOLUTIVO', String(product.id), { producto: product.nombre, devolutivo: newVal });
         }
         setSavingDevolutivo(false);
     };

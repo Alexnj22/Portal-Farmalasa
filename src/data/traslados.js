@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { conBitacora } from './audit';
 import { rangoDeSemana } from '../utils/semana';
 
 // Datos del traslado entre salas.
@@ -42,7 +43,19 @@ export const MOTIVOS_RECHAZO = [
  * composición enviada y sin forma de saber cuál mitad.
  */
 export function crearSolicitudTraslado(payload) {
-    return supabase.from('approval_requests').insert(payload);
+    // La bitácora la anota esta función (D3 del núcleo portable), con lo que
+    // ya viaja en las filas: una entrada por composición, no por sala.
+    const filas = Array.isArray(payload) ? payload : [payload];
+    const meta = filas.map(f => f?.metadata ?? {});
+    return conBitacora(supabase.from('approval_requests').insert(payload),
+        'TRASLADO_SOLICITADO', String(meta[0]?.branch_id ?? ''), {
+            solicitudes: filas.length,
+            productos: meta.reduce((n, m) => n + (m.items?.length ?? 0), 0),
+            salas: meta.map(m => m.origen_branch_name),
+            unidades: meta.reduce((n, m) => n + (Number(m.total_unidades) || 0), 0),
+            causa: meta[0]?.reason ?? '',
+            ...(meta[0]?.grupo_id ? { grupo_id: meta[0].grupo_id } : {}),
+        });
 }
 
 /**
@@ -507,7 +520,11 @@ export async function rechazarTraslado(requestId, motivo, texto = '', sugerencia
         .maybeSingle();
     if (errLeer) return { error: errLeer };
 
-    return supabase
+    // Despachar y recibir pasan por la función del servidor, que deja su
+    // propio rastro. Rechazar se escribe desde el cliente y no dejaba ninguno:
+    // una sala que se queda sin lo que pidió no tenía forma de saber quién
+    // dijo que no ni por qué. Lo anota esta función (D3 del núcleo portable).
+    return conBitacora(supabase
         .from('approval_requests')
         .update({
             status: 'REJECTED',
@@ -519,5 +536,7 @@ export async function rechazarTraslado(requestId, motivo, texto = '', sugerencia
             },
         })
         .eq('id', requestId)
-        .eq('status', 'PENDING');   // no pisar si otro la resolvió en el medio
+        .eq('status', 'PENDING'),   // no pisar si otro la resolvió en el medio
+    'RECHAZAR_TRASLADO', String(requestId),
+    { motivo, detalle: texto || null, sugerencia: sugerencia || null });
 }

@@ -360,8 +360,10 @@ justamente lo que rompe en silencio (un import que apunta al archivo viejo, un
   de `src/data` que guarda (así la app del teléfono la hereda), y en dinero y lo
   fiscal la base anota además por su cuenta. La mitad de la base está hecha:
   `bitacora_de_dinero` en 13 tablas (`20260928155410`, v2.1076.2); cortes y
-  bolsas ya tenían su historial. Falta mover los ~269 `appendAuditLog` de las
-  pantallas a `src/data`, módulo por módulo, empezando por los de dinero.
+  bolsas ya tenían su historial. **Cerrada** en v2.1077.0: la entrada legible
+  sale de `src/data` en todos los módulos; quedan 24 en pantallas a propósito
+  (abrir, exportar, imprimir, un error de pantalla) y las de los stores, que
+  ya son lógica compartida.
 - **F8:** no hay piloto de un solo flujo. Palabras del usuario: *«abrirán todas.
   Así que debe estar toda la info. No sé si necesariamente igual, pero debe
   estar todo.»* La app del teléfono tiene que cubrir todas las pantallas; la

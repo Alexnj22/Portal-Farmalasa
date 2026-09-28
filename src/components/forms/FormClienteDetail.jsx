@@ -11,7 +11,6 @@ import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
 import { LoadingState } from '../common/StateViews';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
 import {
@@ -294,10 +293,8 @@ const FormClienteDetail = ({ formData }) => {
         setGuardando(true);
         setError('');
         try {
-            await updateCustomerFiscal(id, cambios, { confirmarFiscal: confirmando });
-            useStaff.getState().appendAuditLog('CLIENTES_EDITAR_FICHA', String(id), {
-                nombre: cliente?.name, campos: Object.keys(cambios),
-            });
+            // La bitácora la anota `updateCustomerFiscal` (D3).
+            await updateCustomerFiscal(id, cambios, { confirmarFiscal: confirmando }, { nombre: cliente?.name });
             const n = Object.keys(cambios).length;
             useToastStore.getState().showToast(
                 'Ficha actualizada',

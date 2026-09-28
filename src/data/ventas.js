@@ -13,6 +13,7 @@
 // que puede tener un día que no cuadra.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { conBitacora } from './audit';
 
 // Los productos bajo receta, para pintar el badge de cada renglón y para saber
 // si la píldora «Receta Médica» tiene sentido. Son 79 sobre 5,212 — cabe de
@@ -359,8 +360,14 @@ export const fetchVendedorPorDia = (params) => supabase.rpc('get_vendedor_diario
 /** Las ventas agregadas por producto de un período (JSON, sin el techo de 1000 filas). */
 export const fetchVentasPorProducto = (params) => supabase.rpc('get_product_sales_agg_jsonb', params);
 
-/** Oculta o vuelve a mostrar un producto en el ranking de Ventas. */
-export const alternarProductoOcultoEnVentas = (params) => supabase.rpc('toggle_producto_oculto_ventas', params);
+/**
+ * Oculta o vuelve a mostrar un producto en el ranking de Ventas, y lo anota en
+ * la bitácora (D3, 2026-09-28). `contexto` lleva los datos legibles.
+ */
+export const alternarProductoOcultoEnVentas = (params, contexto = {}) => conBitacora(
+    supabase.rpc('toggle_producto_oculto_ventas', params),
+    params?.p_oculto ? 'OCULTAR_PRODUCTO_VENTAS' : 'MOSTRAR_PRODUCTO_VENTAS',
+    params?.p_erp_product_id ?? null, contexto);
 
 /** Las líneas de venta de un producto en un período. */
 export const fetchLineasDeVentaDelProducto = (params) => supabase.rpc('get_product_drill_lines', params);

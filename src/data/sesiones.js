@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { fechaTexto } from '../utils/fecha';
+import { anotar } from './audit';
 
 // SesionesView.jsx (F4 de docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md).
 //
@@ -18,15 +19,32 @@ export async function fetchSesiones() {
     return { data: await signPhotosDeep(filas), error: null };
 }
 
-export function cerrarSesion(sessionId) {
-    return supabase.rpc('revoke_session', { p_session_id: sessionId });
+// Cerrar, bloquear y desbloquear se anotan solos (D3, 2026-09-28): los
+// escribe la función que lo hace, así que la app del teléfono los hereda. La
+// pantalla sólo pasa en `contexto` los rótulos que la bitácora muestra (el
+// nombre de la persona y la cuenta). Sólo se anota si entró.
+async function conAnotacion(llamada, armar) {
+    const res = await llamada;
+    if (!res?.error) {
+        const [accion, targetId, detalles] = armar(res?.data);
+        anotar(accion, targetId, detalles);
+    }
+    return res;
+}
+
+/** Cerrar una conexión → `SESION_CERRADA`. */
+export function cerrarSesion(sessionId, contexto = {}) {
+    return conAnotacion(supabase.rpc('revoke_session', { p_session_id: sessionId }),
+        () => ['SESION_CERRADA', String(sessionId), { ...contexto, cerradas: 1, sessionId }]);
 }
 
 // Recibe la FICHA: con una tarjeta por persona, «cerrar todas» significa las de
 // todas sus puertas. La función de la base acepta la ficha o cualquiera de sus
 // identidades y cierra todo lo que cuelgue de esa persona.
-export function cerrarTodasDe(personaId) {
-    return supabase.rpc('revoke_person_sessions', { p_user_id: personaId });
+/** Cerrar todas las conexiones de una persona → `SESIONES_CERRADAS_PERSONA`. */
+export function cerrarTodasDe(personaId, contexto = {}) {
+    return conAnotacion(supabase.rpc('revoke_person_sessions', { p_user_id: personaId }),
+        (cerradas) => ['SESIONES_CERRADAS_PERSONA', String(personaId), { ...contexto, cerradas }]);
 }
 
 // ── Cómo entró: la puerta, dicha en palabras ────────────────────────────────
@@ -194,16 +212,21 @@ export function describirLimite(minutos) {
 // `personaId` es la FICHA. La base lo traduce igual si le llega una identidad
 // —así fue como esto estuvo roto doce días—, pero la pantalla ya sabe cuál es y
 // no tiene por qué hacerla adivinar.
-export function bloquearPersona(personaId, hasta, motivo) {
-    return supabase.rpc('block_employee', {
+/** Bloquear a una persona → `EMPLEADO_BLOQUEADO`. */
+export function bloquearPersona(personaId, hasta, motivo, contexto = {}) {
+    return conAnotacion(supabase.rpc('block_employee', {
         p_employee_id: personaId,
         p_until: hasta ?? null,      // null = indefinido
         p_reason: motivo || null,
-    });
+    }), (sesionesCerradas) => ['EMPLEADO_BLOQUEADO', String(personaId), {
+        ...contexto, hasta: hasta || 'indefinido', motivo: motivo || null, sesionesCerradas,
+    }]);
 }
 
-export function desbloquearPersona(personaId) {
-    return supabase.rpc('unblock_employee', { p_employee_id: personaId });
+/** Quitar el bloqueo → `EMPLEADO_DESBLOQUEADO`. */
+export function desbloquearPersona(personaId, contexto = {}) {
+    return conAnotacion(supabase.rpc('unblock_employee', { p_employee_id: personaId }),
+        () => ['EMPLEADO_DESBLOQUEADO', String(personaId), { ...contexto }]);
 }
 
 // `blocked_until` viene con 'infinity' cuando el bloqueo no tiene fecha. Ese

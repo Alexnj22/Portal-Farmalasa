@@ -4,6 +4,7 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { buscarIdsDeProducto } from './busquedaProductos';
+import { conBitacora } from './audit';
 
 // keepIdPresentacion: la regla ya configurada puede apuntar a una presentación
 // que desde entonces se marcó activo=false en el catálogo — igual debe listarse
@@ -93,14 +94,19 @@ export async function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, s
     return { ...(await q), aproximado };
 }
 
-export function deleteDispatchRule(id) {
-    return supabase.from('dispatch_rules').delete().eq('id', id);
+// La bitácora la anotan estas tres funciones (D3 del núcleo portable): así la
+// hereda cualquier cliente que edite una regla, no sólo la pestaña Reglas.
+export function deleteDispatchRule(id, contexto = {}) {
+    return conBitacora(supabase.from('dispatch_rules').delete().eq('id', id),
+        'ELIMINAR_REGLA_DESPACHO', String(id), { ...contexto });
 }
 
 export function updateDispatchRule(id, payload) {
-    return supabase.from('dispatch_rules').update(payload).eq('id', id).select().single();
+    return conBitacora(supabase.from('dispatch_rules').update(payload).eq('id', id).select().single(),
+        'EDITAR_REGLA_DESPACHO', String(id), payload);
 }
 
 export function insertDispatchRule(payload) {
-    return supabase.from('dispatch_rules').insert(payload).select().single();
+    return conBitacora(supabase.from('dispatch_rules').insert(payload).select().single(),
+        'CREAR_REGLA_DESPACHO', String(payload?.erp_product_id), payload);
 }

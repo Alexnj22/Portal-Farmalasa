@@ -616,11 +616,7 @@ const SchedulesView = ({ openModal, setView }) => {
             showToast('No se quitó la cobertura', mensajeAmigable(error, 'Intenta de nuevo.'), 'error');
             return;
         }
-        // Una cobertura dice que alguien de otra sala trabaja acá esa semana.
-        // Quitarla o ponerla cambia dónde se espera a una persona, y de eso
-        // dependen la marcación y el reclamo de después.
-        useStaff.getState().appendAuditLog('QUITAR_COBERTURA', String(empId),
-            { sucursal_id: Number(filterBranch), semana: startDate });
+        // `QUITAR_COBERTURA` lo anota `deleteScheduleCoverage`.
     }, [filterBranch, startDate, showToast]);
 
     const handleSaveCoverageCell = useCallback(async (empId, homeBranchId, dayOfWeek, scheduleData) => {
@@ -647,8 +643,7 @@ const SchedulesView = ({ openModal, setView }) => {
             showToast('No se guardó la cobertura', mensajeAmigable(error, 'Intenta de nuevo.'), 'error');
             return;
         }
-        useStaff.getState().appendAuditLog('GUARDAR_COBERTURA', String(empId),
-            { sucursal_id: Number(filterBranch), semana: startDate, dia: dayOfWeek });
+        // `GUARDAR_COBERTURA` lo anota `upsertScheduleCoverage`.
     }, [filterBranch, startDate, showToast]);
 
     /* La revisión previa a publicar.

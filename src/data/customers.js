@@ -3,6 +3,7 @@
 // sobre el listado completo de clientes (23K+ filas) por tokens —
 // cada token hace OR sobre search_name/nit/dui/phone/erp_id.
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 /**
  * Buscar clientes con la regla del portal (`busqueda_clientes` en la base:
@@ -109,14 +110,18 @@ export function mensajeDeError(err) {
  * Solo viajan los campos que vienen en `campos`: el RPC conserva lo que no
  * recibe. Es deliberado y es lo contrario de lo que hace el ERP, cuyo POST
  * parcial BORRA lo que no se le manda.
+ *
+ * Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+ * que la llame la deja. `contexto` son los datos legibles (el nombre).
  */
-export async function updateCustomerFiscal(id, campos, { confirmarFiscal = false } = {}) {
+export async function updateCustomerFiscal(id, campos, { confirmarFiscal = false } = {}, contexto = {}) {
     const { data, error } = await supabase.rpc('update_customer_fiscal', {
         p_id: id,
         p_campos: campos,
         p_confirmar_fiscal: confirmarFiscal,
     });
     if (error) throw error;
+    anotar('CLIENTES_EDITAR_FICHA', id, { ...contexto, campos: Object.keys(campos || {}) });
     return data;
 }
 
@@ -174,9 +179,10 @@ export async function fetchClientesPorRevisar({ familia, page = 1, pageSize = 50
 
 /** "Ya lo miré, no hay nada que hacer." Se anota para que la lista no vuelva a
  *  mostrarlo — una decisión que no se anota se vuelve a tomar. */
-export async function descartarClientePorRevisar(id, deshacer = false) {
+export async function descartarClientePorRevisar(id, deshacer = false, contexto = {}) {
     const { error } = await supabase.rpc('descartar_cliente_por_revisar', {
         p_id: id, p_deshacer: deshacer,
     });
     if (error) throw error;
+    anotar(deshacer ? 'CLIENTES_REVISAR_DESHACER' : 'CLIENTES_REVISAR_DESCARTAR', id, contexto);
 }

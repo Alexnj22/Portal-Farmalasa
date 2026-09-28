@@ -6,6 +6,7 @@
 // armando el payload/patch exacto que ya armaba antes).
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { anotar, conBitacora } from './audit';
 
 const ONCONFLICT = 'erp_product_id,erp_sucursal_id';
 
@@ -47,6 +48,29 @@ export function upsertStockParams(payload) {
     return supabase.from('product_stock_params').upsert(payload, { onConflict: ONCONFLICT });
 }
 
+// Ocultar un producto de Mín·Máx en una sala, y anotarlo (D3, 2026-09-28).
+// Oculto queda en -/- PUBLICADO, no en un borrador de 0/0: el borrador era
+// inalcanzable —la tabla no lista ocultos y el contador de borradores los
+// saltea— así que quedaba pendiente para siempre y bloqueaba el recálculo
+// mensual de toda la sucursal.
+export function ocultarProductoMinMax(erpProductId, erpSucursalId, contexto = {}) {
+    return conBitacora(upsertStockParams({
+        erp_product_id: erpProductId,
+        erp_sucursal_id: erpSucursalId,
+        is_hidden: true,
+        min_units: null, max_units: null,
+        draft_min: null, draft_max: null, draft_status: 'none',
+        updated_at: new Date().toISOString(),
+    }), 'MINMAX_HIDE', erpProductId, { sucursal_id: erpSucursalId, ...contexto });
+}
+
+// Marcar existencia muerta para traslado o liquidación. No escribe ninguna
+// tabla: la marca ES la entrada de la bitácora, así que vive acá y no en la
+// pantalla para que cualquier cliente la deje igual. Nunca lanza.
+export function marcarAccionStockMuerto(erpProductId, action, contexto = {}) {
+    return anotar('DEAD_STOCK_ACTION', erpProductId, { action, ...contexto });
+}
+
 // Igual que upsertStockParams pero devuelve la fila escrita. F2.6: el log de
 // auditoría de Bodega necesita el delta que NO se editó (manual_min cuando se
 // edita el MAX, y viceversa), y get_stock_analysis no devuelve esas columnas —
@@ -70,9 +94,17 @@ export function updateStockParams(erpProductId, erpSucursalId, patch) {
 // a propósito: ese UPDATE pasa por `psp_update`, que con alcance de una sala
 // devuelve CERO filas sin error sobre las demás — y desde un pedido se corrige
 // la sala que pidió, no la propia. La función lo autoriza por el renglón.
-export function guardarMinMaxDesdePedido(pedidoItemId, min, max) {
-    return supabase.rpc('guardar_minmax_desde_pedido', {
+// La bitácora la anota esta función (D3 del núcleo portable). `target_id` es
+// el PRODUCTO y no el renglón del pedido: es lo que el historial MIN/MAX de
+// Productos usa para buscar los cambios de un producto puntual. Lo pasa quien
+// llama en `contexto.erp_product_id`, junto con lo que sólo la pantalla sabe
+// (nombre, sala, valores anteriores, pedido).
+export function guardarMinMaxDesdePedido(pedidoItemId, min, max, contexto = {}) {
+    const { erp_product_id: productId, ...resto } = contexto;
+    return conBitacora(supabase.rpc('guardar_minmax_desde_pedido', {
         p_pedido_item_id: pedidoItemId, p_min: min, p_max: max,
+    }), 'MINMAX_UPDATED_FROM_PEDIDO', String(productId ?? pedidoItemId), {
+        field: 'min+max', ...resto, new_min: min, new_max: max,
     });
 }
 
@@ -167,8 +199,13 @@ export function fetchStockConfigFull() {
 
 // ── ConfigPanel.jsx (guardar configuración Min/Max) ─────────────────────────
 
+// Es una fila sola, pero `cycle_days` y los `reorder_*_days` son el divisor y
+// el multiplicador del MIN·MAX de TODO el catálogo: un cambio acá reescribe
+// 18,364 filas a la vez. Sin registro, un producto cuyo mínimo se movió no
+// tiene explicación ni autor — por eso se anota acá, al guardar (D3).
 export function updateStockConfig(payload) {
-    return supabase.from('stock_config').update(payload).eq('id', 1);
+    return conBitacora(supabase.from('stock_config').update(payload).eq('id', 1),
+        'CAMBIAR_CONFIG_MINMAX', 'stock_config', payload);
 }
 
 export function fetchErpSucursalIdForBranchLocked(branchId) {

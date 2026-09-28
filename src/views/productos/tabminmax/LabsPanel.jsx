@@ -8,11 +8,9 @@ import ModalShell from '../../../components/common/ModalShell';
 import Switch from '../../../components/common/Switch';
 import { SkeletonText } from '../../../components/common/StateViews';
 import { FlaskConical, X, Search, Loader2 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { smartFilter } from '../../../utils/searchUtils';
 import {
-    fetchLaboratoriosMinMaxVisibility, fetchActiveProductLabCounts, updateLaboratorioMinMaxVisibility,
-    fetchProductIdsByLaboratorio, unhideStockParamsForProducts,
+    fetchLaboratoriosMinMaxVisibility, fetchActiveProductLabCounts, cambiarVisibilidadLaboratorioMinMax,
 } from '../../../data/minmaxLabs';
 import SearchInput from '../../../components/common/SearchInput';
 import { EmptyState } from '../../../components/common/StateViews';
@@ -45,29 +43,16 @@ export default function LabsPanel({ onClose, onChanged }) {
         setSaving(lab.id);
         setErr(null);
         const newVal = !lab.ocultar_en_minmax;
-        const { error } = await updateLaboratorioMinMaxVisibility(lab.id, newVal);
+        // Al desocultar, la función de datos limpia también el `is_hidden` de
+        // cada producto del laboratorio, y anota en la bitácora (D3).
+        const { error, errorDesocultar } = await cambiarVisibilidadLaboratorioMinMax(lab.id, newVal, { lab: lab.nombre });
         if (!error) {
-            // Al desocultar un lab, limpia is_hidden individual para que los productos
-            // reaparezcan sin estar marcados como ocultos a nivel de producto
-            if (!newVal) {
-                const { data: prods } = await fetchProductIdsByLaboratorio(lab.id);
-                if (prods?.length) {
-                    // unhideStockParamsForProducts devuelve un array de resultados
-                    // (uno por chunk de 1000) — un chunk fallido antes quedaba en
-                    // silencio (hallazgo de /code-review post-auditoría).
-                    const results = await unhideStockParamsForProducts(prods.map(p => p.id));
-                    const failed = results.find(r => r.error);
-                    if (failed) {
-                        setErr(`Algunos productos no se pudieron desocultar: ${failed.error.message}`);
-                        setSaving(null);
-                        return;
-                    }
-                }
+            if (errorDesocultar) {
+                setErr(`Algunos productos no se pudieron desocultar: ${errorDesocultar.message}`);
+                setSaving(null);
+                return;
             }
             setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, ocultar_en_minmax: newVal } : l));
-            useStaff.getState().appendAuditLog('MINMAX_LAB_VISIBILITY', String(lab.id), {
-                lab: lab.nombre, ocultar: newVal,
-            });
             onChanged?.();
         } else {
             setErr(error.message);

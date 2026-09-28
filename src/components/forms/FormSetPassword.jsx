@@ -3,7 +3,6 @@ import Notice from '../common/Notice';
 import Button from '../common/Button';
 import { KeyRound, Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore';
-import { useStaffStore } from '../../store/staffStore';
 import PortalInput from '../common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fijarContrasenaDeEmpleado } from '../../data/auth';
@@ -28,7 +27,10 @@ const FormSetPassword = ({ formData, onClose }) => {
 
         setLoading(true);
         try {
-            const { data, error: fnErr } = await fijarContrasenaDeEmpleado(username, password);
+            // Es el ÚNICO camino para cambiar una contraseña: la bitácora
+            // (`CONTRASENA_RESTABLECIDA`) la anota `fijarContrasenaDeEmpleado`.
+            const { data, error: fnErr } = await fijarContrasenaDeEmpleado(username, password,
+                { employeeId: formData?.id ?? null });
 
             if (fnErr) {
                 setError('Error de red: la función no respondió.');
@@ -36,12 +38,6 @@ const FormSetPassword = ({ formData, onClose }) => {
                 setError(`${data?.error || 'Error'}${data?.details ? ': ' + data.details : ''}`);
             } else {
                 setDone(true);
-                // Es el ÚNICO camino para cambiar una contraseña (el autoservicio
-                // se quitó el 2026-09-22), así que queda en la bitácora: quién la
-                // restableció y a quién. Nunca la contraseña.
-                useStaffStore.getState().appendAuditLog('CONTRASENA_RESTABLECIDA', formData?.id ? String(formData.id) : null, {
-                    usuario: username,
-                });
                 const { showToast } = useToastStore.getState();
                 showToast?.('Contraseña establecida', `Acceso configurado para ${formData?.name || username}.`, 'success');
                 setTimeout(onClose, 1200);

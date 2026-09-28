@@ -6,6 +6,8 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { buscarProductos } from './busquedaProductos';
+import { anotar, conBitacora } from './audit';
+import { recibirTrasladoPedido, updatePedidoSucursalStatus } from './pedidos';
 
 export function fetchProductPreciosOpts(productId) {
     return supabase.from('product_precios')
@@ -114,16 +116,79 @@ export function quitarExtraDePedido(itemId) {
  * de la cantidad de más sale de ese acuerdo. Una sala no le puede bajar la
  * existencia a bodega sin que bodega se entere.
  */
-export function corregirRecepcionDeItem({ itemId, cantidad, nota }) {
-    return supabase.rpc('corregir_recepcion_de_item', {
+export function corregirRecepcionDeItem({ itemId, cantidad, nota, pedidoId = null }, contexto = {}) {
+    return conBitacora(supabase.rpc('corregir_recepcion_de_item', {
         p_item_id: itemId,
         p_cantidad: cantidad,
         p_nota: nota ?? null,
+    }), 'CORREGIR_CONTEO_PEDIDO', pedidoId ?? itemId, {
+        ...contexto, pedido_item_id: itemId, ahora: cantidad,
     });
 }
 
 // ── Llamadas que vivían en las pantallas (F3 del núcleo portable) ──────────
 // Reciben los parámetros de la función tal cual y devuelven `{ data, error }`.
 
+// ── Bitácora de la recepción (D3 del núcleo portable) ───────────────────────
+// La anotan estas funciones y no la pantalla, para que la herede cualquier
+// cliente. Una recepción se anota según QUÉ se cerró:
+//   · un pedido sin hojas o una caja especial → `recibirPedidoDeSucursal`
+//     con `accion` en el contexto (sin `accion` no anota: es un paso de algo
+//     que anota otra función);
+//   · una o varias hojas → `marcarHojasRecibidas`, que anota DESPUÉS de dejar
+//     la hoja marcada — sin esa marca la hoja reaparece pendiente;
+//   · un producto suelto → `recibirProductoSuelto`.
+const ACCIONES_DE_RECEPCION = new Set(['CONFIRMAR_RECEPCION_PEDIDO', 'CONFIRMAR_RECEPCION_ESPECIAL']);
+
 /** Registra lo que recibió una sala de un pedido. */
-export const recibirPedidoDeSucursal = (params) => supabase.rpc('receive_pedido_sucursal', params);
+export function recibirPedidoDeSucursal(params, { accion = null, ...contexto } = {}) {
+    const escritura = supabase.rpc('receive_pedido_sucursal', params);
+    if (!accion) return escritura;
+    if (!ACCIONES_DE_RECEPCION.has(accion)) {
+        console.error('bitácora: acción de recepción desconocida', accion);
+        return escritura;
+    }
+    return conBitacora(escritura, accion, params?.p_pedido_id, {
+        sucursal_id: params?.p_sucursal_id, items_count: (params?.p_items || []).length, ...contexto,
+    });
+}
+
+/**
+ * Deja las hojas marcadas como recibidas y anota lo que se cerró con ellas:
+ * `hojas` ([{ hoja, items_count }]) una entrada por hoja, `especiales`
+ * (etiquetas) una por caja especial confirmada en el mismo paso, y `pedido`
+ * (objeto de detalles, o null) la del pedido completo. El resto de
+ * `contexto` va en todas.
+ */
+export async function marcarHojasRecibidas(pedidoId, sucursalId, hojasRecibidas,
+    { hojas = [], especiales = [], pedido = null, ...contexto } = {}) {
+    const res = await updatePedidoSucursalStatus(pedidoId, sucursalId, { hojas_recibidas: hojasRecibidas });
+    if (res?.error) return res;
+    for (const { hoja, items_count } of hojas) {
+        anotar('CONFIRMAR_RECEPCION_HOJA', pedidoId, { sucursal_id: sucursalId, hoja, items_count, ...contexto });
+    }
+    for (const especial of especiales) {
+        anotar('CONFIRMAR_RECEPCION_ESPECIAL', pedidoId, { sucursal_id: sucursalId, especial, ...contexto });
+    }
+    if (pedido) anotar('CONFIRMAR_RECEPCION_PEDIDO', pedidoId, { sucursal_id: sucursalId, ...pedido });
+    return res;
+}
+
+/**
+ * Recibe UN producto sin contar el resto de la caja: lo cuenta y lo ingresa
+ * al inventario (su propio traslado, entero). Devuelve `{ error, erp }`; `erp`
+ * es la respuesta del ingreso. La bitácora dice si entró al sistema.
+ */
+export async function recibirProductoSuelto({ pedidoId, sucursalId, items, receivedBy = null, itemId }, contexto = {}) {
+    const { error } = await supabase.rpc('receive_pedido_sucursal', {
+        p_pedido_id: pedidoId, p_sucursal_id: sucursalId,
+        p_items: items, p_received_by: receivedBy,
+    });
+    if (error) return { error, erp: null };
+    const erp = await recibirTrasladoPedido(pedidoId, sucursalId, { itemIds: [itemId] });
+    anotar('RECIBIR_PRODUCTO_SUELTO', pedidoId, {
+        sucursal_id: sucursalId, pedido_item_id: itemId, ...contexto,
+        entro_al_sistema: erp?.ok === true,
+    });
+    return { error: null, erp };
+}

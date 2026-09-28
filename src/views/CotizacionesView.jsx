@@ -17,9 +17,8 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
-import { deleteCotizacionItems, fetchAllProductPreciosForCotizaciones, fetchCotizacionItems, fetchCotizacionesList, insertCotizacion, insertCotizacionItems, searchCustomersByName, searchProductsActive, siguienteNumeroDeCotizacion, updateCotizacion } from '../data/cotizaciones';
+import { anularCotizacion, crearCotizacion, editarCotizacion, fetchAllProductPreciosForCotizaciones, fetchCotizacionItems, fetchCotizacionesList, searchCustomersByName, searchProductsActive } from '../data/cotizaciones';
 import { fetchBranchesBasic } from '../data/system';
-import { useStaffStore as useStaff } from '../store/staffStore';
 import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -595,8 +594,8 @@ export default function CotizacionesView() {
         };
     };
 
-    const buildItemRows = (cotId) => items.map((it, idx) => ({
-        cotizacion_id:     cotId,
+    // Sin `cotizacion_id`: lo pone la función de datos al guardar.
+    const buildItemRows = () => items.map((it, idx) => ({
         product_id:        parseInt(it.productId),
         product_nombre:    it.productName,
         presentacion_id:   it.presentacionId ? parseInt(it.presentacionId) : null,
@@ -608,27 +607,14 @@ export default function CotizacionesView() {
         sort_order:        idx,
     }));
 
-    const insertItems = async (cotId) => {
-        const { error } = await insertCotizacionItems(buildItemRows(cotId));
-        if (error) throw error;
-    };
-
     // ── Guardar nueva ─────────────────────────────────────────────────────────
     const handleSave = async () => {
         if (items.length === 0) { setSaveError('Agrega al menos un producto.'); return; }
         setSaveError(''); setSaving(true);
         try {
-            const { data: numData, error: numErr } = await siguienteNumeroDeCotizacion();
-            if (numErr) throw numErr;
-            const { data: cotData, error: cotErr } = await insertCotizacion({ numero: numData, ...buildPayload() });
+            // Número, cotización, renglones y bitácora: todo en la capa de datos (D3).
+            const { data: cotData, error: cotErr } = await crearCotizacion(buildPayload(), buildItemRows());
             if (cotErr) throw cotErr;
-            await insertItems(cotData.id);
-            // Una cotización es un precio que la empresa le ofrece a alguien por
-            // escrito. Quién la emitió, por cuánto y a quién no quedaba en
-            // ningún lado fuera de la propia fila, que después se edita encima.
-            useStaff.getState().appendAuditLog('CREAR_COTIZACION', String(cotData.id),
-                { numero: numData, cliente: cotData.cliente_nombre ?? null,
-                  total: cotData.total ?? null, renglones: items.length });
             const { data: freshItems, error: freshErr } = await fetchCotizacionItems(cotData.id);
             if (freshErr) console.error('handleSave: fetch fresh items failed:', freshErr.message);
             descartar();   // la cotización existe: el borrador ya no sirve
@@ -643,17 +629,10 @@ export default function CotizacionesView() {
         if (items.length === 0) { setSaveError('Agrega al menos un producto.'); return; }
         setSaveError(''); setSaving(true);
         try {
-            const { data: cotData, error: cotErr } = await updateCotizacion(editingId,
-                { ...buildPayload(), updated_at: new Date().toISOString() }, true);
+            // Reescribe los renglones y anota en la bitácora (D3).
+            const { data: cotData, error: cotErr } = await editarCotizacion(editingId,
+                { ...buildPayload(), updated_at: new Date().toISOString() }, buildItemRows());
             if (cotErr) throw cotErr;
-            await deleteCotizacionItems(editingId);
-            await insertItems(editingId);
-            // Editar BORRA los renglones y los reescribe: el precio de antes
-            // deja de existir en la fila. Sin registro no hay forma de mostrar
-            // qué se había ofrecido si el cliente reclama.
-            useStaff.getState().appendAuditLog('EDITAR_COTIZACION', String(editingId),
-                { numero: cotData?.numero ?? null, total: cotData?.total ?? null,
-                  renglones: items.length });
             const { data: freshItems, error: freshErr } = await fetchCotizacionItems(editingId);
             if (freshErr) console.error('handleUpdate: fetch fresh items failed:', freshErr.message);
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
@@ -700,8 +679,7 @@ export default function CotizacionesView() {
     const handleAnular = async () => {
         if (!confirmAnular) return;
         setAnulando(true);
-        await updateCotizacion(confirmAnular, { status: 'ANULADA' });
-        useStaff.getState().appendAuditLog('ANULAR_COTIZACION', String(confirmAnular), {});
+        await anularCotizacion(confirmAnular);
         setAnulando(false);
         setConfirmAnular(null);
         loadList();

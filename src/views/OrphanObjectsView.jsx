@@ -5,7 +5,6 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
 import { fetchOrphanObjects, updateOrphanObjectStatus } from '../data/orphanObjects';
 import Badge from '../components/common/Badge';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -39,7 +38,6 @@ const EMPTY_ARRAY = [];
 const OrphanObjectsView = () => {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('orphan_objects', 'can_edit');
-    const appendAuditLog = useStaff(state => state.appendAuditLog);
 
     const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'todos');
     const [rows, setRows] = useState(EMPTY_ARRAY);
@@ -58,12 +56,12 @@ const OrphanObjectsView = () => {
 
     const handleStatusChange = async (row, newStatus) => {
         setSavingId(row.id);
-        const { data, error } = await updateOrphanObjectStatus(row.id, newStatus);
+        const { data, error } = await updateOrphanObjectStatus(row.id, newStatus,
+            { title: row.title, from: row.status });
         if (error) {
             console.error('OrphanObjectsView: update failed:', error.message);
         } else {
             setRows(prev => prev.map(r => r.id === row.id ? { ...r, status: data.status, resolved_at: data.resolved_at } : r));
-            appendAuditLog?.('ORPHAN_OBJECT_STATUS_CHANGE', String(row.id), { title: row.title, from: row.status, to: newStatus });
         }
         setSavingId(null);
     };

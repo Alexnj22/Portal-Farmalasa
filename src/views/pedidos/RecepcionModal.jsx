@@ -18,8 +18,8 @@ import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
 import { useSearchToggle } from '../../plataforma/useSearchToggle';
-import { actualizarExtraDePedido, agregarExtraAPedido, corregirRecepcionDeItem, fetchLastDispatchInfo, fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, quitarExtraDePedido, recibirPedidoDeSucursal, searchAvailableProducts } from '../../data/recepcion';
-import { updatePedidoSucursalStatus, recibirTrasladoPedido } from '../../data/pedidos';
+import { actualizarExtraDePedido, agregarExtraAPedido, corregirRecepcionDeItem, fetchLastDispatchInfo, fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, marcarHojasRecibidas, quitarExtraDePedido, recibirPedidoDeSucursal, recibirProductoSuelto, searchAvailableProducts } from '../../data/recepcion';
+import { recibirTrasladoPedido } from '../../data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import PortalInput from '../../components/common/PortalInput';
@@ -1174,20 +1174,13 @@ export default function RecepcionModal({
         setSaving(true); setSaveError(null);
         try {
             const p_items = buildPItems([row]);
-            const { error } = await recibirPedidoDeSucursal({
-                p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
-                p_items, p_received_by: user?.id ?? null,
-            });
+            // Cuenta, ingresa y anota en la bitácora (capa de datos).
+            const { error, erp } = await recibirProductoSuelto({
+                pedidoId: pedido.id, sucursalId, items: p_items,
+                receivedBy: user?.id ?? null, itemId: row.id,
+            }, { producto: row.products?.nombre ?? null });
             if (error) throw error;
-
-            const erp = await recibirTrasladoPedido(pedido.id, sucursalId, { itemIds: [row.id] });
             setSueltosOk(prev => new Set([...prev, row.id]));
-
-            useStaff.getState().appendAuditLog('RECIBIR_PRODUCTO_SUELTO', pedido.id, {
-                sucursal_id: sucursalId, pedido_item_id: row.id,
-                producto: row.products?.nombre ?? null,
-                entro_al_sistema: erp.ok === true,
-            });
 
             if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') {
                 setSaveError(
@@ -1216,7 +1209,11 @@ export default function RecepcionModal({
         setSaving(true); setSaveError(null);
         try {
             const { data, error } = await corregirRecepcionDeItem({
-                itemId: row.id, cantidad: cantidadRaw, nota,
+                itemId: row.id, cantidad: cantidadRaw, nota, pedidoId: pedido.id,
+            }, {
+                sucursal_id: sucursalId,
+                producto: row.products?.nombre ?? null,
+                antes: Number(row.cantidad_recibida) || 0,
             });
             if (error) throw error;
             setCorrecciones(prev => ({
@@ -1230,11 +1227,6 @@ export default function RecepcionModal({
             }));
             setCorrigiendoId(null);
             setHuboCorreccion(true);
-            useStaff.getState().appendAuditLog('CORREGIR_CONTEO_PEDIDO', pedido.id, {
-                sucursal_id: sucursalId, pedido_item_id: row.id,
-                producto: row.products?.nombre ?? null,
-                antes: Number(row.cantidad_recibida) || 0, ahora: cantidadRaw,
-            });
             // `reabrio_el_cierre`: el pedido ya estaba dado por cerrado y esta
             // corrección lo vuelve a abrir. Hay que decirlo — quien corrige no
             // tiene por qué saber que el acuse de bodega y sala se cae, y
@@ -1283,16 +1275,13 @@ export default function RecepcionModal({
     // ya habían divergido: la copia de «Todo OK» no conocía las cajas especiales
     // —desde adentro de una confirmaba el pedido ENTERO— y tampoco las esperaba
     // antes de darlo por terminado. Una sola copia de cada uno.
-    const cerrarEspecial = useCallback(async ({ itemsCount, hasDiff, todoOk = false }) => {
+    // La entrada de la bitácora la anota `recibirPedidoDeSucursal` al contar.
+    const cerrarEspecial = useCallback(async ({ hasDiff }) => {
         const newConfirmedIds = new Set([...confirmedEspecialIds, selectedEspecial.item.id]);
         setConfirmedEspecialIds(newConfirmedIds);
         const espDone = especialItems.filter(e => !e.item.falta_caja)
             .every(e => newConfirmedIds.has(e.item.id) || e.item.status === 'recibido');
         const regDone = accessibleHojaNums.length === 0 || accessibleHojaNums.every(n => allRecibidas.includes(n));
-        useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
-            sucursal_id: sucursalId, especial: selectedEspecial.label, items_count: itemsCount,
-            ...(todoOk ? { todo_ok: true } : {}),
-        });
         if (regDone && espDone) {
             await asentarExtras();
             onConfirmed?.({ hasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
@@ -1301,29 +1290,28 @@ export default function RecepcionModal({
             setScreen('cajas'); setSelectedEspecial(null); setProdSearch(''); setShowSearch(false);
         }
     }, [confirmedEspecialIds, selectedEspecial, especialItems, accessibleHojaNums, allRecibidas,
-        pedido, sucursalId, asentarExtras, onConfirmed, onClose, faltaCajas, hasFaltaItems]);
+        asentarExtras, onConfirmed, onClose, faltaCajas, hasFaltaItems]);
 
     const cerrarHoja = useCallback(async ({ itemsCount, hasDiff, todoOk = false }) => {
         const newRec = [...new Set([...allRecibidas, selectedHoja])].sort((a, b) => a - b);
         // Sin este chequeo la hoja se pintaba contada en pantalla y reaparecía
         // pendiente al recargar: el UPDATE lo frenaba RLS y no devolvía error.
         // Es lo que pasó el 2026-08-14 en La Popular.
-        const { error } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { hojas_recibidas: newRec });
-        if (error) throw error;
-        setLocalRec(prev => [...new Set([...prev, selectedHoja])].sort((a, b) => a - b));
-
         const regDone = accessibleHojaNums.every(n => newRec.includes(n));
         const espDone = especialItems.filter(e => !e.item.falta_caja)
             .every(e => confirmedEspecialIds.has(e.item.id) || e.item.status === 'recibido');
-        useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_HOJA', pedido.id, {
-            sucursal_id: sucursalId, hoja: selectedHoja, items_count: itemsCount,
+        // Marca la hoja y anota en la bitácora la hoja y, si con ella se
+        // completó, el pedido (capa de datos).
+        const { error } = await marcarHojasRecibidas(pedido.id, sucursalId, newRec, {
+            hojas: [{ hoja: selectedHoja, items_count: itemsCount }],
+            pedido: regDone && espDone ? { extras_count: extras.length } : null,
             ...(todoOk ? { todo_ok: true } : {}),
         });
+        if (error) throw error;
+        setLocalRec(prev => [...new Set([...prev, selectedHoja])].sort((a, b) => a - b));
+
         if (regDone && espDone) {
             await asentarExtras();
-            useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
-                sucursal_id: sucursalId, extras_count: extras.length,
-            });
             onConfirmed?.({ hasDiff, allDone: true });
             onClose();
         } else {
@@ -1351,10 +1339,15 @@ export default function RecepcionModal({
         const p_items = buildPItems(rowsToSave);
 
         try {
+            // La bitácora la anota la capa de datos: la especial y el pedido
+            // sin hojas al contar; la hoja, `marcarHojasRecibidas` en `cerrarHoja`.
             const { error } = await recibirPedidoDeSucursal({
                 p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
                 p_items, p_received_by: user?.id ?? null,
-            });
+            }, alcance === 'especial'
+                ? { accion: 'CONFIRMAR_RECEPCION_ESPECIAL', especial: selectedEspecial?.label }
+                : alcance === 'hoja' ? {}
+                : { accion: 'CONFIRMAR_RECEPCION_PEDIDO', extras_count: extras.length });
             if (error) throw error;
 
             // ── Y lo mismo en el inventario, sin hacer esperar a la sala ────
@@ -1367,15 +1360,12 @@ export default function RecepcionModal({
             setAnyHasDiff(newAnyDiff);
 
             if (alcance === 'especial') {
-                await cerrarEspecial({ itemsCount: p_items.length, hasDiff: newAnyDiff });
+                await cerrarEspecial({ hasDiff: newAnyDiff });
             } else if (alcance === 'hoja') {
                 await cerrarHoja({ itemsCount: p_items.length, hasDiff: newAnyDiff });
             } else {
                 // No caja map — single confirm, original behavior
                 await asentarExtras();
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
-                    sucursal_id: sucursalId, items_count: p_items.length, extras_count: extras.length,
-                });
                 onConfirmed?.({ hasDiff: boxHasDiff, allDone: true });
                 onClose();
             }
@@ -1385,7 +1375,7 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [
-        alcance, filasPorContar, extras, buildPItems, cerrarEspecial, cerrarHoja,
+        alcance, filasPorContar, extras, buildPItems, cerrarEspecial, cerrarHoja, selectedEspecial,
         pedido, sucursalId, user, anyHasDiff, asentarExtras, onConfirmed, onClose,
         ingresarAlInventario, avisarIngresoFallido, avisarIngresoEnCurso,
     ]);
@@ -1414,7 +1404,10 @@ export default function RecepcionModal({
             const { error } = await recibirPedidoDeSucursal({
                 p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
                 p_items, p_received_by: user?.id ?? null,
-            });
+            }, alcance === 'especial'
+                ? { accion: 'CONFIRMAR_RECEPCION_ESPECIAL', especial: selectedEspecial?.label, todo_ok: true }
+                : alcance === 'hoja' ? {}
+                : { accion: 'CONFIRMAR_RECEPCION_PEDIDO', todo_ok: true });
             if (error) throw error;
 
             // Dar por bueno también ingresa: «Todo OK» y «Confirmar» dejan el
@@ -1425,12 +1418,11 @@ export default function RecepcionModal({
             else if (ing.enCurso) avisarIngresoEnCurso(p_items.length);
 
             if (alcance === 'especial') {
-                await cerrarEspecial({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
+                await cerrarEspecial({ hasDiff: anyHasDiff });
             } else if (alcance === 'hoja') {
                 await cerrarHoja({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
             } else {
                 await asentarExtras();
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, { sucursal_id: sucursalId, items_count: p_items.length, todo_ok: true });
                 onConfirmed?.({ hasDiff: false, allDone: true });
                 onClose();
             }
@@ -1439,7 +1431,7 @@ export default function RecepcionModal({
         } finally {
             setSaving(false);
         }
-    }, [alcance, filasPorContar, pedido, sucursalId, user, anyHasDiff,
+    }, [alcance, filasPorContar, pedido, sucursalId, user, anyHasDiff, selectedEspecial,
         cerrarEspecial, cerrarHoja, asentarExtras, onConfirmed, onClose,
         ingresarAlInventario, avisarIngresoFallido, avisarIngresoEnCurso]);
 
@@ -1502,7 +1494,14 @@ export default function RecepcionModal({
                 if (error) throw error;
             }
 
-            const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { hojas_recibidas: newRec });
+            // Marca las hojas y anota en la bitácora cada hoja, cada especial y
+            // el pedido (capa de datos).
+            const { error: recErr } = await marcarHojasRecibidas(pedido.id, sucursalId, newRec, {
+                hojas: hojasConfirmadas.map(({ hoja, items }) => ({ hoja, items_count: items })),
+                especiales: especialesConfirmadas,
+                pedido: { extras_count: extras.length, batch: true, items_count: p_items.length },
+                todo_ok: true,
+            });
             if (recErr) throw recErr;
             setLocalRec(newRec.filter(n => !initHojasRecibidas.includes(n)));
             setConfirmedEspecialIds(newConfirmedEspIds);
@@ -1515,22 +1514,6 @@ export default function RecepcionModal({
             else if (ing.enCurso) avisarIngresoEnCurso(p_items.length);
 
             await asentarExtras();
-            for (const { hoja: h, items } of hojasConfirmadas) {
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_HOJA', pedido.id, {
-                    sucursal_id: sucursalId, hoja: h, items_count: items, todo_ok: true,
-                    ingreso_en_segundo_plano: ing.ok && ing.enCurso,
-                });
-            }
-            for (const label of especialesConfirmadas) {
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
-                    sucursal_id: sucursalId, especial: label, todo_ok: true,
-                    ingreso_en_segundo_plano: ing.ok && ing.enCurso,
-                });
-            }
-            useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
-                sucursal_id: sucursalId, extras_count: extras.length, todo_ok: true, batch: true,
-                items_count: p_items.length,
-            });
             // Sólo se da por terminado si no quedó nada por revisar ni en reenvío
             const quedaPorRevisar = accessibleHojaNums.some(n => hojasAlertadas.has(n) && !newRec.includes(n));
             onConfirmed?.({ hasDiff: anyHasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems && !quedaPorRevisar });

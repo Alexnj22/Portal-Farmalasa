@@ -1,4 +1,14 @@
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
+
+/* La bitácora de la custodia la anotan estas funciones (D3 del núcleo
+ * portable), así la hereda cualquier cliente que haga el recorrido.
+ *
+ * `retiro_soltar` BORRA la fila, así que sin esto soltar una bolsa no dejaba
+ * rastro de ningún tipo: si después falta, no hay dónde leer quién la tuvo ni
+ * cuándo dejó de tenerla. Y es justamente la acción cuyo único propósito es
+ * asignar responsabilidad. Sólo se anota lo que salió (`ok`). */
+const idDe = (id) => String(id ?? '');
 
 // ─── El retiro: quién carga las bolsas y responde por ellas ─────────────────
 //
@@ -71,7 +81,7 @@ export async function fetchPendientesEnSala(branchId) {
  *   · `YA_CARGADA`     — la lleva otro, y el mensaje dice quién
  *   · `YA_RECIBIDO`    — llegó a destino entre medio
  */
-export async function cargarBulto(requestId, entregoId = null) {
+export async function cargarBulto(requestId, entregoId = null, contexto = {}) {
     const { data, error } = await supabase.rpc('retiro_cargar', {
         p_request_id: requestId,
         p_entrego_id: entregoId,
@@ -79,6 +89,13 @@ export async function cargarBulto(requestId, entregoId = null) {
     if (error) {
         console.error('retiros: retiro_cargar failed:', error.message);
         return { ok: false, error: 'No se pudo cargar esa bolsa.' };
+    }
+    if (data?.ok) {
+        anotar('CARGAR_BULTO', idDe(requestId), {
+            ...contexto,
+            firma_propia: data.firma_propia === true, falta_firma: data.falta_firma === true,
+            entrego: data.entrego ?? null,
+        });
     }
     return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
 }
@@ -97,13 +114,20 @@ export async function cargarBulto(requestId, entregoId = null) {
  * `firmadas: 0` NO es un fallo: es exactamente lo que devuelve firmar de
  * primero, cuando todavía no hay nada cargado.
  */
-export async function firmarEntrega(entregoId) {
+export async function firmarEntrega(entregoId, { retiroId = null, ...contexto } = {}) {
     const { data, error } = await supabase.rpc('retiro_firmar', { p_entrego_id: entregoId });
     if (error) {
         console.error('retiros: retiro_firmar failed:', error.message);
         return { ok: false, error: 'No se pudo registrar la firma.' };
     }
+    if (data?.ok) anotarFirma(data, retiroId, contexto);
     return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+}
+
+function anotarFirma(r, retiroId, contexto) {
+    anotar('FIRMAR_ENTREGA', idDe(r.retiro_id ?? retiroId), {
+        quien: r.quien ?? null, bolsas: Number(r.firmadas ?? 0), ...contexto,
+    });
 }
 
 /**
@@ -122,7 +146,7 @@ export async function firmarEntrega(entregoId) {
  * registro de quién preguntó por quién; y devuelve la firma ya hecha, para que
  * traducir un carné en una persona no quede como una llamada suelta.
  */
-export async function firmarEntregaConCarne(codigo) {
+export async function firmarEntregaConCarne(codigo, { retiroId = null, ...contexto } = {}) {
     const { data, error } = await supabase.rpc('retiro_firmar_carne', {
         p_valor: String(codigo ?? '').trim(),
     });
@@ -130,16 +154,19 @@ export async function firmarEntregaConCarne(codigo) {
         console.error('retiros: retiro_firmar_carne failed:', error.message);
         return { ok: false, error: 'No se pudo confirmar el carné.' };
     }
+    if (data?.ok) anotarFirma(data, retiroId, contexto);
     return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
 }
 
 /** Soltar una que se cargó por error. Sólo la puede soltar quien la lleva. */
-export async function soltarBulto(requestId) {
+export async function soltarBulto(requestId, contexto = {}) {
     const { data, error } = await supabase.rpc('retiro_soltar', { p_request_id: requestId });
     if (error) {
         console.error('retiros: retiro_soltar failed:', error.message);
         return { ok: false, error: 'No se pudo soltar esa bolsa.' };
     }
+    // La fila se borra: esta anotación es el ÚNICO rastro de que existió.
+    if (data?.ok) anotar('SOLTAR_BULTO', idDe(requestId), { ...contexto });
     return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
 }
 
@@ -150,12 +177,13 @@ export async function soltarBulto(requestId) {
  * entregar»). Vuelve con `QUEDAN_BULTOS` y cuántos — el número importa, porque
  * «no podés cerrar» sin decir cuántos faltan obliga a ir a contarlos.
  */
-export async function cerrarRetiro() {
+export async function cerrarRetiro({ retiroId = null, ...contexto } = {}) {
     const { data, error } = await supabase.rpc('retiro_cerrar');
     if (error) {
         console.error('retiros: retiro_cerrar failed:', error.message);
         return { ok: false, error: 'No se pudo cerrar el recorrido.' };
     }
+    if (data?.ok) anotar('CERRAR_RETIRO', idDe(retiroId), { ...contexto });
     return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
 }
 

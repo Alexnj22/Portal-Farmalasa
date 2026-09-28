@@ -14,7 +14,6 @@ import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { Users, Loader2, AlertTriangle, Check } from 'lucide-react';
 import { signPhotosDeep } from '../../../utils/storageFiles';
 import useCapturaDeCarne from '../../../plataforma/useCapturaDeCarne';
-import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import PedidoModal from '../PedidoModal';
 import { fetchEmployeeByKioskPin, upsertPedidoApoyo } from '../../../data/pedidos';
@@ -88,7 +87,6 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                 { pedido_id: pedidoId, erp_sucursal_id: sucId, employee_id: employee.id, registered_by: currentUserId, tipo }
             );
             if (e) throw e;
-            useStaff.getState().appendAuditLog('PEDIDO_APOYO_REGISTRADO', pedidoId, { sucursal_id: sucId, employee_id: employee.id });
             onSuccess(employee);
             setAnotados(prev => prev.some(a => a.id === employee.id) ? prev : [...prev, employee]);
             // Anotar a alguien NO cierra: el escáner queda esperando el

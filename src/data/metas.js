@@ -19,7 +19,9 @@ export async function fetchMetasHistorico() {
     return data ?? [];
 }
 
-export async function guardarMetaManual({ branchId, yearMonth, monto, nota }) {
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
+export async function guardarMetaManual({ branchId, yearMonth, monto, nota }, contexto = {}) {
     const { error } = await supabase.rpc('upsert_meta_manual', {
         p_branch_id: Number(branchId),
         p_year_month: yearMonth,
@@ -27,6 +29,7 @@ export async function guardarMetaManual({ branchId, yearMonth, monto, nota }) {
         p_nota: nota || null,
     });
     if (error) throw error;
+    anotar('METAS_META_MANUAL', `${branchId}|${yearMonth}`, { monto, nota: nota || undefined, ...contexto });
 }
 
 // Una sola fila: umbrales del bono, el interruptor de bonificaciones y hasta
@@ -56,6 +59,10 @@ export async function setBonificaciones(activas, soloEsteMes) {
         p_solo_este_mes: !!soloEsteMes,
     });
     if (error) throw error;
+    anotar('METAS_BONO_INTERRUPTOR', 'metas_config', {
+        bonificaciones_activas: data?.bonificaciones_activas,
+        bonificaciones_hasta_ym: data?.bonificaciones_hasta_ym ?? null,
+    });
     return data;
 }
 
@@ -71,36 +78,47 @@ export async function fetchMetasRows(yearMonths) {
     return data ?? [];
 }
 
-export async function generarPropuestas() {
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
+// Sin propuestas nuevas no anota: no se escribió nada.
+export async function generarPropuestas(contexto = {}) {
     const { data, error } = await supabase.rpc('generar_propuestas_metas_manual');
     if (error) throw error;
+    if (data) anotar('METAS_GENERAR_PROPUESTAS', null, { creadas: data, ...contexto });
     return data ?? 0; // cuántas se crearon
 }
 
-export async function confirmarMeta({ id, monto, nota }) {
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
+export async function confirmarMeta({ id, monto, nota }, contexto = {}) {
     const { error } = await supabase.rpc('confirmar_meta_supervisor', {
         p_id: id,
         p_monto: monto ?? null,
         p_nota: nota || null,
     });
     if (error) throw error;
+    anotar('METAS_CONFIRMAR', id, { monto, nota: nota || undefined, ...contexto });
 }
 
 // Confirma varias de una vez. Va en UNA transacción del lado del servidor: si
 // alguna falla no quedan la mitad confirmadas.
-export async function confirmarMetasLote(items) {
+export async function confirmarMetasLote(items, contexto = {}) {
     const { data, error } = await supabase.rpc('confirmar_metas_lote', { p_items: items });
     if (error) throw error;
+    anotar('METAS_CONFIRMAR_LOTE', (items ?? []).map((i) => i.id).join(','), {
+        cuantas: (items ?? []).length, ...contexto,
+    });
     return data ?? 0;
 }
 
 // `monto` es opcional: si va, el gerente ajustó el número que había confirmado
 // el supervisor, y el servidor le avisa a él. Si no, se aprueba tal cual.
-export async function aprobarMeta({ id, monto = null }) {
+export async function aprobarMeta({ id, monto = null }, contexto = {}) {
     const { error } = await supabase.rpc('aprobar_meta_gerente', {
         p_id: id, p_monto: monto,
     });
     if (error) throw error;
+    anotar('METAS_APROBAR', id, { monto, ...contexto });
 }
 
 // De dónde sale la propuesta, pieza por pieza. Devuelve además el número
@@ -136,26 +154,31 @@ export async function explicarMetasPropuestas(yearMonth) {
 
 // Aprueba varias de una vez, en UNA transacción: si alguna falla no quedan la
 // mitad oficiales. Igual que `confirmarMetasLote`, del otro lado del flujo.
-export async function aprobarMetasLote(ids) {
+export async function aprobarMetasLote(ids, contexto = {}) {
     const { data, error } = await supabase.rpc('aprobar_metas_lote', { p_ids: ids });
     if (error) throw error;
+    anotar('METAS_APROBAR_LOTE', (ids ?? []).join(','), { cuantas: (ids ?? []).length, ...contexto });
     return data ?? 0;
 }
 
 // Lo mismo por el camino de la autorización verbal: se pregunta UNA vez quién
 // autorizó y cómo, y se aplica a todas. Cada meta conserva su propio renglón en
 // la bitácora y su propio aviso a quien autorizó.
-export async function aprobarMetasPorAutorizacionLote({ ids, autorizoPor, nota }) {
+export async function aprobarMetasPorAutorizacionLote({ ids, autorizoPor, nota }, contexto = {}) {
     const { data, error } = await supabase.rpc('aprobar_metas_por_autorizacion_lote', {
         p_ids: ids, p_autorizo: autorizoPor, p_nota: nota,
     });
     if (error) throw error;
+    anotar('METAS_APROBAR_POR_AUTORIZACION_LOTE', (ids ?? []).join(','), {
+        cuantas: (ids ?? []).length, autorizo_id: autorizoPor, nota, ...contexto,
+    });
     return data ?? 0;
 }
 
-export async function devolverMeta({ id, nota }) {
+export async function devolverMeta({ id, nota }, contexto = {}) {
     const { error } = await supabase.rpc('devolver_meta_gerente', { p_id: id, p_nota: nota });
     if (error) throw error;
+    anotar('METAS_DEVOLVER', id, { nota, ...contexto });
 }
 
 // Quiénes pueden figurar como autorizantes (gerentes activos). Va por RPC y no
@@ -169,11 +192,12 @@ export async function fetchAutorizadores() {
 
 // Deja la meta oficial asentando que el gerente autorizó de palabra. El servidor
 // guarda las DOS personas: quien ejecutó y quien autorizó, y le avisa al segundo.
-export async function aprobarMetaPorAutorizacion({ id, autorizoPor, nota, monto = null }) {
+export async function aprobarMetaPorAutorizacion({ id, autorizoPor, nota, monto = null }, contexto = {}) {
     const { error } = await supabase.rpc('aprobar_meta_por_autorizacion', {
         p_id: id, p_autorizo: autorizoPor, p_nota: nota, p_monto: monto,
     });
     if (error) throw error;
+    anotar('METAS_APROBAR_POR_AUTORIZACION', id, { monto, autorizo_id: autorizoPor, nota, ...contexto });
 }
 
 // ── Fase 3: la meta de UNA sala, para el widget del Inicio ───────────────────
@@ -215,12 +239,18 @@ export async function previewMetaGasto({ salas, ymInicio, meses }) {
     return data ?? null;
 }
 
-export async function crearMetaGasto({ concepto, salas, ymInicio, meses, nota }) {
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
+export async function crearMetaGasto({ concepto, salas, ymInicio, meses, nota }, contexto = {}) {
     const { data, error } = await supabase.rpc('crear_metas_gasto', {
         p_concepto: concepto, p_salas: salas, p_ym_inicio: ymInicio,
         p_meses: meses, p_nota: nota || null,
     });
     if (error) throw error;
+    anotar('METAS_GASTO_CREAR', data?.gasto_id ?? null, {
+        concepto, meses, desde: ymInicio,
+        ventaTotal: data?.venta_total, metasReabiertas: data?.metas_reabiertas, ...contexto,
+    });
     return data;
 }
 
@@ -265,6 +295,8 @@ export async function fetchBonoSemestral(semestre) {
 }
 
 // Quien ya no trabaja: gerencia decide si cobra lo acumulado, con motivo.
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
 export async function decidirBonoSemestral({ semestre, employeeId, pagar, motivo }) {
     const { data, error } = await supabase.rpc('decidir_bono_semestral', {
         p_semestre: semestre,
@@ -273,16 +305,23 @@ export async function decidirBonoSemestral({ semestre, employeeId, pagar, motivo
         p_motivo: motivo,
     });
     if (error) throw error;
+    anotar('METAS_BONO_SEMESTRE_DECISION', 'bono_semestre', {
+        semestre, employee_id: employeeId, pagar, motivo,
+    });
     return data ?? null;
 }
 
 // Aprobar CONGELA la hoja; reabrir (`aprobar = false`) exige el motivo.
-export async function aprobarBonoSemestral(semestre, aprobar = true, nota = null) {
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
+export async function aprobarBonoSemestral(semestre, aprobar = true, nota = null, contexto = {}) {
     const { data, error } = await supabase.rpc('aprobar_bono_semestral', {
         p_semestre: semestre,
         p_aprobar: !!aprobar,
         p_nota: nota || null,
     });
     if (error) throw error;
+    anotar(aprobar ? 'METAS_BONO_SEMESTRE_APROBAR' : 'METAS_BONO_SEMESTRE_REABRIR', 'bono_semestre',
+        aprobar ? { semestre, ...contexto } : { semestre, motivo: nota, ...contexto });
     return data ?? null;
 }

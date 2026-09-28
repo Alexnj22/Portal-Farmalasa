@@ -101,7 +101,8 @@ export default function TabLaboratorios({ searchTerm = '' }) {
             bodega_peldano: fields.bodega_peldano?.trim() || null,
             updated_at:     new Date().toISOString(),
         };
-        const { error } = await upsertLabLocation(payload);
+        const lab = labs.find(l => l.id === labId);
+        const { error } = await upsertLabLocation(payload, { lab: lab?.nombre });
         if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return false; }
         setLocations(prev => ({
             ...prev,
@@ -116,8 +117,6 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                 },
             },
         }));
-        const lab = labs.find(l => l.id === labId);
-        useStaff.getState().appendAuditLog('UPDATE_LAB_LOCATION', String(labId), { lab: lab?.nombre, branch_id: branchId });
         useToastStore.getState().showToast('Guardado', 'Ubicación actualizada.', 'success');
         return true;
     };

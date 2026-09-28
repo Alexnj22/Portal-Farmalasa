@@ -10,6 +10,8 @@
 // podían leerlo), por qué `RETURNING` enumera columnas, y por qué sin permiso el
 // salario devuelve vacío en vez de error.
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
+import { diaSV } from '../utils/fecha';
 
 // ── Catálogo educativo/médico (upsert best-effort, ignora duplicados) ──────
 
@@ -231,8 +233,24 @@ export function fetchAttendanceSince(sinceIso) {
     return supabase.from('attendance').select('*').gte('timestamp', sinceIso);
 }
 
-export function insertAttendancePunch(payload) {
-    return supabase.from('attendance').insert([payload]).select().single();
+/**
+ * Insertar una marcación. Si es un marcaje MANUAL de auditoría
+ * (`details.manualAudit`), se anota `ATTENDANCE_PUNCH_MANUAL_ADDED` (D3,
+ * 2026-09-28): es alguien escribiendo una hora de trabajo ajena, y la entrada
+ * tiene que existir la cargue quien la cargue. Las marcaciones del kiosco no
+ * llevan esa marca y no se anotan acá.
+ */
+export async function insertAttendancePunch(payload) {
+    const res = await supabase.from('attendance').insert([payload]).select().single();
+    if (!res?.error && payload?.details?.manualAudit) {
+        anotar('ATTENDANCE_PUNCH_MANUAL_ADDED', payload.employee_id != null ? String(payload.employee_id) : null, {
+            employeeId: payload.employee_id,
+            date: payload.timestamp ? diaSV(payload.timestamp) : null,
+            type: payload.type,
+            reason: payload.details.reason ?? null,
+        });
+    }
+    return res;
 }
 
 export function deleteAttendancePunch(punchId) {

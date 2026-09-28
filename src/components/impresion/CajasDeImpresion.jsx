@@ -210,20 +210,16 @@ export default function CajasDeImpresion({ puedeEditar }) {
     const borrar = useCallback(async () => {
         if (!aBorrar || borrando) return;
         setBorrando(true);
-        const { data, error } = await eliminarCajaDeImpresion(aBorrar.id);
+        // `IMPRESION_CAJA_ELIMINADA` lo anota `eliminarCajaDeImpresion`.
+        const { data, error } = await eliminarCajaDeImpresion(aBorrar.id, {
+            branchId: aBorrar.branch_id, nombre: aBorrar.nombre,
+            sala: nombreSala[aBorrar.branch_id] || aBorrar.branch_id, equipo: aBorrar.equipo,
+        });
         setBorrando(false);
         if (error) {
             showToast?.('No se pudo quitar', mensajeAmigable(error, 'Vuelve a intentar.'), 'error');
             return;
         }
-        // Sacar una caja deja una sala sin dónde imprimir si era la única, así
-        // que queda en la bitácora con su sala y su nombre — no alcanza con el
-        // id de una fila que ya no existe.
-        useStaff.getState().appendAuditLog('IMPRESION_CAJA_ELIMINADA', String(aBorrar.branch_id), {
-            caja: data || aBorrar.nombre,
-            sala: nombreSala[aBorrar.branch_id] || aBorrar.branch_id,
-            equipo: aBorrar.equipo,
-        });
         showToast?.('Caja quitada', `Ya no aparece «${data || aBorrar.nombre}».`, 'success');
         setABorrar(null);
         cargar();

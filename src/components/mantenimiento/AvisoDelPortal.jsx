@@ -9,8 +9,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import LiquidSelect from '../common/LiquidSelect';
 import { FranjaBanner } from '../common/BannerPortal';
 import { useBannerPortal } from '../../hooks/useBannerPortal';
-import { setBannerPortal, VARIANTES_BANNER } from '../../data/bannerPortal';
-import { useStaffStore as useStaff } from '../../store/staffStore';
+import { apagarBannerPortal, encenderBannerPortal, guardarBannerPortal, VARIANTES_BANNER } from '../../data/bannerPortal';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
@@ -72,22 +71,16 @@ export default function AvisoDelPortal() {
         // dio al switch sin guardar, lo que se ve tiene que ser lo que escribió
         // y no una versión vieja que ya nadie está mirando.
         setGuardando(true);
-        const { error } = await setBannerPortal(
-            encender
-                ? { activo: true, texto, textoCorto, variante }
-                : { activo: false },
-        );
+        // `BANNER_PORTAL_ON` / `_OFF` los anota la capa de datos.
+        const { error } = encender
+            ? await encenderBannerPortal({ texto, textoCorto, variante })
+            : await apagarBannerPortal();
         setGuardando(false);
         if (error) {
             useToastStore.getState().showToast('Aviso del portal', mensajeAmigable(error), 'error');
             return;
         }
         setBorrador(null);
-        useStaff.getState().appendAuditLog(
-            encender ? 'BANNER_PORTAL_ON' : 'BANNER_PORTAL_OFF',
-            'banner_portal',
-            encender ? { texto, variante } : {},
-        );
         useToastStore.getState().showToast(
             encender ? 'Aviso encendido' : 'Aviso apagado',
             encender
@@ -100,14 +93,14 @@ export default function AvisoDelPortal() {
 
     const guardar = useCallback(async () => {
         setGuardando(true);
-        const { error } = await setBannerPortal({ activo, texto, textoCorto, variante });
+        // `BANNER_PORTAL_EDIT` lo anota `guardarBannerPortal`.
+        const { error } = await guardarBannerPortal({ activo, texto, textoCorto, variante });
         setGuardando(false);
         if (error) {
             useToastStore.getState().showToast('Aviso del portal', mensajeAmigable(error), 'error');
             return;
         }
         setBorrador(null);
-        useStaff.getState().appendAuditLog('BANNER_PORTAL_EDIT', 'banner_portal', { texto, variante });
         useToastStore.getState().showToast(
             'Aviso guardado',
             activo ? 'Ya se ve con el texto nuevo.' : 'Queda listo para cuando lo enciendas.',

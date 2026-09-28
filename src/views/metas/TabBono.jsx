@@ -14,7 +14,6 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { fetchBonoMetaSala, setBonificaciones } from '../../data/metas';
-import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, SALAS_VENTA, TRAMO_CFG } from '../../utils/metasUtils';
@@ -101,11 +100,7 @@ export default function TabBono({
     const cambiarBono = async (activas, esteMes) => {
         setGuardando(true);
         try {
-            const r = await setBonificaciones(activas, esteMes);
-            useStaffStore.getState().appendAuditLog('METAS_BONO_INTERRUPTOR', 'metas_config', {
-                bonificaciones_activas: r?.bonificaciones_activas,
-                bonificaciones_hasta_ym: r?.bonificaciones_hasta_ym ?? null,
-            });
+            await setBonificaciones(activas, esteMes);
             showToast(
                 activas ? 'Bonificaciones activadas' : 'Bonificaciones apagadas',
                 activas

@@ -222,7 +222,9 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
             requested_by:      user?.email ?? '',
             requested_by_id:   user?.id ?? null,
             requested_by_name: user?.name ?? null,
-        }, { aplicar: puedeAplicar });
+        }, { aplicar: puedeAplicar }, {
+            sucursal: ERP_NAMES[sala], producto: row.product_name, erp_product_id: row.erp_product_id, min, max,
+        });
         setGuardando(false);
         if (!r.ok) {
             setAviso({ variant: 'danger', texto: `No se pudo pedir el ajuste de ${row.product_name}: ${r.error}` });
@@ -236,10 +238,6 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
             : puedeAplicar
                 ? { variant: 'warning', texto: `${row.product_name}: quedó pedido, pero no se pudo aplicar (${r.error}). Resuélvelo en Solicitudes.` }
                 : { variant: 'success', texto: `${row.product_name}: ajuste pedido (Min ${min} · Max ${max}). Lo aprueba quien aprueba Min/Max.` });
-        useStaff.getState().appendAuditLog('MINMAX_DESDE_GESTION_STOCK', null, {
-            sucursal: ERP_NAMES[sala], producto: row.product_name, erp_product_id: row.erp_product_id,
-            min, max, aplicado: r.aplicado,
-        });
     }, [editando, sala, user, puedeAplicar]);
 
     const exportar = useCallback(() => {

@@ -8,7 +8,6 @@ import { SkeletonText } from '../../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronRight, Search, X, Loader2, Check, RotateCcw, ShieldAlert } from 'lucide-react';
 import { smartFilter } from '../../../utils/searchUtils';
-import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../../components/common/DataTable';
 import TablePagination from '../../../components/common/TablePagination';
@@ -447,17 +446,15 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
             //   Va por función y no por UPDATE porque quien corrige desde un
             //   pedido puede tener Mín·Máx acotado a su propia sala (Compras,
             //   2026-09-25): el UPDATE directo daba cero filas sin error.
-            const { error } = await guardarMinMaxDesdePedido(row.id, min, max);
-            if (error) throw error;
-            // target_id debe ser el producto (no el pedido) — es lo que el historial
-            // MIN/MAX de Productos usa para buscar cambios de un producto puntual.
-            useStaff.getState().appendAuditLog('MINMAX_UPDATED_FROM_PEDIDO', String(row.erp_product_id), {
-                field: 'min+max', product: row.product_name, sucursal_id: row.erp_sucursal_id,
+            // La bitácora la anota la función; el producto va como target_id.
+            const { error } = await guardarMinMaxDesdePedido(row.id, min, max, {
+                erp_product_id: row.erp_product_id,
+                product: row.product_name, sucursal_id: row.erp_sucursal_id,
                 old_min: effectiveMinMaxPair(prevPsp).min ?? 0,
                 old_max: effectiveMinMaxPair(prevPsp).max ?? 0,
-                new_min: min, new_max: max,
                 pedido_id: row.pedido_id,
             });
+            if (error) throw error;
             setPspMap(prev => ({ ...prev, [k]: { ...(prev[k] ?? {}), min_units: min, max_units: max, manual_min: null, manual_max: null } }));
             setSavedId(row.id);
             setTimeout(() => setSavedId(id => id === row.id ? null : id), 2000);

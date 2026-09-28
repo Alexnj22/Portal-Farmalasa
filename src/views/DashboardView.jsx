@@ -2265,18 +2265,15 @@ const DashboardView = ({ openModal }) => {
     const medidasPublicadas = Object.fromEntries(orden.filter(id => medidas[id]).map(id => [id, medidas[id]]));
 
     setPublicando(true);
-    const { error } = await upsertDashboardCanon({ tabId, orden, medidas: medidasPublicadas });
+    // `TABLERO_ACOMODO_PUBLICADO` lo anota `upsertDashboardCanon`.
+    const { error } = await upsertDashboardCanon({ tabId, orden, medidas: medidasPublicadas },
+      { pestana: TABS.find(t => t.id === tabId)?.label ?? tabId });
     setPublicando(false);
     if (error) { console.error('[dash canon publicar]', error); return; }
 
     setCanon(prev => ({ ...(prev || {}), [tabId]: { orden, medidas: medidasPublicadas } }));
     setPublicado(tabId);
     setTimeout(() => setPublicado(null), 2600);
-    useStaff.getState().appendAuditLog('TABLERO_ACOMODO_PUBLICADO', tabId, {
-      pestana: TABS.find(t => t.id === tabId)?.label ?? tabId,
-      widgets: orden.length,
-      orden,
-    });
   };
 
   // Los cargos y sus permisos, para el previsualizador. Se piden una sola vez y

@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 // La cola de impresión de cada sala.
 //
@@ -141,8 +142,20 @@ export function crearCodigoDeVinculacion({ branchId, nombre }) {
  *
  * Devuelve el nombre de la que se fue, para que la pantalla pueda decirlo.
  */
-export function eliminarCajaDeImpresion(id) {
-    return supabase.rpc('eliminar_caja_de_impresion', { p_id: id });
+/*
+ * Sacar una caja deja una sala sin dónde imprimir si era la única, así que se
+ * anota `IMPRESION_CAJA_ELIMINADA` con su sala y su nombre — no alcanza con el
+ * id de una fila que ya no existe. La anota esta función (D3, 2026-09-28), no
+ * la pantalla; `contexto` trae la sala y el equipo que la pantalla tiene a mano.
+ */
+export async function eliminarCajaDeImpresion(id, { branchId = null, nombre = null, sala = null, equipo = null } = {}) {
+    const res = await supabase.rpc('eliminar_caja_de_impresion', { p_id: id });
+    if (!res?.error) {
+        anotar('IMPRESION_CAJA_ELIMINADA', String(branchId ?? id), {
+            caja: res?.data || nombre, sala: sala ?? branchId, equipo,
+        });
+    }
+    return res;
 }
 
 /**

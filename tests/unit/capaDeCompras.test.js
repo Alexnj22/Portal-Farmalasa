@@ -134,6 +134,16 @@ describe('el maestro de proveedores', () => {
         await setProveedoresCategoriaBulk([3, 4, 5], 7);
         expect(espia.rpc[0].nombre).toBe('set_proveedores_categoria_bulk');
     });
+
+    // D3: la entrada de la bitácora la escribe la capa de datos, no la
+    // pantalla — así la hereda cualquier cliente que llame a la función.
+    it('la escritura anota su propia entrada en la bitácora', async () => {
+        await setProveedorCategoria(3, 7, { nombre: 'DROGUERIA X' });
+        const nota = espia.rpc.find(r => r.nombre === 'registrar_bitacora');
+        expect(nota.args.p_action).toBe('PROVEEDORES_SET_CATEGORIA');
+        expect(nota.args.p_target_id).toBe('3');
+        expect(nota.args.p_details).toMatchObject({ nombre: 'DROGUERIA X', categoria_id: 7 });
+    });
 });
 
 describe('las recepciones de bodega', () => {

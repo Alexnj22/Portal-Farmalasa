@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1077.0 — Bitácora: toda escritura anota desde la capa de datos
+
+Cierra D3 del plan del núcleo portable («la mezcla»): la entrada legible de la
+bitácora la escribe la función de `src/data` que guarda, así que la app del
+teléfono la hereda al llamar a la misma función. En dinero y lo fiscal, además,
+la base anota sola (v2.1076.2).
+
+- **~120 anotaciones** de 60 pantallas pasaron a sus funciones de datos: compras
+  y proveedores, pedidos, rutas, recepción, traslados y envíos, productos,
+  Mín·Máx, metas, ventas, puntos, clientes, cotizaciones, permisos, sesiones y
+  bloqueos, candados de módulo, contraseñas, encuestas, bitácoras SRS,
+  asistencia, horarios, solicitudes de datos, carnés, impresión y el tablero.
+- **Ahora anotan sólo si la escritura salió bien.** Varias pantallas anotaban
+  aunque el guardado hubiera fallado, porque la consulta no lanza.
+- **Dobles que se unificaron:** los movimientos de inventario se anotaban dos
+  veces con nombres distintos; la entrega de una parada de ruta, dos veces.
+- **Nuevas entradas que antes faltaban:** descargas de paquetes de compra desde
+  otras dos pantallas, marcar «sin principio activo» desde la revisión SRS, y
+  pedir Mín·Máx desde productos parados.
+- El destino de la entrada es la cosa escrita (la sesión, el empleado, la
+  solicitud), no quien actúa — la autoría ya la pone `registrar_bitacora`.
+- **Quedan 24 en pantallas, a propósito:** no siguen a una escritura —abrir un
+  detalle, exportar o imprimir (la salida ya va a `export_log`), un error de
+  pantalla— o escriben por un store que ya es lógica compartida.
+
+Verificado: lint sin problemas nuevos en ningún archivo, 2,903 pruebas, nueve
+gates y el build en verde, y las 22 pantallas tocadas recorridas contra el
+entorno de pruebas sin errores. Hecho en cuatro tandas paralelas, una por grupo
+de módulos, y juntadas acá.
+
 ## v2.1076.11 — Metas: la tarjeta de confirmación con gráfico de comparación
 
 El usuario pidió tarjetas más modernas e interactivas, «no solo puro texto».

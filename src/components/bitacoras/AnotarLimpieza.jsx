@@ -6,7 +6,6 @@ import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
 import { ListaDePuntos } from './PuntosDeLimpieza';
 import { anularLimpieza, corregirLimpieza, registrarLimpieza } from '../../data/bitacoras';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { rango12 } from '../../utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -53,13 +52,16 @@ export default function AnotarLimpieza({ area, turno, fecha, registro, modo = 'r
         setGuardando(true);
 
         const marcados = puntos.map(p => ({ clave: p.clave, hecho: marcadas.has(p.clave) }));
+        // Quitar y corregir anotan su propia entrada en la bitácora
+        // (`QUITAR_…` / `CORREGIR_LIMPIEZA_BITACORA`) con el motivo.
+        const contexto = { area: area?.nombre ?? null, turno: turno?.label ?? null, fecha };
         let err = null;
         if (quitando) {
-            ({ error: err } = await anularLimpieza({ limpiezaId: registro.id, motivo }));
+            ({ error: err } = await anularLimpieza({ limpiezaId: registro.id, motivo }, contexto));
         } else if (corrigiendo) {
             ({ error: err } = await corregirLimpieza({
                 limpiezaId: registro.id, puntos: marcados, observaciones: obs, motivo,
-            }));
+            }, contexto));
         } else {
             ({ error: err } = await registrarLimpieza({
                 areaId: area.id, fecha, turno: turno.clave, observaciones: obs, puntos: marcados,
@@ -67,17 +69,6 @@ export default function AnotarLimpieza({ area, turno, fecha, registro, modo = 'r
         }
         setGuardando(false);
         if (err) { setError(err); return; }
-
-        // Tocar un registro ya anotado deja rastro: es el canon del portal para
-        // toda acción de usuario, y acá además es el único lugar donde vive el
-        // motivo de un registro que se quitó.
-        if (corrigiendo || quitando) {
-            useStaff.getState().appendAuditLog(
-                quitando ? 'QUITAR_LIMPIEZA_BITACORA' : 'CORREGIR_LIMPIEZA_BITACORA',
-                String(registro?.id ?? ''),
-                { area: area?.nombre ?? null, turno: turno?.label ?? null, fecha, motivo },
-            );
-        }
         onCerrar(true);
     }, [quitando, corrigiendo, registro, motivo, puntos, marcadas, obs, area, fecha, turno, onCerrar]);
 

@@ -31,7 +31,6 @@ import Notice from '../../components/common/Notice';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { LoadingState } from '../../components/common/StateViews';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -462,10 +461,8 @@ function AjustarPuntos({ customerId, nombre, saldo, habilitado, onHecho }) {
         if (falta) return;
         setGuardando(true);
         try {
-            const r = await ajustarPuntos({ customerId, puntos: sentido === 'dar' ? n : -n, motivo, nota });
-            useStaff.getState().appendAuditLog?.('PUNTOS_AJUSTE', String(customerId), {
-                nombre, puntos: sentido === 'dar' ? n : -n, motivo, nota: nota.trim() || null, saldo: r?.saldo,
-            });
+            // La bitácora la anota `ajustarPuntos` (D3).
+            const r = await ajustarPuntos({ customerId, puntos: sentido === 'dar' ? n : -n, motivo, nota }, { nombre });
             showToast(sentido === 'dar' ? 'Puntos dados' : 'Puntos quitados',
                 `Ahora tiene ${pts(r?.saldo)} puntos.`, 'success');
             setAbierto(false); setCantidad(''); setMotivo(''); setNota('');

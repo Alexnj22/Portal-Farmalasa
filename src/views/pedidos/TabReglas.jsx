@@ -11,7 +11,6 @@ import {
     Loader2, Check, X, Ban, AlertTriangle, Package, ShieldAlert,
     Sparkles, FlaskConical, Box, Layers, Sigma, ArrowRight, Building2,
 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../../components/common/DataTable';
 import TablePagination                   from '../../components/common/TablePagination';
 import FilterBar    from '../../components/common/FilterBar';
@@ -781,9 +780,8 @@ export default function TabReglas({ searchTerm = '' }) {
             if (!v.dispatch_id_presentacion) {
                 // Quitar regla → delete si existe
                 if (existing) {
-                    const { error } = await deleteDispatchRule(existing.id);
+                    const { error } = await deleteDispatchRule(existing.id, { erp_product_id: productId });
                     if (error) throw error;
-                    useStaff.getState().appendAuditLog('ELIMINAR_REGLA_DESPACHO', String(existing.id), { erp_product_id: productId });
                     const next = { ...rulesMapRef.current };
                     delete next[productId];
                     rulesMapRef.current = next;
@@ -808,12 +806,10 @@ export default function TabReglas({ searchTerm = '' }) {
                     const { data, error } = await updateDispatchRule(existing.id, payload);
                     if (error) throw error;
                     saved = data;
-                    useStaff.getState().appendAuditLog('EDITAR_REGLA_DESPACHO', String(existing.id), payload);
                 } else {
                     const { data, error } = await insertDispatchRule(payload);
                     if (error) throw error;
                     saved = data;
-                    useStaff.getState().appendAuditLog('CREAR_REGLA_DESPACHO', String(productId), payload);
                 }
                 // dispatch_tipo desde presCache (ya cargado al abrir el panel)
                 const cachedPres = presCache.current[productId] ?? [];

@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { getSignedFileUrl } from '../utils/storageFiles';
 
 import { registrarEgreso } from './egreso';
+import { anotar } from './audit';
 import { descargarArchivo } from '../plataforma/descargas';
 import { hoySV } from '../utils/fecha';
 // supabase-js lanza FunctionsHttpError con .message genérico
@@ -39,9 +40,14 @@ export async function fetchPurchaseDteReviewQueue(status = 'pendiente') {
     return data || [];
 }
 
-export async function setPurchaseDteProveedor(documentId, proveedorId) {
+// Las escrituras de este archivo anotan su propia entrada en la bitácora (D3,
+// 2026-09-28): cualquier cliente que las llame la deja, no sólo la pantalla.
+// `contexto` son los datos legibles que sólo el llamador conoce; la acción es
+// fija. `anotar` nunca lanza, así que no cambia lo que la función devuelve.
+export async function setPurchaseDteProveedor(documentId, proveedorId, contexto = {}) {
     const { error } = await supabase.rpc('set_purchase_dte_proveedor', { p_document_id: documentId, p_proveedor_id: proveedorId });
     if (error) throw error;
+    anotar('FACTURAS_COMPRA_MATCH_PROVEEDOR', documentId, { proveedor_id: proveedorId, ...contexto });
 }
 
 // Clasificar un PDF huérfano de Revisión (ej. sello ANULADO gráfico que la
@@ -49,22 +55,26 @@ export async function setPurchaseDteProveedor(documentId, proveedorId) {
 // (anulacion|otro) y el documento DTE al que se enlaza; si es anulación el
 // RPC marca ese documento invalidado, y en ambos casos la fila de revisión
 // queda resuelta con matched_document_id (trazabilidad de qué PDF lo justificó).
-export async function classifyPurchaseDteReview(reviewId, documentId, tipo, motivo = null) {
+export async function classifyPurchaseDteReview(reviewId, documentId, tipo, motivo = null, contexto = {}) {
     const { error } = await supabase.rpc('classify_purchase_dte_review', {
         p_review_id: reviewId, p_document_id: documentId, p_tipo: tipo, p_motivo: motivo,
     });
     if (error) throw error;
+    anotar('FACTURAS_COMPRA_CLASIFICAR_REVISION', reviewId, {
+        matched_document_id: documentId, tipo, ...(motivo ? { motivo } : {}), ...contexto,
+    });
 }
 
 // Fase 3.2: fusiona un doc "confirmado sin JSON" (solo PDF) con el
 // duplicado que sí trae el JSON completo — acción manual del usuario, ver
 // PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md §3.2 (sin match automático: las
 // filas sin JSON no guardan numero_control/monto/fecha/NIT).
-export async function mergePurchaseDteDocuments(targetId, sourceId) {
+export async function mergePurchaseDteDocuments(targetId, sourceId, contexto = {}) {
     const { error } = await supabase.rpc('merge_purchase_dte_documents', {
         p_target_id: targetId, p_source_id: sourceId,
     });
     if (error) throw error;
+    anotar('FACTURAS_COMPRA_ADJUNTAR_JSON', targetId, { source_document_id: sourceId, ...contexto });
 }
 
 // Fase 3.2: busca un documento YA sincronizado (con JSON) por su
@@ -91,11 +101,24 @@ export async function fetchPurchaseDteReviewSources(documentId) {
     return data || [];
 }
 
-export async function resolvePurchaseDteReview(reviewId, action, matchedDocumentId = null) {
+// Una acción de bitácora por cada desenlace de la revisión — son los nombres
+// que ya usaba la pantalla.
+const ACCION_REVISION = {
+    descartado: 'FACTURAS_COMPRA_DESCARTAR_REVISION',
+    confirmado: 'FACTURAS_COMPRA_CONFIRMAR_SIN_JSON',
+    emparejado: 'FACTURAS_COMPRA_EMPAREJAR_REVISION',
+};
+
+export async function resolvePurchaseDteReview(reviewId, action, matchedDocumentId = null, contexto = {}) {
     const { error } = await supabase.rpc('resolve_purchase_dte_review', {
         p_review_id: reviewId, p_action: action, p_matched_document_id: matchedDocumentId,
     });
     if (error) throw error;
+    anotar(ACCION_REVISION[action] ?? 'FACTURAS_COMPRA_RESOLVER_REVISION', reviewId, {
+        ...(ACCION_REVISION[action] ? {} : { accion: action }),
+        ...(matchedDocumentId ? { matched_document_id: matchedDocumentId } : {}),
+        ...contexto,
+    });
 }
 
 export async function syncPurchaseEmailsNow({ dryRun = false, accountId = null } = {}) {
@@ -104,6 +127,29 @@ export async function syncPurchaseEmailsNow({ dryRun = false, accountId = null }
     });
     if (error) throw new Error(await extractFunctionErrorMessage(error));
     return data;
+}
+
+/**
+ * «Buscar ahora»: corre `syncPurchaseEmailsNow` tanda tras tanda mientras el
+ * servidor diga que quedó más, con un tope para que un backfill grande no
+ * trabe el botón para siempre ni exceda el presupuesto de la sesión. Anota UNA
+ * entrada con el total de la corrida, no una por tanda.
+ *
+ * `onTanda(n)` avisa el número de tanda que empieza (para el progreso).
+ */
+export async function buscarCorreosDeCompras({ maxTandas = 10, onTanda } = {}) {
+    let insertados = 0;
+    let tandas = 0;
+    let quedaMas = true;
+    while (quedaMas && tandas < maxTandas) {
+        tandas++;
+        onTanda?.(tandas);
+        const result = await syncPurchaseEmailsNow({ dryRun: false });
+        insertados += (result?.results || []).reduce((sum, r) => sum + (r.documentsInserted || 0), 0);
+        quedaMas = result?.hasMore === true;
+    }
+    anotar('FACTURAS_COMPRA_SYNC_MANUAL', null, { inserted: insertados, batches: tandas });
+    return { insertados, tandas, quedaMas };
 }
 
 // El ZIP se arma en el NAVEGADOR con client-zip (~3 kB), no con JSZip: JSZip
@@ -129,6 +175,9 @@ export function nombreZipFacturas() {
 // (no amerita ida al servidor, ver decisión en el plan). "row" para no
 // shadowear el `document` global (document.createElement más abajo).
 export async function downloadPurchaseDtePackage(row) {
+    // La bitácora la anota esta función (D3): la llaman Facturas de compra, el
+    // visor del documento y el widget de la sala, y antes sólo la primera
+    // dejaba rastro.
     const { downloadZip } = await getZip();
     const baseName = row.codigo_generacion || `doc-${row.id}`;
     const entradas = [];
@@ -169,6 +218,7 @@ export async function downloadPurchaseDtePackage(row) {
 
     triggerDownload(await downloadZip(entradas).blob(), `${baseName}.zip`);
     registrarEgreso('dte_compra', { formato: 'zip', filas: entradas.length, detalle: { documento: baseName } });
+    anotar('FACTURAS_COMPRA_DESCARGA_PAQUETE', row.id ?? null, { codigo_generacion: row.codigo_generacion ?? null });
 }
 
 // ── Descarga masiva ────────────────────────────────────────────────────────
@@ -246,7 +296,7 @@ async function pedirManifiesto(ids, includePendingReview) {
 // importar el tamaño. Tiene que crearlo el llamador dentro del gesto del
 // click (showSaveFilePicker lo exige). Sin él se cae al Blob de siempre, que
 // igual es 1× el tamaño en vez de las 4× del diseño anterior.
-export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendingReview = true, fileHandle = null } = {}) {
+export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendingReview = true, fileHandle = null } = {}, contexto = {}) {
     const { files, warnings } = await pedirManifiesto(ids, includePendingReview);
     const { downloadZip } = await getZip();
 
@@ -302,6 +352,9 @@ export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendi
     registrarEgreso('dte_compra', {
         formato: 'zip', filas: incluidos,
         detalle: { masiva: true, pedidos: total, fallidos: fallidos.length },
+    });
+    anotar('FACTURAS_COMPRA_DESCARGA_MASIVA', null, {
+        cantidad: ids.length, archivos: total, incluidos, fallidos: fallidos.length, ...contexto,
     });
     return { total, incluidos, fallidos: fallidos.length };
 }

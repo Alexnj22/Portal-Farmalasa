@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las solicitudes que una persona presenta sobre sus propios datos.
@@ -128,10 +129,18 @@ export async function crearSolicitud(branchId) {
         p_branch_id: branchId ?? null,
     });
     if (error) throw error;
-    return Array.isArray(data) ? data[0] : data;
+    const fila = Array.isArray(data) ? data[0] : data;
+    // La hoja nace con su folio para imprimirse: el nombre de la acción es el
+    // que tenía cuando la anotaba la pantalla (D3, 2026-09-28).
+    anotar('IMPRIMIR_SOLICITUD_DATOS', fila?.id != null ? String(fila.id) : null, { folio: fila?.folio_txt ?? null });
+    return fila;
 }
 
-/** Guarda lo que el delegado transcribe de la hoja. */
+/**
+ * Guarda lo que el delegado transcribe de la hoja → `REGISTRAR_SOLICITUD_DATOS`,
+ * o `RESOLVER_SOLICITUD_DATOS` si la deja resuelta. La entrada la escribe esta
+ * función (D3, 2026-09-28), no la pantalla.
+ */
 export async function guardarSolicitud(id, campos) {
     const { data, error } = await supabase
         .from('solicitudes_datos')
@@ -140,6 +149,8 @@ export async function guardarSolicitud(id, campos) {
         .select()
         .single();
     if (error) throw error;
+    anotar(campos?.estado === 'RESUELTA' ? 'RESOLVER_SOLICITUD_DATOS' : 'REGISTRAR_SOLICITUD_DATOS',
+        String(id), { folio: data?.folio_txt ?? null, derechos: campos?.derechos ?? [] });
     return data;
 }
 

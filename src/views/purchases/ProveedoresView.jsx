@@ -403,12 +403,12 @@ export default function ProveedoresView({ openModal }) {
         ...BASE_COLS,
     ], [pageAllSelected, pageSomeSelected, togglePage]);
 
-    const runBulk = useCallback(async (fn, accion, extra) => {
+    // La entrada de la bitácora la anota la función de datos (D3, 2026-09-28).
+    const runBulk = useCallback(async (fn) => {
         setBulkBusy(true);
         try {
             const ids = [...selectedIds];
             const cambiados = await fn(ids);
-            useStaff.getState().appendAuditLog(accion, null, { seleccionados: ids.length, cambiados, ...extra });
             useToastStore.getState().showToast(
                 'Categorías actualizadas',
                 cambiados === 0
@@ -436,11 +436,10 @@ export default function ProveedoresView({ openModal }) {
     // estado en su columna, y `loadFiscal()` porque una regla confirmada tiene
     // que desaparecer del panel. Recargar sólo una dejaría la pantalla
     // contradiciéndose a sí misma.
-    const runFiscal = useCallback(async (fn, accion, extra) => {
+    const runFiscal = useCallback(async (fn) => {
         setBulkBusy(true);
         try {
             const cambiados = await fn();
-            useStaff.getState().appendAuditLog(accion, null, { cambiados, ...extra });
             useToastStore.getState().showToast(
                 'Clasificación confirmada',
                 cambiados === 0
@@ -504,16 +503,8 @@ export default function ProveedoresView({ openModal }) {
                         loading={fiscalLoading}
                         canEdit={canEdit}
                         busy={bulkBusy}
-                        onConfirmarPropuesta={(ids) => runFiscal(
-                            () => confirmarClasificacionPropuesta(ids),
-                            'PROVEEDORES_CLASIFICACION_FISCAL_BULK',
-                            { seleccionados: ids.length },
-                        )}
-                        onResolver={(ids, c) => runFiscal(
-                            () => resolverClasificacionPendiente(ids, c),
-                            'PROVEEDORES_RESOLVER_CLASIFICACION',
-                            { seleccionados: ids.length, ...c },
-                        )}
+                        onConfirmarPropuesta={(ids) => runFiscal(() => confirmarClasificacionPropuesta(ids))}
+                        onResolver={(ids, c) => runFiscal(() => resolverClasificacionPendiente(ids, c))}
                         onAbrirFicha={abrirFichaDesdePanel}
                     />
                 ) : (<>
@@ -631,10 +622,10 @@ export default function ProveedoresView({ openModal }) {
                         conSugerencia={seleccionConSugerencia}
                         categorias={categorias}
                         busy={bulkBusy}
-                        onAceptarSugerencia={() => runBulk(applyProveedoresCategoriaSugerida, 'PROVEEDORES_CATEGORIA_SUGERIDA_BULK')}
+                        onAceptarSugerencia={() => runBulk(applyProveedoresCategoriaSugerida)}
                         onAsignar={(categoriaId) => {
                             if (!categoriaId) return;
-                            runBulk((ids) => setProveedoresCategoriaBulk(ids, categoriaId), 'PROVEEDORES_CATEGORIA_BULK', { categoria_id: categoriaId });
+                            runBulk((ids) => setProveedoresCategoriaBulk(ids, categoriaId));
                         }}
                         onCancelar={clearSelection}
                     />

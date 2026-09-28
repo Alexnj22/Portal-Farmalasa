@@ -11,7 +11,6 @@ import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { MODULE_INFO } from '../components/common/catalogos/permisos';
 import { smartFilter } from '../utils/searchUtils';
@@ -208,9 +207,11 @@ export default function MaintenanceView() {
     const totalFiltrado = grupos.reduce((n, [, ks]) => n + ks.length, 0);
     const totalActivos  = Object.keys(activos).length;
 
-    const aplicar = useCallback(async (key, { reason, hours }) => {
+    // `MODULE_LOCK_ON` / `MODULE_LOCK_OFF` los anotan `lockModule` y
+    // `unlockModule`; acá sólo se dice qué se estaba editando.
+    const aplicar = useCallback(async (key, { reason, hours }, contexto = {}) => {
         setBusy(key);
-        const { error } = await lockModule(key, reason ?? null, hours ?? 4);
+        const { error } = await lockModule(key, reason ?? null, hours ?? 4, contexto);
         setBusy(null);
         if (error) { useToastStore.getState().showToast(info(key).label, mensajeAmigable(error), 'error'); return false; }
         refreshModuleLocks();
@@ -220,7 +221,6 @@ export default function MaintenanceView() {
     const encender = useCallback(async (key) => {
         const ok = await aplicar(key, { hours: 4 });
         if (!ok) return;
-        useStaff.getState().appendAuditLog('MODULE_LOCK_ON', key, { module: key, hours: 4 });
         useToastStore.getState().showToast(info(key).label, 'En mantenimiento. Los demás quedan en solo lectura.', 'success');
         // El motivo se escribe en el cuadro que acaba de aparecer.
         setTimeout(() => motivoRef.current[key]?.focus(), 80);
@@ -234,7 +234,6 @@ export default function MaintenanceView() {
         const { error } = await unlockModule(key);
         setBusy(null);
         if (error) { useToastStore.getState().showToast(info(key).label, mensajeAmigable(error), 'error'); return; }
-        useStaff.getState().appendAuditLog('MODULE_LOCK_OFF', key, { module: key });
         useToastStore.getState().showToast(info(key).label, 'Mantenimiento terminado. Ya se puede editar.', 'success');
         setMotivoDraft(d => ({ ...d, [key]: undefined }));
         refreshModuleLocks();
@@ -243,13 +242,11 @@ export default function MaintenanceView() {
     const guardarMotivo = useCallback(async (key, lock) => {
         const nuevo = (motivoDraft[key] ?? '').trim();
         if (nuevo === (lock.reason ?? '')) return;
-        const ok = await aplicar(key, { reason: nuevo || null, hours: Number(horasDe(lock)) });
-        if (ok) useStaff.getState().appendAuditLog('MODULE_LOCK_ON', key, { module: key, reason: nuevo || null, edit: 'motivo' });
+        await aplicar(key, { reason: nuevo || null, hours: Number(horasDe(lock)) }, { edit: 'motivo' });
     }, [motivoDraft, aplicar]);
 
     const cambiarHoras = useCallback(async (key, lock, horas) => {
-        const ok = await aplicar(key, { reason: lock.reason ?? null, hours: Number(horas) });
-        if (ok) useStaff.getState().appendAuditLog('MODULE_LOCK_ON', key, { module: key, hours: Number(horas), edit: 'duracion' });
+        await aplicar(key, { reason: lock.reason ?? null, hours: Number(horas) }, { edit: 'duracion' });
     }, [aplicar]);
 
     const filtersContent = (

@@ -5,7 +5,6 @@ import { Truck, CheckCircle2, Home, Play, Plus, ChevronDown, ChevronUp, Navigati
 import { tokenMatch } from '../../utils/searchUtils';
 import { clickable } from '../../utils/clickable';
 import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { dialogoDiferido } from '../../utils/dialogoDiferido';
@@ -17,7 +16,7 @@ const CrearRutaModal = dialogoDiferido(() => import('./CrearRutaModal'));
 const RutaMapModal   = dialogoDiferido(() => import('./RutaMapModal'));
 import Badge from '../../components/common/Badge';
 import {
-    updateRutaStatus, updateRutaPedidoEntregado,
+    iniciarRuta, completarRuta, updateRutaPedidoEntregado,
     fetchRutasConParadas, fetchBranchNamesForSucursales, fetchPedidoNumerosByIds,
 } from '../../data/pedidos';
 import { hora12 } from '../../utils/hora';
@@ -58,9 +57,8 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const handleIniciarRuta = async () => {
     setBusyRuta('iniciar');
     try {
-      const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
+      const { error } = await iniciarRuta(ruta.id);
       if (error) throw error;
-      useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
       // «En camino» a cada sala lo escribe la base (`avisar_salida_de_ruta`).
       onRefresh();
     } catch (e) {
@@ -73,9 +71,8 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const handleEntregarStop = async (stop) => {
     setBusyStop(stop.id);
     try {
-      const { error } = await updateRutaPedidoEntregado(stop.id, currentUserId);
+      const { error } = await updateRutaPedidoEntregado(stop.id, currentUserId, { sucursal_id: stop.erp_sucursal_id });
       if (error) throw error;
-      useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stop.id, { sucursal_id: stop.erp_sucursal_id });
 
       // «El conductor llegó» lo escribe la base (`avisar_llegada_del_conductor`).
       onRefresh();
@@ -88,9 +85,8 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const handleVueltaBase = async () => {
     setBusyRuta('vuelta');
     try {
-      const { error } = await updateRutaStatus(ruta.id, { status: 'completada', vuelta_base_at: new Date().toISOString() });
+      const { error } = await completarRuta(ruta.id);
       if (error) throw error;
-      useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
       onRefresh();
     } catch (e) {
       showToast('No se pudo cerrar la ruta', mensajeAmigable(e), 'error');

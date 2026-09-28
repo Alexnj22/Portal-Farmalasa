@@ -2057,7 +2057,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         const { error: e } = await alternarProductoOcultoEnVentas({
             p_erp_product_id: row.erp_product_id,
             p_oculto: nextVal,
-        });
+        }, { producto: row.descripcion });
         if (e) { useToastStore.getState().showToast('Error', mensajeAmigable(e), 'error'); return; }
         // Optimista: el nombre exacto (first_names/last_names) se confirma en el
         // próximo fetch; mientras tanto se parte user.name igual que lo hace
@@ -2087,7 +2087,6 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 localStorage.setItem(lsKey, JSON.stringify(parsed));
             }
         } catch { /* localStorage unavailable or corrupted — in-memory cache still fixed */ }
-        useStaff.getState().appendAuditLog(nextVal ? 'OCULTAR_PRODUCTO_VENTAS' : 'MOSTRAR_PRODUCTO_VENTAS', String(row.erp_product_id), { producto: row.descripcion });
         useToastStore.getState().showToast(nextVal ? 'Producto oculto' : 'Producto visible', nextVal ? 'Ya no aparecerá en Ventas > Productos.' : 'Vuelve a aparecer en Ventas > Productos.', 'success');
     }, [fini, ffin, filterBranch, currentUser]);
 

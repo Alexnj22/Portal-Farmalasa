@@ -6,14 +6,13 @@ import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Package, Building2, CheckCircle2, TrendingDown } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useAuth } from '../../../context/AuthContext';
 import { useNowTick } from '../../../hooks/useNowTick';
 import { ERP_NAMES, ERP_ORDER, ALERT } from './constants';
 import { sortedPres, formatDominant } from '../../../utils/minmaxTabla';
 import StockBar from './StockBar';
 import AbcXyzBadge from './AbcXyzBadge';
-import { fetchLotesPorVencer, fetchPoliticaDeVencimiento, fetchProductCostHistory, fetchResumenDelProductoPorSala, fetchStockParamsHistory, fetchUltimasVentasDelProducto } from '../../../data/stockParams';
+import { fetchLotesPorVencer, marcarAccionStockMuerto, fetchPoliticaDeVencimiento, fetchProductCostHistory, fetchResumenDelProductoPorSala, fetchStockParamsHistory, fetchUltimasVentasDelProducto } from '../../../data/stockParams';
 import { formatMoney } from '../../../utils/formatNumber';
 import { fechaTexto } from '../../../utils/fecha';
 
@@ -53,8 +52,8 @@ export default function ExpandedPanel({ row, cycleDays }) {
 
     const logDeadStockAction = async (action) => {
         setDeadAction(action);
-        await useStaff.getState().appendAuditLog('DEAD_STOCK_ACTION', String(row.erp_product_id), {
-            product: row.product_name, action, stock: Number(row.current_stock), erp_sucursal_id: row._erp_sucursal_id,
+        await marcarAccionStockMuerto(row.erp_product_id, action, {
+            product: row.product_name, stock: Number(row.current_stock), erp_sucursal_id: row._erp_sucursal_id,
         });
     };
 

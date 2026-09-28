@@ -5,7 +5,6 @@ import ConfirmModal from '../common/ConfirmModal';
 import BotonCarneDePapel from './BotonCarneDePapel';
 import { fetchCarnesTemporales, anularCarneTemporal, carneVigente } from '../../data/carneTemporal';
 import { useToastStore } from '../../store/toastStore';
-import { useStaffStore } from '../../store/staffStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 
 /**
@@ -60,11 +59,9 @@ export default function CarneDelDia({ employeeId, nombre, cargo = '', sala = '' 
         setAnulando(true);
         const { showToast } = useToastStore.getState();
         try {
-            const r = await anularCarneTemporal(vigente.id);
+            // `CARNE_TEMPORAL_ANULADO` lo anota `anularCarneTemporal`.
+            const r = await anularCarneTemporal(vigente.id, { employeeId });
             if (r?.ok) {
-                useStaffStore.getState().appendAuditLog?.('CARNE_TEMPORAL_ANULADO', employeeId, {
-                    carne_id: vigente.id,
-                });
                 showToast('Carné anulado', 'Ese papel ya no sirve para nada.', 'success');
             } else {
                 showToast('No se anuló', r?.motivo || 'Intenta de nuevo.', 'error');

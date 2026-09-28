@@ -12,7 +12,6 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import Notice from '../components/common/Notice';
 import { EmptyState } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import {
     fetchSesiones, cerrarSesion, cerrarTodasDe, agruparPorPersona,
@@ -27,9 +26,8 @@ const EMPTY_ARRAY = [];
 const POLL_MS = 60_000;
 
 const SesionesView = () => {
-    const { user, hasPermission, logout } = useAuth();
+    const { hasPermission, logout } = useAuth();
     const canEdit = hasPermission('sesiones', 'can_edit');
-    const appendAuditLog = useStaff(s => s.appendAuditLog);
     const showToast = useToastStore(s => s.showToast);
 
     const [busqueda, setBusqueda] = useState('');
@@ -105,9 +103,12 @@ const SesionesView = () => {
         if (!porCerrar) return;
         setCerrando(true);
         const esTodas = porCerrar.tipo === 'todas';
+        // La bitácora (`SESION_CERRADA` / `SESIONES_CERRADAS_PERSONA`) la
+        // anotan `cerrarSesion` y `cerrarTodasDe`.
+        const quien = { persona: porCerrar.persona.empleado, cuenta: porCerrar.persona.cuenta };
         const { data, error } = esTodas
-            ? await cerrarTodasDe(porCerrar.persona.ficha_id)
-            : await cerrarSesion(porCerrar.conexion.session_id);
+            ? await cerrarTodasDe(porCerrar.persona.ficha_id, quien)
+            : await cerrarSesion(porCerrar.conexion.session_id, quien);
         setCerrando(false);
 
         // ¿Me cerré a mí mismo? Con «Cerrar todas» sobre la propia cuenta, sí —
@@ -123,13 +124,6 @@ const SesionesView = () => {
         if (error) {
             showToast?.('No se pudo cerrar', 'Vuelve a intentar en un momento.', 'error');
         } else {
-            appendAuditLog?.(esTodas ? 'SESIONES_CERRADAS_PERSONA' : 'SESION_CERRADA', user?.id, {
-                persona: porCerrar.persona.empleado,
-                cuenta: porCerrar.persona.cuenta,
-                cerradas: esTodas ? data : 1,
-                sessionId: esTodas ? undefined : porCerrar.conexion.session_id,
-                actorName: user?.name,
-            });
             showToast?.(
                 esTodas ? `${data} conexiones cerradas` : 'Conexión cerrada',
                 meCerreAMi
@@ -142,41 +136,35 @@ const SesionesView = () => {
         }
         setPorCerrar(null);
         cargar();
-    }, [porCerrar, appendAuditLog, user, showToast, cargar, logout]);
+    }, [porCerrar, showToast, cargar, logout]);
 
     const confirmarBloqueo = useCallback(async (hasta, motivo) => {
         if (!porBloquear) return;
         setBloqueando(true);
-        const { data, error } = await bloquearPersona(porBloquear.ficha_id, hasta, motivo);
+        const { data, error } = await bloquearPersona(porBloquear.ficha_id, hasta, motivo,
+            { persona: porBloquear.empleado, cuenta: porBloquear.cuenta });
         setBloqueando(false);
         if (error) {
             showToast?.('No se pudo bloquear', error.message || 'Vuelve a intentar.', 'error');
         } else {
-            appendAuditLog?.('EMPLEADO_BLOQUEADO', user?.id, {
-                persona: porBloquear.empleado, cuenta: porBloquear.cuenta,
-                hasta: hasta || 'indefinido', motivo: motivo || null,
-                sesionesCerradas: data, actorName: user?.name,
-            });
             showToast?.('Persona bloqueada',
                 `Se cerraron ${data} conexiones y ya no puede entrar.`, 'success');
         }
         setPorBloquear(null);
         setAbierta(null);
         cargar();
-    }, [porBloquear, appendAuditLog, user, showToast, cargar]);
+    }, [porBloquear, showToast, cargar]);
 
     const quitarBloqueo = useCallback(async (persona) => {
-        const { error } = await desbloquearPersona(persona.ficha_id);
+        const { error } = await desbloquearPersona(persona.ficha_id,
+            { persona: persona.empleado, cuenta: persona.cuenta });
         if (error) {
             showToast?.('No se pudo desbloquear', error.message || 'Vuelve a intentar.', 'error');
         } else {
-            appendAuditLog?.('EMPLEADO_DESBLOQUEADO', user?.id, {
-                persona: persona.empleado, cuenta: persona.cuenta, actorName: user?.name,
-            });
             showToast?.('Bloqueo quitado', 'Ya puede volver a entrar al portal.', 'success');
         }
         cargar();
-    }, [appendAuditLog, user, showToast, cargar]);
+    }, [showToast, cargar]);
 
     const filtrosActivos = (soloHoy ? 1 : 0) + (soloOlvidadas ? 1 : 0);
 

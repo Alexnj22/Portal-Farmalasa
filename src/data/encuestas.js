@@ -3,6 +3,7 @@
 // (7 llamadas, de las cuales 4 reutilizan funciones ya definidas acá:
 // fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, updateSurvey).
 import { supabase } from '../supabaseClient';
+import { conBitacora } from './audit';
 
 export function fetchSurveys() {
     return supabase.from('surveys').select('*').order('año', { ascending: false });
@@ -32,24 +33,45 @@ export function fetchSurveyResponses(surveyId) {
         .eq('survey_id', surveyId);
 }
 
+// Sin bitácora a propósito: además de la edición del administrador, la usa
+// EncuestaView para guardar el resumen de IA en caché, que no es una acción de
+// nadie. La edición del administrador pasa por `actualizarEncuesta`.
 export function updateSurvey(surveyId, payload) {
     return supabase.from('surveys').update(payload).eq('id', surveyId);
 }
 
+// ── Escrituras del administrador: se anotan solas (D3, 2026-09-28) ─────────
+// La entrada la escribe la función que guarda, no la pantalla, para que
+// cualquier cliente la herede. Sólo se anota si la escritura entró.
+
+/** Editar una encuesta → `ENCUESTA_ACTUALIZADA`. */
+export function actualizarEncuesta(surveyId, payload) {
+    return conBitacora(updateSurvey(surveyId, payload), 'ENCUESTA_ACTUALIZADA', String(surveyId),
+        { survey_id: surveyId });
+}
+
+/** Crear una encuesta → `ENCUESTA_CREADA`. */
 export function insertSurvey(payload) {
-    return supabase.from('surveys').insert(payload);
+    return conBitacora(supabase.from('surveys').insert(payload), 'ENCUESTA_CREADA', null,
+        { nombre: payload?.nombre });
 }
 
-export function updateSurveyResponse(responseId, patch) {
-    return supabase.from('survey_responses').update(patch).eq('id', responseId);
+/** Editar la respuesta de una persona → `ENCUESTA_RESPUESTA_EDITADA` (target: la persona). */
+export function updateSurveyResponse(responseId, patch, { surveyId = null, employeeId = null } = {}) {
+    return conBitacora(supabase.from('survey_responses').update(patch).eq('id', responseId),
+        'ENCUESTA_RESPUESTA_EDITADA', employeeId, { survey_id: surveyId, response_id: responseId });
 }
 
+/** Cargar la respuesta de una persona → `ENCUESTA_RESPUESTA_AGREGADA`. */
 export function insertSurveyResponse(payload) {
-    return supabase.from('survey_responses').insert(payload);
+    return conBitacora(supabase.from('survey_responses').insert(payload),
+        'ENCUESTA_RESPUESTA_AGREGADA', payload?.employee_id ?? null, { survey_id: payload?.survey_id ?? null });
 }
 
-export function deleteSurveyResponse(responseId) {
-    return supabase.from('survey_responses').delete().eq('id', responseId);
+/** Borrar la respuesta de una persona → `ENCUESTA_RESPUESTA_ELIMINADA`. */
+export function deleteSurveyResponse(responseId, { surveyId = null, employeeId = null } = {}) {
+    return conBitacora(supabase.from('survey_responses').delete().eq('id', responseId),
+        'ENCUESTA_RESPUESTA_ELIMINADA', employeeId, { survey_id: surveyId, response_id: responseId });
 }
 
 // EncuestaView.jsx (vista de resultados) usa un join más liviano que

@@ -9,6 +9,7 @@
 // No es Anuncios: aquello son mensajes con audiencia y caducidad. Esto es LA
 // franja, una sola, para todo el mundo a la vez.
 import { supabase } from '../supabaseClient';
+import { conBitacora } from './audit';
 
 // El orden y los rótulos son los que ve quien lo enciende. `obra` va primera
 // porque es la que reproduce la franja que el portal venía mostrando.
@@ -37,4 +38,25 @@ export function setBannerPortal({ activo, texto = null, textoCorto = null, varia
         p_texto_corto: textoCorto,
         p_variante:    variante,
     });
+}
+
+// ── Lo que hace el administrador, anotado (D3, 2026-09-28) ─────────────────
+// Encender, apagar o reescribir la franja que ve todo el portal se anota desde
+// acá, no desde la pantalla, así que cualquier cliente lo hereda. Sólo si entró.
+
+/** Encender el aviso (con el texto que se está viendo) → `BANNER_PORTAL_ON`. */
+export function encenderBannerPortal({ texto = null, textoCorto = null, variante = null } = {}) {
+    return conBitacora(setBannerPortal({ activo: true, texto, textoCorto, variante }),
+        'BANNER_PORTAL_ON', 'banner_portal', { texto, variante });
+}
+
+/** Apagar el aviso → `BANNER_PORTAL_OFF`. */
+export function apagarBannerPortal() {
+    return conBitacora(setBannerPortal({ activo: false }), 'BANNER_PORTAL_OFF', 'banner_portal', {});
+}
+
+/** Guardar el texto sin cambiar si está encendido → `BANNER_PORTAL_EDIT`. */
+export function guardarBannerPortal({ activo, texto = null, textoCorto = null, variante = null }) {
+    return conBitacora(setBannerPortal({ activo, texto, textoCorto, variante }),
+        'BANNER_PORTAL_EDIT', 'banner_portal', { texto, variante });
 }

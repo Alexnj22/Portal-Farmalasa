@@ -20,17 +20,9 @@ import { buscadorDePersonas } from '../../utils/movimientoTexto';
 import { reimprimirTicketDeTraslado } from '../../utils/imprimirTraslado';
 import LecturaQueNoEntro from './LecturaQueNoEntro';
 
-/* La bitácora de la custodia.
- *
- * `retiro_soltar` BORRA la fila, así que sin esto soltar una bolsa no dejaba
- * rastro de ningún tipo: si después falta, no hay dónde leer quién la tuvo ni
- * cuándo dejó de tenerla. Y es justamente la acción cuyo único propósito es
- * asignar responsabilidad. Regla del repo: toda acción de usuario va a
- * `audit_logs`. */
-const anotar = (accion, requestId, detalle) => {
-    try { useStaff.getState().appendAuditLog(accion, String(requestId ?? ''), detalle); }
-    catch (e) { console.error('bitácora del retiro:', e); }   // no puede tumbar la acción
-};
+/* La bitácora de la custodia (cargar, firmar, soltar, cerrar) la anotan las
+ * funciones de `data/retiros.js`; acá sólo se les pasa lo que la pantalla sabe
+ * (nombres de sala, id del recorrido). */
 
 const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo'));
 
@@ -141,7 +133,9 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                 return;
             }
 
-            const r = await cargarBulto(traslado.id, entregoId);
+            const r = await cargarBulto(traslado.id, entregoId, {
+                origen: traslado.origen ?? null, destino: traslado.destino ?? null,
+            });
             if (!r?.ok) {
                 setError(r?.error ?? 'No se pudo cargar esa bolsa.');
                 return;
@@ -165,11 +159,6 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
              * los dos vienen de `retiro_cargar`, que devuelve el origen. */
             const origenId = r.origen_branch_id ?? null;
             setSalaActual(origenId ? { id: origenId, nombre: traslado.origen } : null);
-            anotar('CARGAR_BULTO', traslado.id, {
-                origen: traslado.origen ?? null, destino: traslado.destino ?? null,
-                firma_propia: r.firma_propia === true, falta_firma: r.falta_firma === true,
-                entrego: r.entrego ?? null,
-            });
             await recargar(origenId);
             onCambio?.();
         } catch (e) {
@@ -209,7 +198,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     const leerFirma = useCallback(async (code) => {
         setOcupado(true); setError(''); setAviso('');
         try {
-            const r = await firmarEntregaConCarne(code);
+            const r = await firmarEntregaConCarne(code, { retiroId: retiro?.retiro_id });
             if (!r?.ok) { setError(r?.error ?? 'No se pudo registrar la firma.'); return; }
 
             setModoFirma(false);
@@ -217,7 +206,6 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
             setAviso(n > 0
                 ? `${r.quien} firmó la entrega de ${n} ${n === 1 ? 'bolsa' : 'bolsas'}.`
                 : `${r.quien} queda como quien entrega lo que te lleves de su sala.`);
-            anotar('FIRMAR_ENTREGA', retiro?.retiro_id, { quien: r.quien ?? null, bolsas: n });
             await recargar(salaActual?.id ?? miBranch ?? null);
             onCambio?.();
         } catch (e) {
@@ -300,10 +288,9 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
 
     const cerrar = async () => {
         setOcupado(true); setError(''); setAviso('');
-        const r = await cerrarRetiro();
+        const r = await cerrarRetiro({ retiroId: retiro?.retiro_id, bultos: bultos.length });
         setOcupado(false);
         if (!r?.ok) { setError(r?.error ?? 'No se pudo cerrar el recorrido.'); return; }
-        anotar('CERRAR_RETIRO', retiro?.retiro_id, { bultos: bultos.length });
         setAviso('Recorrido cerrado.');
         await recargar(salaActual?.id ?? null);
         onCambio?.();
@@ -311,11 +298,9 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
 
     const soltar = async (requestId) => {
         setOcupado(true); setError('');
-        const r = await soltarBulto(requestId);
+        const r = await soltarBulto(requestId, { sala: salaActual?.nombre ?? null });
         setOcupado(false);
         if (!r?.ok) { setError(r?.error ?? 'No se pudo soltar esa bolsa.'); return; }
-        // La fila se borra: esta anotación es el ÚNICO rastro de que existió.
-        anotar('SOLTAR_BULTO', requestId, { sala: salaActual?.nombre ?? null });
         await recargar(salaActual?.id ?? null);
         onCambio?.();
     };

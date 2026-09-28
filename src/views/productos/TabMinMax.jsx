@@ -21,7 +21,6 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination from '../../components/common/TablePagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useNavigate } from 'react-router-dom';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -44,7 +43,7 @@ import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import ConfigPanel from './tabminmax/ConfigPanel';
 import LabsPanel from './tabminmax/LabsPanel';
 import BorradoresRanura from './tabminmax/BorradoresRanura';
-import { fetchProveedorPrincipal, fetchStockNetoPorSala, upsertStockParams } from '../../data/stockParams';
+import { fetchProveedorPrincipal, fetchStockNetoPorSala, ocultarProductoMinMax } from '../../data/stockParams';
 import { useMinMaxData, estadoAjuste } from '../../hooks/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
@@ -1419,19 +1418,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 // contador de borradores los saltea (useMinMaxData.js:298)— así
                                                 // que quedaba pendiente para siempre y bloqueaba el recálculo
                                                 // mensual de toda la sucursal.
-                                                await upsertStockParams({
-                                                    erp_product_id: row.erp_product_id,
-                                                    erp_sucursal_id: row._erp_sucursal_id,
-                                                    is_hidden: true,
-                                                    min_units: null, max_units: null,
-                                                    draft_min: null, draft_max: null, draft_status: 'none',
-                                                    updated_at: new Date().toISOString(),
-                                                });
+                                                await ocultarProductoMinMax(row.erp_product_id, row._erp_sucursal_id,
+                                                    { product: row.product_name });
                                                 setHidingIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; });
                                                 setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
                                                 setData(prev => prev.map(r => r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
                                                     ? { ...r, is_hidden: true, min_units: null, max_units: null, draft_min: null, draft_max: null, draft_status: 'none' } : r));
-                                                useStaff.getState().appendAuditLog('MINMAX_HIDE', String(row.erp_product_id), { product: row.product_name, sucursal_id: row._erp_sucursal_id });
                                             }}
                                             onZeroOut={() => {
                                                 const cls = row.draft_abc_class || row.abc_class;

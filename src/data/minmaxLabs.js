@@ -2,6 +2,7 @@
 // laboratorios en el cálculo de MinMax). Extraído de LabsPanel.jsx
 // (tabminmax): 5 llamadas supabase.from().
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 const CHUNK = 1000; // cap de PostgREST — Patrón B/A del CLAUDE.md
 
@@ -35,6 +36,33 @@ export function fetchActiveProductLabCounts() {
 
 export function updateLaboratorioMinMaxVisibility(labId, ocultar) {
     return supabase.from('laboratorios').update({ ocultar_en_minmax: ocultar }).eq('id', labId);
+}
+
+/**
+ * Oculta o muestra un laboratorio en Mín·Máx. Al desocultarlo limpia además el
+ * `is_hidden` individual de sus productos, para que reaparezcan sin quedar
+ * marcados como ocultos a nivel de producto. Anota la entrada en la bitácora
+ * sólo si todo salió bien (D3, 2026-09-28).
+ *
+ * Devuelve `{ error }` si falló el cambio del laboratorio, o
+ * `{ errorDesocultar }` si el laboratorio cambió pero algún tramo de
+ * productos no se pudo desocultar.
+ */
+export async function cambiarVisibilidadLaboratorioMinMax(labId, ocultar, contexto = {}) {
+    const { error } = await updateLaboratorioMinMaxVisibility(labId, ocultar);
+    if (error) return { error };
+    if (!ocultar) {
+        const { data: prods } = await fetchProductIdsByLaboratorio(labId);
+        if (prods?.length) {
+            // Devuelve un array de resultados (uno por tramo de 1000): un tramo
+            // fallido antes quedaba en silencio.
+            const results = await unhideStockParamsForProducts(prods.map(p => p.id));
+            const failed = results.find(r => r.error);
+            if (failed) return { error: null, errorDesocultar: failed.error };
+        }
+    }
+    anotar('MINMAX_LAB_VISIBILITY', labId, { ocultar, ...contexto });
+    return { error: null };
 }
 
 // Un laboratorio grande podía des-ocultarse solo parcialmente (M-3).

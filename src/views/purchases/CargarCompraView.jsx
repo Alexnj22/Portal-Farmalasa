@@ -25,7 +25,6 @@ import { formatMoney } from '../../utils/formatNumber';
 import { tokenMatch } from '../../utils/searchUtils';
 import { useAuth } from '../../context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
-import { useStaffStore } from '../../store/staffStore';
 import { fechaNumerica } from '../../utils/fecha';
 
 // Vista «Cargar compra».
@@ -146,14 +145,12 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     const confirmar = async (renglon, producto) => {
         setG(renglon.codigo_proveedor);
         const { error: e } = await confirmarProducto(
-            p.documento.emisor_nit, renglon.codigo_proveedor, producto.id);
+            p.documento.emisor_nit, renglon.codigo_proveedor, producto.id,
+            { proveedor: p.documento.emisor, producto: producto.nombre });
         setG(null);
         if (e) { setError(e); return; }
         setEleg(x => ({ ...x, [renglon.codigo_proveedor]: { product_id: producto.id, nombre: producto.nombre } }));
         setBusc(null);
-        useStaffStore.getState().appendAuditLog('COMPRA_ALIAS_CONFIRMADO', String(producto.id), {
-            proveedor: p.documento.emisor, codigo: renglon.codigo_proveedor, producto: producto.nombre,
-        });
     };
 
     const resumen = p?.resumen;
@@ -377,14 +374,12 @@ function TabPorConfirmar({ puedeEditar }) {
 
     const confirmar = async (fila, producto) => {
         setG(fila.id);
-        const { error: e } = await confirmarProducto(fila.emisor_nit, fila.llave, producto.id);
+        const { error: e } = await confirmarProducto(fila.emisor_nit, fila.llave, producto.id, {
+            proveedor: fila.proveedor, producto: producto.nombre, renglones: fila.renglones,
+        });
         setG(null);
         if (e) { setError(e); return; }
         setBusc(null);
-        useStaffStore.getState().appendAuditLog('COMPRA_ALIAS_CONFIRMADO', String(producto.id), {
-            proveedor: fila.proveedor, codigo: fila.llave, producto: producto.nombre,
-            renglones: fila.renglones,
-        });
         await cargar();
     };
 
@@ -394,13 +389,12 @@ function TabPorConfirmar({ puedeEditar }) {
     // revisa con el filtro «No son productos», no leyendo motivos.
     const apartar = async (fila) => {
         setG(fila.id);
-        const { error: e } = await apartarRenglon(fila.id, false);
-        setG(null);
-        if (e) { setError(e); return; }
-        useStaffStore.getState().appendAuditLog('COMPRA_RENGLON_APARTADO', String(fila.id), {
+        const { error: e } = await apartarRenglon(fila.id, false, {
             proveedor: fila.proveedor, codigo: fila.codigo_proveedor,
             descripcion: fila.descripcion, renglones: fila.renglones,
         });
+        setG(null);
+        if (e) { setError(e); return; }
         await cargar();
     };
 
@@ -585,12 +579,10 @@ function TabPorConfirmar({ puedeEditar }) {
                                     <Button size="xs" variant="ghost" loading={guardando === f.id}
                                         onClick={async () => {
                                             setG(f.id);
-                                            const { error: e } = await apartarRenglon(f.id, true);
+                                            const { error: e } = await apartarRenglon(f.id, true,
+                                                { proveedor: f.proveedor, codigo: f.codigo_proveedor });
                                             setG(null);
                                             if (e) { setError(e); return; }
-                                            useStaffStore.getState().appendAuditLog(
-                                                'COMPRA_RENGLON_DEVUELTO', String(f.id),
-                                                { proveedor: f.proveedor, codigo: f.codigo_proveedor });
                                             await cargar();
                                         }}>
                                         Devolver a la lista

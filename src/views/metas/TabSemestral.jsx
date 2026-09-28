@@ -125,11 +125,11 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
         [filtradas, page, pageSize],
     );
 
-    const correr = useCallback(async (fn, accion, detalle, fallo) => {
+    // La bitácora la anota la función de datos que guarda (D3).
+    const correr = useCallback(async (fn, fallo) => {
         setOcupado(true);
         try {
             setHoja(await fn());
-            useStaffStore.getState().appendAuditLog(accion, 'bono_semestre', { semestre: sem, ...detalle });
             return true;
         } catch (err) {
             showToast('No se pudo guardar', mensajeAmigable(err, fallo), 'error');
@@ -137,7 +137,7 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
         } finally {
             setOcupado(false);
         }
-    }, [sem, showToast]);
+    }, [showToast]);
 
     const exportar = () => {
         exportCsv(
@@ -382,8 +382,8 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
                 onClose={() => setConfirmar(false)}
                 onConfirm={async () => {
                     setConfirmar(false);
-                    const ok = await correr(() => aprobarBonoSemestral(sem, true),
-                        'METAS_BONO_SEMESTRE_APROBAR', { a_pagar: aPagar }, 'Vuelve a intentarlo.');
+                    const ok = await correr(() => aprobarBonoSemestral(sem, true, null, { a_pagar: aPagar }),
+                        'Vuelve a intentarlo.');
                     if (ok) showToast('Semestre aprobado', `${formatMoney(aPagar)} quedan congelados.`, 'success');
                 }}
                 title={`Aprobar ${semestreLabel(sem).toLowerCase()}`}
@@ -397,8 +397,7 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
                 onClose={() => setReabrir(false)}
                 onConfirm={async (texto) => {
                     setReabrir(false);
-                    await correr(() => aprobarBonoSemestral(sem, false, texto),
-                        'METAS_BONO_SEMESTRE_REABRIR', { motivo: texto }, 'Vuelve a intentarlo.');
+                    await correr(() => aprobarBonoSemestral(sem, false, texto), 'Vuelve a intentarlo.');
                 }}
                 title={`Reabrir ${semestreLabel(sem).toLowerCase()}`}
                 message="Esto deshace la aprobación y la hoja vuelve a calcularse. Escribe por qué."
@@ -417,8 +416,6 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
                     setDecidir(null);
                     const ok = await correr(
                         () => decidirBonoSemestral({ semestre: sem, employeeId: d.persona.employee_id, pagar: d.pagar, motivo: texto }),
-                        'METAS_BONO_SEMESTRE_DECISION',
-                        { employee_id: d.persona.employee_id, pagar: d.pagar, motivo: texto },
                         'Vuelve a intentarlo.');
                     if (ok) showToast('Decisión guardada', d.pagar ? 'Cobra lo acumulado.' : 'No cobra lo acumulado.', 'success');
                 }}

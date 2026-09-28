@@ -7,7 +7,6 @@ import { SkeletonText } from '../../components/common/StateViews';
 import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle } from 'lucide-react';
 import { signPhotosDeep } from '../../utils/storageFiles';
 import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import PedidoModal from './PedidoModal';
 import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '../../utils/routeOptimizer';
 import { loadGoogleMaps, loadLeaflet, matrizPorCarretera } from '../../plataforma/mapas';
@@ -446,10 +445,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       const { error: salidaErr } = await updateRutaStatus(rutaId, { status: 'en_ruta', salida_at: new Date().toISOString(), ...(visitasData.length > 0 ? { visitas: visitasData } : {}) });
       if (salidaErr) throw salidaErr;
 
-      useStaff.getState().appendAuditLog('RUTA_CREADA', rutaId, {
-        conductor: conductorNombre,
-        paradas:   rpcParadas.length,
-      });
+      // `RUTA_CREADA` lo anota `crearRuta` en la capa de datos.
 
       // «En camino» a cada sala lo escribe la base al pasar la ruta a
       // `en_ruta` (`avisar_salida_de_ruta`, 2026-09-28): uno por sala, con sus

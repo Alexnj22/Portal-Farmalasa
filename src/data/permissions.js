@@ -3,6 +3,7 @@
 // supabase.from().
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { anotar, conBitacora } from './audit';
 
 export function fetchRolesForPermissions() {
     return supabase.from('roles').select('id, name, parent_role_id, max_price_level, is_su, idle_limit_min').order('id');
@@ -50,6 +51,83 @@ export function updateRoleIsSU(roleId, value) {
 // deja afuera a sí mismo.
 export function updateRoleIdleLimit(roleId, minutos) {
     return supabase.from('roles').update({ idle_limit_min: minutos }).eq('id', roleId);
+}
+
+// ── Cambios de acceso que se anotan solos (D3, 2026-09-28) ─────────────────
+// Quién le dio acceso a quién es justo lo que más importa poder rastrear
+// (hallazgo P0 de la auditoría del 2026-08-03), así que la entrada la escribe
+// la función que guarda y no la pantalla: la app del teléfono la hereda al
+// llamar a la misma función. La pantalla sólo aporta lo que la base no sabe
+// decir en palabras (`contexto`: el nombre del cargo, de qué cargo se copió).
+//
+// Las que ya se anotaban aunque la escritura fallara lo siguen haciendo, con
+// `error` en el detalle: el INTENTO de cambiar un permiso también es un dato.
+async function anotarIntento(escritura, accion, targetId, detalles) {
+    const res = await escritura;
+    const error = res?.error;
+    anotar(accion, targetId, {
+        ...detalles,
+        error: error ? (error.message || 'error al guardar') : undefined,
+    });
+    return res;
+}
+
+/** Un permiso de un módulo para un cargo → `PERMISOS_CAMBIO`. */
+export function guardarPermisoDeCargo(row, contexto = {}) {
+    return anotarIntento(upsertRolePermission(row), 'PERMISOS_CAMBIO', String(row.role_id),
+        { modulo: row.module_key, ...contexto });
+}
+
+/** Tope de nivel de precio del cargo → `PERMISOS_NIVEL_PRECIO`. */
+export function cambiarNivelDePrecioDeCargo(roleId, level, contexto = {}) {
+    return anotarIntento(updateRoleMaxPriceLevel(roleId, level), 'PERMISOS_NIVEL_PRECIO', String(roleId),
+        { ...contexto, nivel: level || 'sin límite' });
+}
+
+/** Super Usuario del cargo → `PERMISOS_SUPER_USUARIO`. */
+export function cambiarSuperUsuarioDeCargo(roleId, value, contexto = {}) {
+    return anotarIntento(updateRoleIsSU(roleId, value), 'PERMISOS_SUPER_USUARIO', String(roleId),
+        { ...contexto, valor: value });
+}
+
+/** Minutos de inactividad del cargo → `PERMISOS_TIEMPO_INACTIVIDAD` (sólo si entró). */
+export function cambiarTiempoDeInactividadDeCargo(roleId, minutos, contexto = {}) {
+    return conBitacora(updateRoleIdleLimit(roleId, minutos), 'PERMISOS_TIEMPO_INACTIVIDAD', String(roleId),
+        { ...contexto, minutos });
+}
+
+/** Delegar (o no) las decisiones en ausencia → `PERMISOS_DELEGAR_AUSENCIA` (sólo si entró). */
+export function delegarDecisionesDeCargo(roleId, rows, value, contexto = {}) {
+    return conBitacora(upsertRolePermissionsBulk(rows), 'PERMISOS_DELEGAR_AUSENCIA', String(roleId),
+        { ...contexto, valor: value });
+}
+
+/** Encender todo (como Super Usuario) y quitar el tope de precio → `PERMISOS_ACTIVAR_TODO`. */
+export async function activarTodoParaCargo(roleId, rows, contexto = {}) {
+    const [perm, nivel] = await Promise.all([
+        upsertRolePermissionsBulk(rows),
+        updateRoleMaxPriceLevel(roleId, null),
+    ]);
+    const error = perm?.error || nivel?.error || null;
+    return anotarIntento({ error }, 'PERMISOS_ACTIVAR_TODO', String(roleId),
+        { ...contexto, modulos: rows.length });
+}
+
+/** Copiar los permisos y el tope de precio de otro cargo → `PERMISOS_COPIAR_DESDE`. */
+export async function copiarPermisosDeCargo(roleId, rows, nivel, contexto = {}) {
+    const [perm, niv] = await Promise.all([
+        upsertRolePermissionsBulk(rows),
+        updateRoleMaxPriceLevel(roleId, nivel),
+    ]);
+    const error = perm?.error || niv?.error || null;
+    return anotarIntento({ error }, 'PERMISOS_COPIAR_DESDE', String(roleId), contexto);
+}
+
+/** Encender o apagar una sección entera → `PERMISOS_ACTIVAR_SECCION` / `PERMISOS_APAGAR_SECCION`. */
+export function cambiarSeccionDeCargo(roleId, rows, activar, contexto = {}) {
+    return anotarIntento(upsertRolePermissionsBulk(rows),
+        activar ? 'PERMISOS_ACTIVAR_SECCION' : 'PERMISOS_APAGAR_SECCION', String(roleId),
+        { ...contexto, modulos: rows.length });
 }
 
 // ── AuthContext.jsx (2 de sus 3 sitios — refreshPermissions) ────────────────

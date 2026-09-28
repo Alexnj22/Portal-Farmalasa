@@ -6,7 +6,6 @@ import Button from '../../../components/common/Button';
 import ModalShell from '../../../components/common/ModalShell';
 import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
 import { updateStockConfig } from '../../../data/stockParams';
-import { useStaffStore as useStaff } from '../../../store/staffStore';
 import PortalInput from '../../../components/common/PortalInput';
 import { usuarioDeLaSesion } from '../../../data/auth';
 
@@ -62,13 +61,10 @@ export default function ConfigPanel({ config, onSave, onClose }) {
             updated_by:          user?.email ?? null,
         };
         try {
+            // Anota el cambio en la bitácora la propia función de datos (D3):
+            // mueve el MIN·MAX de todo el catálogo a la vez.
             const { error } = await updateStockConfig(payload);
             if (error) throw error;
-            // Es una fila sola, pero `cycle_days` y los `reorder_*_days` son el
-            // divisor y el multiplicador del MIN·MAX de TODO el catálogo: un
-            // cambio acá reescribe 18,364 filas a la vez. Sin registro, un
-            // producto cuyo mínimo se movió no tiene explicación ni autor.
-            useStaff.getState().appendAuditLog('CAMBIAR_CONFIG_MINMAX', 'stock_config', payload);
             onSave({ ...payload });
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);

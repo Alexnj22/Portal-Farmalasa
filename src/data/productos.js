@@ -5,6 +5,11 @@
 // prefetchRow y toggleRow) y quedan en una sola función acá.
 import { supabase } from '../supabaseClient';
 import { buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
+import { anotar, conBitacora } from './audit';
+
+// Las escrituras de la ficha anotan su propia entrada en la bitácora (D3,
+// 2026-09-28): cualquier cliente que las llame la deja. `contexto` son los
+// datos legibles que sólo la pantalla conoce; la acción es fija.
 
 // ── Principios activos ──────────────────────────────────────────────────────
 
@@ -20,10 +25,24 @@ export function updateProductPrincipioActivo(productId, text) {
     return supabase.from('products').update({ principio_activo: text || null }).eq('id', productId);
 }
 
+/**
+ * Reemplaza los principios activos de un producto —las filas y el texto de
+ * `products.principio_activo`— y lo anota. Es lo que hace el editor de la ficha
+ * del catálogo. Devuelve el resultado del último paso (el texto).
+ */
+export async function guardarPrincipiosActivos(productId, rows, text, contexto = {}) {
+    await deleteProductActivePrinciples(productId);
+    if (rows.length > 0) await insertProductActivePrinciples(rows);
+    const res = await updateProductPrincipioActivo(productId, text);
+    if (!res?.error) anotar('UPDATE_PRODUCT_PRINCIPLES', productId, { count: rows.length, ...contexto });
+    return res;
+}
+
 // ── Categoría ────────────────────────────────────────────────────────────────
 
 export function updateProductCategoria(productId, categoria) {
-    return supabase.from('products').update({ tipo_medicamento: categoria || null }).eq('id', productId);
+    return conBitacora(supabase.from('products').update({ tipo_medicamento: categoria || null }).eq('id', productId),
+        'UPDATE_PRODUCT_CATEGORY', productId, { categoria: categoria || null });
 }
 
 export function insertProductCategory(nombre) {
@@ -40,18 +59,35 @@ export function deleteProductLocations(productId, branchIds) {
     return supabase.from('product_locations').delete().eq('product_id', productId).in('branch_id', branchIds);
 }
 
+/**
+ * Guarda las ubicaciones de un producto por sala: las que tienen datos se
+ * escriben, las vacías se borran. Anota una sola entrada por guardado.
+ */
+export async function guardarUbicacionesProducto(productId, toUpsert, toDelete, contexto = {}) {
+    let error = null;
+    if (toUpsert.length > 0) ({ error } = await upsertProductLocations(toUpsert));
+    if (!error && toDelete.length > 0) ({ error } = await deleteProductLocations(productId, toDelete));
+    if (!error) anotar('UPDATE_PRODUCT_LOCATIONS', productId, { branches: toUpsert.length, ...contexto });
+    return { error };
+}
+
 // ── Devolutivo / foto ────────────────────────────────────────────────────────
 
-export function updateProductDevolutivo(productId, value) {
-    return supabase.from('products').update({ devolutivo: value }).eq('id', productId);
+export function updateProductDevolutivo(productId, value, contexto = {}) {
+    return conBitacora(supabase.from('products').update({ devolutivo: value }).eq('id', productId),
+        'PRODUCTO_DEVOLUTIVO', productId, { devolutivo: value, ...contexto });
 }
 
 export function updateProductFoto(productId, fotoUrl) {
     return supabase.from('products').update({ foto_url: fotoUrl }).eq('id', productId);
 }
 
+// Decir que un producto NO tiene principio activo lo saca de la clasificación
+// regulada: es una decisión de una persona sobre el catálogo, y se toma de a
+// cientos en una corrida. Por eso se anota siempre.
 export function updateProductSinPrincipioActivo(productId, value) {
-    return supabase.from('products').update({ sin_principio_activo: value }).eq('id', productId);
+    return conBitacora(supabase.from('products').update({ sin_principio_activo: value }).eq('id', productId),
+        'MARCAR_SIN_PRINCIPIO_ACTIVO', productId, { sin_principio_activo: value });
 }
 
 // ── Enriquecimiento SRS (principios activos por lote) ───────────────────────

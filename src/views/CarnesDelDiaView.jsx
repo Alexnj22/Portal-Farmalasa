@@ -144,11 +144,9 @@ const CarnesDelDiaView = () => {
         setAnulando(true);
         const { showToast } = useToastStore.getState();
         try {
-            const r = await anularCarneTemporal(aAnular.id);
+            // `CARNE_TEMPORAL_ANULADO` lo anota `anularCarneTemporal`.
+            const r = await anularCarneTemporal(aAnular.id, { employeeId: aAnular.employee_id });
             if (r?.ok) {
-                useStaff.getState().appendAuditLog?.('CARNE_TEMPORAL_ANULADO', aAnular.employee_id, {
-                    carne_id: aAnular.id,
-                });
                 showToast('Carné anulado', `El papel de ${aAnular.nombre} ya no sirve para nada.`, 'success');
             } else {
                 showToast('No se anuló', r?.motivo || 'Intenta de nuevo.', 'error');

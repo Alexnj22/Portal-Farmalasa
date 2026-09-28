@@ -10,7 +10,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import EditorDeHorarios from '../../components/bitacoras/EditorDeHorarios';
 import PuntosDeLimpieza from '../../components/bitacoras/PuntosDeLimpieza';
 import { LoadingState } from '../../components/common/StateViews';
-import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, areaNueva, crearArea, fetchAreas, guardarArea, rangoDeLaSucursal, rotularRango, soloLimpieza } from '../../data/bitacoras';
+import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, apagarRefrigerador, areaNueva, crearArea, encenderRefrigerador, fetchAreas, guardarArea, rangoDeLaSucursal, rotularRango, soloLimpieza } from '../../data/bitacoras';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { hora12 } from '../../utils/hora';
 import { hoySV } from '../../utils/fecha';
@@ -86,25 +86,16 @@ function Area({ area, puedeEditar, onGuardado }) {
 
     const guardar = useCallback(async () => {
         setGuardando(true); setError(null); setOk(false);
+        // La bitácora (`CONFIGURAR_AREA_BITACORA`) la anota `guardarArea`.
         const { error: err } = await guardarArea(area.id, {
             activa,
             instrumento: instrumento.trim() || null,
             calibrado_hasta: calibrado || null,
             calibrado_el: calibradoEl || null,
             puntos,
-        });
+        }, { area: area.nombre ?? null });
         setGuardando(false);
         if (err) { setError(err); return; }
-        // Esto reescribe qué se le exige a la sala todos los días y, de rebote,
-        // el número que el regente firma al cerrar el mes. Tiene permiso propio
-        // (`bitacoras_configurar`) y no dejaba rastro de quién lo cambió — que
-        // es exactamente lo que una bitácora regulada tiene que poder mostrar.
-        useStaff.getState().appendAuditLog('CONFIGURAR_AREA_BITACORA', String(area.id), {
-            area: area.nombre ?? null, activa,
-            instrumento: instrumento.trim() || null,
-            calibrado_hasta: calibrado || null, calibrado_el: calibradoEl || null,
-            puntos,
-        });
         setOk(true);
         onGuardado?.();
     }, [area.id, area.nombre, activa, instrumento, calibrado, calibradoEl, puntos, onGuardado]);
@@ -306,12 +297,10 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
 
     const guardar = useCallback(async () => {
         setGuardando(true); setError(null); setOk(false);
-        const { areas: tocadas, error: err } = await aplicarHorarios(branchId, franjas, limpiezas);
+        // La bitácora (`CONFIGURAR_HORARIOS_BITACORA`) la anota `aplicarHorarios`.
+        const { error: err } = await aplicarHorarios(branchId, franjas, limpiezas);
         setGuardando(false);
         if (err) { setError(err); return; }
-        useStaff.getState().appendAuditLog('CONFIGURAR_HORARIOS_BITACORA', String(branchId), {
-            sucursal: branchId, areas: tocadas, franjas, limpiezas,
-        });
         setOk(true);
         onCambio?.();
     }, [branchId, franjas, limpiezas, onCambio]);
@@ -389,17 +378,15 @@ function Refrigerador({ branchId, areas, puedeEditar, onCambio }) {
 
     const encender = useCallback(async () => {
         setTrabajando(true); setError(null);
-        const datos = { activa: true, calibrado_el: fecha, calibrado_hasta: unAnoDespues(fecha) };
-        // Si ya existió y se apagó, se vuelve a encender: crear otro chocaría
-        // con el UNIQUE (sucursal, tipo, nombre) y, peor, dejaría las lecturas
-        // viejas colgando de un área apagada.
-        const { error: err } = refri
-            ? await guardarArea(refri.id, datos)
-            : await crearArea({ ...areaNueva('refrigerador', branchId, areas), ...datos });
+        // Si ya existió y se apagó, `encenderRefrigerador` lo vuelve a encender
+        // en vez de crear otro. La bitácora la anota la misma función.
+        const { error: err } = await encenderRefrigerador({
+            refri,
+            nueva: refri ? null : areaNueva('refrigerador', branchId, areas),
+            branchId, calibradoEl: fecha, calibradoHasta: unAnoDespues(fecha),
+        });
         setTrabajando(false);
         if (err) { setError(err); return; }
-        useStaff.getState().appendAuditLog('CONFIGURAR_REFRIGERADOR_BITACORA',
-            String(refri?.id ?? branchId), { sucursal: branchId, encendido: true, calibrado_el: fecha });
         setFecha('');
         onCambio?.();
     }, [refri, fecha, branchId, areas, onCambio]);
@@ -407,11 +394,9 @@ function Refrigerador({ branchId, areas, puedeEditar, onCambio }) {
     const apagar = useCallback(async () => {
         if (!refri) return;
         setTrabajando(true); setError(null);
-        const { error: err } = await guardarArea(refri.id, { activa: false });
+        const { error: err } = await apagarRefrigerador(refri.id, branchId);
         setTrabajando(false);
         if (err) { setError(err); return; }
-        useStaff.getState().appendAuditLog('CONFIGURAR_REFRIGERADOR_BITACORA', String(refri.id),
-            { sucursal: branchId, encendido: false });
         onCambio?.();
     }, [refri, branchId, onCambio]);
 
@@ -514,12 +499,10 @@ function AgregarArea({ branchId, areas, onCreada }) {
         setCreando(true); setError(null);
         const base = areaNueva(tipo, branchId, areas);
         if (nombre.trim()) base.nombre = nombre.trim();
-        const { id, error: err } = await crearArea(base);
+        // La bitácora (`CREAR_AREA_BITACORA`) la anota `crearArea`.
+        const { error: err } = await crearArea(base);
         setCreando(false);
         if (err) { setError(err); return; }
-        useStaff.getState().appendAuditLog('CREAR_AREA_BITACORA', String(id ?? ''), {
-            sucursal: branchId, tipo, nombre: base.nombre,
-        });
         setTipo(''); setNombre('');
         onCreada?.();
     }, [tipo, nombre, branchId, areas, onCreada]);

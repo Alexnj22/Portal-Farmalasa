@@ -6,7 +6,6 @@ import Button from './Button';
 import ConfirmModal from './ConfirmModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
-import { useStaffStore } from '../../store/staffStore';
 import { unlockModule } from '../../data/moduleLocks';
 import { MODULE_MAP, moduleKeyForPath } from '../../constants/moduleMap';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -74,7 +73,6 @@ const ModuleLockNotice = memo(({ moduleKey: moduleKeyProp }) => {
         setBusy(false);
         setAskUnlock(false);
         if (error) { useToastStore.getState().showToast(nombre, mensajeAmigable(error), 'error'); return; }
-        useStaffStore.getState().appendAuditLog('MODULE_LOCK_OFF', moduleKey, { module: moduleKey });
         useToastStore.getState().showToast(nombre, 'Mantenimiento terminado. Ya se puede editar.', 'success');
         refreshModuleLocks();
     };

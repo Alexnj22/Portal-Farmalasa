@@ -7,7 +7,6 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { useAuth } from '../../context/AuthContext';
-import { useStaffStore } from '../../store/staffStore';
 import { useComposicionTraslado } from '../../store/composicionTraslado';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
 import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../../data/traslados';
@@ -86,7 +85,6 @@ function diasHasta(d) {
 
 export default function PedirTrasladoModal({ producto: productoInicial = null, onClose, onListo }) {
     const { user } = useAuth();
-    const appendAuditLog = useStaffStore(s => s.appendAuditLog);
     /* Lo elegido en el primer paso, cuando hubo primer paso. La fila del
        catálogo trae `{ id, nombre }` y el resto del archivo habla de
        `{ erp_product_id, descripcion }`: se traduce acá, en el borde, y no en
@@ -657,17 +655,9 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
              * esperando respuesta—, es mejor que no entre nada y se corrija,
              * que quedarse con media composición enviada y sin forma de saber
              * cuál mitad. */
+            // La bitácora (`TRASLADO_SOLICITADO`) la anota la capa de datos.
             const { error: e } = await crearSolicitudTraslado(filas);
             if (e) throw e;
-
-            await appendAuditLog('TRASLADO_SOLICITADO', String(miBranch ?? ''), {
-                solicitudes: filas.length,
-                productos: aEnviar.length,
-                salas: [...porSala.values()].map(g => g[0].origen.sala),
-                unidades: aEnviar.reduce((s, r) => s + r.unidades, 0),
-                causa: causa.trim(),
-                ...(grupoId ? { grupo_id: grupoId } : {}),
-            });
 
             setResumen({
                 solicitudes: filas.length,

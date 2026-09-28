@@ -26,7 +26,7 @@ import { extractCodigoGeneracionFromPdf } from '../../utils/dtePdfCodigo';
 import { fetchProveedoresMaestro } from '../../data/proveedores';
 import {
     fetchPurchaseDteDocuments, fetchPurchaseDteReviewQueue,
-    setPurchaseDteProveedor, resolvePurchaseDteReview, syncPurchaseEmailsNow,
+    setPurchaseDteProveedor, resolvePurchaseDteReview, buscarCorreosDeCompras,
     downloadPurchaseDtePackage, downloadPurchaseDteZipBulk, mergePurchaseDteDocuments,
     findPurchaseDteDocumentByCodigo, classifyPurchaseDteReview, nombreZipFacturas,
 } from '../../data/facturasCompra';
@@ -220,10 +220,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                         if (!val) { setEditing(false); return; }
                         setSaving(true);
                         try {
-                            await setPurchaseDteProveedor(row.id, val);
-                            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_MATCH_PROVEEDOR', String(row.id), {
-                                codigo_generacion: row.codigo_generacion, proveedor_id: val,
-                            });
+                            await setPurchaseDteProveedor(row.id, val, { codigo_generacion: row.codigo_generacion });
                             onMatched();
                             setEditing(false);
                         } catch (e) {
@@ -407,10 +404,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                         if (!val) { onClose(); return; }
                         setSaving(true);
                         try {
-                            await resolvePurchaseDteReview(row.id, 'emparejado', val);
-                            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_EMPAREJAR_REVISION', String(row.id), {
-                                matched_document_id: val, filename: row.filename,
-                            });
+                            await resolvePurchaseDteReview(row.id, 'emparejado', val, { filename: row.filename });
                             onMatched();
                         } catch (e) {
                             setError(mensajeAmigable(e, 'No se pudo emparejar'));
@@ -486,10 +480,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
         setSaving(true);
         setError('');
         try {
-            await classifyPurchaseDteReview(row.id, documentId, tipo);
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_CLASIFICAR_REVISION', String(row.id), {
-                matched_document_id: documentId, tipo, filename: row.filename,
-            });
+            await classifyPurchaseDteReview(row.id, documentId, tipo, null, { filename: row.filename });
             onClassified();
         } catch (e) {
             setError(mensajeAmigable(e, 'No se pudo clasificar'));
@@ -576,9 +567,6 @@ function AttachJsonAction({ row, candidates, onMerged }) {
                         setSaving(true);
                         try {
                             await mergePurchaseDteDocuments(row.id, val);
-                            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_ADJUNTAR_JSON', String(row.id), {
-                                source_document_id: val,
-                            });
                             onMerged();
                             setOpen(false);
                         } catch (e) {
@@ -792,10 +780,7 @@ function TabDocumentos({
     const mergePorCodigo = async (row, match) => {
         setBulkError('');
         try {
-            await mergePurchaseDteDocuments(row.id, match.id);
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_ADJUNTAR_JSON', String(row.id), {
-                source_document_id: match.id, via: 'detect_code',
-            });
+            await mergePurchaseDteDocuments(row.id, match.id, { via: 'detect_code' });
             load();
         } catch (e) {
             setBulkError(mensajeAmigable(e, 'No se pudo fusionar'));
@@ -809,9 +794,6 @@ function TabDocumentos({
         setBulkError('');
         try {
             await downloadPurchaseDtePackage(row);
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_PAQUETE', String(row.id), {
-                codigo_generacion: row.codigo_generacion,
-            });
         } catch (e) {
             setBulkError(mensajeAmigable(e));
         }
@@ -858,10 +840,8 @@ function TabDocumentos({
                     }
                 },
                 { fileHandle },
+                { dateStart, dateEnd },
             );
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_MASIVA', null, {
-                cantidad: filtered.length, archivos: total, incluidos, fallidos, dateStart, dateEnd,
-            });
             // Un archivo que no entró se dice acá, no solo dentro del ZIP: el
             // manifest-errores.txt lo lee quien lo abre, y el punto de este
             // rediseño es que un corte de red deje de pasar desapercibido.
@@ -1255,10 +1235,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
     const discard = async (row) => {
         setRowError('');
         try {
-            await resolvePurchaseDteReview(row.id, 'descartado');
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARTAR_REVISION', String(row.id), {
-                kind: row.kind, filename: row.filename,
-            });
+            await resolvePurchaseDteReview(row.id, 'descartado', null, { kind: row.kind, filename: row.filename });
             bumpRefresh();
         } catch (e) {
             setRowError(mensajeAmigable(e, 'No se pudo descartar'));
@@ -1271,10 +1248,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
     const confirmSinJson = async (row) => {
         setRowError('');
         try {
-            await resolvePurchaseDteReview(row.id, 'confirmado');
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_CONFIRMAR_SIN_JSON', String(row.id), {
-                kind: row.kind, filename: row.filename,
-            });
+            await resolvePurchaseDteReview(row.id, 'confirmado', null, { kind: row.kind, filename: row.filename });
             bumpRefresh();
         } catch (e) {
             setRowError(mensajeAmigable(e, 'No se pudo confirmar'));
@@ -1287,10 +1261,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
     const emparejarPorCodigo = async (row, match) => {
         setRowError('');
         try {
-            await resolvePurchaseDteReview(row.id, 'emparejado', match.id);
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_EMPAREJAR_REVISION', String(row.id), {
-                matched_document_id: match.id, filename: row.filename, via: 'detect_code',
-            });
+            await resolvePurchaseDteReview(row.id, 'emparejado', match.id, { filename: row.filename, via: 'detect_code' });
             bumpRefresh();
         } catch (e) {
             setRowError(mensajeAmigable(e, 'No se pudo emparejar'));
@@ -1480,18 +1451,13 @@ export default function FacturasCompraView({ openModal }) {
     const runSyncNow = async () => {
         setSyncing(true);
         setSyncProgress(null);
-        let totalInserted = 0;
-        let batch = 0;
-        let hasMore = true;
         try {
-            while (hasMore && batch < MAX_SYNC_BATCHES) {
-                batch++;
-                if (batch > 1) setSyncProgress({ batch });
-                const result = await syncPurchaseEmailsNow({ dryRun: false });
-                totalInserted += (result.results || []).reduce((sum, r) => sum + (r.documentsInserted || 0), 0);
-                hasMore = result.hasMore === true;
-            }
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_SYNC_MANUAL', null, { inserted: totalInserted, batches: batch });
+            // El bucle de tandas y la entrada de la bitácora viven en la capa
+            // de datos (D3, 2026-09-28).
+            const { insertados: totalInserted, quedaMas: hasMore } = await buscarCorreosDeCompras({
+                maxTandas: MAX_SYNC_BATCHES,
+                onTanda: (batch) => { if (batch > 1) setSyncProgress({ batch }); },
+            });
             useToastStore.getState().showToast(
                 'Búsqueda completa',
                 `${totalInserted} documento${totalInserted !== 1 ? 's' : ''} nuevo${totalInserted !== 1 ? 's' : ''}${hasMore ? ` (tope de ${MAX_SYNC_BATCHES} tandas alcanzado, quedó más — corré de nuevo)` : ''}`,

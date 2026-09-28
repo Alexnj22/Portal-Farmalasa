@@ -9,7 +9,6 @@ import {
     TriangleAlert, TrendingUp,
     Check, Search, PackageX, Repeat,
 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
@@ -155,15 +154,9 @@ export default function TabGenerar({ searchTerm = '' }) {
                 p_responsable_id: esEmpleado ? user.id : null,
                 p_revisado_por:   null,
                 p_sucursal_ids:   [...selected],
-            });
+            }, { directo: true });
             if (confErr) throw confErr;
             const { data: ped } = await fetchPedidoNumero(pedidoId);
-            useStaff.getState().appendAuditLog('GENERAR_PEDIDO', pedidoId, {
-                sucursales:  [...selected],
-                items_count: pItems.length,
-                numero:      ped?.numero,
-                directo:     true,
-            });
 
             const map = {};
             for (const row of rows) {

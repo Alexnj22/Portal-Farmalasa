@@ -392,15 +392,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         try {
             // Sin mirar el error, una edge function que falla cae en el `else`
             // de abajo con un mensaje genérico y el motivo real se pierde.
-            const { data, error } = await fijarContrasenaDeEmpleado(emp.username, '1234');
+            // `CONTRASENA_RESTABLECIDA` lo anota `fijarContrasenaDeEmpleado`.
+            const { data, error } = await fijarContrasenaDeEmpleado(emp.username, '1234', { employeeId: emp.id });
             if (error) throw error;
             if (data?.ok) {
-                // Restablecer es el ÚNICO camino para cambiar una contraseña (el
-                // autoservicio se quitó en v2.1030.0): queda quién y a quién.
-                // Nunca la contraseña.
-                useStaffStore.getState().appendAuditLog('CONTRASENA_RESTABLECIDA', String(emp.id), {
-                    usuario: emp.username,
-                });
                 setShowResetConfirm(false);
                 if (data.tempPassword) {
                     setCopiedPwd(false);

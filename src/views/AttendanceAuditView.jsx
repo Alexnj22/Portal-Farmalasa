@@ -28,13 +28,11 @@ import TimePicker12 from '../components/common/TimePicker12';
 import { smartFilter } from '../utils/searchUtils';
 import {
     fetchPendingShiftExceptions, fetchQuincenaTimesheets, approveTimesheetsBulk,
-    closeQuincenaTimesheets, fetchEmployeeExceptions,
+    closeQuincenaTimesheets, marcarMarcajesRevisados, resolverTurnoExtra,
     buildCSTDate,
     getCSTDateStr,
     minutosDeTardanza,
 } from '../data/attendanceAudit';
-import { updateAttendancePunch, updateEmployee } from '../data/employees';
-import { resolverApprovalRequest } from '../data/requests';
 import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -848,7 +846,6 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   const storeEmployees = useStaff(s => s.employees);
   const storeBranches = useStaff(s => s.branches);
   const storeShifts = useStaff(s => s.shifts);
-  const appendAuditLog = useStaff(s => s.appendAuditLog);
   const loadAttendanceLastDays = useStaff(s => s.loadAttendanceLastDays);
   const insertAttendancePunchAt = useStaff(s => s.insertAttendancePunchAt);
 
@@ -978,15 +975,15 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     const pending = quincenaTS.filter(ts => String(ts.employee_id) === String(emp.id) && ts.status !== 'APPROVED');
     if (!pending.length) return;
     const ids = pending.map(ts => ts.id);
-    const { error } = await approveTimesheetsBulk(ids);
+    // La firma (`TIMESHEETS_BULK_APPROVED`) la anota `approveTimesheetsBulk`.
+    const { error } = await approveTimesheetsBulk(ids, { employeeId: emp.id, quincena: selectedQuincena });
     if (!error) {
       setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
-      appendAuditLog?.('TIMESHEETS_BULK_APPROVED', user?.id, { empId: emp.id, count: ids.length, quincena: selectedQuincena, actorName: user?.name });
       showToast('Aprobado', `${ids.length} día(s) aprobado(s) para ${shortEmployeeName(emp)}.`, 'success');
     } else {
       showToast('Error', 'No se pudo aprobar.', 'error');
     }
-  }, [isDemoMode, quincenaTS, user, appendAuditLog, selectedQuincena, showToast]);
+  }, [isDemoMode, quincenaTS, selectedQuincena, showToast]);
 
   const handleCloseQuincena = useCallback(async () => {
     if (isClosingQuincena) return;
@@ -1058,6 +1055,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     const ts = buildCSTDate(dateStr, time);
     if (!ts) { showToast('Error','Hora inválida.','error'); return; }
     try {
+      // `manualAudit` hace que la capa de datos anote ATTENDANCE_PUNCH_MANUAL_ADDED.
       await insertAttendancePunchAt(emp.id, ts.toISOString(), type, {
         manualAudit:    true,
         auditedByName:  user?.name || user?.email,
@@ -1065,14 +1063,13 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
         reason,
         editedAt:       new Date().toISOString(),
       });
-      appendAuditLog?.('ATTENDANCE_PUNCH_MANUAL_ADDED', { employeeId: emp.id, date: dateStr, type, reason }, { actorId: user?.id, actorName: user?.name });
       showToast('Guardado','Marcaje registrado correctamente.','success');
       setCorrectionTarget(null);
     } catch(err) {
       console.error(err);
       showToast('Error','No se pudo guardar el marcaje.','error');
     }
-  }, [correctionTarget, isDemoMode, insertAttendancePunchAt, appendAuditLog, user, showToast]);
+  }, [correctionTarget, isDemoMode, insertAttendancePunchAt, user, showToast]);
 
   // ── Mark pending HR review punches as reviewed ──────────────────────────
   const handleMarkReviewed = useCallback(async (emp, dateStr, pendingPunches) => {
@@ -1080,14 +1077,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     if (!canEdit) { showToast('Sin permisos', 'No tienes permiso para revisar marcajes.', 'info'); return; }
     if (!pendingPunches.length) return;
     try {
-      const now = new Date().toISOString();
-      for (const p of pendingPunches) {
-        const newDetails = { ...p.details, pendingHRReview: false, hrReviewedBy: user?.name, hrReviewedAt: now };
-        await updateAttendancePunch(p.id, { details: newDetails });
-      }
-      appendAuditLog?.('ATTENDANCE_HR_REVIEW_CLEARED', user?.id, {
-        empId: emp.id, date: dateStr, count: pendingPunches.length, actorName: user?.name
-      });
+      await marcarMarcajesRevisados(pendingPunches, { employeeId: emp.id, date: dateStr, revisadoPor: user?.name });
       showToast('Revisado', `${pendingPunches.length} marcaje(s) marcado(s) como revisado(s).`, 'success');
       const ids = pendingPunches.map(p => p.id);
       setReviewedPunchIds(prev => new Set([...prev, ...ids]));
@@ -1095,33 +1085,19 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       console.error(err);
       showToast('Error', 'No se pudo marcar como revisado.', 'error');
     }
-  }, [isDemoMode, canEdit, user, appendAuditLog, showToast]);
+  }, [isDemoMode, canEdit, user, showToast]);
 
   // ── Process SHIFT_EXCEPTION (confirm or reject) ─────────────────────────
   const handleProcessShiftException = useCallback(async (req, action, confirmedStart, confirmedEnd, motivo = '') => {
     setProcessingExId(req.id);
     try {
-      const meta = req.metadata || {};
-      const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
-
-      /* Se decide PRIMERO, y sólo si la decisión entra se toca al empleado.
-       *
-       * Con dos pestañas abiertas esta lista sigue mostrando el turno extra por
-       * confirmar aunque ya se haya resuelto en la otra, y el orden viejo
-       * —escribir la excepción y después marcar la solicitud— dejaba pasar la
-       * segunda confirmación entera: horario reescrito, bitácora duplicada y un
-       * «Confirmado» que no era cierto. El UPDATE condicionado a PENDING es el
-       * candado de todo lo que sigue. */
-      const { error: reqErr, count } = await resolverApprovalRequest(req.id, {
-        status: newStatus, approver_id: user?.id,
-        /* El motivo del rechazo. Este camino no lo escribía y la pantalla no lo
-         * pedía: el empleado veía su turno extra rechazado sin saber por qué, y
-         * en la base no quedaba nada. Obligatorio desde el 2026-08-18. */
-        ...(String(motivo ?? '').trim() ? { approver_note: String(motivo).trim() } : {}),
-        updated_at: new Date().toISOString(),
+      // Decidir, escribir la excepción en la ficha y anotar
+      // `SHIFT_EXCEPTION_*` lo hace `resolverTurnoExtra`, en ese orden.
+      const { error, yaResuelta } = await resolverTurnoExtra(req, action === 'APPROVE', {
+        confirmedStart, confirmedEnd, motivo, approverId: user?.id, approverName: user?.name,
       });
-      if (reqErr) throw reqErr;
-      if (count === 0) {
+      if (error) throw error;
+      if (yaResuelta) {
         showToast('Ya estaba resuelta',
           'Alguien la decidió antes, así que no se volvió a aplicar.', 'error');
         setShiftExceptions(prev => prev.filter(r => r.id !== req.id));
@@ -1129,34 +1105,15 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
         return;
       }
 
-      if (action === 'APPROVE' && confirmedStart && confirmedEnd) {
-        // Write exception to employee record so consolidate-timesheets uses declared hours
-        const { data: empRow } = await fetchEmployeeExceptions(req.employee_id);
-        if (empRow) {
-          const existing = Array.isArray(empRow.exceptions) ? empRow.exceptions : [];
-          const filtered = existing.filter(ex => ex.date !== meta.date);
-          const newEx = {
-            id: Date.now().toString(),
-            date: meta.date,
-            isCustom: true,
-            customStart: confirmedStart,
-            customEnd: confirmedEnd,
-            note: `Turno extra confirmado por TH (${user?.name || 'supervisor'})`,
-          };
-          await updateEmployee(req.employee_id, { exceptions: [...filtered, newEx], updated_at: new Date().toISOString() });
-        }
-      }
-
       setShiftExceptions(prev => prev.filter(r => r.id !== req.id));
       setEditingExId(null);
-      appendAuditLog?.(`SHIFT_EXCEPTION_${newStatus}`, user?.id, { requestId: req.id, empId: req.employee_id, date: meta.date, confirmedStart, confirmedEnd, actorName: user?.name });
       showToast(action === 'APPROVE' ? 'Confirmado' : 'Rechazado', action === 'APPROVE' ? 'Turno extra aplicado al empleado.' : 'Solicitud rechazada.', action === 'APPROVE' ? 'success' : 'info');
     } catch (err) {
       showToast('Error', mensajeAmigable(err), 'error');
     } finally {
       setProcessingExId(null);
     }
-  }, [user, appendAuditLog, showToast]);
+  }, [user, showToast]);
 
   // ── Branch options sorted by custom order ───────────────────────────────
   const sortedBranchOptions = useMemo(() => {

@@ -33,7 +33,6 @@ import {
   fetchFaltantesConStockEnOtraSala,
 } from '../../../data/inventory';
 import { insertVentaPerdida } from '../../../data/ventasPerdidas';
-import { useStaffStore as useStaff } from '../../../store/staffStore';
 import PortalInput from '../../../components/common/PortalInput';
 import { clickable } from '../../../utils/clickable';
 import PhotoLightbox from '../../../components/common/PhotoLightbox';
@@ -293,13 +292,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
       branch_id:     user?.branchId ?? null,
       reportado_por: user?.id       ?? null,
       status:        'pendiente',
-    });
-    // La fila guarda `reportado_por`, pero su estado se edita después y la
-    // bitácora es lo único que conserva el momento en que alguien dijo «esto me
-    // lo pidieron y no lo tenía».
-    useStaff.getState().appendAuditLog('REPORTAR_VENTA_PERDIDA', null, {
-      producto: nombre || searchQuery, cantidad, sucursal_id: user?.branchId ?? null,
-    });
+    });  // la entrada de la bitácora la anota `insertVentaPerdida`
     setRState('done');
     setTimeout(() => { setFormOpen(false); setRState('idle'); setQty('1'); }, 2500);
   };

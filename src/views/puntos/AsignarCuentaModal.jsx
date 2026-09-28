@@ -22,7 +22,6 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { clickable } from '../../utils/clickable';
 import { formatMoney, formatQty } from '../../utils/formatNumber';
 import { useToastStore } from '../../store/toastStore';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchFichasCandidatas, asignarCuentaAnterior, QUE_HACER_POR_MOTIVO } from '../../data/puntos';
 
@@ -77,10 +76,8 @@ function Cuerpo({ cuenta, puedeAsignar, onClose, onAsignada }) {
             const r = await asignarCuentaAnterior({
                 idCliente: cuenta.id_cliente, customerId: ficha.id, nota: nota.trim(), simular: false,
             });
+            // La bitácora la anota `asignarCuentaAnterior` (D3).
             if (!r?.ok) throw new Error(r?.error || 'No se pudo asignar');
-            useStaff.getState().appendAuditLog?.('ASIGNAR_CUENTA_PUNTOS', String(ficha.id), {
-                cuenta_anterior: cuenta.id_cliente, puntos: r.puntos, nota: nota.trim(),
-            });
             showToast('Cuenta asignada',
                 `${pts(r.puntos)} puntos pasaron a ${ficha.nombre}. Su saldo quedó en ${pts(r.saldo_despues)}.`,
                 'success');

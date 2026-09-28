@@ -26,7 +26,9 @@ import Switch from '../components/common/Switch';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import {
     fetchRolesForPermissions, fetchRolePermissions, upsertRolePermission, upsertRolePermissionsBulk,
-    updateRoleMaxPriceLevel, updateRoleIsSU, updateRoleIdleLimit,
+    guardarPermisoDeCargo, cambiarNivelDePrecioDeCargo, cambiarSuperUsuarioDeCargo,
+    cambiarTiempoDeInactividadDeCargo, delegarDecisionesDeCargo, activarTodoParaCargo,
+    copiarPermisosDeCargo, cambiarSeccionDeCargo,
 } from '../data/permissions';
 import { useToastStore } from '../store/toastStore';
 
@@ -804,7 +806,10 @@ const PermissionsView = () => {
         const next = { ...cur, [permType]: value };
         if (permType === 'can_view' && !value) { next.can_edit = false; next.can_approve = false; }
 
-        const { error } = await upsertRolePermission({
+        // La bitácora (`PERMISOS_CAMBIO`) la anota `guardarPermisoDeCargo`,
+        // también si falla: es justo donde más importa saber quién le dio
+        // acceso a quién — hallazgo P0 de la auditoría del 2026-08-03.
+        const { error } = await guardarPermisoDeCargo({
             role_id: roleId,
             module_key: moduleKey,
             can_view: next.can_view ?? false,
@@ -813,6 +818,14 @@ const PermissionsView = () => {
             scope: next.scope || 'ALL',
             delega_en_ausencia: next.delega_en_ausencia ?? false,
             updated_at: new Date().toISOString(),
+        }, {
+            cargo: orgRoles.find(r => r.id === roleId)?.name,
+            permiso: permType, valor: value,
+            arrastro: arrastra.length || undefined,
+            // Queda en la bitácora porque es un cambio de acceso que el
+            // administrador no pidió explícitamente: si «Inicio» aparece o
+            // desaparece de un cargo, tiene que poder rastrearse por qué.
+            inicio: inicioPasaA === null ? undefined : (inicioPasaA ? 'encendido' : 'apagado'),
         });
 
         /* Persistir la cascada. Va aparte del upsert de arriba y no dentro,
@@ -878,28 +891,14 @@ const PermissionsView = () => {
             setSavedFlash(prev => ({ ...prev, [k]: true }));
             setTimeout(() => setSavedFlash(prev => ({ ...prev, [k]: false })), 1500);
         }
-        // Toda acción de usuario va a la bitácora (regla de CLAUDE.md). Faltaba
-        // en TODA esta vista, que es justo donde más importa saber quién le dio
-        // acceso a quién — hallazgo P0 de la auditoría del 2026-08-03.
-        useStaff.getState().appendAuditLog('PERMISOS_CAMBIO', String(roleId), {
-            cargo: orgRoles.find(r => r.id === roleId)?.name,
-            modulo: moduleKey, permiso: permType, valor: value,
-            arrastro: arrastra.length || undefined,
-            // Queda en la bitácora porque es un cambio de acceso que el
-            // administrador no pidió explícitamente: si «Inicio» aparece o
-            // desaparece de un cargo, tiene que poder rastrearse por qué.
-            inicio: inicioPasaA === null ? undefined : (inicioPasaA ? 'encendido' : 'apagado'),
-            error: error ? (error.message || 'error al guardar') : undefined,
-        });
     }, [selectedRoleId, permissions, orgRoles]);
 
     // ── Nivel de precio por cargo ────────────────────────────────────────────
     const handlePriceLevelChange = useCallback(async (level) => {
         if (!selectedRoleId) return;
         setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: level }));
-        await updateRoleMaxPriceLevel(selectedRoleId, level);
-        useStaff.getState().appendAuditLog('PERMISOS_NIVEL_PRECIO', String(selectedRoleId), {
-            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, nivel: level || 'sin límite',
+        await cambiarNivelDePrecioDeCargo(selectedRoleId, level, {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
         });
     }, [selectedRoleId, orgRoles]);
 
@@ -911,24 +910,21 @@ const PermissionsView = () => {
         if (!selectedRoleId) return;
         const anterior = roleIdleLimits[selectedRoleId] ?? 5;
         setRoleIdleLimits(prev => ({ ...prev, [selectedRoleId]: minutos }));
-        const { error } = await updateRoleIdleLimit(selectedRoleId, minutos);
+        const { error } = await cambiarTiempoDeInactividadDeCargo(selectedRoleId, minutos, {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
+        });
         if (error) {
             setRoleIdleLimits(prev => ({ ...prev, [selectedRoleId]: anterior }));
             showToast?.('No se pudo cambiar el tiempo', 'Vuelve a intentarlo.', 'error');
-            return;
         }
-        useStaff.getState().appendAuditLog('PERMISOS_TIEMPO_INACTIVIDAD', String(selectedRoleId), {
-            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, minutos,
-        });
     }, [selectedRoleId, orgRoles, roleIdleLimits, showToast]);
 
     // ── Toggle Super Usuario por cargo ───────────────────────────────────────
     const handleSuToggle = useCallback(async (value) => {
         if (!selectedRoleId) return;
         setRoleIsSU(prev => ({ ...prev, [selectedRoleId]: value }));
-        await updateRoleIsSU(selectedRoleId, value);
-        useStaff.getState().appendAuditLog('PERMISOS_SUPER_USUARIO', String(selectedRoleId), {
-            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, valor: value,
+        await cambiarSuperUsuarioDeCargo(selectedRoleId, value, {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
         });
     }, [selectedRoleId, orgRoles]);
 
@@ -950,7 +946,7 @@ const PermissionsView = () => {
             }
             return next;
         });
-        const { error } = await upsertRolePermissionsBulk(claves.map(k => {
+        await delegarDecisionesDeCargo(roleId, claves.map(k => {
             const pv = permissions[`${roleId}:${k}`] || {};
             return {
                 role_id: roleId, module_key: k,
@@ -961,12 +957,7 @@ const PermissionsView = () => {
                 delega_en_ausencia: value,
                 updated_at: new Date().toISOString(),
             };
-        }));
-        if (!error) {
-            useStaff.getState().appendAuditLog('PERMISOS_DELEGAR_AUSENCIA', String(roleId), {
-                cargo: orgRoles.find(r => r.id === roleId)?.name, valor: value,
-            });
-        }
+        }), value, { cargo: orgRoles.find(r => r.id === roleId)?.name });
     }, [permissions, orgRoles]);
 
     /* Las tarjetas ACTIVAS primero, dentro de cada grupo.
@@ -1000,10 +991,9 @@ const PermissionsView = () => {
             scope: permissions[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
             updated_at: new Date().toISOString(),
         }));
-        const [{ error }] = await Promise.all([
-            upsertRolePermissionsBulk(rows),
-            updateRoleMaxPriceLevel(selectedRoleId, null),
-        ]);
+        const { error } = await activarTodoParaCargo(selectedRoleId, rows, {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
+        });
         if (!error) {
             setPermissions(prev => {
                 const next = { ...prev };
@@ -1019,9 +1009,6 @@ const PermissionsView = () => {
             });
             setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: null }));
         }
-        useStaff.getState().appendAuditLog('PERMISOS_ACTIVAR_TODO', String(selectedRoleId), {
-            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, modulos: MODULES.length,
-        });
         setActivatingAll(false);
     }, [selectedRoleId, permissions, orgRoles]);
 
@@ -1046,10 +1033,10 @@ const PermissionsView = () => {
             };
         });
         const srcLevel = rolePriceLevels[sourceRoleId] ?? null;
-        const [{ error }] = await Promise.all([
-            upsertRolePermissionsBulk(rows),
-            updateRoleMaxPriceLevel(selectedRoleId, srcLevel),
-        ]);
+        const { error } = await copiarPermisosDeCargo(selectedRoleId, rows, srcLevel, {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
+            desde: orgRoles.find(r => r.id === sourceRoleId)?.name,
+        });
         if (!error) {
             setPermissions(prev => {
                 const next = { ...prev };
@@ -1067,10 +1054,6 @@ const PermissionsView = () => {
             });
             setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: srcLevel }));
         }
-        useStaff.getState().appendAuditLog('PERMISOS_COPIAR_DESDE', String(selectedRoleId), {
-            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
-            desde: orgRoles.find(r => r.id === sourceRoleId)?.name,
-        });
         setCopyingFrom(false);
     }, [selectedRoleId, permissions, rolePriceLevels, orgRoles]);
 
@@ -1099,12 +1082,9 @@ const PermissionsView = () => {
             scope: permissions[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
             updated_at: new Date().toISOString(),
         }));
-        await upsertRolePermissionsBulk(rows);
-        useStaff.getState().appendAuditLog(activate ? 'PERMISOS_ACTIVAR_SECCION' : 'PERMISOS_APAGAR_SECCION',
-            String(selectedRoleId), {
-                cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
-                modulos: groupModules.length,
-            });
+        await cambiarSeccionDeCargo(selectedRoleId, rows, activate, {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
+        });
     }, [selectedRoleId, permissions, orgRoles]);
 
     const selectedOrgRole = orgRoles.find(r => r.id === selectedRoleId) ?? null;

@@ -297,9 +297,14 @@ export async function contarPorVencer({ erpSucursalId }) {
     };
 }
 
-/** Crea la solicitud. El aviso al aprobador lo dispara el trigger, no esto. */
-export function insertMovimientoInventario(payload) {
-    return insertApprovalRequestSilent(payload);
+/**
+ * Crea la solicitud. El aviso al aprobador lo dispara el trigger, no esto.
+ * La bitácora (`INVENTORY_LOAD_REQUEST_CREATED` / `INVENTORY_DISCARD_REQUEST_
+ * CREATED`) la anota `insertApprovalRequestSilent` con la `metadata`;
+ * `contexto` agrega lo que la metadata no dice (cuántas líneas, cuántas fotos).
+ */
+export function insertMovimientoInventario(payload, contexto = {}) {
+    return insertApprovalRequestSilent(payload, contexto);
 }
 
 /**

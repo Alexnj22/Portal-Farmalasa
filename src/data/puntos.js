@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 /**
  * Los puntos, del lado del portal.
@@ -185,10 +186,17 @@ export const fetchFichasCandidatas = (idCliente, busqueda = null) =>
  * `simular` (por defecto) devuelve las dos lado a lado sin escribir. La firma
  * la pone la base con la sesión de quien asigna, nunca el navegador.
  */
-export const asignarCuentaAnterior = ({ idCliente, customerId, nota, simular = true }) =>
-    rpc('puntos_panel_asignar', {
+// La asignación de verdad (no la simulación) anota su propia entrada en la
+// bitácora (D3, 2026-09-28): cualquier cliente que la llame la deja.
+export const asignarCuentaAnterior = async ({ idCliente, customerId, nota, simular = true }) => {
+    const r = await rpc('puntos_panel_asignar', {
         p_id_cliente: idCliente, p_customer_id: customerId, p_nota: nota, p_simular: simular,
     });
+    if (!simular && r?.ok) {
+        anotar('ASIGNAR_CUENTA_PUNTOS', customerId, { cuenta_anterior: idCliente, puntos: r.puntos, nota });
+    }
+    return r;
+};
 
 /** Por qué una cuenta no pasó sola, dicho para quien atiende el reclamo. */
 export const QUE_HACER_POR_MOTIVO = {
@@ -225,8 +233,13 @@ export const fetchClientesConPuntos = ({ busqueda = null, limite = 25, desde = 0
  * `puntos_ajustar` y el motivo, y rechaza dejar la cuenta en negativo: las tres
  * cosas las vuelve a comprobar la base.
  */
-export const ajustarPuntos = ({ customerId, puntos, motivo, nota = null }) =>
-    rpc('puntos_ajustar', { p_customer_id: customerId, p_puntos: puntos, p_motivo: motivo, p_nota: nota || null });
+// Anota su propia entrada en la bitácora (D3, 2026-09-28). `contexto` son los
+// datos legibles (el nombre del cliente); la acción es fija.
+export const ajustarPuntos = async ({ customerId, puntos, motivo, nota = null }, contexto = {}) => {
+    const r = await rpc('puntos_ajustar', { p_customer_id: customerId, p_puntos: puntos, p_motivo: motivo, p_nota: nota || null });
+    anotar('PUNTOS_AJUSTE', customerId, { ...contexto, puntos, motivo, nota: nota?.trim() || null, saldo: r?.saldo });
+    return r;
+};
 
 /** Todo de un cliente: ficha, cuenta (saldo, vencimientos, movimientos) y cuentas viejas asignadas. */
 export const fetchPuntosCliente = (customerId) => rpc('puntos_panel_cliente', { p_customer_id: customerId });

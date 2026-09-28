@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { subirEvidencia as subirEvidenciaEn } from './evidencia';
+import { anotar } from './audit';
 
 // Enviar producto a otra sala: el traslado al REVÉS.
 //
@@ -265,6 +266,39 @@ async function invocar(body) {
 /** Saca el producto de la sala: un movimiento por renglón. Retomable. */
 export const despacharEnvio = (requestId) =>
     invocar({ request_id: requestId, accion: 'despachar' });
+
+/**
+ * Enviar a otra sala de punta a punta: crea los envíos (un solo `insert`) y
+ * los despacha **uno por uno** —cada despacho abre su propia sesión contra el
+ * sistema de origen, y dos a la vez podrían escribir con la sucursal de la
+ * otra—. Si crear falla no se despacha nada y vuelve `{ error }`.
+ *
+ * `alDespachar(fila, respuesta, i)` corre después de cada despacho (el ticket
+ * de la bolsa). La bitácora (`ENVIO_A_OTRA_SALA`) la anota esta función al
+ * terminar, con cuántos renglones salieron y cuántos fallaron (D3 del núcleo
+ * portable). `salaId` es el target; el resto de `contexto` son los detalles
+ * que sólo sabe quien llama (nombres, motivo, fotos, unidades).
+ */
+export async function enviarAOtraSala(filas, { alDespachar = null, salaId = null, ...contexto } = {}) {
+    const { data, error } = await crearEnvio(filas);
+    if (error) return { error, creados: [], salidas: [] };
+
+    const creados = Array.isArray(data) ? data : [data];
+    const salidas = [];
+    for (let i = 0; i < creados.length; i++) {
+        const r = await despacharEnvio(creados[i].id);
+        salidas.push(r);
+        alDespachar?.(creados[i], r, i);
+    }
+
+    anotar('ENVIO_A_OTRA_SALA', String(salaId ?? ''), {
+        envios: creados.map(x => x.id),
+        ...contexto,
+        enviadas: salidas.reduce((n, x) => n + (x?.enviadas ?? 0), 0),
+        fallos: salidas.flatMap(x => x?.fallos ?? []).length,
+    });
+    return { error: null, creados, salidas };
+}
 
 /**
  * Las tres cosas que la sala que abre la caja puede decir de un producto.

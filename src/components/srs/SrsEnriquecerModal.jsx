@@ -12,7 +12,6 @@ import {
     updateProductSinPrincipioActivo, fetchProductsWithoutPrincipioActivo,
 } from '../../data/productos';
 import PortalInput from '../common/PortalInput';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { buscarEnSrs } from '../../data/srs';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -316,11 +315,8 @@ export default function SrsEnriquecerModal({ onClose }) {
     // Mark a product as sin_principio_activo (insumos, equipos, cosméticos…)
     const handleMarkSinPA = useCallback(async (productId) => {
         try {
+            // Anota en la bitácora la propia función de datos (D3).
             await updateProductSinPrincipioActivo(productId, true);
-            // Decir que un producto NO tiene principio activo lo saca de la
-            // clasificación regulada. Es una decisión de una persona sobre el
-            // catálogo, y se toma de a cientos en una corrida.
-            useStaff.getState().appendAuditLog('MARCAR_SIN_PRINCIPIO_ACTIVO', String(productId), { sin_principio_activo: true });
             setMarkedSinPA(s => new Set([...s, productId]));
         } catch { /* ignore */ }
     }, []);
@@ -328,7 +324,6 @@ export default function SrsEnriquecerModal({ onClose }) {
     const handleUnmarkSinPA = useCallback(async (productId) => {
         try {
             await updateProductSinPrincipioActivo(productId, false);
-            useStaff.getState().appendAuditLog('MARCAR_SIN_PRINCIPIO_ACTIVO', String(productId), { sin_principio_activo: false });
             setMarkedSinPA(s => { const n = new Set(s); n.delete(productId); return n; });
         } catch { /* ignore */ }
     }, []);

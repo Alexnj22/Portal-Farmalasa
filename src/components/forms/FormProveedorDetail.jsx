@@ -3,7 +3,6 @@ import Button from '../common/Button';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2, Scale, Landmark } from 'lucide-react';
 import { guardarCondicionesProveedor } from '../../data/cuentasPorPagar';
-import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier, setProveedorClasificacionFiscal } from '../../data/proveedores';
 import { departamentoLabel } from '../../utils/svCatalogs';
@@ -195,10 +194,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 // Tipo de operación: gravada si da crédito fiscal. Si no es
                 // deducible no hay operación gravada que declarar por esta vía.
                 f07_tipo_operacion: fiscal.iva_deducible ? 1 : null,
-            });
-            useStaffStore.getState().appendAuditLog('PROVEEDORES_SET_CLASIFICACION_FISCAL', String(formData.id), {
-                nombre: formData.nombre, ...fiscal,
-            });
+            }, { nombre: formData.nombre });
             setFiscal(p => ({ ...p, estado: 'confirmada' }));
             useToastStore.getState().showToast('Clasificación confirmada', `${formData.nombre} queda ${fiscal.iva_deducible ? 'como deducible' : 'como no deducible'}.`, 'success');
             formData?.onSaved?.();
@@ -223,10 +219,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
         setSavingCategoria(true);
         setClasifError('');
         try {
-            await setProveedorCategoria(formData.id, val || null);
-            useStaffStore.getState().appendAuditLog('PROVEEDORES_SET_CATEGORIA', String(formData.id), {
-                nombre: formData.nombre, categoria_id: val || null,
-            });
+            await setProveedorCategoria(formData.id, val || null, { nombre: formData.nombre });
             setCategoriaId(val || '');
             formData?.onSaved?.();
         } catch (e) {
@@ -240,10 +233,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
         setSavingSupplier(true);
         setClasifError('');
         try {
-            await setProveedorSupplier(formData.id, val || null);
-            useStaffStore.getState().appendAuditLog('PROVEEDORES_SET_MATCH_ERP', String(formData.id), {
-                nombre: formData.nombre, supplier_id: val || null,
-            });
+            await setProveedorSupplier(formData.id, val || null, { nombre: formData.nombre });
             setSupplierId(val || '');
             formData?.onSaved?.();
         } catch (e) {
@@ -264,10 +254,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
         setLoading(true);
         setError('');
         try {
-            await updateProveedorManual(formData.id, form);
-            useStaffStore.getState().appendAuditLog('PROVEEDORES_UPDATE_MANUAL', String(formData.id), {
-                nombre: formData.nombre, ...form,
-            });
+            await updateProveedorManual(formData.id, form, { nombre: formData.nombre });
             useToastStore.getState().showToast('Guardado', 'Proveedor actualizado.', 'success');
             // Guardado: el borrador ya no sirve. Después del `await`, para que
             // un fallo no se lleve lo escrito.

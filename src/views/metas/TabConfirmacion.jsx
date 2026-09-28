@@ -7,7 +7,6 @@ import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import {
@@ -169,11 +168,12 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         [canEdit, montoDe],
     );
 
-    const accion = async (fn, id, auditAction, auditDetails, okTitle, okBody) => {
+    // La bitácora la anota cada función de datos al guardar (D3): acá sólo van
+    // los detalles legibles como su `contexto`.
+    const accion = async (fn, id, okTitle, okBody) => {
         setBusy(id);
         try {
             await fn();
-            useStaffStore.getState().appendAuditLog(auditAction, String(id), auditDetails);
             showToast(okTitle, okBody, 'success');
             onChanged?.();
             cargar();
@@ -214,10 +214,10 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <Button
                             variant="primary" icon={CheckCircle2} disabled={busy != null}
                             onClick={() => accion(
-                                () => confirmarMetasLote(porConfirmar.map((r) => ({ id: r.id, monto: montoDe(r) }))),
-                                'lote-confirmar', 'METAS_CONFIRMAR_LOTE',
-                                { mes, cuantas: porConfirmar.length, total: totalConfirmar,
-                                  salas: porConfirmar.map((r) => `${salaNombre(r.branch_id)}=${montoDe(r)}`).join(', ') },
+                                () => confirmarMetasLote(porConfirmar.map((r) => ({ id: r.id, monto: montoDe(r) })),
+                                    { mes, total: totalConfirmar,
+                                      salas: porConfirmar.map((r) => `${salaNombre(r.branch_id)}=${montoDe(r)}`).join(', ') }),
+                                'lote-confirmar',
                                 'Metas confirmadas',
                                 `${porConfirmar.length} salas · ${formatMoney(totalConfirmar)}. Al confirmar todas, le llega al gerente.`,
                             )}
@@ -231,8 +231,8 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <Button
                             variant="primary" icon={CheckCircle2} disabled={busy != null}
                             onClick={() => accion(
-                                () => aprobarMetasLote(idsAprobar),
-                                'lote-aprobar', 'METAS_APROBAR_LOTE', detalleAprobar,
+                                () => aprobarMetasLote(idsAprobar, detalleAprobar),
+                                'lote-aprobar',
                                 'Metas aprobadas',
                                 `${porAprobar.length} salas quedaron oficiales. Cada una ve la suya.`,
                             )}
@@ -279,11 +279,9 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             onClick={() => accion(
                                 () => aprobarMetasPorAutorizacionLote({
                                     ids: loteAut.ids, autorizoPor: quienAut, nota: notaAut.trim(),
-                                }),
-                                'lote-autorizar', 'METAS_APROBAR_POR_AUTORIZACION_LOTE',
-                                { ...detalleAprobar,
-                                  autorizo: autorizadores.find((a) => a.id === quienAut)?.name,
-                                  nota: notaAut.trim() },
+                                }, { ...detalleAprobar,
+                                     autorizo: autorizadores.find((a) => a.id === quienAut)?.name }),
+                                'lote-autorizar',
                                 'Metas oficiales',
                                 `${loteAut.cuantas} salas quedaron registradas con esa autorización, y a quien autorizó le llegó el aviso.`,
                             )}
@@ -546,8 +544,9 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             variant="primary" icon={CheckCircle2} className="flex-1"
                             disabled={busy != null || !Number.isFinite(montoNum) || montoNum <= 0}
                             onClick={() => accion(
-                                () => confirmarMeta({ id: r.id, monto: montoNum }),
-                                r.id, 'METAS_CONFIRMAR', { sala: salaNombre(r.branch_id), mes: r.year_month, monto: montoNum },
+                                () => confirmarMeta({ id: r.id, monto: montoNum },
+                                    { sala: salaNombre(r.branch_id), mes: r.year_month }),
+                                r.id,
                                 'Meta confirmada', `${salaNombre(r.branch_id)} · ${formatMoney(montoNum)}. Al confirmar todas, le llega al gerente.`,
                             )}
                         >
@@ -562,10 +561,10 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                     // Solo se manda el monto si de verdad se movió: mandarlo
                                     // siempre haría que el servidor lo lea como un ajuste y
                                     // le avisara al supervisor de un cambio que no hubo.
-                                    () => aprobarMeta({ id: r.id, monto: pasos !== 0 ? montoNum : null }),
-                                    r.id, 'METAS_APROBAR',
-                                    { sala: salaNombre(r.branch_id), mes: r.year_month,
-                                      monto: montoNum + recuperacion, ajustado: pasos !== 0 ? `${pasos}%` : undefined },
+                                    () => aprobarMeta({ id: r.id, monto: pasos !== 0 ? montoNum : null },
+                                        { sala: salaNombre(r.branch_id), mes: r.year_month,
+                                          monto: montoNum + recuperacion, ajustado: pasos !== 0 ? `${pasos}%` : undefined }),
+                                    r.id,
                                     'Meta aprobada',
                                     pasos !== 0
                                         ? `${salaNombre(r.branch_id)} quedó oficial en ${formatMoney(montoNum + recuperacion)}. Al supervisor le llegó el aviso del cambio.`
@@ -618,11 +617,10 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 () => aprobarMetaPorAutorizacion({
                                     id: r.id, autorizoPor: quienAut, nota: notaAut.trim(),
                                     monto: pasos !== 0 ? montoNum : null,
-                                }),
-                                r.id, 'METAS_APROBAR_POR_AUTORIZACION',
-                                { sala: salaNombre(r.branch_id), mes: r.year_month,
-                                  monto: montoNum + recuperacion, ajustado: pasos !== 0 ? `${pasos}%` : undefined,
-                                  autorizo: autorizadores.find((a) => a.id === quienAut)?.name, nota: notaAut.trim() },
+                                }, { sala: salaNombre(r.branch_id), mes: r.year_month,
+                                     monto: montoNum + recuperacion, ajustado: pasos !== 0 ? `${pasos}%` : undefined,
+                                     autorizo: autorizadores.find((a) => a.id === quienAut)?.name }),
+                                r.id,
                                 'Meta oficial',
                                 pasos !== 0
                                     ? `Quedó en ${formatMoney(montoNum + recuperacion)} con esa autorización. Al supervisor le llegó el aviso del cambio.`
@@ -654,8 +652,9 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             variant="destructive" icon={Undo2}
                             disabled={busy != null || !notaDev.trim()}
                             onClick={() => accion(
-                                () => devolverMeta({ id: r.id, nota: notaDev.trim() }),
-                                r.id, 'METAS_DEVOLVER', { sala: salaNombre(r.branch_id), mes: r.year_month, nota: notaDev.trim() },
+                                () => devolverMeta({ id: r.id, nota: notaDev.trim() },
+                                    { sala: salaNombre(r.branch_id), mes: r.year_month }),
+                                r.id,
                                 'Meta devuelta', 'Le llega la nota al supervisor para que la revise.',
                             )}
                         >
@@ -754,8 +753,8 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 <Button
                                     variant="primary" icon={Sparkles} disabled={busy != null}
                                     onClick={() => accion(
-                                        async () => { const n = await generarPropuestas(); if (!n) throw new Error('No había nada que proponer'); },
-                                        'generar', 'METAS_GENERAR_PROPUESTAS', { mes: ymSig },
+                                        async () => { const n = await generarPropuestas({ mes: ymSig }); if (!n) throw new Error('No había nada que proponer'); },
+                                        'generar',
                                         'Propuestas listas', 'Revisa cada sala, ajusta el monto si hace falta y confirma.',
                                     )}
                                 >

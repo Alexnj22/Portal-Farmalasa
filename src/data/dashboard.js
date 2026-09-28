@@ -3,6 +3,7 @@
 // supabase.from().
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { conBitacora } from './audit';
 
 export function fetchUserDashboardPrefs(userId) {
     return supabase.from('user_dashboard_prefs')
@@ -26,9 +27,14 @@ export function fetchDashboardCanon() {
 // El payload NO lleva `updated_at` ni `updated_by`: los sella el trigger
 // `dashboard_canon_sellar` con el reloj y la identidad del servidor. Mandarlos
 // desde acá sería ofrecerle al cliente que firme por otro.
-export function upsertDashboardCanon({ tabId, orden, medidas }) {
-    return supabase.from('dashboard_canon')
-        .upsert({ tab_id: tabId, orden, medidas }, { onConflict: 'tab_id' });
+//
+// Publicar cambia el tablero de todos los que ven esa pestaña, así que se anota
+// `TABLERO_ACOMODO_PUBLICADO` — desde acá y no desde la pantalla (D3,
+// 2026-09-28). `contexto` lleva el rótulo de la pestaña. Sólo si entró.
+export function upsertDashboardCanon({ tabId, orden, medidas }, contexto = {}) {
+    return conBitacora(supabase.from('dashboard_canon')
+        .upsert({ tab_id: tabId, orden, medidas }, { onConflict: 'tab_id' }),
+        'TABLERO_ACOMODO_PUBLICADO', tabId, { pestana: tabId, ...contexto, widgets: (orden || []).length, orden });
 }
 
 // El tema se guarda por FORMATO de aparato, no por usuario: `theme` es el de

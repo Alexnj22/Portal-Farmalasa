@@ -51,10 +51,8 @@ export default function TabPorRevisar({ openModal }) {
 
     const descartar = useCallback(async (fila, deshacer = false) => {
         try {
-            await descartarClientePorRevisar(fila.id, deshacer);
-            useStaff.getState().appendAuditLog(
-                deshacer ? 'CLIENTES_REVISAR_DESHACER' : 'CLIENTES_REVISAR_DESCARTAR',
-                String(fila.id), { nombre: fila.name, motivo: fila.motivo });
+            // La bitácora la anota la función de datos (D3).
+            await descartarClientePorRevisar(fila.id, deshacer, { nombre: fila.name, motivo: fila.motivo });
             cargar();
         } catch (e) {
             setError(e?.message || 'No se pudo guardar la decisión.');

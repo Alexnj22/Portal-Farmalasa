@@ -276,11 +276,9 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                 campos.resolucion  = f.resolucion?.trim() || null;
                 campos.resuelta_at = new Date().toISOString();
             }
+            // La bitácora (`REGISTRAR_…` / `RESOLVER_SOLICITUD_DATOS`) la
+            // anota `guardarSolicitud`.
             const fila = await guardarSolicitud(solicitud.id, campos);
-            useStaff.getState().appendAuditLog?.(
-                estado === 'RESUELTA' ? 'RESOLVER_SOLICITUD_DATOS' : 'REGISTRAR_SOLICITUD_DATOS',
-                String(solicitud.id),
-                { folio: solicitud.folio_txt, derechos: campos.derechos });
             if (claveBorrador) clearDraft(claveBorrador);
             showToast('Guardado', `Solicitud ${solicitud.folio_txt}`, 'success');
             onGuardada?.(fila);

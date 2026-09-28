@@ -8,7 +8,6 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
-import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { crearMetaGasto, previewMetaGasto } from '../../data/metas';
@@ -149,11 +148,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
             const res = await crearMetaGasto({
                 concepto: concepto.trim(), salas: salasValidas,
                 ymInicio: ym, meses: Number(meses), nota,
-            });
-            useStaffStore.getState().appendAuditLog('METAS_GASTO_CREAR', String(res?.gasto_id ?? ''), {
-                concepto: concepto.trim(), monto: total, meses: Number(meses), desde: ym,
-                ventaTotal: res?.venta_total, metasReabiertas: res?.metas_reabiertas,
-            });
+            }, { monto: total });
             showToast(
                 'Gasto cargado',
                 `${formatMoney(total)} le agregan ${formatMoney(res?.venta_total ?? 0)} de meta`

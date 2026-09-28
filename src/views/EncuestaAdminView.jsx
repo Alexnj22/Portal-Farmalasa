@@ -25,7 +25,7 @@ import FilterBar from '../components/common/FilterBar';
 import PortalInput from '../components/common/PortalInput';
 import {
     fetchSurveys, fetchSurveyResponseCounts, fetchEmployeesForSurvey, fetchSurveyBloques,
-    fetchSurveyPreguntas, fetchSurveyResponses, updateSurvey, insertSurvey,
+    fetchSurveyPreguntas, fetchSurveyResponses, actualizarEncuesta, insertSurvey,
     updateSurveyResponse, insertSurveyResponse, deleteSurveyResponse,
 } from '../data/encuestas';
 import SearchInput from '../components/common/SearchInput';
@@ -173,7 +173,6 @@ function computeTenureCategory(hireDateStr) {
 // ─── Main view ────────────────────────────────────────────────────────────────
 export default function EncuestaAdminView() {
     const navigate = useNavigate();
-    const appendAuditLog = useStaff(state => state.appendAuditLog);
     const { showToast } = useToastStore();
     const { hasPermission } = useAuth();
     const canManage = hasPermission('encuesta_admin', 'can_edit');
@@ -353,14 +352,12 @@ export default function EncuestaAdminView() {
             fecha_inicio: sfFechaInicio || null, fecha_fin: sfFechaFin || null,
         };
         if (editingSurvey?.id) {
-            const { error } = await updateSurvey(editingSurvey.id, payload);
+            const { error } = await actualizarEncuesta(editingSurvey.id, payload);
             if (error) { showToast('Error', 'No se pudo actualizar.', 'error'); setSavingSurvey(false); return; }
-            await appendAuditLog('ENCUESTA_ACTUALIZADA', null, { survey_id: editingSurvey.id });
             showToast('Actualizado', 'Encuesta actualizada.', 'success');
         } else {
             const { error } = await insertSurvey(payload);
             if (error) { showToast('Error', 'No se pudo crear.', 'error'); setSavingSurvey(false); return; }
-            await appendAuditLog('ENCUESTA_CREADA', null, { nombre: payload.nombre });
             showToast('Creado', 'Encuesta creada.', 'success');
         }
         descartarBorrador();   // la encuesta existe: el borrador ya no sirve
@@ -404,9 +401,9 @@ export default function EncuestaAdminView() {
         if (editingResponse?.id) {
             const { error } = await updateSurveyResponse(editingResponse.id,
                 { is_jefe: rfIsJefe, responses: rfAnswers, comentario: rfComentario.trim() || null,
-                    updated_at: new Date().toISOString() });
+                    updated_at: new Date().toISOString() },
+                { surveyId: selectedSurvey.id, employeeId: empId });
             if (error) { showToast('Error', 'No se pudo actualizar.', 'error'); setSavingResponse(false); return; }
-            await appendAuditLog('ENCUESTA_RESPUESTA_EDITADA', empId, { survey_id: selectedSurvey.id, response_id: editingResponse.id });
             showToast('Actualizado', 'Respuesta actualizada.', 'success');
         } else {
             const { error } = await insertSurveyResponse({
@@ -414,7 +411,6 @@ export default function EncuestaAdminView() {
                 responses: rfAnswers, comentario: rfComentario.trim() || null,
             });
             if (error) { showToast('Error', 'No se pudo guardar.', 'error'); setSavingResponse(false); return; }
-            await appendAuditLog('ENCUESTA_RESPUESTA_AGREGADA', empId, { survey_id: selectedSurvey.id });
             showToast('Guardado', 'Respuesta registrada.', 'success');
             setResponseCounts(p => ({ ...p, [selectedSurvey.id]: (p[selectedSurvey.id] || 0) + 1 }));
         }
@@ -426,9 +422,9 @@ export default function EncuestaAdminView() {
 
     const handleDeleteResponse = async (row) => {
         if (!selectedSurvey) return;
-        const { error } = await deleteSurveyResponse(row.id);
+        const { error } = await deleteSurveyResponse(row.id,
+            { surveyId: selectedSurvey.id, employeeId: row.employee_id });
         if (error) { showToast('Error', 'No se pudo eliminar.', 'error'); return; }
-        await appendAuditLog('ENCUESTA_RESPUESTA_ELIMINADA', row.employee_id, { survey_id: selectedSurvey.id });
         showToast('Eliminado', 'Respuesta eliminada.', 'success');
         setRespuestas(r => r.filter(x => x.id !== row.id));
         setResponseCounts(p => ({ ...p, [selectedSurvey.id]: Math.max(0, (p[selectedSurvey.id] || 1) - 1) }));

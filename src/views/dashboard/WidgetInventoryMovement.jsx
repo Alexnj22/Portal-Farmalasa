@@ -281,7 +281,6 @@ function CabeceraMovimiento({ op, branchName, onBack, lineas, unidades }) {
 export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId, selectorSucursal, onHecho }) {
     const { user } = useAuth();
     const employees = useStaffStore(s => s.employees);
-    const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
     const [opKey, setOpKey] = useState(null);      // null = paso 1
     const [busqueda, setBusqueda] = useState('');
@@ -644,15 +643,11 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     notified_employee_id: target?.id ?? null,
                     notified_employee: target?.name ?? 'Sin supervisión asignada',
                 },
-            });
+            }, { lineas: totales.lineas, fotos: evidencia.length });
+            // La bitácora la anota la capa de datos (`<TIPO>_CREATED`, con la
+            // metadata de la solicitud). Acá se anotaba además una segunda
+            // entrada del mismo hecho con otro nombre.
             if (errIns) throw errIns;
-
-            await appendAuditLog(
-                esCarga ? 'INVENTARIO_CARGA_SOLICITADA' : 'INVENTARIO_DESCARTE_SOLICITADO',
-                String(branchId ?? ''),
-                { subtipo: opKey, motivo: motivo || null, lineas: totales.lineas,
-                  unidades: totales.unidades, causa: causa.trim(), fotos: evidencia.length },
-            );
 
             // El aviso lo crea el trigger junto con la fila. Mandarlo desde acá
             // sería la llamada aparte que este módulo ya perdió una vez.

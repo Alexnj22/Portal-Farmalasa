@@ -5,6 +5,7 @@
 // data/requests.js y upsertWeeklyRoster/upsertBulkWeeklyRosters de
 // data/system.js — mismos queries exactos, no se duplican.
 import { supabase } from '../supabaseClient';
+import { conBitacora } from './audit';
 
 // ── Horarios de la semana ────────────────────────────────────────────────────
 
@@ -80,16 +81,26 @@ export function fetchBranchHourlySalesAll(branchId) {
         .eq('branch_id', branchId);
 }
 
+// Una cobertura dice que alguien de otra sala trabaja acá esa semana. Quitarla
+// o ponerla cambia dónde se espera a una persona, y de eso dependen la
+// marcación y el reclamo de después. Por eso se anota, y lo anota la función
+// que escribe (D3, 2026-09-28), no la pantalla. Sólo si entró.
+
+/** Quitar la cobertura de una persona en una sala y semana → `QUITAR_COBERTURA`. */
 export function deleteScheduleCoverage(employeeId, branchId, weekStart) {
-    return supabase.from('schedule_coverage')
+    return conBitacora(supabase.from('schedule_coverage')
         .delete()
         .eq('employee_id', employeeId)
         .eq('coverage_branch_id', branchId)
-        .eq('week_start_date', weekStart);
+        .eq('week_start_date', weekStart),
+        'QUITAR_COBERTURA', String(employeeId), { sucursal_id: Number(branchId), semana: weekStart });
 }
 
+/** Guardar un día de cobertura → `GUARDAR_COBERTURA`. */
 export function upsertScheduleCoverage(entry) {
-    return supabase.from('schedule_coverage').upsert(entry, {
+    return conBitacora(supabase.from('schedule_coverage').upsert(entry, {
         onConflict: 'employee_id,coverage_branch_id,week_start_date,day_of_week',
+    }), 'GUARDAR_COBERTURA', String(entry?.employee_id), {
+        sucursal_id: entry?.coverage_branch_id ?? null, semana: entry?.week_start_date ?? null, dia: entry?.day_of_week ?? null,
     });
 }

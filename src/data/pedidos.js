@@ -16,6 +16,7 @@
 // proyecto para esto.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { anotar, conBitacora } from './audit';
 
 // ── Sucursal / ERP lookups ──────────────────────────────────────────────────
 
@@ -75,7 +76,10 @@ export async function fetchEmployeeByKioskPin(code) {
 }
 
 export function upsertPedidoApoyo(payload) {
-    return supabase.from('pedido_apoyo').upsert(payload, { onConflict: 'pedido_id,erp_sucursal_id,employee_id,tipo' });
+    return conBitacora(
+        supabase.from('pedido_apoyo').upsert(payload, { onConflict: 'pedido_id,erp_sucursal_id,employee_id,tipo' }),
+        'PEDIDO_APOYO_REGISTRADO', payload?.pedido_id,
+        { sucursal_id: payload?.erp_sucursal_id, employee_id: payload?.employee_id });
 }
 
 // ── Rutas ────────────────────────────────────────────────────────────────────
@@ -180,16 +184,34 @@ function escrituraDeRecepcion(builder) {
     return escrituraQueDebeTocarFilas(builder, MSG_RECEPCION_SIN_EFECTO);
 }
 
+// Cambio de estado a secas, SIN bitácora: lo usa la creación de la ruta para
+// arrancarla en el mismo clic (esa acción ya anota `RUTA_CREADA`). Para
+// iniciar o cerrar una ruta existente, `iniciarRuta` / `completarRuta`.
 export function updateRutaStatus(rutaId, patch) {
     return escrituraDeRuta(supabase.from('rutas').update(patch).eq('id', rutaId));
 }
 
-export function updateRutaPedidoEntregado(stopId, userId) {
-    return escrituraDeRuta(
+// La bitácora la anota la capa de datos (D3 del núcleo portable): la tarjeta
+// de Rutas y la de Pedidos arrancaban y cerraban la ruta con la misma
+// escritura y cada una anotaba por su cuenta.
+export function iniciarRuta(rutaId, contexto = {}) {
+    return conBitacora(
+        updateRutaStatus(rutaId, { status: 'en_ruta', salida_at: new Date().toISOString() }),
+        'RUTA_INICIADA', rutaId, { ...contexto });
+}
+
+export function completarRuta(rutaId, contexto = {}) {
+    return conBitacora(
+        updateRutaStatus(rutaId, { status: 'completada', vuelta_base_at: new Date().toISOString() }),
+        'RUTA_COMPLETADA', rutaId, { ...contexto });
+}
+
+export function updateRutaPedidoEntregado(stopId, userId, contexto = {}) {
+    return conBitacora(escrituraDeRuta(
         supabase.from('ruta_pedidos')
             .update({ entregado_at: new Date().toISOString(), entregado_por: userId })
             .eq('id', stopId)
-    );
+    ), 'RUTA_PARADA_ENTREGADA', stopId, { ...contexto });
 }
 
 // Extraído de TabRutas.jsx (5 de sus 7 sitios reutilizan funciones ya
@@ -607,7 +629,14 @@ export function fetchSucursalesConCoords() {
 // Reciben los parámetros de la función tal cual y devuelven `{ data, error }`.
 
 /** Crea una ruta de reparto con sus paradas; devuelve su id. */
-export const crearRuta = (params) => supabase.rpc('crear_ruta', params);
+export async function crearRuta(params) {
+    const res = await supabase.rpc('crear_ruta', params);
+    if (!res.error) anotar('RUTA_CREADA', res.data, {
+        conductor: params?.p_conductor_nombre,
+        paradas:   (params?.p_paradas || []).length,
+    });
+    return res;
+}
 
 /** Lo que necesita cada sala antes de generar un pedido (`p_sucursal_ids`). */
 export const fetchTableroParaGenerarPedido = (params) => supabase.rpc('get_pedido_generar_dashboard', params);
@@ -616,7 +645,24 @@ export const fetchTableroParaGenerarPedido = (params) => supabase.rpc('get_pedid
 export const fetchVistaPreviaDePedido = (params) => supabase.rpc('get_pedido_preview', params);
 
 /** Confirma un pedido con sus renglones; devuelve su id. */
-export const confirmarPedido = (params) => supabase.rpc('confirm_pedido', params);
+export async function confirmarPedido(params, contexto = {}) {
+    const res = await supabase.rpc('confirm_pedido', params);
+    if (!res.error) {
+        const pedidoId = res.data;
+        const detalles = (numero) => ({
+            sucursales:  params?.p_sucursal_ids ?? [],
+            items_count: (params?.p_items || []).length,
+            numero,
+            ...contexto,
+        });
+        // El número se lee aparte y por detrás: la anotación no demora la
+        // respuesta, y sin número igual queda la entrada.
+        fetchPedidoNumero(pedidoId)
+            .then(({ data }) => anotar('GENERAR_PEDIDO', pedidoId, detalles(data?.numero)))
+            .catch(() => anotar('GENERAR_PEDIDO', pedidoId, detalles(undefined)));
+    }
+    return res;
+}
 
 /** Asigna los códigos de cada sala dentro de un pedido. */
 export const iniciarCodigosDeSucursalesDelPedido = (params) => supabase.rpc('init_pedido_sucursal_codigos', params);

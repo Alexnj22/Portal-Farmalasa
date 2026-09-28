@@ -12,6 +12,7 @@
 // decide la base: la función llama al RPC con el JWT de quien apretó el botón.
 
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 /**
  * Emite un carné de papel para esa persona y devuelve su secreto.
@@ -75,11 +76,18 @@ export function fetchCarnesVigentes(limite = 50) {
         .limit(limite);
 }
 
-/** Mata un carné antes de su vencimiento (el papel se perdió, por ejemplo). */
-export async function anularCarneTemporal(id) {
+/**
+ * Mata un carné antes de su vencimiento (el papel se perdió, por ejemplo), y
+ * anota `CARNE_TEMPORAL_ANULADO` si el servidor dijo que sí. La entrada la
+ * escribe esta función (D3, 2026-09-28): las dos pantallas que anulan la
+ * anotaban cada una por su lado. `employeeId` es de quién era el carné.
+ */
+export async function anularCarneTemporal(id, { employeeId = null } = {}) {
     const { data, error } = await supabase.rpc('anular_carne_temporal', { p_id: id });
     if (error) return { ok: false, motivo: 'No se pudo anular el carné.' };
-    return data ?? { ok: false, motivo: 'No se pudo anular el carné.' };
+    const r = data ?? { ok: false, motivo: 'No se pudo anular el carné.' };
+    if (r.ok) anotar('CARNE_TEMPORAL_ANULADO', employeeId != null ? String(employeeId) : null, { carne_id: id });
+    return r;
 }
 
 /** ¿Este carné sigue sirviendo? Es la misma condición que aplica el servidor. */

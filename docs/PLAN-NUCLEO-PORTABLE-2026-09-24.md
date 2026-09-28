@@ -1,6 +1,6 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 **en curso**: paso 1 (alias) hecho, falta mudar las carpetas.
+**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho (paso 2 pospuesto) · **F8 en curso**: la app arranca, faltan las pantallas.
 
 ### Bitácora
 
@@ -131,6 +131,24 @@
   (71 importaciones). `npm run gate:alias`, también en el pre-commit, falla si
   una importación nueva cruza el borde por ruta relativa. **Paso 2**: mudar las
   carpetas a `packages/core` y apuntar `@nucleo` ahí — ya no toca pantallas.
+  **Pospuesto por decisión del usuario** (2026-09-28): se muda cuando ninguna
+  otra sesión esté usando esos archivos. La app no lo necesita: Metro resuelve
+  `@nucleo` a `src/`.
+- **F8 paso 1 — la app arranca con el núcleo del portal (2026-09-28)**.
+  `apps/mobile`, Expo 57 con expo-router. Metro lee el núcleo de `src/` sin
+  copiarlo (55 archivos del portal en el paquete, una sola copia de React
+  —verificado en el mapa de fuentes—). Doce adaptadores en
+  `apps/mobile/plataforma/` con los nombres de los de la web; lo que todavía no
+  existe en el teléfono (descargas, fotos) LANZA en vez de devolver un vacío.
+  `supabaseClient.js` ahora toma URL, llave y almacén de la sesión de
+  `@plataforma/config`, así es el mismo archivo en las dos apps. Pantallas:
+  entrada (con el cambio obligatorio de contraseña, cuyas reglas se unificaron
+  en `utils/contrasena.js`: estaban copiadas en la entrada y en Personal con
+  textos distintos) e inicio con los módulos que el cargo puede ver, sacados de
+  `MODULE_MAP` + `hasPermission`. Probado con la cuenta de pruebas en un iPhone
+  13 simulado (web de Expo): entra y lista **58 módulos**, sin errores en
+  consola. Compila también para Android. **Falta**: probarla en un teléfono de
+  verdad, y las pantallas — hoy las 58 dicen «pronto».
 
 ## Para qué
 

@@ -12,7 +12,9 @@ export default defineConfig([
   // (27 el 2026-08-10). No era ruido: ESLint las recorría enteras y moría
   // formateando el informe —`RangeError: Invalid string length`— o sea que
   // `npm run lint` no fallaba por el código, fallaba siempre.
-  globalIgnores(['dist', 'dist-*', 'android', 'ios', '.agents']),
+  // `apps/`: la app del teléfono tiene su propio lint (`npx expo lint`) y su
+  // propio node_modules, que este recorrería entero.
+  globalIgnores(['dist', 'dist-*', 'android', 'ios', '.agents', 'apps']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

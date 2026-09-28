@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1081.0 — F8 paso 1 — la app del teléfono arranca con el núcleo del portal
+
+Nace `apps/mobile` (Expo): entra con usuario y contraseña —incluido el cambio
+obligatorio de la primera vez— y muestra los módulos que el cargo puede ver,
+con el MISMO código de sesión y permisos del portal (lo lee de `src/`, no lo
+copia). Las pantallas de cada módulo todavía dicen «pronto».
+
+En el portal: `supabaseClient.js` toma su configuración de la plataforma, y
+las reglas de una contraseña nueva viven en `utils/contrasena.js` — estaban
+copiadas en la entrada y en Personal con textos distintos («una mayúscula» /
+«una letra mayúscula»); ahora dicen lo mismo.
+
 ## v2.1080.2 — Metas: la gráfica de comparación en dos columnas
 
 El usuario prefirió la versión anterior de las tarjetas: el problema era la

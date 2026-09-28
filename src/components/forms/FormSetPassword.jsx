@@ -6,6 +6,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import PortalInput from '../common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
+import { problemaDeContrasenaNueva } from '@nucleo/utils/contrasena';
 
 const FormSetPassword = ({ formData, onClose }) => {
     const [password, setPassword] = useState('');
@@ -20,10 +21,8 @@ const FormSetPassword = ({ formData, onClose }) => {
         e.preventDefault();
         setError('');
 
-        if (password.length < 8) { setError('Mínimo 8 caracteres.'); return; }
-        if (!/[A-Z]/.test(password)) { setError('Debe incluir al menos una letra mayúscula.'); return; }
-        if (!/[0-9]/.test(password)) { setError('Debe incluir al menos un número.'); return; }
-        if (password !== confirm) { setError('Las contraseñas no coinciden.'); return; }
+        const problema = problemaDeContrasenaNueva(password, confirm);
+        if (problema) { setError(problema); return; }
 
         setLoading(true);
         try {

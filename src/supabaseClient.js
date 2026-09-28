@@ -1,8 +1,13 @@
 // src/supabaseClient.js
 import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ALMACEN_DE_SESION } from '@plataforma/config';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// La URL, la llave y dónde se guarda la sesión los pone cada app: la web los
+// lee de Vite y guarda en `localStorage` (el default de auth-js, por eso
+// ALMACEN_DE_SESION viene vacío); el teléfono, de su configuración y de su
+// almacén. Así este archivo es el mismo en las dos.
+const supabaseUrl = SUPABASE_URL;
+const supabaseKey = SUPABASE_ANON_KEY;
 
 /** @type {import('@supabase/supabase-js').SupabaseClient<import('./types/database').Database>} */
 export const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -10,6 +15,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
+    ...(ALMACEN_DE_SESION ? { storage: ALMACEN_DE_SESION } : {}),
   },
 });
 

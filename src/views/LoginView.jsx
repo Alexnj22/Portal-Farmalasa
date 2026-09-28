@@ -11,6 +11,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useMediaQuery from '../plataforma/useMediaQuery';
 import { esAtajoDePegar, esPegadoDeUnaPersona } from '@nucleo/utils/pegadoManual';
 import { cambiarMiContrasenaInicial } from '@nucleo/data/auth';
+import { problemaDeContrasenaNueva } from '@nucleo/utils/contrasena';
 
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
@@ -870,10 +871,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     const handleChangePassword = async () => {
         setChangePassError('');
-        if (newPassword.length < 8)              { setChangePassError('Mínimo 8 caracteres.'); return; }
-        if (!/[A-Z]/.test(newPassword))          { setChangePassError('Debe incluir al menos una mayúscula.'); return; }
-        if (!/[0-9]/.test(newPassword))          { setChangePassError('Debe incluir al menos un número.'); return; }
-        if (newPassword !== confirmPassword)      { setChangePassError('Las contraseñas no coinciden.'); return; }
+        const problema = problemaDeContrasenaNueva(newPassword, confirmPassword);
+        if (problema) { setChangePassError(problema); return; }
         setChangePassLoading(true);
         try {
             const { error } = await cambiarMiContrasenaInicial(newPassword);

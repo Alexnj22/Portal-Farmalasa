@@ -78,6 +78,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './tests/setup.js',
-    exclude: ['tests/e2e/**', 'node_modules/**'],
+    // `apps/` es la app del teléfono: tiene sus propias dependencias (y sus pruebas).
+    exclude: ['tests/e2e/**', 'node_modules/**', 'apps/**'],
   },
 })

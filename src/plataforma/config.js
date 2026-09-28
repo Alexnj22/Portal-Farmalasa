@@ -14,3 +14,8 @@ export const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL;
 export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const VAPID_PUBLIC_KEY  = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 export const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+// Dónde guarda auth-js la sesión. En la web, nada: usa `localStorage`, que es
+// su default, y cambiarlo haría perder la sesión de todos al publicar. El
+// teléfono pasa su almacén (ver apps/mobile/plataforma/config.js).
+export const ALMACEN_DE_SESION = undefined;

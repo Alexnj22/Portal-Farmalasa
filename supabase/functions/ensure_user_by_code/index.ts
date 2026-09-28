@@ -90,6 +90,50 @@ async function resolveEmployeeFromSession(uid: string) {
   return byLink.data?.[0] ?? null;
 }
 
+// ── Por qué falló un login con usuario y contraseña (2026-09-28) ─────────────
+// Auth contesta lo mismo —`invalid_credentials`— para un usuario que no existe
+// y para una contraseña equivocada, y el portal decía «usuario no encontrado o
+// contraseña incorrecta». El 28-sep eso costó un restablecimiento: una persona
+// con la contraseña intacta no sabía si había escrito mal el usuario o la clave.
+//
+// Contestarlo revela qué usuarios existen, y acá se adivinan (`nombre.apellido`).
+// Decisión del usuario: se contesta, con dos frenos. El portal sólo pregunta
+// DESPUÉS de un intento fallido, y cada pregunta cuenta como un fallo en el
+// mismo tope por IP que el login por código (15 en 10 minutos): alcanza para
+// quien se equivocó, no para barrer la lista.
+//
+// Nunca dice nada de la contraseña más allá de «el usuario existe y está en
+// regla»: la clave la sigue juzgando Auth, no esta función.
+async function diagnosticarUsuario(entrada: string, ip: string) {
+  if (!admin) return { ok: false, error: "MISSING_ENV" };
+  if (await isRateLimited(ip)) return { ok: true, estado: "DEMASIADOS_INTENTOS" };
+  recordFailure(ip);
+
+  const usuario = entrada.trim().toLowerCase();
+  // Sin `%` ni `_`: el `ilike` de abajo los leería como comodines.
+  if (!usuario || !/^[a-z0-9.\-]+$/.test(usuario)) return { ok: true, estado: "NO_EXISTE" };
+
+  const { data: filas, error } = await admin
+    .from("employees").select("id, status").ilike("username", usuario).limit(1);
+  if (error) return { ok: false, error: "DB_ERROR" };
+  const emp = filas?.[0];
+  if (!emp) return { ok: true, estado: "NO_EXISTE" };
+  if (emp.status && emp.status !== "ACTIVO") return { ok: true, estado: "INACTIVO" };
+
+  // La cuenta del portal se crea con `id: employee.id` (set-employee-password).
+  const { data: cuenta } = await admin.auth.admin.getUserById(emp.id);
+  const u = cuenta?.user;
+  if (!u) return { ok: true, estado: "SIN_ACCESO" };
+  // El login arma el correo con lo que se escribió; si la cuenta tiene otro, esa
+  // persona no puede entrar con ninguna contraseña — es un renombre a medias.
+  if ((u.email ?? "").toLowerCase() !== `${usuario}@farmalasa.app`) {
+    return { ok: true, estado: "CUENTA_DESALINEADA" };
+  }
+  const baneada = (u as { banned_until?: string | null }).banned_until;
+  if (baneada && new Date(baneada).getTime() > Date.now()) return { ok: true, estado: "BLOQUEADO" };
+  return { ok: true, estado: "CONTRASENA" };
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
   const json = (body: unknown, status = 200) =>
@@ -205,6 +249,12 @@ Deno.serve(async (req: Request) => {
     // ═══ Pre-login: sin sesión, el código es lo único que hay. Solo devuelve
     // el correo con el que completar el signIn — nunca datos del empleado. ═══
     const body = await req.json().catch(() => ({}));
+
+    // ═══ Diagnóstico de un login fallido ═══
+    if (typeof body?.diagnosticar_usuario === "string") {
+      return json(await diagnosticarUsuario(body.diagnosticar_usuario, clientIp));
+    }
+
     const raw  = typeof body?.code === "string" ? body.code.trim() : "";
 
     // ── Validación de input: solo caracteres seguros (excluye % _ para evitar inyección ILIKE) ──

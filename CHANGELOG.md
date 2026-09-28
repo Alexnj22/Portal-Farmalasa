@@ -37,7 +37,6 @@ Torogoz) sobre el núcleo portable.
 - Conflictos resueltos conservando las dos partes (`index.css`,
   `routeImporters.js`, `RequestsView.jsx`, `CHANGELOG.md`).
 
-
 ## v2.1088.0 — Torogoz: la distribuidora con su propia entrada (/torogoz), login, menú y Solicitudes
 
 Decisión del usuario: la distribuidora «alimenta el portal y se consulta,
@@ -57,7 +56,6 @@ portal, las mismas cuentas por permiso, y fuera del menú de las farmacias.
 - `gate:rutas` entiende las rutas anidadas bajo un prefijo propio
   (`/torogoz/*`): antes leía `/venta` y daba `/torogoz` por inexistente.
   Verificado fabricándole la regresión (quitar un título la caza).
-
 
 ## v2.1087.0 — Distribución: descuentos con aprobación, preventa, venta más clara y Enter en los montos
 
@@ -87,7 +85,6 @@ resto se pide, se aprueba o se rechaza, y la venta espera como preventa.
   acepta `descartado` sin firma (el entorno viejo lo tenía cambiado a mano).
 - Inventario: la entrada de lote guarda borrador.
 
-
 ## v2.1086.1 — Distribución: precios con IVA en centavos y la pantalla calcula con el motor del documento
 
 Pregunta del usuario: «eso del redondeo, ¿cómo lo espera la ley?». La pantalla
@@ -106,7 +103,6 @@ pantalla hacía su propia cuenta.
   a sin IVA a 8 decimales. El descuento se guarda en la misma base.
 - Catálogo: el precio se escribe con IVA y no acepta más de dos decimales.
 - Detalle del pedido: importes y total también del motor.
-
 
 ## v2.1086.0 — Distribución: inventario por lote y el lote en el documento
 
@@ -161,6 +157,23 @@ Pedido del usuario: «mira el ERP, no como guía en diseño sino en utilidad.
   cuánto entrega el cliente y muestra el cambio.
 - Precios con IVA si es Factura, sin IVA si es Crédito Fiscal.
 
+## v2.1084.2 — Las pantallas abiertas ya no se rompen al publicar
+
+El 93% de los errores de pantalla del último mes (649 de 704, hasta 39
+personas en una semana) era lo mismo: alguien tenía el portal abierto, se
+publicaba una versión nueva y la siguiente vista que abría ya no encontraba sus
+archivos. Desde ahora cada publicación conserva los archivos de las
+publicaciones de las últimas 48 horas, así que una pestaña abierta sigue
+funcionando hasta que la persona decida actualizar. Empieza a surtir efecto a
+partir de la segunda publicación después de ésta.
+
+## v2.1084.1 — Los mensajes del login, cortos
+
+A pedido del usuario: una línea práctica por caso — «Usuario incorrecto.»,
+«Contraseña incorrecta.», «Usuario dado de baja.», «Usuario bloqueado.»,
+«Usuario sin acceso al portal.», «Usuario mal configurado. Avisa a Sistemas.»,
+«Demasiados intentos. Espera unos minutos.»
+
 ## v2.1084.0 — Distribución: el cierre al pie de la hoja y el PDF completo
 
 Dos pedidos del usuario: que los totales estén siempre en el mismo lugar, y
@@ -191,6 +204,21 @@ Imberton, Calleja).
   texto vacío (el guardián del cierre usa un espacio), y una fila de 8pt con su
   relleno mide ~17.3pt y no 15.6 — con la cuenta a ojo el total se salía de la
   hoja.
+
+## v2.1084.0 — El login dice por qué no entraste
+
+Antes, cualquier fallo decía «Usuario no encontrado o contraseña incorrecta», y
+«cuenta bloqueada» o «demasiados intentos» llegaban en el inglés de Auth. El
+28-sep eso costó un restablecimiento a alguien con la contraseña intacta.
+
+Ahora, después de un intento fallido, el portal le pregunta a
+`ensure_user_by_code` (modo `diagnosticar_usuario`) y dice cuál de estos es:
+el usuario no existe, contraseña incorrecta, cuenta desactivada, acceso
+bloqueado, usuario sin acceso al portal, cuenta desalineada (renombre a medias)
+o demasiados intentos. Decir que un usuario no existe revela cuáles sí; por eso
+cada pregunta cuenta en el tope del login por código (15 fallos en 10 minutos
+por IP) y sólo se hace tras un fallo. La contraseña la sigue juzgando Auth.
+
 
 ## v2.1083.0 — F8 paso 3 — Bitácoras nativa en la app
 

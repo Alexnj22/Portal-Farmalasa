@@ -10,7 +10,7 @@
     "pruebas:env": "node scripts/entorno-pruebas/mantener_al_dia.mjs --env",
     "prebuild": "node scripts/publicar-agente.mjs && npm run legal:web && npm run legal:js && node scripts/limpiar-dist.mjs --auto",
     "agente:publicar": "node scripts/publicar-agente.mjs",
-    "build": "vite build --outDir ${OUT_DIR:-dist}",
+    "build": "vite build --outDir ${OUT_DIR:-dist} && node scripts/conservar-assets.mjs ${OUT_DIR:-dist}",
     "build:staging": "vite build --mode staging --outDir ${OUT_DIR:-dist-staging}",
     "lint": "eslint .",
     "preview": "vite preview --outDir ${OUT_DIR:-dist} --strictPort --port ${QA_PORT:-4173}",

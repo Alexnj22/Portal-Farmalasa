@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
     ShoppingCart, Pill, AlertCircle, Lock, Camera,
-    User as UserIcon, Sparkles, ArrowRight, X, CheckCircle2,
+    User as UserIcon, Sparkles, ArrowRight, X, CheckCircle2, Eye, EyeOff,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -250,6 +250,19 @@ const keyframeStyles = `
    desenfoca nada util, solo obliga al compositor a copiar lo de abajo-. El
    `<span>` vacio de adentro tampoco hacia nada: quedo de un barrido que se
    llevo el brillo y dejo el nodo. */
+// Ojo para ver la contraseña. `type="button"` para que no mande el
+// formulario, y `onMouseDown` sin foco para que el teclado del teléfono no se
+// cierre al tocarlo. El ícono dice lo que va a PASAR al tocar, como en iOS.
+const BotonVerClave = ({ visible, onToggle }) => (
+    <button type="button" onClick={onToggle} onMouseDown={e => e.preventDefault()}
+        aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        title={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        aria-pressed={visible}
+        className="absolute right-2 z-base flex items-center justify-center w-10 h-10 min-h-[var(--tap-min)] min-w-[var(--tap-min)] rounded-card text-content-3 hover:text-brand-text active:scale-[0.97] transition">
+        {visible ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
+    </button>
+);
+
 const LoginButton = ({ type = 'submit', onClick, disabled, children, height = 'h-[54px]' }) => (
     <button type={type} onClick={onClick} disabled={disabled}
         className={`w-full ${height}
@@ -321,6 +334,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [changePassLoading, setChangePassLoading] = useState(false);
     const [mustChangePwd,     setMustChangePwd]     = useState(false);
     const [pendingUserLocal,  setPendingUserLocal]  = useState(null);
+    // Ver lo escrito en la contraseña. En el teléfono no se puede pegar (ver
+    // `bloquearPegado`) y el teclado mete mayúsculas solo: sin ver, un error
+    // de tecla es indistinguible de una contraseña olvidada.
+    const [verClave,          setVerClave]          = useState(false);
+    const [verNueva,          setVerNueva]          = useState(false);
     const [scanHoldLeft,      setScanHoldLeft]      = useState(SCAN_FOCUS_WAIT_MS / 1000);
     const [hasCamera,         setHasCamera]         = useState(false);
     // Equipo con lector: manda el cartel, la espera de 30s y hasta si el
@@ -1029,8 +1047,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     { ref: userPasswordRef, id: 'password', type: 'password', placeholder: 'Contraseña',      autoComplete: 'current-password', Icon: Lock },
                 ].map(({ ref, id, type, placeholder, autoComplete, Icon }) => (
                     <div key={id} className="relative group flex items-center">
+                        {id === 'password' && <BotonVerClave visible={verClave} onToggle={() => setVerClave(v => !v)} />}
                         <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-base" />
-                        <input aria-label={placeholder} ref={ref} id={id} name={id} type={type} placeholder={placeholder}
+                        <input aria-label={placeholder} ref={ref} id={id} name={id} type={id === 'password' && verClave ? 'text' : type} placeholder={placeholder}
+                            autoCapitalize={id === 'password' ? 'none' : undefined} autoCorrect="off"
                             autoComplete={autoComplete}
                             spellCheck="false"
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
@@ -1060,7 +1080,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             // personal), la contraseña no.
                             onCopy={id === 'password' ? (e => e.preventDefault()) : undefined}
                             onCut={id === 'password' ? (e => e.preventDefault()) : undefined}
-                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-body-xl':'pl-12 pr-5 py-4 text-body-xl'} rounded-card`} />
+                            className={`${inputCls} ${compact?'pl-11 py-3 text-body-xl':'pl-12 py-4 text-body-xl'} ${id === 'password' ? 'pr-14' : compact ? 'pr-4' : 'pr-5'} rounded-card`} />
                     </div>
                 ))}
                 {error && (
@@ -1103,7 +1123,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
                                 <div key={i} className="relative group flex items-center">
                                     <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-base" />
-                                    <input aria-label={f.ph} type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-body-xl rounded-card`} />
+                                    <input aria-label={f.ph} type={verNueva ? 'text' : 'password'} autoCapitalize="none" autoCorrect="off" spellCheck="false" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-14 py-3.5 text-body-xl rounded-card`} />
+                                    <BotonVerClave visible={verNueva} onToggle={() => setVerNueva(v => !v)} />
                                 </div>
                             ))}
                             {changePassError && <div className="flex items-center gap-3 text-danger-text bg-danger/10 px-4 py-3 rounded-card border border-danger/30 animate-in fade-in slide-in-from-top-2"><AlertCircle size={18} className="text-danger shrink-0" strokeWidth={2.5}/><span className="text-body-sm font-bold leading-relaxed">{changePassError}</span></div>}

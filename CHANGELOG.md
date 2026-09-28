@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.1 — Login: botón para ver la contraseña
+
+Una regente no podía entrar desde el teléfono después de cambiar su
+contraseña: tres intentos fallidos seguidos, y la pantalla no dejaba ni ver lo
+escrito ni pegarlo. En el teléfono un error de tecla (la mayúscula que el
+teclado pone solo) se confunde con una contraseña olvidada.
+
+- Ojo para mostrar u ocultar la contraseña en la entrada y en «Cambia tu
+  contraseña». Blanco de 44pt, no manda el formulario y no cierra el teclado.
+- Los campos de contraseña ya no se capitalizan ni se autocorrigen solos.
+
 ## v2.1076.0 — Puntos: cumpleaños automático, dar y quitar a mano, y las fichas genéricas al encender
 
 Revisión previa al 1-oct: lo que el sistema anterior hacía y el portal no.

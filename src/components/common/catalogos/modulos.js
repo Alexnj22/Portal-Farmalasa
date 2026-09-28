@@ -68,9 +68,9 @@ import {
     Thermometer,
     Star,
 } from 'lucide-react';
-import { MODULE_MAP as BASE } from '../../../constants/moduleMap';
+import { MODULE_MAP as BASE } from '@nucleo/constants/moduleMap';
 
-export * from '../../../constants/moduleMap';
+export * from '@nucleo/constants/moduleMap';
 
 const ICONOS = {
     Activity,

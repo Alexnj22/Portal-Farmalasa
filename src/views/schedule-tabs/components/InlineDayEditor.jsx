@@ -7,17 +7,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Bot, Clock, Flame, AlertTriangle, Building2 } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect'; 
 import TimePicker12 from '../../../components/common/TimePicker12'; 
-import { useStaffStore } from '../../../store/staffStore'; 
-import { timeToMins, formatHourAMPM, resolverTurnoDelDia, reparosDelDia } from '../../../utils/scheduleHelpers';
+import { useStaffStore } from '@nucleo/store/staffStore'; 
+import { timeToMins, formatHourAMPM, resolverTurnoDelDia, reparosDelDia } from '@nucleo/utils/scheduleHelpers';
 import ModalShell from '../../../components/common/ModalShell';
 import HojaMovil from '../../../components/common/HojaMovil';
 import useMediaQuery from '../../../plataforma/useMediaQuery';
 import { CORTE_TELEFONO } from '../../../components/common/usarExpediente';
-import { clickable } from '../../../utils/clickable';
-import { shortEmployeeName } from '../../../utils/nameUtils';
-import { rotuloCampo } from '../../../utils/rotuloDeCampo';
-import { hora12 } from '../../../utils/hora';
-import { fechaTexto } from '../../../utils/fecha';
+import { clickable } from '@nucleo/utils/clickable';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // «16:00» → «4:00 p. m.», del canónico.
 const formatTime12hStr = (time24) => hora12(time24);

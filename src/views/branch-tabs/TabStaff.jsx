@@ -13,13 +13,13 @@ import {
 import ConfirmModal from '../../components/common/ConfirmModal';
 import AlertModal from '../../components/common/AlertModal';
 import Notice from '../../components/common/Notice';
-import { calculateMinimumStaff } from '../../utils/staffHelpers';
+import { calculateMinimumStaff } from '@nucleo/utils/staffHelpers';
 
-import { fetchBranchHourlySalesAll } from '../../data/schedules';
-import { clickable } from '../../utils/clickable';
-import { fechaTexto, hoySV } from '../../utils/fecha';
-import { analizarSucursal } from '../../data/ia';
-import { sincronizarVentasDeSucursal } from '../../data/branches';
+import { fetchBranchHourlySalesAll } from '@nucleo/data/schedules';
+import { clickable } from '@nucleo/utils/clickable';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { analizarSucursal } from '@nucleo/data/ia';
+import { sincronizarVentasDeSucursal } from '@nucleo/data/branches';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS

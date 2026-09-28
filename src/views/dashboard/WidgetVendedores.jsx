@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { SkeletonText } from '../../components/common/StateViews';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchMesEnCurso } from '../../data/metas';
-import { useAuth } from '../../context/AuthContext';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchMesEnCurso } from '@nucleo/data/metas';
+import { useAuth } from '@nucleo/context/AuthContext';
 import RankingVendedores from '../metas/RankingVendedores';
 
 // Quién está vendiendo, en el Inicio de la sala. Es el MISMO componente que usa

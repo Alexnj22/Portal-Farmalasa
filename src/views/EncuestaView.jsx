@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import ListRow from '../components/common/ListRow';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
-import { signPhotosDeep } from '../utils/storageFiles';
+import { signPhotosDeep } from '@nucleo/utils/storageFiles';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -20,11 +20,11 @@ import FilterBar from '../components/common/FilterBar';
 import {
     fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView,
     fetchSurveyAiSummaries, updateSurvey,
-} from '../data/encuestas';
-import { clickable } from '../utils/clickable';
+} from '@nucleo/data/encuestas';
+import { clickable } from '@nucleo/utils/clickable';
 import LiquidTooltip from '../components/common/LiquidTooltip';
-import { shortEmployeeName } from '../utils/nameUtils';
-import { preguntarASaly } from '../data/ia';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { preguntarASaly } from '@nucleo/data/ia';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
 const SUPERVISOR_DE_JEFE = {

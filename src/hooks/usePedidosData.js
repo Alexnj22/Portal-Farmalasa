@@ -17,7 +17,7 @@ import {
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
 } from '../data/devoluciones';
 import { decidirDiferencia, confirmarLlegadaDiferencia } from '../data/diferencias';
-import { seguirPosicion } from '../plataforma/ubicacion';
+import { seguirPosicion } from '@plataforma/ubicacion';
 
 import { mensajeAmigable } from '../utils/errorMessages';
 import { cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '../utils/cajasEspeciales';

@@ -4,11 +4,11 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import LiquidSelect from '../components/common/LiquidSelect';
-import { useAuth } from '../context/AuthContext';
-import { fetchOrphanObjects, updateOrphanObjectStatus } from '../data/orphanObjects';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { fetchOrphanObjects, updateOrphanObjectStatus } from '@nucleo/data/orphanObjects';
 import Badge from '../components/common/Badge';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { fechaTexto } from '../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 const STATUS_LABELS = {
     candidate: 'Candidato',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useBusqueda } from '../hooks/useBusqueda';
+import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -14,10 +14,10 @@ import {
     ChevronUp, Search, X, Trophy, Star, ChevronLeft,
     ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical, Syringe
 } from 'lucide-react';
-import { ROTULO_PUNTOS, OPCIONES_FILTRO_PUNTOS } from '../data/puntos';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useToastStore } from '../store/toastStore';
-import { useAuth } from '../context/AuthContext';
+import { ROTULO_PUNTOS, OPCIONES_FILTRO_PUNTOS } from '@nucleo/data/puntos';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -27,18 +27,18 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../components/common/usarExpediente';
 import TablePagination from '../components/common/TablePagination';
-import { smartFilter } from '../utils/searchUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import AvisoParecidos from '../components/common/AvisoParecidos';
-import { shortEmployeeName } from '../utils/nameUtils';
-import { useNowTick } from '../hooks/useNowTick';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
 import FilterBar from '../components/common/FilterBar';
-import { alternarProductoOcultoEnVentas, fetchAntibioticProductIds, fetchInvoiceChangelog, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice, fetchInvoicesList, fetchLineasDeVentaDelProducto, fetchProductPreciosActivos, fetchProductPreciosDetail, fetchProductPreciosHistory, fetchPuntosCanjeados, fetchResumenDeVendedores, fetchResumenDeVentas, fetchResumenDelProductoVendido, fetchTendenciaDelProducto, fetchTotalVendidoPorProductos, fetchVendedorPorDia, fetchVendorMonthlyStats, fetchVentasConPuntos, fetchVentasConReceta, fetchVentasPorProducto, fetchVentasRecetaStats, fetchVentasSinProducto, ventasBusquedaEsAproximada } from '../data/ventas';
-import { clickable } from '../utils/clickable';
-import { formatMoney, formatQty } from '../utils/formatNumber';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { hora12 } from '../utils/hora';
+import { alternarProductoOcultoEnVentas, fetchAntibioticProductIds, fetchInvoiceChangelog, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice, fetchInvoicesList, fetchLineasDeVentaDelProducto, fetchProductPreciosActivos, fetchProductPreciosDetail, fetchProductPreciosHistory, fetchPuntosCanjeados, fetchResumenDeVendedores, fetchResumenDeVentas, fetchResumenDelProductoVendido, fetchTendenciaDelProducto, fetchTotalVendidoPorProductos, fetchVendedorPorDia, fetchVendorMonthlyStats, fetchVentasConPuntos, fetchVentasConReceta, fetchVentasPorProducto, fetchVentasRecetaStats, fetchVentasSinProducto, ventasBusquedaEsAproximada } from '@nucleo/data/ventas';
+import { clickable } from '@nucleo/utils/clickable';
+import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { hora12 } from '@nucleo/utils/hora';
 import TabInyecciones from './ventas/TabInyecciones';
-import { fechaTexto, horaSV, hoySV, relojSV } from '../utils/fecha';
+import { fechaTexto, horaSV, hoySV, relojSV } from '@nucleo/utils/fecha';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];

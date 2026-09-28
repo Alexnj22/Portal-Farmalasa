@@ -23,7 +23,7 @@ import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
 import { EmptyState } from '../../../components/common/StateViews';
 import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import {
   fetchProductPhotoMap,
   fetchProductsByPrincipioActivo,
@@ -31,18 +31,18 @@ import {
   MAX_PRODUCTOS_BUSQUEDA,
   fetchInventoryByProductIds,
   fetchFaltantesConStockEnOtraSala,
-} from '../../../data/inventory';
-import { insertVentaPerdida } from '../../../data/ventasPerdidas';
+} from '@nucleo/data/inventory';
+import { insertVentaPerdida } from '@nucleo/data/ventasPerdidas';
 import PortalInput from '../../../components/common/PortalInput';
-import { clickable } from '../../../utils/clickable';
+import { clickable } from '@nucleo/utils/clickable';
 import PhotoLightbox from '../../../components/common/PhotoLightbox';
 import LiquidSelect from '../../../components/common/LiquidSelect';
 import LiquidTooltip from '../../../components/common/LiquidTooltip';
-import { unidadesDe, sumaUnidades } from '../../../utils/unidadesInventario';
+import { unidadesDe, sumaUnidades } from '@nucleo/utils/unidadesInventario';
 import SearchInput from '../../../components/common/SearchInput';
 import LanzadorSolicitud, { HerramientasModal } from '../LanzadorSolicitud';
 import { Carril, FranjaVacia } from '../InstrumentoBaldosa';
-import { useComposicionTraslado } from '../../../store/composicionTraslado';
+import { useComposicionTraslado } from '@nucleo/store/composicionTraslado';
 /* El formulario de pedir a otra sala se baja al APRETAR «Solicitar», no al
  * entrar al Inicio.
  *
@@ -58,8 +58,8 @@ import { useComposicionTraslado } from '../../../store/composicionTraslado';
  * la vista. Del otro lado ya se abría así. */
 const PedirTrasladoModal = lazy(() => import('../PedirTrasladoModal'));
 import { ERP_BRANCH_MAP, BRANCH_ORDER, MI_ERP_POR_BRANCH } from './salas';
-import { fechaTexto } from '../../../utils/fecha';
-import { buscarEnSrs } from '../../../data/srs';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { buscarEnSrs } from '@nucleo/data/srs';
 
 // Desde cuántas letras se sale a preguntar. Con una sola, el buscador pedía
 // 16,722 filas —lo que empareja con «a»— y el navegador se quedaba pintando.

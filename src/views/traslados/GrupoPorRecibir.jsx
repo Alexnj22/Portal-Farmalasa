@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Loader2, PackageCheck } from 'lucide-react';
 import Button from '../../components/common/Button';
-import { recibirTraslado } from '../../data/traslados';
+import { recibirTraslado } from '@nucleo/data/traslados';
 
 // Las hermanas de una misma solicitud, juntas.
 //

@@ -8,8 +8,8 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import { ListaDePuntos } from './PuntosDeLimpieza';
-import { fueraDeRango, registrarRonda, rotularRango } from '../../data/bitacoras';
-import { rango12 } from '../../utils/hora';
+import { fueraDeRango, registrarRonda, rotularRango } from '@nucleo/data/bitacoras';
+import { rango12 } from '@nucleo/utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Pasar la ronda — la vuelta entera en una pantalla.

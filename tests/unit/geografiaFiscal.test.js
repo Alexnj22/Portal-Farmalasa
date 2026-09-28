@@ -19,9 +19,9 @@ import { describe, it, expect } from 'vitest';
 import {
     DEPARTAMENTOS, municipiosDe, distritosDe, departamentoDeMunicipio,
     canonDepartamento, canonMunicipio, canonDistrito, conciliarGeo, normalizarGeo,
-} from '../../src/data/elSalvadorGeo';
-import { ivaDelDte } from '../../src/utils/dteIva';
-import { DEPARTAMENTOS_SV, departamentoLabel } from '../../src/utils/svCatalogs';
+} from '@nucleo/data/elSalvadorGeo';
+import { ivaDelDte } from '@nucleo/utils/dteIva';
+import { DEPARTAMENTOS_SV, departamentoLabel } from '@nucleo/utils/svCatalogs';
 
 describe('los tres niveles', () => {
     it('son 14 departamentos y 44 municipios', () => {

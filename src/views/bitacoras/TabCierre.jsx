@@ -6,13 +6,13 @@ import Notice from '../../components/common/Notice';
 import PeriodStepper from '../../components/common/PeriodStepper';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { LoadingState } from '../../components/common/StateViews';
-import { useAuth } from '../../context/AuthContext';
-import { cerrarMes, correrPeriodo, fetchCierres, fetchLibroPendientes, fetchMesImpreso, fetchResumenMes, periodoDe, reabrirMes } from '../../data/bitacoras';
-import { fechaTexto, hoySV } from '../../utils/fecha';
-import { registrarEgreso } from '../../data/egreso';
-import { imprimirMesDeBitacoras } from '../../utils/bitacoraPrint';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { cerrarMes, correrPeriodo, fetchCierres, fetchLibroPendientes, fetchMesImpreso, fetchResumenMes, periodoDe, reabrirMes } from '@nucleo/data/bitacoras';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { registrarEgreso } from '@nucleo/data/egreso';
+import { imprimirMesDeBitacoras } from '@nucleo/utils/bitacoraPrint';
 import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
-import { logoComoDataUrl, LOGO_DE_LA_EMPRESA } from '../../utils/marcaDeLaSala';
+import { logoComoDataUrl, LOGO_DE_LA_EMPRESA } from '@nucleo/utils/marcaDeLaSala';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El cierre de mes del regente.

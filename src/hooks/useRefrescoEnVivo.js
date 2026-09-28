@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '../plataforma/cicloDeVida';
+import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '@plataforma/cicloDeVida';
 
 /**
  * Que una pantalla de trabajo compartido se ponga al día sola.

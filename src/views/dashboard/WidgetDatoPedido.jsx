@@ -5,9 +5,9 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { useToastStore } from '../../store/toastStore';
-import { fetchDatosPedidos, responderDatoPedido } from '../../data/datosPedidos';
-import { fechaTexto } from '../../utils/fecha';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { fetchDatosPedidos, responderDatoPedido } from '@nucleo/data/datosPedidos';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Lo que el portal le PIDE a la sala para poder terminar un documento.

@@ -5,8 +5,8 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
-import { corregirLectura, registrarLectura, rotularRango } from '../../data/bitacoras';
-import { rango12 } from '../../utils/hora';
+import { corregirLectura, registrarLectura, rotularRango } from '@nucleo/data/bitacoras';
+import { rango12 } from '@nucleo/utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Anotar —o corregir— una lectura.

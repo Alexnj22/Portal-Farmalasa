@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     CATEGORIAS_DOCUMENTO, TERMINATION_REASONS, DISABILITY_TYPES,
     categoriaDeDocumento, tipoDeIncapacidad, opcionesDeCatalogo, SIN_ASIGNAR,
-} from '../../src/data/constants';
+} from '@nucleo/data/constants';
 
 // Estos dos catálogos guardaban el RÓTULO como valor (`value === label`), así
 // que corregirle una mayúscula desincronizaba lo guardado de lo que el código

@@ -6924,7 +6924,7 @@ organigrama».
 
 ### 33.6 El mapa de precarga es el sexto nombre, y falla en silencio
 
-`IMPORTADOR_POR_RUTA` (`src/constants/routeImporters.js`) mapea el primer
+`IMPORTADOR_POR_RUTA` (`src/routeImporters.js`) mapea el primer
 segmento de la ruta a su vista, para empezar a bajar el módulo cuando el mouse
 pasa por el menú. **Su modo de falla es el peor de todos: no rompe nada.** Si la
 clave no está, `prefetchRuta` no encuentra nada y no hace nada — la vista carga

@@ -10,9 +10,9 @@
 //     mouse sin que lo detectara el build, el lint ni ningún gate.
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { fetchAllRows } from '../../src/utils/supabaseUtils';
-import { saveDraft, loadDraft, clearDraft } from '../../src/utils/draftUtils';
-import { clickable } from '../../src/utils/clickable';
+import { fetchAllRows } from '@nucleo/utils/supabaseUtils';
+import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
+import { clickable } from '@nucleo/utils/clickable';
 
 describe('paginar hasta agotar la consulta', () => {
     /** Una consulta falsa con `n` filas, que responde por rangos como PostgREST. */

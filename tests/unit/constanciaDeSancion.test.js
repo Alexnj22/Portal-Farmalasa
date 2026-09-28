@@ -7,8 +7,8 @@
  * juez lo mira.
  */
 import { describe, it, expect } from 'vitest';
-import { definicionDeLaConstancia, nombreDeLaConstancia } from '../../src/utils/constanciaDeSancion';
-import { EMPRESA } from '../../src/constants/empresa';
+import { definicionDeLaConstancia, nombreDeLaConstancia } from '@nucleo/utils/constanciaDeSancion';
+import { EMPRESA } from '@nucleo/constants/empresa';
 
 /** Todo el texto del documento, en una sola cadena. */
 function textoDe(nodo, out = []) {

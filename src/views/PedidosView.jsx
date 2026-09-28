@@ -1,10 +1,10 @@
 import React, { lazy, Suspense } from 'react';
-import { useBusqueda } from '../hooks/useBusqueda';
+import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { useSearchParams } from 'react-router-dom';
 import { ClipboardList, Loader2, Settings2, BarChart2, Package, Truck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
-import { useAuth }     from '../context/AuthContext';
+import { useAuth }     from '@nucleo/context/AuthContext';
 
 // ── Cada pestaña se baja al abrirla, no al entrar (2026-08-19) ─────────────
 //

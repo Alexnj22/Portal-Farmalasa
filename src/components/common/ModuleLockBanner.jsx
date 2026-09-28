@@ -4,12 +4,12 @@ import { Wrench, Unlock } from 'lucide-react';
 import Badge from './Badge';
 import Button from './Button';
 import ConfirmModal from './ConfirmModal';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
-import { unlockModule } from '../../data/moduleLocks';
-import { MODULE_MAP, moduleKeyForPath } from '../../constants/moduleMap';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { hora12 } from '../../utils/hora';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { unlockModule } from '@nucleo/data/moduleLocks';
+import { MODULE_MAP, moduleKeyForPath } from '@nucleo/constants/moduleMap';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { hora12 } from '@nucleo/utils/hora';
 
 /**
  * El aviso de "este módulo está en mantenimiento", en el ENCABEZADO.

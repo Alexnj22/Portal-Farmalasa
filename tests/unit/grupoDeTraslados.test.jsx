@@ -25,7 +25,7 @@ import { render, screen, act, fireEvent } from '@testing-library/react';
 
 const recibirTraslado = vi.fn(async () => ({ ok: true }));
 
-vi.mock('../../src/data/traslados', () => ({
+vi.mock('@nucleo/data/traslados', () => ({
     recibirTraslado: (...a) => recibirTraslado(...a),
 }));
 

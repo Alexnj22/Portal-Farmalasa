@@ -2,10 +2,10 @@ import React, { useMemo } from 'react';
 import Button from './Button';
 import Badge from './Badge';
 import { Eye, FolderOpen } from 'lucide-react';
-import { openStoredFile } from '../../utils/storageFiles';
-import { getExpiryBadge, getExpiringDocuments } from '../../utils/documentExpiry';
+import { openStoredFile } from '@nucleo/utils/storageFiles';
+import { getExpiryBadge, getExpiringDocuments } from '@nucleo/utils/documentExpiry';
 import { nombreDeDocumento, iconoDeCategoria, tinteDeCategoria } from './catalogos/documentos';
-import { fechaTexto } from '../../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 
 const DocumentRow = ({ doc }) => {

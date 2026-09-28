@@ -36,14 +36,14 @@ const renglon = (nombre, clave) => ({
 
 describe('la composición de un traslado', () => {
     it('vuelve entera después de recargar', async () => {
-        const { useComposicionTraslado } = await import('../../src/store/composicionTraslado');
+        const { useComposicionTraslado } = await import('@nucleo/store/composicionTraslado');
         useComposicionTraslado.getState().agregar(renglon('EUTIROX 100', 's1'));
         useComposicionTraslado.getState().agregar(renglon('EUTIROX 100', 's2'));
         useComposicionTraslado.getState().setCausa('faltante de sala');
 
         // La recarga: el módulo se evalúa de nuevo y el store nace otra vez.
         vi.resetModules();
-        const recargado = await import('../../src/store/composicionTraslado');
+        const recargado = await import('@nucleo/store/composicionTraslado');
         const s = recargado.useComposicionTraslado.getState();
 
         expect(s.renglones).toHaveLength(2);
@@ -52,7 +52,7 @@ describe('la composición de un traslado', () => {
     });
 
     it('al enviar se limpia, y la recarga NO la resucita', async () => {
-        const { useComposicionTraslado } = await import('../../src/store/composicionTraslado');
+        const { useComposicionTraslado } = await import('@nucleo/store/composicionTraslado');
         useComposicionTraslado.getState().agregar(renglon('EUTIROX 100', 's1'));
         // `limpiar` es lo que corre al mandar la solicitud: ahí deja de ser
         // borrador. Si el guardado sobreviviera a esto, la próxima vez que
@@ -60,19 +60,19 @@ describe('la composición de un traslado', () => {
         useComposicionTraslado.getState().limpiar();
 
         vi.resetModules();
-        const recargado = await import('../../src/store/composicionTraslado');
+        const recargado = await import('@nucleo/store/composicionTraslado');
         expect(recargado.useComposicionTraslado.getState().renglones).toEqual([]);
         expect(recargado.useComposicionTraslado.getState().causa).toBe('');
     });
 
     it('quitar un renglón también se guarda', async () => {
-        const { useComposicionTraslado } = await import('../../src/store/composicionTraslado');
+        const { useComposicionTraslado } = await import('@nucleo/store/composicionTraslado');
         useComposicionTraslado.getState().agregar(renglon('A', 's1'));
         useComposicionTraslado.getState().agregar(renglon('B', 's2'));
         useComposicionTraslado.getState().quitar(0);
 
         vi.resetModules();
-        const recargado = await import('../../src/store/composicionTraslado');
+        const recargado = await import('@nucleo/store/composicionTraslado');
         const s = recargado.useComposicionTraslado.getState();
         expect(s.renglones).toHaveLength(1);
         expect(s.renglones[0].clave).toBe('s2');
@@ -86,7 +86,7 @@ describe('la composición de un traslado', () => {
             setItem: () => { throw new Error('sin storage'); },
             removeItem: () => { throw new Error('sin storage'); },
         });
-        const { useComposicionTraslado } = await import('../../src/store/composicionTraslado');
+        const { useComposicionTraslado } = await import('@nucleo/store/composicionTraslado');
         expect(useComposicionTraslado.getState().renglones).toEqual([]);
         expect(() => useComposicionTraslado.getState().agregar(renglon('A', 's1'))).not.toThrow();
         expect(useComposicionTraslado.getState().renglones).toHaveLength(1);

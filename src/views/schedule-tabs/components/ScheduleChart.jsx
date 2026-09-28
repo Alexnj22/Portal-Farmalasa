@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import Button from '../../../components/common/Button';
 import { TrendingUp, ChevronLeft, BarChart2, Maximize2 } from 'lucide-react';
 import SegmentedControl from '../../../components/common/SegmentedControl';
-import { clickable } from '../../../utils/clickable';
+import { clickable } from '@nucleo/utils/clickable';
 
 const ScheduleChart = ({
     chartTitle,

@@ -16,9 +16,9 @@
 // nadie tenía que hacer.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { hoySV, sumarDias as correrDia } from '../../src/utils/fecha';
+import { hoySV, sumarDias as correrDia } from '@nucleo/utils/fecha';
 import { periodoDe, correrPeriodo, pendientesDelDia, rotularRango, soloLimpieza, TIPO_AREA }
-    from '../../src/data/bitacoras';
+    from '@nucleo/data/bitacoras';
 
 describe('hoy en El Salvador', () => {
     afterEach(() => vi.useRealTimers());

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { tokenMatch } from '../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { BookOpen, CalendarCheck, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -13,13 +13,13 @@ import TabHoy from './bitacoras/TabHoy';
 import TabBajoReceta from './bitacoras/TabBajoReceta';
 import TabCierre from './bitacoras/TabCierre';
 import TabConfiguracion from './bitacoras/TabConfiguracion';
-import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import {
     CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA, LIBROS,
     fetchBitacoraDia, fetchLibro, pendientesDelDia, periodoDe,
-} from '../data/bitacoras';
-import { fechaTexto, hoySV, sumarDias, ultimoDiaDelMes } from '../utils/fecha';
+} from '@nucleo/data/bitacoras';
+import { fechaTexto, hoySV, sumarDias, ultimoDiaDelMes } from '@nucleo/utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Bitácoras — los registros que exige la Superintendencia de Regulación

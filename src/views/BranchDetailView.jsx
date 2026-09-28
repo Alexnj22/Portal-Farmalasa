@@ -5,8 +5,8 @@ import {
     MapPin, Users, Monitor, Clock, Phone, CalendarClock, Building2, ShieldCheck, Briefcase, Pencil,
     Scale, Zap, ChevronRight, X, SlidersHorizontal, CircleUserRound, FolderOpen, ArrowLeft
 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { formatTime12h } from '../utils/helpers';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { formatTime12h } from '@nucleo/utils/helpers';
 import { WEEK_DAYS } from '../components/common/catalogos/constantes';
 
 import TabHistory from './branch-tabs/TabHistory';
@@ -15,10 +15,10 @@ import TabExpenses from './branch-tabs/TabExpenses';
 import TabStaff from './branch-tabs/TabStaff';
 
 import GlassViewLayout from '../components/GlassViewLayout';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
-import { fechaTexto } from '../utils/fecha';
+import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL

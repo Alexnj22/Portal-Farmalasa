@@ -2,11 +2,11 @@ import React, { useMemo, useEffect, useState } from 'react';
 import PortalInput from '../common/PortalInput';
 import Button from '../common/Button';
 import { Clock, CreditCard, CalendarOff } from 'lucide-react';
-import { calcPayrollEntry } from '../../store/slices/payrollSlice';
-import { fetchOvertimeBankRows } from '../../data/payroll';
+import { calcPayrollEntry } from '@nucleo/store/slices/payrollSlice';
+import { fetchOvertimeBankRows } from '@nucleo/data/payroll';
 import NocturnalLegalInfo from '../common/NocturnalLegalInfo';
-import { formatMoney } from '../../utils/formatNumber';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));

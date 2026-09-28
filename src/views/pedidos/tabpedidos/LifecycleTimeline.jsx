@@ -3,10 +3,10 @@
 // its pause badge, shown inside each expanded pedido card.
 import React from 'react';
 import { Pause } from 'lucide-react';
-import { fmtMin, elapsed, fmtHM } from '../../../utils/tableroDePedidos';
+import { fmtMin, elapsed, fmtHM } from '@nucleo/utils/tableroDePedidos';
 import Badge from '../../../components/common/Badge';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
-import { shortEmployeeName } from '../../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 // El ancho de cada paso del carril. Eran 48px y ninguno de los rótulos entraba
 // —«Confirmado» mide ~52px y la hora ~55px—, así que el texto se salía de su

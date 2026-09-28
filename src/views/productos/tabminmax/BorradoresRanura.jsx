@@ -4,7 +4,7 @@ import { ChevronDown, EyeOff, Filter, GitCompare, Loader2, Trash2, Upload, X } f
 import TabBarAction from '../../../components/common/TabBarAction';
 import LiquidTooltip from '../../../components/common/LiquidTooltip';
 import useAnclaje from '../../../plataforma/useAnclaje';
-import useLayoutCompacto from '../../../hooks/useLayoutCompacto';
+import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 
 /**
  * BorradoresRanura — los borradores de MIN·MAX, dentro de la píldora de filtros.

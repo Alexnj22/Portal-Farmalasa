@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { esAtajoDePegar, esPegadoDeUnaPersona, VENTANA_ATAJO_MS } from '../../src/utils/pegadoManual.js';
+import { esAtajoDePegar, esPegadoDeUnaPersona, VENTANA_ATAJO_MS } from '@nucleo/utils/pegadoManual.js';
 
 // Esta regla decide si el login deja pasar un pegado. Se equivocó dos veces en
 // producción el 2026-08-16 y las dos veces el síntoma fue el mismo: el usuario

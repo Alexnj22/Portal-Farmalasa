@@ -120,7 +120,7 @@ describe('gate:rutas', () => {
         // perdió la precarga de 19 rutas al renombrarlas, y así `cortes` estuvo
         // años sin precargarse figurando como `cortes_caja`.
         const pre = path.join(tmp, 'routeImporters.js');
-        fs.writeFileSync(pre, fs.readFileSync(path.join(RAIZ, 'src/constants/routeImporters.js'), 'utf8')
+        fs.writeFileSync(pre, fs.readFileSync(path.join(RAIZ, 'src/routeImporters.js'), 'utf8')
             .replace("'bitacoras': IMPORTADORES.BitacorasView,", ''));
         const app = path.join(tmp, 'App-precarga.jsx');
         fs.writeFileSync(app, fs.readFileSync(APP_REAL, 'utf8'));

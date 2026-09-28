@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '../plataforma/cicloDeVida';
+import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '@plataforma/cicloDeVida';
 
 /**
  * Volver a leer cuando la pestaña vuelve a estar visible.

@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { acreditacionesDe, pendientesPrevisionales, ACREDITACIONES,
-    tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion, acreditacionesProvisionales } from '../../src/utils/acreditaciones';
+    tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion, acreditacionesProvisionales } from '@nucleo/utils/acreditaciones';
 
 const ids = (ctx) => acreditacionesDe(ctx).map(a => a.id);
 

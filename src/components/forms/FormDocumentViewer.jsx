@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Skeleton } from '../common/StateViews';
 import { Download, FileText, Loader2 } from 'lucide-react';
-import { getSignedFileUrl } from '../../utils/storageFiles';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 
 const FormDocumentViewer = ({ formData }) => {
     const { url: storedUrl, title } = formData || {};

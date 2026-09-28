@@ -8,16 +8,16 @@ import Notice from '../../components/common/Notice';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import EsperaDeCarne from '../../components/common/EsperaDeCarne';
 import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
-import { fetchTrasladoPorCodigo, fetchTrasladoParaImprimir } from '../../data/traslados';
+import { fetchTrasladoPorCodigo, fetchTrasladoParaImprimir } from '@nucleo/data/traslados';
 import {
     fetchRetiroAbierto, fetchPendientesEnSala, cargarBulto, firmarEntregaConCarne,
     soltarBulto, cerrarRetiro, DIAS_PARA_ALARMA,
-} from '../../data/retiros';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { buscadorDePersonas } from '../../utils/movimientoTexto';
-import { reimprimirTicketDeTraslado } from '../../utils/imprimirTraslado';
+} from '@nucleo/data/retiros';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import { reimprimirTicketDeTraslado } from '@nucleo/utils/imprimirTraslado';
 import LecturaQueNoEntro from './LecturaQueNoEntro';
 
 /* La bitácora de la custodia (cargar, firmar, soltar, cerrar) la anotan las

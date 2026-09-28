@@ -5,10 +5,10 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
-import { useToastStore } from '../../store/toastStore';
-import { guardarMetaManual, fetchMetasRows } from '../../data/metas';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA } from '../../utils/metasUtils';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { guardarMetaManual, fetchMetasRows } from '@nucleo/data/metas';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA } from '@nucleo/utils/metasUtils';
 
 const squircleClass = 'w-12 h-12 rounded-2xl bg-surface-card-hover border border-border-card shadow-sm flex items-center justify-center shrink-0';
 

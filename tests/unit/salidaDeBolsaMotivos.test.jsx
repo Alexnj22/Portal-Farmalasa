@@ -61,7 +61,7 @@ const TIPOS = [
       pide_receptor: false, entidad_la_dice_el_papel: false, activo: false },
 ];
 
-vi.mock('../../src/data/bolsas', () => ({
+vi.mock('@nucleo/data/bolsas', () => ({
     fetchTiposDeSalida: vi.fn(async () => TIPOS),
     fetchEntidadesDeSalida: vi.fn(async () => [
         { tipo: 'POS_PROMERICA', nombre: 'MONEYGRAM' },
@@ -83,8 +83,8 @@ vi.mock('../../src/components/common/EditorDeDocumento', () => ({
         <button type="button" onClick={() => onConfirm(file)}>preparar la foto</button>
     ),
 }));
-vi.mock('../../src/context/AuthContext', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
-vi.mock('../../src/store/toastStore', () => ({ useToastStore: () => vi.fn() }));
+vi.mock('@nucleo/context/AuthContext', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
+vi.mock('@nucleo/store/toastStore', () => ({ useToastStore: () => vi.fn() }));
 
 const SalidaDeBolsa = (await import('../../src/components/bolsas/SalidaDeBolsa')).default;
 

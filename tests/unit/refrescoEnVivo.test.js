@@ -6,7 +6,7 @@ import { renderHook, act } from '@testing-library/react';
  * quita al desmontar es una fuga que no da error — la vista se cierra y el
  * socket sigue trayendo avisos a un componente que ya no existe. */
 const canales = [];
-vi.mock('../../src/supabaseClient', () => ({
+vi.mock('@nucleo/supabaseClient', () => ({
     supabase: {
         channel: (topico) => {
             const c = { topico, handler: null, suscrito: false, quitado: false };
@@ -19,7 +19,7 @@ vi.mock('../../src/supabaseClient', () => ({
     },
 }));
 
-const { useRefrescoEnVivo } = await import('../../src/hooks/useRefrescoEnVivo');
+const { useRefrescoEnVivo } = await import('@nucleo/hooks/useRefrescoEnVivo');
 
 /** Un cambio en la tabla, como lo mandaría la base. */
 const avisoDeLaBase = () => act(() => { canales.at(-1).handler?.({}); });

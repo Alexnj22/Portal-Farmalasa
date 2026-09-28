@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
-import { tokenMatch } from '../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useSearchParams } from 'react-router-dom';
 import {
     AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
-import { unaSolaVez } from '../utils/unaSolaVez';
+import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
@@ -16,15 +16,15 @@ import FileField from '../components/common/FileField';
 import PortalInput from '../components/common/PortalInput';
 import IdentidadDeQuienRetira from '../components/bolsas/IdentidadDeQuienRetira';
 import AvatarConEstado from '../components/common/AvatarConEstado';
-import { shortEmployeeName } from '../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import PhotoLightbox from '../components/common/PhotoLightbox';
 import SearchInput from '../components/common/SearchInput';
 import StatCard from '../components/common/StatCard';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
-import { useToastStore } from '../store/toastStore';
-import useCerrarBolsa from '../hooks/useCerrarBolsa';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import useCerrarBolsa from '@nucleo/hooks/useCerrarBolsa';
 import useResolverCorte from '../components/cortes/useResolverCorte';
 import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, iniciarTurno,
@@ -33,15 +33,15 @@ import {
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion,
     subirComprobante, boletaYaEnCaja,
-} from '../data/bolsas';
+} from '@nucleo/data/bolsas';
 import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
 import MetaDelDia from '../components/cortes/MetaDelDia';
-import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '../data/cortes';
+import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '@nucleo/data/cortes';
 /* Los cobros de crédito son la TERCERA fuente de efectivo del día, junto con
  * el cajón y las bolsas. Viven en `creditos` porque el cobro se decide allá;
  * acá se miran porque el dinero entra por esta caja. */
-import { cobroEnEfectivo, fetchCobrosDelPortal } from '../data/creditos';
-import { conLaCuentaBuena, repartirPorCorte } from '../utils/cortesDiagnostico';
+import { cobroEnEfectivo, fetchCobrosDelPortal } from '@nucleo/data/creditos';
+import { conLaCuentaBuena, repartirPorCorte } from '@nucleo/utils/cortesDiagnostico';
 
 /* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
  * 29-ago): todo lo que mueve efectivo vive en la caja. Es el MISMO componente,
@@ -54,18 +54,18 @@ const SalidaDeBolsa = lazy(() => import('../components/bolsas/SalidaDeBolsa'));
  * mayoría de las visitas a esta pantalla no apartan nada. */
 const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
 import BonosPorPagar from '../components/caja/BonosPorPagar';
-import { construirComprobanteDeAbono } from '../utils/abonoTicket';
-import { construirComprobanteDeCorte } from '../utils/corteTicket';
-import { construirComprobanteDeMovimiento } from '../utils/movimientoTicket';
-import { conceptoDelPapel, sentidoDelPapel } from '../utils/conceptoDelPapel';
-import { choqueDeBoleta } from '../utils/boletaRepetida';
-import { conSigno, formatMoney } from '../utils/formatNumber';
-import { imprimirDocumento } from '../utils/imprimirDiferido';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { getSignedFileUrl } from '../utils/storageFiles';
-import { saldoDeBolsa } from '../utils/bolsasReparto';
-import { hora12 } from '../utils/hora';
-import { fechaTexto, hoySV } from '../utils/fecha';
+import { construirComprobanteDeAbono } from '@nucleo/utils/abonoTicket';
+import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
+import { construirComprobanteDeMovimiento } from '@nucleo/utils/movimientoTicket';
+import { conceptoDelPapel, sentidoDelPapel } from '@nucleo/utils/conceptoDelPapel';
+import { choqueDeBoleta } from '@nucleo/utils/boletaRepetida';
+import { conSigno, formatMoney } from '@nucleo/utils/formatNumber';
+import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 /**
  * Mi caja — el turno de esta sala, ahora.

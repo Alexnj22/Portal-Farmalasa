@@ -11,13 +11,13 @@ import { createPortal } from 'react-dom';
 import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import { useAuth } from '../../context/AuthContext';
-import { smartFilter } from '../../utils/searchUtils';
-import { hora12 } from '../../utils/hora';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { hora12 } from '@nucleo/utils/hora';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
-import { fechaTexto, hoySV } from '../../utils/fecha';
-import { formatMoney } from '../../utils/formatNumber';
-import { analizarHistorial } from '../../data/ia';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { analizarHistorial } from '@nucleo/data/ia';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS (Colores e Iconos dinámicos)

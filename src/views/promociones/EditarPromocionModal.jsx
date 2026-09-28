@@ -14,12 +14,12 @@ import {
     fetchLaboratoriosConProductos, agregarRenglonesAPromocion,
     editarRenglon, editarTarifaRenglon, extenderRenglon,
     quitarRenglon, borrarPromocion, fetchResumenDePromocion, ajustarResumenPromocion,
-} from '../../data/promociones';
-import { guardarDescuento, sincronizarProductosDelDescuento } from '../../data/descuentos';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useStaffStore } from '../../store/staffStore';
-import { SALAS_VENTA } from '../../utils/metasUtils';
-import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion } from '../../utils/promocionesUtils';
+} from '@nucleo/data/promociones';
+import { guardarDescuento, sincronizarProductosDelDescuento } from '@nucleo/data/descuentos';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
+import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion } from '@nucleo/utils/promocionesUtils';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import AgregarProductos from './AgregarProductos';
 import Campo from './Campo';

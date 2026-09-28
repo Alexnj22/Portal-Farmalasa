@@ -16,17 +16,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { haversineMeters, optimizeRoute, totalRoute, decodePolyline } =
-    await import('../../src/utils/routeOptimizer');
+    await import('@nucleo/utils/routeOptimizer');
 const { STAGE_CONFIG, COLOR_CLS, SUC_VARIANTE } =
     await import('../../src/views/pedidos/tabpedidos/constants');
-const { PAUSE_REASONS } = await import('../../src/constants/pedidos');
+const { PAUSE_REASONS } = await import('@nucleo/constants/pedidos');
 const { fetchProductPresentacionesForDispatch, fetchAllDispatchRules, fetchProductsWithLabPage } =
-    await import('../../src/data/dispatchRules');
+    await import('@nucleo/data/dispatchRules');
 const { fetchProductPreciosOptsForProducts, searchAvailableProducts, fetchLastDispatchInfo } =
-    await import('../../src/data/recepcion');
+    await import('@nucleo/data/recepcion');
 
 beforeEach(() => { vi.clearAllMocks(); espia.limpiar(); });
 

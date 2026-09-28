@@ -8,8 +8,8 @@
 // Salud 4 (28).
 
 import { describe, it, expect } from 'vitest';
-import { emparejarCobrosConMovimientos } from '../../src/utils/cortesDiagnostico';
-import { cobroEnEfectivo } from '../../src/data/creditos';
+import { emparejarCobrosConMovimientos } from '@nucleo/utils/cortesDiagnostico';
+import { cobroEnEfectivo } from '@nucleo/data/creditos';
 
 const emparejar = (m, c) => emparejarCobrosConMovimientos(m, c, cobroEnEfectivo);
 

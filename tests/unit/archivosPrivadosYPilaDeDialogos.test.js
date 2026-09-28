@@ -18,12 +18,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const createSignedUrls = vi.fn(async (paths) =>
     ({ data: paths.map(p => ({ signedUrl: `https://x.supabase.co/storage/v1/object/sign/${p}?token=T` })), error: null }));
-vi.mock('../../src/supabaseClient', () => ({
+vi.mock('@nucleo/supabaseClient', () => ({
     supabase: { storage: { from: () => ({ createSignedUrls: (...a) => createSignedUrls(...a) }) } },
 }));
 
 const { getStoragePathFromUrl, webpSignedUrl, signStorageUrls, signPhotosDeep, clearSignedUrlCache } =
-    await import('../../src/utils/storageFiles');
+    await import('@nucleo/utils/storageFiles');
 const { abrirDialogo } = await import('../../src/components/common/dialogosAbiertos');
 
 const PRIVADA = 'https://x.supabase.co/storage/v1/object/public/empleados/fotos/ana.png';

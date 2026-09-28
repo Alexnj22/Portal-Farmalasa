@@ -12,15 +12,15 @@ import PhotoLightbox from '../common/PhotoLightbox';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
-import { fetchTurnoDelCorte, subirEvidenciaDeDiferencia } from '../../data/cortes';
-import { getSignedFileUrl } from '../../utils/storageFiles';
-import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { repartirEnPartes, severidad } from '../../utils/cortesDiagnostico';
-import { formatMoney } from '../../utils/formatNumber';
-import { useAuth } from '../../context/AuthContext';
-import useResolverDiferencia from '../../hooks/useResolverDiferencia';
-import { fechaHora12 } from '../../utils/hora';
+import { fetchTurnoDelCorte, subirEvidenciaDeDiferencia } from '@nucleo/data/cortes';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { repartirEnPartes, severidad } from '@nucleo/utils/cortesDiagnostico';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { useAuth } from '@nucleo/context/AuthContext';
+import useResolverDiferencia from '@nucleo/hooks/useResolverDiferencia';
+import { fechaHora12 } from '@nucleo/utils/hora';
 
 /**
  * Qué se hizo con el faltante o el sobrante de un corte.

@@ -3,9 +3,9 @@ import { Ban, ShieldCheck } from 'lucide-react';
 import Button from '../common/Button';
 import ConfirmModal from '../common/ConfirmModal';
 import BotonCarneDePapel from './BotonCarneDePapel';
-import { fetchCarnesTemporales, anularCarneTemporal, carneVigente } from '../../data/carneTemporal';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { fetchCarnesTemporales, anularCarneTemporal, carneVigente } from '@nucleo/data/carneTemporal';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 /**
  * El carné de papel de una persona: imprimirlo, ver si tiene uno vivo y matarlo.

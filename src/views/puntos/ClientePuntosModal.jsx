@@ -32,11 +32,11 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { LoadingState } from '../../components/common/StateViews';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { formatMoney, formatQty } from '../../utils/formatNumber';
-import { fechaNumerica, fechaTexto } from '../../utils/fecha';
-import { fetchPuntosCliente, ajustarPuntos } from '../../data/puntos';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
+import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
+import { fetchPuntosCliente, ajustarPuntos } from '@nucleo/data/puntos';
 import CodigoDeAcceso from './CodigoDeAcceso';
 
 // `recharts` viaja en su chunk: el modal se abre sin esperarlo.

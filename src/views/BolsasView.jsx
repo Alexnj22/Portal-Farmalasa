@@ -8,12 +8,12 @@ import PeriodPicker from '../components/common/PeriodPicker';
 import PeriodStepper from '../components/common/PeriodStepper';
 import StatCard from '../components/common/StatCard';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '@nucleo/utils/periodo';
 import CircuitoDeBolsas from './bolsas/CircuitoDeBolsas';
 import { ETAPAS } from './bolsas/etapas';
-import { hoySV, sumarDias } from '../utils/fecha';
+import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 
 /**
  * Bolsas de efectivo — el dinero que la sala guarda al confirmar un corte,

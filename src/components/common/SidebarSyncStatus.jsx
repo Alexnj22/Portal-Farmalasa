@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Bell, BellOff, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { fetchInventorySyncLogRecent } from '../../data/inventory';
+import { fetchInventorySyncLogRecent } from '@nucleo/data/inventory';
 import { usePushSubscription } from '../../plataforma/usePushSubscription';
-import { useNowTick } from '../../hooks/useNowTick';
-import { useAuth } from '../../context/AuthContext';
-import { escucharCambios } from '../../data/tiempoReal';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { escucharCambios } from '@nucleo/data/tiempoReal';
 
 const WARN_MINS  = 8;
 const STALE_MINS = 15;

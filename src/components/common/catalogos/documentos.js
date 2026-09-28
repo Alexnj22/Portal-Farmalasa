@@ -20,9 +20,9 @@ import {
     ScrollText,
     Accessibility,
 } from 'lucide-react';
-import { nombreDelIconoDeCategoria } from '../../../utils/documentosDelExpediente';
+import { nombreDelIconoDeCategoria } from '@nucleo/utils/documentosDelExpediente';
 
-export * from '../../../utils/documentosDelExpediente';
+export * from '@nucleo/utils/documentosDelExpediente';
 
 const ICONOS = {
     Accessibility,

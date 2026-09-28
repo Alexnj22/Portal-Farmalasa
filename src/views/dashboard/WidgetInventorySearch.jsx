@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, lazy } from 'react';
 import { Package } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { fetchFaltantesConStockEnOtraSala } from '../../data/inventory';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { fetchFaltantesConStockEnOtraSala } from '@nucleo/data/inventory';
 import LanzadorSolicitud from './LanzadorSolicitud';
 import { Carril, FranjaVacia } from './InstrumentoBaldosa';
 import { ERP_BRANCH_MAP, BRANCH_ORDER, MI_ERP_POR_BRANCH } from './inventario/salas';

@@ -14,7 +14,7 @@
 //    le pide a alguien un trámite que no puede hacer.
 
 import { describe, it, expect } from 'vitest';
-import { marcaDeLaSala, logoDeLaSala, LOGO_DE_LA_EMPRESA, comoSeLlamaLaSede } from '../../src/utils/marcaDeLaSala';
+import { marcaDeLaSala, logoDeLaSala, LOGO_DE_LA_EMPRESA, comoSeLlamaLaSede } from '@nucleo/utils/marcaDeLaSala';
 import { definicionDelDocumento, BASICO_DEL_REGLAMENTO, paginaDelCarne, INDUCCION, orientacionPrevisional, nombreDelArchivo } from '../../src/plataforma/documentoDeBienvenida';
 
 const textoDe = (def) => JSON.stringify(def.content);

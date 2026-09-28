@@ -22,7 +22,7 @@ import { X } from 'lucide-react';
 import ModalShell from './ModalShell';
 import QrDeCaptura from './QrDeCaptura';
 import Button from './Button';
-import { enlaceDeCaptura } from '../../data/capturaDeFoto';
+import { enlaceDeCaptura } from '@nucleo/data/capturaDeFoto';
 
 /**
  * @param {{id: string, secreto: string, vence_el: string}} captura  la captura viva

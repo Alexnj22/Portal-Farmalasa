@@ -1,6 +1,6 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { Target } from 'lucide-react';
-import { fmtMoney } from '../../../utils/minmaxTabla';
+import { fmtMoney } from '@nucleo/utils/minmaxTabla';
 import StatCard from '../../../components/common/StatCard';
 
 /**

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import useBorrador from '../../hooks/useBorrador';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import {
     Wallet, AlertTriangle, Clock, CheckCircle2, Landmark, Ban, CalendarRange,
 } from 'lucide-react';
@@ -19,13 +19,13 @@ import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/Tabl
 import {
     fetchCuentasPorPagar, fetchDetalleProveedor, fetchPagos,
     registrarPago, aprobarPago, anularPago, guardarCondicionesProveedor,
-} from '../../data/cuentasPorPagar';
-import { formatMoney } from '../../utils/formatNumber';
-import { tokenMatch } from '../../utils/searchUtils';
-import { useAuth } from '../../context/AuthContext';
+} from '@nucleo/data/cuentasPorPagar';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { fechaNumerica, hoySV } from '../../utils/fecha';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 
 // Vista «Cuentas por pagar».
 //

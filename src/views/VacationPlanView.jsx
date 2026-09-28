@@ -13,9 +13,9 @@ import {
     Building2, ListFilter, Trash2, Sparkles, ShieldCheck, ArrowRight,
     MessageSquare, RefreshCw
 } from 'lucide-react';
-import { useStaffStore } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
-import { useToastStore } from '../store/toastStore';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -23,12 +23,12 @@ import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 import TimePicker12 from '../components/common/TimePicker12';
-import { smartFilter } from '../utils/searchUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import PortalTextarea from '../components/common/PortalTextarea';
-import { shortEmployeeName } from '../utils/nameUtils';
-import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
-import { hora12 } from '../utils/hora';
-import { diasEntre, fechaTexto } from '../utils/fecha';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
+import { hora12 } from '@nucleo/utils/hora';
+import { diasEntre, fechaTexto } from '@nucleo/utils/fecha';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' }) : '—';

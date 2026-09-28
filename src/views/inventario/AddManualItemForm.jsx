@@ -7,13 +7,13 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { Campo, CajaFecha } from './camposDeConteo';
 import {
     searchActiveProductsForConteo, fetchProductPresentacionesForConteo,
     fetchErpSucursalIdsForBranch, fetchInventoryLotesForProduct,
-} from '../../data/conteoInventario';
+} from '@nucleo/data/conteoInventario';
 
 // Mismo motivo que en la vista: `@zxing` sólo hace falta al tocar «Escanear», y
 // este formulario ya viaja diferido. Estático lo volvería a meter en el paquete

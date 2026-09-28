@@ -16,8 +16,8 @@ import {
     CLASIFICACION_OPTIONS, SECTOR_OPTIONS, TIPO_CG_TODOS, DEDUCIBLE_OPTIONS,
     ESTADO_CLASIF, tiposCostoGasto, clasificacionLabel, sectorLabel,
     tipoCostoGastoLabel, fmtMoneda,
-} from '../../src/utils/f07Catalogos';
-import { DTE_TYPE_LABELS, dteTypeLabel, dteAdmiteProveedor } from '../../src/utils/dteTypes';
+} from '@nucleo/utils/f07Catalogos';
+import { DTE_TYPE_LABELS, dteTypeLabel, dteAdmiteProveedor } from '@nucleo/utils/dteTypes';
 
 describe('la matriz Costo/Gasto del manual', () => {
     it('con Costo sólo los tipos 4 a 7; con Gasto sólo 1 a 3', () => {

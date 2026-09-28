@@ -17,7 +17,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
     daysUntilExpiry, getExpiryBadge, getExpiringDocuments,
     getNextAnnualidadCsspDueDate, DOC_EXPIRY_WARN_DAYS, DOC_EXPIRY_DANGER_DAYS,
-} from '../../src/utils/documentExpiry';
+} from '@nucleo/utils/documentExpiry';
 
 // Un martes cualquiera, a media mañana, para que ningún caso quede pegado a un
 // borde de día por accidente.

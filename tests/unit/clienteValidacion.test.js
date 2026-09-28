@@ -21,7 +21,7 @@ import { describe, it, expect } from 'vitest';
 import {
     esContribuyente, telefonoValido, duiValido, nitValido, nrcValido,
     correoValido, retencionValida, camposRequeridos, validarCliente,
-} from '../../src/utils/clienteValidacion';
+} from '@nucleo/utils/clienteValidacion';
 
 describe('teléfono', () => {
     it('cuenta DÍGITOS, no caracteres: el mismo número con o sin guiones vale', () => {

@@ -11,15 +11,15 @@ import Badge from '../../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
-import { useStaffStore } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { formatMoney } from '../../utils/formatNumber';
-import { formatearNit, formatearNrc } from '../../utils/nitUtils';
-import { tokenMatch } from '../../utils/searchUtils';
-import { exportCsv } from '../../utils/csvExport';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } from '../../data/libroComprasCompleto';
-import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '../../utils/fecha';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } from '@nucleo/data/libroComprasCompleto';
+import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Libro de compras COMPLETO — vista propia, no una pestaña de Libros IVA.

@@ -4,9 +4,9 @@ import { CalendarClock, History, X, Check } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import TimePicker12 from '../../components/common/TimePicker12';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { hora12, fechaHora12 } from '../../utils/hora';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 
 function fmtEntradaParts(iso) {
     if (!iso) return { date: '', time: '' };

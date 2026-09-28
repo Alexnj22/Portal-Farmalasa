@@ -8,7 +8,7 @@ import {
     iniciarVigilanciaDeVersion,
     posponerAviso,
     suscribirVersionNueva,
-} from '../../utils/versionNueva';
+} from '@nucleo/utils/versionNueva';
 
 /**
  * «Hay una versión nueva» — el aviso que reemplazó a la recarga sola.

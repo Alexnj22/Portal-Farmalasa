@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento } from '../../src/utils/fotoDocumento';
+import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento } from '@nucleo/utils/fotoDocumento';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las medidas de la foto de una receta.

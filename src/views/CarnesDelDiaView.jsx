@@ -7,12 +7,12 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import BotonCarneDePapel from '../components/personal/BotonCarneDePapel';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useToastStore } from '../store/toastStore';
-import { fetchCarnesVigentes, anularCarneTemporal } from '../data/carneTemporal';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { tokenMatch } from '../utils/searchUtils';
-import { shortEmployeeName } from '../utils/nameUtils';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { fetchCarnesVigentes, anularCarneTemporal } from '@nucleo/data/carneTemporal';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 const VACIO = [];
 const SIN_SUCURSAL = 'Sin sucursal';

@@ -26,12 +26,12 @@ import { render, screen } from '@testing-library/react';
 // El padrón: quien recibe tiene su ficha con foto firmada. Sin el store, el
 // avatar cae a la inicial — que es exactamente el silencio que la migración de
 // `get_cortes_resolutores` vino a cerrar, no lo que esta prueba mide.
-vi.mock('../../src/store/staffStore', () => ({
+vi.mock('@nucleo/store/staffStore', () => ({
     useStaffStore: (selector) => selector({ employees: [], historialCompleto: true }),
 }));
 
 const EntregaDelTurno = (await import('../../src/components/cortes/EntregaDelTurno.jsx')).default;
-const { cadenaDeEntregas } = await import('../../src/utils/cortesDiagnostico.js');
+const { cadenaDeEntregas } = await import('@nucleo/utils/cortesDiagnostico.js');
 
 const CRISTIAN = { id: 'c-1', name: 'Cristian Humberto' };
 const KAREN = { id: 'k-1', name: 'Karen Figueroa' };

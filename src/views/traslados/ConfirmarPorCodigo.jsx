@@ -6,12 +6,12 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
 import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
-import { fetchTrasladoPorCodigo, recibirTraslado } from '../../data/traslados';
+import { fetchTrasladoPorCodigo, recibirTraslado } from '@nucleo/data/traslados';
 import DeclararFaltantes from './DeclararFaltantes';
-import { declararFaltanteTardio, HORAS_PARA_DECLARAR_TARDE } from '../../data/faltantes';
+import { declararFaltanteTardio, HORAS_PARA_DECLARAR_TARDE } from '@nucleo/data/faltantes';
 import { FilaEnvioPorDecidir } from './FilasEnvio';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fmtCuando } from '../../utils/trasladoTexto';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fmtCuando } from '@nucleo/utils/trasladoTexto';
 import LecturaQueNoEntro from './LecturaQueNoEntro';
 
 // La cámara pesa y sólo hace falta si alguien la pide: el camino normal es el

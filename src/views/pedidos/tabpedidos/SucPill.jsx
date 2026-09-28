@@ -1,6 +1,6 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { Building2 } from 'lucide-react';
-import { ERP_NAMES } from '../../../constants/erp';
+import { ERP_NAMES } from '@nucleo/constants/erp';
 import { SUC_VARIANTE } from './constants';
 import Badge from '../../../components/common/Badge';
 

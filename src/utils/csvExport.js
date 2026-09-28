@@ -19,7 +19,7 @@
 // libro fiscal, una fila en blanco es una fila del libro.
 
 import { registrarEgreso } from '../data/egreso';
-import { descargarArchivo } from '../plataforma/descargas';
+import { descargarArchivo } from '@plataforma/descargas';
 
 function escapeCell(value) {
     if (value == null) return '';

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { datosDeProductosSinVenta } from '../../src/utils/avisosDeOperacion';
-import { porQueDesde } from '../../src/utils/productosParados';
+import { datosDeProductosSinVenta } from '@nucleo/utils/avisosDeOperacion';
+import { porQueDesde } from '@nucleo/utils/productosParados';
 
 // El aviso semanal de productos sin venta (`avisar_productos_sin_venta`) y el
 // porqué de la fecha, que comparten la tarjeta y la pestaña «Stock retenido».

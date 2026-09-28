@@ -1,5 +1,5 @@
-import * as almacen from '../plataforma/almacen';
-import { svgDeCodigoDeBarras, ajustarAltoDelMarco, imprimirMarco as imprimirMarcoDelNavegador, imprimirHtmlSinVista, permisoDeRedLocal } from '../plataforma/impresion';
+import * as almacen from '@plataforma/almacen';
+import { svgDeCodigoDeBarras, ajustarAltoDelMarco, imprimirMarco as imprimirMarcoDelNavegador, imprimirHtmlSinVista, permisoDeRedLocal } from '@plataforma/impresion';
 // ─── Impresión en rollo (ticketera) ──────────────────────────────────────────
 //
 // El portal imprimía sólo en hoja: `pedidoPrint.js`, `conteoInventarioPrint.js`

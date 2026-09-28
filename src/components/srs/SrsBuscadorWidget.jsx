@@ -3,10 +3,10 @@ import Button from '../common/Button';
 import { Search, Loader2, ChevronLeft, ChevronRight, FlaskConical, Building2, Pill, X } from 'lucide-react';
 import Badge from '../common/Badge';
 import SearchInput from '../common/SearchInput';
-import { clickable } from '../../utils/clickable';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fechaTexto } from '../../utils/fecha';
-import { buscarEnSrs } from '../../data/srs';
+import { clickable } from '@nucleo/utils/clickable';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { buscarEnSrs } from '@nucleo/data/srs';
 
 
 // ── SrsBuscadorWidget ─────────────────────────────────────────────────────────

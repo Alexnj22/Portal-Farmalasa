@@ -35,9 +35,9 @@ import {
     Landmark,
     Archive,
 } from 'lucide-react';
-import { NOMBRE_DE_ICONO_POR_TIPO, nombreDelIconoDeTipo } from '../../../constants/tipoIconos';
+import { NOMBRE_DE_ICONO_POR_TIPO, nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
 
-export * from '../../../constants/tipoIconos';
+export * from '@nucleo/constants/tipoIconos';
 
 const ICONOS = {
     Archive,

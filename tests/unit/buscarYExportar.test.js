@@ -15,8 +15,8 @@
 //   sin salto final  el archivo termina en el último dato
 
 import { describe, it, expect } from 'vitest';
-import { normSearch, tokenMatch, likePattern } from '../../src/utils/searchUtils';
-import { buildCsvText } from '../../src/utils/csvExport';
+import { normSearch, tokenMatch, likePattern } from '@nucleo/utils/searchUtils';
+import { buildCsvText } from '@nucleo/utils/csvExport';
 
 describe('normalizar lo que se escribe y lo que se busca', () => {
     it('las tildes no cuentan', () => {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
     mesesRecientes, mesAnterior, rotuloMes, fmtVigencia, diasRestantes,
     estadoVisible, esLaboratorio,
-} from '../../src/utils/promocionesUtils';
+} from '@nucleo/utils/promocionesUtils';
 
 /**
  * Los meses de Promociones, anclados contra un reloj congelado.

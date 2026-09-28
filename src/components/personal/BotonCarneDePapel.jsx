@@ -2,11 +2,11 @@ import React, { useCallback, useState } from 'react';
 import { Printer } from 'lucide-react';
 import Button from '../common/Button';
 import ElegirSalaDeImpresion from './ElegirSalaDeImpresion';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { entregarCarneDePapel } from '../../utils/entregarCarneDePapel';
-import { fetchSalasConCaja } from '../../data/impresion';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { entregarCarneDePapel } from '@nucleo/utils/entregarCarneDePapel';
+import { fetchSalasConCaja } from '@nucleo/data/impresion';
 
 /**
  * Imprime un carné de papel del día para esa persona, **preguntando en qué sala

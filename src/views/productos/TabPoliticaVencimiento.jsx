@@ -3,9 +3,9 @@ import ListRow from '../../components/common/ListRow';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
-import { useAuth } from '../../context/AuthContext';
-import { tokenMatch } from '../../utils/searchUtils';
-import { useToastStore } from '../../store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { useToastStore } from '@nucleo/store/toastStore';
 import TablePagination from '../../components/common/TablePagination';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import ConfirmModal from '../../components/common/ConfirmModal';
@@ -16,9 +16,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     fetchLaboratoriosBasic, fetchProveedores, fetchSuppliersNames, insertProveedor,
     updateProveedor, deleteProveedor, fetchProductCountByLabDevolutivo, updateProductsMarkND,
-} from '../../data/laboratorios';
+} from '@nucleo/data/laboratorios';
 import PortalInput from '../../components/common/PortalInput';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 let rowIdSeq = 0;
 const nextRowId = () => `new-${Date.now()}-${rowIdSeq++}`;

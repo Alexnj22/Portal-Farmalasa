@@ -20,7 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
     esCarneDeDependiente, normalizarCarne, numeroDelCarne, porQueNoSirve,
-} from '../../src/utils/carneDeDependiente';
+} from '@nucleo/utils/carneDeDependiente';
 
 const REAL = 'https://expedientes.srs.gob.sv/carnets/dependientes/1758306680151';
 

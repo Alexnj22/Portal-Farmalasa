@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import AvisoVersionNueva from '../../src/components/common/AvisoVersionNueva';
-import { _reiniciarParaPruebas, marcarVersionNueva } from '../../src/utils/versionNueva';
+import { _reiniciarParaPruebas, marcarVersionNueva } from '@nucleo/utils/versionNueva';
 
 /**
  * El aviso que reemplazó a la recarga sola.

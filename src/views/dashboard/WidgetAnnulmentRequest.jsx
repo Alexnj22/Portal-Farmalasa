@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
-import { webpSignedUrl } from '../../utils/storageFiles';
+import { webpSignedUrl } from '@nucleo/utils/storageFiles';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
@@ -13,26 +13,26 @@ import {
 } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import SearchInput from '../../components/common/SearchInput';
-import { useStaffStore } from '../../store/staffStore';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import { HerramientasModal, PieModal } from './LanzadorSolicitud';
-import { useAuth } from '../../context/AuthContext';
-import { tokenMatch } from '../../utils/searchUtils';
-import { clickable } from '../../utils/clickable';
-import { formatMoney } from '../../utils/formatNumber';
-import { insertApprovalRequestSilent } from '../../data/requests';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { clickable } from '@nucleo/utils/clickable';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { insertApprovalRequestSilent } from '@nucleo/data/requests';
 import {
   fetchInvoiceItemsForInvoice, fetchBranchInvoicesRecent,
   searchBranchInvoices, WIDGET_INVOICE_PAGE,
-} from '../../data/facturacion';
-import { buscarClientes } from '../../data/customers';
+} from '@nucleo/data/facturacion';
+import { buscarClientes } from '@nucleo/data/customers';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
-import { salaConCajaAbierta } from '../../data/cortes';
+import { salaConCajaAbierta } from '@nucleo/data/cortes';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import ListRow from '../../components/common/ListRow';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { shortEmployeeName, employeeInitials } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 const REASONS = [
   'Devolución del cliente',

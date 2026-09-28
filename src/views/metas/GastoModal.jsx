@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import useBorrador from '../../hooks/useBorrador';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import { Receipt, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -8,11 +8,11 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
-import { useToastStore } from '../../store/toastStore';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { crearMetaGasto, previewMetaGasto } from '../../data/metas';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, ymLabelCorto } from '../../utils/metasUtils';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { crearMetaGasto, previewMetaGasto } from '@nucleo/data/metas';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ymHoySV, ymSumar, ymLabel, ymLabelCorto } from '@nucleo/utils/metasUtils';
 
 const squircleClass = 'w-12 h-12 rounded-2xl bg-surface-card-hover border border-border-card shadow-sm flex items-center justify-center shrink-0';
 

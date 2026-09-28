@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { ReceiptText, Loader2, Undo2, Store, CalendarRange, CircleSlash, CheckCircle2, Clock } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -12,10 +12,10 @@ import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
-import { fetchFacturasSalaPanel, soltarFactura, resumenRenglones } from '../../data/facturasSala';
-import { formatMoney } from '../../utils/formatNumber';
-import { useAuth } from '../../context/AuthContext';
-import { fechaNumerica, fechaTexto } from '../../utils/fecha';
+import { fetchFacturasSalaPanel, soltarFactura, resumenRenglones } from '@nucleo/data/facturasSala';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 
 // Vista «Facturas de Sala».
 //

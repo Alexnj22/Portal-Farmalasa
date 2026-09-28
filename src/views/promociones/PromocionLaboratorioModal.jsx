@@ -9,15 +9,15 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import { LoadingState } from '../../components/common/StateViews';
-import useBorrador from '../../hooks/useBorrador';
-import { useStaffStore } from '../../store/staffStore';
-import { SALAS_VENTA } from '../../utils/metasUtils';
+import useBorrador from '@nucleo/hooks/useBorrador';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import {
     crearPromocionLaboratorio, editarPromocionLaboratorio,
     fetchPromocionLaboratorio, fetchLaboratorios, fetchProveedoresDelSistema,
-} from '../../data/promociones';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fmtMoneda, mesesRecientes } from '../../utils/promocionesUtils';
+} from '@nucleo/data/promociones';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fmtMoneda, mesesRecientes } from '@nucleo/utils/promocionesUtils';
 import Campo from './Campo';
 
 const CLAVE_BORRADOR = 'promocion_laboratorio';

@@ -9,7 +9,7 @@ import {
     marcarVersionNueva,
     posponerAviso,
     revisarVersion,
-} from '../../src/utils/versionNueva';
+} from '@nucleo/utils/versionNueva';
 
 /**
  * El aviso de versión nueva — y sobre todo, la regresión que tiene que cazar.

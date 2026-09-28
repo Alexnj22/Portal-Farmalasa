@@ -30,9 +30,9 @@
  * nada es peor que pedir treinta segundos de trabajo.
  */
 import { DOCS } from '../utils/fotoDocumento';
-import { girarEsquinas, ordenarEsquinas } from '../plataforma/perspectiva';
-import { rectificarPapel, aArchivo } from '../plataforma/componerDocumento';
-import { acabadoPorDefecto } from '../plataforma/tratamientoDeFoto';
+import { girarEsquinas, ordenarEsquinas } from '@plataforma/perspectiva';
+import { rectificarPapel, aArchivo } from '@plataforma/componerDocumento';
+import { acabadoPorDefecto } from '@plataforma/tratamientoDeFoto';
 
 /** La foto, cargada como elemento para poder medirla y redibujarla. */
 function cargar(file) {

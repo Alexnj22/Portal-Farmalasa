@@ -18,19 +18,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchNotifications, markNotificationRead, markNotificationsReadBulk,
         deleteNotificationsByIds, deleteNotificationsBefore } =
-    await import('../../src/data/notifications');
+    await import('@nucleo/data/notifications');
 const { fetchPresentacionesMaestro, fetchProductosPorPresentacion } =
-    await import('../../src/data/presentaciones');
-const { fetchSyncHealthRecent, SYNC_HEALTH_DOMAINS } = await import('../../src/data/syncHealth');
-const { fetchOrphanObjects, updateOrphanObjectStatus } = await import('../../src/data/orphanObjects');
+    await import('@nucleo/data/presentaciones');
+const { fetchSyncHealthRecent, SYNC_HEALTH_DOMAINS } = await import('@nucleo/data/syncHealth');
+const { fetchOrphanObjects, updateOrphanObjectStatus } = await import('@nucleo/data/orphanObjects');
 const { fetchVentasPerdidas, fetchVentasPerdidasPendingCount, updateVentaPerdidaStatus } =
-    await import('../../src/data/ventasPerdidas');
+    await import('@nucleo/data/ventasPerdidas');
 const { fetchPayrollEntriesByPeriod, deletePendingPayrollEntries } =
-    await import('../../src/data/payroll');
+    await import('@nucleo/data/payroll');
 
 beforeEach(() => espia.limpiar());
 

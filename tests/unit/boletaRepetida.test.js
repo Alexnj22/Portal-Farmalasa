@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { choqueDeBoleta } from '../../src/utils/boletaRepetida';
+import { choqueDeBoleta } from '@nucleo/utils/boletaRepetida';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Ese número de boleta ya está anotado en la sala. ¿Y entonces?

@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 import Button from '../components/common/Button';
 import { LogOut } from 'lucide-react';
 
-import { useAuth } from '../context/AuthContext';
-import { useTimeClockEngine } from '../hooks/useTimeClockEngine';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useTimeClockEngine } from '@nucleo/hooks/useTimeClockEngine';
 
 import ConfirmModal from '../components/common/ConfirmModal';
 import OfflineBanner from '../components/common/OfflineBanner';
@@ -13,7 +13,7 @@ import EarlyExitForm from '../components/timeclock/EarlyExitForm';
 import KioskConfigModal from '../components/timeclock/KioskConfigModal';
 import IdleScanPanel from '../components/timeclock/IdleScanPanel';
 import SelfDeclareShiftPanel from '../components/timeclock/SelfDeclareShiftPanel';
-import { hora12ConSegundos } from '../utils/hora';
+import { hora12ConSegundos } from '@nucleo/utils/hora';
 
 const TimeClockView = ({ setView }) => {
   const { logout } = useAuth();

@@ -31,7 +31,7 @@ import useMediaQuery from '../../plataforma/useMediaQuery';
 import ModalShell from './ModalShell';
 import HojaMovil from './HojaMovil';
 import OjoDeTarjeta from './OjoDeTarjeta';
-import usePulsacionLarga from '../../hooks/usePulsacionLarga';
+import usePulsacionLarga from '@nucleo/hooks/usePulsacionLarga';
 import { HojaAccionesCtx } from './hojaDeAcciones';
 
 // `hideBelow` se armaba en runtime: `hidden ${hideBelow}:table-cell`. Tailwind

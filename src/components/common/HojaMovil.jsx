@@ -3,7 +3,7 @@ import AsaHoja from './AsaHoja';
 import { useArrastreHoja } from './arrastreHoja';
 import { EstadoDialogoCtx } from './estadoDialogo';
 import useMediaQuery from '../../plataforma/useMediaQuery';
-import { usePanelLateral } from '../../hooks/useLayoutCompacto';
+import { usePanelLateral } from '@nucleo/hooks/useLayoutCompacto';
 
 /**
  * HojaMovil — el CUERPO canónico de un modal en el teléfono.

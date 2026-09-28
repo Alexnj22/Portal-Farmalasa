@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import Button from '../common/Button';
 import { Clock, SkipForward, CheckCircle2 } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
     const [start, setStart] = useState('08:00');

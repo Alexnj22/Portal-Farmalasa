@@ -8,7 +8,7 @@
 // 1 y 2 de septiembre de 2026) y la remesa REM-1058 repartida en tres bolsas.
 
 import { describe, it, expect } from 'vitest';
-import { repartoDeUnaSalida } from '../../src/utils/cortesDiagnostico';
+import { repartoDeUnaSalida } from '@nucleo/utils/cortesDiagnostico';
 
 /** Una parte pagada desde una bolsa. `vale` es el `erp_movimiento_id` del
  *  renglón que la caja anotó, o `null` si esa bolsa ya estaba cerrada. */

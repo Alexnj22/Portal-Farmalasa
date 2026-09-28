@@ -25,15 +25,15 @@ import { render, cleanup, waitFor } from '@testing-library/react';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const rpc = vi.fn();
-vi.mock('../../src/supabaseClient', () => ({ supabase: { rpc: (...a) => rpc(...a) } }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: { rpc: (...a) => rpc(...a) } }));
 
 let estadoStore = {};
-vi.mock('../../src/store/staffStore', () => ({
+vi.mock('@nucleo/store/staffStore', () => ({
     useStaffStore: (selector) => selector(estadoStore),
 }));
 
 import AvatarConEstado from '../../src/components/common/AvatarConEstado';
-import { _limpiarCache } from '../../src/data/estadosDePersonas';
+import { _limpiarCache } from '@nucleo/data/estadosDePersonas';
 
 const AUSENTE_HOY = { id: 'e-1', name: 'Quien Despachó' };
 

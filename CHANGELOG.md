@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1080.0 — F7 paso 1 — el núcleo se importa por alias
+
+Sin cambios visibles: la compilación sale idéntica byte a byte. Las pantallas
+importan el núcleo por `@nucleo/…` y el núcleo pide la plataforma por
+`@plataforma/…` (1,939 importaciones en 526 archivos), para poder mudarlo a
+`packages/core` sin tocar ninguna pantalla. `routeImporters.js` pasa de
+`src/constants/` a `src/`. `npm run gate:alias` (también en el pre-commit)
+falla si una importación nueva cruza el borde por ruta relativa.
+
 ## v2.1079.2 — Metas: quién cambió cada meta, con foto y nombre
 
 Pedido del usuario: «el gerente debe ver las modificaciones, con foto y nombre».

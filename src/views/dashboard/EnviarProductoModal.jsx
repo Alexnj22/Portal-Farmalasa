@@ -10,18 +10,18 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { EmptyState } from '../../components/common/StateViews';
 import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
-import { useAuth } from '../../context/AuthContext';
-import { buscarInventarioGlobalV2, fetchExistenciasDeProductos, fetchUnidadDeDespacho } from '../../data/inventory';
-import { renglonCompleto, nombreDeDespacho } from '../../utils/unidadDeDespacho';
-import { fetchPresentaciones } from '../../data/inventoryMovements';
-import { enviarAOtraSala, envioNecesitaFoto, ERP_BODEGA, MAX_FOTOS_ENVIO, MOTIVOS_ENVIO, motivosEnvioPorDireccion, subirEvidenciaEnvio, TOPE_RENGLONES_ENVIO } from '../../data/envios';
-import { lotesEnUnidades, repartirPedido, sumaUnidades } from '../../utils/unidadesInventario';
-import { opcionesDePresentacion } from '../../utils/presentacion';
-import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
-import { clickable } from '../../utils/clickable';
-import { imprimirTicketDeTraslado } from '../../utils/imprimirTraslado';
-import { fechaTexto } from '../../utils/fecha';
-import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '../../constants/erp';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { buscarInventarioGlobalV2, fetchExistenciasDeProductos, fetchUnidadDeDespacho } from '@nucleo/data/inventory';
+import { renglonCompleto, nombreDeDespacho } from '@nucleo/utils/unidadDeDespacho';
+import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
+import { enviarAOtraSala, envioNecesitaFoto, ERP_BODEGA, MAX_FOTOS_ENVIO, MOTIVOS_ENVIO, motivosEnvioPorDireccion, subirEvidenciaEnvio, TOPE_RENGLONES_ENVIO } from '@nucleo/data/envios';
+import { lotesEnUnidades, repartirPedido, sumaUnidades } from '@nucleo/utils/unidadesInventario';
+import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
+import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
+import { clickable } from '@nucleo/utils/clickable';
+import { imprimirTicketDeTraslado } from '@nucleo/utils/imprimirTraslado';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '@nucleo/constants/erp';
 
 // Mandarle producto a otra sala sin que te lo pidan.
 //

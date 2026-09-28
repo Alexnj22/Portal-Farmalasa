@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { programarEn, TOPE_TIMEOUT_MS } from '../../src/utils/temporizadorLargo.js';
+import { programarEn, TOPE_TIMEOUT_MS } from '@nucleo/utils/temporizadorLargo.js';
 
 const DIA = 24 * 60 * 60 * 1000;
 

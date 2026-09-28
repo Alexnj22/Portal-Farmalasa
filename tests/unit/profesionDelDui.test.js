@@ -18,7 +18,7 @@
 //     acreditación profesional.
 
 import { describe, it, expect } from 'vitest';
-import { leerProfesion } from '../../src/utils/profesionDelDui';
+import { leerProfesion } from '@nucleo/utils/profesionDelDui';
 
 describe('leerProfesion', () => {
     it('expande el prefijo y conserva el resto ENTERO', () => {

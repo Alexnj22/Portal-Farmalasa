@@ -2,15 +2,15 @@ import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams } from "react-router-dom";
 import { usePestanaEnUrl } from './plataforma/usePestanaEnUrl';
 import { Loader2 } from "lucide-react";
-import { IMPORTADORES } from "./constants/routeImporters";
+import { IMPORTADORES } from "./routeImporters";
 
 // Contextos
-import { useAuth } from "./context/AuthContext";
-import { useStaffStore as useStaff } from "./store/staffStore";
-import { useToastStore } from "./store/toastStore";
-import { isMobileOrApp } from './utils/helpers';
-import { MODULE_MAP } from './constants/moduleMap';
-import { pantallaDeArranque, PANTALLA } from './utils/arranqueSesion';
+import { useAuth } from "@nucleo/context/AuthContext";
+import { useStaffStore as useStaff } from "@nucleo/store/staffStore";
+import { useToastStore } from "@nucleo/store/toastStore";
+import { isMobileOrApp } from '@nucleo/utils/helpers';
+import { MODULE_MAP } from '@nucleo/constants/moduleMap';
+import { pantallaDeArranque, PANTALLA } from '@nucleo/utils/arranqueSesion';
 import AlertModal from "./components/common/AlertModal";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import AvisoEntornoPruebas from "./components/common/AvisoEntornoPruebas";
@@ -34,7 +34,7 @@ const CapturaDeFotoView = lazy(() => import("./views/CapturaDeFotoView"));
 const MisPuntosView = lazy(() => import("./views/MisPuntosView"));
 import LiquidToast from './components/common/LiquidToast';
 import { LoadingState } from './components/common/StateViews';
-import { hoySV } from './utils/fecha';
+import { hoySV } from '@nucleo/utils/fecha';
 
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
 // empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.

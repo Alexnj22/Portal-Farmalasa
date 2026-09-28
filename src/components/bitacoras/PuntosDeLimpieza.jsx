@@ -2,7 +2,7 @@ import React from 'react';
 import { Minus, Plus, Sparkles } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
-import { PUNTOS_POR_AREA, TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos } from '../../data/bitacoras';
+import { PUNTOS_POR_AREA, TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos } from '@nucleo/data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los muebles que se limpian dentro de un área.

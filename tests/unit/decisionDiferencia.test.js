@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { turnoDe, esCargoDeSupervision } from '../../src/utils/decisionDiferencia';
+import { turnoDe, esCargoDeSupervision } from '@nucleo/utils/decisionDiferencia';
 
 // El circuito acordado con el usuario el 2026-08-17, sobre el pedido 116 de
 // La Popular: la propone la SALA, contesta BODEGA, si bodega contrapropone
@@ -77,7 +77,7 @@ describe('esCargoDeSupervision', () => {
 });
 
 // El corte que ordena la lista: arriba lo que me toca, abajo lo que espero.
-import { tengoAlgoQueHacer } from '../../src/utils/decisionDiferencia';
+import { tengoAlgoQueHacer } from '@nucleo/utils/decisionDiferencia';
 
 const SIN_MOVER  = { mueve: 'ninguno', cierra_con: 'llegada_sala' };
 const A_BODEGA   = { mueve: 'ninguno', cierra_con: 'llegada_bodega' };

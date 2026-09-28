@@ -5,7 +5,7 @@ import SegmentedControl from '../components/common/SegmentedControl';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
-import { tokenMatch } from '../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     Pencil, Mail, Phone, Shield,
     Clock, FileText, Paperclip,
@@ -15,15 +15,15 @@ import {
     KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope, ChevronLeft, ChevronRight,
     Copy, Printer
 } from 'lucide-react';
-import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
+import { REQUEST_TYPES, REQUEST_STATUS } from '@nucleo/store/slices/requestsSlice';
 import { EVENT_TYPES, WEEK_DAYS, SIN_ASIGNAR } from '../components/common/catalogos/constantes';
-import { formatDate, formatTime12h, getEffectiveStatus } from '../utils/helpers';
-import { useStaffStore } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
-import { useToastStore } from '../store/toastStore';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { fetchEmployeeApprovalRequestsDetail } from '../data/requests';
-import { fetchEmployeeTimeline, fetchCredenciales } from '../data/employees';
+import { formatDate, formatTime12h, getEffectiveStatus } from '@nucleo/utils/helpers';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchEmployeeApprovalRequestsDetail } from '@nucleo/data/requests';
+import { fetchEmployeeTimeline, fetchCredenciales } from '@nucleo/data/employees';
 // `lazy`: el carné del día arrastra el selector de sala y su diálogo, y esta
 // vista la abre TODO el personal para mirar su propio expediente. Sólo lo baja
 // quien tiene el permiso — y sólo cuando el bloque llega a pintarse.
@@ -41,14 +41,14 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
 import PortalTextarea from '../components/common/PortalTextarea';
 import SearchInput from '../components/common/SearchInput';
-import { clickable } from '../utils/clickable';
+import { clickable } from '@nucleo/utils/clickable';
 import ModalShell from '../components/common/ModalShell';
 
-import { rotuloCampo } from '../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion } from '../plataforma/ventanaDeImpresion';
-import { fechaTexto, hoySV } from '../utils/fecha';
-import { formatMoney } from '../utils/formatNumber';
-import { fijarContrasenaDeEmpleado } from '../data/auth';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 

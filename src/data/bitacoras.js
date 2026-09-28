@@ -1,6 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
-import { SUPABASE_URL } from '../plataforma/config';
+import { SUPABASE_URL } from '@plataforma/config';
 import { hoySV } from '../utils/fecha';
 import { anotar } from './audit';
 

@@ -19,7 +19,7 @@
 // portal y que nada delataba.
 
 import { describe, it, expect } from 'vitest';
-import { calcRenta, calcPayrollEntry, TRAMOS_RENTA_QUINCENAL } from '../../src/store/slices/payrollSlice';
+import { calcRenta, calcPayrollEntry, TRAMOS_RENTA_QUINCENAL } from '@nucleo/store/slices/payrollSlice';
 
 const emp = (base_salary) => ({ id: 'x', base_salary });
 

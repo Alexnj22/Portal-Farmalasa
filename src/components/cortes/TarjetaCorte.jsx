@@ -3,12 +3,12 @@ import { AlertTriangle, Ban, CheckCircle2 } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import AvatarConEstado from '../common/AvatarConEstado';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
-import { clickable } from '../../utils/clickable';
-import { contraste, diferenciaDelCorte, noContoEfectivo, seConfirmaDeUnClic, severidad } from '../../utils/cortesDiagnostico';
-import { conSigno, formatMoney } from '../../utils/formatNumber';
-import { hora12, fechaHora12 } from '../../utils/hora';
+import { clickable } from '@nucleo/utils/clickable';
+import { contraste, diferenciaDelCorte, noContoEfectivo, seConfirmaDeUnClic, severidad } from '@nucleo/utils/cortesDiagnostico';
+import { conSigno, formatMoney } from '@nucleo/utils/formatNumber';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 
 /**
  * Un corte de caja, en tarjeta.

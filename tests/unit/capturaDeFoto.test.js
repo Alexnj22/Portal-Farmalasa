@@ -19,7 +19,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { enlaceDeCaptura } from '../../src/data/capturaDeFoto';
+import { enlaceDeCaptura } from '@nucleo/data/capturaDeFoto';
 
 const leer = (rel) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
 

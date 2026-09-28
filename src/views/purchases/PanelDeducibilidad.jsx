@@ -6,11 +6,11 @@ import Checkbox from '../../components/common/Checkbox';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import {
     CLASIFICACION_OPTIONS, SECTOR_OPTIONS,
     tiposCostoGasto, clasificacionLabel, sectorLabel, tipoCostoGastoLabel, fmtMoneda,
-} from '../../utils/f07Catalogos';
+} from '@nucleo/utils/f07Catalogos';
 
 /**
  * PanelDeducibilidad — la revisión de la clasificación fiscal, POR REGLA.

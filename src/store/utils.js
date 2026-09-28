@@ -1,4 +1,4 @@
-import * as almacen from '../plataforma/almacen';
+import * as almacen from '@plataforma/almacen';
 // src/store/utils.js
 
 export const makeId = () => {

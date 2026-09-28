@@ -2,8 +2,8 @@ import React, { lazy, Suspense, useMemo, useState, useEffect } from 'react';
 import Button from '../../components/common/Button';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, DollarSign, AlertCircle, UploadCloud, TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react';
 
-import { fetchBranchExpensesHistory } from '../../data/branches';
-import { formatMoney } from '../../utils/formatNumber';
+import { fetchBranchExpensesHistory } from '@nucleo/data/branches';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 
 // El dibujo arrastra `recharts` (95 kB gzip) y estaba en el cierre estático de
 // `BranchDetailView`: se bajaba al abrir cualquier sucursal para una gráfica de

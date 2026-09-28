@@ -1,6 +1,6 @@
 import React from 'react';
 import LiquidSelect from './LiquidSelect';
-import { OTRA_ESPECIALIDAD, isCatalogOther } from '../../utils/educationCatalogs';
+import { OTRA_ESPECIALIDAD, isCatalogOther } from '@nucleo/utils/educationCatalogs';
 
 // Select con fallback a "Otra..." (solo el select — el input de texto libre
 // se renderiza aparte, en el caller, para poder ubicarlo a ancho completo).

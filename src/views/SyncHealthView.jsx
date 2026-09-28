@@ -5,11 +5,11 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { fetchSyncHealthRecent, SYNC_HEALTH_DOMAINS } from '../data/syncHealth';
-import { ERP_NAMES } from '../constants/erp';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { fetchSyncHealthRecent, SYNC_HEALTH_DOMAINS } from '@nucleo/data/syncHealth';
+import { ERP_NAMES } from '@nucleo/constants/erp';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { hora12 } from '../utils/hora';
+import { hora12 } from '@nucleo/utils/hora';
 
 const DOMAIN_LABELS = {
     products: 'Productos',

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath } from 'node:url'
 
 // Deja en `dist/version.json` cuál es el archivo de código de ESTA publicación.
 //
@@ -40,6 +41,17 @@ function huellaDeVersion() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), huellaDeVersion()],
+  // El núcleo portable (F7 de docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md). Todo lo
+  // que cruza su borde va por alias —`@nucleo/…` desde las pantallas,
+  // `@plataforma/…` desde el núcleo—, así mudarlo es cambiar esta ruta y nada
+  // más. `@plataforma` lo pone cada app: la web, `src/plataforma`; el
+  // teléfono, sus adaptadores. Lo vigila `scripts/nucleo-alias.mjs`.
+  resolve: {
+    alias: {
+      '@nucleo': fileURLToPath(new URL('./src', import.meta.url)),
+      '@plataforma': fileURLToPath(new URL('./src/plataforma', import.meta.url)),
+    },
+  },
   optimizeDeps: {
     exclude: ['@imgly/background-removal', '@capacitor/geolocation', '@capacitor-community/background-geolocation'],
   },

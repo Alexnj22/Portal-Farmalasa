@@ -8,7 +8,7 @@
 // TRABAJO, y un contrato de servicios profesionales es civil.
 
 import { describe, it, expect } from 'vitest';
-import { estadoRemisionMtps, esContratoCivil, PLAZO_MTPS_DIAS, PLAZO_DE_PAGO } from '../../src/utils/contrato';
+import { estadoRemisionMtps, esContratoCivil, PLAZO_MTPS_DIAS, PLAZO_DE_PAGO } from '@nucleo/utils/contrato';
 
 const HOY = new Date(2026, 7, 26);   // 26-ago-2026, hora local
 
@@ -93,7 +93,7 @@ describe('PLAZO_DE_PAGO', () => {
 // así que el campo es una elección entre esos dos y no un texto libre: un
 // tercero contradiría el documento que la empresa tiene aprobado.
 
-import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO, MEDIO_PAGO_OPTIONS } from '../../src/utils/contrato';
+import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO, MEDIO_PAGO_OPTIONS } from '@nucleo/utils/contrato';
 
 describe('el lugar de pago', () => {
     /* Eran dos —«oficinas de la empresa» y «lugar de trabajo»—, copiadas del
@@ -139,7 +139,7 @@ describe('el lugar de pago', () => {
 // mientras no hay firma el aviso del Ministerio dice, con razón, que su plazo
 // todavía no empezó — y alguien puede llevar un mes trabajando sin contrato.
 
-import { estadoFirmaDelContrato } from '../../src/utils/contrato';
+import { estadoFirmaDelContrato } from '@nucleo/utils/contrato';
 
 describe('el plazo para firmar el contrato', () => {
     const hoy = new Date(2026, 7, 27);   // 27-ago-2026
@@ -190,7 +190,7 @@ describe('el plazo para firmar el contrato', () => {
 // Lo que se prueba acá es que el texto REMITE y no INVENTA un horario — y que
 // las áreas que no rotan sí lo dicen entero, porque ahí sí es verdad.
 
-import { horarioParaElContrato } from '../../src/utils/contrato';
+import { horarioParaElContrato } from '@nucleo/utils/contrato';
 
 describe('el horario que va en el contrato', () => {
     it('una sala remite al reglamento, no fija horas', () => {

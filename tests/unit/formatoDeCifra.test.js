@@ -17,7 +17,7 @@
 //      manera y había `$NaN` alcanzable en pantalla.
 
 import { describe, it, expect } from 'vitest';
-import { formatMoney, formatQty, formatMoneyCorto, formatPct } from '../../src/utils/formatNumber';
+import { formatMoney, formatQty, formatMoneyCorto, formatPct } from '@nucleo/utils/formatNumber';
 
 describe('dinero', () => {
     it.each([

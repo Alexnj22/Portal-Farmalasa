@@ -106,11 +106,11 @@ const estado = {
     deletePracticante: () => {},
 };
 
-vi.mock('../../src/store/staffStore', () => ({
+vi.mock('@nucleo/store/staffStore', () => ({
     useStaffStore: (selector) => selector(estado),
 }));
 
-vi.mock('../../src/context/AuthContext', () => ({
+vi.mock('@nucleo/context/AuthContext', () => ({
     useAuth: () => ({ user: { branchId: 44 }, getScope: () => 'ALL', hasPermission: () => true }),
 }));
 

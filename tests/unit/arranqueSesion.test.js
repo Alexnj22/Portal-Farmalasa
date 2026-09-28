@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pantallaDeArranque, PANTALLA } from '../../src/utils/arranqueSesion.js';
+import { pantallaDeArranque, PANTALLA } from '@nucleo/utils/arranqueSesion.js';
 
 const base = { cargando: false, autenticado: true, permisos: { overview: { can_view: true } }, leyendoPermisos: false, falloDePermisos: false };
 

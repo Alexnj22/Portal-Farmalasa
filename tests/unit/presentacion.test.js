@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyPresRule, opcionesDePresentacion, presentacionesEnteras } from '../../src/utils/presentacion';
+import { applyPresRule, opcionesDePresentacion, presentacionesEnteras } from '@nucleo/utils/presentacion';
 
 // Regresión: extraído de TabMinMax.jsx — reglas de negocio que ya rompieron
 // en producción (ver PLAN-EJECUCION-2026-07.md, Bloque 2). Convierte

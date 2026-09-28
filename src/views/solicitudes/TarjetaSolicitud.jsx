@@ -7,17 +7,17 @@ import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import ModalShell from '../../components/common/ModalShell';
 import PortalTextarea from '../../components/common/PortalTextarea';
-import { REQUEST_TYPES, REQUEST_STATUS } from '../../store/slices/requestsSlice';
+import { REQUEST_TYPES, REQUEST_STATUS } from '@nucleo/store/slices/requestsSlice';
 import { ICONO_POR_TIPO } from '../../components/common/catalogos/tiposDeAviso';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { CaraPersona, ChipPersona } from './PersonasSolicitud';
 import {
     resumenMovimiento, esMovimiento, lineasDe, esParcial,
     fmtDiaMes as fmtDate, fmtHora, fmtFechaHora, desdeHace,
     personasDe, cuandoSeDecidio, salaQueEspera, areaQueDecide, motivoDeRechazoCorto,
-} from '../../utils/movimientoTexto';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+} from '@nucleo/utils/movimientoTexto';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // La tarjeta y el modal de una solicitud — el canónico, para las TRES pantallas
 // que muestran solicitudes.

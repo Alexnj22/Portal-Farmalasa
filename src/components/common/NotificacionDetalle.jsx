@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { SkeletonText } from './StateViews';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { fetchApprovalRequestById } from '../../data/requests';
-import { fetchMinMaxChangeRequestById } from '../../data/minmaxRequests';
-import { adaptarMinMax } from '../../store/slices/requestsSlice';
-import { ERP_NAMES } from '../../constants/erp';
-import { buscadorDePersonas } from '../../utils/movimientoTexto';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { fetchApprovalRequestById } from '@nucleo/data/requests';
+import { fetchMinMaxChangeRequestById } from '@nucleo/data/minmaxRequests';
+import { adaptarMinMax } from '@nucleo/store/slices/requestsSlice';
+import { ERP_NAMES } from '@nucleo/constants/erp';
+import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 // El detalle de una solicitud, DENTRO de la campana.
 //

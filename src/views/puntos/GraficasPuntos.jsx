@@ -20,7 +20,7 @@ import {
     ComposedChart, Area, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
-import { formatQty, formatMoney, formatMoneyCorto } from '../../utils/formatNumber';
+import { formatQty, formatMoney, formatMoneyCorto } from '@nucleo/utils/formatNumber';
 
 const COLOR = {
     acumulado: 'var(--chart-1)',

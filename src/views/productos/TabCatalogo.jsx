@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperat
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { createPortal } from 'react-dom';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
-import { useAuth } from '../../context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
@@ -25,7 +25,7 @@ import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 // entero, no solo esta vista.
 import ExpedienteMovil from '../../components/common/ExpedienteMovil.jsx';
 import { useExpedienteMovil } from '../../components/common/usarExpediente';
-import { formatMoney } from '../../utils/formatNumber';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -34,15 +34,15 @@ import {
     updateProductCategoria, insertProductCategory, guardarUbicacionesProducto,
     updateProductDevolutivo, updateProductFoto, fetchProductPreciosMarginPage, fetchProductCounts,
     fetchChangelogPage, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
-} from '../../data/productos';
+} from '@nucleo/data/productos';
 import PortalInput from '../../components/common/PortalInput';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
-import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
-import { fechaTexto, hoySV } from '../../utils/fecha';
-import { subirArchivo } from '../../utils/storageFiles';
+import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 
 const PRICE_FIELDS = [

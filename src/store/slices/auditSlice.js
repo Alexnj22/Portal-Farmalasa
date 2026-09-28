@@ -1,6 +1,6 @@
 import { safeJsonParse, CACHE_KEYS } from '../utils';
 import { anotar, escucharAnotaciones, fetchAuditLogs as fetchAuditLogsData } from '../../data/audit';
-import * as almacen from '../../plataforma/almacen';
+import * as almacen from '@plataforma/almacen';
 
 // ==========================================================
 // 🔐 Auditoría PRO (sin IP)

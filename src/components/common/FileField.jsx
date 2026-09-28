@@ -3,8 +3,8 @@ import { UploadCloud, FileCheck2, Eye, X, Loader2, Camera, Smartphone } from 'lu
 import ListRow from './ListRow';
 import Button from './Button';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
-import { PROPS_CAMARA, aceptaImagenes } from '../../utils/capturaDeFoto';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { PROPS_CAMARA, aceptaImagenes } from '@nucleo/utils/capturaDeFoto';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 /* Los dos por `lazy`, y por el mismo motivo: este componente está en los 21
    adjuntos del portal, así que TODO lo que importe viaja en el cierre estático
    de cada vista que adjunte algo, la use o no.
@@ -24,13 +24,13 @@ const VisorDeDocumento = lazy(() => import('./VisorDeDocumento'));
    `abrirCaptura` no se llama hasta que alguien aprieta el botón, y `esperarFoto`
    no escucha nada hasta que hay un código vivo. Estáticos costaban 1 kB en cada
    vista que adjunta algo — medido con `gate:bundle`. */
-const traspaso = () => import('../../data/capturaDeFoto');
+const traspaso = () => import('@nucleo/data/capturaDeFoto');
 /* Preguntar dónde está el papel dentro de la foto. Por `await import()` como
    todo lo demás: sólo corre cuando alguien eligió una imagen. */
-const sugerencia = () => import('../../data/recorteSugerido');
+const sugerencia = () => import('@nucleo/data/recorteSugerido');
 /* La tubería automática: detectar las esquinas, enderezar, ajustar al papel y
    dar el acabado, sin preguntarle nada a nadie. */
-const preparado = () => import('../../data/prepararDocumento');
+const preparado = () => import('@nucleo/data/prepararDocumento');
 
 /**
  * FileField — adjuntar un archivo a un formulario.

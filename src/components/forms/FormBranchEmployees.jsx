@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import AvatarConEstado from '../common/AvatarConEstado';
-import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { Users, Shield, Star, Stethoscope, Briefcase, ArrowUpRight, AlertCircle, Building2, Globe, CalendarDays, MapPin } from 'lucide-react';
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
-import { clickable } from '../../utils/clickable';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { clickable } from '@nucleo/utils/clickable';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { SIN_ASIGNAR } from '../common/catalogos/constantes';
 
 const safeParse = (obj) => {

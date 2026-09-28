@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bell, BellRing, Check, Megaphone, ChevronRight, Trash2, X, Undo2,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { useTheme } from '../../plataforma/ThemeContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { announcementAppliesToUser } from '../../utils/announcementAudience';
-import { PIDE_DECISION } from '../../utils/notificacionTexto';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
+import { PIDE_DECISION } from '@nucleo/utils/notificacionTexto';
 import Contador from './Contador';
 import { LoadingState } from './StateViews';
 /* La tarjeta de un aviso, su paleta y la máquina de decidir viven fuera desde

@@ -5,7 +5,7 @@ import IdentidadDeQuienRetira from '../bolsas/IdentidadDeQuienRetira';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
-import { hora12 } from '../../utils/hora';
+import { hora12 } from '@nucleo/utils/hora';
 
 /**
  * «¿Quién recibe la caja?» — el paso que convierte confirmar un corte en una

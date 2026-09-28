@@ -5,7 +5,7 @@ import {
     fetchBranchDocuments, fetchAuditLogsForBranch, fetchActiveKioskDeviceCount, insertKioskDevice,
     updateKioskDevice, fetchBranchKiosks, fetchBranchExpenseRecord, updateBranchExpense, insertBranchExpense,
 } from '../../data/branches';
-import * as almacen from '../../plataforma/almacen';
+import * as almacen from '@plataforma/almacen';
 import { formatMoney } from '../../utils/formatNumber';
 
 const persistBranches = (branches) => {

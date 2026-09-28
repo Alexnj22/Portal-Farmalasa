@@ -2,10 +2,10 @@ import useMediaQuery from '../../plataforma/useMediaQuery';
 import React, { useState, useEffect, useCallback } from 'react';
 import ListRow from '../../components/common/ListRow';
 import { SkeletonText } from '../../components/common/StateViews';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { tokenMatch } from '../../utils/searchUtils';
-import { useToastStore } from '../../store/toastStore';
-import { fetchLaboratoriosBasic, fetchLabLocations, upsertLabLocation } from '../../data/laboratorios';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { fetchLaboratoriosBasic, fetchLabLocations, upsertLabLocation } from '@nucleo/data/laboratorios';
 import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
     ChevronDown, Building2, Package, ShoppingBag,
@@ -15,7 +15,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import PortalInput from '../../components/common/PortalInput';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 function emptyLoc() {
     return { vitrina: '', estante: '', peldano: '', bodega_numero: '', bodega_peldano: '' };

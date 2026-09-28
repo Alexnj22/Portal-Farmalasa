@@ -9,15 +9,15 @@ import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { fetchInyeccionesAplicadas } from '../../data/ventas';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { smartFilter } from '../../utils/searchUtils';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { exportCsv } from '../../utils/csvExport';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { hora12 } from '../../utils/hora';
-import { fechaNumerica, hoySV } from '../../utils/fecha';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { fetchInyeccionesAplicadas } from '@nucleo/data/ventas';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 
 /*
  * «¿A quién se le cobró la aplicación?» — las ventas con inyección del período

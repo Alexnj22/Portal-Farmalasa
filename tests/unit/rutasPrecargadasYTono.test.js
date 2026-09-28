@@ -18,7 +18,7 @@
 // primer gesto no puede impedir que la persona fiche.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { IMPORTADORES, IMPORTADOR_POR_RUTA, prefetchRuta } from '../../src/constants/routeImporters';
+import { IMPORTADORES, IMPORTADOR_POR_RUTA, prefetchRuta } from '../../src/routeImporters';
 import { playFeedbackTone, playSuccessTone, playWarningTone, playErrorTone }
     from '../../src/plataforma/kioskSound';
 

@@ -5,7 +5,7 @@ import { LazyInput, Switch, FileUploader } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import Button from '../common/Button';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const BranchTabLegal = ({
     legal, updateNestedSetting, availableRegents,

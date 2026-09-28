@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Button from '../../components/common/Button';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { Truck, CheckCircle2, Home, Play, Plus, ChevronDown, ChevronUp, Navigation, Map, Search } from 'lucide-react';
-import { tokenMatch } from '../../utils/searchUtils';
-import { clickable } from '../../utils/clickable';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { dialogoDiferido } from '../../utils/dialogoDiferido';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { clickable } from '@nucleo/utils/clickable';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
 
 /* Los dos diálogos llegan al abrirlos — ver `src/utils/dialogoDiferido.jsx`.
    Van acá además de en TabPedidos: si una pestaña los difiere y la otra no,
@@ -18,9 +18,9 @@ import Badge from '../../components/common/Badge';
 import {
     iniciarRuta, completarRuta, updateRutaPedidoEntregado,
     fetchRutasConParadas, fetchBranchNamesForSucursales, fetchPedidoNumerosByIds,
-} from '../../data/pedidos';
-import { hora12 } from '../../utils/hora';
-import { escucharCambios } from '../../data/tiempoReal';
+} from '@nucleo/data/pedidos';
+import { hora12 } from '@nucleo/utils/hora';
+import { escucharCambios } from '@nucleo/data/tiempoReal';
 
 const STATUS_BADGE = {
   pendiente:  { label: 'Pendiente',  variante: 'warning' },

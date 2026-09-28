@@ -1,8 +1,8 @@
 import React from 'react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import { User, ShieldCheck } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../store/staffStore'; // ✅ Corregido para usar Zustand
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore'; // ✅ Corregido para usar Zustand
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 const FormRoleEmployees = ({ formData }) => {
     const { employees, branches = [] } = useStaff();

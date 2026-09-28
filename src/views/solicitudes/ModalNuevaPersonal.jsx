@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import useBorrador from '../../hooks/useBorrador';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import {
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Stethoscope, Coffee,
     ClipboardList, Send, X, AlertCircle, AlertTriangle, Info, Clock, CalendarDays,
@@ -16,15 +16,15 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import FileField from '../../components/common/FileField';
-import { useStaffStore } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
-import { REQUEST_TYPES } from '../../store/slices/requestsSlice';
-import { fetchEmployeeEventsByTypes } from '../../data/employeeSelfService';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { rango12 } from '../../utils/hora';
-import { fechaTexto, hoySV } from '../../utils/fecha';
-import { formatMoney } from '../../utils/formatNumber';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
+import { fetchEmployeeEventsByTypes } from '@nucleo/data/employeeSelfService';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { rango12 } from '@nucleo/utils/hora';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 
 /**
  * El formulario de una solicitud personal, en un modal.

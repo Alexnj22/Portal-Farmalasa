@@ -7,11 +7,11 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { EmptyState } from '../../components/common/StateViews';
-import { borrarDescuento } from '../../data/descuentos';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { formatMoney } from '../../utils/formatNumber';
-import { fmtVigencia } from '../../utils/promocionesUtils';
-import { hoySV } from '../../utils/fecha';
+import { borrarDescuento } from '@nucleo/data/descuentos';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fmtVigencia } from '@nucleo/utils/promocionesUtils';
+import { hoySV } from '@nucleo/utils/fecha';
 
 /** Vigente, programado o terminado — sale de las fechas, que es lo único que hay. */
 function estado(d) {

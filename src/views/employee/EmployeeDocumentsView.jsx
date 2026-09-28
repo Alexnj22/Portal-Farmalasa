@@ -5,25 +5,25 @@ import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import FilterBar from '../../components/common/FilterBar';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     FolderOpen, Search, X, FileCheck, Stethoscope,
     FileText, Palmtree, RefreshCw,
     AlertCircle, CheckCircle2, Clock, XCircle, Paperclip,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore } from '../../store/staffStore';
-import { fetchOwnApprovalRequests } from '../../data/employeeSelfService';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { fetchOwnApprovalRequests } from '@nucleo/data/employeeSelfService';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import PeriodPicker from '../../components/common/PeriodPicker';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import VisorDeDocumento from '../../components/common/VisorDeDocumento';
-import { getExpiryBadge } from '../../utils/documentExpiry';
+import { getExpiryBadge } from '@nucleo/utils/documentExpiry';
 import {
     nombreDeDocumento, grupoDeCategoria, iconoDeCategoria,
     tinteDeCategoria, descripcionDelArchivo,
 } from '../../components/common/catalogos/documentos';
-import { fechaTexto } from '../../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
 //

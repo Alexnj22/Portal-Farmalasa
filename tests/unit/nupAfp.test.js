@@ -14,7 +14,7 @@
 // documento de otra persona.
 
 import { describe, it, expect } from 'vitest';
-import { revisarNup, pareceDui, pareceNupViejo } from '../../src/utils/nupAfp';
+import { revisarNup, pareceDui, pareceNupViejo } from '@nucleo/utils/nupAfp';
 
 const DUI = '01234567-8';
 

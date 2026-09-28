@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from 'react';
 import { Camera, Images, X } from 'lucide-react';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
-import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
+import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
 
 /**
  * FotosDeEvidencia — la tira de fotos de un formulario: miniaturas, agregar y

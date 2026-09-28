@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     CalendarRange, Users, UserX, Lock, Unlock, Download, AlertTriangle, RefreshCw, Coins, Check, X,
 } from 'lucide-react';
@@ -16,16 +16,16 @@ import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { EmptyState } from '../../components/common/StateViews';
 import usePaginaEnUrl from '../../plataforma/usePaginaEnUrl';
-import { formatMoney } from '../../utils/formatNumber';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { exportCsv } from '../../utils/csvExport';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchBonoSemestral, decidirBonoSemestral, aprobarBonoSemestral } from '../../data/metas';
-import { useStaffStore } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchBonoSemestral, decidirBonoSemestral, aprobarBonoSemestral } from '@nucleo/data/metas';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import {
     ymHoySV, ymLabelCorto, semestreDe, semestreSumar, semestreLabel, semestrePagoLabel,
-} from '../../utils/metasUtils';
+} from '@nucleo/utils/metasUtils';
 
 // El primer semestre con la foto del cierre: julio y agosto de 2026 se tomaron
 // el 22-sep al crear el módulo. Enero–junio 2026 se pagó en julio fuera del

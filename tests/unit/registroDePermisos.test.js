@@ -17,8 +17,8 @@
 // promete algo distinto de lo que hace.
 
 import { describe, it, expect } from 'vitest';
-import { MODULE_GROUPS, MODULE_INFO, pestanasDe, capacidadesDe } from '../../src/constants/permissionModules';
-import { MODULE_MAP } from '../../src/constants/moduleMap';
+import { MODULE_GROUPS, MODULE_INFO, pestanasDe, capacidadesDe } from '@nucleo/constants/permissionModules';
+import { MODULE_MAP } from '@nucleo/constants/moduleMap';
 
 const modulos = MODULE_GROUPS.flatMap(g => g.modules);
 const subs    = modulos.flatMap(m => (m.sub || []).map(s => ({ ...s, padre: m.key })));

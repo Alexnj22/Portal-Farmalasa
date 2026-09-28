@@ -10,15 +10,15 @@ import { EmptyState, SkeletonText } from '../common/StateViews';
 import PhotoLightbox from '../common/PhotoLightbox';
 import {
     anularBolsa, anularSalida, fetchEventosDeBolsa, fetchSalidasDeBolsa,
-} from '../../data/bolsas';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { getSignedFileUrl } from '../../utils/storageFiles';
-import useCerrarBolsa from '../../hooks/useCerrarBolsa';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
-import { hora12, fechaHora12 } from '../../utils/hora';
-import { fechaNumerica } from '../../utils/fecha';
+} from '@nucleo/data/bolsas';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import useCerrarBolsa from '@nucleo/hooks/useCerrarBolsa';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 /**
  * Todo lo que le pasó a una bolsa, y las dos correcciones que existen.

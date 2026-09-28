@@ -22,7 +22,7 @@ import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClo
 import { getHourlyCode, toLocalISO } from '../utils/helpers';
 import { verifyKioskAuthorization } from '../data/kioskAuth';
 import { hasRecentKioskVerification, recordKioskVerification } from '../utils/kioskGrace';
-import { playFeedbackTone } from '../plataforma/kioskSound';
+import { playFeedbackTone } from '@plataforma/kioskSound';
 import { enqueueAttendancePunch, flushAttendanceQueue } from '../utils/attendanceQueue';
 import {
     kioscoAvisoLeido,
@@ -34,10 +34,10 @@ import {
 } from '../data/kiosco';
 import useKioskDevice from './useKioskDevice';
 import { useAuth } from '../context/AuthContext';
-import { escucharConexion, soltarConexion } from '../plataforma/conexion';
-import { recargar } from '../plataforma/navegacion';
-import { escucharTeclas, soltarTeclas } from '../plataforma/teclado';
-import { useFocoDelLector } from '../plataforma/useFocoDelLector';
+import { escucharConexion, soltarConexion } from '@plataforma/conexion';
+import { recargar } from '@plataforma/navegacion';
+import { escucharTeclas, soltarTeclas } from '@plataforma/teclado';
+import { useFocoDelLector } from '@plataforma/useFocoDelLector';
 
 import { mensajeAmigable } from '../utils/errorMessages';
 import { requiereCodigoSu } from '../utils/kioskAutorizacion';

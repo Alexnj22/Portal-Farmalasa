@@ -4,8 +4,8 @@ import { Building2, Home, Trash2, User, Phone, DollarSign, CalendarDays, Landmar
 import { LazyInput, Switch, FileUploader, clampInt, formatPhoneMask } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { fechaTexto } from '../../utils/fecha';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;

@@ -11,7 +11,7 @@ import SegmentedControl from '../common/SegmentedControl';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
-import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
+import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 
 /* El editor se baja al ELEGIR el archivo, no al abrir el formulario: arrastra
  * el canónico de recorte y no hace falta hasta que hay una foto. */
@@ -20,8 +20,8 @@ import {
     CLASE_CLIENTE, JUNTAS_QUE_PRESCRIBEN, avisarFallaDelConsejo, buscarMedicoLocal,
     buscarMedicosLocalPorNombre, completarRenglon, consultarConsejo, fetchRecetasRecientes,
     guardarMedicoDelConsejo, subirFotoDeReceta,
-} from '../../data/bitacoras';
-import { fechaTexto } from '../../utils/fecha';
+} from '@nucleo/data/bitacoras';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Completar un renglón del libro.

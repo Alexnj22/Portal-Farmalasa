@@ -9,12 +9,12 @@ import Button from '../../components/common/Button';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import PromptModal from '../../components/common/PromptModal';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchPeriodosFiscales, cerrarPeriodoFiscal, reabrirPeriodoFiscal } from '../../data/cierrePeriodo';
-import { etiquetaMes, NOMBRES_DE_MES } from '../../utils/fecha';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchPeriodosFiscales, cerrarPeriodoFiscal, reabrirPeriodoFiscal } from '@nucleo/data/cierrePeriodo';
+import { etiquetaMes, NOMBRES_DE_MES } from '@nucleo/utils/fecha';
 
 /**
  * Cierre de período fiscal — la cadena del remanente.

@@ -14,17 +14,17 @@ import {
     Search, Filter, X, ArrowUpRight, Copy, MessageCircle, ChevronRight,
     Scale, Zap, Briefcase, Shield, Stethoscope, Sparkles, Activity, ArrowLeft
 } from "lucide-react";
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { formatTime12h } from "../utils/helpers";
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { formatTime12h } from "@nucleo/utils/helpers";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AlertModal from "../components/common/AlertModal";
 import GlassViewLayout from '../components/GlassViewLayout';
-import { useToastStore } from '../store/toastStore';
-import { useAuth } from '../context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 
-import { smartFilter } from '../utils/searchUtils';
-import { fechaTexto } from '../utils/fecha';
-import { analizarSucursal } from '../data/ia';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { analizarSucursal } from '@nucleo/data/ia';
 
 const FILTER_OPTIONS = [
     { value: "ALL", label: "Todas" },

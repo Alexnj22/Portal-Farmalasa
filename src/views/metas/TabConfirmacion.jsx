@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck, TrendingUp, TrendingDown, Store, Target, RotateCcw } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -7,21 +7,21 @@ import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { useToastStore } from '../../store/toastStore';
-import { useStaffStore } from '../../store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { fechaHora12 } from '../../utils/hora';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { fechaHora12 } from '@nucleo/utils/hora';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import {
     fetchMetasRows, fetchMetasCambios, fetchMetasHistorico, explicarMetasPropuestas, generarPropuestas,
     confirmarMeta, confirmarMetasLote, aprobarMeta, devolverMeta,
     fetchAutorizadores, aprobarMetaPorAutorizacion,
     aprobarMetasLote, aprobarMetasPorAutorizacionLote,
-} from '../../data/metas';
+} from '@nucleo/data/metas';
 import ExplicacionMeta from './ExplicacionMeta';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from '../../utils/metasUtils';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from '@nucleo/utils/metasUtils';
 
 // Un toque = 1% sobre la propuesta, y el recorrido se topa en ±10%: más que eso
 // no es ajustar una meta, es escribir otra — y para eso está devolverla.

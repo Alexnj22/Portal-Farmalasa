@@ -3,7 +3,7 @@ import { Package } from 'lucide-react';
 import SearchInput from './SearchInput';
 import ListRow from './ListRow';
 import { SkeletonText } from './StateViews';
-import { buscarProductosMinMax } from '../../data/minmaxRequests';
+import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import AvisoParecidos from './AvisoParecidos';
 
 // Elegir un producto del catálogo, para un formulario que empieza por ahí.

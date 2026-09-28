@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Button from '../common/Button';
 import { CheckCircle2, AlertCircle, Eye, PartyPopper, ChevronLeft, ChevronRight, User, ChevronDown } from 'lucide-react';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 // 3. Componente de Controles de Paginación (Liquidglass)
 const PaginationControls = ({ currentPage, totalPages, setPage }) => {

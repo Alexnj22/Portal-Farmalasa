@@ -5,9 +5,9 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
-import { fetchPromocionLaboratorio } from '../../data/promociones';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '../../utils/promocionesUtils';
+import { fetchPromocionLaboratorio } from '@nucleo/data/promociones';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '@nucleo/utils/promocionesUtils';
 import Campo from './Campo';
 
 /**

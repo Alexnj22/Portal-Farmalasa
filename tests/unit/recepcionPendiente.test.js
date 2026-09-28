@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hayRecepcionPendiente } from '../../src/utils/tableroDePedidos';
+import { hayRecepcionPendiente } from '@nucleo/utils/tableroDePedidos';
 
 // El caso real: La Popular, pedido 116 del 2026-08-17 (código 09-170826-3-PO).
 // 174 renglones despachados —169 repartidos en 5 hojas y 5 en cajas especiales—.

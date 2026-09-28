@@ -1,5 +1,5 @@
 import { Banknote, Package, Scale, Send, ShieldCheck } from 'lucide-react';
-import { ETAPAS_DE_BOLSA } from '../../constants/bolsas';
+import { ETAPAS_DE_BOLSA } from '@nucleo/constants/bolsas';
 
 // Las etapas (claves, estados, alcance) viven en `constants/bolsas.js` —con el
 // porqué de cada una—; acá sólo se les pone el ícono. `rangoDeDias` vive en
@@ -8,4 +8,4 @@ const ICONOS = { Banknote, Package, Scale, Send, ShieldCheck };
 
 export const ETAPAS = ETAPAS_DE_BOLSA.map((e) => ({ ...e, icon: ICONOS[e.icono] }));
 
-export { rangoDeDias } from '../../utils/bolsasTexto';
+export { rangoDeDias } from '@nucleo/utils/bolsasTexto';

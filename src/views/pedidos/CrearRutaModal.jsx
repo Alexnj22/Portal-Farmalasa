@@ -5,17 +5,17 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle } from 'lucide-react';
-import { signPhotosDeep } from '../../utils/storageFiles';
-import { useAuth } from '../../context/AuthContext';
+import { signPhotosDeep } from '@nucleo/utils/storageFiles';
+import { useAuth } from '@nucleo/context/AuthContext';
 import PedidoModal from './PedidoModal';
-import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '../../utils/routeOptimizer';
+import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '@nucleo/utils/routeOptimizer';
 import { loadGoogleMaps, loadLeaflet, matrizPorCarretera } from '../../plataforma/mapas';
-import { crearRuta, fetchEmployeeDriverInfo, fetchPedidoSucursalStatusFinalizados, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '../../data/pedidos';
+import { crearRuta, fetchEmployeeDriverInfo, fetchPedidoSucursalStatusFinalizados, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '@nucleo/data/pedidos';
 
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;

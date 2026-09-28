@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { Clock, CopyPlus } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
-import { WEEK_DAYS } from '../../data/constants';
+import { WEEK_DAYS } from '@nucleo/data/constants';
 import { Switch } from './BranchHelpers';
 import Button from '../common/Button';
 

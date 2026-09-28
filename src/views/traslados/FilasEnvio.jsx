@@ -8,11 +8,11 @@ import EvidenciaFotos from '../../components/common/EvidenciaFotos';
 import {
     DECISIONES_ENVIO, MOTIVOS_RECHAZO_ENVIO, cancelarEnvio, decidirEnvio, despacharEnvio,
     recibirDevolucion,
-} from '../../data/envios';
-import { imprimirTicketDeEnvio } from '../../utils/imprimirTraslado';
-import { useAuth } from '../../context/AuthContext';
-import { fmtCuando, fmtFechaLarga } from '../../utils/trasladoTexto';
-import { desdeHace } from '../../utils/movimientoTexto';
+} from '@nucleo/data/envios';
+import { imprimirTicketDeEnvio } from '@nucleo/utils/imprimirTraslado';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { fmtCuando, fmtFechaLarga } from '@nucleo/utils/trasladoTexto';
+import { desdeHace } from '@nucleo/utils/movimientoTexto';
 
 // Las tarjetas del envío, en un solo lugar.
 //

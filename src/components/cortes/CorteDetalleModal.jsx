@@ -3,28 +3,28 @@ import { AlertTriangle, Ban, CheckCircle2, RotateCcw, ShieldCheck } from 'lucide
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import AvatarConEstado from '../common/AvatarConEstado';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
 import ResolverDiferencia from './ResolverDiferencia';
-import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
+import useSobreviveAlCierre from '@nucleo/hooks/useSobreviveAlCierre';
 import {
     fetchAbonosDelDia, fetchDiferencias, fetchMovimientos, fetchPersonas, fetchVentasPorPago,
     reabrirCorte,
-} from '../../data/cortes';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useToastStore } from '../../store/toastStore';
+} from '@nucleo/data/cortes';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useToastStore } from '@nucleo/store/toastStore';
 import {
     cobrosDeCredito, desgloseDelCierre, diferenciaDelCorte, entroEnEfectivo,
     formasFueraDelComprobante, noContoEfectivo, notaDeCifra, severidad, sugerenciasDeCorte,
-} from '../../utils/cortesDiagnostico';
-import { formatMoney } from '../../utils/formatNumber';
-import { useAuth } from '../../context/AuthContext';
+} from '@nucleo/utils/cortesDiagnostico';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { useAuth } from '@nucleo/context/AuthContext';
 import useResolverCorte from './useResolverCorte';
-import { hora12, fechaHora12 } from '../../utils/hora';
-import { fechaTexto } from '../../utils/fecha';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 /**
  * El detalle de un corte de caja, y el único sitio donde se confirma o descarta.

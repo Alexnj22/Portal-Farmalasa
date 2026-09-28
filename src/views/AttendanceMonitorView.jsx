@@ -28,16 +28,16 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
-import { shortEmployeeName } from "../utils/nameUtils";
-import { tokenMatch } from '../utils/searchUtils';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { getTodayScheduleConfig, normalizeText } from "@nucleo/utils/helpers";
+import { shortEmployeeName } from "@nucleo/utils/nameUtils";
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from "../components/common/LiquidSelect";
 import FilterBar from "../components/common/FilterBar";
-import { toLocalISODate } from "../utils/timeClock.helpers";
-import { hora12 } from "../utils/hora";
-import { useAuth } from '../context/AuthContext';
+import { toLocalISODate } from "@nucleo/utils/timeClock.helpers";
+import { hora12 } from "@nucleo/utils/hora";
+import { useAuth } from '@nucleo/context/AuthContext';
 
 const EMPTY_ARRAY = [];
 

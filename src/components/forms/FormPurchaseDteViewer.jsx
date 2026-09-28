@@ -2,16 +2,16 @@ import React, { useEffect, useState } from 'react';
 import Button from '../common/Button';
 import PdfZoomViewer from '../common/PdfZoomViewer';
 import { Archive, AlertTriangle, Download, ExternalLink, FileText, Receipt } from 'lucide-react';
-import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
-import { useAuth } from '../../context/AuthContext';
-import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSources } from '../../data/facturasCompra';
-import { dteTypeLabel } from '../../utils/dteTypes';
+import { getSignedFileUrl, downloadStoredFile } from '@nucleo/utils/storageFiles';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSources } from '@nucleo/data/facturasCompra';
+import { dteTypeLabel } from '@nucleo/utils/dteTypes';
 import SegmentedControl from '../common/SegmentedControl';
-import { useToastStore } from '../../store/toastStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { LoadingState } from '../common/StateViews';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { ivaDelDte } from '../../utils/dteIva';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ivaDelDte } from '@nucleo/utils/dteIva';
 
 const fmt$ = (n) => formatMoney(n || 0);
 

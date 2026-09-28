@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import fs from 'node:fs';
 import path from 'node:path';
 import EditorDeDocumento from '../../src/components/common/EditorDeDocumento';
-import { DOCS, avisosDeFoto, sePuedeGuardar } from '../../src/utils/fotoDocumento';
+import { DOCS, avisosDeFoto, sePuedeGuardar } from '@nucleo/utils/fotoDocumento';
 import { acabadoPorDefecto, acabadosDe } from '../../src/plataforma/tratamientoDeFoto';
 
 /**

@@ -10,7 +10,7 @@ import {
 import LiquidSelect from '../common/LiquidSelect'; // 🚨 Asegúrate de que esta ruta sea correcta
 import PortalInput from '../common/PortalInput';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const KioskConfigModal = ({
   isOpen,

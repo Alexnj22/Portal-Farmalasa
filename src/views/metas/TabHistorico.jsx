@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { Target, Plus, History, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -7,10 +7,10 @@ import FilterBar from '../../components/common/FilterBar';
 import ListRow from '../../components/common/ListRow';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { Skeleton, SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { fetchMetasHistorico } from '../../data/metas';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { agruparHistoricoPorMes, ymLabelCorto, TRAMO_CFG } from '../../utils/metasUtils';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { fetchMetasHistorico } from '@nucleo/data/metas';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { agruparHistoricoPorMes, ymLabelCorto, TRAMO_CFG } from '@nucleo/utils/metasUtils';
 
 // Las dos gráficas arrastran `recharts` (95 kB gzip) y esta es la última de las
 // cinco pestañas de Metas, así que viajan en su propio chunk. Leer el encabezado

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '../common/Button';
 import ModalShell from '../common/ModalShell';
 import { Search, CornerDownLeft, ArrowUp, ArrowDown, X } from 'lucide-react';
-import { smartFilter } from '../../utils/searchUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import { Link } from 'react-router-dom';
 
 /**

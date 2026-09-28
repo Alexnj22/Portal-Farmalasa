@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import ModuleLockNotice, { ModuleLockChip } from './common/ModuleLockBanner';
-import useLayoutCompacto from '../hooks/useLayoutCompacto';
+import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 import BarraFlotante from './common/BarraFlotante';
 import {
     CanalDeVistaCtx, useCanalesDeVista,

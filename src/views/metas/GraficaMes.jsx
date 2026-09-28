@@ -3,8 +3,8 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import { Skeleton } from '../../components/common/StateViews';
 import BarraAvance from './BarraAvance';
 import AvisoSinProducto from '../../components/common/AvisoSinProducto';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { TRAMO_CFG } from '../../utils/metasUtils';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { TRAMO_CFG } from '@nucleo/utils/metasUtils';
 
 // El dibujo vive en `GraficaMesDias.jsx` para que `recharts` (95 kB gzip) no
 // entre en el cierre estático de Metas; leer su encabezado antes de tocarlo.

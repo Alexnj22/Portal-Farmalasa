@@ -6,14 +6,14 @@ import Button from '../../components/common/Button';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos } from '../../data/bolsas';
-import { formatMoney } from '../../utils/formatNumber';
-import { useAuth } from '../../context/AuthContext';
-import useCerrarBolsa from '../../hooks/useCerrarBolsa';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { saldoDeBolsa } from '../../utils/bolsasReparto';
-import { hora12 } from '../../utils/hora';
-import { diasEntre, fechaTexto, hoySV, sumarDias } from '../../utils/fecha';
+import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos } from '@nucleo/data/bolsas';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { useAuth } from '@nucleo/context/AuthContext';
+import useCerrarBolsa from '@nucleo/hooks/useCerrarBolsa';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { hora12 } from '@nucleo/utils/hora';
+import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 
 /* El formulario se baja al apretar su botón, no al entrar al Inicio: arrastra el
  * canónico de archivo y el selector de personas, y la baldosa se ve entera sin

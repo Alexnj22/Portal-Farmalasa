@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { getTodayScheduleConfig } from '../../src/utils/helpers';
-import { resolveAttendanceFlow } from '../../src/utils/timeClock.helpers';
-import { buildCustomConfig, buildFinalPunchPresentation } from '../../src/utils/timeClock.rules';
-import { claveDeDia } from '../../src/utils/scheduleHelpers';
+import { getTodayScheduleConfig } from '@nucleo/utils/helpers';
+import { resolveAttendanceFlow } from '@nucleo/utils/timeClock.helpers';
+import { buildCustomConfig, buildFinalPunchPresentation } from '@nucleo/utils/timeClock.rules';
+import { claveDeDia } from '@nucleo/utils/scheduleHelpers';
 
 // El horario semanal se guarda en `employee_rosters.schedule_data` con las
 // claves que produce `Date.getDay()` — o sea **domingo = "0"**. Medido sobre

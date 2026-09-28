@@ -44,13 +44,13 @@ const DONDE = {
     404: [{ erp_sucursal_id: 5, sala: 'La Popular', unidades: 27, minimo: 62, vence: null }],
 };
 
-vi.mock('../../src/data/traslados', () => ({
+vi.mock('@nucleo/data/traslados', () => ({
     MOTIVOS_RECHAZO: [],
     crearSolicitudTraslado: (...a) => crearSolicitudTraslado(...a),
     fetchDondeHay: vi.fn(async (id) => ({ donde: DONDE[id] ?? [], error: null })),
     fetchEsAntibiotico: vi.fn(async () => ({ esAntibiotico: false })),
 }));
-vi.mock('../../src/data/inventory', () => ({ fetchInventoryByProductIds: vi.fn(async () => []) }));
+vi.mock('@nucleo/data/inventory', () => ({ fetchInventoryByProductIds: vi.fn(async () => []) }));
 // A propósito DISTINTAS por producto: la amoxicilina va en caja de 10 y los
 // otros dos por unidad. Si alguna vez el renglón se arma con la presentación
 // del producto anterior —las tres consultas viajan en paralelo y la de salas
@@ -63,20 +63,20 @@ const PRESENTACIONES = {
     404: [{ tipo: 'CAJA', factor: 50 }, { tipo: 'UNIDAD', factor: 1 }],
 };
 
-vi.mock('../../src/data/inventoryMovements', () => ({
+vi.mock('@nucleo/data/inventoryMovements', () => ({
     fetchPresentaciones: vi.fn(async (ids) => ({
         porProducto: new Map(ids.map(id => [id, PRESENTACIONES[id] ?? []])),
     })),
 }));
-vi.mock('../../src/context/AuthContext', () => ({
+vi.mock('@nucleo/context/AuthContext', () => ({
     useAuth: () => ({ user: { id: 'u1', branchId: 27, branchName: 'Salud 3' } }),
 }));
-vi.mock('../../src/store/staffStore', () => ({
+vi.mock('@nucleo/store/staffStore', () => ({
     useStaffStore: (sel) => sel({ appendAuditLog: vi.fn(async () => {}) }),
 }));
 
 const PedirTrasladoModal = (await import('../../src/views/dashboard/PedirTrasladoModal.jsx')).default;
-const { useComposicionTraslado } = await import('../../src/store/composicionTraslado.js');
+const { useComposicionTraslado } = await import('@nucleo/store/composicionTraslado.js');
 
 const EUTIROX = { erp_product_id: 101, descripcion: 'EUTIROX 100' };
 const AMOXI   = { erp_product_id: 202, descripcion: 'AMOXICILINA 500' };

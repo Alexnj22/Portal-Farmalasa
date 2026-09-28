@@ -19,7 +19,7 @@
 //      nulo.
 
 import { describe, it, expect } from 'vitest';
-import { normalizarCargo, buscarCargo, opcionesDeCargo } from '../../src/utils/roles';
+import { normalizarCargo, buscarCargo, opcionesDeCargo } from '@nucleo/utils/roles';
 
 // Las filas de la tabla real, con sus rarezas incluidas a propósito.
 // El espacio al final de la id 9 ya NO existe en producción (medido el

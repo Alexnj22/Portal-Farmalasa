@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo, useState, lazy, Suspense } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
-import { MODULO_QUE_DECIDE } from '../../constants/solicitudModulos';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useDecidirSolicitud } from '../../hooks/useDecidirSolicitud';
-import useCortesDeAvisos, { AVISOS_DE_CORTE } from '../../hooks/useCortesDeAvisos';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { MODULO_QUE_DECIDE } from '@nucleo/constants/solicitudModulos';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useDecidirSolicitud } from '@nucleo/hooks/useDecidirSolicitud';
+import useCortesDeAvisos, { AVISOS_DE_CORTE } from '@nucleo/hooks/useCortesDeAvisos';
 import useResolverCorte from '../cortes/useResolverCorte';
-import { seConfirmaDeUnClic } from '../../utils/cortesDiagnostico';
-import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/solicitudDeAviso';
+import { seConfirmaDeUnClic } from '@nucleo/utils/cortesDiagnostico';
+import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '@nucleo/data/solicitudDeAviso';
 
 /* Decidir DESDE el aviso — la campana y el historial, con las mismas reglas.
  *

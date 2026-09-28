@@ -4,13 +4,13 @@ import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Notice from '../common/Notice';
 import { LoadingState } from '../common/StateViews';
-import { useAuth } from '../../context/AuthContext';
-import { formatMoney } from '../../utils/formatNumber';
-import { openStoredFile } from '../../utils/storageFiles';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { openStoredFile } from '@nucleo/utils/storageFiles';
 import CompletarRenglon from './CompletarRenglon';
-import { ESTADO_RENGLON, fetchFolio } from '../../data/bitacoras';
-import { hora12 } from '../../utils/hora';
-import { fechaTexto } from '../../utils/fecha';
+import { ESTADO_RENGLON, fetchFolio } from '@nucleo/data/bitacoras';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Un folio, abierto.

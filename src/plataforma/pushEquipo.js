@@ -17,8 +17,8 @@
 // suscripción del navegador se deja viva. Así el permiso ya concedido sigue
 // puesto y el siguiente empleado queda ligado en silencio al iniciar sesión, sin
 // tener que enterarse de nada ni volver a autorizar avisos.
-import { reclamarPushSubscription } from '../data/pushSubscriptions';
-import { AUTH_STORAGE_KEY } from '../supabaseClient';
+import { reclamarPushSubscription } from '@nucleo/data/pushSubscriptions';
+import { AUTH_STORAGE_KEY } from '@nucleo/supabaseClient';
 
 // El endpoint se RECUERDA al reclamar. En `pagehide` no hay tiempo de
 // preguntárselo al service worker: `getSubscription()` es asíncrono y la página

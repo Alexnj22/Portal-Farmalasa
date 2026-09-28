@@ -18,13 +18,13 @@ import { crearEspia } from './_espiaSupabase';
 const espia = crearEspia();
 const invoke = vi.fn(async () => ({ data: { documentos: [{ id: 1, renglones: [] }] }, error: null }));
 espia.supabase.functions = { invoke: (...a) => invoke(...a) };
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchDocumentosSinCargar, fetchPropuesta, confirmarProducto, fetchProductosPorConfirmar } =
-    await import('../../src/data/cargarCompra');
+    await import('@nucleo/data/cargarCompra');
 const { searchProductsActive, searchCustomersByName, fetchCotizacionesList,
-        fetchAllProductPreciosForCotizaciones } = await import('../../src/data/cotizaciones');
-const { createBranchSlice } = await import('../../src/store/slices/branchSlice');
+        fetchAllProductPreciosForCotizaciones } = await import('@nucleo/data/cotizaciones');
+const { createBranchSlice } = await import('@nucleo/store/slices/branchSlice');
 
 beforeEach(() => { espia.limpiar(); vi.clearAllMocks(); });
 

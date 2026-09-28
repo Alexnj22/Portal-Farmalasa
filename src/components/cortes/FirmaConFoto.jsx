@@ -1,6 +1,6 @@
 import React from 'react';
 import AvatarConEstado from '../common/AvatarConEstado';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 /**
  * Quién hizo un paso de una diferencia de caja: su foto y su nombre, siempre

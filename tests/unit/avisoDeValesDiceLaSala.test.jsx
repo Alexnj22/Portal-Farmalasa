@@ -27,14 +27,14 @@ import { render, screen } from '@testing-library/react';
 
 const filas = { valor: [] };
 
-vi.mock('../../src/data/bolsas', () => ({
+vi.mock('@nucleo/data/bolsas', () => ({
     fetchValesPendientes: async () => ({ filas: filas.valor, pude: true }),
     anotarValesEnCaja: async () => ({ ok: true, resultados: [] }),
 }));
-vi.mock('../../src/context/AuthContext', () => ({
+vi.mock('@nucleo/context/AuthContext', () => ({
     useAuth: () => ({ hasPermission: () => true }),
 }));
-vi.mock('../../src/store/toastStore', () => ({
+vi.mock('@nucleo/store/toastStore', () => ({
     useToastStore: (sel) => sel({ showToast: () => {} }),
 }));
 

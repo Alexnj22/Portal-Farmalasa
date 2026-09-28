@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { COLUMNAS, soloAscii, recortar, fechaCorta, horaDeColumna, selloDeTiempo, selloCorto, juntarSiEntra }
-    from '../../src/utils/ticketCampos';
+    from '@nucleo/utils/ticketCampos';
 
 describe('el rollo es ASCII y nada más', () => {
     it('la eñe se vuelve n, no basura', () => {

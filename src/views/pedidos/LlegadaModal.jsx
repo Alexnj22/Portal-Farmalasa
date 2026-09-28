@@ -5,15 +5,15 @@ import Checkbox from '../../components/common/Checkbox';
 import { PackageCheck, PackageX, PackagePlus, Package, AlertTriangle, X, Loader2, Zap, HelpCircle, RotateCcw, Check } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import { getPageGroups } from '../../utils/pedidoPrint';
-import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
-import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
+import { getPageGroups } from '@nucleo/utils/pedidoPrint';
+import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
+import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { electrolitFueraDeEspeciales } from '../../utils/cajasEspeciales';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { electrolitFueraDeEspeciales } from '@nucleo/utils/cajasEspeciales';
 
 // Opciones de sucursal para selector de caja extra (excluye bodega)
 const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));

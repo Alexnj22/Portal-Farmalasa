@@ -14,15 +14,15 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SearchInput from '../../components/common/SearchInput';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { useStaffStore } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import useBorrador from '../../hooks/useBorrador';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import {
     buscarConExistencia, buscarEnCatalogo, fetchPresentaciones, fetchLotesDeProducto,
     fetchPerecederos, insertMovimientoInventario, fetchSucursalEnConteo,
-} from '../../data/inventoryMovements';
-import { diasEntre, fechaNumerica, hoySV } from '../../utils/fecha';
-import { subirArchivo } from '../../utils/storageFiles';
+} from '@nucleo/data/inventoryMovements';
+import { diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
+import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 // Widget «Ajuste de Inventario».
 //

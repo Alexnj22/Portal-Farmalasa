@@ -65,7 +65,7 @@ import { join } from 'node:path';
 // y una pestaña que no copia su encabezado, y comprobar que falla por las dos.
 const APP = process.env.RUTAS_GATE_APP || 'src/App.jsx';
 const MODULOS = process.env.RUTAS_GATE_MODULOS || 'src/constants/moduleMap.js';
-const PRECARGA = process.env.RUTAS_GATE_PRECARGA || 'src/constants/routeImporters.js';
+const PRECARGA = process.env.RUTAS_GATE_PRECARGA || 'src/routeImporters.js';
 const AREAS = process.env.RUTAS_GATE_AREAS || 'auditoria/areas.mjs';
 // `RUTAS_GATE_HEREDADAS` (JSON) reemplaza la lista de deuda. Existe SÓLO para
 // que la prueba pueda fabricar el caso «una entrada de deuda que ya se
@@ -393,7 +393,7 @@ if (sinPrecarga.length) {
   console.log(`  ${c.rojo}✗${c.fin} ${c.neg}${sinPrecarga.length} ruta(s) sin clave en IMPORTADOR_POR_RUTA${c.fin}`);
   for (const p of sinPrecarga) console.log(`      ${c.gris}${p}${c.fin}`);
   console.log(`    Su vista no se precarga y NO da error: sólo carga lento la primera vez.`);
-  console.log(`    Agregá la clave en src/constants/routeImporters.js.\n`);
+  console.log(`    Agregá la clave en src/routeImporters.js.\n`);
 }
 
 const nuevasEnIngles = enIngles.filter(p => !(p in HEREDADAS));

@@ -15,7 +15,7 @@
 // inconsistencia: la crea.
 
 import { describe, it, expect } from 'vitest';
-import { fechaDeVuelta, estadoDesdeClave, estadoDePersona, estaAusenteHoy } from '../../src/utils/estadoDePersona';
+import { fechaDeVuelta, estadoDesdeClave, estadoDePersona, estaAusenteHoy } from '@nucleo/utils/estadoDePersona';
 
 const hoyISO = () => {
     const d = new Date();

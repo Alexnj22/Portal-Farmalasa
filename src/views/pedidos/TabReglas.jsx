@@ -21,14 +21,14 @@ import {
     fetchProductPresentacionesForDispatch, fetchLaboratorios, fetchAllDispatchRules,
     fetchActiveProductsCount, fetchNewProductsThisMonth, fetchProductsWithLabPage,
     deleteDispatchRule, updateDispatchRule, insertDispatchRule,
-} from '../../data/dispatchRules';
+} from '@nucleo/data/dispatchRules';
 import PortalInput from '../../components/common/PortalInput';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useAuth } from '../../context/AuthContext';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useAuth } from '@nucleo/context/AuthContext';
 import ExpedienteMovil from '../../components/common/ExpedienteMovil';
 import { useExpedienteMovil, CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import useMediaQuery from '../../plataforma/useMediaQuery';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];

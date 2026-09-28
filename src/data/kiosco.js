@@ -15,7 +15,7 @@
 // tirar un marcaje sólo porque se cayó el internet.
 
 import { supabase } from '../supabaseClient';
-import * as almacen from '../plataforma/almacen';
+import * as almacen from '@plataforma/almacen';
 
 // Un error de PostgREST que trae `code` es una respuesta REAL del servidor;
 // sin `code` es una caída de red. La diferencia decide si el marcaje se

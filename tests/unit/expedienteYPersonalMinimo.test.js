@@ -11,17 +11,17 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE, isDependentAgeOnly, getDependentAge,
-         isDependentAgeInvalid } from '../../src/utils/economicDependents';
+         isDependentAgeInvalid } from '@nucleo/utils/economicDependents';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions }
-    from '../../src/utils/educationCatalogs';
-import { NATIONALITY_OPTIONS } from '../../src/data/nationalities';
-import { calculateMinimumStaff } from '../../src/utils/staffHelpers';
+    from '@nucleo/utils/educationCatalogs';
+import { NATIONALITY_OPTIONS } from '@nucleo/data/nationalities';
+import { calculateMinimumStaff } from '@nucleo/utils/staffHelpers';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 const { fetchPracticantes, upsertInstitucionCatalogEntry, fetchInstitucionCatalogValues,
-        deletePracticante } = await import('../../src/data/practicantes');
+        deletePracticante } = await import('@nucleo/data/practicantes');
 
 describe('los dependientes económicos: fecha exacta o edad a mano', () => {
     it('con fecha de nacimiento NO está en modo edad', () => {

@@ -12,7 +12,7 @@
 // termina desactivado.
 
 import { describe, it, expect } from 'vitest';
-import { faltantesDelExpediente, expedienteIncompleto, edadDe } from '../../src/utils/expediente';
+import { faltantesDelExpediente, expedienteIncompleto, edadDe } from '@nucleo/utils/expediente';
 
 const campos = (datos) => faltantesDelExpediente(datos).map(f => f.campo);
 

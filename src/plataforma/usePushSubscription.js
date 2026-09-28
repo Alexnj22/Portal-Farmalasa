@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { reclamarPushSubscription, soltarPushSubscription } from '../data/pushSubscriptions';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { reclamarPushSubscription, soltarPushSubscription } from '@nucleo/data/pushSubscriptions';
 import { reclamarPushDelEquipo } from './pushEquipo';
-import { useToastStore } from '../store/toastStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 
 import { VAPID_PUBLIC_KEY } from './config';
 

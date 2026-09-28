@@ -4,7 +4,7 @@ import {
     User, Activity, MonitorSmartphone, CalendarClock, 
     ShieldAlert, CheckCircle2, AlertTriangle, Code2
 } from 'lucide-react';
-import { fechaHora12 } from '../../utils/hora';
+import { fechaHora12 } from '@nucleo/utils/hora';
 
 const FormAuditDetail = ({ data }) => {
     if (!data) return null;

@@ -2,7 +2,7 @@ import React from 'react';
 import { Zap, Droplet, Wifi, Smartphone, CalendarDays } from 'lucide-react';
 import { LazyInput, clampInt } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const BranchTabServicios = ({ services, updateServiceField }) => {
 

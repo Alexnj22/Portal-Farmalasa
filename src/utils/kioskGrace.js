@@ -1,4 +1,4 @@
-import * as almacen from '../plataforma/almacen';
+import * as almacen from '@plataforma/almacen';
 // Ventana de gracia de autorización del kiosco.
 //
 // Reemplaza a `kiosk_supervisor_pins`, el caché de localStorage que guardaba

@@ -19,14 +19,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchPeriodosFiscales, cerrarPeriodoFiscal, reabrirPeriodoFiscal } =
-    await import('../../src/data/cierrePeriodo');
-const { fetchCortesZ, fetchCorteZDias } = await import('../../src/data/corteZ');
-const { fetchResumenFiscal } = await import('../../src/data/resumenFiscal');
+    await import('@nucleo/data/cierrePeriodo');
+const { fetchCortesZ, fetchCorteZDias } = await import('@nucleo/data/corteZ');
+const { fetchResumenFiscal } = await import('@nucleo/data/resumenFiscal');
 const { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } =
-    await import('../../src/data/libroComprasCompleto');
+    await import('@nucleo/data/libroComprasCompleto');
 
 const rpcReal = espia.supabase.rpc;
 beforeEach(() => { espia.limpiar(); espia.supabase.rpc = rpcReal; });

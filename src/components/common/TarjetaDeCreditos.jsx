@@ -1,7 +1,7 @@
 import React from 'react';
 import { HandCoins } from 'lucide-react';
-import { formatMoney } from '../../utils/formatNumber';
-import { DIAS_EN_ROJO } from '../../utils/creditosVencidos';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { DIAS_EN_ROJO } from '@nucleo/utils/creditosVencidos';
 
 /* «Créditos que se pasaron del mes», dentro de la campana.
  *

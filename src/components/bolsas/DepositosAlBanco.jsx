@@ -10,13 +10,13 @@ import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
 import {
     adjuntarComprobanteDeposito, anularDeposito, fetchDepositos, subirComprobante,
-} from '../../data/bolsas';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { getSignedFileUrl } from '../../utils/storageFiles';
-import { useToastStore } from '../../store/toastStore';
-import { hora12, fechaHora12 } from '../../utils/hora';
-import { fechaTexto } from '../../utils/fecha';
+} from '@nucleo/data/bolsas';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 /**
  * El archivo de los depósitos al banco.

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
-import { useTextoRebotado } from '../hooks/useBusqueda';
+import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import SegmentedControl from '../components/common/SegmentedControl';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
@@ -12,23 +12,23 @@ import {
   Users, User, Target, X, Search, Plus, CheckCircle2,
   Archive, Eye, AlertCircle, PartyPopper, ChevronLeft, ChevronRight, Clock, Flame, Pencil, Save, CalendarClock, Power, Timer
 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../store/staffStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import ConfirmModal from '../components/common/ConfirmModal';
-import { tokenMatch, smartFilter } from '../utils/searchUtils';
+import { tokenMatch, smartFilter } from '@nucleo/utils/searchUtils';
 import AlertModal from '../components/common/AlertModal';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import LiquidSelect from '../components/common/LiquidSelect';
 import SearchInput from '../components/common/SearchInput';
-import { useToastStore } from '../store/toastStore';
-import { useAuth } from '../context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import PortalTextarea from '../components/common/PortalTextarea';
 import PortalInput from '../components/common/PortalInput';
 import TablePagination from '../components/common/TablePagination';
-import { shortEmployeeName } from '../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { EmptyState } from '../components/common/StateViews';
-import { rotuloCampo } from '../utils/rotuloDeCampo';
-import { fechaTexto } from '../utils/fecha';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // Las pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección. El

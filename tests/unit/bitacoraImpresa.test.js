@@ -15,7 +15,7 @@
 // Se mide sobre el HTML que escribe, capturado con una ventana falsa.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { imprimirMesDeBitacoras } from '../../src/utils/bitacoraPrint';
+import { imprimirMesDeBitacoras } from '@nucleo/utils/bitacoraPrint';
 
 /**
  * Escribe el mes en una ventana falsa y devuelve el HTML que se habría impreso.

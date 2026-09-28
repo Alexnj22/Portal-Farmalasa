@@ -20,12 +20,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchModuleLocks, lockModule, unlockModule, fetchLockableModules } =
-    await import('../../src/data/moduleLocks');
+    await import('@nucleo/data/moduleLocks');
 const { fetchRolePermissions, upsertRolePermission, updateRoleIdleLimit, fetchRolePermissionsForRoles } =
-    await import('../../src/data/permissions');
+    await import('@nucleo/data/permissions');
 
 beforeEach(() => espia.limpiar());
 

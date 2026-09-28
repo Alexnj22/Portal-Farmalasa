@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Loader2, TrendingUp } from 'lucide-react';
 import LanzadorSolicitud from '../LanzadorSolicitud';
 import { BarraTramos, FranjaVacia } from '../InstrumentoBaldosa';
-import { fetchMinMaxEstados } from '../../../data/minmaxRequests';
+import { fetchMinMaxEstados } from '@nucleo/data/minmaxRequests';
 
 // La BALDOSA de «Ajuste de Min/Max»: lo que el Inicio dibuja sin que nadie
 // toque nada.

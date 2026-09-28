@@ -12,13 +12,13 @@ import Badge from '../../../components/common/Badge';
 import EsperaDeCarne from '../../../components/common/EsperaDeCarne';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { Users, Loader2, AlertTriangle, Check } from 'lucide-react';
-import { signPhotosDeep } from '../../../utils/storageFiles';
+import { signPhotosDeep } from '@nucleo/utils/storageFiles';
 import useCapturaDeCarne from '../../../plataforma/useCapturaDeCarne';
-import { useToastStore } from '../../../store/toastStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import PedidoModal from '../PedidoModal';
-import { fetchEmployeeByKioskPin, upsertPedidoApoyo } from '../../../data/pedidos';
-import { mensajeAmigable } from '../../../utils/errorMessages';
-import { shortEmployeeName } from '../../../utils/nameUtils';
+import { fetchEmployeeByKioskPin, upsertPedidoApoyo } from '@nucleo/data/pedidos';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 export default function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existingApoyo = [], onSuccess, tipo = 'preparacion' }) {
     const [employee,    setEmployee]    = useState(null);

@@ -13,16 +13,16 @@ import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import ExpedienteMovil from '../../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../../components/common/usarExpediente';
-import { buscarIdsDeProducto } from '../../data/busquedaProductos';
+import { buscarIdsDeProducto } from '@nucleo/data/busquedaProductos';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
-import { fetchAllVencidosInventory, fetchExpiredInventoryCount, fetchInventarioAgrupado, fetchInventarioInversion, fetchInventarioProximosAVencer, fetchInventoryDetail, fetchInventorySyncLog, fetchProductCategories } from '../../data/inventarioTab';
-import { fetchLaboratoriosBasic } from '../../data/laboratorios';
-import { useToastStore } from '../../store/toastStore';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { hoySV } from '../../utils/fecha';
+import { fetchAllVencidosInventory, fetchExpiredInventoryCount, fetchInventarioAgrupado, fetchInventarioInversion, fetchInventarioProximosAVencer, fetchInventoryDetail, fetchInventorySyncLog, fetchProductCategories } from '@nucleo/data/inventarioTab';
+import { fetchLaboratoriosBasic } from '@nucleo/data/laboratorios';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { hoySV } from '@nucleo/utils/fecha';
 
-import { ERP_NAMES } from '../../constants/erp';
+import { ERP_NAMES } from '@nucleo/constants/erp';
 // Orden numérico a propósito en esta pestaña (no el de despacho de `ERP_ORDEN`).
 const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
 // Guarda el NOMBRE de la variante, no tres clases (2026-07-28, D3.5).

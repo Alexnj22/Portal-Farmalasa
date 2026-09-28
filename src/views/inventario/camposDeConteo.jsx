@@ -1,5 +1,5 @@
 import React from 'react';
-import { inputHoverClass } from '../../utils/inputStyles';
+import { inputHoverClass } from '@nucleo/utils/inputStyles';
 
 /**
  * Los dos envoltorios de campo del Conteo de inventario.

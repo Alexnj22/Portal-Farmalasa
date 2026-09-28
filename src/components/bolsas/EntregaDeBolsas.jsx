@@ -5,12 +5,12 @@ import Checkbox from '../common/Checkbox';
 import IdentidadDeQuienRetira from './IdentidadDeQuienRetira';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
-import { entregarBolsas } from '../../data/bolsas';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useToastStore } from '../../store/toastStore';
-import { saldoDeBolsa } from '../../utils/bolsasReparto';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { entregarBolsas } from '@nucleo/data/bolsas';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 /**
  * Entregar el efectivo de la sala a quien lo recolecta.

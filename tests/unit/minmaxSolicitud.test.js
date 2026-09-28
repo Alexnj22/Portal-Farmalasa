@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio } from '../../src/utils/minmaxSolicitud';
+import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio } from '@nucleo/utils/minmaxSolicitud';
 
 /**
  * Los MISMOS casos que se corrieron contra `minmax_change_requests` en

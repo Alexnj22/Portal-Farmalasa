@@ -15,13 +15,13 @@ import {
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import PortalInput from '../components/common/PortalInput';
 import ConfirmModal from '../components/common/ConfirmModal';
-import { smartFilter } from '../utils/searchUtils';
-import { useStaffStore as useStaff } from '../store/staffStore';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import Switch from '../components/common/Switch';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import {
@@ -29,8 +29,8 @@ import {
     guardarPermisoDeCargo, cambiarNivelDePrecioDeCargo, cambiarSuperUsuarioDeCargo,
     cambiarTiempoDeInactividadDeCargo, delegarDecisionesDeCargo, activarTodoParaCargo,
     copiarPermisosDeCargo, cambiarSeccionDeCargo,
-} from '../data/permissions';
-import { useToastStore } from '../store/toastStore';
+} from '@nucleo/data/permissions';
+import { useToastStore } from '@nucleo/store/toastStore';
 
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 // MODULE_GROUPS vive en constants/permissionModules.js (lo comparte MaintenanceView).

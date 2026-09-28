@@ -84,9 +84,9 @@ import {
     Mail,
     Star,
 } from 'lucide-react';
-import { MODULE_GROUPS as GRUPOS, MODULE_INFO as INFO } from '../../../constants/permissionModules';
+import { MODULE_GROUPS as GRUPOS, MODULE_INFO as INFO } from '@nucleo/constants/permissionModules';
 
-export * from '../../../constants/permissionModules';
+export * from '@nucleo/constants/permissionModules';
 
 const ICONOS = {
     Activity,

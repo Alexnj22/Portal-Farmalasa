@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../plataforma/ThemeContext';
+import { useTheme } from '@plataforma/ThemeContext';
 import { fetchUserTheme, upsertUserTheme } from '../data/dashboard';
-import { COLUMNA_TEMA } from '../plataforma/temaPorDispositivo';
+import { COLUMNA_TEMA } from '@plataforma/temaPorDispositivo';
 
 // Mounted once in AppLayout.
 // Sincroniza ThemeContext con user_dashboard_prefs: al iniciar sesión trae el

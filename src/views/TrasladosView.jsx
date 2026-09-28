@@ -6,12 +6,12 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { useStaffStore } from '../store/staffStore';
-import { useNowTick } from '../hooks/useNowTick';
-import { smartFilter } from '../utils/searchUtils';
-import { getLocalMonday, formatWeekRange, shiftWeek } from '../utils/semana';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { getLocalMonday, formatWeekRange, shiftWeek } from '@nucleo/utils/semana';
 // Diferidas igual que en `WidgetTransferRequests`, y por el MISMO motivo escrito
 // en el baseline del gate de peso: estas tarjetas se dibujan sólo cuando la
 // consulta VOLVIÓ con algo en camino, y cuando no hay nada la pantalla muestra
@@ -31,11 +31,11 @@ const RetiroModal        = lazy(() => import('./traslados/RetiroModal'));
 /* Mismo motivo que las tarjetas de arriba: la lista de faltantes se dibuja sólo
    cuando su consulta volvió con algo, y lo normal es que no haya ninguno. */
 const FilasFaltante      = lazy(() => import('./traslados/FilasFaltante'));
-import { buscadorDePersonas } from '../utils/movimientoTexto';
-import { textoBuscable } from '../utils/trasladoTexto';
-import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
-import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '../data/envios';
-import { fetchFaltantes } from '../data/faltantes';
+import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import { textoBuscable } from '@nucleo/utils/trasladoTexto';
+import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '@nucleo/data/traslados';
+import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '@nucleo/data/envios';
+import { fetchFaltantes } from '@nucleo/data/faltantes';
 const GrupoPorRecibir = lazy(() => import('./traslados/GrupoPorRecibir'));
 // El historial es la pestaña que menos se abre, y trae sus tarjetas propias.
 const HistorialTraslados = lazy(() => import('./traslados/HistorialTraslados'));

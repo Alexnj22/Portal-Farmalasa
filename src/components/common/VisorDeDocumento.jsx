@@ -35,7 +35,7 @@ import { X, Pencil, ExternalLink, Download, Loader2, FileText } from 'lucide-rea
 import ModalShell from './ModalShell';
 import Button from './Button';
 import Notice from './Notice';
-import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
+import { getSignedFileUrl, downloadStoredFile } from '@nucleo/utils/storageFiles';
 
 const EditorDeDocumento = lazy(() => import('./EditorDeDocumento'));
 

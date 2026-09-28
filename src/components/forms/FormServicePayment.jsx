@@ -2,7 +2,7 @@ import React from 'react';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, CalendarCheck, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const SERVICE_CONFIG = {
  rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3', providerLabel: 'Nombre del Arrendador' },

@@ -17,9 +17,9 @@ import { aplicarPendientes } from '../../data/documentosCompartidos';
 import { guardarDiaDeHorario } from '../../data/schedules';
 import { TERMINATION_REASONS, SIN_ASIGNAR } from '../../data/constants';
 import { claveDeDia } from '../../utils/scheduleHelpers';
-import * as almacen from '../../plataforma/almacen';
-import { emitir } from '../../plataforma/eventos';
-import { comprimirFotoDeEmpleado } from '../../plataforma/imagenes';
+import * as almacen from '@plataforma/almacen';
+import { emitir } from '@plataforma/eventos';
+import { comprimirFotoDeEmpleado } from '@plataforma/imagenes';
 import { hoySV, lunesDe } from '../../utils/fecha';
 
 // education_specialty/profession son selects de catálogo con fallback a

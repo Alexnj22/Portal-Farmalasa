@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Loader2, Receipt } from 'lucide-react';
 import LanzadorSolicitud from '../LanzadorSolicitud';
 import { BarraTramos, FranjaVacia } from '../InstrumentoBaldosa';
-import { fetchSolicitudesFacturacionPendientes } from '../../../data/requests';
+import { fetchSolicitudesFacturacionPendientes } from '@nucleo/data/requests';
 
 // La BALDOSA de «Modificar facturación»: lo que el Inicio dibuja sin que nadie
 // toque nada.

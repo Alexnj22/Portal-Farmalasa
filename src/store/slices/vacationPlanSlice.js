@@ -7,7 +7,7 @@ import {
     insertVacationPlan,
 } from '../../data/vacationPlans';
 import { resolverApprovalRequest, updateApprovalRequest } from '../../data/requests';
-import { SUPABASE_URL } from '../../plataforma/config';
+import { SUPABASE_URL } from '@plataforma/config';
 import { fechaTexto } from '../../utils/fecha';
 
 export const createVacationPlanSlice = (set, get) => ({

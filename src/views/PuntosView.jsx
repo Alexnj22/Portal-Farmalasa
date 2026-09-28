@@ -43,25 +43,25 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';
 import TablePagination from '../components/common/TablePagination';
-import { useAuth } from '../context/AuthContext';
-import { useToastStore } from '../store/toastStore';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { tokenMatch } from '../utils/searchUtils';
-import { formatMoney, formatQty } from '../utils/formatNumber';
-import { fechaHora12 } from '../utils/hora';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
+import { fechaHora12 } from '@nucleo/utils/hora';
 import {
     fetchResumenDePuntos, fetchAvisosDePuntos, fetchCuentasPorAsignar, QUE_HACER_POR_MOTIVO,
     fetchSerieDePuntos, fetchClientesConPuntos, fetchTableroDePuntos,
-} from '../data/puntos';
-import { useTextoRebotado } from '../hooks/useBusqueda';
-import { useStaffStore as useStaff } from '../store/staffStore';
+} from '@nucleo/data/puntos';
+import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import AsignarCuentaModal from './puntos/AsignarCuentaModal';
 import ClientePuntosModal from './puntos/ClientePuntosModal';
 
 // `recharts` pesa: viaja en su propio chunk y se pide cuando la pestaña lo pinta.
 const GraficaDiaria = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaDiaria })));
-import { fechaTexto } from '../utils/fecha';
-import { clickable } from '../utils/clickable';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { clickable } from '@nucleo/utils/clickable';
 
 // Cada pestaña con su permiso. La lista que se le pasa a la URL es la de las
 // VISIBLES: una dirección con `?tab=avisos` en manos de quien no la tiene cae a

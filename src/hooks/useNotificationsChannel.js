@@ -3,9 +3,9 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
-import { fireBrowserNotif } from '../plataforma/browserNotif';
+import { fireBrowserNotif } from '@plataforma/browserNotif';
 import { useRecargarAlVolver } from './useRecargarAlVolver';
-import { irA } from '../plataforma/navegacion';
+import { irA } from '@plataforma/navegacion';
 
 // Montar UNA sola vez (AppLayout). Carga inicial + realtime de la tabla
 // notifications filtrado al empleado actual; RLS respalda el filtro.

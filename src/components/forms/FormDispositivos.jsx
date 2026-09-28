@@ -3,8 +3,8 @@ import Notice from '../common/Notice';
 import Button from '../common/Button';
 import { SkeletonText } from '../common/StateViews';
 import { Laptop, AlertCircle, Loader2, Unplug, PowerOff, Activity } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { fechaTexto } from '../../utils/fecha';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 const FormDispositivos = ({ formData }) => {
     const [kiosks, setKiosks] = useState([]);

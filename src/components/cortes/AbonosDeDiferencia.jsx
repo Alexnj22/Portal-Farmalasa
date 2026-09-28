@@ -7,10 +7,10 @@ import Button from '../common/Button';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
-import useResolverDiferencia from '../../hooks/useResolverDiferencia';
-import { formatMoney } from '../../utils/formatNumber';
-import { fechaHora12 } from '../../utils/hora';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import useResolverDiferencia from '@nucleo/hooks/useResolverDiferencia';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fechaHora12 } from '@nucleo/utils/hora';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 /**
  * Quién responde por un faltante sin causa, cuánto lleva abonado y cómo se

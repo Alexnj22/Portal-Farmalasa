@@ -4,7 +4,7 @@ import SegmentedControl from '../components/common/SegmentedControl';
 import { EmptyState } from '../components/common/StateViews';
 import Button from '../components/common/Button';
 import { AnimatePresence, motion } from 'framer-motion';
-import { tokenMatch, normSearch } from '../utils/searchUtils';
+import { tokenMatch, normSearch } from '@nucleo/utils/searchUtils';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
     X, Save, Loader2,
@@ -12,9 +12,9 @@ import {
     AlertTriangle
 } from 'lucide-react';
 
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
-import { useToastStore } from '../store/toastStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import TabShifts from './schedule-tabs/TabShifts';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -28,9 +28,9 @@ import {
     formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM,
     resolverTurnoDelDia, claveDeDia, descansoInsuficiente,
     HORAS_SEMANA_DIURNA, DESCANSOS_POR_SEMANA,
-} from '../utils/scheduleHelpers';
-import { shortEmployeeName } from '../utils/nameUtils';
-import { getLocalMonday, formatWeekRange } from '../utils/semana';
+} from '@nucleo/utils/scheduleHelpers';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { getLocalMonday, formatWeekRange } from '@nucleo/utils/semana';
 
 import InlineDayEditor from './schedule-tabs/components/InlineDayEditor';
 import ScheduleChart from './schedule-tabs/components/ScheduleChart';
@@ -39,12 +39,12 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import {
     fetchScheduleCoverageAtBranch, fetchScheduleCoverageFromBranch,
     fetchBranchHourlySales, deleteScheduleCoverage, upsertScheduleCoverage,
-} from '../data/schedules';
-import { fetchRostersForWeekByEmployees } from '../data/requests';
+} from '@nucleo/data/schedules';
+import { fetchRostersForWeekByEmployees } from '@nucleo/data/requests';
 import PortalInput from '../components/common/PortalInput';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
-import { rotuloCampo } from '../utils/rotuloDeCampo';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 

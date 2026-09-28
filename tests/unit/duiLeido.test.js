@@ -14,7 +14,7 @@
 // es el documento, así que debe siempre sustituir». Antes NO pisaba lo tecleado.
 
 import { describe, it, expect } from 'vitest';
-import { aplicarDuiLeido, avisoDeCaras } from '../../src/utils/duiLeido';
+import { aplicarDuiLeido, avisoDeCaras } from '@nucleo/utils/duiLeido';
 
 const LEIDO = {
     numero: '01234567-8',

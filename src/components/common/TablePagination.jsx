@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import LiquidSelect from './LiquidSelect';
-import useLayoutCompacto from '../../hooks/useLayoutCompacto';
+import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 
 // eslint-disable-next-line react-refresh/only-export-components -- constante chica usada solo junto a este componente; solo afecta Fast Refresh en dev
 export const PAGE_SIZE_OPTIONS = [25, 50, 100];

@@ -7,13 +7,13 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import { EmptyState, LoadingState } from '../common/StateViews';
 import ResolverDiferencia from './ResolverDiferencia';
-import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
-import { clickable } from '../../utils/clickable';
-import { formatMoney } from '../../utils/formatNumber';
-import { hora12 } from '../../utils/hora';
-import { fechaTexto } from '../../utils/fecha';
-import { desgloseDelDia, responsablesDelDia } from '../../utils/diferenciasDeCaja';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import useSobreviveAlCierre from '@nucleo/hooks/useSobreviveAlCierre';
+import { clickable } from '@nucleo/utils/clickable';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { desgloseDelDia, responsablesDelDia } from '@nucleo/utils/diferenciasDeCaja';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 /**
  * La pestaña «Diferencias» de /caja: qué días tuvieron diferencia, cómo quedó

@@ -1521,6 +1521,11 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   (359 usos en 64 archivos) y **sólo baja**. Si hace falta el navegador, se
   pide por el adaptador de la plataforma; si hace falta un ícono, la lógica
   devuelve su NOMBRE. Plan y fases en `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+  **Al importar el núcleo desde una pantalla, `@nucleo/utils/…`, nunca
+  `../../utils/…`; desde el núcleo, la plataforma va por `@plataforma/…`.** Lo
+  vigila `npm run gate:alias` en el pre-commit (`--escribir` en
+  `scripts/nucleo-alias.mjs` lo corrige solo). Es lo que deja mudar el núcleo a
+  `packages/core` sin tocar pantallas.
 - **`npm run gate:tipos` — la base es un CONTRATO.** `src/types/database.ts`
   son los tipos de producción y el cliente de Supabase se declara con ellos:
   una tabla, columna o parámetro de `.rpc()` que no existe da un aviso de `tsc`

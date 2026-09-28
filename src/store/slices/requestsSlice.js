@@ -20,7 +20,7 @@ import { guardarDiaDeHorario } from '../../data/schedules';
 import { signStorageUrls } from '../../utils/storageFiles';
 import { formatMoney } from '../../utils/formatNumber';
 import { claveDeDia } from '../../utils/scheduleHelpers';
-import { emitir } from '../../plataforma/eventos';
+import { emitir } from '@plataforma/eventos';
 import { fechaTexto, hoySV, lunesDe } from '../../utils/fecha';
 
 // ============================================================================

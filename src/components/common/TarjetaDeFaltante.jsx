@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingDown, Wallet } from 'lucide-react';
-import { formatMoney } from '../../utils/formatNumber';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import AvatarConEstado from './AvatarConEstado';
 
 /* «Ayer la caja cerró con faltante», dentro de la campana.

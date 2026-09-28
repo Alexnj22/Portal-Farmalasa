@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import AsaHoja from './AsaHoja';
 import ModalShell from './ModalShell';
 import { useArrastreHoja } from './arrastreHoja';
-import { usePanelLateral } from '../../hooks/useLayoutCompacto';
+import { usePanelLateral } from '@nucleo/hooks/useLayoutCompacto';
 import useMediaQuery from '../../plataforma/useMediaQuery';
 
 /**

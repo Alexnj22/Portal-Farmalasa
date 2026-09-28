@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { unaSolaVez } from '../../src/utils/unaSolaVez';
+import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El doble toque que costó $377.61.

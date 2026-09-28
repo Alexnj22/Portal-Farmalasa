@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Loader2, PackageMinus } from 'lucide-react';
 import LanzadorSolicitud from '../LanzadorSolicitud';
 import { BarraTramos, FranjaVacia } from '../InstrumentoBaldosa';
-import { contarPorVencer } from '../../../data/inventoryMovements';
+import { contarPorVencer } from '@nucleo/data/inventoryMovements';
 
 // La BALDOSA de «Ajuste de inventario»: lo que el Inicio dibuja sin que nadie
 // toque nada.

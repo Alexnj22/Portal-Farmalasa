@@ -10,10 +10,10 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import EditorDeHorarios from '../../components/bitacoras/EditorDeHorarios';
 import PuntosDeLimpieza from '../../components/bitacoras/PuntosDeLimpieza';
 import { LoadingState } from '../../components/common/StateViews';
-import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, apagarRefrigerador, areaNueva, crearArea, encenderRefrigerador, fetchAreas, guardarArea, rangoDeLaSucursal, rotularRango, soloLimpieza } from '../../data/bitacoras';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { hora12 } from '../../utils/hora';
-import { hoySV } from '../../utils/fecha';
+import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, apagarRefrigerador, areaNueva, crearArea, encenderRefrigerador, fetchAreas, guardarArea, rangoDeLaSucursal, rotularRango, soloLimpieza } from '@nucleo/data/bitacoras';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { hora12 } from '@nucleo/utils/hora';
+import { hoySV } from '@nucleo/utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuración de las áreas.

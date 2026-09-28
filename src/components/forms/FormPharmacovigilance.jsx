@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import Button from '../common/Button';
 import { Users, ShieldCheck, FileText, AlertCircle } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);

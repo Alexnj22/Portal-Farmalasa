@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { salaQueEspera } from '../../src/utils/movimientoTexto';
+import { salaQueEspera } from '@nucleo/utils/movimientoTexto';
 
 // El traslado de Rodrigo, tal como está en producción: lo pide Salud 3 y lo
 // tiene que entregar Salud 5. `branch_id` es la sala que PIDIÓ y

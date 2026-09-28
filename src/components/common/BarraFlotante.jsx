@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X, ScanLine } from 'lucide-react';
-import useLayoutCompacto from '../../hooks/useLayoutCompacto';
+import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 import Contador from './Contador';
 import ModalShell from './ModalShell';
 import HojaMovil, { MATERIAL_HOJA, MATERIAL_CLUSTER } from './HojaMovil';

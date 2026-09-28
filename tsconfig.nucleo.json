@@ -11,7 +11,18 @@
     "skipLibCheck": true,
     "jsx": "react-jsx",
     "resolveJsonModule": true,
-    "types": ["vite/client"]
+    "types": [
+      "vite/client"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@nucleo/*": [
+        "src/*"
+      ],
+      "@plataforma/*": [
+        "src/plataforma/*"
+      ]
+    }
   },
   "include": [
     "src/data/**/*.js",
@@ -22,5 +33,7 @@
     "src/supabaseClient.js",
     "src/types/**/*.ts"
   ],
-  "exclude": ["**/*.test.js"]
+  "exclude": [
+    "**/*.test.js"
+  ]
 }

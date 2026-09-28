@@ -1,8 +1,8 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { useStaffStore } from '../../store/staffStore';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import { anotar } from '../../plataforma/cajaNegra';
-import { marcarVersionNueva } from '../../utils/versionNueva';
+import { marcarVersionNueva } from '@nucleo/utils/versionNueva';
 
 /**
  * ¿Este error es «el chunk no cargó» y no «el código falló»?

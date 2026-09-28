@@ -30,12 +30,12 @@ import PeriodStepper from '../../components/common/PeriodStepper';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Notice from '../../components/common/Notice';
-import { useStaffStore } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchResumenFiscal } from '../../data/resumenFiscal';
-import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '../../utils/fecha';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchResumenFiscal } from '@nucleo/data/resumenFiscal';
+import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 
 const pct = (t) => `${(Number(t || 0) * 100).toFixed(2).replace(/\.?0+$/, '')}%`;
 

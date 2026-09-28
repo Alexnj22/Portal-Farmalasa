@@ -1,7 +1,7 @@
 import React from 'react';
 import Button from '../common/Button';
 import { ScanBarcode, ShieldAlert, XCircle, Bell } from 'lucide-react';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 // Anillo "esperando escaneo" — reemplaza el <input> que simulaba tecleo
 // manual. El carné ya no se escribe: el escáner alimenta un listener global

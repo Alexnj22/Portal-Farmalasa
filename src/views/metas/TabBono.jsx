@@ -12,11 +12,11 @@ import PeriodStepper from '../../components/common/PeriodStepper';
 import ListRow from '../../components/common/ListRow';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { fetchBonoMetaSala, setBonificaciones } from '../../data/metas';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, SALAS_VENTA, TRAMO_CFG } from '../../utils/metasUtils';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { fetchBonoMetaSala, setBonificaciones } from '@nucleo/data/metas';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, SALAS_VENTA, TRAMO_CFG } from '@nucleo/utils/metasUtils';
 
 const COLS_BASE = [
     { key: 'persona', label: 'Persona' },

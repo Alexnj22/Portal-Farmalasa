@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy, Percent, ChevronRight } from 'lucide-react';
-import { clickable } from '../../utils/clickable';
+import { clickable } from '@nucleo/utils/clickable';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
-import { activarPromocion } from '../../data/promociones';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { activarPromocion } from '@nucleo/data/promociones';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
     fmtUnidades, fmtVigencia, diasRestantes, estadoVisible, rotuloMes,
     esLaboratorio,
-} from '../../utils/promocionesUtils';
+} from '@nucleo/utils/promocionesUtils';
 
 /**
  * Las promociones vivas, como tarjetas.

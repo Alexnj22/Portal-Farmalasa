@@ -20,10 +20,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const rpc  = vi.fn(() => ({ data: null, error: null }));
 const from = vi.fn(() => ({ select: () => ({ eq: () => ({ data: [], error: null }) }) }));
-vi.mock('../../src/supabaseClient', () => ({ supabase: { rpc: (...a) => rpc(...a), from: (...a) => from(...a) } }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: { rpc: (...a) => rpc(...a), from: (...a) => from(...a) } }));
 
 const { fetchVentasConReceta, fetchVentasRecetaStats, fetchVentasSinProducto, fetchAntibioticProductIds } =
-    await import('../../src/data/ventas');
+    await import('@nucleo/data/ventas');
 
 beforeEach(() => vi.clearAllMocks());
 

@@ -6,15 +6,15 @@ import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Package, Building2, CheckCircle2, TrendingDown } from 'lucide-react';
-import { useAuth } from '../../../context/AuthContext';
-import { useNowTick } from '../../../hooks/useNowTick';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { ERP_NAMES, ERP_ORDER, ALERT } from './constants';
-import { sortedPres, formatDominant } from '../../../utils/minmaxTabla';
+import { sortedPres, formatDominant } from '@nucleo/utils/minmaxTabla';
 import StockBar from './StockBar';
 import AbcXyzBadge from './AbcXyzBadge';
-import { fetchLotesPorVencer, marcarAccionStockMuerto, fetchPoliticaDeVencimiento, fetchProductCostHistory, fetchResumenDelProductoPorSala, fetchStockParamsHistory, fetchUltimasVentasDelProducto } from '../../../data/stockParams';
-import { formatMoney } from '../../../utils/formatNumber';
-import { fechaTexto } from '../../../utils/fecha';
+import { fetchLotesPorVencer, marcarAccionStockMuerto, fetchPoliticaDeVencimiento, fetchProductCostHistory, fetchResumenDelProductoPorSala, fetchStockParamsHistory, fetchUltimasVentasDelProducto } from '@nucleo/data/stockParams';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // 7B.2 — regla (g) de Bodega: la cuenta regresiva es sobre la política en
 // meses, NO el mes de vencimiento — el envío llega ~1 mes después de

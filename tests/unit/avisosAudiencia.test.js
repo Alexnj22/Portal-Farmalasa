@@ -9,7 +9,7 @@
 // se nota tarde y mal.
 
 import { describe, it, expect } from 'vitest';
-import { announcementAppliesToUser } from '../../src/utils/announcementAudience';
+import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
 
 // `user.role` es el ID del cargo (AuthContext lo arma como `emp.role_id`), y la
 // función lo cruza contra `roles` para sacar el NOMBRE. Ese rodeo es a propósito:

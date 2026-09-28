@@ -10,9 +10,9 @@ import Badge from '../common/Badge';
 import {
     deleteProductActivePrinciples, insertProductActivePrinciples, updateProductPrincipioActivo,
     updateProductSinPrincipioActivo, fetchProductsWithoutPrincipioActivo,
-} from '../../data/productos';
+} from '@nucleo/data/productos';
 import PortalInput from '../common/PortalInput';
-import { buscarEnSrs } from '../../data/srs';
+import { buscarEnSrs } from '@nucleo/data/srs';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sumarDiasHabiles, diasHabilesEntre, plazoDe } from '../../src/data/solicitudesDatos';
+import { sumarDiasHabiles, diasHabilesEntre, plazoDe } from '@nucleo/data/solicitudesDatos';
 
 // El plazo de una solicitud de datos personales (Art. 20 de la Ley de
 // Protección de Datos): 20 días HÁBILES desde el acuse, 40 si se prorrogó.

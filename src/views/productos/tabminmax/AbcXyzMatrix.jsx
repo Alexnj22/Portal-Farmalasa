@@ -2,10 +2,10 @@
 import React, { useMemo, useState, useRef, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { BarChart2, ChevronDown } from 'lucide-react';
-import { normXyz } from '../../../utils/minmaxTabla';
+import { normXyz } from '@nucleo/utils/minmaxTabla';
 import Button from '../../../components/common/Button';
 import useCapaFlotante from '../../../plataforma/capaFlotante';
-import useLayoutCompacto from '../../../hooks/useLayoutCompacto';
+import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 
 const XYZ_KEYS = ['X', 'Y', 'Z'];
 const ABC_KEYS = ['A', 'B', 'C'];

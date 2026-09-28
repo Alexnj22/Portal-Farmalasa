@@ -2,7 +2,7 @@
 import { useRef, useEffect } from 'react';
 import Badge from '../../../components/common/Badge';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
-import { shortEmployeeName } from '../../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { Truck, CheckCircle2, AlertCircle, Check, AlertTriangle, PackageX } from 'lucide-react';
 
 // El tipo de llegada, como variante del canónico `Badge`. Era un par

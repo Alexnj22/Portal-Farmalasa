@@ -22,12 +22,12 @@ import PromptModal from '../../components/common/PromptModal';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
-import { useStaffStore } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
 import {
     printHojaConteo, printResultadosConteo, printAjustesConteo, exportAjustesConteo,
-} from '../../utils/conteoInventarioPrint';
+} from '@nucleo/utils/conteoInventarioPrint';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
@@ -42,16 +42,16 @@ const AddManualItemForm = lazy(() => import('./AddManualItemForm'));
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import FilterBar from '../../components/common/FilterBar';
 import Contador from '../../components/common/Contador';
-import useLayoutCompacto, { useFichasEnVezDeTabla, useAltoEscaso } from '../../hooks/useLayoutCompacto';
+import useLayoutCompacto, { useFichasEnVezDeTabla, useAltoEscaso } from '@nucleo/hooks/useLayoutCompacto';
 import usePaginaEnUrl from '../../plataforma/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { CajaFecha } from './camposDeConteo';
-import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { hora12, fechaHora12 } from '../../utils/hora';
-import { fechaNumerica } from '../../utils/fecha';
+import { formatMoney, formatQty, formatPct } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 const PAGE_SIZE_INICIAL = 25;
 

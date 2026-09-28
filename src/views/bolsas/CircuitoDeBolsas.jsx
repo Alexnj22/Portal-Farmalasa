@@ -19,23 +19,23 @@ import {
     fetchConteos, fetchInvariante, fetchPersonasDeBolsas, fetchPorDepositar, fetchSaldos,
     marcarConteoBolsa,
     recibirBolsas, resolverDiferenciaBolsa, subirComprobante,
-} from '../../data/bolsas';
-import { clickable } from '../../utils/clickable';
-import { getSignedFileUrl } from '../../utils/storageFiles';
-import { tokenMatch } from '../../utils/searchUtils';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useAuth } from '../../context/AuthContext';
-import useCerrarBolsa from '../../hooks/useCerrarBolsa';
-import { useNowTick } from '../../hooks/useNowTick';
-import { useRefrescoEnVivo } from '../../hooks/useRefrescoEnVivo';
-import { useStaffStore as useStaff } from '../../store/staffStore';
+} from '@nucleo/data/bolsas';
+import { clickable } from '@nucleo/utils/clickable';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useAuth } from '@nucleo/context/AuthContext';
+import useCerrarBolsa from '@nucleo/hooks/useCerrarBolsa';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
+import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { rangoDeDias } from './etapas';
-import { useToastStore } from '../../store/toastStore';
-import { saldoDeBolsa } from '../../utils/bolsasReparto';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { hora12, fechaHora12 } from '../../utils/hora';
-import { diasEntre, fechaTexto, hoySV } from '../../utils/fecha';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
+import { diasEntre, fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 /* El detalle se baja al ABRIR una bolsa, no al entrar a la pestaña: arrastra el
  * motor de impresion y el visor de archivos firmados, y la lista se ve entera

@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient';
-import { GOOGLE_MAPS_API_KEY } from '../plataforma/config';
+import { GOOGLE_MAPS_API_KEY } from '@plataforma/config';
 
 const BODEGA_SUC_ID = 6;
 const AVG_SPEED_KMH = 40;

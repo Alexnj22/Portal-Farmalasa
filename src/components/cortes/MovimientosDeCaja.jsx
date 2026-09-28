@@ -7,14 +7,14 @@ import Notice from '../common/Notice';
 import TablePagination from '../common/TablePagination';
 import { EmptyState } from '../common/StateViews';
 import AvatarConEstado from '../common/AvatarConEstado';
-import { formatMoney } from '../../utils/formatNumber';
-import { tokenMatch } from '../../utils/searchUtils';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { emparejarCobrosConMovimientos } from '../../utils/cortesDiagnostico';
-import { cobroEnEfectivo } from '../../data/creditos';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { hora12, fechaHora12 } from '../../utils/hora';
-import { diaSV, fechaTexto, relojSV } from '../../utils/fecha';
+import { emparejarCobrosConMovimientos } from '@nucleo/utils/cortesDiagnostico';
+import { cobroEnEfectivo } from '@nucleo/data/creditos';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
+import { diaSV, fechaTexto, relojSV } from '@nucleo/utils/fecha';
 
 /**
  * Los movimientos de caja de un período: verlos y buscarlos TODOS.

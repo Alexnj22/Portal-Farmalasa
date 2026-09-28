@@ -8,11 +8,11 @@
 // CUARTO código de sala.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { EMPRESA } from '../../src/constants/empresa';
+import { EMPRESA } from '@nucleo/constants/empresa';
 import { SUCURSALES, ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP, ERP_CODIGOS,
-         ERP_UBICACION_POR_SUCURSAL } from '../../src/constants/erp';
+         ERP_UBICACION_POR_SUCURSAL } from '@nucleo/constants/erp';
 import { SENSITIVE_FIELDS, CACHE_KEYS, safeJsonParse, persistEmployees,
-         normalizeWeeklyHours } from '../../src/store/utils';
+         normalizeWeeklyHours } from '@nucleo/store/utils';
 
 describe('los datos fiscales de la empresa', () => {
     it('el nombre es el de la EMPRESA, no el del portal', () => {

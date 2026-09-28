@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { PESTANAS_TEMATICAS, catalogoDePestana, hospedaBaldosasDeSucursal, tematicaDe }
-    from '../../src/constants/dashboardTabs';
+    from '@nucleo/constants/dashboardTabs';
 import { ERP_BRANCH_MAP, BRANCH_ORDER, MI_ERP_POR_BRANCH }
     from '../../src/views/dashboard/inventario/salas';
 

@@ -2,14 +2,14 @@ import React, { useMemo } from 'react';
 import Button from '../common/Button';
 import { EmptyState } from '../common/StateViews';
 import { Plus, Trash2, UploadCloud, ShieldCheck, Users, Award, Receipt, CheckCircle2 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
-import { clickable } from '../../utils/clickable';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { clickable } from '@nucleo/utils/clickable';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const FormNursingRegents = ({ formData, setFormData }) => {
     const employees = useStaff(state => state.employees);

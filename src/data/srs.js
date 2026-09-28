@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../plataforma/config';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@plataforma/config';
 
 // ── El registro sanitario (SRS), por el intermediario `srs-proxy` ────────────
 //

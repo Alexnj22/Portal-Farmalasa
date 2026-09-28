@@ -2,21 +2,21 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import { smartFilter } from '../../utils/searchUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
     Building2, ClipboardList, CheckCircle2,
     Package, Info,
     TriangleAlert, TrendingUp,
     Check, Search, PackageX, Repeat,
 } from 'lucide-react';
-import { useToastStore } from '../../store/toastStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
-import { useAuth } from '../../context/AuthContext';
-import { printPerSucursal, buildPedidoCodigo, fefoProject, getExactPageGroups } from '../../utils/pedidoPrint';
-import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { printPerSucursal, buildPedidoCodigo, fefoProject, getExactPageGroups } from '@nucleo/utils/pedidoPrint';
+import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
 import Contador from '../../components/common/Contador';
-import { confirmarPedido, fetchActiveEmployeesBasic, fetchPedidoIdsSinceExcluding, fetchPedidoItemsForPrintCapture, fetchPedidoNumero, fetchPedidoSucursalStatusForPedidos, fetchTableroParaGenerarPedido, fetchVistaPreviaDePedido, iniciarCodigosDeSucursalesDelPedido, tieneEtiquetaDeDespacho, updatePedidoSucursalStatus } from '../../data/pedidos';
+import { confirmarPedido, fetchActiveEmployeesBasic, fetchPedidoIdsSinceExcluding, fetchPedidoItemsForPrintCapture, fetchPedidoNumero, fetchPedidoSucursalStatusForPedidos, fetchTableroParaGenerarPedido, fetchVistaPreviaDePedido, iniciarCodigosDeSucursalesDelPedido, tieneEtiquetaDeDespacho, updatePedidoSucursalStatus } from '@nucleo/data/pedidos';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 
 function friendlyError(e) {

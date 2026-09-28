@@ -16,27 +16,27 @@ import AvatarConEstado from '../components/common/AvatarConEstado';
 import AvisoDeBorrador from '../components/common/AvisoDeBorrador';
 import FileField from '../components/common/FileField';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
-import useBorrador from '../hooks/useBorrador';
-import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useToastStore } from '../store/toastStore';
+import useBorrador from '@nucleo/hooks/useBorrador';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';
 import {
     DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchCreditosDelCliente,
     fetchHistorialDelOrigen, fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito,
     pagarCreditos, pedirCorreccionDeAbono, severidadDeDias, fetchCreditosReservados,
     subirComprobanteDeAbono,
-} from '../data/creditos';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { formatMoney } from '../utils/formatNumber';
+} from '@nucleo/data/creditos';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 /* `fechaCorta` sale de `ticketCampos` y no se reescribe acá: es la MISMA
  * pregunta —«dd/mm/aaaa sin que el huso corra un día»— y el archivo no importa
  * nada, así que no arrastra el maquetador del rollo. Escribirla dos veces es
  * cómo dos pantallas terminan mostrando días distintos. */
-import { fechaCorta } from '../utils/ticketCampos';
-import { tokenMatch } from '../utils/searchUtils';
-import { shortEmployeeName } from '../utils/nameUtils';
-import { hora12 } from '../utils/hora';
+import { fechaCorta } from '@nucleo/utils/ticketCampos';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hora12 } from '@nucleo/utils/hora';
 
 /**
  * CUENTAS POR COBRAR — quién debe, desde cuándo, y cobrarle.

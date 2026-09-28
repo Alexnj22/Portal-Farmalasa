@@ -23,19 +23,19 @@ import {
     InsigniaDeMetasPorAprobar, CuerpoDeMetasPorAprobar, InsigniaDeReinicio, CuerpoDeReinicio,
     InsigniaDeProductosSinVenta, CuerpoDeProductosSinVenta,
 } from './TarjetasDeOperacion';
-import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '../../utils/cierreDeMeta';
-import { datosDeFaltanteDeCaja, datosDeDiferenciasPendientes } from '../../utils/faltanteDeCaja';
-import { datosDeAperturasDeLaManana } from '../../utils/aperturasDeLaManana';
-import { datosDeCreditosVencidos } from '../../utils/creditosVencidos';
+import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from '@nucleo/utils/cierreDeMeta';
+import { datosDeFaltanteDeCaja, datosDeDiferenciasPendientes } from '@nucleo/utils/faltanteDeCaja';
+import { datosDeAperturasDeLaManana } from '@nucleo/utils/aperturasDeLaManana';
+import { datosDeCreditosVencidos } from '@nucleo/utils/creditosVencidos';
 import {
     datosDeCorteNuevo, datosDeBitacoraPorVencer, datosDeTrasladosPorRespaldo, TRASLADOS_VISIBLES,
     datosDeMinmaxPendiente, datosDeBolsaNoCuadra, datosDeDeposito,
     datosDeAlertaDeVentas, datosDeFacturaDeSala, datosDeCortesPendientes, datosDePedido, datosDeSolicitud,
     datosDeRespuesta, datosDeDecision, datosDeDiferencia, diferenciaMeToca,
     datosDeConteo, datosDeHacienda, datosDePromo, datosDeMetasPorAprobar, datosDeReinicio, datosDeProductosSinVenta,
-} from '../../utils/avisosDeOperacion';
+} from '@nucleo/utils/avisosDeOperacion';
 import { iconoDeTipo } from './catalogos/tiposDeAviso';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     severidadDelTitulo, tituloSinEmoji, tintForType, etiquetaDeAccion,
     RESUELTA_LABEL, cuandoLlego,

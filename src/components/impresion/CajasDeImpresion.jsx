@@ -8,13 +8,13 @@ import PortalInput from '../common/PortalInput';
 import {
     crearCodigoDeVinculacion, eliminarCajaDeImpresion, encolarImpresion,
     fetchCajasDeImpresion, fetchColaDeImpresion, fetchVersionPublicadaDelAgente,
-} from '../../data/impresion';
-import { construirTicketDePruebaDeCaja, textoParaElRollo, ticketEnBase64 } from '../../utils/ticketPrint';
+} from '@nucleo/data/impresion';
+import { construirTicketDePruebaDeCaja, textoParaElRollo, ticketEnBase64 } from '@nucleo/utils/ticketPrint';
 import { APP_VERSION } from '../../version';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 
 /**
  * Las cajas que pueden imprimir, y qué pasó con el papel.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe, rangoDeSemana } from '../../src/utils/semana';
+import { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe, rangoDeSemana } from '@nucleo/utils/semana';
 
 /**
  * La semana del portal.

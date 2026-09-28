@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Users } from 'lucide-react';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { EmptyState } from '../../components/common/StateViews';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 
 // Quién está vendiendo este mes. Top 2 resaltado, el resto en gris, y en ROJO
 // quien está bajo el promedio de la sala (decisión del usuario 2026-08-05).

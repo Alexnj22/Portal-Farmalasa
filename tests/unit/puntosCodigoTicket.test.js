@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     urlConCodigo, codigoLegible, construirTicketDeCodigo, URL_MIS_PUNTOS,
-} from '../../src/utils/puntosCodigoTicket';
-import { textoParaElRollo } from '../../src/utils/ticketPrint';
+} from '@nucleo/utils/puntosCodigoTicket';
+import { textoParaElRollo } from '@nucleo/utils/ticketPrint';
 
 /**
  * El papel del código de acceso, anclado contra el defecto que lo destapó.

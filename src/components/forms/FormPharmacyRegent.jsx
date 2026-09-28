@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import Button from '../common/Button';
 import { UploadCloud, Users, ShieldCheck, AlertCircle, Award } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);

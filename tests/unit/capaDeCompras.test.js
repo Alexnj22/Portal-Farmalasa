@@ -16,15 +16,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchCuentasPorPagar, fetchDetalleProveedor, fetchPagos, registrarPago,
         aprobarPago, anularPago, guardarCondicionesProveedor } =
-    await import('../../src/data/cuentasPorPagar');
+    await import('@nucleo/data/cuentasPorPagar');
 const { fetchProveedoresMaestro, fetchProveedorCategorias, setProveedorCategoria,
-        setProveedoresCategoriaBulk } = await import('../../src/data/proveedores');
+        setProveedoresCategoriaBulk } = await import('@nucleo/data/proveedores');
 const { fetchPurchaseReceiptItems, fetchPurchaseReceiptsPage, fetchSuppliersBasic } =
-    await import('../../src/data/compras');
+    await import('@nucleo/data/compras');
 
 beforeEach(() => espia.limpiar());
 

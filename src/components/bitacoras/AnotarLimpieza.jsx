@@ -5,8 +5,8 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
 import { ListaDePuntos } from './PuntosDeLimpieza';
-import { anularLimpieza, corregirLimpieza, registrarLimpieza } from '../../data/bitacoras';
-import { rango12 } from '../../utils/hora';
+import { anularLimpieza, corregirLimpieza, registrarLimpieza } from '@nucleo/data/bitacoras';
+import { rango12 } from '@nucleo/utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Registrar, corregir o quitar una limpieza.

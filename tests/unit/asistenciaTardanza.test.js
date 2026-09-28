@@ -9,7 +9,7 @@
 // horas de tardanza a alguien que llegó puntual, o al revés.
 
 import { describe, it, expect } from 'vitest';
-import { buildCSTDate, getCSTDateStr, minutosDeTardanza } from '../../src/data/attendanceAudit';
+import { buildCSTDate, getCSTDateStr, minutosDeTardanza } from '@nucleo/data/attendanceAudit';
 
 describe('la hora del turno es hora de El Salvador', () => {
     it('las 08:00 de El Salvador son las 14:00 UTC', () => {

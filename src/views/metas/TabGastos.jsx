@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { Receipt, Plus, Coins, TrendingUp, Percent, AlertTriangle, RefreshCw, Search, Undo2 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -9,11 +9,11 @@ import CarrilCards from '../../components/common/CarrilCards';
 import FilterBar from '../../components/common/FilterBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { useToastStore } from '../../store/toastStore';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { fetchMetasGastos, anularMetaGasto } from '../../data/metas';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymLabel, ymLabelCorto } from '../../utils/metasUtils';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { fetchMetasGastos, anularMetaGasto } from '@nucleo/data/metas';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ymHoySV, ymLabel, ymLabelCorto } from '@nucleo/utils/metasUtils';
 
 const COLS = [
     { key: 'mes',   label: 'Mes' },

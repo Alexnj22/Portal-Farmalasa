@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, useRef } from 'react';
-import useBorrador from '../../hooks/useBorrador';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import { AlertTriangle, ArrowLeft, ArrowRight, HandCoins, Package, ScanLine } from 'lucide-react';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
@@ -13,15 +13,15 @@ import PortalTextarea from '../common/PortalTextarea';
 import {
     boletaYaRegistrada, fetchEntidadesDeSalida, fetchTiposDeSalida,
     guardarLecturaDeBoleta, leerBoleta, registrarSalida, subirComprobante,
-} from '../../data/bolsas';
-import { disponibles, elegirOrigen, totalDisponible } from '../../utils/bolsasReparto';
-import { conceptoDelPapel } from '../../utils/conceptoDelPapel';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
-import { hora12 } from '../../utils/hora';
-import { fechaTexto } from '../../utils/fecha';
+} from '@nucleo/data/bolsas';
+import { disponibles, elegirOrigen, totalDisponible } from '@nucleo/utils/bolsasReparto';
+import { conceptoDelPapel } from '@nucleo/utils/conceptoDelPapel';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 /* El editor de la foto se baja al elegir el archivo, no al abrir el formulario:
  * arrastra el canónico de recorte, y la mayoría de las salidas del día no piden
@@ -311,8 +311,8 @@ export default function SalidaDeBolsa({
         // segundo después de escribir y la bolsa se quedó sin su vale adentro.
         // Bajarlo al ABRIR el diálogo no evita el chunk muerto —eso no se puede
         // desde acá—, lo adelanta a un momento en que recargar no cuesta nada.
-        import('../../utils/ticketPrint').catch(() => {});
-        import('../../utils/bolsaComprobante').catch(() => {});
+        import('@nucleo/utils/ticketPrint').catch(() => {});
+        import('@nucleo/utils/bolsaComprobante').catch(() => {});
     }, [abierto]);
 
     // Al cerrar se olvida TODO, y el vale el primero: es un permiso de un solo
@@ -513,7 +513,7 @@ export default function SalidaDeBolsa({
             fotoParaRecortar.current = f;
             (async () => {
                 try {
-                    const { buscarEsquinas } = await import('../../data/recorteSugerido');
+                    const { buscarEsquinas } = await import('@nucleo/data/recorteSugerido');
                     const r = await buscarEsquinas(f);
                     if (fotoParaRecortar.current === f && r) setSugerido(r);
                 } catch { /* sin recuadro: el editor abre como siempre */ }

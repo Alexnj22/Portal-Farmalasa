@@ -8,9 +8,9 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import PromptModal from '../../components/common/PromptModal';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
-import { fetchExcedentes, decidirExcedente } from '../../data/promociones';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fmtMoneda, fmtUnidades } from '../../utils/promocionesUtils';
+import { fetchExcedentes, decidirExcedente } from '@nucleo/data/promociones';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fmtMoneda, fmtUnidades } from '@nucleo/utils/promocionesUtils';
 
 /**
  * Lo vendido por encima del lote, esperando decisión.

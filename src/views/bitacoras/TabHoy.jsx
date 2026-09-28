@@ -11,8 +11,8 @@ import AnotarLectura from '../../components/bitacoras/AnotarLectura';
 import AnotarLimpieza from '../../components/bitacoras/AnotarLimpieza';
 import MatrizDelDia from '../../components/bitacoras/MatrizDelDia';
 import PasarLaRonda from '../../components/bitacoras/PasarLaRonda';
-import { bloquesDeLaRonda } from '../../data/bitacoras';
-import { rango12 } from '../../utils/hora';
+import { bloquesDeLaRonda } from '@nucleo/data/bitacoras';
+import { rango12 } from '@nucleo/utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La captura del día.

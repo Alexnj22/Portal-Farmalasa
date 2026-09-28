@@ -7,7 +7,7 @@ import AvatarConEstado from '../../src/components/common/AvatarConEstado';
 // El store es la fuente cuando el llamador no trae la ficha entera. Se le da la
 // misma persona que `DE_VACACIONES` para que la prueba de resolución por id
 // tenga contra qué resolver.
-vi.mock('../../src/store/staffStore', () => ({
+vi.mock('@nucleo/store/staffStore', () => ({
     useStaffStore: (selector) => selector({
         employees: [{
             id: 1, name: 'Edwin Nuñez',

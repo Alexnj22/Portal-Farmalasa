@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { conceptoDelPapel, sentidoDelPapel } from '../../src/utils/conceptoDelPapel';
+import { conceptoDelPapel, sentidoDelPapel } from '@nucleo/utils/conceptoDelPapel';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Qué operación fue, dicho por el papel.

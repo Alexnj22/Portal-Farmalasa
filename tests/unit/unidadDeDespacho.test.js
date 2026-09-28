@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nombreDeDespacho, paraBodega, esPocoParaMandar, renglonCompleto } from '../../src/utils/unidadDeDespacho';
+import { nombreDeDespacho, paraBodega, esPocoParaMandar, renglonCompleto } from '@nucleo/utils/unidadDeDespacho';
 
 // Reglas REALES de `unidad_de_despacho` (2026-09-24).
 const ELECTROLIT = { tipo: 'FRASCO', etiqueta: 'CAJA', factor: 1, multiplo: 12, unidades: 12 };

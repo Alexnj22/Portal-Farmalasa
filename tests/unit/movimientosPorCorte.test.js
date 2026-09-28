@@ -12,7 +12,7 @@
 // Los datos son los reales de Salud 4 del 2-sep-2026.
 
 import { describe, it, expect } from 'vitest';
-import { repartirPorCorte } from '../../src/utils/cortesDiagnostico';
+import { repartirPorCorte } from '@nucleo/utils/cortesDiagnostico';
 
 const corte = (o) => ({ id: 1, tipo: 'C', estado: 'CONFIRMADO', fecha: '2026-09-02', ...o });
 const mov = (hora, clave) => ({ clave, cuando: `2026-09-02T${hora}:00-06:00` });

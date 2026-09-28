@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resumenRenglones } from '../../src/data/facturasSala';
+import { resumenRenglones } from '@nucleo/data/facturasSala';
 
 // El renglón que ve la sala en «Facturas de mi sala». Las cadenas de abajo son
 // LITERALES de producción (`purchase_dte_documents.items_text`, leídas el

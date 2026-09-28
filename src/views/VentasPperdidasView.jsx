@@ -5,17 +5,17 @@ import { SkeletonText } from '../components/common/StateViews';
 import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building2, ShoppingCart, Download } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
-import { signPhotosDeep } from '../utils/storageFiles';
-import { exportCsv } from '../utils/csvExport';
-import { fechaHora12 } from '../utils/hora';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
+import { signPhotosDeep } from '@nucleo/utils/storageFiles';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { fechaHora12 } from '@nucleo/utils/hora';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import {
     fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidas, updateVentaPerdidaStatus,
-} from '../data/ventasPerdidas';
-import { useToastStore } from '../store/toastStore';
-import { hoySV } from '../utils/fecha';
+} from '@nucleo/data/ventasPerdidas';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { hoySV } from '@nucleo/utils/fecha';
 
 const TABS = [
     { key: 'pendiente', label: 'Pendiente' },

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import { useBusqueda } from '../hooks/useBusqueda';
+import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
-import { useStaffStore as useStaff } from '../store/staffStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import {
     Clock, ShieldCheck, Search, Globe,
     Database, AlertCircle, ListFilter, Hash,
@@ -16,10 +16,10 @@ import FilterBar from '../components/common/FilterBar';
 import TablePagination from '../components/common/TablePagination';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
-import { smartFilter } from '../utils/searchUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import Badge from '../components/common/Badge';
-import { hora12, hora12ConSegundos } from '../utils/hora';
-import { hoySV } from '../utils/fecha';
+import { hora12, hora12ConSegundos } from '@nucleo/utils/hora';
+import { hoySV } from '@nucleo/utils/fecha';
 
 const ACTION_OPTIONS = [
     { value: "ALL", label: "Todas" },

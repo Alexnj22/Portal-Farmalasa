@@ -1,5 +1,5 @@
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
-import { shortEmployeeName } from '../../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 // La cara y el nombre de una persona, juntos.
 //

@@ -1,7 +1,7 @@
 import React from 'react';
 import { DoorOpen } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
-import { hora12 } from '../../utils/hora';
+import { hora12 } from '@nucleo/utils/hora';
 
 /* «Así abrió la mañana», dentro de la campana.
  *

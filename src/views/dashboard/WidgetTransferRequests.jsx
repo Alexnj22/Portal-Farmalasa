@@ -4,14 +4,14 @@ import Button from '../../components/common/Button';
 import LanzadorSolicitud from './LanzadorSolicitud';
 import { Flujo, FranjaVacia } from './InstrumentoBaldosa';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore } from '../../store/staffStore';
-import { useNowTick } from '../../hooks/useNowTick';
-import { buscadorDePersonas } from '../../utils/movimientoTexto';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
+import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import {
     fetchSalasQueCubro, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
-} from '../../data/traslados';
-import { fetchEnviosVivos, momentoDelEnvio } from '../../data/envios';
+} from '@nucleo/data/traslados';
+import { fetchEnviosVivos, momentoDelEnvio } from '@nucleo/data/envios';
 
 // Widget «Traslados entre Salas».
 //

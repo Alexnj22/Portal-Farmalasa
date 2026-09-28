@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { construirComprobanteDeAbono, vencimientoDeReserva, CONDICIONES_DEL_PAPEL } from '../../src/utils/abonoTicket';
-import { textoParaElRollo } from '../../src/utils/ticketPrint';
+import { construirComprobanteDeAbono, vencimientoDeReserva, CONDICIONES_DEL_PAPEL } from '@nucleo/utils/abonoTicket';
+import { textoParaElRollo } from '@nucleo/utils/ticketPrint';
 
 /**
  * La geometría del comprobante de abono, anclada contra el rollo de verdad.

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { Target, TrendingUp, Gauge, BarChart3, Plus, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -9,12 +9,12 @@ import FilterBar from '../../components/common/FilterBar';
 import PeriodStepper from '../../components/common/PeriodStepper';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import BarraAvance from './BarraAvance';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import GraficaMes from './GraficaMes';
 import RankingVendedores from './RankingVendedores';
-import { fetchMetasDashboard, fetchMetasRows, fetchMesEnCurso, fetchBonoActivo } from '../../data/metas';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG, tramoLabel } from '../../utils/metasUtils';
+import { fetchMetasDashboard, fetchMetasRows, fetchMesEnCurso, fetchBonoActivo } from '@nucleo/data/metas';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG, tramoLabel } from '@nucleo/utils/metasUtils';
 
 const fmtPct = (v) => formatPct(v);
 

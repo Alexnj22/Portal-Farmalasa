@@ -5,10 +5,10 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
-import { useStaffStore } from '../../store/staffStore';
-import { SALAS_VENTA } from '../../utils/metasUtils';
-import { duplicarPromocion } from '../../data/promociones';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
+import { duplicarPromocion } from '@nucleo/data/promociones';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 /**
  * Copiar una promoción, opcionalmente para UNA sala.

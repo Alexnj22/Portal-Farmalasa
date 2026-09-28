@@ -10,7 +10,7 @@
 // inventado prueba que la función coincide consigo misma, no que esté bien.
 
 import { describe, it, expect } from 'vitest';
-import { maskDui, isValidDUIAlgorithm } from '../../src/utils/duiUtils';
+import { maskDui, isValidDUIAlgorithm } from '@nucleo/utils/duiUtils';
 
 describe('el verificador', () => {
     it.each(['04413277-6', '00000000-0', '12345678-4', '99999999-4', '01234567-8'])(

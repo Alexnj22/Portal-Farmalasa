@@ -1,17 +1,17 @@
 import React, { lazy, Suspense, useState, useEffect, useMemo, memo } from 'react';
 import SegmentedControl from '../common/SegmentedControl';
-import { fetchBranchHourlySalesOrdered } from '../../data/schedules';
-import { fetchVentasSinProducto } from '../../data/ventas';
+import { fetchBranchHourlySalesOrdered } from '@nucleo/data/schedules';
+import { fetchVentasSinProducto } from '@nucleo/data/ventas';
 import AvisoSinProducto from '../common/AvisoSinProducto';
 import { Loader2, Activity, Users, DollarSign, Calendar as CalendarIcon, MousePointerClick, TrendingUp, Sparkles, Building2 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
 // 🚀 IMPORTANTE: Importamos el parser robusto que usamos en el otro componente
-import { timeToMins } from '../../utils/scheduleHelpers';
-import { useAuth } from '../../context/AuthContext';
+import { timeToMins } from '@nucleo/utils/scheduleHelpers';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { AiThinkingState } from '../common/StateViews';
-import { formatMoney } from '../../utils/formatNumber';
-import { hoySV } from '../../utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { hoySV } from '@nucleo/utils/fecha';
 
 // El dibujo arrastra `recharts` (95 kB gzip): 95 de los 119 kB que pesaba este
 // modal. Leer el encabezado de `GraficaAfluencia.jsx` antes de tocarlo.

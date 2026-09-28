@@ -5,18 +5,18 @@ import CajasDeImpresion from '../components/impresion/CajasDeImpresion';
 import Button from '../components/common/Button';
 import Notice from '../components/common/Notice';
 import LiquidSelect from '../components/common/LiquidSelect';
-import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { EMPRESA } from '../constants/empresa';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { EMPRESA } from '@nucleo/constants/empresa';
 import { APP_VERSION } from '../version';
-import { rotuloCampo } from '../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import {
     ANCHOS_ROLLO, construirTicketHtml,
     imprimirMarco, ajustarAltoDePagina, enviarAImpresoraDeLaComputadora,
     comprobarLaConexion, permisoDeRedLocal,
     leerAjustesDeImpresion, guardarAjustesDeImpresion,
     reglaDeColumnas, fechaHora, codigosDePrueba, conCodigosDibujados,
-} from '../utils/ticketPrint';
+} from '@nucleo/utils/ticketPrint';
 
 const EMPTY_ARRAY = [];
 

@@ -8,10 +8,10 @@
 
 import { describe, it, expect } from 'vitest';
 import { granularidadDePeriodo, correrPeriodo, periodoDeHoy, periodoAlcanzaHoy, pad }
-    from '../../src/utils/periodo';
-import { hoySV as svToday } from '../../src/utils/fecha';
-import { shortEmployeeName, employeeInitials } from '../../src/utils/nameUtils';
-import { calcAge, MINOR_AGE } from '../../src/utils/ageUtils';
+    from '@nucleo/utils/periodo';
+import { hoySV as svToday } from '@nucleo/utils/fecha';
+import { shortEmployeeName, employeeInitials } from '@nucleo/utils/nameUtils';
+import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
 
 describe('qué ES un período, deducido del propio rango', () => {
     // Pedido del usuario (2026-08-14): «que ese elemento sea inteligente, y se

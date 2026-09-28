@@ -1,10 +1,10 @@
 import React, { useMemo, useEffect, useSyncExternalStore } from 'react';
 import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle, Ban } from 'lucide-react';
 import LiquidAvatar from './LiquidAvatar';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { estadoDePersona, estadoDesdeClave, normalizarPersona } from '../../utils/estadoDePersona';
-import { useStaffStore } from '../../store/staffStore';
-import { leerEstado, pedirEstado, suscribirse } from '../../data/estadosDePersonas';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { estadoDePersona, estadoDesdeClave, normalizarPersona } from '@nucleo/utils/estadoDePersona';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { leerEstado, pedirEstado, suscribirse } from '@nucleo/data/estadosDePersonas';
 
 /**
  * AvatarConEstado — la foto de una persona, y si esa persona está o no.

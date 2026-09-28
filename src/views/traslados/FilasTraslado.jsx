@@ -8,18 +8,18 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
     fetchDisponibilidadTraslado,
-} from '../../data/traslados';
-import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, loQueLlego, piezasDe, renglonesDe } from '../../utils/trasladoTexto';
+} from '@nucleo/data/traslados';
+import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, loQueLlego, piezasDe, renglonesDe } from '@nucleo/utils/trasladoTexto';
 import DeclararFaltantes from './DeclararFaltantes';
-import { desdeHace, cuantoTardo } from '../../utils/movimientoTexto';
+import { desdeHace, cuantoTardo } from '@nucleo/utils/movimientoTexto';
 import { ChipPersona, FichaPersona } from '../solicitudes/PersonasSolicitud';
 import ModalShell from '../../components/common/ModalShell';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { buscadorDePersonas } from '../../utils/movimientoTexto';
-import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa } from '../../utils/imprimirTraslado';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa } from '@nucleo/utils/imprimirTraslado';
 
 /* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la
  * rejilla igualando alturas, un traslado de doce lotes estira a todas las demás

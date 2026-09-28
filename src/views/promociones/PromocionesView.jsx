@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
     CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText,
@@ -12,14 +12,14 @@ import StatCard from '../../components/common/StatCard';
 import Notice from '../../components/common/Notice';
 import { LoadingState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
-import { useAuth } from '../../context/AuthContext';
-import { fetchPromociones } from '../../data/promociones';
-import { fetchDescuentos } from '../../data/descuentos';
-import { useStaffStore } from '../../store/staffStore';
-import { SALAS_VENTA } from '../../utils/metasUtils';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { estadoVisible, esLaboratorio, textoBuscable } from '../../utils/promocionesUtils';
-import { hoySV } from '../../utils/fecha';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { fetchPromociones } from '@nucleo/data/promociones';
+import { fetchDescuentos } from '@nucleo/data/descuentos';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { estadoVisible, esLaboratorio, textoBuscable } from '@nucleo/utils/promocionesUtils';
+import { hoySV } from '@nucleo/utils/fecha';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';

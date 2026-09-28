@@ -10,19 +10,19 @@ import {
     ArrowUpRight, LayoutTemplate, Maximize, Minimize, Download,
     PartyPopper, AlertCircle, Search, X, ChevronRight, GitMerge, Pencil, Save, ChevronDown, MapPin, Hash, Globe, Building2
 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../store/staffStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { toPng } from 'html-to-image';
 import ConfirmModal from '../components/common/ConfirmModal';
 import AlertModal from '../components/common/AlertModal';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { useToastStore } from '../store/toastStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { smartFilter } from '../utils/searchUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import PortalInput from '../components/common/PortalInput';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { rotuloCampo } from '../utils/rotuloDeCampo';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // Las dos pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección.

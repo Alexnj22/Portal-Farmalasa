@@ -22,14 +22,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchInventorySyncLog, fetchAllVencidosInventory, fetchExpiredInventoryCount,
-        fetchInventoryDetail } = await import('../../src/data/inventarioTab');
+        fetchInventoryDetail } = await import('@nucleo/data/inventarioTab');
 const { fetchLaboratoriosBasic, fetchProveedores, deleteProveedor, fetchProductCountByLabDevolutivo } =
-    await import('../../src/data/laboratorios');
-const { fetchBannerPortal, setBannerPortal } = await import('../../src/data/bannerPortal');
-const { esAvisoDeMinMax } = await import('../../src/data/solicitudDeAviso');
+    await import('@nucleo/data/laboratorios');
+const { fetchBannerPortal, setBannerPortal } = await import('@nucleo/data/bannerPortal');
+const { esAvisoDeMinMax } = await import('@nucleo/data/solicitudDeAviso');
 
 beforeEach(() => espia.limpiar());
 

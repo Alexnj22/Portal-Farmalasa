@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { construirComprobanteDeCorte } from '../../src/utils/corteTicket';
-import { resultadoDeLaFila } from '../../src/utils/cortesDiagnostico';
-import { textoParaElRollo } from '../../src/utils/ticketPrint';
+import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
+import { resultadoDeLaFila } from '@nucleo/utils/cortesDiagnostico';
+import { textoParaElRollo } from '@nucleo/utils/ticketPrint';
 
 /*
  * El comprobante del corte, anclado contra un corte REAL: el 14323 de Salud 3

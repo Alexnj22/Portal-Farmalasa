@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import useBorrador from '../../hooks/useBorrador';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
 import { GraduationCap, X, Check, Upload, AlertCircle, User, Fingerprint, Building2, Phone, Users, Clock, ShieldAlert } from 'lucide-react';
@@ -8,19 +8,19 @@ import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
 import { CatalogSelect, CatalogOtherInput } from '../common/CatalogSelect';
-import { inputHoverClass } from '../../utils/inputStyles';
-import { fetchInstitucionCatalogValues } from '../../data/practicantes';
-import { useStaffStore } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
-import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
-import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
-import { OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
+import { inputHoverClass } from '@nucleo/utils/inputStyles';
+import { fetchInstitucionCatalogValues } from '@nucleo/data/practicantes';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { isValidDUIAlgorithm, maskDui } from '@nucleo/utils/duiUtils';
+import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
+import { OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
 import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { subirArchivo } from '../../utils/storageFiles';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 const ESTADO_OPTIONS = [
     { value: 'ACTIVO', label: 'Activo' },

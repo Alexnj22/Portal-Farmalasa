@@ -3,9 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { Target, Gauge, History, CalendarCheck, Coins, Receipt, CalendarRange } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore } from '../../store/staffStore';
-import { fetchMetasConfig, fetchMetasRows } from '../../data/metas';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { fetchMetasConfig, fetchMetasRows } from '@nucleo/data/metas';
 import TabTablero from './TabTablero';
 import TabHistorico from './TabHistorico';
 import TabConfirmacion from './TabConfirmacion';
@@ -14,7 +14,7 @@ import TabSemestral from './TabSemestral';
 import TabGastos from './TabGastos';
 import MetaModal from './MetaModal';
 import GastoModal from './GastoModal';
-import { SALAS_VENTA, ymHoySV, ymSumar } from '../../utils/metasUtils';
+import { SALAS_VENTA, ymHoySV, ymSumar } from '@nucleo/utils/metasUtils';
 
 // Metas por sala — docs/planes-cerrados/PLAN-METAS-2026-08-03.md. Tablero e Histórico (Fase 1)
 // + el flujo de confirmación supervisor→gerente (Fase 2). Este módulo es de

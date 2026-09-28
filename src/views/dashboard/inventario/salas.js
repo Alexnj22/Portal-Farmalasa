@@ -11,7 +11,7 @@
 
 // Los nombres y el mapa sala↔sucursal son los de `constants/erp.js`: acá
 // había una copia idéntica de cada uno.
-export { ERP_NAMES as ERP_BRANCH_MAP, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '../../../constants/erp';
+export { ERP_NAMES as ERP_BRANCH_MAP, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '@nucleo/constants/erp';
 
 // Bodega SIEMPRE primero (pedido del usuario, 2026-08-07). Venía última, con el
 // orden de despacho que usa el resto del tablero — y acá ese orden no aplica:

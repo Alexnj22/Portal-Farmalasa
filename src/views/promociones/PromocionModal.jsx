@@ -12,22 +12,22 @@ import Notice from '../../components/common/Notice';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
-import useBorrador from '../../hooks/useBorrador';
-import { useStaffStore } from '../../store/staffStore';
-import { SALAS_VENTA } from '../../utils/metasUtils';
+import useBorrador from '@nucleo/hooks/useBorrador';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import {
     crearPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
     fetchLaboratoriosConProductos,
-} from '../../data/promociones';
+} from '@nucleo/data/promociones';
 import AgregarProductos from './AgregarProductos';
-import { guardarDescuento } from '../../data/descuentos';
-import { useAuth } from '../../context/AuthContext';
+import { guardarDescuento } from '@nucleo/data/descuentos';
+import { useAuth } from '@nucleo/context/AuthContext';
 import DescuentoEnVentas from './DescuentoEnVentas';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Campo from './Campo';
-import { fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento } from '../../utils/promocionesUtils';
-import { hoySV } from '../../utils/fecha';
-import { formatMoney } from '../../utils/formatNumber';
+import { fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento } from '@nucleo/utils/promocionesUtils';
+import { hoySV } from '@nucleo/utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 
 const CLAVE_BORRADOR = 'promocion_nueva';
 

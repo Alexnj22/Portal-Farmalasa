@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
-import { getSignedFileUrl } from '../../utils/storageFiles';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import PhotoLightbox from './PhotoLightbox';
 
 /**

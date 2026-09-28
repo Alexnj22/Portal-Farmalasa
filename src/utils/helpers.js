@@ -226,4 +226,4 @@ export { makeId, CACHE_KEYS, safeJsonParse, normalizeBranchPayloadFromModal } fr
 // Vive en `plataforma/dispositivo.js`: es una pregunta al navegador (el
 // user-agent, la pantalla táctil, Capacitor). Se re-exporta con su nombre de
 // siempre para no tocar a quien la usa.
-export { esMovilOApp as isMobileOrApp } from '../plataforma/dispositivo';
+export { esMovilOApp as isMobileOrApp } from '@plataforma/dispositivo';

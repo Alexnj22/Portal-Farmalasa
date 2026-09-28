@@ -5,9 +5,9 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
-import { fetchPreciosDeProductos } from '../../data/descuentos';
-import { formatMoney } from '../../utils/formatNumber';
-import { fmtVigencia, ordenarPorPerdida, precioConDescuento } from '../../utils/promocionesUtils';
+import { fetchPreciosDeProductos } from '@nucleo/data/descuentos';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fmtVigencia, ordenarPorPerdida, precioConDescuento } from '@nucleo/utils/promocionesUtils';
 import Campo from './Campo';
 
 /**

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ConfirmModal from './ConfirmModal';
-import { useAvisoDeSesion } from '../../context/AuthContext';
+import { useAvisoDeSesion } from '@nucleo/context/AuthContext';
 
 // ── «¿Sigues ahí?» — el aviso que existe para no perder trabajo ──────────────
 //

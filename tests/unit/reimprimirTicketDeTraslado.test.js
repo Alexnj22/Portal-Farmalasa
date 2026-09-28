@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { datosDelTicketGuardado } from '../../src/utils/imprimirTraslado';
-import { construirTicketDeTraslado } from '../../src/utils/trasladoTicket';
+import { datosDelTicketGuardado } from '@nucleo/utils/imprimirTraslado';
+import { construirTicketDeTraslado } from '@nucleo/utils/trasladoTicket';
 
 /**
  * Reimprimir tiene que sacar el MISMO papel, y ahí está todo el riesgo.

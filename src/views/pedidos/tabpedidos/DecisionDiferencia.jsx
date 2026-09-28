@@ -7,8 +7,8 @@ import Notice from '../../../components/common/Notice';
 import SegmentedControl from '../../../components/common/SegmentedControl';
 import PortalInput from '../../../components/common/PortalInput';
 import EmpChip from './EmpChip';
-import { opcionesDe, opcionElegida, ayudaPara } from '../../../data/diferencias';
-import { turnoDe } from '../../../utils/decisionDiferencia';
+import { opcionesDe, opcionElegida, ayudaPara } from '@nucleo/data/diferencias';
+import { turnoDe } from '@nucleo/utils/decisionDiferencia';
 
 // La decisión de una diferencia, dentro de la tarjeta de su renglón.
 //

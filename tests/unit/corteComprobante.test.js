@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     construirComprobante, construirComprobanteDeAsiento, soloAscii,
-} from '../../src/utils/corteComprobante';
-import { seccionesParaElPrograma, COLUMNAS_TICKET } from '../../src/utils/ticketPrint';
+} from '@nucleo/utils/corteComprobante';
+import { seccionesParaElPrograma, COLUMNAS_TICKET } from '@nucleo/utils/ticketPrint';
 
 // El comprobante de una diferencia de caja es el PRIMER documento del portal que
 // va al rollo, así que las reglas del papel se estrenan acá. Las dos que se

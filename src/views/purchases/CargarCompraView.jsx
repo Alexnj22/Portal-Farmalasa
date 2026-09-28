@@ -20,12 +20,12 @@ import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/Tabl
 import {
     fetchDocumentosSinCargar, fetchPropuesta, confirmarProducto, buscarProductos,
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon,
-} from '../../data/cargarCompra';
-import { formatMoney } from '../../utils/formatNumber';
-import { tokenMatch } from '../../utils/searchUtils';
-import { useAuth } from '../../context/AuthContext';
+} from '@nucleo/data/cargarCompra';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
-import { fechaNumerica } from '../../utils/fecha';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 // Vista «Cargar compra».
 //

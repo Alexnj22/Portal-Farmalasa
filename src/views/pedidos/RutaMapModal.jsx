@@ -4,11 +4,11 @@ import Button from '../../components/common/Button';
 import { X, MapPin, CheckCircle2, Clock, Crosshair, Truck, Radio, RefreshCw } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import { loadGoogleMaps, loadLeaflet } from '../../plataforma/mapas';
-import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '../../data/pedidos';
+import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '@nucleo/data/pedidos';
 import { seguirPosicion } from '../../plataforma/ubicacion';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
-import { hora12 } from '../../utils/hora';
-import { escucharCambios } from '../../data/tiempoReal';
+import { hora12 } from '@nucleo/utils/hora';
+import { escucharCambios } from '@nucleo/data/tiempoReal';
 
 
 function fmtTime(iso) {

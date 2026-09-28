@@ -1,18 +1,18 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
-import useBorrador from '../../hooks/useBorrador';
+import useBorrador from '@nucleo/hooks/useBorrador';
 
 /* Diferido: repartir un documento colectivo pasa una vez cada tanto, y su
    código no tiene por qué viajar con cada apertura de una ficha. */
 const AsignarDocumentoAVarios = lazy(() => import('./AsignarDocumentoAVarios'));
-import { loadDraft, clearDraft } from '../../utils/draftUtils';
-import { SENSITIVE_FIELDS } from '../../store/utils';
-import { faltantesDelExpediente } from '../../utils/expediente';
-import { aplicarDuiLeido, avisoDeCaras, ROTULO_DUI } from '../../utils/duiLeido';
+import { loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
+import { SENSITIVE_FIELDS } from '@nucleo/store/utils';
+import { faltantesDelExpediente } from '@nucleo/utils/expediente';
+import { aplicarDuiLeido, avisoDeCaras, ROTULO_DUI } from '@nucleo/utils/duiLeido';
 import { ACREDITACIONES, acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
-    TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '../../utils/acreditaciones';
+    TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '@nucleo/utils/acreditaciones';
 import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO,
     estadoRemisionMtps, estadoFirmaDelContrato, horarioParaElContrato, esContratoCivil, ART20_ADVERTENCIA,
-         FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '../../utils/contrato';
+         FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '@nucleo/utils/contrato';
 
 // La clave del borrador del alta. Una sola, porque el alta es una sola: dos
 // pestañas dando de alta a dos personas a la vez no es un caso real, y una
@@ -27,27 +27,27 @@ import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
 import { CatalogSelect, CatalogOtherInput } from '../common/CatalogSelect';
-import { inputHoverClass } from '../../utils/inputStyles';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { EL_SALVADOR_GEO, distritosDe } from '../../data/elSalvadorGeo';
-import { NATIONALITY_OPTIONS } from '../../data/nationalities';
-import { useStaffStore } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
+import { inputHoverClass } from '@nucleo/utils/inputStyles';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { EL_SALVADOR_GEO, distritosDe } from '@nucleo/data/elSalvadorGeo';
+import { NATIONALITY_OPTIONS } from '@nucleo/data/nationalities';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
 import {
     codigoDeCarneLibre, duiDisponible, fetchCredenciales, fetchEducationCatalogEntries, fetchLastTerminationEvent,
     fetchIdentidades, fetchSalarios,
-} from '../../data/employees';
-import { revisarNup } from '../../utils/nupAfp';
-import { getStoragePathFromUrl, openStoredFile } from '../../utils/storageFiles';
-import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
-import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
-import { ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar } from '../../utils/documentosDelExpediente';
-import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
-import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
-import { usuarioDesdeNombre } from '../../utils/nameUtils';
-import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
-import { abrirCaptura, esperarFoto, fotoComoArchivo, soltarCaptura, enlaceDeCaptura } from '../../data/capturaDeFoto';
+} from '@nucleo/data/employees';
+import { revisarNup } from '@nucleo/utils/nupAfp';
+import { getStoragePathFromUrl, openStoredFile } from '@nucleo/utils/storageFiles';
+import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
+import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '@nucleo/utils/documentExpiry';
+import { ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar } from '@nucleo/utils/documentosDelExpediente';
+import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '@nucleo/utils/economicDependents';
+import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
+import { usuarioDesdeNombre } from '@nucleo/utils/nameUtils';
+import { isValidDUIAlgorithm, maskDui } from '@nucleo/utils/duiUtils';
+import { abrirCaptura, esperarFoto, fotoComoArchivo, soltarCaptura, enlaceDeCaptura } from '@nucleo/data/capturaDeFoto';
 import QrDeCaptura from '../common/QrDeCaptura';
 
 /* Las tres casillas donde entra un DUI. `DOCUMENTO_IDENTIDAD` NO está: es el
@@ -238,11 +238,11 @@ import ModalShell from '../common/ModalShell';
 import FileField from '../common/FileField';
 import CarneDeDependiente from '../common/CarneDeDependiente';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
-import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { NOMBRES_DE_MES, fechaTexto, hoySV } from '../../utils/fecha';
-import { analizarDocumento, leerDui } from '../../data/ia';
+import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { NOMBRES_DE_MES, fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { analizarDocumento, leerDui } from '@nucleo/data/ia';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES

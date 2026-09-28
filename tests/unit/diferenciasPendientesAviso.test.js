@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { datosDeDiferenciasPendientes } from '../../src/utils/faltanteDeCaja';
+import { datosDeDiferenciasPendientes } from '@nucleo/utils/faltanteDeCaja';
 
 const aviso = (metadata) => ({ type: 'CORTE_DIFERENCIAS_PENDIENTES', metadata });
 

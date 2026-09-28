@@ -2,33 +2,33 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
-import { clickable } from '../../utils/clickable';
+import { clickable } from '@nucleo/utils/clickable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import useCapaFlotante from '../../plataforma/capaFlotante';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
     Plus, Trash2, PackagePlus, Check, ChevronLeft, FileText, Truck, Star,
     ListChecks, Pencil,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
 import { useSearchToggle } from '../../plataforma/useSearchToggle';
-import { actualizarExtraDePedido, agregarExtraAPedido, corregirRecepcionDeItem, fetchLastDispatchInfo, fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, marcarHojasRecibidas, quitarExtraDePedido, recibirPedidoDeSucursal, recibirProductoSuelto, searchAvailableProducts } from '../../data/recepcion';
-import { recibirTrasladoPedido } from '../../data/pedidos';
+import { actualizarExtraDePedido, agregarExtraAPedido, corregirRecepcionDeItem, fetchLastDispatchInfo, fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, marcarHojasRecibidas, quitarExtraDePedido, recibirPedidoDeSucursal, recibirProductoSuelto, searchAvailableProducts } from '@nucleo/data/recepcion';
+import { recibirTrasladoPedido } from '@nucleo/data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import PortalInput from '../../components/common/PortalInput';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { alcanceDeRecepcion, construirCajasEspeciales } from '../../utils/cajasEspeciales';
-import { estadoDeHojas, hojasContables, hojasContadas } from '../../utils/hojasRecepcion';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { alcanceDeRecepcion, construirCajasEspeciales } from '@nucleo/utils/cajasEspeciales';
+import { estadoDeHojas, hojasContables, hojasContadas } from '@nucleo/utils/hojasRecepcion';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
-import { lotesAsignadosToDispatch } from '../../utils/pedidoPrint';
-import { fechaTexto } from '../../utils/fecha';
+import { lotesAsignadosToDispatch } from '@nucleo/utils/pedidoPrint';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
 // único uso en todo el repo (el chip de las tarjetas de pedido es

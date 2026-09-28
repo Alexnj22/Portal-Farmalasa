@@ -27,12 +27,12 @@ import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import Notice from '../common/Notice';
 import Badge from '../common/Badge';
-import { listarFaltas, consultarEscalera, registrarSancion, PELDANOS } from '../../data/disciplina';
-import { EVENT_TYPES } from '../../data/constants';
-import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { hoySV } from '../../utils/fecha';
+import { listarFaltas, consultarEscalera, registrarSancion, PELDANOS } from '@nucleo/data/disciplina';
+import { EVENT_TYPES } from '@nucleo/data/constants';
+import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { hoySV } from '@nucleo/utils/fecha';
 
 const fmtFecha = (iso) => {
     if (!iso) return '';
@@ -156,7 +156,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
             //
             // Va con `await import()` porque arrastra pdfmake — la regla de
             // librerías pesadas de CLAUDE.md.
-            const { descargarConstancia } = await import('../../utils/constanciaDeSancion');
+            const { descargarConstancia } = await import('@nucleo/utils/constanciaDeSancion');
             const elegida = faltas.find(f => f.clave === falta);
             const r = await descargarConstancia({
                 nombre:        empleado?.name,

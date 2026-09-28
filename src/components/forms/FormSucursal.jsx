@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, Suspense } from 'react';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { WEEK_DAYS } from '../../data/constants';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { WEEK_DAYS } from '@nucleo/data/constants';
 import { EL_SALVADOR_GEO } from './BranchHelpers';
 
 const BranchTabGeneral = React.lazy(() => import('./BranchTabGeneral'));

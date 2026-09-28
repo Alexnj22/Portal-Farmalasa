@@ -9,7 +9,7 @@
  * una computadora no se ejecuta nunca.
  */
 import { supabase } from '../supabaseClient';
-import { reducirAJpeg } from '../plataforma/imagenes';
+import { reducirAJpeg } from '@plataforma/imagenes';
 
 /** ¿Ese código todavía sirve? La llama el TELÉFONO, sin sesión. */
 export async function capturaVigente(secreto) {

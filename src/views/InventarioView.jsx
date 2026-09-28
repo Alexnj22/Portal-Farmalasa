@@ -1,5 +1,5 @@
 import React from 'react';
-import { useBusqueda } from '../hooks/useBusqueda';
+import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { Boxes } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';

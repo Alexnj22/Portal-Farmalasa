@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import Notice from '../common/Notice';
 import Button from '../common/Button';
 import { KeyRound, Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useToastStore } from '../../store/toastStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import PortalInput from '../common/PortalInput';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fijarContrasenaDeEmpleado } from '../../data/auth';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
 
 const FormSetPassword = ({ formData, onClose }) => {
     const [password, setPassword] = useState('');

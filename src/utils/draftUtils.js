@@ -1,4 +1,4 @@
-import * as almacen from '../plataforma/almacen';
+import * as almacen from '@plataforma/almacen';
 const PREFIX = 'pedido_draft_';
 
 export function saveDraft(key, data) {

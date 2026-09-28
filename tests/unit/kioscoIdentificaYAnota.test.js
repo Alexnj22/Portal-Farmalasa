@@ -16,11 +16,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
-const { kioscoIdentificar, kioscoMarcar, kioscoBitacora } = await import('../../src/data/kiosco');
+const { kioscoIdentificar, kioscoMarcar, kioscoBitacora } = await import('@nucleo/data/kiosco');
 const { redactSensitive, normalizeKioskAuditInfo, INPUT_METHOD, DETAILS_MAX_BYTES } =
-    await import('../../src/utils/timeClock.audit');
+    await import('@nucleo/utils/timeClock.audit');
 const { ICONO_POR_TIPO, iconoDeTipo } = await import('../../src/components/common/catalogos/tiposDeAviso');
 
 const rpcReal = espia.supabase.rpc;

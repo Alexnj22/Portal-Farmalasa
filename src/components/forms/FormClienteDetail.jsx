@@ -11,24 +11,24 @@ import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
 import { LoadingState } from '../common/StateViews';
-import { useToastStore } from '../../store/toastStore';
-import { formatMoney } from '../../utils/formatNumber';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import {
     fetchCustomerDetail, updateCustomerFiscal, pushClienteAlErp,
     codigoDeError, mensajeDeError,
-} from '../../data/customers';
+} from '@nucleo/data/customers';
 import {
     EL_SALVADOR_GEO, municipiosDe, distritosDe, normalizarGeo, conciliarGeo,
-} from '../../data/elSalvadorGeo';
+} from '@nucleo/data/elSalvadorGeo';
 import {
     validarCliente, camposRequeridos, esContribuyente as esFiscal,
     ETIQUETA_CAMPO as ETIQUETAS,
-} from '../../utils/clienteValidacion';
-import useBorrador from '../../hooks/useBorrador';
+} from '@nucleo/utils/clienteValidacion';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { hora12 } from '../../utils/hora';
-import { fechaNumerica } from '../../utils/fecha';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 const CATEGORIAS = [
     'Consumidor', 'Contribuyente', 'Gran Contribuyente',

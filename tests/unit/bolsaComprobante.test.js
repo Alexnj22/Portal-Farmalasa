@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     construirEtiquetaDeBolsa, construirValeDeSalida,
-} from '../../src/utils/bolsaComprobante';
-import { seccionesParaElPrograma, COLUMNAS_TICKET } from '../../src/utils/ticketPrint';
+} from '@nucleo/utils/bolsaComprobante';
+import { seccionesParaElPrograma, COLUMNAS_TICKET } from '@nucleo/utils/ticketPrint';
 
 // Los tres papeles de una bolsa de efectivo. Se prueban contra el camino SIN
 // DIALOGO —el que arma el texto con posiciones contadas a mano— porque es el que
@@ -415,7 +415,7 @@ describe('la hora que va en la etiqueta', () => {
         // «04:23 p. m.» y la etiqueta de la MISMA bolsa listaba esa salida a las
         // «22:23». Dos papeles de la misma operación con seis horas de
         // diferencia, y el que miente es el que va pegado afuera.
-        const { enHoraDeLaSala } = await import('../../src/utils/bolsaComprobante');
+        const { enHoraDeLaSala } = await import('@nucleo/utils/bolsaComprobante');
         expect(enHoraDeLaSala('2026-08-15T22:23:00.000Z'))
             .toEqual({ fecha: '2026-08-15', hora: '16:23' });
         // Y cruza el día correctamente: 03:00 UTC es todavía el día anterior en
@@ -425,7 +425,7 @@ describe('la hora que va en la etiqueta', () => {
     });
 
     it('deja fuera los vales anulados: ya no están adentro', async () => {
-        const { salidasParaEtiqueta } = await import('../../src/utils/bolsaComprobante');
+        const { salidasParaEtiqueta } = await import('@nucleo/utils/bolsaComprobante');
         const filas = [
             { registrado_at: '2026-08-15T22:23:00.000Z', monto: -500, etiqueta: 'Remesa' },
             { registrado_at: '2026-08-15T23:00:00.000Z', monto: -100, etiqueta: 'Gasto', anulado_at: '2026-08-16T00:00:00.000Z' },

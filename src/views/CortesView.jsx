@@ -43,33 +43,33 @@ miCajaEnVuelo.catch(() => {});
 const MiCajaView = lazy(() => miCajaEnVuelo.catch(traerMiCaja));
 import MovimientosDeCaja from '../components/cortes/MovimientosDeCaja';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import useResolverCorte from '../components/cortes/useResolverCorte';
-import useDiasConDiferencia from '../hooks/useDiasConDiferencia';
+import useDiasConDiferencia from '@nucleo/hooks/useDiasConDiferencia';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import {
     fetchAperturas, fetchCortes, fetchDiferencias, fetchEntradasParaCruce,
     fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas,
     fetchPiezasDelCajon, fetchSalasQueTienenCaja, fetchVentasPorPago,
-} from '../data/cortes';
+} from '@nucleo/data/cortes';
 /* Los cobros de crédito viven en `creditos` —el cobro se decide allá— y se
  * miran acá porque el dinero entra por esta caja. Es la misma lectura que hace
  * «Hoy»; la policy de la tabla acepta las dos puertas, `caja_vales` para operar
  * y `cortes_caja` para mirar. */
-import { fetchCobrosDelPortal } from '../data/creditos';
+import { fetchCobrosDelPortal } from '@nucleo/data/creditos';
 /* Las salidas pagadas con una bolsa de efectivo. Van acá porque son la tercera
  * forma en que sale dinero de una sala, y la única que no dejaba rastro en
  * ninguna pantalla de Efectivo. */
-import { fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '../data/bolsas';
-import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
+import { fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '@nucleo/data/bolsas';
+import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '@nucleo/utils/cortesDiagnostico';
 import {
     diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resumenDeDias,
-} from '../utils/diferenciasDeCaja';
-import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
-import { formatMoney } from '../utils/formatNumber';
-import { tokenMatch } from '../utils/searchUtils';
-import { fechaTexto, hoySV, sumarDias } from '../utils/fecha';
+} from '@nucleo/utils/diferenciasDeCaja';
+import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '@nucleo/utils/periodo';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 
 // ── Bolsas de efectivo salió de acá el 2026-08-24 ───────────────────────────
 //

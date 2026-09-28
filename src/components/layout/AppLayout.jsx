@@ -13,15 +13,15 @@ import {
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, BookOpen,
     Thermometer, Wallet
 } from 'lucide-react';
-import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
-import { useAuth } from '../../context/AuthContext';
-import { fetchKioskAuthCode } from '../../data/kioskAuth';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { announcementAppliesToUser } from '../../utils/announcementAudience';
-import { useToastStore } from '../../store/toastStore';
-import { useSyncMonitor } from '../../hooks/useSyncMonitor';
-import { useNotificationsChannel } from '../../hooks/useNotificationsChannel';
-import { useThemeSync } from '../../hooks/useThemeSync';
+import { fetchVentasPerdidasPendingCount } from '@nucleo/data/ventasPerdidas';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { fetchKioskAuthCode } from '@nucleo/data/kioskAuth';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useSyncMonitor } from '@nucleo/hooks/useSyncMonitor';
+import { useNotificationsChannel } from '@nucleo/hooks/useNotificationsChannel';
+import { useThemeSync } from '@nucleo/hooks/useThemeSync';
 /* ── La campana se baja DESPUÉS del primer pintado ──────────────────────────
  *
  * Medido el 2026-08-24: sacarla del cierre estático baja el ENTRY de 303 a
@@ -39,19 +39,19 @@ const NotificationBell = React.lazy(() => import('../common/NotificationBell'));
 const HuecoDeCampana = () => <div className="w-11 h-11 shrink-0" aria-hidden="true" />;
 import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
 import MenuSearchModal from './MenuSearchModal';
-import { MODULE_SEARCH_KEYWORDS } from '../../constants/menuSearchKeywords';
+import { MODULE_SEARCH_KEYWORDS } from '@nucleo/constants/menuSearchKeywords';
 import { APP_VERSION } from '../../version';
 import AvisosApagadosDialog from '../common/AvisosApagadosDialog';
 import OfflineBanner from '../common/OfflineBanner';
 import BannerPortal from '../common/BannerPortal';
 import Contador from '../common/Contador';
 import { MODULE_MAP } from '../common/catalogos/modulos';
-import { prefetchRuta } from '../../constants/routeImporters';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { prefetchRuta } from '../../routeImporters';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { remontarAlGirar, contarRenderShell } from '../../plataforma/cajaNegra';
 import { useHayDialogo } from '../common/dialogosAbiertos';
-import { hoySV } from '../../utils/fecha';
-import { escucharCambios } from '../../data/tiempoReal';
+import { hoySV } from '@nucleo/utils/fecha';
+import { escucharCambios } from '@nucleo/data/tiempoReal';
 
 // MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
 

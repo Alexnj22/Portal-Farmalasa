@@ -35,8 +35,8 @@
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, Loader2, Plus, Send, X } from 'lucide-react';
-import { capturaVigente, mandarFoto } from '../data/capturaDesdeElTelefono';
-import { PROPS_CAMARA } from '../utils/capturaDeFoto';
+import { capturaVigente, mandarFoto } from '@nucleo/data/capturaDesdeElTelefono';
+import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 
@@ -106,8 +106,8 @@ export default function CapturaDeFotoView() {
                    el mismo reductor que usa la foto suelta —1600 px al 85%—,
                    así que las dos rutas producen la misma calidad. */
                 const [{ hojasEnPdf }, { hojaReducida }] = await Promise.all([
-                    import('../utils/hojasEnPdf'),
-                    import('../data/capturaDesdeElTelefono'),
+                    import('@nucleo/utils/hojasEnPdf'),
+                    import('@nucleo/data/capturaDesdeElTelefono'),
                 ]);
                 const chicas = [];
                 for (const h of hojas) chicas.push(await hojaReducida(h.file));
@@ -164,7 +164,7 @@ export default function CapturaDeFotoView() {
         setPorAjustar(file);
         setSugerido(null);
         setBuscando(true);
-        import('../data/recorteSugerido')
+        import('@nucleo/data/recorteSugerido')
             .then(m => m.buscarEsquinas(file, { secretoDeCaptura: secreto }))
             .then(r => { if (vivoRef.current) setSugerido(r); })
             .catch(() => {})

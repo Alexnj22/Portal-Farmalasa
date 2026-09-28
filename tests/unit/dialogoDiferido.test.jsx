@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
-import { dialogoDiferido } from '../../src/utils/dialogoDiferido';
+import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
 
 // Un diálogo que se baja al abrirlo.
 //

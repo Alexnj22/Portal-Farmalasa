@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { estadoAjuste } from '../../src/hooks/useMinMaxData';
+import { estadoAjuste } from '@nucleo/hooks/useMinMaxData';
 
 // Los estados de un MIN·MAX que puso una persona
 // (docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md §4.3).

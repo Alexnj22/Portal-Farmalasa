@@ -23,7 +23,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const reclamarPushSubscription = vi.fn();
 const soltarPushSubscription   = vi.fn();
-vi.mock('../../src/data/pushSubscriptions', () => ({
+vi.mock('@nucleo/data/pushSubscriptions', () => ({
     reclamarPushSubscription: (...a) => reclamarPushSubscription(...a),
     soltarPushSubscription:   (...a) => soltarPushSubscription(...a),
 }));

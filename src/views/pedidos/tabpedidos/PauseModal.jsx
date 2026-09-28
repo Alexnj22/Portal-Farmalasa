@@ -2,11 +2,11 @@
 import { Pause, Coffee, Clock, ClipboardList, Bell, MessageSquare, Loader2 } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import PedidoModal from '../PedidoModal';
-import { ERP_NAMES } from '../../../constants/erp';
-import { PAUSE_REASONS } from '../../../constants/pedidos';
+import { ERP_NAMES } from '@nucleo/constants/erp';
+import { PAUSE_REASONS } from '@nucleo/constants/pedidos';
 import IconoPorNombre from '../../../components/common/IconoPorNombre';
 import PortalTextarea from '../../../components/common/PortalTextarea';
-import { rotuloCampo } from '../../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // Los íconos de los motivos de pausa: el catálogo (`constants/pedidos`) sólo
 // trae el nombre.

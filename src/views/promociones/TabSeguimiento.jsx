@@ -2,18 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
     Layers, Search, AlertTriangle, Download, Package, FileText, Users, DollarSign, Store,
 } from 'lucide-react';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
-import { fetchPromocion } from '../../data/promociones';
-import { exportCsv } from '../../utils/csvExport';
+import { fetchPromocion } from '@nucleo/data/promociones';
+import { exportCsv } from '@nucleo/utils/csvExport';
 import MatrizLaboratorio from './MatrizLaboratorio';
 import {
     fmtMoneda, fmtUnidades, porLaboratorio, rotuloPresentacion, MOTIVO_CIERRE,
     esLaboratorio,
-} from '../../utils/promocionesUtils';
+} from '@nucleo/utils/promocionesUtils';
 
 /**
  * El avance de UNA promoción: por producto, por sala y por persona.

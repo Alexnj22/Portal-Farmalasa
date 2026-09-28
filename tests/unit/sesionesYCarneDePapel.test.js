@@ -18,14 +18,14 @@ import { crearEspia } from './_espiaSupabase';
 const espia = crearEspia();
 const invoke = vi.fn(async () => ({ data: { ok: true, secreto: 'S3CR3T0' }, error: null }));
 espia.supabase.functions = { invoke: (...a) => invoke(...a) };
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { emitirCarneTemporal, fetchCarnesVigentes, fetchCarnesTemporales,
-        anularCarneTemporal, carneVigente } = await import('../../src/data/carneTemporal');
+        anularCarneTemporal, carneVigente } = await import('@nucleo/data/carneTemporal');
 const { agruparPorPersona, describirDispositivo, haceCuanto, diasDesde, describirLimite,
-        cerrarSesion, cerrarTodasDe, bloquearPersona } = await import('../../src/data/sesiones');
-const { verifyKioskAuthorization, verifyKioskPin } = await import('../../src/data/kioskAuth');
-const { fetchEmployeeSafeByUsername } = await import('../../src/data/auth');
+        cerrarSesion, cerrarTodasDe, bloquearPersona } = await import('@nucleo/data/sesiones');
+const { verifyKioskAuthorization, verifyKioskPin } = await import('@nucleo/data/kioskAuth');
+const { fetchEmployeeSafeByUsername } = await import('@nucleo/data/auth');
 
 const rpcReal = espia.supabase.rpc;
 beforeEach(() => {

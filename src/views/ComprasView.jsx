@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useBusqueda } from '../hooks/useBusqueda';
+import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
 import { ShoppingCart, Package, ChevronDown, ChevronRight, Users, AlertTriangle } from 'lucide-react';
@@ -15,12 +15,12 @@ import FilterBar from '../components/common/FilterBar';
 import {
     fetchPurchaseReceiptItems, fetchPurchaseReceiptsPage, fetchProductPurchaseSummaryPage,
     fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount,
-} from '../data/compras';
-import { formatMoney, formatQty } from '../utils/formatNumber';
-import { useAuth } from '../context/AuthContext';
+} from '@nucleo/data/compras';
+import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
+import { useAuth } from '@nucleo/context/AuthContext';
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../components/common/usarExpediente';
-import { fechaNumerica } from '../utils/fecha';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

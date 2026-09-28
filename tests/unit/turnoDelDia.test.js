@@ -3,7 +3,7 @@ import {
     resolverTurnoDelDia, minutosNocturnosDe, tramosDeLaJornada,
     reparosDelDia, descansoInsuficiente, claveDeDia, aMinutos, aHora,
     HORAS_SEMANA_DIURNA, HORAS_JORNADA_DIURNA,
-} from '../../src/utils/turnoDelDia';
+} from '@nucleo/utils/turnoDelDia';
 
 // El catálogo de prueba. `start_time`/`end_time` es como vienen de la base;
 // `start`/`end` es como quedan en memoria después del store. Las dos formas

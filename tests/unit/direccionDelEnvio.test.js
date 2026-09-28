@@ -41,7 +41,7 @@
 // La que MANDA es `validar_envio_producto`. Esto ancla el espejo.
 
 import { describe, it, expect } from 'vitest';
-import { ERP_BODEGA, MOTIVOS_ENVIO, motivosEnvioPorDireccion } from '../../src/data/envios';
+import { ERP_BODEGA, MOTIVOS_ENVIO, motivosEnvioPorDireccion } from '@nucleo/data/envios';
 
 const A_BODEGA    = () => motivosEnvioPorDireccion(false, true);   // una sala → Bodega
 const DE_BODEGA   = () => motivosEnvioPorDireccion(true,  false);  // Bodega → una sala

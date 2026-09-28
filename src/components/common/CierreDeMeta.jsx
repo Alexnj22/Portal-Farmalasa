@@ -1,8 +1,8 @@
 import React from 'react';
 import { Crown, Medal } from 'lucide-react';
-import { formatMoney } from '../../utils/formatNumber';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { tonoDeCumplimiento, tonoContraPromedio } from '../../utils/cierreDeMeta';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { tonoDeCumplimiento, tonoContraPromedio } from '@nucleo/utils/cierreDeMeta';
 import AvatarConEstado from './AvatarConEstado';
 
 /* El cierre de mes de una sala, dentro de la campana.

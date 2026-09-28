@@ -18,9 +18,9 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { recordKioskVerification, hasRecentKioskVerification, clearKioskGrace }
-    from '../../src/utils/kioskGrace';
+    from '@nucleo/utils/kioskGrace';
 import { enqueueAttendancePunch, contarMarcajesEnCola, flushAttendanceQueue }
-    from '../../src/utils/attendanceQueue';
+    from '@nucleo/utils/attendanceQueue';
 
 const DIA = 24 * 60 * 60 * 1000;
 

@@ -16,26 +16,26 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodStepper from '../../components/common/PeriodStepper';
 import FilterBar from '../../components/common/FilterBar';
 import TablePagination from '../../components/common/TablePagination';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
-import { tokenMatch, normSearch } from '../../utils/searchUtils';
-import { dteTypeLabel, dteAdmiteProveedor } from '../../utils/dteTypes';
-import { downloadStoredFile, getSignedFileUrl } from '../../utils/storageFiles';
-import { extractCodigoGeneracionFromPdf } from '../../utils/dtePdfCodigo';
-import { fetchProveedoresMaestro } from '../../data/proveedores';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { tokenMatch, normSearch } from '@nucleo/utils/searchUtils';
+import { dteTypeLabel, dteAdmiteProveedor } from '@nucleo/utils/dteTypes';
+import { downloadStoredFile, getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import { extractCodigoGeneracionFromPdf } from '@nucleo/utils/dtePdfCodigo';
+import { fetchProveedoresMaestro } from '@nucleo/data/proveedores';
 import {
     fetchPurchaseDteDocuments, fetchPurchaseDteReviewQueue,
     setPurchaseDteProveedor, resolvePurchaseDteReview, buscarCorreosDeCompras,
     downloadPurchaseDtePackage, downloadPurchaseDteZipBulk, mergePurchaseDteDocuments,
     findPurchaseDteDocumentByCodigo, classifyPurchaseDteReview, nombreZipFacturas,
-} from '../../data/facturasCompra';
-import { clickable } from '../../utils/clickable';
+} from '@nucleo/data/facturasCompra';
+import { clickable } from '@nucleo/utils/clickable';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fechaHora12 } from '../../utils/hora';
-import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '../../utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fechaHora12 } from '@nucleo/utils/hora';
+import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 
 const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },

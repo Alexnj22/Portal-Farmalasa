@@ -5,8 +5,8 @@ import { Receipt, DollarSign, Calendar, UploadCloud, CheckCircle2, AlertCircle, 
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { formatMoney } from '../../utils/formatNumber';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 
 const SERVICE_LABELS = {
     rent: 'Arrendamiento',

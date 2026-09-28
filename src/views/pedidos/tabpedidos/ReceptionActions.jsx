@@ -4,7 +4,7 @@ import Badge from '../../../components/common/Badge';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import Button from '../../../components/common/Button';
 import Notice from '../../../components/common/Notice';
-import { shortEmployeeName } from '../../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 // Mismas etiquetas que LLEGADA_TIPO_INFO en PostCompletionSection.jsx (solo
 // el texto — el estilo de esta tarjeta sigue el patrón "completado" propio

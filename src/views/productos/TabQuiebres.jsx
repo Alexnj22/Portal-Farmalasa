@@ -7,11 +7,11 @@ import Badge       from '../../components/common/Badge';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { SkeletonText } from '../../components/common/StateViews';
-import { fetchQuiebresSala } from '../../data/stockParams';
+import { fetchQuiebresSala } from '@nucleo/data/stockParams';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
-import { tokenMatch } from '../../utils/searchUtils';
-import { formatQty } from '../../utils/formatNumber';
-import { fechaTexto } from '../../utils/fecha';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { formatQty } from '@nucleo/utils/formatNumber';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 /**
  * Agotados — lo que la sala no tiene y sí vende.

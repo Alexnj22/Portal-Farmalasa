@@ -3,8 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight, Clock } from 'lucide-react';
-import { calcSolicitado, fmtRelative, fmtDia, fmtHM } from '../../../utils/tableroDePedidos';
-import { ERP_NAMES } from '../../../constants/erp';
+import { calcSolicitado, fmtRelative, fmtDia, fmtHM } from '@nucleo/utils/tableroDePedidos';
+import { ERP_NAMES } from '@nucleo/constants/erp';
 import Badge from '../../../components/common/Badge';
 import Notice from '../../../components/common/Notice';
 import PortalInput from '../../../components/common/PortalInput';
@@ -12,8 +12,8 @@ import DevolucionBloque from './DevolucionBloque';
 import EvidenciaFotos from '../../../components/common/EvidenciaFotos';
 import EmpChip from './EmpChip';
 import DecisionDiferencia from './DecisionDiferencia';
-import { fetchOpcionesDiferencia, opcionElegida } from '../../../data/diferencias';
-import { tengoAlgoQueHacer } from '../../../utils/decisionDiferencia';
+import { fetchOpcionesDiferencia, opcionElegida } from '@nucleo/data/diferencias';
+import { tengoAlgoQueHacer } from '@nucleo/utils/decisionDiferencia';
 
 const ERROR_TIPO_LABEL = {
     faltante:     { label: 'Faltante',        variante: 'danger'           },

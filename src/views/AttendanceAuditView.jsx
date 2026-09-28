@@ -15,9 +15,9 @@ import {
   Baby, Coffee, Loader2, ShieldCheck, LockKeyhole, CalendarRange,
   Users, TrendingUp, Download,
 } from "lucide-react";
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useAuth } from "../context/AuthContext";
-import { useToastStore } from "../store/toastStore";
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from "@nucleo/context/AuthContext";
+import { useToastStore } from "@nucleo/store/toastStore";
 import ModalShell from "../components/common/ModalShell";
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -25,24 +25,24 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 import TimePicker12 from '../components/common/TimePicker12';
-import { smartFilter } from '../utils/searchUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
     fetchPendingShiftExceptions, fetchQuincenaTimesheets, approveTimesheetsBulk,
     closeQuincenaTimesheets, marcarMarcajesRevisados, resolverTurnoExtra,
     buildCSTDate,
     getCSTDateStr,
     minutosDeTardanza,
-} from '../data/attendanceAudit';
+} from '@nucleo/data/attendanceAudit';
 import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { shortEmployeeName } from '../utils/nameUtils';
-import { registrarEgreso } from '../data/egreso';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { registrarEgreso } from '@nucleo/data/egreso';
 import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, isAutoPunch,
          isPendingPunch, getCurrentQuincenaStart, getQuincenaEnd, prevQuincena, nextQuincena }
-    from '../utils/quincena';
+    from '@nucleo/utils/quincena';
 import { descargarArchivo } from '../plataforma/descargas';
-import { fechaTexto } from '../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];

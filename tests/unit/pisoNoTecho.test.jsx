@@ -20,8 +20,8 @@ import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { NOMBRE_POR_ICONO, TONO_POR_ICONO, CLASE_TEXTO_POR_TONO, VARIANTES_RELLENAS }
     from '../../src/components/common/iconNames';
-import { MODULE_SEARCH_KEYWORDS } from '../../src/constants/menuSearchKeywords';
-import useSobreviveAlCierre from '../../src/hooks/useSobreviveAlCierre';
+import { MODULE_SEARCH_KEYWORDS } from '@nucleo/constants/menuSearchKeywords';
+import useSobreviveAlCierre from '@nucleo/hooks/useSobreviveAlCierre';
 import useMediaQuery from '../../src/plataforma/useMediaQuery';
 import { CORTE_TELEFONO, useExpedienteMovil } from '../../src/components/common/usarExpediente';
 

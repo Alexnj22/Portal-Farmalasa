@@ -2,7 +2,7 @@ import React, { memo, Children, isValidElement, useState, useEffect, useLayoutEf
 import AsaHoja from './AsaHoja';
 import { createPortal } from 'react-dom';
 import { X, SlidersHorizontal, MoreHorizontal, Building2 } from 'lucide-react';
-import useLayoutCompacto from '../../hooks/useLayoutCompacto';
+import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 // El anclaje de los paneles de esta barra vive en `hooks/` desde que son tres
 // (desborde, otros, y el de borradores que TabMinMax mete como ranura).
 import useAnclaje from '../../plataforma/useAnclaje';

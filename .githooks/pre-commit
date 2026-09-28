@@ -193,6 +193,14 @@ if git diff --cached --name-only | grep -qE '^src/index\.css$|^src/constants/tok
   node scripts/exportar-tokens.mjs --revisar || exit 1
 fi
 
+# nucleo-alias: lo que cruza el borde del núcleo va por `@nucleo/…` (desde las
+# pantallas) o `@plataforma/…` (desde el núcleo), nunca por ruta relativa — así
+# mudar el núcleo a `packages/core` (F7) no toca ninguna pantalla. Local y en
+# milisegundos. Si falla: `node scripts/nucleo-alias.mjs --escribir` lo corrige.
+if git diff --cached --name-only | grep -qE '^(src|tests)/'; then
+  node scripts/nucleo-alias.mjs --hook || exit 1
+fi
+
 # consultas-gate: las pantallas (`views`, `components`) no le hablan a la base;
 # la consulta va a `src/data` o a un hook de `src/hooks`, que es lo que la app
 # del teléfono reutiliza. Trinquete: la cuenta por archivo no puede subir.

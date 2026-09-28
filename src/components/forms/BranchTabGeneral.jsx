@@ -4,7 +4,7 @@ import { Building2, MapPin, Phone, Smartphone, Map, Map as MapIcon, Navigation }
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { LazyInput, formatPhoneMask } from './BranchHelpers';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const BranchTabGeneral = ({
     formData, setFormData, name, openingDate, location, 

@@ -1,6 +1,6 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado:** F0 a F6, U1 y U2 **cerradas** · sigue **F7** (el núcleo a `packages/core`).
+**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 **en curso**: paso 1 (alias) hecho, falta mudar las carpetas.
 
 ### Bitácora
 
@@ -118,6 +118,19 @@
   inválido y los fondos `chart-8/…` salían transparentes. Corregido a
   `--text-tertiary`/`--text-secondary`, que es lo que el cambio original quiso
   decir.
+- **F7 paso 1 — las importaciones por alias (2026-09-28)**. Todo lo que cruza
+  el borde del núcleo va por `@nucleo/…` (desde las pantallas y las pruebas) o
+  `@plataforma/…` (desde el núcleo hacia los adaptadores, que pone cada app).
+  1,939 importaciones en 526 archivos, reescritas por
+  `scripts/nucleo-alias.mjs --escribir`; los alias viven en `vite.config.js` y
+  `tsconfig.nucleo.json`. **La compilación salió idéntica byte a byte** a la de
+  antes (464 archivos), 2,903 pruebas en verde y los gates igual. Se le fabricó
+  una consulta a una pantalla importada por alias y `gate:consultas` la cazó.
+  `routeImporters.js` salió de `constants/` a `src/`: son las rutas de las
+  pantallas web, no núcleo, y era lo único del núcleo que importaba pantallas
+  (71 importaciones). `npm run gate:alias`, también en el pre-commit, falla si
+  una importación nueva cruza el borde por ruta relativa. **Paso 2**: mudar las
+  carpetas a `packages/core` y apuntar `@nucleo` ahí — ya no toca pantallas.
 
 ## Para qué
 

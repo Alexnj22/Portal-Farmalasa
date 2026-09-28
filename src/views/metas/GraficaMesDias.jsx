@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine, Tooltip, Cell } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
-import { formatMoney, formatMoneyCorto } from '../../utils/formatNumber';
+import { formatMoney, formatMoneyCorto } from '@nucleo/utils/formatNumber';
 
 /**
  * El «día por día» del mes en curso, en su propio módulo para que `recharts`

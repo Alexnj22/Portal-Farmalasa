@@ -1,8 +1,8 @@
 import React, { memo, useState } from 'react';
 import { Landmark, ChevronDown } from 'lucide-react';
 import Notice from './Notice';
-import { formatMoney } from '../../utils/formatNumber';
-import { hora12 } from '../../utils/hora';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { hora12 } from '@nucleo/utils/hora';
 
 /**
  * «De este total, tanto no es venta de productos».

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { seccionesParaElPrograma, COLUMNAS_TICKET, textoParaElRollo, ticketEnBase64 }
-    from '../../src/utils/ticketPrint';
+    from '@nucleo/utils/ticketPrint';
 
 // El ancla de estos tests es un ticket REAL del sistema de facturación —factura
 // 351275, capturada el 2026-08-13— del que se contaron las columnas:

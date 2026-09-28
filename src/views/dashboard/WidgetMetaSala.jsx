@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Target } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchMetaSala } from '../../data/metas';
-import { fetchVentasSinProducto } from '../../data/ventas';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchMetaSala } from '@nucleo/data/metas';
+import { fetchVentasSinProducto } from '@nucleo/data/ventas';
 import AvisoSinProducto from '../../components/common/AvisoSinProducto';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import BarraAvance from '../metas/BarraAvance';
-import { TRAMO_CFG, tramoLabel, ymLabel } from '../../utils/metasUtils';
+import { TRAMO_CFG, tramoLabel, ymLabel } from '@nucleo/utils/metasUtils';
 
 // La meta de la sala en el Inicio. Es el mismo dato que el tablero del módulo,
 // pero contado desde la sala y para HOY: cuánto lleva el mes, cuánto vendió hoy,

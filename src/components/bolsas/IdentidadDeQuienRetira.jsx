@@ -5,10 +5,10 @@ import Button from '../common/Button';
 import EsperaDeCarne from '../common/EsperaDeCarne';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
-import { identificarPorCarne, identificarPorUsuario } from '../../data/bolsas';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { identificarPorCarne, identificarPorUsuario } from '@nucleo/data/bolsas';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 /**
  * «Quién se lleva el efectivo»: el lector de carné, la escotilla de usuario y

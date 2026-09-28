@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { claveAlfabetica, letraDe, agruparPorLetra } from '../../src/utils/alfabetico';
+import { claveAlfabetica, letraDe, agruparPorLetra } from '@nucleo/utils/alfabetico';
 
 describe('letraDe — el cajón del índice A–Z', () => {
     it('usa la primera letra cuando el nombre empieza con letra', () => {

@@ -19,8 +19,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * — la tarjeta simplemente desaparecía, que es indistinguible de «funcionó».
  */
 
-vi.mock('../../src/supabaseClient', () => ({ supabase: {} }));
-vi.mock('../../src/data/notifications', () => ({
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: {} }));
+vi.mock('@nucleo/data/notifications', () => ({
     fetchNotifications: vi.fn(),
     markNotificationRead: vi.fn(async () => ({ error: null })),
     markNotificationsReadBulk: vi.fn(async () => ({ error: null })),
@@ -29,7 +29,7 @@ vi.mock('../../src/data/notifications', () => ({
     restoreNotificationsByIds: vi.fn(async () => ({ error: null })),
 }));
 
-const { createNotificationsSlice } = await import('../../src/store/slices/notificationsSlice');
+const { createNotificationsSlice } = await import('@nucleo/store/slices/notificationsSlice');
 
 const REQ = '11111111-1111-1111-1111-111111111111';
 

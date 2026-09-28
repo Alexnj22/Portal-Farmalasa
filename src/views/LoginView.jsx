@@ -5,12 +5,12 @@ import {
     User as UserIcon, Sparkles, ArrowRight, X, CheckCircle2, Eye, EyeOff,
 } from 'lucide-react';
 
-import { useAuth } from '../context/AuthContext';
-import { isMobileOrApp } from '../utils/helpers';
-import { mensajeAmigable } from '../utils/errorMessages';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { isMobileOrApp } from '@nucleo/utils/helpers';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useMediaQuery from '../plataforma/useMediaQuery';
-import { esAtajoDePegar, esPegadoDeUnaPersona } from '../utils/pegadoManual';
-import { cambiarMiContrasenaInicial } from '../data/auth';
+import { esAtajoDePegar, esPegadoDeUnaPersona } from '@nucleo/utils/pegadoManual';
+import { cambiarMiContrasenaInicial } from '@nucleo/data/auth';
 
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;

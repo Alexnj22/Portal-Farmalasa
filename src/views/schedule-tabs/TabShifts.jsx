@@ -1,21 +1,21 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     X, Archive, Target, Pencil, Copy,
     AlertTriangle, Search, RotateCcw, Save, Send, Globe, AlertCircle,
     CheckCircle2, Sparkles, Zap, UtensilsCrossed as IconoPausa, MoreHorizontal
 } from 'lucide-react';
 import TimePicker12 from '../../components/common/TimePicker12';
-import { formatTime12h } from '../../utils/helpers';
-import { useStaffStore } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
+import { formatTime12h } from '@nucleo/utils/helpers';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import {
     formatHourAMPM, timeToMins, resolverTurnoDelDia, reparosDelDia,
     HORAS_JORNADA_DIURNA, MINUTOS_DE_PAUSA,
-} from '../../utils/scheduleHelpers';
-import usePulsacionLarga from '../../hooks/usePulsacionLarga';
+} from '@nucleo/utils/scheduleHelpers';
+import usePulsacionLarga from '@nucleo/hooks/usePulsacionLarga';
 import ModalShell from '../../components/common/ModalShell';
 import HojaMovil from '../../components/common/HojaMovil';
 import ListRow from '../../components/common/ListRow';
@@ -24,10 +24,10 @@ import useMediaQuery from '../../plataforma/useMediaQuery';
 import { CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { EmptyState } from '../../components/common/StateViews';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { clickable } from '../../utils/clickable';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { clickable } from '@nucleo/utils/clickable';
 
 const minsToTimeStr = (mins) => {
     const h = Math.floor(mins / 60);

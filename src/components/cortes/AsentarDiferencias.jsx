@@ -6,19 +6,19 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
-import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
-import { asentarDiferencias, justificarDiferencia } from '../../data/cortes';
-import { construirComprobanteDeAsiento } from '../../utils/corteComprobante';
-import { imprimirDocumento } from '../../utils/imprimirDiferido';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { formatMoney } from '../../utils/formatNumber';
+import useSobreviveAlCierre from '@nucleo/hooks/useSobreviveAlCierre';
+import { asentarDiferencias, justificarDiferencia } from '@nucleo/data/cortes';
+import { construirComprobanteDeAsiento } from '@nucleo/utils/corteComprobante';
+import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 
 // «31 ago» y no «2026-08-31»: la fecha se lee, no se procesa.
 const fechaCorta = (f) => fechaTexto(f, {
     day: 'numeric', month: 'short' });
-import { useToastStore } from '../../store/toastStore';
-import { useAuth } from '../../context/AuthContext';
-import { fechaTexto } from '../../utils/fecha';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 /**
  * Marcar como registradas las diferencias que ya se anotaron en el sistema.

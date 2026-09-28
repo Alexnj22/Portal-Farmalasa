@@ -10,15 +10,15 @@ import PortalInput from '../components/common/PortalInput';
 import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
-import { useAuth } from '../context/AuthContext';
-import { useToastStore } from '../store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { MODULE_INFO } from '../components/common/catalogos/permisos';
-import { smartFilter } from '../utils/searchUtils';
-import { fetchLockableModules, lockModule, unlockModule } from '../data/moduleLocks';
-import { fetchTrasladoSwitch, setTrasladoSwitch } from '../data/trasladoSwitch';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { fetchLockableModules, lockModule, unlockModule } from '@nucleo/data/moduleLocks';
+import { fetchTrasladoSwitch, setTrasladoSwitch } from '@nucleo/data/trasladoSwitch';
 import AvisoDelPortal from '../components/mantenimiento/AvisoDelPortal';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { hora12 } from '../utils/hora';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { hora12 } from '@nucleo/utils/hora';
 
 /**
  * Sistema › Mantenimiento — poner un módulo en solo lectura para el resto.

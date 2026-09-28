@@ -25,9 +25,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
-const { fetchIdentidades, duiDisponible } = await import('../../src/data/employees');
+const { fetchIdentidades, duiDisponible } = await import('@nucleo/data/employees');
 const rpcReal = espia.supabase.rpc;
 
 beforeEach(() => { espia.limpiar(); espia.supabase.rpc = rpcReal; });

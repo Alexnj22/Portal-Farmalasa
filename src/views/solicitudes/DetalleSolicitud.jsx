@@ -9,21 +9,21 @@ import Checkbox from '../../components/common/Checkbox';
 // Las fotos guardadas viven en `components/common/EvidenciaFotos`: el envío por
 // avería necesita las mismas, y una segunda copia se habría separado de ésta.
 import EvidenciaFotos from '../../components/common/EvidenciaFotos';
-import { formatMoney } from '../../utils/formatNumber';
-import { getSignedFileUrl } from '../../utils/storageFiles';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import {
     lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento, fmtFechaHora,
     motivoDeRechazo, cuantoTardo,
-} from '../../utils/movimientoTexto';
+} from '@nucleo/utils/movimientoTexto';
 import { CaraPersona, ChipPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { ajusteSinCambio, fmtUltimaVenta } from '../../utils/minmaxSolicitud';
-import { fechaTexto } from '../../utils/fecha';
-import { fetchContextoDeSolicitudMinMax } from '../../data/minmaxRequests';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { ajusteSinCambio, fmtUltimaVenta } from '@nucleo/utils/minmaxSolicitud';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { fetchContextoDeSolicitudMinMax } from '@nucleo/data/minmaxRequests';
 import {
     leerMeses, leerPresentaciones, leerDespacho, maxNoAlcanzaParaDespachar,
-} from '../../utils/avisosDeOperacion';
+} from '@nucleo/utils/avisosDeOperacion';
 
 // El detalle de una solicitud, en UN solo lugar.
 //

@@ -7,9 +7,9 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import TabBarAction from '../../components/common/TabBarAction';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { fetchClientesPorRevisar, descartarClientePorRevisar } from '../../data/customers';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { fetchClientesPorRevisar, descartarClientePorRevisar } from '@nucleo/data/customers';
 
 // Los rótulos hablan del PORTAL, nunca del sistema de origen ni de la tubería:
 // "congelado" y "repetido" son términos del negocio; "SALTADO (categoría

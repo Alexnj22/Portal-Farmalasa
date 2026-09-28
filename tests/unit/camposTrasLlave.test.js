@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { partirPorLlave, CAMPOS_TRAS_LLAVE, SENSITIVE_FIELDS } from '../../src/store/utils';
+import { partirPorLlave, CAMPOS_TRAS_LLAVE, SENSITIVE_FIELDS } from '@nucleo/store/utils';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El reparto de un payload de ficha entre la tabla y la RPC.
@@ -118,7 +118,7 @@ describe('persistEmployees — las marcas no sobreviven a los datos que marcan',
             setItem: (k, v) => { guardado[k] = v; },
             getItem: (k) => guardado[k] ?? null,
         });
-        const { persistEmployees } = await import('../../src/store/utils');
+        const { persistEmployees } = await import('@nucleo/store/utils');
 
         persistEmployees([{
             id: 'a', name: 'ANA', dui: '01234567-8', base_salary: 365,

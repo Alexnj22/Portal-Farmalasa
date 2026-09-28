@@ -1,7 +1,7 @@
 import { ArrowLeftRight, PackageMinus, Receipt, TrendingUp } from 'lucide-react';
 import {
     FAMILIAS_OPERATIVAS, familiasDisponibles as disponiblesDe,
-} from '../../constants/familiasOperativas';
+} from '@nucleo/constants/familiasOperativas';
 
 // El catálogo (claves, textos, permisos) vive en `constants/familiasOperativas`
 // —lo usa la lógica—; acá sólo el ícono y el color de cada baldosa.

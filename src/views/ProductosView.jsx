@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useBusqueda } from '../hooks/useBusqueda';
+import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { useSearchParams } from 'react-router-dom';
 import { Package, LayoutList, Boxes } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import TabCatalogo     from './productos/TabCatalogo';
 import TabPresentaciones from './productos/TabPresentaciones';
-import { useAuth }     from '../context/AuthContext';
-import { fetchLaboratoriosBasic } from '../data/laboratorios';
-import { fetchProductCategories } from '../data/inventarioTab';
+import { useAuth }     from '@nucleo/context/AuthContext';
+import { fetchLaboratoriosBasic } from '@nucleo/data/laboratorios';
+import { fetchProductCategories } from '@nucleo/data/inventarioTab';
 
 // «Inventario» y «Gestión de Stock» se fueron de acá el 2026-08-08 (pedido del
 // usuario) a `/inventario` y `/gestion-stock`, en el grupo Inventario del menú.

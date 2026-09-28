@@ -6,10 +6,10 @@ import Button from '../../components/common/Button';
 import ListRow from '../../components/common/ListRow';
 import Notice from '../../components/common/Notice';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { faltantesDelRenglon, fetchLibro } from '../../data/bitacoras';
-import { diasEntre, fechaTexto, hoySV, sumarDias } from '../../utils/fecha';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { faltantesDelRenglon, fetchLibro } from '@nucleo/data/bitacoras';
+import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 
 /* El formulario se baja al apretar «Completar», no al entrar al Inicio: arrastra
  * el canónico de archivo, el desplegable y el buscador de médico, y la baldosa

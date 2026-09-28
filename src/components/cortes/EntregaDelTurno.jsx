@@ -2,9 +2,9 @@ import React from 'react';
 import { ChevronRight, UserX } from 'lucide-react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
-import { cadenaDeEntregas } from '../../utils/cortesDiagnostico';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { hora12 } from '../../utils/hora';
+import { cadenaDeEntregas } from '@nucleo/utils/cortesDiagnostico';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hora12 } from '@nucleo/utils/hora';
 
 /**
  * POR QUÉ MANOS PASÓ LA CAJA HOY — con las caras, y en el panel del día.

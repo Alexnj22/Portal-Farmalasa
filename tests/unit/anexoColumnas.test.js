@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import SPEC from '../../supabase/functions/_shared/anexo-spec.json';
-import { construirLibro } from '../../src/utils/libroIva';
+import { construirLibro } from '@nucleo/utils/libroIva';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // El candado que faltaba: contar las columnas.

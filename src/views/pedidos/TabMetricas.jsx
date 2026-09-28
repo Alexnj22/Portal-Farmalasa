@@ -3,15 +3,15 @@ import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import Button from '../../components/common/Button';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { smartFilter } from '../../utils/searchUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
     BarChart2, Clock, Truck, PackageCheck,
     Pause, TrendingUp, Building2, RefreshCw, Search,
 } from 'lucide-react';
-import { ERP_NAMES } from '../../constants/erp';
+import { ERP_NAMES } from '@nucleo/constants/erp';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { fetchIndicadoresDePedidos, fetchRazonesDePausa } from '../../data/pedidos';
+import { fetchIndicadoresDePedidos, fetchRazonesDePausa } from '@nucleo/data/pedidos';
 
 const COLS_SUCURSAL = [
     { key: 'sucursal',  label: 'Sucursal' },

@@ -3,26 +3,26 @@ import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     User, Phone, HeartPulse, Briefcase,
     Clock, Pencil, Calendar, ArrowRightLeft, Sparkles, Palmtree,
     MapPin, CreditCard, Coffee, Zap, Award, TrendingUp, SlidersHorizontal, ChevronDown, ChevronUp, X, Stethoscope, FileText,
     FolderOpen
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore } from '../../store/staffStore';
-import { EVENT_TYPES } from '../../data/constants';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { EVENT_TYPES } from '@nucleo/data/constants';
 import {
     fetchOwnEventsFull, fetchOwnPendingRequestsCount, fetchOwnVacationPlansActive,
-} from '../../data/employeeSelfService';
+} from '@nucleo/data/employeeSelfService';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
-import { formatTime12h } from '../../utils/helpers';
+import { formatTime12h } from '@nucleo/utils/helpers';
 import SearchInput from '../../components/common/SearchInput';
 import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList';
 import SegmentedControl from '../../components/common/SegmentedControl';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 const formatDate = (d) => d
     ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' })

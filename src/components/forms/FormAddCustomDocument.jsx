@@ -5,9 +5,9 @@ import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
-import { clickable } from '../../utils/clickable';
-import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, opcionesDeCatalogo } from '../../data/constants';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { clickable } from '@nucleo/utils/clickable';
+import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, opcionesDeCatalogo } from '@nucleo/data/constants';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // La categoría se guarda por CLAVE (`PERMISOS`, `LEGALES`…). Antes se guardaba
 // el rótulo, así que corregirle una mayúscula desincronizaba lo guardado de las

@@ -5,11 +5,11 @@ import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
-import { fetchBancos, fetchPersonasDeAdministracion, registrarDeposito } from '../../data/bolsas';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useToastStore } from '../../store/toastStore';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { fetchBancos, fetchPersonasDeAdministracion, registrarDeposito } from '@nucleo/data/bolsas';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 /**
  * Lo que sigue después de confirmar el conteo: cuánto se lleva al banco.

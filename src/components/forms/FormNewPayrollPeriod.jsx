@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
-import { fechaTexto } from '../../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 const InputLabel = ({ children }) => (
     <p className="text-caption font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>

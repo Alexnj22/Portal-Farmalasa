@@ -3,10 +3,10 @@ import { Clock, DoorOpen, UserX } from 'lucide-react';
 import Badge from '../common/Badge';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
-import { formatMoney } from '../../utils/formatNumber';
-import { useAuth } from '../../context/AuthContext';
-import { hora12 } from '../../utils/hora';
-import { diaSV, relojSV } from '../../utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { hora12 } from '@nucleo/utils/hora';
+import { diaSV, relojSV } from '@nucleo/utils/fecha';
 
 /**
  * Quién abrió cada caja, desde cuándo y con cuánto — arriba de los cortes.

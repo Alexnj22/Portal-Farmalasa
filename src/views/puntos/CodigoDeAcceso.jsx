@@ -12,12 +12,12 @@ import { KeyRound, Eye, Printer, RefreshCw } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import ElegirSalaDeImpresion from '../../components/personal/ElegirSalaDeImpresion';
-import { fetchSalasConCaja } from '../../data/impresion';
-import { useToastStore } from '../../store/toastStore';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { estadoCodigoAcceso, verCodigoAcceso, emitirCodigoAcceso, salaDeHoy } from '../../data/puntos';
-import { fechaTexto } from '../../utils/fecha';
+import { fetchSalasConCaja } from '@nucleo/data/impresion';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { estadoCodigoAcceso, verCodigoAcceso, emitirCodigoAcceso, salaDeHoy } from '@nucleo/data/puntos';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 /**
  * El código de acceso a «Mis puntos», en la ficha.
@@ -98,7 +98,7 @@ export default function CodigoDeAcceso({ customerId, nombre, puedeEditar }) {
         setPreguntando(false);
         const valor = codigo ?? await verCodigoAcceso(customerId);
         if (!valor) { aviso('Sin código', 'Este cliente todavía no tiene uno. Genéralo primero.', 'error'); return; }
-        const { imprimirTicketDeCodigo } = await import('../../utils/puntosCodigoTicket');
+        const { imprimirTicketDeCodigo } = await import('@nucleo/utils/puntosCodigoTicket');
         await imprimirTicketDeCodigo(
             { nombre, codigo: valor, emitidoPor: user?.name || user?.email || '' },
             { sala: salaId },

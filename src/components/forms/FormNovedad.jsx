@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { codigoDeCarneLibre } from '../../data/employees';
+import { codigoDeCarneLibre } from '@nucleo/data/employees';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import {
@@ -10,20 +10,20 @@ import {
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import RangeDatePicker from '../common/RangeDatePicker';
-import { EVENT_TYPES, TERMINATION_REASONS, DISABILITY_TYPES, opcionesDeCatalogo, tipoDeIncapacidad } from '../../data/constants';
-import { formatDate } from '../../utils/helpers';
-import { buscarCargo } from '../../utils/roles';
-import { useStaffStore } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
-import { useNowTick } from '../../hooks/useNowTick';
+import { EVENT_TYPES, TERMINATION_REASONS, DISABILITY_TYPES, opcionesDeCatalogo, tipoDeIncapacidad } from '@nucleo/data/constants';
+import { formatDate } from '@nucleo/utils/helpers';
+import { buscarCargo } from '@nucleo/utils/roles';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
 import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
 import Badge from '../common/Badge';
 import PortalInput from '../common/PortalInput';
-import { formatMoney } from '../../utils/formatNumber';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion } from '../../plataforma/ventanaDeImpresion';
-import { hoySV } from '../../utils/fecha';
+import { hoySV } from '@nucleo/utils/fecha';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 

@@ -23,17 +23,17 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
 import SearchInput from '../../components/common/SearchInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
-import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { DERECHOS, guardarSolicitud, plazoDe, buscarPersona, resumenDeCliente } from '../../data/solicitudesDatos';
-import { papelDeRespuesta, filasParaPortabilidad } from '../../utils/respuestaDeDatos';
+import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { DERECHOS, guardarSolicitud, plazoDe, buscarPersona, resumenDeCliente } from '@nucleo/data/solicitudesDatos';
+import { papelDeRespuesta, filasParaPortabilidad } from '@nucleo/utils/respuestaDeDatos';
 import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
-import { exportCsv } from '../../utils/csvExport';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { duiValido, telefonoValido, correoValido } from '../../utils/clienteValidacion';
-import { fechaTexto } from '../../utils/fecha';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { duiValido, telefonoValido, correoValido } from '@nucleo/utils/clienteValidacion';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 const paraInput = (iso) => {
     if (!iso) return '';

@@ -31,7 +31,7 @@ const despacharTraslado = vi.fn(async () => ({ ok: true }));
 const rechazarTraslado = vi.fn(async () => ({ error: null }));
 let disponibilidad = null;
 
-vi.mock('../../src/data/traslados', () => ({
+vi.mock('@nucleo/data/traslados', () => ({
     MOTIVOS_RECHAZO: ['Producto ya encargado', 'Sin existencia en físico', 'Producto dañado', 'Otro'],
     fetchDisponibilidadTraslado: vi.fn(async () => ({ disponibilidad, error: null })),
     despacharTraslado: (...a) => despacharTraslado(...a),
@@ -44,12 +44,12 @@ vi.mock('../../src/data/traslados', () => ({
 // (para decir quién pidió). Se simulan acá y no se agregan como props: si fueran
 // props, las tres pantallas que montan esta tarjeta tendrían que acordarse de
 // pasarlas, y la que se olvide imprime en la caja equivocada sin que falle nada.
-vi.mock('../../src/context/AuthContext', () => ({
+vi.mock('@nucleo/context/AuthContext', () => ({
     useAuth: () => ({ user: { branchId: 25 } }),
 }));
 
 const imprimirTicketDeTraslado = vi.fn(async () => ({ ok: true, via: 'cola' }));
-vi.mock('../../src/utils/imprimirTraslado', async (original) => ({
+vi.mock('@nucleo/utils/imprimirTraslado', async (original) => ({
     // `loQueVaEnLaBolsa` es la de verdad: es justamente lo que hay que
     // comprobar —que el papel liste lo que VIAJA y no lo que se pidió—, y
     // simularla dejaría la prueba mirándose a sí misma.

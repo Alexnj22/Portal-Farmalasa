@@ -5,7 +5,7 @@ import {
     unidadesDe,
     sumaUnidades,
     lotesEnUnidades,
-} from '../../src/utils/unidadesInventario';
+} from '@nucleo/utils/unidadesInventario';
 
 // Cuántas unidades hay en una fila de inventario.
 //

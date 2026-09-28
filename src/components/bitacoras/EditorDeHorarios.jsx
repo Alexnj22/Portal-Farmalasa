@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Sparkles, Thermometer } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
-import { rango12 } from '../../utils/hora';
+import { rango12 } from '@nucleo/utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los horarios de un área — cuándo se toma la temperatura y cuándo se limpia.

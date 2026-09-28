@@ -3,11 +3,11 @@ import { AlertTriangle, Calendar, Clock, FileText, Palmtree } from 'lucide-react
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import AvatarConEstado from '../common/AvatarConEstado';
-import { useStaffStore } from '../../store/staffStore';
-import { formatDate } from '../../utils/helpers';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { formatDate } from '@nucleo/utils/helpers';
 import PortalTextarea from '../common/PortalTextarea';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { hoySV } from '../../utils/fecha';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hoySV } from '@nucleo/utils/fecha';
 
 const FormVacationRecall = ({ formData, setFormData }) => {
     const { shifts } = useStaffStore();

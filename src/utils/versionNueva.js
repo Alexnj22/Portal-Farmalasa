@@ -1,7 +1,7 @@
-import { anotar } from '../plataforma/cajaNegra';
-import * as almacen from '../plataforma/almacen';
-import { recargar } from '../plataforma/navegacion';
-import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '../plataforma/cicloDeVida';
+import { anotar } from '@plataforma/cajaNegra';
+import * as almacen from '@plataforma/almacen';
+import { recargar } from '@plataforma/navegacion';
+import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '@plataforma/cicloDeVida';
 
 /**
  * «Hay una versión nueva» — el aviso que reemplazó a la recarga sola.

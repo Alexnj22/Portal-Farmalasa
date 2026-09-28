@@ -3,15 +3,15 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { ChevronLeft, Loader2, X, Package, PackageCheck, RotateCcw, TriangleAlert, Search, RotateCw } from 'lucide-react';
 import PedidoModal from './PedidoModal';
-import { getExactPageGroups } from '../../utils/pedidoPrint';
-import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
+import { getExactPageGroups } from '@nucleo/utils/pedidoPrint';
+import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import FilterBar from '../../components/common/FilterBar';
 import PortalInput from '../../components/common/PortalInput';
 import Notice from '../../components/common/Notice';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
-import { smartFilter } from '../../utils/searchUtils';
-import { lanzarSimulacroTraslado, fetchTrasladoErp, updatePedidoSucursalStatus } from '../../data/pedidos';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { lanzarSimulacroTraslado, fetchTrasladoErp, updatePedidoSucursalStatus } from '@nucleo/data/pedidos';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // Un solo «sin productos» para siempre: `items` es dependencia del efecto que
 // reinicia el diálogo, y un `[]` nuevo en cada render lo volvía a correr —y a

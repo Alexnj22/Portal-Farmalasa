@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { reacomodar } from '../../src/utils/acomodoWidgets';
+import { reacomodar } from '@nucleo/utils/acomodoWidgets';
 
 // La regla que decide dónde queda cada widget al soltar uno encima de otro.
 //

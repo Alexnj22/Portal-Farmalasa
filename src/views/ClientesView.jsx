@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useTextoRebotado } from '../hooks/useBusqueda';
+import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import {
     Contact, Users, IdCard, Building2, MapPin, AlertTriangle, ShieldCheck,
     FileWarning, Receipt, Store, Search,
@@ -17,12 +17,12 @@ import AvisoParecidos from '../components/common/AvisoParecidos';
 import LiquidSelect from '../components/common/LiquidSelect';
 import TablePagination from '../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
-import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { formatMoney } from '../utils/formatNumber';
-import { fetchCustomersPage, fetchCustomersStats } from '../data/customers';
-import { EL_SALVADOR_GEO, municipiosDe } from '../data/elSalvadorGeo';
-import { fechaNumerica } from '../utils/fecha';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fetchCustomersPage, fetchCustomersStats } from '@nucleo/data/customers';
+import { EL_SALVADOR_GEO, municipiosDe } from '@nucleo/data/elSalvadorGeo';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 const CATEGORIAS = [
     'Consumidor', 'Contribuyente', 'Gran Contribuyente',

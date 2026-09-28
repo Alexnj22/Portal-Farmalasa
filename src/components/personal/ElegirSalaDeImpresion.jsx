@@ -4,8 +4,8 @@ import ModalShell from '../common/ModalShell';
 import CuerpoDialogo from '../common/CuerpoDialogo';
 import Button from '../common/Button';
 import LiquidSelect from '../common/LiquidSelect';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 
 const VACIO = [];
 

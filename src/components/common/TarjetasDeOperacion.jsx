@@ -8,19 +8,19 @@ import {
 } from 'lucide-react';
 import AvatarConEstado from './AvatarConEstado';
 import Badge from './Badge';
-import { formatMoney } from '../../utils/formatNumber';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { hora12, rango12, fechaHora12 } from '../../utils/hora';
-import { getSignedFileUrl } from '../../utils/storageFiles';
-import { fetchFotoDeEmpleado } from '../../data/notifications';
-import { decidirDiferencia } from '../../data/diferencias';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useToastStore } from '../../store/toastStore';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hora12, rango12, fechaHora12 } from '@nucleo/utils/hora';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import { fetchFotoDeEmpleado } from '@nucleo/data/notifications';
+import { decidirDiferencia } from '@nucleo/data/diferencias';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useToastStore } from '@nucleo/store/toastStore';
 import Button from './Button';
 import PortalInput from './PortalInput';
-import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES, ETAPAS_DE_PEDIDO, maxNoAlcanzaParaDespachar } from '../../utils/avisosDeOperacion';
-import { porQueDesde } from '../../utils/productosParados';
-import { diasEntre, hoySV } from '../../utils/fecha';
+import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES, ETAPAS_DE_PEDIDO, maxNoAlcanzaParaDespachar } from '@nucleo/utils/avisosDeOperacion';
+import { porQueDesde } from '@nucleo/utils/productosParados';
+import { diasEntre, hoySV } from '@nucleo/utils/fecha';
 
 /* Tres tarjetas de la campana para avisos de la operación del día: el corte de
  * caja, la bitácora por cerrarse y los traslados despachados por respaldo.

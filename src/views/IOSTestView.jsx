@@ -10,7 +10,7 @@ import {
     leerRotaciones, limpiarRotaciones, remontarAlGirar, fijarRemontarAlGirar,
 } from '../plataforma/cajaNegra';
 import { APP_VERSION } from '../version';
-import { hora12ConSegundos } from '../utils/hora';
+import { hora12ConSegundos } from '@nucleo/utils/hora';
 
 const Card = ({ title, children, accent }) => (
     <div data-surface="card" className={`p-4 ${accent || 'border-border-card'}`}>

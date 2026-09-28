@@ -3,7 +3,7 @@ import {
     cobrosDeCredito, conLaCuentaBuena, conTramo, desgloseDelCierre, diferenciaDelCorte,
     formasFueraDelComprobante, noContoEfectivo, notaDeCifra, repartirEnPartes,
     seConfirmaDeUnClic, sugerenciasDeCorte, resumenDeCortes,
-} from '../../src/utils/cortesDiagnostico';
+} from '@nucleo/utils/cortesDiagnostico';
 
 // Los casos son cortes REALES capturados el 13 y 14 de agosto de 2026. No son
 // inventados a propósito: la regla que prueban —que sólo un corte confirmado

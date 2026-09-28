@@ -24,8 +24,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, renderHook, act, fireEvent } from '@testing-library/react';
 import AvisoDeBorrador from '../../src/components/common/AvisoDeBorrador';
-import useBorrador from '../../src/hooks/useBorrador';
-import { saveDraft, loadDraft, loadDraftTime } from '../../src/utils/draftUtils';
+import useBorrador from '@nucleo/hooks/useBorrador';
+import { saveDraft, loadDraft, loadDraftTime } from '@nucleo/utils/draftUtils';
 
 beforeEach(() => localStorage.clear());
 

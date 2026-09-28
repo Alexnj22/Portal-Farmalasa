@@ -8,9 +8,9 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
-import { useStaffStore } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
-import { smartFilter } from '../utils/searchUtils';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import FilterBar from '../components/common/FilterBar';
 import StatCard from '../components/common/StatCard';
 import CarrilCards from '../components/common/CarrilCards';
@@ -22,10 +22,10 @@ import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
 import ModalShell from '../components/common/ModalShell';
 import HojaMovil from '../components/common/HojaMovil';
-import usePulsacionLarga from '../hooks/usePulsacionLarga';
-import { useToastStore } from '../store/toastStore';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { formatMoney, formatQty } from '../utils/formatNumber';
+import usePulsacionLarga from '@nucleo/hooks/usePulsacionLarga';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 
 // 'APROBADO' no está porque nunca existió: aprobar_conteo_inventario escribe
 // 'CERRADO'. Las claves bg/text/border tampoco: solo se usaba `variante`, que es

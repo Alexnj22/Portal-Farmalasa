@@ -2,21 +2,21 @@ import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2, Scale, Landmark } from 'lucide-react';
-import { guardarCondicionesProveedor } from '../../data/cuentasPorPagar';
-import { useToastStore } from '../../store/toastStore';
-import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier, setProveedorClasificacionFiscal } from '../../data/proveedores';
-import { departamentoLabel } from '../../utils/svCatalogs';
+import { guardarCondicionesProveedor } from '@nucleo/data/cuentasPorPagar';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier, setProveedorClasificacionFiscal } from '@nucleo/data/proveedores';
+import { departamentoLabel } from '@nucleo/utils/svCatalogs';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
-import { mensajeAmigable, mensajeConPrefijo } from '../../utils/errorMessages';
+import { mensajeAmigable, mensajeConPrefijo } from '@nucleo/utils/errorMessages';
 import {
     ESTADO_CLASIF, DEDUCIBLE_OPTIONS, CLASIFICACION_OPTIONS, SECTOR_OPTIONS, tiposCostoGasto,
-} from '../../utils/f07Catalogos';
-import useBorrador from '../../hooks/useBorrador';
+} from '@nucleo/utils/f07Catalogos';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { fechaNumerica } from '../../utils/fecha';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 function SectionHeader({ icon: Icon, children }) {
     return (

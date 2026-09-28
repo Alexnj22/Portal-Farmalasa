@@ -1,4 +1,4 @@
-import * as almacen from '../plataforma/almacen';
+import * as almacen from '@plataforma/almacen';
 // Cola local de marcajes de asistencia. Cuando el kiosco no tiene conexión, el
 // marcaje se guarda acá en vez de perderse — se reintenta cuando la conexión
 // vuelve. localStorage alcanza de sobra: el volumen real por kiosco es de

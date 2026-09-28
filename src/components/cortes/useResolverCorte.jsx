@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchCorteParaElPapel, resolverCorte, salaConCajaAbierta, salaYaCerro } from '../../data/cortes';
+import { fetchCorteParaElPapel, resolverCorte, salaConCajaAbierta, salaYaCerro } from '@nucleo/data/cortes';
 import CerrarElDiaAhora from './CerrarElDiaAhora';
 import EntregaDeCaja from './EntregaDeCaja';
-import { cerrarElDia, fetchBolsaDeCorte } from '../../data/bolsas';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
-import { hora12 } from '../../utils/hora';
-import { hoySV } from '../../utils/fecha';
+import { cerrarElDia, fetchBolsaDeCorte } from '@nucleo/data/bolsas';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { hora12 } from '@nucleo/utils/hora';
+import { hoySV } from '@nucleo/utils/fecha';
 
 // El día de caja en hora de El Salvador. Se usa para no ofrecer el cierre del
 // día al confirmar un corte VIEJO: `sala_ya_cerro` mira el reloj de ahora, así
@@ -81,9 +81,9 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
     // pantallas que confirman por la misma razón que la escritura: una quinta
     // pantalla nueva se olvidaría de pedirlo, y el modo de falla es mudo.
     useEffect(() => {
-        import('../../utils/ticketPrint').catch(() => {});
-        import('../../utils/bolsaComprobante').catch(() => {});
-        import('../../utils/corteTicket').catch(() => {});
+        import('@nucleo/utils/ticketPrint').catch(() => {});
+        import('@nucleo/utils/bolsaComprobante').catch(() => {});
+        import('@nucleo/utils/corteTicket').catch(() => {});
     }, []);
 
     const escribir = useCallback(async (corte, estado, {
@@ -162,9 +162,9 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
                        { construirComprobanteDeCorte }, { resultadoDeLaFila }] =
                     await Promise.all([
                         fetchCorteParaElPapel(corte.id),
-                        import('../../utils/ticketPrint'),
-                        import('../../utils/corteTicket'),
-                        import('../../utils/cortesDiagnostico'),
+                        import('@nucleo/utils/ticketPrint'),
+                        import('@nucleo/utils/corteTicket'),
+                        import('@nucleo/utils/cortesDiagnostico'),
                     ]);
                 if (!fila) {
                     showToast?.('El comprobante no salió',
@@ -214,9 +214,9 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
                     const [{ imprimirDocumento }, { construirEtiquetaDeBolsa },
                            { marcarEtiquetaImpresa, fetchChequesDeBolsa }] =
                         await Promise.all([
-                            import('../../utils/ticketPrint'),
-                            import('../../utils/bolsaComprobante'),
-                            import('../../data/bolsas'),
+                            import('@nucleo/utils/ticketPrint'),
+                            import('@nucleo/utils/bolsaComprobante'),
+                            import('@nucleo/data/bolsas'),
                         ]);
                     const r = await imprimirDocumento(construirEtiquetaDeBolsa({
                         bolsa,

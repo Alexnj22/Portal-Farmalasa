@@ -43,7 +43,7 @@
  * papel en un teléfono es a ciegas.
  */
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import useGestos, { useRueda } from '../../hooks/useGestos';
+import useGestos, { useRueda } from '@nucleo/hooks/useGestos';
 
 const NOMBRES = ['arriba a la izquierda', 'arriba a la derecha',
     'abajo a la derecha', 'abajo a la izquierda'];

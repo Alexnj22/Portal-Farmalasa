@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { Construction, AlertTriangle, XCircle, Info, CheckCircle2 } from 'lucide-react';
-import { useBannerPortal } from '../../hooks/useBannerPortal';
+import { useBannerPortal } from '@nucleo/hooks/useBannerPortal';
 
 /**
  * La franja de aviso del tope del portal.

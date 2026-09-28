@@ -4,7 +4,7 @@ import {
     ReferenceLine, Tooltip,
 } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
-import { formatMoney, formatMoneyCorto, formatPct } from '../../utils/formatNumber';
+import { formatMoney, formatMoneyCorto, formatPct } from '@nucleo/utils/formatNumber';
 
 // Las dos gráficas del histórico, sobre los últimos 12 meses cerrados.
 //

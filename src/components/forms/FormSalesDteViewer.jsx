@@ -4,11 +4,11 @@ import Button from '../common/Button';
 import PdfZoomViewer from '../common/PdfZoomViewer';
 import SegmentedControl from '../common/SegmentedControl';
 import { LoadingState } from '../common/StateViews';
-import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
-import { descargarPaqueteDteVenta } from '../../data/librosIva';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { ivaDelDte } from '../../utils/dteIva';
+import { getSignedFileUrl, downloadStoredFile } from '@nucleo/utils/storageFiles';
+import { descargarPaqueteDteVenta } from '@nucleo/data/librosIva';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ivaDelDte } from '@nucleo/utils/dteIva';
 
 const fmt$ = (n) => formatMoney(n || 0);
 

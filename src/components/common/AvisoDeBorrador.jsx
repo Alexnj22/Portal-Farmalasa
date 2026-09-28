@@ -2,7 +2,7 @@ import React from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import Notice from './Notice';
 import Button from './Button';
-import { hora12 } from '../../utils/hora';
+import { hora12 } from '@nucleo/utils/hora';
 
 /**
  * «Tenés cambios sin guardar. ¿Los recuperás?»

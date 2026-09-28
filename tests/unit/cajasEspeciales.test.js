@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { alcanceDeRecepcion, cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '../../src/utils/cajasEspeciales';
+import { alcanceDeRecepcion, cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '@nucleo/utils/cajasEspeciales';
 
 // El ancla es el pedido #114 REAL —La Popular, finalizado el 2026-08-14 a las
 // 12:24— que salió con 60 etiquetas E1…E60 para 5 cajas de Electrolit. Sus cuatro

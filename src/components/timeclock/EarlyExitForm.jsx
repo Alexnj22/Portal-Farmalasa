@@ -3,8 +3,8 @@ import Button from '../common/Button';
 import { FileText, XCircle, CheckCircle2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
-import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { shortEmployeeName, employeeInitials } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const EARLY_EXIT_OPTIONS = [
   'Permiso Médico / Consulta',

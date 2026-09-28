@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User } from 'lucide-react';
-import { webpSignedUrl } from '../../utils/storageFiles';
+import { webpSignedUrl } from '@nucleo/utils/storageFiles';
 
 /**
  * LiquidAvatar — la foto redonda con sus iniciales de respaldo.

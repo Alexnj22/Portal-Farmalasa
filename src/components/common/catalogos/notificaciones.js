@@ -13,9 +13,9 @@ import {
     AlertTriangle,
     CheckCircle2,
 } from 'lucide-react';
-import { SEVERIDAD as BASE, severidadDelTitulo as severidadBase } from '../../../utils/notificacionTexto';
+import { SEVERIDAD as BASE, severidadDelTitulo as severidadBase } from '@nucleo/utils/notificacionTexto';
 
-export * from '../../../utils/notificacionTexto';
+export * from '@nucleo/utils/notificacionTexto';
 
 const ICONOS = {
     AlertCircle,

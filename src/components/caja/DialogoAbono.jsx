@@ -5,13 +5,13 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import BuscadorDeProducto from '../common/BuscadorDeProducto';
-import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
-import { unaSolaVez } from '../../utils/unaSolaVez';
-import { formatMoney } from '../../utils/formatNumber';
-import { DIAS_DE_RESERVA, POLITICA_DE_RESERVA, vencimientoDeReserva } from '../../utils/abonoTicket';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { hoySV } from '../../utils/fecha';
+import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
+import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { DIAS_DE_RESERVA, POLITICA_DE_RESERVA, vencimientoDeReserva } from '@nucleo/utils/abonoTicket';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { hoySV } from '@nucleo/utils/fecha';
 
 /**
  * El abono de un cliente para apartar un producto.

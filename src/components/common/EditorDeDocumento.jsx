@@ -55,7 +55,7 @@ import Button from './Button';
 import LiquidModal from './LiquidModal';
 import Notice from './Notice';
 import LienzoDeEncuadre from './LienzoDeEncuadre';
-import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento, sePuedeGuardar } from '../../utils/fotoDocumento';
+import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento, sePuedeGuardar } from '@nucleo/utils/fotoDocumento';
 import { ESQUINAS_ENTERAS, girarEsquinas, ordenarEsquinas } from '../../plataforma/perspectiva';
 import { aEscala, aArchivo, rectificarPapel } from '../../plataforma/componerDocumento';
 import { acabadoPorDefecto, acabadosDe, aplicarAcabado } from '../../plataforma/tratamientoDeFoto';

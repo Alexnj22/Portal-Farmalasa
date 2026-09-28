@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
-import { formatMoney } from '../../utils/formatNumber';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 
 /**
  * La «Tendencia de Gastos» de la pestaña Gastos de una sucursal, en su propio

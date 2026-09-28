@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
-import { useBusqueda } from '../hooks/useBusqueda';
+import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
@@ -12,11 +12,11 @@ import {
     ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, Copy, Info,
     ShieldCheck
 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
-import { tokenMatch, smartFilter } from '../utils/searchUtils';
+import { tokenMatch, smartFilter } from '@nucleo/utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import FilterBar from '../components/common/FilterBar';
 import CarrilCards from '../components/common/CarrilCards';
@@ -26,12 +26,12 @@ import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/comm
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../components/common/usarExpediente';
 import TablePagination from '../components/common/TablePagination';
-import { openStoredFile, subirArchivo } from '../utils/storageFiles';
-import { signPhotosDeep } from '../utils/storageFiles';
+import { openStoredFile, subirArchivo } from '@nucleo/utils/storageFiles';
+import { signPhotosDeep } from '@nucleo/utils/storageFiles';
 import FileField from '../components/common/FileField';
 import PortalTextarea from '../components/common/PortalTextarea';
-import { formatMoney } from '../utils/formatNumber';
-import { hora12, fechaHora12 } from '../utils/hora';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import {
     regularizarDte,
     fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices, countConfirmedMhInvoices,
@@ -41,16 +41,16 @@ import {
     fetchSalesInvoiceGaps, fetchGapResolutions, insertGapResolution,
     fetchNonCashInvoices, fetchPaymentConfirmationIds, fetchPaymentConfirmationsHistorial, insertPaymentConfirmation,
     fetchInvoiceObservations, fetchObservationResolutions, insertObservationResolution,
-} from '../data/facturacion';
-import { useToastStore } from '../store/toastStore';
+} from '@nucleo/data/facturacion';
+import { useToastStore } from '@nucleo/store/toastStore';
 
 // Los cuatro "Solventar" fallaban en silencio: las tablas de resoluciones tenían
 // RLS sin policy de INSERT, así que Postgres rechazaba la escritura y la vista no
 // avisaba (dos de los cuatro handlers ni desestructuraban `error`, y auditaban
 // igual — `audit_logs` quedó con acciones que nunca ocurrieron). La policy ya
 // existe; esto es la otra mitad: que un fallo se VEA.
-import { mensajeAmigable } from '../utils/errorMessages';
-import { diasEntre, hoySV, relojSV } from '../utils/fecha';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { diasEntre, hoySV, relojSV } from '@nucleo/utils/fecha';
 function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
     useToastStore.getState().showToast(

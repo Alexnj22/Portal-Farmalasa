@@ -20,7 +20,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { rotuloCampo, ALTO_ROTULO } from '../../src/utils/rotuloDeCampo';
+import { rotuloCampo, ALTO_ROTULO } from '@nucleo/utils/rotuloDeCampo';
 import { blanquearComentarios } from '../../scripts/lib/blanquearComentarios.mjs';
 
 const leer = (rel) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');

@@ -5,11 +5,11 @@ import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import IdentidadDeQuienRetira from '../bolsas/IdentidadDeQuienRetira';
-import { fetchBonosProductoSala, reservarPagoBono } from '../../data/bonosProducto';
-import { formatMoney } from '../../utils/formatNumber';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useToastStore } from '../../store/toastStore';
+import { fetchBonosProductoSala, reservarPagoBono } from '@nucleo/data/bonosProducto';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useToastStore } from '@nucleo/store/toastStore';
 
 /**
  * Los bonos de promoción que la sala tiene por pagar — Fase 3 de

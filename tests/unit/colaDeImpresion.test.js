@@ -21,11 +21,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { encolarImpresion, fetchCajasDeImpresion, fetchSalasConCaja,
         crearCodigoDeVinculacion, eliminarCajaDeImpresion, fetchColaDeImpresion,
-        fetchVersionPublicadaDelAgente } = await import('../../src/data/impresion');
+        fetchVersionPublicadaDelAgente } = await import('@nucleo/data/impresion');
 
 // Dos pruebas de acá reemplazan `from`/`rpc` para simular un fallo: se guardan
 // los originales y se restauran en cada prueba, porque si no el reemplazo se

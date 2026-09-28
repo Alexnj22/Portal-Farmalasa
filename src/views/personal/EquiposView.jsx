@@ -24,22 +24,22 @@ const PracticanteModal = lazy(() => import('../../components/practicantes/Practi
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { clickable } from '../../utils/clickable';
-import { estadoDePersona, estaAusenteHoy } from '../../utils/estadoDePersona';
-import { getRoleTheme } from '../../utils/scheduleHelpers';
-import { cadenaDeSuperiores } from '../../utils/roles';
-import { repartirSala } from '../../utils/mandoDeSala';
-import { getExpiringDocuments } from '../../utils/documentExpiry';
-import { soloPersonalEnPlanilla, soloNoEmpleados, esFichaQueNoEsEmpleado } from '../../utils/tipoDeFicha';
-import { exportarDirectorio } from '../../utils/directorioCsv';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { clickable } from '@nucleo/utils/clickable';
+import { estadoDePersona, estaAusenteHoy } from '@nucleo/utils/estadoDePersona';
+import { getRoleTheme } from '@nucleo/utils/scheduleHelpers';
+import { cadenaDeSuperiores } from '@nucleo/utils/roles';
+import { repartirSala } from '@nucleo/utils/mandoDeSala';
+import { getExpiringDocuments } from '@nucleo/utils/documentExpiry';
+import { soloPersonalEnPlanilla, soloNoEmpleados, esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
+import { exportarDirectorio } from '@nucleo/utils/directorioCsv';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { smartFilter } from '../../utils/searchUtils';
-import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
 import { SIN_ASIGNAR } from '../../components/common/catalogos/constantes';
 
 /*

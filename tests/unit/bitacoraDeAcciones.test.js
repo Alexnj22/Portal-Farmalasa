@@ -23,7 +23,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Supabase y se reconstruye la fila desde los parámetros de `registrar_bitacora`:
 // así la prueba cubre la lógica real, no una copia.
 const insertAuditLog = vi.fn();
-vi.mock('../../src/supabaseClient', () => ({
+vi.mock('@nucleo/supabaseClient', () => ({
     supabase: {
         rpc: async (nombre, p) => {
             if (nombre !== 'registrar_bitacora') return { data: null, error: null };
@@ -41,7 +41,7 @@ vi.mock('../../src/supabaseClient', () => ({
     },
 }));
 
-const { createAuditSlice } = await import('../../src/store/slices/auditSlice');
+const { createAuditSlice } = await import('@nucleo/store/slices/auditSlice');
 
 /** Un slice con un `set` que no hace nada más que registrar. */
 function armar() {

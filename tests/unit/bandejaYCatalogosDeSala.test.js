@@ -14,20 +14,20 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchApprovalRequestsList, fetchEmployeeApprovalRequestsDetail, fetchEmployeeUnavailable,
-        fetchBranchAdmins, RANGO } = await import('../../src/data/requests');
+        fetchBranchAdmins, RANGO } = await import('@nucleo/data/requests');
 const { fetchBranchDocuments, fetchActiveKioskDeviceCount, fetchBranchExpensesHistory,
-        fetchBranchExpenseRecord } = await import('../../src/data/branches');
+        fetchBranchExpenseRecord } = await import('@nucleo/data/branches');
 const { fetchScheduleCoverageAtBranch, fetchScheduleCoverageFromBranch } =
-    await import('../../src/data/schedules');
+    await import('@nucleo/data/schedules');
 const { fetchVacationHeaders, updateVacationPlansBulkPreApprove, fetchVacationChangeRequests } =
-    await import('../../src/data/vacationPlans');
+    await import('@nucleo/data/vacationPlans');
 const { fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas } =
-    await import('../../src/data/encuestas');
+    await import('@nucleo/data/encuestas');
 const { fetchLaboratoriosMinMaxVisibility, fetchActiveProductLabCounts } =
-    await import('../../src/data/minmaxLabs');
+    await import('@nucleo/data/minmaxLabs');
 
 beforeEach(() => espia.limpiar());
 

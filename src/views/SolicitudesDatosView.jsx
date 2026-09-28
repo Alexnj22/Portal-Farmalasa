@@ -19,7 +19,7 @@
  * pública puede ser cualquiera. El papel no desaparece: deja de ser el registro.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { tokenMatch } from '../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { ShieldCheck, Printer, Clock, Inbox, AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -31,15 +31,15 @@ import Badge from '../components/common/Badge';
 import Notice from '../components/common/Notice';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useToastStore } from '../store/toastStore';
-import { mensajeAmigable } from '../utils/errorMessages';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '../plataforma/ventanaDeImpresion';
 import { papelDeSolicitudDeDatos } from '../generated/formularioDatos';
-import { fetchSolicitudes, crearSolicitud, plazoDe, DERECHOS, ESTADOS } from '../data/solicitudesDatos';
+import { fetchSolicitudes, crearSolicitud, plazoDe, DERECHOS, ESTADOS } from '@nucleo/data/solicitudesDatos';
 import SolicitudModal from './datos/SolicitudModal';
-import { fechaTexto, hoySV } from '../utils/fecha';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 const PESTANAS = [
     { key: 'tramite',   label: 'En trámite', icon: Clock },

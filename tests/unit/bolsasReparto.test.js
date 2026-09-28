@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { disponibles, elegirBolsas, elegirOrigen, saldoDeBolsa, totalDisponible } from '../../src/utils/bolsasReparto';
+import { disponibles, elegirBolsas, elegirOrigen, saldoDeBolsa, totalDisponible } from '@nucleo/utils/bolsasReparto';
 
 // De qué bolsa sale el dinero. La regla del usuario es «la más vieja que
 // alcance SOLA» — no vaciar la vieja primero, que es la respuesta intuitiva y

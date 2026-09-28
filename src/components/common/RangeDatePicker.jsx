@@ -7,8 +7,8 @@ import Button from './Button';
 import { createPortal } from 'react-dom';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { CalendarDays, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
-import { useToastStore } from '../../store/toastStore';
-import { NOMBRES_DE_MES } from '../../utils/fecha';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { NOMBRES_DE_MES } from '@nucleo/utils/fecha';
 
 const DAYS_SHORT = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 

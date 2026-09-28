@@ -1,11 +1,11 @@
 // Estilos de MIN·MAX. Los nombres y las claves viven en `constants/minmax.js`
 // (los usa la lógica); acá sólo va cómo se ven. Los nombres de sala son los de
 // `constants/erp.js` — esta pantalla tenía su propia copia, idéntica.
-import { ERP_NAMES, ERP_ORDEN as ERP_ORDER } from '../../../constants/erp';
-import { ALERTA_ETIQUETA, ESTADOS_DE_STOCK, ESTADOS_DE_AJUSTE } from '../../../constants/minmax';
+import { ERP_NAMES, ERP_ORDEN as ERP_ORDER } from '@nucleo/constants/erp';
+import { ALERTA_ETIQUETA, ESTADOS_DE_STOCK, ESTADOS_DE_AJUSTE } from '@nucleo/constants/minmax';
 
 export { ERP_NAMES, ERP_ORDER };
-export { MOTIVO_AJUSTE } from '../../../constants/minmax';
+export { MOTIVO_AJUSTE } from '@nucleo/constants/minmax';
 
 export const ALERT = {
     out_of_stock: { label: ALERTA_ETIQUETA.out_of_stock, pill: 'bg-surface-card-hover text-content-2 border-border-card', dot: 'bg-stock-out',         row: 'bg-stock-out/10'         },

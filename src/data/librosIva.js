@@ -17,7 +17,7 @@ import { supabase } from '../supabaseClient';
 import { getSignedFileUrl } from '../utils/storageFiles';
 
 import { registrarEgreso } from './egreso';
-import { descargarArchivo } from '../plataforma/descargas';
+import { descargarArchivo } from '@plataforma/descargas';
 // `client-zip` solo hace falta al apretar un botón, así que va por
 // `await import()` — regla de librerías pesadas de CLAUDE.md.
 let zipPromise = null;

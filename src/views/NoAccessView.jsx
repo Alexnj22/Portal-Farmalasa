@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../components/common/Button';
 import { ShieldOff, LogOut, MessageCircle, Loader2, WifiOff, RefreshCw } from 'lucide-react';
-import { fetchRoleName } from '../data/permissions';
-import { useAuth } from '../context/AuthContext';
+import { fetchRoleName } from '@nucleo/data/permissions';
+import { useAuth } from '@nucleo/context/AuthContext';
 
 const SUPPORT_PHONE = '50370153222';
 

@@ -11,17 +11,17 @@ const ICONOS_DE_CONFLICTO = { Palmtree, HeartPulse, FileText, CalendarOff, Build
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../plataforma/useSearchToggle';
 import { AnimatePresence, motion } from 'framer-motion';
-import { tokenMatch } from '../../../utils/searchUtils';
-import { shortEmployeeName } from '../../../utils/nameUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 import {
     getRoleTheme, getDayConflictLocal, calculateEmployeeWeeklyHoursLocal, timeToMins,
     resolverTurnoDelDia, tramosDeLaJornada, descansoInsuficiente,
     HORAS_SEMANA_DIURNA, HORAS_JORNADA_DIURNA, DESCANSOS_POR_SEMANA, HORAS_ENTRE_JORNADAS,
-} from '../../../utils/scheduleHelpers';
-import { clickable } from '../../../utils/clickable';
-import { hora12 } from '../../../utils/hora';
-import { fechaTexto } from '../../../utils/fecha';
+} from '@nucleo/utils/scheduleHelpers';
+import { clickable } from '@nucleo/utils/clickable';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // ============================================================================
 // 🛠️ ICONOS CUSTOM

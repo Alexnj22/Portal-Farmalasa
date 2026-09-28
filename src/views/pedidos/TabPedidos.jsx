@@ -16,26 +16,26 @@ import {
     ClipboardList, UserPlus, Inbox, FileDown, Box, Zap, Map as MapIcon,
     CalendarClock, Ban, Star, Search, Radio, RefreshCw, PackageX,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import SucPill from './tabpedidos/SucPill';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes } from '../../utils/tableroDePedidos';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes } from '@nucleo/utils/tableroDePedidos';
 import ItemSections from './tabpedidos/ItemSections';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
 import DifSection from './tabpedidos/DifSection';
 import PostCompletionSection from './tabpedidos/PostCompletionSection';
 import ReceptionActions from './tabpedidos/ReceptionActions';
 import FilterPill from './tabpedidos/FilterPill';
-import { iniciarRuta, completarRuta } from '../../data/pedidos';
-import { usePedidosData } from '../../hooks/usePedidosData';
-import { clickable } from '../../utils/clickable';
-import { esCargoDeSupervision } from '../../utils/decisionDiferencia';
-import { dialogoDiferido } from '../../utils/dialogoDiferido';
-import { electrolitFueraDeEspeciales } from '../../utils/cajasEspeciales';
-import { hora12 } from '../../utils/hora';
+import { iniciarRuta, completarRuta } from '@nucleo/data/pedidos';
+import { usePedidosData } from '@nucleo/hooks/usePedidosData';
+import { clickable } from '@nucleo/utils/clickable';
+import { esCargoDeSupervision } from '@nucleo/utils/decisionDiferencia';
+import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
+import { electrolitFueraDeEspeciales } from '@nucleo/utils/cajasEspeciales';
+import { hora12 } from '@nucleo/utils/hora';
 
 /* Los once diálogos se bajan al ABRIRLOS, no al entrar a la pestaña: abrir
  * Pedidos descargaba RecepcionModal (1,959 líneas), CrearRutaModal (812),

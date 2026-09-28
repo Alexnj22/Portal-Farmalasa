@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { estadoDeHojas, hojasContables, hojasContadas } from '../../src/utils/hojasRecepcion';
+import { estadoDeHojas, hojasContables, hojasContadas } from '@nucleo/utils/hojasRecepcion';
 
 // El despacho de la captura del 2026-08-15 (La Popular, 4 hojas): H1 y H2 se
 // contaron en una sesión anterior, H3 y H4 quedan por contar. Sus renglones ya

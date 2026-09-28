@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Target } from 'lucide-react';
-import { formatMoney } from '../../utils/formatNumber';
-import { fetchMetaSala } from '../../data/metas';
-import { useAuth } from '../../context/AuthContext';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fetchMetaSala } from '@nucleo/data/metas';
+import { useAuth } from '@nucleo/context/AuthContext';
 
 /**
  * Cómo va la sala contra la meta de HOY, en la pestaña «Hoy» de Efectivo.

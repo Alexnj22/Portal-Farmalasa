@@ -4,21 +4,21 @@ import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
     User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Pencil, Truck, Contact
 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../store/staffStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import LiquidModal from "./common/LiquidModal";
-import { useToastStore } from '../store/toastStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { LoadingState } from './common/StateViews';
 import useMontadoParaSalida from '../plataforma/useMontadoParaSalida';
-import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages';
-import { shortEmployeeName } from '../utils/nameUtils';
-import { buscarCargo } from '../utils/roles';
+import { mensajeAmigable, mensajeConPrefijo } from '@nucleo/utils/errorMessages';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { buscarCargo } from '@nucleo/utils/roles';
 import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, SIN_ASIGNAR } from './common/catalogos/constantes';
-import { clearDraft } from '../utils/draftUtils';
-import useBorrador from '../hooks/useBorrador';
+import { clearDraft } from '@nucleo/utils/draftUtils';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import AvisoDeBorrador from './common/AvisoDeBorrador';
-import { SENSITIVE_FIELDS } from '../store/utils';
-import { subirArchivo } from '../utils/storageFiles';
-import { analizarDocumento } from '../data/ia';
+import { SENSITIVE_FIELDS } from '@nucleo/store/utils';
+import { subirArchivo } from '@nucleo/utils/storageFiles';
+import { analizarDocumento } from '@nucleo/data/ia';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -534,7 +534,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         // Un documento con credenciales es una salida de datos del
                         // portal, y las salidas se anotan (`export_log`).
                         if (doc.ok) {
-                            const { registrarEgreso } = await import('../data/egreso');
+                            const { registrarEgreso } = await import('@nucleo/data/egreso');
                             registrarEgreso('staff_list', { formato: 'pdf', filas: 1, detalle: { motivo: 'documento de accesos al crear personal' } });
                         }
 

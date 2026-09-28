@@ -1,10 +1,10 @@
 import React from 'react';
 import { Building2 } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { useNowTick } from '../../hooks/useNowTick';
-import { useStaffStore } from '../../store/staffStore';
-import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, salaQueEspera, salaDePersona, areaQueDecide } from '../../utils/movimientoTexto';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, salaQueEspera, salaDePersona, areaQueDecide } from '@nucleo/utils/movimientoTexto';
 
 /* La cara de quien pide y la de quien decide.
  *

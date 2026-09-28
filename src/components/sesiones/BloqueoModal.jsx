@@ -5,8 +5,8 @@ import Button from '../common/Button';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalInput from '../common/PortalInput';
 import Notice from '../common/Notice';
-import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import useSobreviveAlCierre from '@nucleo/hooks/useSobreviveAlCierre';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // Bloquear a alguien es más grave que cerrarle una conexión, y el diálogo tiene
 // que decirlo: cerrar una conexión sólo impide renovar el acceso, mientras que

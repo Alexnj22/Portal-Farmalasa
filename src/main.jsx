@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import { anotar, entorno, iniciarPulso, iniciarSondaRotacion, recogerPulso } from "./plataforma/cajaNegra";
 import { APP_VERSION } from "./version";
-import { marcarVersionNueva } from "./utils/versionNueva";
+import { marcarVersionNueva } from "@nucleo/utils/versionNueva";
 
 // Supabase uses the Web Locks API internally to serialize token refreshes.
 // When multiple async auth operations fire simultaneously (validateSession +
@@ -75,7 +75,7 @@ window.addEventListener('vite:preloadError', (event) => {
 });
 
 import App from "./App.jsx";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "@nucleo/context/AuthContext";
 import { AvisoDeInactividadDeLaSesion } from "./components/common/AvisoDeInactividad";
 import { ThemeProvider } from "./plataforma/ThemeContext";
 import MotionProvider from "./components/MotionProvider";

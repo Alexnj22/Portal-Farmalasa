@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTextoRebotado } from '../hooks/useBusqueda';
+import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { useNavigate } from 'react-router-dom';
 import {
     Bell, BellOff, Check, RotateCcw, Search, Inbox,
@@ -13,13 +13,13 @@ import TarjetaDeAviso from '../components/common/TarjetaDeAviso';
 import { paletaDeAviso } from '../components/common/paletaDeAviso';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useTheme } from '../plataforma/ThemeContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useToastStore } from '../store/toastStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';
 import usePestanaEnUrl from '../plataforma/usePestanaEnUrl';
 import useAccionesDeAviso from '../components/common/useAccionesDeAviso';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { fetchNotificationsPage, DIAS_VISIBLES } from '../data/notifications';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchNotificationsPage, DIAS_VISIBLES } from '@nucleo/data/notifications';
 
 /* El historial de avisos — y la papelera (2026-09-04).
  *

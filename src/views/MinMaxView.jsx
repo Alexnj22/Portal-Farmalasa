@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useBusqueda } from '../hooks/useBusqueda';
+import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { BarChart2 } from 'lucide-react';
 import GlassViewLayout    from '../components/GlassViewLayout';
 import ViewTabBar         from '../components/common/ViewTabBar';
 import TabMinMax          from './productos/TabMinMax';
 import TabQuiebres        from './productos/TabQuiebres';
-import { useAuth }       from '../context/AuthContext';
+import { useAuth }       from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { fetchStockConfigFull, fetchErpSucursalIdForBranchLocked } from '../data/stockParams';
+import { fetchStockConfigFull, fetchErpSucursalIdForBranchLocked } from '@nucleo/data/stockParams';
 
 // La pestaña «Red» se retiró el 2026-08-09 a pedido del usuario: «no se me es de
 // utilidad». Se fue entera —vista, permiso `minmax_tab_red` y el RPC

@@ -31,7 +31,7 @@ import {
   ReceiptText, Upload, Eye, Lock, Thermometer, Pill,
   Wallet, Mail
 } from 'lucide-react';
-import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
+import { DAY_NAMES, formatHourAMPM } from '@nucleo/utils/scheduleHelpers';
 // Los mapas del sistema de origen se mudaron a `constants/erp` el 2026-08-11:
 // «Solicitudes de Sucursal» abre los mismos formularios y necesita los mismos
 // mapas, y dos copias a mano se desincronizan. `MM_ERP_NAMES` era además una
@@ -41,10 +41,10 @@ import {
     ERP_ORDEN as MM_ERP_ORDER,
     BRANCH_A_ERP as MM_BRANCH_TO_ERP,
     ERP_UBICACION_POR_SUCURSAL,
-} from '../constants/erp';
-import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { REQUEST_TYPES } from '../store/slices/requestsSlice';
+} from '@nucleo/constants/erp';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
 import GlassViewLayout from '../components/GlassViewLayout';
 import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
 import SearchInput from '../components/common/SearchInput';
@@ -74,14 +74,14 @@ const WidgetBolsasSala = lazy(() => import('./dashboard/WidgetBolsasSala'));
 // completa y su permiso registrado, pero faltaba esta línea. No se veía porque
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
 import WidgetVendedores from './dashboard/WidgetVendedores';
-import { SALAS_VENTA } from '../utils/metasUtils';
+import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { MODULE_MAP } from '../components/common/catalogos/modulos';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
-import { useLayoutCompacto } from '../hooks/useLayoutCompacto';
+import { useLayoutCompacto } from '@nucleo/hooks/useLayoutCompacto';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { getTodayAttendanceStatus } from '../utils/helpers';
+import { getTodayAttendanceStatus } from '@nucleo/utils/helpers';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ListRow from '../components/common/ListRow';
 import {
@@ -89,20 +89,20 @@ import {
     fetchPendingApprovalRequests, fetchActiveLeaveRequests, fetchTodayHourlySales,
     fetchBranchHourlySalesRange, fetchRecentCotizaciones, fetchTodayInvoicesSummary,
     fetchDashboardCanon, upsertDashboardCanon,
-} from '../data/dashboard';
-import { fetchRolesForPermissions, fetchRolePermissions } from '../data/permissions';
-import { clickable } from '../utils/clickable';
-import { reacomodar } from '../utils/acomodoWidgets';
+} from '@nucleo/data/dashboard';
+import { fetchRolesForPermissions, fetchRolePermissions } from '@nucleo/data/permissions';
+import { clickable } from '@nucleo/utils/clickable';
+import { reacomodar } from '@nucleo/utils/acomodoWidgets';
 import { permitirEscapeDelScroll } from '../plataforma/scrollEncadenado';
-import { formatMoney } from '../utils/formatNumber';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import useCapaFlotante from '../plataforma/capaFlotante';
-import { shortEmployeeName } from '../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     catalogoDePestana, pestanasVisibles, ordenDeLaPestana, widgetsSinUbicar,
     hospedaBaldosasDeSucursal,
-} from '../constants/dashboardTabs';
-import { fechaTexto } from '../utils/fecha';
-import { fetchTopProductosDelMes } from '../data/ventas';
+} from '@nucleo/constants/dashboardTabs';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { fetchTopProductosDelMes } from '@nucleo/data/ventas';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};

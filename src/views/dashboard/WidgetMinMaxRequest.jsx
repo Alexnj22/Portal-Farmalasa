@@ -7,14 +7,14 @@ import Notice from '../../components/common/Notice';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import PortalInput from '../../components/common/PortalInput';
 import { HerramientasModal, PieModal } from './LanzadorSolicitud';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import {
     fetchProductPreciosForMinMax, fetchCurrentStockParams, insertMinMaxChangeRequest,
     fetchMinMaxContextoVenta,
-} from '../../data/minmaxRequests';
+} from '@nucleo/data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
-import { effectiveMinMaxPair } from '../../data/stockParams';
-import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio, fmtUltimaVenta } from '../../utils/minmaxSolicitud';
+import { effectiveMinMaxPair } from '@nucleo/data/stockParams';
+import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio, fmtUltimaVenta } from '@nucleo/utils/minmaxSolicitud';
 import PortalTextarea from '../../components/common/PortalTextarea';
 
 // Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.

@@ -8,12 +8,12 @@ import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import LiquidSelect from '../common/LiquidSelect';
 import { FranjaBanner } from '../common/BannerPortal';
-import { useBannerPortal } from '../../hooks/useBannerPortal';
-import { apagarBannerPortal, encenderBannerPortal, guardarBannerPortal, VARIANTES_BANNER } from '../../data/bannerPortal';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { fechaHora12 } from '../../utils/hora';
+import { useBannerPortal } from '@nucleo/hooks/useBannerPortal';
+import { apagarBannerPortal, encenderBannerPortal, guardarBannerPortal, VARIANTES_BANNER } from '@nucleo/data/bannerPortal';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { fechaHora12 } from '@nucleo/utils/hora';
 
 /**
  * Sistema › Mantenimiento — la franja de aviso que se ve en el tope de todas

@@ -6,23 +6,23 @@ import ViewTabBar from '../../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { tokenMatch } from '../../utils/searchUtils';
-import { fetchSuppliersBasic } from '../../data/compras';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { fetchSuppliersBasic } from '@nucleo/data/compras';
 import Checkbox from '../../components/common/Checkbox';
 import {
     fetchProveedoresMaestro, fetchProveedorCategorias,
     setProveedoresCategoriaBulk, applyProveedoresCategoriaSugerida,
     confirmarClasificacionPropuesta, fetchClasificacionFiscalPendiente,
     resolverClasificacionPendiente,
-} from '../../data/proveedores';
+} from '@nucleo/data/proveedores';
 import PanelDeducibilidad from './PanelDeducibilidad';
 import FilterBar from '../../components/common/FilterBar';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fechaNumerica } from '../../utils/fecha';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 const SIN_CATEGORIA = '__sin_categoria__';
 

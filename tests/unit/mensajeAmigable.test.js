@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mensajeAmigable, MENSAJE_GENERICO } from '../../src/utils/errorMessages.js';
+import { mensajeAmigable, MENSAJE_GENERICO } from '@nucleo/utils/errorMessages.js';
 
 // `mensajeAmigable` compara contra una tira que junta message + details + hint +
 // code, porque varias reglas matchean por CÓDIGO (`23505`, `22P02`). Lo que se

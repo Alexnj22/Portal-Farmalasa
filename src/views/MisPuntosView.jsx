@@ -49,9 +49,9 @@ import Button from '../components/common/Button';
 import PortalInput from '../components/common/PortalInput';
 import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
-import { consultarMisPuntos } from '../data/misPuntos';
-import { EMPRESA } from '../constants/empresa';
-import { diaDe, diasEntre, fechaNumerica, hoySV } from '../utils/fecha';
+import { consultarMisPuntos } from '@nucleo/data/misPuntos';
+import { EMPRESA } from '@nucleo/constants/empresa';
+import { diaDe, diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 
 /**
  * La forma del código de acceso: siete caracteres de un alfabeto sin parecidos

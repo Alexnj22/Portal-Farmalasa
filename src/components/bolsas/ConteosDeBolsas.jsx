@@ -2,15 +2,15 @@ import React, { useMemo, useState } from 'react';
 import { AlertTriangle, Building2, CheckCircle2, ChevronDown, ChevronUp, Package, Scale } from 'lucide-react';
 import Badge from '../common/Badge';
 import AvatarConEstado from '../common/AvatarConEstado';
-import { shortEmployeeName } from '../../utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
-import { formatMoney } from '../../utils/formatNumber';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 // El rango de días vive en `etapas` porque también lo arma el motor para el
 // rótulo de la ranura de la píldora, y este archivo se carga en diferido.
 import { rangoDeDias } from '../../views/bolsas/etapas';
-import { hora12, fechaHora12 } from '../../utils/hora';
-import { fechaTexto } from '../../utils/fecha';
+import { hora12, fechaHora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 /**
  * El archivo de las TANDAS de conteo.

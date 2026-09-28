@@ -30,9 +30,9 @@ import {
     Ban,
     ShieldCheck,
 } from 'lucide-react';
-import { EVENT_TYPES as BASE } from '../../../data/constants';
+import { EVENT_TYPES as BASE } from '@nucleo/data/constants';
 
-export * from '../../../data/constants';
+export * from '@nucleo/data/constants';
 
 const ICONOS = {
     AlertCircle,

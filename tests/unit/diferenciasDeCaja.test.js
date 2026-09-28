@@ -3,7 +3,7 @@ import {
     conEstados, diaEnFiltro, diaEnMes, estadoDeCorte, mesesDeLosDias, ordenarDias, peorEstado,
     pendientesDeRegistrar, porSigno, resumenDeDias,
     saldoDeDiferencia, desgloseDelDia, responsablesDelDia,
-} from '../../src/utils/diferenciasDeCaja';
+} from '@nucleo/utils/diferenciasDeCaja';
 
 // El caso real que originó la pestaña: Salud 2, 24-sep, faltante de −$20.25 en
 // el corte de la 1:05 p. m., confirmado y sin resolver.

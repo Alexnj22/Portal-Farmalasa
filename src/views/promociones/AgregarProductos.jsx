@@ -7,7 +7,7 @@ import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
-import { fetchProductosParaPromocion } from '../../data/promociones';
+import { fetchProductosParaPromocion } from '@nucleo/data/promociones';
 
 /**
  * Elegir VARIOS productos de una vez.

@@ -8,7 +8,7 @@ import { fetchAllRows } from '../utils/supabaseUtils';
  * `import` no trae una función, trae el módulo entero. Esta línea metía los
  * 63 kB de `data/bolsas` en el chunk de arranque, porque `requestsSlice` importa
  * este archivo. Ver la cabecera de `fotoParaLeer`. */
-import { aBase64Reducido } from '../plataforma/fotoParaLeer';
+import { aBase64Reducido } from '@plataforma/fotoParaLeer';
 import { diaSV } from '../utils/fecha';
 
 /**

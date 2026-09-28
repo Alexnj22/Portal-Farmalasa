@@ -21,12 +21,12 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination from '../../components/common/TablePagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
-import { useToastStore } from '../../store/toastStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { useNavigate } from 'react-router-dom';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { useAuth } from '../../context/AuthContext';
-import { applyPresRule } from '../../utils/presentacion';
-import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant, hasDispatchRisk } from '../../utils/minmaxTabla';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { applyPresRule } from '@nucleo/utils/presentacion';
+import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant, hasDispatchRisk } from '@nucleo/utils/minmaxTabla';
 import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, VISIBLE_STAT_KEYS, AJUSTE_CFGS, MOTIVO_AJUSTE } from './tabminmax/constants';
 import CoverageBar from './tabminmax/CoverageBar';
 import StockBar from './tabminmax/StockBar';
@@ -43,19 +43,19 @@ import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import ConfigPanel from './tabminmax/ConfigPanel';
 import LabsPanel from './tabminmax/LabsPanel';
 import BorradoresRanura from './tabminmax/BorradoresRanura';
-import { fetchProveedorPrincipal, fetchStockNetoPorSala, ocultarProductoMinMax } from '../../data/stockParams';
-import { useMinMaxData, estadoAjuste } from '../../hooks/useMinMaxData';
+import { fetchProveedorPrincipal, fetchStockNetoPorSala, ocultarProductoMinMax } from '@nucleo/data/stockParams';
+import { useMinMaxData, estadoAjuste } from '@nucleo/hooks/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
-import { clickable } from '../../utils/clickable';
-import { hora12 } from '../../utils/hora';
+import { clickable } from '@nucleo/utils/clickable';
+import { hora12 } from '@nucleo/utils/hora';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import ModalShell from '../../components/common/ModalShell';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 
-import { registrarEgreso } from '../../data/egreso';
+import { registrarEgreso } from '@nucleo/data/egreso';
 import { descargarArchivo } from '../../plataforma/descargas';
-import { fechaTexto, hoySV } from '../../utils/fecha';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];

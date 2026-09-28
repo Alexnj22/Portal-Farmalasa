@@ -8,10 +8,10 @@ import ModalShell from '../../../components/common/ModalShell';
 import Switch from '../../../components/common/Switch';
 import { SkeletonText } from '../../../components/common/StateViews';
 import { FlaskConical, X, Search, Loader2 } from 'lucide-react';
-import { smartFilter } from '../../../utils/searchUtils';
+import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
     fetchLaboratoriosMinMaxVisibility, fetchActiveProductLabCounts, cambiarVisibilidadLaboratorioMinMax,
-} from '../../../data/minmaxLabs';
+} from '@nucleo/data/minmaxLabs';
 import SearchInput from '../../../components/common/SearchInput';
 import { EmptyState } from '../../../components/common/StateViews';
 

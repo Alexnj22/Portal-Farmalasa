@@ -5,7 +5,7 @@ import { getSignedFileUrl } from '../utils/storageFiles';
 
 import { registrarEgreso } from './egreso';
 import { anotar } from './audit';
-import { descargarArchivo } from '../plataforma/descargas';
+import { descargarArchivo } from '@plataforma/descargas';
 import { hoySV } from '../utils/fecha';
 // supabase-js lanza FunctionsHttpError con .message genérico
 // ("Edge Function returned a non-2xx status code") — el mensaje real que arma

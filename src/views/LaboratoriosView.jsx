@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useBusqueda } from '../hooks/useBusqueda';
+import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { useSearchParams } from 'react-router-dom';
 import { FlaskConical, MapPin, CalendarClock } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';

@@ -2,13 +2,13 @@ import React, { useState, useEffect, memo } from 'react';
 import { Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Ban } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
-import { formatMoney } from '../../utils/formatNumber';
-import { fetchInvoiceById, fetchInvoiceItemsForInvoice } from '../../data/ventas';
-import { tieneSelloMh } from '../../data/facturacion';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { hora12 } from '../../utils/hora';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fetchInvoiceById, fetchInvoiceItemsForInvoice } from '@nucleo/data/ventas';
+import { tieneSelloMh } from '@nucleo/data/facturacion';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hora12 } from '@nucleo/utils/hora';
 import { CaraPersona } from './PersonasSolicitud';
-import { fechaTexto } from '../../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 /* La venta entera, adentro de la solicitud que pide tocarla.
  *

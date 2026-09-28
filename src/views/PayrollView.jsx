@@ -7,12 +7,12 @@ import {
     DollarSign, Plus, Printer, CheckCircle2, Banknote,
     Building2, Search, Pencil, RotateCcw, Download, X, ListFilter,
     AlertTriangle, LockKeyhole, ExternalLink, CalendarDays } from 'lucide-react';
-import { fetchUnapprovedTimesheetsCount } from '../data/payroll';
-import { useStaffStore } from '../store/staffStore';
-import { smartFilter } from '../utils/searchUtils';
-import { formatMoney } from '../utils/formatNumber';
-import { useToastStore } from '../store/toastStore';
-import { useAuth } from '../context/AuthContext';
+import { fetchUnapprovedTimesheetsCount } from '@nucleo/data/payroll';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import AvatarConEstado from '../components/common/AvatarConEstado';
@@ -21,13 +21,13 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import ListRow from '../components/common/ListRow';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { shortEmployeeName } from '../utils/nameUtils';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
-import { registrarEgreso } from '../data/egreso';
+import { registrarEgreso } from '@nucleo/data/egreso';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { descargarArchivo } from '../plataforma/descargas';
-import { fechaTexto } from '../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));

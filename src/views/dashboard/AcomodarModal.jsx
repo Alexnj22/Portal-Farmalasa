@@ -4,7 +4,7 @@ import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import SegmentedControl from '../../components/common/SegmentedControl';
-import { reacomodar } from '../../utils/acomodoWidgets';
+import { reacomodar } from '@nucleo/utils/acomodoWidgets';
 
 // El tablero entero, en chico, para acomodarlo de una sentada.
 //

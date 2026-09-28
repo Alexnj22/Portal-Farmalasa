@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient';
-import { aBase64Reducido } from '../plataforma/fotoParaLeer';
+import { aBase64Reducido } from '@plataforma/fotoParaLeer';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { repartoDeUnaSalida } from '../utils/cortesDiagnostico';

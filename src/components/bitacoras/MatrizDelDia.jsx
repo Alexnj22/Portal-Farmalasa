@@ -5,8 +5,8 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import Firma from './Firma';
 import { ResumenDePuntos } from './PuntosDeLimpieza';
-import { fueraDeRango, registrarLectura, registrarLimpieza, rotularRango, soloLimpieza } from '../../data/bitacoras';
-import { hora12, rango12 } from '../../utils/hora';
+import { fueraDeRango, registrarLectura, registrarLimpieza, rotularRango, soloLimpieza } from '@nucleo/data/bitacoras';
+import { hora12, rango12 } from '@nucleo/utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La matriz del día — áreas en las filas, momentos en las columnas.

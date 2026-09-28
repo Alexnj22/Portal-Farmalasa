@@ -23,7 +23,7 @@
  * no se registra en el historial y la fila de la base tiene sólo su hash.
  */
 import { supabase } from '../supabaseClient';
-import { origen } from '../plataforma/navegacion';
+import { origen } from '@plataforma/navegacion';
 
 /** La dirección que va dentro del QR. */
 export function enlaceDeCaptura(secreto) {

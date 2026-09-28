@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { seccionesParaElPrograma, COLUMNAS_TICKET } from '../../src/utils/ticketPrint';
+import { seccionesParaElPrograma, COLUMNAS_TICKET } from '@nucleo/utils/ticketPrint';
 import {
     construirTicketDeTraslado, salaQueDespacha, SIMBOLOGIA_DEL_TRASLADO, FAMILIAS,
     BARRAS_DEL_TRASLADO,
-} from '../../src/utils/trasladoTicket';
-import { datosDelTicketDeEnvio } from '../../src/utils/imprimirTraslado';
+} from '@nucleo/utils/trasladoTicket';
+import { datosDelTicketDeEnvio } from '@nucleo/utils/imprimirTraslado';
 
 // El ancla es un traslado REAL: el 32274 del 2026-08-23, Salud 2 -> Salud 1,
 // «PIDE HELEN HUEZO (S1) ENV KAREN FIGUEROA (S2)», un renglón de FOSFOCIL. Se

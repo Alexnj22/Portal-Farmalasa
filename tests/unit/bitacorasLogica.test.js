@@ -13,12 +13,12 @@
 //     pantalla.
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { hoySV, sumarDias as correrDia } from '../../src/utils/fecha';
+import { hoySV, sumarDias as correrDia } from '@nucleo/utils/fecha';
 import {
     periodoDe, correrPeriodo,
     partirFolio, rotularFolio, faltantesDelRenglon, soloLimpieza,
     CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA,
-} from '../../src/data/bitacoras';
+} from '@nucleo/data/bitacoras';
 
 afterEach(() => vi.useRealTimers());
 

@@ -5,8 +5,8 @@ import ModalShell from './ModalShell';
 import SearchInput from './SearchInput';
 import Button from './Button';
 import { SkeletonText } from './StateViews';
-import { agruparPorLetra } from '../../utils/alfabetico';
-import { filtrar } from '../../utils/busqueda';
+import { agruparPorLetra } from '@nucleo/utils/alfabetico';
+import { filtrar } from '@nucleo/utils/busqueda';
 
 /**
  * SelectorTactil — elegir de una lista LARGA con el pulgar.

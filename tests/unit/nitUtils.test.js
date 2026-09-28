@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatearNit, formatearNrc } from '../../src/utils/nitUtils';
+import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
 
 // Los casos salen de `customers.nit` en producción (2026-08-02): 52 filas con el
 // NIT clásico bien formado, 29 con un NIT de 9 dígitos vestido con la máscara de

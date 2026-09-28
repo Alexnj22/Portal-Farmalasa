@@ -19,11 +19,11 @@ import { crearEspia } from './_espiaSupabase';
 const espia = crearEspia();
 const invoke = vi.fn(async () => ({ data: { empujado: true }, error: null }));
 espia.supabase.functions = { invoke: (...a) => invoke(...a) };
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchCustomersPage, fetchCustomerDetail, updateCustomerFiscal, pushClienteAlErp,
         fetchClientesPorRevisar, descartarClientePorRevisar, codigoDeError, mensajeDeError } =
-    await import('../../src/data/customers');
+    await import('@nucleo/data/customers');
 
 const rpcReal = espia.supabase.rpc;
 beforeEach(() => { espia.limpiar(); vi.clearAllMocks(); espia.supabase.rpc = rpcReal; });

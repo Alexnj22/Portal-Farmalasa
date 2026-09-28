@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import useBorrador from '../hooks/useBorrador';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import { SkeletonText, EmptyState} from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
-import { tokenMatch } from '../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     PenLine, Plus, Trash2, Users, UserCheck, Save, ChevronDown, ChevronUp,
     Check, X, Building2, BarChart2, ClipboardList,
@@ -14,10 +14,10 @@ import {
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
-import { signPhotosDeep } from '../utils/storageFiles';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useToastStore } from '../store/toastStore';
-import { useAuth } from '../context/AuthContext';
+import { signPhotosDeep } from '@nucleo/utils/storageFiles';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import PortalTextarea from '../components/common/PortalTextarea';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ListRow from '../components/common/ListRow';
@@ -27,11 +27,11 @@ import {
     fetchSurveys, fetchSurveyResponseCounts, fetchEmployeesForSurvey, fetchSurveyBloques,
     fetchSurveyPreguntas, fetchSurveyResponses, actualizarEncuesta, insertSurvey,
     updateSurveyResponse, insertSurveyResponse, deleteSurveyResponse,
-} from '../data/encuestas';
+} from '@nucleo/data/encuestas';
 import SearchInput from '../components/common/SearchInput';
 import LiquidTooltip from '../components/common/LiquidTooltip';
-import { shortEmployeeName } from '../utils/nameUtils';
-import { rotuloCampo } from '../utils/rotuloDeCampo';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };

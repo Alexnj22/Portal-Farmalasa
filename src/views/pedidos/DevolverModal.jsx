@@ -4,7 +4,7 @@ import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import PortalInput from '../../components/common/PortalInput';
 import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
-import { MOTIVOS, MAX_FOTOS, viajaPorMotivo } from '../../data/devoluciones';
+import { MOTIVOS, MAX_FOTOS, viajaPorMotivo } from '@nucleo/data/devoluciones';
 
 // La sala pide devolver a bodega lo que no cuadró.
 //

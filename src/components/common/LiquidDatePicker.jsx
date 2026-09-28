@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import ModalShell from './ModalShell';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
-import { NOMBRES_DE_MES } from '../../utils/fecha';
+import { NOMBRES_DE_MES } from '@nucleo/utils/fecha';
 
 const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const DAYS = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];

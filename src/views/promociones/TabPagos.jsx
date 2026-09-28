@@ -4,8 +4,8 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
-import { fetchPagosBonoProducto } from '../../data/bonosProducto';
-import { fmtMoneda } from '../../utils/promocionesUtils';
+import { fetchPagosBonoProducto } from '@nucleo/data/bonosProducto';
+import { fmtMoneda } from '@nucleo/utils/promocionesUtils';
 
 const PAGADO = new Set(['pagado', 'fuera_del_portal']);
 

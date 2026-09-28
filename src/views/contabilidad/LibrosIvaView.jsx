@@ -12,26 +12,26 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
-import { useStaffStore } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { formatMoney } from '../../utils/formatNumber';
-import { formatearNit, formatearNrc } from '../../utils/nitUtils';
-import { tokenMatch } from '../../utils/searchUtils';
-import { exportCsv, buildCsvText } from '../../utils/csvExport';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { exportCsv, buildCsvText } from '@nucleo/utils/csvExport';
 import { fmtFecha, soloNumero, csvRetencionVentas, CSV_RET_VENTAS_HEADERS,
-         construirLibro } from '../../utils/libroIva';
+         construirLibro } from '@nucleo/utils/libroIva';
 import {
     fetchAnexoRetencionRenta,
     fetchVentasFueraDelLibro,
     fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
     fetchLibroCompras, fetchLibroPercepcion, fetchLibroRetencion,
     fetchNotasCreditoCompras, fetchRetencionVentas, descargarPaqueteDteVenta,
-} from '../../data/librosIva';
-import { getSignedFileUrl } from '../../utils/storageFiles';
+} from '@nucleo/data/librosIva';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 
-import { registrarEgreso } from '../../data/egreso';
+import { registrarEgreso } from '@nucleo/data/egreso';
 import { descargarArchivo } from '../../plataforma/descargas';
-import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '../../utils/fecha';
+import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 // ─────────────────────────────────────────────────────────────────────────────
 // Los siete libros y anexos de IVA del ERP, generados desde el portal:
 // ventas desde `sales_invoices`, compras desde `purchase_receipts`.

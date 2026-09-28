@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { AlertCircle, Lock } from 'lucide-react';
-import { inputHoverClass, applyInputMask } from '../../utils/inputStyles';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { inputHoverClass, applyInputMask } from '@nucleo/utils/inputStyles';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // Input estándar del portal: label uppercase + badge "Requerido"/error, icono
 // izquierdo opcional, glow azul de marca al hover/focus, borde rojo cuando

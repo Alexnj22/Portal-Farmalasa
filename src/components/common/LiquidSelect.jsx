@@ -6,7 +6,7 @@ import useCapaFlotante from '../../plataforma/capaFlotante';
 import SelectorTactil from './SelectorTactil';
 import { AnimatePresence, motion } from 'framer-motion';
 import { msDelTema } from './gotaApertura';
-import { filtrar } from '../../utils/busqueda';
+import { filtrar } from '@nucleo/utils/busqueda';
 
 
 const LiquidSelect = ({

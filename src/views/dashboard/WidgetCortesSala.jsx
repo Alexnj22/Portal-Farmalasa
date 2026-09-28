@@ -4,12 +4,12 @@ import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import TarjetaCorte from '../../components/cortes/TarjetaCorte';
-import { fetchCortes, fetchCortesResumen, fetchPersonas } from '../../data/cortes';
-import { conTramoPorSalaYDia, resumenDeCortes } from '../../utils/cortesDiagnostico';
-import { useAuth } from '../../context/AuthContext';
+import { fetchCortes, fetchCortesResumen, fetchPersonas } from '@nucleo/data/cortes';
+import { conTramoPorSalaYDia, resumenDeCortes } from '@nucleo/utils/cortesDiagnostico';
+import { useAuth } from '@nucleo/context/AuthContext';
 import useResolverCorte from '../../components/cortes/useResolverCorte';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { fechaTexto, hoySV, sumarDias } from '../../utils/fecha';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 
 /* El detalle del corte se baja al abrir uno, no al entrar al Inicio.
  *

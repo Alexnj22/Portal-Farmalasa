@@ -11,8 +11,8 @@
 //     interruptores para una puerta es lo que se terminó con «Mis Solicitudes».
 
 import { describe, it, expect } from 'vitest';
-import { MODULO_QUE_DECIDE, QUIEN_RESUELVE } from '../../src/constants/solicitudModulos';
-import { areaQueDecide } from '../../src/utils/movimientoTexto';
+import { MODULO_QUE_DECIDE, QUIEN_RESUELVE } from '@nucleo/constants/solicitudModulos';
+import { areaQueDecide } from '@nucleo/utils/movimientoTexto';
 import { FAMILIAS, familiasDisponibles } from '../../src/views/solicitudes/familiasOperativas';
 
 describe('qué módulo decide cada tipo de solicitud', () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     ReceiptText, Download, Check, Undo2, PackageCheck,
 } from 'lucide-react';
@@ -11,10 +11,10 @@ import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
 import { BarraTramos, FranjaVacia } from './InstrumentoBaldosa';
 import {
     fetchFacturasSala, reclamarFactura, soltarFactura, resumenRenglones,
-} from '../../data/facturasSala';
-import { downloadPurchaseDtePackage } from '../../data/facturasCompra';
-import { formatMoney } from '../../utils/formatNumber';
-import { fechaNumerica } from '../../utils/fecha';
+} from '@nucleo/data/facturasSala';
+import { downloadPurchaseDtePackage } from '@nucleo/data/facturasCompra';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 // Widget «Facturas de mi Sala».
 //

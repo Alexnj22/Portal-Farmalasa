@@ -10,20 +10,20 @@ import {
     Inbox, ChevronDown, ClipboardList, Palmtree, FileText,
     CheckCircle2, Search, Plus, Users, User,
 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../store/staffStore';
-import { useAuth } from '../context/AuthContext';
-import { smartFilter } from '../utils/searchUtils';
-import { useNowTick } from '../hooks/useNowTick';
-import { useRecargarAlVolver } from '../hooks/useRecargarAlVolver';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
+import { useRecargarAlVolver } from '@nucleo/hooks/useRecargarAlVolver';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe } from '../utils/semana';
-import { useDecidirSolicitud } from '../hooks/useDecidirSolicitud';
+import { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe } from '@nucleo/utils/semana';
+import { useDecidirSolicitud } from '@nucleo/hooks/useDecidirSolicitud';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
-import { fetchAllMinMaxChangeRequests } from '../data/minmaxRequests';
-import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '../constants/erp';
+import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '@nucleo/store/slices/requestsSlice';
+import { fetchAllMinMaxChangeRequests } from '@nucleo/data/minmaxRequests';
+import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '@nucleo/constants/erp';
 import { ICONO_POR_TIPO } from '../components/common/catalogos/tiposDeAviso';
-import { MODULO_QUE_DECIDE } from '../constants/solicitudModulos';
+import { MODULO_QUE_DECIDE } from '@nucleo/constants/solicitudModulos';
 import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
 /* Los dos formularios se cargan tarde. No es una optimización de gusto: es la
  * regla del proyecto —lo que sólo hace falta al apretar un botón no viaja en el
@@ -36,7 +36,7 @@ import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
 const ModalNuevaPersonal  = lazy(() => import('./solicitudes/ModalNuevaPersonal'));
 const ModalNuevaOperativa = lazy(() => import('./solicitudes/ModalNuevaOperativa'));
 import { familiasDisponibles } from './solicitudes/familiasOperativas';
-import { lineasDe, buscadorDePersonas } from '../utils/movimientoTexto';
+import { lineasDe, buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import { EmptyState } from '../components/common/StateViews';
 
 // Las pestañas viven acá arriba y no dentro del componente: `usePestanaEnUrl`

@@ -13,11 +13,11 @@ import { DataTable, DataRow, DataCell, useExpandStyle } from '../../components/c
 import ExpedienteMovil from '../../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import { SkeletonText } from '../../components/common/StateViews';
-import { fetchPresentacionesMaestro, fetchProductosPorPresentacion } from '../../data/presentaciones';
-import { tokenMatch } from '../../utils/searchUtils';
-import { formatQty } from '../../utils/formatNumber';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { fetchPresentacionesMaestro, fetchProductosPorPresentacion } from '@nucleo/data/presentaciones';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { formatQty } from '@nucleo/utils/formatNumber';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 /**
  * Presentaciones — el catálogo visto por el envase en que se vende cada

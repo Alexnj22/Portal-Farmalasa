@@ -6,15 +6,15 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
-import { useAuth } from '../../context/AuthContext';
-import { useComposicionTraslado } from '../../store/composicionTraslado';
-import { fetchPresentaciones } from '../../data/inventoryMovements';
-import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../../data/traslados';
-import { fetchInventoryByProductIds } from '../../data/inventory';
-import { lotesEnUnidades, repartirPedido } from '../../utils/unidadesInventario';
-import { opcionesDePresentacion } from '../../utils/presentacion';
-import { diasEntre, fechaTexto, hoySV } from '../../utils/fecha';
-import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '../../constants/erp';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useComposicionTraslado } from '@nucleo/store/composicionTraslado';
+import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
+import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '@nucleo/data/traslados';
+import { fetchInventoryByProductIds } from '@nucleo/data/inventory';
+import { lotesEnUnidades, repartirPedido } from '@nucleo/utils/unidadesInventario';
+import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
+import { diasEntre, fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '@nucleo/constants/erp';
 
 // Pedirle un producto a otra sala.
 //

@@ -4,14 +4,14 @@ import {
     FolderOpen, FileText, CheckCircle2, AlertTriangle, Eye, UploadCloud,
     Calendar, ShieldCheck, Building2, Users, Clock, AlertCircle, Plus, Tags, Search, X, Pencil, Trash2, Layers, Sparkles
 } from 'lucide-react';
-import { useStaffStore } from '../../store/staffStore';
-import { tokenMatch } from '../../utils/searchUtils';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import AlertModal from '../../components/common/AlertModal';
 import SearchInput from '../../components/common/SearchInput';
 import { EmptyState } from '../../components/common/StateViews';
 import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento } from '../../components/common/catalogos/constantes';
-import { fechaTexto } from '../../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS

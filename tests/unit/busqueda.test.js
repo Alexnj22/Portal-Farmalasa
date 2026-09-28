@@ -3,7 +3,7 @@ import casos from '../casos-busqueda.json';
 import {
     normalizar, coincide, puntaje, parecido, filtrar, fonetica, patronSinTildes,
     UMBRAL_APROXIMADA,
-} from '../../src/utils/busqueda';
+} from '@nucleo/utils/busqueda';
 
 // Los casos viven en JSON y no acá porque valen también para el gemelo SQL:
 // un caso escrito sólo para JS es un caso que el otro gemelo nunca enfrenta.

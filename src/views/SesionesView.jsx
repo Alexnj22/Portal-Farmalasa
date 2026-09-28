@@ -11,16 +11,16 @@ import FilterBar from '../components/common/FilterBar';
 import ConfirmModal from '../components/common/ConfirmModal';
 import Notice from '../components/common/Notice';
 import { EmptyState } from '../components/common/StateViews';
-import { useAuth } from '../context/AuthContext';
-import { useToastStore } from '../store/toastStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
 import {
     fetchSesiones, cerrarSesion, cerrarTodasDe, agruparPorPersona,
     describirDispositivo, haceCuanto, describirLimite, diasDesde,
     bloquearPersona, desbloquearPersona, describirBloqueo, describirAcceso,
-} from '../data/sesiones';
+} from '@nucleo/data/sesiones';
 import BloqueoModal from '../components/sesiones/BloqueoModal';
-import useSobreviveAlCierre from '../hooks/useSobreviveAlCierre';
-import { tokenMatch } from '../utils/searchUtils';
+import useSobreviveAlCierre from '@nucleo/hooks/useSobreviveAlCierre';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 
 const EMPTY_ARRAY = [];
 const POLL_MS = 60_000;

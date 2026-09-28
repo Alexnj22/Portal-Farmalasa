@@ -35,14 +35,14 @@ import Notice from './Notice';
 import ModalShell from './ModalShell';
 import PortalInput from './PortalInput';
 import QrDeCaptura from './QrDeCaptura';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
-import { normalizarCarne, numeroDelCarne, porQueNoSirve } from '../../utils/carneDeDependiente';
+import { normalizarCarne, numeroDelCarne, porQueNoSirve } from '@nucleo/utils/carneDeDependiente';
 
 // Arrastra `@zxing` y prende la cámara: sólo hace falta al apretar el botón.
 const LectorDeCodigo = lazy(() => import('./LectorDeCodigo'));
 const DialogoDeCaptura = lazy(() => import('./DialogoDeCaptura'));
-const traspaso = () => import('../../data/capturaDeFoto');
+const traspaso = () => import('@nucleo/data/capturaDeFoto');
 
 /**
  * @param {string|null} url      lo guardado hoy
@@ -103,7 +103,7 @@ export default function CarneDeDependiente({ url, onChange, soloLectura = false 
                 setCaptura(null);
                 setLeyendoFoto(true);
                 try {
-                    const { leerQrDeImagen } = await import('../../utils/leerQrDeImagen');
+                    const { leerQrDeImagen } = await import('@nucleo/utils/leerQrDeImagen');
                     const texto = await leerQrDeImagen(urlFirmada);
                     // `null` = la foto llegó pero no traía ningún QR legible. Es
                     // el caso normal de una foto movida, y hay que decirlo

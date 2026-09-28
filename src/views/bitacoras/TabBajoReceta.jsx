@@ -13,10 +13,10 @@ import DetalleDeFolio from '../../components/bitacoras/DetalleDeFolio';
 const CompletarRenglon = lazy(() => import('../../components/bitacoras/CompletarRenglon'));
 import {
     CLASE_ANTIBIOTICO, ESTADO_RENGLON, faltantesDelRenglon, rotularLibro,
-} from '../../data/bitacoras';
-import { exportCsv } from '../../utils/csvExport';
-import { hora12 } from '../../utils/hora';
-import { fechaTexto } from '../../utils/fecha';
+} from '@nucleo/data/bitacoras';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El libro foliado de dispensación bajo receta.

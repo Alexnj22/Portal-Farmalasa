@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback , useRef } from 'react';
-import useBorrador from '../hooks/useBorrador';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -9,7 +9,7 @@ import {
     Package, Hash, Receipt, Tag, Percent, CheckCircle2, AlertCircle, ShoppingCart, Calculator,
     Pencil, Info, AlertTriangle, ChevronDown,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@nucleo/context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import PortalInput from '../components/common/PortalInput';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -17,15 +17,15 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
-import { anularCotizacion, crearCotizacion, editarCotizacion, fetchAllProductPreciosForCotizaciones, fetchCotizacionItems, fetchCotizacionesList, searchCustomersByName, searchProductsActive } from '../data/cotizaciones';
-import { fetchBranchesBasic } from '../data/system';
-import { clickable } from '../utils/clickable';
-import { formatMoney, formatQty } from '../utils/formatNumber';
-import { mensajeAmigable } from '../utils/errorMessages';
-import { rotuloCampo } from '../utils/rotuloDeCampo';
+import { anularCotizacion, crearCotizacion, editarCotizacion, fetchAllProductPreciosForCotizaciones, fetchCotizacionItems, fetchCotizacionesList, searchCustomersByName, searchProductsActive } from '@nucleo/data/cotizaciones';
+import { fetchBranchesBasic } from '@nucleo/data/system';
+import { clickable } from '@nucleo/utils/clickable';
+import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
-import { useToastStore } from '../store/toastStore';
-import { fechaTexto, hoySV } from '../utils/fecha';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;

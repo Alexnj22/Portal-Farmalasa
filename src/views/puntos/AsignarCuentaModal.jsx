@@ -19,11 +19,11 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import SearchInput from '../../components/common/SearchInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
-import { clickable } from '../../utils/clickable';
-import { formatMoney, formatQty } from '../../utils/formatNumber';
-import { useToastStore } from '../../store/toastStore';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchFichasCandidatas, asignarCuentaAnterior, QUE_HACER_POR_MOTIVO } from '../../data/puntos';
+import { clickable } from '@nucleo/utils/clickable';
+import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchFichasCandidatas, asignarCuentaAnterior, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
 
 const pts = (n) => formatQty(Number(n) || 0);
 const dolares = (n) => formatMoney((Number(n) || 0) / 100);

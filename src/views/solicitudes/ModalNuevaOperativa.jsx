@@ -5,7 +5,7 @@ import { FAMILIAS, familiasDisponibles } from './familiasOperativas';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import {
     ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP, ERP_UBICACION_POR_SUCURSAL,
-} from '../../constants/erp';
+} from '@nucleo/constants/erp';
 
 /**
  * «Nueva solicitud» en Solicitudes de Sucursal.

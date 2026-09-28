@@ -14,7 +14,7 @@
 // Lo que se ancla acá es sobre todo lo que NO se hace: nombrar cuando hay duda.
 
 import { describe, it, expect } from 'vitest';
-import { FORMATOS, medidaAjustada, reconocerFormato } from '../../src/utils/formatosDePapel';
+import { FORMATOS, medidaAjustada, reconocerFormato } from '@nucleo/utils/formatosDePapel';
 
 describe('reconocer el papel', () => {
     it('reconoce los seis: los tres tamaños, de pie y acostados', () => {

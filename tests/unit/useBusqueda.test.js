@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useBusqueda, ESPERA_BUSQUEDA_MS } from '../../src/hooks/useBusqueda';
+import { useBusqueda, ESPERA_BUSQUEDA_MS } from '@nucleo/hooks/useBusqueda';
 
 /**
  * El buscador que consulta a la base espera a que se termine de escribir.

@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { inputHoverClass } from '../../utils/inputStyles';
+import { inputHoverClass } from '@nucleo/utils/inputStyles';
 
 /**
  * PortalTextarea — el campo de varias líneas del portal.

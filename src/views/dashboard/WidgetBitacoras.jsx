@@ -5,9 +5,9 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { useAuth } from '../../context/AuthContext';
-import { fetchBitacoraDia, pendientesDelDia } from '../../data/bitacoras';
-import { hoySV } from '../../utils/fecha';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { fetchBitacoraDia, pendientesDelDia } from '@nucleo/data/bitacoras';
+import { hoySV } from '@nucleo/utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las bitácoras en el Inicio.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyInputMask } from '../../src/utils/inputStyles';
+import { applyInputMask } from '@nucleo/utils/inputStyles';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La máscara DECIMAL.

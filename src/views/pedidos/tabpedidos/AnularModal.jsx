@@ -4,7 +4,7 @@ import Button from '../../../components/common/Button';
 import { Ban, AlertTriangle, Loader2 } from 'lucide-react';
 import PedidoModal from '../PedidoModal';
 import PortalTextarea from '../../../components/common/PortalTextarea';
-import { rotuloCampo } from '../../../utils/rotuloDeCampo';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
     const [motivo, setMotivo] = useState('');

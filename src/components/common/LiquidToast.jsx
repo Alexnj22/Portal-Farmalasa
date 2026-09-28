@@ -2,7 +2,7 @@ import React from 'react';
 import Button from './Button';
 import { createPortal } from 'react-dom';
 import { PartyPopper, AlertCircle, Info, X, Cake } from 'lucide-react';
-import { useToastStore } from '../../store/toastStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 
 const LiquidToast = () => {
     const { isOpen, title, message, type, hideToast } = useToastStore();

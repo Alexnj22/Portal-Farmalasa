@@ -6,8 +6,8 @@ import SegmentedControl from './SegmentedControl';
 import Button from './Button';
 import { createPortal } from 'react-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { granularidadDePeriodo } from '../../utils/periodo';
-import { ahoraSV, hoySV } from '../../utils/fecha';
+import { granularidadDePeriodo } from '@nucleo/utils/periodo';
+import { ahoraSV, hoySV } from '@nucleo/utils/fecha';
 
 const MONTHS_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MONTHS_SH   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];

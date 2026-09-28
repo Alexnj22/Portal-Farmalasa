@@ -7,7 +7,7 @@ import Button from '../../../components/common/Button';
 import PortalInput from '../../../components/common/PortalInput';
 import PortalTextarea from '../../../components/common/PortalTextarea';
 import { MOTIVO_AJUSTE, ERP_NAMES } from './constants';
-import { fechaTexto } from '../../../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 /**
  * Por qué este MIN·MAX está puesto a mano.

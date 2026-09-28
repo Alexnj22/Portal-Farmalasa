@@ -19,7 +19,7 @@
 // cambiar cualquiera de las dos, hay que volver a medirla.
 
 import { describe, it, expect } from 'vitest';
-import { normalizarNombre, cruzarConElPadron } from '../../src/data/documentosCompartidos';
+import { normalizarNombre, cruzarConElPadron } from '@nucleo/data/documentosCompartidos';
 
 // [ lo que entra , lo que devolvió la BASE ]
 const MEDIDO_EN_LA_BASE = [

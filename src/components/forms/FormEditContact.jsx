@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
 import { Phone, Loader2, Check } from 'lucide-react';
-import { useStaffStore } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import PortalInput from '../common/PortalInput';
 
 const FIELDS = [

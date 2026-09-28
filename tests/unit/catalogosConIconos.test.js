@@ -11,8 +11,8 @@ import * as constantes from '../../src/components/common/catalogos/constantes';
 import * as tipos from '../../src/components/common/catalogos/tiposDeAviso';
 import * as documentos from '../../src/components/common/catalogos/documentos';
 import * as notificaciones from '../../src/components/common/catalogos/notificaciones';
-import { NOMBRE_DE_ICONO_POR_TIPO } from '../../src/constants/tipoIconos';
-import { ROTULOS } from '../../src/utils/documentosDelExpediente';
+import { NOMBRE_DE_ICONO_POR_TIPO } from '@nucleo/constants/tipoIconos';
+import { ROTULOS } from '@nucleo/utils/documentosDelExpediente';
 
 const esComponente = (c) => typeof c === 'function' || !!(c && typeof c === 'object' && c.$$typeof);
 

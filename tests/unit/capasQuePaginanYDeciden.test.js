@@ -17,14 +17,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { crearEspia } from './_espiaSupabase';
 
 const espia = crearEspia();
-vi.mock('../../src/supabaseClient', () => ({ supabase: espia.supabase }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: espia.supabase }));
 
 const { fetchAllMinMaxChangeRequests, decidirMinMax, insertMinMaxChangeRequest } =
-    await import('../../src/data/minmaxRequests');
-const { fetchCortes, resolverCorte, reabrirCorte } = await import('../../src/data/cortes');
-const { cancelarEnvio, fetchEnviosVivos, fetchEnviosHistorial } = await import('../../src/data/envios');
-const { fetchMetasDashboard, guardarMetaManual, confirmarMeta } = await import('../../src/data/metas');
-const { fetchTrasladoSwitch, setTrasladoSwitch } = await import('../../src/data/trasladoSwitch');
+    await import('@nucleo/data/minmaxRequests');
+const { fetchCortes, resolverCorte, reabrirCorte } = await import('@nucleo/data/cortes');
+const { cancelarEnvio, fetchEnviosVivos, fetchEnviosHistorial } = await import('@nucleo/data/envios');
+const { fetchMetasDashboard, guardarMetaManual, confirmarMeta } = await import('@nucleo/data/metas');
+const { fetchTrasladoSwitch, setTrasladoSwitch } = await import('@nucleo/data/trasladoSwitch');
 
 beforeEach(() => espia.limpiar());
 

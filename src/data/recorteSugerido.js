@@ -24,7 +24,7 @@
  * recuadro de siempre. Una ayuda que se cae no puede impedir adjuntar un papel.
  */
 import { supabase } from '../supabaseClient';
-import { reducirAJpeg } from '../plataforma/imagenes';
+import { reducirAJpeg } from '@plataforma/imagenes';
 
 /* La imagen se achica ANTES de mandarla. Para decir DÓNDE está un documento no
  * hace falta resolución: 1024 px del lado mayor alcanzan de sobra y la pregunta
@@ -89,7 +89,7 @@ export async function buscarEsquinas(file, { secretoDeCaptura } = {}) {
 
     try {
         const [{ detectarPapel }, imagen] = await Promise.all([
-            import('../plataforma/detectarPapel'),
+            import('@plataforma/detectarPapel'),
             new Promise((res, rej) => {
                 const url = URL.createObjectURL(file);
                 const el = new Image();

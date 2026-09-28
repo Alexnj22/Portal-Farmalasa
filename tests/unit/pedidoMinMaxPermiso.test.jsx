@@ -12,7 +12,7 @@ const fetchStockParamsForRevision = vi.fn(async () => ({
     }],
     error: null,
 }));
-vi.mock('../../src/data/stockParams', () => ({
+vi.mock('@nucleo/data/stockParams', () => ({
     fetchStockParamsForRevision: (...a) => fetchStockParamsForRevision(...a),
     updateStockParams: vi.fn(async () => ({ error: null })),
     effectiveMinMaxPair: (psp) => ({

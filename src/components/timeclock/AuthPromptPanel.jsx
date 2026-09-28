@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import Button from '../common/Button';
 import { ShieldAlert, XCircle, SkipForward } from 'lucide-react';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { requiereCodigoSu } from '../../utils/kioskAutorizacion';
-import { hora12 } from '../../utils/hora';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { requiereCodigoSu } from '@nucleo/utils/kioskAutorizacion';
+import { hora12 } from '@nucleo/utils/hora';
 
 const formatTime = (dateObj) => {
   if (!dateObj) return '--:--';

@@ -29,7 +29,7 @@ import ModalShell from '../common/ModalShell';
 import Button from '../common/Button';
 import Notice from '../common/Notice';
 import Badge from '../common/Badge';
-import { cruzarConElPadron, asignarDocumentoA, dejarPendiente } from '../../data/documentosCompartidos';
+import { cruzarConElPadron, asignarDocumentoA, dejarPendiente } from '@nucleo/data/documentosCompartidos';
 
 /**
  * @param {string[]} nombres    los que leyó el documento

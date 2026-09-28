@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toDispatch, lotesToDispatch, lotesAsignadosToDispatch, fmtVence } from '../../src/utils/pedidoPrint';
+import { toDispatch, lotesToDispatch, lotesAsignadosToDispatch, fmtVence } from '@nucleo/utils/pedidoPrint';
 
 // Regresión: conversión de unidades ERP → unidades de despacho (dispatch_factor)
 // para impresión/snapshot de pedidos. Ver memoria del proyecto

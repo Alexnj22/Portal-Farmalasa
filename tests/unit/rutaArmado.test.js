@@ -6,7 +6,7 @@
 // —que se guardan con la ruta— quedaban mal. `armarRuta` es ahora el único
 // camino para poner paradas en un orden, y mide cada tramo desde la anterior.
 import { describe, it, expect } from 'vitest';
-import { armarRuta, tramoEnLineaRecta, medidorDeMatriz, totalRoute } from '../../src/utils/routeOptimizer';
+import { armarRuta, tramoEnLineaRecta, medidorDeMatriz, totalRoute } from '@nucleo/utils/routeOptimizer';
 
 const bodega = { lat: 14.0412, lng: -88.9631 };
 const A = { erp_sucursal_id: 1, suc_name: 'A', lat: 14.10, lng: -88.90, _uid: 'a' };

@@ -6,8 +6,8 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import AvatarConEstado from '../common/AvatarConEstado';
 import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
-import { fechaTexto } from '../../utils/fecha';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 const CONTRACT_TYPE_OPTIONS = [
     { value: 'INDEFINIDO',   label: 'Indefinido (Fijo)' },

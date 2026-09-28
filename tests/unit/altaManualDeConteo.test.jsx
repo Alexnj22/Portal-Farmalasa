@@ -26,14 +26,14 @@ import { render, cleanup, waitFor, fireEvent } from '@testing-library/react';
 // obligatorios —elegir producto y elegir presentación—.
 // ═══════════════════════════════════════════════════════════════════════════
 
-vi.mock('../../src/data/conteoInventario', () => ({
+vi.mock('@nucleo/data/conteoInventario', () => ({
     searchActiveProductsForConteo: vi.fn(async () => ({ data: [], error: null })),
     fetchProductPresentacionesForConteo: vi.fn(async () => ({ data: [], error: null })),
     fetchErpSucursalIdsForBranch: vi.fn(async () => ({ data: [], error: null })),
     fetchInventoryLotesForProduct: vi.fn(async () => ({ data: [], error: null })),
 }));
 
-vi.mock('../../src/store/toastStore', () => ({
+vi.mock('@nucleo/store/toastStore', () => ({
     useToastStore: () => ({ showToast: vi.fn() }),
 }));
 
@@ -110,7 +110,7 @@ describe('AddManualItemForm — el código entra por el lector', () => {
     };
 
     it('una ráfaga del lector sale a buscar ESE código', async () => {
-        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        const { searchActiveProductsForConteo } = await import('@nucleo/data/conteoInventario');
         await montar();
         pasarElLector('7501234567890');
         await waitFor(() => {
@@ -119,7 +119,7 @@ describe('AddManualItemForm — el código entra por el lector', () => {
     });
 
     it('con UN solo resultado lo elige solo, y lo muestra para poder comprobarlo', async () => {
-        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        const { searchActiveProductsForConteo } = await import('@nucleo/data/conteoInventario');
         searchActiveProductsForConteo.mockResolvedValue({
             data: [{ id: 991, nombre: 'ACETAMINOFEN 500MG', codigo_barras: '7501234567890', laboratorios: { nombre: 'BAYER' } }],
             error: null,
@@ -135,7 +135,7 @@ describe('AddManualItemForm — el código entra por el lector', () => {
     });
 
     it('con NINGÚN resultado no elige nada y lo dice', async () => {
-        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        const { searchActiveProductsForConteo } = await import('@nucleo/data/conteoInventario');
         searchActiveProductsForConteo.mockResolvedValue({ data: [], error: null });
         const container = await montar();
         pasarElLector('0000000000000');
@@ -148,7 +148,7 @@ describe('AddManualItemForm — el código entra por el lector', () => {
     // igual que un código que no existe, y las dos cosas se arreglan en sitios
     // distintos.
     it('si la búsqueda revienta, lo dice — no se queda callado', async () => {
-        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        const { searchActiveProductsForConteo } = await import('@nucleo/data/conteoInventario');
         searchActiveProductsForConteo.mockRejectedValue(new Error('network'));
         const container = await montar();
         pasarElLector('7501234567890');
@@ -161,7 +161,7 @@ describe('AddManualItemForm — el código entra por el lector', () => {
     // lado se lea como una ráfaga y dispare una selección que nadie pidió.
     it('lo tecleado a ritmo humano no cuenta como escaneo', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true });
-        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        const { searchActiveProductsForConteo } = await import('@nucleo/data/conteoInventario');
         searchActiveProductsForConteo.mockResolvedValue({ data: [], error: null });
         await montar();
         for (const c of 'acetam') {

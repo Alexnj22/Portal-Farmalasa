@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hora12, hora12ConSegundos, fechaHora12, rango12, hora12Papel, horasEnTexto } from '../../src/utils/hora';
+import { hora12, hora12ConSegundos, fechaHora12, rango12, hora12Papel, horasEnTexto } from '@nucleo/utils/hora';
 
 // Regla del usuario (23 y 24-sep): toda hora del portal en 12 horas, de acá.
 const NB = ' ';

@@ -4,15 +4,15 @@ import Badge from '../common/Badge';
 import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2, Layers, Hash, Printer, Radio } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
-import { useStaffStore } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
-import { fetchLaboratoriosBasic } from '../../data/laboratorios';
-import { searchActiveProductsForConteo, fetchBranchIdsConInventario } from '../../data/conteoInventario';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { fetchLaboratoriosBasic } from '@nucleo/data/laboratorios';
+import { searchActiveProductsForConteo, fetchBranchIdsConInventario } from '@nucleo/data/conteoInventario';
 import SegmentedControl from '../common/SegmentedControl';
 import PortalInput from '../common/PortalInput';
 import Notice from '../common/Notice';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 // Etiquetas de UNA línea: en `layout="block"` la píldora es de alto fijo (h-11),
 // así que un label que envuelve no crece — se desborda. Van en text-caption

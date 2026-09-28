@@ -20,8 +20,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import useBorrador from '../../src/hooks/useBorrador';
-import { saveDraft, loadDraft } from '../../src/utils/draftUtils';
+import useBorrador from '@nucleo/hooks/useBorrador';
+import { saveDraft, loadDraft } from '@nucleo/utils/draftUtils';
 
 beforeEach(() => { localStorage.clear(); vi.useFakeTimers(); });
 afterEach(() => vi.useRealTimers());

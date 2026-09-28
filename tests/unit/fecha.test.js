@@ -5,7 +5,7 @@
 // hora, durante años. Si algún día no coincide, es que el país cambió de
 // horario y hay que cambiar el canónico — que es justo lo que esta prueba avisa.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { hoySV, diaSV, ahoraSV, horaSV, relojSV, sumarDias, diasEntre, lunesDe, diaDe, fechaTexto, fechaNumerica, correrMes, rangoDelMes, ultimoDiaDelMes, etiquetaMes, mesSV, diasDesde, diasHasta } from '../../src/utils/fecha';
+import { hoySV, diaSV, ahoraSV, horaSV, relojSV, sumarDias, diasEntre, lunesDe, diaDe, fechaTexto, fechaNumerica, correrMes, rangoDelMes, ultimoDiaDelMes, etiquetaMes, mesSV, diasDesde, diasHasta } from '@nucleo/utils/fecha';
 
 const porZona = (instante) => {
     const partes = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {

@@ -2,18 +2,18 @@ import React, { useMemo, useEffect } from 'react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import { Search, User, MapPin, Briefcase, ArrowRightLeft, TrendingUp, Clock, ShieldCheck, CheckCircle2, FileText, AlertCircle, UserMinus, Award, Phone, CalendarDays } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { tokenMatch } from '../../utils/searchUtils';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect'; 
 import PortalTextarea from '../common/PortalTextarea';
 import Button from '../common/Button';
 import SearchInput from '../common/SearchInput';
-import { clickable } from '../../utils/clickable';
-import { shortEmployeeName } from '../../utils/nameUtils';
-import { opcionesDeCargo, buscarCargo } from '../../utils/roles';
-import { SIN_ASIGNAR } from '../../data/constants';
-import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { clickable } from '@nucleo/utils/clickable';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { opcionesDeCargo, buscarCargo } from '@nucleo/utils/roles';
+import { SIN_ASIGNAR } from '@nucleo/data/constants';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // A dónde va quien es relevado de una jefatura. Es una lista CURADA a
 // propósito —no son los 24 cargos de la tabla—, pero los nombres se resuelven

@@ -1,6 +1,6 @@
 import { supabase } from '../supabaseClient';
-import { descargarArchivo, abrirEnPestanaNueva, abrirEnPestanaCuandoLlegue } from '../plataforma/descargas';
-import * as almacen from '../plataforma/almacen';
+import { descargarArchivo, abrirEnPestanaNueva, abrirEnPestanaCuandoLlegue } from '@plataforma/descargas';
+import * as almacen from '@plataforma/almacen';
 
 // Buckets privados (2026-07-02): las URLs "public" guardadas en BD quedaron
 // como identificadores — para mostrarlas hay que convertirlas a URL firmada

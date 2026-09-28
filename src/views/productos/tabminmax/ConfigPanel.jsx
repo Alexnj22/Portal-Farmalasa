@@ -5,9 +5,9 @@ import useMediaQuery from '../../../plataforma/useMediaQuery';
 import Button from '../../../components/common/Button';
 import ModalShell from '../../../components/common/ModalShell';
 import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
-import { updateStockConfig } from '../../../data/stockParams';
+import { updateStockConfig } from '@nucleo/data/stockParams';
 import PortalInput from '../../../components/common/PortalInput';
-import { usuarioDeLaSesion } from '../../../data/auth';
+import { usuarioDeLaSesion } from '@nucleo/data/auth';
 
 // Definido a nivel de módulo — dentro del componente, React lo recreaba en cada render
 // y desmontaba/remontaba el <input>, perdiendo el foco tras cada tecla (M-4).

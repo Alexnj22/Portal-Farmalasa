@@ -7,15 +7,15 @@ import ViewTabBar from '../../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { Bell, Globe, Building2, User, CheckCircle2, Flame, Clock, Search, X, ChevronLeft, ChevronRight, RefreshCw, Palmtree, FileText, DollarSign, FileCheck, Stethoscope, CalendarDays, ArrowLeftRight, Sparkles, ChevronsRight, Pencil } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useStaffStore } from '../../store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
-import { smartFilter } from '../../utils/searchUtils';
-import { announcementAppliesToUser } from '../../utils/announcementAudience';
-import { clickable } from '../../utils/clickable';
-import { formatMoney } from '../../utils/formatNumber';
+import { smartFilter } from '@nucleo/utils/searchUtils';
+import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
+import { clickable } from '@nucleo/utils/clickable';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import { EmptyState } from '../../components/common/StateViews';
-import { fechaTexto } from '../../utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 const TABS = [
     { key: 'UNREAD', label: 'Sin leer' },

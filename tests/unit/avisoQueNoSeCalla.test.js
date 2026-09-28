@@ -19,14 +19,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const rpc = vi.fn();
-vi.mock('../../src/supabaseClient', () => ({ supabase: { rpc: (...a) => rpc(...a) } }));
+vi.mock('@nucleo/supabaseClient', () => ({ supabase: { rpc: (...a) => rpc(...a) } }));
 
 const showToast = vi.fn();
-vi.mock('../../src/store/toastStore', () => ({
+vi.mock('@nucleo/store/toastStore', () => ({
     useToastStore: { getState: () => ({ showToast }) },
 }));
 
-const { notifyEmployees } = await import('../../src/utils/notify');
+const { notifyEmployees } = await import('@nucleo/utils/notify');
 const { fireBrowserNotif } = await import('../../src/plataforma/browserNotif');
 
 const ok = (n) => ({ data: n, error: null });

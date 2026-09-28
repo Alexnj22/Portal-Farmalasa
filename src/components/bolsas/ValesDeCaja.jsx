@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
-import { anotarValesEnCaja, fetchValesPendientes } from '../../data/bolsas';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
+import { anotarValesEnCaja, fetchValesPendientes } from '@nucleo/data/bolsas';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
 
 /**
  * Lo que la caja todavía cuenta como suyo, y el botón que se lo anota.

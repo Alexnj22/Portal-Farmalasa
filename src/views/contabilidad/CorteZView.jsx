@@ -10,13 +10,13 @@ import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 
-import { useAuth } from '../../context/AuthContext';
-import { formatMoney } from '../../utils/formatNumber';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchCortesZ, fetchCorteZDias } from '../../data/corteZ';
-import { descargarCorteZPdf, direccionDe, etiquetaPeriodo } from '../../utils/corteZPrint';
-import { EMPRESA } from '../../constants/empresa';
-import { correrMes, mesSV, rangoDelMes } from '../../utils/fecha';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fetchCortesZ, fetchCorteZDias } from '@nucleo/data/corteZ';
+import { descargarCorteZPdf, direccionDe, etiquetaPeriodo } from '@nucleo/utils/corteZPrint';
+import { EMPRESA } from '@nucleo/constants/empresa';
+import { correrMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CORTE Z — el Gran Z mensual de cada sucursal.

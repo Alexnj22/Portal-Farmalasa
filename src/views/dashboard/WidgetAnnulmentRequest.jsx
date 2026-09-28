@@ -424,7 +424,7 @@ function TypeSelector({ inv, onSelect, onBack, employees, cajaAbierta }) {
 }
 
 /* ─── Annulment form ─────────────────────────────────────────────────────────── */
-function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog, cajaAbierta }) {
+function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, cajaAbierta }) {
   const [reason,      setReason]      = useState('');
   const [comment,     setComment]     = useState('');
   const [ccfAck,      setCcfAck]      = useState(false);
@@ -470,9 +470,8 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         },
       });
       if (error) throw error;
-      await appendAuditLog('ANNULMENT_REQUEST_CREATED', String(inv.id), {
-        correlativo: inv.correlativo, reason, total: inv.total, notified: target?.name,
-      });
+      // La entrada de la bitácora la anota `insertApprovalRequestSilent` con la
+      // metadata de la solicitud (D3, 2026-09-28).
       // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
       // `notificar_solicitud_creada` en la misma transacción que la solicitud.
       // Mandarlo también desde el navegador duplicaría la notificación, y era
@@ -574,7 +573,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
 }
 
 /* ─── Payment change form ────────────────────────────────────────────────────── */
-function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog }) {
+function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees }) {
   const [newPayment,  setNewPayment]  = useState('');
   const [comment,     setComment]     = useState('');
   const [submitting,  setSubmitting]  = useState(false);
@@ -611,9 +610,8 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         },
       });
       if (error) throw error;
-      await appendAuditLog('PAYMENT_CHANGE_REQUEST_CREATED', String(inv.id), {
-        correlativo: inv.correlativo, current_pago: inv.tipo_pago, new_pago: newPayment,
-      });
+      // La entrada de la bitácora la anota `insertApprovalRequestSilent` con la
+      // metadata de la solicitud (D3, 2026-09-28).
       // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
       // `notificar_solicitud_creada` en la misma transacción que la solicitud.
       // Mandarlo también desde el navegador duplicaría la notificación, y era
@@ -669,7 +667,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
 }
 
 /* ─── Vendor change form ─────────────────────────────────────────────────────── */
-function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog, codigosVistos }) {
+function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, codigosVistos }) {
   const [newVendorId, setNewVendorId] = useState('');
   const [comment,     setComment]     = useState('');
   const [submitting,  setSubmitting]  = useState(false);
@@ -716,9 +714,8 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         },
       });
       if (error) throw error;
-      await appendAuditLog('VENDOR_CHANGE_REQUEST_CREATED', String(inv.id), {
-        correlativo: inv.correlativo, from: inv.cod_vendedor, to: selectedVendor.code,
-      });
+      // La entrada de la bitácora la anota `insertApprovalRequestSilent` con la
+      // metadata de la solicitud (D3, 2026-09-28).
       // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
       // `notificar_solicitud_creada` en la misma transacción que la solicitud.
       // Mandarlo también desde el navegador duplicaría la notificación, y era
@@ -793,7 +790,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 }
 
 /* ─── Client change form ─────────────────────────────────────────────────────── */
-function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog }) {
+function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees }) {
   const [query,       setQuery]       = useState('');
   const [results,     setResults]     = useState([]);
   const [clientesParecidos, setClientesParecidos] = useState(false);
@@ -856,9 +853,8 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         },
       });
       if (error) throw error;
-      await appendAuditLog('CLIENT_CHANGE_REQUEST_CREATED', String(inv.id), {
-        correlativo: inv.correlativo, from: inv.cliente, to: newClient.name,
-      });
+      // La entrada de la bitácora la anota `insertApprovalRequestSilent` con la
+      // metadata de la solicitud (D3, 2026-09-28).
       // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
       // `notificar_solicitud_creada` en la misma transacción que la solicitud.
       // Mandarlo también desde el navegador duplicaría la notificación, y era
@@ -955,7 +951,6 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
   const { user }       = useAuth();
   const employees      = useStaffStore(s => s.employees);
   const branches       = useStaffStore(s => s.branches);
-  const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
   const userBranchId   = user?.branchId ?? user?.branch_id;
   const activeBranchId = propBranchId ?? String(userBranchId ?? '');
@@ -1123,7 +1118,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
     [invoices],
   );
 
-  const sharedProps = { user, activeBranch, activeBranchId, employees, appendAuditLog, cajaAbierta };
+  const sharedProps = { user, activeBranch, activeBranchId, employees, cajaAbierta };
 
   if (!activeBranchId) {
     return (

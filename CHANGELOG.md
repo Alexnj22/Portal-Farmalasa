@@ -21,9 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.6 — Bitácora: las solicitudes anotan desde la capa de datos
+
+`insertApprovalRequestSilent` anota `<TIPO>_CREATED` con la propia `metadata`
+de la solicitud (correlativo, motivo, montos, a quién se avisó). Las cuatro de
+facturación —anular, cambiar forma de pago, vendedor o cliente— dejaron de
+anotarlo desde la pantalla, y las de movimiento de inventario (cargar o
+descargar producto), que no dejaban ninguna entrada, ahora la dejan. Con esto
+el dinero queda cubierto; la planilla ya anotaba desde su store, que es lógica
+compartida. Siguen los módulos que no son de dinero.
+
 ## v2.1076.5 — Bitácora: bolsas, proveedores, cierre fiscal y metas anotan desde la capa de datos
 
-_(pendiente de redactar)_
+Sigue D3: cerrar una bolsa, las condiciones y pagos a proveedores (registrar,
+aprobar, anular), cerrar y reabrir un período fiscal y quitar un gasto de metas
+anotan su entrada desde la función que guarda (`data/bolsas.js`,
+`cuentasPorPagar.js`, `cierrePeriodo.js`, `metas.js`); las pantallas sólo pasan
+el contexto. Las condiciones de crédito de un proveedor se anotaban con dos
+nombres según la pantalla (`PROVEEDOR_CONDICIONES_CREDITO` y `CXP_CONDICIONES`);
+ahora es uno. Quedan de dinero las solicitudes de anulación/cambios y la
+planilla; después, los módulos que no son de dinero.
 
 ## v2.1076.4 — Puntos: el canje de una factura anulada se devuelve, y la anulación con puntos gastados queda en Avisos
 

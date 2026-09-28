@@ -14,6 +14,7 @@
 // sin aprobador.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { conBitacora } from './audit';
 
 export const REQUEST_SIMPLE_SELECT = 'id, type, status, note, metadata, approver_note, created_at, updated_at, employee_id, approver_id, current_level, approvals';
 
@@ -299,8 +300,18 @@ export function insertApprovalRequest(payload) {
 // WidgetAnnulmentRequest.jsx en sus 4 formularios (annul/pay_change/
 // vendor_change/client_change): el caller solo chequea { error }, nunca
 // lee la fila insertada, así que no se agrega un round-trip extra.
-export function insertApprovalRequestSilent(payload) {
-    return supabase.from('approval_requests').insert(payload);
+/**
+ * Crea la solicitud y ANOTA `<TIPO>_CREATED` en la bitácora (D3, 2026-09-28).
+ * El detalle de la entrada es la propia `metadata` de la solicitud —correlativo,
+ * motivo, montos, a quién se avisó—, así que ninguna pantalla tiene que armarlo
+ * ni acordarse. Antes lo anotaban sólo las cuatro de facturación; las de
+ * movimiento de inventario no dejaban entrada.
+ */
+export function insertApprovalRequestSilent(payload, contexto = {}) {
+    return conBitacora(supabase.from('approval_requests').insert(payload),
+        `${payload?.type || 'APPROVAL_REQUEST'}_CREATED`,
+        payload?.metadata?.invoice_id ?? null,
+        { ...(payload?.metadata || {}), note: payload?.note ?? null, ...contexto });
 }
 
 /**

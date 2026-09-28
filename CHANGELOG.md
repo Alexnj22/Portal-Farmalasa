@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1077.4 — Metas: el deslizador de la meta se puede arrastrar
+
+El usuario: la regla bajo Subir/Bajar «parece interactiva y no se puede tocar».
+
+- Ahora es un deslizador de verdad: se arrastra o se toca en cualquier punto,
+  de −10% a +10% en pasos de 1%, con rótulos «−10% · Propuesta · +10%» y el
+  tramo recorrido pintado. Funciona con teclado y lector de pantalla (un
+  `range` nativo transparente encima de la pista dibujada).
+- Las tarjetas y las acciones del grupo se llaman como funciones y no como
+  componentes declarados dentro de la vista: React las remontaba en cada render,
+  así que el deslizador se soltaba a mitad del arrastre y el campo «¿Cómo lo
+  autorizó?» perdía el foco a cada tecla.
+
 ## v2.1077.3 — Puntos: el Resumen contesta cuánto se debe, cómo va el mes y a quién ofrecer canjear
 
 Pedido del usuario: «mejórala, hazla útil». La pestaña Resumen pasa de mostrar

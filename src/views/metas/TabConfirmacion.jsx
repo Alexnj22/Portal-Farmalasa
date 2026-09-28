@@ -195,7 +195,12 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     // mismo sitio que «Aprobar todo» en Asistencia. Llevan la cuenta y el total
     // en el rótulo: mover seis metas de golpe no puede ser un botón mudo.
     // Con una sola fila no aparecen: para eso está el botón de la tarjeta.
-    const AccionesDelGrupo = ({ filas, mes }) => {
+    // Se llaman como FUNCIONES y no como componentes (`<FilaMeta />`): un
+    // componente declarado dentro de otro es un tipo nuevo en cada render, y
+    // React lo desmonta y lo vuelve a montar — el campo de la nota perdía el
+    // foco a cada tecla y el deslizador de la meta se soltaba a mitad del
+    // arrastre.
+    const accionesDelGrupo = (filas, mes) => {
         const porConfirmar = filas.filter(esConfirmable);
         const porAprobar = filas.filter((r) => r.estado === 'confirmada_supervisor');
         const totalConfirmar = porConfirmar.reduce((s, r) => s + metaDe(r), 0);
@@ -376,7 +381,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                        <AccionesDelGrupo filas={filas} mes={mes} />
+                        {accionesDelGrupo(filas, mes)}
                     </div>
                 </div>
 
@@ -430,7 +435,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         );
     };
 
-    const FilaMeta = ({ r }) => {
+    const filaMeta = (r) => {
         const es = ESTADO_CFG[r.estado] || ESTADO_CFG.propuesta;
         // El cálculo de ESTA tarjeta: el de su mes y su sala.
         const c = calc[r.year_month]?.[r.branch_id] || null;
@@ -514,7 +519,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         };
 
         return (
-            <article data-surface="card" className="p-5 flex flex-col gap-4">
+            <article key={r.id} data-surface="card" className="p-5 flex flex-col gap-4">
                 <header className="flex items-center gap-3">
                     <span className="size-10 shrink-0 rounded-xl bg-chart-1/10 text-chart-1-text grid place-items-center">
                         <Store size={18} aria-hidden />
@@ -633,12 +638,36 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 Subir 1%
                             </Button>
                         </div>
-                        <div data-medida="dato" className="relative h-1.5 rounded-full bg-surface-card-hover mx-1" aria-hidden>
-                            <span className="absolute -inset-y-1 left-1/2 w-px bg-content-3/60" />
-                            <span
-                                className={`absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface-card transition-[left] duration-[var(--dur-base)] ease-[var(--ease-spring)] motion-reduce:transition-none ${pasos === 0 ? 'bg-content-2' : 'bg-chart-1'}`}
-                                style={{ left: `${50 + (pasos / PASOS_MAX) * 50}%` }}
+                        {/* El deslizador: se arrastra o se toca en cualquier
+                            punto, de a 1%. Lo que se ve es la pista dibujada; lo
+                            que recibe el dedo, el teclado y el lector de pantalla
+                            es el `range` nativo encima, transparente. */}
+                        <div className="relative mx-1 min-h-[var(--tap-min)] flex items-center">
+                            <div data-medida="dato" className="relative h-1.5 w-full rounded-full bg-surface-card-hover" aria-hidden>
+                                <span
+                                    className="absolute inset-y-0 rounded-full bg-chart-1/50"
+                                    style={pasos >= 0
+                                        ? { left: '50%', width: `${(pasos / PASOS_MAX) * 50}%` }
+                                        : { right: '50%', width: `${(-pasos / PASOS_MAX) * 50}%` }}
+                                />
+                                <span className="absolute -inset-y-1 left-1/2 w-px bg-content-3/60" />
+                                <span
+                                    className={`absolute top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface-card shadow-md transition-[left] duration-[var(--dur-fast)] ease-[var(--ease-out)] motion-reduce:transition-none ${pasos === 0 ? 'bg-content-2' : 'bg-chart-1'}`}
+                                    style={{ left: `${50 + (pasos / PASOS_MAX) * 50}%` }}
+                                />
+                            </div>
+                            <input
+                                type="range" min={-PASOS_MAX} max={PASOS_MAX} step={1}
+                                value={pasos}
+                                disabled={busy != null}
+                                onChange={(e) => setAjustes((a) => ({ ...a, [r.id]: Number(e.target.value) }))}
+                                aria-label="Ajuste sobre la propuesta del sistema"
+                                aria-valuetext={pasos === 0 ? 'Igual a la propuesta' : `${pasos > 0 ? 'más' : 'menos'} ${Math.abs(pasos)} por ciento`}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-grab active:cursor-grabbing disabled:cursor-not-allowed"
                             />
+                        </div>
+                        <div className="flex justify-between text-micro font-bold text-content-3 tabular-nums -mt-1 mx-1" aria-hidden>
+                            <span>−10%</span><span>Propuesta</span><span>+10%</span>
                         </div>
                         <div className="flex items-center justify-between gap-2">
                             <p className="text-micro font-semibold text-content-3">
@@ -840,7 +869,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         />
                     ) : (
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            {pendientesActual.map((r) => <FilaMeta key={r.id} r={r} />)}
+                            {pendientesActual.map(filaMeta)}
                         </div>
                     )}
                 </section>
@@ -890,7 +919,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     )
                 ) : (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {delMesSig.map((r) => <FilaMeta key={r.id} r={r} />)}
+                        {delMesSig.map(filaMeta)}
                     </div>
                 )}
             </section>

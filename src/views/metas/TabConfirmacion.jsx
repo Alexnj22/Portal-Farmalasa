@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '../../utils/searchUtils';
-import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck, TrendingUp, TrendingDown } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -318,143 +318,154 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
             ...a, [r.id]: Math.max(-PASOS_MAX, Math.min(PASOS_MAX, pasos + d)),
         }));
 
+        // La meta que se está decidiendo, y contra qué se compara. Las tres
+        // referencias dicen su diferencia contra ESTE número, así que moverlo
+        // con la exigencia mueve las tres a la vez: se ve en el acto si la meta
+        // nueva queda por encima o por debajo de la del mes anterior.
+        const metaAhora = editable || ajustable ? montoNum + recuperacion : Number(r.monto_meta || 0);
+        const metaAnterior = c?.meta_ultimo != null ? Number(c.meta_ultimo) : null;
+        const refs = [
+            {
+                key: 'anterior',
+                rotulo: c?.ym_ultimo ? `Meta ${ymLabelCorto(c.ym_ultimo).split(' ')[0]}` : 'Meta anterior',
+                valor: metaAnterior,
+                // Cómo le fue con ella: sin esto, «subirla 5%» no dice si la
+                // sala venía pasándola o quedándose corta.
+                pie: c?.pct_ultimo != null ? (
+                    <span className={TRAMO_CFG[c.tramo_ultimo]?.textCls || ''}>
+                        {c.ultimo_proyectado ? 'va en ' : 'cerró en '}{formatPct(c.pct_ultimo)}
+                    </span>
+                ) : (c ? 'sin meta' : null),
+            },
+            {
+                key: 'anio',
+                rotulo: ymLabelCorto(ymSumar(r.year_month, -12)),
+                valor: anioPasado?.venta_total != null ? Number(anioPasado.venta_total) : null,
+                pie: 'venta',
+            },
+            {
+                key: 'prom',
+                rotulo: meses.length ? `Prom. ${meses.map((m) => ymLabelCorto(m.ym).split(' ')[0]).join('·')}` : 'Promedio 3 meses',
+                valor: promMeses,
+                pie: hayProyectado ? 'venta · uno proyectado' : 'venta',
+            },
+        ];
+        const difVs = (ref) => (ref > 0 && metaAhora > 0 ? (metaAhora / ref - 1) * 100 : null);
+        const difAnterior = difVs(metaAnterior);
+        const signo = (v) => (v > 0 ? '+' : v < 0 ? '−' : '±');
+
         return (
-            <article data-surface="card" className="p-5">
-                <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
-                    <div>
-                        <h3 className="text-body font-black leading-tight">{salaNombre(r.branch_id)}</h3>
+            <article data-surface="card" className="p-5 flex flex-col gap-4">
+                <header className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <h3 className="text-body font-black leading-tight truncate">{salaNombre(r.branch_id)}</h3>
                         <p className="text-caption font-bold text-content-3 uppercase tracking-widest mt-0.5">{ymLabelCorto(r.year_month)}</p>
                     </div>
                     <Badge variant={es.variante} size="sm">{es.label}</Badge>
-                </div>
+                </header>
 
                 {r.estado === 'devuelta' && r.nota_devolucion && (
-                    <Notice variant="danger" className="mb-3">{r.nota_devolucion}</Notice>
+                    <Notice variant="danger">{r.nota_devolucion}</Notice>
                 )}
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                    {/* El mismo mes DE ESTA tarjeta, un año antes — no un mes
-                        fijo: la sección del mes en curso y la del que viene
-                        comparten componente. */}
-                    <div>
-                        <p className="text-micro font-black uppercase tracking-widest text-content-3">Mismo mes, año pasado</p>
-                        <p className="text-body-sm font-black tabular-nums">
-                            {anioPasado?.venta_total != null ? formatMoney(anioPasado.venta_total) : '—'}
-                        </p>
-                    </div>
-                    {/* Los MISMOS tres meses que usó la fórmula, no «los últimos
-                        3 cerrados»: con el mes en curso adentro, un promedio de
-                        otro trío explicaría una propuesta que no es ésta. */}
-                    <div>
-                        <p className="text-micro font-black uppercase tracking-widest text-content-3">
-                            {meses.length ? `Promedio ${meses.map((m) => ymLabelCorto(m.ym).split(' ')[0]).join('·')}` : 'Promedio 3 meses'}
-                        </p>
-                        <p className="text-body-sm font-black tabular-nums">
-                            {promMeses != null ? formatMoney(promMeses) : '—'}
-                            {hayProyectado && <span className="text-content-3 font-semibold"> · uno proyectado</span>}
-                        </p>
-                    </div>
-                    {/* En cuánto viene el mes anterior: es con lo que uno decide
-                        si el monto propuesto es alcanzable, y es EXACTAMENTE el
-                        mes del que sale el factor. Si todavía no cerró se dice
-                        así: «cerró» sobre un mes en curso sería falso, y era lo
-                        que confundía — la tarjeta de septiembre hablaba de julio
-                        mientras la fórmula ya contaba agosto. */}
-                    <div className="col-span-2">
-                        <p className="text-micro font-black uppercase tracking-widest text-content-3">
-                            {c?.ym_ultimo
-                                ? `${c.ultimo_proyectado ? 'Va cerrando' : 'Cerró'} ${ymLabelCorto(c.ym_ultimo)}`
-                                : 'Mes anterior'}
-                        </p>
-                        {c?.pct_ultimo != null ? (
-                            <p className="text-body-sm font-black tabular-nums">
-                                <span className={TRAMO_CFG[c.tramo_ultimo]?.textCls || ''}>{formatPct(c.pct_ultimo)}</span>
-                                {c.meta_ultimo != null && (
-                                    <span className="text-content-3 font-semibold"> de su meta de {formatMoney(c.meta_ultimo)}</span>
-                                )}
-                            </p>
-                        ) : (
-                            <p className="text-body-sm font-semibold text-content-3">
-                                {c ? 'Ese mes no tuvo meta' : '—'}
-                            </p>
+                {/* El número de la tarjeta, arriba y grande, con su diferencia
+                    contra la meta del mes anterior al lado: es la comparación
+                    que uno hace antes de confirmar. */}
+                <div>
+                    <p className="text-micro font-black uppercase tracking-widest text-content-3">
+                        {editable ? 'Meta a confirmar' : ajustable ? 'Meta a aprobar' : 'Meta'}
+                    </p>
+                    <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap mt-0.5">
+                        <p className="text-2xl font-black tabular-nums leading-none">{formatMoney(metaAhora)}</p>
+                        {difAnterior != null && (
+                            <span className={`inline-flex items-center gap-1 text-label font-black tabular-nums ${difAnterior >= 0 ? 'text-chart-1-text' : 'text-content-2'}`}>
+                                {difAnterior >= 0 ? <TrendingUp size={14} aria-hidden /> : <TrendingDown size={14} aria-hidden />}
+                                {signo(difAnterior)}{formatPct(Math.abs(difAnterior))}
+                                <span className="font-semibold text-content-3">vs {ymLabelCorto(c.ym_ultimo).split(' ')[0].toLowerCase()}</span>
+                            </span>
                         )}
                     </div>
-                    {r.monto_propuesto != null && (
-                        <div className="col-span-2">
-                            <p className="text-micro font-black uppercase tracking-widest text-content-3">Propuesta del sistema</p>
-                            <p className="text-body-sm font-black tabular-nums text-chart-1-text">{formatMoney(r.monto_propuesto)}</p>
-                            <ExplicacionMeta
-                                branchId={r.branch_id}
-                                yearMonth={r.year_month}
-                                montoPropuesto={r.monto_propuesto}
-                                datos={c}
-                            />
-                        </div>
+                    {/* De qué está hecha, y que la exigencia corre solo sobre
+                        la venta: el gasto no se negocia. */}
+                    {recuperacion > 0 && (
+                        <p className="text-micro font-semibold text-content-3 tabular-nums mt-1.5">
+                            {formatMoney(editable || ajustable ? montoNum : r.monto_base)} de venta
+                            {' + '}
+                            <span className="text-chart-1-text font-black">{formatMoney(recuperacion)}</span>
+                            {' por gastos'}
+                        </p>
+                    )}
+                    {/* Al ajustar en «espera aprobación» se está cambiando un
+                        número que otra persona ya confirmó. Decirlo acá evita
+                        que se entere por la notificación. */}
+                    {ajustable && pasos !== 0 && (
+                        <p className="text-micro font-semibold text-warning-text mt-1">
+                            Cambiaste lo que confirmó el supervisor — le va a llegar el aviso.
+                        </p>
                     )}
                 </div>
 
-                {editable || ajustable ? (
+                {(editable || ajustable) && (
                     /* No se teclea el monto: se corre la exigencia. Un campo libre
                        invita a inventar una cifra redonda y pierde el cálculo que
-                       hay detrás; acá cada toque es 1% sobre la propuesta y el
-                       monto se ve en dinero, con sus separadores. */
-                    <div>
-                        <p className="text-micro font-black uppercase tracking-widest text-content-3">
-                            {ajustable ? 'Meta a aprobar' : 'Meta a confirmar'}
-                        </p>
-                        <p className="text-xl font-black tabular-nums mt-0.5">{formatMoney(montoNum + recuperacion)}</p>
-                        {/* Al ajustar en «espera aprobación» se está cambiando un
-                            número que otra persona ya confirmó. Decirlo acá evita
-                            que se entere por la notificación. */}
-                        {ajustable && pasos !== 0 && (
-                            <p className="text-micro font-semibold text-warning-text mt-0.5">
-                                Cambiaste lo que confirmó el supervisor — le va a llegar el aviso.
+                       hay detrás; acá cada toque es 1% sobre la propuesta. */
+                    <div className="flex items-center gap-3">
+                        <Button variant="secondary" size="sm" icon={Minus} iconOnly
+                            aria-label="Menos exigente"
+                            disabled={busy != null || pasos <= -PASOS_MAX}
+                            onClick={() => mover(-1)} />
+                        <div className="flex-1 min-w-0 text-center">
+                            <p className="text-micro font-black uppercase tracking-widest text-content-3">Exigencia</p>
+                            <p className={`text-label font-black tabular-nums ${pasos > 0 ? 'text-warning-text' : pasos < 0 ? 'text-content-2' : 'text-content-1'}`}>
+                                {pasos === 0 ? 'La propuesta' : `${pasos > 0 ? '+' : '−'}${Math.abs(pasos)}% sobre la propuesta`}
                             </p>
-                        )}
-                        {/* De qué está hecha, y que la exigencia corre solo sobre
-                            la venta: el gasto no se negocia. */}
-                        {recuperacion > 0 && (
-                            <p className="text-micro font-semibold text-content-3 tabular-nums mt-0.5">
-                                {formatMoney(montoNum)} de venta
-                                {' + '}
-                                <span className="text-chart-1-text font-black">{formatMoney(recuperacion)}</span>
-                                {' por gastos'}
-                            </p>
-                        )}
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <Button variant="secondary" size="sm" icon={Minus}
-                                disabled={busy != null || pasos <= -PASOS_MAX}
-                                onClick={() => mover(-1)}>
-                                Menos exigente
-                            </Button>
-                            <Button variant="secondary" size="sm" icon={Plus}
-                                disabled={busy != null || pasos >= PASOS_MAX}
-                                onClick={() => mover(1)}>
-                                Más exigente
-                            </Button>
-                            {pasos !== 0 && (
-                                <Badge variant={pasos > 0 ? 'warning' : 'neutral'} size="sm">
-                                    {pasos > 0 ? '+' : ''}{pasos}% sobre la propuesta
-                                </Badge>
-                            )}
                         </div>
-                    </div>
-                ) : (
-                    <div className="mb-1">
-                        <p className="text-micro font-black uppercase tracking-widest text-content-3">Meta</p>
-                        <p className="text-xl font-black tabular-nums">{formatMoney(r.monto_meta)}</p>
-                        {recuperacion > 0 && (
-                            <p className="text-micro font-semibold text-content-3 tabular-nums mt-0.5">
-                                {formatMoney(r.monto_base)} de venta
-                                {' + '}
-                                <span className="text-chart-1-text font-black">{formatMoney(recuperacion)}</span>
-                                {' por gastos'}
-                            </p>
-                        )}
+                        <Button variant="secondary" size="sm" icon={Plus} iconOnly
+                            aria-label="Más exigente"
+                            disabled={busy != null || pasos >= PASOS_MAX}
+                            onClick={() => mover(1)} />
                     </div>
                 )}
 
-                <div className="flex flex-wrap gap-2 mt-4">
+                {/* Las tres referencias, cada una con su diferencia contra la
+                    meta de arriba. La del mes anterior va primero porque es la
+                    que se pregunta: «¿cuánto era la de septiembre?». */}
+                <div className="grid grid-cols-3 gap-2">
+                    {refs.map((ref) => {
+                        const d = difVs(ref.valor);
+                        return (
+                            <div key={ref.key} data-surface="card" className="p-2.5 min-w-0">
+                                <p className="text-micro font-black uppercase tracking-wider text-content-3 truncate" title={ref.rotulo}>{ref.rotulo}</p>
+                                <p className="text-label font-black tabular-nums mt-0.5 truncate">
+                                    {ref.valor != null ? formatMoney(ref.valor) : '—'}
+                                </p>
+                                {ref.pie && <p className="text-micro font-semibold text-content-3 truncate">{ref.pie}</p>}
+                                {d != null && (
+                                    <p className="text-micro font-black tabular-nums text-content-2 mt-1">
+                                        meta {signo(d)}{formatPct(Math.abs(d))}
+                                    </p>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {r.monto_propuesto != null && (
+                    <div>
+                        <p className="text-label font-semibold text-content-3">
+                            Propuesta del sistema{' '}
+                            <span className="font-black tabular-nums text-chart-1-text">{formatMoney(r.monto_propuesto)}</span>
+                        </p>
+                        <ExplicacionMeta
+                            branchId={r.branch_id}
+                            yearMonth={r.year_month}
+                            montoPropuesto={r.monto_propuesto}
+                            datos={c}
+                        />
+                    </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 mt-auto pt-1">
                     {editable && (
                         <Button
                             variant="primary" icon={CheckCircle2}
@@ -510,7 +521,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 </div>
 
                 {autorizando === r.id && (
-                    <div data-surface="card" data-tono="warning" className="mt-3 p-3 space-y-2">
+                    <div data-surface="card" data-tono="warning" className="p-3 space-y-2">
                         <p className="text-label font-semibold text-content-2">
                             Esto la deja oficial. Queda asentado que la ejecutaste vos con
                             autorización de quien elijas, y a esa persona le llega el aviso.
@@ -549,7 +560,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 )}
 
                 {r.estado === 'oficial' && r.autorizado_por && (
-                    <p className="mt-3 text-label font-semibold text-content-3">
+                    <p className="text-label font-semibold text-content-3">
                         Oficial por autorización de <strong className="text-content-2">
                             {autorizadores.find((a) => a.id === r.autorizado_por)?.name || 'la gerencia'}
                         </strong>
@@ -558,7 +569,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 )}
 
                 {devolviendo === r.id && (
-                    <div className="mt-3 space-y-2">
+                    <div className="space-y-2">
                         <PortalInput
                             label="¿Por qué se devuelve?" name={`nota-dev-${r.id}`}
                             value={notaDev} onChange={(e) => setNotaDev(e.target.value)}

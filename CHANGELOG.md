@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.7 — Metas: la tarjeta de confirmación compara contra la meta del mes anterior
+
+Pedido del usuario: «¿cómo veo la meta del mes anterior para comparar?». Estaba,
+pero enterrada en una línea («Va cerrando SEP… de su meta de $X»).
+
+- La meta que se confirma va arriba y grande, con su diferencia contra la meta
+  del mes anterior al lado (▲ +3.6% vs sep).
+- Tres referencias en fila —meta del mes anterior (con cuánto cumplió), el mismo
+  mes del año pasado y el promedio de los tres meses base—, cada una con cuánto
+  queda la meta nueva por encima o por debajo. Se mueven con la exigencia.
+- La exigencia pasa a un control compacto − / + con el ajuste escrito al medio.
+
 ## v2.1076.6 — Bitácora: las solicitudes anotan desde la capa de datos
 
 `insertApprovalRequestSilent` anota `<TIPO>_CREATED` con la propia `metadata`

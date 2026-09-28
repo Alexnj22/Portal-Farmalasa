@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Truck, ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle } from 'lucide-react';
+import { Truck, ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -11,20 +11,22 @@ import TabPedidos from './distribucion/TabPedidos';
 import TabDocumentos from './distribucion/TabDocumentos';
 import TabClientes from './distribucion/TabClientes';
 import TabCatalogo from './distribucion/TabCatalogo';
+import TabInventario from './distribucion/TabInventario';
 import TabEmisor from './distribucion/TabEmisor';
 
 // Distribución — la venta en ruta de la S.A.S. a tiendas, supermercados y
 // farmacias. Es otra empresa (otro NIT) con su propio emisor de documentos
 // electrónicos: nada de acá toca la facturación de las salas.
 //
-// Las cinco pestañas siguen el orden del trabajo del día: se toma el pedido,
-// se factura, y lo demás (clientes, precios, datos de la empresa) se mira
-// cuando hace falta.
+// Las seis pestañas siguen el orden del trabajo del día: se toma el pedido,
+// se factura, y lo demás (clientes, precios, existencias por lote, datos de la
+// empresa) se mira cuando hace falta.
 const TABS = [
     { key: 'pedidos',    label: 'Pedidos',    icon: ClipboardList },
     { key: 'documentos', label: 'Documentos', icon: FileCheck2 },
     { key: 'clientes',   label: 'Clientes',   icon: Store },
     { key: 'catalogo',   label: 'Catálogo',   icon: PackageSearch },
+    { key: 'inventario', label: 'Inventario', icon: Boxes },
     { key: 'emisor',     label: 'Empresa',    icon: Building2 },
 ];
 
@@ -68,6 +70,7 @@ export default function DistribucionView() {
         documentos: 'Buscar por cliente o número de control…',
         clientes: 'Buscar por nombre, NIT, DUI o NRC…',
         catalogo: 'Buscar producto…',
+        inventario: 'Buscar producto o lote…',
     }[tab] ?? 'Buscar…'), [tab]);
 
     const comunes = { emisor, puedeVender, puedeConfigurar, buscar };
@@ -106,6 +109,9 @@ export default function DistribucionView() {
             )}
             {visitadas.has('catalogo') && (
                 <div className={tab === 'catalogo' ? '' : 'hidden'}><TabCatalogo {...comunes} /></div>
+            )}
+            {visitadas.has('inventario') && (
+                <div className={tab === 'inventario' ? '' : 'hidden'}><TabInventario {...comunes} /></div>
             )}
             {visitadas.has('emisor') && (
                 <div className={tab === 'emisor' ? '' : 'hidden'}>

@@ -27,6 +27,16 @@ export const NOMBRE_DOCUMENTO = {
 const CONDICION = { 1: 'Contado', 2: 'Credito', 3: 'Otro' };
 // CAT-014: las que usa una droguería (catalogos.ts); el resto se muestra por número.
 const UNIDAD_MEDIDA = { 59: 'Unidad', 99: 'Otra' };
+
+// El lote y el vencimiento viajan al final de la descripción, dentro del JSON
+// firmado (supabase/functions/_shared/dte/lotes.ts los escribe así). El papel
+// los separa en sus columnas; si la cola no está, la descripción queda entera.
+const COLA_DE_LOTE = / LOTE: (.+?)(?: VENCE: (\d{2}\/\d{2}\/\d{4}))?$/;
+export function separarLote(descripcion) {
+    const m = String(descripcion ?? '').match(COLA_DE_LOTE);
+    if (!m) return { descripcion: descripcion ?? '', lote: null, vence: null };
+    return { descripcion: descripcion.slice(0, m.index), lote: m[1], vence: m[2] ?? null };
+}
 const PLAZO = { '01': 'dias', '02': 'meses', '03': 'anios' };
 
 /** La consulta pública de Hacienda: lo que abre el QR del papel. */
@@ -109,11 +119,11 @@ export function leerDocumento(dte) {
         })),
         apendice: (j.apendice ?? []).map(a => [a.etiqueta, a.valor]),
         renglones: j.cuerpoDocumento.map(c => ({
+            ...separarLote(c.descripcion),
             n: c.numItem,
             codigo: c.codigo ?? '',
             unidad: UNIDAD_MEDIDA[c.uniMedida] ?? (c.uniMedida != null ? String(c.uniMedida) : ''),
             cantidad: cantidad(c.cantidad),
-            descripcion: c.descripcion,
             precio: c.precioUni,
             descuento: c.montoDescu,
             noSujeta: c.ventaNoSuj,
@@ -189,7 +199,13 @@ export function ticketDeVenta(dte, marca = null) {
         ],
         items: {
             columnas: [{ label: 'CANT' }, { label: 'DESCRIPCION' }, { label: 'P. UNIT' }, { label: 'TOTAL' }],
-            filas: d.renglones.map(r => [r.cantidad, r.descripcion, dinero(r.precio), dinero(r.gravada + r.exenta + r.noSujeta)]),
+            // En el rollo el lote va pegado a la descripción: no hay ancho
+            // para dos columnas más, y separado del producto se pierde.
+            filas: d.renglones.map(r => [
+                r.cantidad,
+                r.lote ? `${r.descripcion} L:${r.lote}${r.vence ? ` V:${r.vence}` : ''}` : r.descripcion,
+                dinero(r.precio), dinero(r.gravada + r.exenta + r.noSujeta),
+            ]),
         },
         totales,
         total_letras: res.letras,
@@ -350,6 +366,7 @@ export function definicionPdf(dte, qrSvg, marca = null) {
     };
 
     const sumas = (k) => d.renglones.reduce((t, r) => t + Number(r[k] ?? 0), 0);
+    const conLotes = d.renglones.some(r => r.lote);
     const marcaDeAgua = d.invalidado ? 'DOCUMENTO INVALIDADO' : d.prueba ? 'SIN VALIDEZ FISCAL' : null;
 
     return {
@@ -492,10 +509,17 @@ export function definicionPdf(dte, qrSvg, marca = null) {
                 table: {
                     headerRows: 1,
                     dontBreakRows: true,
-                    widths: [14, 44, 28, 32, '*', 46, 38, 44, 42, 50],
+                    // Lote y vence sólo si el documento los trae: uno sin lotes
+                    // (anterior al inventario) no lleva dos columnas vacías.
+                    // Con lote son doce columnas en 540pt: el relleno de las
+                    // celdas (5+5) solo se comía 120pt y la descripción
+                    // quedaba en 40, partida en cuatro renglones (medido).
+                    widths: conLotes
+                        ? [10, 30, 22, 26, '*', 40, 38, 40, 30, 34, 34, 42]
+                        : [14, 44, 28, 32, '*', 46, 38, 44, 42, 50],
                     body: [
-                        ['N°', 'Código', 'Cant.', 'Unidad', 'Descripción', 'Precio unit.', 'Desc.', 'No sujetas', 'Exentas', 'Gravadas']
-                            .map((t, i) => celda(t, { bold: true, color: '#ffffff', fillColor: C.petroleo, fontSize: 7, alignment: i < 5 ? 'left' : 'right' })),
+                        ['N°', 'Código', 'Cant.', 'Unidad', 'Descripción', ...(conLotes ? ['Lote', 'Vence'] : []), 'Precio unit.', 'Desc.', 'No sujetas', 'Exentas', 'Gravadas']
+                            .map((t, i) => celda(t, { bold: true, color: '#ffffff', fillColor: C.petroleo, fontSize: 7, alignment: i < (conLotes ? 7 : 5) ? 'left' : 'right' })),
                         ...d.renglones.map((r, i) => {
                             const fondo = i % 2 ? '#f5f8f9' : null;
                             const num = (v) => celda(dinero(v), { alignment: 'right', fillColor: fondo });
@@ -503,16 +527,17 @@ export function definicionPdf(dte, qrSvg, marca = null) {
                                 celda(r.n, { color: GRIS, fillColor: fondo }), celda(r.codigo, { fontSize: 7, fillColor: fondo }),
                                 celda(r.cantidad, { alignment: 'right', fillColor: fondo }), celda(r.unidad, { fontSize: 7, fillColor: fondo }),
                                 celda(r.descripcion, { fillColor: fondo }),
+                                ...(conLotes ? [celda(r.lote ?? '—', { fontSize: 7, fillColor: fondo }), celda(r.vence ?? '—', { fontSize: 7, fillColor: fondo })] : []),
                                 num(r.precio), num(r.descuento), num(r.noSujeta), num(r.exenta), num(r.gravada),
                             ];
                         }),
                         [
-                            { text: 'Sumas', colSpan: 7, alignment: 'right', bold: true, fontSize: 8, color: TINTA }, {}, {}, {}, {}, {}, {},
+                            { text: 'Sumas', colSpan: conLotes ? 9 : 7, alignment: 'right', bold: true, fontSize: 8, color: TINTA }, ...Array(conLotes ? 8 : 6).fill({}),
                             ...[sumas('noSujeta'), sumas('exenta'), sumas('gravada')].map(v => celda(dinero(v), { alignment: 'right', bold: true })),
                         ],
                     ],
                 },
-                layout: lineasSuaves,
+                layout: conLotes ? { ...lineasSuaves, paddingLeft: () => 3, paddingRight: () => 3 } : lineasSuaves,
             },
 
             // ── Documentos relacionados (notas de crédito y débito, remisiones) ──

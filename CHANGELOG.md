@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1086.0 — Distribución: inventario por lote y el lote en el documento
+
+Pedido del usuario: el documento lleva lote y vencimiento, y «si se vende de
+dos lotes se separa». La distribuidora tiene inventario PROPIO (no el de
+Bodega: es otra empresa), y todavía no existía.
+
+- **Pestaña «Inventario»**: existencia por producto, lote y vencimiento, con
+  lotes por vencer (90 días) y vencidos. «Entrada de lote» registra lo que llega
+  (en unidades sueltas); un **ajuste** corrige la existencia o el vencimiento y
+  exige motivo. Cada lote tiene su historial de movimientos. No hay «salida» a
+  mano: una salida sin documento sería una venta sin documento.
+- **Al facturar se asigna el lote solo**: primero vence, primero sale; una
+  presentación no se parte entre lotes. Si no alcanza, NO factura y dice qué
+  falta («Sin existencia suficiente: … (faltan N unidades)»), sin dejar nada
+  reservado a medias. Vuelve al inventario si el documento se invalida o el
+  pedido se anula; un reintento después de un rechazo reasigna sin contar doble.
+- **Dos lotes = dos renglones** en el DTE, con «LOTE: X VENCE: dd/mm/aaaa» al
+  final de la descripción: queda DENTRO del documento firmado, como lo hacen las
+  droguerías que nos facturan. Partir no cambia el total (cantidad y descuento se
+  reparten exactos; probado con precio con y sin IVA).
+- El **PDF** separa esa cola en columnas Lote y Vence (sólo si el documento las
+  trae); el **ticket** la pega corta a la descripción («L:… V:…»).
+- Esquema en `supabase/borradores/distribucion/0006_inventario_lotes.sql`,
+  aplicado en pruebas con `execute_sql`. La existencia sólo cambia por funciones
+  (`dist_mover_lote` y quienes la llaman). Medido al probar: en este proyecto una
+  tabla nueva nace SIN `SELECT` para `authenticated` y CON `TRUNCATE` (que salta
+  el RLS) — se revoca todo y se da sólo lectura.
+- Verificado en pruebas de punta a punta: pedido 29 → documento 41 con dos
+  renglones (lote B2611 y A2703), total $76.44 igual al pago ya registrado,
+  existencias 1→0 y 10→8.
+- `distribucion-dte/index.ts` va con cuatro líneas de la sesión de Distribución
+  (precio con IVA en centavos, borrador 0007), a pedido suyo: la base de pruebas
+  ya cambió y el archivo tiene que coincidir.
+
 ## v2.1085.0 — Distribución: la venta como en la caja — presentaciones, listas de precio, descuentos y el cobro abajo
 
 Pedido del usuario: «mira el ERP, no como guía en diseño sino en utilidad.

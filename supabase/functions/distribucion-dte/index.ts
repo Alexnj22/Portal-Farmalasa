@@ -33,6 +33,7 @@ import {
 import { TIPO_DTE, VERSION, type Ambiente, type TipoDte } from "../_shared/dte/catalogos.ts";
 import { claveCoincide, firmarDte, importarLlavePrivada, leerCertificadoMH } from "../_shared/dte/firma.ts";
 import { armarInvalidacion } from "../_shared/dte/eventos.ts";
+import { partirPorLote, type Asignacion } from "../_shared/dte/lotes.ts";
 import {
   autenticar, consultar, ErrorHacienda, invalidar, tokenVigente, transmitirConReintentos,
   type RespuestaRecepcion, type Token,
@@ -411,10 +412,10 @@ async function corregirSellado(admin: Admin, dteId: number, empleadoId: string) 
   }).select("id").single();
   if (eN) throw new ErrorUsuario(`No se pudo abrir la corrección: ${eN.message}`);
   const { data: its, error: eI } = await admin.from("dist_pedido_items")
-    .select("product_id, cantidad, descuento, descripcion").eq("pedido_id", d.pedido_id);
+    .select("product_id, cantidad, descuento, descuento_pct, descripcion, presentacion, lista_id").eq("pedido_id", d.pedido_id);
   if (eI) throw new Error(`leer productos: ${eI.message}`);
   const { error: eIns } = await admin.from("dist_pedido_items").insert(
-    (its ?? []).map((i: any) => ({ ...i, pedido_id: nuevo.id, precio_sin_iva: 0 })));
+    (its ?? []).map((i: any) => ({ ...i, pedido_id: nuevo.id, precio_con_iva: 0 })));
   if (eIns) throw new ErrorUsuario(`No se pudieron copiar los productos: ${eIns.message}`);
   return { pedido_id: nuevo.id };
 }
@@ -435,7 +436,7 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   const [emi, cli, its, pag] = await Promise.all([
     admin.from("dist_emisores").select("*").eq("id", p.emisor_id).single(),
     admin.from("dist_clientes").select("*").eq("id", p.cliente_id).single(),
-    admin.from("dist_pedido_items").select("product_id, cantidad, precio_sin_iva, descuento, descripcion").eq("pedido_id", pedidoId).order("id"),
+    admin.from("dist_pedido_items").select("id, product_id, cantidad, precio_con_iva, descuento, descripcion").eq("pedido_id", pedidoId).order("id"),
     admin.from("dist_pagos").select("id, orden, forma, monto, referencia").eq("pedido_id", pedidoId).order("orden"),
   ]);
   for (const r of [emi, cli, its, pag]) if (r.error) throw new Error(r.error.message);
@@ -449,11 +450,21 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   if (tipo === TIPO_DTE.CCF && !c.contribuyente) {
     throw new ErrorUsuario("Este cliente no tiene NRC: sólo se le puede emitir Factura.");
   }
-  const renglones: Renglon[] = its.data!.map((i: any) => ({
+  // De qué lote sale cada renglón (primero vence, primero sale). Si no alcanza
+  // la existencia, no se factura: la función lo dice producto por producto y
+  // no deja nada reservado a medias. Ver borradores/distribucion/0006.
+  const { data: asignadas, error: eLot } = await admin.rpc("dist_asignar_lotes", { p_pedido: pedidoId });
+  if (eLot) {
+    if (eLot.message?.startsWith("Sin existencia suficiente")) throw new ErrorUsuario(eLot.message, 409);
+    throw new Error(`asignar lotes: ${eLot.message}`);
+  }
+  const renglones: Renglon[] = its.data!.flatMap((i: any) => partirPorLote({
     codigo: String(i.product_id), descripcion: i.descripcion,
-    cantidad: String(i.cantidad), precio: String(i.precio_sin_iva), precioIncluyeIva: false,
+    // Precio y descuento se guardan CON IVA en centavos (borrador 0007); el
+    // motor los lleva a la base de cada documento.
+    cantidad: String(i.cantidad), precio: String(i.precio_con_iva), precioIncluyeIva: true,
     descuento: String(i.descuento),
-  }));
+  }, i.id, (asignadas ?? []) as Asignacion[]));
 
   const ambiente = e.ambiente as Ambiente;
   const anio = Number(new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 4));
@@ -503,6 +514,10 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   const { error: ePed } = await admin.from("dist_pedidos")
     .update({ estado: "facturado", dte_id: ins.id }).eq("id", p.id).eq("estado", "confirmado");
   if (ePed) throw new Error(`marcar el pedido: ${ePed.message}`);
+  // Las unidades quedan atadas a ESTE documento: si se invalida, vuelven.
+  const { error: eAsg } = await admin.from("dist_lote_asignaciones")
+    .update({ dte_id: ins.id }).eq("pedido_id", p.id).is("devuelta_at", null).is("dte_id", null);
+  if (eAsg) throw new Error(`atar los lotes al documento: ${eAsg.message}`);
 
   if (p.reemplaza_dte_id) {
     // Este documento corrige a uno sellado: el original se invalida citando a

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1081.2 — Torogoz: la distribuidora cambia de nombre e icono
+
+«Rumbo» no le gustó al usuario; eligió **Torogoz**. En `/distribucion` el menú
+y el encabezado del teléfono dicen **Torogoz · Distribuidora**, y el icono
+(`public/distribuidora/icono.svg`, hecho a su pedido) es el ave nacional en
+vuelo —la cola de raquetas que la distingue, ceja turquesa y antifaz— llevando
+un paquete, sobre el petróleo de la marca.
+
+Antes de usar el nombre fuera del portal hay que consultarlo en el CNR: existe
+Torogoz S.A. de C.V. (San Salvador, 1977, productos metálicos, con canal de
+distribución propio). Para el portal interno el usuario decidió usarlo igual.
+
 ## v2.1081.1 — Rumbo: nombre e icono propuestos para la distribuidora
 
 Propuesta hecha a pedido del usuario, **pendiente de su aprobación**: la

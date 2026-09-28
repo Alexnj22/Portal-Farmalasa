@@ -65,11 +65,12 @@ import { hoySV } from '../../utils/fecha';
 // directorio de empleados; Clima Organizacional estaba partido entre su
 // propio grupo (encuesta) y RRHH (encuesta_admin) sin motivo. Ningún grupo
 // nuevo pasa de 6 ítems.
-// El encabezado del menú dice de quién es la pantalla. Rumbo (la distribuidora)
-// es una propuesta del 2026-09-28 hecha a pedido del usuario, pendiente de su
-// aprobación: si se descarta, se borra esta constante y `public/distribuidora/`.
+// El encabezado del menú dice de quién es la pantalla. «Torogoz» (la
+// distribuidora) lo eligió el usuario el 2026-09-28; el icono es una propuesta
+// hecha a su pedido. Ojo: existe Torogoz S.A. de C.V. (1977, productos
+// metálicos) — antes de usar el nombre fuera del portal, consultarlo en el CNR.
 const MARCA_PORTAL = { icono: '/Logo192.png', alt: 'FLS', titulo: 'Portal', bajada: 'La Salud & La Popular', bajadaCorta: 'La Salud' };
-const MARCA_DISTRIBUIDORA = { icono: '/distribuidora/icono.svg', alt: 'Rumbo', titulo: 'Rumbo', bajada: 'Distribuidora', bajadaCorta: 'Distribuidora' };
+const MARCA_DISTRIBUIDORA = { icono: '/distribuidora/icono.svg', alt: 'Torogoz', titulo: 'Torogoz', bajada: 'Distribuidora', bajadaCorta: 'Distribuidora' };
 
 const MENU_GROUPS = [
     { key: 'overview',      label: 'Inicio',        icon: Home,          modules: ['overview']                          },

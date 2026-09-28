@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1080.1 — Metas: tarjetas de confirmación compactas, en dos columnas
+
+Pedido del usuario: compactar las tarjetas, dos columnas, menos alto.
+
+- Las tarjetas van de a dos por fila (antes tres), y adentro se parten en dos
+  columnas cuando son anchas (container query): a la izquierda la meta y
+  «Para comparar»; a la derecha «Ajustar», «Cambios» y «De dónde sale».
+  Angostas, siguen en una columna.
+- «Para comparar»: la nota va en la misma línea del rótulo y la leyenda de la
+  raya pasa al encabezado («▍ meta nueva»).
+- «Ajustar»: − 1% · deslizador · + 1% en una sola fila, con la diferencia en
+  dinero y «Restablecer» debajo.
+- «Cambios» más apretado, y el renglón suelto «Propuesta del sistema» sólo
+  aparece cuando todavía no hay cambios (si no, lo dice la primera línea).
+
 ## v2.1080.0 — F7 paso 1 — el núcleo se importa por alias
 
 Sin cambios visibles: la compilación sale idéntica byte a byte. Las pantallas

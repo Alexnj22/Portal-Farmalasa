@@ -589,14 +589,14 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         };
 
         return (
-            <article key={r.id} data-surface="card" className="p-5 flex flex-col gap-4">
-                <header className="flex items-center gap-3">
-                    <span className="size-10 shrink-0 rounded-xl bg-chart-1/10 text-chart-1-text grid place-items-center">
-                        <Store size={18} aria-hidden />
+            <article key={r.id} data-surface="card" className="@container p-4 flex flex-col gap-3">
+                <header className="flex items-center gap-2.5">
+                    <span className="size-8 shrink-0 rounded-lg bg-chart-1/10 text-chart-1-text grid place-items-center">
+                        <Store size={16} aria-hidden />
                     </span>
                     <div className="min-w-0 flex-1">
                         <h3 className="text-body font-black leading-tight truncate">{salaNombre(r.branch_id)}</h3>
-                        <p className="text-caption font-bold text-content-3 uppercase tracking-widest mt-0.5">{ymLabelCorto(r.year_month)}</p>
+                        <p className="text-micro font-bold text-content-3 uppercase tracking-widest">{ymLabelCorto(r.year_month)}</p>
                     </div>
                     <Badge variant={es.variante} size="sm">{es.label}</Badge>
                 </header>
@@ -605,244 +605,259 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     <Notice variant="danger">{r.nota_devolucion}</Notice>
                 )}
 
-                {/* El número de la tarjeta, grande, y su distancia a la meta del
-                    mes anterior en una ficha con flecha: sube o baja de un
-                    vistazo. */}
-                <div>
-                    <p className="text-micro font-black uppercase tracking-widest text-content-3">
-                        {editable ? 'Meta a confirmar' : ajustable ? 'Meta a aprobar' : 'Meta'}
-                    </p>
-                    <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap mt-1">
-                        <p className="text-3xl font-black tabular-nums leading-none">{formatMoney(metaAhora)}</p>
-                        {difAnterior != null && difAnterior !== 0 && (
-                            <Badge variant={difAnterior > 0 ? 'chart-1' : 'neutral'} icon={difAnterior > 0 ? TrendingUp : TrendingDown}>
-                                {formatMoney(Math.abs(difAnterior))} {difAnterior > 0 ? 'más' : 'menos'} que {mesDe(c.ym_ultimo)}
-                            </Badge>
-                        )}
-                    </div>
-                    {/* De qué está hecha: el gasto no se negocia. */}
-                    {recuperacion > 0 && (
-                        <p className="text-micro font-semibold text-content-3 tabular-nums mt-1.5">
-                            {formatMoney(editable || ajustable ? montoNum : r.monto_base)} de venta
-                            {' + '}
-                            <span className="text-chart-1-text font-black">{formatMoney(recuperacion)}</span>
-                            {' por gastos'}
-                        </p>
-                    )}
-                    {/* Al ajustar en «espera aprobación» se está cambiando un
-                        número que otra persona ya confirmó. */}
-                    {ajustable && pasos !== 0 && (
-                        <p className="text-micro font-semibold text-warning-text mt-1">
-                            Cambiaste lo que confirmó el supervisor — le va a llegar el aviso.
-                        </p>
-                    )}
-                    {/* Una vez confirmada, el ajuste queda a la vista: quien
-                        aprueba tiene que ver que no es el número del sistema, y
-                        cuánto se movió (pedido del usuario, 2026-09-28: «¿el
-                        gerente no ve mis cambios de propuesta?»). El detalle de
-                        quién lo movió está en «Cambios», más abajo. */}
-                    {ajusteConfirmado != null && ajusteConfirmado !== 0 && (
-                        <p className="text-label font-semibold text-content-3 mt-1.5">
-                            <span className={`font-black tabular-nums ${ajusteConfirmado > 0 ? 'text-chart-1-text' : 'text-content-1'}`}>
-                                {ajusteConfirmado > 0 ? '+' : '−'}{formatMoney(Math.abs(ajusteConfirmado))}
-                            </span>
-                            {' · '}{formatPct(Math.abs(ajusteConfirmadoPct))} {ajusteConfirmado > 0 ? 'más alta' : 'más baja'} que la propuesta del sistema
-                        </p>
-                    )}
-                </div>
+                {/* Dos columnas cuando la tarjeta es ancha (container query, no
+                    el ancho de la ventana): a la izquierda el número y contra
+                    qué se compara; a la derecha qué se puede hacer con él y
+                    quién lo movió. Angosta, una sola columna en ese orden. */}
+                <div className="grid gap-x-5 gap-y-3 @2xl:grid-cols-2">
+                    <div className="flex flex-col gap-3 min-w-0">
+                        <div>
+                            <p className="text-micro font-black uppercase tracking-widest text-content-3">
+                                {editable ? 'Meta a confirmar' : ajustable ? 'Meta a aprobar' : 'Meta'}
+                            </p>
+                            <div className="flex items-center gap-x-2.5 gap-y-1 flex-wrap mt-0.5">
+                                <p className="text-2xl font-black tabular-nums leading-tight">{formatMoney(metaAhora)}</p>
+                                {difAnterior != null && difAnterior !== 0 && (
+                                    <Badge variant={difAnterior > 0 ? 'chart-1' : 'neutral'} icon={difAnterior > 0 ? TrendingUp : TrendingDown} size="sm">
+                                        {formatMoney(Math.abs(difAnterior))} {difAnterior > 0 ? 'más' : 'menos'} que {mesDe(c.ym_ultimo)}
+                                    </Badge>
+                                )}
+                            </div>
+                            {/* De qué está hecha: el gasto no se negocia. */}
+                            {recuperacion > 0 && (
+                                <p className="text-micro font-semibold text-content-3 tabular-nums mt-1.5">
+                                    {formatMoney(editable || ajustable ? montoNum : r.monto_base)} de venta
+                                    {' + '}
+                                    <span className="text-chart-1-text font-black">{formatMoney(recuperacion)}</span>
+                                    {' por gastos'}
+                                </p>
+                            )}
+                            {/* Al ajustar en «espera aprobación» se está cambiando un
+                                número que otra persona ya confirmó. */}
+                            {ajustable && pasos !== 0 && (
+                                <p className="text-micro font-semibold text-warning-text mt-1">
+                                    Cambiaste lo que confirmó el supervisor — le va a llegar el aviso.
+                                </p>
+                            )}
+                            {/* Una vez confirmada, el ajuste queda a la vista: quien
+                                aprueba tiene que ver que no es el número del sistema, y
+                                cuánto se movió (pedido del usuario, 2026-09-28: «¿el
+                                gerente no ve mis cambios de propuesta?»). El detalle de
+                                quién lo movió está en «Cambios», más abajo. */}
+                            {ajusteConfirmado != null && ajusteConfirmado !== 0 && (
+                                <p className="text-label font-semibold text-content-3 mt-1.5">
+                                    <span className={`font-black tabular-nums ${ajusteConfirmado > 0 ? 'text-chart-1-text' : 'text-content-1'}`}>
+                                        {ajusteConfirmado > 0 ? '+' : '−'}{formatMoney(Math.abs(ajusteConfirmado))}
+                                    </span>
+                                    {' · '}{formatPct(Math.abs(ajusteConfirmadoPct))} {ajusteConfirmado > 0 ? 'más alta' : 'más baja'} que la propuesta del sistema
+                                </p>
+                            )}
+                        </div>
 
-                {/* La comparación, dibujada. */}
-                <div data-surface="card" className="p-3.5">
-                    <ul className="space-y-3">
-                        {barras.map((x) => {
-                            const dif = x.nueva ? null : contraNueva(x.valor);
-                            return (
-                                <li key={x.key} tabIndex={dif ? 0 : undefined}
-                                    aria-label={dif ? `${x.rotulo}: ${x.valor != null ? formatMoney(x.valor) : 'sin dato'}. ${dif}` : undefined}
-                                    className="group rounded-lg">
-                                    <div className="flex items-baseline justify-between gap-3">
-                                        <span className={`text-label font-bold truncate ${x.nueva ? 'text-content-1' : 'text-content-2'}`}>{x.rotulo}</span>
-                                        <span className={`text-label font-black tabular-nums shrink-0 ${x.nueva ? 'text-chart-1-text' : ''}`}>
-                                            {x.valor != null ? formatMoney(x.valor) : '—'}
-                                        </span>
+                        {/* La comparación, dibujada: un renglón por referencia,
+                            rótulo y monto arriba, barra abajo. La raya azul es la
+                            meta nueva; al pasar o tocar, la nota cambia por la
+                            diferencia. */}
+                        <div data-surface="card" className="p-3">
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                                <p className="text-micro font-black uppercase tracking-widest text-content-3">Para comparar</p>
+                                <p className="flex items-center gap-1 text-micro font-semibold text-content-3">
+                                    <span aria-hidden className="inline-block w-0.5 h-2.5 rounded-full bg-chart-1" />
+                                    meta nueva
+                                </p>
+                            </div>
+                            <ul className="space-y-2">
+                                {barras.map((x) => {
+                                    const dif = x.nueva ? null : contraNueva(x.valor);
+                                    return (
+                                        <li key={x.key} tabIndex={dif ? 0 : undefined}
+                                            aria-label={dif ? `${x.rotulo}: ${x.valor != null ? formatMoney(x.valor) : 'sin dato'}. ${dif}` : undefined}
+                                            className="group rounded-lg">
+                                            <div className="flex items-baseline justify-between gap-2">
+                                                <p className="min-w-0 truncate text-label">
+                                                    <span className={`font-bold ${x.nueva ? 'text-content-1' : 'text-content-2'}`}>{x.rotulo}</span>
+                                                    {(x.nota || dif) && !x.nueva && (
+                                                        <span className="text-micro font-semibold text-content-3">
+                                                            {' · '}
+                                                            <span className={dif ? 'group-hover:hidden group-focus:hidden' : ''}>{x.nota}</span>
+                                                            {dif && <span className="hidden group-hover:inline group-focus:inline text-chart-1-text font-black">{dif}</span>}
+                                                        </span>
+                                                    )}
+                                                </p>
+                                                <span className={`text-label font-black tabular-nums shrink-0 ${x.nueva ? 'text-chart-1-text' : ''}`}>
+                                                    {x.valor != null ? formatMoney(x.valor) : '—'}
+                                                </span>
+                                            </div>
+                                            <div data-medida="dato" className="relative h-2 mt-1 rounded-full bg-surface-card-hover">
+                                                {x.valor != null && (
+                                                    <span
+                                                        className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-[var(--dur-slow)] ease-[var(--ease-out)] motion-reduce:transition-none ${x.nueva ? 'bg-chart-1' : 'bg-content-3/35'}`}
+                                                        style={{ width: xDe(x.valor) }}
+                                                    />
+                                                )}
+                                                {/* Lo que se vendió contra esa meta, en el color de cómo le fue. */}
+                                                {x.relleno != null && (
+                                                    <span
+                                                        className={`absolute inset-y-0 left-0 rounded-full ${RELLENO_TRAMO[x.tramo] || 'bg-content-3'}`}
+                                                        style={{ width: xDe(x.relleno) }}
+                                                    />
+                                                )}
+                                                {!x.nueva && metaAhora > 0 && (
+                                                    <span
+                                                        aria-hidden
+                                                        className="absolute -inset-y-1 w-0.5 rounded-full bg-chart-1 transition-[left] duration-[var(--dur-slow)] ease-[var(--ease-out)] motion-reduce:transition-none"
+                                                        style={{ left: xDe(metaAhora) }}
+                                                    />
+                                                )}
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 min-w-0">
+                        {(editable || ajustable) && (
+                            /* No se teclea el monto: se sube o se baja de a 1% —con
+                               los botones o arrastrando— dentro del ±10%. */
+                            <div>
+                                <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-1">Ajustar</p>
+                                <div className="flex items-center gap-2">
+                                    <Button variant="secondary" size="sm" icon={Minus}
+                                        aria-label="Bajar 1%"
+                                        disabled={busy != null || pasos <= -PASOS_MAX}
+                                        onClick={() => mover(-1)}>
+                                        1%
+                                    </Button>
+                                    {/* Lo que se ve es la pista dibujada; lo que
+                                        recibe el dedo, el teclado y el lector de
+                                        pantalla es el `range` nativo encima. */}
+                                    <div className="relative flex-1 min-h-[var(--tap-min)] flex items-center">
+                                        <div data-medida="dato" className="relative h-1.5 w-full rounded-full bg-surface-card-hover" aria-hidden>
+                                            <span
+                                                className="absolute inset-y-0 rounded-full bg-chart-1/50"
+                                                style={pasos >= 0
+                                                    ? { left: '50%', width: `${(pasos / PASOS_MAX) * 50}%` }
+                                                    : { right: '50%', width: `${(-pasos / PASOS_MAX) * 50}%` }}
+                                            />
+                                            <span className="absolute -inset-y-1 left-1/2 w-px bg-content-3/60" />
+                                            <span
+                                                className={`absolute top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface-card shadow-md transition-[left] duration-[var(--dur-fast)] ease-[var(--ease-out)] motion-reduce:transition-none ${pasos === 0 ? 'bg-content-2' : 'bg-chart-1'}`}
+                                                style={{ left: `${50 + (pasos / PASOS_MAX) * 50}%` }}
+                                            />
+                                        </div>
+                                        <input
+                                            type="range" min={-PASOS_MAX} max={PASOS_MAX} step={1}
+                                            value={pasos}
+                                            disabled={busy != null}
+                                            onChange={(e) => setAjustes((a) => ({ ...a, [r.id]: Number(e.target.value) }))}
+                                            aria-label={ajustable ? 'Ajuste sobre lo que confirmó el supervisor' : 'Ajuste sobre la propuesta del sistema'}
+                                            aria-valuetext={pasos === 0 ? 'Sin ajuste' : `${pasos > 0 ? 'más' : 'menos'} ${Math.abs(pasos)} por ciento`}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-grab active:cursor-grabbing disabled:cursor-not-allowed"
+                                        />
                                     </div>
-                                    <div data-medida="dato" className="relative h-2.5 mt-1.5 rounded-full bg-surface-card-hover">
-                                        {x.valor != null && (
-                                            <span
-                                                className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-[var(--dur-slow)] ease-[var(--ease-out)] motion-reduce:transition-none ${x.nueva ? 'bg-chart-1' : 'bg-content-3/35'}`}
-                                                style={{ width: xDe(x.valor) }}
-                                            />
-                                        )}
-                                        {/* Lo que se vendió contra esa meta, en el color de cómo le fue. */}
-                                        {x.relleno != null && (
-                                            <span
-                                                className={`absolute inset-y-0 left-0 rounded-full ${RELLENO_TRAMO[x.tramo] || 'bg-content-3'}`}
-                                                style={{ width: xDe(x.relleno) }}
-                                            />
-                                        )}
-                                        {!x.nueva && metaAhora > 0 && (
-                                            <span
-                                                aria-hidden
-                                                className="absolute -inset-y-1 w-0.5 rounded-full bg-chart-1 transition-[left] duration-[var(--dur-slow)] ease-[var(--ease-out)] motion-reduce:transition-none"
-                                                style={{ left: xDe(metaAhora) }}
-                                            />
-                                        )}
-                                    </div>
-                                    {(x.nota || dif) && (
-                                        <p className="text-micro font-semibold text-content-3 mt-1 truncate">
-                                            <span className={dif ? 'group-hover:hidden group-focus:hidden' : ''}>{x.nota}</span>
-                                            {dif && <span className="hidden group-hover:inline group-focus:inline text-chart-1-text font-black">{dif}</span>}
+                                    <Button variant="secondary" size="sm" icon={Plus}
+                                        aria-label="Subir 1%"
+                                        disabled={busy != null || pasos >= PASOS_MAX}
+                                        onClick={() => mover(1)}>
+                                        1%
+                                    </Button>
+                                </div>
+                                {/* Cuánto se movió, en dinero, y ahí mismo la
+                                    salida de vuelta. */}
+                                <div className="flex items-center justify-between gap-2 min-h-[var(--tap-min)]">
+                                    {pasos === 0 ? (
+                                        <p className="text-label font-semibold text-content-3">
+                                            {ajustable ? 'Igual a lo que confirmó el supervisor' : 'Igual a la propuesta del sistema'}
+                                        </p>
+                                    ) : (
+                                        <p className="text-label font-semibold min-w-0">
+                                            <span className={`font-black tabular-nums ${pasos > 0 ? 'text-chart-1-text' : 'text-content-1'}`}>
+                                                {pasos > 0 ? '+' : '−'}{formatMoney(Math.abs(montoNum - baseDe(r)))}
+                                            </span>
+                                            <span className="text-content-3"> · {Math.abs(pasos)}% {pasos > 0 ? 'más' : 'menos'} que {ajustable ? 'lo confirmado' : 'la propuesta'}</span>
                                         </p>
                                     )}
-                                </li>
-                            );
-                        })}
-                    </ul>
-                    <p className="flex items-center gap-1.5 text-micro font-semibold text-content-3 mt-3">
-                        <span aria-hidden className="inline-block w-0.5 h-3 rounded-full bg-chart-1" />
-                        La raya es la meta nueva · toca un renglón para ver la diferencia
-                    </p>
-                </div>
-
-                {(editable || ajustable) && (
-                    /* No se teclea el monto: se sube o se baja de a 1% sobre la
-                       propuesta. La regla de abajo dibuja dónde está dentro del
-                       ±10% permitido. */
-                    <div className="space-y-2.5">
-                        <div className="grid grid-cols-2 gap-2">
-                            <Button variant="secondary" size="sm" icon={Minus} className="w-full"
-                                disabled={busy != null || pasos <= -PASOS_MAX}
-                                onClick={() => mover(-1)}>
-                                Bajar 1%
-                            </Button>
-                            <Button variant="secondary" size="sm" icon={Plus} className="w-full"
-                                disabled={busy != null || pasos >= PASOS_MAX}
-                                onClick={() => mover(1)}>
-                                Subir 1%
-                            </Button>
-                        </div>
-                        {/* El deslizador: se arrastra o se toca en cualquier
-                            punto, de a 1%. Lo que se ve es la pista dibujada; lo
-                            que recibe el dedo, el teclado y el lector de pantalla
-                            es el `range` nativo encima, transparente. */}
-                        <div className="relative mx-1 min-h-[var(--tap-min)] flex items-center">
-                            <div data-medida="dato" className="relative h-1.5 w-full rounded-full bg-surface-card-hover" aria-hidden>
-                                <span
-                                    className="absolute inset-y-0 rounded-full bg-chart-1/50"
-                                    style={pasos >= 0
-                                        ? { left: '50%', width: `${(pasos / PASOS_MAX) * 50}%` }
-                                        : { right: '50%', width: `${(-pasos / PASOS_MAX) * 50}%` }}
-                                />
-                                <span className="absolute -inset-y-1 left-1/2 w-px bg-content-3/60" />
-                                <span
-                                    className={`absolute top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface-card shadow-md transition-[left] duration-[var(--dur-fast)] ease-[var(--ease-out)] motion-reduce:transition-none ${pasos === 0 ? 'bg-content-2' : 'bg-chart-1'}`}
-                                    style={{ left: `${50 + (pasos / PASOS_MAX) * 50}%` }}
-                                />
+                                    {pasos !== 0 && (
+                                        <Button variant="ghost" size="sm" icon={RotateCcw} className="shrink-0"
+                                            onClick={() => setAjustes((x) => ({ ...x, [r.id]: 0 }))}>
+                                            Restablecer
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
-                            <input
-                                type="range" min={-PASOS_MAX} max={PASOS_MAX} step={1}
-                                value={pasos}
-                                disabled={busy != null}
-                                onChange={(e) => setAjustes((a) => ({ ...a, [r.id]: Number(e.target.value) }))}
-                                aria-label="Ajuste sobre la propuesta del sistema"
-                                aria-valuetext={pasos === 0 ? 'Igual a la propuesta' : `${pasos > 0 ? 'más' : 'menos'} ${Math.abs(pasos)} por ciento`}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-grab active:cursor-grabbing disabled:cursor-not-allowed"
-                            />
-                        </div>
-                        <div className="flex justify-between text-micro font-bold text-content-3 tabular-nums -mt-1 mx-1" aria-hidden>
-                            <span>−10%</span><span>Propuesta</span><span>+10%</span>
-                        </div>
-                        {/* Cuánto se movió, en dinero, justo debajo del
-                            deslizador — y ahí mismo la salida de vuelta. */}
-                        <div data-surface="card" className="flex items-center justify-between gap-3 px-3 py-2">
-                            {pasos === 0 ? (
-                                <p className="text-label font-semibold text-content-3 py-1.5">
-                                    {ajustable ? 'Igual a lo que confirmó el supervisor' : 'Igual a la propuesta del sistema'}
-                                </p>
-                            ) : (
-                                <p className="text-label font-semibold text-content-2 min-w-0">
-                                    <span className={`font-black tabular-nums ${pasos > 0 ? 'text-chart-1-text' : 'text-content-1'}`}>
-                                        {pasos > 0 ? '+' : '−'}{formatMoney(Math.abs(montoNum - baseDe(r)))}
-                                    </span>
-                                    <span className="text-content-3"> · {Math.abs(pasos)}% {pasos > 0 ? 'más' : 'menos'} que {ajustable ? 'lo confirmado' : 'la propuesta'}</span>
-                                </p>
-                            )}
-                            {pasos !== 0 && (
-                                <Button variant="ghost" size="sm" icon={RotateCcw} className="shrink-0"
-                                    onClick={() => setAjustes((x) => ({ ...x, [r.id]: 0 }))}>
-                                    Restablecer
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                )}
+                        )}
 
-                {/* Quién movió la meta, con su foto: la del sistema primero y
-                    cada persona después, con cuánto la subió o la bajó. */}
-                {cambios === null ? (
-                    <p className="text-micro font-semibold text-content-3">No se pudo cargar quién cambió esta meta.</p>
-                ) : cambiosDeMeta.some((c) => c.actor) && (
-                    <div>
-                        <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-2">Cambios</p>
-                        <ol className="relative space-y-3 before:absolute before:left-[13px] before:top-2 before:bottom-2 before:w-px before:bg-border-card">
-                            {cambiosDeMeta.map((cb) => {
-                                const emp = cb.actor ? empPorId.get(cb.actor) : null;
-                                const antes = cb.monto_antes != null ? Number(cb.monto_antes) : null;
-                                const despues = cb.monto_despues != null ? Number(cb.monto_despues) : null;
-                                const mov = antes > 0 && despues != null && !EVENTO_SIN_MONTO.has(cb.evento) ? Math.round((despues - antes) * 100) / 100 : null;
-                                return (
-                                    <li key={cb.id} className="relative flex items-start gap-2.5">
-                                        {cb.actor ? (
-                                            <AvatarConEstado emp={emp || { id: cb.actor, name: 'Alguien' }} px={28} radio="rounded-full" marco="" />
-                                        ) : (
-                                            <span className="relative size-7 shrink-0 rounded-full bg-surface-card-hover text-chart-1-text grid place-items-center">
-                                                <Sparkles size={14} aria-hidden />
-                                            </span>
-                                        )}
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-label text-content-2">
-                                                <span className="font-black text-content-1">
-                                                    {cb.actor ? (emp ? shortEmployeeName(emp.name) : 'Alguien') : 'El sistema'}
-                                                </span>
-                                                {' '}{EVENTO_TXT[cb.evento] || cb.evento.replace(/_/g, ' ')}
-                                                {despues != null && !EVENTO_SIN_MONTO.has(cb.evento) && (
-                                                    <> <span className="font-black tabular-nums text-content-1">{formatMoney(despues)}</span></>
-                                                )}
-                                            </p>
-                                            <p className="text-micro font-semibold text-content-3 tabular-nums">
-                                                {mov != null && mov !== 0 && (
-                                                    <span className={`font-black ${mov > 0 ? 'text-chart-1-text' : 'text-content-2'}`}>
-                                                        {mov > 0 ? 'subió ' : 'bajó '}{formatMoney(Math.abs(mov))} ({formatPct(Math.abs(mov / antes) * 100)}){' · '}
+                        {/* Quién movió la meta, con su foto: el sistema primero y
+                            cada persona después, con cuánto la subió o la bajó. */}
+                        {cambios === null ? (
+                            <p className="text-micro font-semibold text-content-3">No se pudo cargar quién cambió esta meta.</p>
+                        ) : cambiosDeMeta.some((cb) => cb.actor) ? (
+                            <div>
+                                <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-1.5">Cambios</p>
+                                <ol className="relative space-y-2 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-border-card">
+                                    {cambiosDeMeta.map((cb) => {
+                                        const emp = cb.actor ? empPorId.get(cb.actor) : null;
+                                        const antes = cb.monto_antes != null ? Number(cb.monto_antes) : null;
+                                        const despues = cb.monto_despues != null ? Number(cb.monto_despues) : null;
+                                        const mov = antes > 0 && despues != null && !EVENTO_SIN_MONTO.has(cb.evento) ? Math.round((despues - antes) * 100) / 100 : null;
+                                        return (
+                                            <li key={cb.id} className="relative flex items-start gap-2">
+                                                {cb.actor ? (
+                                                    <AvatarConEstado emp={emp || { id: cb.actor, name: 'Alguien' }} px={24} radio="rounded-full" marco="" />
+                                                ) : (
+                                                    <span className="relative size-6 shrink-0 rounded-full bg-surface-card-hover text-chart-1-text grid place-items-center">
+                                                        <Sparkles size={12} aria-hidden />
                                                     </span>
                                                 )}
-                                                {fechaHora12(cb.created_at)}
-                                            </p>
-                                            {cb.nota && <p className="text-micro font-semibold text-content-3 mt-0.5">«{cb.nota}»</p>}
-                                        </div>
-                                    </li>
-                                );
-                            })}
-                        </ol>
-                    </div>
-                )}
+                                                <div className="min-w-0 flex-1 leading-snug">
+                                                    <p className="text-label text-content-2">
+                                                        <span className="font-black text-content-1">
+                                                            {cb.actor ? (emp ? shortEmployeeName(emp.name) : 'Alguien') : 'El sistema'}
+                                                        </span>
+                                                        {' '}{EVENTO_TXT[cb.evento] || cb.evento.replace(/_/g, ' ')}
+                                                        {despues != null && !EVENTO_SIN_MONTO.has(cb.evento) && (
+                                                            <> <span className="font-black tabular-nums text-content-1">{formatMoney(despues)}</span></>
+                                                        )}
+                                                    </p>
+                                                    <p className="text-micro font-semibold text-content-3 tabular-nums">
+                                                        {mov != null && mov !== 0 && (
+                                                            <span className={`font-black ${mov > 0 ? 'text-chart-1-text' : 'text-content-2'}`}>
+                                                                {mov > 0 ? 'subió ' : 'bajó '}{formatMoney(Math.abs(mov))} ({formatPct(Math.abs(mov / antes) * 100)}){' · '}
+                                                            </span>
+                                                        )}
+                                                        {fechaHora12(cb.created_at)}
+                                                        {/* La nota de una persona se muestra; la del sistema
+                                                            repite lo que ya dice «De dónde sale». */}
+                                                        {cb.actor && cb.nota ? ` · «${cb.nota}»` : ''}
+                                                    </p>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ol>
+                            </div>
+                        ) : r.monto_propuesto != null && (
+                            <p className="flex items-center gap-1.5 text-label font-semibold text-content-3">
+                                <Sparkles size={14} className="text-chart-1-text" aria-hidden />
+                                Propuesta del sistema
+                                <span className="font-black tabular-nums text-content-1 ml-auto">{formatMoney(r.monto_propuesto)}</span>
+                            </p>
+                        )}
 
-                {r.monto_propuesto != null && (
-                    <div className="border-t border-border-card pt-3">
-                        <p className="flex items-center gap-1.5 text-label font-semibold text-content-3">
-                            <Sparkles size={14} className="text-chart-1-text" aria-hidden />
-                            Propuesta del sistema
-                            <span className="font-black tabular-nums text-content-1 ml-auto">{formatMoney(r.monto_propuesto)}</span>
-                        </p>
-                        <ExplicacionMeta
-                            branchId={r.branch_id}
-                            yearMonth={r.year_month}
-                            montoPropuesto={r.monto_propuesto}
-                            datos={c}
-                        />
+                        {r.monto_propuesto != null && (
+                            <ExplicacionMeta
+                                branchId={r.branch_id}
+                                yearMonth={r.year_month}
+                                montoPropuesto={r.monto_propuesto}
+                                datos={c}
+                            />
+                        )}
                     </div>
-                )}
+                </div>
 
-                <div className="flex flex-wrap gap-2 mt-auto pt-1">
+                <div className="flex flex-wrap gap-2 mt-auto">
                     {editable && (
                         <Button
                             variant="primary" icon={CheckCircle2} className="flex-1"
@@ -972,7 +987,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
 
     if (loading) {
         return (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} data-surface="card" className="p-5"><SkeletonText lines={5} /></div>)}
             </div>
         );
@@ -1009,7 +1024,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             )}
                         />
                     ) : (
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                             {pendientesActual.map(filaMeta)}
                         </div>
                     )}
@@ -1059,7 +1074,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         />
                     )
                 ) : (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                         {delMesSig.map(filaMeta)}
                     </div>
                 )}

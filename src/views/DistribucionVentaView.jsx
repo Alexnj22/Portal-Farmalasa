@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     ShoppingCart, Plus, Minus, Trash2, ShieldAlert, Loader2, Receipt, Save, Search, Printer, PackageX, ArrowLeft, AlertTriangle,
-    Send, Clock, Store, Package, Wallet, Tag, RefreshCw,
+    Send, Clock, Store, Package, Wallet, Tag, RefreshCw, ListChecks, ChevronRight,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
@@ -19,9 +19,11 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { hoySV } from '@nucleo/utils/fecha';
+import { hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { fechaHora12 } from '@nucleo/utils/hora';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
-    fetchEmisor, fetchClientes, fetchCatalogo, fetchListasYPrecios, fetchPedidoParaCorregir,
+    fetchEmisor, fetchClientes, fetchCatalogo, fetchListasYPrecios, fetchPedidoParaCorregir, fetchPedidos,
     crearPedido, actualizarPedido, facturarPedido, mensajeDeDistribucion, guardarPagos, subirComprobante, adjuntarComprobante,
     pedirDescuento,
 } from '@nucleo/data/distribucion';
@@ -31,8 +33,8 @@ import FormasDePago from './distribucion/FormasDePago';
 import { filaNueva, problemaDePagos, cambioDePagos } from './distribucion/pagos';
 import { leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO } from './distribucion/comun';
 import { indexarPrecios, presentacionesDe, listasDe, precioDe } from './distribucion/precios';
-import { calcularVenta, descuentoConIva } from './distribucion/motor';
-import { rutaInicio, rutaDocumento } from './distribucion/rutas';
+import { calcularVenta, descuentoConIva, totalDePedido } from './distribucion/motor';
+import { rutaInicio, rutaDocumento, rutaVenta } from './distribucion/rutas';
 
 // La venta de Distribución, en su propia vista.
 //
@@ -116,6 +118,8 @@ export default function DistribucionVentaView() {
     const [error, setError] = useState('');
     const [motivoDescuento, setMotivoDescuento] = useState('');
     const [existencias, setExistencias] = useState(null); // Map product_id → unidades, o null si no se pudo leer
+    const [pendientes, setPendientes] = useState(null);   // preventas por finalizar (sólo en una venta nueva)
+    const [buscarPendiente, setBuscarPendiente] = useState('');
     const buscador = useRef(null);
     const barra = useRef(null);
 
@@ -143,14 +147,22 @@ export default function DistribucionVentaView() {
             setCargando(true);
             setErrorCarga('');
             try {
-                const [e, cs, cat, lp, ped, lotes] = await Promise.all([
+                const [e, cs, cat, lp, ped, lotes, pend] = await Promise.all([
                     fetchEmisor(), fetchClientes(), fetchCatalogo(), fetchListasYPrecios(),
                     corrigiendo ? fetchPedidoParaCorregir(Number(pedidoIdParam)) : Promise.resolve(null),
                     // La existencia es AYUDA para quien vende (el candado de verdad
                     // lo pone la base al facturar): si no se puede leer, la venta
                     // sigue sin ese dato en vez de no abrir.
                     fetchLotes().catch(err => { console.error('venta: existencias', err); return null; }),
+                    // Las preventas por finalizar (pedido del usuario: «en venta
+                    // debe salir un listado de los pendientes, para seleccionar
+                    // y finalizar»). Ayuda, igual que la existencia: si falla,
+                    // la venta abre igual.
+                    corrigiendo ? Promise.resolve(null)
+                        : fetchPedidos({ estados: ['confirmado'], desde: sumarDias(hoySV(), -60) })
+                            .catch(err => { console.error('venta: pendientes', err); return null; }),
                 ]);
+                if (vivo) setPendientes(pend);
                 if (!vivo) return;
                 setEmisor(e); setClientes(cs); setCatalogo(cat); setListas(lp.listas); setPrecios(lp.precios); setPedido(ped);
                 if (lotes) {
@@ -471,7 +483,7 @@ export default function DistribucionVentaView() {
     };
 
     const titulo = corrigiendo
-        ? (pedido?.pedido.reemplaza_dte_id ? `Corregir documento (pedido ${pedidoIdParam})` : `Corregir venta ${pedidoIdParam}`)
+        ? (pedido?.pedido.reemplaza_dte_id ? `Corregir documento (pedido ${pedidoIdParam})` : `Finalizar venta ${pedidoIdParam}`)
         : 'Nueva venta';
 
     const headerLeft = (
@@ -525,6 +537,52 @@ export default function DistribucionVentaView() {
                 {!cargando && !errorCarga && (
                     <div className="flex flex-col gap-4 min-w-0">
                         {error && <Notice variant="danger" bloque>{error}</Notice>}
+                        {!corrigiendo && pendientes?.length > 0 && (() => {
+                            const q = buscarPendiente.trim();
+                            const lista = pendientes.filter(p => !q || tokenMatch(q, p.dist_clientes?.nombre, String(p.id)));
+                            return (
+                                <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-3">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <ListChecks size={18} className="text-brand-text shrink-0" />
+                                            <h3 className="text-body font-black text-content">Pendientes de finalizar</h3>
+                                            <Badge size="sm" variant="warning" uppercase={false}>{pendientes.length}</Badge>
+                                        </div>
+                                        {pendientes.length > 4 && (
+                                            <div className="w-full sm:w-64">
+                                                <PortalInput compact icon={Search} name="buscar-pendiente" value={buscarPendiente}
+                                                    placeholder="Cliente o número…" aria-label="Buscar una preventa"
+                                                    onChange={(e) => setBuscarPendiente(e.target.value)} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-caption text-content-3 -mt-1">Elige una para revisarla y facturarla, o sigue abajo con una venta nueva.</p>
+                                    <div className="rounded-xl border border-divider overflow-hidden max-h-72 overflow-y-auto">
+                                        {lista.length === 0 && <p className="px-4 py-3 text-caption text-content-3">Ninguna coincide.</p>}
+                                        {lista.map(p => {
+                                            const espera = !!p.descuento_solicitud_id;
+                                            return (
+                                                <button key={p.id} type="button" data-pendiente={p.id} onClick={() => navigate(rutaVenta(p.id))}
+                                                    className="w-full flex items-center justify-between gap-3 px-4 min-h-[var(--tap-min)] py-2.5 text-left border-b border-divider last:border-b-0 hover:bg-surface-card-hover active:scale-[0.99] transition-transform">
+                                                    <span className="min-w-0">
+                                                        <span className="block text-body-sm font-bold text-content-2 truncate">{p.dist_clientes?.nombre}</span>
+                                                        <span className="block text-caption text-content-3 truncate">
+                                                            Venta {p.id} · {fechaHora12(p.created_at)} · {shortEmployeeName(p.employees) || '—'}
+                                                            {' · '}{TIPO_DOCUMENTO[p.tipo_documento ?? '01']?.largo}
+                                                        </span>
+                                                    </span>
+                                                    <span className="flex items-center gap-3 shrink-0">
+                                                        {espera && <Badge size="sm" variant="warning" icon={Clock} uppercase={false}>Descuento por aprobar</Badge>}
+                                                        <span className="tabular-nums font-black text-content">{formatMoney(totalDePedido(p))}</span>
+                                                        <ChevronRight size={16} className="text-content-3" />
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </section>
+                            );
+                        })()}
                         {esperandoAprobacion && (
                             <Notice variant="warning" icon={Clock}>
                                 Esta venta espera la aprobación de un descuento. Se puede corregir; al guardarla, la solicitud se pone al día.

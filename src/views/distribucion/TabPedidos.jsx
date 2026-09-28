@@ -8,19 +8,17 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { useToastStore } from '@nucleo/store/toastStore';
-import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchPedidos, contarPagosSinComprobante } from '@nucleo/data/distribucion';
 import DocumentoModal from './DocumentoModal';
 import PedidoModal from './PedidoModal';
-import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, rotuloTipoCliente } from './comun';
+import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, rotuloTipoCliente, VISTAS_PEDIDOS } from './comun';
 import { rutaVenta } from './rutas';
+import { totalDePedido } from './motor';
 
 const COLS = [
     { key: 'cliente',   label: 'Cliente',   align: 'left', className: 'w-[220px]' },
@@ -31,24 +29,17 @@ const COLS = [
     { key: 'total',     label: 'Total',     align: 'right' },
 ];
 
-const ESTADOS_FILTRO = [
-    { value: 'confirmado', label: 'Preventa' },
-    { value: 'facturado',  label: 'Facturados' },
-    { value: 'anulado',    label: 'Anulados' },
-];
 
 // Se trae una ventana de 60 días: la preventa se factura el mismo día o el
 // siguiente, y lo viejo vive en Documentos.
 const VENTANA_DIAS = 60;
 
-export default function TabPedidos({ emisor, puedeVender, buscar }) {
-    const showToast = useToastStore(s => s.showToast);
+export default function TabPedidos({ emisor, puedeVender, buscar, vista = 'pendientes', onVista }) {
     const navigate = useNavigate();
     const [params, setParams] = useSearchParams();
     const [pedidos, setPedidos] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState('');
-    const [estado, setEstado] = useState('');
     const [abierto, setAbierto] = useState(null);
     const [sinComprobante, setSinComprobante] = useState(0);
     const [documento, setDocumento] = useState(null);       // { id, imprimir }
@@ -76,9 +67,10 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
 
     const filtrados = useMemo(() => {
         const q = buscar.trim();
-        return pedidos.filter(p => (!estado || p.estado === estado)
+        const estados = (VISTAS_PEDIDOS.find(v => v.key === vista) ?? VISTAS_PEDIDOS[0]).estados;
+        return pedidos.filter(p => estados.includes(p.estado)
             && (!q || tokenMatch(q, p.dist_clientes?.nombre, String(p.id), p.dist_dte?.numero_control)));
-    }, [pedidos, buscar, estado]);
+    }, [pedidos, buscar, vista]);
 
     const hoy = hoySV();
     const stats = useMemo(() => ({
@@ -104,7 +96,7 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
     const abrirCorreccion = (pedidoId) => navigate(rutaVenta(pedidoId));
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
-    useEffect(() => { setPage(1); }, [buscar, estado]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => { setPage(1); }, [buscar, vista]); // eslint-disable-line react-hooks/exhaustive-deps
     const pagina = filtrados.slice((page - 1) * pageSize, page * pageSize);
 
     const acciones = puedeVender && emisor
@@ -115,9 +107,9 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
         <div className="p-5 md:p-6 space-y-5">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de pedidos">
-                    <StatCard icon={ClipboardList} label="Preventas" value={stats.porFacturar} loading={cargando}
-                        sub="Guardadas sin facturar" active={estado === 'confirmado'} tono="brand"
-                        onClick={() => setEstado(v => (v === 'confirmado' ? '' : 'confirmado'))} />
+                    <StatCard icon={ClipboardList} label="Pendientes" value={stats.porFacturar} loading={cargando}
+                        sub="Preventas por finalizar" active={vista === 'pendientes'} tono="brand"
+                        onClick={() => onVista?.('pendientes')} />
                     <StatCard icon={CheckCircle2} label="Hoy" value={stats.facturadosHoy} loading={cargando}
                         iconBg="bg-success/10" iconCls="text-success" sub="Pedidos facturados hoy" />
                     <StatCard icon={Clock} label="Sin sello" value={stats.sinSello} loading={cargando}
@@ -130,12 +122,7 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
                         iconBg="bg-danger/10" iconCls="text-danger" valueCls={stats.rechazados ? 'text-danger-text' : undefined}
                         sub="Hay que volver a facturarlos" />
                 </CarrilCards>
-                <FilterBar onClear={() => setEstado('')} activeCount={estado ? 1 : 0} acciones={acciones}>
-                    <FilterBar.Section active={!!estado} onClear={() => setEstado('')} label="estado">
-                        <FilterBar.Opciones options={ESTADOS_FILTRO} value={estado} onChange={v => setEstado(v || '')}
-                            label="Estado" icon={ClipboardList} placeholder="Estado" />
-                    </FilterBar.Section>
-                </FilterBar>
+                <FilterBar activeCount={0} acciones={acciones} />
             </div>
 
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
@@ -145,9 +132,11 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
                 movil={{ usarAccionDeFila: true }}
                 loading={cargando}
                 minWidth="320px"
-                empty={buscar || estado
-                    ? { icon: Search, message: 'Sin resultados', subtext: 'Ningún pedido coincide con la búsqueda o el filtro.' }
-                    : { icon: ClipboardList, message: 'Sin pedidos', subtext: puedeVender ? 'Haz la primera con «Nueva venta».' : undefined }}
+                empty={buscar
+                    ? { icon: Search, message: 'Sin resultados', subtext: 'Ningún pedido coincide con la búsqueda.' }
+                    : vista === 'pendientes'
+                        ? { icon: CheckCircle2, message: 'Sin pendientes', subtext: 'Todas las preventas están finalizadas.' }
+                        : { icon: ClipboardList, message: vista === 'anulados' ? 'Sin anulados' : 'Sin pedidos finalizados' }}
             >
                 {pagina.map((p, i) => {
                     // Una preventa con un descuento pedido espera a que lo decidan:
@@ -188,7 +177,9 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
                                 <span className="text-label text-content-2 tabular-nums">{fechaNumerica(p.created_at)}</span>
                             </DataCell>
                             <DataCell align="right">
-                                <span className="tabular-nums font-bold text-content-2">{dte ? formatMoney(dte.total_pagar) : '—'}</span>
+                                {/* Una preventa no tiene documento todavía: su total sale del
+                                    mismo motor que lo va a calcular al facturar. */}
+                                <span className="tabular-nums font-bold text-content-2">{formatMoney(dte ? dte.total_pagar : totalDePedido(p))}</span>
                             </DataCell>
                         </DataRow>
                     );

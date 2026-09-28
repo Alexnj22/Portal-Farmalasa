@@ -138,12 +138,17 @@ export async function agregarAlCatalogo(emisorId, productId, precioConIva, venta
 
 const SELECT_PEDIDO = 'id, cliente_id, vendedor_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, created_at, dte_id, descuento_solicitud_id, '
     + 'dist_clientes(nombre, tipo, contribuyente), employees!dist_pedidos_vendedor_id_fkey(name), '
-    + 'dist_dte!dist_pedidos_dte_id_fkey(numero_control, estado, total_pagar, tipo)';
+    + 'dist_dte!dist_pedidos_dte_id_fkey(numero_control, estado, total_pagar, tipo), '
+    // Los renglones, para el total de una preventa (sin documento todavía no
+    // hay `total_pagar`): lo calcula la pantalla con el motor del documento.
+    + 'dist_pedido_items(cantidad, precio_con_iva, descuento)';
 
-export async function fetchPedidos({ desde } = {}) {
+/** `estados`: sólo esos (p. ej. las preventas por finalizar: `['confirmado']`). */
+export async function fetchPedidos({ desde, estados } = {}) {
     const rows = await fetchAllRows(() => {
         let q = supabase.from('dist_pedidos').select(SELECT_PEDIDO).order('created_at', { ascending: false });
         if (desde) q = q.gte('created_at', desde);
+        if (estados?.length) q = q.in('estado', estados);
         return q;
     });
     if (rows === null) throw new Error('No se pudieron cargar los pedidos.');

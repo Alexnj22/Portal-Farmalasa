@@ -13,6 +13,8 @@ import TabCatalogo from './distribucion/TabCatalogo';
 import TabInventario from './distribucion/TabInventario';
 import TabEmisor from './distribucion/TabEmisor';
 import SolicitudesDescuento from './distribucion/SolicitudesDescuento';
+import { VISTAS_PEDIDOS } from './distribucion/comun';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 
 // Distribución — la venta en ruta de la S.A.S. a tiendas, supermercados y
 // farmacias. Es otra empresa (otro NIT) con su propio emisor de documentos
@@ -38,6 +40,9 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
     useMarca('distribucion');
     const actual = TABS.find(t => t.key === seccion) ?? TABS[0];
     const tab = actual.key;
+    // Pedidos se divide en pendientes / finalizados / anulados; la pestaña
+    // vive en `?vista=` (las demás secciones no tienen pestañas).
+    const [vista, setVista] = usePestanaEnUrl(VISTAS_PEDIDOS, 'pendientes', 'vista');
     const { hasPermission } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
@@ -83,7 +88,8 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
             icon={actual.icon}
             title={actual.label}
             filtersContent={conBuscador ? (
-                <ViewTabBar tabs={[actual]} activeTab={tab} onTabChange={() => {}}
+                <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : [actual]}
+                    activeTab={tab === 'pedidos' ? vista : tab} onTabChange={tab === 'pedidos' ? setVista : () => {}}
                     searchValue={buscar} onSearchChange={setBuscar}
                     placeholder={placeholder} showSearch />
             ) : null}
@@ -102,7 +108,7 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
             )}
 
             {visitadas.has('pedidos') && (
-                <div className={tab === 'pedidos' ? '' : 'hidden'}><TabPedidos {...comunes} /></div>
+                <div className={tab === 'pedidos' ? '' : 'hidden'}><TabPedidos {...comunes} vista={vista} onVista={setVista} /></div>
             )}
             {visitadas.has('documentos') && (
                 <div className={tab === 'documentos' ? '' : 'hidden'}><TabDocumentos {...comunes} /></div>

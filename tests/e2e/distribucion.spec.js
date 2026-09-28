@@ -82,7 +82,7 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
     // Corregir: el documento nunca llegó a Hacienda, se retira y el pedido vuelve a la venta.
     await doc.getByRole('button', { name: 'Corregir' }).click();
     await expect(page).toHaveURL(/\/torogoz\/venta\/\d+$/, { timeout: 20_000 });
-    await expect(page.getByRole('heading', { name: /Corregir venta/ }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Finalizar venta|Corregir venta/ }).first()).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/corregir.png`, fullPage: true });
 });
 
@@ -179,4 +179,31 @@ test('venta como en la caja: presentación, lista, descuento y el cambio del efe
     await doc.getByText('Ticket', { exact: true }).click();
     await expect(doc.frameLocator('iframe[title="Vista previa del ticket"]').getByText(/PAQUETE/).first()).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: `${SALIDA}/venta-caja-ticket.png`, fullPage: true });
+});
+
+test('pedidos separados en pendientes y finalizados; la venta lista las pendientes para finalizarlas', async ({ page }) => {
+    await entrar(page);
+    // Pedidos abre en Pendientes: sólo preventas.
+    await page.goto('/torogoz/pedidos');
+    await expect(page).toHaveURL(/\/torogoz\/pedidos/);
+    await page.waitForTimeout(2500);
+    const estadosPendientes = await page.locator('table tbody tr').allInnerTexts();
+    expect(estadosPendientes.every(t => /PREVENTA|DESCUENTO POR APROBAR/i.test(t) || /Sin pendientes/i.test(t))).toBe(true);
+    // Finalizados: ninguna preventa, y la pestaña queda en la dirección.
+    await page.getByRole('tab', { name: 'Finalizados' }).click();
+    await expect(page).toHaveURL(/vista=finalizados/);
+    await page.waitForTimeout(1500);
+    const finalizados = await page.locator('table tbody tr').allInnerTexts();
+    expect(finalizados.some(t => /PREVENTA/i.test(t))).toBe(false);
+    await page.screenshot({ path: `${SALIDA}/pedidos-finalizados.png`, fullPage: true });
+
+    // En la venta nueva, arriba, las pendientes: se elige una y se abre para finalizar.
+    await page.goto('/torogoz/venta');
+    const lista = page.locator('[data-pendiente]');
+    await expect(lista.first()).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/venta-pendientes.png`, fullPage: true });
+    await lista.first().click();
+    await expect(page).toHaveURL(/\/torogoz\/venta\/\d+$/);
+    await expect(page.getByRole('heading', { name: /Finalizar venta/ }).first()).toBeVisible();
+    await expect(page.locator('[data-renglon]').first()).toBeVisible();
 });

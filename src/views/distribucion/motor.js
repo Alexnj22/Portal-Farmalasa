@@ -62,3 +62,15 @@ export function calcularVenta(lineas, { tipoDoc, retiene1 = false, percibe1 = fa
         return { ...vacio, error: e.message };
     }
 }
+
+/**
+ * El total de una preventa guardada (renglones con IVA, como los deja la base).
+ * Sin la retención del 1%: ésa la decide el documento con la ficha del cliente.
+ */
+export function totalDePedido(pedido) {
+    const items = pedido?.dist_pedido_items ?? [];
+    if (!items.length) return 0;
+    return calcularVenta(items.map(i => ({
+        cantidad: Number(i.cantidad), precioConIva: Number(i.precio_con_iva), descuentoConIva: Number(i.descuento) || 0,
+    })), { tipoDoc: pedido.tipo_documento ?? '01' }).total;
+}

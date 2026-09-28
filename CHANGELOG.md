@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1090.0 — Torogoz: pedidos en pendientes y finalizados; la venta lista las pendientes para finalizarlas
+
+Pedido del usuario: «los pedidos deben estar separados por finalizados y
+pendientes; en venta debe salir un listado de los pendientes, para
+seleccionar y finalizar».
+
+- **Pedidos** en tres pestañas —Pendientes (preventas), Finalizados
+  (facturados) y Anulados—, en la dirección (`?vista=`). Las pendientes
+  muestran su total, calculado con el motor del documento (`totalDePedido`).
+- **Venta nueva**: arriba, «Pendientes de finalizar» con cliente, fecha,
+  vendedor, documento, total y si espera un descuento; buscador si son
+  más de cuatro. Al elegir una se abre como «Finalizar venta N» para
+  revisarla y facturarla.
+
+
 ## v2.1089.0 — Une la distribuidora (Torogoz) con el núcleo portable
 
 Pedido del usuario: ver la distribuidora en dev.farmasalud.lat, que publica

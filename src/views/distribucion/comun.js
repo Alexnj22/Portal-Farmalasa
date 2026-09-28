@@ -32,6 +32,17 @@ export const ESTADO_PEDIDO = {
     anulado:    { variant: 'neutral', label: 'Anulado' },
 };
 
+// Las tres vistas de Pedidos (pedido del usuario, 2026-09-28: «separados por
+// finalizados y pendientes»). Viven en la dirección (`?vista=`), como toda
+// pestaña del portal. Pendiente = preventa, guardada sin facturar;
+// finalizado = ya tiene documento.
+export const VISTAS_PEDIDOS = [
+    { key: 'pendientes',  label: 'Pendientes',  estados: ['confirmado'] },
+    { key: 'finalizados', label: 'Finalizados', estados: ['facturado', 'entregado'] },
+    { key: 'anulados',    label: 'Anulados',    estados: ['anulado'] },
+];
+
+
 export const TIPO_CLIENTE = [
     { value: 'tienda',       label: 'Tienda' },
     { value: 'supermercado', label: 'Supermercado' },

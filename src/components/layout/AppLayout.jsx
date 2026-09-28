@@ -65,6 +65,12 @@ import { hoySV } from '../../utils/fecha';
 // directorio de empleados; Clima Organizacional estaba partido entre su
 // propio grupo (encuesta) y RRHH (encuesta_admin) sin motivo. Ningún grupo
 // nuevo pasa de 6 ítems.
+// El encabezado del menú dice de quién es la pantalla. Rumbo (la distribuidora)
+// es una propuesta del 2026-09-28 hecha a pedido del usuario, pendiente de su
+// aprobación: si se descarta, se borra esta constante y `public/distribuidora/`.
+const MARCA_PORTAL = { icono: '/Logo192.png', alt: 'FLS', titulo: 'Portal', bajada: 'La Salud & La Popular', bajadaCorta: 'La Salud' };
+const MARCA_DISTRIBUIDORA = { icono: '/distribuidora/icono.svg', alt: 'Rumbo', titulo: 'Rumbo', bajada: 'Distribuidora', bajadaCorta: 'Distribuidora' };
+
 const MENU_GROUPS = [
     { key: 'overview',      label: 'Inicio',        icon: Home,          modules: ['overview']                          },
     // `traslados` va acá y no en Inventario: un traslado ES una solicitud
@@ -294,6 +300,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     const activePath = location.pathname;
     const activeId = activePath.split('/')[1] || '';
+    // Distribución es otra empresa: su vista lleva su propio nombre e icono en
+    // el encabezado (los colores los pone `useMarca` en la vista).
+    const marca = activeId === 'distribucion' ? MARCA_DISTRIBUIDORA : MARCA_PORTAL;
 
     const cargoLabel = (() => {
         if (isSU) return 'Super Admin';
@@ -1165,15 +1174,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-[rgb(var(--sidebar-realce)/0.18)]
                                         ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                         <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.2)] to-transparent pointer-events-none rounded-t-[1.25rem]" />
-                                        <img src="/Logo192.png" alt="FLS"
+                                        <img src={marca.icono} alt={marca.alt}
                                             className={`object-contain relative z-base transition-transform duration-[var(--dur-slow)] group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                     </div>
                                 </Link>
 
                                 {isExpanded && (
                                     <div className="animate-in fade-in zoom-in-95 duration-[var(--dur-slow)] origin-left min-w-0">
-                                        <h1 className="font-black text-subtitle leading-tight tracking-tight text-[rgb(var(--sidebar-ink))]">Portal</h1>
-                                        <p className="text-caption font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-[rgb(var(--sidebar-ink)/0.5)]">La Salud & La Popular</p>
+                                        <h1 className="font-black text-subtitle leading-tight tracking-tight text-[rgb(var(--sidebar-ink))]">{marca.titulo}</h1>
+                                        <p className="text-caption font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-[rgb(var(--sidebar-ink)/0.5)]">{marca.bajada}</p>
                                     </div>
                                 )}
                             </div>
@@ -1416,8 +1425,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <Button variant="ghost" icon={Menu} iconOnly onClick={() => setIsSidebarOpen(true)} />
                                 <div className="w-px h-6 rounded-full bg-divider" />
                                 <div className="flex flex-col justify-center">
-                                    <h1 className="text-body-lg font-black leading-none tracking-tight">Portal</h1>
-                                    <p className="text-micro font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">La Salud</p>
+                                    <h1 className="text-body-lg font-black leading-none tracking-tight">{marca.titulo}</h1>
+                                    <p className="text-micro font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">{marca.bajadaCorta}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">

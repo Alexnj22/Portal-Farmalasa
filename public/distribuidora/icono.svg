@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Rumbo">
+  <!-- Rumbo, distribuidora — propuesta 2026-09-28, pendiente de aprobación.
+       Una ruta que sale de un punto (el pedido) y termina en una flecha (la
+       entrega). Petróleo #0f6e7d y naranja #f28c1b, la paleta de la marca. -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#0f6e7d"/>
+  <path d="M17 47 C 17 37, 27 36, 32 32 S 41 24, 44 20" fill="none" stroke="#ffffff" stroke-width="6.5" stroke-linecap="round"/>
+  <path d="M36.5 14.5 L 50 14 L 49.5 27.5 Z" fill="#f28c1b" stroke="#f28c1b" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="17" cy="47" r="6.5" fill="#f28c1b"/>
+  <circle cx="17" cy="47" r="2.6" fill="#0f6e7d"/>
+</svg>

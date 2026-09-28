@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1081.1 — Rumbo: nombre e icono propuestos para la distribuidora
+
+Propuesta hecha a pedido del usuario, **pendiente de su aprobación**: la
+distribuidora todavía no tenía nombre ni logo. En `/distribucion` el encabezado
+del menú y el del teléfono dicen **Rumbo · Distribuidora** con su icono
+(`public/distribuidora/icono.svg`: una ruta blanca que sale de un punto naranja
+y termina en una flecha naranja, sobre petróleo). En el resto del portal no
+cambia nada. Si se descarta, se borran `MARCA_DISTRIBUIDORA` de `AppLayout` y
+la carpeta `public/distribuidora/`.
+
 ## v2.1081.0 — Distribución: pagos por forma con comprobante, y corregir o deshacer un documento sellado
 
 - **Varias formas de pago en una venta** ($2 en efectivo, el resto con

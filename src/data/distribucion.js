@@ -18,6 +18,7 @@ const MENSAJES = {
     DIST_CLIENTE_INACTIVO: 'Ese cliente está desactivado.',
     DIST_PEDIDO_CERRADO: 'El pedido ya se facturó o se anuló.',
     DIST_DESCUENTO: 'El descuento pasa del importe del renglón.',
+    DIST_CCF_SIN_NRC: 'Ese cliente no tiene NRC: sólo se le puede emitir Factura.',
 };
 
 export function mensajeDeDistribucion(error) {
@@ -105,7 +106,7 @@ export async function agregarAlCatalogo(emisorId, productId, precioSinIva, venta
 
 // ── Pedidos ────────────────────────────────────────────────────────────────
 
-const SELECT_PEDIDO = 'id, cliente_id, vendedor_id, estado, condicion, forma_pago, plazo_dias, observaciones, created_at, dte_id, '
+const SELECT_PEDIDO = 'id, cliente_id, vendedor_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, created_at, dte_id, '
     + 'dist_clientes(nombre, tipo, contribuyente), employees!dist_pedidos_vendedor_id_fkey(name), '
     + 'dist_dte!dist_pedidos_dte_id_fkey(numero_control, estado, total_pagar, tipo)';
 
@@ -132,7 +133,7 @@ export async function fetchItemsDePedido(pedidoId) {
  * mandar: si la señal se corta y se reintenta, la base rechaza el duplicado
  * por `client_uuid` en vez de crear dos pedidos.
  */
-export async function crearPedido({ emisorId, clienteId, condicion, plazoDias, formaPago, observaciones, clientUuid, renglones }) {
+export async function crearPedido({ emisorId, clienteId, tipoDocumento, condicion, plazoDias, formaPago, observaciones, clientUuid, renglones }) {
     const { data: previo, error: ePrev } = await supabase.from('dist_pedidos')
         .select('id').eq('client_uuid', clientUuid).maybeSingle();
     if (ePrev) throw ePrev;
@@ -140,7 +141,7 @@ export async function crearPedido({ emisorId, clienteId, condicion, plazoDias, f
     if (!pedidoId) {
         const { data, error } = await supabase.from('dist_pedidos').insert({
             // vendedor_id lo pone la base (la ficha de quien inserta).
-            emisor_id: emisorId, cliente_id: clienteId,
+            emisor_id: emisorId, cliente_id: clienteId, tipo_documento: tipoDocumento,
             condicion, plazo_dias: condicion === 2 ? plazoDias : null,
             forma_pago: formaPago, observaciones: observaciones?.trim() || null, client_uuid: clientUuid,
         }).select('id').single();
@@ -170,9 +171,9 @@ export async function crearPedido({ emisorId, clienteId, condicion, plazoDias, f
  * Los renglones que ya no están se borran y el resto se reescribe; el precio
  * lo vuelve a poner el trigger desde el catálogo.
  */
-export async function actualizarPedido(pedidoId, { condicion, plazoDias, formaPago, observaciones, renglones }) {
+export async function actualizarPedido(pedidoId, { tipoDocumento, condicion, plazoDias, formaPago, observaciones, renglones }) {
     const { error } = await supabase.from('dist_pedidos').update({
-        condicion, plazo_dias: condicion === 2 ? plazoDias : null, forma_pago: formaPago,
+        tipo_documento: tipoDocumento, condicion, plazo_dias: condicion === 2 ? plazoDias : null, forma_pago: formaPago,
         observaciones: observaciones?.trim() || null,
     }).eq('id', pedidoId).eq('estado', 'confirmado');
     if (error) throw error;

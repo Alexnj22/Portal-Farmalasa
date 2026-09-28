@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1079.1 — Distribución: el tipo de documento se elige en cada venta
+
+Un contribuyente no siempre pide Crédito Fiscal (pedido del usuario). La venta
+tiene ahora un selector **Factura / Crédito Fiscal**: arranca en el que
+corresponde a la ficha y se puede cambiar. Sin NRC sólo hay Factura, y lo
+vuelven a frenar el trigger (`DIST_CCF_SIN_NRC`) y `distribucion-dte`. Columna
+nueva `dist_pedidos.tipo_documento` (NULL = el de la ficha). La retención del
+1% se estima sólo con Crédito Fiscal.
+
 ## v2.1079.0 — Distribución: venta ágil, ticket de venta, PDF del documento y corregir antes del sello
 
 - **Venta ágil** (`VentaModal`, reemplaza al formulario de pedido): se busca

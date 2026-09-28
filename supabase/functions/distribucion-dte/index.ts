@@ -232,7 +232,7 @@ async function descartar(admin: Admin, dteId: number) {
 
 async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   const { data: p, error } = await admin.from("dist_pedidos")
-    .select("id, emisor_id, cliente_id, estado, condicion, forma_pago, plazo_dias, observaciones, dte_id")
+    .select("id, emisor_id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, dte_id")
     .eq("id", pedidoId).maybeSingle();
   if (error) throw new Error(`leer el pedido: ${error.message}`);
   if (!p) throw new ErrorUsuario("no existe ese pedido", 404);
@@ -251,7 +251,12 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   if (!e.activo) throw new ErrorUsuario("el emisor está desactivado");
   if (!its.data!.length) throw new ErrorUsuario("el pedido no tiene productos");
 
-  const tipo: TipoDte = c.contribuyente ? TIPO_DTE.CCF : TIPO_DTE.FACTURA;
+  // El documento lo eligió quien vendió; si no eligió, el de la ficha. Un
+  // Crédito Fiscal sin NRC no se emite aunque el pedido lo diga.
+  const tipo: TipoDte = (p.tipo_documento as TipoDte | null) ?? (c.contribuyente ? TIPO_DTE.CCF : TIPO_DTE.FACTURA);
+  if (tipo === TIPO_DTE.CCF && !c.contribuyente) {
+    throw new ErrorUsuario("Este cliente no tiene NRC: sólo se le puede emitir Factura.");
+  }
   const renglones: Renglon[] = its.data!.map((i: any) => ({
     codigo: String(i.product_id), descripcion: i.descripcion,
     cantidad: String(i.cantidad), precio: String(i.precio_sin_iva), precioIncluyeIva: false,

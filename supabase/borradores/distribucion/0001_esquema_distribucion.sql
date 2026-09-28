@@ -249,6 +249,10 @@ CREATE TABLE public.dist_pedidos (
     vendedor_id     uuid   NOT NULL DEFAULT public.auth_employee_id() REFERENCES public.employees(id),
     estado          text NOT NULL DEFAULT 'confirmado'
                     CHECK (estado IN ('confirmado','facturado','entregado','anulado')),
+    -- El documento lo ELIGE quien vende: un contribuyente no siempre pide
+    -- Crédito Fiscal. NULL = el que corresponde a la ficha (con NRC, CCF).
+    -- Crédito Fiscal sin NRC no se puede: lo frena el trigger.
+    tipo_documento  text CHECK (tipo_documento IS NULL OR tipo_documento IN ('01','03')),
     condicion       smallint NOT NULL DEFAULT 1 CHECK (condicion IN (1,2)),   -- CAT-016
     forma_pago      text NOT NULL DEFAULT '01',                              -- CAT-017
     plazo_dias      smallint CHECK (plazo_dias IS NULL OR plazo_dias BETWEEN 1 AND 120),
@@ -344,6 +348,9 @@ BEGIN
     IF v_cliente.licencia_srs IS NULL OR (v_cliente.licencia_srs_vence IS NOT NULL AND v_cliente.licencia_srs_vence < current_date) THEN
         RAISE EXCEPTION 'DIST_SIN_LICENCIA: % no tiene autorización de la SRS vigente', v_cliente.nombre;
     END IF;
+    IF NEW.tipo_documento = '03' AND v_cliente.nrc IS NULL THEN
+        RAISE EXCEPTION 'DIST_CCF_SIN_NRC: % no tiene NRC: sólo se le puede emitir Factura', v_cliente.nombre;
+    END IF;
     IF NEW.condicion = 2 AND (v_cliente.plazo_dias = 0 OR v_cliente.limite_credito = 0) THEN
         RAISE EXCEPTION 'DIST_SIN_CREDITO: % no tiene crédito aprobado', v_cliente.nombre;
     END IF;
@@ -354,7 +361,7 @@ BEGIN
 END $$;
 REVOKE EXECUTE ON FUNCTION public.dist_validar_pedido() FROM PUBLIC, anon, authenticated;
 CREATE TRIGGER dist_pedidos_validar
-    BEFORE INSERT ON public.dist_pedidos
+    BEFORE INSERT OR UPDATE OF cliente_id, tipo_documento, condicion, plazo_dias ON public.dist_pedidos
     FOR EACH ROW EXECUTE FUNCTION public.dist_validar_pedido();
 
 -- Siguiente correlativo, atómico. Sólo el servidor: un número de control que

@@ -74,3 +74,21 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
     await expect(page.getByRole('dialog').getByText(/Corregir pedido/)).toBeVisible({ timeout: 20_000 });
     await page.screenshot({ path: `${SALIDA}/corregir.png`, fullPage: true });
 });
+
+test('a un contribuyente se le puede emitir Factura si la pide', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/distribucion?tab=pedidos');
+    await page.getByRole('button', { name: /nueva venta/i }).first().click();
+    const modal = page.getByRole('dialog');
+    await modal.getByText('Elegir cliente…').click();
+    await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
+    // Por la ficha (tiene NRC) arranca en Crédito Fiscal; se cambia a Factura.
+    await expect(modal.getByRole('radio', { name: 'Crédito Fiscal' })).toHaveAttribute('aria-checked', 'true');
+    await modal.getByRole('radio', { name: 'Factura' }).click();
+    await modal.getByLabel('Buscar producto').fill('a');
+    await modal.getByRole('option').first().click();
+    await modal.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    await modal.getByRole('button', { name: /^Facturar$/ }).click();
+    const doc = page.getByRole('dialog', { name: 'Documento' });
+    await expect(doc.getByRole('heading', { name: /^Factura/ })).toBeVisible({ timeout: 30_000 });
+});

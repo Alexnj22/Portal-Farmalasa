@@ -44,6 +44,7 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
     const [clienteId, setClienteId] = useState('');
     const [carrito, setCarrito] = useState([]); // [{ product_id, cantidad: string }]
     const [buscar, setBuscar] = useState('');
+    const [tipoDoc, setTipoDoc] = useState('01');
     const [condicion, setCondicion] = useState(1);
     const [plazo, setPlazo] = useState('');
     const [formaPago, setFormaPago] = useState('01');
@@ -58,16 +59,17 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
     useEffect(() => {
         if (!open || !pedido) return;
         setClienteId(String(pedido.cliente_id));
+        setTipoDoc(pedido.tipo_documento ?? (clientes.find(c => c.id === pedido.cliente_id)?.contribuyente ? '03' : '01'));
         setCondicion(pedido.condicion);
         setPlazo(pedido.plazo_dias ? String(pedido.plazo_dias) : '');
         setFormaPago(pedido.forma_pago ?? '01');
         setNotas(pedido.observaciones ?? '');
         setCarrito((itemsDelPedido ?? []).map(i => ({ product_id: String(i.product_id), cantidad: conCantidad(Number(i.cantidad)) })));
-    }, [open, pedido, itemsDelPedido]);
+    }, [open, pedido, itemsDelPedido]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const { recuperado, descartar } = useBorrador(
         open && emisor && !corrigiendo ? `distribucion-venta-${emisor.id}` : null,
-        { clienteId, carrito, condicion, plazo, formaPago, notas, uuid },
+        { clienteId, tipoDoc, carrito, condicion, plazo, formaPago, notas, uuid },
         { activo: open && !corrigiendo, vale: (v) => !!v?.clienteId || v?.carrito?.length > 0 },
     );
     const repuesto = useRef(false);
@@ -76,6 +78,7 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
         if (repuesto.current || !recuperado) return;
         repuesto.current = true;
         setClienteId(recuperado.clienteId ?? '');
+        setTipoDoc(recuperado.tipoDoc ?? '01');
         setCarrito(recuperado.carrito ?? []);
         setCondicion(recuperado.condicion ?? 1);
         setPlazo(recuperado.plazo ?? '');
@@ -125,6 +128,7 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
     const cambiarCliente = useCallback((v) => {
         setClienteId(v || '');
         const c = clientes.find(x => String(x.id) === String(v));
+        setTipoDoc(c?.contribuyente ? '03' : '01');
         if (!c || !(c.plazo_dias > 0)) setCondicion(1);
         setPlazo(c?.plazo_dias ? String(c.plazo_dias) : '');
         setError('');
@@ -142,7 +146,7 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
 
     const estimado = estimarPedido(
         lineas.filter(l => l.p && l.n > 0).map(l => ({ cantidad: l.n, precio_sin_iva: Number(l.p.precio_sin_iva) })),
-        { contribuyente: !!cliente?.contribuyente, granContribuyente: !!cliente?.gran_contribuyente },
+        { contribuyente: tipoDoc === '03', granContribuyente: !!cliente?.gran_contribuyente },
     );
     const excedeCredito = condicion === 2 && cliente && estimado.total > Number(cliente.limite_credito);
 
@@ -157,7 +161,7 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
     const listo = !bloqueo && !guardando;
 
     const reiniciar = () => {
-        setClienteId(''); setCarrito([]); setBuscar(''); setCondicion(1); setPlazo('');
+        setClienteId(''); setTipoDoc('01'); setCarrito([]); setBuscar(''); setCondicion(1); setPlazo('');
         setFormaPago('01'); setNotas(''); setUuid(crypto.randomUUID()); setError('');
     };
 
@@ -168,10 +172,10 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
         try {
             let pedidoId = pedido?.id;
             if (corrigiendo) {
-                await actualizarPedido(pedido.id, { condicion, plazoDias: plazoNum, formaPago, observaciones: notas, renglones });
+                await actualizarPedido(pedido.id, { tipoDocumento: tipoDoc, condicion, plazoDias: plazoNum, formaPago, observaciones: notas, renglones });
             } else {
                 pedidoId = await crearPedido({
-                    emisorId: emisor.id, clienteId: cliente.id,
+                    emisorId: emisor.id, clienteId: cliente.id, tipoDocumento: tipoDoc,
                     condicion, plazoDias: plazoNum, formaPago, observaciones: notas, clientUuid: uuid, renglones,
                 });
             }
@@ -191,7 +195,6 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
         }
     };
 
-    const tipoDoc = cliente ? TIPO_DOCUMENTO[cliente.contribuyente ? '03' : '01'].largo : null;
 
     return (
         <LiquidModal open={open} onClose={guardando ? undefined : onClose} maxWidth="max-w-3xl"
@@ -215,8 +218,7 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
                             placeholder="Elegir cliente…" clearable={false} disabled={corrigiendo} />
                         {cliente && (
                             <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                                <Badge size="sm" variant="info" uppercase={false}>Se emite {tipoDoc}</Badge>
-                                {cliente.gran_contribuyente && <Badge size="sm" variant="warning" uppercase={false}>Retiene 1%</Badge>}
+                                {cliente.gran_contribuyente && tipoDoc === '03' && <Badge size="sm" variant="warning" uppercase={false}>Retiene 1%</Badge>}
                                 {soloVentaLibre(cliente.tipo) && <Badge size="sm" variant="neutral" uppercase={false}>Sólo venta libre</Badge>}
                                 {tieneCredito && <Badge size="sm" variant="neutral" uppercase={false}>Crédito {formatMoney(cliente.limite_credito)} · {cliente.plazo_dias} días</Badge>}
                             </div>
@@ -227,6 +229,20 @@ export default function VentaModal({ open, onClose, emisor, clientes, catalogo, 
                             </Notice>
                         )}
                     </div>
+
+                    {cliente && (
+                        <div>
+                            <span className="text-caption font-bold text-content-2 block mb-1.5">Documento</span>
+                            {/* Un contribuyente no siempre pide Crédito Fiscal: se elige en
+                                cada venta. Sin NRC, sólo Factura (la base lo vuelve a frenar). */}
+                            <SegmentedControl value={tipoDoc} onChange={setTipoDoc}
+                                options={[
+                                    { value: '01', label: TIPO_DOCUMENTO['01'].largo },
+                                    { value: '03', label: TIPO_DOCUMENTO['03'].largo, disabled: !cliente.contribuyente },
+                                ]} />
+                            {!cliente.contribuyente && <p className="text-caption text-content-3 mt-1">Sin NRC en su ficha: sólo Factura.</p>}
+                        </div>
+                    )}
 
                     <div className="flex flex-col gap-2">
                         <PortalInput ref={buscador} icon={Search} name="buscar-producto" value={buscar}

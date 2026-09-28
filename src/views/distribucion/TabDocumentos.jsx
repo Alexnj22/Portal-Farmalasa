@@ -11,6 +11,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import { fechaNumerica, hoySV, sumarDias } from '../../utils/fecha';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
+import { useToastStore } from '../../store/toastStore';
 import { fetchDocumentos } from '../../data/distribucion';
 import DocumentoModal from './DocumentoModal';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
@@ -32,6 +33,7 @@ const FILTRO_ESTADO = [
 const PENDIENTE = new Set(['sin_firmar', 'firmado', 'contingencia']);
 
 export default function TabDocumentos({ puedeVender, buscar }) {
+    const showToast = useToastStore(s => s.showToast);
     const [docs, setDocs] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState('');
@@ -154,7 +156,12 @@ export default function TabDocumentos({ puedeVender, buscar }) {
 
             {abierto && (
                 <DocumentoModal id={abierto} puedeVender={puedeVender} onClose={() => setAbierto(null)}
-                    onCambio={cargar} />
+                    onCambio={cargar}
+                    onCorregirPedido={() => {
+                        setAbierto(null);
+                        cargar();
+                        showToast('El pedido volvió a «Por facturar»', 'Corrígelo y factúralo de nuevo desde la pestaña Pedidos.');
+                    }} />
             )}
         </div>
     );

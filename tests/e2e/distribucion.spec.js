@@ -26,24 +26,51 @@ test('las cinco pestañas abren sin romper', async ({ page }) => {
     expect(errores).toEqual([]);
 });
 
-test('tomar un pedido a una tienda y facturarlo', async ({ page }) => {
+test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({ page }) => {
     await entrar(page);
     await page.goto('/distribucion?tab=pedidos');
-    await page.getByRole('button', { name: /nuevo pedido/i }).first().click();
+    await page.getByRole('button', { name: /nueva venta/i }).first().click();
     const modal = page.getByRole('dialog');
-    await expect(modal.getByText('Nuevo pedido')).toBeVisible();
+    await expect(modal.getByText('Nueva venta')).toBeVisible();
 
     await modal.getByText('Elegir cliente…').click();
     await page.getByText('TIENDA LA ESQUINA', { exact: true }).last().click();
     await expect(modal.getByText(/Sólo venta libre/)).toBeVisible();
 
-    await modal.getByText('Producto…').first().click();
-    await page.locator('[role="option"]').first().click();
-    await modal.locator('input[name="cantidad-0"]').fill('6');
-    await page.screenshot({ path: `${SALIDA}/pedido-lleno.png`, fullPage: true });
+    // Buscar escribiendo y agregar con un toque; el segundo toque suma uno.
+    const buscar = modal.getByLabel('Buscar producto');
+    await buscar.fill('a');
+    const primero = modal.getByRole('option').first();
+    await expect(primero).toBeVisible();
+    await primero.click();
+    await buscar.fill('a');
+    await modal.getByRole('option').first().click();
+    await modal.getByRole('button', { name: 'Uno más' }).first().click();
+    await expect(modal.locator('input[name^="cantidad-"]').first()).toHaveValue('3');
+    // Sin ticketera, «imprimir» abriría el diálogo del navegador: acá se apaga.
+    await modal.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    await page.screenshot({ path: `${SALIDA}/venta-lista.png`, fullPage: true });
 
-    await modal.getByRole('button', { name: /guardar y facturar/i }).click();
-    await expect(modal).toHaveCount(0, { timeout: 30_000 });
-    await expect(page.getByText(/Factura|Pedido guardado/).first()).toBeVisible({ timeout: 10_000 });
-    await page.screenshot({ path: `${SALIDA}/pedido-facturado.png`, fullPage: true });
+    await modal.getByRole('button', { name: /^Facturar$/ }).click();
+    const doc = page.getByRole('dialog', { name: 'Documento' });
+    await expect(doc).toBeVisible({ timeout: 30_000 });
+    await expect(doc.frameLocator('iframe[title="Vista previa del ticket"]').getByText('FACTURA').first()).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/ticket.png`, fullPage: true });
+
+    await doc.getByText('PDF', { exact: true }).click();
+    await expect(doc.locator('iframe[title="Documento en PDF"]')).toBeVisible({ timeout: 20_000 });
+    await expect(doc.getByRole('button', { name: /Descargar PDF/ })).toBeEnabled();
+    // El visor de PDF no existe en el navegador sin pantalla: se baja el archivo
+    // y se guarda para mirarlo (y para convertirlo a imagen si hace falta).
+    const [descarga] = await Promise.all([
+        page.waitForEvent('download'),
+        doc.getByRole('button', { name: /Descargar PDF/ }).click(),
+    ]);
+    expect(descarga.suggestedFilename()).toMatch(/^FACTURA-\d{6}-[0-9A-F-]{36}\.pdf$/);
+    await descarga.saveAs(`${SALIDA}/documento.pdf`);
+
+    // Corregir: el documento nunca llegó a Hacienda, se retira y el pedido vuelve a la venta.
+    await doc.getByRole('button', { name: 'Corregir' }).click();
+    await expect(page.getByRole('dialog').getByText(/Corregir pedido/)).toBeVisible({ timeout: 20_000 });
+    await page.screenshot({ path: `${SALIDA}/corregir.png`, fullPage: true });
 });

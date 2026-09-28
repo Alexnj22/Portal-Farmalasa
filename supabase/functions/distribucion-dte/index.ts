@@ -3,6 +3,7 @@
 // Acciones (POST JSON, con la sesión del usuario — verify_jwt ON):
 //   { accion: "facturar",   pedido_id }  arma, firma, guarda y transmite
 //   { accion: "transmitir", dte_id }     reintenta uno que quedó sin firmar o sin enviar
+//   { accion: "descartar",  dte_id }     retira uno que Hacienda NO tiene, para corregir el pedido
 //
 // ── Por qué el DTE lo arma el SERVIDOR ─────────────────────────────────────
 // El navegador sólo pide «factura este pedido». Todo lo demás —el tipo de
@@ -29,7 +30,7 @@ import {
 import { TIPO_DTE, VERSION, type Ambiente, type TipoDte } from "../_shared/dte/catalogos.ts";
 import { claveCoincide, firmarDte, importarLlavePrivada, leerCertificadoMH } from "../_shared/dte/firma.ts";
 import {
-  autenticar, ErrorHacienda, tokenVigente, transmitirConReintentos,
+  autenticar, consultar, ErrorHacienda, tokenVigente, transmitirConReintentos,
   type RespuestaRecepcion, type Token,
 } from "../_shared/dte/hacienda.ts";
 
@@ -181,6 +182,52 @@ async function transmitirDte(admin: Admin, dteId: number) {
   return { estado: cambios.estado, sello: cambios.sello_recibido, mensaje: r.descripcionMsg, observaciones: r.observaciones };
 }
 
+// ── Descartar un documento que nunca llegó a Hacienda ───────────────────────
+//
+// Corregir un pedido ya facturado sólo se puede si el documento NO existe
+// para Hacienda. Si alguna vez se intentó transmitir, se le PREGUNTA antes:
+// una respuesta perdida puede esconder un documento que sí entró, y descartar
+// eso sería perder una venta sellada. Con sello, el camino es invalidarlo.
+async function descartar(admin: Admin, dteId: number) {
+  const { data: dte, error } = await admin.from("dist_dte")
+    .select("id, emisor_id, ambiente, tipo, codigo_generacion, json, estado, pedido_id").eq("id", dteId).single();
+  if (error) throw new Error(`leer DTE: ${error.message}`);
+  if (dte.estado === "descartado") return { estado: "descartado" };
+  if (dte.estado === "sellado" || dte.estado === "invalidado") {
+    throw new ErrorUsuario("Este documento ya tiene sello de Hacienda: no se descarta, se invalida.");
+  }
+  if (dte.estado === "rechazado") {
+    return { estado: "rechazado", aviso: "Hacienda lo rechazó: el pedido ya quedó libre para corregirlo y facturarlo de nuevo." };
+  }
+  const { count, error: eInt } = await admin.from("dist_dte_intentos")
+    .select("id", { count: "exact", head: true }).eq("dte_id", dteId).eq("operacion", "transmitir");
+  if (eInt) throw new Error(`leer intentos: ${eInt.message}`);
+  if ((count ?? 0) > 0) {
+    const ambiente = dte.ambiente as Ambiente;
+    const token = await tokenHacienda(admin, dte.emisor_id, ambiente);
+    if (!token) throw new ErrorUsuario("Se intentó enviar y no se puede confirmar con Hacienda que no lo tenga: faltan las credenciales.");
+    const ya = await consultar(ambiente, token, {
+      nitEmisor: (dte.json as any).emisor.nit, tipoDte: dte.tipo as TipoDte, codigoGeneracion: dte.codigo_generacion,
+    });
+    await registrarIntento(admin, dteId, "consultar", ya?.http ?? 404, ya?.cruda ?? null, null);
+    if (ya?.selloRecibido) {
+      const { error: eS } = await admin.from("dist_dte").update({
+        estado: "sellado", sello_recibido: ya.selloRecibido, fh_procesamiento: ya.fhProcesamiento,
+      }).eq("id", dteId);
+      if (eS) throw new Error(`guardar sello: ${eS.message}`);
+      throw new ErrorUsuario("Hacienda SÍ tiene este documento: quedó sellado. Para corregirlo hay que invalidarlo.");
+    }
+  }
+  const { error: eD } = await admin.from("dist_dte").update({ estado: "descartado" }).eq("id", dteId).in("estado", ["sin_firmar", "firmado", "contingencia"]);
+  if (eD) throw new Error(`descartar: ${eD.message}`);
+  if (dte.pedido_id) {
+    const { error: eP } = await admin.from("dist_pedidos")
+      .update({ estado: "confirmado", dte_id: null }).eq("id", dte.pedido_id).eq("dte_id", dteId);
+    if (eP) throw new Error(`liberar el pedido: ${eP.message}`);
+  }
+  return { estado: "descartado", aviso: "Documento retirado. El pedido volvió a «Por facturar» para corregirlo." };
+}
+
 // ── Facturar un pedido ──────────────────────────────────────────────────────
 
 async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
@@ -287,6 +334,9 @@ Deno.serve(async (req) => {
   try {
     if (cuerpo?.accion === "facturar" && Number.isInteger(cuerpo.pedido_id)) {
       return json(req, 200, await facturar(admin, cuerpo.pedido_id, empleado.id));
+    }
+    if (cuerpo?.accion === "descartar" && Number.isInteger(cuerpo.dte_id)) {
+      return json(req, 200, { dte_id: cuerpo.dte_id, ...(await descartar(admin, cuerpo.dte_id)) });
     }
     if (cuerpo?.accion === "transmitir" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, { dte_id: cuerpo.dte_id, ...(await transmitirDte(admin, cuerpo.dte_id)) });

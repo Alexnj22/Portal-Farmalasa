@@ -11,11 +11,13 @@ import { useToastStore } from '../../store/toastStore';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
+import { mensajeAmigable } from '../../utils/errorMessages';
 import { fechaNumerica, hoySV, sumarDias } from '../../utils/fecha';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { fetchPedidos, fetchClientes, fetchCatalogo } from '../../data/distribucion';
-import NuevoPedidoModal from './NuevoPedidoModal';
+import { fetchPedidos, fetchClientes, fetchCatalogo, fetchItemsDePedido } from '../../data/distribucion';
+import VentaModal from './VentaModal';
+import DocumentoModal from './DocumentoModal';
 import PedidoModal from './PedidoModal';
 import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, rotuloTipoCliente } from './comun';
 
@@ -48,6 +50,8 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
     const [estado, setEstado] = useState('');
     const [nuevo, setNuevo] = useState(false);
     const [abierto, setAbierto] = useState(null);
+    const [corrigiendo, setCorrigiendo] = useState(null);   // { pedido, items }
+    const [documento, setDocumento] = useState(null);       // { id, imprimir }
     const pedidoRef = useRef(0);
 
     const cargar = useCallback(async () => {
@@ -84,16 +88,26 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
         rechazados: pedidos.filter(p => p.dist_dte?.estado === 'rechazado').length,
     }), [pedidos, hoy]);
 
-    const alCrear = ({ pedidoId, factura, errorFactura }) => {
+    const alTerminar = ({ pedidoId, factura, errorFactura, imprimir, corregido }) => {
         setNuevo(false);
-        useStaff.getState().appendAuditLog('DISTRIBUCION_PEDIDO_CREADO', String(pedidoId), { facturado: !!factura });
+        setCorrigiendo(null);
+        useStaff.getState().appendAuditLog(corregido ? 'DISTRIBUCION_PEDIDO_CORREGIDO' : 'DISTRIBUCION_PEDIDO_CREADO',
+            String(pedidoId), { facturado: !!factura });
         if (errorFactura) showToast('Pedido guardado sin facturar', errorFactura, 'warning');
-        else if (factura) showToast(
-            `${TIPO_DOCUMENTO[factura.tipo]?.largo ?? 'Documento'} ${ESTADO_DOCUMENTO[factura.estado]?.label.toLowerCase() ?? ''}`,
-            factura.aviso ?? `Número de control ${factura.numero_control}.`,
-            factura.estado === 'sellado' ? 'success' : 'warning');
-        else showToast('Pedido guardado', 'Queda por facturar.');
+        else if (!factura) showToast(corregido ? 'Pedido corregido' : 'Pedido guardado', 'Queda por facturar.');
+        // Facturado: se abre el documento, con su ticket y su PDF a la vista, y
+        // si se pidió, el ticket sale solo.
+        if (factura?.dte_id) setDocumento({ id: factura.dte_id, imprimir });
         cargar();
+    };
+
+    const abrirCorreccion = async (p) => {
+        try {
+            setCorrigiendo({ pedido: p, items: await fetchItemsDePedido(p.id) });
+            setAbierto(null);
+        } catch (e) {
+            showToast('No se pudo abrir el pedido', mensajeAmigable(e), 'error');
+        }
     };
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
@@ -101,7 +115,7 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
     const pagina = filtrados.slice((page - 1) * pageSize, page * pageSize);
 
     const acciones = puedeVender && emisor
-        ? [{ key: 'nuevo', icon: Plus, label: 'Nuevo pedido', variant: 'primary', onClick: () => setNuevo(true) }]
+        ? [{ key: 'nuevo', icon: Plus, label: 'Nueva venta', variant: 'primary', onClick: () => setNuevo(true) }]
         : [];
 
     return (
@@ -137,7 +151,7 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
                 minWidth="320px"
                 empty={buscar || estado
                     ? { icon: Search, message: 'Sin resultados', subtext: 'Ningún pedido coincide con la búsqueda o el filtro.' }
-                    : { icon: ClipboardList, message: 'Sin pedidos', subtext: puedeVender ? 'Toma el primero con «Nuevo pedido».' : undefined }}
+                    : { icon: ClipboardList, message: 'Sin pedidos', subtext: puedeVender ? 'Haz la primera con «Nueva venta».' : undefined }}
             >
                 {pagina.map((p, i) => {
                     const est = ESTADO_PEDIDO[p.estado] ?? ESTADO_PEDIDO.confirmado;
@@ -186,11 +200,27 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
                     page={page} totalPages={totalPages} onPageChange={setPage} total={filtrados.length} unit="pedidos" />
             )}
 
-            <NuevoPedidoModal open={nuevo} onClose={() => setNuevo(false)} emisor={emisor}
-                clientes={clientes} catalogo={catalogo} onCreado={alCrear} />
+            <VentaModal open={nuevo} onClose={() => setNuevo(false)} emisor={emisor}
+                clientes={clientes} catalogo={catalogo} onListo={alTerminar} />
+            {corrigiendo && (
+                <VentaModal open onClose={() => setCorrigiendo(null)} emisor={emisor} clientes={clientes} catalogo={catalogo}
+                    pedido={corrigiendo.pedido} itemsDelPedido={corrigiendo.items} onListo={alTerminar} />
+            )}
             {abierto && (
                 <PedidoModal pedido={abierto} puedeVender={puedeVender} onClose={() => setAbierto(null)}
+                    onCorregir={() => abrirCorreccion(abierto)}
+                    onVerDocumento={(id) => { setAbierto(null); setDocumento({ id, imprimir: false }); }}
                     onCambio={() => { setAbierto(null); cargar(); }} />
+            )}
+            {documento && (
+                <DocumentoModal id={documento.id} imprimirAlAbrir={documento.imprimir} puedeVender={puedeVender}
+                    onClose={() => setDocumento(null)} onCambio={cargar}
+                    onCorregirPedido={async (pedidoId) => {
+                        setDocumento(null);
+                        await cargar();
+                        const p = (await fetchPedidos({ desde: sumarDias(hoySV(), -VENTANA_DIAS) })).find(x => x.id === pedidoId);
+                        if (p) abrirCorreccion(p);
+                    }} />
             )}
         </div>
     );

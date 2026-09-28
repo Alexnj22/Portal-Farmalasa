@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1079.0 — Distribución: venta ágil, ticket de venta, PDF del documento y corregir antes del sello
+
+- **Venta ágil** (`VentaModal`, reemplaza al formulario de pedido): se busca
+  el producto escribiendo nombre o código de barras, un toque lo agrega (Enter
+  agrega el primero), − y + ajustan, y el total queda fijo en el pie junto a
+  «Facturar e imprimir». La misma pantalla corrige un pedido por facturar.
+- **Ticket de venta** por `imprimirDocumento` (ticketera de la computadora o
+  diálogo del navegador), con QR a la consulta pública de Hacienda. Sale solo al
+  facturar si está marcado.
+- **PDF del documento** (representación gráfica del DTE, carta): emisor,
+  receptor, los tres números de identidad, QR, detalle, resumen, valor en
+  letras y la marca «SIN VALIDEZ FISCAL» en pruebas. pdfmake por `import()`.
+- Ticket y PDF salen del **JSON firmado**, nunca del pedido ni de la ficha: el
+  papel no puede contradecir al documento (8 pruebas nuevas).
+- **Corregir antes del sello**: la acción `descartar` de `distribucion-dte`
+  retira un documento que Hacienda no tiene (si alguna vez se intentó enviar,
+  le pregunta antes) y devuelve el pedido a «Por facturar». Estado nuevo
+  `descartado` en `dist_dte`. Con sello, el camino sigue siendo invalidar.
+
 ## v2.1078.1 — Pruebas: las funciones aceptan varios dominios del portal
 
 `PORTAL_ORIGIN` de las edge functions admite varios dominios separados por coma.

@@ -621,6 +621,7 @@ export const AREAS = [
         archivos: [
             'src/views/DistribucionView.jsx', 'src/views/distribucion/',
             'src/data/distribucion.js', 'src/data/geoCodigosMH.js', 'src/data/actividadesMH.js',
+            'src/utils/distribucionDocumento.js', 'tests/unit/distribucionDocumento.test.js',
             'tests/e2e/distribucion.spec.js', 'tests/e2e/distribucion-movil.spec.js', 'tests/e2e/distribucionEntrar.js',
             'supabase/functions/_shared/dte/',
             'supabase/functions/distribucion-dte/',

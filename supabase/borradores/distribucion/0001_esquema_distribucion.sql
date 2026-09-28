@@ -149,7 +149,9 @@ CREATE TABLE public.dist_dte (
     -- sellado: Hacienda lo aceptó · rechazado: Hacienda lo rechazó (se corrige y se emite otro)
     -- contingencia: firmado sin poder transmitir, va en el próximo evento
     -- invalidado: anulado en Hacienda
-    estado              text NOT NULL CHECK (estado IN ('sin_firmar','firmado','sellado','rechazado','contingencia','invalidado')),
+    -- descartado: nunca llegó a Hacienda y se retiró para corregir el pedido
+    --             (la función lo confirma con Hacienda antes de permitirlo)
+    estado              text NOT NULL CHECK (estado IN ('sin_firmar','firmado','sellado','rechazado','contingencia','invalidado','descartado')),
     sello_recibido      text CHECK (sello_recibido IS NULL OR length(sello_recibido) = 40),
     fh_procesamiento    text,
     codigo_msg          text,
@@ -172,7 +174,7 @@ CREATE UNIQUE INDEX dist_dte_numero_control_anio ON public.dist_dte (emisor_id, 
 -- tiempo: entra uno y el otro choca acá (la edge function lo traduce a «ya se
 -- está facturando»). Un rechazado o invalidado no cuenta: se re-emite.
 CREATE UNIQUE INDEX dist_dte_un_documento_por_pedido ON public.dist_dte (pedido_id)
-    WHERE tipo IN ('01','03') AND estado NOT IN ('rechazado','invalidado');
+    WHERE tipo IN ('01','03') AND estado NOT IN ('rechazado','invalidado','descartado');
 CREATE INDEX dist_dte_estado ON public.dist_dte (estado) WHERE estado IN ('sin_firmar','firmado','contingencia');
 CREATE INDEX dist_dte_cliente ON public.dist_dte (cliente_id);
 CREATE INDEX dist_dte_pedido ON public.dist_dte (pedido_id);

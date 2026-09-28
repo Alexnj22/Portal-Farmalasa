@@ -78,12 +78,13 @@ export async function guardarCliente(cliente) {
 export async function fetchCatalogo() {
     const rows = await fetchAllRows(() => supabase
         .from('dist_catalogo')
-        .select('emisor_id, product_id, precio_sin_iva, venta_libre, activo, products(nombre, es_antibiotico, requiere_receta, regulado)')
+        .select('emisor_id, product_id, precio_sin_iva, venta_libre, activo, products(nombre, codigo_barras, es_antibiotico, requiere_receta, regulado)')
         .order('product_id'));
     if (rows === null) throw new Error('No se pudo cargar el catálogo.');
     return rows.map(r => ({
         ...r,
         nombre: r.products?.nombre ?? `Producto ${r.product_id}`,
+        codigo_barras: r.products?.codigo_barras ?? null,
         // Lo que la base NO dejaría vender a una tienda aunque se marque venta libre.
         controlado: !!(r.products?.es_antibiotico || r.products?.requiere_receta || r.products?.regulado),
     }));
@@ -164,6 +165,30 @@ export async function crearPedido({ emisorId, clienteId, condicion, plazoDias, f
     return pedidoId;
 }
 
+/**
+ * Corrige un pedido que todavía no se facturó: sus datos y sus renglones.
+ * Los renglones que ya no están se borran y el resto se reescribe; el precio
+ * lo vuelve a poner el trigger desde el catálogo.
+ */
+export async function actualizarPedido(pedidoId, { condicion, plazoDias, formaPago, observaciones, renglones }) {
+    const { error } = await supabase.from('dist_pedidos').update({
+        condicion, plazo_dias: condicion === 2 ? plazoDias : null, forma_pago: formaPago,
+        observaciones: observaciones?.trim() || null,
+    }).eq('id', pedidoId).eq('estado', 'confirmado');
+    if (error) throw error;
+    const ids = renglones.map(r => r.product_id);
+    const { error: eBorrar } = await supabase.from('dist_pedido_items').delete()
+        .eq('pedido_id', pedidoId).not('product_id', 'in', `(${ids.join(',') || 0})`);
+    if (eBorrar) throw eBorrar;
+    const { error: eIt } = await supabase.from('dist_pedido_items').upsert(
+        renglones.map(r => ({
+            pedido_id: pedidoId, product_id: r.product_id, cantidad: r.cantidad,
+            precio_sin_iva: 0, descuento: r.descuento || 0, descripcion: r.descripcion || '',
+        })),
+        { onConflict: 'pedido_id,product_id' });
+    if (eIt) throw eIt;
+}
+
 export async function anularPedido(pedidoId, motivo) {
     const { error } = await supabase.from('dist_pedidos')
         .update({ estado: 'anulado', anulado_motivo: motivo?.trim() || null })
@@ -204,3 +229,4 @@ async function invocar(body) {
 
 export const facturarPedido = (pedidoId) => invocar({ accion: 'facturar', pedido_id: pedidoId });
 export const reintentarDocumento = (dteId) => invocar({ accion: 'transmitir', dte_id: dteId });
+export const descartarDocumento = (dteId) => invocar({ accion: 'descartar', dte_id: dteId });

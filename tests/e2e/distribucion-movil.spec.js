@@ -22,8 +22,8 @@ test('pestañas y formulario de pedido en el teléfono', async ({ page }) => {
     }
     await page.goto('/distribucion?tab=pedidos');
     await page.waitForTimeout(1500);
-    await page.getByRole('button', { name: /nuevo pedido/i }).first().click();
-    await expect(page.getByRole('dialog').getByText('Nuevo pedido')).toBeVisible();
-    await page.screenshot({ path: `${SALIDA}/nuevo-pedido.png` });
+    await page.getByRole('button', { name: /nueva venta/i }).first().click();
+    await expect(page.getByRole('dialog').getByText('Nueva venta')).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/nueva-venta.png` });
     expect(errores).toEqual([]);
 });

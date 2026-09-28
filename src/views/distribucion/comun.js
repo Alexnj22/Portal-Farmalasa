@@ -21,6 +21,7 @@ export const ESTADO_DOCUMENTO = {
     sellado:      { variant: 'success', label: 'Sellado',         ayuda: 'Hacienda lo recibió y lo selló.' },
     rechazado:    { variant: 'danger',  label: 'Rechazado',       ayuda: 'Hacienda no lo aceptó. Se corrige y se emite uno nuevo.' },
     invalidado:   { variant: 'neutral', label: 'Invalidado',      ayuda: 'Anulado ante Hacienda.' },
+    descartado:   { variant: 'neutral', label: 'Descartado',      ayuda: 'Nunca llegó a Hacienda y se retiró para corregir el pedido.' },
 };
 
 export const ESTADO_PEDIDO = {

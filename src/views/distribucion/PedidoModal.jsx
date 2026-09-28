@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Receipt, Ban, Loader2, RefreshCw } from 'lucide-react';
+import { ClipboardList, Receipt, Ban, Loader2, RefreshCw, Pencil, FileText } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -19,7 +19,7 @@ import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, FORMA_PAGO, rotuloTipo
 // El detalle de un pedido y lo que se puede hacer con él. Facturar lo hace el
 // servidor; acá se pide y se muestra lo que contestó, incluido «quedó firmado
 // y sin enviar», que NO es lo mismo que emitido.
-export default function PedidoModal({ pedido, puedeVender, onClose, onCambio }) {
+export default function PedidoModal({ pedido, puedeVender, onClose, onCambio, onCorregir, onVerDocumento }) {
     const showToast = useToastStore(s => s.showToast);
     const [items, setItems] = useState(null);
     const [error, setError] = useState('');
@@ -53,7 +53,8 @@ export default function PedidoModal({ pedido, puedeVender, onClose, onCambio }) 
             } else {
                 showToast('Listo', '');
             }
-            onCambio?.();
+            if (clave === 'facturar' && r?.dte_id) onVerDocumento?.(r.dte_id);
+            else onCambio?.();
         } catch (e) {
             setError(mensajeDeDistribucion(e));
         } finally {
@@ -140,6 +141,14 @@ export default function PedidoModal({ pedido, puedeVender, onClose, onCambio }) 
                     <Button variant="ghost" onClick={onClose} disabled={!!ocupado}>Cerrar</Button>
                     {puedeFacturar && !anulando && (
                         <Button variant="secondary" icon={Ban} disabled={!!ocupado} onClick={() => setAnulando(true)}>Anular</Button>
+                    )}
+                    {puedeFacturar && !anulando && (
+                        <Button variant="secondary" icon={Pencil} disabled={!!ocupado} onClick={onCorregir}>Corregir</Button>
+                    )}
+                    {pedido.dte_id && (
+                        <Button variant="secondary" icon={FileText} disabled={!!ocupado} onClick={() => onVerDocumento?.(pedido.dte_id)}>
+                            Ver ticket y PDF
+                        </Button>
                     )}
                     {anulando && (
                         <Button variant="secondary" tone="danger" icon={ocupado === 'anular' ? Loader2 : Ban}

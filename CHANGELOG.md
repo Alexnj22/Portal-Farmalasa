@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1075.36 — Cortes: la pantalla y la base se comparan en cada gate
+
+Sin cambios en el portal. `npm run gate:cortes` gana la sección F: enfrenta la
+diferencia de cada corte según la pantalla (`diferenciaDelCorte`) y según la
+base (`corte_diferencia`, la que decide qué se cobra). Antes eso lo hacía un
+script que había que acordarse de correr. Hoy: iguales en los 1,162 cortes, y
+una regresión fabricada de un centavo la caza. Vigila además que ningún corte
+sin conteo quede confirmado (hoy: los 7 que hay están descartados).
+
+Y el plan del núcleo anota las decisiones del usuario del 2026-09-28: cinco
+reglas se quedan en JavaScript compartido, los avisos de pedido pasan a la
+base, y la app del teléfono cubre todas las pantallas, no un piloto.
+
 ## v2.1075.35 — Plan del núcleo: se recupera el texto que la edición anterior cortó
 
 Sin cambios en el portal. La edición de v2.1075.34 dejó el plan del núcleo en

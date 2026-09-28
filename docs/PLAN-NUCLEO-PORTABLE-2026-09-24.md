@@ -343,8 +343,18 @@ justamente lo que rompe en silencio (un import que apunta al archivo viejo, un
 ## Lo que queda por decidir (del usuario)
 
 1. **D3:** ¿la bitácora queda en el cliente dentro de `src/data`, o se lleva a
-   la base?
-2. **D2:** para cada una de las seis, ¿se queda como JavaScript compartido o se
-   pasa a una función de la base?
-3. **F8:** ¿qué flujo es el piloto? Para decidirlo con datos se puede medir qué
-   vistas abren los cargos de sala desde el teléfono.
+   la base? *(pendiente: el usuario pidió la explicación, 2026-09-28)*
+
+### Decidido (2026-09-28)
+
+- **D2:** cinco de las seis se quedan como JavaScript compartido en el núcleo
+  (diagnóstico de cortes, reloj del kiosco, quincena, libro de IVA, cajas
+  especiales). El diagnóstico de cortes tiene gemelo en la base
+  (`corte_diferencia`) y desde ese día `npm run gate:cortes` los enfrenta en
+  cada corrida (sección F; iguales en 1,162 cortes, y una regresión fabricada
+  de un centavo la caza). **Los avisos de pedido a las salas pasan a la base**,
+  donde ninguna app puede olvidarlos.
+- **F8:** no hay piloto de un solo flujo. Palabras del usuario: *«abrirán todas.
+  Así que debe estar toda la info. No sé si necesariamente igual, pero debe
+  estar todo.»* La app del teléfono tiene que cubrir todas las pantallas; la
+  forma puede ser otra, el contenido no.

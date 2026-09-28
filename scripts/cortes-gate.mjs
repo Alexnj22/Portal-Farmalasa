@@ -48,6 +48,17 @@
  *      creencia: si mañana entra un duplicado por un camino que nadie previó,
  *      esto lo dice.
  *
+ *   F. Los dos jueces dicen lo mismo. `diferenciaDelCorte` (JavaScript, lo que
+ *      se VE) contra `corte_diferencia` (la base, lo que se COBRA), sobre todos
+ *      los cortes. Lo hacía `scripts/comparar-diferencia-de-corte.mjs`, pero a
+ *      mano: su encabezado decía «cambiar cualquiera de los dos lados exige
+ *      volver a correr esto», y una regla que depende de acordarse se olvida.
+ *      Desde el 2026-09-28 (F4 del plan del núcleo: el juez de cortes queda en
+ *      JavaScript compartido con el teléfono) corre acá. Y se vigila además que
+ *      ningún corte SIN CONTEO esté confirmado: ahí los dos jueces no se
+ *      comparan —JavaScript dice «no se contó», la base daría un faltante del
+ *      tamaño de la caja— y `avisar_cierre_del_dia` lee el último confirmado.
+ *
  * ── Dos decisiones de medición, las dos costaron ────────────────────────────
  *
  *   · Los movimientos con `desaparecido_at` NO cuentan. El origen no anula:
@@ -65,6 +76,7 @@
  * historia —el del 2-sep— y en ninguno más; B cierra 493 de 493. O sea que el
  * cero no es un cero de instrumento apagado: es el número que hay.
  */
+import { execFileSync } from 'node:child_process';
 import { abrirCanal } from './lib/canal-supabase.mjs';
 
 const CENTAVO = 0.005;
@@ -199,6 +211,14 @@ SELECT b.name AS sala, z.fecha::text AS fecha, z.hora::text AS hora,
  * Sólo mira los VIGENTES: un duplicado que ya se anuló está resuelto, y volver
  * a nombrarlo sería pedir que se arregle dos veces.
  */
+const SQL_SIN_CONTEO_CONFIRMADO = `
+SELECT c.id, b.name AS sala, c.fecha, c.hora
+  FROM public.cortes_caja c JOIN public.branches b ON b.id = c.branch_id
+ WHERE c.tipo = 'C' AND c.estado = 'CONFIRMADO'
+   AND coalesce(c.total_declarado, 0) = 0 AND coalesce(c.diferencia_erp, 0) = 0
+   AND coalesce(c.tk_total_caja, 0) > 0
+ ORDER BY c.fecha DESC`;
+
 const SQL_DUPLICADOS = `
 WITH vivos AS (
   SELECT m.id, m.branch_id, m.fecha, m.tipo, m.tipo_codigo, m.monto, m.concepto,
@@ -361,8 +381,36 @@ function main() {
     console.log(`  duplicados:  ${dupNuevos.length === 0
       ? `ninguno vigente${porCaso.size ? ` (${porCaso.size} histórico(s) declarado(s))` : ''}`
       : `${dupNuevos.length} movimiento(s) anotados dos veces`}`);
+
+    const sinConteo = canal.consultar(SQL_SIN_CONTEO_CONFIRMADO);
+    for (const r of sinConteo) {
+      fallas.push({
+        clave: `sin-conteo-confirmado:${r.id}`,
+        detalle: `${r.sala} ${r.fecha} ${String(r.hora).slice(0, 5)}: confirmado sin haberse contado`,
+        porque: 'Sin conteo, la base calcula un faltante del tamaño de toda la caja, y el aviso '
+              + 'del cierre del día lee el último corte confirmado.',
+      });
+    }
   } finally {
     canal.cerrar();
+  }
+
+  // F — los dos jueces. Con vite-node porque el módulo de JavaScript importa sin
+  // extensión (lo resuelve Vite, no Node).
+  try {
+    const salida = execFileSync('npx', ['vite-node', 'scripts/comparar-diferencia-de-corte.mjs'],
+      { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+    const m = salida.match(/comparados:\s*(\d+)/);
+    console.log(`  jueces:      JavaScript y la base iguales en ${m ? m[1] : '?'} corte(s)`);
+  } catch (e) {
+    const texto = String(e.stdout || '') + String(e.stderr || '');
+    fallas.push({
+      clave: 'jueces-distintos',
+      detalle: (texto.match(/distintas:\s*\d+/) || ['no se pudo comparar'])[0],
+      porque: 'La pantalla (`diferenciaDelCorte`) y la base (`corte_diferencia`, la que cobra) '
+            + 'dan números distintos sobre el mismo corte. Correr '
+            + '`npx vite-node scripts/comparar-diferencia-de-corte.mjs` para ver cuáles.',
+    });
   }
 
   if (fallas.length === 0) {

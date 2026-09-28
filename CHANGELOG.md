@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.11 — Puntos: respetar la salida del programa y vigilar que el motor acumule
+
+Recomendaciones aceptadas por el usuario, las dos para después del arranque.
+
+- **La salida del programa se respeta.** «Mis puntos» deja salir del programa
+  (`acepta_programa_puntos = false`), pero la regla de acumulación no lo miraba:
+  esa persona seguía sumando, y le llegaba el cumpleaños. Hoy nadie salió; el
+  hueco era latente. Probado: la venta de una ficha que sale deja de acumular.
+- **Vigía del motor** (`puntos_vigilar_motor`, cron `puntos-vigilar-motor` cada
+  15 min): si en horario de ventas (8:00–21:00) hubo 3 o más ventas con cliente
+  en la última hora y ninguna acumuló, avisa a Gerencia y Administración, una
+  vez por día. Un motor detenido no da error visible: lo primero en notarlo
+  sería el cliente, días después. No hace nada mientras el programa siga en el
+  sistema anterior. Probado en una transacción que se deshace: detectó 57
+  ventas sin acumular, avisó a dos personas y no repitió el aviso.
+
 ## v2.1084.10 — MIN·MAX: «0 en todas las salas» con permiso propio y el porqué obligatorio
 
 La jefa de Compras y Logística no podía retirar un producto de todas las salas:

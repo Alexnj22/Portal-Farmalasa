@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1077.1 — Metas: meta general del mes arriba de la confirmación
+
+Pedido del usuario: una «meta general» arriba, con el botón de confirmar todas ahí mismo.
+
+- Tarjeta de meta general por mes: la suma de las salas (la misma que muestra
+  cada tarjeta, ajustes incluidos), con cuánto sube o baja frente a la meta
+  general del mes anterior.
+- Barra partida por sala, cada tramo del ancho de su meta, con leyenda de
+  nombre, monto y porcentaje del total. El color sigue a la sala, no al filtro.
+- Tres referencias en la misma escala —meta general anterior (con lo vendido),
+  venta del mismo mes del año pasado y venta promedio por mes—, con la raya de
+  la meta general.
+- «Confirmar las N», «Aprobar las N» y «Registrar la autorización» viven ahora
+  en esa tarjeta, y reemplazan el encabezado suelto del grupo.
+
 ## v2.1077.0 — Bitácora: toda escritura anota desde la capa de datos
 
 Cierra D3 del plan del núcleo portable («la mezcla»): la entrada legible de la

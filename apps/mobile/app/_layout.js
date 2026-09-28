@@ -1,7 +1,7 @@
 // La raíz de la app. El `AuthProvider` es EL MISMO del portal
 // (src/context/AuthContext.jsx): la sesión, los permisos, el cierre por
 // inactividad y el candado de módulos se deciden con el mismo código.
-import { Stack } from 'expo-router';
+import { router, Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -11,12 +11,22 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { notificarActividad } from '@plataforma/cicloDeVida';
 import { useTema } from '../tema/tema';
 
-// Lo mismo que hace `App.jsx` del portal al entrar: cargar salas, personal y
-// catálogos al store. Sin esto, las pantallas nativas verían el store vacío.
-function CargaInicial() {
-  const { isAuthenticated } = useAuth();
+// Lo que hace `App.jsx` del portal alrededor de las pantallas:
+//  - al entrar, cargar salas, personal y catálogos al store (`fetchBoot`); sin
+//    esto las pantallas nativas verían el store vacío;
+//  - sin sesión, llevar a la entrada. La web lo hace con su guardia de rutas;
+//    sin esto, «Salir» cerraba la sesión y dejaba un Inicio en blanco, y lo
+//    mismo pasaría cuando la sesión se vence por inactividad.
+function GuardiaDeSesion() {
+  const { isAuthenticated, loading } = useAuth();
   const fetchBoot = useStaffStore((s) => s.fetchBoot);
+  const segmentos = useSegments();
   useEffect(() => { if (isAuthenticated) fetchBoot(); }, [isAuthenticated, fetchBoot]);
+  useEffect(() => {
+    if (loading) return;
+    const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index';
+    if (!isAuthenticated && !enEntrada) router.replace('/entrar');
+  }, [isAuthenticated, loading, segmentos]);
   return null;
 }
 
@@ -28,7 +38,7 @@ export default function Raiz() {
           y el teclado, y lo que mantiene viva la sesión. */}
       <View style={{ flex: 1, backgroundColor: tema.color.fondo }} onTouchStart={notificarActividad}>
         <AuthProvider>
-          <CargaInicial />
+          <GuardiaDeSesion />
           <StatusBar style={tema.nombre === 'solid-dark' ? 'light' : 'dark'} />
           <Stack
             screenOptions={{

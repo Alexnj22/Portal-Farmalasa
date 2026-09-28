@@ -8,7 +8,7 @@
  * las mismas—; sólo cambian los imports.
  */
 import React, { useState, useEffect } from 'react';
-import { KeyRound, Eye, Printer, RefreshCw } from 'lucide-react';
+import { KeyRound, Eye, Printer, RefreshCw, Copy, MessageCircle } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import ElegirSalaDeImpresion from '../../components/personal/ElegirSalaDeImpresion';
@@ -36,7 +36,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
  * farmacia—; para el resto va acompañado del teléfono, y eso es lo que permite
  * que el código sea de siete caracteres y no de una docena.
  */
-export default function CodigoDeAcceso({ customerId, nombre, puedeEditar }) {
+export default function CodigoDeAcceso({ customerId, nombre, telefono, puedeEditar }) {
     // `showToast(titulo, mensaje, tipo)` — así lo expone el store, y así lo usa
     // el resto de este archivo. `addToast` no existe.
     const aviso = (titulo, mensaje, tipo) =>
@@ -157,64 +157,124 @@ export default function CodigoDeAcceso({ customerId, nombre, puedeEditar }) {
         setPreguntando(true);
     });
 
-    const legible = codigo
-        ? `${codigo.slice(0, 3)} - ${codigo.slice(3)}`
-        : null;
+    // ── Copiar y mandar por WhatsApp (rediseño del 2026-09-28) ────────────
+    // Lo práctico en el mostrador no es dictar siete letras: es mandárselas al
+    // teléfono del cliente con el enlace que ya abre su saldo. El enlace lleva
+    // el código adentro (`/mis-puntos?codigo=…`), igual que el QR del papel.
+    // Pedir el código para copiarlo o mandarlo pasa por `verCodigoAcceso`, así
+    // que también queda en la bitácora.
+    const valorParaUsar = async () => codigo ?? (await verCodigoAcceso(customerId));
+
+    const copiar = () => conError('copiar el código')(async () => {
+        const valor = await valorParaUsar();
+        if (!valor) return;
+        setCodigo(valor);
+        await navigator.clipboard.writeText(valor);
+        aviso('Copiado', 'El código está en el portapapeles.', 'success');
+    });
+
+    const telLimpio = String(telefono ?? '').replace(/\D/g, '');
+    const telWhatsapp = telLimpio.length === 8 ? `503${telLimpio}` : telLimpio.length >= 11 ? telLimpio : null;
+    const whatsapp = () => {
+        // La ventana se abre EN el clic, antes de cualquier espera: si se abre
+        // después de un `await`, el navegador la trata como ventana emergente y
+        // la bloquea. Se abre vacía y se le pone la dirección cuando llega el
+        // código.
+        // Sin 'noopener' en el tercer argumento: con él `window.open` devuelve
+        // null y no habría ventana a la que ponerle la dirección. El vínculo
+        // con esta pestaña se corta a mano.
+        const ventana = window.open('', '_blank');
+        if (ventana) ventana.opener = null;
+        conError('preparar el mensaje')(async () => {
+            const valor = await valorParaUsar();
+            if (!valor) { ventana?.close(); return; }
+            setCodigo(valor);
+            const enlace = `${window.location.origin}/mis-puntos?codigo=${valor}`;
+            const texto = `Hola${nombre ? ` ${nombre.split(' ')[0]}` : ''}. Tu código para ver tus puntos es ${valor.slice(0, 3)}-${valor.slice(3)}. Entra aquí: ${enlace}`;
+            const url = `https://wa.me/${telWhatsapp}?text=${encodeURIComponent(texto)}`;
+            // Si el navegador bloqueó la ventana, se avisa en vez de sacar a
+            // la persona del portal.
+            if (ventana) ventana.location.href = url;
+            else aviso('No se abrió WhatsApp', 'El navegador bloqueó la ventana. Permite las ventanas de este sitio e intenta de nuevo.', 'error');
+        });
+    };
+
+    const tiene = !!estado?.tiene;
+    // Las casillas: el código de verdad, o puntos mientras no se pidió verlo.
+    const casillas = (codigo ?? '•••••••').split('');
 
     return (
-        <div data-surface="card" className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-content-2" aria-hidden="true" />
-                <span className="text-caption">Código de acceso</span>
-                {estado?.tiene
-                    ? <Badge size="sm" variant="success">Emitido</Badge>
-                    : <Badge size="sm" variant="neutral">Sin código</Badge>}
+        <div data-surface="card" className="p-4 sm:p-5 flex flex-col gap-4 min-w-0">
+            <div className="flex items-start gap-3 min-w-0">
+                <span className="w-10 h-10 rounded-xl bg-brand/10 text-brand-text flex items-center justify-center shrink-0">
+                    <KeyRound size={18} aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-body-sm font-black text-content">Acceso a Mis puntos</h3>
+                        {tiene
+                            ? <Badge size="sm" variant="success">Activo</Badge>
+                            : <Badge size="sm" variant="neutral">Sin código</Badge>}
+                    </div>
+                    {/* Ya no se distingue la ficha extranjera: el código entra SOLO
+                        en todas — ver `20260903164641_puntos_el_codigo_entra_solo`. */}
+                    <p className="text-caption text-content-3 mt-0.5">
+                        {tiene
+                            ? <>Con este código el cliente ve su saldo en su teléfono, sin otro dato. Emitido el {fechaTexto(estado.emitido_at)}{estado.veces_emitido > 1 ? ` · ${estado.veces_emitido} veces` : ''}.</>
+                            : 'Sirve para que el cliente vea su saldo en su teléfono cuando no tiene su documento a mano.'}
+                    </p>
+                </div>
             </div>
 
-            {/* Ya no se distingue la ficha extranjera: el código entra SOLO en
-                todas. Distinguirla obligaba a explicar dos reglas a quien
-                atiende, y la que sobraba era la del teléfono — ver la migración
-                `20260903164641_puntos_el_codigo_entra_solo`. */}
-            <p className="text-sm text-content-2">
-                El cliente entra a Mis puntos con este código, sin ningún otro dato.
-                Sirve cuando no tiene su documento a mano.
-            </p>
-
-            {legible && (
-                <p className="text-center font-mono text-2xl tracking-[0.2em] py-2">{legible}</p>
-            )}
-
-            {estado?.tiene && !legible && (
-                <p className="text-xs text-content-3">
-                    Emitido el {fechaTexto(estado.emitido_at)}
-                    {estado.veces_emitido > 1 && ` · ${estado.veces_emitido} veces`}
-                </p>
+            {tiene && (
+                <div className="flex items-center justify-center gap-1.5" aria-label={codigo ? `Código ${codigo}` : 'Código oculto'}>
+                    {casillas.map((c, i) => (
+                        <React.Fragment key={i}>
+                            {i === 3 && <span className="w-2 h-0.5 rounded-full bg-content-3 mx-0.5" aria-hidden="true" />}
+                            <span className={`w-9 h-11 sm:w-10 sm:h-12 rounded-btn border border-border-card bg-surface-card-hover
+                                              flex items-center justify-center font-mono font-black text-title
+                                              ${codigo ? 'text-content' : 'text-content-3'}`}>
+                                {c}
+                            </span>
+                        </React.Fragment>
+                    ))}
+                </div>
             )}
 
             <div className="flex flex-wrap gap-2">
-                {estado?.tiene && !legible && (
+                {tiene && !codigo && (
                     <Button size="sm" variant="secondary" icon={Eye} onClick={ver} disabled={ocupado}>
-                        Ver el código
+                        Ver
                     </Button>
                 )}
-                {puedeEditar && (
-                    <Button size="sm" variant={estado?.tiene ? 'ghost' : 'primary'}
-                        icon={estado?.tiene ? RefreshCw : KeyRound}
-                        onClick={emitir} disabled={ocupado}>
-                        {estado?.tiene ? 'Generar uno nuevo' : 'Generar código'}
+                {tiene && (
+                    <Button size="sm" variant="secondary" icon={Copy} onClick={copiar} disabled={ocupado}>
+                        Copiar
                     </Button>
                 )}
-                {estado?.tiene && (
+                {tiene && telWhatsapp && (
+                    <Button size="sm" variant="secondary" icon={MessageCircle} onClick={whatsapp} disabled={ocupado}>
+                        Enviar por WhatsApp
+                    </Button>
+                )}
+                {tiene && (
                     <Button size="sm" variant="secondary" icon={Printer}
                         onClick={alImprimir} disabled={ocupado || cargandoSalas}>
                         Imprimir
                     </Button>
                 )}
+                {puedeEditar && (
+                    <Button size="sm" variant={tiene ? 'ghost' : 'primary'}
+                        icon={tiene ? RefreshCw : KeyRound}
+                        onClick={emitir} disabled={ocupado}>
+                        {tiene ? 'Generar uno nuevo' : 'Generar código'}
+                    </Button>
+                )}
             </div>
 
-            {estado?.tiene && (
-                <p className="text-xs text-content-3">
-                    Ver el código queda registrado. Generar uno nuevo deja el anterior sin efecto.
+            {tiene && (
+                <p className="text-caption text-content-3">
+                    Ver, copiar o enviar el código queda registrado. Generar uno nuevo deja el anterior sin efecto.
                 </p>
             )}
 

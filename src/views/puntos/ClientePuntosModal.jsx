@@ -20,7 +20,7 @@
  * composición y los grupos se derivan acá de los movimientos, así que no pueden
  * contradecir a la lista que se ve debajo.
  */
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import {
     Star, Pencil, TrendingUp, Gift, Undo2, CalendarX, Wrench, History, CalendarClock, IdCard, Phone,
     ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal,
@@ -29,6 +29,10 @@ import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import SearchInput from '../../components/common/SearchInput';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { LoadingState } from '../../components/common/StateViews';
@@ -90,6 +94,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
     const [mostrar, setMostrar] = useState(DE_A);
     const [filtro, setFiltro] = useState('todos');
     const [mesElegido, setMesElegido] = useState(null);
+    const [busqueda, setBusqueda] = useState('');
     const [unidad, setUnidad] = useState('puntos');
     // Sube después de un ajuste: se relee el estado de cuenta entero, así el
     // saldo que se ve es el que la base dice, no una suma hecha acá.
@@ -112,7 +117,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
 
     const cliente = datos?.cliente;
     const cuenta = datos?.cuenta;
-    const salas = datos?.salas ?? {};
+    const salas = useMemo(() => datos?.salas ?? {}, [datos]);
     const sala = (codigo) => (codigo ? salas[codigo] ?? codigo : null);
     const movimientos = useMemo(() => cuenta?.movimientos ?? [], [cuenta]);
     const vencimientos = cuenta?.vencimientos ?? [];
@@ -154,13 +159,26 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
         return lista.slice(0, 18).reverse();
     }, [movimientos, cuenta]);
 
-    const filtrados = useMemo(() => movimientos.filter((m) => {
-        const p = Number(m.puntos) || 0;
-        if (filtro === 'entran' && p <= 0) return false;
-        if (filtro === 'salen' && m.tipo !== 'canje') return false;
-        if (mesElegido && String(m.fecha).slice(0, 7) !== mesElegido) return false;
-        return true;
-    }), [movimientos, filtro, mesElegido]);
+    // El documento y quién, por movimiento (`puntos_panel_cliente.detalle`).
+    // Un canje devuelto comparte los datos de su canje.
+    const detalle = useMemo(() => datos?.detalle ?? {}, [datos]);
+    const infoDe = useCallback((m) => detalle[`${m.tipo === 'canje_devuelto' ? 'canje' : m.tipo}-${m.id}`] ?? {},
+        [detalle]);
+
+    const filtrados = useMemo(() => {
+        const q = busqueda.trim();
+        return movimientos.filter((m) => {
+            const p = Number(m.puntos) || 0;
+            if (filtro === 'entran' && p <= 0) return false;
+            if (filtro === 'salen' && m.tipo !== 'canje') return false;
+            if (mesElegido && String(m.fecha).slice(0, 7) !== mesElegido) return false;
+            if (!q) return true;
+            // Por documento, número de movimiento, quién, sala o motivo.
+            const i = infoDe(m);
+            return tokenMatch(q, i.documento, String(m.id), i.quien, salas[m.sucursal] ?? m.sucursal,
+                m.motivo, String(Math.abs(p)));
+        });
+    }, [movimientos, filtro, mesElegido, busqueda, infoDe, salas]);
 
     // Agrupados por mes, sobre la tanda visible.
     const grupos = useMemo(() => {
@@ -183,26 +201,40 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
     return (
         <>
             <LiquidModal.Header>
-                {/* En el teléfono el botón baja: al lado del nombre lo cortaba. */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+                {/* Compacto a propósito: el encabezado queda fijo, y en el teléfono
+                    el nombre en tres renglones se comía un tercio de la pantalla.
+                    El nombre cabe en dos renglones; el botón, a su lado, sólo con
+                    el ícono en el teléfono. */}
+                <div className="flex items-start justify-between gap-3 w-full">
                     <div className="flex items-center gap-3 min-w-0">
-                        <span className="w-12 h-12 rounded-full bg-brand/10 text-brand-text flex items-center justify-center shrink-0">
-                            <Star size={20} />
+                        <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand/10 text-brand-text flex items-center justify-center shrink-0">
+                            <Star size={18} />
                         </span>
                         <div className="min-w-0">
-                            <h2 className="text-title font-black text-content break-words sm:truncate">
+                            <h2 className="text-body-lg sm:text-title font-black text-content line-clamp-2 sm:truncate leading-tight">
                                 {cliente?.nombre ?? 'Cliente'}
                             </h2>
                             <p className="text-caption text-content-3 mt-0.5 flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
-                                <span className="inline-flex items-center gap-1.5"><IdCard size={12} />{cliente?.dui || 'Sin DUI'}</span>
-                                <span className="inline-flex items-center gap-1.5"><Phone size={12} />{cliente?.telefono || 'Sin teléfono'}</span>
+                                <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><IdCard size={12} />{cliente?.dui || 'Sin DUI'}</span>
+                                <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><Phone size={12} />{cliente?.telefono || 'Sin teléfono'}</span>
                             </p>
                         </div>
                     </div>
                     {cliente && (
-                        <Button variant="secondary" size="sm" icon={Pencil} onClick={() => onEditar(cliente)}>
-                            {puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
-                        </Button>
+                        <>
+                            {/* El `hidden` va en un envoltorio: puesto en el botón,
+                                su propio `inline-flex` le ganaba y salían los dos. */}
+                            <span className="hidden sm:block shrink-0">
+                                <Button variant="secondary" size="sm" icon={Pencil} onClick={() => onEditar(cliente)}>
+                                    {puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
+                                </Button>
+                            </span>
+                            <span className="sm:hidden shrink-0">
+                                <Button variant="secondary" size="sm" icon={Pencil} iconOnly onClick={() => onEditar(cliente)}
+                                    title={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
+                                    aria-label={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'} />
+                            </span>
+                        </>
                     )}
                 </div>
             </LiquidModal.Header>
@@ -218,39 +250,47 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                             </Notice>
                         )}
 
-                        {/* ── 1 · El saldo, y en qué se fue lo acumulado ───── */}
-                        <div className="grid grid-cols-1 md:grid-cols-[1.25fr_1fr] gap-4">
-                            <div data-surface="card" className="p-5 flex flex-col gap-4 min-w-0">
+                        {/* ── 1 · El saldo, y en qué se fue lo acumulado ─────
+                            Una sola tarjeta: el saldo manda y los cuatro datos lo
+                            acompañan. Eran cinco tarjetas —casi dos pantallas en
+                            el teléfono— para seis números. */}
+                        <div data-surface="card" className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-5 min-w-0">
+                            <div className="flex flex-col gap-4 min-w-0">
                                 <div>
                                     <p className="text-caption font-bold text-content-3">Puntos disponibles</p>
-                                    <p className="text-5xl font-black tabular-nums text-content leading-none mt-2">
+                                    <p className="text-4xl sm:text-5xl font-black tabular-nums text-content leading-none mt-2">
                                         {pts(cuenta?.saldo)}
                                     </p>
                                     <p className="text-body-sm text-content-2 mt-2">
                                         Equivalen a <span className="font-black tabular-nums">{dolares(cuenta?.saldo)}</span> de descuento
                                     </p>
                                 </div>
-                                <div className="mt-auto flex flex-col gap-2">
+                                <div className="flex flex-col gap-2">
                                     <p className="text-caption font-bold text-content-3">
                                         De los {pts(cuenta?.ganados)} acumulados
                                     </p>
                                     <Reparto ganados={Number(cuenta?.ganados) || 0} saldo={Number(cuenta?.saldo) || 0} {...reparto} />
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <Dato icono={TrendingUp} tono="bg-success/10 text-success-text" rotulo="Acumulados"
+                            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 content-center md:border-l md:border-divider md:pl-5">
+                                <Dato icono={TrendingUp} rotulo="Acumulados"
                                     valor={pts(cuenta?.ganados)} sub={dolares(cuenta?.ganados)} />
-                                <Dato icono={Gift} tono="bg-warning/10 text-warning-text" rotulo="Canjeados"
+                                <Dato icono={Gift} rotulo="Canjeados"
                                     valor={pts(reparto.canjeado)} sub={dolares(reparto.canjeado)} />
-                                <Dato icono={CalendarClock} tono="bg-brand/10 text-brand-text" rotulo="Próximo vencimiento"
+                                <Dato icono={CalendarClock} rotulo="Próximo vencimiento"
                                     valor={proximo ? pts(proximo.puntos) : '—'}
                                     sub={proximo ? fechaTexto(proximo.vence_el, { day: 'numeric', month: 'short', year: 'numeric' }) : 'Nada por vencer'} />
-                                <Dato icono={Receipt} tono="bg-surface-card-hover text-content-3" rotulo="Última compra"
+                                <Dato icono={Receipt} rotulo="Última compra"
                                     valor={ultimaCompra ? fechaTexto(ultimaCompra.fecha, { day: 'numeric', month: 'short' }) : '—'}
                                     sub={ultimaCompra ? (sala(ultimaCompra.sucursal) ?? '') : 'Sin compras'} />
-                            </div>
+                            </dl>
                         </div>
+
+                        {/* El acceso sube, justo debajo del saldo (pedido del usuario,
+                            2026-09-28): es lo que se usa con el cliente enfrente —
+                            «¿cuánto tengo?, mándamelo»—, no un dato del fondo. */}
+                        <CodigoDeAcceso customerId={cliente.id} nombre={cliente.nombre || ''}
+                            telefono={cliente.telefono} puedeEditar={puedeEditarFicha} />
 
                         {puedeAjustar && (
                             <AjustarPuntos customerId={cliente.id} nombre={cliente.nombre}
@@ -288,6 +328,10 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                                             <span className="capitalize">{nombreMes(mesElegido)}</span>
                                         </Button>
                                     )}
+                                    <SearchInput size="sm" value={busqueda}
+                                        onChange={(v) => { setBusqueda(v); setMostrar(DE_A); }}
+                                        placeholder="Documento o vendedor…"
+                                        ariaLabel="Buscar en los movimientos del cliente" />
                                     <SegmentedControl size="sm" value={filtro} onChange={cambiarFiltro}
                                         label="Tipo de movimiento" options={FILTROS} />
                                 </div>
@@ -310,7 +354,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                                                 </p>
                                             </div>
                                             <div className="flex flex-col divide-y divide-divider">
-                                                {g.filas.map((m) => <Movimiento key={`${m.tipo}-${m.id}`} m={m} sala={sala(m.sucursal)} />)}
+                                                {g.filas.map((m) => <Movimiento key={`${m.tipo}-${m.id}`} m={m} sala={sala(m.sucursal)} info={infoDe(m)} />)}
                                             </div>
                                         </div>
                                     ))}
@@ -353,11 +397,6 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                             </section>
                         )}
 
-                        <section className="flex flex-col gap-2">
-                            <Titulo icono={KeyRound}>Acceso a Mis puntos</Titulo>
-                            <CodigoDeAcceso customerId={cliente.id} nombre={cliente.nombre || ''}
-                                puedeEditar={puedeEditarFicha} />
-                        </section>
                     </div>
                 )}
             </LiquidModal.Body>
@@ -510,28 +549,42 @@ function AjustarPuntos({ customerId, nombre, saldo, habilitado, onHecho }) {
     );
 }
 
-function Dato({ icono: Icono, tono, rotulo, valor, sub }) {
+/** Un dato del saldo: rótulo con su ícono, el número y una línea de contexto. */
+function Dato({ icono: Icono, rotulo, valor, sub }) {
     return (
-        <div data-surface="card" className="p-3.5 flex flex-col gap-2 min-w-0">
-            <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${tono}`}><Icono size={15} /></span>
-            <div className="min-w-0">
-                <p className="text-title font-black tabular-nums text-content leading-tight truncate">{valor}</p>
-                <p className="text-caption font-bold text-content-2 truncate">{rotulo}</p>
-                {sub && <p className="text-caption text-content-3 truncate">{sub}</p>}
-            </div>
+        <div className="min-w-0">
+            <dt className="text-caption font-bold text-content-3 flex items-center gap-1.5 truncate">
+                <Icono size={13} className="shrink-0" /> {rotulo}
+            </dt>
+            <dd className="text-body-lg font-black tabular-nums text-content leading-tight mt-1 truncate">{valor}</dd>
+            {sub && <dd className="text-caption text-content-3 truncate">{sub}</dd>}
         </div>
     );
 }
 
-function Movimiento({ m, sala }) {
+// Cómo se dice quién hizo el movimiento (2026-09-28). En lo automático —la
+// compra, el canje— la persona es quien vendió.
+const ROL = { 'vendió': 'Vendió', 'ajustó': 'Ajustó' };
+
+function Movimiento({ m, sala, info = {} }) {
     const t = TIPO[m.tipo] ?? TIPO.ajuste;
     const Icono = t.icono;
     const p = Number(m.puntos) || 0;
     // El rótulo ya dice «Compra» o «Canje»: del motivo se quita esa palabra
-    // para no leer «Compra · compra».
-    const detalle = String(m.motivo ?? '')
+    // para no leer «Compra · compra». Y si ya se sabe el documento, se muestra
+    // ése en vez del «ticket …» del sistema anterior.
+    let detalle = String(m.motivo ?? '')
         .replace(/^(compra anulada|canje aplicado en el sistema de ventas|la factura del canje se anuló|compra|canje|cortesía cumpleaños)(\s·\s)?/i, '')
         .trim();
+    if (info.documento) {
+        detalle = detalle.replace(/^(ticket\s+)?[0-9A-Za-z_-]+(\s·\s)?/, (x) => (x.includes(info.documento) || /ticket|DTE-|^\d/.test(x) ? '' : x)).trim();
+        detalle = [info.documento, detalle].filter(Boolean).join(' · ');
+    }
+    // Regla del portal: quien hizo algo sale con FOTO y nombre + apellido
+    // (`AvatarConEstado` + `shortEmployeeName`). Va en su propia línea: en el
+    // teléfono, pegado a la fecha y la sala, se cortaba en «Vendió Monic…».
+    const persona = info.quien && info.quien !== 'Automático'
+        ? { id: info.quien_id, name: info.quien } : null;
     return (
         <div className="flex items-center gap-3 px-4 py-3 min-w-0">
             <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${t.burbuja}`}>
@@ -545,6 +598,16 @@ function Movimiento({ m, sala }) {
                 <p className="text-caption text-content-3 tabular-nums truncate">
                     {fechaNumerica(m.fecha)}{sala ? ` · ${sala}` : ''}
                 </p>
+                {persona ? (
+                    <p className="text-caption text-content-3 flex items-center gap-1.5 mt-1 min-w-0">
+                        <AvatarConEstado emp={persona} px={18} radio="rounded-full" marco="" />
+                        <span className="truncate">
+                            {ROL[info.rol] ?? ''} <span className="font-bold text-content-2">{shortEmployeeName(persona)}</span>
+                        </span>
+                    </p>
+                ) : info.quien === 'Automático' ? (
+                    <p className="text-caption text-content-3 mt-1">Automático</p>
+                ) : null}
             </div>
             <div className="text-right shrink-0">
                 <p className="text-body-sm font-black tabular-nums text-content">

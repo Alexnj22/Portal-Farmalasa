@@ -48,6 +48,14 @@ serve(async (req) => {
 
     const supervisorIds = (supervisors ?? []).map((e: { id: string }) => e.id);
 
+    // ── El sello llegó después del aviso: sacarlo de la campana (2026-09-28) ─
+    // Reportado: «me llegó un CCF sin firmar y ya estaba firmado». El aviso
+    // espera 5 min (get_ccf_alerts), pero si el sello llega más tarde igual,
+    // la campana no puede seguir pidiendo algo que ya se resolvió. No frena la
+    // corrida: un aviso de más es mejor que ninguno.
+    const { error: eRet } = await supabase.rpc('retirar_avisos_ccf_ya_sellados');
+    if (eRet) console.error('retirar_avisos_ccf_ya_sellados:', eRet.message);
+
     // ── Check 1: sucursales con ≥3 ventas consecutivas pendientes MH ────────
     const { data: consecAlerts, error: e1 } = await supabase.rpc('get_consecutive_mh_alerts');
     if (e1) throw e1;

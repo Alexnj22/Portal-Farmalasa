@@ -32,7 +32,6 @@ ahí, solo para admin».
   (`distribucion_config`): hoy, los cuatro cargos del área administrativa y la
   cuenta de pruebas. Por permiso y no por cargo, para cambiarlo desde Permisos.
 
-
 ## v2.1090.0 — Torogoz: pedidos en pendientes y finalizados; la venta lista las pendientes para finalizarlas
 
 Pedido del usuario: «los pedidos deben estar separados por finalizados y
@@ -46,7 +45,6 @@ seleccionar y finalizar».
   vendedor, documento, total y si espera un descuento; buscador si son
   más de cuatro. Al elegir una se abre como «Finalizar venta N» para
   revisarla y facturarla.
-
 
 ## v2.1089.0 — Une la distribuidora (Torogoz) con el núcleo portable
 
@@ -183,6 +181,105 @@ Pedido del usuario: «mira el ERP, no como guía en diseño sino en utilidad.
   no como campo (la referencia se confundía con el monto). El efectivo pide
   cuánto entrega el cliente y muestra el cambio.
 - Precios con IVA si es Factura, sin IVA si es Crédito Fiscal.
+
+## v2.1084.9 — App: salir vuelve a la entrada; probada en iOS
+
+La app del teléfono se probó en un iPhone (simulador, iOS 27): entra, guarda
+la contraseña en el llavero del sistema si la persona quiere, Bitácoras y la
+ronda funcionan, bajar la hoja de la ronda con algo escrito pregunta antes de
+tirarlo, y el portal dentro de la app abre con la misma sesión. Dos arreglos:
+«Salir» dejaba un Inicio en blanco (ahora vuelve a la entrada, igual que
+cuando la sesión se vence), y el aviso de salir sin guardar decía «1 renglón
+… se guardaron».
+
+## v2.1084.8 — Puntos: el acceso a Mis puntos sube y se envía por WhatsApp
+
+Pedido del usuario: subir el acceso a Mis puntos y hacerlo más moderno y
+práctico.
+
+- **Sube**, justo debajo del saldo: es lo que se usa con el cliente enfrente
+  («¿cuánto tengo?, mándamelo»), no un dato del fondo del detalle.
+- **El código en casillas**, oculto hasta pedirlo (`••• – ••••`); al verlo,
+  las siete letras grandes y legibles.
+- **Acciones directas**: Ver, **Copiar**, **Enviar por WhatsApp** —al teléfono
+  de la ficha, con el enlace `/mis-puntos?codigo=…` que ya abre su saldo, igual
+  que el QR del papel—, Imprimir y Generar uno nuevo. Copiar y enviar pasan por
+  la misma lectura que Ver, así que también quedan en la bitácora.
+- La ventana de WhatsApp se abre en el clic (antes de esperar el código): abierta
+  después de una espera, el navegador la bloquea. Si igual la bloquea, avisa en
+  vez de sacar a la persona del portal.
+
+## v2.1084.7 — Bodega recibe lo próximo a vencer y las averías en su área de vencidos
+
+Reporte de Bodega: un envío por «Próximo a vencer» aceptado en el portal entró
+al estante normal y no al área de vencidos. `enviar-producto-erp` recibía
+SIEMPRE en la ubicación de trabajo del destino, sin mirar el motivo. Medido: 43
+renglones de «Próximo a vencer» y 2 de avería (26-ago → 28-sep) entraron así.
+
+Ahora, si el destino es Bodega y el motivo es «Próximo a vencer» o «Avería», la
+recepción (y la devolución de un renglón rechazado, que sale del mismo lugar)
+usa el área de vencidos. «Baja rotación» y «Retiro del mercado» siguen al
+estante (decisión del usuario). Lo ya recibido NO se movió: se le pasó la lista
+a Bodega para hacerlo a mano. Edge function redesplegada con `--no-verify-jwt`.
+
+## v2.1084.6 — El aviso de CCF sin sello se retira solo cuando llega el sello
+
+Pedido del usuario, siguiendo a v2.1084.4. Si el sello de Hacienda llega
+después de mandado el aviso «CCF sin sello», el aviso sale de la campana
+solo (`deleted_at`) en la siguiente corrida de `check-sales-alerts` (cada
+5 min). El listado de notificaciones lo sigue mostrando, con
+`metadata.retirado = 'sello_llego'`. El push que ya llegó al teléfono no se
+puede retirar. Migración `20260928221338_retirar_avisos_ccf_ya_sellados`;
+edge function redesplegada con `--no-verify-jwt` (v21).
+
+## v2.1084.5 — Puntos: el detalle del cliente, compacto y con la foto de quien vendió
+
+Revisión completa del detalle del cliente, en escritorio y en teléfono.
+
+- **Quién, con foto y nombre + apellido** (regla del portal):
+  `AvatarConEstado` + `shortEmployeeName` — «Vendió Mónica Estrada» con su
+  foto, en su propia línea. Pegado a la fecha y la sala se cortaba en el
+  teléfono («Vendió Monic…»).
+- **El saldo en UNA tarjeta**: el número grande, el reparto de lo acumulado y
+  los cuatro datos (acumulados, canjeados, próximo vencimiento, última compra)
+  juntos. Eran cinco tarjetas —casi dos pantallas en el teléfono— para seis
+  números.
+- **Encabezado compacto**: el nombre en dos renglones como máximo y, en el
+  teléfono, «Editar cliente» sólo con el ícono. Es fijo, y en tres renglones se
+  comía un tercio de la pantalla. El DUI y el teléfono ya no se parten.
+
+## v2.1084.4 — Aviso de CCF sin sello espera 5 minutos
+
+Reporte del usuario: llegó «Salud 5 · CCF sin sello de Hacienda» y al ir a
+ver ya estaba sellado. El CCF 113 se emitió 15:58:50, el aviso salió 16:00:03
+y el sello llegó 16:00:06. En 60 días, los 16 avisos salieron entre 0.1 y 5.5
+min después de emitido, y al menos 7 fueron falsos igual.
+
+`get_ccf_alerts()` ahora sólo avisa «sin sello» si el CCF lleva 5+ minutos
+emitido (decisión del usuario). Anulado y observación de Hacienda siguen
+avisando al momento. Migración `20260928220905_ccf_sin_sello_espera_5_minutos`.
+
+## v2.1084.3 — Puntos: buscador y quién en los movimientos del cliente
+
+Pedido del usuario: buscar dentro del detalle del cliente, y que cada
+movimiento diga quién lo hizo («en el caso automático, quien se lo vendió»).
+
+- **Buscador** en los movimientos: por documento, número de movimiento,
+  vendedor, sala o motivo. Se combina con el filtro por tipo y el mes elegido.
+- **Quién**, en la segunda línea de cada movimiento: «Vendió <nombre>» en
+  compras, canjes y anulaciones (el vendedor de la factura), «Ajustó <nombre>»
+  en los ajustes, «Automático» en el cumpleaños. El documento reemplaza al
+  «ticket …» del sistema anterior cuando se conoce.
+- Los datos salen de `puntos_panel_cliente.detalle` y NO del estado de cuenta,
+  que también alimenta «Mis puntos»: el nombre de un empleado no se le muestra
+  a un cliente.
+- Lo migrado se cruza con cuidado: los números de ticket viejos se repiten con
+  los nuevos, así que se exige la misma sala y una factura de hasta 90 días
+  antes (89% de las compras desde may-2025). La primera versión no lo exigía y
+  una compra de 2023 salió con el vendedor de una factura de 2025; se corrigió
+  el mismo día. Lo anterior a may-2025 no tiene vendedor: el portal no tenía
+  esas facturas.
+
 
 ## v2.1084.2 — Las pantallas abiertas ya no se rompen al publicar
 

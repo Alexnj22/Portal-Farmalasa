@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.4 — Puntos: el canje de una factura anulada se devuelve, y la anulación con puntos gastados queda en Avisos
+
+Auditoría del motor antes del 1-oct, corriéndolo en seco sobre la semana real.
+
+- **Canje sobre factura anulada = cobro doble.** El barrido no miraba si la
+  factura del canje seguía siendo una venta, ni devolvía un canje ya registrado
+  si la factura se anulaba después; la caja anula y refactura, y la factura
+  nueva trae el mismo canje. 12 de 562 canjes del último año. Ahora sólo canjea
+  una venta válida (`venta_valida`), y `puntos_devolver_canjes_anulados` le
+  devuelve los puntos a los MISMOS lotes (con su vencimiento original) antes de
+  mirar los canjes nuevos. Sale en Avisos como «Canje devuelto».
+- **Venta anulada con los puntos ya gastados = sin rastro.** El barrido sólo
+  veía lotes con saldo; el aviso de la vista leía la bitácora del puente viejo,
+  que deja de escribirse el 1-oct. Ahora queda en `puntos_anulacion_gastada` y
+  sale en Avisos.
+- Probado en el entorno de pruebas (devolución, anotación, idempotencia y
+  cuadre) y verificado que las funciones de producción son idénticas a las
+  probadas. El motor real respondió 200 en seco.
+
 ## v2.1076.3 — Bitácora: facturación y cortes anotan desde la capa de datos
 
 La otra mitad de «la mezcla» (D3): la entrada legible de la bitácora la escribe

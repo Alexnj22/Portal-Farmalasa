@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1079.2 — Metas: quién cambió cada meta, con foto y nombre
+
+Pedido del usuario: «el gerente debe ver las modificaciones, con foto y nombre».
+
+- Cada tarjeta de Confirmación tiene una sección **Cambios**, en línea de
+  tiempo: «El sistema la propuso en $43,825.53», y después cada persona con su
+  foto y nombre corto —«Edwin Nuñez la confirmó en $42,510.76 · bajó $1,314.77
+  (3.0%) · 28 sep 11:11 a. m.»—, con la nota si la dejó. Cubre confirmación,
+  aprobación con o sin ajuste, devolución, gastos e ingreso manual.
+- Sale de `metas_historial`, que ya anotaba cada paso con su autor
+  (`fetchMetasCambios`, nuevo en `data/metas.js`). Si no se puede leer, la
+  tarjeta lo dice en vez de mostrar una lista vacía.
+- La línea bajo la meta queda como resumen: «−$1,314.77 · 3.0% más baja que la
+  propuesta del sistema».
+
 ## v2.1079.1 — Metas: el ajuste del supervisor queda a la vista al confirmar
 
 Pregunta del usuario: «una vez confirmadas, ¿no sale qué tanto se bajó o subió

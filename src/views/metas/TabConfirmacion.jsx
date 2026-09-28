@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '../../utils/searchUtils';
-import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck, TrendingUp, TrendingDown, Store, Target, RotateCcw, UserCheck } from 'lucide-react';
+import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck, TrendingUp, TrendingDown, Store, Target, RotateCcw } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -8,9 +8,13 @@ import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { useToastStore } from '../../store/toastStore';
+import { useStaffStore } from '../../store/staffStore';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
+import { shortEmployeeName } from '../../utils/nameUtils';
+import { fechaHora12 } from '../../utils/hora';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import {
-    fetchMetasRows, fetchMetasHistorico, explicarMetasPropuestas, generarPropuestas,
+    fetchMetasRows, fetchMetasCambios, fetchMetasHistorico, explicarMetasPropuestas, generarPropuestas,
     confirmarMeta, confirmarMetasLote, aprobarMeta, devolverMeta,
     fetchAutorizadores, aprobarMetaPorAutorizacion,
     aprobarMetasLote, aprobarMetasPorAutorizacionLote,
@@ -23,6 +27,26 @@ import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from '..
 // no es ajustar una meta, es escribir otra — y para eso está devolverla.
 const PASO_FACTOR = 0.01;
 const PASOS_MAX = 10;
+
+// Cómo se lee cada evento de `metas_historial` en la línea de «Cambios». Uno
+// que no esté acá se muestra con su nombre, sin guiones: mejor eso que
+// esconderlo.
+const EVENTO_TXT = {
+    propuesta_generada: 'la propuso en',
+    propuesta_recalculada: 'la recalculó en',
+    recalculada_por_formula: 'la recalculó en',
+    confirmada: 'la confirmó en',
+    aprobada: 'la aprobó en',
+    aprobada_con_ajuste: 'la aprobó con ajuste en',
+    devuelta: 'la devolvió',
+    ingreso_manual: 'la escribió a mano en',
+    gasto_cargado: 'le sumó un gasto; quedó en',
+    gasto_anulado: 'anuló un gasto; quedó en',
+    reabierta_por_gasto: 'la reabrió por un gasto en',
+};
+// Eventos donde el monto no cambió de mano: decir «la devolvió $X» se lee como
+// si el monto fuera parte de la devolución.
+const EVENTO_SIN_MONTO = new Set(['devuelta']);
 
 // La base de venta sobre la que corre el ajuste (ver `montoDe`).
 const baseDe = (r) => Number(r.monto_base ?? r.monto_propuesto ?? 0);
@@ -71,6 +95,11 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     const [notaAut, setNotaAut] = useState('');
     const [quienAut, setQuienAut] = useState('');
     const [autorizadores, setAutorizadores] = useState([]);
+    // meta_id → sus cambios, con quién los hizo. `null` = no se pudo leer:
+    // distinto de «sin cambios», y la tarjeta lo dice así.
+    const [cambios, setCambios] = useState({});
+    const empleados = useStaffStore((st) => st.employees);
+    const empPorId = useMemo(() => new Map((empleados || []).map((e) => [e.id, e])), [empleados]);
     const [busy, setBusy] = useState(null);       // id (o 'generar') en vuelo
 
     const cargar = () => {
@@ -98,6 +127,16 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 // que ya no está.
                 setLoteAut(null); setAutorizando(null); setDevolviendo(null);
                 setLoading(false);
+                // El historial va después y aparte: depende de los ids, y si
+                // falla la pantalla sigue sirviendo para confirmar.
+                fetchMetasCambios(r.map((x) => x.id))
+                    .then((lista) => {
+                        if (!alive) return;
+                        const porMeta = {};
+                        for (const c of lista) (porMeta[c.meta_id] ||= []).push(c);
+                        setCambios(porMeta);
+                    })
+                    .catch(() => { if (alive) setCambios(null); });
             })
             .catch((err) => { if (alive) { setError(mensajeAmigable(err, 'Error al cargar el flujo')); setLoading(false); } });
         return () => { alive = false; };
@@ -498,6 +537,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         const ajusteConfirmado = !['propuesta', 'devuelta'].includes(r.estado) && propuesto > 0
             ? Math.round((baseDe(r) - propuesto) * 100) / 100 : null;
         const ajusteConfirmadoPct = ajusteConfirmado != null ? (ajusteConfirmado / propuesto) * 100 : null;
+        const cambiosDeMeta = cambios?.[r.id] || [];
         // Lo vendido contra la meta del mes anterior: el relleno de su barra.
         const vendidoAnterior = metaAnterior != null && c?.pct_ultimo != null
             ? metaAnterior * Number(c.pct_ultimo) / 100 : null;
@@ -599,25 +639,15 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     {/* Una vez confirmada, el ajuste queda a la vista: quien
                         aprueba tiene que ver que no es el número del sistema, y
                         cuánto se movió (pedido del usuario, 2026-09-28: «¿el
-                        gerente no ve mis cambios de propuesta?»). */}
-                    {ajusteConfirmado != null && (
-                        <div data-surface="card" className="mt-2.5 flex items-start gap-2 px-3 py-2">
-                            <UserCheck size={16} className="mt-0.5 shrink-0 text-chart-1-text" aria-hidden />
-                            <p className="text-label font-semibold text-content-3">
-                                {ajusteConfirmado === 0 ? (
-                                    <>Se confirmó <span className="font-black text-content-1">igual a la propuesta</span> del sistema</>
-                                ) : (
-                                    <>
-                                        Se confirmó{' '}
-                                        <span className={`font-black tabular-nums ${ajusteConfirmado > 0 ? 'text-chart-1-text' : 'text-content-1'}`}>
-                                            {ajusteConfirmado > 0 ? '+' : '−'}{formatMoney(Math.abs(ajusteConfirmado))}
-                                        </span>
-                                        {' · '}{formatPct(Math.abs(ajusteConfirmadoPct))} {ajusteConfirmado > 0 ? 'más alta' : 'más baja'} que
-                                        la propuesta del sistema ({formatMoney(r.monto_propuesto)})
-                                    </>
-                                )}
-                            </p>
-                        </div>
+                        gerente no ve mis cambios de propuesta?»). El detalle de
+                        quién lo movió está en «Cambios», más abajo. */}
+                    {ajusteConfirmado != null && ajusteConfirmado !== 0 && (
+                        <p className="text-label font-semibold text-content-3 mt-1.5">
+                            <span className={`font-black tabular-nums ${ajusteConfirmado > 0 ? 'text-chart-1-text' : 'text-content-1'}`}>
+                                {ajusteConfirmado > 0 ? '+' : '−'}{formatMoney(Math.abs(ajusteConfirmado))}
+                            </span>
+                            {' · '}{formatPct(Math.abs(ajusteConfirmadoPct))} {ajusteConfirmado > 0 ? 'más alta' : 'más baja'} que la propuesta del sistema
+                        </p>
                     )}
                 </div>
 
@@ -744,6 +774,55 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 </Button>
                             )}
                         </div>
+                    </div>
+                )}
+
+                {/* Quién movió la meta, con su foto: la del sistema primero y
+                    cada persona después, con cuánto la subió o la bajó. */}
+                {cambios === null ? (
+                    <p className="text-micro font-semibold text-content-3">No se pudo cargar quién cambió esta meta.</p>
+                ) : cambiosDeMeta.some((c) => c.actor) && (
+                    <div>
+                        <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-2">Cambios</p>
+                        <ol className="relative space-y-3 before:absolute before:left-[13px] before:top-2 before:bottom-2 before:w-px before:bg-border-card">
+                            {cambiosDeMeta.map((cb) => {
+                                const emp = cb.actor ? empPorId.get(cb.actor) : null;
+                                const antes = cb.monto_antes != null ? Number(cb.monto_antes) : null;
+                                const despues = cb.monto_despues != null ? Number(cb.monto_despues) : null;
+                                const mov = antes > 0 && despues != null && !EVENTO_SIN_MONTO.has(cb.evento) ? Math.round((despues - antes) * 100) / 100 : null;
+                                return (
+                                    <li key={cb.id} className="relative flex items-start gap-2.5">
+                                        {cb.actor ? (
+                                            <AvatarConEstado emp={emp || { id: cb.actor, name: 'Alguien' }} px={28} radio="rounded-full" marco="" />
+                                        ) : (
+                                            <span className="relative size-7 shrink-0 rounded-full bg-surface-card-hover text-chart-1-text grid place-items-center">
+                                                <Sparkles size={14} aria-hidden />
+                                            </span>
+                                        )}
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-label text-content-2">
+                                                <span className="font-black text-content-1">
+                                                    {cb.actor ? (emp ? shortEmployeeName(emp.name) : 'Alguien') : 'El sistema'}
+                                                </span>
+                                                {' '}{EVENTO_TXT[cb.evento] || cb.evento.replace(/_/g, ' ')}
+                                                {despues != null && !EVENTO_SIN_MONTO.has(cb.evento) && (
+                                                    <> <span className="font-black tabular-nums text-content-1">{formatMoney(despues)}</span></>
+                                                )}
+                                            </p>
+                                            <p className="text-micro font-semibold text-content-3 tabular-nums">
+                                                {mov != null && mov !== 0 && (
+                                                    <span className={`font-black ${mov > 0 ? 'text-chart-1-text' : 'text-content-2'}`}>
+                                                        {mov > 0 ? 'subió ' : 'bajó '}{formatMoney(Math.abs(mov))} ({formatPct(Math.abs(mov / antes) * 100)}){' · '}
+                                                    </span>
+                                                )}
+                                                {fechaHora12(cb.created_at)}
+                                            </p>
+                                            {cb.nota && <p className="text-micro font-semibold text-content-3 mt-0.5">«{cb.nota}»</p>}
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ol>
                     </div>
                 )}
 

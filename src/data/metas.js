@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 // Metas por sala (Fase 1 — docs/planes-cerrados/PLAN-METAS-2026-08-03.md). Los tres RPC
 // devuelven pocas filas (6 salas × meses), así que no hay paginación que
@@ -17,6 +18,25 @@ export async function fetchMetasHistorico() {
     const { data, error } = await supabase.rpc('get_metas_historico');
     if (error) throw error;
     return data ?? [];
+}
+
+// Los cambios de cada meta, con quién los hizo: la propuesta del sistema, la
+// confirmación del supervisor, el ajuste o la aprobación del gerente. Es lo que
+// deja ver a quien aprueba QUIÉN movió el número y cuánto. Pocas filas por mes
+// (media docena de eventos por sala), y el `.in` es sobre `meta_id`, que se
+// repite: por eso va con `fetchAllRows` y no confiado a que la entrada acote.
+export async function fetchMetasCambios(metaIds) {
+    if (!metaIds?.length) return [];
+    const filas = await fetchAllRows(() => supabase
+        .from('metas_historial')
+        .select('id, meta_id, evento, estado_antes, estado_despues, monto_antes, monto_despues, actor, nota, created_at')
+        .in('meta_id', metaIds)
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true }));
+    // `fetchAllRows` devuelve null cuando falla la primera página: tratarlo
+    // como lista vacía diría «nadie cambió nada», que es justo lo falso.
+    if (filas == null) throw new Error('No se pudo leer el historial de cambios de las metas');
+    return filas;
 }
 
 // Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
